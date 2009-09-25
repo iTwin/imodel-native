@@ -1,0 +1,87 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: ecobjects/native/native.mke $
+#
+#  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+baseDir         = $(_MakeFilePath)
+
+SolutionPolicyMki=$(baseDir)native.mki
+
+programName = ECObjects
+
+%include    mdl.mki
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+#--------------------------------------------------------------------------------
+#  Bring our precompiled header up-to-date.  After including PreCompileHeader.mki
+#  $(UsePrecompiledHeaderOptions) will contain the /Yu and /Fp options that we
+#  need to consume the .pch.
+#----------------------------------------------------------------------
+PchCompiland = $(baseDir)ECObjectsPch.cpp
+PchOutputDir = $(o)
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts  = $(UsePrecompiledHeaderOptions)
+CPchOpts   = $(UsePrecompiledHeaderOptions)
+
+#----------------------------------------------------------------------
+# Prepare to multi-compile using a uniform set of dependency blocks.
+# Note that you CANNOT change compiler options for just some of the
+# below compilands. The entire set of compilands must be content with
+# uniform treatment for multi-compilation to work.
+#----------------------------------------------------------------------
+MultiCompileDepends=$(_MakeFileSpec) 
+%include MultiCppCompileRule.mki
+
+#----------------------------------------------------------------------
+#   Objects that go into the ECObjects library
+#----------------------------------------------------------------------
+ECObjectsHeaders = $(ecobjectsPublicAPISrc)ECObjects.h $(ecobjectsPublicAPISrc)ECSchema.h $(ecobjectsPublicAPISrc)ECValue.h $(ecobjectsPublicAPISrc)ECInstance.h $(ecobjectsPublicAPISrc)ECEnabler.h
+
+$(o)ecschema.obj        : $(baseDir)ecschema.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+
+$(o)ecinstance.obj      : $(baseDir)ecinstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+
+$(o)ecvalue.obj         : $(baseDir)ecvalue.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+
+$(o)ecenabler.obj       : $(baseDir)ecenabler.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+
+%include MultiCppCompileGo.mki
+cppObjects=%$(MultiCompileObjectList)
+CCPchOpts =
+CPchOpts =
+
+#----------------------------------------------------------------------
+#   dependencies of the subsystem.
+#----------------------------------------------------------------------
+DLM_NO_DLS        = 1
+DLM_NO_DEF        = 1
+DLM_NAME          = ECObjects
+DLM_DEST          = $(o)
+DLM_OBJECT_DEST   = $(o)
+DLM_OBJECT_FILES  = $(cppObjects) $(o)ECObjectsPch.obj
+DLM_EXPORT_OBJS   = $(cppObjects)
+DLM_EXPORT_DEST   = $(o)
+DLM_EXP_DEST      = $(o)
+DLM_NOINITFUNC    = 1
+DLM_NOMSBUILTINS  = 1
+DLM_NO_DEF        = 1
+DLM_NOENTRY       = 1
+DLM_LIBRARY_FILES = 
+#DLM_NT_LIBS       + advapi32.lib user32.lib wininet.lib ole32.lib
+DLM_USE_LIBPREFIX = 1
+
+#----------------------------------------------------------------------
+#   NEEDSWORK : Temporary settings
+#----------------------------------------------------------------------
+DLM_NO_NTBSADDR=1
+
+%include dlmLink.mki
+

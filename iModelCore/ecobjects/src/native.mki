@@ -1,0 +1,12 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: ecobjects/native/native.mki $
+#
+#  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+OPTIMIZE_FOR_SPEED=1
+
+nameToDefine=__ECOBJECTS_BUILD__
+%include cdefapnd.mki
+
