@@ -63,8 +63,7 @@ ECEnablerCP Instance::GetEnabler() const
 +---------------+---------------+---------------+---------------+---------------+------*/    
 bool Instance::AccessStringAndNIndicesAgree (const wchar_t * propertyAccessString, UInt32 nIndices, bool errorIfFalse)
     {
-    const wchar_t * accessString = propertyAccessString; // only to make it readable in debugger
-    const wchar_t * pointerToBrackets = pointerToBrackets = wcsstr (accessString, L"[]"); ;
+    const wchar_t * pointerToBrackets = pointerToBrackets = wcsstr (propertyAccessString, L"[]"); ;
     int nBrackets = 0;
     while (NULL != pointerToBrackets)
         {
@@ -84,6 +83,7 @@ bool Instance::AccessStringAndNIndicesAgree (const wchar_t * propertyAccessStrin
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt Instance::GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
     {
+    //wip: add a CheckForNull (propertyAccessString) macro here that logs error and triggers debugger in a debug build
     //wip: in debug mode could find and validate ECProperty here
     
     if (!AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true)) // .04

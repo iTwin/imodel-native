@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+/*__PUBLISH_SECTION_START__*/
 
 #include <ECObjects\ECObjects.h>
 
@@ -91,15 +92,15 @@ protected:
         
     union
         {
-        bool        m_boolean;
-        ::Int32     m_integer32;
-        ::Int64     m_long64;
-        double      m_double;
-        StringInfo  m_stringInfo;
-        const wchar_t *    m_dateTime;
-        DPoint2d    m_dPoint2d;
-        DPoint3d    m_dpoint3d;
-        ArrayInfo   m_arrayInfo;
+        bool            m_boolean;
+        ::Int32         m_integer32;
+        ::Int64         m_long64;
+        double          m_double;
+        StringInfo      m_stringInfo;
+        const wchar_t * m_dateTime;
+        DPoint2d        m_dPoint2d;
+        DPoint3d        m_dpoint3d;
+        ArrayInfo       m_arrayInfo;
         };
 
     void        DeepCopy (ECValueCR v);
@@ -144,7 +145,7 @@ public:
     Int64           GetLong() const;
     StatusInt       SetLong (Int64 long64);
                 
-    const wchar_t *       GetString() const;
+    const wchar_t * GetString() const;
     StatusInt       SetString (const wchar_t * string, bool holdADuplicate = true);
     };
 

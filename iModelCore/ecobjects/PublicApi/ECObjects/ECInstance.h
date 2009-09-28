@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+/*__PUBLISH_SECTION_START__*/
 
 #include <ECObjects\ECObjects.h>
 #include <string>

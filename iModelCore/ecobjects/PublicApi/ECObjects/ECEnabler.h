@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+/*__PUBLISH_SECTION_START__*/
 
 #include <ECObjects\ECObjects.h>
 
@@ -67,15 +68,15 @@ public:
 struct Enabler
     {
 private:
-    bool                m_initialized;
-    ECIGetValueCP       m_iGetValue;
+    bool                    m_initialized;
+    ECIGetValueCP           m_iGetValue;
 public:
-    Enabler(): m_initialized(false), m_iGetValue(NULL) {};
-    void                Initialize();
-    virtual UInt32      GetId()   const = 0;  // From Linkage/Handler ID Pool
-    virtual const wchar_t *   GetName() const = 0;  // Mostly for debugging info 
+    ECOBJECTS_EXPORT Enabler(): m_initialized(false), m_iGetValue(NULL) {};
+    ECOBJECTS_EXPORT void                    Initialize();
+    ECOBJECTS_EXPORT virtual UInt32          GetId()   const = 0;  // From Linkage/Handler ID Pool
+    ECOBJECTS_EXPORT virtual const wchar_t * GetName() const = 0;  // Mostly for debugging info 
     
-    ECIGetValueCP         IGetValue() const;
+    ECOBJECTS_EXPORT ECIGetValueCP           IGetValue() const;
     };
 
 /*=================================================================================**//**
