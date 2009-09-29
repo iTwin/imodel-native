@@ -13,7 +13,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-Instance::Instance(ECEnablerCR enabler, ECClassCR ecClass)
+Instance::Instance(EnablerCR enabler, ClassCR ecClass)
     : m_enabler (&enabler), m_class(&ecClass)
     {
     };    
@@ -21,7 +21,7 @@ Instance::Instance(ECEnablerCR enabler, ECClassCR ecClass)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-Instance::Instance(ECEnablerCR enabler, ECClassCR ecClass, const wchar_t * instanceId) 
+Instance::Instance(EnablerCR enabler, ClassCR ecClass, const wchar_t * instanceId) 
     : m_enabler(&enabler), m_class(&ecClass), m_instanceId(instanceId)
     {
     };
@@ -39,13 +39,13 @@ const wchar_t *   Instance::GetInstanceId() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool        Instance::IsReadOnly() const
     {        
-    return (NULL != dynamic_cast<ECISetValueCP>(GetEnabler()));
+    return (NULL != dynamic_cast<ISetValueCP>(GetEnabler()));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP     Instance::GetClass() const 
+ClassCP     Instance::GetClass() const 
     {
     return m_class;
     }
@@ -53,7 +53,7 @@ ECClassCP     Instance::GetClass() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECEnablerCP Instance::GetEnabler() const
+EnablerCP Instance::GetEnabler() const
     {
     return m_enabler;
     }    
@@ -81,7 +81,7 @@ bool Instance::AccessStringAndNIndicesAgree (const wchar_t * propertyAccessStrin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Instance::GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+StatusInt Instance::GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
     {
     //wip: add a CheckForNull (propertyAccessString) macro here that logs error and triggers debugger in a debug build
     //wip: in debug mode could find and validate ECProperty here
@@ -89,10 +89,10 @@ StatusInt Instance::GetValue (ECValueR v, const wchar_t * propertyAccessString, 
     if (!AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true)) // .04
         return ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices;
             
-    ECEnablerCP e = GetEnabler();
+    EnablerCP e = GetEnabler();
     assert (NULL != e);
     
-    ECIGetValueCP enabler = e->IGetValue(); // replaces a dynamic_cast that was costing .38. Now about .01
+    IGetValueCP enabler = e->IGetValue(); // replaces a dynamic_cast that was costing .38. Now about .01
     assert (NULL != enabler);
     
     return enabler->GetValue (v, *this, propertyAccessString, nIndices, indices); // .36  (now less expensive since one dynamic_cast is avoided internally
@@ -102,14 +102,14 @@ StatusInt Instance::GetValue (ECValueR v, const wchar_t * propertyAccessString, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Instance::SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 nIndices, UInt32 const * indices)
+StatusInt Instance::SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices, UInt32 const * indices)
     {
     //wip: in debug mode we could find and validate ECProperty here
     
     if (!AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true))
         return ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices;
     
-    ECISetValueCP enabler = dynamic_cast<ECISetValueCP>(GetEnabler());
+    ISetValueCP enabler = dynamic_cast<ISetValueCP>(GetEnabler());
     return enabler->SetValue (*this, propertyAccessString, v, nIndices, indices);
     }        
 
@@ -140,13 +140,13 @@ UInt32 Instance::GetInteger (const wchar_t * propertyAccessString, UInt32 nIndic
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Instance::InsertArrayElement (const wchar_t * propertyAccessString, ECValueCR v, UInt32 index)
+StatusInt Instance::InsertArrayElement (const wchar_t * propertyAccessString, ValueCR v, UInt32 index)
     {
-    ECIArrayManipulatorCP manipulator = dynamic_cast<ECIArrayManipulatorCP>(GetEnabler());
+    IArrayManipulatorCP manipulator = dynamic_cast<IArrayManipulatorCP>(GetEnabler());
     if (NULL == manipulator)
         return ECOBJECTS_STATUS_OperationNotSupportedByEnabler;
         
-    ECPropertyP property;
+    PropertyP property;
     StatusInt status = m_class->GetECProperty (property, propertyAccessString);
     if (status != SUCCESS)
         return status;
@@ -159,11 +159,11 @@ StatusInt Instance::InsertArrayElement (const wchar_t * propertyAccessString, EC
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt Instance::RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index)
     {
-    ECIArrayManipulatorCP manipulator = dynamic_cast<ECIArrayManipulatorCP>(GetEnabler());
+    IArrayManipulatorCP manipulator = dynamic_cast<IArrayManipulatorCP>(GetEnabler());
     if (NULL == manipulator)
         return ECOBJECTS_STATUS_OperationNotSupportedByEnabler;
         
-    ECPropertyP property;
+    PropertyP property;
     StatusInt status = m_class->GetECProperty (property, propertyAccessString);
     if (status != SUCCESS)
         return status;
@@ -176,11 +176,11 @@ StatusInt Instance::RemoveArrayElement (const wchar_t * propertyAccessString, UI
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt Instance::ClearArray (const wchar_t * propertyAccessString)
     {
-    ECIArrayManipulatorCP manipulator = dynamic_cast<ECIArrayManipulatorCP>(GetEnabler());
+    IArrayManipulatorCP manipulator = dynamic_cast<IArrayManipulatorCP>(GetEnabler());
     if (NULL == manipulator)
         return ECOBJECTS_STATUS_OperationNotSupportedByEnabler;
         
-    ECPropertyP property = NULL;
+    PropertyP property = NULL;
     StatusInt status = m_class->GetECProperty (property, propertyAccessString);
     if (status != SUCCESS)
         return status;

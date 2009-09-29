@@ -22,7 +22,7 @@ void                Enabler::Initialize()
     m_initialized = true;
     
     // amortize the cost of the dynamic_cast over a lifetime of get/set calls
-    m_iGetValue = dynamic_cast<ECIGetValueCP>(this);
+    m_iGetValue = dynamic_cast<IGetValueCP>(this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -31,7 +31,7 @@ void                Enabler::Initialize()
 * it once and save the result.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECIGetValueCP         Enabler::IGetValue() const
+IGetValueCP         Enabler::IGetValue() const
     {
     assert (m_initialized && "You should call Initialize() in the constructor of your subclass of Enabler. "
                                "It performs initialization that cannot be performed in the base constructor.");

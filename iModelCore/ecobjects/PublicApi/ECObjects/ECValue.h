@@ -103,17 +103,17 @@ protected:
         ArrayInfo       m_arrayInfo;
         };
 
-    void        DeepCopy (ECValueCR v);
+    void        DeepCopy (ValueCR v);
     inline void ConstructUninitialized();
                 
 public:
     void            Clear();
-    ECValueR          operator= (ECValueCR rhs);
+    ValueR          operator= (ValueCR rhs);
     
     ~Value();
     
     Value ();
-    Value (ECValueCR v);
+    Value (ValueCR v);
     Value (DataType dataType);
     
     explicit Value (::Int32 integer32);

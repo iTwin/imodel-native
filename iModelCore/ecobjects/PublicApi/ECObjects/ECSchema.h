@@ -27,7 +27,7 @@ private:
 
 
 public:        
-    StatusInt GetECProperty (ECPropertyP & ecProperty, const wchar_t * propertyName) const;
+    StatusInt GetECProperty (PropertyP & ecProperty, const wchar_t * propertyName) const;
 
     };
 

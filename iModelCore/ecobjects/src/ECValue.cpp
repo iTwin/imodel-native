@@ -29,7 +29,7 @@ void Value::ConstructUninitialized()
 * It duplicates string values, even if the original did not hold a duplicate that is was responsible for freeing.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Value::DeepCopy (ECValueCR v)
+void Value::DeepCopy (ValueCR v)
     {
     memcpy (this, &v, sizeof(Value));
     /*ConstructUninitialized ();    
@@ -114,7 +114,7 @@ Value::~Value()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValueR Value::operator= (ECValueCR rhs)
+ValueR Value::operator= (ValueCR rhs)
     {
     DeepCopy(rhs);
     return *this;
@@ -133,7 +133,7 @@ Value::Value ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-Value::Value (ECValueCR v)
+Value::Value (ValueCR v)
     {
     DeepCopy (v);
     }
