@@ -92,7 +92,7 @@ StatusInt Instance::GetValue (ValueR v, const wchar_t * propertyAccessString, UI
     EnablerCP e = GetEnabler();
     assert (NULL != e);
     
-    IGetValueCP enabler = e->IGetValue(); // replaces a dynamic_cast that was costing .38. Now about .01
+    IGetValueCP enabler = e->DynamicCastToIGetValue(); // replaces a dynamic_cast that was costing .38. Now about .01
     assert (NULL != enabler);
     
     return enabler->GetValue (v, *this, propertyAccessString, nIndices, indices); // .36  (now less expensive since one dynamic_cast is avoided internally

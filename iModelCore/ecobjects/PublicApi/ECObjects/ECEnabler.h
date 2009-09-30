@@ -69,14 +69,31 @@ struct Enabler
     {
 private:
     bool                    m_initialized;
-    IGetValueCP           m_iGetValue;
-public:
-    ECOBJECTS_EXPORT Enabler(): m_initialized(false), m_iGetValue(NULL) {};
-    ECOBJECTS_EXPORT void                    Initialize();
-    ECOBJECTS_EXPORT virtual UInt32          GetId()   const = 0;  // From Linkage/Handler ID Pool
-    ECOBJECTS_EXPORT virtual const wchar_t * GetName() const = 0;  // Mostly for debugging info 
+    IGetValueCP             m_iGetValue;
     
-    ECOBJECTS_EXPORT IGetValueCP           IGetValue() const;
+    ClassCP                 m_ecClass;
+
+protected:
+    //! Must be called from the constructor of your subclass of Enabler.
+    //! It cannot be called in the base constructor because you cannot dynamic_cast to
+    //! a derived type in the base constructor.    
+    ECOBJECTS_EXPORT void                    Initialize();
+
+public:
+    //! Default constructor
+    ECOBJECTS_EXPORT Enabler(ClassCR ecClass): m_ecClass (&ecClass), m_initialized(false), m_iGetValue(NULL) {};
+    
+    //! Should be obtained from the Linkage/Handler ID Pool
+    ECOBJECTS_EXPORT virtual UInt32          GetId()   const = 0;
+    
+    //! Primarily for debugging/logging purposes. Should match your fully-qualified class name
+    ECOBJECTS_EXPORT virtual const wchar_t * GetName() const = 0;
+    
+    //! Called by EC::Implementations to efficiently "dynamic_cast" to IGetValue.
+    //! Efficiencies are gained by only calling dynamic_cast<IGetValue> once and 
+    //! amortizing the cost over the lifetime of the Enabler.
+    //! @return the result of dynamic_cast<IGetValue>(this)
+    ECOBJECTS_EXPORT IGetValueCP           DynamicCastToIGetValue() const;
     };
 
 /*=================================================================================**//**

@@ -17,16 +17,29 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
   
-   
 /*=================================================================================**//**
 * @bsistruct                                                     
 +===============+===============+===============+===============+===============+======*/
 struct Class
     {
 private:
-
-
-public:        
+    std::wstring    m_name;
+    SchemaCP        m_schema; //wip: smart pointer?
+public:
+    ECOBJECTS_EXPORT Class (wchar_t const * name, SchemaCR schema) : m_name(name), m_schema(&schema)
+        {
+        }
+        
+    ECOBJECTS_EXPORT wchar_t const * GetName() const
+        {
+        return m_name.c_str();
+        }
+        
+    SchemaCP GetSchema() const
+        {
+        return m_schema;
+        }
+              
     StatusInt GetECProperty (PropertyP & ecProperty, const wchar_t * propertyName) const;
 
     };
@@ -60,8 +73,8 @@ private:
     void init (std::wstring & name, std::wstring & prefix);
 
 public:    
-    Schema (const wchar_t * prefix, const wchar_t * name, UInt32 majorVersion, UInt32 minorVersion);
-    ~Schema();
+    ECOBJECTS_EXPORT Schema (const wchar_t * prefix, const wchar_t * name, UInt32 majorVersion, UInt32 minorVersion);
+    ECOBJECTS_EXPORT ~Schema();
 
     const wchar_t * GetSchemaName() const;
     void SetSchemaName (const wchar_t * schemaName);    

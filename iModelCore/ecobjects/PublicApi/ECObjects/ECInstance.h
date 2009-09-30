@@ -28,7 +28,7 @@ struct Instance
     {
 private:
     EnablerCP         m_enabler;
-    std::wstring        m_instanceId;
+    std::wstring      m_instanceId;
     ClassCP           m_class; //needs a refcounted ptr
 
     //wip: AccessStringAndNIndicesAgree should move to AccessStringHelper struct... along with method to convert to/from .NET ECObjects style accessString
@@ -46,7 +46,7 @@ public:
     virtual const wchar_t * GetInstanceId() const; // A subclass may want to calculate it on demand
     bool        IsReadOnly() const;
     
-    ClassCP   GetClass() const;
+    ClassCP     GetClass() const;
     
     StatusInt   GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
     StatusInt   SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices = 0, UInt32 const * indices = NULL);

@@ -10,6 +10,7 @@
 
 #include <ECObjects\ECObjects.h>
 
+#if get_these_from_geomlibs
 // needswork, need to reconcile these with the dpoint types defined in geomlibs
 struct DPoint2d
     {
@@ -23,7 +24,8 @@ struct DPoint3d
     double y;
     double z;
     };
-    
+#endif
+
 #include <vector>
 
 BEGIN_BENTLEY_EC_NAMESPACE
@@ -98,8 +100,10 @@ protected:
         double          m_double;
         StringInfo      m_stringInfo;
         const wchar_t * m_dateTime;
+#if get_these_from_geomlibs
         DPoint2d        m_dPoint2d;
         DPoint3d        m_dpoint3d;
+#endif
         ArrayInfo       m_arrayInfo;
         };
 
