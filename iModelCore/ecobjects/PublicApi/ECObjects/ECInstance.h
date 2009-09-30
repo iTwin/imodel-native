@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+/*__PUBLISH_SECTION_START__*/
 
 #include <ECObjects\ECObjects.h>
 #include <string>
@@ -26,9 +27,9 @@ BEGIN_BENTLEY_EC_NAMESPACE
 struct Instance
     {
 private:
-    ECEnablerCP         m_enabler;
-    std::wstring        m_instanceId;
-    ECClassCP           m_class; //needs a refcounted ptr
+    EnablerCP         m_enabler;
+    std::wstring      m_instanceId;
+    ClassCP           m_class; //needs a refcounted ptr
 
     //wip: AccessStringAndNIndicesAgree should move to AccessStringHelper struct... along with method to convert to/from .NET ECObjects style accessString
     static bool AccessStringAndNIndicesAgree (const wchar_t * propertyAccessString, UInt32 nIndices, bool assertIfFalse);
@@ -36,21 +37,21 @@ private:
 protected:    
     Instance() {}; 
 
-    ECEnablerCP   GetEnabler() const;    
+    EnablerCP   GetEnabler() const;    
     
 public:
-    Instance(ECEnablerCR enabler, ECClassCR ecClass, const wchar_t * instanceId);
-    Instance(ECEnablerCR enabler, ECClassCR ecClass);
+    Instance(EnablerCR enabler, ClassCR ecClass, const wchar_t * instanceId);
+    Instance(EnablerCR enabler, ClassCR ecClass);
     
     virtual const wchar_t * GetInstanceId() const; // A subclass may want to calculate it on demand
     bool        IsReadOnly() const;
     
-    ECClassCP   GetClass() const;
+    ClassCP     GetClass() const;
     
-    StatusInt   GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
-    StatusInt   SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 nIndices = 0, UInt32 const * indices = NULL);
+    StatusInt   GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
+    StatusInt   SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices = 0, UInt32 const * indices = NULL);
     
-    StatusInt   InsertArrayElement (const wchar_t * propertyAccessString, ECValueCR v, UInt32 index); //wip: Return the new count?
+    StatusInt   InsertArrayElement (const wchar_t * propertyAccessString, ValueCR v, UInt32 index); //wip: Return the new count?
     StatusInt   RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index); //wip: return the removed one? YAGNI? Return the new count?
     StatusInt   ClearArray (const wchar_t * propertyAccessString);    
     

@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+/*__PUBLISH_SECTION_START__*/
 
 #include <ECObjects\ECObjects.h>
 
@@ -24,7 +25,7 @@ struct IGetValue
     {
 private:
 public:
-    virtual StatusInt GetValue (ECValueR v, ECInstanceCR instance, const wchar_t * propertyAccessString, 
+    virtual StatusInt GetValue (ValueR v, InstanceCR instance, const wchar_t * propertyAccessString, 
                                 UInt32 nIndices = 0, UInt32 const * indices = NULL) const = 0;
     };
 
@@ -41,7 +42,7 @@ struct ISetValue
     {
 private:
 public:
-    virtual StatusInt SetValue (ECInstanceR instance, const wchar_t * propertyAccessString, ECValueCR v,
+    virtual StatusInt SetValue (InstanceR instance, const wchar_t * propertyAccessString, ValueCR v,
                                 UInt32 nIndices = 0, UInt32 const * indices = NULL) const = 0;
     };
 
@@ -67,15 +68,32 @@ public:
 struct Enabler
     {
 private:
-    bool                m_initialized;
-    ECIGetValueCP       m_iGetValue;
-public:
-    Enabler(): m_initialized(false), m_iGetValue(NULL) {};
-    void                Initialize();
-    virtual UInt32      GetId()   const = 0;  // From Linkage/Handler ID Pool
-    virtual const wchar_t *   GetName() const = 0;  // Mostly for debugging info 
+    bool                    m_initialized;
+    IGetValueCP             m_iGetValue;
     
-    ECIGetValueCP         IGetValue() const;
+    ClassCP                 m_ecClass;
+
+protected:
+    //! Must be called from the constructor of your subclass of Enabler.
+    //! It cannot be called in the base constructor because you cannot dynamic_cast to
+    //! a derived type in the base constructor.    
+    ECOBJECTS_EXPORT void                    Initialize();
+
+public:
+    //! Default constructor
+    ECOBJECTS_EXPORT Enabler(ClassCR ecClass): m_ecClass (&ecClass), m_initialized(false), m_iGetValue(NULL) {};
+    
+    //! Should be obtained from the Linkage/Handler ID Pool
+    ECOBJECTS_EXPORT virtual UInt32          GetId()   const = 0;
+    
+    //! Primarily for debugging/logging purposes. Should match your fully-qualified class name
+    ECOBJECTS_EXPORT virtual const wchar_t * GetName() const = 0;
+    
+    //! Called by EC::Implementations to efficiently "dynamic_cast" to IGetValue.
+    //! Efficiencies are gained by only calling dynamic_cast<IGetValue> once and 
+    //! amortizing the cost over the lifetime of the Enabler.
+    //! @return the result of dynamic_cast<IGetValue>(this)
+    ECOBJECTS_EXPORT IGetValueCP           DynamicCastToIGetValue() const;
     };
 
 /*=================================================================================**//**
@@ -94,13 +112,13 @@ private:
 public:
 
     // @param propertyAccessString should be in the "array element" form, e.g. "Aliases[]" instead of "Aliases"
-    virtual StatusInt InsertArrayElement (ECInstanceR instance, const wchar_t * propertyAccessString, ECValueCR value, UInt32 index) const = 0;
+    virtual StatusInt InsertArrayElement (InstanceR instance, const wchar_t * propertyAccessString, ValueCR value, UInt32 index) const = 0;
     
     // @param propertyAccessString should be in the "array element" form, e.g. "Aliases[]" instead of "Aliases"
-    virtual StatusInt RemoveArrayElement (ECInstanceR instance, const wchar_t * propertyAccessString, UInt32 index) const = 0;
+    virtual StatusInt RemoveArrayElement (InstanceR instance, const wchar_t * propertyAccessString, UInt32 index) const = 0;
     
     // @param propertyAccessString should be in the "array element" form, e.g. "Aliases[]" instead of "Aliases"
-    virtual StatusInt ClearArray (ECInstanceR instance, const wchar_t * propertyAccessString) const = 0;    
+    virtual StatusInt ClearArray (InstanceR instance, const wchar_t * propertyAccessString) const = 0;    
     };    
 
 
@@ -114,7 +132,7 @@ struct ICreateInstance
     {
 private:
 public:
-    virtual StatusInt CreateInstance (ECInstanceP& instance, ECClassCR ecClass, const wchar_t * instanceId) const = 0;
+    virtual StatusInt CreateInstance (InstanceP& instance, ClassCR ecClass, const wchar_t * instanceId) const = 0;
     };    
 
 //wip: ICacheValues : ReloadCachedValues, SaveCachedValues, FreeCachedValues

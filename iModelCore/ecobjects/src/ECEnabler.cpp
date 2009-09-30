@@ -11,9 +11,6 @@
 BEGIN_BENTLEY_EC_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
-* Must be called from the constructor of your Enabler.
-* It cannot be called in the base constructor because you cannot dynamic_cast to
-* a derived type in the base constructor.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 void                Enabler::Initialize()
@@ -22,16 +19,13 @@ void                Enabler::Initialize()
     m_initialized = true;
     
     // amortize the cost of the dynamic_cast over a lifetime of get/set calls
-    m_iGetValue = dynamic_cast<ECIGetValueCP>(this);
+    m_iGetValue = dynamic_cast<IGetValueCP>(this);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Call this method rather than dynamic_casting the EC::Enabler on your own, because
-* dynamic_cast is more expensive than you might have imagined, and it is better to do
-* it once and save the result.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECIGetValueCP         Enabler::IGetValue() const
+IGetValueCP         Enabler::DynamicCastToIGetValue() const
     {
     assert (m_initialized && "You should call Initialize() in the constructor of your subclass of Enabler. "
                                "It performs initialization that cannot be performed in the base constructor.");

@@ -19,7 +19,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt Class::GetECProperty 
 (
-ECPropertyP & ecProperty, 
+PropertyP & ecProperty, 
 const wchar_t * propertyName
 ) const
     {

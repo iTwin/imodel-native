@@ -30,19 +30,17 @@
 
 #define END_BENTLEY_EC_NAMESPACE    }}
 
-#define USING_NAMESPACE_BENTLEY_EC  using namespace Bentley::EC;
+#define USING_NAMESPACE_EC  using namespace Bentley::EC;
 
-#define EC_TYPEDEFS(_name_) \
-    BEGIN_BENTLEY_EC_NAMESPACE struct _name_; END_BENTLEY_EC_NAMESPACE \
-    ADD_TYPEDEFS1(Bentley::EC,_name_,EC##_name_,struct)    
+#define EC_TYPEDEFS(_name_)  \
+        BEGIN_BENTLEY_EC_NAMESPACE      \
+            struct _name_;      \
+            typedef _name_ *         _name_##P;  \
+            typedef _name_ &         _name_##R;  \
+            typedef _name_ const*    _name_##CP; \
+            typedef _name_ const&    _name_##CR; \
+        END_BENTLEY_EC_NAMESPACE
 
-#define EC_CLASS_TYPEDEFS(_name_) \
-    BEGIN_BENTLEY_EC_NAMESPACE class _name_; END_BENTLEY_EC_NAMESPACE \
-    ADD_TYPEDEFS1(Bentley::EC,_name_,_name_,class)
-
-#define EC_ENUM(t,tEnum) \
-    BEGIN_BENTLEY_EC_NAMESPACE enum t; END_BENTLEY_EC_NAMESPACE \
-    ADD_ENUM_TYPEDEF(Bentley::EC,t,tEnum)
 
 EC_TYPEDEFS(Value);
 EC_TYPEDEFS(ArrayInfo);
