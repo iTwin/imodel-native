@@ -83,7 +83,4 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 #----------------------------------------------------------------------
 #   NEEDSWORK : Temporary settings
 #----------------------------------------------------------------------
-DLM_NO_NTBSADDR=1
-
 %include dlmLink.mki
-
