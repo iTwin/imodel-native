@@ -73,7 +73,7 @@ DLM_EXP_DEST      = $(o)
 DLM_NOINITFUNC    = 1
 DLM_NOMSBUILTINS  = 1
 DLM_NOENTRY       = 1
-DLM_LIBRARY_FILES = 
+DLM_LIBRARY_FILES = $(BuildContext)SubParts/Libs/Bentley.lib
 #DLM_NT_LIBS       + advapi32.lib user32.lib wininet.lib ole32.lib
 DLM_USE_LIBPREFIX = 1
 DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/

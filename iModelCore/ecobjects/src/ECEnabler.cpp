@@ -21,7 +21,7 @@ void                Enabler::Initialize()
     // amortize the cost of the dynamic_cast over a lifetime of get/set calls
     m_iGetValue = dynamic_cast<IGetValueCP>(this);
     }
-
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/

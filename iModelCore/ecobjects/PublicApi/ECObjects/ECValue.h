@@ -30,11 +30,8 @@ struct DPoint3d
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-/*---------------------------------------------------------------------------------**//**
-* Enumeration of primitive datatypes supported by native "ECObjects" implementation.
-* These should correspond to all of the datatypes supported in .NET ECObjects
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+//! Enumeration of primitive datatypes supported by native "ECObjects" implementation.
+//! These should correspond to all of the datatypes supported in .NET ECObjects
 enum DataType
     {
     DATATYPE_Uninitialized                  = 0,
@@ -46,12 +43,9 @@ enum DataType
     DATATYPE_Doubld                         = 6,
     };
     
-/*---------------------------------------------------------------------------------**//**
-* Information about an array in an EC::Instance. Does not contain the actual elements.
-* @group "ECInstance"
-* @see Value
-* @bsistruct
-+---------------+---------------+---------------+---------------+---------------+------*/
+//! Information about an array in an EC::Instance. Does not contain the actual elements.
+//! @group "ECInstance"
+//! @see Value
 struct ArrayInfo
     {
 private:
@@ -66,15 +60,12 @@ public:
     DataType    GetElementDataType() const;
     };
 
-/*---------------------------------------------------------------------------------**//**
-* Variant-like object representing the value of a conceptual ECPropertyValue. 
-* It does not represent a "live" reference into the underlying EC::Instance 
-* (or the object that the EC::Instance represents). Changing the EC::Value will not affect
-* the EC::Instance unless you subsequently call SetValue() with it.
-* 
-* @group "ECInstance"
-* @bsistruct
-+---------------+---------------+---------------+---------------+---------------+------*/
+//! Variant-like object representing the value of a conceptual ECPropertyValue. 
+//! It does not represent a "live" reference into the underlying EC::Instance 
+//! (or the object that the EC::Instance represents). Changing the EC::Value will not affect
+//! the EC::Instance unless you subsequently call SetValue() with it.
+//! 
+//! @group "ECInstance"
 struct Value
     {
 private:        

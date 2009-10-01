@@ -13,17 +13,14 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
     
-/*=================================================================================**//**
-* EC::Instance is the native equivalent of a .NET IECInstance.
-* Unlike IECInstance, it is not a pure interface, but is a concrete struct.
-* Whereas in .NET, one might implement IECInstance, or use the "Lightweight" system
-* in Bentley.ECObjects.Lightweight, in native "ECObjects" you write a struct that implements
-* the EC::Enabler interface and one or more related interfaces to supply functionality 
-* to the EC::Instance.
-* We could call these "enabled" instances as opposed to "lightweight".
-* @see Enabler
-* @bsistruct                                                     
-+===============+===============+===============+===============+===============+======*/    
+//! EC::Instance is the native equivalent of a .NET IECInstance.
+//! Unlike IECInstance, it is not a pure interface, but is a concrete struct.
+//! Whereas in .NET, one might implement IECInstance, or use the "Lightweight" system
+//! in Bentley.ECObjects.Lightweight, in native "ECObjects" you write a struct that implements
+//! the EC::Enabler interface and one or more related interfaces to supply functionality 
+//! to the EC::Instance.
+//! We could call these "enabled" instances as opposed to "lightweight".
+//! @see Enabler
 struct Instance
     {
 private:
@@ -69,11 +66,8 @@ public:
     // needswork: experiment with the best way to return strings in one shot
     };
     
-/*=================================================================================**//**
-* EC::RelationshipInstance is the native equivalent of a .NET IECRelationshipInstance.
-* @see Instance, RelationshipClass
-* @bsistruct                                                     
-+===============+===============+===============+===============+===============+======*/    
+//! EC::RelationshipInstance is the native equivalent of a .NET IECRelationshipInstance.
+//! @see Instance, RelationshipClass
 struct RelationshipInstance : public Instance
     {
 private:
