@@ -29,7 +29,7 @@
 				CleanCommandLine="bmake +aD $(SrcEcf)\ecobjects\native\native.mke"
 				Output="ecobjects.exe"
 				PreprocessorDefinitions="WIN32;_DEBUG"
-				IncludeSearchPath="$(VS2008Dir)\VC\INCLUDE\;$(OutRoot)Winx$(PROCESSOR_ARCHITECTURE)\BuildContexts\Bentley\PublicAPI;$(SrcEcf)\PublicApi"
+				IncludeSearchPath="&quot;$(VCInstallDir)INCLUDE\&quot;;&quot;$(OutRoot)Win$(PROCESSOR_ARCHITECTURE)\BuildContexts\Bentley\PublicAPI&quot;;&quot;$(SrcEcf)\PublicApi&quot;"
 				ForcedIncludes=""
 				AssemblySearchPath=""
 				ForcedUsingAssemblies=""
