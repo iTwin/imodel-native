@@ -26,33 +26,33 @@ struct Instance
 private:
     EnablerCP         m_enabler;
     std::wstring      m_instanceId;
-    ClassCP           m_class; //needs a refcounted ptr
+    ClassCP           m_class; // WIP_FUSION needs a refcounted ptr
 
-    //wip: AccessStringAndNIndicesAgree should move to AccessStringHelper struct... along with method to convert to/from .NET ECObjects style accessString
+    //WIP_FUSION AccessStringAndNIndicesAgree should move to AccessStringHelper struct... along with method to convert to/from .NET ECObjects style accessString
     static bool AccessStringAndNIndicesAgree (const wchar_t * propertyAccessString, UInt32 nIndices, bool assertIfFalse);
     
 protected:    
-    Instance() {}; 
+    ECOBJECTS_EXPORT Instance() {}; 
 
-    EnablerCP   GetEnabler() const;    
+    ECOBJECTS_EXPORT EnablerCP   GetEnabler() const;    
     
 public:
-    Instance(EnablerCR enabler, ClassCR ecClass, const wchar_t * instanceId);
-    Instance(EnablerCR enabler, ClassCR ecClass);
+    ECOBJECTS_EXPORT Instance(EnablerCR enabler, ClassCR ecClass, const wchar_t * instanceId);
+    ECOBJECTS_EXPORT Instance(EnablerCR enabler, ClassCR ecClass);
     
-    virtual const wchar_t * GetInstanceId() const; // A subclass may want to calculate it on demand
-    bool        IsReadOnly() const;
+    ECOBJECTS_EXPORT virtual std::wstring GetInstanceId() const; // Virtual and returning std::wstring because a subclass may want to calculate it on demand
+    ECOBJECTS_EXPORT bool        IsReadOnly() const;
     
-    ClassCP     GetClass() const;
+    ECOBJECTS_EXPORT ClassCP     GetClass() const;
     
-    StatusInt   GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
-    StatusInt   SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices = 0, UInt32 const * indices = NULL);
+    ECOBJECTS_EXPORT StatusInt   GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
+    ECOBJECTS_EXPORT StatusInt   SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices = 0, UInt32 const * indices = NULL);
     
-    StatusInt   InsertArrayElement (const wchar_t * propertyAccessString, ValueCR v, UInt32 index); //wip: Return the new count?
-    StatusInt   RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index); //wip: return the removed one? YAGNI? Return the new count?
+    StatusInt   InsertArrayElement (const wchar_t * propertyAccessString, ValueCR v, UInt32 index); //WIP_FUSION Return the new count?
+    StatusInt   RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index); //WIP_FUSION return the removed one? YAGNI? Return the new count?
     StatusInt   ClearArray (const wchar_t * propertyAccessString);    
     
-#ifdef WIP_MANAGEDACCESS
+#ifdef WIP_FUSION_MANAGEDACCESS
     // These are more than just convenience methods... they enable an access pattern 
     // from managed code that can get a value with only one managed to native transition
     StatusInt GetDouble (double value, const wchar_t * propertyAccessString); // marshal as few args as possible 

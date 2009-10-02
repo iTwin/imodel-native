@@ -71,7 +71,7 @@ void            Value::SetToNull()
     if (IsString())
         SetString (NULL);
     else
-        m_isNull = true; //wip: handle other types
+        m_isNull = true; //WIP_FUSION handle other types
     }    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
@@ -225,7 +225,7 @@ StatusInt Value::SetLong (::Int64 long64)
 const wchar_t * Value::GetString() const
     {
     assert (IsString() && "Tried to get string value from an EC::Value that is not a string.");
-    if (!IsString()) return L"<Programmer Error: Attempted to get string value from EC::Value that is not a string.>"; //wip: log as an error... no good can come of it
+    if (!IsString()) return L"<Programmer Error: Attempted to get string value from EC::Value that is not a string.>"; //WIP_FUSION log as an error... no good can come of it
     return m_stringInfo.m_string;
     };
     

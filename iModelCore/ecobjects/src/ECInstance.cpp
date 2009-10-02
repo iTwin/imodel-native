@@ -29,9 +29,9 @@ Instance::Instance(EnablerCR enabler, ClassCR ecClass, const wchar_t * instanceI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-const wchar_t *   Instance::GetInstanceId() const
+std::wstring Instance::GetInstanceId() const
     {
-    return m_instanceId.c_str();
+    return m_instanceId;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -73,7 +73,7 @@ bool Instance::AccessStringAndNIndicesAgree (const wchar_t * propertyAccessStrin
         }
     
     assert (!errorIfFalse || (nIndices == nBrackets && "nIndices must match the number of brackets '[]' found in the propertyAccessString"));
-    //wip: log this as an error if errorIfFalse!
+    //WIP_FUSION log this as an error if errorIfFalse!
     
     return (nIndices == nBrackets);
     }
@@ -83,8 +83,8 @@ bool Instance::AccessStringAndNIndicesAgree (const wchar_t * propertyAccessStrin
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt Instance::GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
     {
-    //wip: add a CheckForNull (propertyAccessString) macro here that logs error and triggers debugger in a debug build
-    //wip: in debug mode could find and validate ECProperty here
+    //WIP_FUSION add a CheckForNull (propertyAccessString) macro here that logs error and triggers debugger in a debug build
+    //WIP_FUSION in debug mode could find and validate ECProperty here
     
     if (!AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true)) // .04
         return ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices;
@@ -104,7 +104,7 @@ StatusInt Instance::GetValue (ValueR v, const wchar_t * propertyAccessString, UI
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt Instance::SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices, UInt32 const * indices)
     {
-    //wip: in debug mode we could find and validate ECProperty here
+    //WIP_FUSION in debug mode we could find and validate ECProperty here
     
     if (!AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true))
         return ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices;

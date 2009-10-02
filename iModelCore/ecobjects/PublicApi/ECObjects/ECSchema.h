@@ -24,7 +24,7 @@ struct Class
     {
 private:
     std::wstring    m_name;
-    SchemaCP        m_schema; //wip: smart pointer?
+    SchemaCP        m_schema; //WIP_FUSION smart pointer?
 public:
     ECOBJECTS_EXPORT Class (wchar_t const * name, SchemaCR schema) : m_name(name), m_schema(&schema)
         {

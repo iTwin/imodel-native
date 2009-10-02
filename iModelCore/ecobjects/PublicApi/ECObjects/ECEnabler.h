@@ -148,5 +148,5 @@ public:
     virtual StatusInt CreateInstance (InstanceP& instance, ClassCR ecClass, const wchar_t * instanceId) const = 0;
     };    
 
-//wip: ICacheValues : ReloadCachedValues, SaveCachedValues, FreeCachedValues
+//WIP_FUSION ICacheValues : ReloadCachedValues, SaveCachedValues, FreeCachedValues
 END_BENTLEY_EC_NAMESPACE
