@@ -99,29 +99,18 @@ protected:
 public:
     
     //! Should be obtained from the Linkage/Handler ID Pool
-    ECOBJECTS_EXPORT inline UInt32      GetId()   const { return m_id; }
+    ECOBJECTS_EXPORT inline UInt32          GetId()   const { return m_id; }
     
     //! Primarily for debugging/logging purposes. Should match your fully-qualified class name
-    ECOBJECTS_EXPORT inline wchar_t const *    GetName() const { return m_name.c_str(); }
+    ECOBJECTS_EXPORT inline wchar_t const * GetName() const { return m_name.c_str(); }
     
-    ECOBJECTS_EXPORT inline ClassCP GetClass() const { return m_ecClass; }
+    ECOBJECTS_EXPORT inline ClassCP         GetClass() const { return m_ecClass; }
     
     //! Called by EC::Implementations to efficiently "dynamic_cast" to IGetValue.
     //! Efficiencies are gained by only calling dynamic_cast<IGetValue> once and 
     //! amortizing the cost over the lifetime of the Enabler.
     //! @return the result of dynamic_cast<IGetValue>(this)
     ECOBJECTS_EXPORT inline IGetValueCP           DynamicCastToIGetValue() const;// { return m_iGetValue; };
-
-#ifdef YAGNI    
-/*__PUBLISH_SECTION_END__*/
-    // OPERATOR_NEW_KLUDGE
-    void * operator new(size_t size) { return AllocateRefCounted (size); }
-    void operator delete(void *rawMemory, size_t size) { DeleteRefCounted (rawMemory, size); }
-    void * operator new [](size_t size) { return AllocateArrayRefCounted (size); }
-    void operator delete [] (void *rawMemory, size_t size) { DeleteArrayRefCounted (rawMemory, size); }
-
-/*__PUBLISH_SECTION_START__*/
-#endif    
     };
 
 //! Implemented by enablers that support manipulation of array properties, i.e. operations
