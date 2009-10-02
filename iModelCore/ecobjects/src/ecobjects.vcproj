@@ -24,9 +24,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="bmake $(SrcEcf)\ecobjects\native\native.mke"
-				ReBuildCommandLine="bmake +a $(SrcEcf)\ecobjects\native\native.mke"
-				CleanCommandLine="bmake +aD $(SrcEcf)\ecobjects\native\native.mke"
+				BuildCommandLine="bmake $(SrcEcf)ecobjects\native\native.mke"
+				ReBuildCommandLine="bmake +a $(SrcEcf)ecobjects\native\native.mke"
+				CleanCommandLine="bmake +aD $(SrcEcf)ecobjects\native\native.mke"
 				Output="ecobjects.exe"
 				PreprocessorDefinitions="WIN32;_DEBUG"
 				IncludeSearchPath="&quot;$(VCInstallDir)INCLUDE\&quot;;&quot;$(OutRoot)Win$(PROCESSOR_ARCHITECTURE)\BuildContexts\Bentley\PublicAPI&quot;;&quot;$(SrcEcf)\PublicApi&quot;"
@@ -122,6 +122,10 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 		</Filter>
+		<File
+			RelativePath="..\..\ecf.PartFile.xml"
+			>
+		</File>
 		<File
 			RelativePath="..\..\..\ecf\ecobjects\native\native.mke"
 			>
