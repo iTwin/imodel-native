@@ -25,7 +25,6 @@ struct Instance
     {
 private:
     EnablerCP         m_enabler;
-    std::wstring      m_instanceId;
     ClassCP           m_class; // WIP_FUSION needs a refcounted ptr
 
     //WIP_FUSION AccessStringAndNIndicesAgree should move to AccessStringHelper struct... along with method to convert to/from .NET ECObjects style accessString
@@ -37,10 +36,9 @@ protected:
     ECOBJECTS_EXPORT EnablerCP   GetEnabler() const;    
     
 public:
-    ECOBJECTS_EXPORT Instance(EnablerCR enabler, ClassCR ecClass, const wchar_t * instanceId);
     ECOBJECTS_EXPORT Instance(EnablerCR enabler, ClassCR ecClass);
     
-    ECOBJECTS_EXPORT virtual std::wstring GetInstanceId() const; // Virtual and returning std::wstring because a subclass may want to calculate it on demand
+    ECOBJECTS_EXPORT virtual std::wstring GetInstanceId() const = 0; // Virtual and returning std::wstring because a subclass may want to calculate it on demand
     ECOBJECTS_EXPORT bool        IsReadOnly() const;
     
     ECOBJECTS_EXPORT ClassCP     GetClass() const;

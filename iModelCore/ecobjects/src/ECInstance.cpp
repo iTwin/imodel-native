@@ -21,22 +21,6 @@ Instance::Instance(EnablerCR enabler, ClassCR ecClass)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-Instance::Instance(EnablerCR enabler, ClassCR ecClass, const wchar_t * instanceId) 
-    : m_enabler(&enabler), m_class(&ecClass), m_instanceId(instanceId)
-    {
-    };
-        
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring Instance::GetInstanceId() const
-    {
-    return m_instanceId;
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool        Instance::IsReadOnly() const
     {        
     return (NULL != dynamic_cast<ISetValueCP>(GetEnabler()));
