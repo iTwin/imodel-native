@@ -110,7 +110,7 @@ public:
     //! Efficiencies are gained by only calling dynamic_cast<IGetValue> once and 
     //! amortizing the cost over the lifetime of the Enabler.
     //! @return the result of dynamic_cast<IGetValue>(this)
-    ECOBJECTS_EXPORT inline IGetValueCP           DynamicCastToIGetValue() const;// { return m_iGetValue; };
+    ECOBJECTS_EXPORT inline IGetValueCP           GetIGetValue() const;// { return m_iGetValue; };
     };
 
 //! Implemented by enablers that support manipulation of array properties, i.e. operations

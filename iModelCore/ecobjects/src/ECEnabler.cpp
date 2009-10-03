@@ -25,7 +25,7 @@ void                Enabler::Initialize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGetValueCP         Enabler::DynamicCastToIGetValue() const
+IGetValueCP         Enabler::GetIGetValue() const
     {
     assert (m_initialized && "You should call Initialize() in the constructor of your subclass of Enabler. "
                                "It performs initialization that cannot be performed in the base constructor.");

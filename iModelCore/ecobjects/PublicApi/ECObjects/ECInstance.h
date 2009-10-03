@@ -16,7 +16,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 //! EC::Instance is the native equivalent of a .NET IECInstance.
 //! Unlike IECInstance, it is not a pure interface, but is a concrete struct.
 //! Whereas in .NET, one might implement IECInstance, or use the "Lightweight" system
-//! in Bentley.ECObjects.Lightweight, in native "ECObjects" you write a struct that implements
+//! in Bentley.ECObjects.Lightweight, in native "ECObjects" you write a class that implements
 //! the EC::Enabler interface and one or more related interfaces to supply functionality 
 //! to the EC::Instance.
 //! We could call these "enabled" instances as opposed to "lightweight".
@@ -32,7 +32,7 @@ private:
     static bool AccessStringAndNIndicesAgree (const wchar_t * propertyAccessString, UInt32 nIndices, bool assertIfFalse);
     
 protected:    
-    ECOBJECTS_EXPORT Instance() {}; 
+    ECOBJECTS_EXPORT Instance() {}; // WIP_FUSION: Should this go away? Force caller to provide the enabler and class
 
     ECOBJECTS_EXPORT EnablerCP   GetEnabler() const;    
     
