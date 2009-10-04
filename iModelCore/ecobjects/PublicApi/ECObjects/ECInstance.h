@@ -24,8 +24,6 @@ BEGIN_BENTLEY_EC_NAMESPACE
 struct Instance
     {
 private:
-    ClassCP           m_class; // WIP_FUSION: This should go away... we can get it from the enabler.
-
     //WIP_FUSION AccessStringAndNIndicesAgree should move to AccessStringHelper struct... along with method to convert to/from .NET ECObjects style accessString
     static bool AccessStringAndNIndicesAgree (const wchar_t * propertyAccessString, UInt32 nIndices, bool assertIfFalse);
     
@@ -34,18 +32,17 @@ protected:
     
     ECOBJECTS_EXPORT Instance() {}; // WIP_FUSION: Should this go away? Force caller to provide the enabler and class
 
-    ECOBJECTS_EXPORT EnablerCP   GetEnabler() const;    
-    
 public:
-    ECOBJECTS_EXPORT Instance(EnablerCR enabler, ClassCR ecClass);
+    ECOBJECTS_EXPORT Instance(EnablerCR enabler);
     
+    ECOBJECTS_EXPORT inline  EnablerCP    GetEnabler() const { return m_enabler; };    
     ECOBJECTS_EXPORT virtual std::wstring GetInstanceId() const = 0; // Virtual and returning std::wstring because a subclass may want to calculate it on demand
-    ECOBJECTS_EXPORT bool        IsReadOnly() const;
+    ECOBJECTS_EXPORT bool                 IsReadOnly() const;
     
-    ECOBJECTS_EXPORT ClassCP     GetClass() const;
+    ECOBJECTS_EXPORT inline ClassCP       GetClass() const;
     
-    ECOBJECTS_EXPORT StatusInt   GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
-    ECOBJECTS_EXPORT StatusInt   SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices = 0, UInt32 const * indices = NULL);
+    ECOBJECTS_EXPORT StatusInt            GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
+    ECOBJECTS_EXPORT StatusInt            SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices = 0, UInt32 const * indices = NULL);
     
     StatusInt   InsertArrayElement (const wchar_t * propertyAccessString, ValueCR v, UInt32 index); //WIP_FUSION Return the new count?
     StatusInt   RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index); //WIP_FUSION return the removed one? YAGNI? Return the new count?

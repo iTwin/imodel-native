@@ -17,7 +17,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Class::GetECProperty 
+StatusInt Class::GetProperty 
 (
 PropertyP & ecProperty, 
 const wchar_t * propertyName

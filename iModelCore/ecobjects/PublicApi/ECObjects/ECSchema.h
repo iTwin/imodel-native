@@ -40,7 +40,7 @@ public:
         return m_schema;
         }
               
-    StatusInt GetECProperty (PropertyP & ecProperty, const wchar_t * propertyName) const;
+    StatusInt GetProperty (PropertyP & ecProperty, const wchar_t * propertyName) const;
 
     };
 

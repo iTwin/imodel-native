@@ -12,8 +12,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-Instance::Instance(EnablerCR enabler, ClassCR ecClass)
-    : m_enabler (&enabler), m_class(&ecClass)
+Instance::Instance(EnablerCR enabler) : m_enabler (&enabler)
     {
     };    
         
@@ -30,16 +29,12 @@ bool        Instance::IsReadOnly() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassCP     Instance::GetClass() const 
     {
-    return m_class;
+    ECAssert(m_enabler);
+    if (NULL == m_enabler)
+        return NULL;
+        
+    return m_enabler->GetClass();
     }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-EnablerCP Instance::GetEnabler() const
-    {
-    return m_enabler;
-    }    
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
@@ -130,7 +125,7 @@ StatusInt Instance::InsertArrayElement (const wchar_t * propertyAccessString, Va
         return ECOBJECTS_STATUS_OperationNotSupportedByEnabler;
         
     PropertyP property;
-    StatusInt status = m_class->GetECProperty (property, propertyAccessString);
+    StatusInt status = GetClass()->GetProperty (property, propertyAccessString);
     if (status != SUCCESS)
         return status;
         
@@ -147,7 +142,7 @@ StatusInt Instance::RemoveArrayElement (const wchar_t * propertyAccessString, UI
         return ECOBJECTS_STATUS_OperationNotSupportedByEnabler;
         
     PropertyP property;
-    StatusInt status = m_class->GetECProperty (property, propertyAccessString);
+    StatusInt status = GetClass()->GetProperty (property, propertyAccessString);
     if (status != SUCCESS)
         return status;
         
@@ -164,7 +159,7 @@ StatusInt Instance::ClearArray (const wchar_t * propertyAccessString)
         return ECOBJECTS_STATUS_OperationNotSupportedByEnabler;
         
     PropertyP property = NULL;
-    StatusInt status = m_class->GetECProperty (property, propertyAccessString);
+    StatusInt status = GetClass()->GetProperty (property, propertyAccessString);
     if (status != SUCCESS)
         return status;
         
