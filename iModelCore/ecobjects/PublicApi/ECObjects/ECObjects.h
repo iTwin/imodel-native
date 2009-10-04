@@ -57,6 +57,12 @@ EC_TYPEDEFS(ISetValue);
 EC_TYPEDEFS(IArrayManipulator);
 EC_TYPEDEFS(ICreateInstance);
 
+#if !defined(ECAssert)
+    #define ECAssert(expression) \
+        if (!(expression)) \
+             __asm int 3;
+#endif    
+
 USING_NAMESPACE_BENTLEY
 
 /*=================================================================================**//**

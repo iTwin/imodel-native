@@ -24,13 +24,14 @@ BEGIN_BENTLEY_EC_NAMESPACE
 struct Instance
     {
 private:
-    EnablerCP         m_enabler;
-    ClassCP           m_class; // WIP_FUSION needs a refcounted ptr
+    ClassCP           m_class; // WIP_FUSION: This should go away... we can get it from the enabler.
 
     //WIP_FUSION AccessStringAndNIndicesAgree should move to AccessStringHelper struct... along with method to convert to/from .NET ECObjects style accessString
     static bool AccessStringAndNIndicesAgree (const wchar_t * propertyAccessString, UInt32 nIndices, bool assertIfFalse);
     
 protected:    
+    EnablerCP         m_enabler;
+    
     ECOBJECTS_EXPORT Instance() {}; // WIP_FUSION: Should this go away? Force caller to provide the enabler and class
 
     ECOBJECTS_EXPORT EnablerCP   GetEnabler() const;    

@@ -102,46 +102,45 @@ protected:
     inline void ConstructUninitialized();
                 
 public:
-    void            Clear();
-    ValueR          operator= (ValueCR rhs);
+    ECOBJECTS_EXPORT void            Clear();
+    ECOBJECTS_EXPORT ValueR          operator= (ValueCR rhs);
     
-    ~Value();
+    ECOBJECTS_EXPORT ~Value();
     
-    Value ();
-    Value (ValueCR v);
-    Value (DataType dataType);
+    ECOBJECTS_EXPORT Value ();
+    ECOBJECTS_EXPORT Value (ValueCR v);
+    ECOBJECTS_EXPORT Value (DataType dataType);
     
-    explicit Value (::Int32 integer32);
-    explicit Value (::Int64 long64);
-    explicit Value (const wchar_t * string, bool holdADuplicate = true);
+    ECOBJECTS_EXPORT explicit Value (::Int32 integer32);
+    ECOBJECTS_EXPORT explicit Value (::Int64 long64);
+    ECOBJECTS_EXPORT explicit Value (const wchar_t * string, bool holdADuplicate = true);
 
-    inline void     SetReadOnly(bool isReadOnly) { m_isReadOnly = isReadOnly; };
+    ECOBJECTS_EXPORT inline void     SetReadOnly(bool isReadOnly) { m_isReadOnly = isReadOnly; };
 
-    inline bool     IsReadOnly()        const { return m_isReadOnly; };
-    inline bool     IsNull()            const { return m_isNull; };
-    void            SetToNull();
+    ECOBJECTS_EXPORT inline bool     IsReadOnly()        const { return m_isReadOnly; };
+    ECOBJECTS_EXPORT inline bool     IsNull()            const { return m_isNull; };
+    ECOBJECTS_EXPORT void            SetToNull();
 
-    inline DataType GetDataType()       const { return m_dataType; };
-    inline bool     IsUninitialized ()  const { return m_dataType == DATATYPE_Uninitialized; };
+    ECOBJECTS_EXPORT inline DataType GetDataType()       const { return m_dataType; };
+    ECOBJECTS_EXPORT inline bool     IsUninitialized ()  const { return m_dataType == DATATYPE_Uninitialized; };
     
-    inline bool     IsString ()         const { return m_dataType == DATATYPE_String; };
-    inline bool     IsInteger ()        const { return m_dataType == DATATYPE_Integer32; };
-    inline bool     IsLong ()           const { return m_dataType == DATATYPE_Long64; };
-    inline bool     IsArray ()          const { return m_dataType == DATATYPE_Array; };
-    inline bool     IsStruct ()         const { return m_dataType == DATATYPE_Struct; };
+    ECOBJECTS_EXPORT inline bool     IsString ()         const { return m_dataType == DATATYPE_String; };
+    ECOBJECTS_EXPORT inline bool     IsInteger ()        const { return m_dataType == DATATYPE_Integer32; };
+    ECOBJECTS_EXPORT inline bool     IsLong ()           const { return m_dataType == DATATYPE_Long64; };
+    ECOBJECTS_EXPORT inline bool     IsArray ()          const { return m_dataType == DATATYPE_Array; };
+    ECOBJECTS_EXPORT inline bool     IsStruct ()         const { return m_dataType == DATATYPE_Struct; };
         
+    ECOBJECTS_EXPORT StatusInt       SetArrayInfo (DataType dataType, UInt32 count, bool isFixedSize, bool isReadOnly);
+    ECOBJECTS_EXPORT ArrayInfo       GetArrayInfo();
     
-    StatusInt       SetArrayInfo (DataType dataType, UInt32 count, bool isFixedSize, bool isReadOnly);
-    ArrayInfo       GetArrayInfo();
+    ECOBJECTS_EXPORT Int32           GetInteger() const;
+    ECOBJECTS_EXPORT StatusInt       SetInteger (Int32 integer);
     
-    Int32           GetInteger() const;
-    StatusInt       SetInteger (Int32 integer);
+    ECOBJECTS_EXPORT Int64           GetLong() const;
+    ECOBJECTS_EXPORT StatusInt       SetLong (Int64 long64);
     
-    Int64           GetLong() const;
-    StatusInt       SetLong (Int64 long64);
-                
-    const wchar_t * GetString() const;
-    StatusInt       SetString (const wchar_t * string, bool holdADuplicate = true);
+    ECOBJECTS_EXPORT const wchar_t * GetString() const;
+    ECOBJECTS_EXPORT StatusInt       SetString (const wchar_t * string, bool holdADuplicate = true);
     };
 
 END_BENTLEY_EC_NAMESPACE

@@ -22,10 +22,8 @@ BEGIN_BENTLEY_EC_NAMESPACE
 //! @bsistruct                                                     CaseyMullen    09/09
 struct IGetValue
     {
-private:
-public:
-    virtual StatusInt GetValue (ValueR v, InstanceCR instance, const wchar_t * propertyAccessString, 
-                                UInt32 nIndices = 0, UInt32 const * indices = NULL) const = 0;
+    ECOBJECTS_EXPORT virtual StatusInt GetValue (ValueR v, InstanceCR instance, const wchar_t * propertyAccessString, 
+                                                 UInt32 nIndices = 0, UInt32 const * indices = NULL) const = 0;
     };
 
 //! Interface implemented by EC::Enablers that can SetValues from an EC::Instance
@@ -37,10 +35,8 @@ public:
 //! @bsistruct                                                     CaseyMullen    09/09
 struct ISetValue
     {
-private:
-public:
-    virtual StatusInt SetValue (InstanceR instance, const wchar_t * propertyAccessString, ValueCR v,
-                                UInt32 nIndices = 0, UInt32 const * indices = NULL) const = 0;
+    ECOBJECTS_EXPORT virtual StatusInt SetValue (InstanceR instance, const wchar_t * propertyAccessString, ValueCR v,
+                                                 UInt32 nIndices = 0, UInt32 const * indices = NULL) const = 0;
     };
 
 typedef RefCountedPtr<Enabler>                  EnablerPtr;
@@ -123,9 +119,6 @@ public:
 //! @bsistruct                                                     CaseyMullen    09/09
 struct IArrayManipulator
     {
-private:
-public:
-
     // @param propertyAccessString should be in the "array element" form, e.g. "Aliases[]" instead of "Aliases"
     virtual StatusInt InsertArrayElement (InstanceR instance, const wchar_t * propertyAccessString, ValueCR value, UInt32 index) const = 0;
     
@@ -143,8 +136,6 @@ public:
 //! @bsistruct                                                     CaseyMullen    09/09
 struct ICreateInstance
     {
-private:
-public:
     virtual StatusInt CreateInstance (InstanceP& instance, ClassCR ecClass, const wchar_t * instanceId) const = 0;
     };    
 

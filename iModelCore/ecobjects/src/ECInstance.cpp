@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
-#include "assert.h"
 
 BEGIN_BENTLEY_EC_NAMESPACE
     
@@ -56,7 +55,7 @@ bool Instance::AccessStringAndNIndicesAgree (const wchar_t * propertyAccessStrin
         pointerToBrackets = wcsstr (pointerToBrackets, L"[]"); ;
         }
     
-    assert (!errorIfFalse || (nIndices == nBrackets && "nIndices must match the number of brackets '[]' found in the propertyAccessString"));
+    ECAssert (!errorIfFalse || (nIndices == nBrackets && "nIndices must match the number of brackets '[]' found in the propertyAccessString"));
     //WIP_FUSION log this as an error if errorIfFalse!
     
     return (nIndices == nBrackets);
@@ -74,10 +73,10 @@ StatusInt Instance::GetValue (ValueR v, const wchar_t * propertyAccessString, UI
         return ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices;
             
     EnablerCP e = GetEnabler();
-    assert (NULL != e);
+    ECAssert (NULL != e);
     
     IGetValueCP enabler = e->GetIGetValue(); // replaces a dynamic_cast that was costing .38. Now about .01
-    assert (NULL != enabler);
+    ECAssert (NULL != enabler);
     
     return enabler->GetValue (v, *this, propertyAccessString, nIndices, indices); // .36  (now less expensive since one dynamic_cast is avoided internally
     // Now about .21

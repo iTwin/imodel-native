@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
-#include <assert.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -50,7 +49,7 @@ void Value::DeepCopy (ValueCR v)
             
         case DATATYPE_Struct:
             {
-            assert (false && "Needs work: copy the struct value");
+            ECAssert (false && "Needs work: copy the struct value");
             break;
             }
         // the memset takes care of these...            
@@ -59,7 +58,7 @@ void Value::DeepCopy (ValueCR v)
             break;
                         
         default:
-            assert (false); // type not handled
+            ECAssert (false); // type not handled
         }
     };
     
@@ -180,8 +179,8 @@ Value::Value (const wchar_t * string, bool holdADuplicate)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ::Int32 Value::GetInteger() const
     {
-    assert (IsInteger() && "Tried to get integer value from an EC::Value that is not an integer.");
-    assert (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined");
+    ECAssert (IsInteger() && "Tried to get integer value from an EC::Value that is not an integer.");
+    ECAssert (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined");
     return m_integer32;
     };
 
@@ -202,8 +201,8 @@ StatusInt Value::SetInteger (::Int32 integer)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ::Int64 Value::GetLong() const
     {
-    assert (IsLong() && "Tried to get long64 value from an EC::Value that is not an long64.");
-    assert (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined");
+    ECAssert (IsLong() && "Tried to get long64 value from an EC::Value that is not an long64.");
+    ECAssert (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined");
     return m_long64;
     };
 
@@ -224,7 +223,7 @@ StatusInt Value::SetLong (::Int64 long64)
 +---------------+---------------+---------------+---------------+---------------+------*/
 const wchar_t * Value::GetString() const
     {
-    assert (IsString() && "Tried to get string value from an EC::Value that is not a string.");
+    ECAssert (IsString() && "Tried to get string value from an EC::Value that is not a string.");
     if (!IsString()) return L"<Programmer Error: Attempted to get string value from EC::Value that is not a string.>"; //WIP_FUSION log as an error... no good can come of it
     return m_stringInfo.m_string;
     };
@@ -278,7 +277,7 @@ StatusInt         Value::SetArrayInfo (DataType elementDataType, UInt32 count, b
 +---------------+---------------+---------------+---------------+---------------+------*/
 ArrayInfo         Value::GetArrayInfo()
     {
-    assert (IsArray());
+    ECAssert (IsArray());
     
     return m_arrayInfo;
     }
