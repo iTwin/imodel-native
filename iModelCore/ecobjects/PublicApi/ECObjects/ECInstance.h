@@ -36,6 +36,7 @@ public:
     ECOBJECTS_EXPORT Instance(EnablerCR enabler);
     
     ECOBJECTS_EXPORT inline  EnablerCP    GetEnabler() const { return m_enabler; };    
+    // WIP_FUSION: convert all of the exported virtual methods to use the pattern where the virtual method is like _GetInstanceId and the exported method is inline but calls the virtual method.
     ECOBJECTS_EXPORT virtual std::wstring GetInstanceId() const = 0; // Virtual and returning std::wstring because a subclass may want to calculate it on demand
     ECOBJECTS_EXPORT bool                 IsReadOnly() const;
     
@@ -57,9 +58,9 @@ public:
     UInt32 GetInteger (const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const; // marshal as few args as possible     
     UInt32 JustIntArgs (UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
     UInt32 NoArgs () const;
+    // WIP_FUSION: experiment with the best way to return strings in one shot
 #endif
 
-    // needswork: experiment with the best way to return strings in one shot
     };
     
 //! EC::RelationshipInstance is the native equivalent of a .NET IECRelationshipInstance.

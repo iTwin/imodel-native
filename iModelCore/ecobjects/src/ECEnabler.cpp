@@ -19,6 +19,7 @@ void                Enabler::Initialize()
 
     // amortize the cost of the dynamic_cast over a lifetime of get/set calls
     m_iGetValue = dynamic_cast<IGetValueCP>(this);
+    m_iSetValue = dynamic_cast<ISetValueCP>(this);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -26,10 +27,20 @@ void                Enabler::Initialize()
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGetValueCP         Enabler::GetIGetValue() const
     {
-    ECAssert (m_initialized && "You should call Initialize() in the constructor of your subclass of Enabler. "
+    ECAssert (m_initialized && "You must call Initialize() in the constructor of your subclass of Enabler. "
                                "It performs initialization that cannot be performed in the base constructor.");
     return m_iGetValue;
     }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+ISetValueCP         Enabler::GetISetValue() const
+    {
+    ECAssert (m_initialized && "You must call Initialize() in the constructor of your subclass of Enabler. "
+                               "It performs initialization that cannot be performed in the base constructor.");
+    return m_iSetValue;
+    }    
     
 END_BENTLEY_EC_NAMESPACE
     

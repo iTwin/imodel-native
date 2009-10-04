@@ -66,6 +66,7 @@ private:
     std::wstring            m_name;
     ClassCP                 m_ecClass;
     IGetValueCP             m_iGetValue;
+    ISetValueCP             m_iSetValue;
 
     // Hide these as part of the RefCounted pattern
     Enabler(){};
@@ -90,7 +91,7 @@ protected:
     //! /endcode
     //! where the ____ is a name specific to your subclass.
     ECOBJECTS_EXPORT Enabler(ClassCR ecClass, UInt32 id, std::wstring name) : m_ecClass (&ecClass), m_name(name), 
-        m_id(id), m_initialized(false), m_iGetValue(NULL) {};
+        m_id(id), m_initialized(false), m_iGetValue(NULL), m_iSetValue(NULL) {};
 
 public:
     
@@ -106,7 +107,13 @@ public:
     //! Efficiencies are gained by only calling dynamic_cast<IGetValue> once and 
     //! amortizing the cost over the lifetime of the Enabler.
     //! @return the result of dynamic_cast<IGetValue>(this)
-    ECOBJECTS_EXPORT inline IGetValueCP           GetIGetValue() const;// { return m_iGetValue; };
+    ECOBJECTS_EXPORT inline IGetValueCP           GetIGetValue() const;
+    
+    //! Called by EC::Implementations to efficiently "dynamic_cast" to ISetValue.
+    //! Efficiencies are gained by only calling dynamic_cast<ISetValue> once and 
+    //! amortizing the cost over the lifetime of the Enabler.
+    //! @return the result of dynamic_cast<ISetValue>(this)
+    ECOBJECTS_EXPORT inline ISetValueCP           GetISetValue() const;
     };
 
 //! Implemented by enablers that support manipulation of array properties, i.e. operations
