@@ -60,7 +60,7 @@ EC_TYPEDEFS(ICreateInstance);
 #if !defined(ECAssert)
     #define ECAssert(expression) \
         if (!(expression)) \
-             __asm int 3;
+            __debugbreak ();
 #endif    
 
 USING_NAMESPACE_BENTLEY
