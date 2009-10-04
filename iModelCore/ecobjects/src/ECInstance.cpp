@@ -14,6 +14,10 @@ BEGIN_BENTLEY_EC_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 Instance::Instance(EnablerCR enabler) : m_enabler (&enabler)
     {
+    size_t sizeofInstance = sizeof(Instance);
+    size_t sizeofVoid = sizeof (void*);
+    
+    ECAssert (sizeof(Instance) == 2 * sizeof (void*) && L"Increasing the size or memory layout of the base EC::Instance will adversely affect subclasses. Think of this as a pure interface... to which you would never be able to add (additional) data, either");
     };    
         
 /*---------------------------------------------------------------------------------**//**
