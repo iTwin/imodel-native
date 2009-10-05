@@ -58,9 +58,13 @@ EC_TYPEDEFS(IArrayManipulator);
 EC_TYPEDEFS(ICreateInstance);
 
 #if !defined(ECAssert)
-    #define ECAssert(expression) \
-        if (!(expression)) \
-            __debugbreak ();
+    #ifdef  NDEBUG
+        #define ECAssert(_Expression)     ((void)0)
+    #else
+        #define ECAssert(_Expression) \
+            if (!(_Expression)) \
+                __debugbreak ();
+    #endif
 #endif    
 
 USING_NAMESPACE_BENTLEY
