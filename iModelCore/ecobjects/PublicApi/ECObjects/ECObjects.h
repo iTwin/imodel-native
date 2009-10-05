@@ -61,9 +61,7 @@ EC_TYPEDEFS(ICreateInstance);
     #ifdef  NDEBUG
         #define ECAssert(_Expression)     ((void)0)
     #else
-        #define ECAssert(_Expression) \
-            if (!(_Expression)) \
-                __debugbreak ();
+        #define ECAssert(_Expression)     if (!(_Expression)) __debugbreak ();
     #endif
 #endif    
 
