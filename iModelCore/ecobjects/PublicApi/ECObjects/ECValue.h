@@ -32,7 +32,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 
 //! Enumeration of primitive datatypes supported by native "ECObjects" implementation.
 //! These should correspond to all of the datatypes supported in .NET ECObjects
-enum DataType
+enum DataType //FUSION_WIP: Could or should I define this to be a UInt8 in order to save space per value?
     {
     DATATYPE_Uninitialized                  = 0,
     DATATYPE_Array                          = 1,
@@ -40,17 +40,17 @@ enum DataType
     DATATYPE_Integer32                      = 3,
     DATATYPE_Long64                         = 4,
     DATATYPE_String                         = 5,
-    DATATYPE_Doubld                         = 6,
+    DATATYPE_Double                         = 6,
     };
     
 //! Information about an array in an EC::Instance. Does not contain the actual elements.
 //! @group "ECInstance"
 //! @see Value
-struct ArrayInfo
+struct ArrayInfo  // FUSION_WIP: this could also fit into 8 bytes if packed properly
     {
 private:
-    DataType        m_elementDataType;
-    bool            m_isFixedSize;
+    DataType        m_elementDataType; // FUSION_WIP This and m_isFizedSize could each be a UInt16 to pack more nicely.
+    bool            m_isFixedSize;     // FUSION_WIP Store this as some other (blittable) type.
     UInt32          m_count;
             
 public:
@@ -69,7 +69,7 @@ public:
 struct Value
     {
 private:        
-    DataType    m_dataType;   
+    DataType    m_dataType;   // WIP_FUSION These could pack nicely as a UInt16 followed by two UInt8s
     bool        m_isNull;     
     bool        m_isReadOnly; // Really indicates that the property from which this came is readonly... not the value itself.
     
@@ -80,8 +80,8 @@ protected:
     struct StringInfo
         {
         const wchar_t *     m_string;
-        bool                m_freeWhenDone;
-        };
+        bool                m_freeWhenDone;   // WIP_FUSION: this could be stored in the "header"... shared with other DataTypes that need to be freed
+        };                                    //             and it would make max size of StringInfo be 8 bytes
         
     union
         {
@@ -92,8 +92,8 @@ protected:
         StringInfo      m_stringInfo;
         const wchar_t * m_dateTime;
 #if get_these_from_geomlibs
-        DPoint2d        m_dPoint2d;
-        DPoint3d        m_dpoint3d;
+        DPoint2d        m_dPoint2d;   
+        DPoint3d        m_dpoint3d;   
 #endif
         ArrayInfo       m_arrayInfo;
         };
@@ -127,6 +127,8 @@ public:
     ECOBJECTS_EXPORT inline bool     IsString ()         const { return m_dataType == DATATYPE_String; };
     ECOBJECTS_EXPORT inline bool     IsInteger ()        const { return m_dataType == DATATYPE_Integer32; };
     ECOBJECTS_EXPORT inline bool     IsLong ()           const { return m_dataType == DATATYPE_Long64; };
+    ECOBJECTS_EXPORT inline bool     IsDouble ()         const { return m_dataType == DATATYPE_Double; };
+    
     ECOBJECTS_EXPORT inline bool     IsArray ()          const { return m_dataType == DATATYPE_Array; };
     ECOBJECTS_EXPORT inline bool     IsStruct ()         const { return m_dataType == DATATYPE_Struct; };
         
@@ -139,6 +141,9 @@ public:
     ECOBJECTS_EXPORT Int64           GetLong() const;
     ECOBJECTS_EXPORT StatusInt       SetLong (Int64 long64);
     
+    ECOBJECTS_EXPORT double          GetDouble() const;
+    ECOBJECTS_EXPORT StatusInt       SetDouble (double value);  
+        
     ECOBJECTS_EXPORT const wchar_t * GetString() const;
     ECOBJECTS_EXPORT StatusInt       SetString (const wchar_t * string, bool holdADuplicate = true);
     };

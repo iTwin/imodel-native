@@ -217,7 +217,29 @@ StatusInt Value::SetLong (::Int64 long64)
     
     return SUCCESS;
     }        
-            
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/
+double Value::GetDouble() const
+    {
+    ECAssert (IsDouble() && "Tried to get double value from an EC::Value that is not an double.");
+    ECAssert (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined");
+    return m_double;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt Value::SetDouble (double value)
+    {
+    m_isNull    = false;
+    m_dataType  = DATATYPE_Double;
+    m_double    = value;
+    
+    return SUCCESS;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
