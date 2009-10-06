@@ -13,7 +13,6 @@
 /*__PUBLISH_SECTION_START__*/
 
 #include <ECObjects\ECObjects.h>
-#include <string>
 
 BEGIN_BENTLEY_EC_NAMESPACE
   
@@ -76,10 +75,10 @@ public:
     ECOBJECTS_EXPORT Schema (const wchar_t * prefix, const wchar_t * name, UInt32 majorVersion, UInt32 minorVersion);
     ECOBJECTS_EXPORT ~Schema();
 
-    const wchar_t * GetSchemaName() const;
+    ECOBJECTS_EXPORT const wchar_t * GetSchemaName() const;
     void SetSchemaName (const wchar_t * schemaName);    
 
-    const wchar_t * GetSchemaPrefix() const;    
+    ECOBJECTS_EXPORT const wchar_t * GetSchemaPrefix() const;    
     void SetSchemaPrefix (const wchar_t * schemaPrefix);
 
     const wchar_t * GetDisplayLabel() const;
