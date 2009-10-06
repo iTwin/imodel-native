@@ -26,8 +26,6 @@ struct DPoint3d
     };
 #endif
 
-#include <vector>
-
 BEGIN_BENTLEY_EC_NAMESPACE
 
 //! Enumeration of primitive datatypes supported by native "ECObjects" implementation.

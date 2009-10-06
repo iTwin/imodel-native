@@ -9,7 +9,6 @@
 /*__PUBLISH_SECTION_START__*/
 
 #include <ECObjects\ECObjects.h>
-#include <string>
 
 BEGIN_BENTLEY_EC_NAMESPACE
     

@@ -12,6 +12,9 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
+#include <string>
+#include <vector>
+
 #include <ECObjects\ECEnabler.h>
 #include <ECObjects\ECInstance.h>
 #include <ECObjects\ECSchema.h>

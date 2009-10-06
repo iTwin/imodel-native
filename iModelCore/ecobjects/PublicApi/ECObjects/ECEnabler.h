@@ -62,7 +62,7 @@ struct Enabler : RefCountedBase
     {
 private:
     bool                    m_initialized;
-    UInt32                  m_id;
+    UInt32                  m_id;    
     std::wstring            m_name;
     ClassCP                 m_ecClass;
     IGetValueCP             m_iGetValue;

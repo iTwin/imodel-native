@@ -9,11 +9,9 @@
 |  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#pragma once
 
-#include <ECObjects\ECObjects.h>
-#include <ECObjects\ECValue.h>
-#include <ECObjects\ECSchema.h>
-#include <ECObjects\ECInstance.h>
-#include <ECObjects\ECEnabler.h>
+#include <ECObjects\ECObjectsAPI.h>
+
 
   
