@@ -29,7 +29,7 @@
 				CleanCommandLine="bmake +aD $(SrcEcf)ecobjects\nativeatp\ECObjectsNativeTest.mke"
 				Output="ECObjectsNativeTest.exe"
 				PreprocessorDefinitions="WIN32;_DEBUG"
-				IncludeSearchPath="&quot;$(OutRoot)Win$(PROCESSOR_ARCHITECTURE)\BuildContexts\ecf\VendorAPI\google\&quot;;&quot;$(VCInstallDir)INCLUDE\&quot;;&quot;$(OutRoot)Win$(PROCESSOR_ARCHITECTURE)\BuildContexts\Bentley\PublicAPI&quot;;&quot;$(SrcEcf)\PublicApi&quot;"
+				IncludeSearchPath="&quot;$(OutRoot)Win$(PROCESSOR_ARCHITECTURE)\BuildContexts\ecf\VendorAPI\&quot;;&quot;$(VCInstallDir)INCLUDE\&quot;;&quot;$(OutRoot)Win$(PROCESSOR_ARCHITECTURE)\BuildContexts\ecf\SubParts\PublishedAPI\&quot;"
 				ForcedIncludes=""
 				AssemblySearchPath=""
 				ForcedUsingAssemblies=""

@@ -8,6 +8,9 @@
 baseDir =   $(_MakeFilePath)
 programName = ECObjectsTest
 
+# Using this solution policy file ensures that published headers will be in the include path for
+# compiles within this mke file and within PreCompileHeader.mke which is used by this mke file.
+SolutionPolicyMki=$(baseDir)publishedTestSolutionPolicy.mki
 %include mdl.mki
 
 # We don't want to run the test from the build location because the dependencies are not there.

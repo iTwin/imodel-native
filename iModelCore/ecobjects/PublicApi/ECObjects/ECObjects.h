@@ -1,14 +1,10 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/ECObjects/ECObjects.h $
-|    $RCSfile: file.tpl,v $
-|   $Revision: 1.10 $
-|       $Date: 2005/11/07 15:38:45 $
-|     $Author: EarlinLutz $
+|     $Source: PublicApi/ECObjects/ECObjects.h $
 |
-|   Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved.
+|  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
 |
-+---------------------------------------------------------------------------------------*/
++--------------------------------------------------------------------------------------*/
 #pragma once
 
 #define NO_USING_NAMESPACE_BENTLEY 1
@@ -59,6 +55,8 @@ EC_TYPEDEFS(ISetValue);
 EC_TYPEDEFS(IArrayManipulator);
 EC_TYPEDEFS(ICreateInstance);
 
+/*__PUBLISH_SECTION_END__*/
+
 #if !defined(ECAssert)
     #ifdef  NDEBUG
         #define ECAssert(_Expression)     ((void)0)
@@ -66,6 +64,8 @@ EC_TYPEDEFS(ICreateInstance);
         #define ECAssert(_Expression)     if (!(_Expression)) __debugbreak ();
     #endif
 #endif    
+
+/*__PUBLISH_SECTION_START__*/
 
 USING_NAMESPACE_BENTLEY
 
