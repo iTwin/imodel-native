@@ -19,7 +19,6 @@ BEGIN_BENTLEY_EC_NAMESPACE
 //! without being an EC::Enabler.)
 //!
 //! @see Enabler
-//! @bsistruct                                                     CaseyMullen    09/09
 struct IGetValue
     {
     ECOBJECTS_EXPORT virtual StatusInt GetValue (ValueR v, InstanceCR instance, const wchar_t * propertyAccessString, 
@@ -32,7 +31,6 @@ struct IGetValue
 //! without being an EC::Enabler.)
 //!
 //! @see Enabler
-//! @bsistruct                                                     CaseyMullen    09/09
 struct ISetValue
     {
     ECOBJECTS_EXPORT virtual StatusInt SetValue (InstanceR instance, const wchar_t * propertyAccessString, ValueCR v,
@@ -57,7 +55,6 @@ typedef RefCountedPtr<Enabler>                  EnablerPtr;
 //!   correct DataType. If you return an error status in such a case
 //!
 //! @see IGetValue, ISetValue, ICreateInstance, IDeleteInstance, IArrayManipulator, IArrayAccessor, etc.
-//! @bsistruct                                                     CaseyMullen    09/09
 struct Enabler : RefCountedBase
     {
 private:
@@ -123,7 +120,6 @@ public:
 //! - For all of the methods, the propertyAccessString should be in the "array element" form, 
 //!   e.g. "Aliases[]" instead of "Aliases" 
 //! @see IArrayAccessor, Enabler
-//! @bsistruct                                                     CaseyMullen    09/09
 struct IArrayManipulator
     {
     // @param propertyAccessString should be in the "array element" form, e.g. "Aliases[]" instead of "Aliases"
@@ -140,7 +136,6 @@ struct IArrayManipulator
 //! Implemented by enablers that support creation of new standalone (non-persisted) EC::Instances
 //! This one should live in Bentley::EC
 //! @see Enabler
-//! @bsistruct                                                     CaseyMullen    09/09
 struct ICreateInstance
     {
     virtual StatusInt CreateInstance (InstanceP& instance, ClassCR ecClass, const wchar_t * instanceId) const = 0;

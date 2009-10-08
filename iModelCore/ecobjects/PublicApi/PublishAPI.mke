@@ -1,0 +1,22 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: PublicApi/PublishAPI.mke $
+#
+#  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+genDir       = $(buildDir)PublishedAPI
+
+stampFileName = $(genDir).stamp
+
+%if defined(BMAKE_DELETE_ALL_TARGETS)
+cleanopt = --clean
+%else
+cleanopt =
+%endif
+
+always:
+    PublishAPI.py -o$(genDir) -d$(BuildContext)PublicApi -s$(stampFileName) $(cleanopt)
+    @CreateSymLinks.py -d"$(BuildContextPublishedApiDir)=$(genDir)"

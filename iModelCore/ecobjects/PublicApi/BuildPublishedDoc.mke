@@ -1,0 +1,55 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: PublicApi/BuildPublishedDoc.mke $
+#
+#  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include    mdl.mki
+%include    $(SharedMki)HtmlHelp.mki
+
+OutputName     = ECObjectsAPI
+InputDir       = $(buildDir)PublishedAPI/ECObjects/
+DOXYGEN_OUTPUT = $(buildDir)dox/
+
+InputStamp     = $(buildDir)PublishedAPI.stamp
+
+DOXYGEN_INPUT  = $(InputDir)
+
+#INCLUDE_PATH  = $(DOXYGEN_INPUT)
+$(DOXYGEN_OUTPUT)doxygen.cfg : $(InputStamp)
+    $(msg)
+    ~mkdir $(DOXYGEN_OUTPUT)
+    > $(DOXYGEN_OUTPUT)doxygen.cfg
+    @INCLUDE      = bentley-doxygen.cfg
+    <
+    ~@putenv PROJECT_NAME="ECObjects SDK Documentation"
+    ~@putenv DOXYGEN_INPUT=$(DOXYGEN_INPUT)
+    ~@putenv DOXYGEN_OUTPUT=$(DOXYGEN_OUTPUT)
+    ~@putenv HHC=
+    %if defined (NO_CHM)
+        ~@putenv DOXYGEN_GENERATE_CHM=NO
+        | ************************************************
+        | *  NO_CHM is defined - not building .chm file
+        | ************************************************
+    %else
+        ~@putenv DOXYGEN_GENERATE_CHM=YES
+        ~@putenv CHM_FILE=$(DOXYGEN_OUTPUT)$(OutputName)
+    %endif
+    ~chdir $(SrcBsitools)doxygen
+    !$(doxygenCmd) $(DOXYGEN_OUTPUT)doxygen.cfg
+    %if !defined (NO_CHM)
+        | [== hhc $(DOXYGEN_OUTPUT)html/index.hhp ==]
+        !-$(hhc) $(DOXYGEN_OUTPUT)html/index.hhp
+    %else
+        | ************************************************
+        | * See $(DOXYGEN_OUTPUT)html/index.html
+        | ************************************************
+    %endif
+    ~time
+
+%if !defined (NO_CHM)
+$(ContextDeliveryDir)$(OutputName).chm: $(DOXYGEN_OUTPUT)$(OutputName).chm
+    $(LinkFirstDepToFirstTarget)
+%endif
+
