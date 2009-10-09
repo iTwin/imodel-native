@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="ECObjectsNativeTest"
-	ProjectGUID="{885B170C-2635-4A7D-9532-8A4AE95B2561}"
-	RootNamespace="ECObjectsNativeTest"
+	Name="NonPublishedTests"
+	ProjectGUID="{BBE7BE41-3763-40D1-BB1B-34EB81E4636B}"
+	RootNamespace="NonPublishedTests"
 	Keyword="MakeFileProj"
 	TargetFrameworkVersion="196613"
 	>
@@ -24,12 +24,12 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="bmake $(SrcEcf)ecobjects\nativeatp\ECObjectsNativeTest.mke"
-				ReBuildCommandLine="bmake +a $(SrcEcf)ecobjects\nativeatp\ECObjectsNativeTest.mke"
-				CleanCommandLine="bmake +aD $(SrcEcf)ecobjects\nativeatp\ECObjectsNativeTest.mke"
-				Output="ECObjectsNativeTest.exe"
+				BuildCommandLine="bmake $(SrcEcf)ecobjects\nativeatp\NonPublishedTests.mke"
+				ReBuildCommandLine="bmake +a $(SrcEcf)ecobjects\nativeatp\NonPublishedTests.mke"
+				CleanCommandLine="bmake +aD $(SrcEcf)ecobjects\nativeatp\NonPublishedTests.mke"
+				Output="ECObjectsTest_NonPublished.exe"
 				PreprocessorDefinitions="WIN32;_DEBUG"
-				IncludeSearchPath="&quot;$(OutRoot)Win$(PROCESSOR_ARCHITECTURE)\BuildContexts\ecf\VendorAPI\&quot;;&quot;$(VCInstallDir)INCLUDE\&quot;;&quot;$(OutRoot)Win$(PROCESSOR_ARCHITECTURE)\BuildContexts\ecf\SubParts\PublishedAPI\&quot;"
+				IncludeSearchPath="&quot;$(OutRoot)Win$(PROCESSOR_ARCHITECTURE)\BuildContexts\ecf\VendorAPI\&quot;;&quot;$(VCInstallDir)INCLUDE\&quot;;&quot;$(OutRoot)Win$(PROCESSOR_ARCHITECTURE)\BuildContexts\ecf\PublicAPI\&quot;"
 				ForcedIncludes=""
 				AssemblySearchPath=""
 				ForcedUsingAssemblies=""
@@ -47,7 +47,7 @@
 				BuildCommandLine=""
 				ReBuildCommandLine=""
 				CleanCommandLine=""
-				Output="ECObjectsNativeTest.exe"
+				Output="ECObjectsTest_NonPublished.exe"
 				PreprocessorDefinitions="WIN32;NDEBUG"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -69,10 +69,6 @@
 				RelativePath=".\ECObjectsTestPCH.cpp"
 				>
 			</File>
-			<File
-				RelativePath=".\Published\SchemaTests.cpp"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -91,7 +87,7 @@
 			>
 		</Filter>
 		<File
-			RelativePath=".\ECObjectsNativeTest.mke"
+			RelativePath=".\NonPublishedTests.mke"
 			>
 		</File>
 	</Files>

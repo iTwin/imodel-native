@@ -7,6 +7,14 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
 
-#ifdef NON_PUBLISHED_HEADER_INCLUDED
+#if !defined (COMPILING_PUBLISHED_TESTS) && !defined(COMPILING_NONPUBLISHED_TESTS)
+    #error One of COMPILING_PUBLISHED_TESTS or COMPILING_NONPUBLISHED_TESTS must be defined when building ECObjects native tests.
+#endif
+
+#if defined(COMPILING_PUBLISHED_TESTS) && defined (NON_PUBLISHED_HEADER_INCLUDED)
    #error The ECObjects Published API Tests are compiling against the non published header files.  They are intended to compile against the published headers.  It is likely the include path for dll mke has been changed in error.
+#endif
+
+#if defined(COMPILING_NONPUBLISHED_TESTS) && !defined (NON_PUBLISHED_HEADER_INCLUDED) 
+   #error The ECObjects NonPublished API Tests are compiling against the published header files.  They are intended to compile against the nonpublished headers.  It is likely the include path for dll mke has been changed in error.
 #endif

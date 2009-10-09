@@ -6,6 +6,11 @@
 #
 #----------------------------------------------------------------------------------------
 
+compileRulesPath=$(baseDir)publishedCompileRules.mki
+
+nameToDefine = COMPILING_PUBLISHED_TESTS
+%include cdefapnd.mki
+
 # When the published tests build they will set USE_PUBLIC_PUBLISHED_HEADERS which should make sure they
 # compile with the published headers and not the internal headers.  All other portions of the build will use
 # internal headers.
