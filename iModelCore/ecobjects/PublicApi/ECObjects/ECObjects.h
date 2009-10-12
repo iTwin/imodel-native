@@ -1,10 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: PublicApi/ECObjects/ECObjects.h $
-|    $RCSfile: file.tpl,v $
-|   $Revision: 1.10 $
-|       $Date: 2005/11/07 15:38:45 $
-|     $Author: EarlinLutz $
 |
 |  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -12,19 +8,21 @@
 #pragma once
 
 #define NO_USING_NAMESPACE_BENTLEY 1
+/*__PUBLISH_SECTION_START__*/
+
 #include <Bentley\Bentley.h>
+
+/*__PUBLISH_SECTION_END__*/
+// In many of the DgnPlatform libraries we redefine the below macros based on __cplusplus.  This is because there
+// are existing C callers that we can not get rid of.  I've spoken to Sam and he recommends that for any new libraries we
+// ONLY support cpp callers and therefore do not repeat this pattern.
+/*__PUBLISH_SECTION_START__*/
 
 #ifdef __ECOBJECTS_BUILD__
 #define ECOBJECTS_EXPORT __declspec(dllexport)
 #else
 #define ECOBJECTS_EXPORT __declspec(dllimport)
 #endif
-  
-/*__PUBLISH_SECTION_END__*/
-// In many of the DgnPlatform libraries we redefine the below macros based on __cplusplus.  This is because there
-// are existing C callers that we can not get rid of.  I've spoken to Sam and he recommends that for any new libraries we
-// ONLY support cpp callers and therefore do not repeat this pattern.
-/*__PUBLISH_SECTION_START__*/
 
 #define BEGIN_BENTLEY_EC_NAMESPACE  BEGIN_BENTLEY_NAMESPACE namespace EC {
 
@@ -57,6 +55,8 @@ EC_TYPEDEFS(ISetValue);
 EC_TYPEDEFS(IArrayManipulator);
 EC_TYPEDEFS(ICreateInstance);
 
+/*__PUBLISH_SECTION_END__*/
+
 #if !defined(ECAssert)
     #ifdef  NDEBUG
         #define ECAssert(_Expression)     ((void)0)
@@ -64,6 +64,8 @@ EC_TYPEDEFS(ICreateInstance);
         #define ECAssert(_Expression)     if (!(_Expression)) __debugbreak ();
     #endif
 #endif    
+
+/*__PUBLISH_SECTION_START__*/
 
 USING_NAMESPACE_BENTLEY
 

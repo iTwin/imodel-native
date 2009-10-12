@@ -1,0 +1,79 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: ecobjects/nativeatp/buildTestFixture.mki $
+#
+#  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+baseDir =   $(_MakeFilePath)
+
+%include mdl.mki
+
+# We don't want to run the test from the build location because the dependencies are not there.
+GUNITTEST_NOEXEC = 1
+
+#----------------------------------------------------------------------------------------
+# Use gtest version 1.3
+#----------------------------------------------------------------------------------------
+GUNIT_TEST_VERSION = 1.3
+
+#----------------------------------------------------------------------------------------
+#   Libs
+#----------------------------------------------------------------------------------------
+libsUsed = \
+        $(BuildContext)SubParts/Libs/ECObjects.lib
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------------------------
+# Published Tests 
+# Pre-Compiled Header Sections
+#----------------------------------------------------------------------------------------
+PCHCompilandBaseName    = ECObjectsTestPCH
+PchCompiland            = $(baseDir)$(PCHCompilandBaseName).cpp
+PchOutputDir            = $(o)
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts  = $(UsePrecompiledHeaderOptions)
+PCHHeaderDependency     = $(o)$(PCHCompilandBaseName).pch
+PCHHeaderObject         = $(o)$(PCHCompilandBaseName)$(oext)
+
+#----------------------------------------------------------------------
+# Prepare to multi-compile using a uniform set of dependency blocks.
+# Note that you CANNOT change compiler options for just some of the
+# below compilands. The entire set of compilands must be content with
+# uniform treatment for multi-compilation to work.
+#----------------------------------------------------------------------
+MultiCompileDepends=$(_MakeFileSpec) 
+%include MultiCppCompileRule.mki
+
+
+%include $(compileRulesPath)
+
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------------------------
+%undef CPchOpts
+%undef CCPchOpts
+
+GUNITTEST_OUT       = $(o)
+GUNITTEST_NAME      = $(programName)
+GUNITTEST_DEST      = $(o)
+GUNITTEST_LIBS      = $(libsUsed)
+GUNITTEST_NTLIBS    = advapi32.lib
+GUNITTEST_OBJS      = $(PCHHeaderObject) $(MultiCompileObjectList)
+GUNITTEST_PATH      = $(o) 
+GUNITTEST_SYMB      = $(o)
+
+%include $(BuildContext)SubParts/google_gtest_mki/gtestobj.mki
+%include $(SharedMki)gunittest.mki
+
+always:
+    @CreateSymLinks.py "$(BuildContext)Delivery\$(programName).exe=$(o)$(programName).exe"

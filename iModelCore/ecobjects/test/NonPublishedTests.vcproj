@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="ecobjects"
-	ProjectGUID="{01917E3B-2174-4AC9-860E-BAAAA15C606D}"
-	RootNamespace="ecobjects"
+	Name="NonPublishedTests"
+	ProjectGUID="{BBE7BE41-3763-40D1-BB1B-34EB81E4636B}"
+	RootNamespace="NonPublishedTests"
 	Keyword="MakeFileProj"
 	TargetFrameworkVersion="196613"
 	>
@@ -24,12 +24,12 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="bmake $(SrcEcf)ecobjects\native\native.mke"
-				ReBuildCommandLine="bmake +a $(SrcEcf)ecobjects\native\native.mke"
-				CleanCommandLine="bmake +aD $(SrcEcf)ecobjects\native\native.mke"
-				Output="ecobjects.exe"
+				BuildCommandLine="bmake $(SrcEcf)ecobjects\nativeatp\NonPublishedTests.mke"
+				ReBuildCommandLine="bmake +a $(SrcEcf)ecobjects\nativeatp\NonPublishedTests.mke"
+				CleanCommandLine="bmake +aD $(SrcEcf)ecobjects\nativeatp\NonPublishedTests.mke"
+				Output="ECObjectsTest_NonPublished.exe"
 				PreprocessorDefinitions="WIN32;_DEBUG"
-				IncludeSearchPath="&quot;$(VCInstallDir)INCLUDE\&quot;;&quot;$(OutRoot)Win$(PROCESSOR_ARCHITECTURE)\BuildContexts\Bentley\PublicAPI&quot;;&quot;$(SrcEcf)\PublicApi&quot;"
+				IncludeSearchPath="&quot;$(OutRoot)Win$(PROCESSOR_ARCHITECTURE)\BuildContexts\ecf\VendorAPI\&quot;;&quot;$(VCInstallDir)INCLUDE\&quot;;&quot;$(OutRoot)Win$(PROCESSOR_ARCHITECTURE)\BuildContexts\ecf\PublicAPI\&quot;"
 				ForcedIncludes=""
 				AssemblySearchPath=""
 				ForcedUsingAssemblies=""
@@ -47,7 +47,7 @@
 				BuildCommandLine=""
 				ReBuildCommandLine=""
 				CleanCommandLine=""
-				Output="ecobjects.exe"
+				Output="ECObjectsTest_NonPublished.exe"
 				PreprocessorDefinitions="WIN32;NDEBUG"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -66,23 +66,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\..\ecf\ecobjects\native\ECEnabler.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\ecf\ecobjects\native\ECInstance.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\ecf\ecobjects\native\ECObjectsPch.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\ecf\ecobjects\native\ECSchema.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\ecf\ecobjects\native\ECValue.cpp"
+				RelativePath=".\ECObjectsTestPCH.cpp"
 				>
 			</File>
 		</Filter>
@@ -92,31 +76,7 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\..\..\ecf\PublicApi\ECObjects\ECEnabler.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\ecf\PublicApi\ECObjects\ECInstance.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\ecf\PublicApi\ECObjects\ECObjects.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\PublicApi\ECObjects\ECObjectsAPI.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\ecf\ecobjects\native\ECObjectsPch.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\ecf\PublicApi\ECObjects\ECSchema.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\ecf\PublicApi\ECObjects\ECValue.h"
+				RelativePath=".\ECObjectsTestPCH.h"
 				>
 			</File>
 		</Filter>
@@ -127,15 +87,7 @@
 			>
 		</Filter>
 		<File
-			RelativePath="..\..\ecf.PartFile.xml"
-			>
-		</File>
-		<File
-			RelativePath="..\..\..\ecf\ecobjects\native\native.mke"
-			>
-		</File>
-		<File
-			RelativePath="..\..\..\ecf\ecobjects\native\native.mki"
+			RelativePath=".\NonPublishedTests.mke"
 			>
 		</File>
 	</Files>

@@ -1,0 +1,16 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: ecobjects/nativeatp/NonPublishedTests.mke $
+#
+#  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+baseDir =   $(_MakeFilePath)
+
+programName = ECObjectsTest_NonPublished
+
+# Using this solution policy file ensures that nonpublished headers will be in the include path for
+# compiles within this mke file and within PreCompileHeader.mke which is used by this mke file.
+SolutionPolicyMki=$(baseDir)nonpublishedTestSolutionPolicy.mki
+
+%include buildTestFixture.mki

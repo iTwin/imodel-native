@@ -1,0 +1,14 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: ecobjects/nativeatp/nonpublishedTestSolutionPolicy.mki $
+#
+#  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+
+compileRulesPath=$(baseDir)nonpublishedCompileRules.mki
+
+nameToDefine = COMPILING_NONPUBLISHED_TESTS
+%include cdefapnd.mki
+
+

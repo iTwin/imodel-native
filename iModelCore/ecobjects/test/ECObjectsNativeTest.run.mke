@@ -1,0 +1,15 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: ecobjects/nativeatp/ECObjectsNativeTest.run.mke $
+#
+#  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+always:
+     $(OutputRootDir)Product/ECFrameworkTest/Tests/ECObjectsTest_Published.exe
+     $(OutputRootDir)Product/ECFrameworkTest/Tests/ECObjectsTest_NonPublished.exe
+
+
+

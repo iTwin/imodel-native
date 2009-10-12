@@ -3,6 +3,10 @@ Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ecobjects", "ecobjects.vcproj", "{01917E3B-2174-4AC9-860E-BAAAA15C606D}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PublishedTests", "..\nativeatp\PublishedTests.vcproj", "{885B170C-2635-4A7D-9532-8A4AE95B2561}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NonPublishedTests", "..\nativeatp\NonPublishedTests.vcproj", "{BBE7BE41-3763-40D1-BB1B-34EB81E4636B}"
+EndProject
 Global
 	GlobalSection(DPCodeReviewSolutionGUID) = preSolution
 		DPCodeReviewSolutionGUID = {00000000-0000-0000-0000-000000000000}
@@ -16,6 +20,14 @@ Global
 		{01917E3B-2174-4AC9-860E-BAAAA15C606D}.Debug|Win32.Build.0 = Debug|Win32
 		{01917E3B-2174-4AC9-860E-BAAAA15C606D}.Release|Win32.ActiveCfg = Release|Win32
 		{01917E3B-2174-4AC9-860E-BAAAA15C606D}.Release|Win32.Build.0 = Release|Win32
+		{885B170C-2635-4A7D-9532-8A4AE95B2561}.Debug|Win32.ActiveCfg = Debug|Win32
+		{885B170C-2635-4A7D-9532-8A4AE95B2561}.Debug|Win32.Build.0 = Debug|Win32
+		{885B170C-2635-4A7D-9532-8A4AE95B2561}.Release|Win32.ActiveCfg = Release|Win32
+		{885B170C-2635-4A7D-9532-8A4AE95B2561}.Release|Win32.Build.0 = Release|Win32
+		{BBE7BE41-3763-40D1-BB1B-34EB81E4636B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{BBE7BE41-3763-40D1-BB1B-34EB81E4636B}.Debug|Win32.Build.0 = Debug|Win32
+		{BBE7BE41-3763-40D1-BB1B-34EB81E4636B}.Release|Win32.ActiveCfg = Release|Win32
+		{BBE7BE41-3763-40D1-BB1B-34EB81E4636B}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
