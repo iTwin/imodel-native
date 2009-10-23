@@ -10,3 +10,6 @@
 # Compile the list of tests. 
 #########################################################################################
 $(o)SchemaTests$(oext)        : $(baseDir)Published/SchemaTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
+
+$(o)MacroTests$(oext)         : $(baseDir)Published/MacroTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
+

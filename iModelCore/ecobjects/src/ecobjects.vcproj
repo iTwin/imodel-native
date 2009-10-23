@@ -29,7 +29,7 @@
 				CleanCommandLine="bmake +aD $(SrcEcf)ecobjects\native\native.mke"
 				Output="ecobjects.exe"
 				PreprocessorDefinitions="WIN32;_DEBUG"
-				IncludeSearchPath="&quot;$(VCInstallDir)INCLUDE\&quot;;&quot;$(OutRoot)Win$(PROCESSOR_ARCHITECTURE)\BuildContexts\Bentley\PublicAPI&quot;;&quot;$(SrcEcf)\PublicApi&quot;"
+				IncludeSearchPath="&quot;$(VCInstallDir)INCLUDE\&quot;;&quot;$(SrcEcf)\PublicApi&quot;;&quot;$(OutRoot)Win$(PROCESSOR_ARCHITECTURE)\BuildContexts\Bentley\PublicAPI&quot;"
 				ForcedIncludes=""
 				AssemblySearchPath=""
 				ForcedUsingAssemblies=""
@@ -66,6 +66,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\DesignByContract.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\ecf\ecobjects\native\ECEnabler.cpp"
 				>
 			</File>
@@ -91,6 +95,10 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath="..\..\..\ecf\PublicApi\ECObjects\DesignByContract.h"
+				>
+			</File>
 			<File
 				RelativePath="..\..\..\ecf\PublicApi\ECObjects\ECEnabler.h"
 				>

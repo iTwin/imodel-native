@@ -13,8 +13,8 @@ BEGIN_BENTLEY_EC_NAMESPACE
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 void                Enabler::Initialize()
-    {
-    ECAssert (!m_initialized && "You should only call Initialize() once. It doesn't really hurt, but it probably means you have a logic problem somewhere.");
+    {    
+    assert (!m_initialized && "You should only call Initialize() once. It doesn't really hurt, but it probably means you have a logic problem somewhere.");
     m_initialized = true;
 
     // amortize the cost of the dynamic_cast over a lifetime of get/set calls
@@ -27,7 +27,7 @@ void                Enabler::Initialize()
 +---------------+---------------+---------------+---------------+---------------+------*/
 IGetValueCP         Enabler::GetIGetValue() const
     {
-    ECAssert (m_initialized && "You must call Initialize() in the constructor of your subclass of Enabler. "
+    assert (m_initialized && "You must call Initialize() in the constructor of your subclass of Enabler. "
                                "It performs initialization that cannot be performed in the base constructor.");
     return m_iGetValue;
     }
@@ -37,7 +37,7 @@ IGetValueCP         Enabler::GetIGetValue() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ISetValueCP         Enabler::GetISetValue() const
     {
-    ECAssert (m_initialized && "You must call Initialize() in the constructor of your subclass of Enabler. "
+    assert (m_initialized && "You must call Initialize() in the constructor of your subclass of Enabler. "
                                "It performs initialization that cannot be performed in the base constructor.");
     return m_iSetValue;
     }    

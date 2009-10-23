@@ -70,6 +70,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Published\MacroTests.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Published\SchemaTests.cpp"
 				>
 			</File>
@@ -90,6 +94,10 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 		</Filter>
+		<File
+			RelativePath=".\publishedCompileRules.mki"
+			>
+		</File>
 		<File
 			RelativePath=".\PublishedTests.mke"
 			>
