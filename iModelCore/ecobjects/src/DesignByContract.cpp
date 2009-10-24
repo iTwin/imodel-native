@@ -36,18 +36,6 @@ AssertDisabler::~AssertDisabler ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LogAndReturnFailureMessage (wchar_t * formattedMessage, int bufferSize, const wchar_t * message, ...)
-    {
-    va_list arguments;
-    va_start (arguments, message); 
-    vswprintf (formattedMessage, 1024, message, arguments);
-    wprintf (formattedMessage);                                       
-    vwprintf (message, arguments);    
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    AdamKlatzkin     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/
 void LogFailureMessage (const wchar_t * message, ...)
     {
     va_list arguments;
