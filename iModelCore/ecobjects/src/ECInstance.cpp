@@ -17,7 +17,7 @@ Instance::Instance(EnablerCR enabler) : m_enabler (&enabler)
     size_t sizeofInstance = sizeof(Instance);
     size_t sizeofVoid = sizeof (void*);
     
-    ECAssert (sizeof(Instance) == 2 * sizeof (void*) && L"Increasing the size or memory layout of the base EC::Instance will adversely affect subclasses. Think of this as a pure interface... to which you would never be able to add (additional) data, either");
+    assert (sizeof(Instance) == 2 * sizeof (void*) && L"Increasing the size or memory layout of the base EC::Instance will adversely affect subclasses. Think of this as a pure interface... to which you would never be able to add (additional) data, either");
     };    
         
 /*---------------------------------------------------------------------------------**//**
@@ -33,9 +33,7 @@ bool        Instance::IsReadOnly() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassCP     Instance::GetClass() const 
     {
-    ECAssert(m_enabler);
-    if (NULL == m_enabler)
-        return NULL;
+    PRECONDITION(NULL != m_enabler, NULL)
         
     return m_enabler->GetClass();
     }
@@ -54,7 +52,7 @@ bool Instance::AccessStringAndNIndicesAgree (const wchar_t * propertyAccessStrin
         pointerToBrackets = wcsstr (pointerToBrackets, L"[]"); ;
         }
     
-    ECAssert (!errorIfFalse || (nIndices == nBrackets && "nIndices must match the number of brackets '[]' found in the propertyAccessString"));
+    assert (!errorIfFalse || (nIndices == nBrackets && "nIndices must match the number of brackets '[]' found in the propertyAccessString"));
     //WIP_FUSION log this as an error if errorIfFalse!
     
     return (nIndices == nBrackets);
@@ -70,12 +68,12 @@ StatusInt Instance::GetValue (ValueR v, const wchar_t * propertyAccessString, UI
     
     if (!AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true)) // .04
         return ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices;
-            
+                
     EnablerCP e = GetEnabler();
-    ECAssert (NULL != e);
+    assert (NULL != e);
     
     IGetValueCP enabler = e->GetIGetValue(); // replaces a dynamic_cast that was costing .38. Now about .01
-    ECAssert (NULL != enabler);
+    assert (NULL != enabler);
     
     return enabler->GetValue (v, *this, propertyAccessString, nIndices, indices); // .36  (now less expensive since one dynamic_cast is avoided internally
     // Now about .21

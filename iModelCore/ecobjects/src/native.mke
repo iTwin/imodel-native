@@ -43,7 +43,7 @@ MultiCompileDepends=$(_MakeFileSpec)
 #----------------------------------------------------------------------
 #   Objects that go into the ECObjects library
 #----------------------------------------------------------------------
-ECObjectsHeaders = $(ecobjectsPublicAPISrc)ECObjects.h $(ecobjectsPublicAPISrc)ECSchema.h $(ecobjectsPublicAPISrc)ECValue.h $(ecobjectsPublicAPISrc)ECInstance.h $(ecobjectsPublicAPISrc)ECEnabler.h
+ECObjectsHeaders = $(ecobjectsPublicAPISrc)ECObjects.h $(ecobjectsPublicAPISrc)ECSchema.h $(ecobjectsPublicAPISrc)ECValue.h $(ecobjectsPublicAPISrc)ECInstance.h $(ecobjectsPublicAPISrc)ECEnabler.h $(ecobjectsPublicAPISrc)designbycontract.h
 
 $(o)ecschema.obj        : $(baseDir)ecschema.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
@@ -52,6 +52,8 @@ $(o)ecinstance.obj      : $(baseDir)ecinstance.cpp $(ECObjectsHeaders) ${MultiCo
 $(o)ecvalue.obj         : $(baseDir)ecvalue.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
 $(o)ecenabler.obj       : $(baseDir)ecenabler.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+
+$(o)designbycontract.obj        : $(baseDir)designbycontract.cpp $(ecobjectsPublicAPISrc)designbycontract.h ${MultiCompileDepends} 
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)

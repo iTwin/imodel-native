@@ -18,3 +18,14 @@
 #if defined(COMPILING_NONPUBLISHED_TESTS) && !defined (NON_PUBLISHED_HEADER_INCLUDED) 
    #error The ECObjects NonPublished API Tests are compiling against the published header files.  They are intended to compile against the nonpublished headers.  It is likely the include path for dll mke has been changed in error.
 #endif
+
+int main(int argc, char **argv) 
+    {  
+    ::testing::InitGoogleTest(&argc, argv);  
+
+    // We do this to cause asserts to always output to a message box.  Without this the gtest process will abort without giving the developer the opportunity to 
+    // attach with a debugger and analyze the situation.
+    _set_error_mode (_OUT_TO_MSGBOX);
+
+    return RUN_ALL_TESTS();
+    }
