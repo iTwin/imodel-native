@@ -26,10 +26,14 @@ public:
 };
 
 #ifdef  NDEBUG
-    #define DISABLE_ASSERTS                 __noop;
     #define ASSERT_FALSE_IF_NOT_DISABLED    __noop
 
 #else
+        
+    //! Avoid direct use of this macro.  It is only intended for use by other macros defined in this file.
+    // Forces an assert with the specified message as long as asserts are enabled.  No expression is evaluated.
+    #define ASSERT_FALSE_IF_NOT_DISABLED(_Message)    (void)((AssertDisabler::AreAssertsDisabled()) || (_wassert(_CRT_WIDE(#_Message), _CRT_WIDE(__FILE__), __LINE__), 0))
+#endif    
 
     //! Utilize this macro to disable asserts that may occur within a codeblock.
     //! The intent is that this macro will only ever be used by ATPs when testing failure scenarios.  No delivered code should ever utilize this macro.
@@ -59,11 +63,7 @@ public:
     //!       };
     //! \endcode
     #define DISABLE_ASSERTS           AssertDisabler assertDisabler;
-        
-    //! Avoid direct use of this macro.  It is only intended for use by other macros defined in this file.
-    // Forces an assert with the specified message as long as asserts are enabled.  No expression is evaluated.
-    #define ASSERT_FALSE_IF_NOT_DISABLED(_Message)    (void)((AssertDisabler::AreAssertsDisabled()) || (_wassert(_CRT_WIDE(#_Message), _CRT_WIDE(__FILE__), __LINE__), 0))
-#endif    
+
 
 //! Avoid direct use of this function.  It is only intended for use by macros defined in this file.
 ECOBJECTS_EXPORT void LogFailureMessage (const wchar_t * message, ...);
