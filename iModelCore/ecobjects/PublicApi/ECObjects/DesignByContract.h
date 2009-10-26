@@ -26,7 +26,7 @@ public:
 };
 
 #ifdef  NDEBUG
-    #define DISABLE_ASSERTS                 __noop
+    #define DISABLE_ASSERTS                 __noop;
     #define ASSERT_FALSE_IF_NOT_DISABLED    __noop
 
 #else
