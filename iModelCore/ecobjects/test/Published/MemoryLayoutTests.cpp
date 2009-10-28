@@ -12,6 +12,9 @@ BEGIN_BENTLEY_EC_NAMESPACE
 
 using namespace std;
 
+// WIP_FUSION: these verify methods are duplicated in DgnPlatformTests... how do we share that code?    
+// WIP_FUSION: where is the right place to share these methods even among ECObjects tests? 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    

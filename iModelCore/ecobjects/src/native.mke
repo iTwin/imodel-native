@@ -53,6 +53,8 @@ $(o)ecvalue.obj         : $(baseDir)ecvalue.cpp $(ECObjectsHeaders) ${MultiCompi
 
 $(o)ecenabler.obj       : $(baseDir)ecenabler.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
+$(o)MemoryLayout.obj    : $(baseDir)MemoryLayout.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)MemoryLayout.h
+
 $(o)designbycontract.obj        : $(baseDir)designbycontract.cpp $(ecobjectsPublicAPISrc)designbycontract.h ${MultiCompileDepends} 
 
 %include MultiCppCompileGo.mki

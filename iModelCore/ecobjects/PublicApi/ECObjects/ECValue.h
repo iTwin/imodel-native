@@ -30,7 +30,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 
 //! Enumeration of primitive datatypes supported by native "ECObjects" implementation.
 //! These should correspond to all of the datatypes supported in .NET ECObjects
-enum DataType //FUSION_WIP: Could or should I define this to be a UInt8 in order to save space per value?
+enum DataType
     {
     DATATYPE_Uninitialized                  = 0,
     DATATYPE_Array                          = 1,
@@ -139,6 +139,7 @@ public:
     ECOBJECTS_EXPORT Int64           GetLong() const;
     ECOBJECTS_EXPORT StatusInt       SetLong (Int64 long64);
     
+    //! @returns    The double held by the Value, or std::numeric_limits<double>::quiet_NaN() if it is not a double or IsNull
     ECOBJECTS_EXPORT double          GetDouble() const;
     ECOBJECTS_EXPORT StatusInt       SetDouble (double value);  
         

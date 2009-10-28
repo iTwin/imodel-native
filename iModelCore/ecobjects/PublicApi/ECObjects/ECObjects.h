@@ -55,6 +55,11 @@ EC_TYPEDEFS(ISetValue);
 EC_TYPEDEFS(IArrayManipulator);
 EC_TYPEDEFS(ICreateInstance);
 
+EC_TYPEDEFS(ClassLayout);
+EC_TYPEDEFS(PropertyLayout);
+EC_TYPEDEFS(MemoryInstance);
+EC_TYPEDEFS(MemoryEnabler);
+
 /*__PUBLISH_SECTION_END__*/
 
 #if !defined(ECAssert)
@@ -93,6 +98,7 @@ enum ECObjectsStatus
     ECOBJECTS_STATUS_ECSchemaNotSupported                              = ECOBJECTS_ERROR_BASE + 0x07,
     ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices                 = ECOBJECTS_ERROR_BASE + 0x08,
     ECOBJECTS_STATUS_EnablerNotFound                                   = ECOBJECTS_ERROR_BASE + 0x09,
-    ECOBJECTS_STATUS_OperationNotSupportedByEnabler                    = ECOBJECTS_ERROR_BASE + 0x0A
+    ECOBJECTS_STATUS_OperationNotSupportedByEnabler                    = ECOBJECTS_ERROR_BASE + 0x0A,
+    ECOBJECTS_STATUS_PreconditionViolated                              = ECOBJECTS_ERROR_BASE + 0x0B
     }; 
 

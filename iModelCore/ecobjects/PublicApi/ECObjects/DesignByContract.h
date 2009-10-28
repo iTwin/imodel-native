@@ -171,3 +171,10 @@ ECOBJECTS_EXPORT void LogFailureMessage (const wchar_t * message, ...);
     || (LogFailureMessage(L"The following expected condition has failed:\n  expected condition: %S\n  method: %S\n  file: %S\n  line: %i\n", #_Expression, __FUNCTION__, __FILE__, __LINE__), 0) \
     || (ASSERT_FALSE_IF_NOT_DISABLED (_Expression), 0) )
     
+#ifdef NDEBUG
+    #define DEBUG_EXPECT(_Expression)    __noop
+    #define DEBUG_FAIL(_Message)         __noop
+#else
+    #define DEBUG_EXPECT(_Expression)    EXPECTED_CONDITION(_Expression)
+    #define DEBUG_FAIL(_Message)         EXPECTED_CONDITION(false && _Message)
+#endif

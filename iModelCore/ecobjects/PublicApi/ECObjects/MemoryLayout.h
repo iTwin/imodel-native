@@ -5,19 +5,18 @@
 |   $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-//__BENTLEY_INTERNAL_ONLY__
+//__PUBLISH_SECTION_START__
 #pragma once
 
 #include <ECObjects\ECObjects.h>
-
-//#pragma warning (disable:4251)
 
 BEGIN_BENTLEY_EC_NAMESPACE
     
 typedef UInt32 NullflagsBitmask;
 typedef UInt32 SecondaryOffset;
-typedef RefCountedPtr<MemoryEnabler> MemoryEnablerPtr;
 
+struct MemoryEnabler;
+typedef RefCountedPtr<MemoryEnabler> MemoryEnablerPtr;
 
 #define NULLFLAGS_BITMASK_AllOn     0xFFFFFFFF
 #define MEMORYENABLER_EnablerID     0x00EC3E30 // WIP_FUSION: get a real id
@@ -40,12 +39,6 @@ private:
   //PropertyCP          m_property; // WIP_FUSION: optional? YAGNI?
     
 public:
-    /*PropertyLayout (PropertyLayoutCR propertyLayout)
-        {
-        m_dataType = propertyLayout.m_dataType;
-        m_offset = propertyLayout.m_offset;
-        };*/
-    //PropertyLayout () {};        
     PropertyLayout (wchar_t const * accessString, DataType dataType, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask) : //, PropertyCP property) :
         m_accessString(accessString), m_dataType(dataType), m_offset(offset), m_nullflagsOffset(nullflagsOffset), 
         m_nullflagsBitmask (nullflagsBitmask) {}; //, m_property(property) {};
@@ -68,7 +61,7 @@ public:
 +===============+===============+===============+===============+===============+======*/      
 struct ClassLayout
     {
-    friend MemoryInstance;
+    friend MemoryEnabler;
 
 private:
     struct StringComparer {bool operator()(wchar_t const * s1, wchar_t const * s2) const   {return wcscmp (s1, s2) < 0;}};
@@ -92,12 +85,6 @@ private:
 
     PropertyLayoutVector    m_propertyLayouts; // This is the primary collection, there is a secondary map for lookup by name, below.
     PropertyLayoutLookup    m_propertyLayoutLookup;
-    
-    //std::wstring        m_pepOfSchemaElement;
-    //std::wstring        m_schemaName;
-    //UInt32              m_minorVersion;    
-    //UInt32              m_majorVersion;
-    //ClassCP             m_class; // optional? YAGNI?
     
     // These members are transient
     UInt32                  m_sizeOfFixedSection;
@@ -141,115 +128,111 @@ struct ClassLayoutRegistry
     std::map<UInt32, ClassLayoutCP>  m_classLayouts;
     };         
     
+//! Implemented by an EC::Instance that can cooperate with the EC::MemoryEnabler 
+//! To allocate and access memory in which to store values
+//! @see MemoryEnabler, Instance
+struct IMemoryProvider
+    {
+    friend MemoryEnabler;
+    
+protected:    
+    //! Get a pointer to the first byte of the data    
+    virtual byte *  GetData () const = 0;
+    virtual UInt32  GetBytesUsed () const = 0;
+    virtual void    AdjustBytesUsed (Int32 adjustment) = 0;
+    virtual UInt32  GetBytesAllocated () const = 0;
+    //! Allocates memory for the Instance. The memory does not need to be initialized in any way.
+    //! @param minimumBytesToAllocate
+    virtual void    AllocateBytes (UInt32 minimumBytesToAllocate) = 0;
+        
+    //! Reallocates memory for the Instance and copies the old Instance data into the new memory
+    //! You might get more memory than used asked for, but you won't get less
+    //! @param additionalBytesNeeded  Additional bytes of memory needed above current allocation
+    virtual void    GrowAllocation (UInt32 additionalBytesNeeded) = 0;
+    
+    //! Reallocates memory for the Instance and copies the old Instance data into the new memory
+    //! This is not guaranteed to do anything or to change to precisely the allocation you request
+    //! but it will be at least as large as you request.
+    //! @param newAllocation  Additional bytes of memory needed above current allocation    
+    virtual void    ShrinkAllocation (UInt32 newAllocation) = 0;
+    
+    //! Free any allocated memory
+    virtual void    FreeAllocation () = 0;
+    };
+    
 //! EC::MemoryEnabler can be used with any EC::Instance that implements IMemoryLayoutSupport
 struct MemoryEnabler : public Enabler, public IGetValue, public ISetValue,
-                                      public ICreateInstance //wip: also implement public IArrayManipulator
+                       public ICreateInstance //wip: also implement public IArrayManipulator
     {
 private:
     ClassLayout             m_classLayout;
-public: 
+    
+    byte *                  GetAddressOfValue (IMemoryProvider const & memoryProvider, PropertyLayoutCR propertyLayout) const;
+    StatusInt               EnsureSpaceIsAvailable (IMemoryProvider & memoryProvider, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded) const;
+        
     MemoryEnabler (ClassCR ecClass) : Enabler (ecClass, MEMORYENABLER_EnablerID, L"Bentley::EC::MemoryEnabler")
         {
         Initialize();
         m_classLayout.SetClass(ecClass);
         }
         
-    static MemoryEnablerPtr Create(ClassCR ecClass)
+protected:
+    ECOBJECTS_EXPORT MemoryEnabler (ClassCR ecClass, UInt32 enablerID, std::wstring name) : Enabler (ecClass, enablerID, name) 
+        {
+        Initialize();
+        m_classLayout.SetClass(ecClass);
+        }        
+public: 
+
+    static MemoryEnablerPtr             Create(ClassCR ecClass)
         {
         return new MemoryEnabler (ecClass);    
         };
         
-    virtual StatusInt GetValue (ValueR v, InstanceCR instance, wchar_t const * propertyAccessString,
+    ECOBJECTS_EXPORT void               InitializeInstanceMemory (IMemoryProvider& memoryProvider) const;
+        
+    ECOBJECTS_EXPORT virtual StatusInt  GetValue (ValueR v, InstanceCR instance, wchar_t const * propertyAccessString,
                                 UInt32 nIndices = 0, UInt32 const * indices = NULL) const override;
-    virtual StatusInt SetValue (InstanceR instance, wchar_t const * propertyAccessString, ValueCR v,
+    ECOBJECTS_EXPORT virtual StatusInt  SetValue (InstanceR instance, wchar_t const * propertyAccessString, ValueCR v,
                                 UInt32 nIndices = 0, UInt32 const * indices = NULL) const override;
                                 
-    virtual StatusInt CreateInstance (InstanceP& instance, ClassCR ecClass, wchar_t const * instanceId) const override;
+    ECOBJECTS_EXPORT virtual StatusInt  CreateInstance (InstanceP& instance, ClassCR ecClass, wchar_t const * instanceId) const override;
     
     ClassLayoutCR   GetClassLayout() const { return m_classLayout; }
     };
         
-/*=================================================================================**//**
-* EC::MemoryInstance is the native equivalent of a .NET "Heavyweight" ECInstance.
-* It holds the values in a series of stl:map collections...
-* @see MemoryEnabler, Instance
-* @bsistruct                                                     CaseyMullen    10/09
-+===============+===============+===============+===============+===============+======*/         
-struct MemoryInstance : public Instance
+//! EC::MemoryInstance is the native equivalent of a .NET "Heavyweight" ECInstance.
+//! It holds the values in memory that it allocates... laid out according to the ClassLayout
+//! @see MemoryEnabler, Instance
+struct MemoryInstance : Instance, IMemoryProvider
     {
     friend MemoryEnabler;
 
 private:
     std::wstring    m_instanceID;
+    
     byte *          m_data;
     UInt32          m_bytesUsed;            
     UInt32          m_bytesAllocated;
      
+    virtual byte *  GetData () const                    { return m_data; };
+    virtual UInt32  GetBytesUsed () const               { return m_bytesUsed; };
+    virtual void    AdjustBytesUsed (Int32 adjustment)  { m_bytesUsed += adjustment; };
+    virtual void    SetBytesUsed (UInt32 nBytes)        { m_bytesUsed = nBytes; };
+    virtual UInt32  GetBytesAllocated () const          { return m_bytesAllocated; };
+    virtual void    ShrinkAllocation (UInt32 newAllocation) {}; // WIP_FUSION: needs implementation
+    virtual void    FreeAllocation ()                   { free (m_data); m_data = NULL; };
+    virtual void    AllocateBytes (UInt32 minimumBytesToAllocate);
+    virtual void    GrowAllocation (UInt32 bytesNeeded);        
+    
     static EnablerCR GetEnablerForClass (ClassCR ecClass);
-    byte *           GetAddressOfValue (PropertyLayoutCR propertyLayout) const;
     
 protected:
-    virtual          std::wstring         _GetInstanceID() const override;
-
-    //! Allocates memory for the Instance. The memory does not need to be initialized in any way.
-    //! @param minimumBytesToAllocate
-    virtual void _Allocate (UInt32 minimumBytesToAllocate)
-        {
-        DEBUG_EXPECT (0 == m_bytesAllocated);
-        DEBUG_EXPECT (NULL == m_data);
-        
-        // WIP_FUSION: add performance counter
-        m_data = (byte*)malloc(minimumBytesToAllocate);
-        m_bytesAllocated = minimumBytesToAllocate;
-        }
-        
-    //! Reallocates memory for the Instance and copies the old Instance data into the new memory
-    //! @param bytesNeeded  Additional bytes of memory needed above current allocation
-    virtual void _GrowAllocation (UInt32 bytesNeeded)
-        {
-        DEBUG_EXPECT (m_bytesAllocated > 0);
-        DEBUG_EXPECT (NULL != m_data);
-        // WIP_FUSION: add performance counter
-                
-        byte * data = (byte*)malloc(m_bytesAllocated + bytesNeeded); 
-        memcpy (data, m_data, m_bytesAllocated);
-        
-        free (m_data);
-        m_data = data;
-        m_bytesAllocated += bytesNeeded;
-        }  
+    ECOBJECTS_EXPORT virtual std::wstring _GetInstanceID() const override;
         
 public:
-    MemoryEnablerCR GetMemoryEnabler() const
-        {
-        EnablerCP enabler = GetEnabler();
-        DEBUG_EXPECT (NULL != enabler);
-        return *(MemoryEnablerCP)enabler;
-        }
-        
-    ClassLayoutCR GetClassLayout()
-        {
-        return GetMemoryEnabler().GetClassLayout();
-        }
-        
-    StatusInt               EnsureSpaceIsAvailable (PropertyLayoutCR propertyLayout, UInt32 bytesNeeded);
-    
-    MemoryInstance (ClassCR ecClass) : Instance (GetEnablerForClass(ecClass)), 
-                                       m_bytesAllocated(0), m_bytesUsed(0), m_data(NULL) 
-        {
-        wchar_t id[256];
-        swprintf(id, sizeof(id)/sizeof(wchar_t), L"%s-0x%X", ecClass.GetName(), this);
-        m_instanceID = id;
-        
-        ClassLayoutCR classLayout = GetClassLayout();
-        
-        m_bytesUsed = classLayout.GetSizeOfFixedSection();
-        _Allocate (m_bytesUsed + 1024);
-        DEBUG_EXPECT (m_bytesAllocated >= m_bytesUsed + 1024);
-        
-        classLayout.InitializeMemoryForInstance (m_data, m_bytesAllocated);
-        // WIP_FUSION: could initialize default values here.
-        };    
+    MemoryEnablerCR GetMemoryEnabler() const;
+    ECOBJECTS_EXPORT MemoryInstance (ClassCR ecClass);
     };
 
 END_BENTLEY_EC_NAMESPACE

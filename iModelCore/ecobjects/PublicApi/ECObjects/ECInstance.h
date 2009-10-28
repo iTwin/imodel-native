@@ -30,13 +30,14 @@ protected:
     EnablerCP         m_enabler;
     
     ECOBJECTS_EXPORT Instance() {}; // WIP_FUSION: Should this go away? Force caller to provide the enabler and class
+    ECOBJECTS_EXPORT virtual std::wstring _GetInstanceID() const = 0; // Virtual and returning std::wstring because a subclass may want to calculate it on demand
 
 public:
     ECOBJECTS_EXPORT Instance(EnablerCR enabler);
     
     ECOBJECTS_EXPORT inline  EnablerCP    GetEnabler() const { return m_enabler; };    
-    // WIP_FUSION: convert all of the exported virtual methods to use the pattern where the virtual method is like _GetInstanceId and the exported method is inline but calls the virtual method.
-    ECOBJECTS_EXPORT virtual std::wstring GetInstanceId() const = 0; // Virtual and returning std::wstring because a subclass may want to calculate it on demand
+    // WIP_FUSION: convert all of the exported virtual methods to use the pattern where the virtual method is like _GetInstanceID and the exported method is inline but calls the virtual method.
+    ECOBJECTS_EXPORT std::wstring         GetInstanceID() const;
     ECOBJECTS_EXPORT bool                 IsReadOnly() const;
     
     ECOBJECTS_EXPORT inline ClassCP       GetClass() const;
@@ -53,10 +54,6 @@ public:
     // from managed code that can get a value with only one managed to native transition
     StatusInt GetDouble (double value, const wchar_t * propertyAccessString); // marshal as few args as possible 
     StatusInt GetDouble (double value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices); // marshal as few args as possible 
-    
-    UInt32 GetInteger (const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const; // marshal as few args as possible     
-    UInt32 JustIntArgs (UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
-    UInt32 NoArgs () const;
     // WIP_FUSION: experiment with the best way to return strings in one shot
 #endif
 

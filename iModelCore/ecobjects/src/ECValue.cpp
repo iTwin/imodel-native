@@ -179,8 +179,8 @@ Value::Value (const wchar_t * string, bool holdADuplicate)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ::Int32 Value::GetInteger() const
     {
-    assert (IsInteger() && "Tried to get integer value from an EC::Value that is not an integer.");
-    assert (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined");
+    PRECONDITION (IsInteger() && "Tried to get integer value from an EC::Value that is not an integer.", 0);
+    PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", 0);
     return m_integer32;
     };
 
@@ -201,8 +201,8 @@ StatusInt Value::SetInteger (::Int32 integer)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ::Int64 Value::GetLong() const
     {
-    assert (IsLong() && "Tried to get long64 value from an EC::Value that is not an long64.");
-    assert (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined");
+    PRECONDITION (IsLong() && "Tried to get long64 value from an EC::Value that is not an long64.", 0);
+    PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", 0);
     return m_long64;
     };
 
@@ -223,8 +223,8 @@ StatusInt Value::SetLong (::Int64 long64)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double Value::GetDouble() const
     {
-    ECAssert (IsDouble() && "Tried to get double value from an EC::Value that is not an double.");
-    ECAssert (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined");
+    PRECONDITION (IsDouble() && "Tried to get double value from an EC::Value that is not an double.", std::numeric_limits<double>::quiet_NaN());
+    PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", std::numeric_limits<double>::quiet_NaN());
     return m_double;
     };
 
@@ -245,8 +245,7 @@ StatusInt Value::SetDouble (double value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 const wchar_t * Value::GetString() const
     {
-    assert (IsString() && "Tried to get string value from an EC::Value that is not a string.");
-    if (!IsString()) return L"<Programmer Error: Attempted to get string value from EC::Value that is not a string.>"; //WIP_FUSION log as an error... no good can come of it
+    PRECONDITION (IsString() && "Tried to get string value from an EC::Value that is not a string.", L"<Programmer Error: Attempted to get string value from EC::Value that is not a string.>");
     return m_stringInfo.m_string;
     };
     

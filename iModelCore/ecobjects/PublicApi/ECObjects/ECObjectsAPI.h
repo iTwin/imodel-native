@@ -35,14 +35,16 @@
 
 #include <string>
 #include <vector>
+#include <map>
+#include <limits>
 
 #include <ECObjects\ECEnabler.h>
 #include <ECObjects\ECInstance.h>
 #include <ECObjects\ECSchema.h>
 #include <ECObjects\ECValue.h>
+#include <ECObjects\MemoryLayout.h>
 
 /*__PUBLISH_SECTION_END__*/
-
 #include <ECObjects\DesignByContract.h>
 
 // This define is checked from the ECObjects Published ATPs to ensure that they are building against the published header files.

@@ -23,6 +23,14 @@ Instance::Instance(EnablerCR enabler) : m_enabler (&enabler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
+std::wstring        Instance::GetInstanceID() const
+    {
+    return _GetInstanceID();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
 bool        Instance::IsReadOnly() const
     {        
     return (NULL != dynamic_cast<ISetValueCP>(GetEnabler()));
@@ -63,17 +71,15 @@ bool Instance::AccessStringAndNIndicesAgree (const wchar_t * propertyAccessStrin
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt Instance::GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
     {
-    //WIP_FUSION add a CheckForNull (propertyAccessString) macro here that logs error and triggers debugger in a debug build
-    //WIP_FUSION in debug mode could find and validate ECProperty here
-    
-    if (!AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true)) // .04
-        return ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices;
+    PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
+    PRECONDITION (AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true), ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices);
                 
     EnablerCP e = GetEnabler();
-    assert (NULL != e);
+    PRECONDITION (NULL != e, ECOBJECTS_STATUS_PreconditionViolated);
     
-    IGetValueCP enabler = e->GetIGetValue(); // replaces a dynamic_cast that was costing .38. Now about .01
-    assert (NULL != enabler);
+    IGetValueCP enabler = e->GetIGetValue();
+    if (NULL == enabler)
+        return ECOBJECTS_STATUS_OperationNotSupportedByEnabler;
     
     return enabler->GetValue (v, *this, propertyAccessString, nIndices, indices); // .36  (now less expensive since one dynamic_cast is avoided internally
     // Now about .21
@@ -84,39 +90,19 @@ StatusInt Instance::GetValue (ValueR v, const wchar_t * propertyAccessString, UI
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt Instance::SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices, UInt32 const * indices)
     {
-    //WIP_FUSION in debug mode we could find and validate ECProperty here
+    PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
+    PRECONDITION (AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true), ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices);
+                
+    EnablerCP e = GetEnabler();
+    PRECONDITION (NULL != e, ECOBJECTS_STATUS_PreconditionViolated);
     
-    if (!AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true))
-        return ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices;
-    
-    ISetValueCP enabler = dynamic_cast<ISetValueCP>(GetEnabler());
+    ISetValueCP enabler = e->GetISetValue();
+    if (NULL == enabler)
+        return ECOBJECTS_STATUS_OperationNotSupportedByEnabler;
+            
     return enabler->SetValue (*this, propertyAccessString, v, nIndices, indices);
     }        
 
-#ifdef WIP_MANAGEDACCESS
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 Instance::JustIntArgs (UInt32 nIndices, UInt32 const * indices) const
-    {
-    return 24;
-    }
-    
-UInt32 Instance::NoArgs () const
-    {
-    return 24;
-    }
-    
-UInt32 Instance::GetInteger (const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
-    {
-    Bentley::EC::Value v;                                  // .07
-    
-    GetValue (v, propertyAccessString, nIndices, indices); // .80
-    
-    return v.GetInteger();                                 // .01
-    }    
-#endif
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
