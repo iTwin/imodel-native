@@ -33,7 +33,7 @@ std::wstring        Instance::GetInstanceID() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool        Instance::IsReadOnly() const
     {        
-    return (NULL != dynamic_cast<ISetValueCP>(GetEnabler()));
+    return (NULL != GetEnabler()->GetISetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -10,7 +10,7 @@
 
 #include <ECObjects\ECObjects.h>
 
-#if get_these_from_geomlibs
+#if get_these_from_geomlibs // WIP_FUSION
 // needswork, need to reconcile these with the dpoint types defined in geomlibs
 struct DPoint2d
     {

@@ -13,3 +13,4 @@ $(o)SchemaTests$(oext)        : $(baseDir)Published/SchemaTests.cpp   $(PCHHeade
 
 $(o)MacroTests$(oext)         : $(baseDir)Published/MacroTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
 
+$(o)MemoryLayoutTests$(oext)  : $(baseDir)Published/MemoryLayoutTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}

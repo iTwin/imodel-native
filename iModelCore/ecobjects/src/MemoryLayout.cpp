@@ -386,8 +386,8 @@ MemoryInstance::MemoryInstance (ClassCR ecClass) : Instance (GetEnablerForClass(
     swprintf(id, sizeof(id)/sizeof(wchar_t), L"%s-0x%X", ecClass.GetName(), this);
     m_instanceID = id;
     
-    MemoryEnablerCP memoryEnabler = (MemoryEnablerCP)GetEnabler();
-    DEBUG_EXPECT (NULL != dynamic_cast<MemoryEnablerCP>(GetEnabler()));
+    MemoryEnablerCP memoryEnabler = dynamic_cast<MemoryEnablerCP>(GetEnabler());
+    DEBUG_EXPECT (NULL != memoryEnabler && "Programmer Error: only use MemoryEnabler with the MemoryInstance");
     
     memoryEnabler->InitializeInstanceMemory (*this);
     }
