@@ -13,36 +13,12 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-//! Interface implemented by EC::Enablers that can GetValues from an EC::Instance
-//! (which is essentially all of them, but the interface is kept separate for consistency
-//! with the other "small" interfaces and to allow the possibiliy of implementing this
-//! without being an EC::Enabler.)
-//!
-//! @see Enabler
-struct IGetValue
-    {
-    ECOBJECTS_EXPORT virtual StatusInt GetValue (ValueR v, InstanceCR instance, const wchar_t * propertyAccessString, 
-                                                 UInt32 nIndices = 0, UInt32 const * indices = NULL) const = 0;
-    };
-
-//! Interface implemented by EC::Enablers that can SetValues from an EC::Instance
-//! (which is essentially all of them, but the interface is kept separate for consistency
-//! with the other "small" interfaces and to allow the possibiliy of implementing this
-//! without being an EC::Enabler.)
-//!
-//! @see Enabler
-struct ISetValue
-    {
-    ECOBJECTS_EXPORT virtual StatusInt SetValue (InstanceR instance, const wchar_t * propertyAccessString, ValueCR v,
-                                                 UInt32 nIndices = 0, UInt32 const * indices = NULL) const = 0;
-    };
-
 typedef RefCountedPtr<Enabler>                  EnablerPtr;
 
 //! Primary interface for a struct that enables EC functionality. 
 //! This interface only supports identification and registration of enablers.
 //! The implementing struct will likely implement other EC "enabler" interfaces like
-//! IGetValue, ISetValue, IArrayManipulator, etc.
+//! IArrayManipulator, etc.
 //!
 //! The "contract" for being a well-behaved EC::Enabler
 //! - If passed an EC::Instance with an implementation that you don't handle 
@@ -54,16 +30,13 @@ typedef RefCountedPtr<Enabler>                  EnablerPtr;
 //!   If you detect a mismatch, return ERROR_DataTypeMismatch
 //!   correct DataType. If you return an error status in such a case
 //!
-//! @see IGetValue, ISetValue, ICreateInstance, IDeleteInstance, IArrayManipulator, IArrayAccessor, etc.
+//! @see ICreateInstance, IDeleteInstance, IArrayManipulator, IArrayAccessor, etc.
 struct Enabler : RefCountedBase
     {
 private:
-    bool                    m_initialized;
     UInt32                  m_id;    
     std::wstring            m_name;
     ClassCP                 m_ecClass;
-    IGetValueCP             m_iGetValue;
-    ISetValueCP             m_iSetValue;
 
     // Hide these as part of the RefCounted pattern
     Enabler(){};
@@ -71,11 +44,6 @@ private:
 protected:
     //! Protected as part of the RefCounted pattern
     ~Enabler(){};
-
-    //! Must be called from the constructor of your subclass of Enabler.
-    //! It cannot be called in the base constructor because you cannot dynamic_cast to
-    //! a derived type in the base constructor.    
-    ECOBJECTS_EXPORT void                    Initialize();
 
     //! Subclasses of Enabler should implement a FactoryMethod to construct the enabler, as
     //! part of the RefCounted pattern.
@@ -88,7 +56,7 @@ protected:
     //! /endcode
     //! where the ____ is a name specific to your subclass.
     ECOBJECTS_EXPORT Enabler(ClassCR ecClass, UInt32 id, std::wstring name) : m_ecClass (&ecClass), m_name(name), 
-        m_id(id), m_initialized(false), m_iGetValue(NULL), m_iSetValue(NULL) {};
+        m_id(id) {};
 
 public:
     
@@ -99,18 +67,6 @@ public:
     ECOBJECTS_EXPORT inline wchar_t const * GetName() const { return m_name.c_str(); }
     
     ECOBJECTS_EXPORT inline ClassCP         GetClass() const { return m_ecClass; }
-    
-    //! Called by EC::Implementations to efficiently "dynamic_cast" to IGetValue.
-    //! Efficiencies are gained by only calling dynamic_cast<IGetValue> once and 
-    //! amortizing the cost over the lifetime of the Enabler.
-    //! @return the result of dynamic_cast<IGetValue>(this)
-    ECOBJECTS_EXPORT inline IGetValueCP           GetIGetValue() const;
-    
-    //! Called by EC::Implementations to efficiently "dynamic_cast" to ISetValue.
-    //! Efficiencies are gained by only calling dynamic_cast<ISetValue> once and 
-    //! amortizing the cost over the lifetime of the Enabler.
-    //! @return the result of dynamic_cast<ISetValue>(this)
-    ECOBJECTS_EXPORT inline ISetValueCP           GetISetValue() const;
     };
 
 //! Implemented by enablers that support manipulation of array properties, i.e. operations
@@ -120,7 +76,7 @@ public:
 //! - For all of the methods, the propertyAccessString should be in the "array element" form, 
 //!   e.g. "Aliases[]" instead of "Aliases" 
 //! @see IArrayAccessor, Enabler
-struct IArrayManipulator
+struct IArrayManipulator  // WIP_FUSION: these responsibilities should move to the Instance, just like GetValue and SetValue moved
     {
     // @param propertyAccessString should be in the "array element" form, e.g. "Aliases[]" instead of "Aliases"
     virtual StatusInt InsertArrayElement (InstanceR instance, const wchar_t * propertyAccessString, ValueCR value, UInt32 index) const = 0;

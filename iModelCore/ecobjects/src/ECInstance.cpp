@@ -12,12 +12,12 @@ BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-Instance::Instance(EnablerCR enabler) : m_enabler (&enabler)
+Instance::Instance()
     {
     size_t sizeofInstance = sizeof(Instance);
     size_t sizeofVoid = sizeof (void*);
     
-    assert (sizeof(Instance) == 2 * sizeof (void*) && L"Increasing the size or memory layout of the base EC::Instance will adversely affect subclasses. Think of this as a pure interface... to which you would never be able to add (additional) data, either");
+    assert (sizeof(Instance) == sizeof (void*) && L"Increasing the size or memory layout of the base EC::Instance will adversely affect subclasses. Think of this as a pure interface... to which you would never be able to add (additional) data, either");
     };    
         
 /*---------------------------------------------------------------------------------**//**
@@ -31,19 +31,12 @@ std::wstring        Instance::GetInstanceID() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool        Instance::IsReadOnly() const
-    {        
-    return (NULL != GetEnabler()->GetISetValue());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
 ClassCP     Instance::GetClass() const 
     {
-    PRECONDITION(NULL != m_enabler, NULL)
+    EnablerCP enabler = GetEnabler();
+    PRECONDITION(NULL != enabler, NULL)
         
-    return m_enabler->GetClass();
+    return enabler->GetClass();
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -65,44 +58,55 @@ bool Instance::AccessStringAndNIndicesAgree (const wchar_t * propertyAccessStrin
     
     return (nIndices == nBrackets);
     }
-    
+        
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Instance::GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
++---------------+---------------+---------------+---------------+---------------+------*/   
+EnablerCP            Instance::GetEnabler() const
     {
-    PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
-    PRECONDITION (AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true), ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices);
-                
-    EnablerCP e = GetEnabler();
-    PRECONDITION (NULL != e, ECOBJECTS_STATUS_PreconditionViolated);
-    
-    IGetValueCP enabler = e->GetIGetValue();
-    if (NULL == enabler)
-        return ECOBJECTS_STATUS_OperationNotSupportedByEnabler;
-    
-    return enabler->GetValue (v, *this, propertyAccessString, nIndices, indices); // .36  (now less expensive since one dynamic_cast is avoided internally
-    // Now about .21
+    return _GetEnabler();
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Instance::SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices, UInt32 const * indices)
++---------------+---------------+---------------+---------------+---------------+------*/   
+bool                Instance::IsReadOnly() const
     {
-    PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
-    PRECONDITION (AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true), ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices);
-                
-    EnablerCP e = GetEnabler();
-    PRECONDITION (NULL != e, ECOBJECTS_STATUS_PreconditionViolated);
-    
-    ISetValueCP enabler = e->GetISetValue();
-    if (NULL == enabler)
-        return ECOBJECTS_STATUS_OperationNotSupportedByEnabler;
-            
-    return enabler->SetValue (*this, propertyAccessString, v, nIndices, indices);
-    }        
+    return _IsReadOnly();
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/    
+StatusInt            Instance::GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+    {
+    return _GetValue (v, propertyAccessString, nIndices, indices);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/    
+StatusInt            Instance::SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices, UInt32 const * indices)
+    {
+    return _SetValue (propertyAccessString, v, nIndices, indices);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/    
+StatusInt            Instance::GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 index)
+    {
+    return _GetValue (v, propertyAccessString, 1, &index);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/    
+StatusInt            Instance::SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 index)
+    {
+    return _SetValue (propertyAccessString, v, 1, &index);
+    }
+            
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -110,7 +114,7 @@ StatusInt Instance::InsertArrayElement (const wchar_t * propertyAccessString, Va
     {
     IArrayManipulatorCP manipulator = dynamic_cast<IArrayManipulatorCP>(GetEnabler());
     if (NULL == manipulator)
-        return ECOBJECTS_STATUS_OperationNotSupportedByEnabler;
+        return ECOBJECTS_STATUS_OperationNotSupported;
         
     PropertyP property;
     StatusInt status = GetClass()->GetProperty (property, propertyAccessString);
@@ -127,7 +131,7 @@ StatusInt Instance::RemoveArrayElement (const wchar_t * propertyAccessString, UI
     {
     IArrayManipulatorCP manipulator = dynamic_cast<IArrayManipulatorCP>(GetEnabler());
     if (NULL == manipulator)
-        return ECOBJECTS_STATUS_OperationNotSupportedByEnabler;
+        return ECOBJECTS_STATUS_OperationNotSupported;
         
     PropertyP property;
     StatusInt status = GetClass()->GetProperty (property, propertyAccessString);
@@ -144,7 +148,7 @@ StatusInt Instance::ClearArray (const wchar_t * propertyAccessString)
     {
     IArrayManipulatorCP manipulator = dynamic_cast<IArrayManipulatorCP>(GetEnabler());
     if (NULL == manipulator)
-        return ECOBJECTS_STATUS_OperationNotSupportedByEnabler;
+        return ECOBJECTS_STATUS_OperationNotSupported;
         
     PropertyP property = NULL;
     StatusInt status = GetClass()->GetProperty (property, propertyAccessString);

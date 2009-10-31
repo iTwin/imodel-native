@@ -72,6 +72,7 @@
 			<File RelativePath="..\..\..\ecf\ecobjects\native\ECSchema.cpp"></File>
 			<File RelativePath="..\..\..\ecf\ecobjects\native\ECValue.cpp"></File>
 			<File RelativePath="..\..\..\ecf\ecobjects\native\MemoryLayout.cpp"></File>
+			<File RelativePath="..\..\..\ecf\ecobjects\native\StandaloneInstance.cpp"></File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -87,6 +88,7 @@
 			<File RelativePath="..\..\..\ecf\PublicApi\ECObjects\ECSchema.h"></File>
 			<File RelativePath="..\..\..\ecf\PublicApi\ECObjects\ECValue.h"></File>
 			<File RelativePath="..\..\..\ecf\PublicApi\ECObjects\MemoryLayout.h"></File>
+			<File RelativePath="..\..\..\ecf\PublicApi\ECObjects\StandaloneInstance.h"></File>
 		</Filter>
 		<Filter
 			Name="Resource Files"

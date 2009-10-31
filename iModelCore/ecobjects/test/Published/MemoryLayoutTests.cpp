@@ -98,12 +98,12 @@ void SetAndVerifyLong (InstanceR instance, ValueR v, wchar_t const * accessStrin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(MemoryLayoutTests, InstantiateMemoryInstance)
+TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
     {
     SchemaP schema = new Schema(L"t", L"TestSchema", 1, 0);    
     ClassP ecClass = new Class (L"TestClass", *schema);
     
-    MemoryInstance instance(*ecClass);
+    StandaloneInstance instance(*ecClass);
     wstring instanceID = instance.GetInstanceID();
     
     Value v;

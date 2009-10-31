@@ -43,6 +43,7 @@
 #include <ECObjects\ECSchema.h>
 #include <ECObjects\ECValue.h>
 #include <ECObjects\MemoryLayout.h>
+#include <ECObjects\StandaloneInstance.h>
 
 /*__PUBLISH_SECTION_END__*/
 #include <ECObjects\DesignByContract.h>

@@ -224,7 +224,7 @@ StatusInt       ClassLayout::SetClass (ClassCR ecClass)
     For a given array of fixed-sized values, the memory layout will be: count, nullflags, element, element, element
     ...and we have random access to the elements.
     
-    For an array of variable-sized values, we follow the same pattern as the overall MemoryInstance
+    For an array of variable-sized values, we follow the same pattern as the overall StandaloneInstance
     and have a fixed-sized section (an array of SecondaryOffsets) followed by a variable-sized section holding the actual values.
     For efficiency, when adding array elements, you really, really want to reserve them in advance, otherwise every
     new element increases the size of the fixed-sized section, forcing a shift of the entire variable-sized section.
@@ -375,88 +375,35 @@ StatusInt       ClassLayout::GetPropertyLayoutByIndex (PropertyLayoutCP & proper
     propertyLayout = &m_propertyLayouts[propertyIndex];
     return SUCCESS;
     }
-    
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-MemoryInstance::MemoryInstance (ClassCR ecClass) : Instance (GetEnablerForClass(ecClass)), 
-                                                   m_bytesAllocated(0), m_bytesUsed(0), m_data(NULL) 
+StatusInt       MemoryEnabler::CreateInstance (InstanceP& instance, ClassCR ecClass, wchar_t const * instanceId) const
     {
-    wchar_t id[256];
-    swprintf(id, sizeof(id)/sizeof(wchar_t), L"%s-0x%X", ecClass.GetName(), this);
-    m_instanceID = id;
+    instance = new StandaloneInstance (ecClass);
     
-    MemoryEnablerCP memoryEnabler = dynamic_cast<MemoryEnablerCP>(GetEnabler());
-    DEBUG_EXPECT (NULL != memoryEnabler && "Programmer Error: only use MemoryEnabler with the MemoryInstance");
-    
-    memoryEnabler->InitializeInstanceMemory (*this);
+    return SUCCESS;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-MemoryEnablerCR MemoryInstance::GetMemoryEnabler() const
+ClassLayoutCR   MemoryBasedInstance::GetClassLayout() const
     {
-    EnablerCP enabler = GetEnabler();
-    DEBUG_EXPECT (NULL != enabler);
-    return *(MemoryEnablerCP)enabler;
+    DEBUG_EXPECT (NULL != GetMemoryEnabler());
+    return GetMemoryEnabler()->GetClassLayout();
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-EnablerCR       MemoryInstance::GetEnablerForClass (ClassCR ecClass)
-    {
-    MemoryEnablerPtr enabler = MemoryEnabler::Create (ecClass); // WIP_FUSION: hack! We certainly don't want to create a new one every time... and we prefer to not have to even look it up, again
-    enabler->AddRef(); // WIP_FUSION: hack... 
-    return *enabler;
-    }    
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/    
-std::wstring    MemoryInstance::_GetInstanceID() const
-    {
-    return m_instanceID;
-    }
-       
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            MemoryInstance::AllocateBytes (UInt32 minimumBytesToAllocate)
-    {
-    DEBUG_EXPECT (0 == m_bytesAllocated);
-    DEBUG_EXPECT (NULL == m_data);
-    
-    // WIP_FUSION: add performance counter
-    m_data = (byte*)malloc(minimumBytesToAllocate);
-    m_bytesAllocated = minimumBytesToAllocate;
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            MemoryInstance::GrowAllocation (UInt32 bytesNeeded)
-    {
-    DEBUG_EXPECT (m_bytesAllocated > 0);
-    DEBUG_EXPECT (NULL != m_data);
-    // WIP_FUSION: add performance counter
-            
-    byte * data = (byte*)malloc(m_bytesAllocated + bytesNeeded); 
-    memcpy (data, m_data, m_bytesAllocated);
-    
-    free (m_data);
-    m_data = data;
-    m_bytesAllocated += bytesNeeded;
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-byte *          MemoryEnabler::GetAddressOfValue (IMemoryProvider const & memoryProvider, PropertyLayoutCR propertyLayout) const
+byte *          MemoryBasedInstance::GetAddressOfValue (PropertyLayoutCR propertyLayout) const
     {
     size_t offset = propertyLayout.GetOffset();
-        
-    byte * data = memoryProvider.GetData();
+    
+    byte * data = GetData();
     byte * pValue = data + offset;
     
     if (propertyLayout.IsFixedSized())
@@ -472,9 +419,9 @@ byte *          MemoryEnabler::GetAddressOfValue (IMemoryProvider const & memory
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       MemoryEnabler::EnsureSpaceIsAvailable (IMemoryProvider & memoryProvider, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded) const
+StatusInt       MemoryBasedInstance::EnsureSpaceIsAvailable (PropertyLayoutCR propertyLayout, UInt32 bytesNeeded)
     {
-    SecondaryOffset* pSecondaryOffset = (SecondaryOffset*)(memoryProvider.GetData() + propertyLayout.GetOffset());
+    SecondaryOffset* pSecondaryOffset = (SecondaryOffset*)(GetData() + propertyLayout.GetOffset());
     SecondaryOffset* pNextSecondaryOffset = pSecondaryOffset + 1;
     UInt32 availableBytes = *pNextSecondaryOffset - *pSecondaryOffset;
     
@@ -484,61 +431,62 @@ StatusInt       MemoryEnabler::EnsureSpaceIsAvailable (IMemoryProvider & memoryP
 #endif
     
     Int32 additionalBytesNeeded = bytesNeeded - availableBytes;
-    Int32 additionalBytesAvailable = memoryProvider.GetBytesAllocated() - memoryProvider.GetBytesUsed();
+    Int32 additionalBytesAvailable = GetBytesAllocated() - GetBytesUsed();
     
     if (additionalBytesNeeded > additionalBytesAvailable)
-        memoryProvider.GrowAllocation (additionalBytesNeeded);
+        GrowAllocation (additionalBytesNeeded);
     
-    memoryProvider.AdjustBytesUsed(additionalBytesNeeded);
+    AdjustBytesUsed(additionalBytesNeeded);
     
     ClassLayoutCR classLayout = GetClassLayout();
-    classLayout.ShiftValueData(memoryProvider.GetData(), propertyLayout, additionalBytesNeeded);
+    classLayout.ShiftValueData(GetData(), propertyLayout, additionalBytesNeeded);
     
     return SUCCESS;
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            MemoryEnabler::InitializeInstanceMemory (IMemoryProvider& memoryProvider) const
+void            MemoryBasedInstance::InitializeInstanceMemory ()
     {
-    DEBUG_EXPECT (NULL == memoryProvider.GetData());
+    DEBUG_EXPECT (NULL == GetData());
     
     ClassLayoutCR classLayout = GetClassLayout();
         
-    DEBUG_EXPECT (0 == memoryProvider.GetBytesUsed());    
+    DEBUG_EXPECT (0 == GetBytesUsed());    
     UInt32 bytesUsed = classLayout.GetSizeOfFixedSection();
     
-    memoryProvider.AdjustBytesUsed (bytesUsed);
-    memoryProvider.AllocateBytes (bytesUsed + 1024);
+    AdjustBytesUsed (bytesUsed);
+    AllocateBytes (bytesUsed + 1024);
     
-    UInt32 bytesAllocated = memoryProvider.GetBytesAllocated();
+    UInt32 bytesAllocated = GetBytesAllocated();
     DEBUG_EXPECT (bytesAllocated >= bytesUsed + 1024);
     
-    byte * data = memoryProvider.GetData();
+    byte * data = GetData();
     classLayout.InitializeMemoryForInstance (data, bytesAllocated);
     
     // WIP_FUSION: could initialize default values here.
     }
- 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       MemoryEnabler::GetValue (ValueR v, InstanceCR instance, wchar_t const * propertyAccessString,
-                            UInt32 nIndices, UInt32 const * indices) const
-    {
-    // WIP_FUSION: attempting an unsafe cast here caused problems. How expensive is this dynamic cast? Is there any way to avoid it? The ECInstance could cache it's value? Do it once and remember the offset from "this"?
-    IMemoryProvider const* memoryProvider = dynamic_cast<IMemoryProvider const*>(&instance);
-    PRECONDITION (NULL != memoryProvider && "Programmer Error: only use Instance implementing IMemoryProvider with the MemoryEnabler", ECOBJECTS_STATUS_PreconditionViolated);
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       MemoryBasedInstance::_GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+    {
+    PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
+    PRECONDITION (AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true), ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices);
+                
     // WIP_FUSION: check null flags first!
+    IMemoryProviderCR memoryProvider = *this;
 
     PropertyLayoutCP layout = NULL;
-    StatusInt status = m_classLayout.GetPropertyLayout (layout, propertyAccessString);
+    ClassLayoutCR classLayout = GetClassLayout();
+    StatusInt status = classLayout.GetPropertyLayout (layout, propertyAccessString);
     if (SUCCESS != status || NULL == layout)
         return ERROR; // WIP_FUSION ERROR_PropertyNotFound
         
-    byte * pValue = GetAddressOfValue (*memoryProvider, *layout);
+    byte * pValue = GetAddressOfValue (*layout);
     
     switch (layout->GetDataType())
         {
@@ -573,25 +521,26 @@ StatusInt       MemoryEnabler::GetValue (ValueR v, InstanceCR instance, wchar_t 
     
     POSTCONDITION (false && "datatype not implemented", ERROR);
     }
-    
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
+* @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       MemoryEnabler::SetValue (InstanceR instance, wchar_t const * propertyAccessString, ValueCR v,
-                                   UInt32 nIndices, UInt32 const * indices) const
+StatusInt       MemoryBasedInstance::_SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices, UInt32 const * indices)
     {
-    IMemoryProvider* memoryProvider = dynamic_cast<IMemoryProvider*>(&instance);
-    PRECONDITION (NULL != memoryProvider && "Programmer Error: only use Instance implementing IMemoryProvider with the MemoryEnabler", ECOBJECTS_STATUS_PreconditionViolated);
+    PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
+    PRECONDITION (AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true), ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices);
+                
+    IMemoryProviderR memoryProvider = *this;
 
     PropertyLayoutCP layout = NULL;
-    StatusInt status = m_classLayout.GetPropertyLayout (layout, propertyAccessString); // WIP_FUSION: If it only has one error, let it just return null
+    ClassLayoutCR classLayout = GetClassLayout();
+    StatusInt status = classLayout.GetPropertyLayout (layout, propertyAccessString); // WIP_FUSION: If it only has one error, let it just return null
     if (SUCCESS != status || NULL == layout)
         return ERROR; // WIP_FUSION ERROR_PropertyNotFound
         
     if (layout->GetDataType() != v.GetDataType())
         return ERROR; // WIP_FUSION ERROR_DataTypeMismatch
     
-    byte * pValue = GetAddressOfValue (*memoryProvider, *layout);
+    byte * pValue = GetAddressOfValue (*layout);
     
     switch (layout->GetDataType())
         {
@@ -618,7 +567,7 @@ StatusInt       MemoryEnabler::SetValue (InstanceR instance, wchar_t const * pro
             wchar_t const * value = v.GetString();
             UInt32 bytesNeeded = (UInt32)(sizeof(wchar_t) * (wcslen(value) + 1));
             
-            StatusInt status = EnsureSpaceIsAvailable (*memoryProvider, *layout, bytesNeeded);
+            StatusInt status = EnsureSpaceIsAvailable (*layout, bytesNeeded);
             if (SUCCESS != status)
                 return status;
                 
@@ -637,14 +586,5 @@ StatusInt       MemoryEnabler::SetValue (InstanceR instance, wchar_t const * pro
     return SUCCESS;
     }        
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       MemoryEnabler::CreateInstance (InstanceP& instance, ClassCR ecClass, wchar_t const * instanceId) const
-    {
-    instance = new MemoryInstance (ecClass);
-    
-    return SUCCESS;
-    }
 
 END_BENTLEY_EC_NAMESPACE

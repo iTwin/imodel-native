@@ -23,28 +23,27 @@ BEGIN_BENTLEY_EC_NAMESPACE
 struct Instance
     {
 private:
-    //WIP_FUSION AccessStringAndNIndicesAgree should move to AccessStringHelper struct... along with method to convert to/from .NET ECObjects style accessString
-    static bool AccessStringAndNIndicesAgree (const wchar_t * propertyAccessString, UInt32 nIndices, bool assertIfFalse);
-    
 protected:    
-    EnablerCP         m_enabler;
-    
-    ECOBJECTS_EXPORT Instance() {}; // WIP_FUSION: Should this go away? Force caller to provide the enabler and class
+    //WIP_FUSION AccessStringAndNIndicesAgree should move to AccessStringHelper struct... along with method to convert to/from .NET ECObjects style accessString
+    ECOBJECTS_EXPORT static bool AccessStringAndNIndicesAgree (const wchar_t * propertyAccessString, UInt32 nIndices, bool assertIfFalse);
+    ECOBJECTS_EXPORT Instance(); 
     ECOBJECTS_EXPORT virtual std::wstring _GetInstanceID() const = 0; // Virtual and returning std::wstring because a subclass may want to calculate it on demand
-
-public:
-    ECOBJECTS_EXPORT Instance(EnablerCR enabler);
+    ECOBJECTS_EXPORT virtual StatusInt    _GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const = 0;
+    ECOBJECTS_EXPORT virtual StatusInt    _SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices = 0, UInt32 const * indices = NULL) = 0;
+    ECOBJECTS_EXPORT virtual EnablerCP    _GetEnabler() const = 0; // WIP_FUSION: Should this return an EnablerCR?
+    ECOBJECTS_EXPORT virtual bool         _IsReadOnly() const = 0;
     
-    ECOBJECTS_EXPORT inline  EnablerCP    GetEnabler() const { return m_enabler; };    
-    // WIP_FUSION: convert all of the exported virtual methods to use the pattern where the virtual method is like _GetInstanceID and the exported method is inline but calls the virtual method.
+public:
+    ECOBJECTS_EXPORT EnablerCP            GetEnabler() const; // WIP_FUSION: Should this return an EnablerCR?
     ECOBJECTS_EXPORT std::wstring         GetInstanceID() const;
     ECOBJECTS_EXPORT bool                 IsReadOnly() const;
     
-    ECOBJECTS_EXPORT inline ClassCP       GetClass() const;
-    
+    ECOBJECTS_EXPORT ClassCP              GetClass() const;
     ECOBJECTS_EXPORT StatusInt            GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
     ECOBJECTS_EXPORT StatusInt            SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices = 0, UInt32 const * indices = NULL);
-    
+    ECOBJECTS_EXPORT StatusInt            GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 index);
+    ECOBJECTS_EXPORT StatusInt            SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 index);
+        
     StatusInt   InsertArrayElement (const wchar_t * propertyAccessString, ValueCR v, UInt32 index); //WIP_FUSION Return the new count?
     StatusInt   RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index); //WIP_FUSION return the removed one? YAGNI? Return the new count?
     StatusInt   ClearArray (const wchar_t * propertyAccessString);    
