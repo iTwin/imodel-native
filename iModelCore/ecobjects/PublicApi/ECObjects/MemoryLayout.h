@@ -64,6 +64,7 @@ public:
 +===============+===============+===============+===============+===============+======*/      
 struct ClassLayout
     {
+    friend MemoryBasedInstance;
 private:
     struct StringComparer {bool operator()(wchar_t const * s1, wchar_t const * s2) const   {return wcscmp (s1, s2) < 0;}};
     typedef std::map<wchar_t const *, PropertyLayoutCP, StringComparer> PropertyLayoutLookup;
