@@ -131,6 +131,15 @@ TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
     VerifyInteger (instance, v, L"AA", 12);
     VerifyString  (instance, v, L"B", L"Very Very Happy");
         
+        
+    wchar_t largeString[3300];
+    largeString[0] = L'\0';
+    for (int i = 0; i < 100; i++)
+        wcscat (largeString, L"S2345678901234567890123456789012");
+    
+    size_t len = wcslen(largeString);
+    SetAndVerifyString (instance, v, L"S", largeString);
+           
 #if later        
     // array of ints
     UInt32 indices[1];

@@ -514,7 +514,12 @@ StatusInt       MemoryBasedInstance::_GetValue (ValueR v, const wchar_t * proper
         case DATATYPE_String:
             {
             wchar_t * pString = (wchar_t *)pValue;
-            v.SetString (pString);
+            v.SetString (pString, false); // WIP_FUSION: We are passing false for "makeDuplicateCopy" to avoid the allocation 
+                                          // and copying... but how do make the caller aware of this? When do they need 
+                                          // to be aware. The wchar_t* they get back would get invalidated if the 
+                                          // XAttribute or other IMemoryProvider got reallocated, or the string got moved.
+                                          // The caller must immediately use (e.g. marshal or copy) the returned value.
+                                          // Optionally, the caller could ask the EC::Value to make a duplicate? 
             return SUCCESS;            
             }
         }
@@ -570,6 +575,8 @@ StatusInt       MemoryBasedInstance::_SetValue (const wchar_t * propertyAccessSt
             StatusInt status = EnsureSpaceIsAvailable (*layout, bytesNeeded);
             if (SUCCESS != status)
                 return status;
+                
+            byte * pValue = GetAddressOfValue (*layout); // WIP_FUSION: only recalculate if EnsureSpaceIsAvailable returns status indicating that a reallocation happened
                 
             wchar_t * pString = (wchar_t *)pValue;
             memcpy (pString, value, bytesNeeded);

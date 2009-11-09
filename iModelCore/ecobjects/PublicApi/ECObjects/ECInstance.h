@@ -41,21 +41,18 @@ public:
     ECOBJECTS_EXPORT ClassCP              GetClass() const;
     ECOBJECTS_EXPORT StatusInt            GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
     ECOBJECTS_EXPORT StatusInt            SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices = 0, UInt32 const * indices = NULL);
-    ECOBJECTS_EXPORT StatusInt            GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 index);
+    ECOBJECTS_EXPORT StatusInt            GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 index) const;
     ECOBJECTS_EXPORT StatusInt            SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 index);
         
     StatusInt   InsertArrayElement (const wchar_t * propertyAccessString, ValueCR v, UInt32 index); //WIP_FUSION Return the new count?
     StatusInt   RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index); //WIP_FUSION return the removed one? YAGNI? Return the new count?
     StatusInt   ClearArray (const wchar_t * propertyAccessString);    
     
-#ifdef WIP_FUSION_MANAGEDACCESS
     // These are more than just convenience methods... they enable an access pattern 
-    // from managed code that can get a value with only one managed to native transition
-    StatusInt GetDouble (double value, const wchar_t * propertyAccessString); // marshal as few args as possible 
-    StatusInt GetDouble (double value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices); // marshal as few args as possible 
-    // WIP_FUSION: experiment with the best way to return strings in one shot
-#endif
-
+    // from managed code that can get a value with only one managed to native transition    
+    ECOBJECTS_EXPORT StatusInt GetInteger (int & value, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
+    ECOBJECTS_EXPORT StatusInt GetDouble (double & value, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
+    ECOBJECTS_EXPORT StatusInt GetString (const wchar_t * & value, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
     };
     
 //! EC::RelationshipInstance is the native equivalent of a .NET IECRelationshipInstance.

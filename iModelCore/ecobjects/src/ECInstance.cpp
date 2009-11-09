@@ -94,7 +94,7 @@ StatusInt            Instance::SetValue (const wchar_t * propertyAccessString, V
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StatusInt            Instance::GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 index)
+StatusInt            Instance::GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 index) const
     {
     return _GetValue (v, propertyAccessString, 1, &index);
     }
@@ -106,7 +106,42 @@ StatusInt            Instance::SetValue (const wchar_t * propertyAccessString, V
     {
     return _SetValue (propertyAccessString, v, 1, &index);
     }
-            
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/        
+StatusInt Instance::GetInteger (int & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+    {
+    Value v;
+    StatusInt status = _GetValue (v, propertyAccessString, 0, NULL);
+    value = v.GetInteger();
+    
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/                
+StatusInt Instance::GetDouble (double& value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+    {
+    Value v;
+    StatusInt status = _GetValue (v, propertyAccessString, 0, NULL);
+    value = v.GetDouble();
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/       
+StatusInt Instance::GetString (const wchar_t * & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+    {
+    Value v;
+    StatusInt status = _GetValue (v, propertyAccessString, 0, NULL);
+    value = v.GetString();
+
+    return status;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
