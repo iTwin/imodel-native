@@ -107,6 +107,9 @@ private:
     //! @param shiftBy    Positive or negative! Memory will be moved and SecondaryOffsets will be adjusted by this amount
     void                    ShiftValueData(byte * data, PropertyLayoutCR propertyLayout, Int32 shiftBy) const;    
     
+    //! Determines the number of bytes used, so far
+    UInt32                  GetBytesUsed(byte const * data) const;
+    
 public:
     ClassLayout() : m_state(AcceptingFixedSizeProperties), 
                     m_perFileClassID(0), 
@@ -135,7 +138,8 @@ struct ClassLayoutRegistry
 //! @see MemoryEnabler, Instance
 struct IMemoryProvider
     {
-protected:    
+protected:
+    virtual bool    IsMemoryInitialized () const = 0;    
     //! Get a pointer to the first byte of the data    
     virtual byte *  GetData () const = 0;
     virtual UInt32  GetBytesUsed () const = 0;
@@ -193,15 +197,17 @@ struct MemoryBasedInstance : Instance, IMemoryProvider
     {
 private:    
 
-    ClassLayoutCR       GetClassLayout() const;
     byte *              GetAddressOfValue (PropertyLayoutCR propertyLayout) const;
     StatusInt           EnsureSpaceIsAvailable (PropertyLayoutCR propertyLayout, UInt32 bytesNeeded);
+    ClassLayoutCR       GetClassLayout() const;
          
 protected:
     ECOBJECTS_EXPORT void               InitializeInstanceMemory ();
-    ECOBJECTS_EXPORT virtual MemoryEnablerCP GetMemoryEnabler() const = 0;
+    ECOBJECTS_EXPORT UInt32             GetBytesUsedFromInstanceMemory(byte const * data) const;
+    
     ECOBJECTS_EXPORT virtual StatusInt  _GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const override;
     ECOBJECTS_EXPORT virtual StatusInt  _SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices, UInt32 const * indices) override;      
+    ECOBJECTS_EXPORT virtual MemoryEnablerCP GetMemoryEnabler() const = 0;
     };
 
 END_BENTLEY_EC_NAMESPACE

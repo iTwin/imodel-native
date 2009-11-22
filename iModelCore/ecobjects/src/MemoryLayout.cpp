@@ -151,6 +151,18 @@ void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 byt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
+UInt32          ClassLayout::GetBytesUsed(byte const * data) const
+    {
+    DEBUG_EXPECT (m_sizeOfFixedSection > 0 && "The ClassLayout has not been initialized");
+    SecondaryOffset * pLast = (SecondaryOffset*)(data + m_sizeOfFixedSection - sizeof(SecondaryOffset));
+    
+    // pLast is the last offset, pointing to one byte beyond the used space, so it is equal to the number of bytes used, so far
+    return *pLast;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/
 void            ClassLayout::ShiftValueData(byte * data, PropertyLayoutCR propertyLayout, Int32 shiftBy) const
     {
     DEBUG_EXPECT (!propertyLayout.IsFixedSized() && "The propertyLayout should be that of the variable-sized property whose size is increasing");
@@ -450,15 +462,15 @@ StatusInt       MemoryBasedInstance::EnsureSpaceIsAvailable (PropertyLayoutCR pr
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            MemoryBasedInstance::InitializeInstanceMemory ()
     {
-    DEBUG_EXPECT (NULL == GetData());
+    DEBUG_EXPECT (!IsMemoryInitialized());
     
     ClassLayoutCR classLayout = GetClassLayout();
         
     DEBUG_EXPECT (0 == GetBytesUsed());    
     UInt32 bytesUsed = classLayout.GetSizeOfFixedSection();
     
+    AllocateBytes (bytesUsed + 1024); // AllocateBytes must preceed AdjustBytesUsed because AllocateBytes may be initializing a new XAttribute
     AdjustBytesUsed (bytesUsed);
-    AllocateBytes (bytesUsed + 1024);
     
     UInt32 bytesAllocated = GetBytesAllocated();
     DEBUG_EXPECT (bytesAllocated >= bytesUsed + 1024);
@@ -468,7 +480,14 @@ void            MemoryBasedInstance::InitializeInstanceMemory ()
     
     // WIP_FUSION: could initialize default values here.
     }
-
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32          MemoryBasedInstance::GetBytesUsedFromInstanceMemory(byte const * data) const
+    {
+    return GetClassLayout().GetBytesUsed (data);
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -552,7 +571,7 @@ StatusInt       MemoryBasedInstance::_SetValue (const wchar_t * propertyAccessSt
         case DATATYPE_Integer32:
             {
             Int32 value = v.GetInteger();
-            memcpy (pValue, &value, sizeof(value));
+            memcpy (pValue, &value, sizeof(value)); //ModifyMemory (offset...
             return SUCCESS;
             }
         case DATATYPE_Long64:
