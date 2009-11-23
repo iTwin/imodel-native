@@ -27,18 +27,19 @@ private:
     // WIP_FUSION: Unpublish most/all of this?
      
 public: // These two must be public so that XDataEnabler can get at the guts of Standalone to copy it into and XAttribute     
-    ECOBJECTS_EXPORT virtual byte *   GetData () const;
-    ECOBJECTS_EXPORT virtual UInt32   GetBytesAllocated () const;
+    ECOBJECTS_EXPORT virtual byte const * GetDataForRead () const;
+    ECOBJECTS_EXPORT virtual UInt32       GetBytesAllocated () const;
     
 private:
-    virtual bool     IsMemoryInitialized () const;    
-    virtual UInt32   GetBytesUsed () const;
-    virtual void     AdjustBytesUsed (Int32 adjustment);
-    virtual void     SetBytesUsed (UInt32 nBytes);
-    virtual void     ShrinkAllocation (UInt32 newAllocation);
-    virtual void     FreeAllocation ();
-    virtual void     AllocateBytes (UInt32 minimumBytesToAllocate);
-    virtual void     GrowAllocation (UInt32 bytesNeeded);        
+    virtual bool      IsMemoryInitialized () const;
+    virtual byte *    GetDataForWrite () const;
+    virtual StatusInt ModifyData (UInt32 offset, void const * newData, UInt32 dataLength);    
+    virtual UInt32    GetBytesUsed () const;
+    virtual void      AdjustBytesUsed (Int32 adjustment);
+    virtual void      ShrinkAllocation (UInt32 newAllocation);
+    virtual void      FreeAllocation ();
+    virtual void      AllocateBytes (UInt32 minimumBytesToAllocate);
+    virtual void      GrowAllocation (UInt32 bytesNeeded);        
     
 protected:
     ECOBJECTS_EXPORT virtual EnablerCP       _GetEnabler() const override;

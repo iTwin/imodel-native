@@ -411,12 +411,12 @@ ClassLayoutCR   MemoryBasedInstance::GetClassLayout() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-byte *          MemoryBasedInstance::GetAddressOfValue (PropertyLayoutCR propertyLayout) const
+byte const *    MemoryBasedInstance::GetAddressOfValue (PropertyLayoutCR propertyLayout) const
     {
-    size_t offset = propertyLayout.GetOffset();
+    UInt32 offset = propertyLayout.GetOffset();
     
-    byte * data = GetData();
-    byte * pValue = data + offset;
+    byte const * data = GetDataForRead();
+    byte const * pValue = data + offset;
     
     if (propertyLayout.IsFixedSized())
         return pValue;
@@ -427,13 +427,32 @@ byte *          MemoryBasedInstance::GetAddressOfValue (PropertyLayoutCR propert
     pValue = data + secondaryOffset;
     return pValue;
     }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32          MemoryBasedInstance::GetOffsetOfValue (PropertyLayoutCR propertyLayout) const
+    {
+    UInt32 offset = propertyLayout.GetOffset();
+    
+    if (propertyLayout.IsFixedSized())
+        return offset;
+
+    byte const * data = GetDataForRead();
+    byte const * pValue = data + offset;
+        
+    SecondaryOffset secondaryOffset = (SecondaryOffset)(*pValue);
+    DEBUG_EXPECT (0 != secondaryOffset && "The instance is not initialized!");
+    
+    return secondaryOffset;
+    }    
         
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       MemoryBasedInstance::EnsureSpaceIsAvailable (PropertyLayoutCR propertyLayout, UInt32 bytesNeeded)
     {
-    SecondaryOffset* pSecondaryOffset = (SecondaryOffset*)(GetData() + propertyLayout.GetOffset());
+    SecondaryOffset* pSecondaryOffset = (SecondaryOffset*)(GetDataForRead() + propertyLayout.GetOffset());
     SecondaryOffset* pNextSecondaryOffset = pSecondaryOffset + 1;
     UInt32 availableBytes = *pNextSecondaryOffset - *pSecondaryOffset;
     
@@ -451,7 +470,7 @@ StatusInt       MemoryBasedInstance::EnsureSpaceIsAvailable (PropertyLayoutCR pr
     AdjustBytesUsed(additionalBytesNeeded);
     
     ClassLayoutCR classLayout = GetClassLayout();
-    classLayout.ShiftValueData(GetData(), propertyLayout, additionalBytesNeeded);
+    classLayout.ShiftValueData(GetDataForWrite(), propertyLayout, additionalBytesNeeded);
     
     return SUCCESS;
     }
@@ -475,7 +494,7 @@ void            MemoryBasedInstance::InitializeInstanceMemory ()
     UInt32 bytesAllocated = GetBytesAllocated();
     DEBUG_EXPECT (bytesAllocated >= bytesUsed + 1024);
     
-    byte * data = GetData();
+    byte * data = GetDataForWrite();
     classLayout.InitializeMemoryForInstance (data, bytesAllocated);
     
     // WIP_FUSION: could initialize default values here.
@@ -505,7 +524,7 @@ StatusInt       MemoryBasedInstance::_GetValue (ValueR v, const wchar_t * proper
     if (SUCCESS != status || NULL == layout)
         return ERROR; // WIP_FUSION ERROR_PropertyNotFound
         
-    byte * pValue = GetAddressOfValue (*layout);
+    byte const * pValue = GetAddressOfValue (*layout);
     
     switch (layout->GetDataType())
         {
@@ -564,27 +583,24 @@ StatusInt       MemoryBasedInstance::_SetValue (const wchar_t * propertyAccessSt
     if (layout->GetDataType() != v.GetDataType())
         return ERROR; // WIP_FUSION ERROR_DataTypeMismatch
     
-    byte * pValue = GetAddressOfValue (*layout);
+    UInt32 offset = GetOffsetOfValue (*layout);
     
     switch (layout->GetDataType())
         {
         case DATATYPE_Integer32:
             {
             Int32 value = v.GetInteger();
-            memcpy (pValue, &value, sizeof(value)); //ModifyMemory (offset...
-            return SUCCESS;
+            return ModifyData (offset, &value, sizeof(value));
             }
         case DATATYPE_Long64:
             {
             Int64 value = v.GetLong();
-            memcpy (pValue, &value, sizeof(value));
-            return SUCCESS;
+            return ModifyData (offset, &value, sizeof(value));
             }
         case DATATYPE_Double:
             {
             double value = v.GetDouble();
-            memcpy (pValue, &value, sizeof(value));
-            return SUCCESS;
+            return ModifyData (offset, &value, sizeof(value));
             }       
         case DATATYPE_String:
             {
@@ -595,12 +611,7 @@ StatusInt       MemoryBasedInstance::_SetValue (const wchar_t * propertyAccessSt
             if (SUCCESS != status)
                 return status;
                 
-            byte * pValue = GetAddressOfValue (*layout); // WIP_FUSION: only recalculate if EnsureSpaceIsAvailable returns status indicating that a reallocation happened
-                
-            wchar_t * pString = (wchar_t *)pValue;
-            memcpy (pString, value, bytesNeeded);
-
-            return SUCCESS;            
+            return ModifyData (offset, value, bytesNeeded);
             }
         default:
             {

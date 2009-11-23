@@ -81,11 +81,32 @@ bool            StandaloneInstance::IsMemoryInitialized () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-byte *          StandaloneInstance::GetData () const
+byte const *    StandaloneInstance::GetDataForRead () const
     {
     return m_data;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+byte *          StandaloneInstance::GetDataForWrite () const
+    {
+    return m_data;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       StandaloneInstance::ModifyData (UInt32 offset, void const * newData, UInt32 dataLength)
+    {
+    PRECONDITION (NULL != m_data, ERROR);
+    PRECONDITION (offset + dataLength <= m_bytesAllocated, ERROR); //WIP_FUSION ERROR_MemoryBoundsOverrun
+    byte * dest = m_data + offset;
+    memcpy (dest, newData, dataLength);
+    
+    return SUCCESS;
+    }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -100,14 +121,6 @@ UInt32          StandaloneInstance::GetBytesUsed () const
 void            StandaloneInstance::AdjustBytesUsed (Int32 adjustment)
     {
     m_bytesUsed += adjustment;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            StandaloneInstance::SetBytesUsed (UInt32 nBytes)
-    {
-    m_bytesUsed = nBytes;
     }
 
 /*---------------------------------------------------------------------------------**//**

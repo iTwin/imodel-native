@@ -1,4 +1,3 @@
-
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: ecobjects/nativeatp/Published/MemoryLayoutTests.cpp $
