@@ -11,7 +11,7 @@
 #include <ECObjects\ECObjects.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
-    
+
 //! EC::Instance is the native equivalent of a .NET IECInstance.
 //! Unlike IECInstance, it is not a pure interface, but is a concrete struct.
 //! Whereas in .NET, one might implement IECInstance, or use the "Lightweight" system
@@ -24,8 +24,6 @@ struct Instance
     {
 private:
 protected:    
-    //WIP_FUSION AccessStringAndNIndicesAgree should move to AccessStringHelper struct... along with method to convert to/from .NET ECObjects style accessString
-    ECOBJECTS_EXPORT static bool AccessStringAndNIndicesAgree (const wchar_t * propertyAccessString, UInt32 nIndices, bool assertIfFalse);
     ECOBJECTS_EXPORT Instance(); 
     ECOBJECTS_EXPORT virtual std::wstring _GetInstanceID() const = 0; // Virtual and returning std::wstring because a subclass may want to calculate it on demand
     ECOBJECTS_EXPORT virtual StatusInt    _GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const = 0;
@@ -47,6 +45,9 @@ public:
     StatusInt   InsertArrayElement (const wchar_t * propertyAccessString, ValueCR v, UInt32 index); //WIP_FUSION Return the new count?
     StatusInt   RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index); //WIP_FUSION return the removed one? YAGNI? Return the new count?
     StatusInt   ClearArray (const wchar_t * propertyAccessString);    
+    
+    //WIP_FUSION AccessStringAndNIndicesAgree should move to AccessStringHelper struct... along with method to convert to/from .NET ECObjects style accessString
+    ECOBJECTS_EXPORT static bool          AccessStringAndNIndicesAgree (const wchar_t * propertyAccessString, UInt32 nIndices, bool assertIfFalse);
     
     // These are more than just convenience methods... they enable an access pattern 
     // from managed code that can get a value with only one managed to native transition    

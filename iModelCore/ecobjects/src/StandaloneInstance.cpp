@@ -178,4 +178,20 @@ void            StandaloneInstance::GrowAllocation (UInt32 bytesNeeded)
     m_bytesAllocated += bytesNeeded;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       StandaloneInstance::_GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+    {
+    return GetValueFromMemory (v, propertyAccessString, nIndices, indices);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       StandaloneInstance::_SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices, UInt32 const * indices)
+    {
+    return SetValueToMemory (propertyAccessString, v, nIndices, indices);
+    }
+    
 END_BENTLEY_EC_NAMESPACE

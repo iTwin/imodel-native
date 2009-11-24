@@ -53,7 +53,7 @@ $(o)ecvalue.obj         : $(baseDir)ecvalue.cpp $(ECObjectsHeaders) ${MultiCompi
 
 $(o)ecenabler.obj       : $(baseDir)ecenabler.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)MemoryLayout.obj    : $(baseDir)MemoryLayout.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)MemoryLayout.h
+$(o)MemoryInstanceSupport.obj : $(baseDir)MemoryInstanceSupport.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)MemoryInstanceSupport.h
 
 $(o)StandaloneInstance.obj    : $(baseDir)StandaloneInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)StandaloneInstance.h
 

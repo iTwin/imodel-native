@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/ECObjects/MemoryLayout.h $
+|     $Source: PublicApi/ECObjects/MemoryInstanceSupport.h $
 |
 |   $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -11,7 +11,7 @@
 #include <ECObjects\ECObjects.h>
 
 EC_TYPEDEFS(IMemoryProvider);
-EC_TYPEDEFS(MemoryBasedInstance);
+EC_TYPEDEFS(MemoryInstanceSupport);
 EC_TYPEDEFS(MemoryEnabler);
 
 BEGIN_BENTLEY_EC_NAMESPACE
@@ -64,7 +64,7 @@ public:
 +===============+===============+===============+===============+===============+======*/      
 struct ClassLayout
     {
-    friend MemoryBasedInstance;
+    friend MemoryInstanceSupport;
 private:
     struct StringComparer {bool operator()(wchar_t const * s1, wchar_t const * s2) const   {return wcscmp (s1, s2) < 0;}};
     typedef std::map<wchar_t const *, PropertyLayoutCP, StringComparer> PropertyLayoutLookup;
@@ -102,7 +102,7 @@ private:
     //! Shifts the values' data and adjusts SecondaryOffsets for all variable-sized property values 
     //! AFTER the given one, to make room for additional bytes needed for the property value of the given PropertyLayout
     //! or to "compact" to reclaim unused space.
-    //! @param data                     Start of the data of the MemoryBasedInstance
+    //! @param data                     Start of the data of the MemoryInstanceSupport
     //! @param propertyLayout           PropertyLayout of the variable-sized property whose size is increasing
     //! @param shiftBy    Positive or negative! Memory will be moved and SecondaryOffsets will be adjusted by this amount
     void                    ShiftValueData(byte * data, PropertyLayoutCR propertyLayout, Int32 shiftBy) const;    
@@ -195,7 +195,7 @@ public:
     };
 
 //! Base class for ECInstances that get/set values from a block of memory
-struct MemoryBasedInstance : Instance, IMemoryProvider
+struct MemoryInstanceSupport : IMemoryProvider
     {
 private:    
 
@@ -208,8 +208,8 @@ protected:
     ECOBJECTS_EXPORT void               InitializeInstanceMemory ();
     ECOBJECTS_EXPORT UInt32             GetBytesUsedFromInstanceMemory(byte const * data) const;
     
-    ECOBJECTS_EXPORT virtual StatusInt  _GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const override;
-    ECOBJECTS_EXPORT virtual StatusInt  _SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices, UInt32 const * indices) override;      
+    ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const;
+    ECOBJECTS_EXPORT StatusInt  SetValueToMemory (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices, UInt32 const * indices);      
     ECOBJECTS_EXPORT virtual MemoryEnablerCP GetMemoryEnabler() const = 0;
     };
 

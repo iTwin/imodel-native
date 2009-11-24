@@ -15,7 +15,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 //! EC::StandaloneInstance is the native equivalent of a .NET "Heavyweight" ECInstance.
 //! It holds the values in memory that it allocates... laid out according to the ClassLayout
 //! @see MemoryEnabler, Instance
-struct StandaloneInstance : MemoryBasedInstance
+struct StandaloneInstance : Instance, MemoryInstanceSupport
     {
 private:
     MemoryEnablerPtr m_enabler; 
@@ -46,9 +46,10 @@ protected:
     ECOBJECTS_EXPORT virtual MemoryEnablerCP GetMemoryEnabler() const override;
     
     ECOBJECTS_EXPORT virtual std::wstring    _GetInstanceID() const override;
- 
     ECOBJECTS_EXPORT virtual bool            _IsReadOnly() const override;        
-
+    ECOBJECTS_EXPORT virtual StatusInt       _GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const override;
+    ECOBJECTS_EXPORT virtual StatusInt       _SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices, UInt32 const * indices) override;      
+        
 public:
     ECOBJECTS_EXPORT StandaloneInstance (MemoryEnablerCR enabler);
     ECOBJECTS_EXPORT StandaloneInstance (ClassCR ecClass);

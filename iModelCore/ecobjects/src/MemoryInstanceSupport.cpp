@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/native/MemoryLayout.cpp $
+|     $Source: ecobjects/native/MemoryInstanceSupport.cpp $
 |
 |   $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -264,8 +264,8 @@ StatusInt       ClassLayout::SetClass (ClassCR ecClass)
     
     FinishLayout ();
     
-    wprintf (L"ECClass name=%s\n", ecClass.GetName());
-    Dump();
+    //wprintf (L"ECClass name=%s\n", ecClass.GetName());
+    //Dump();
     
     return SUCCESS;
     }
@@ -402,7 +402,7 @@ StatusInt       MemoryEnabler::CreateInstance (InstanceP& instance, ClassCR ecCl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutCR   MemoryBasedInstance::GetClassLayout() const
+ClassLayoutCR   MemoryInstanceSupport::GetClassLayout() const
     {
     DEBUG_EXPECT (NULL != GetMemoryEnabler());
     return GetMemoryEnabler()->GetClassLayout();
@@ -411,7 +411,7 @@ ClassLayoutCR   MemoryBasedInstance::GetClassLayout() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-byte const *    MemoryBasedInstance::GetAddressOfValue (PropertyLayoutCR propertyLayout) const
+byte const *    MemoryInstanceSupport::GetAddressOfValue (PropertyLayoutCR propertyLayout) const
     {
     UInt32 offset = propertyLayout.GetOffset();
     
@@ -431,7 +431,7 @@ byte const *    MemoryBasedInstance::GetAddressOfValue (PropertyLayoutCR propert
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          MemoryBasedInstance::GetOffsetOfValue (PropertyLayoutCR propertyLayout) const
+UInt32          MemoryInstanceSupport::GetOffsetOfValue (PropertyLayoutCR propertyLayout) const
     {
     UInt32 offset = propertyLayout.GetOffset();
     
@@ -450,7 +450,7 @@ UInt32          MemoryBasedInstance::GetOffsetOfValue (PropertyLayoutCR property
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       MemoryBasedInstance::EnsureSpaceIsAvailable (PropertyLayoutCR propertyLayout, UInt32 bytesNeeded)
+StatusInt       MemoryInstanceSupport::EnsureSpaceIsAvailable (PropertyLayoutCR propertyLayout, UInt32 bytesNeeded)
     {
     SecondaryOffset* pSecondaryOffset = (SecondaryOffset*)(GetDataForRead() + propertyLayout.GetOffset());
     SecondaryOffset* pNextSecondaryOffset = pSecondaryOffset + 1;
@@ -479,7 +479,7 @@ StatusInt       MemoryBasedInstance::EnsureSpaceIsAvailable (PropertyLayoutCR pr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            MemoryBasedInstance::InitializeInstanceMemory ()
+void            MemoryInstanceSupport::InitializeInstanceMemory ()
     {
     DEBUG_EXPECT (!IsMemoryInitialized());
     
@@ -503,17 +503,17 @@ void            MemoryBasedInstance::InitializeInstanceMemory ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          MemoryBasedInstance::GetBytesUsedFromInstanceMemory(byte const * data) const
+UInt32          MemoryInstanceSupport::GetBytesUsedFromInstanceMemory(byte const * data) const
     {
     return GetClassLayout().GetBytesUsed (data);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       MemoryBasedInstance::_GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+StatusInt       MemoryInstanceSupport::GetValueFromMemory (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
     {
     PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
-    PRECONDITION (AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true), ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices);
+    PRECONDITION (Instance::AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true), ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices);
                 
     // WIP_FUSION: check null flags first!
     IMemoryProviderCR memoryProvider = *this;
@@ -567,10 +567,10 @@ StatusInt       MemoryBasedInstance::_GetValue (ValueR v, const wchar_t * proper
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       MemoryBasedInstance::_SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices, UInt32 const * indices)
+StatusInt       MemoryInstanceSupport::SetValueToMemory (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices, UInt32 const * indices)
     {
     PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
-    PRECONDITION (AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true), ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices);
+    PRECONDITION (Instance::AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true), ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices);
                 
     IMemoryProviderR memoryProvider = *this;
 
