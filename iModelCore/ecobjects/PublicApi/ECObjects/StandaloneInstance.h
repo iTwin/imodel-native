@@ -24,16 +24,22 @@ private:
     byte *           m_data;
     UInt32           m_bytesUsed;            
     UInt32           m_bytesAllocated;
+    // WIP_FUSION: Unpublish most/all of this?
      
-    virtual byte *   GetData () const                    { return m_data; };
-    virtual UInt32   GetBytesUsed () const               { return m_bytesUsed; };
-    virtual void     AdjustBytesUsed (Int32 adjustment)  { m_bytesUsed += adjustment; };
-    virtual void     SetBytesUsed (UInt32 nBytes)        { m_bytesUsed = nBytes; };
-    virtual UInt32   GetBytesAllocated () const          { return m_bytesAllocated; };
-    virtual void     ShrinkAllocation (UInt32 newAllocation) {}; // WIP_FUSION: needs implementation
-    virtual void     FreeAllocation ()                   { free (m_data); m_data = NULL; };
-    virtual void     AllocateBytes (UInt32 minimumBytesToAllocate);
-    virtual void     GrowAllocation (UInt32 bytesNeeded);        
+public: // These two must be public so that XDataEnabler can get at the guts of Standalone to copy it into and XAttribute     
+    ECOBJECTS_EXPORT virtual byte const * GetDataForRead () const;
+    ECOBJECTS_EXPORT virtual UInt32       GetBytesAllocated () const;
+    
+private:
+    virtual bool      IsMemoryInitialized () const;
+    virtual byte *    GetDataForWrite () const;
+    virtual StatusInt ModifyData (UInt32 offset, void const * newData, UInt32 dataLength);    
+    virtual UInt32    GetBytesUsed () const;
+    virtual void      AdjustBytesUsed (Int32 adjustment);
+    virtual void      ShrinkAllocation (UInt32 newAllocation);
+    virtual void      FreeAllocation ();
+    virtual void      AllocateBytes (UInt32 minimumBytesToAllocate);
+    virtual void      GrowAllocation (UInt32 bytesNeeded);        
     
 protected:
     ECOBJECTS_EXPORT virtual EnablerCP       _GetEnabler() const override;
@@ -44,7 +50,13 @@ protected:
     ECOBJECTS_EXPORT virtual bool            _IsReadOnly() const override;        
 
 public:
+    ECOBJECTS_EXPORT StandaloneInstance (MemoryEnablerCR enabler);
     ECOBJECTS_EXPORT StandaloneInstance (ClassCR ecClass);
+    
+    //! Provides access to the raw data. For internal use only
+    ECOBJECTS_EXPORT byte const * PeekData();
+    //! Provides access to the raw data. For internal use only
+    ECOBJECTS_EXPORT UInt32 PeekDataSize();
 
     };
 

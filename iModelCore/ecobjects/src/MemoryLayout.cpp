@@ -151,6 +151,18 @@ void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 byt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
+UInt32          ClassLayout::GetBytesUsed(byte const * data) const
+    {
+    DEBUG_EXPECT (m_sizeOfFixedSection > 0 && "The ClassLayout has not been initialized");
+    SecondaryOffset * pLast = (SecondaryOffset*)(data + m_sizeOfFixedSection - sizeof(SecondaryOffset));
+    
+    // pLast is the last offset, pointing to one byte beyond the used space, so it is equal to the number of bytes used, so far
+    return *pLast;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/
 void            ClassLayout::ShiftValueData(byte * data, PropertyLayoutCR propertyLayout, Int32 shiftBy) const
     {
     DEBUG_EXPECT (!propertyLayout.IsFixedSized() && "The propertyLayout should be that of the variable-sized property whose size is increasing");
@@ -399,12 +411,12 @@ ClassLayoutCR   MemoryBasedInstance::GetClassLayout() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-byte *          MemoryBasedInstance::GetAddressOfValue (PropertyLayoutCR propertyLayout) const
+byte const *    MemoryBasedInstance::GetAddressOfValue (PropertyLayoutCR propertyLayout) const
     {
-    size_t offset = propertyLayout.GetOffset();
+    UInt32 offset = propertyLayout.GetOffset();
     
-    byte * data = GetData();
-    byte * pValue = data + offset;
+    byte const * data = GetDataForRead();
+    byte const * pValue = data + offset;
     
     if (propertyLayout.IsFixedSized())
         return pValue;
@@ -415,13 +427,32 @@ byte *          MemoryBasedInstance::GetAddressOfValue (PropertyLayoutCR propert
     pValue = data + secondaryOffset;
     return pValue;
     }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32          MemoryBasedInstance::GetOffsetOfValue (PropertyLayoutCR propertyLayout) const
+    {
+    UInt32 offset = propertyLayout.GetOffset();
+    
+    if (propertyLayout.IsFixedSized())
+        return offset;
+
+    byte const * data = GetDataForRead();
+    byte const * pValue = data + offset;
+        
+    SecondaryOffset secondaryOffset = (SecondaryOffset)(*pValue);
+    DEBUG_EXPECT (0 != secondaryOffset && "The instance is not initialized!");
+    
+    return secondaryOffset;
+    }    
         
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       MemoryBasedInstance::EnsureSpaceIsAvailable (PropertyLayoutCR propertyLayout, UInt32 bytesNeeded)
     {
-    SecondaryOffset* pSecondaryOffset = (SecondaryOffset*)(GetData() + propertyLayout.GetOffset());
+    SecondaryOffset* pSecondaryOffset = (SecondaryOffset*)(GetDataForRead() + propertyLayout.GetOffset());
     SecondaryOffset* pNextSecondaryOffset = pSecondaryOffset + 1;
     UInt32 availableBytes = *pNextSecondaryOffset - *pSecondaryOffset;
     
@@ -439,7 +470,7 @@ StatusInt       MemoryBasedInstance::EnsureSpaceIsAvailable (PropertyLayoutCR pr
     AdjustBytesUsed(additionalBytesNeeded);
     
     ClassLayoutCR classLayout = GetClassLayout();
-    classLayout.ShiftValueData(GetData(), propertyLayout, additionalBytesNeeded);
+    classLayout.ShiftValueData(GetDataForWrite(), propertyLayout, additionalBytesNeeded);
     
     return SUCCESS;
     }
@@ -450,25 +481,32 @@ StatusInt       MemoryBasedInstance::EnsureSpaceIsAvailable (PropertyLayoutCR pr
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            MemoryBasedInstance::InitializeInstanceMemory ()
     {
-    DEBUG_EXPECT (NULL == GetData());
+    DEBUG_EXPECT (!IsMemoryInitialized());
     
     ClassLayoutCR classLayout = GetClassLayout();
         
     DEBUG_EXPECT (0 == GetBytesUsed());    
     UInt32 bytesUsed = classLayout.GetSizeOfFixedSection();
     
+    AllocateBytes (bytesUsed + 1024); // AllocateBytes must preceed AdjustBytesUsed because AllocateBytes may be initializing a new XAttribute
     AdjustBytesUsed (bytesUsed);
-    AllocateBytes (bytesUsed + 1024);
     
     UInt32 bytesAllocated = GetBytesAllocated();
     DEBUG_EXPECT (bytesAllocated >= bytesUsed + 1024);
     
-    byte * data = GetData();
+    byte * data = GetDataForWrite();
     classLayout.InitializeMemoryForInstance (data, bytesAllocated);
     
     // WIP_FUSION: could initialize default values here.
     }
-
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32          MemoryBasedInstance::GetBytesUsedFromInstanceMemory(byte const * data) const
+    {
+    return GetClassLayout().GetBytesUsed (data);
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -486,7 +524,7 @@ StatusInt       MemoryBasedInstance::_GetValue (ValueR v, const wchar_t * proper
     if (SUCCESS != status || NULL == layout)
         return ERROR; // WIP_FUSION ERROR_PropertyNotFound
         
-    byte * pValue = GetAddressOfValue (*layout);
+    byte const * pValue = GetAddressOfValue (*layout);
     
     switch (layout->GetDataType())
         {
@@ -545,27 +583,24 @@ StatusInt       MemoryBasedInstance::_SetValue (const wchar_t * propertyAccessSt
     if (layout->GetDataType() != v.GetDataType())
         return ERROR; // WIP_FUSION ERROR_DataTypeMismatch
     
-    byte * pValue = GetAddressOfValue (*layout);
+    UInt32 offset = GetOffsetOfValue (*layout);
     
     switch (layout->GetDataType())
         {
         case DATATYPE_Integer32:
             {
             Int32 value = v.GetInteger();
-            memcpy (pValue, &value, sizeof(value));
-            return SUCCESS;
+            return ModifyData (offset, &value, sizeof(value));
             }
         case DATATYPE_Long64:
             {
             Int64 value = v.GetLong();
-            memcpy (pValue, &value, sizeof(value));
-            return SUCCESS;
+            return ModifyData (offset, &value, sizeof(value));
             }
         case DATATYPE_Double:
             {
             double value = v.GetDouble();
-            memcpy (pValue, &value, sizeof(value));
-            return SUCCESS;
+            return ModifyData (offset, &value, sizeof(value));
             }       
         case DATATYPE_String:
             {
@@ -576,12 +611,7 @@ StatusInt       MemoryBasedInstance::_SetValue (const wchar_t * propertyAccessSt
             if (SUCCESS != status)
                 return status;
                 
-            byte * pValue = GetAddressOfValue (*layout); // WIP_FUSION: only recalculate if EnsureSpaceIsAvailable returns status indicating that a reallocation happened
-                
-            wchar_t * pString = (wchar_t *)pValue;
-            memcpy (pString, value, bytesNeeded);
-
-            return SUCCESS;            
+            return ModifyData (offset, value, bytesNeeded);
             }
         default:
             {

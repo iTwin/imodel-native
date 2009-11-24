@@ -107,6 +107,9 @@ private:
     //! @param shiftBy    Positive or negative! Memory will be moved and SecondaryOffsets will be adjusted by this amount
     void                    ShiftValueData(byte * data, PropertyLayoutCR propertyLayout, Int32 shiftBy) const;    
     
+    //! Determines the number of bytes used, so far
+    UInt32                  GetBytesUsed(byte const * data) const;
+    
 public:
     ClassLayout() : m_state(AcceptingFixedSizeProperties), 
                     m_perFileClassID(0), 
@@ -135,29 +138,32 @@ struct ClassLayoutRegistry
 //! @see MemoryEnabler, Instance
 struct IMemoryProvider
     {
-protected:    
+protected:
+    virtual bool         IsMemoryInitialized () const = 0;    
     //! Get a pointer to the first byte of the data    
-    virtual byte *  GetData () const = 0;
-    virtual UInt32  GetBytesUsed () const = 0;
-    virtual void    AdjustBytesUsed (Int32 adjustment) = 0;
-    virtual UInt32  GetBytesAllocated () const = 0;
+    virtual byte const * GetDataForRead () const = 0;
+    virtual byte *       GetDataForWrite () const = 0;
+    virtual StatusInt    ModifyData (UInt32 offset, void const * newData, UInt32 dataLength) = 0;
+    virtual UInt32       GetBytesUsed () const = 0;
+    virtual void         AdjustBytesUsed (Int32 adjustment) = 0; // WIP_FUSION: should be eliminated. We can calculate BytesUsed from the data itself
+    virtual UInt32       GetBytesAllocated () const = 0;
     //! Allocates memory for the Instance. The memory does not need to be initialized in any way.
     //! @param minimumBytesToAllocate
-    virtual void    AllocateBytes (UInt32 minimumBytesToAllocate) = 0;
+    virtual void         AllocateBytes (UInt32 minimumBytesToAllocate) = 0;
         
     //! Reallocates memory for the Instance and copies the old Instance data into the new memory
     //! You might get more memory than used asked for, but you won't get less
     //! @param additionalBytesNeeded  Additional bytes of memory needed above current allocation
-    virtual void    GrowAllocation (UInt32 additionalBytesNeeded) = 0;
+    virtual void         GrowAllocation (UInt32 additionalBytesNeeded) = 0;
     
     //! Reallocates memory for the Instance and copies the old Instance data into the new memory
     //! This is not guaranteed to do anything or to change to precisely the allocation you request
     //! but it will be at least as large as you request.
     //! @param newAllocation  Additional bytes of memory needed above current allocation    
-    virtual void    ShrinkAllocation (UInt32 newAllocation) = 0;
+    virtual void         ShrinkAllocation (UInt32 newAllocation) = 0;
     
     //! Free any allocated memory
-    virtual void    FreeAllocation () = 0;
+    virtual void        FreeAllocation () = 0;
     };
     
 //! EC::MemoryEnabler can be used with any EC::Instance that implements IMemoryLayoutSupport
@@ -193,15 +199,18 @@ struct MemoryBasedInstance : Instance, IMemoryProvider
     {
 private:    
 
-    ClassLayoutCR       GetClassLayout() const;
-    byte *              GetAddressOfValue (PropertyLayoutCR propertyLayout) const;
+    byte const *        GetAddressOfValue (PropertyLayoutCR propertyLayout) const;
+    UInt32              GetOffsetOfValue (PropertyLayoutCR propertyLayout) const;
     StatusInt           EnsureSpaceIsAvailable (PropertyLayoutCR propertyLayout, UInt32 bytesNeeded);
+    ClassLayoutCR       GetClassLayout() const;
          
 protected:
     ECOBJECTS_EXPORT void               InitializeInstanceMemory ();
-    ECOBJECTS_EXPORT virtual MemoryEnablerCP GetMemoryEnabler() const = 0;
+    ECOBJECTS_EXPORT UInt32             GetBytesUsedFromInstanceMemory(byte const * data) const;
+    
     ECOBJECTS_EXPORT virtual StatusInt  _GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const override;
     ECOBJECTS_EXPORT virtual StatusInt  _SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices, UInt32 const * indices) override;      
+    ECOBJECTS_EXPORT virtual MemoryEnablerCP GetMemoryEnabler() const = 0;
     };
 
 END_BENTLEY_EC_NAMESPACE

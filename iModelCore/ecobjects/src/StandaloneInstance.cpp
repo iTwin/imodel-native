@@ -22,6 +22,20 @@ StandaloneInstance::StandaloneInstance (ClassCR ecClass) : m_bytesAllocated(0), 
     
     InitializeInstanceMemory ();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/
+StandaloneInstance::StandaloneInstance (MemoryEnablerCR enabler) : 
+        m_enabler(const_cast<MemoryEnablerP>(&enabler)),
+        m_bytesAllocated(0), m_bytesUsed(0), m_data(NULL) 
+    {
+    wchar_t id[256];
+    swprintf(id, sizeof(id)/sizeof(wchar_t), L"%s-0x%X", enabler.GetClass()->GetName(), this);
+    m_instanceID = id;
+    
+    InitializeInstanceMemory ();
+    }    
   
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
@@ -55,6 +69,85 @@ std::wstring    StandaloneInstance::_GetInstanceID() const
     return m_instanceID;
     }
     
+ 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            StandaloneInstance::IsMemoryInitialized () const
+    {
+    return m_data != NULL;
+    }
+        
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+byte const *    StandaloneInstance::GetDataForRead () const
+    {
+    return m_data;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+byte *          StandaloneInstance::GetDataForWrite () const
+    {
+    return m_data;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       StandaloneInstance::ModifyData (UInt32 offset, void const * newData, UInt32 dataLength)
+    {
+    PRECONDITION (NULL != m_data, ERROR);
+    PRECONDITION (offset + dataLength <= m_bytesAllocated, ERROR); //WIP_FUSION ERROR_MemoryBoundsOverrun
+    byte * dest = m_data + offset;
+    memcpy (dest, newData, dataLength);
+    
+    return SUCCESS;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32          StandaloneInstance::GetBytesUsed () const
+    {
+    return m_bytesUsed;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+void            StandaloneInstance::AdjustBytesUsed (Int32 adjustment)
+    {
+    m_bytesUsed += adjustment;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32          StandaloneInstance::GetBytesAllocated () const
+    {
+    return m_bytesAllocated;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+void            StandaloneInstance::ShrinkAllocation (UInt32 newAllocation)
+    {
+    DEBUG_EXPECT (false && "WIP_FUSION: needs implementation");
+    } 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+void            StandaloneInstance::FreeAllocation ()
+    {
+    free (m_data); 
+    m_data = NULL;
+    }
+            
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
