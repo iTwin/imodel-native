@@ -65,30 +65,100 @@
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
-			<File RelativePath=".\DesignByContract.cpp"></File>
-			<File RelativePath="..\..\..\ecf\ecobjects\native\ECEnabler.cpp"></File>
-			<File RelativePath="..\..\..\ecf\ecobjects\native\ECInstance.cpp"></File>
-			<File RelativePath="..\..\..\ecf\ecobjects\native\ECObjectsPch.cpp"></File>
-			<File RelativePath="..\..\..\ecf\ecobjects\native\ECSchema.cpp"></File>
-			<File RelativePath="..\..\..\ecf\ecobjects\native\ECValue.cpp"></File>
-			<File RelativePath="..\..\..\ecf\ecobjects\native\MemoryLayout.cpp"></File>
-			<File RelativePath="..\..\..\ecf\ecobjects\native\StandaloneInstance.cpp"></File>
+			<File
+				RelativePath=".\DesignByContract.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ECClass.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\ecf\ecobjects\native\ECEnabler.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\ecf\ecobjects\native\ECInstance.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\ecf\ecobjects\native\ECObjectsPch.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ECProperty.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\ecf\ecobjects\native\ECSchema.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\ecf\ecobjects\native\ECValue.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ecxml.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\ecf\ecobjects\native\MemoryLayout.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\ecf\ecobjects\native\StandaloneInstance.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
-			<File RelativePath="..\..\..\ecf\PublicApi\ECObjects\DesignByContract.h"></File>
-			<File RelativePath="..\..\..\ecf\PublicApi\ECObjects\ECEnabler.h"></File>
-			<File RelativePath="..\..\..\ecf\PublicApi\ECObjects\ECInstance.h"></File>
-			<File RelativePath="..\..\..\ecf\PublicApi\ECObjects\ECObjects.h"></File>
-			<File RelativePath="..\..\PublicApi\ECObjects\ECObjectsAPI.h"></File>
-			<File RelativePath="..\..\..\ecf\ecobjects\native\ECObjectsPch.h"></File>
-			<File RelativePath="..\..\..\ecf\PublicApi\ECObjects\ECSchema.h"></File>
-			<File RelativePath="..\..\..\ecf\PublicApi\ECObjects\ECValue.h"></File>
-			<File RelativePath="..\..\..\ecf\PublicApi\ECObjects\MemoryLayout.h"></File>
-			<File RelativePath="..\..\..\ecf\PublicApi\ECObjects\StandaloneInstance.h"></File>
+			<File
+				RelativePath="..\..\..\ecf\PublicApi\ECObjects\DesignByContract.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\ecf\PublicApi\ECObjects\ECEnabler.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\ecf\PublicApi\ECObjects\ECInstance.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\ecf\PublicApi\ECObjects\ECObjects.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\PublicApi\ECObjects\ECObjectsAPI.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\ecf\ecobjects\native\ECObjectsPch.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\ecf\PublicApi\ECObjects\ECSchema.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\ecf\PublicApi\ECObjects\ECValue.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ecxml.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\ecf\PublicApi\ECObjects\MemoryLayout.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\ecf\PublicApi\ECObjects\StandaloneInstance.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
@@ -96,9 +166,18 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 		</Filter>
-		<File RelativePath="..\..\ecf.PartFile.xml"></File>
-		<File RelativePath="..\..\..\ecf\ecobjects\native\native.mke"></File>
-		<File RelativePath="..\..\..\ecf\ecobjects\native\native.mki"></File>
+		<File
+			RelativePath="..\..\ecf.PartFile.xml"
+			>
+		</File>
+		<File
+			RelativePath="..\..\..\ecf\ecobjects\native\native.mke"
+			>
+		</File>
+		<File
+			RelativePath="..\..\..\ecf\ecobjects\native\native.mki"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

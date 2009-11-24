@@ -74,14 +74,13 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Published\SchemaTests.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\Published\MemoryLayoutTests.cpp"
 				>
 			</File>
-            
+			<File
+				RelativePath=".\Published\SchemaTests.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -92,11 +91,6 @@
 				RelativePath=".\ECObjectsTestPCH.h"
 				>
 			</File>
-			<File
-				RelativePath=".\Published\MemoryLayoutTests.cpp"
-				>
-			</File>
-            
 		</Filter>
 		<Filter
 			Name="Resource Files"

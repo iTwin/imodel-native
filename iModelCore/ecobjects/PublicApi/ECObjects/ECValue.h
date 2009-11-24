@@ -28,18 +28,6 @@ struct DPoint3d
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-//! Enumeration of primitive datatypes supported by native "ECObjects" implementation.
-//! These should correspond to all of the datatypes supported in .NET ECObjects
-enum DataType
-    {
-    DATATYPE_Uninitialized                  = 0,
-    DATATYPE_Array                          = 1,
-    DATATYPE_Struct                         = 2,
-    DATATYPE_Integer32                      = 3,
-    DATATYPE_Long64                         = 4,
-    DATATYPE_String                         = 5,
-    DATATYPE_Double                         = 6,
-    };
     
 //! Information about an array in an EC::Instance. Does not contain the actual elements.
 //! @group "ECInstance"
