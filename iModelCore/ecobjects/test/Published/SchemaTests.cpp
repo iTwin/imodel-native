@@ -12,7 +12,8 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-#define SCHEMAS_PATH  L"C:\\bsw\\source\\Beijing\\ecf\\ecobjects\\nativeatp\\SeedData\\" 
+// NEEDSWORK Improve strategy for seed data.  Should not be maintained in source.
+#define SCHEMAS_PATH  L"" 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
