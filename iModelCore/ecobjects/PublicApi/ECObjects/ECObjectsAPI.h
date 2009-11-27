@@ -42,7 +42,7 @@
 #include <ECObjects\ECInstance.h>
 #include <ECObjects\ECSchema.h>
 #include <ECObjects\ECValue.h>
-#include <ECObjects\MemoryLayout.h>
+#include <ECObjects\MemoryInstanceSupport.h>
 #include <ECObjects\StandaloneInstance.h>
 
 /*__PUBLISH_SECTION_END__*/
