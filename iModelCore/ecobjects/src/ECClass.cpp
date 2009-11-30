@@ -23,13 +23,15 @@ Class::~Class
 )
     {
     // NEEDSWORK make sure everything is destroyed
-    wprintf (L"~~~~ Destorying ECClass %s\n", this->Name.c_str());
+    wprintf (L"~~~~ Destroying ECClass %s\n", this->Name.c_str());
 
     wprintf (L"     Freeing memory for %d properties\n", m_propertyMap.size());
     for each (std::pair<const wchar_t * , PropertyP> entry in m_propertyMap)
         delete entry.second;
     
     m_propertyMap.clear();
+    
+    memset (this, 0xececdead, sizeof(this));
     }
 
 /*---------------------------------------------------------------------------------**//**

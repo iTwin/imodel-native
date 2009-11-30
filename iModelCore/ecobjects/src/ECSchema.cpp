@@ -24,7 +24,7 @@ Schema::~Schema
 )
     {
     // NEEDSWORK make sure everything is destroyed
-    wprintf (L"~~~~ Destorying Schema\n");
+    wprintf (L"~~~~ Destroying Schema: %s\n", GetName().c_str());
     stdext::hash_map<const wchar_t * , ClassP>::const_iterator classIterator, classEnd;        
     classIterator = m_classMap.begin();
     classEnd = m_classMap.end();
@@ -37,6 +37,7 @@ Schema::~Schema
 
     assert (m_classMap.empty());
 
+    memset (this, 0xececdead, sizeof(this));
     /*
     for (ECSchemaReferenceVector::iterator sit = m_referencedSchemas.begin(); sit != m_referencedSchemas.end(); sit++)
         {
