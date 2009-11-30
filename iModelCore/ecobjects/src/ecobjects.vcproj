@@ -70,6 +70,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ECClass.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\ecf\ecobjects\native\ECEnabler.cpp"
 				>
 			</File>
@@ -79,6 +83,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\ecf\ecobjects\native\ECObjectsPch.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ECProperty.cpp"
 				>
 			</File>
 			<File

@@ -14,54 +14,7 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Class::GetProperty 
-(
-PropertyP & ecProperty, 
-const wchar_t * propertyName
-) const
-    {
-    return SUCCESS;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Schema::init 
-(
-std::wstring & name, 
-std::wstring & prefix
-)
-    {
-    Schema::SchemaNameIsValid (name.c_str());    
-    //CECClass::ECNameIsValid (prefix.c_str(), TRUE);        
-    m_schemaName = name;
-    m_schemaPrefix = prefix;
-    m_majorVersion = 0;
-    m_minorVersion = 0;
-    /*m_referencedSchemas.clear();
-    m_ecRelationshipUpgradeHandler = NULL;
-    m_ecClassResolutionHelper = NULL;*/    
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-Schema::Schema 
-(
-const wchar_t *   prefix, 
-const wchar_t *   name, 
-UInt32      majorVersion,
-UInt32      minorVersion
-) 
-    {
-    init (std::wstring(name), std::wstring(prefix));
-    m_majorVersion = majorVersion;
-    m_minorVersion = minorVersion;
-    }
+// NEEDSWORK wprintf statements should be converted to use formal logging
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
@@ -70,22 +23,21 @@ Schema::~Schema
 (
 )
     {
-    /*for (CECClassVector::iterator it = m_CECClassVector.begin(); it != m_CECClassVector.end(); it++)
+    // NEEDSWORK make sure everything is destroyed
+    wprintf (L"~~~~ Destorying Schema\n");
+    stdext::hash_map<const wchar_t * , ClassP>::const_iterator classIterator, classEnd;        
+    classIterator = m_classMap.begin();
+    classEnd = m_classMap.end();
+    wprintf (L"     Freeing memory for %d classes\n", m_classMap.size());
+    while (classIterator != classEnd)
         {
-        CECClass * pClass = *it;
-        if (NULL != pClass)
-            delete pClass;
+        delete classIterator->second;        
+        classIterator = m_classMap.erase(classIterator);        
         }
 
-    for (CECRelationshipClassVector::iterator rcit = m_CECRelationshipClassVector.begin(); rcit != m_CECRelationshipClassVector.end(); rcit++)
-        {
-        CECRelationshipClass * pRelationshipClass = *rcit;
-        *rcit = NULL;
-        if (NULL != pRelationshipClass)
-            delete pRelationshipClass;
-        }
-    m_CECRelationshipClassVector.clear();
+    assert (m_classMap.empty());
 
+    /*
     for (ECSchemaReferenceVector::iterator sit = m_referencedSchemas.begin(); sit != m_referencedSchemas.end(); sit++)
         {
         CECSchemaReference & schemaRef = *sit;
@@ -98,80 +50,626 @@ Schema::~Schema
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-const wchar_t * Schema::GetSchemaName 
+std::wstring const& Schema::GetName
 (
 ) const
     {
-    return m_schemaName.c_str();
+    return m_name;
     }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Schema::SetSchemaName 
+ECObjectsStatus Schema::SetName
 (
-const wchar_t * schemaName
+std::wstring const& name
 )
-    {
-    Schema::SchemaNameIsValid (schemaName);
-    m_schemaName = schemaName;
+    {        
+    //NEEDSWORK name needs to be validated
+    m_name = name;        
+    return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-
-const wchar_t * Schema::GetSchemaPrefix
+std::wstring const& Schema::GetNamespacePrefix
 (
 ) const
     {        
-    return m_schemaPrefix.c_str();    
+    return m_namespacePrefix;    
     }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-
-void Schema::SetSchemaPrefix 
+ECObjectsStatus Schema::SetNamespacePrefix
 (
-const wchar_t * schemaPrefix
+std::wstring const& namespacePrefix
 )
-    {
-    Schema::SchemaNameIsValid (schemaPrefix);
-    m_schemaPrefix = schemaPrefix;
+    {        
+    m_namespacePrefix = namespacePrefix;  
+    return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-const wchar_t * Schema::GetDisplayLabel
+std::wstring const& Schema::GetDescription
 (
 ) const
     {
-    return m_displayLabel.c_str();
+    return m_description;        
     }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Schema::SetDisplayLabel 
+ECObjectsStatus Schema::SetDescription
 (
-const wchar_t * displayLabel
+std::wstring const& description
 )
-    {    
-    m_displayLabel = displayLabel;
+    {        
+    m_description = description;
+    return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Schema::SchemaNameIsValid 
+std::wstring const& Schema::GetDisplayLabel
 (
-const wchar_t * name
+) const
+    {
+    return (m_displayLabel.empty()) ? Name : m_displayLabel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus Schema::SetDisplayLabel
+(
+std::wstring const& displayLabel
+)
+    {        
+    m_displayLabel = displayLabel;
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Schema::GetIsDisplayLabelDefined
+(
+) const
+    {
+    return (!m_displayLabel.empty());        
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32 Schema::GetVersionMajor
+(
+) const
+    {
+    return m_versionMajor;        
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus Schema::SetVersionMajor
+(
+const UInt32 versionMajor
+)
+    {        
+    m_versionMajor = versionMajor;
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32 Schema::GetVersionMinor
+(
+) const
+    {
+    return m_versionMinor;        
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus Schema::SetVersionMinor
+(
+const UInt32 versionMinor
+)
+    {        
+    m_versionMinor = versionMinor;
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassP Schema::GetClassP
+(
+std::wstring const& name
+) const
+    {
+    stdext::hash_map<const wchar_t *, ClassP>::const_iterator  classIterator;
+    classIterator = m_classMap.find (name.c_str());
+    
+    if ( classIterator != m_classMap.end() )
+        return classIterator->second;
+    else
+        return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus Schema::AddClass 
+(
+ClassP&                 pClass
 )
     {
-    // AZK TODO - implement this method.  How should errors be handled.  Return code or exception?
-    return true;    
+    std::pair < stdext::hash_map<const wchar_t *, ClassP>::iterator, bool > resultPair;
+    resultPair = m_classMap.insert (std::pair<const wchar_t *, ClassP> (pClass->Name.c_str(), pClass));
+    if (resultPair.second == false)
+        {
+        wprintf (L"Can not create class '%s' because it already exists in the schema", pClass->Name.c_str());
+        delete pClass;
+        pClass = NULL;        
+        return ECOBJECTS_STATUS_NamedItemAlreadyExists;
+        }
+
+    return ECOBJECTS_STATUS_Success;
     }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus Schema::CreateClass 
+(
+ClassP&                 pClass, 
+std::wstring const&     name
+)
+    {
+    pClass = new Class(*this);
+    ECObjectsStatus status = pClass->SetName (name);
+    if (ECOBJECTS_STATUS_Success != status)
+        return status;
+
+    return AddClass (pClass);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus Schema::CreateRelationshipClass 
+(
+RelationshipClassP&     pClass, 
+std::wstring const&     name
+)
+    {
+    pClass = new RelationshipClass(*this);
+    ECObjectsStatus status = pClass->SetName (name);
+    if (ECOBJECTS_STATUS_Success != status)
+        return status;
+
+    std::pair < stdext::hash_map<const wchar_t *, ClassP>::iterator, bool > resultPair;
+    resultPair = m_classMap.insert (std::pair<const wchar_t *, ClassP> (pClass->Name.c_str(), pClass));
+    if (resultPair.second == false)
+        {
+        delete pClass;
+        pClass = NULL;
+        wprintf (L"Can not create relationship class '%s' because it already exists in the schema", name.c_str());
+        return ECOBJECTS_STATUS_NamedItemAlreadyExists;
+        }
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
+#define     ECSCHEMA_VERSION_FORMAT_EXPLAINATION L" Format must be MM.mm where MM is major version and mm is minor version.\n"
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus Schema::ParseVersionString 
+(
+UInt32&                 versionMajor, 
+UInt32&                 versionMinor, 
+std::wstring const&     versionString
+)
+    {
+    versionMajor = DEFAULT_VERSION_MAJOR;
+    versionMinor = DEFAULT_VERSION_MINOR;
+    if (versionString.empty())
+        return ECOBJECTS_STATUS_Success;
+
+    const wchar_t * version = versionString.c_str();
+    const wchar_t * theDot = wcschr (version, L'.');
+    if (NULL == theDot)
+        {
+        wprintf (L"Invalid ECSchema Version String: '%s' does not contain a '.'!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
+        return ECOBJECTS_STATUS_ParseError;
+        }
+
+    size_t majorLen = theDot - version;
+    if (majorLen < 1 || majorLen > 3)
+        {
+        wprintf (L"Invalid ECSchema Version String: '%s' does not have 1-3 numbers before the '.'!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
+        return ECOBJECTS_STATUS_ParseError;
+        }
+
+    size_t minorLen = wcslen (theDot) - 1;
+    if (minorLen < 1 || minorLen > 3)
+        {
+        wprintf (L"Invalid ECSchema Version String: '%s' does not have 1-3 numbers after the '.'!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
+        return ECOBJECTS_STATUS_ParseError;
+        }
+
+    wchar_t * end = NULL;    
+    versionMajor = wcstoul (version, &end, 10);
+    if (version == end)
+        {
+        wprintf (L"Invalid ECSchema Version String: '%s' The characters before the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
+        return ECOBJECTS_STATUS_ParseError;
+        }
+
+    versionMinor = wcstoul (&theDot[1], &end, 10);
+    if (&theDot[1] == end)
+        {
+        wprintf (L"Invalid ECSchema Version String: '%s' The characters after the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
+        return ECOBJECTS_STATUS_ParseError;
+        }
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus Schema::SetVersionFromString 
+(
+std::wstring const& versionString
+)
+    {
+    UInt32 versionMajor;
+    UInt32 versionMinor;
+    ECObjectsStatus status;
+    if ((ECOBJECTS_STATUS_Success != (status = ParseVersionString (versionMajor, versionMinor, versionString))) ||         
+        (ECOBJECTS_STATUS_Success != (status = this->SetVersionMajor (versionMajor))) ||
+        (ECOBJECTS_STATUS_Success != (status = this->SetVersionMinor (versionMinor))))
+        return status;
+    else
+        return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus Schema::CreateSchema
+(
+SchemaPtr&              schemaOut, 
+std::wstring const&     schemaName
+)
+    {    
+    schemaOut = new Schema();
+    return schemaOut->SetName (schemaName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaP Schema::GetSchemaByNamespacePrefixP
+(
+std::wstring const&     namespacePrefix
+) const
+    {
+    if ((namespacePrefix.length() == 0) || (namespacePrefix == m_namespacePrefix))
+        return (SchemaP)this;
+
+    // NEEDSWORK lookup referenced schema by prefix
+
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+std::wstring const* Schema::ResolveNamespacePrefix
+(
+SchemaCR    schema
+) const
+    {
+    if (&schema == this)
+        return &EMPTY_STRING;
+
+    // NEEDSWORK support referenced schemas
+
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaDeserializationStatus Schema::ReadClassStubsFromXML
+(
+MSXML2::IXMLDOMNode& schemaNode,
+ClassDeserializationVector&  classes
+)
+    {
+    SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
+
+    // Create Class Stubs (no attributes or properties)
+    size_t classElementLength = wcslen (EC_CLASS_ELEMENT);
+    MSXML2::IXMLDOMNodeListPtr xmlNodeListPtr = schemaNode.selectNodes (EC_NAMESPACE_PREFIX L":" EC_CLASS_ELEMENT L" | " EC_NAMESPACE_PREFIX L":" EC_RELATIONSHIP_CLASS_ELEMENT);
+    _bstr_t baseName;    
+    ClassP pClass;
+    RelationshipClassP pRelationshipClass;
+    MSXML2::IXMLDOMNodePtr xmlNodePtr;
+    while (NULL != (xmlNodePtr = xmlNodeListPtr->nextNode()))
+        {        
+        baseName = xmlNodePtr->baseName;
+        
+        if (baseName.length() == classElementLength)
+            {            
+            pClass = new Class (*this);
+            pRelationshipClass = NULL;
+            }
+        else
+            {            
+            pRelationshipClass = new RelationshipClass (*this);            
+            pClass = pRelationshipClass;
+            }
+
+        if (SCHEMA_DESERIALIZATION_STATUS_Success != (status = pClass->ReadXMLAttributes(xmlNodePtr)))
+            return status;           
+
+        if (ECOBJECTS_STATUS_Success != this->AddClass (pClass))
+            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXML;
+
+        if (NULL == pRelationshipClass)
+            wprintf (L"    Created Class Stub: %s\n", pClass->Name.c_str());
+        else
+            wprintf (L"    Created Relationship Class Stub: %s\n", pClass->Name.c_str());
+
+        classes.push_back (std::make_pair (pClass, xmlNodePtr));
+        }
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ - Expects class stubs have already been read and created.  They are stored in the vector passed into this method.
+ - Expects referenced schemas have been resolved and deserialized so that base classes & structs in other schemas can be located.
+ - Reads the contents of each XML node cached in the classes vector and populates the in-memory EC:Class with
+   base classes, properties & relationship endpoints.
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaDeserializationStatus Schema::ReadClassContentsFromXML
+(
+ClassDeserializationVector&  classes
+)
+    {
+    SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
+
+    ClassDeserializationVector::const_iterator  classesStart, classesEnd, classesIterator;
+    ClassP pClass;
+    MSXML2::IXMLDOMNodePtr xmlNodePtr;
+    for(classesStart = classes.begin(), classesEnd = classes.end(), classesIterator = classesStart; classesIterator != classesEnd; classesIterator++)
+        {
+        pClass = classesIterator->first;
+        xmlNodePtr = classesIterator->second;
+        status = pClass->ReadXMLContents (xmlNodePtr);
+        if (SCHEMA_DESERIALIZATION_STATUS_Success != status)
+            return status;
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaDeserializationStatus Schema::ReadXML
+(
+SchemaPtr&                          schemaOut, 
+MSXML2::IXMLDOMDocument2&           pXmlDoc
+)
+    {            
+    SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
+    
+    
+    pXmlDoc.setProperty("SelectionNamespaces", L"xmlns:" EC_NAMESPACE_PREFIX L"='" ECXML_URI_2_0 L"'");
+    MSXML2::IXMLDOMNodePtr xmlNodePtr = pXmlDoc.selectSingleNode (L"/" EC_NAMESPACE_PREFIX L":" EC_SCHEMA_ELEMENT);
+    if (NULL == xmlNodePtr)
+        {
+        wprintf (L"Invalid ECSchemaXML: Missing a top-level " EC_SCHEMA_ELEMENT L" node in the " ECXML_URI_2_0 L" namespace\n");
+        return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXML;
+        }
+    
+    MSXML2::IXMLDOMNodePtr schemaNodePtr = xmlNodePtr;       
+    MSXML2::IXMLDOMNamedNodeMapPtr nodeAttributesPtr = schemaNodePtr->attributes;
+    MSXML2::IXMLDOMNodePtr attributePtr;
+    
+    // schemaName is a REQUIRED attribute in order to create the schema
+    if ((NULL == nodeAttributesPtr) || (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMA_NAME_ATTRIBUTE))))
+        {
+        wprintf (L"Invalid ECSchemaXML: " EC_SCHEMA_ELEMENT L" element must contain a schemaName attribute\n");
+        return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXML;
+        }
+
+    if (ECOBJECTS_STATUS_Success != CreateSchema (schemaOut, (const wchar_t *)attributePtr->text))
+        return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXML;
+
+    // OPTIONAL attributes - If these attributes exist they MUST be valid        
+    READ_OPTIONAL_XML_ATTRIBUTE (SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE,         schemaOut, NamespacePrefix)
+    READ_OPTIONAL_XML_ATTRIBUTE (DESCRIPTION_ATTRIBUTE,                     schemaOut, Description)
+    READ_OPTIONAL_XML_ATTRIBUTE (DISPLAY_LABEL_ATTRIBUTE,                   schemaOut, DisplayLabel)
+
+    // OPTIONAL attributes - If these attributes exist they do not need to be valid.  We will ignore any errors setting them and use default values.
+    // NEEDSWORK This is due to the current implementation in managed ECObjects.  We should reconsider whether it is the correct behavior.
+    ECObjectsStatus setterStatus;
+    READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (SCHEMA_VERSION_ATTRIBUTE,                  schemaOut, VersionFromString)
+    if (ECOBJECTS_STATUS_Success != setterStatus)
+        wprintf (L"Invalid version attribute has been ignored while deserializing ECSchema '%s'.  The default version number %d.%d has been applied.\n", 
+            schemaOut->Name.c_str(), schemaOut->VersionMajor, schemaOut->VersionMinor);
+
+    ClassDeserializationVector classes;
+    if (SCHEMA_DESERIALIZATION_STATUS_Success != (status = schemaOut->ReadClassStubsFromXML (schemaNodePtr, classes)))
+        return status;
+
+    // NEEDSWORK Find and deserialize referenced schemas
+
+    // NEEDSWORK Class inheritance (base classes, properties & relationship endpoints)
+    if (SCHEMA_DESERIALIZATION_STATUS_Success != (status = schemaOut->ReadClassContentsFromXML (classes)))
+        return status;
+
+    // NEEDSWORK Custom attributes (schema, classes, properties, etc)
+
+    return SCHEMA_DESERIALIZATION_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus LogXmlLoadError
+(
+MSXML2::IXMLDOMDocument2& pXmlDoc
+)
+    {        
+    MSXML2::IXMLDOMParseErrorPtr pXMLError = pXmlDoc.parseError;
+    if (pXMLError != NULL)
+        {
+        LONG lErrorCode = pXMLError->errorCode;
+        if (lErrorCode != 0)
+            {
+            long line = pXMLError->Getline();
+            long linePos = pXMLError->Getlinepos();
+            _bstr_t pBURL = pXMLError->Geturl();
+            _bstr_t pBReason = pXMLError->Getreason();
+
+            std::wstring file = pBURL;
+            std::wstring reason = pBReason;
+                        
+            wprintf (L"line %d, position %d parsing ECSchema file %s. %s\n", line, linePos, file.c_str(), reason.c_str());            
+            return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaDeserializationStatus Schema::ReadXMLFromFile
+(
+SchemaPtr&          schemaOut, 
+const wchar_t *     ecSchemaXmlFile
+)
+    {                  
+    SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
+
+    MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;        
+    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_DESERIALIZATION_STATUS_FailedToInitializeMsmxl);
+    xmlDocPtr->put_validateOnParse(VARIANT_TRUE);
+    xmlDocPtr->put_async(VARIANT_FALSE);
+    
+    VARIANT_BOOL returnCode = xmlDocPtr->load(ecSchemaXmlFile);
+    if (returnCode != VARIANT_TRUE)
+        {
+        LogXmlLoadError(xmlDocPtr);
+        return SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml;
+        }
+
+    status = ReadXML (schemaOut, xmlDocPtr);
+    if (ECOBJECTS_STATUS_Success != status)
+        wprintf (L"Failed to deserialize XML file: %s\n", ecSchemaXmlFile);
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaDeserializationStatus Schema::ReadXMLFromString
+(
+SchemaPtr&          schemaOut, 
+const wchar_t *     ecSchemaXml
+)
+    {                  
+    SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
+
+    MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;        
+    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_DESERIALIZATION_STATUS_FailedToInitializeMsmxl);
+    xmlDocPtr->put_validateOnParse(VARIANT_TRUE);
+    xmlDocPtr->put_async(VARIANT_FALSE);
+    
+    VARIANT_BOOL returnCode = xmlDocPtr->loadXML(ecSchemaXml);
+    if (returnCode != VARIANT_TRUE)
+        {
+        LogXmlLoadError(xmlDocPtr);
+        return SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml;
+        }
+
+    status = ReadXML (schemaOut, xmlDocPtr);
+    if (ECOBJECTS_STATUS_Success != status)
+        wprintf (L"Failed to deserialize XML from string: %s\n", ecSchemaXml);
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassContainerCR Schema::GetClasses
+(
+) const
+    {
+    return m_classContainer;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassContainer::const_iterator  ClassContainer::begin () const
+    {
+    return ClassContainer::const_iterator(m_classMap.begin());        
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassContainer::const_iterator  ClassContainer::end () const
+    {
+    return ClassContainer::const_iterator(m_classMap.end());        
+    }   
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassContainer::const_iterator& ClassContainer::const_iterator::operator++()
+    {
+    m_state->m_mapIterator++;    
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    ClassContainer::const_iterator::operator!= (const_iterator const& rhs) const
+    {
+    return (m_state->m_mapIterator != rhs.m_state->m_mapIterator);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassP   ClassContainer::const_iterator::operator*() const
+    {
+    std::pair<const wchar_t * , ClassP> mapPair = *(m_state->m_mapIterator);
+    return mapPair.second;
+    };
 
 END_BENTLEY_EC_NAMESPACE

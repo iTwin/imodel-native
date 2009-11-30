@@ -44,6 +44,11 @@ EC_TYPEDEFS(Value);
 EC_TYPEDEFS(ArrayInfo);
 EC_TYPEDEFS(Schema);
 EC_TYPEDEFS(Property);
+EC_TYPEDEFS(PrimitiveProperty);
+EC_TYPEDEFS(StructProperty);
+EC_TYPEDEFS(ArrayProperty);
+EC_TYPEDEFS(PropertyContainer);
+EC_TYPEDEFS(ClassContainer);
 EC_TYPEDEFS(Class);
 EC_TYPEDEFS(RelationshipClass);
 EC_TYPEDEFS(Instance);
@@ -58,26 +63,30 @@ EC_TYPEDEFS(PropertyLayout);
 EC_TYPEDEFS(StandaloneInstance);
 EC_TYPEDEFS(MemoryEnabler);
 
-/*__PUBLISH_SECTION_END__*/
+#define EXPORTED_PROPERTY(TYPE, NAME) \
+    ECOBJECTS_EXPORT TYPE Get##NAME() const; \
+    ECOBJECTS_EXPORT ECObjectsStatus Set##NAME (TYPE value); \
+    __declspec(property(get=Get##NAME,put=Set##NAME)) TYPE NAME
 
-#if !defined(ECAssert)
-    #ifdef  NDEBUG
-        #define ECAssert(_Expression)     ((void)0)
-    #else
-        #define ECAssert(_Expression)     if (!(_Expression)) __debugbreak ();
-    #endif
-#endif    
+#define READONLY_PROPERTY(TYPE, NAME) TYPE Get##NAME() const; \
+    __declspec(property(get=Get##NAME)) TYPE NAME;
 
-/*__PUBLISH_SECTION_START__*/
+#define EXPORTED_READONLY_PROPERTY(TYPE, NAME) \
+    ECOBJECTS_EXPORT TYPE Get##NAME() const; \
+    __declspec(property(get=Get##NAME)) TYPE NAME;
 
-USING_NAMESPACE_BENTLEY
+#define WRITEONLY_PROPERTY(TYPE, NAME) __declspec(property(put=Set##NAME)) TYPE NAME
+
+
+BEGIN_BENTLEY_EC_NAMESPACE
 
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 typedef enum ECErrorCategories
     {
-    ECOBJECTS_ERROR_BASE        = 0x31000
+    ECOBJECTS_ERROR_BASE                    = 0x31000,
+    SCHEMA_DESERIALIZATION_STATUS_BASE      = 0x32000
     } ECErrorCategories;
 
 
@@ -97,6 +106,21 @@ enum ECObjectsStatus
     ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices                 = ECOBJECTS_ERROR_BASE + 0x08,
     ECOBJECTS_STATUS_EnablerNotFound                                   = ECOBJECTS_ERROR_BASE + 0x09,
     ECOBJECTS_STATUS_OperationNotSupported                             = ECOBJECTS_ERROR_BASE + 0x0A,
-    ECOBJECTS_STATUS_PreconditionViolated                              = ECOBJECTS_ERROR_BASE + 0x0B
+    ECOBJECTS_STATUS_ParseError                                        = ECOBJECTS_ERROR_BASE + 0x0B,
+    ECOBJECTS_STATUS_NamedItemAlreadyExists                            = ECOBJECTS_ERROR_BASE + 0x0C, 
+    ECOBJECTS_STATUS_PreconditionViolated                              = ECOBJECTS_ERROR_BASE + 0x0D,
+    ECOBJECTS_STATUS_SchemaNotFound                                    = ECOBJECTS_ERROR_BASE + 0x0E,
+    ECOBJECTS_STATUS_ClassNotFound                                     = ECOBJECTS_ERROR_BASE + 0x0F
     }; 
 
+enum SchemaDeserializationStatus
+    {
+    SCHEMA_DESERIALIZATION_STATUS_Success                               = SUCCESS,
+    SCHEMA_DESERIALIZATION_STATUS_FailedToInitializeMsmxl               = SCHEMA_DESERIALIZATION_STATUS_BASE + 0x01,
+    SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml                      = SCHEMA_DESERIALIZATION_STATUS_BASE + 0x02,
+    SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXML                    = SCHEMA_DESERIALIZATION_STATUS_BASE + 0x03,
+    };
+
+END_BENTLEY_EC_NAMESPACE
+
+USING_NAMESPACE_BENTLEY

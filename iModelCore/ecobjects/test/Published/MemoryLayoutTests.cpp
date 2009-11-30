@@ -99,8 +99,11 @@ void SetAndVerifyLong (InstanceR instance, ValueR v, wchar_t const * accessStrin
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
     {
-    SchemaP schema = new Schema(L"t", L"TestSchema", 1, 0);    
-    ClassP ecClass = new Class (L"TestClass", *schema);
+    SchemaPtr schema;
+    ASSERT_EQ (ECOBJECTS_STATUS_Success, Schema::CreateSchema (schema, L"TestSchema"));
+    ClassP ecClass;
+    schema->CreateClass(ecClass, L"TestClass");    
+    ASSERT_TRUE (ecClass);
     
     StandaloneInstance instance(*ecClass);
     wstring instanceID = instance.GetInstanceID();

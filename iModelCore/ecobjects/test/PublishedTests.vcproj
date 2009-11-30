@@ -91,10 +91,6 @@
 				RelativePath=".\ECObjectsTestPCH.h"
 				>
 			</File>
-			<File
-				RelativePath=".\Published\MemoryLayoutTests.cpp"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"

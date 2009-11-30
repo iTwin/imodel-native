@@ -380,7 +380,7 @@ StatusInt       ClassLayout::GetPropertyLayout (PropertyLayoutCP & propertyLayou
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ClassLayout::GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const
     {
-    ECAssert (propertyIndex < m_propertyLayouts.size());
+    assert (propertyIndex < m_propertyLayouts.size());
     if (propertyIndex >= m_propertyLayouts.size())
         return ERROR; // WIP_FUSION PropertyIndexOutOfBounds
         
@@ -615,7 +615,7 @@ StatusInt       MemoryInstanceSupport::SetValueToMemory (const wchar_t * propert
             }
         default:
             {
-            ECAssert(false && L"DataType not implemented");
+            assert(false && L"DataType not implemented");
             return ERROR;
             }
         }
