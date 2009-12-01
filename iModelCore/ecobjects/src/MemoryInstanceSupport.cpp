@@ -264,7 +264,7 @@ StatusInt       ClassLayout::SetClass (ClassCR ecClass)
     
     FinishLayout ();
     
-    //wprintf (L"ECClass name=%s\n", ecClass.GetName());
+    //wprintf (L"ECClass name=%s\n", ecClass.GetName().c_str());
     //Dump();
     
     return SUCCESS;

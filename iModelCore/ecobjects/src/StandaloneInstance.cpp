@@ -17,7 +17,7 @@ StandaloneInstance::StandaloneInstance (ClassCR ecClass) : m_bytesAllocated(0), 
     m_enabler = MemoryEnabler::Create (ecClass); // WIP_FUSION: hack! We certainly don't want to create a new one every time... and we prefer to not have to even look it up, again
     
     wchar_t id[256];
-    swprintf(id, sizeof(id)/sizeof(wchar_t), L"%s-0x%X", ecClass.GetName(), this);
+    swprintf(id, sizeof(id)/sizeof(wchar_t), L"%s-0x%X", ecClass.GetName().c_str(), this);
     m_instanceID = id;
     
     InitializeInstanceMemory ();
@@ -31,7 +31,7 @@ StandaloneInstance::StandaloneInstance (MemoryEnablerCR enabler) :
         m_bytesAllocated(0), m_bytesUsed(0), m_data(NULL) 
     {
     wchar_t id[256];
-    swprintf(id, sizeof(id)/sizeof(wchar_t), L"%s-0x%X", enabler.GetClass()->GetName(), this);
+    swprintf(id, sizeof(id)/sizeof(wchar_t), L"%s-0x%X", enabler.GetClass()->GetName().c_str(), this);
     m_instanceID = id;
     
     InitializeInstanceMemory ();
