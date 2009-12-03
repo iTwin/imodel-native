@@ -61,7 +61,7 @@ $(o)ecenabler.obj       : $(baseDir)ecenabler.cpp $(ECObjectsHeaders) ${MultiCom
 
 $(o)MemoryInstanceSupport.obj : $(baseDir)MemoryInstanceSupport.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)MemoryInstanceSupport.h
 
-$(o)StandaloneInstance.obj    : $(baseDir)StandaloneInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)StandaloneInstance.h
+$(o)StandaloneInstance.obj    : $(baseDir)StandaloneInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)StandaloneInstance.h $(ecobjectsPublicAPISrc)MemoryInstanceSupport.h
 
 $(o)designbycontract.obj        : $(baseDir)designbycontract.cpp $(ecobjectsPublicAPISrc)designbycontract.h ${MultiCompileDepends} 
 

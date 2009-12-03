@@ -14,7 +14,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 StandaloneInstance::StandaloneInstance (ClassCR ecClass) : m_bytesAllocated(0), m_bytesUsed(0), m_data(NULL) 
     {
-    m_enabler = MemoryEnabler::Create (ecClass); // WIP_FUSION: hack! We certainly don't want to create a new one every time... and we prefer to not have to even look it up, again
+    m_enabler = MemoryEnabler::Create (ecClass, 0); // WIP_FUSION: hack! We certainly don't want to create a new one every time... and we prefer to not have to even look it up, again
     
     wchar_t id[256];
     swprintf(id, sizeof(id)/sizeof(wchar_t), L"%s-0x%X", ecClass.GetName().c_str(), this);

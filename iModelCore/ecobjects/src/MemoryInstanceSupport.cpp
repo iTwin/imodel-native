@@ -81,9 +81,18 @@ UInt32          PropertyLayout::GetSizeInFixedSection () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
+ClassLayout::ClassLayout() : m_state(AcceptingFixedSizeProperties), 
+                             m_classID(0), 
+                             m_nProperties(0), 
+                             m_nullflagsOffset (sizeof(UInt32)),  // First 16 bits are ClassID, Next 16 bits are flags
+                             m_offset(sizeof(UInt32) + sizeof(NullflagsBitmask)), // Next 32 bits are Nullflags
+                             m_sizeOfFixedSection(0) {};
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/
 void            ClassLayout::Dump () const
     {
-    wprintf (L"ECClass perFileId=%i\n", m_perFileClassID);
+    wprintf (L"ECClass perFileId=%i\n", m_classID);
     for each (PropertyLayout layout in m_propertyLayouts)
         {
         wprintf (layout.ToString().c_str());
@@ -117,15 +126,18 @@ UInt32          ClassLayout::GetSizeOfFixedSection() const
 void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const
     {
     memset (data, 0, bytesAllocated);
-    
+    UInt16 * pClassID = (UInt16 *)data;
+    *pClassID = m_classID;
     UInt32 sizeOfFixedSection = GetSizeOfFixedSection();
     
-    UInt32 currentNullflagsOffset = 23; // Not a real offset... but guaranteed to differ from the first real offset
+    UInt32 currentNullflagsOffset;
+    bool isFirstProperty = true;
     for (UInt32 i = 0; i < m_propertyLayouts.size(); ++i)
         {
         PropertyLayoutCR layout = m_propertyLayouts[i];
-        if (currentNullflagsOffset != layout.GetNullflagsOffset())
+        if (isFirstProperty || currentNullflagsOffset != layout.GetNullflagsOffset())
             {
+            isFirstProperty = false;
             currentNullflagsOffset = layout.GetNullflagsOffset();
             NullflagsBitmask * nullflags = (NullflagsBitmask *)(data + currentNullflagsOffset);
             *nullflags = NULLFLAGS_BITMASK_AllOn;
@@ -163,6 +175,16 @@ UInt32          ClassLayout::GetBytesUsed(byte const * data) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool            ClassLayout::HasMatchingClassID(byte const * data) const
+    {
+    DEBUG_EXPECT (m_sizeOfFixedSection > 0 && "The ClassLayout has not been initialized");
+    UInt16 * pClassID = (UInt16*)data; // The first 16 bits should hold the ClassID
+    return *pClassID == m_classID;    
+    }    
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/
 void            ClassLayout::ShiftValueData(byte * data, PropertyLayoutCR propertyLayout, Int32 shiftBy) const
     {
     DEBUG_EXPECT (!propertyLayout.IsFixedSized() && "The propertyLayout should be that of the variable-sized property whose size is increasing");
@@ -191,8 +213,9 @@ void            ClassLayout::ShiftValueData(byte * data, PropertyLayoutCR proper
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ClassLayout::SetClass (ClassCR ecClass)
+StatusInt       ClassLayout::SetClass (ClassCR ecClass, UInt16 classID)
     {
+    m_classID = classID;
     // WIP_FUSION: iterate through the EC::Properties of the EC::Class and build the layout
     
     // WIP_FUSION: fake it til we make it

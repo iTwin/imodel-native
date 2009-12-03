@@ -24,6 +24,7 @@ typedef RefCountedPtr<MemoryEnabler> MemoryEnablerPtr;
 #define NULLFLAGS_BITMASK_AllOn     0xFFFFFFFF
 #define MEMORYENABLER_EnablerID     0x00EC3E30 // WIP_FUSION: get a real id
 
+
 /*=================================================================================**//**
 * @bsistruct                                                     CaseyMullen    10/09
 +===============+===============+===============+===============+===============+======*/      
@@ -78,7 +79,7 @@ private:
         };
     
     // These members are expected to be persisted  
-    UInt32                  m_perFileClassID;
+    UInt16                  m_classID; // Unique per some context, e.g. per DgnFile
     State                   m_state;
     UInt32                  m_nProperties;
     
@@ -109,16 +110,11 @@ private:
     
     //! Determines the number of bytes used, so far
     UInt32                  GetBytesUsed(byte const * data) const;
+    bool                    HasMatchingClassID(byte const * data) const;
     
 public:
-    ClassLayout() : m_state(AcceptingFixedSizeProperties), 
-                    m_perFileClassID(0), 
-                    m_nProperties(0), 
-                    m_nullflagsOffset (0),
-                    m_offset(sizeof(NullflagsBitmask)),
-                    m_sizeOfFixedSection(0) {};
-    
-    StatusInt               SetClass (ClassCR ecClass);
+    ClassLayout();
+    StatusInt               SetClass (ClassCR ecClass, UInt16 classID);
     StatusInt               GetPropertyLayout (PropertyLayoutCP & propertyLayout, wchar_t const * accessString) const;
     StatusInt               GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const;
     // WIP_FUSION add StatusInt GetPropertyIndex (UInt32& propertyIndex, wchar_t const * accessString);
@@ -172,21 +168,22 @@ struct MemoryEnabler : public Enabler, public ICreateInstance //wip: also implem
 private:
     ClassLayout             m_classLayout;
     
-    MemoryEnabler (ClassCR ecClass) : Enabler (ecClass, MEMORYENABLER_EnablerID, L"Bentley::EC::MemoryEnabler")
+    MemoryEnabler (ClassCR ecClass, UInt16 classID) : Enabler (ecClass, MEMORYENABLER_EnablerID, L"Bentley::EC::MemoryEnabler")
         {
-        m_classLayout.SetClass(ecClass);
+        // FUSION_WIP: sometimes, this will be loaded from the file
+        m_classLayout.SetClass(ecClass, classID);
         }
         
 protected:
-    ECOBJECTS_EXPORT MemoryEnabler (ClassCR ecClass, UInt32 enablerID, std::wstring name) : Enabler (ecClass, enablerID, name) 
+    ECOBJECTS_EXPORT MemoryEnabler (ClassCR ecClass, UInt16 classID, UInt32 enablerID, std::wstring name) : Enabler (ecClass, enablerID, name) 
         {
-        m_classLayout.SetClass(ecClass);
+        m_classLayout.SetClass(ecClass, classID);
         }        
 public: 
 
-    static MemoryEnablerPtr             Create(ClassCR ecClass)
+    static MemoryEnablerPtr             Create(ClassCR ecClass, UInt16 classID)
         {
-        return new MemoryEnabler (ecClass);    
+        return new MemoryEnabler (ecClass, classID);    
         };
         
     ECOBJECTS_EXPORT virtual StatusInt  CreateInstance (InstanceP& instance, ClassCR ecClass, wchar_t const * instanceId) const override;
