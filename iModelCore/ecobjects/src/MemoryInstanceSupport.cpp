@@ -82,9 +82,9 @@ UInt32          PropertyLayout::GetSizeInFixedSection () const
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassLayout::ClassLayout() : m_state(AcceptingFixedSizeProperties), 
-                             m_classID(0), 
+                             m_classID(0),
                              m_nProperties(0), 
-                             m_nullflagsOffset (sizeof(UInt32)),  // First 16 bits are ClassID, Next 16 bits are flags
+                             m_nullflagsOffset (sizeof(UInt32)),  // The first 32 bits are reserved for flags
                              m_offset(sizeof(UInt32) + sizeof(NullflagsBitmask)), // Next 32 bits are Nullflags
                              m_sizeOfFixedSection(0) {};
 /*---------------------------------------------------------------------------------**//**
@@ -126,8 +126,6 @@ UInt32          ClassLayout::GetSizeOfFixedSection() const
 void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const
     {
     memset (data, 0, bytesAllocated);
-    UInt16 * pClassID = (UInt16 *)data;
-    *pClassID = m_classID;
     UInt32 sizeOfFixedSection = GetSizeOfFixedSection();
     
     UInt32 currentNullflagsOffset;
@@ -175,13 +173,11 @@ UInt32          ClassLayout::GetBytesUsed(byte const * data) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            ClassLayout::HasMatchingClassID(byte const * data) const
+UInt16          ClassLayout::GetClassID() const
     {
-    DEBUG_EXPECT (m_sizeOfFixedSection > 0 && "The ClassLayout has not been initialized");
-    UInt16 * pClassID = (UInt16*)data; // The first 16 bits should hold the ClassID
-    return *pClassID == m_classID;    
-    }    
-    
+    return m_classID;
+    } 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/

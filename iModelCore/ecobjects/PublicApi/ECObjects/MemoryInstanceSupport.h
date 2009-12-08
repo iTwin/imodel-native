@@ -80,16 +80,15 @@ private:
     
     // These members are expected to be persisted  
     UInt16                  m_classID; // Unique per some context, e.g. per DgnFile
-    State                   m_state;
     UInt32                  m_nProperties;
     
-    UInt32                  m_offset;
-    UInt32                  m_nullflagsOffset;
-
     PropertyLayoutVector    m_propertyLayouts; // This is the primary collection, there is a secondary map for lookup by name, below.
     PropertyLayoutLookup    m_propertyLayoutLookup;
     
     // These members are transient
+    UInt32                  m_nullflagsOffset;
+    State                   m_state;
+    UInt32                  m_offset;
     UInt32                  m_sizeOfFixedSection;
     
     StatusInt               AddProperty (wchar_t const * accessString, DataType datatype, size_t size);
@@ -110,14 +109,15 @@ private:
     
     //! Determines the number of bytes used, so far
     UInt32                  GetBytesUsed(byte const * data) const;
-    bool                    HasMatchingClassID(byte const * data) const;
     
 public:
     ClassLayout();
     StatusInt               SetClass (ClassCR ecClass, UInt16 classID);
+    UInt16                  GetClassID() const;
     StatusInt               GetPropertyLayout (PropertyLayoutCP & propertyLayout, wchar_t const * accessString) const;
     StatusInt               GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const;
     // WIP_FUSION add StatusInt GetPropertyIndex (UInt32& propertyIndex, wchar_t const * accessString);
+    
     void                    Dump() const;
     
     static UInt32           GetPropertyValueSize (DataType datatype); // WIP_FUSION: move to ecvalue.h
