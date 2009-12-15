@@ -42,7 +42,7 @@ std::wstring    PropertyLayout::ToString ()
     wchar_t const * datatype = GetDatatypeName (m_dataType);
     
     wchar_t line[1024];
-    swprintf (line, sizeof(line)/sizeof(wchar_t), L"%32s %16s offset=%3i nullflagsOffset=%3i, nullflagsBitmask=0x%04X", m_accessString.c_str(), datatype, m_offset, m_nullflagsOffset, m_nullflagsBitmask);
+    swprintf (line, sizeof(line)/sizeof(wchar_t), L"%32s %16s offset=%3i nullflagsOffset=%3i, nullflagsBitmask=0x%08.X", m_accessString.c_str(), datatype, m_offset, m_nullflagsOffset, m_nullflagsBitmask);
         
     return line;
     }
@@ -84,22 +84,22 @@ UInt32          PropertyLayout::GetSizeInFixedSection () const
 ClassLayout::ClassLayout() : m_state(AcceptingFixedSizeProperties), 
                              m_classID(0),
                              m_nProperties(0), 
-                             m_nullflagsOffset (sizeof(UInt32)),  // The first 32 bits are reserved for flags
-                             m_offset(sizeof(UInt32) + sizeof(NullflagsBitmask)), // Next 32 bits are Nullflags
+                             m_nullflagsOffset (0),
+                             m_offset(sizeof(InstanceFlags)), // The first 32 bits are reserved for flags/future
                              m_sizeOfFixedSection(0) {};
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ClassLayout::Dump () const
     {
-    wprintf (L"ECClass perFileId=%i\n", m_classID);
+    wprintf (L"ECClassIndex=%i, ECClass.Name=%s\n", m_classID, m_className.c_str());
     for each (PropertyLayout layout in m_propertyLayouts)
         {
         wprintf (layout.ToString().c_str());
         wprintf (L"\n");
         }
     }
-    
+        
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
@@ -125,22 +125,23 @@ UInt32          ClassLayout::GetSizeOfFixedSection() const
 +---------------+---------------+---------------+---------------+---------------+------*/     
 void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const
     {
-    memset (data, 0, bytesAllocated);
     UInt32 sizeOfFixedSection = GetSizeOfFixedSection();
+    memset (data, 0, sizeof(InstanceFlags)); 
     
-    UInt32 currentNullflagsOffset;
-    bool isFirstProperty = true;
+    UInt32 bitsPerMask = (sizeof(NullflagsBitmask) * 8);
+    UInt32 nNullflagsBitmasks = (UInt32)m_propertyLayouts.size() / bitsPerMask;
+    if ( (m_propertyLayouts.size() % bitsPerMask > 0))
+        ++nNullflagsBitmasks;
+    
+    for (UInt32 i = 0; i < nNullflagsBitmasks; i++)
+        {
+        NullflagsBitmask * nullflags = (NullflagsBitmask *)(data + sizeof(InstanceFlags) + i * sizeof (NullflagsBitmask));
+        *nullflags = NULLFLAGS_BITMASK_AllOn;
+        }
+            
     for (UInt32 i = 0; i < m_propertyLayouts.size(); ++i)
         {
         PropertyLayoutCR layout = m_propertyLayouts[i];
-        if (isFirstProperty || currentNullflagsOffset != layout.GetNullflagsOffset())
-            {
-            isFirstProperty = false;
-            currentNullflagsOffset = layout.GetNullflagsOffset();
-            NullflagsBitmask * nullflags = (NullflagsBitmask *)(data + currentNullflagsOffset);
-            *nullflags = NULLFLAGS_BITMASK_AllOn;
-            }
-            
         if (!layout.IsFixedSized())
             {
             DEBUG_EXPECT (layout.GetOffset() % 4 == 0 && "We expect secondaryOffsets to be aligned on a 4 byte boundary");
@@ -163,7 +164,9 @@ void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 byt
 +---------------+---------------+---------------+---------------+---------------+------*/
 UInt32          ClassLayout::GetBytesUsed(byte const * data) const
     {
-    DEBUG_EXPECT (m_sizeOfFixedSection > 0 && "The ClassLayout has not been initialized");
+    if (m_sizeOfFixedSection == 0)
+        return 0;
+
     SecondaryOffset * pLast = (SecondaryOffset*)(data + m_sizeOfFixedSection - sizeof(SecondaryOffset));
     
     // pLast is the last offset, pointing to one byte beyond the used space, so it is equal to the number of bytes used, so far
@@ -177,16 +180,25 @@ UInt16          ClassLayout::GetClassID() const
     {
     return m_classID;
     } 
-
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     12/09
++---------------+---------------+---------------+---------------+---------------+------*/    
+std::wstring    ClassLayout::GetClassName() const
+    {
+    return m_className;
+    }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ClassLayout::ShiftValueData(byte * data, PropertyLayoutCR propertyLayout, Int32 shiftBy) const
+void            MemoryInstanceSupport::ShiftValueData(ClassLayoutCR classLayout, byte * data, PropertyLayoutCR propertyLayout, Int32 shiftBy)
     {
+    DEBUG_EXPECT (0 != shiftBy && "It is a pointless waste of time to shift nothing");
     DEBUG_EXPECT (!propertyLayout.IsFixedSized() && "The propertyLayout should be that of the variable-sized property whose size is increasing");
-    DEBUG_EXPECT (m_sizeOfFixedSection > 0 && "The ClassLayout has not been initialized");
+    DEBUG_EXPECT (classLayout.GetSizeOfFixedSection() > 0 && "The ClassLayout has not been initialized");
     
-    SecondaryOffset * pLast = (SecondaryOffset*)(data + m_sizeOfFixedSection - sizeof(SecondaryOffset));
+    SecondaryOffset * pLast = (SecondaryOffset*)(data + classLayout.GetSizeOfFixedSection() - sizeof(SecondaryOffset));
     SecondaryOffset * pAdjusting = (SecondaryOffset*)(data + propertyLayout.GetOffset());
     SecondaryOffset * pCurrent = pAdjusting + 1; // start at the one AFTER the property whose value's size is adjusting
     DEBUG_EXPECT (pCurrent <= pLast);
@@ -197,21 +209,31 @@ void            ClassLayout::ShiftValueData(byte * data, PropertyLayoutCR proper
         {
         byte * source = data + *pCurrent;
         byte * destination = source + shiftBy;
-        memmove (destination, source, bytesToMove);
+        memmove (destination, source, bytesToMove); // WIP_FUSION: not using the IMemoryProvider. Use Modify data
         }
 
-    while (pCurrent <= pLast)
+    UInt32 sizeOfSecondaryOffsetsToShift = (UInt32)(((byte*)pLast - (byte*)pCurrent) + sizeof (SecondaryOffset));
+    UInt32 nSecondaryOffsetsToShift = sizeOfSecondaryOffsetsToShift / sizeof(SecondaryOffset);
+    SecondaryOffset * shiftedSecondaryOffsets = (SecondaryOffset*)alloca (sizeOfSecondaryOffsetsToShift);
+    for (UInt32 i = 0; i < nSecondaryOffsetsToShift; i++)
+    //while (pCurrent <= pLast) // WIP_FUSION: calculate the size of these to be changed, allocate a buffer on the stack for the new values, then use ModifyData
         {
-        *pCurrent += shiftBy;
-        ++pCurrent;
+        shiftedSecondaryOffsets[i] = pCurrent[i] + shiftBy;
+        //*pCurrent += shiftBy; // WIP_FUSION: not using the IMemoryProvider
+        //++pCurrent;
         }
+        
+    UInt32 offsetOfCurrent = (UInt32)((byte*)pCurrent - data);
+    ModifyData (offsetOfCurrent, shiftedSecondaryOffsets, sizeOfSecondaryOffsetsToShift);
     }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ClassLayout::SetClass (ClassCR ecClass, UInt16 classID)
     {
     m_classID = classID;
+    m_className = ecClass.GetName();
     // WIP_FUSION: iterate through the EC::Properties of the EC::Class and build the layout
     
     // WIP_FUSION: fake it til we make it
@@ -243,6 +265,13 @@ StatusInt       ClassLayout::SetClass (ClassCR ecClass, UInt16 classID)
     AddVariableSizeProperty (L"B",                   EC::DATATYPE_String);
     AddVariableSizeProperty (L"S",                   EC::DATATYPE_String);
     AddVariableSizeProperty (L"Manufacturer.Name",   EC::DATATYPE_String);
+
+    for (int i = 0; i < N_FINAL_STRING_PROPS_IN_FAKE_CLASS; i++)
+        {
+        wchar_t propertyName[66];
+        swprintf (propertyName, L"Property%i", i);
+        AddVariableSizeProperty (propertyName,       EC::DATATYPE_String);
+        }
     
     //AddArrayProperty (L"ArrayOfInts",   EC::DATATYPE_String);
     /* WIP_FUSION: deal with array later.
@@ -301,6 +330,23 @@ StatusInt       ClassLayout::FinishLayout ()
         m_propertyLayoutLookup[propertyLayout->GetAccessString()] = propertyLayout;
         }
         
+#if DEBUG
+    DEBUG_EXPECT (m_nProperties == m_propertyLayouts.size());
+    if (0 == m_propertyLayouts.size())
+        return SUCCESS;
+    
+    UInt32 bitsPerMask = (sizeof(NullflagsBitmask) * 8);
+    UInt32 nNullflagsBitmasks = m_propertyLayouts.size() / bitsPerMask;
+    if ( (m_propertyLayouts.size() % bitsPerMask > 0)
+        ++nNullflagsBitmasks;
+    
+    DEBUG_EXPECT (m_propertyLayouts[0].m_offset == sizeof(InstanceFlags) + nNullflagsBitmasks * sizeof(NullflagsBitmask);
+    for (int i = 0; i < m_propertyLayouts.size(); i++)
+        {
+        UInt32 expectedNullflagsOffset == i / bitsPerMask + sizeof(InstanceFlags);
+        DEBUG_EXPECT (m_propertyLayouts[i].m_nullflagsOffset == expectedNullflagsOffset);
+        }     
+#endif
     return SUCCESS;
     }
     
@@ -326,23 +372,25 @@ UInt32          ClassLayout::GetPropertyValueSize (DataType datatype) // WIP_FUS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StatusInt       ClassLayout::AddProperty (wchar_t const * accessString, DataType datatype, size_t size)
+StatusInt       ClassLayout::AddProperty (wchar_t const * accessString, DataType datatype, size_t size) // WIP_FUSION: use UInt32 instead of size
     {
     UInt32  positionInCurrentNullFlags = m_nProperties % 32;
     NullflagsBitmask  nullflagsBitmask = 0x01 << positionInCurrentNullFlags;
     
+    if (0 == positionInCurrentNullFlags)
+        {
+        // It is time to add a new set of Nullflags
+        m_nullflagsOffset = m_nullflagsOffset + sizeof(NullflagsBitmask);
+        m_offset += sizeof(NullflagsBitmask);
+        for (UInt32 i = 0; i < m_propertyLayouts.size(); i++)
+            m_propertyLayouts[i].m_offset += sizeof(NullflagsBitmask); // Offsets of already-added property layouts need to get bumped up
+        } 
+
     PropertyLayout propertyLayout (accessString, datatype, m_offset, m_nullflagsOffset, nullflagsBitmask);
-    
+
     m_nProperties++;
     m_offset += (UInt32)size;
    
-    if ((positionInCurrentNullFlags + 1) == 32)
-        {
-        // It is time to bump up the nullflags offset
-        m_nullflagsOffset = m_offset;
-        m_offset += sizeof(NullflagsBitmask);
-        }
-        
     m_propertyLayouts.push_back(propertyLayout);
     
     return SUCCESS;
@@ -379,6 +427,14 @@ StatusInt       ClassLayout::AddVariableSizeProperty (wchar_t const * accessStri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
+UInt32          ClassLayout::GetPropertyCount () const
+    {
+    return m_nProperties;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ClassLayout::GetPropertyLayout (PropertyLayoutCP & propertyLayout, wchar_t const * accessString) const
     {
     PropertyLayoutLookup::const_iterator it = m_propertyLayoutLookup.find(accessString);
@@ -407,7 +463,24 @@ StatusInt       ClassLayout::GetPropertyLayoutByIndex (PropertyLayoutCP & proper
     return SUCCESS;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     12/09
++---------------+---------------+---------------+---------------+---------------+------*/
+MemoryEnabler::MemoryEnabler (ClassCR ecClass, UInt16 classID) : 
+    Enabler (ecClass, MEMORYENABLER_EnablerID, L"Bentley::EC::MemoryEnabler")
+    {
+    // FUSION_WIP: sometimes, this will be loaded from the file
+    m_classLayout.SetClass(ecClass, classID);
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     12/09
++---------------+---------------+---------------+---------------+---------------+------*/
+MemoryEnabler::MemoryEnabler (ClassCR ecClass, UInt16 classID, UInt32 enablerID, std::wstring name) : Enabler (ecClass, enablerID, name) 
+    {
+    m_classLayout.SetClass(ecClass, classID);
+    }
+        
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -440,13 +513,36 @@ byte const *    MemoryInstanceSupport::GetAddressOfValue (PropertyLayoutCR prope
     if (propertyLayout.IsFixedSized())
         return pValue;
     
-    SecondaryOffset secondaryOffset = (SecondaryOffset)(*pValue);
+    SecondaryOffset secondaryOffset = *((SecondaryOffset*)pValue);
     DEBUG_EXPECT (0 != secondaryOffset && "The instance is not initialized!");
     
     pValue = data + secondaryOffset;
     return pValue;
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            MemoryInstanceSupport::IsNull (PropertyLayoutCR propertyLayout) const
+    {
+    NullflagsBitmask const * nullflags = (NullflagsBitmask const *)(GetDataForRead() + propertyLayout.GetNullflagsOffset());
+    return (0 != (*nullflags & propertyLayout.GetNullflagsBitmask()));
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/
+void            MemoryInstanceSupport::SetNull (PropertyLayoutCR propertyLayout, bool isNull)
+    {
+    NullflagsBitmask mask = propertyLayout.GetNullflagsBitmask();
+    
+    NullflagsBitmask * nullflags = (NullflagsBitmask *)(GetDataForWrite() + propertyLayout.GetNullflagsOffset());
+    if (isNull && 0 == (*nullflags & mask))
+        *nullflags |= mask; // turn on the null bit
+    else if (!isNull && mask == (*nullflags & mask))
+        *nullflags ^= mask; // turn off the null bit
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -458,9 +554,9 @@ UInt32          MemoryInstanceSupport::GetOffsetOfValue (PropertyLayoutCR proper
         return offset;
 
     byte const * data = GetDataForRead();
-    byte const * pValue = data + offset;
-        
-    SecondaryOffset secondaryOffset = (SecondaryOffset)(*pValue);
+    SecondaryOffset const * pSecondaryOffset = (SecondaryOffset const *)(data + offset);
+
+    SecondaryOffset secondaryOffset = *pSecondaryOffset;
     DEBUG_EXPECT (0 != secondaryOffset && "The instance is not initialized!");
     
     return secondaryOffset;
@@ -479,26 +575,31 @@ StatusInt       MemoryInstanceSupport::EnsureSpaceIsAvailable (PropertyLayoutCR 
     if (bytesNeeded <= availableBytes)
         return SUCCESS;
 #endif
-    
+    UInt32 bytesUsed = GetBytesUsed();
     Int32 additionalBytesNeeded = bytesNeeded - availableBytes;
-    Int32 additionalBytesAvailable = GetBytesAllocated() - GetBytesUsed();
+    
+    if (additionalBytesNeeded <= 0)
+        return SUCCESS;
+        
+    Int32 additionalBytesAvailable = GetBytesAllocated() - bytesUsed;
     
     if (additionalBytesNeeded > additionalBytesAvailable)
-        GrowAllocation (additionalBytesNeeded);
+        GrowAllocation (additionalBytesNeeded - additionalBytesAvailable);
     
-    AdjustBytesUsed(additionalBytesNeeded);
+    DEBUG_EXPECT (bytesUsed == GetBytesUsed());
     
     ClassLayoutCR classLayout = GetClassLayout();
-    classLayout.ShiftValueData(GetDataForWrite(), propertyLayout, additionalBytesNeeded);
+    ShiftValueData(classLayout, GetDataForWrite(), propertyLayout, additionalBytesNeeded);
+
+    DEBUG_EXPECT (bytesUsed + additionalBytesNeeded == GetBytesUsed());
     
     return SUCCESS;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            MemoryInstanceSupport::InitializeInstanceMemory ()
+void            MemoryInstanceSupport::AllocateAndInitializeMemory ()
     {
     DEBUG_EXPECT (!IsMemoryInitialized());
     
@@ -507,16 +608,23 @@ void            MemoryInstanceSupport::InitializeInstanceMemory ()
     DEBUG_EXPECT (0 == GetBytesUsed());    
     UInt32 bytesUsed = classLayout.GetSizeOfFixedSection();
     
-    AllocateBytes (bytesUsed + 1024); // AllocateBytes must preceed AdjustBytesUsed because AllocateBytes may be initializing a new XAttribute
-    AdjustBytesUsed (bytesUsed);
+    AllocateBytes (bytesUsed);// + 2024); // AllocateBytes must preceed AdjustBytesUsed because AllocateBytes may be initializing a new XAttribute
     
     UInt32 bytesAllocated = GetBytesAllocated();
-    DEBUG_EXPECT (bytesAllocated >= bytesUsed + 1024);
     
     byte * data = GetDataForWrite();
     classLayout.InitializeMemoryForInstance (data, bytesAllocated);
     
     // WIP_FUSION: could initialize default values here.
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     12/09
++---------------+---------------+---------------+---------------+---------------+------*/
+void            MemoryInstanceSupport::InitializeMemory(byte * data, UInt32 bytesAllocated) const
+    {
+    ClassLayoutCR classLayout = GetClassLayout();
+    classLayout.InitializeMemoryForInstance (data, bytesAllocated);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -526,26 +634,22 @@ UInt32          MemoryInstanceSupport::GetBytesUsedFromInstanceMemory(byte const
     {
     return GetClassLayout().GetBytesUsed (data);
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       MemoryInstanceSupport::GetValueFromMemory (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+StatusInt       MemoryInstanceSupport::GetValueFromMemory (ValueR v, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const
     {
-    PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
-    PRECONDITION (Instance::AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true), ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices);
-                
-    // WIP_FUSION: check null flags first!
-    IMemoryProviderCR memoryProvider = *this;
-
-    PropertyLayoutCP layout = NULL;
-    ClassLayoutCR classLayout = GetClassLayout();
-    StatusInt status = classLayout.GetPropertyLayout (layout, propertyAccessString);
-    if (SUCCESS != status || NULL == layout)
-        return ERROR; // WIP_FUSION ERROR_PropertyNotFound
+    if (IsNull(propertyLayout))
+        {
+        //v.Clear();
+        v.SetToNull();
+        return SUCCESS;
+        }
         
-    byte const * pValue = GetAddressOfValue (*layout);
+    byte const * pValue = GetAddressOfValue (propertyLayout);
     
-    switch (layout->GetDataType())
+    switch (propertyLayout.GetDataType())
         {
         case DATATYPE_Integer32:
             {
@@ -583,6 +687,27 @@ StatusInt       MemoryInstanceSupport::GetValueFromMemory (ValueR v, const wchar
     
     POSTCONDITION (false && "datatype not implemented", ERROR);
     }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       MemoryInstanceSupport::GetValueFromMemory (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+    {
+    PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
+    PRECONDITION (Instance::AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true), ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices);
+                
+    // WIP_FUSION: check null flags first!
+    IMemoryProviderCR memoryProvider = *this;
+
+    PropertyLayoutCP propertyLayout = NULL;
+    ClassLayoutCR classLayout = GetClassLayout();
+    StatusInt status = classLayout.GetPropertyLayout (propertyLayout, propertyAccessString);
+    if (SUCCESS != status || NULL == propertyLayout)
+        return ERROR; // WIP_FUSION ERROR_PropertyNotFound
+        
+    return GetValueFromMemory (v, *propertyLayout, nIndices, indices);
+    }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -599,6 +724,14 @@ StatusInt       MemoryInstanceSupport::SetValueToMemory (const wchar_t * propert
     if (SUCCESS != status || NULL == layout)
         return ERROR; // WIP_FUSION ERROR_PropertyNotFound
         
+    if (v.IsNull())
+        {
+        SetNull (*layout, true);
+        return SUCCESS;
+        }
+        
+    SetNull (*layout, false);
+                
     if (layout->GetDataType() != v.GetDataType())
         return ERROR; // WIP_FUSION ERROR_DataTypeMismatch
     
@@ -642,5 +775,63 @@ StatusInt       MemoryInstanceSupport::SetValueToMemory (const wchar_t * propert
     return SUCCESS;
     }        
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/
+void            MemoryInstanceSupport::DumpInstanceData () const
+    {
+    byte const * data = GetDataForRead();
+    ClassLayoutCR classLayout = this->GetClassLayout();
+    
+    wprintf (L"ECClass=%s at address = 0x%8.0x\n", classLayout.GetClassName().c_str(), data);
+    InstanceFlags flags = *(InstanceFlags*)data;
+    wprintf (L"  [0x%8.0x][%4.d] InstanceFlags = 0x%08.x\n", data, 0, flags);
+    
+    UInt32 nProperties = classLayout.GetPropertyCount ();
+    
+    UInt32 bitsPerMask = (sizeof(NullflagsBitmask) * 8);
+    UInt32 nNullflagsBitmasks = nProperties / bitsPerMask;
+    if ( (nProperties % bitsPerMask) > 0)
+        ++nNullflagsBitmasks;
+    
+    for (UInt32 i = 0; i < nNullflagsBitmasks; i++)
+        {
+        UInt32 offset = sizeof(InstanceFlags) + i * sizeof(NullflagsBitmask);
+        byte const * address = offset + data;
+        wprintf (L"  [0x%8.x][%4.d] Nullflags[%d] = 0x%8.x\n", address, offset, i, *(NullflagsBitmask*)(data + offset));
+        }
+    
+    for (UInt32 i = 0; i < nProperties; i++)
+        {
+        PropertyLayoutCP propertyLayout;
+        StatusInt status = classLayout.GetPropertyLayoutByIndex (propertyLayout, i);
+        if (SUCCESS != status)
+            {
+            wprintf (L"Error (%d) returned while getting PropertyLayout #%d", status, i);
+            return;
+            }
 
+        UInt32 offset = propertyLayout->GetOffset();
+        byte const * address = data + offset;
+            
+        Value v;
+        GetValueFromMemory (v, *propertyLayout, 0, NULL);
+        std::wstring valueAsString = v.ToString();
+           
+        if (propertyLayout->IsFixedSized())
+            wprintf (L"  [0x%8.x][%4.d] %s = %s\n", address, offset, propertyLayout->GetAccessString(), valueAsString.c_str());
+        else
+            {
+            SecondaryOffset secondaryOffset = *(SecondaryOffset*)address;
+            byte const * realAddress = data + secondaryOffset;
+            
+            wprintf (L"  [0x%8.x][%4.d] -> [0x%8.x][%4.d] %s = %s\n", address, offset, realAddress, secondaryOffset, propertyLayout->GetAccessString(), valueAsString.c_str());
+            }
+        }
+        
+    UInt32 offsetOfLast = classLayout.GetSizeOfFixedSection() - sizeof(SecondaryOffset);
+    SecondaryOffset * pLast = (SecondaryOffset*)(data + offsetOfLast);
+    wprintf (L"  [0x%8.x][%4.d] Offset of TheEnd = %d\n", pLast, offsetOfLast, *pLast);
+    }
+    
 END_BENTLEY_EC_NAMESPACE

@@ -10,6 +10,8 @@
 
 #include <ECObjects\ECObjects.h>
 
+#define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
+
 EC_TYPEDEFS(IMemoryProvider);
 EC_TYPEDEFS(MemoryInstanceSupport);
 EC_TYPEDEFS(MemoryEnabler);
@@ -17,6 +19,7 @@ EC_TYPEDEFS(MemoryEnabler);
 BEGIN_BENTLEY_EC_NAMESPACE
     
 typedef UInt32 NullflagsBitmask;
+typedef UInt32 InstanceFlags;
 typedef UInt32 SecondaryOffset;
 
 typedef RefCountedPtr<MemoryEnabler> MemoryEnablerPtr;
@@ -30,16 +33,17 @@ typedef RefCountedPtr<MemoryEnabler> MemoryEnablerPtr;
 +===============+===============+===============+===============+===============+======*/      
 struct PropertyLayout
     {
+friend ClassLayout;    
 private:
     std::wstring        m_accessString;
     DataType            m_dataType;
     
-    // WIP_FUSION: Using UInt32 instead of size_t below because we anticipate persisting this struct in an XAttribute
+    // Using UInt32 instead of size_t below because we will persist this struct in an XAttribute. It will never be very big.
     UInt32              m_offset; //! An offset to either the data holding that property’s value (for fixed-size values) or to the offset at which the properties value can be found.
   //UInt32              m_modifierFlags //! Can be used to indicate that a string should be treated as fixed size, with a max length, or that a longer fixed size type should be treated as an optional variable-sized type, or that for a string that only an entry to a StringTable is Stored, or that a default value should be used.
   //UInt32              m_modifierData  //! Data used with the modifier flag, like the length of a fixed-sized string.
     UInt32              m_nullflagsOffset;
-    UInt32              m_nullflagsBitmask;
+    NullflagsBitmask    m_nullflagsBitmask;
   //PropertyCP          m_property; // WIP_FUSION: optional? YAGNI?
     
 public:
@@ -49,6 +53,7 @@ public:
 
     inline UInt32           GetOffset() const           { return m_offset; }
     inline UInt32           GetNullflagsOffset() const  { return m_nullflagsOffset; }
+    inline NullflagsBitmask GetNullflagsBitmask() const { return m_nullflagsBitmask; }
     inline DataType         GetDataType() const         { return m_dataType; }
     inline wchar_t const *  GetAccessString() const     { return m_accessString.c_str(); }
     
@@ -80,6 +85,7 @@ private:
     
     // These members are expected to be persisted  
     UInt16                  m_classID; // Unique per some context, e.g. per DgnFile
+    std::wstring            m_className;
     UInt32                  m_nProperties;
     
     PropertyLayoutVector    m_propertyLayouts; // This is the primary collection, there is a secondary map for lookup by name, below.
@@ -95,33 +101,25 @@ private:
     StatusInt               AddFixedSizeProperty (wchar_t const * accessString, DataType datatype);
     StatusInt               AddVariableSizeProperty (wchar_t const * accessString, DataType datatype);
     StatusInt               FinishLayout ();
-    
-    UInt32                  GetSizeOfFixedSection() const;
-    void                    InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const;
-    
-    //! Shifts the values' data and adjusts SecondaryOffsets for all variable-sized property values 
-    //! AFTER the given one, to make room for additional bytes needed for the property value of the given PropertyLayout
-    //! or to "compact" to reclaim unused space.
-    //! @param data                     Start of the data of the MemoryInstanceSupport
-    //! @param propertyLayout           PropertyLayout of the variable-sized property whose size is increasing
-    //! @param shiftBy    Positive or negative! Memory will be moved and SecondaryOffsets will be adjusted by this amount
-    void                    ShiftValueData(byte * data, PropertyLayoutCR propertyLayout, Int32 shiftBy) const;    
-    
-    //! Determines the number of bytes used, so far
-    UInt32                  GetBytesUsed(byte const * data) const;
-    
+
 public:
     ClassLayout();
     StatusInt               SetClass (ClassCR ecClass, UInt16 classID);
     UInt16                  GetClassID() const;
+    std::wstring            GetClassName() const;
+    UInt32                  GetPropertyCount () const;
     StatusInt               GetPropertyLayout (PropertyLayoutCP & propertyLayout, wchar_t const * accessString) const;
     StatusInt               GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const;
     // WIP_FUSION add StatusInt GetPropertyIndex (UInt32& propertyIndex, wchar_t const * accessString);
     
     void                    Dump() const;
     
+    void                    InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const;
+    
     static UInt32           GetPropertyValueSize (DataType datatype); // WIP_FUSION: move to ecvalue.h
-
+    UInt32                  GetSizeOfFixedSection() const;
+    //! Determines the number of bytes used, so far
+    UInt32                  GetBytesUsed(byte const * data) const;
     };
          
 struct ClassLayoutRegistry
@@ -141,7 +139,6 @@ protected:
     virtual byte *       GetDataForWrite () const = 0;
     virtual StatusInt    ModifyData (UInt32 offset, void const * newData, UInt32 dataLength) = 0;
     virtual UInt32       GetBytesUsed () const = 0;
-    virtual void         AdjustBytesUsed (Int32 adjustment) = 0; // WIP_FUSION: should be eliminated. We can calculate BytesUsed from the data itself
     virtual UInt32       GetBytesAllocated () const = 0;
     //! Allocates memory for the Instance. The memory does not need to be initialized in any way.
     //! @param minimumBytesToAllocate
@@ -168,17 +165,10 @@ struct MemoryEnabler : public Enabler, public ICreateInstance //wip: also implem
 private:
     ClassLayout             m_classLayout;
     
-    MemoryEnabler (ClassCR ecClass, UInt16 classID) : Enabler (ecClass, MEMORYENABLER_EnablerID, L"Bentley::EC::MemoryEnabler")
-        {
-        // FUSION_WIP: sometimes, this will be loaded from the file
-        m_classLayout.SetClass(ecClass, classID);
-        }
+    MemoryEnabler (ClassCR ecClass, UInt16 classID);
         
 protected:
-    ECOBJECTS_EXPORT MemoryEnabler (ClassCR ecClass, UInt16 classID, UInt32 enablerID, std::wstring name) : Enabler (ecClass, enablerID, name) 
-        {
-        m_classLayout.SetClass(ecClass, classID);
-        }        
+    ECOBJECTS_EXPORT MemoryEnabler (ClassCR ecClass, UInt16 classID, UInt32 enablerID, std::wstring name);
 public: 
 
     static MemoryEnablerPtr             Create(ClassCR ecClass, UInt16 classID)
@@ -196,18 +186,35 @@ struct MemoryInstanceSupport : IMemoryProvider
     {
 private:    
 
-    byte const *        GetAddressOfValue (PropertyLayoutCR propertyLayout) const;
-    UInt32              GetOffsetOfValue (PropertyLayoutCR propertyLayout) const;
-    StatusInt           EnsureSpaceIsAvailable (PropertyLayoutCR propertyLayout, UInt32 bytesNeeded);
-    ClassLayoutCR       GetClassLayout() const;
+    byte const *                GetAddressOfValue (PropertyLayoutCR propertyLayout) const;
+    UInt32                      GetOffsetOfValue (PropertyLayoutCR propertyLayout) const;
+    bool                        IsNull (PropertyLayoutCR propertyLayout) const;
+    void                        SetNull (PropertyLayoutCR propertyLayout, bool isNull);
+    
+    //! Shifts the values' data and adjusts SecondaryOffsets for all variable-sized property values 
+    //! AFTER the given one, to make room for additional bytes needed for the property value of the given PropertyLayout
+    //! or to "compact" to reclaim unused space.
+    //! @param data           Start of the data of the MemoryInstanceSupport
+    //! @param propertyLayout PropertyLayout of the variable-sized property whose size is increasing
+    //! @param shiftBy        Positive or negative! Memory will be moved and SecondaryOffsets will be adjusted by this amount
+    void                        ShiftValueData(ClassLayoutCR classLayout, byte * data, PropertyLayoutCR propertyLayout, Int32 shiftBy);
+        
+    StatusInt                   EnsureSpaceIsAvailable (PropertyLayoutCR propertyLayout, UInt32 bytesNeeded);
+    ClassLayoutCR               GetClassLayout() const;
          
 protected:
-    ECOBJECTS_EXPORT void               InitializeInstanceMemory ();
-    ECOBJECTS_EXPORT UInt32             GetBytesUsedFromInstanceMemory(byte const * data) const;
+    ECOBJECTS_EXPORT void       AllocateAndInitializeMemory ();
+    ECOBJECTS_EXPORT void       InitializeMemory(byte * data, UInt32 bytesAllocated) const;
     
+    ECOBJECTS_EXPORT UInt32     GetBytesUsedFromInstanceMemory(byte const * data) const;
+    
+    ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ValueR v, PropertyLayoutCR propertyLayout,      UInt32 nIndices, UInt32 const * indices) const;
     ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const;
-    ECOBJECTS_EXPORT StatusInt  SetValueToMemory (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices, UInt32 const * indices);      
-    ECOBJECTS_EXPORT virtual MemoryEnablerCP GetMemoryEnabler() const = 0;
+    ECOBJECTS_EXPORT StatusInt  SetValueToMemory (const wchar_t * propertyAccessString, ValueCR v,  UInt32 nIndices, UInt32 const * indices);      
+    ECOBJECTS_EXPORT virtual    MemoryEnablerCP GetMemoryEnabler() const = 0;
+
+public:    
+    ECOBJECTS_EXPORT void       DumpInstanceData () const;
     };
 
 END_BENTLEY_EC_NAMESPACE

@@ -13,7 +13,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 * Copies this value, including all strings and array values held by this value.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Value::ConstructUninitialized()
+void            Value::ConstructUninitialized()
     {
     int size = sizeof (Value); // currently 32 bytes
     memset (this, 0xBAADF00D, size); // avoid accidental misinterpretation of uninitialized data
@@ -28,7 +28,7 @@ void Value::ConstructUninitialized()
 * It duplicates string values, even if the original did not hold a duplicate that is was responsible for freeing.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Value::DeepCopy (ValueCR v)
+void            Value::DeepCopy (ValueCR v)
     {
     memcpy (this, &v, sizeof(Value));
     /*ConstructUninitialized ();    
@@ -75,7 +75,7 @@ void            Value::SetToNull()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Value::Clear()
+void            Value::Clear()
     {
     if (IsNull())
         {
@@ -177,7 +177,7 @@ Value::Value (const wchar_t * string, bool holdADuplicate)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-::Int32 Value::GetInteger() const
+::Int32         Value::GetInteger() const
     {
     PRECONDITION (IsInteger() && "Tried to get integer value from an EC::Value that is not an integer.", 0);
     PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", 0);
@@ -187,7 +187,7 @@ Value::Value (const wchar_t * string, bool holdADuplicate)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Value::SetInteger (::Int32 integer)
+StatusInt       Value::SetInteger (::Int32 integer)
     {
     m_isNull    = false;
     m_dataType  = DATATYPE_Integer32;
@@ -199,7 +199,7 @@ StatusInt Value::SetInteger (::Int32 integer)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-::Int64 Value::GetLong() const
+::Int64         Value::GetLong() const
     {
     PRECONDITION (IsLong() && "Tried to get long64 value from an EC::Value that is not an long64.", 0);
     PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", 0);
@@ -209,7 +209,7 @@ StatusInt Value::SetInteger (::Int32 integer)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Value::SetLong (::Int64 long64)
+StatusInt       Value::SetLong (::Int64 long64)
     {
     m_isNull    = false;
     m_dataType  = DATATYPE_Long64;
@@ -221,7 +221,7 @@ StatusInt Value::SetLong (::Int64 long64)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-double Value::GetDouble() const
+double          Value::GetDouble() const
     {
     PRECONDITION (IsDouble() && "Tried to get double value from an EC::Value that is not an double.", std::numeric_limits<double>::quiet_NaN());
     PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", std::numeric_limits<double>::quiet_NaN());
@@ -231,7 +231,7 @@ double Value::GetDouble() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Value::SetDouble (double value)
+StatusInt       Value::SetDouble (double value)
     {
     m_isNull    = false;
     m_dataType  = DATATYPE_Double;
@@ -278,10 +278,51 @@ StatusInt Value::SetString (const wchar_t * string, bool holdADuplicate)
     }
     
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     12/09
++---------------+---------------+---------------+---------------+---------------+------*/    
+std::wstring    Value::ToString ()
+    {
+    if (IsNull())
+        return L"<null>";
+        
+    std::wostringstream valueAsString;
+    switch (GetDataType())
+        {
+        case DATATYPE_Integer32:
+            {
+            valueAsString << GetInteger();
+            break;
+            }
+        case DATATYPE_Long64:
+            {
+            valueAsString << GetLong();
+            break;
+            }            
+        case DATATYPE_Double:
+            {
+            valueAsString << GetDouble();
+            break;
+            }            
+        case DATATYPE_String:
+            {
+            valueAsString << GetString();
+            break;          
+            }
+        default:
+            {
+            valueAsString << L"EC::Value::ToString needs work... unsupported data type";
+            break;          
+            }            
+        }
+        
+    return valueAsString.str();
+    }
+    
+/*---------------------------------------------------------------------------------**//**
 * @param        capacity IN  Estimated size of the array.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt         Value::SetArrayInfo (DataType elementDataType, UInt32 count, bool isFixedSize, bool isReadOnly)
+StatusInt       Value::SetArrayInfo (DataType elementDataType, UInt32 count, bool isFixedSize, bool isReadOnly)
     {
     Clear();
         
@@ -296,7 +337,7 @@ StatusInt         Value::SetArrayInfo (DataType elementDataType, UInt32 count, b
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ArrayInfo         Value::GetArrayInfo()
+ArrayInfo       Value::GetArrayInfo()
     {
     assert (IsArray());
     
@@ -306,7 +347,7 @@ ArrayInfo         Value::GetArrayInfo()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void      ArrayInfo::Initialize (DataType elementDataType, UInt32 count, bool isFixedSize)
+void            ArrayInfo::Initialize (DataType elementDataType, UInt32 count, bool isFixedSize)
     {
     m_elementDataType = elementDataType;
     m_count           = count;
@@ -317,7 +358,7 @@ void      ArrayInfo::Initialize (DataType elementDataType, UInt32 count, bool is
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32      ArrayInfo::GetCount() const
+UInt32          ArrayInfo::GetCount() const
     {
     return m_count;
     }
@@ -325,7 +366,7 @@ UInt32      ArrayInfo::GetCount() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool      ArrayInfo::IsFixedSize() const
+bool            ArrayInfo::IsFixedSize() const
     {
     return m_isFixedSize;
     }
@@ -333,7 +374,7 @@ bool      ArrayInfo::IsFixedSize() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-DataType    ArrayInfo::GetElementDataType() const
+DataType        ArrayInfo::GetElementDataType() const
     {
     return m_elementDataType;
     }  

@@ -133,6 +133,10 @@ public:
         
     ECOBJECTS_EXPORT const wchar_t * GetString() const;
     ECOBJECTS_EXPORT StatusInt       SetString (const wchar_t * string, bool holdADuplicate = true);
+    
+    //! This is intended for debugging purposes, not for presentation purposes.
+    ECOBJECTS_EXPORT std::wstring    ToString ();
+    
     };
 
 END_BENTLEY_EC_NAMESPACE
