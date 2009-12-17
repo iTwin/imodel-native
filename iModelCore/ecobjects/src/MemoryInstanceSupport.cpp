@@ -13,6 +13,41 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/09
++---------------+---------------+---------------+---------------+---------------+------*/
+DataType        DataTypeFromPrimitiveType (PrimitiveType primitiveType)
+    {
+    switch (primitiveType)
+        {
+        case PRIMITIVETYPE_Integer: return DATATYPE_Integer32;
+        case PRIMITIVETYPE_Long:    return DATATYPE_Long64;
+        case PRIMITIVETYPE_Double:  return DATATYPE_Double;
+        case PRIMITIVETYPE_String:  return DATATYPE_String;
+        default:                    return DATATYPE_Uninitialized;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/09
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            DataTypeIsFixedSize (DataType dataType)
+    {
+    switch (dataType)
+        {
+        case DATATYPE_Integer32:
+        case DATATYPE_Long64:
+        case DATATYPE_Double:
+            return true;
+        case DATATYPE_String:
+            return false;
+        default:
+            assert(false && "Unsupported data type");
+            return false;
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -228,14 +263,62 @@ void            MemoryInstanceSupport::ShiftValueData(ClassLayoutCR classLayout,
     }
     
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/09
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ClassLayout::AddProperties (ClassCR ecClass, wchar_t const * nameRoot, bool addingFixedSizeProps)
+    {
+    for each (PropertyP property in ecClass.GetProperties())
+        {
+        std::wstring    propName = property->GetName();
+        
+        if (NULL != nameRoot)
+            propName = std::wstring (nameRoot) + L"." + propName;
+
+        if (property->GetIsPrimitive())
+            {
+            PrimitivePropertyP  primitiveProp = property->GetAsPrimitiveProperty();
+            DataType            dataType = DataTypeFromPrimitiveType (primitiveProp->GetType());
+
+            if (DATATYPE_Uninitialized == dataType)
+                { assert (false && "Unimplemented Primitive Type"); continue; }
+
+            bool isFixedSize = DataTypeIsFixedSize(dataType);
+
+            if (addingFixedSizeProps && isFixedSize)
+                AddFixedSizeProperty (propName.c_str(), dataType);
+            else
+            if ( ! addingFixedSizeProps && ! isFixedSize)
+                AddVariableSizeProperty (propName.c_str(), dataType);
+            }
+        else
+        if (property->GetIsStruct())
+            {
+            StructPropertyP  structProp = property->GetAsStructProperty();
+            ClassCR          nestedClass = structProp->GetType();
+            
+            AddProperties (nestedClass, propName.c_str(), addingFixedSizeProps);
+            }
+        else
+        if (property->GetIsArray())
+            {
+            assert (false && "Arrays are not implemented");
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ClassLayout::SetClass (ClassCR ecClass, UInt16 classID)
     {
     m_classID = classID;
     m_className = ecClass.GetName();
+
     // WIP_FUSION: iterate through the EC::Properties of the EC::Class and build the layout
-    
+    AddProperties (ecClass, NULL, true);
+    AddProperties (ecClass, NULL, false);
+
+#if defined (TO_BE_REMOVED)
     // WIP_FUSION: fake it til we make it
     /* Fake a layout for
     
@@ -309,6 +392,7 @@ StatusInt       ClassLayout::SetClass (ClassCR ecClass, UInt16 classID)
     Need to figure out how to really handle this recursively in a consistent way....
     
     */
+#endif
     
     FinishLayout ();
     

@@ -97,6 +97,7 @@ private:
     UInt32                  m_offset;
     UInt32                  m_sizeOfFixedSection;
     
+    void                    AddProperties (ClassCR ecClass, wchar_t const * nameRoot, bool addFixedSize);
     StatusInt               AddProperty (wchar_t const * accessString, DataType datatype, size_t size);
     StatusInt               AddFixedSizeProperty (wchar_t const * accessString, DataType datatype);
     StatusInt               AddVariableSizeProperty (wchar_t const * accessString, DataType datatype);
