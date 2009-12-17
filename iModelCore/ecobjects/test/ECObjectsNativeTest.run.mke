@@ -8,8 +8,8 @@
 %include mdl.mki
 
 always:
-     $(OutputRootDir)Product/ECFrameworkTest/Tests/ECObjectsTest_Published.exe
-     $(OutputRootDir)Product/ECFrameworkTest/Tests/ECObjectsTest_NonPublished.exe
+     $(OutputRootDir)Product/ECFrameworkTest/Tests/native/ECObjectsTest_Published.exe
+     $(OutputRootDir)Product/ECFrameworkTest/Tests/native/ECObjectsTest_NonPublished.exe
 
 
 
