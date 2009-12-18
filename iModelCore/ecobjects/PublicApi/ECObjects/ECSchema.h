@@ -563,7 +563,7 @@ public:
     //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and
     //! uninitialize COM using CoInitialize/CoUninitialize</b>
     //! @param[out]   schemaOut           The deserialized schema
-    //! @param[in]    ecSchemaXmlFile     The string containing ECSchemaXML to deserialize
+    //! @param[in]    ecSchemaXml         The string containing ECSchemaXML to deserialize
     //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
     //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
     ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXMLFromString (SchemaPtr& schemaOut, const wchar_t * ecSchemaXml);
