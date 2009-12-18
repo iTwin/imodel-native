@@ -8,6 +8,8 @@
 #pragma once
 
 #include <ECObjects\ECObjectsAPI.h>
+#include <sstream>
+#include "ecxml.h"
 
 
 

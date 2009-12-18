@@ -6,6 +6,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+#include <hash_map>
+
+#include <msxml6\msxml6.tlh>
+
 /*__PUBLISH_SECTION_START__*/
 
 /*=================================================================================**//**
@@ -42,7 +46,7 @@
 #include <ECObjects\ECInstance.h>
 #include <ECObjects\ECSchema.h>
 #include <ECObjects\ECValue.h>
-#include <ECObjects\MemoryLayout.h>
+#include <ECObjects\MemoryInstanceSupport.h>
 #include <ECObjects\StandaloneInstance.h>
 
 /*__PUBLISH_SECTION_END__*/

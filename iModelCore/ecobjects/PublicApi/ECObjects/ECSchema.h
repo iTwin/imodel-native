@@ -6,280 +6,569 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+
 /*__PUBLISH_SECTION_START__*/
 
 #include <ECObjects\ECObjects.h>
+#include <Bentley\RefCounted.h>
+
+#define DEFAULT_VERSION_MAJOR   1
+#define DEFAULT_VERSION_MINOR   0
 
 BEGIN_BENTLEY_EC_NAMESPACE
-  
-/*=================================================================================**//**
-* @bsistruct                                                     
-+===============+===============+===============+===============+===============+======*/
-struct Class
-    {
-private:
-    std::wstring    m_name;
-    SchemaCP        m_schema; //WIP_FUSION smart pointer?
-public:
-    ECOBJECTS_EXPORT Class (wchar_t const * name, SchemaCR schema) : m_name(name), m_schema(&schema)
-        {
-        }
-        
-    ECOBJECTS_EXPORT wchar_t const * GetName() const
-        {
-        return m_name.c_str();
-        }
-        
-    SchemaCP GetSchema() const
-        {
-        return m_schema;
-        }
-              
-    StatusInt GetProperty (PropertyP & ecProperty, const wchar_t * propertyName) const;
 
+/*__PUBLISH_SECTION_END__*/
+
+/*=================================================================================**//**
+* Comparison function that is used within various schema related data structures
+* for string comparison in STL collections.
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct less_str
+{
+bool operator()(const wchar_t * s1, const wchar_t * s2) const
+    {
+    if (wcscmp(s1, s2) < 0)
+        return true;
+
+    return false;
+    }
+};
+
+typedef stdext::hash_map<const wchar_t * , PropertyP, stdext::hash_compare<const wchar_t *, less_str>>   PropertyMap;
+typedef stdext::hash_map<const wchar_t * , ClassP, stdext::hash_compare<const wchar_t *, less_str>> ClassMap;
+/*__PUBLISH_SECTION_START__*/
+
+//NEEDSWORK reconcile DataType & PrimitiveType
+
+//! Enumeration of primitive datatypes supported by native "ECObjects" implementation.
+//! These should correspond to all of the datatypes supported in .NET ECObjects
+enum DataType //NEEDSWORK: Could or should I define this to be a UInt8 in order to save space per value?
+    {
+    DATATYPE_Uninitialized                  = 0,
+    DATATYPE_Array                          = 1,
+    DATATYPE_Struct                         = 2,
+    DATATYPE_Integer32                      = 3,
+    DATATYPE_Long64                         = 4,
+    DATATYPE_String                         = 5,
+    DATATYPE_Double                         = 6,
     };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct Schema //: public CECCommon
+//NEEDSWORK types: common geometry, installed primitives
+// If you add any additional types you must update 
+//    - ECXML_TYPENAME_X constants
+//    - PrimitiveProperty::_GetTypeName
+enum PrimitiveType
+    {
+    PRIMITIVETYPE_Binary                    = 0,
+    PRIMITIVETYPE_Boolean                   = 1,
+    PRIMITIVETYPE_DateTime                  = 2,
+    PRIMITIVETYPE_Double                    = 3,
+    PRIMITIVETYPE_Integer                   = 4,
+    PRIMITIVETYPE_Long                      = 5,
+    PRIMITIVETYPE_Point2D                   = 6,
+    PRIMITIVETYPE_Point3D                   = 7,
+    PRIMITIVETYPE_String                    = 8
+    };
+
+enum ArrayElementClassification
+    {
+    ELEMENTCLASSIFICATION_Primitive       = 0,
+    ELEMENTCLASSIFICATION_Struct          = 1
+    };
+
+// NEEDSWORK - unsure what the best way is to model ECProperty.  Managed implementation has a single ECProperty and introduces an ECType concept.  My gut is that
+// this is overkill for the native implementation.  Alternatively we could have a single Property class that could act as primitive/struct/array or we can take the
+// appoach I've implemented below.
+
+/*=================================================================================**//**
+//
+//! The in-memory representation of an ECProperty as defined by ECSchemaXML
+//
++===============+===============+===============+===============+===============+======*/
+struct Property abstract
 {
-    //friend class CECSchemaReference;
-    //friend class CECReferencedSchemaIterator;
-    //friend class CECClassIterator;
+/*__PUBLISH_SECTION_END__*/
+friend struct Class;
 
 private:
-    //    static ECValuePtrList s_recycledValues;    
-    std::wstring m_schemaName;
-    std::wstring m_schemaPrefix;
-    std::wstring m_displayLabel;
-    UInt32   m_majorVersion;
-    UInt32   m_minorVersion;
+    std::wstring    m_name;        
+    std::wstring    m_displayLabel;
+    std::wstring    m_description;
+    bool            m_readOnly;
+    ClassCR         m_class;
+    PropertyP       m_baseProperty;    
 
-    //    
-    //    std::wstring m_referencedSchemaSearchPath;
-    //    
-    //    ECRelationshipConstraintUpgradeHandlerP m_ecRelationshipUpgradeHandler;
-    //    ECClassResolutionHelperP                m_ecClassResolutionHelper;
-    //    ECSchemaReferenceVector                 m_referencedSchemas; //needwork: make this a map based on the prefix
-    //    CECClassVector                          m_CECClassVector;  //needswork: make this a map for fast lookup by name
-    //    CECRelationshipClassVector              m_CECRelationshipClassVector;
+protected:
+    Property (ClassCR ecClass) : m_class(ecClass), m_readOnly(false), m_baseProperty(NULL) {};        
+    ECObjectsStatus SetName (std::wstring const& name);    
 
-    void init (std::wstring & name, std::wstring & prefix);
+    virtual SchemaDeserializationStatus _ReadXML (MSXML2::IXMLDOMNode& propertyNode);
+    virtual bool _IsPrimitive () const { return false; }
+    virtual bool _IsStruct () const { return false; }
+    virtual bool _IsArray () const { return false; }
+    // This method returns a wstring by value because it may be a computed string.  For instance struct properties may return a qualified typename with a namespace
+    // prefix relative to the containing schema.
+    virtual std::wstring _GetTypeName () const abstract;
+    virtual ECObjectsStatus _SetTypeName (std::wstring const& typeName) abstract;
+
+/*__PUBLISH_SECTION_START__*/
+public:    
+    EXPORTED_READONLY_PROPERTY (ClassCR, Class);   
+    // Class implementation will index property by name so publicly name can not be reset
+    EXPORTED_READONLY_PROPERTY (std::wstring const&, Name);        
+    EXPORTED_READONLY_PROPERTY (bool, IsDisplayLabelDefined);    
+    EXPORTED_READONLY_PROPERTY (bool, IsStruct);    
+    EXPORTED_READONLY_PROPERTY (bool, IsArray);    
+    EXPORTED_READONLY_PROPERTY (bool, IsPrimitive);    
+
+    //! The ECXML typename for the property.  
+    //! The TypeName for struct properties will be the ECClass name of the struct.  It may be qualified with a namespacePrefix if 
+    //! the struct belongs to a schema that is referenced by the schema actually containing this property.
+    //! The TypeName for array properties will be the type of the elements the array contains.
+    //! This method returns a wstring by value because it may be a computed string.  For instance struct properties may return a qualified typename with a namespace
+    //! prefix relative to the containing schema.
+    EXPORTED_PROPERTY  (std::wstring, TypeName);        
+    EXPORTED_PROPERTY  (std::wstring const&, Description);
+    EXPORTED_PROPERTY  (std::wstring const&, DisplayLabel);    
+    EXPORTED_PROPERTY  (bool, IsReadOnly);    
+
+    ECOBJECTS_EXPORT ECObjectsStatus SetIsReadOnly (const wchar_t * isReadOnly);
+
+    // NEEDSWORK, don't necessarily like this pattern but it will suffice for now.  Necessary since you can't dynamic_cast when using the published headers.  How
+    // do other similiar classes deal with this.
+    ECOBJECTS_EXPORT PrimitivePropertyP GetAsPrimitiveProperty () const;
+    ECOBJECTS_EXPORT ArrayPropertyP GetAsArrayProperty () const;
+    ECOBJECTS_EXPORT StructPropertyP GetAsStructProperty () const;
+};
+
+/*=================================================================================**//**
+//
+//! The in-memory representation of an ECProperty as defined by ECSchemaXML
+//
++===============+===============+===============+===============+===============+======*/
+struct PrimitiveProperty /*__PUBLISH_ABSTRACT__*/ : public Property
+{
+/*__PUBLISH_SECTION_END__*/
+friend struct Class;
+private:
+    PrimitiveType   m_primitiveType;   
+
+    PrimitiveProperty (ClassCR ecClass) : m_primitiveType(PRIMITIVETYPE_String), Property(ecClass) {};
+
+protected:
+    virtual SchemaDeserializationStatus _ReadXML (MSXML2::IXMLDOMNode& propertyNode) override;
+    virtual bool _IsPrimitive () const override { return true;}
+    virtual std::wstring _GetTypeName () const override;
+    virtual ECObjectsStatus _SetTypeName (std::wstring const& typeName) override;
+
+/*__PUBLISH_SECTION_START__*/
+public:    
+    EXPORTED_PROPERTY  (PrimitiveType, Type);    
+};
+
+/*=================================================================================**//**
+//
+//! The in-memory representation of an ECProperty as defined by ECSchemaXML
+//
++===============+===============+===============+===============+===============+======*/
+struct StructProperty /*__PUBLISH_ABSTRACT__*/ : public Property
+{
+/*__PUBLISH_SECTION_END__*/
+friend struct Class;
+private:
+    ClassCP   m_structType;   
+
+    StructProperty (ClassCR ecClass) : m_structType(NULL), Property(ecClass) {};
+
+protected:
+    virtual SchemaDeserializationStatus _ReadXML (MSXML2::IXMLDOMNode& propertyNode) override;
+    virtual bool _IsStruct () const override { return true;}
+    virtual std::wstring _GetTypeName () const override;
+    virtual ECObjectsStatus _SetTypeName (std::wstring const& typeName) override;
+
+/*__PUBLISH_SECTION_START__*/
+public:    
+    //! The property type.
+    //! This type must be an ECClass where IsStruct is set to true.
+    EXPORTED_PROPERTY  (ClassCR, Type);    
+};
+
+/*=================================================================================**//**
+//
+//! The in-memory representation of an ECProperty as defined by ECSchemaXML
+//
++===============+===============+===============+===============+===============+======*/
+struct ArrayProperty /*__PUBLISH_ABSTRACT__*/ : public Property
+{
+/*__PUBLISH_SECTION_END__*/
+friend struct Class;
+
+private:
+    UInt32  m_minOccurs;
+    UInt32  m_maxOccurs;
+
+    union
+        {
+        PrimitiveType   m_primitiveType;
+        ClassCP         m_structType;
+        };
+
+    ArrayElementClassification m_elementClassification;
+      
+    ArrayProperty (ClassCR ecClass) : m_primitiveType(PRIMITIVETYPE_String), m_elementClassification (ELEMENTCLASSIFICATION_Primitive),
+        m_minOccurs (0), m_maxOccurs (UINT_MAX), Property(ecClass) {};
+    ECObjectsStatus SetMinOccurs (std::wstring const& minOccurs);          
+    ECObjectsStatus SetMaxOccurs (std::wstring const& maxOccurs);          
+
+protected:
+    virtual SchemaDeserializationStatus _ReadXML (MSXML2::IXMLDOMNode& propertyNode) override;
+    virtual bool _IsArray () const override { return true;}
+    virtual std::wstring _GetTypeName () const override;
+    virtual ECObjectsStatus _SetTypeName (std::wstring const& typeName) override;
+
+/*__PUBLISH_SECTION_START__*/
+public:      
+    EXPORTED_READONLY_PROPERTY  (ArrayElementClassification, ElementClassification);        
+
+    EXPORTED_PROPERTY  (PrimitiveType, PrimitiveElementType);        
+    EXPORTED_PROPERTY  (ClassCP, StructElementType);    
+    EXPORTED_PROPERTY  (UInt32, MinOccurs);  
+    EXPORTED_PROPERTY  (UInt32, MaxOccurs);     
+};
+
+/*=================================================================================**//**
+//
+//! Container holding ECProperties that supports STL like iteration
+//
++===============+===============+===============+===============+===============+======*/
+struct      PropertyContainer /*__PUBLISH_ABSTRACT__*/
+{
+/*__PUBLISH_SECTION_END__*/
+private:
+    friend struct Class;
+        
+    PropertyMap const&     m_propertyMap;
+    
+    PropertyContainer (PropertyMap const& propertyMap) 
+        : m_propertyMap (propertyMap) {};
+
+/*__PUBLISH_SECTION_START__*/
 
 public:    
-    ECOBJECTS_EXPORT Schema (const wchar_t * prefix, const wchar_t * name, UInt32 majorVersion, UInt32 minorVersion);
-    ECOBJECTS_EXPORT ~Schema();
+    /*=================================================================================**//**
+    * @bsistruct
+    +===============+===============+===============+===============+===============+======*/
+    struct IteratorState /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
+        {        
+        friend struct const_iterator;
+/*__PUBLISH_SECTION_END__*/
+        public:            
+            PropertyMap::const_iterator     m_mapIterator;                   
 
-    ECOBJECTS_EXPORT const wchar_t * GetSchemaName() const;
-    void SetSchemaName (const wchar_t * schemaName);    
+            IteratorState (PropertyMap::const_iterator mapIterator) { m_mapIterator = mapIterator; };
+            static RefCountedPtr<IteratorState> Create (PropertyMap::const_iterator mapIterator) { return new IteratorState(mapIterator); };
+/*__PUBLISH_SECTION_START__*/                        
+        };
 
-    ECOBJECTS_EXPORT const wchar_t * GetSchemaPrefix() const;    
-    void SetSchemaPrefix (const wchar_t * schemaPrefix);
+    /*=================================================================================**//**
+    * @bsistruct
+    +===============+===============+===============+===============+===============+======*/
+    struct const_iterator
+    {    
+    private:                
+        friend          PropertyContainer;                   
+        RefCountedPtr<IteratorState>   m_state;
 
-    const wchar_t * GetDisplayLabel() const;
-    void SetDisplayLabel (const wchar_t * displayLabel);
+/*__PUBLISH_SECTION_END__*/
+        const_iterator (PropertyMap::const_iterator mapIterator) { m_state = IteratorState::Create (mapIterator); };
+/*__PUBLISH_SECTION_START__*/                        
 
-    static bool SchemaNameIsValid (const wchar_t * name);
+    public:
+        ECOBJECTS_EXPORT const_iterator&     operator++();
+        ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const;
+        ECOBJECTS_EXPORT PropertyP           operator* () const;
+    };
 
-    //    ECRelationshipConstraintUpgradeHandlerP GetECRelationshipUpgradeHandler ();
+public:
+    ECOBJECTS_EXPORT const_iterator begin () const;
+    ECOBJECTS_EXPORT const_iterator end ()   const;
 
-    //    void SetECRelationshipUpgradeHandler(ECRelationshipConstraintUpgradeHandlerP handler);
+}; 
 
-    //    ECClassResolutionHelperP GetECClassResolutionHelper ();
-    //    void SetECClassResolutionHelper(ECClassResolutionHelperP helper);
+/*=================================================================================**//**
+//
+//! The in-memory representation of an ECClass as defined by ECSchemaXML
+//
++===============+===============+===============+===============+===============+======*/
+struct Class /*__PUBLISH_ABSTRACT__*/
+{
+/*__PUBLISH_SECTION_END__*/
 
-    //    static BOOL CECSchema::IsPrimitiveType (LPCWSTR typeName);
+friend struct Schema;
+friend struct PropertyContainer;
 
-    //    static CECValue * GetRecycledECValue (CECProperty * pECProperty);
-    //    static void RecycleECValue (CECValue * pECValue);
-    //    static void FreeRecycledValues ();
+private:
+    std::wstring    m_name;
+    std::wstring    m_displayLabel;
+    std::wstring    m_description;
+    bool            m_isStruct;
+    bool            m_isCustomAttributeClass;
+    bool            m_isDomainClass;
+    SchemaCR        m_schema;
+    std::vector<ClassP>    m_baseClasses;
+    PropertyContainer   m_propertyContainer;
 
-    //    virtual void AddReference(CECSchemaReference & ecSchemaReference);// this is only virtual so that this becomes a polymorphic type (to avoid error C2683)
-  
+    // Needswork:  Does STL provide any type of hypbrid list/dictionary collection?  We need fast lookup by name as well as retained order.  For now we will
+    // just use a hash_map but we need to start retaining order once we implement serialization.
+    PropertyMap m_propertyMap;    
+    
+    ECObjectsStatus AddProperty (PropertyP& pProperty);    
 
-    //    CECSchema * GetReferencedSchema (ULONG i);
+protected:
+    //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
+    //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
+    //  of a schema.
+    Class (SchemaCR schema) : m_schema(schema), m_isStruct(false), m_isCustomAttributeClass(false), m_isDomainClass(true), m_propertyContainer(PropertyContainer(m_propertyMap)){ };
+    ~Class();    
 
-    //    CECSchema * FindReferencedSchema (LPCWSTR schemaName, LPCWSTR versionString = NULL);
+    // schemas index class by name so publicly name can not be reset
+    ECObjectsStatus SetName (std::wstring const& name);    
 
-    //    CECSchema * FindReferencedSchemaByPrefix (LPCWSTR prefix);
+    virtual SchemaDeserializationStatus ReadXMLAttributes (MSXML2::IXMLDOMNode& classNode);
 
-    //    void AddECRelationshipClass(CECRelationshipClass *pCECRelationshipClass);
+    //! Uses the specified xml node (which must conform to an ECClass as defined in ECSchemaXML) to populate the base classes and properties of this class.
+    //! Before this method is invoked the schema containing the class must have loaded all schema references and stubs for all classes within
+    //! the schema itself otherwise the method may fail because such dependencies can not be located.
+    //! @param[in]  classNode       The XML DOM node to read
+    //! @return   Status code
+    virtual SchemaDeserializationStatus ReadXMLContents (MSXML2::IXMLDOMNode& classNode);    
 
-    //    CECRelationshipClass * GetECRelationshipClass(int i);
-    //    int GetECRelationshipClassCount();
+/*__PUBLISH_SECTION_START__*/
 
-    //    CECClass * CreateECClass (LPCWSTR typeName, LPCWSTR description = L"", DWORD classType = ECXML_CLASSTYPE_DOMAIN);
+public:    
+    EXPORTED_READONLY_PROPERTY (SchemaCR, Schema);                
+    // schemas index class by name so publicly name can not be reset
+    EXPORTED_READONLY_PROPERTY (std::wstring const&, Name);        
+    EXPORTED_READONLY_PROPERTY (bool, IsDisplayLabelDefined);    
+    EXPORTED_READONLY_PROPERTY (PropertyContainerCR, Properties);    
 
-    //    CECRelationshipClass * CreateECRelationshipClass (LPCWSTR typeName, LPCWSTR description = L"", DWORD classType = ECXML_CLASSTYPE_DOMAIN);
+    EXPORTED_PROPERTY  (std::wstring const&, Description);
+    EXPORTED_PROPERTY  (std::wstring const&, DisplayLabel);
+    EXPORTED_PROPERTY  (bool, IsStruct);    
+    EXPORTED_PROPERTY  (bool, IsCustomAttributeClass);    
+    EXPORTED_PROPERTY  (bool, IsDomainClass);    
+    
+    ECOBJECTS_EXPORT ECObjectsStatus SetIsStruct (const wchar_t * isStruct);          
+    ECOBJECTS_EXPORT ECObjectsStatus SetIsCustomAttributeClass (const wchar_t * isCustomAttribute);
+    ECOBJECTS_EXPORT ECObjectsStatus SetIsDomainClass (const wchar_t * isDomainClass);
+    ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ClassCR baseClass);
+    ECOBJECTS_EXPORT bool HasBaseClasses();
+    //NEEDSWORK: Method to iterate/get base classes
+    //NEEDSWORK: Is method (test if is or derived from class X)
 
-    //    void AddECClass (CECClass *pCECClass);
-    //    void RemoveAllClasses ();
+    //! Get a property by name within the context of this class and its base classes.
+    //! The pointer returned by this method is valid until the Class containing the property is destroyed or the property
+    //! is removed from the class.
+    //! @param[in]  name     The name of the property to lookup.
+    //! @return   A pointer to an EC::Property if the named property exists within the current class; otherwise, NULL
+    ECOBJECTS_EXPORT PropertyP GetPropertyP (std::wstring const& name) const;
 
-    //    /* needswork: I'd like to have a GetECClassCount, but does that just count locals or all the referenced schemas?
-    //       Maybe everything just works locally, except IterateOverAllClasses
+    // ************************************************************************************************************************
+    // ************************************  STATIC METHODS *******************************************************************
+    // ************************************************************************************************************************
 
-    //       Change GetECClassVectorSize to GetECClassCount, and MAYBE pass an optional parameter (includeReferencedSchemas)?
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseClassName (std::wstring & prefix, std::wstring & className, std::wstring const& qualifiedClassName);
 
-    //       Right now, I've exposed multiple ways to iterate... by index, by IterateOverAllClasses, and CECClassIterator.
-    //       We should get rid of either the CECClassIterator or the ByIndex... ByIndex would still work if we have a sorted
-    //       std::vector, but it would stop working if we changed to a map. Sorted std::vector is probably adequate.
-    //       But the CECClassIterator ultimately gives us the greatest flexibility.
-    //       */
+}; // Class
 
-    //    CECClass * GetECClassByIndex(int i);
-    //    int GetECClassCount();
+/*=================================================================================**//**
+//
+//! The in-memory representation of a relationship class as defined by ECSchemaXML
+//
++===============+===============+===============+===============+===============+======*/
+struct RelationshipClass /*__PUBLISH_ABSTRACT__*/ : public Class
+{
+/*__PUBLISH_SECTION_END__*/
+friend struct Schema;
 
-    //    // used to iterate over all classes in a schema
-    //    // keeps iterating until a non-NULL value is returned.
-    //    typedef void * (* ClassIteratorCallbackP) (CECClass * pECClass, void * context);
+// NEEDSWORK  missing full implementation
+private:
+    //std::wstring     m_strength;
+    //std::wstring     m_strengthDirection;
 
-    //    void * IterateOverAllClasses
-    //    (
-    //    ClassIteratorCallbackP callback,                // i  - processing continues until the callback returns a non-NULL value
-    //    void *                 context,                 // i  - pass whatever contextual information you want into this
-    //    BOOL                   includeReferencedSchemas
-    //    );
-    //        
+    //  Lifecycle management:  For now, to keep it simple, the class constructor is private.  The schema implementation will
+    //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
+    //  of a schema.
+    RelationshipClass (SchemaCR schema) : Class (schema) {};
 
-    //    // used to iterate over all classes in a schema
-    //    typedef void * (* RelationshipClassIteratorCallbackP) (CECRelationshipClass * pECRelationshipClass, void * context);
+/*__PUBLISH_SECTION_START__*/
+public:
+    //EXPORTED_PROPERTY (std::wstring const&, Strength);                
+    //EXPORTED_PROPERTY (std::wstring const&, StrengthDirection);                
 
-    //    void * IterateOverAllRelationshipClasses
-    //    (
-    //    RelationshipClassIteratorCallbackP callback,                // i  - processing continues until the callback returns a non-NULL value
-    //    void *                 context,                 // i  - pass whatever contextual information you want into this
-    //    BOOL                   includeReferencedSchemas
-    //    );
-    //        
+}; // RelationshipClass
 
-    //    /*---------------------------------------------------------------------------------**//**
-    //      Used by FindECClass
-    //     @bsimethod                                                     Casey.Mullen    06/04
-    //    +---------------+---------------+---------------+---------------+---------------+------*/
-    //private:
-    //    static void * findECClassCallback (CECClass * pECClass, void * context);
-    //public:
-    //    /*---------------------------------------------------------------------------------**//**
-    //      The classType will be logically AND-ed with the ECClasses' ClassType flags.
-    //      The result of the AND must be non-zero, and the className must match, in order
-    //      for a given class to be considered a match.
+/*=================================================================================**//**
+//
+//! Supports STL like iterator of classes in a schema
+//
++===============+===============+===============+===============+===============+======*/
+struct      ClassContainer /*__PUBLISH_ABSTRACT__*/
+{
+/*__PUBLISH_SECTION_END__*/
+private:
+    friend struct Schema;
+        
+    ClassMap const&     m_classMap;
+    
+    ClassContainer (ClassMap const& classMap) : m_classMap (classMap) {};
 
-    //     @bsimethod                                                     Casey.Mullen    06/04
-    //    +---------------+---------------+---------------+---------------+---------------+------*/
-    //    CECClass * FindECClass
-    //    (
-    //    LPCWSTR className,                   // i  - name of the class to be found. //needswork: what about the namespace?
-    //    DWORD classType = ECXML_CLASSTYPE_ALL // i  - This will be logically AND-ed with the ClassType flags. The AND must be non-zero, and the className must match, in order for a given class to be a match
-    //    );
+/*__PUBLISH_SECTION_START__*/
 
-    //    /*---------------------------------------------------------------------------------**//**
-    //      The classType will be logically AND-ed with the ECClasses' ClassType flags.
-    //      The result of the AND must be non-zero, and the className must match, in order
-    //      for a given class to be considered a match.
+public:    
+    /*=================================================================================**//**
+    * @bsistruct
+    +===============+===============+===============+===============+===============+======*/
+    struct IteratorState /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
+        {        
+        friend struct const_iterator;
+/*__PUBLISH_SECTION_END__*/
+        public:            
+            ClassMap::const_iterator     m_mapIterator;                   
 
-    //     @bsimethod                                                     Casey.Mullen    06/04
-    //    +---------------+---------------+---------------+---------------+---------------+------*/
-    //    CECClass * FindECClassUsingSchemaName
-    //    (
-    //    LPCWSTR className,                   // i  - name of the class to be found.
-    //    LPCWSTR schemaName,                  // i  - full schemaName
-    //    DWORD classType = ECXML_CLASSTYPE_ALL // i  - This will be logically AND-ed with the ClassType flags. The AND must be non-zero, and the className must match, in order for a given class to be a match
-    //    );
-    //    
-    //    CECClass * FindECClassUsingPrefix
-    //    (
-    //    LPCWSTR className,                   // i  - name of the class to be found.
-    //    LPCWSTR prefix    ,                  // i  - schemaPrefix
-    //    DWORD classType = ECXML_CLASSTYPE_ALL // i  - This will be logically AND-ed with the ClassType flags. The AND must be non-zero, and the className must match, in order for a given class to be a match
-    //    );
+            IteratorState (ClassMap::const_iterator mapIterator) { m_mapIterator = mapIterator; };
+            static RefCountedPtr<IteratorState> Create (ClassMap::const_iterator mapIterator) { return new IteratorState(mapIterator); };
+/*__PUBLISH_SECTION_START__*/                        
+        };
 
-    //    /*---------------------------------------------------------------------------------**//**
-    //      The classType will be logically AND-ed with the ECClasses' ClassType flags.
-    //      The result of the AND must be non-zero, and the className must match, in order
-    //      for a given class to be considered a match.
+    /*=================================================================================**//**
+    * @bsistruct
+    +===============+===============+===============+===============+===============+======*/
+    struct const_iterator
+    {    
+    private:                
+        friend          ClassContainer;                   
+        RefCountedPtr<IteratorState>   m_state;
 
-    //     @bsimethod                                                     Casey.Mullen    06/04
-    //    +---------------+---------------+---------------+---------------+---------------+------*/
-    //    CECClass * FindECClassUsingFullName
-    //    (
-    //    LPCWSTR fullname,                    // i  - full name (including prefix) of the class to be found.
-    //    DWORD classType = ECXML_CLASSTYPE_ALL // i  - This will be logically AND-ed with the ClassType flags. The AND must be non-zero, and the className must match, in order for a given class to be a match
-    //    );
+/*__PUBLISH_SECTION_END__*/
+        const_iterator (ClassMap::const_iterator mapIterator) { m_state = IteratorState::Create (mapIterator); };
+/*__PUBLISH_SECTION_START__*/                        
 
-    //    /*---------------------------------------------------------------------------------**//**
-    //      Used by FindECClass
-    //     @bsimethod                                                     Casey.Mullen    06/04
-    //    +---------------+---------------+---------------+---------------+---------------+------*/
-    //private:
-    //    static void * findECRelationshipClassCallback (CECRelationshipClass * pECRelationshipClass, void * context);
-    //public:
-    //    /*---------------------------------------------------------------------------------**//**
-    //      The classType will be logically AND-ed with the ECRelationshipClasses' ClassType flags.
-    //      The result of the AND must be non-zero, and the className must match, in order
-    //      for a given class to be considered a match.
+    public:
+        ECOBJECTS_EXPORT const_iterator&     operator++();
+        ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const;
+        ECOBJECTS_EXPORT ClassP             operator* () const;
+    };
 
-    //     @bsimethod                                                     Casey.Mullen    06/04
-    //    +---------------+---------------+---------------+---------------+---------------+------*/
-    //    CECRelationshipClass * FindECRelationshipClass
-    //    (
-    //    LPCWSTR className,                   // i  - name of the class to be found. //needswork: what about the namespace?
-    //    DWORD classType = ECXML_CLASSTYPE_ALL // i  -
-    //    );
+public:
+    ECOBJECTS_EXPORT const_iterator begin () const;
+    ECOBJECTS_EXPORT const_iterator end ()   const;
 
-    //    CECRelationshipClass * FindECRelationshipClassUsingSchemaName
-    //    (
-    //    LPCWSTR className,                   // i  - name of the class to be found.
-    //    LPCWSTR schemaName,                  // i  - full schemaName
-    //    DWORD classType = ECXML_CLASSTYPE_ALL // i  - This will be logically AND-ed with the ClassType flags. The AND must be non-zero, and the className must match, in order for a given class to be a match
-    //    );
+}; 
 
-    //    /*---------------------------------------------------------------------------------**//**
-    //      The classType will be logically AND-ed with the ECRelationshipClasses' ClassType flags.
-    //      The result of the AND must be non-zero, and the className must match, in order
-    //      for a given class to be considered a match.
+typedef RefCountedPtr<Schema>                  SchemaPtr;
 
-    //     @bsimethod                                                     Casey.Mullen    06/04
-    //    +---------------+---------------+---------------+---------------+---------------+------*/
-    //    CECRelationshipClass * FindECRelationshipClassUsingPrefix
-    //    (
-    //    LPCWSTR className,                   // i  - name of the class to be found.
-    //    LPCWSTR prefix    ,                  // i  - schemaPrefix
-    //    DWORD classType = ECXML_CLASSTYPE_ALL // i  - This will be logically AND-ed with the ClassType flags. The AND must be non-zero, and the className must match, in order for a given class to be a match
-    //    );
+/*=================================================================================**//**
+//
+//! The in-memory representation of a schema as defined by ECSchemaXML
+//
++===============+===============+===============+===============+===============+======*/
+struct Schema /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
+{
+/*__PUBLISH_SECTION_END__*/
 
-    //    CECRelationshipClass * FindECRelationshipClassUsingFullName
-    //    (
-    //    LPCWSTR fullname,                    // i  - full name (including prefix) of the class to be found.
-    //    DWORD classType = ECXML_CLASSTYPE_ALL // i  - This will be logically AND-ed with the ClassType flags. The AND must be non-zero, and the className must match, in order for a given class to be a match
-    //    );
+// Schemas are RefCounted but none of the constructs held by schemas (classes, properties, etc.) are.
+// They are freed when the schema is freed.
 
+private:
+    std::wstring        m_name;
+    std::wstring        m_namespacePrefix;
+    std::wstring        m_displayLabel;
+    std::wstring        m_description;
+    UInt32              m_versionMajor;
+    UInt32              m_versionMinor;    
+    ClassContainer      m_classContainer;
 
+    // maps class name -> class pointer    
+    ClassMap m_classMap;
 
-    //    static void ParseVersionString (LPCWSTR version, ULONG * pMajor, ULONG * pMinor);
-    //    static void FormatVersionString (std::wstring & version, ULONG major, ULONG minor);
+    // Hide these as part of the RefCounted pattern    
+    Schema () : m_versionMajor (DEFAULT_VERSION_MAJOR), m_versionMinor (DEFAULT_VERSION_MINOR), m_classContainer(ClassContainer(m_classMap)) {};
+    ~Schema();    
 
-    //    static void ParseECClassName
-    //    (
-    //    LPCWSTR          fullClassName,  // i  -
-    //    std::wstring &   prefix,         // o  -
-    //    std::wstring &   className       // o  -
-    //    );        
+    static SchemaDeserializationStatus ReadXML (SchemaPtr& schemaOut, MSXML2::IXMLDOMDocument2& pXmlDoc);
 
-    //    std::wstring GetRelativeClassName (CECClass * pECClass);
+    ECObjectsStatus AddClass (ClassP& pClass);
+    ECObjectsStatus SetVersionFromString (std::wstring const& versionString);
 
-    //    std::wstring GetRelativeClassName (LPCWSTR className);
+    typedef std::vector<std::pair<ClassP, MSXML2::IXMLDOMNodePtr>>  ClassDeserializationVector;
+    SchemaDeserializationStatus ReadClassStubsFromXML(MSXML2::IXMLDOMNode& schemaNodePtr,ClassDeserializationVector& classes);
+    SchemaDeserializationStatus ReadClassContentsFromXML(ClassDeserializationVector&  classes);
 
-    //    std::wstring OfficialFilename ();
+/*__PUBLISH_SECTION_START__*/
+public:    
+    EXPORTED_PROPERTY (std::wstring const&, Name);    
+    EXPORTED_PROPERTY (std::wstring const&, NamespacePrefix);
+    EXPORTED_PROPERTY (std::wstring const&, Description);
+    EXPORTED_PROPERTY (std::wstring const&, DisplayLabel);
+    EXPORTED_PROPERTY (UInt32, VersionMajor);
+    EXPORTED_PROPERTY (UInt32, VersionMinor);
 
-    //    inline std::wstring XmlNamespace ();
+    EXPORTED_READONLY_PROPERTY (ClassContainerCR, Classes);
+    EXPORTED_READONLY_PROPERTY (bool, IsDisplayLabelDefined);
 
+    ECOBJECTS_EXPORT ECObjectsStatus CreateClass (ClassP& ecClass, std::wstring const& name);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateRelationshipClass (RelationshipClassP& relationshipClass, std::wstring const& name);
 
-    //    void SetVersionString (LPCWSTR version);
-    //    std::wstring VersionString ();
+    //! Get a schema by namespace prefix within the context of this schema and it's referenced schemas.
+    //! It is important to note that this method does not return a RefCountedPtr.  If you want to hold a pointer to the returned schema that will exceed the
+    //! lifetime of the RefCountedPtr on which you invoked this method then it is critical you assign the return value to a SchemaPtr.   
+    //! @param[in]  namespacePrefix     The prefix of the schema to lookup in the context of this schema and it's references.
+    //!                                 Passing an empty namespacePrefix will return a pointer to the current schema.
+    //! @return   A non-refcounted pointer to an EC::Schema if it can be successfully resolved from the specified namespacePrefix; otherwise, NULL
+    ECOBJECTS_EXPORT SchemaP GetSchemaByNamespacePrefixP(std::wstring const& namespacePrefix) const;
 
-    //    int WriteXML (LPCWSTR ecSchemaXmlFile);//, LPCWSTR ecprefix, LPCWSTR ecschemauri); //needswork... the schema should know this
-    //    int ReadXML (LPCWSTR ecSchemaXmlFile);
+    //! Resolve a namespace prefix for the specified schema within the context of this schema and it's references.
+    //! @param[in]  schema     The schemato lookup a namespace prefix in the context of this schema and it's references.    
+    //! @return   The namespace prefix if schema is a referenced schema; empty string if the schema is the current schema; otherwise, NULL
+    ECOBJECTS_EXPORT std::wstring const* ResolveNamespacePrefix(SchemaCR schema) const;
+
+    //! Get a class by name within the context of this schema.
+    //! It is important to note that this method does not return a RefCountedPtr.  You must hold onto to the reference counted SchemaPtr on which you invoke
+    //! this method for the lifetime that you which to keep the returned class alive.  If you do not, there is a chance that the returned class pointer will go
+    //! stale and result in a memory access violation when used.
+    //! @param[in]  name     The name of the class to lookup.  This must be an unqualified (short) class name.    
+    //! @return   A pointer to an EC::Class if the named class exists in within the current schema; otherwise, NULL
+    ECOBJECTS_EXPORT ClassP GetClassP (std::wstring const& name) const;
+
+    // ************************************************************************************************************************
+    // ************************************  STATIC METHODS *******************************************************************
+    // ************************************************************************************************************************
+
+    ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema (SchemaPtr& schemaOut, std::wstring const& schemaName);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseVersionString (UInt32& versionMajor, UInt32& versionMinor, std::wstring const& versionString);
+    
+
+    //! Deserializes an ECXML schema from a file.
+    //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and
+    //! uninitialize COM using CoInitialize/CoUninitialize</b>
+    //! @param[out]   schemaOut           The deserialized schema
+    //! @param[in]    ecSchemaXmlFile     The absolute path of the file to deserialize.
+    //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
+    //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
+    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXMLFromFile (SchemaPtr& schemaOut, const wchar_t * ecSchemaXmlFile);
+
+    //! Deserializes an ECXML schema from a string.
+    //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and
+    //! uninitialize COM using CoInitialize/CoUninitialize</b>
+    //! @param[out]   schemaOut           The deserialized schema
+    //! @param[in]    ecSchemaXml         The string containing ECSchemaXML to deserialize
+    //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
+    //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
+    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXMLFromString (SchemaPtr& schemaOut, const wchar_t * ecSchemaXml);
+
+    //NEEDSWORK need a mechansim to ReadXML from a stream    
 
 }; // Schema
 

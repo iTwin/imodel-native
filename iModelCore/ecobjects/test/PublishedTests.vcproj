@@ -24,9 +24,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="bmake $(SrcEcf)ecobjects\nativeatp\PublishedTests.mke"
-				ReBuildCommandLine="bmake +a $(SrcEcf)ecobjects\nativeatp\PublishedTests.mke"
-				CleanCommandLine="bmake +aD $(SrcEcf)ecobjects\nativeatp\PublishedTests.mke"
+				BuildCommandLine="C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ecf -f ecf -p ECObjectsPublishedTests -v4 -n build -f"
+				ReBuildCommandLine="C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ecf -f ecf -p ECObjectsPublishedTests -v4 -n build -c &amp; C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ecf -f ecf -p ECObjectsPublishedTests -v4 build -f"
+				CleanCommandLine="C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ecf -f ecf -p ECObjectsPublishedTests -v4 -n build -c"
 				Output="ECObjectsTest_Published.exe"
 				PreprocessorDefinitions="WIN32;_DEBUG"
 				IncludeSearchPath="&quot;$(OutRoot)Win$(PROCESSOR_ARCHITECTURE)\BuildContexts\ecf\VendorAPI\&quot;;&quot;$(VCInstallDir)INCLUDE\&quot;;&quot;$(OutRoot)Win$(PROCESSOR_ARCHITECTURE)\BuildContexts\ecf\SubParts\PublishedAPI\&quot;"
@@ -74,14 +74,13 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Published\SchemaTests.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\Published\MemoryLayoutTests.cpp"
 				>
 			</File>
-            
+			<File
+				RelativePath=".\Published\SchemaTests.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -92,11 +91,6 @@
 				RelativePath=".\ECObjectsTestPCH.h"
 				>
 			</File>
-			<File
-				RelativePath=".\Published\MemoryLayoutTests.cpp"
-				>
-			</File>
-            
 		</Filter>
 		<Filter
 			Name="Resource Files"

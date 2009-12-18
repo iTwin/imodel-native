@@ -43,9 +43,15 @@ MultiCompileDepends=$(_MakeFileSpec)
 #----------------------------------------------------------------------
 #   Objects that go into the ECObjects library
 #----------------------------------------------------------------------
-ECObjectsHeaders = $(ecobjectsPublicAPISrc)ECObjects.h $(ecobjectsPublicAPISrc)ECSchema.h $(ecobjectsPublicAPISrc)ECValue.h $(ecobjectsPublicAPISrc)ECInstance.h $(ecobjectsPublicAPISrc)ECEnabler.h $(ecobjectsPublicAPISrc)designbycontract.h
+ECObjectsHeaders = $(ecobjectsPublicAPISrc)ECObjects.h $(ecobjectsPublicAPISrc)ECSchema.h $(ecobjectsPublicAPISrc)ECValue.h $(ecobjectsPublicAPISrc)ECInstance.h $(ecobjectsPublicAPISrc)ECEnabler.h $(ecobjectsPublicAPISrc)designbycontract.h $(baseDir)ecxml.h
+
+$(o)ecxml.obj           : $(baseDir)ecxml.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
 $(o)ecschema.obj        : $(baseDir)ecschema.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+
+$(o)ecclass.obj         : $(baseDir)ecclass.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)ecproperty.obj      : $(baseDir)ecproperty.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
 $(o)ecinstance.obj      : $(baseDir)ecinstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
@@ -53,9 +59,9 @@ $(o)ecvalue.obj         : $(baseDir)ecvalue.cpp $(ECObjectsHeaders) ${MultiCompi
 
 $(o)ecenabler.obj       : $(baseDir)ecenabler.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)MemoryLayout.obj    : $(baseDir)MemoryLayout.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)MemoryLayout.h
+$(o)MemoryInstanceSupport.obj : $(baseDir)MemoryInstanceSupport.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)MemoryInstanceSupport.h
 
-$(o)StandaloneInstance.obj    : $(baseDir)StandaloneInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)StandaloneInstance.h
+$(o)StandaloneInstance.obj    : $(baseDir)StandaloneInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)StandaloneInstance.h $(ecobjectsPublicAPISrc)MemoryInstanceSupport.h
 
 $(o)designbycontract.obj        : $(baseDir)designbycontract.cpp $(ecobjectsPublicAPISrc)designbycontract.h ${MultiCompileDepends} 
 

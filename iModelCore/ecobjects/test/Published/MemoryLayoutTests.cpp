@@ -1,4 +1,3 @@
-
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: ecobjects/nativeatp/Published/MemoryLayoutTests.cpp $
@@ -12,7 +11,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 
 using namespace std;
 
-// WIP_FUSION: these verify methods are duplicated in DgnPlatformTests... how do we share that code?    
+// WIP_FUSION: these verify methods are duplicated in DgnPlatformTest... how do we share that code?    
 // WIP_FUSION: where is the right place to share these methods even among ECObjects tests? 
 
 /*---------------------------------------------------------------------------------**//**
@@ -94,19 +93,15 @@ void SetAndVerifyLong (InstanceR instance, ValueR v, wchar_t const * accessStrin
     EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
     VerifyLong (instance, v, accessString, value);
     } 
-             
+
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
-    {
-    SchemaP schema = new Schema(L"t", L"TestSchema", 1, 0);    
-    ClassP ecClass = new Class (L"TestClass", *schema);
-    
-    StandaloneInstance instance(*ecClass);
-    wstring instanceID = instance.GetInstanceID();
-    
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/  
+void ExerciseInstance (InstanceR instance, wchar_t* valueForFinalStrings)
+    {   
     Value v;
+    
+    StatusInt status = instance.GetValue (v, L"D");
     
     double doubleValue = 1.0/3.0;
     SetAndVerifyDouble (instance, v, L"D", doubleValue);
@@ -123,23 +118,36 @@ TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
     VerifyString (instance, v, L"S", L"Lucky");
     SetAndVerifyString (instance, v, L"Manufacturer.Name", L"Charmed");
     SetAndVerifyString (instance, v, L"S", L"Lucky Strike");
-    VerifyString (instance, v, L"Manufacturer.Name", L"Charmed");
-        
-    // Make sure that everything still has the final value that we expected
-    VerifyInteger (instance, v, L"A", 97);
-    VerifyDouble  (instance, v, L"D", doubleValue);
-    VerifyInteger (instance, v, L"AA", 12);
-    VerifyString  (instance, v, L"B", L"Very Very Happy");
-        
         
     wchar_t largeString[3300];
     largeString[0] = L'\0';
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < 20; i++)
         wcscat (largeString, L"S2345678901234567890123456789012");
     
     size_t len = wcslen(largeString);
     SetAndVerifyString (instance, v, L"S", largeString);
+    
+    for (int i = 0; i < N_FINAL_STRING_PROPS_IN_FAKE_CLASS; i++)
+        {
+        wchar_t propertyName[66];
+        swprintf (propertyName, L"Property%i", i);
+        SetAndVerifyString (instance, v, propertyName, valueForFinalStrings);
+        }
            
+    // Make sure that everything still has the final value that we expected
+    VerifyString (instance, v, L"S", largeString);
+    VerifyInteger (instance, v, L"A", 97);
+    VerifyDouble  (instance, v, L"D", doubleValue);
+    VerifyInteger (instance, v, L"AA", 12);
+    VerifyString  (instance, v, L"B", L"Very Very Happy");
+    VerifyString (instance, v, L"Manufacturer.Name", L"Charmed");
+    for (int i = 0; i < N_FINAL_STRING_PROPS_IN_FAKE_CLASS; i++)
+        {
+        wchar_t propertyName[66];
+        swprintf (propertyName, L"Property%i", i);
+        VerifyString (instance, v, propertyName, valueForFinalStrings);
+        }    
+               
 #if later        
     // array of ints
     UInt32 indices[1];
@@ -158,6 +166,33 @@ TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
         EXPECT_TRUE (i + 1 == v.GetInteger());
         }
 #endif        
+    }
+                 
+               
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
+    {
+    SchemaPtr schema;
+    ASSERT_EQ (ECOBJECTS_STATUS_Success, Schema::CreateSchema (schema, L"TestSchema"));
+    ClassP ecClass;
+    schema->CreateClass(ecClass, L"TestClass");    
+    ASSERT_TRUE (ecClass);
+    
+    StandaloneInstanceEnablerPtr enabler = StandaloneInstance::CreateEnabler (*ecClass);
+    EC::StandaloneInstanceFactoryP factory = new StandaloneInstanceFactory (*enabler);
+    
+    EC::StandaloneInstanceP instance = NULL;
+    EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));    
+    
+    wstring instanceID = instance->GetInstanceID();
+    
+    ExerciseInstance (*instance, L"Test");
+    EXPECT_TRUE (SUCCESS == factory->FinishConstruction (instance));    
+    
+    instance->Dump();
+    
     // instance.Compact()... then check values again
     };
 
@@ -219,4 +254,132 @@ TEST (MemoryLayoutTests, Values) // move it!
     wchar_t const * wcnull = snull.GetString();
     EXPECT_EQ (NULL, s.GetString());
     }
+  
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     12/09
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST (MemoryLayoutTests, TestSetGetNull)
+    {
+    SchemaPtr schema;
+    ASSERT_EQ (ECOBJECTS_STATUS_Success, Schema::CreateSchema (schema, L"TestSchema"));
+    ClassP ecClass;
+    schema->CreateClass(ecClass, L"TestClass");    
+    ASSERT_TRUE (ecClass);
+        
+    StandaloneInstanceEnablerPtr enabler = StandaloneInstance::CreateEnabler (*ecClass);
+    EC::StandaloneInstanceFactoryP factory = new StandaloneInstanceFactory (*enabler);
+    
+    EC::StandaloneInstanceP instance = NULL;
+    EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
+    
+    Value v;
+    
+    EXPECT_TRUE (SUCCESS == instance->GetValue (v, L"D"));
+    EXPECT_TRUE (v.IsNull());
+    
+    double doubleValue = 1.0/3.0;
+    SetAndVerifyDouble (*instance, v, L"D", doubleValue);
+    EXPECT_TRUE (!v.IsNull());    
+    
+    v.SetToNull();
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"D", v));
+    v.SetString(L"Just making sure that it is not NULL before calling GetValue in the next line.");
+    EXPECT_TRUE (SUCCESS == instance->GetValue (v, L"D"));
+    EXPECT_TRUE (v.IsNull());
+        
+    SetAndVerifyString (*instance, v, L"S", L"Yo!");
+
+    factory->FinishConstruction(instance);
+    
+    EXPECT_TRUE (SUCCESS == instance->GetValue (v, L"D"));
+    EXPECT_TRUE (v.IsNull());    
+    
+    EXPECT_TRUE (SUCCESS == instance->GetValue (v, L"S"));
+    EXPECT_FALSE (v.IsNull());     
+    }
+    
+void SetStringToSpecifiedNumberOfCharacters (InstanceR instance, int nChars)
+    {
+    wchar_t * string = (wchar_t *)alloca ((nChars + 1) * sizeof(wchar_t));
+    string[0] = '\0';
+    for (int i = 0; i < nChars; i++)
+        {
+        int digit = i % 10;
+        wchar_t digitAsString[2];
+        swprintf (digitAsString, L"%d", digit);
+        wcscat (string, digitAsString);
+        }
+        
+    Value v(string);
+    EXPECT_TRUE (SUCCESS == instance.SetValue (L"S", v));
+    }
+
+TEST (MemoryLayoutTests, DemonstrateInstanceFactory)
+    {
+    SchemaPtr schema;
+    ASSERT_EQ (ECOBJECTS_STATUS_Success, Schema::CreateSchema (schema, L"TestSchema"));
+    ClassP ecClass;
+    schema->CreateClass(ecClass, L"TestClass");    
+    ASSERT_TRUE (ecClass);
+        
+    StandaloneInstanceEnablerPtr enabler = StandaloneInstance::CreateEnabler (*ecClass);
+
+    EC::StandaloneInstanceP instance = NULL;
+    
+    UInt32 slack = 0;
+    EC::StandaloneInstanceFactoryP factory = new StandaloneInstanceFactory (*enabler, slack);
+
+    EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));    
+    SetStringToSpecifiedNumberOfCharacters (*instance, 1); // There is no headroom, so this tiny addition triggers a realloc
+    EXPECT_EQ (0, factory->GetReallocationCount()); // Realloc not noticed until the instance is finished
+    EXPECT_TRUE (SUCCESS == factory->FinishConstruction(instance));
+    EXPECT_EQ (1, factory->GetReallocationCount());
+    
+    instance = NULL;
+    EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
+    EXPECT_EQ (1, factory->GetReallocationCount());
+    SetStringToSpecifiedNumberOfCharacters (*instance, 10);
+    EXPECT_TRUE (SUCCESS == factory->FinishConstruction(instance));
+    EXPECT_EQ (1, factory->GetReallocationCount()); // No new realloc, because it doubled its size when it realloced
+    
+    instance = NULL;
+    EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
+    SetStringToSpecifiedNumberOfCharacters (*instance, 1000);  // This is big enough to trigger another realloc.
+    EXPECT_TRUE (SUCCESS == factory->FinishConstruction(instance));
+    EXPECT_EQ (2, factory->GetReallocationCount()); // No new realloc, because it double its size when it realloced
+    
+    factory = new StandaloneInstanceFactory (*enabler, slack, 4000);
+    instance = NULL;
+    EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
+    EXPECT_EQ (0, factory->GetReallocationCount()); 
+    SetStringToSpecifiedNumberOfCharacters (*instance, 1000);
+    EXPECT_TRUE (SUCCESS == factory->FinishConstruction(instance));
+    EXPECT_EQ (0, factory->GetReallocationCount()); // We made it big enough the first time
+
+    // Test CancelConstruction
+    instance = NULL;
+    EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
+    SetStringToSpecifiedNumberOfCharacters (*instance, 1000);
+    EXPECT_TRUE (SUCCESS == factory->CancelConstruction(instance));
+    EXPECT_EQ (NULL, instance);
+    
+    // Ensure we can continue to use the factory after a cancel
+    instance = NULL;
+    EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
+    SetStringToSpecifiedNumberOfCharacters (*instance, 1000);
+    EXPECT_TRUE (SUCCESS == factory->CancelConstruction(instance));
+    
+    // The factory only keeps one "under construction" at a time... and it tracks which one it is.
+    EC::StandaloneInstanceP oldInstance = instance;    
+    factory = new StandaloneInstanceFactory (*enabler, slack, 2000);
+    instance = NULL;
+    EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
+    DISABLE_ASSERTS // Otherwise, the lines below would trigger assert.
+    EXPECT_TRUE (SUCCESS != factory->BeginConstruction (oldInstance));
+    EXPECT_TRUE (SUCCESS != factory->FinishConstruction(oldInstance));    
+    EXPECT_TRUE (SUCCESS == factory->FinishConstruction(instance));    
+    EXPECT_TRUE (SUCCESS != factory->FinishConstruction(instance)); // It can only finish once
+    }
+    
+
 END_BENTLEY_EC_NAMESPACE

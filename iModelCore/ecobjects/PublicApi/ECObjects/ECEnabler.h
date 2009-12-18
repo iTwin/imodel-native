@@ -90,9 +90,8 @@ struct IArrayManipulator  // WIP_FUSION: these responsibilities should move to t
 
 
 //! Implemented by enablers that support creation of new standalone (non-persisted) EC::Instances
-//! This one should live in Bentley::EC
 //! @see Enabler
-struct ICreateInstance
+struct ICreateInstance // WIP_FUSION: needs to change
     {
     virtual StatusInt CreateInstance (InstanceP& instance, ClassCR ecClass, const wchar_t * instanceId) const = 0;
     };    

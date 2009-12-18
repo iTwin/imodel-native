@@ -151,10 +151,9 @@ StatusInt Instance::InsertArrayElement (const wchar_t * propertyAccessString, Va
     if (NULL == manipulator)
         return ECOBJECTS_STATUS_OperationNotSupported;
         
-    PropertyP property;
-    StatusInt status = GetClass()->GetProperty (property, propertyAccessString);
-    if (status != SUCCESS)
-        return status;
+    PropertyP property = GetClass()->GetPropertyP (propertyAccessString);
+    if (NULL == property)
+        return ERROR;
         
     return manipulator->InsertArrayElement(*this, propertyAccessString, v, index);
     } 
@@ -168,10 +167,9 @@ StatusInt Instance::RemoveArrayElement (const wchar_t * propertyAccessString, UI
     if (NULL == manipulator)
         return ECOBJECTS_STATUS_OperationNotSupported;
         
-    PropertyP property;
-    StatusInt status = GetClass()->GetProperty (property, propertyAccessString);
-    if (status != SUCCESS)
-        return status;
+    PropertyP property = GetClass()->GetPropertyP (propertyAccessString);
+    if (NULL == property)
+        return ERROR;
         
     return manipulator->RemoveArrayElement(*this, propertyAccessString, index);
     } 
@@ -185,10 +183,9 @@ StatusInt Instance::ClearArray (const wchar_t * propertyAccessString)
     if (NULL == manipulator)
         return ECOBJECTS_STATUS_OperationNotSupported;
         
-    PropertyP property = NULL;
-    StatusInt status = GetClass()->GetProperty (property, propertyAccessString);
-    if (status != SUCCESS)
-        return status;
+    PropertyP property = GetClass()->GetPropertyP (propertyAccessString);
+    if (NULL == property)
+        return ERROR;
         
     return manipulator->ClearArray(*this, propertyAccessString);
     }     
