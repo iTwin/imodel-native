@@ -25,7 +25,7 @@
 			<Tool
 				Name="VCNMakeTool"
 				BuildCommandLine="C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ecf -f ecf -p ECObjectsPublishedTests -v4 -n build -f"
-				ReBuildCommandLine="C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ecf -f ecf -p ECObjectsPublishedTests -v4 -n build -c &amp; C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ecf -f ecf -p ECObjectsPublishedTests -v4 -n build -f"
+				ReBuildCommandLine="C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ecf -f ecf -p ECObjectsPublishedTests -v4 -n build -c &amp; C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ecf -f ecf -p ECObjectsPublishedTests -v4 build -f"
 				CleanCommandLine="C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ecf -f ecf -p ECObjectsPublishedTests -v4 -n build -c"
 				Output="ECObjectsTest_Published.exe"
 				PreprocessorDefinitions="WIN32;_DEBUG"

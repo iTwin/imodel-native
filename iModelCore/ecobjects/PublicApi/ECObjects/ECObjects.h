@@ -62,7 +62,7 @@ EC_TYPEDEFS(ClassLayout);
 EC_TYPEDEFS(PropertyLayout);
 EC_TYPEDEFS(StandaloneInstance);
 EC_TYPEDEFS(StandaloneInstanceFactory);
-EC_TYPEDEFS(MemoryEnabler);
+EC_TYPEDEFS(MemoryEnablerSupport);
 
 #define EXPORTED_PROPERTY(TYPE, NAME) \
     ECOBJECTS_EXPORT TYPE Get##NAME() const; \
