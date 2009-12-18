@@ -14,7 +14,7 @@
 
 EC_TYPEDEFS(IMemoryProvider);
 EC_TYPEDEFS(MemoryInstanceSupport);
-EC_TYPEDEFS(MemoryEnabler);
+EC_TYPEDEFS(MemoryEnablerSupport);
 
 BEGIN_BENTLEY_EC_NAMESPACE
     
@@ -22,11 +22,7 @@ typedef UInt32 NullflagsBitmask;
 typedef UInt32 InstanceFlags;
 typedef UInt32 SecondaryOffset;
 
-typedef RefCountedPtr<MemoryEnabler> MemoryEnablerPtr;
-
 #define NULLFLAGS_BITMASK_AllOn     0xFFFFFFFF
-#define MEMORYENABLER_EnablerID     0x00EC3E30 // WIP_FUSION: get a real id
-
 
 /*=================================================================================**//**
 * @bsistruct                                                     CaseyMullen    10/09
@@ -85,13 +81,14 @@ private:
     
     // These members are expected to be persisted  
     UInt16                  m_classID; // Unique per some context, e.g. per DgnFile
-    std::wstring            m_className;
+    std::wstring            m_className; // WIP_FUSION: remove this redundant information and just use m_class. But we still need to persist the name.
     UInt32                  m_nProperties;
     
     PropertyLayoutVector    m_propertyLayouts; // This is the primary collection, there is a secondary map for lookup by name, below.
     PropertyLayoutLookup    m_propertyLayoutLookup;
     
     // These members are transient
+    ClassCP                 m_class;
     UInt32                  m_nullflagsOffset;
     State                   m_state;
     UInt32                  m_offset;
@@ -105,6 +102,7 @@ private:
 public:
     ClassLayout();
     StatusInt               SetClass (ClassCR ecClass, UInt16 classID);
+    ClassCP                 GetClass () const;
     UInt16                  GetClassID() const;
     std::wstring            GetClassName() const;
     UInt32                  GetPropertyCount () const;
@@ -127,9 +125,9 @@ struct ClassLayoutRegistry
     std::map<UInt32, ClassLayoutCP>  m_classLayouts;
     };         
     
-//! Implemented by an EC::Instance that can cooperate with the EC::MemoryEnabler 
+//! Implemented by an EC::Instance that can cooperate with the EC::MemoryEnablerSupport 
 //! To allocate and access memory in which to store values
-//! @see MemoryEnabler, Instance
+//! @see MemoryEnablerSupport, Instance
 struct IMemoryProvider
     {
 protected:
@@ -138,7 +136,6 @@ protected:
     virtual byte const * GetDataForRead () const = 0;
     virtual byte *       GetDataForWrite () const = 0;
     virtual StatusInt    ModifyData (UInt32 offset, void const * newData, UInt32 dataLength) = 0;
-    virtual UInt32       GetBytesUsed () const = 0;
     virtual UInt32       GetBytesAllocated () const = 0;
     //! Allocates memory for the Instance. The memory does not need to be initialized in any way.
     //! @param minimumBytesToAllocate
@@ -159,27 +156,22 @@ protected:
     virtual void        FreeAllocation () = 0;
     };
     
-//! EC::MemoryEnabler can be used with any EC::Instance that implements IMemoryLayoutSupport
-struct MemoryEnabler : public Enabler, public ICreateInstance //wip: also implement public IArrayManipulator
+//! EC::MemoryEnablerSupport can be used with any EC::Instance that implements IMemoryLayoutSupport
+struct MemoryEnablerSupport
     {
 private:
     ClassLayout             m_classLayout;
-    
-    MemoryEnabler (ClassCR ecClass, UInt16 classID);
         
 protected:
-    ECOBJECTS_EXPORT MemoryEnabler (ClassCR ecClass, UInt16 classID, UInt32 enablerID, std::wstring name);
+    ECOBJECTS_EXPORT MemoryEnablerSupport (ClassCR ecClass, UInt16 classID); // WIP_FUSION: remove
+    MemoryEnablerSupport (ClassLayoutCR classLayout);
+    ECOBJECTS_EXPORT MemoryEnablerSupport (ClassCR ecClass, UInt16 classID, UInt32 enablerID, std::wstring name); // WIP_FUSION: remove
+
 public: 
 
-    static MemoryEnablerPtr             Create(ClassCR ecClass, UInt16 classID)
-        {
-        return new MemoryEnabler (ecClass, classID);    
-        };
-        
-    ECOBJECTS_EXPORT virtual StatusInt  CreateInstance (InstanceP& instance, ClassCR ecClass, wchar_t const * instanceId) const override;
-    
     ClassLayoutCR   GetClassLayout() const { return m_classLayout; }
     };
+
 
 //! Base class for ECInstances that get/set values from a block of memory
 struct MemoryInstanceSupport : IMemoryProvider
@@ -199,22 +191,18 @@ private:
     //! @param shiftBy        Positive or negative! Memory will be moved and SecondaryOffsets will be adjusted by this amount
     void                        ShiftValueData(ClassLayoutCR classLayout, byte * data, PropertyLayoutCR propertyLayout, Int32 shiftBy);
         
-    StatusInt                   EnsureSpaceIsAvailable (PropertyLayoutCR propertyLayout, UInt32 bytesNeeded);
-    ClassLayoutCR               GetClassLayout() const;
+    StatusInt                   EnsureSpaceIsAvailable (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded);
          
 protected:
-    ECOBJECTS_EXPORT void       AllocateAndInitializeMemory ();
-    ECOBJECTS_EXPORT void       InitializeMemory(byte * data, UInt32 bytesAllocated) const;
-    
-    ECOBJECTS_EXPORT UInt32     GetBytesUsedFromInstanceMemory(byte const * data) const;
-    
+    ECOBJECTS_EXPORT void       AllocateAndInitializeMemory (ClassLayoutCR classLayout);
+    ECOBJECTS_EXPORT void       InitializeMemory(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated) const;
+    ECOBJECTS_EXPORT UInt32     GetBytesUsed (ClassLayoutCR classLayout, byte const * data) const;
     ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ValueR v, PropertyLayoutCR propertyLayout,      UInt32 nIndices, UInt32 const * indices) const;
-    ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const;
-    ECOBJECTS_EXPORT StatusInt  SetValueToMemory (const wchar_t * propertyAccessString, ValueCR v,  UInt32 nIndices, UInt32 const * indices);      
-    ECOBJECTS_EXPORT virtual    MemoryEnablerCP GetMemoryEnabler() const = 0;
+    ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ClassLayoutCR classLayout, ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const;
+    ECOBJECTS_EXPORT StatusInt  SetValueToMemory (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, ValueCR v,  UInt32 nIndices, UInt32 const * indices);      
 
 public:    
-    ECOBJECTS_EXPORT void       DumpInstanceData () const;
+    ECOBJECTS_EXPORT void       DumpInstanceData (ClassLayoutCR classLayout) const;
     };
 
 END_BENTLEY_EC_NAMESPACE

@@ -12,79 +12,81 @@ BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-MemoryEnablerPtr StandaloneInstance::CreateEnabler (ClassCR ecClass) 
+StandaloneInstanceEnablerP      StandaloneInstanceEnabler::Create(ClassCR ecClass, UInt16 classID)
     {
-    return MemoryEnabler::Create (ecClass, 0);
+    return new StandaloneInstanceEnabler (ecClass, classID);    
+    };
+        
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     12/09
++---------------+---------------+---------------+---------------+---------------+------*/
+StandaloneInstanceEnablerPtr StandaloneInstance::CreateEnabler (ClassCR ecClass) 
+    {
+    return StandaloneInstanceEnabler::Create (ecClass, 0);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneInstance::StandaloneInstance (ClassCR ecClass) : m_bytesAllocated(0), m_data(NULL) 
-    {
-    m_enabler = MemoryEnabler::Create (ecClass, 0); // WIP_FUSION: hack! We certainly don't want to create a new one every time... and we prefer to not have to even look it up, again
-    AllocateAndInitializeMemory ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneInstance::StandaloneInstance (MemoryEnablerCR enabler) : 
-        m_enabler(const_cast<MemoryEnablerP>(&enabler)),
+/*StandaloneInstance::StandaloneInstance (StandaloneInstanceEnablerCR enabler) : 
+        m_enabler(const_cast<StandaloneInstanceEnablerP>(&enabler)),
         m_bytesAllocated(0), m_data(NULL) 
     {
     AllocateAndInitializeMemory ();
-    }
+    }*/
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
-StandaloneInstance::StandaloneInstance (MemoryEnablerCR enabler, byte * data, UInt32 size) :
-        m_enabler(const_cast<MemoryEnablerP>(&enabler)),
+StandaloneInstance::StandaloneInstance (StandaloneInstanceEnablerCR enabler, byte * data, UInt32 size) :
+        m_standaloneEnabler(const_cast<StandaloneInstanceEnablerP>(&enabler)),
         m_bytesAllocated(size), m_data(data) 
     {
     }
 
+#ifdef later
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
-StandaloneInstanceP StandaloneInstance::CreateWithNewMemory (MemoryEnablerCR enabler)
+StandaloneInstanceP StandaloneInstance::CreateWithNewMemory (StandaloneInstanceEnablerCR enabler)
     {
     return new StandaloneInstance (enabler);
     }
+#endif    
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
-StandaloneInstanceP StandaloneInstance::CreateFromUninitializedMemory (MemoryEnablerCR enabler, byte * data, UInt32 size)
+StandaloneInstanceP StandaloneInstance::CreateFromUninitializedMemory (StandaloneInstanceEnablerCR enabler, byte * data, UInt32 size)
     {
     StandaloneInstanceP instance = new StandaloneInstance (enabler, data, size);
-    instance->InitializeMemory (data, size);
+    instance->InitializeMemory (enabler.GetClassLayout(), data, size); // WIP_FUSION: need a Clear() method?
     return instance;
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
-StandaloneInstanceP StandaloneInstance::CreateFromInitializedMemory (MemoryEnablerCR enabler, byte * data, UInt32 size)
+StandaloneInstanceP StandaloneInstance::CreateFromInitializedMemory (StandaloneInstanceEnablerCR enabler, byte * data, UInt32 size)
     {
     return new StandaloneInstance (enabler, data, size);
     }    
-      
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-MemoryEnablerCP StandaloneInstance::GetMemoryEnabler() const
-    {
-    return m_enabler.get();
-    }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/    
+void            StandaloneInstance::Dump() const
+    {
+    return DumpInstanceData (m_standaloneEnabler->GetClassLayout());
+    }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
 EnablerCP       StandaloneInstance::_GetEnabler() const
     {
-    return m_enabler.get();
+    return m_standaloneEnabler;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -157,7 +159,7 @@ UInt32          StandaloneInstance::GetBytesUsed () const
     if (NULL == m_data)
         return 0;
 
-    return GetMemoryEnabler()->GetClassLayout().GetBytesUsed(m_data);
+    return m_standaloneEnabler->GetClassLayout().GetBytesUsed(m_data);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -221,7 +223,9 @@ void            StandaloneInstance::GrowAllocation (UInt32 bytesNeeded)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       StandaloneInstance::_GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
     {
-    return GetValueFromMemory (v, propertyAccessString, nIndices, indices);
+    ClassLayoutCR classLayout = m_standaloneEnabler->GetClassLayout();
+    
+    return GetValueFromMemory (classLayout, v, propertyAccessString, nIndices, indices);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -229,7 +233,8 @@ StatusInt       StandaloneInstance::_GetValue (ValueR v, const wchar_t * propert
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       StandaloneInstance::_SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices, UInt32 const * indices)
     {
-    StatusInt status = SetValueToMemory (propertyAccessString, v, nIndices, indices);
+    ClassLayoutCR classLayout = m_standaloneEnabler->GetClassLayout();
+    StatusInt status = SetValueToMemory (classLayout, propertyAccessString, v, nIndices, indices);
 
     return status;
     }
@@ -237,11 +242,28 @@ StatusInt       StandaloneInstance::_SetValue (const wchar_t * propertyAccessStr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneInstanceFactory::StandaloneInstanceFactory (MemoryEnablerR enabler, UInt32 slack, UInt32 initialBufferSize) : 
-    m_memoryEnabler (enabler), m_nBegun(0), m_nFinished (0), m_nReallocationRequests(0),
+StandaloneInstanceFactory::StandaloneInstanceFactory (StandaloneInstanceEnablerR enabler, UInt32 slack, UInt32 initialBufferSize) : 
+    m_standaloneEnabler (enabler), m_nBegun(0), m_nFinished (0), m_nReallocationRequests(0),
     m_instanceUnderConstruction (NULL), m_minimumSlack (slack), m_data (NULL), m_size (0)
     {
-    ClassLayout classLayout = m_memoryEnabler.GetClassLayout();
+    ClassLayout classLayout = m_standaloneEnabler.GetClassLayout();
+    UInt32 sizeOfFixedSection = classLayout.GetSizeOfFixedSection();
+    
+    if (initialBufferSize < sizeOfFixedSection)
+        initialBufferSize = sizeOfFixedSection;
+        
+    m_size = initialBufferSize;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     12/09
++---------------+---------------+---------------+---------------+---------------+------*/
+StandaloneInstanceFactory::StandaloneInstanceFactory (MemoryEnablerSupportCR enabler, UInt32 slack, UInt32 initialBufferSize) : 
+    m_nBegun(0), m_nFinished (0), m_nReallocationRequests(0),
+    m_instanceUnderConstruction (NULL), m_minimumSlack (slack), m_data (NULL), m_size (0),
+    m_standaloneEnabler (*(new StandaloneInstanceEnabler (enabler.GetClassLayout())))
+    {
+    
+    ClassLayout classLayout = m_standaloneEnabler.GetClassLayout();
     UInt32 sizeOfFixedSection = classLayout.GetSizeOfFixedSection();
     
     if (initialBufferSize < sizeOfFixedSection)
@@ -253,8 +275,9 @@ StandaloneInstanceFactory::StandaloneInstanceFactory (MemoryEnablerR enabler, UI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-BentleyStatus StandaloneInstanceFactory::BeginInstanceConstruction (StandaloneInstanceP& instance)
+BentleyStatus StandaloneInstanceFactory::BeginConstruction (StandaloneInstanceP& instance)
     {
+    PRECONDITION (NULL == instance && "The StandaloneInstance passed to BeginConstruction must be NULL", ERROR);
     if (NULL != m_instanceUnderConstruction)
         {
         // WIP_FUSION: Log message "Programmer Error: Attempted to create a new Instance of %s under construction while there is already one under construction by this factory", m_enabler.GetClass().GetName().c_str());
@@ -269,7 +292,7 @@ BentleyStatus StandaloneInstanceFactory::BeginInstanceConstruction (StandaloneIn
         // WIP_FUSION: log it in debug, as a malloc
         }
         
-    m_instanceUnderConstruction = StandaloneInstance::CreateFromUninitializedMemory (m_memoryEnabler, m_data, m_size);
+    m_instanceUnderConstruction = StandaloneInstance::CreateFromUninitializedMemory (m_standaloneEnabler, m_data, m_size);
     instance = m_instanceUnderConstruction;
     
     return SUCCESS;
@@ -278,7 +301,7 @@ BentleyStatus StandaloneInstanceFactory::BeginInstanceConstruction (StandaloneIn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-BentleyStatus StandaloneInstanceFactory::FinishInstance (StandaloneInstanceP& instance)
+BentleyStatus StandaloneInstanceFactory::FinishConstruction (StandaloneInstanceP& instance)
     {
     PRECONDITION (NULL != instance, ERROR);
     if (instance != m_instanceUnderConstruction)
@@ -320,6 +343,19 @@ BentleyStatus StandaloneInstanceFactory::FinishInstance (StandaloneInstanceP& in
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
+BentleyStatus StandaloneInstanceFactory::CancelConstruction (StandaloneInstanceP& instance)
+    {
+    FinishConstruction (instance); // Not the most efficient thing to do, but the logic is much simpler this way.
+    delete instance;
+    
+    instance = NULL;
+    
+    return SUCCESS;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     12/09
++---------------+---------------+---------------+---------------+---------------+------*/    
 UInt32 StandaloneInstanceFactory::GetReallocationCount ()
     {
     return m_nReallocationRequests;
@@ -341,4 +377,22 @@ UInt32 StandaloneInstanceFactory::GetFinishedCount ()
     return m_nFinished;
     }        
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     12/09
++---------------+---------------+---------------+---------------+---------------+------*/
+StandaloneInstanceEnabler::StandaloneInstanceEnabler (ClassCR ecClass, UInt16 classID) : 
+    Enabler (ecClass, STANDALONEENABLER_EnablerID, L"Bentley::EC::StandaloneInstanceEnabler"),
+    MemoryEnablerSupport (ecClass, classID)
+    {
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     12/09
++---------------+---------------+---------------+---------------+---------------+------*/    
+StandaloneInstanceEnabler::StandaloneInstanceEnabler (ClassLayoutCR classLayout) :
+    Enabler (*classLayout.GetClass(), 42, L"Bentley::EC::StandaloneInstanceEnabler"), // WIP_FUSION: Does EnablerID concept even make sense?
+    MemoryEnablerSupport (classLayout)
+    {
+    }
+
 END_BENTLEY_EC_NAMESPACE

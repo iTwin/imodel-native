@@ -168,6 +168,7 @@ void ExerciseInstance (InstanceR instance, wchar_t* valueForFinalStrings)
 #endif        
     }
                  
+               
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -179,12 +180,18 @@ TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
     schema->CreateClass(ecClass, L"TestClass");    
     ASSERT_TRUE (ecClass);
     
-    StandaloneInstance instance(*ecClass);
-    wstring instanceID = instance.GetInstanceID();
+    StandaloneInstanceEnablerPtr enabler = StandaloneInstance::CreateEnabler (*ecClass);
+    EC::StandaloneInstanceFactoryP factory = new StandaloneInstanceFactory (*enabler);
     
-    ExerciseInstance (instance, L"Test");
+    EC::StandaloneInstanceP instance = NULL;
+    EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));    
     
-    //instance.DumpInstanceData ();
+    wstring instanceID = instance->GetInstanceID();
+    
+    ExerciseInstance (*instance, L"Test");
+    EXPECT_TRUE (SUCCESS == factory->FinishConstruction (instance));    
+    
+    instance->Dump();
     
     // instance.Compact()... then check values again
     };
@@ -259,11 +266,11 @@ TEST (MemoryLayoutTests, TestSetGetNull)
     schema->CreateClass(ecClass, L"TestClass");    
     ASSERT_TRUE (ecClass);
         
-    MemoryEnablerPtr enabler = StandaloneInstance::CreateEnabler (*ecClass);
-    EC::StandaloneInstanceFactoryP factory = new StandaloneInstanceFactory (*enabler.get());
+    StandaloneInstanceEnablerPtr enabler = StandaloneInstance::CreateEnabler (*ecClass);
+    EC::StandaloneInstanceFactoryP factory = new StandaloneInstanceFactory (*enabler);
     
     EC::StandaloneInstanceP instance = NULL;
-    EXPECT_TRUE (SUCCESS == factory->BeginInstanceConstruction (instance));
+    EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
     
     Value v;
     
@@ -272,16 +279,17 @@ TEST (MemoryLayoutTests, TestSetGetNull)
     
     double doubleValue = 1.0/3.0;
     SetAndVerifyDouble (*instance, v, L"D", doubleValue);
-    EXPECT_FALSE (v.IsNull());    
+    EXPECT_TRUE (!v.IsNull());    
     
     v.SetToNull();
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"D", v));
+    v.SetString(L"Just making sure that it is not NULL before calling GetValue in the next line.");
     EXPECT_TRUE (SUCCESS == instance->GetValue (v, L"D"));
     EXPECT_TRUE (v.IsNull());
         
     SetAndVerifyString (*instance, v, L"S", L"Yo!");
 
-    factory->FinishInstance(instance);
+    factory->FinishConstruction(instance);
     
     EXPECT_TRUE (SUCCESS == instance->GetValue (v, L"D"));
     EXPECT_TRUE (v.IsNull());    
@@ -314,47 +322,64 @@ TEST (MemoryLayoutTests, DemonstrateInstanceFactory)
     schema->CreateClass(ecClass, L"TestClass");    
     ASSERT_TRUE (ecClass);
         
-    MemoryEnablerPtr enabler = StandaloneInstance::CreateEnabler (*ecClass);
+    StandaloneInstanceEnablerPtr enabler = StandaloneInstance::CreateEnabler (*ecClass);
 
     EC::StandaloneInstanceP instance = NULL;
     
     UInt32 slack = 0;
     EC::StandaloneInstanceFactoryP factory = new StandaloneInstanceFactory (*enabler, slack);
 
-    EXPECT_TRUE (SUCCESS == factory->BeginInstanceConstruction (instance));    
+    EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));    
     SetStringToSpecifiedNumberOfCharacters (*instance, 1); // There is no headroom, so this tiny addition triggers a realloc
     EXPECT_EQ (0, factory->GetReallocationCount()); // Realloc not noticed until the instance is finished
-    EXPECT_TRUE (SUCCESS == factory->FinishInstance(instance));
+    EXPECT_TRUE (SUCCESS == factory->FinishConstruction(instance));
     EXPECT_EQ (1, factory->GetReallocationCount());
     
-    EXPECT_TRUE (SUCCESS == factory->BeginInstanceConstruction (instance));
+    instance = NULL;
+    EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
     EXPECT_EQ (1, factory->GetReallocationCount());
     SetStringToSpecifiedNumberOfCharacters (*instance, 10);
-    EXPECT_TRUE (SUCCESS == factory->FinishInstance(instance));
+    EXPECT_TRUE (SUCCESS == factory->FinishConstruction(instance));
     EXPECT_EQ (1, factory->GetReallocationCount()); // No new realloc, because it doubled its size when it realloced
     
-    EXPECT_TRUE (SUCCESS == factory->BeginInstanceConstruction (instance));
+    instance = NULL;
+    EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
     SetStringToSpecifiedNumberOfCharacters (*instance, 1000);  // This is big enough to trigger another realloc.
-    EXPECT_TRUE (SUCCESS == factory->FinishInstance(instance));
+    EXPECT_TRUE (SUCCESS == factory->FinishConstruction(instance));
     EXPECT_EQ (2, factory->GetReallocationCount()); // No new realloc, because it double its size when it realloced
     
-    factory = new StandaloneInstanceFactory (*enabler.get(), slack, 4000);
-    EXPECT_TRUE (SUCCESS == factory->BeginInstanceConstruction (instance));
+    factory = new StandaloneInstanceFactory (*enabler, slack, 4000);
+    instance = NULL;
+    EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
     EXPECT_EQ (0, factory->GetReallocationCount()); 
     SetStringToSpecifiedNumberOfCharacters (*instance, 1000);
-    EXPECT_TRUE (SUCCESS == factory->FinishInstance(instance));
+    EXPECT_TRUE (SUCCESS == factory->FinishConstruction(instance));
     EXPECT_EQ (0, factory->GetReallocationCount()); // We made it big enough the first time
 
-
+    // Test CancelConstruction
+    instance = NULL;
+    EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
+    SetStringToSpecifiedNumberOfCharacters (*instance, 1000);
+    EXPECT_TRUE (SUCCESS == factory->CancelConstruction(instance));
+    EXPECT_EQ (NULL, instance);
+    
+    // Ensure we can continue to use the factory after a cancel
+    instance = NULL;
+    EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
+    SetStringToSpecifiedNumberOfCharacters (*instance, 1000);
+    EXPECT_TRUE (SUCCESS == factory->CancelConstruction(instance));
+    
     // The factory only keeps one "under construction" at a time... and it tracks which one it is.
     EC::StandaloneInstanceP oldInstance = instance;    
-    factory = new StandaloneInstanceFactory (*enabler.get(), slack, 2000);
-    EXPECT_TRUE (SUCCESS == factory->BeginInstanceConstruction (instance));
+    factory = new StandaloneInstanceFactory (*enabler, slack, 2000);
+    instance = NULL;
+    EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
     DISABLE_ASSERTS // Otherwise, the lines below would trigger assert.
-    EXPECT_TRUE (SUCCESS != factory->BeginInstanceConstruction (oldInstance));
-    EXPECT_TRUE (SUCCESS != factory->FinishInstance(oldInstance));    
-    EXPECT_TRUE (SUCCESS == factory->FinishInstance(instance));    
-    EXPECT_TRUE (SUCCESS != factory->FinishInstance(instance)); // It can only finish once
+    EXPECT_TRUE (SUCCESS != factory->BeginConstruction (oldInstance));
+    EXPECT_TRUE (SUCCESS != factory->FinishConstruction(oldInstance));    
+    EXPECT_TRUE (SUCCESS == factory->FinishConstruction(instance));    
+    EXPECT_TRUE (SUCCESS != factory->FinishConstruction(instance)); // It can only finish once
     }
     
+
 END_BENTLEY_EC_NAMESPACE
