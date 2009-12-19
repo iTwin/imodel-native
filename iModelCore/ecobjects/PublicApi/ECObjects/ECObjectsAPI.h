@@ -8,8 +8,9 @@
 #pragma once
 #include <hash_map>
 
+#ifndef BENTLEY_EXCLUDE_WINDOWS_HEADERS
 #include <msxml6\msxml6.tlh>
-
+#endif
 /*__PUBLISH_SECTION_START__*/
 
 /*=================================================================================**//**
