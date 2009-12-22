@@ -30,6 +30,8 @@ protected:
     ECOBJECTS_EXPORT virtual StatusInt    _SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices = 0, UInt32 const * indices = NULL) = 0;
     ECOBJECTS_EXPORT virtual EnablerCP    _GetEnabler() const = 0; // WIP_FUSION: Should this return an EnablerCR?
     ECOBJECTS_EXPORT virtual bool         _IsReadOnly() const = 0;
+    //! This should dump the instance's property values using the logger
+    ECOBJECTS_EXPORT virtual void         _Dump () const = 0;
     
 public:
     ECOBJECTS_EXPORT EnablerCP            GetEnabler() const; // WIP_FUSION: Should this return an EnablerCR?
@@ -54,6 +56,7 @@ public:
     ECOBJECTS_EXPORT StatusInt GetInteger (int & value, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
     ECOBJECTS_EXPORT StatusInt GetDouble (double & value, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
     ECOBJECTS_EXPORT StatusInt GetString (const wchar_t * & value, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
+    ECOBJECTS_EXPORT void      Dump () const;    
     };
     
 //! EC::RelationshipInstance is the native equivalent of a .NET IECRelationshipInstance.

@@ -72,11 +72,10 @@ StandaloneInstanceP StandaloneInstance::CreateFromInitializedMemory (StandaloneI
     return new StandaloneInstance (enabler, data, size);
     }    
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void            StandaloneInstance::Dump() const
+void            StandaloneInstance::_Dump() const
     {
     return DumpInstanceData (m_standaloneEnabler->GetClassLayout());
     }
@@ -203,19 +202,22 @@ void            StandaloneInstance::AllocateBytes (UInt32 minimumBytesToAllocate
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            StandaloneInstance::GrowAllocation (UInt32 bytesNeeded)
+StatusInt       StandaloneInstance::GrowAllocation (UInt32 bytesNeeded)
     {
     DEBUG_EXPECT (m_bytesAllocated > 0);
     DEBUG_EXPECT (NULL != m_data);
     // WIP_FUSION: add performance counter
             
     UInt32 newSize = 2 * (m_bytesAllocated + bytesNeeded); // Assume the growing trend will continue. The StandaloneInstanceFactory will ensure that the final instances are trimmed down to an appropriate size
-    m_data = (byte*)realloc(m_data, newSize); 
-    //UInt32 bytesUsed = GetBytesUsed(); x memcpy (data, m_data, bytesUsed);
-// WIP_FUSION: Would this be more efficient as a realloc?    
-    //free (m_data);
-    //m_data = data;
+    byte * reallocedData = (byte*)realloc(m_data, newSize);
+    DEBUG_EXPECT (NULL != reallocedData);
+    if (NULL == reallocedData)
+        return ERROR;
+        
+    m_data = reallocedData;    
     m_bytesAllocated = newSize;
+    
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
