@@ -43,7 +43,7 @@ private:
     virtual void      ShrinkAllocation (UInt32 newAllocation);
     virtual void      FreeAllocation ();
     virtual void      AllocateBytes (UInt32 minimumBytesToAllocate);
-    virtual void      GrowAllocation (UInt32 bytesNeeded);        
+    virtual StatusInt GrowAllocation (UInt32 bytesNeeded);        
     
     StandaloneInstance (StandaloneInstanceEnablerCR enabler, byte * data, UInt32 size);
     
@@ -58,10 +58,9 @@ protected:
     ECOBJECTS_EXPORT virtual bool            _IsReadOnly() const override;        
     ECOBJECTS_EXPORT virtual StatusInt       _GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const override;
     ECOBJECTS_EXPORT virtual StatusInt       _SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices, UInt32 const * indices) override;      
+    ECOBJECTS_EXPORT virtual void            _Dump () const;
         
 public:
-    ECOBJECTS_EXPORT void   Dump() const;
-    
     ECOBJECTS_EXPORT static StandaloneInstanceEnablerPtr CreateEnabler (ClassCR ecClass);
 
     //! Provides access to the raw data. For internal use only
