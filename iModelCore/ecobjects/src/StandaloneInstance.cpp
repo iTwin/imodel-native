@@ -26,16 +26,6 @@ StandaloneInstanceEnablerPtr StandaloneInstance::CreateEnabler (ClassCR ecClass)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-/*StandaloneInstance::StandaloneInstance (StandaloneInstanceEnablerCR enabler) : 
-        m_enabler(const_cast<StandaloneInstanceEnablerP>(&enabler)),
-        m_bytesAllocated(0), m_data(NULL) 
-    {
-    AllocateAndInitializeMemory ();
-    }*/
-    
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
 StandaloneInstance::StandaloneInstance (StandaloneInstanceEnablerCR enabler, byte * data, UInt32 size) :
@@ -44,15 +34,13 @@ StandaloneInstance::StandaloneInstance (StandaloneInstanceEnablerCR enabler, byt
     {
     }
 
-#ifdef later
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
-StandaloneInstanceP StandaloneInstance::CreateWithNewMemory (StandaloneInstanceEnablerCR enabler)
+void StandaloneInstance::ClearValues ()
     {
-    return new StandaloneInstance (enabler);
+    InitializeMemory (m_standaloneEnabler->GetClassLayout(), m_data, m_bytesAllocated);
     }
-#endif    
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
@@ -60,7 +48,8 @@ StandaloneInstanceP StandaloneInstance::CreateWithNewMemory (StandaloneInstanceE
 StandaloneInstanceP StandaloneInstance::CreateFromUninitializedMemory (StandaloneInstanceEnablerCR enabler, byte * data, UInt32 size)
     {
     StandaloneInstanceP instance = new StandaloneInstance (enabler, data, size);
-    instance->InitializeMemory (enabler.GetClassLayout(), data, size); // WIP_FUSION: need a Clear() method?
+    instance->ClearValues();
+    
     return instance;
     }
     
@@ -184,19 +173,6 @@ void            StandaloneInstance::FreeAllocation ()
     {
     free (m_data); 
     m_data = NULL;
-    }
-            
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            StandaloneInstance::AllocateBytes (UInt32 minimumBytesToAllocate)
-    {
-    DEBUG_EXPECT (0 == m_bytesAllocated);
-    DEBUG_EXPECT (NULL == m_data);
-    
-    // WIP_FUSION: add performance counter
-    m_data = (byte*)malloc(minimumBytesToAllocate);
-    m_bytesAllocated = minimumBytesToAllocate;
     }
     
 /*---------------------------------------------------------------------------------**//**

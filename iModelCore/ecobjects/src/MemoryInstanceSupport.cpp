@@ -611,25 +611,6 @@ StatusInt       MemoryInstanceSupport::EnsureSpaceIsAvailable (ClassLayoutCR cla
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            MemoryInstanceSupport::AllocateAndInitializeMemory (ClassLayoutCR classLayout)
-    {
-    DEBUG_EXPECT (!IsMemoryInitialized());
-    
-    UInt32 bytesUsed = classLayout.GetSizeOfFixedSection();
-    
-    AllocateBytes (bytesUsed);
-    
-    UInt32 bytesAllocated = GetBytesAllocated();
-    
-    byte * data = GetDataForWrite();
-    classLayout.InitializeMemoryForInstance (data, bytesAllocated);
-    
-    // WIP_FUSION: could initialize default values here.
-    }
-    
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            MemoryInstanceSupport::InitializeMemory(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated) const

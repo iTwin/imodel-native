@@ -42,7 +42,6 @@ private:
     virtual StatusInt ModifyData (UInt32 offset, void const * newData, UInt32 dataLength);    
     virtual void      ShrinkAllocation (UInt32 newAllocation);
     virtual void      FreeAllocation ();
-    virtual void      AllocateBytes (UInt32 minimumBytesToAllocate);
     virtual StatusInt GrowAllocation (UInt32 bytesNeeded);        
     
     StandaloneInstance (StandaloneInstanceEnablerCR enabler, byte * data, UInt32 size);
@@ -63,10 +62,12 @@ protected:
 public:
     ECOBJECTS_EXPORT static StandaloneInstanceEnablerPtr CreateEnabler (ClassCR ecClass);
 
+    ECOBJECTS_EXPORT void                    ClearValues ();
+
     //! Provides access to the raw data. For internal use only
-    ECOBJECTS_EXPORT byte const * PeekData(); // WIP_FUSION: can we eliminate this?
+    ECOBJECTS_EXPORT byte const *            PeekData(); // WIP_FUSION: can we eliminate this?
     //! Provides access to the raw data. For internal use only
-    ECOBJECTS_EXPORT UInt32 PeekDataSize(); // WIP_FUSION: can we eliminate this?
+    ECOBJECTS_EXPORT UInt32                  PeekDataSize(); // WIP_FUSION: can we eliminate this?
     };
 
 //! StandaloneInstanceFactory is used to construct a new @ref StandaloneInstance. 

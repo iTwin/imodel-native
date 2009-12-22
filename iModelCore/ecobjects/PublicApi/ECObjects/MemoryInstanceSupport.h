@@ -119,11 +119,6 @@ public:
     //! Determines the number of bytes used, so far
     UInt32                  GetBytesUsed(byte const * data) const;
     };
-         
-struct ClassLayoutRegistry
-    {
-    std::map<UInt32, ClassLayoutCP>  m_classLayouts;
-    };         
     
 //! Implemented by an EC::Instance that can cooperate with the EC::MemoryEnablerSupport 
 //! To allocate and access memory in which to store values
@@ -137,9 +132,6 @@ protected:
     virtual byte *       GetDataForWrite () const = 0;
     virtual StatusInt    ModifyData (UInt32 offset, void const * newData, UInt32 dataLength) = 0;
     virtual UInt32       GetBytesAllocated () const = 0;
-    //! Allocates memory for the Instance. The memory does not need to be initialized in any way.
-    //! @param minimumBytesToAllocate
-    virtual void         AllocateBytes (UInt32 minimumBytesToAllocate) = 0;
         
     //! Reallocates memory for the Instance and copies the old Instance data into the new memory
     //! You might get more memory than used asked for, but you won't get less
@@ -195,7 +187,6 @@ private:
     StatusInt                   EnsureSpaceIsAvailable (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded);
          
 protected:
-    ECOBJECTS_EXPORT void       AllocateAndInitializeMemory (ClassLayoutCR classLayout);
     ECOBJECTS_EXPORT void       InitializeMemory(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated) const;
     ECOBJECTS_EXPORT UInt32     GetBytesUsed (ClassLayoutCR classLayout, byte const * data) const;
     ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ValueR v, PropertyLayoutCR propertyLayout,      UInt32 nIndices, UInt32 const * indices) const;
