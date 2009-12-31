@@ -30,7 +30,7 @@ typedef RefCountedPtr<Enabler>                  EnablerPtr;
 //!   If you detect a mismatch, return ERROR_DataTypeMismatch
 //!   correct DataType. If you return an error status in such a case
 //!
-//! @see ICreateInstance, IDeleteInstance, IArrayManipulator, IArrayAccessor, etc.
+//! @see IDeleteInstance, IArrayManipulator, IArrayAccessor, etc.
 struct Enabler : RefCountedBase
     {
 private:
@@ -83,12 +83,4 @@ struct IArrayManipulator  // WIP_FUSION: these responsibilities should move to t
     virtual StatusInt ClearArray (InstanceR instance, const wchar_t * propertyAccessString) const = 0;    
     };    
 
-//! Implemented by enablers that support creation of new standalone (non-persisted) EC::Instances
-//! @see Enabler
-struct ICreateInstance // WIP_FUSION: needs to change
-    {
-    virtual StatusInt CreateInstance (InstanceP& instance, ClassCR ecClass, const wchar_t * instanceId) const = 0;
-    };    
-
-//WIP_FUSION ICacheValues : ReloadCachedValues, SaveCachedValues, FreeCachedValues
 END_BENTLEY_EC_NAMESPACE

@@ -56,7 +56,6 @@ EC_TYPEDEFS(RelationshipInstance);
 
 EC_TYPEDEFS(Enabler);
 EC_TYPEDEFS(IArrayManipulator);
-EC_TYPEDEFS(ICreateInstance);
 
 EC_TYPEDEFS(ClassLayout);
 EC_TYPEDEFS(PropertyLayout);
