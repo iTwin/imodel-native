@@ -25,6 +25,7 @@ struct Instance
 private:
 protected:    
     ECOBJECTS_EXPORT Instance(); 
+    ECOBJECTS_EXPORT ~Instance(){};
     ECOBJECTS_EXPORT virtual std::wstring _GetInstanceID() const = 0; // Virtual and returning std::wstring because a subclass may want to calculate it on demand
     ECOBJECTS_EXPORT virtual StatusInt    _GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const = 0;
     ECOBJECTS_EXPORT virtual StatusInt    _SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices = 0, UInt32 const * indices = NULL) = 0;
@@ -32,6 +33,7 @@ protected:
     ECOBJECTS_EXPORT virtual bool         _IsReadOnly() const = 0;
     //! This should dump the instance's property values using the logger
     ECOBJECTS_EXPORT virtual void         _Dump () const = 0;
+    ECOBJECTS_EXPORT virtual void         _Free () = 0;
     
 public:
     ECOBJECTS_EXPORT EnablerCP            GetEnabler() const; // WIP_FUSION: Should this return an EnablerCR?
@@ -56,7 +58,11 @@ public:
     ECOBJECTS_EXPORT StatusInt GetInteger (int & value, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
     ECOBJECTS_EXPORT StatusInt GetDouble (double & value, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
     ECOBJECTS_EXPORT StatusInt GetString (const wchar_t * & value, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
-    ECOBJECTS_EXPORT void      Dump () const;    
+    ECOBJECTS_EXPORT void      Dump () const;
+    //! Call this instead of "delete" to ensure that the EC::Instance is freed from the same heap that it was allocated.
+    //! This method does not affect the persisted EC::Instance (if it has been persisted)
+    ECOBJECTS_EXPORT void      Free ();
+    
     };
     
 //! EC::RelationshipInstance is the native equivalent of a .NET IECRelationshipInstance.

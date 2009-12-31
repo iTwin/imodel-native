@@ -98,13 +98,13 @@ private:
     StatusInt               AddFixedSizeProperty (wchar_t const * accessString, DataType datatype);
     StatusInt               AddVariableSizeProperty (wchar_t const * accessString, DataType datatype);
     StatusInt               FinishLayout ();
+    std::wstring            GetClassName() const;
 
 public:
-    ClassLayout();
-    StatusInt               SetClass (ClassCR ecClass, UInt16 classID);
-    ClassCP                 GetClass () const;
+    ECOBJECTS_EXPORT ClassLayout();
+    ECOBJECTS_EXPORT StatusInt SetClass (ClassCR ecClass, UInt16 classID);
+    ECOBJECTS_EXPORT ClassCR   GetClass () const;
     UInt16                  GetClassID() const;
-    std::wstring            GetClassName() const;
     UInt32                  GetPropertyCount () const;
     StatusInt               GetPropertyLayout (PropertyLayoutCP & propertyLayout, wchar_t const * accessString) const;
     StatusInt               GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const;
@@ -152,12 +152,12 @@ protected:
 struct MemoryEnablerSupport
     {
 private:
-    ClassLayout             m_classLayout;
+    ClassLayoutCR            m_classLayout;
         
 protected:
-    ECOBJECTS_EXPORT MemoryEnablerSupport (ClassCR ecClass, UInt16 classID); // WIP_FUSION: remove
-    MemoryEnablerSupport (ClassLayoutCR classLayout);
-    ECOBJECTS_EXPORT MemoryEnablerSupport (ClassCR ecClass, UInt16 classID, UInt32 enablerID, std::wstring name); // WIP_FUSION: remove
+    //ECOBJECTS_EXPORT MemoryEnablerSupport (ClassCR ecClass, UInt16 classID); // WIP_FUSION: remove
+    ECOBJECTS_EXPORT MemoryEnablerSupport (ClassLayoutCR classLayout);
+    //ECOBJECTS_EXPORT MemoryEnablerSupport (ClassCR ecClass, UInt16 classID, UInt32 enablerID, std::wstring name); // WIP_FUSION: remove
 
 public: 
 

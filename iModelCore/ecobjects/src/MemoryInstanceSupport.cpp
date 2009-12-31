@@ -321,9 +321,9 @@ StatusInt       ClassLayout::SetClass (ClassCR ecClass, UInt16 classID)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/  
-ClassCP         ClassLayout::GetClass () const
+ClassCR         ClassLayout::GetClass () const
     {
-    return m_class;
+    return *m_class;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -481,27 +481,10 @@ StatusInt       ClassLayout::GetPropertyLayoutByIndex (PropertyLayoutCP & proper
     return SUCCESS;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     12/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-MemoryEnablerSupport::MemoryEnablerSupport (ClassCR ecClass, UInt16 classID)
-    {
-    // FUSION_WIP: sometimes, this will be loaded from the file
-    m_classLayout.SetClass(ecClass, classID);
-    }
-    
 MemoryEnablerSupport::MemoryEnablerSupport (ClassLayoutCR classLayout) : m_classLayout (classLayout)
     {
     }    
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     12/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-MemoryEnablerSupport::MemoryEnablerSupport (ClassCR ecClass, UInt16 classID, UInt32 enablerID, std::wstring name) 
-    {
-    m_classLayout.SetClass(ecClass, classID);
-    }
-        
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -781,7 +764,7 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
     if (s_skipDump)
         return;
         
-    wprintf (L"ECClass=%s at address = 0x%8.0x\n", classLayout.GetClassName().c_str(), data);
+    wprintf (L"ECClass=%s at address = 0x%8.0x\n", classLayout.GetClass().GetName().c_str(), data);
     InstanceFlags flags = *(InstanceFlags*)data;
     wprintf (L"  [0x%8.0x][%4.d] InstanceFlags = 0x%08.x\n", data, 0, flags);
     

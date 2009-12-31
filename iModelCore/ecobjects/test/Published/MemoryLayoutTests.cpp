@@ -180,8 +180,10 @@ TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
     schema->CreateClass(ecClass, L"TestClass");    
     ASSERT_TRUE (ecClass);
     
-    StandaloneInstanceEnablerPtr enabler = StandaloneInstance::CreateEnabler (*ecClass);
-    EC::StandaloneInstanceFactoryP factory = new StandaloneInstanceFactory (*enabler);
+    ClassLayout classLayout;
+    classLayout.SetClass (*ecClass, 42);
+    StandaloneInstanceEnablerPtr enabler = StandaloneInstanceEnabler::CreateEnabler (classLayout);
+    EC::StandaloneInstanceFactoryP factory = new StandaloneInstanceFactory (enabler->GetClassLayout());
     
     EC::StandaloneInstanceP instance = NULL;
     EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));    
@@ -266,8 +268,10 @@ TEST (MemoryLayoutTests, TestSetGetNull)
     schema->CreateClass(ecClass, L"TestClass");    
     ASSERT_TRUE (ecClass);
         
-    StandaloneInstanceEnablerPtr enabler = StandaloneInstance::CreateEnabler (*ecClass);
-    EC::StandaloneInstanceFactoryP factory = new StandaloneInstanceFactory (*enabler);
+    ClassLayout classLayout;
+    classLayout.SetClass (*ecClass, 42);
+    StandaloneInstanceEnablerPtr enabler = StandaloneInstanceEnabler::CreateEnabler (classLayout);
+    EC::StandaloneInstanceFactoryP factory = new StandaloneInstanceFactory (enabler->GetClassLayout());
     
     EC::StandaloneInstanceP instance = NULL;
     EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
@@ -322,12 +326,14 @@ TEST (MemoryLayoutTests, DemonstrateInstanceFactory)
     schema->CreateClass(ecClass, L"TestClass");    
     ASSERT_TRUE (ecClass);
         
-    StandaloneInstanceEnablerPtr enabler = StandaloneInstance::CreateEnabler (*ecClass);
+    ClassLayout classLayout;
+    classLayout.SetClass (*ecClass, 42);
+    StandaloneInstanceEnablerPtr enabler = StandaloneInstanceEnabler::CreateEnabler (classLayout);
 
     EC::StandaloneInstanceP instance = NULL;
     
     UInt32 slack = 0;
-    EC::StandaloneInstanceFactoryP factory = new StandaloneInstanceFactory (*enabler, slack);
+    EC::StandaloneInstanceFactoryP factory = new StandaloneInstanceFactory (enabler->GetClassLayout(), slack);
 
     EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));    
     SetStringToSpecifiedNumberOfCharacters (*instance, 1); // There is no headroom, so this tiny addition triggers a realloc
@@ -348,7 +354,7 @@ TEST (MemoryLayoutTests, DemonstrateInstanceFactory)
     EXPECT_TRUE (SUCCESS == factory->FinishConstruction(instance));
     EXPECT_EQ (2, factory->GetReallocationCount()); // No new realloc, because it double its size when it realloced
     
-    factory = new StandaloneInstanceFactory (*enabler, slack, 4000);
+    factory = new StandaloneInstanceFactory (enabler->GetClassLayout(), slack, 4000);
     instance = NULL;
     EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
     EXPECT_EQ (0, factory->GetReallocationCount()); 
@@ -371,7 +377,7 @@ TEST (MemoryLayoutTests, DemonstrateInstanceFactory)
     
     // The factory only keeps one "under construction" at a time... and it tracks which one it is.
     EC::StandaloneInstanceP oldInstance = instance;    
-    factory = new StandaloneInstanceFactory (*enabler, slack, 2000);
+    factory = new StandaloneInstanceFactory (enabler->GetClassLayout(), slack, 2000);
     instance = NULL;
     EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
     DISABLE_ASSERTS // Otherwise, the lines below would trigger assert.
