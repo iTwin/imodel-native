@@ -64,9 +64,9 @@ void                StandaloneInstance::_Dump() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-EnablerCP           StandaloneInstance::_GetEnabler() const
+EnablerCR           StandaloneInstance::_GetEnabler() const
     {
-    return m_standaloneEnabler;
+    return *m_standaloneEnabler;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -85,7 +85,7 @@ std::wstring        StandaloneInstance::_GetInstanceID() const
     if (m_instanceID.size() == 0)
         {
         wchar_t id[1024];
-        swprintf(id, sizeof(id)/sizeof(wchar_t), L"%s-0x%X", _GetEnabler()->GetClass()->GetName().c_str(), this);
+        swprintf(id, sizeof(id)/sizeof(wchar_t), L"%s-0x%X", _GetEnabler().GetClass().GetName().c_str(), this);
         StandaloneInstanceP thisNotConst = const_cast<StandaloneInstanceP>(this);
         thisNotConst->m_instanceID = id;        
         }

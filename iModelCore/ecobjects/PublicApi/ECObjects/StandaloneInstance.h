@@ -51,7 +51,7 @@ private:
     static StandaloneInstanceP CreateFromInitializedMemory (StandaloneInstanceEnablerCR enabler, byte * data, UInt32 size);
         
 protected:
-    virtual EnablerCP       _GetEnabler() const override;
+    virtual EnablerCR       _GetEnabler() const override;
     
     virtual std::wstring    _GetInstanceID() const override;
     virtual bool            _IsReadOnly() const override;        

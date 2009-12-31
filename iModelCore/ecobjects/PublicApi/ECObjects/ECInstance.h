@@ -29,18 +29,18 @@ protected:
     ECOBJECTS_EXPORT virtual std::wstring _GetInstanceID() const = 0; // Virtual and returning std::wstring because a subclass may want to calculate it on demand
     ECOBJECTS_EXPORT virtual StatusInt    _GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const = 0;
     ECOBJECTS_EXPORT virtual StatusInt    _SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices = 0, UInt32 const * indices = NULL) = 0;
-    ECOBJECTS_EXPORT virtual EnablerCP    _GetEnabler() const = 0; // WIP_FUSION: Should this return an EnablerCR?
+    ECOBJECTS_EXPORT virtual EnablerCR    _GetEnabler() const = 0;
     ECOBJECTS_EXPORT virtual bool         _IsReadOnly() const = 0;
     //! This should dump the instance's property values using the logger
     ECOBJECTS_EXPORT virtual void         _Dump () const = 0;
     ECOBJECTS_EXPORT virtual void         _Free () = 0;
     
 public:
-    ECOBJECTS_EXPORT EnablerCP            GetEnabler() const; // WIP_FUSION: Should this return an EnablerCR?
+    ECOBJECTS_EXPORT EnablerCR            GetEnabler() const;
     ECOBJECTS_EXPORT std::wstring         GetInstanceID() const;
     ECOBJECTS_EXPORT bool                 IsReadOnly() const;
     
-    ECOBJECTS_EXPORT ClassCP              GetClass() const;
+    ECOBJECTS_EXPORT ClassCR              GetClass() const;
     ECOBJECTS_EXPORT StatusInt            GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
     ECOBJECTS_EXPORT StatusInt            SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices = 0, UInt32 const * indices = NULL);
     ECOBJECTS_EXPORT StatusInt            GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 index) const;

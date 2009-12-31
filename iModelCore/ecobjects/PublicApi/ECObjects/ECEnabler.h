@@ -38,35 +38,33 @@ private:
     std::wstring            m_name;
     ClassCP                 m_ecClass;
 
-    // Hide these as part of the RefCounted pattern
-    Enabler(){};
+    Enabler(); // Hidden as part of the RefCounted pattern
     
 protected:
     //! Protected as part of the RefCounted pattern
-    ~Enabler(){};
+    ECOBJECTS_EXPORT ~Enabler(); 
 
     //! Subclasses of Enabler should implement a FactoryMethod to construct the enabler, as
     //! part of the RefCounted pattern.
     //! It should be of the form:
     //! /code
-    //!   static ____EnablerPtr Create(ClassCR ecClass)
+    //!   static ____EnablerPtr CreateEnabler (ClassCR ecClass)
     //!       {
     //!       return new ____Enabler (ecClass);    
     //!       };
     //! /endcode
     //! where the ____ is a name specific to your subclass.
-    ECOBJECTS_EXPORT Enabler(ClassCR ecClass, UInt32 enablerId, std::wstring name) : m_ecClass (&ecClass), m_name(name), 
-        m_id(enablerId) {};
+    ECOBJECTS_EXPORT Enabler(ClassCR ecClass, UInt32 enablerId, std::wstring name);
 
 public:
     
     //! Should be obtained from the Linkage/Handler ID Pool
-    ECOBJECTS_EXPORT inline UInt32          GetId()   const { return m_id; }
+    ECOBJECTS_EXPORT UInt32          GetId()   const;
     
     //! Primarily for debugging/logging purposes. Should match your fully-qualified class name
-    ECOBJECTS_EXPORT inline wchar_t const * GetName() const { return m_name.c_str(); }
+    ECOBJECTS_EXPORT wchar_t const * GetName() const;
     
-    ECOBJECTS_EXPORT inline ClassCP         GetClass() const { return m_ecClass; }
+    ECOBJECTS_EXPORT ClassCR         GetClass() const;
     };
 
 //! Implemented by enablers that support manipulation of array properties, i.e. operations
