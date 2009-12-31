@@ -146,15 +146,7 @@ StatusInt           Instance::GetString (const wchar_t * & value, const wchar_t 
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt           Instance::InsertArrayElement (const wchar_t * propertyAccessString, ValueCR v, UInt32 index)
     {
-    //IArrayManipulatorCP manipulator = dynamic_cast<IArrayManipulatorCP>(GetEnabler());
-    //if (NULL == manipulator)
-        return ECOBJECTS_STATUS_OperationNotSupported;
-        
-    //PropertyP property = GetClass().GetPropertyP (propertyAccessString);
-    //if (NULL == property)
-    //    return ERROR;
-        
-    //return manipulator->InsertArrayElement(*this, propertyAccessString, v, index);
+    return ECOBJECTS_STATUS_OperationNotSupported;
     } 
 
 /*---------------------------------------------------------------------------------**//**
@@ -162,15 +154,7 @@ StatusInt           Instance::InsertArrayElement (const wchar_t * propertyAccess
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt           Instance::RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index)
     {
-    //IArrayManipulatorCP manipulator = dynamic_cast<IArrayManipulatorCP>(GetEnabler());
-    //if (NULL == manipulator)
-        return ECOBJECTS_STATUS_OperationNotSupported;
-        
-    //PropertyP property = GetClass().GetPropertyP (propertyAccessString);
-    //if (NULL == property)
-    //    return ERROR;
-        
-    //return manipulator->RemoveArrayElement(*this, propertyAccessString, index);
+    return ECOBJECTS_STATUS_OperationNotSupported;
     } 
     
 /*---------------------------------------------------------------------------------**//**
@@ -178,15 +162,7 @@ StatusInt           Instance::RemoveArrayElement (const wchar_t * propertyAccess
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt           Instance::ClearArray (const wchar_t * propertyAccessString)
     {
-    //IArrayManipulatorCP manipulator = dynamic_cast<IArrayManipulatorCP>(GetEnabler());
-    //if (NULL == manipulator)
-        return ECOBJECTS_STATUS_OperationNotSupported;
-        
-    //PropertyP property = GetClass().GetPropertyP (propertyAccessString);
-    //if (NULL == property)
-    //    return ERROR;
-        
-    //return manipulator->ClearArray(*this, propertyAccessString);
+    return ECOBJECTS_STATUS_OperationNotSupported;
     }     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
