@@ -23,9 +23,9 @@ Instance::Instance()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring        Instance::GetInstanceID() const
+std::wstring        Instance::GetInstanceId() const
     {
-    return _GetInstanceID();
+    return _GetInstanceId();
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -80,7 +80,7 @@ private:
         };
     
     // These members are expected to be persisted  
-    UInt16                  m_classID; // Unique per some context, e.g. per DgnFile
+    UInt16                  m_classIndex; // Unique per some context, e.g. per DgnFile
     std::wstring            m_className; // WIP_FUSION: remove this redundant information and just use m_class. But we still need to persist the name.
     UInt32                  m_nProperties;
     
@@ -102,9 +102,9 @@ private:
 
 public:
     ECOBJECTS_EXPORT ClassLayout();
-    ECOBJECTS_EXPORT StatusInt SetClass (ClassCR ecClass, UInt16 classID);
+    ECOBJECTS_EXPORT StatusInt SetClass (ClassCR ecClass, UInt16 classIndex);
     ECOBJECTS_EXPORT ClassCR   GetClass () const;
-    UInt16                  GetClassID() const;
+    UInt16                  GetClassIndex() const;
     UInt32                  GetPropertyCount () const;
     StatusInt               GetPropertyLayout (PropertyLayoutCP & propertyLayout, wchar_t const * accessString) const;
     StatusInt               GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const;
@@ -155,9 +155,7 @@ private:
     ClassLayoutCR            m_classLayout;
         
 protected:
-    //ECOBJECTS_EXPORT MemoryEnablerSupport (ClassCR ecClass, UInt16 classID); // WIP_FUSION: remove
     ECOBJECTS_EXPORT MemoryEnablerSupport (ClassLayoutCR classLayout);
-    //ECOBJECTS_EXPORT MemoryEnablerSupport (ClassCR ecClass, UInt16 classID, UInt32 enablerID, std::wstring name); // WIP_FUSION: remove
 
 public: 
 

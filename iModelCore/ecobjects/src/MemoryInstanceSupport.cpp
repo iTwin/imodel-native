@@ -83,7 +83,7 @@ UInt32          PropertyLayout::GetSizeInFixedSection () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassLayout::ClassLayout() : m_state(AcceptingFixedSizeProperties), 
                              m_class(NULL),
-                             m_classID(0),
+                             m_classIndex(0),
                              m_nProperties(0), 
                              m_nullflagsOffset (0),
                              m_offset(sizeof(InstanceFlags)), // The first 32 bits are reserved for flags/future
@@ -97,7 +97,7 @@ ClassLayout::ClassLayout() : m_state(AcceptingFixedSizeProperties),
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ClassLayout::Dump () const
     {
-    wprintf (L"ECClassIndex=%i, ECClass.Name=%s\n", m_classID, m_className.c_str());
+    wprintf (L"ECClassIndex=%i, ECClass.Name=%s\n", m_classIndex, m_className.c_str());
     for each (PropertyLayout layout in m_propertyLayouts)
         {
         wprintf (layout.ToString().c_str());
@@ -174,9 +174,9 @@ UInt32          ClassLayout::GetBytesUsed(byte const * data) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt16          ClassLayout::GetClassID() const
+UInt16          ClassLayout::GetClassIndex() const
     {
-    return m_classID;
+    return m_classIndex;
     } 
     
 /*---------------------------------------------------------------------------------**//**
@@ -190,10 +190,10 @@ std::wstring    ClassLayout::GetClassName() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ClassLayout::SetClass (ClassCR ecClass, UInt16 classID)
+StatusInt       ClassLayout::SetClass (ClassCR ecClass, UInt16 classIndex)
     {
     m_class = &ecClass;
-    m_classID = classID;
+    m_classIndex = classIndex;
     m_className = ecClass.GetName(); // WIP_FUSION: remove this redundant information
     // WIP_FUSION: iterate through the EC::Properties of the EC::Class and build the layout
     

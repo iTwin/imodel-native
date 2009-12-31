@@ -80,17 +80,17 @@ bool                StandaloneInstance::_IsReadOnly() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-std::wstring        StandaloneInstance::_GetInstanceID() const
+std::wstring        StandaloneInstance::_GetInstanceId() const
     {
-    if (m_instanceID.size() == 0)
+    if (m_instanceId.size() == 0)
         {
         wchar_t id[1024];
         swprintf(id, sizeof(id)/sizeof(wchar_t), L"%s-0x%X", _GetEnabler().GetClass().GetName().c_str(), this);
         StandaloneInstanceP thisNotConst = const_cast<StandaloneInstanceP>(this);
-        thisNotConst->m_instanceID = id;        
+        thisNotConst->m_instanceId = id;        
         }
         
-    return m_instanceID;
+    return m_instanceId;
     }
     
  

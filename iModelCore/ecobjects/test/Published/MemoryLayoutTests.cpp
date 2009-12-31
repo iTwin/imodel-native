@@ -188,7 +188,7 @@ TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
     EC::StandaloneInstanceP instance = NULL;
     EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));    
     
-    wstring instanceID = instance->GetInstanceID();
+    wstring instanceId = instance->GetInstanceId();
     
     ExerciseInstance (*instance, L"Test");
     EXPECT_TRUE (SUCCESS == factory->FinishConstruction (instance));    

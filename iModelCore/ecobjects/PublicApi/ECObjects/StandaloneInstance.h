@@ -25,7 +25,7 @@ struct StandaloneInstance : Instance, MemoryInstanceSupport
 friend StandaloneInstanceFactory;
 private:
     StandaloneInstanceEnablerP m_standaloneEnabler; 
-    std::wstring     m_instanceID;
+    std::wstring     m_instanceId;
     
     byte *           m_data;
     UInt32           m_bytesAllocated;
@@ -53,7 +53,7 @@ private:
 protected:
     virtual EnablerCR       _GetEnabler() const override;
     
-    virtual std::wstring    _GetInstanceID() const override;
+    virtual std::wstring    _GetInstanceId() const override;
     virtual bool            _IsReadOnly() const override;        
     virtual StatusInt       _GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const override;
     virtual StatusInt       _SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices, UInt32 const * indices) override;      

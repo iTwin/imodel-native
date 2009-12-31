@@ -26,7 +26,7 @@ private:
 protected:    
     ECOBJECTS_EXPORT Instance(); 
     ECOBJECTS_EXPORT ~Instance(){};
-    ECOBJECTS_EXPORT virtual std::wstring _GetInstanceID() const = 0; // Virtual and returning std::wstring because a subclass may want to calculate it on demand
+    ECOBJECTS_EXPORT virtual std::wstring _GetInstanceId() const = 0; // Virtual and returning std::wstring because a subclass may want to calculate it on demand
     ECOBJECTS_EXPORT virtual StatusInt    _GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const = 0;
     ECOBJECTS_EXPORT virtual StatusInt    _SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices = 0, UInt32 const * indices = NULL) = 0;
     ECOBJECTS_EXPORT virtual EnablerCR    _GetEnabler() const = 0;
@@ -37,7 +37,7 @@ protected:
     
 public:
     ECOBJECTS_EXPORT EnablerCR            GetEnabler() const;
-    ECOBJECTS_EXPORT std::wstring         GetInstanceID() const;
+    ECOBJECTS_EXPORT std::wstring         GetInstanceId() const;
     ECOBJECTS_EXPORT bool                 IsReadOnly() const;
     
     ECOBJECTS_EXPORT ClassCR              GetClass() const;
