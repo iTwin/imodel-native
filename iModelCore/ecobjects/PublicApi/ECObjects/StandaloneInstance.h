@@ -139,15 +139,15 @@ public:
     //StandaloneInstanceP CreateInstance ();
     };
 
-struct StandaloneInstanceEnabler : public MemoryEnablerSupport, public Enabler//, public ICreateInstance //wip: also implement public IArrayManipulator
+struct StandaloneInstanceEnabler : public MemoryEnablerSupport, public Enabler
     {
 friend StandaloneInstanceFactory;    
 private: 
     StandaloneInstanceEnabler (ClassLayoutCR classLayout);
-    //StandaloneInstanceEnabler (ClassCR ecClass, UInt16 classId);
+protected:    
+    virtual wchar_t const * _GetName() const override;
+        
 public: 
     ECOBJECTS_EXPORT static StandaloneInstanceEnablerPtr CreateEnabler (ClassLayoutCR classLayout);
-
-    //ECOBJECTS_EXPORT virtual StatusInt  CreateInstance (InstanceP& instance, ClassCR ecClass, wchar_t const * instanceId) const override;
     };    
 END_BENTLEY_EC_NAMESPACE

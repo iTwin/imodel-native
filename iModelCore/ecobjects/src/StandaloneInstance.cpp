@@ -334,7 +334,7 @@ UInt32          StandaloneInstanceFactory::GetFinishedCount ()
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
 StandaloneInstanceEnabler::StandaloneInstanceEnabler (ClassLayoutCR classLayout) :
-    Enabler (classLayout.GetClass(), 42, L"Bentley::EC::StandaloneInstanceEnabler"), // WIP_FUSION: Does EnablerID concept even make sense?
+    Enabler (classLayout.GetClass()),
     MemoryEnablerSupport (classLayout)
     {
     }
@@ -347,4 +347,12 @@ StandaloneInstanceEnablerPtr StandaloneInstanceEnabler::CreateEnabler (ClassLayo
     return new StandaloneInstanceEnabler (classLayout);
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     12/09
++---------------+---------------+---------------+---------------+---------------+------*/
+wchar_t const * StandaloneInstanceEnabler::_GetName() const
+    {
+    return L"Bentley::EC::StandaloneInstanceEnabler";
+    }
+        
 END_BENTLEY_EC_NAMESPACE

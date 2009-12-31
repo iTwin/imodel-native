@@ -34,8 +34,6 @@ typedef RefCountedPtr<Enabler>                  EnablerPtr;
 struct Enabler : RefCountedBase
     {
 private:
-    UInt32                  m_id;    
-    std::wstring            m_name;
     ClassCP                 m_ecClass;
 
     Enabler(); // Hidden as part of the RefCounted pattern
@@ -53,13 +51,12 @@ protected:
     //!       return new ____Enabler (ecClass);    
     //!       };
     //! /endcode
-    //! where the ____ is a name specific to your subclass.
-    ECOBJECTS_EXPORT Enabler(ClassCR ecClass, UInt32 enablerId, std::wstring name);
+    //! where the ____ is a name specific to your subclass, and the parameters may vary per enabler.
+    ECOBJECTS_EXPORT Enabler(ClassCR ecClass);
+
+    ECOBJECTS_EXPORT virtual wchar_t const * _GetName() const = 0;
 
 public:
-    
-    //! Should be obtained from the Linkage/Handler ID Pool
-    ECOBJECTS_EXPORT UInt32          GetId()   const;
     
     //! Primarily for debugging/logging purposes. Should match your fully-qualified class name
     ECOBJECTS_EXPORT wchar_t const * GetName() const;
@@ -85,7 +82,6 @@ struct IArrayManipulator  // WIP_FUSION: these responsibilities should move to t
     // @param propertyAccessString should be in the "array element" form, e.g. "Aliases[]" instead of "Aliases"
     virtual StatusInt ClearArray (InstanceR instance, const wchar_t * propertyAccessString) const = 0;    
     };    
-
 
 //! Implemented by enablers that support creation of new standalone (non-persisted) EC::Instances
 //! @see Enabler
