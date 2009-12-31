@@ -190,45 +190,6 @@ std::wstring    ClassLayout::GetClassName() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       MemoryInstanceSupport::ShiftValueData(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated, PropertyLayoutCR propertyLayout, Int32 shiftBy)
-    {
-    DEBUG_EXPECT (0 != shiftBy && "It is a pointless waste of time to shift nothing");
-    DEBUG_EXPECT (!propertyLayout.IsFixedSized() && "The propertyLayout should be that of the variable-sized property whose size is increasing");
-    DEBUG_EXPECT (classLayout.GetSizeOfFixedSection() > 0 && "The ClassLayout has not been initialized");
-    
-    SecondaryOffset * pLast = (SecondaryOffset*)(data + classLayout.GetSizeOfFixedSection() - sizeof(SecondaryOffset));
-    SecondaryOffset * pAdjusting = (SecondaryOffset*)(data + propertyLayout.GetOffset());
-    SecondaryOffset * pCurrent = pAdjusting + 1; // start at the one AFTER the property whose value's size is adjusting
-    DEBUG_EXPECT (pCurrent <= pLast);
-    DEBUG_EXPECT ((*pCurrent - *pAdjusting + shiftBy) >= 0 && "shiftBy cannot be such that it would cause the adjusting property to shrink to a negative size");
-    
-    UInt32 bytesToMove = *pLast - *pCurrent;
-    if (bytesToMove > 0)
-        {
-        byte * source = data + *pCurrent;
-        byte * destination = source + shiftBy;
-        
-        DEBUG_EXPECT (destination + bytesToMove <= data + bytesAllocated && "Attempted to move memory beyond the end of the allocated XAttribute.");
-        if (destination + bytesToMove > data + bytesAllocated)
-            return ERROR;
-            
-        memmove (destination, source, bytesToMove); // WIP_FUSION: not using the IMemoryProvider. Use Modify data
-        }
-
-    // Shift all secondaryOffsets for variable-sized property values following the one that just got larger
-    UInt32 sizeOfSecondaryOffsetsToShift = (UInt32)(((byte*)pLast - (byte*)pCurrent) + sizeof (SecondaryOffset));
-    UInt32 nSecondaryOffsetsToShift = sizeOfSecondaryOffsetsToShift / sizeof(SecondaryOffset);
-    SecondaryOffset * shiftedSecondaryOffsets = (SecondaryOffset*)alloca (sizeOfSecondaryOffsetsToShift);
-    for (UInt32 i = 0; i < nSecondaryOffsetsToShift; i++)
-        shiftedSecondaryOffsets[i] = pCurrent[i] + shiftBy;
-        
-    UInt32 offsetOfCurrent = (UInt32)((byte*)pCurrent - data);
-    return ModifyData (offsetOfCurrent, shiftedSecondaryOffsets, sizeOfSecondaryOffsetsToShift);
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ClassLayout::SetClass (ClassCR ecClass, UInt16 classID)
     {
     m_class = &ecClass;
@@ -593,6 +554,45 @@ StatusInt       MemoryInstanceSupport::EnsureSpaceIsAvailable (ClassLayoutCR cla
     return status;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       MemoryInstanceSupport::ShiftValueData(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated, PropertyLayoutCR propertyLayout, Int32 shiftBy)
+    {
+    DEBUG_EXPECT (0 != shiftBy && "It is a pointless waste of time to shift nothing");
+    DEBUG_EXPECT (!propertyLayout.IsFixedSized() && "The propertyLayout should be that of the variable-sized property whose size is increasing");
+    DEBUG_EXPECT (classLayout.GetSizeOfFixedSection() > 0 && "The ClassLayout has not been initialized");
+    
+    SecondaryOffset * pLast = (SecondaryOffset*)(data + classLayout.GetSizeOfFixedSection() - sizeof(SecondaryOffset));
+    SecondaryOffset * pAdjusting = (SecondaryOffset*)(data + propertyLayout.GetOffset());
+    SecondaryOffset * pCurrent = pAdjusting + 1; // start at the one AFTER the property whose value's size is adjusting
+    DEBUG_EXPECT (pCurrent <= pLast);
+    DEBUG_EXPECT ((*pCurrent - *pAdjusting + shiftBy) >= 0 && "shiftBy cannot be such that it would cause the adjusting property to shrink to a negative size");
+    
+    UInt32 bytesToMove = *pLast - *pCurrent;
+    if (bytesToMove > 0)
+        {
+        byte * source = data + *pCurrent;
+        byte * destination = source + shiftBy;
+        
+        DEBUG_EXPECT (destination + bytesToMove <= data + bytesAllocated && "Attempted to move memory beyond the end of the allocated XAttribute.");
+        if (destination + bytesToMove > data + bytesAllocated)
+            return ERROR;
+            
+        memmove (destination, source, bytesToMove); // WIP_FUSION: not using the IMemoryProvider. Use Modify data
+        }
+
+    // Shift all secondaryOffsets for variable-sized property values following the one that just got larger
+    UInt32 sizeOfSecondaryOffsetsToShift = (UInt32)(((byte*)pLast - (byte*)pCurrent) + sizeof (SecondaryOffset));
+    UInt32 nSecondaryOffsetsToShift = sizeOfSecondaryOffsetsToShift / sizeof(SecondaryOffset);
+    SecondaryOffset * shiftedSecondaryOffsets = (SecondaryOffset*)alloca (sizeOfSecondaryOffsetsToShift);
+    for (UInt32 i = 0; i < nSecondaryOffsetsToShift; i++)
+        shiftedSecondaryOffsets[i] = pCurrent[i] + shiftBy;
+        
+    UInt32 offsetOfCurrent = (UInt32)((byte*)pCurrent - data);
+    return ModifyData (offsetOfCurrent, shiftedSecondaryOffsets, sizeOfSecondaryOffsetsToShift);
+    }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
