@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/MemoryInstanceSupport.h $
 |
-|   $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -12,9 +12,7 @@
 
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
 
-EC_TYPEDEFS(IMemoryProvider);
 EC_TYPEDEFS(MemoryInstanceSupport);
-EC_TYPEDEFS(MemoryEnablerSupport);
 
 BEGIN_BENTLEY_EC_NAMESPACE
     
@@ -120,58 +118,30 @@ public:
     UInt32                  GetBytesUsed(byte const * data) const;
     };
     
-//! Implemented by an EC::Instance that can cooperate with the EC::MemoryEnablerSupport 
-//! To allocate and access memory in which to store values
-//! @see MemoryEnablerSupport, Instance
-struct IMemoryProvider
-    {
-protected:
-    virtual bool         IsMemoryInitialized () const = 0;    
-    //! Get a pointer to the first byte of the data    
-    virtual byte const * GetDataForRead () const = 0;
-    virtual byte *       GetDataForWrite () const = 0;
-    virtual StatusInt    ModifyData (UInt32 offset, void const * newData, UInt32 dataLength) = 0;
-    virtual UInt32       GetBytesAllocated () const = 0;
-        
-    //! Reallocates memory for the Instance and copies the old Instance data into the new memory
-    //! You might get more memory than used asked for, but you won't get less
-    //! @param additionalBytesNeeded  Additional bytes of memory needed above current allocation
-    virtual StatusInt    GrowAllocation (UInt32 additionalBytesNeeded) = 0;
-    
-    //! Reallocates memory for the Instance and copies the old Instance data into the new memory
-    //! This is not guaranteed to do anything or to change to precisely the allocation you request
-    //! but it will be at least as large as you request.
-    //! @param newAllocation  Additional bytes of memory needed above current allocation    
-    virtual void         ShrinkAllocation (UInt32 newAllocation) = 0;
-    
-    //! Free any allocated memory
-    virtual void        FreeAllocation () = 0;
-    };
-    
-//! EC::MemoryEnablerSupport can be used with any EC::Instance that implements IMemoryLayoutSupport
-struct MemoryEnablerSupport
+//! Holds a ClassLayoutCR and provides a public method by which to access it.
+//! Used by StandaloneInstanceEnabler and XDataEnabler
+struct ClassLayoutHolder
     {
 private:
     ClassLayoutCR            m_classLayout;
         
 protected:
-    ECOBJECTS_EXPORT MemoryEnablerSupport (ClassLayoutCR classLayout);
+    ECOBJECTS_EXPORT ClassLayoutHolder (ClassLayoutCR classLayout);
 
-public: 
-
-    ClassLayoutCR   GetClassLayout() const { return m_classLayout; }
+public:    
+    ClassLayoutCR    GetClassLayout() const;
     };
 
 
-//! Base class for ECInstances that get/set values from a block of memory
-struct MemoryInstanceSupport : IMemoryProvider
+//! Base class for EC::Instance implementations that get/set values from a block of memory
+struct MemoryInstanceSupport
     {
 private:    
 
     byte const *                GetAddressOfValue (PropertyLayoutCR propertyLayout) const;
     UInt32                      GetOffsetOfValue (PropertyLayoutCR propertyLayout) const;
-    bool                        IsNull (PropertyLayoutCR propertyLayout) const;
-    void                        SetNull (PropertyLayoutCR propertyLayout, bool isNull);
+    bool                        IsValueNull (PropertyLayoutCR propertyLayout) const;
+    void                        SetValueNull (PropertyLayoutCR propertyLayout, bool isNull);
     
     //! Shifts the values' data and adjusts SecondaryOffsets for all variable-sized property values 
     //! AFTER the given one, to make room for additional bytes needed for the property value of the given PropertyLayout
@@ -191,6 +161,27 @@ protected:
     ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ClassLayoutCR classLayout, ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const;
     ECOBJECTS_EXPORT StatusInt  SetValueToMemory (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, ValueCR v,  UInt32 nIndices, UInt32 const * indices);      
     ECOBJECTS_EXPORT void       DumpInstanceData (ClassLayoutCR classLayout) const;
+    
+    virtual bool         IsMemoryInitialized () const = 0;    
+    //! Get a pointer to the first byte of the data    
+    virtual byte const * GetDataForRead () const = 0;
+    virtual byte *       GetDataForWrite () const = 0;
+    virtual StatusInt    ModifyData (UInt32 offset, void const * newData, UInt32 dataLength) = 0;
+    virtual UInt32       GetBytesAllocated () const = 0;
+        
+    //! Reallocates memory for the Instance and copies the old Instance data into the new memory
+    //! You might get more memory than used asked for, but you won't get less
+    //! @param additionalBytesNeeded  Additional bytes of memory needed above current allocation
+    virtual StatusInt    GrowAllocation (UInt32 additionalBytesNeeded) = 0;
+    
+    //! Reallocates memory for the Instance and copies the old Instance data into the new memory
+    //! This is not guaranteed to do anything or to change to precisely the allocation you request
+    //! but it will be at least as large as you request.
+    //! @param newAllocation  Additional bytes of memory needed above current allocation    
+    virtual void         ShrinkAllocation (UInt32 newAllocation) = 0;
+    
+    //! Free any allocated memory
+    virtual void         FreeAllocation () = 0;
     };
 
 END_BENTLEY_EC_NAMESPACE

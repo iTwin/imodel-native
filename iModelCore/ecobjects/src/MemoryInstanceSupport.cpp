@@ -2,7 +2,7 @@
 |
 |     $Source: ecobjects/native/MemoryInstanceSupport.cpp $
 |
-|   $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -442,9 +442,20 @@ StatusInt       ClassLayout::GetPropertyLayoutByIndex (PropertyLayoutCP & proper
     return SUCCESS;
     }
 
-MemoryEnablerSupport::MemoryEnablerSupport (ClassLayoutCR classLayout) : m_classLayout (classLayout)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     12/09
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassLayoutHolder::ClassLayoutHolder (ClassLayoutCR classLayout) : m_classLayout (classLayout)
     {
     }    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     12/09
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassLayoutCR    ClassLayoutHolder::GetClassLayout() const 
+    {
+    return m_classLayout;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
@@ -469,7 +480,7 @@ byte const *    MemoryInstanceSupport::GetAddressOfValue (PropertyLayoutCR prope
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            MemoryInstanceSupport::IsNull (PropertyLayoutCR propertyLayout) const
+bool            MemoryInstanceSupport::IsValueNull (PropertyLayoutCR propertyLayout) const
     {
     NullflagsBitmask const * nullflags = (NullflagsBitmask const *)(GetDataForRead() + propertyLayout.GetNullflagsOffset());
     return (0 != (*nullflags & propertyLayout.GetNullflagsBitmask()));
@@ -478,7 +489,7 @@ bool            MemoryInstanceSupport::IsNull (PropertyLayoutCR propertyLayout) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            MemoryInstanceSupport::SetNull (PropertyLayoutCR propertyLayout, bool isNull)
+void            MemoryInstanceSupport::SetValueNull (PropertyLayoutCR propertyLayout, bool isNull)
     {
     NullflagsBitmask mask = propertyLayout.GetNullflagsBitmask();
     
@@ -579,7 +590,7 @@ StatusInt       MemoryInstanceSupport::ShiftValueData(ClassLayoutCR classLayout,
         if (destination + bytesToMove > data + bytesAllocated)
             return ERROR;
             
-        memmove (destination, source, bytesToMove); // WIP_FUSION: not using the IMemoryProvider. Use Modify data
+        memmove (destination, source, bytesToMove); // WIP_FUSION: Use Modify data, instead
         }
 
     // Shift all secondaryOffsets for variable-sized property values following the one that just got larger
@@ -614,9 +625,8 @@ UInt32          MemoryInstanceSupport::GetBytesUsed (ClassLayoutCR classLayout, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       MemoryInstanceSupport::GetValueFromMemory (ValueR v, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const
     {
-    if (IsNull(propertyLayout))
+    if (IsValueNull(propertyLayout))
         {
-        //v.Clear();
         v.SetToNull();
         return SUCCESS;
         }
@@ -670,9 +680,6 @@ StatusInt       MemoryInstanceSupport::GetValueFromMemory (ClassLayoutCR classLa
     PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
     PRECONDITION (Instance::AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true), ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices);
                 
-    // WIP_FUSION: check null flags first!
-    IMemoryProviderCR memoryProvider = *this;
-
     PropertyLayoutCP propertyLayout = NULL;
     StatusInt status = classLayout.GetPropertyLayout (propertyLayout, propertyAccessString);
     if (SUCCESS != status || NULL == propertyLayout)
@@ -689,7 +696,6 @@ StatusInt       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayo
     PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
     PRECONDITION (Instance::AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true), ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices);
     //UInt32 bytesAllocated = GetBytesAllocated();    
-    IMemoryProviderR memoryProvider = *this;
 
     PropertyLayoutCP propertyLayout = NULL;
     StatusInt status = classLayout.GetPropertyLayout (propertyLayout, propertyAccessString); // WIP_FUSION: If it only has one error, let it just return null
@@ -698,11 +704,11 @@ StatusInt       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayo
         
     if (v.IsNull())
         {
-        SetNull (*propertyLayout, true);
+        SetValueNull (*propertyLayout, true);
         return SUCCESS;
         }
         
-    SetNull (*propertyLayout, false);
+    SetValueNull (*propertyLayout, false);
                 
     if (propertyLayout->GetDataType() != v.GetDataType())
         return ERROR; // WIP_FUSION ERROR_DataTypeMismatch

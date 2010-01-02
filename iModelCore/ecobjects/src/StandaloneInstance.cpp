@@ -2,7 +2,7 @@
 |
 |     $Source: ecobjects/native/StandaloneInstance.cpp $
 |
-|   $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -335,7 +335,7 @@ UInt32          StandaloneInstanceFactory::GetFinishedCount ()
 +---------------+---------------+---------------+---------------+---------------+------*/    
 StandaloneInstanceEnabler::StandaloneInstanceEnabler (ClassLayoutCR classLayout) :
     Enabler (classLayout.GetClass()),
-    MemoryEnablerSupport (classLayout)
+    ClassLayoutHolder (classLayout)
     {
     }
 

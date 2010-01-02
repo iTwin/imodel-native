@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/StandaloneInstance.h $
 |
-|   $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -19,7 +19,7 @@ typedef RefCountedPtr<StandaloneInstanceEnabler> StandaloneInstanceEnablerPtr;
     
 //! EC::StandaloneInstance is the native equivalent of a .NET "Heavyweight" ECInstance.
 //! It holds the values in memory that it allocates... laid out according to the ClassLayout
-//! @see MemoryEnablerSupport, Instance
+//! @see ClassLayoutHolder, Instance
 struct StandaloneInstance : Instance, MemoryInstanceSupport
     {
 friend StandaloneInstanceFactory;
@@ -139,7 +139,7 @@ public:
     //StandaloneInstanceP CreateInstance ();
     };
 
-struct StandaloneInstanceEnabler : public MemoryEnablerSupport, public Enabler
+struct StandaloneInstanceEnabler : public ClassLayoutHolder, public Enabler
     {
 friend StandaloneInstanceFactory;    
 private: 

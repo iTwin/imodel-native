@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECObjects.h $
 |
-|  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -61,7 +61,7 @@ EC_TYPEDEFS(ClassLayout);
 EC_TYPEDEFS(PropertyLayout);
 EC_TYPEDEFS(StandaloneInstance);
 EC_TYPEDEFS(StandaloneInstanceFactory);
-EC_TYPEDEFS(MemoryEnablerSupport);
+EC_TYPEDEFS(ClassLayoutHolder);
 
 #define EXPORTED_PROPERTY(TYPE, NAME) \
     ECOBJECTS_EXPORT TYPE Get##NAME() const; \
