@@ -129,15 +129,15 @@ protected:
     ECOBJECTS_EXPORT ClassLayoutHolder (ClassLayoutCR classLayout);
 
 public:    
-    ClassLayoutCR    GetClassLayout() const;
+    ECOBJECTS_EXPORT ClassLayoutCR    GetClassLayout() const;
     };
 
 
-//! Base class for EC::Instance implementations that get/set values from a block of memory
+//! Base class for EC::Instance implementations that get/set values from a block of memory, 
+//! e.g. StandaloneInstance and XDataInstance
 struct MemoryInstanceSupport
     {
 private:    
-
     byte const *                GetAddressOfValue (PropertyLayoutCR propertyLayout) const;
     UInt32                      GetOffsetOfValue (PropertyLayoutCR propertyLayout) const;
     bool                        IsValueNull (PropertyLayoutCR propertyLayout) const;
