@@ -155,13 +155,13 @@ void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 byt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          ClassLayout::GetBytesUsed(byte const * data) const
+UInt32          ClassLayout::CalculateBytesUsed(byte const * data) const
     {
     DEBUG_EXPECT (0 != m_sizeOfFixedSection);
     if (m_sizeOfFixedSection == 0)//GetSizeOfFixedSection
         return 0;
         
-    PropertyLayoutCR lastPropertyLayout = m_propertyLayouts[m_propertyLayouts.size() - 1];  // WIP_FUSION: if GetBytesUsed shows up in profiler, we may want to add bool m_hasVariableSizedValues;
+    PropertyLayoutCR lastPropertyLayout = m_propertyLayouts[m_propertyLayouts.size() - 1];  // WIP_FUSION: if _GetBytesUsed shows up in profiler, we may want to add bool m_hasVariableSizedValues;
     if (lastPropertyLayout.IsFixedSized())
         return m_sizeOfFixedSection;
 
@@ -464,7 +464,7 @@ byte const *    MemoryInstanceSupport::GetAddressOfValue (PropertyLayoutCR prope
     {
     UInt32 offset = propertyLayout.GetOffset();
     
-    byte const * data = GetDataForRead();
+    byte const * data = _GetDataForRead();
     byte const * pValue = data + offset;
     
     if (propertyLayout.IsFixedSized())
@@ -482,7 +482,7 @@ byte const *    MemoryInstanceSupport::GetAddressOfValue (PropertyLayoutCR prope
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            MemoryInstanceSupport::IsValueNull (PropertyLayoutCR propertyLayout) const
     {
-    NullflagsBitmask const * nullflags = (NullflagsBitmask const *)(GetDataForRead() + propertyLayout.GetNullflagsOffset());
+    NullflagsBitmask const * nullflags = (NullflagsBitmask const *)(_GetDataForRead() + propertyLayout.GetNullflagsOffset());
     return (0 != (*nullflags & propertyLayout.GetNullflagsBitmask()));
     }
     
@@ -493,7 +493,7 @@ void            MemoryInstanceSupport::SetValueNull (PropertyLayoutCR propertyLa
     {
     NullflagsBitmask mask = propertyLayout.GetNullflagsBitmask();
     
-    NullflagsBitmask * nullflags = (NullflagsBitmask *)(GetDataForWrite() + propertyLayout.GetNullflagsOffset());
+    NullflagsBitmask * nullflags = (NullflagsBitmask *)(_GetDataForWrite() + propertyLayout.GetNullflagsOffset());
     if (isNull && 0 == (*nullflags & mask))
         *nullflags |= mask; // turn on the null bit
     else if (!isNull && mask == (*nullflags & mask))
@@ -510,7 +510,7 @@ UInt32          MemoryInstanceSupport::GetOffsetOfValue (PropertyLayoutCR proper
     if (propertyLayout.IsFixedSized())
         return offset;
 
-    byte const * data = GetDataForRead();
+    byte const * data = _GetDataForRead();
     SecondaryOffset const * pSecondaryOffset = (SecondaryOffset const *)(data + offset);
 
     SecondaryOffset secondaryOffset = *pSecondaryOffset;
@@ -524,7 +524,7 @@ UInt32          MemoryInstanceSupport::GetOffsetOfValue (PropertyLayoutCR proper
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       MemoryInstanceSupport::EnsureSpaceIsAvailable (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded)
     {
-    byte const *             data = GetDataForRead();
+    byte const *             data = _GetDataForRead();
     SecondaryOffset*         pSecondaryOffset = (SecondaryOffset*)(data + propertyLayout.GetOffset());
     SecondaryOffset*         pNextSecondaryOffset = pSecondaryOffset + 1;
     UInt32 availableBytes = *pNextSecondaryOffset - *pSecondaryOffset;
@@ -533,21 +533,21 @@ StatusInt       MemoryInstanceSupport::EnsureSpaceIsAvailable (ClassLayoutCR cla
     if (bytesNeeded <= availableBytes)
         return SUCCESS;
 #endif
-    UInt32 bytesUsed = classLayout.GetBytesUsed(data);
+    UInt32 bytesUsed = classLayout.CalculateBytesUsed(data);
     Int32 additionalBytesNeeded = bytesNeeded - availableBytes;
     
     if (additionalBytesNeeded <= 0)
         return SUCCESS;
         
-    UInt32 bytesAllocated = GetBytesAllocated();    
+    UInt32 bytesAllocated = _GetBytesAllocated();    
     Int32 additionalBytesAvailable = bytesAllocated - bytesUsed;
     
     StatusInt status = SUCCESS;
     UInt32 growBy = additionalBytesNeeded - additionalBytesAvailable;
     if (additionalBytesNeeded > additionalBytesAvailable)
         {
-        status = GrowAllocation (growBy);
-        UInt32 newBytesAllocated = GetBytesAllocated();
+        status = _GrowAllocation (growBy);
+        UInt32 newBytesAllocated = _GetBytesAllocated();
         DEBUG_EXPECT (newBytesAllocated >= bytesAllocated + growBy);
         bytesAllocated = newBytesAllocated;
         }
@@ -555,12 +555,12 @@ StatusInt       MemoryInstanceSupport::EnsureSpaceIsAvailable (ClassLayoutCR cla
     if (SUCCESS != status)
         return status;
         
-    byte * writeableData = GetDataForWrite();
-    DEBUG_EXPECT (bytesUsed == classLayout.GetBytesUsed(writeableData));
+    byte * writeableData = _GetDataForWrite();
+    DEBUG_EXPECT (bytesUsed == classLayout.CalculateBytesUsed(writeableData));
     
     status = ShiftValueData(classLayout, writeableData, bytesAllocated, propertyLayout, additionalBytesNeeded);
 
-    DEBUG_EXPECT (0 == bytesUsed || (bytesUsed + additionalBytesNeeded == classLayout.GetBytesUsed(writeableData)));
+    DEBUG_EXPECT (0 == bytesUsed || (bytesUsed + additionalBytesNeeded == classLayout.CalculateBytesUsed(writeableData)));
     
     return status;
     }
@@ -601,7 +601,7 @@ StatusInt       MemoryInstanceSupport::ShiftValueData(ClassLayoutCR classLayout,
         shiftedSecondaryOffsets[i] = pCurrent[i] + shiftBy;
         
     UInt32 offsetOfCurrent = (UInt32)((byte*)pCurrent - data);
-    return ModifyData (offsetOfCurrent, shiftedSecondaryOffsets, sizeOfSecondaryOffsetsToShift);
+    return _ModifyData (offsetOfCurrent, shiftedSecondaryOffsets, sizeOfSecondaryOffsetsToShift);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -610,14 +610,6 @@ StatusInt       MemoryInstanceSupport::ShiftValueData(ClassLayoutCR classLayout,
 void            MemoryInstanceSupport::InitializeMemory(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated) const
     {
     classLayout.InitializeMemoryForInstance (data, bytesAllocated);
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/    
-UInt32          MemoryInstanceSupport::GetBytesUsed (ClassLayoutCR classLayout, byte const * data) const
-    {
-    return classLayout.GetBytesUsed (data);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -695,7 +687,7 @@ StatusInt       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayo
     {
     PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
     PRECONDITION (Instance::AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true), ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices);
-    //UInt32 bytesAllocated = GetBytesAllocated();    
+    //UInt32 bytesAllocated = _GetBytesAllocated();    
 
     PropertyLayoutCP propertyLayout = NULL;
     StatusInt status = classLayout.GetPropertyLayout (propertyLayout, propertyAccessString); // WIP_FUSION: If it only has one error, let it just return null
@@ -722,17 +714,17 @@ StatusInt       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayo
         case DATATYPE_Integer32:
             {
             Int32 value = v.GetInteger();
-            return ModifyData (offset, &value, sizeof(value));
+            return _ModifyData (offset, &value, sizeof(value));
             }
         case DATATYPE_Long64:
             {
             Int64 value = v.GetLong();
-            return ModifyData (offset, &value, sizeof(value));
+            return _ModifyData (offset, &value, sizeof(value));
             }
         case DATATYPE_Double:
             {
             double value = v.GetDouble();
-            return ModifyData (offset, &value, sizeof(value));
+            return _ModifyData (offset, &value, sizeof(value));
             }       
         case DATATYPE_String:
             {
@@ -743,7 +735,7 @@ StatusInt       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayo
             if (SUCCESS != status)
                 return status;
                 
-            return ModifyData (offset, value, bytesNeeded);
+            return _ModifyData (offset, value, bytesNeeded);
             }
         default:
             {
@@ -764,7 +756,7 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
     static int s_dumpCount = 0;
     s_dumpCount++;
     
-    byte const * data = GetDataForRead();
+    byte const * data = _GetDataForRead();
     
     wprintf (L"======================= Dump #%d ===================================\n", s_dumpCount);
     if (s_skipDump)

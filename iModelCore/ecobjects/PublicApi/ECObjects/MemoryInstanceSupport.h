@@ -114,8 +114,9 @@ public:
     
     static UInt32           GetPropertyValueSize (DataType datatype); // WIP_FUSION: move to ecvalue.h
     UInt32                  GetSizeOfFixedSection() const;
+    
     //! Determines the number of bytes used, so far
-    UInt32                  GetBytesUsed(byte const * data) const;
+    ECOBJECTS_EXPORT UInt32 CalculateBytesUsed(byte const * data) const;
     };
     
 //! Holds a ClassLayoutCR and provides a public method by which to access it.
@@ -156,32 +157,32 @@ private:
          
 protected:
     ECOBJECTS_EXPORT void       InitializeMemory(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated) const;
-    ECOBJECTS_EXPORT UInt32     GetBytesUsed (ClassLayoutCR classLayout, byte const * data) const;
+    //ECOBJECTS_EXPORT UInt32     GetBytesUsed (ClassLayoutCR classLayout, byte const * data) const;
     ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ValueR v, PropertyLayoutCR propertyLayout,      UInt32 nIndices, UInt32 const * indices) const;
     ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ClassLayoutCR classLayout, ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const;
     ECOBJECTS_EXPORT StatusInt  SetValueToMemory (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, ValueCR v,  UInt32 nIndices, UInt32 const * indices);      
     ECOBJECTS_EXPORT void       DumpInstanceData (ClassLayoutCR classLayout) const;
     
-    virtual bool         IsMemoryInitialized () const = 0;    
+    virtual bool         _IsMemoryInitialized () const = 0;    
     //! Get a pointer to the first byte of the data    
-    virtual byte const * GetDataForRead () const = 0;
-    virtual byte *       GetDataForWrite () const = 0;
-    virtual StatusInt    ModifyData (UInt32 offset, void const * newData, UInt32 dataLength) = 0;
-    virtual UInt32       GetBytesAllocated () const = 0;
+    virtual byte const * _GetDataForRead () const = 0;
+    virtual byte *       _GetDataForWrite () const = 0;
+    virtual StatusInt    _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength) = 0;
+    virtual UInt32       _GetBytesAllocated () const = 0;
         
     //! Reallocates memory for the Instance and copies the old Instance data into the new memory
     //! You might get more memory than used asked for, but you won't get less
     //! @param additionalBytesNeeded  Additional bytes of memory needed above current allocation
-    virtual StatusInt    GrowAllocation (UInt32 additionalBytesNeeded) = 0;
+    virtual StatusInt    _GrowAllocation (UInt32 additionalBytesNeeded) = 0;
     
     //! Reallocates memory for the Instance and copies the old Instance data into the new memory
     //! This is not guaranteed to do anything or to change to precisely the allocation you request
     //! but it will be at least as large as you request.
     //! @param newAllocation  Additional bytes of memory needed above current allocation    
-    virtual void         ShrinkAllocation (UInt32 newAllocation) = 0;
+    virtual void         _ShrinkAllocation (UInt32 newAllocation) = 0;
     
     //! Free any allocated memory
-    virtual void         FreeAllocation () = 0;
+    virtual void         _FreeAllocation () = 0;
     };
 
 END_BENTLEY_EC_NAMESPACE

@@ -29,20 +29,14 @@ private:
     
     byte *           m_data;
     UInt32           m_bytesAllocated;
-    // WIP_FUSION: Unpublish most/all of this? 
      
-public: // These must be public so that XDataEnabler can get at the guts of StandaloneInstance to copy it into an XAttribute     
-    ECOBJECTS_EXPORT virtual byte const * GetDataForRead () const;
-    ECOBJECTS_EXPORT virtual UInt32       GetBytesAllocated () const;
-    ECOBJECTS_EXPORT UInt32               GetBytesUsed () const;
-    
 private:
-    virtual bool      IsMemoryInitialized () const;
-    virtual byte *    GetDataForWrite () const;
-    virtual StatusInt ModifyData (UInt32 offset, void const * newData, UInt32 dataLength);    
-    virtual void      ShrinkAllocation (UInt32 newAllocation);
-    virtual void      FreeAllocation ();
-    virtual StatusInt GrowAllocation (UInt32 bytesNeeded);        
+    virtual bool      _IsMemoryInitialized () const;
+    virtual byte *    _GetDataForWrite () const;
+    virtual StatusInt _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength);    
+    virtual void      _ShrinkAllocation (UInt32 newAllocation);
+    virtual void      _FreeAllocation ();
+    virtual StatusInt _GrowAllocation (UInt32 bytesNeeded);        
     
     StandaloneInstance (StandaloneInstanceEnablerCR enabler, byte * data, UInt32 size);
     
@@ -59,14 +53,14 @@ protected:
     virtual StatusInt       _SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices, UInt32 const * indices) override;      
     virtual void            _Dump () const;
     virtual void            _Free () override;
-        
-public:
-    ECOBJECTS_EXPORT void                    ClearValues ();
-
-    //! Provides access to the raw data. For internal use only
-    ECOBJECTS_EXPORT byte const *            PeekData(); // WIP_FUSION: can we eliminate this?
-    //! Provides access to the raw data. For internal use only
-    ECOBJECTS_EXPORT UInt32                  PeekDataSize(); // WIP_FUSION: can we eliminate this?
+    virtual byte const *    _GetDataForRead () const;
+    virtual UInt32          _GetBytesAllocated () const;
+    
+public: // These must be public so that XDataEnabler can get at the guts of StandaloneInstance to copy it into an XAttribute     
+    ECOBJECTS_EXPORT byte const *         GetDataForRead () const;
+    ECOBJECTS_EXPORT UInt32               GetBytesUsed () const;
+    ECOBJECTS_EXPORT void                 ClearValues ();
+    ECOBJECTS_EXPORT ClassLayoutCR        GetClassLayout() const;
     };
 
 //! StandaloneInstanceFactory is used to construct a new @ref StandaloneInstance. 
