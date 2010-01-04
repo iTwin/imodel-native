@@ -307,6 +307,43 @@ void            ClassLayout::AddProperties (ClassCR ecClass, wchar_t const * nam
         if (property->GetIsArray())
             {
             assert (false && "Arrays are not implemented");
+
+            //AddArrayProperty (L"ArrayOfInts",   EC::DATATYPE_String);
+            /* WIP_FUSION: deal with array later.
+            Arrays of structs will get sliced so that they appear to be arrays of a single value type.
+            For example, an array of Manufacturer would show up as three PropertyLayout objects:
+            ArrayOfManufacturers[]           // This only holds the count. It is fixed size. The count is the max count of any of the value arrays, below
+            ArrayOfManufacturers[].Name      // This only holds "Name" values. It is variable sized unless the array has a hard upper limit.
+            ArrayOfManufacturers[].AccountNo // This only holds "AccountNo" values. It is variable sized unless the array has a hard upper limit.
+
+            For a given array of fixed-sized values, the memory layout will be: count, nullflags, element, element, element
+            ...and we have random access to the elements.
+
+            For an array of variable-sized values, we follow the same pattern as the overall StandaloneInstance
+            and have a fixed-sized section (an array of SecondaryOffsets) followed by a variable-sized section holding the actual values.
+            For efficiency, when adding array elements, you really, really want to reserve them in advance, otherwise every
+            new element increases the size of the fixed-sized section, forcing a shift of the entire variable-sized section.
+
+            Even though we "slice" arrays of structs, when we add a new 'struct value' to the array, we really need to keep all
+            of the 'slices' in synch, e.g. we can't increase the length of ArrayOfManufacturers[].Name without also increasing
+            the length of ArrayOfManufacturers[].AccountNo. Hmmm... possibly they should all share the same count.
+
+            After 32 elements we have to insert another 4 bytes of nullflags, which also complicates the calculation of offsets
+            and the shifting of values in the case of arrays of variable-sized values.
+
+            Multidimensional arrays:
+            ArrayOfManufacturers[].Aliases[]
+            For this 2D array, we essentially have an array (ArrayOfManufacturers) where every element is an array of strings
+            (Aliases). In the outer array, we lookup the right array of Aliases. Within that array of Aliases, layout is
+            identical to a normal array of strings.
+
+            The tricky part is that when the nested Aliases array needs more memory, it must propagate a memory request back to
+            its outer array, which may in turn need to request more space for its "value", which may need to request more memory
+            from the "instance", which may have to realloc and move the whole shebang, in order to accomplish it.
+
+            Need to figure out how to really handle this recursively in a consistent way....
+            */
+
             }
         }
     }
@@ -320,86 +357,10 @@ StatusInt       ClassLayout::SetClass (ClassCR ecClass, UInt16 classID)
     m_classID = classID;
     m_className = ecClass.GetName(); // WIP_FUSION: remove this redundant information
 
-    // WIP_FUSION: iterate through the EC::Properties of the EC::Class and build the layout
+    // Iterate through the EC::Properties of the EC::Class and build the layout
     AddProperties (ecClass, NULL, true);
     AddProperties (ecClass, NULL, false);
 
-#if defined (TO_BE_REMOVED)
-    // WIP_FUSION: fake it til we make it
-    /* Fake a layout for
-    
-        struct ManufacturerInfo
-            {
-            std::wstring    m_name;
-            int             m_accountNo;
-            };    
-    
-        int                             m_A;
-        int                             m_AA;
-        ::Int64                         m_C;
-        std::wstring                    m_B;
-        std::wstring                    m_S;
-        int[]                           m_arrayOfInts;
-        ManufacturerInfo                m_manufacturer;
-        std::vector<std::wstring>       m_aliases;
-        std::vector<ManufacturerInfo>   m_arrayOfStructs;
-    */
-    
-    AddFixedSizeProperty (L"A",                      EC::DATATYPE_Integer32);
-    AddFixedSizeProperty (L"AA",                     EC::DATATYPE_Integer32);
-    AddFixedSizeProperty (L"C",                      EC::DATATYPE_Long64);
-    AddFixedSizeProperty (L"D",                      EC::DATATYPE_Double);
-    AddFixedSizeProperty (L"Manufacturer.AccountNo", EC::DATATYPE_Integer32);
-    
-    AddVariableSizeProperty (L"B",                   EC::DATATYPE_String);
-    AddVariableSizeProperty (L"S",                   EC::DATATYPE_String);
-    AddVariableSizeProperty (L"Manufacturer.Name",   EC::DATATYPE_String);
-
-    for (int i = 0; i < N_FINAL_STRING_PROPS_IN_FAKE_CLASS; i++)
-        {
-        wchar_t propertyName[66];
-        swprintf (propertyName, L"Property%i", i);
-        AddVariableSizeProperty (propertyName,       EC::DATATYPE_String);
-        }
-    
-    //AddArrayProperty (L"ArrayOfInts",   EC::DATATYPE_String);
-    /* WIP_FUSION: deal with array later.
-    Arrays of structs will get sliced so that they appear to be arrays of a single value type.
-    For example, an array of Manufacturer would show up as three PropertyLayout objects:
-    ArrayOfManufacturers[]           // This only holds the count. It is fixed size. The count is the max count of any of the value arrays, below
-    ArrayOfManufacturers[].Name      // This only holds "Name" values. It is variable sized unless the array has a hard upper limit.
-    ArrayOfManufacturers[].AccountNo // This only holds "AccountNo" values. It is variable sized unless the array has a hard upper limit.
-    
-    For a given array of fixed-sized values, the memory layout will be: count, nullflags, element, element, element
-    ...and we have random access to the elements.
-    
-    For an array of variable-sized values, we follow the same pattern as the overall StandaloneInstance
-    and have a fixed-sized section (an array of SecondaryOffsets) followed by a variable-sized section holding the actual values.
-    For efficiency, when adding array elements, you really, really want to reserve them in advance, otherwise every
-    new element increases the size of the fixed-sized section, forcing a shift of the entire variable-sized section.
-    
-    Even though we "slice" arrays of structs, when we add a new 'struct value' to the array, we really need to keep all 
-    of the 'slices' in synch, e.g. we can't increase the length of ArrayOfManufacturers[].Name without also increasing
-    the length of ArrayOfManufacturers[].AccountNo. Hmmm... possibly they should all share the same count.
-    
-    After 32 elements we have to insert another 4 bytes of nullflags, which also complicates the calculation of offsets
-    and the shifting of values in the case of arrays of variable-sized values.
-    
-    Multidimensional arrays:
-    ArrayOfManufacturers[].Aliases[]
-    For this 2D array, we essentially have an array (ArrayOfManufacturers) where every element is an array of strings
-    (Aliases). In the outer array, we lookup the right array of Aliases. Within that array of Aliases, layout is 
-    identical to a normal array of strings.
-    
-    The tricky part is that when the nested Aliases array needs more memory, it must propagate a memory request back to
-    its outer array, which may in turn need to request more space for its "value", which may need to request more memory
-    from the "instance", which may have to realloc and move the whole shebang, in order to accomplish it.
-    
-    Need to figure out how to really handle this recursively in a consistent way....
-    
-    */
-#endif
-    
     FinishLayout ();
     
     //wprintf (L"ECClass name=%s\n", ecClass.GetName().c_str());
