@@ -2,7 +2,7 @@
 |
 |     $Source: ecobjects/native/StandaloneInstance.cpp $
 |
-|   $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -12,17 +12,17 @@ BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneInstanceEnablerP      StandaloneInstanceEnabler::Create(ClassCR ecClass, UInt16 classID)
+StandaloneInstanceEnablerP      StandaloneInstanceEnabler::Create(ClassLayoutCR classLayout)
     {
-    return new StandaloneInstanceEnabler (ecClass, classID);    
+    return new StandaloneInstanceEnabler (classLayout);    
     };
         
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneInstanceEnablerPtr StandaloneInstance::CreateEnabler (ClassCR ecClass) 
+StandaloneInstanceEnablerPtr StandaloneInstance::CreateEnabler (ClassLayoutCR classLayout) 
     {
-    return StandaloneInstanceEnabler::Create (ecClass, 0);
+    return StandaloneInstanceEnabler::Create (classLayout);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -380,11 +380,14 @@ UInt32 StandaloneInstanceFactory::GetFinishedCount ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if defined (WIP_FUSION)
+//remove
 StandaloneInstanceEnabler::StandaloneInstanceEnabler (ClassCR ecClass, UInt16 classID) : 
     Enabler (ecClass, STANDALONEENABLER_EnablerID, L"Bentley::EC::StandaloneInstanceEnabler"),
     MemoryEnablerSupport (ecClass, classID)
     {
     }
+#endif
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09

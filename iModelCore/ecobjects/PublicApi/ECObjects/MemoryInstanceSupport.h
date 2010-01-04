@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/MemoryInstanceSupport.h $
 |
-|   $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -101,14 +101,15 @@ private:
     StatusInt               FinishLayout ();
 
 public:
-    ClassLayout();
-    StatusInt               SetClass (ClassCR ecClass, UInt16 classID);
-    ClassCP                 GetClass () const;
-    UInt16                  GetClassID() const;
-    std::wstring            GetClassName() const;
-    UInt32                  GetPropertyCount () const;
-    StatusInt               GetPropertyLayout (PropertyLayoutCP & propertyLayout, wchar_t const * accessString) const;
-    StatusInt               GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const;
+    ECOBJECTS_EXPORT ClassLayout();
+    ECOBJECTS_EXPORT StatusInt       SetClass (ClassCR ecClass, UInt16 classID);
+
+    ECOBJECTS_EXPORT ClassCP         GetClass () const;
+    ECOBJECTS_EXPORT UInt16          GetClassID() const;
+    ECOBJECTS_EXPORT std::wstring    GetClassName() const;
+    ECOBJECTS_EXPORT UInt32          GetPropertyCount () const;
+    ECOBJECTS_EXPORT StatusInt       GetPropertyLayout (PropertyLayoutCP & propertyLayout, wchar_t const * accessString) const;
+    ECOBJECTS_EXPORT StatusInt       GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const;
     // WIP_FUSION add StatusInt GetPropertyIndex (UInt32& propertyIndex, wchar_t const * accessString);
     
     void                    Dump() const;
@@ -161,12 +162,10 @@ protected:
 struct MemoryEnablerSupport
     {
 private:
-    ClassLayout             m_classLayout;
+    ClassLayoutCR           m_classLayout;
         
 protected:
-    ECOBJECTS_EXPORT MemoryEnablerSupport (ClassCR ecClass, UInt16 classID); // WIP_FUSION: remove
-    MemoryEnablerSupport (ClassLayoutCR classLayout);
-    ECOBJECTS_EXPORT MemoryEnablerSupport (ClassCR ecClass, UInt16 classID, UInt32 enablerID, std::wstring name); // WIP_FUSION: remove
+    ECOBJECTS_EXPORT MemoryEnablerSupport (ClassLayoutCR classLayout);
 
 public: 
 

@@ -2,7 +2,7 @@
 |
 |     $Source: ecobjects/native/MemoryInstanceSupport.cpp $
 |
-|   $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -124,7 +124,7 @@ ClassLayout::ClassLayout() : m_state(AcceptingFixedSizeProperties),
                              m_offset(sizeof(InstanceFlags)), // The first 32 bits are reserved for flags/future
                              m_sizeOfFixedSection(0)
     {
-    
+    printf ("Constructing classLayout at %x\n", this);
     };
     
 /*---------------------------------------------------------------------------------**//**
@@ -525,24 +525,10 @@ StatusInt       ClassLayout::GetPropertyLayoutByIndex (PropertyLayoutCP & proper
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-MemoryEnablerSupport::MemoryEnablerSupport (ClassCR ecClass, UInt16 classID)
-    {
-    // FUSION_WIP: sometimes, this will be loaded from the file
-    m_classLayout.SetClass(ecClass, classID);
-    }
-    
 MemoryEnablerSupport::MemoryEnablerSupport (ClassLayoutCR classLayout) : m_classLayout (classLayout)
     {
     }    
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     12/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-MemoryEnablerSupport::MemoryEnablerSupport (ClassCR ecClass, UInt16 classID, UInt32 enablerID, std::wstring name) 
-    {
-    m_classLayout.SetClass(ecClass, classID);
-    }
-        
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/StandaloneInstance.h $
 |
-|   $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -62,7 +62,7 @@ protected:
 public:
     ECOBJECTS_EXPORT void   Dump() const;
     
-    ECOBJECTS_EXPORT static StandaloneInstanceEnablerPtr CreateEnabler (ClassCR ecClass);
+    ECOBJECTS_EXPORT static StandaloneInstanceEnablerPtr CreateEnabler (ClassLayoutCR classLayout);
 
     //! Provides access to the raw data. For internal use only
     ECOBJECTS_EXPORT byte const * PeekData(); // WIP_FUSION: can we eliminate this?
@@ -145,12 +145,11 @@ struct StandaloneInstanceEnabler : public MemoryEnablerSupport, public Enabler//
     {
 friend StandaloneInstanceFactory;    
 private:
-    StandaloneInstanceEnabler (ClassCR ecClass, UInt16 classID); 
     StandaloneInstanceEnabler (ClassLayoutCR classLayout); // WIP_FUSION: who controls the lifetime of the ClassLayout
         
 public: 
 
-    static StandaloneInstanceEnablerP             Create(ClassCR ecClass, UInt16 classID);
+    static StandaloneInstanceEnablerP             Create(ClassLayoutCR classLayout);
         
     //ECOBJECTS_EXPORT virtual StatusInt  CreateInstance (InstanceP& instance, ClassCR ecClass, wchar_t const * instanceId) const override;
     };    
