@@ -8,12 +8,17 @@
 #pragma once
 #include <hash_map>
 
-#include <msxml6\msxml6.tlh>
+//#define EC_TRACE_MEMORY
 
+#ifndef BENTLEY_EXCLUDE_WINDOWS_HEADERS
+#include <msxml6\msxml6.tlh>
+#endif
 /*__PUBLISH_SECTION_START__*/
 
 /*=================================================================================**//**
-* @mainpage ECObjects Public API Documentation
+* @if ECOBJECTS_MAINPAGE
+*     @mainpage ECObjects Public API Documentation
+* @endif
 *
 * This file describes the public API for writing applications using the ECObjects library.
 *

@@ -55,8 +55,8 @@ protected:
     //!       };
     //! /endcode
     //! where the ____ is a name specific to your subclass.
-    ECOBJECTS_EXPORT Enabler(ClassCR ecClass, UInt32 id, std::wstring name) : m_ecClass (&ecClass), m_name(name), 
-        m_id(id) {};
+    ECOBJECTS_EXPORT Enabler(ClassCR ecClass, UInt32 enablerId, std::wstring name) : m_ecClass (&ecClass), m_name(name), 
+        m_id(enablerId) {};
 
 public:
     

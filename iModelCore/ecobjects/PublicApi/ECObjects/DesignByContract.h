@@ -127,6 +127,7 @@ ECOBJECTS_EXPORT void LogFailureMessage (const wchar_t * message, ...);
             L"The following method postcondition check has failed:\n  postcondition: %S\n  method: %S\n  file: %S\n  line: %i\n",   \
             #_Expression, __FUNCTION__, __FILE__, __LINE__)
 
+#ifndef BENTLEY_EXCLUDE_WINDOWS_HEADERS            
 //! This macro should be utilized to enforce S_OK is returned by a method that returns an HRESULT.
 //! If _hr is not S_OK the macro will log the details of the HRESULT error, assert and return the specified _ErrorStatus.
 //! The assertion will only occur in debug builds.  Further, the assertion will only occur as long as they have not been disabled using the DISABLE_ASSERTS macros which allows
@@ -153,6 +154,7 @@ ECOBJECTS_EXPORT void LogFailureMessage (const wchar_t * message, ...);
             #_Expression, hresult, err.ErrorMessage(), __FILE__, __LINE__, hresult);   \
         }                                           \
     }
+#endif
 
 //! This macro should be utilized to check that an expected condition is true.  If the condition evaluates to false the macro will log and assert leaving it to the caller
 //! to return an error code or take any additional action.

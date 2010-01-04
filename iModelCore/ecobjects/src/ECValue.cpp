@@ -280,7 +280,7 @@ StatusInt Value::SetString (const wchar_t * string, bool holdADuplicate)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-std::wstring    Value::ToString ()
+std::wstring    Value::ToString () const
     {
     if (IsNull())
         return L"<null>";

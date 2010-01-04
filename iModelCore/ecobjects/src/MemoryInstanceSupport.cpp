@@ -145,18 +145,6 @@ void            ClassLayout::Dump () const
 +---------------+---------------+---------------+---------------+---------------+------*/    
 UInt32          ClassLayout::GetSizeOfFixedSection() const
     {
-    if (m_sizeOfFixedSection != 0)
-        return m_sizeOfFixedSection;
-        
-    PropertyLayoutCR lastPropertyLayout = m_propertyLayouts[m_propertyLayouts.size() - 1];
-    
-    UInt32  size = (UInt32)lastPropertyLayout.GetOffset() + lastPropertyLayout.GetSizeInFixedSection();
-    
-    if (!lastPropertyLayout.IsFixedSized())
-        size += sizeof(SecondaryOffset); // There is one additional SecondaryOffset tracking the end of the last variable-sized value
-    
-    const_cast<ClassLayout*>(this)->m_sizeOfFixedSection = size;
-    
     return m_sizeOfFixedSection;
     }
     
@@ -204,8 +192,13 @@ void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 byt
 +---------------+---------------+---------------+---------------+---------------+------*/
 UInt32          ClassLayout::GetBytesUsed(byte const * data) const
     {
-    if (m_sizeOfFixedSection == 0)
+    DEBUG_EXPECT (0 != m_sizeOfFixedSection);
+    if (m_sizeOfFixedSection == 0)//GetSizeOfFixedSection
         return 0;
+        
+    PropertyLayoutCR lastPropertyLayout = m_propertyLayouts[m_propertyLayouts.size() - 1];  // WIP_FUSION: if GetBytesUsed shows up in profiler, we may want to add bool m_hasVariableSizedValues;
+    if (lastPropertyLayout.IsFixedSized())
+        return m_sizeOfFixedSection;
 
     SecondaryOffset * pLast = (SecondaryOffset*)(data + m_sizeOfFixedSection - sizeof(SecondaryOffset));
     
@@ -232,7 +225,7 @@ std::wstring    ClassLayout::GetClassName() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            MemoryInstanceSupport::ShiftValueData(ClassLayoutCR classLayout, byte * data, PropertyLayoutCR propertyLayout, Int32 shiftBy)
+StatusInt       MemoryInstanceSupport::ShiftValueData(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated, PropertyLayoutCR propertyLayout, Int32 shiftBy)
     {
     DEBUG_EXPECT (0 != shiftBy && "It is a pointless waste of time to shift nothing");
     DEBUG_EXPECT (!propertyLayout.IsFixedSized() && "The propertyLayout should be that of the variable-sized property whose size is increasing");
@@ -249,22 +242,23 @@ void            MemoryInstanceSupport::ShiftValueData(ClassLayoutCR classLayout,
         {
         byte * source = data + *pCurrent;
         byte * destination = source + shiftBy;
+        
+        DEBUG_EXPECT (destination + bytesToMove <= data + bytesAllocated && "Attempted to move memory beyond the end of the allocated XAttribute.");
+        if (destination + bytesToMove > data + bytesAllocated)
+            return ERROR;
+            
         memmove (destination, source, bytesToMove); // WIP_FUSION: not using the IMemoryProvider. Use Modify data
         }
 
+    // Shift all secondaryOffsets for variable-sized property values following the one that just got larger
     UInt32 sizeOfSecondaryOffsetsToShift = (UInt32)(((byte*)pLast - (byte*)pCurrent) + sizeof (SecondaryOffset));
     UInt32 nSecondaryOffsetsToShift = sizeOfSecondaryOffsetsToShift / sizeof(SecondaryOffset);
     SecondaryOffset * shiftedSecondaryOffsets = (SecondaryOffset*)alloca (sizeOfSecondaryOffsetsToShift);
     for (UInt32 i = 0; i < nSecondaryOffsetsToShift; i++)
-    //while (pCurrent <= pLast) // WIP_FUSION: calculate the size of these to be changed, allocate a buffer on the stack for the new values, then use ModifyData
-        {
         shiftedSecondaryOffsets[i] = pCurrent[i] + shiftBy;
-        //*pCurrent += shiftBy; // WIP_FUSION: not using the IMemoryProvider
-        //++pCurrent;
-        }
         
     UInt32 offsetOfCurrent = (UInt32)((byte*)pCurrent - data);
-    ModifyData (offsetOfCurrent, shiftedSecondaryOffsets, sizeOfSecondaryOffsetsToShift);
+    return ModifyData (offsetOfCurrent, shiftedSecondaryOffsets, sizeOfSecondaryOffsetsToShift);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -372,9 +366,9 @@ StatusInt       ClassLayout::SetClass (ClassCR ecClass, UInt16 classID)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/  
-ClassCP         ClassLayout::GetClass () const
+ClassCR         ClassLayout::GetClass () const
     {
-    return m_class;
+    return *m_class;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -389,6 +383,16 @@ StatusInt       ClassLayout::FinishLayout ()
         m_propertyLayoutLookup[propertyLayout->GetAccessString()] = propertyLayout;
         }
         
+    // Calculate size of fixed section    
+    PropertyLayoutCR lastPropertyLayout = m_propertyLayouts[m_propertyLayouts.size() - 1];
+    
+    UInt32  size = (UInt32)lastPropertyLayout.GetOffset() + lastPropertyLayout.GetSizeInFixedSection();
+    
+    if (!lastPropertyLayout.IsFixedSized())
+        size += sizeof(SecondaryOffset); // There is one additional SecondaryOffset tracking the end of the last variable-sized value
+    
+    m_sizeOfFixedSection = size;
+            
 #ifndef NDEBUG
     DEBUG_EXPECT (m_nProperties == m_propertyLayouts.size());
     if (0 == m_propertyLayouts.size())
@@ -522,27 +526,10 @@ StatusInt       ClassLayout::GetPropertyLayoutByIndex (PropertyLayoutCP & proper
     return SUCCESS;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     12/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-MemoryEnablerSupport::MemoryEnablerSupport (ClassCR ecClass, UInt16 classID)
-    {
-    // FUSION_WIP: sometimes, this will be loaded from the file
-    m_classLayout.SetClass(ecClass, classID);
-    }
-    
 MemoryEnablerSupport::MemoryEnablerSupport (ClassLayoutCR classLayout) : m_classLayout (classLayout)
     {
     }    
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     12/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-MemoryEnablerSupport::MemoryEnablerSupport (ClassCR ecClass, UInt16 classID, UInt32 enablerID, std::wstring name) 
-    {
-    m_classLayout.SetClass(ecClass, classID);
-    }
-        
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -625,40 +612,32 @@ StatusInt       MemoryInstanceSupport::EnsureSpaceIsAvailable (ClassLayoutCR cla
     if (additionalBytesNeeded <= 0)
         return SUCCESS;
         
-    Int32 additionalBytesAvailable = GetBytesAllocated() - bytesUsed;
+    UInt32 bytesAllocated = GetBytesAllocated();    
+    Int32 additionalBytesAvailable = bytesAllocated - bytesUsed;
     
+    StatusInt status = SUCCESS;
+    UInt32 growBy = additionalBytesNeeded - additionalBytesAvailable;
     if (additionalBytesNeeded > additionalBytesAvailable)
-        GrowAllocation (additionalBytesNeeded - additionalBytesAvailable);
+        {
+        status = GrowAllocation (growBy);
+        UInt32 newBytesAllocated = GetBytesAllocated();
+        DEBUG_EXPECT (newBytesAllocated >= bytesAllocated + growBy);
+        bytesAllocated = newBytesAllocated;
+        }
     
+    if (SUCCESS != status)
+        return status;
+        
     byte * writeableData = GetDataForWrite();
     DEBUG_EXPECT (bytesUsed == classLayout.GetBytesUsed(writeableData));
     
-    ShiftValueData(classLayout, writeableData, propertyLayout, additionalBytesNeeded);
+    status = ShiftValueData(classLayout, writeableData, bytesAllocated, propertyLayout, additionalBytesNeeded);
 
     DEBUG_EXPECT (0 == bytesUsed || (bytesUsed + additionalBytesNeeded == classLayout.GetBytesUsed(writeableData)));
     
-    return SUCCESS;
+    return status;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            MemoryInstanceSupport::AllocateAndInitializeMemory (ClassLayoutCR classLayout)
-    {
-    DEBUG_EXPECT (!IsMemoryInitialized());
-    
-    UInt32 bytesUsed = classLayout.GetSizeOfFixedSection();
-    
-    AllocateBytes (bytesUsed);
-    
-    UInt32 bytesAllocated = GetBytesAllocated();
-    
-    byte * data = GetDataForWrite();
-    classLayout.InitializeMemoryForInstance (data, bytesAllocated);
-    
-    // WIP_FUSION: could initialize default values here.
-    }
-    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -754,7 +733,7 @@ StatusInt       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayo
     {
     PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
     PRECONDITION (Instance::AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true), ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices);
-                
+    //UInt32 bytesAllocated = GetBytesAllocated();    
     IMemoryProviderR memoryProvider = *this;
 
     PropertyLayoutCP propertyLayout = NULL;
@@ -774,7 +753,9 @@ StatusInt       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayo
         return ERROR; // WIP_FUSION ERROR_DataTypeMismatch
     
     UInt32 offset = GetOffsetOfValue (*propertyLayout);
-    
+#ifdef EC_TRACE_MEMORY 
+    wprintf (L"SetValue %s of 0x%x at offset=%d to %s.\n", propertyAccessString, this, offset, v.ToString().c_str());
+#endif    
     switch (propertyLayout->GetDataType())
         {
         case DATATYPE_Integer32:
@@ -818,9 +799,17 @@ StatusInt       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayo
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayout) const
     {
+    static bool s_skipDump = false;
+    static int s_dumpCount = 0;
+    s_dumpCount++;
+    
     byte const * data = GetDataForRead();
     
-    wprintf (L"ECClass=%s at address = 0x%8.0x\n", classLayout.GetClassName().c_str(), data);
+    wprintf (L"======================= Dump #%d ===================================\n", s_dumpCount);
+    if (s_skipDump)
+        return;
+        
+    wprintf (L"ECClass=%s at address = 0x%8.0x\n", classLayout.GetClass().GetName().c_str(), data);
     InstanceFlags flags = *(InstanceFlags*)data;
     wprintf (L"  [0x%8.0x][%4.d] InstanceFlags = 0x%08.x\n", data, 0, flags);
     

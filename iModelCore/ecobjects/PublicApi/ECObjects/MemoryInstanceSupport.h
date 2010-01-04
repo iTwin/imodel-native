@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/MemoryInstanceSupport.h $
 |
-|   $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -99,13 +99,13 @@ private:
     StatusInt               AddFixedSizeProperty (wchar_t const * accessString, DataType datatype);
     StatusInt               AddVariableSizeProperty (wchar_t const * accessString, DataType datatype);
     StatusInt               FinishLayout ();
+    std::wstring            GetClassName() const;
 
 public:
-    ClassLayout();
-    StatusInt               SetClass (ClassCR ecClass, UInt16 classID);
-    ClassCP                 GetClass () const;
+    ECOBJECTS_EXPORT ClassLayout();
+    ECOBJECTS_EXPORT StatusInt SetClass (ClassCR ecClass, UInt16 classID);
+    ECOBJECTS_EXPORT ClassCR   GetClass () const;
     UInt16                  GetClassID() const;
-    std::wstring            GetClassName() const;
     UInt32                  GetPropertyCount () const;
     StatusInt               GetPropertyLayout (PropertyLayoutCP & propertyLayout, wchar_t const * accessString) const;
     StatusInt               GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const;
@@ -120,11 +120,6 @@ public:
     //! Determines the number of bytes used, so far
     UInt32                  GetBytesUsed(byte const * data) const;
     };
-         
-struct ClassLayoutRegistry
-    {
-    std::map<UInt32, ClassLayoutCP>  m_classLayouts;
-    };         
     
 //! Implemented by an EC::Instance that can cooperate with the EC::MemoryEnablerSupport 
 //! To allocate and access memory in which to store values
@@ -138,14 +133,11 @@ protected:
     virtual byte *       GetDataForWrite () const = 0;
     virtual StatusInt    ModifyData (UInt32 offset, void const * newData, UInt32 dataLength) = 0;
     virtual UInt32       GetBytesAllocated () const = 0;
-    //! Allocates memory for the Instance. The memory does not need to be initialized in any way.
-    //! @param minimumBytesToAllocate
-    virtual void         AllocateBytes (UInt32 minimumBytesToAllocate) = 0;
         
     //! Reallocates memory for the Instance and copies the old Instance data into the new memory
     //! You might get more memory than used asked for, but you won't get less
     //! @param additionalBytesNeeded  Additional bytes of memory needed above current allocation
-    virtual void         GrowAllocation (UInt32 additionalBytesNeeded) = 0;
+    virtual StatusInt    GrowAllocation (UInt32 additionalBytesNeeded) = 0;
     
     //! Reallocates memory for the Instance and copies the old Instance data into the new memory
     //! This is not guaranteed to do anything or to change to precisely the allocation you request
@@ -161,12 +153,12 @@ protected:
 struct MemoryEnablerSupport
     {
 private:
-    ClassLayout             m_classLayout;
+    ClassLayoutCR            m_classLayout;
         
 protected:
-    ECOBJECTS_EXPORT MemoryEnablerSupport (ClassCR ecClass, UInt16 classID); // WIP_FUSION: remove
-    MemoryEnablerSupport (ClassLayoutCR classLayout);
-    ECOBJECTS_EXPORT MemoryEnablerSupport (ClassCR ecClass, UInt16 classID, UInt32 enablerID, std::wstring name); // WIP_FUSION: remove
+    //ECOBJECTS_EXPORT MemoryEnablerSupport (ClassCR ecClass, UInt16 classID); // WIP_FUSION: remove
+    ECOBJECTS_EXPORT MemoryEnablerSupport (ClassLayoutCR classLayout);
+    //ECOBJECTS_EXPORT MemoryEnablerSupport (ClassCR ecClass, UInt16 classID, UInt32 enablerID, std::wstring name); // WIP_FUSION: remove
 
 public: 
 
@@ -188,21 +180,19 @@ private:
     //! AFTER the given one, to make room for additional bytes needed for the property value of the given PropertyLayout
     //! or to "compact" to reclaim unused space.
     //! @param data           Start of the data of the MemoryInstanceSupport
+    //! @param bytesAllocated How much memory is allocated for the data
     //! @param propertyLayout PropertyLayout of the variable-sized property whose size is increasing
     //! @param shiftBy        Positive or negative! Memory will be moved and SecondaryOffsets will be adjusted by this amount
-    void                        ShiftValueData(ClassLayoutCR classLayout, byte * data, PropertyLayoutCR propertyLayout, Int32 shiftBy);
+    StatusInt                   ShiftValueData(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated, PropertyLayoutCR propertyLayout, Int32 shiftBy);
         
     StatusInt                   EnsureSpaceIsAvailable (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded);
          
 protected:
-    ECOBJECTS_EXPORT void       AllocateAndInitializeMemory (ClassLayoutCR classLayout);
     ECOBJECTS_EXPORT void       InitializeMemory(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated) const;
     ECOBJECTS_EXPORT UInt32     GetBytesUsed (ClassLayoutCR classLayout, byte const * data) const;
     ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ValueR v, PropertyLayoutCR propertyLayout,      UInt32 nIndices, UInt32 const * indices) const;
     ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ClassLayoutCR classLayout, ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const;
     ECOBJECTS_EXPORT StatusInt  SetValueToMemory (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, ValueCR v,  UInt32 nIndices, UInt32 const * indices);      
-
-public:    
     ECOBJECTS_EXPORT void       DumpInstanceData (ClassLayoutCR classLayout) const;
     };
 
