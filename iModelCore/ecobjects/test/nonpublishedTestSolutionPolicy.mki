@@ -8,6 +8,8 @@
 
 compileRulesPath=$(baseDir)nonpublishedCompileRules.mki
 
+ActiveBuildContextName = $(EcfTestBuildContextName)
+
 nameToDefine = COMPILING_NONPUBLISHED_TESTS
 %include cdefapnd.mki
 

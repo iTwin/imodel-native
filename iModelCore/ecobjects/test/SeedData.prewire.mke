@@ -9,4 +9,4 @@
 
 # Wire in seed data
 always:
-   @CreateSymLinks.py -d"$(ContextDeliveryDir)SeedData=$(ecobjectsSrc)nativeatp/SeedData"
+   @CreateSymLinks.py -d"$(OutputRootDir)BuildContexts/ecfTest/Delivery/SeedData=$(ecobjectsSrc)nativeatp/SeedData"

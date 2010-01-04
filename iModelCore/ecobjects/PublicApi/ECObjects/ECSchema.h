@@ -81,6 +81,17 @@ enum ArrayElementClassification
 // this is overkill for the native implementation.  Alternatively we could have a single Property class that could act as primitive/struct/array or we can take the
 // appoach I've implemented below.
 
+// These BENTLEY_EXCLUDE_WINDOWS_HEADERS shenanigans are necessary to allow ECObjects headers to be included without sucking in conflicting windows headers
+#ifdef BENTLEY_EXCLUDE_WINDOWS_HEADERS
+    #define MSXML2_IXMLDOMNode      void *
+    #define MSXML2_IXMLDOMNodePtr   void *
+    #define MSXML2_IXMLDOMDocument2 void *
+#else
+    #define MSXML2_IXMLDOMNode      MSXML2::IXMLDOMNode
+    #define MSXML2_IXMLDOMNodePtr   MSXML2::IXMLDOMNodePtr
+    #define MSXML2_IXMLDOMDocument2 MSXML2::IXMLDOMDocument2
+#endif
+
 /*=================================================================================**//**
 //
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
@@ -103,7 +114,7 @@ protected:
     Property (ClassCR ecClass) : m_class(ecClass), m_readOnly(false), m_baseProperty(NULL) {};        
     ECObjectsStatus SetName (std::wstring const& name);    
 
-    virtual SchemaDeserializationStatus _ReadXML (MSXML2::IXMLDOMNode& propertyNode);
+    virtual SchemaDeserializationStatus _ReadXML (MSXML2_IXMLDOMNode& propertyNode);
     virtual bool _IsPrimitive () const { return false; }
     virtual bool _IsStruct () const { return false; }
     virtual bool _IsArray () const { return false; }
@@ -157,7 +168,7 @@ private:
     PrimitiveProperty (ClassCR ecClass) : m_primitiveType(PRIMITIVETYPE_String), Property(ecClass) {};
 
 protected:
-    virtual SchemaDeserializationStatus _ReadXML (MSXML2::IXMLDOMNode& propertyNode) override;
+    virtual SchemaDeserializationStatus _ReadXML (MSXML2_IXMLDOMNode& propertyNode) override;
     virtual bool _IsPrimitive () const override { return true;}
     virtual std::wstring _GetTypeName () const override;
     virtual ECObjectsStatus _SetTypeName (std::wstring const& typeName) override;
@@ -182,7 +193,7 @@ private:
     StructProperty (ClassCR ecClass) : m_structType(NULL), Property(ecClass) {};
 
 protected:
-    virtual SchemaDeserializationStatus _ReadXML (MSXML2::IXMLDOMNode& propertyNode) override;
+    virtual SchemaDeserializationStatus _ReadXML (MSXML2_IXMLDOMNode& propertyNode) override;
     virtual bool _IsStruct () const override { return true;}
     virtual std::wstring _GetTypeName () const override;
     virtual ECObjectsStatus _SetTypeName (std::wstring const& typeName) override;
@@ -222,7 +233,7 @@ private:
     ECObjectsStatus SetMaxOccurs (std::wstring const& maxOccurs);          
 
 protected:
-    virtual SchemaDeserializationStatus _ReadXML (MSXML2::IXMLDOMNode& propertyNode) override;
+    virtual SchemaDeserializationStatus _ReadXML (MSXML2_IXMLDOMNode& propertyNode) override;
     virtual bool _IsArray () const override { return true;}
     virtual std::wstring _GetTypeName () const override;
     virtual ECObjectsStatus _SetTypeName (std::wstring const& typeName) override;
@@ -335,14 +346,14 @@ protected:
     // schemas index class by name so publicly name can not be reset
     ECObjectsStatus SetName (std::wstring const& name);    
 
-    virtual SchemaDeserializationStatus ReadXMLAttributes (MSXML2::IXMLDOMNode& classNode);
+    virtual SchemaDeserializationStatus ReadXMLAttributes (MSXML2_IXMLDOMNode& classNode);
 
     //! Uses the specified xml node (which must conform to an ECClass as defined in ECSchemaXML) to populate the base classes and properties of this class.
     //! Before this method is invoked the schema containing the class must have loaded all schema references and stubs for all classes within
     //! the schema itself otherwise the method may fail because such dependencies can not be located.
     //! @param[in]  classNode       The XML DOM node to read
     //! @return   Status code
-    virtual SchemaDeserializationStatus ReadXMLContents (MSXML2::IXMLDOMNode& classNode);    
+    virtual SchemaDeserializationStatus ReadXMLContents (MSXML2_IXMLDOMNode& classNode);    
 
 /*__PUBLISH_SECTION_START__*/
 
@@ -497,13 +508,13 @@ private:
     Schema () : m_versionMajor (DEFAULT_VERSION_MAJOR), m_versionMinor (DEFAULT_VERSION_MINOR), m_classContainer(ClassContainer(m_classMap)) {};
     ~Schema();    
 
-    static SchemaDeserializationStatus ReadXML (SchemaPtr& schemaOut, MSXML2::IXMLDOMDocument2& pXmlDoc);
+    static SchemaDeserializationStatus ReadXML (SchemaPtr& schemaOut, MSXML2_IXMLDOMDocument2& pXmlDoc);
 
     ECObjectsStatus AddClass (ClassP& pClass);
     ECObjectsStatus SetVersionFromString (std::wstring const& versionString);
 
-    typedef std::vector<std::pair<ClassP, MSXML2::IXMLDOMNodePtr>>  ClassDeserializationVector;
-    SchemaDeserializationStatus ReadClassStubsFromXML(MSXML2::IXMLDOMNode& schemaNodePtr,ClassDeserializationVector& classes);
+    typedef std::vector<std::pair<ClassP, MSXML2_IXMLDOMNodePtr>>  ClassDeserializationVector;
+    SchemaDeserializationStatus ReadClassStubsFromXML(MSXML2_IXMLDOMNode& schemaNodePtr,ClassDeserializationVector& classes);
     SchemaDeserializationStatus ReadClassContentsFromXML(ClassDeserializationVector&  classes);
 
 /*__PUBLISH_SECTION_START__*/
@@ -574,3 +585,7 @@ public:
 
 
 END_BENTLEY_EC_NAMESPACE
+
+#undef MSXML2_IXMLDOMNode
+#undef MSXML2_IXMLDOMNodePtr
+#undef MSXML2_IXMLDOMDocument2

@@ -135,7 +135,7 @@ public:
     ECOBJECTS_EXPORT StatusInt       SetString (const wchar_t * string, bool holdADuplicate = true);
     
     //! This is intended for debugging purposes, not for presentation purposes.
-    ECOBJECTS_EXPORT std::wstring    ToString ();
+    ECOBJECTS_EXPORT std::wstring    ToString () const;
     
     };
 

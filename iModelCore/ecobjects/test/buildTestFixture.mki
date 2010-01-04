@@ -7,6 +7,8 @@
 #----------------------------------------------------------------------------------------
 baseDir =   $(_MakeFilePath)
 
+ActiveBuildContextName = $(EcfTestBuildContextName)
+
 %include mdl.mki
 
 # We don't want to run the test from the build location because the dependencies are not there.
