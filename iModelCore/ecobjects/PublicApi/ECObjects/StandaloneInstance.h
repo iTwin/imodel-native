@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/StandaloneInstance.h $
 |
-|   $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -19,30 +19,24 @@ typedef RefCountedPtr<StandaloneInstanceEnabler> StandaloneInstanceEnablerPtr;
     
 //! EC::StandaloneInstance is the native equivalent of a .NET "Heavyweight" ECInstance.
 //! It holds the values in memory that it allocates... laid out according to the ClassLayout
-//! @see MemoryEnablerSupport, Instance
+//! @see ClassLayoutHolder, Instance
 struct StandaloneInstance : Instance, MemoryInstanceSupport
     {
 friend StandaloneInstanceFactory;
 private:
     StandaloneInstanceEnablerP m_standaloneEnabler; 
-    std::wstring     m_instanceID;
+    std::wstring     m_instanceId;
     
     byte *           m_data;
     UInt32           m_bytesAllocated;
-    // WIP_FUSION: Unpublish most/all of this? 
      
-public: // These must be public so that XDataEnabler can get at the guts of StandaloneInstance to copy it into an XAttribute     
-    ECOBJECTS_EXPORT virtual byte const * GetDataForRead () const;
-    ECOBJECTS_EXPORT virtual UInt32       GetBytesAllocated () const;
-    ECOBJECTS_EXPORT UInt32               GetBytesUsed () const;
-    
 private:
-    virtual bool      IsMemoryInitialized () const;
-    virtual byte *    GetDataForWrite () const;
-    virtual StatusInt ModifyData (UInt32 offset, void const * newData, UInt32 dataLength);    
-    virtual void      ShrinkAllocation (UInt32 newAllocation);
-    virtual void      FreeAllocation ();
-    virtual StatusInt GrowAllocation (UInt32 bytesNeeded);        
+    virtual bool      _IsMemoryInitialized () const;
+    virtual byte *    _GetDataForWrite () const;
+    virtual StatusInt _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength);    
+    virtual void      _ShrinkAllocation (UInt32 newAllocation);
+    virtual void      _FreeAllocation ();
+    virtual StatusInt _GrowAllocation (UInt32 bytesNeeded);        
     
     StandaloneInstance (StandaloneInstanceEnablerCR enabler, byte * data, UInt32 size);
     
@@ -51,22 +45,22 @@ private:
     static StandaloneInstanceP CreateFromInitializedMemory (StandaloneInstanceEnablerCR enabler, byte * data, UInt32 size);
         
 protected:
-    virtual EnablerCP       _GetEnabler() const override;
+    virtual EnablerCR       _GetEnabler() const override;
     
-    virtual std::wstring    _GetInstanceID() const override;
+    virtual std::wstring    _GetInstanceId() const override;
     virtual bool            _IsReadOnly() const override;        
     virtual StatusInt       _GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const override;
     virtual StatusInt       _SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices, UInt32 const * indices) override;      
     virtual void            _Dump () const;
     virtual void            _Free () override;
-        
-public:
-    ECOBJECTS_EXPORT void                    ClearValues ();
-
-    //! Provides access to the raw data. For internal use only
-    ECOBJECTS_EXPORT byte const *            PeekData(); // WIP_FUSION: can we eliminate this?
-    //! Provides access to the raw data. For internal use only
-    ECOBJECTS_EXPORT UInt32                  PeekDataSize(); // WIP_FUSION: can we eliminate this?
+    virtual byte const *    _GetDataForRead () const;
+    virtual UInt32          _GetBytesAllocated () const;
+    
+public: // These must be public so that XDataEnabler can get at the guts of StandaloneInstance to copy it into an XAttribute     
+    ECOBJECTS_EXPORT byte const *         GetDataForRead () const;
+    ECOBJECTS_EXPORT UInt32               GetBytesUsed () const;
+    ECOBJECTS_EXPORT void                 ClearValues ();
+    ECOBJECTS_EXPORT ClassLayoutCR        GetClassLayout() const;
     };
 
 //! StandaloneInstanceFactory is used to construct a new @ref StandaloneInstance. 
@@ -139,15 +133,15 @@ public:
     //StandaloneInstanceP CreateInstance ();
     };
 
-struct StandaloneInstanceEnabler : public MemoryEnablerSupport, public Enabler//, public ICreateInstance //wip: also implement public IArrayManipulator
+struct StandaloneInstanceEnabler : public ClassLayoutHolder, public Enabler
     {
 friend StandaloneInstanceFactory;    
 private: 
     StandaloneInstanceEnabler (ClassLayoutCR classLayout);
-    //StandaloneInstanceEnabler (ClassCR ecClass, UInt16 classId);
+protected:    
+    virtual wchar_t const * _GetName() const override;
+        
 public: 
     ECOBJECTS_EXPORT static StandaloneInstanceEnablerPtr CreateEnabler (ClassLayoutCR classLayout);
-
-    //ECOBJECTS_EXPORT virtual StatusInt  CreateInstance (InstanceP& instance, ClassCR ecClass, wchar_t const * instanceId) const override;
     };    
 END_BENTLEY_EC_NAMESPACE
