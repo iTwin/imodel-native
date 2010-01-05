@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
+#include <comdef.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -13,7 +14,6 @@ using namespace std;
 
 // WIP_FUSION: these verify methods are duplicated in DgnPlatformTest... how do we share that code?    
 // WIP_FUSION: where is the right place to share these methods even among ECObjects tests? 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
@@ -95,6 +95,97 @@ void SetAndVerifyLong (InstanceR instance, ValueR v, wchar_t const * accessStrin
     } 
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/09
++---------------+---------------+---------------+---------------+---------------+------*/
+std::wstring    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor, const wchar_t* className)
+    {
+    wchar_t fmt[] = L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                    L"<ECSchema schemaName=\"%s\" nameSpacePrefix=\"test\" version=\"%02d.%02d\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+                    L"    <ECClass typeName=\"Manufacturer\" isStruct=\"True\" isDomainClass=\"True\">"
+                    L"        <ECProperty propertyName=\"Name\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"AccountNo\" typeName=\"int\" />"
+                    L"    </ECClass>"
+                    L"    <ECClass typeName=\"%s\" isDomainClass=\"True\">"
+                    L"        <ECProperty propertyName=\"A\" typeName=\"int\" />"
+                    L"        <ECProperty propertyName=\"AA\" typeName=\"int\" />"
+                    L"        <ECProperty propertyName=\"B\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"C\" typeName=\"long\" />"
+                    L"        <ECProperty propertyName=\"D\" typeName=\"double\" />"
+                    L"        <ECProperty propertyName=\"S\" typeName=\"string\" />"
+                    L"        <ECStructProperty propertyName=\"Manufacturer\" typeName=\"Manufacturer\" />"
+                    L"        <ECProperty propertyName=\"Property0\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property1\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property2\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property3\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property4\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property5\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property6\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property7\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property8\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property9\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property10\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property11\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property12\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property13\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property14\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property15\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property16\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property17\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property18\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property19\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property20\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property21\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property22\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property23\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property24\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property25\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property26\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property27\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property28\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property29\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property30\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property31\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property32\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property33\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property34\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property35\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property36\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property37\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property38\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property39\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property40\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property41\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property42\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property43\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property44\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property45\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property46\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Property47\" typeName=\"string\" />"
+                    L"    </ECClass>"
+                    L"</ECSchema>";
+
+    wchar_t* buff = (wchar_t*) _alloca (2 * (50 + wcslen (fmt) + wcslen (schemaName) + wcslen (className)));
+
+    swprintf (buff, fmt, schemaName, versionMajor, versionMinor, className);
+
+    return buff;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/09
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaPtr       CreateTestSchema ()
+    {
+    std::wstring schemaXMLString = GetTestSchemaXMLString (L"TestSchema", 0, 0, L"TestClass");
+
+    SchemaPtr schema = NULL;
+
+    EXPECT_EQ (SUCCESS, Schema::ReadXMLFromString (schema, schemaXMLString.c_str()));
+
+    return schema;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/  
 void ExerciseInstance (InstanceR instance, wchar_t* valueForFinalStrings)
@@ -168,16 +259,15 @@ void ExerciseInstance (InstanceR instance, wchar_t* valueForFinalStrings)
 #endif        
     }
                  
-               
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
     {
-    SchemaPtr schema;
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, Schema::CreateSchema (schema, L"TestSchema"));
-    ClassP ecClass;
-    schema->CreateClass(ecClass, L"TestClass");    
+    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+
+    SchemaPtr schema = CreateTestSchema();
+    ClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);
     
     ClassLayout classLayout;
@@ -196,6 +286,7 @@ TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
     instance->Dump();
     
     // instance.Compact()... then check values again
+    CoUninitialize();
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -262,10 +353,10 @@ TEST (MemoryLayoutTests, Values) // move it!
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST (MemoryLayoutTests, TestSetGetNull)
     {
-    SchemaPtr schema;
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, Schema::CreateSchema (schema, L"TestSchema"));
-    ClassP ecClass;
-    schema->CreateClass(ecClass, L"TestClass");    
+    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+
+    SchemaPtr schema = CreateTestSchema();
+    ClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);
         
     ClassLayout classLayout;
@@ -300,6 +391,8 @@ TEST (MemoryLayoutTests, TestSetGetNull)
     
     EXPECT_TRUE (SUCCESS == instance->GetValue (v, L"S"));
     EXPECT_FALSE (v.IsNull());     
+
+    CoUninitialize();
     }
     
 void SetStringToSpecifiedNumberOfCharacters (InstanceR instance, int nChars)
@@ -320,10 +413,10 @@ void SetStringToSpecifiedNumberOfCharacters (InstanceR instance, int nChars)
 
 TEST (MemoryLayoutTests, DemonstrateInstanceFactory)
     {
-    SchemaPtr schema;
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, Schema::CreateSchema (schema, L"TestSchema"));
-    ClassP ecClass;
-    schema->CreateClass(ecClass, L"TestClass");    
+    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+
+    SchemaPtr schema = CreateTestSchema();
+    ClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);
         
     ClassLayout classLayout;
@@ -385,6 +478,8 @@ TEST (MemoryLayoutTests, DemonstrateInstanceFactory)
     EXPECT_TRUE (SUCCESS != factory->FinishConstruction(oldInstance));    
     EXPECT_TRUE (SUCCESS == factory->FinishConstruction(instance));    
     EXPECT_TRUE (SUCCESS != factory->FinishConstruction(instance)); // It can only finish once
+
+    CoUninitialize();
     }
     
 

@@ -124,7 +124,6 @@ ClassLayout::ClassLayout() : m_state(AcceptingFixedSizeProperties),
                              m_offset(sizeof(InstanceFlags)), // The first 32 bits are reserved for flags/future
                              m_sizeOfFixedSection(0)
     {
-    printf ("Constructing classLayout at %x\n", this);
     };
     
 /*---------------------------------------------------------------------------------**//**
@@ -345,14 +344,21 @@ StatusInt       ClassLayout::FinishLayout ()
         }
         
     // Calculate size of fixed section    
-    PropertyLayoutCR lastPropertyLayout = m_propertyLayouts[m_propertyLayouts.size() - 1];
-    
-    UInt32  size = (UInt32)lastPropertyLayout.GetOffset() + lastPropertyLayout.GetSizeInFixedSection();
-    
-    if (!lastPropertyLayout.IsFixedSized())
-        size += sizeof(SecondaryOffset); // There is one additional SecondaryOffset tracking the end of the last variable-sized value
-    
-    m_sizeOfFixedSection = size;
+    if (0 >= m_propertyLayouts.size())
+        {
+        m_sizeOfFixedSection = 0;
+        }
+    else
+        {
+        PropertyLayoutCR lastPropertyLayout = m_propertyLayouts[m_propertyLayouts.size() - 1];
+
+        UInt32  size = (UInt32)lastPropertyLayout.GetOffset() + lastPropertyLayout.GetSizeInFixedSection();
+
+        if (!lastPropertyLayout.IsFixedSized())
+            size += sizeof(SecondaryOffset); // There is one additional SecondaryOffset tracking the end of the last variable-sized value
+
+        m_sizeOfFixedSection = size;
+        }
             
 #ifndef NDEBUG
     DEBUG_EXPECT (m_nProperties == m_propertyLayouts.size());
