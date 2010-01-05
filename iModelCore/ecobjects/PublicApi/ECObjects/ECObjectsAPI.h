@@ -2,10 +2,12 @@
 |
 |     $Source: PublicApi/ECObjects/ECObjectsAPI.h $
 |
-|  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+//! @cond NODOC
+
 #include <hash_map>
 
 #ifndef BENTLEY_EXCLUDE_WINDOWS_HEADERS
@@ -55,3 +57,5 @@
 
 // This define is checked from the ECObjects Published ATPs to ensure that they are building against the published header files.
 #define NON_PUBLISHED_HEADER_INCLUDED
+
+//! @endcond NODOC
