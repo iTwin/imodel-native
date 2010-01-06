@@ -2,7 +2,7 @@
 |
 |     $Source: ecobjects/native/MemoryInstanceSupport.cpp $
 |
-|   $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -97,11 +97,12 @@ ClassLayout::ClassLayout() : m_state(AcceptingFixedSizeProperties),
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ClassLayout::Dump () const
     {
-    wprintf (L"ECClassIndex=%i, ECClass.Name=%s\n", m_classID, m_className.c_str());
+    ILogger *logger = Logger::GetLogger();
+    logger->tracev (L"ECClassIndex=%i, ECClass.Name=%s\n", m_classID, m_className.c_str());
     for each (PropertyLayout layout in m_propertyLayouts)
         {
-        wprintf (layout.ToString().c_str());
-        wprintf (L"\n");
+        logger->tracev (layout.ToString().c_str());
+        logger->tracev (L"\n");
         }
     }
         
