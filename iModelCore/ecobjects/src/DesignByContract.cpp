@@ -2,7 +2,7 @@
 |
 |     $Source: ecobjects/native/DesignByContract.cpp $
 |
-|   $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -39,8 +39,18 @@ AssertDisabler::~AssertDisabler ()
 void LogFailureMessage (const wchar_t * message, ...)
     {
     va_list arguments;
+    int len;
+    wchar_t *buffer;
     va_start (arguments, message);              
-    vwprintf (message, arguments);    
+
+       len = _vscwprintf( message, arguments ) // _vscprintf doesn't count
+                                + 1; // terminating '\0'
+    
+    buffer = (wchar_t*)malloc( len * sizeof(wchar_t) );
+
+    vswprintf( buffer, message, arguments ); // C4996
+    Bentley::EC::Logger::GetLogger()->warning(buffer );
+    free( buffer );
     }
 
 
