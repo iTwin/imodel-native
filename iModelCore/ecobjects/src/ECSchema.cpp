@@ -6,15 +6,13 @@
 |       $Date: 2005/11/07 15:38:45 $
 |     $Author: EarlinLutz $
 |
-|  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "ECObjectsPch.h"
 
 BEGIN_BENTLEY_EC_NAMESPACE
-
-// NEEDSWORK wprintf statements should be converted to use formal logging
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
@@ -24,11 +22,11 @@ Schema::~Schema
 )
     {
     // NEEDSWORK make sure everything is destroyed
-    wprintf (L"~~~~ Destroying Schema: %s\n", GetName().c_str());
+    Logger::GetLogger()->infov (L"~~~~ Destroying Schema: %s\n", GetName().c_str());
     stdext::hash_map<const wchar_t * , ClassP>::const_iterator classIterator, classEnd;        
     classIterator = m_classMap.begin();
     classEnd = m_classMap.end();
-    wprintf (L"     Freeing memory for %d classes\n", m_classMap.size());
+    Logger::GetLogger()->tracev (L"     Freeing memory for %d classes\n", m_classMap.size());
     while (classIterator != classEnd)
         {
         delete classIterator->second;        
@@ -220,7 +218,7 @@ ClassP&                 pClass
     resultPair = m_classMap.insert (std::pair<const wchar_t *, ClassP> (pClass->Name.c_str(), pClass));
     if (resultPair.second == false)
         {
-        wprintf (L"Can not create class '%s' because it already exists in the schema", pClass->Name.c_str());
+        Logger::GetLogger()->warningv (L"Can not create class '%s' because it already exists in the schema", pClass->Name.c_str());
         delete pClass;
         pClass = NULL;        
         return ECOBJECTS_STATUS_NamedItemAlreadyExists;
@@ -266,7 +264,7 @@ std::wstring const&     name
         {
         delete pClass;
         pClass = NULL;
-        wprintf (L"Can not create relationship class '%s' because it already exists in the schema", name.c_str());
+        Logger::GetLogger()->warningv (L"Can not create relationship class '%s' because it already exists in the schema", name.c_str());
         return ECOBJECTS_STATUS_NamedItemAlreadyExists;
         }
 
@@ -293,21 +291,21 @@ std::wstring const&     versionString
     const wchar_t * theDot = wcschr (version, L'.');
     if (NULL == theDot)
         {
-        wprintf (L"Invalid ECSchema Version String: '%s' does not contain a '.'!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
+        Logger::GetLogger()->errorv (L"Invalid ECSchema Version String: '%s' does not contain a '.'!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
         return ECOBJECTS_STATUS_ParseError;
         }
 
     size_t majorLen = theDot - version;
     if (majorLen < 1 || majorLen > 3)
         {
-        wprintf (L"Invalid ECSchema Version String: '%s' does not have 1-3 numbers before the '.'!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
+        Logger::GetLogger()->errorv (L"Invalid ECSchema Version String: '%s' does not have 1-3 numbers before the '.'!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
         return ECOBJECTS_STATUS_ParseError;
         }
 
     size_t minorLen = wcslen (theDot) - 1;
     if (minorLen < 1 || minorLen > 3)
         {
-        wprintf (L"Invalid ECSchema Version String: '%s' does not have 1-3 numbers after the '.'!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
+        Logger::GetLogger()->errorv (L"Invalid ECSchema Version String: '%s' does not have 1-3 numbers after the '.'!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
         return ECOBJECTS_STATUS_ParseError;
         }
 
@@ -315,14 +313,14 @@ std::wstring const&     versionString
     versionMajor = wcstoul (version, &end, 10);
     if (version == end)
         {
-        wprintf (L"Invalid ECSchema Version String: '%s' The characters before the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
+        Logger::GetLogger()->errorv (L"Invalid ECSchema Version String: '%s' The characters before the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
         return ECOBJECTS_STATUS_ParseError;
         }
 
     versionMinor = wcstoul (&theDot[1], &end, 10);
     if (&theDot[1] == end)
         {
-        wprintf (L"Invalid ECSchema Version String: '%s' The characters after the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
+        Logger::GetLogger()->errorv (L"Invalid ECSchema Version String: '%s' The characters after the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
         return ECOBJECTS_STATUS_ParseError;
         }
 
@@ -433,9 +431,9 @@ ClassDeserializationVector&  classes
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXML;
 
         if (NULL == pRelationshipClass)
-            wprintf (L"    Created Class Stub: %s\n", pClass->Name.c_str());
+            Logger::GetLogger()->tracev (L"    Created Class Stub: %s\n", pClass->Name.c_str());
         else
-            wprintf (L"    Created Relationship Class Stub: %s\n", pClass->Name.c_str());
+            Logger::GetLogger()->tracev (L"    Created Relationship Class Stub: %s\n", pClass->Name.c_str());
 
         classes.push_back (std::make_pair (pClass, xmlNodePtr));
         }
@@ -487,7 +485,7 @@ MSXML2::IXMLDOMDocument2&           pXmlDoc
     MSXML2::IXMLDOMNodePtr xmlNodePtr = pXmlDoc.selectSingleNode (L"/" EC_NAMESPACE_PREFIX L":" EC_SCHEMA_ELEMENT);
     if (NULL == xmlNodePtr)
         {
-        wprintf (L"Invalid ECSchemaXML: Missing a top-level " EC_SCHEMA_ELEMENT L" node in the " ECXML_URI_2_0 L" namespace\n");
+        Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: Missing a top-level " EC_SCHEMA_ELEMENT L" node in the " ECXML_URI_2_0 L" namespace\n");
         return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXML;
         }
     
@@ -498,7 +496,7 @@ MSXML2::IXMLDOMDocument2&           pXmlDoc
     // schemaName is a REQUIRED attribute in order to create the schema
     if ((NULL == nodeAttributesPtr) || (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMA_NAME_ATTRIBUTE))))
         {
-        wprintf (L"Invalid ECSchemaXML: " EC_SCHEMA_ELEMENT L" element must contain a schemaName attribute\n");
+        Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: " EC_SCHEMA_ELEMENT L" element must contain a schemaName attribute\n");
         return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXML;
         }
 
@@ -515,7 +513,7 @@ MSXML2::IXMLDOMDocument2&           pXmlDoc
     ECObjectsStatus setterStatus;
     READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (SCHEMA_VERSION_ATTRIBUTE,                  schemaOut, VersionFromString)
     if (ECOBJECTS_STATUS_Success != setterStatus)
-        wprintf (L"Invalid version attribute has been ignored while deserializing ECSchema '%s'.  The default version number %d.%d has been applied.\n", 
+        Logger::GetLogger()->warningv (L"Invalid version attribute has been ignored while deserializing ECSchema '%s'.  The default version number %d.%d has been applied.\n", 
             schemaOut->Name.c_str(), schemaOut->VersionMajor, schemaOut->VersionMinor);
 
     ClassDeserializationVector classes;
@@ -536,6 +534,51 @@ MSXML2::IXMLDOMDocument2&           pXmlDoc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                               
 +---------------+---------------+---------------+---------------+---------------+------*/
+SchemaSerializationStatus Schema::WriteXml
+(
+MSXML2::IXMLDOMDocument2* pXmlDoc
+)
+    {
+    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+
+    MSXML2::IXMLDOMProcessingInstructionPtr piPtr = NULL;
+    MSXML2::IXMLDOMTextPtr textPtr = NULL;
+
+    piPtr = pXmlDoc->createProcessingInstruction(L"xml", L"version='1.0'  encoding='UTF-8'");
+    APPEND_CHILD_TO_PARENT(piPtr, pXmlDoc);
+    //CREATE_AND_ADD_TEXT_NODE(L"\n", piPtr);
+    
+    MSXML2::IXMLDOMElementPtr schemaElementPtr = pXmlDoc->createNode(NODE_ELEMENT, EC_SCHEMA_ELEMENT, ECXML_URI_2_0);
+    APPEND_CHILD_TO_PARENT(schemaElementPtr, pXmlDoc);
+    
+    MSXML2::IXMLDOMAttributePtr attributePtr;
+    WRITE_XML_ATTRIBUTE(L"xmlns:" EC_NAMESPACE_PREFIX, ECXML_URI_2_0, schemaElementPtr);
+    WRITE_XML_ATTRIBUTE(SCHEMA_NAME_ATTRIBUTE, this->Name.c_str(), schemaElementPtr);
+    WRITE_OPTIONAL_XML_ATTRIBUTE(SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE, NamespacePrefix, schemaElementPtr);
+    WRITE_OPTIONAL_XML_ATTRIBUTE(DESCRIPTION_ATTRIBUTE, Description, schemaElementPtr);
+    WRITE_OPTIONAL_XML_ATTRIBUTE(DISPLAY_LABEL_ATTRIBUTE, DisplayLabel, schemaElementPtr);
+    
+    wchar_t versionString[8];
+    swprintf(versionString, 8, L"%02d.%02d", m_versionMajor, m_versionMinor);
+    WRITE_XML_ATTRIBUTE(SCHEMA_VERSION_ATTRIBUTE, versionString, schemaElementPtr);
+
+    // NEEDSWORK Serialize schema references
+    
+    // NEEDSWORK Serialize custom attributes
+    
+    std::vector<std::wstring> alreadySerializedClasses;
+    for each (ClassP pClass in Classes)
+        {
+        // NEEDSWORK Make sure haven't already serialized this class
+        pClass->Serialize(schemaElementPtr);
+        }
+        
+    CREATE_AND_ADD_TEXT_NODE(L"\n", schemaElementPtr);
+    return status;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus LogXmlLoadError
 (
 MSXML2::IXMLDOMDocument2& pXmlDoc
@@ -552,10 +595,13 @@ MSXML2::IXMLDOMDocument2& pXmlDoc
             _bstr_t pBURL = pXMLError->Geturl();
             _bstr_t pBReason = pXMLError->Getreason();
 
-            std::wstring file = pBURL;
+            std::wstring file;
+            if (NULL != pBURL.GetBSTR())
+                file = pBURL;
+                
             std::wstring reason = pBReason;
                         
-            wprintf (L"line %d, position %d parsing ECSchema file %s. %s\n", line, linePos, file.c_str(), reason.c_str());            
+            Logger::GetLogger()->errorv (L"line %d, position %d parsing ECSchema file %s. %s\n", line, linePos, file.c_str(), reason.c_str());            
             return ERROR;
             }
         }
@@ -588,7 +634,7 @@ const wchar_t *     ecSchemaXmlFile
 
     status = ReadXML (schemaOut, xmlDocPtr);
     if (ECOBJECTS_STATUS_Success != status)
-        wprintf (L"Failed to deserialize XML file: %s\n", ecSchemaXmlFile);
+        Logger::GetLogger()->errorv (L"Failed to deserialize XML file: %s\n", ecSchemaXmlFile);
     return status;
     }
 
@@ -617,10 +663,118 @@ const wchar_t *     ecSchemaXml
 
     status = ReadXML (schemaOut, xmlDocPtr);
     if (ECOBJECTS_STATUS_Success != status)
-        wprintf (L"Failed to deserialize XML from string: %s\n", ecSchemaXml);
+        Logger::GetLogger()->errorv (L"Failed to deserialize XML from string: %s\n", ecSchemaXml);
+    return status;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaDeserializationStatus Schema::ReadXMLFromStream
+(
+SchemaPtr&          schemaOut, 
+IStream *           ecSchemaXmlStream
+)
+    {                  
+    SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
+
+    MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;        
+    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_DESERIALIZATION_STATUS_FailedToInitializeMsmxl);
+    xmlDocPtr->put_validateOnParse(VARIANT_TRUE);
+    xmlDocPtr->put_async(VARIANT_FALSE);
+    
+    VARIANT_BOOL returnCode = xmlDocPtr->load(ecSchemaXmlStream);
+    if (returnCode != VARIANT_TRUE)
+        {
+        LogXmlLoadError(xmlDocPtr);
+        return SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml;
+        }
+
+    status = ReadXML (schemaOut, xmlDocPtr);
+    if (ECOBJECTS_STATUS_Success != status)
+        Logger::GetLogger()->errorv (L"Failed to deserialize XML from stream\n");
     return status;
     }
 
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaSerializationStatus Schema::WriteXmlToString
+(
+const wchar_t*  &ecSchemaXml
+)
+    {
+    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+
+    MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;        
+    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_SERIALIZATION_STATUS_FailedToInitializeMsmxl);
+    xmlDocPtr->put_validateOnParse(VARIANT_TRUE);
+    xmlDocPtr->put_async(VARIANT_FALSE);
+    xmlDocPtr->put_preserveWhiteSpace(VARIANT_TRUE);
+    xmlDocPtr->put_resolveExternals(VARIANT_FALSE);
+    
+    status = WriteXml(xmlDocPtr);
+    
+    if (status != SCHEMA_SERIALIZATION_STATUS_Success)
+        return status;
+        
+    ecSchemaXml = xmlDocPtr->xml;
+    
+    return status;
+    }
+   
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaSerializationStatus Schema::WriteXmlToFile
+(
+const wchar_t * ecSchemaXmlFile
+)
+    {
+    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+
+    MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;        
+    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_SERIALIZATION_STATUS_FailedToInitializeMsmxl);
+    xmlDocPtr->put_validateOnParse(VARIANT_TRUE);
+    xmlDocPtr->put_async(VARIANT_FALSE);
+    xmlDocPtr->put_preserveWhiteSpace(VARIANT_TRUE);
+    xmlDocPtr->put_resolveExternals(VARIANT_FALSE);
+    
+    status = WriteXml(xmlDocPtr);
+    if (status != SCHEMA_SERIALIZATION_STATUS_Success)
+        return status;
+        
+    VERIFY_HRESULT_OK(xmlDocPtr->save(ecSchemaXmlFile), SCHEMA_SERIALIZATION_STATUS_FailedToSaveXml);
+
+    return status;
+    }
+   
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaSerializationStatus Schema::WriteXmlToStream
+(
+IStream * ecSchemaXmlStream
+)
+    {
+    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+
+    MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;        
+    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_SERIALIZATION_STATUS_FailedToInitializeMsmxl);
+    xmlDocPtr->put_validateOnParse(VARIANT_TRUE);
+    xmlDocPtr->put_async(VARIANT_FALSE);
+    xmlDocPtr->put_preserveWhiteSpace(VARIANT_TRUE);
+    xmlDocPtr->put_resolveExternals(VARIANT_FALSE);
+    
+    status = WriteXml(xmlDocPtr);
+    if (status != SCHEMA_SERIALIZATION_STATUS_Success)
+        return status;
+        
+    VERIFY_HRESULT_OK(xmlDocPtr->save(ecSchemaXmlStream), SCHEMA_SERIALIZATION_STATUS_FailedToSaveXml);
+
+    return status;
+    }
+     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/

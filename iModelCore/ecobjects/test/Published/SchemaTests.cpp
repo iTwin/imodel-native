@@ -3,7 +3,7 @@
 |
 |     $Source: ecobjects/nativeatp/Published/SchemaTests.cpp $
 |
-|  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -15,6 +15,131 @@ BEGIN_BENTLEY_EC_NAMESPACE
 // NEEDSWORK Improve strategy for seed data.  Should not be maintained in source.
 #define SCHEMAS_PATH  L"" 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+void VerifyWidgetsSchema
+(
+SchemaPtr schema
+)
+    {
+    EXPECT_STREQ (L"Widgets", schema->Name.c_str());
+    EXPECT_STREQ (L"wid", schema->NamespacePrefix.c_str());
+    EXPECT_STREQ (L"Widgets Display Label", schema->DisplayLabel.c_str());
+    EXPECT_TRUE (schema->IsDisplayLabelDefined);
+    EXPECT_STREQ (L"Widgets Description", schema->Description.c_str());
+    EXPECT_EQ (9, schema->VersionMajor);
+    EXPECT_EQ (6, schema->VersionMinor);        
+    
+    for each (ClassP pClass in schema->Classes)
+        {
+        wprintf (L"Widgets contains class: '%s' with display label '%s'\n", pClass->Name.c_str(), pClass->DisplayLabel.c_str());
+        }
+
+    ClassP pClass = schema->GetClassP(L"ClassDoesNotExistInSchema");
+    EXPECT_FALSE (pClass);
+
+    pClass = schema->GetClassP(L"ecProject");
+    ASSERT_TRUE (pClass);
+    EXPECT_STREQ (L"ecProject", pClass->Name.c_str());    
+    EXPECT_STREQ (L"Project", pClass->DisplayLabel.c_str());
+    EXPECT_TRUE (pClass->IsDisplayLabelDefined);
+    EXPECT_STREQ (L"Project Class", pClass->Description.c_str());
+    EXPECT_FALSE (pClass->IsStruct);
+    EXPECT_FALSE (pClass->IsCustomAttributeClass);
+    EXPECT_TRUE (pClass->IsDomainClass);
+    EXPECT_FALSE (pClass->HasBaseClasses());
+    PropertyP pProperty = pClass->GetPropertyP (L"Name");
+    EXPECT_TRUE (pProperty);
+    EXPECT_STREQ (L"Name", pProperty->Name.c_str());
+    EXPECT_TRUE (pProperty->IsPrimitive);
+    EXPECT_FALSE (pProperty->IsStruct);
+    EXPECT_FALSE (pProperty->IsArray);
+    EXPECT_STREQ (L"string", pProperty->TypeName.c_str());
+    EXPECT_EQ (PRIMITIVETYPE_String, pProperty->GetAsPrimitiveProperty()->Type);
+    EXPECT_TRUE (pProperty->IsDisplayLabelDefined);
+    EXPECT_STREQ (L"Project Name", pProperty->DisplayLabel.c_str());
+    EXPECT_STREQ (L"", pProperty->Description.c_str());
+    EXPECT_EQ (pClass, &pProperty->Class);
+    EXPECT_FALSE (pProperty->IsReadOnly);
+
+    pProperty = pClass->GetPropertyP (L"PropertyDoesNotExistInClass");
+    EXPECT_FALSE (pProperty);
+
+    pClass = schema->GetClassP(L"AccessCustomAttributes");
+    ASSERT_TRUE (pClass);
+    EXPECT_STREQ (L"AccessCustomAttributes", pClass->Name.c_str());    
+    EXPECT_STREQ (L"AccessCustomAttributes", pClass->DisplayLabel.c_str());
+    EXPECT_FALSE (pClass->IsDisplayLabelDefined);
+    EXPECT_STREQ (L"", pClass->Description.c_str());
+    EXPECT_FALSE (pClass->IsStruct);
+    EXPECT_TRUE (pClass->IsCustomAttributeClass);
+    EXPECT_FALSE (pClass->IsDomainClass);
+    EXPECT_FALSE (pClass->HasBaseClasses());
+
+    pClass = schema->GetClassP(L"Struct1");
+    ASSERT_TRUE (pClass);
+    EXPECT_STREQ (L"Struct1", pClass->Name.c_str());    
+    EXPECT_STREQ (L"Struct1", pClass->DisplayLabel.c_str());
+    EXPECT_FALSE (pClass->IsDisplayLabelDefined);
+    EXPECT_STREQ (L"", pClass->Description.c_str());
+    EXPECT_TRUE (pClass->IsStruct);
+    EXPECT_FALSE (pClass->IsCustomAttributeClass);
+    EXPECT_FALSE (pClass->IsDomainClass);
+    EXPECT_FALSE (pClass->HasBaseClasses());
+
+    pClass = schema->GetClassP(L"Struct2");
+    ASSERT_TRUE (pClass);
+    EXPECT_STREQ (L"Struct2", pClass->Name.c_str());    
+    EXPECT_STREQ (L"Struct2", pClass->DisplayLabel.c_str());
+    EXPECT_FALSE (pClass->IsDisplayLabelDefined);
+    EXPECT_STREQ (L"", pClass->Description.c_str());
+    EXPECT_TRUE (pClass->IsStruct);
+    EXPECT_FALSE (pClass->IsCustomAttributeClass);
+    EXPECT_TRUE (pClass->IsDomainClass);
+    EXPECT_FALSE (pClass->HasBaseClasses());
+    pProperty = pClass->GetPropertyP (L"NestedArray");
+    EXPECT_TRUE (pProperty);
+    EXPECT_STREQ (L"NestedArray", pProperty->Name.c_str());
+    EXPECT_FALSE (pProperty->IsPrimitive);
+    EXPECT_FALSE (pProperty->IsStruct);
+    EXPECT_TRUE (pProperty->IsArray);
+    EXPECT_STREQ (L"Struct1", pProperty->TypeName.c_str());
+    ArrayPropertyP arrayProperty = pProperty->GetAsArrayProperty();
+    EXPECT_EQ (ELEMENTCLASSIFICATION_Struct, arrayProperty->ElementClassification);
+    EXPECT_EQ (schema->GetClassP(L"Struct1"), arrayProperty->StructElementType);
+    EXPECT_EQ (0, arrayProperty->MinOccurs);
+    EXPECT_EQ (UINT_MAX, arrayProperty->MaxOccurs);    
+    EXPECT_FALSE (pProperty->IsDisplayLabelDefined);
+    EXPECT_STREQ (L"NestedArray", pProperty->DisplayLabel.c_str());
+    EXPECT_STREQ (L"", pProperty->Description.c_str());
+    EXPECT_EQ (pClass, &pProperty->Class);
+    EXPECT_FALSE (pProperty->IsReadOnly);
+
+    pClass = schema->GetClassP(L"TestClass");
+    ASSERT_TRUE (pClass);
+    EXPECT_TRUE (pClass->HasBaseClasses());
+    pProperty = pClass->GetPropertyP (L"EmbeddedStruct");
+    EXPECT_TRUE (pProperty);
+    EXPECT_STREQ (L"EmbeddedStruct", pProperty->Name.c_str());
+    EXPECT_FALSE (pProperty->IsPrimitive);
+    EXPECT_TRUE (pProperty->IsStruct);
+    EXPECT_FALSE (pProperty->IsArray);
+    EXPECT_STREQ (L"Struct1", pProperty->TypeName.c_str());
+    StructPropertyP structProperty = pProperty->GetAsStructProperty();    
+    EXPECT_EQ (schema->GetClassP(L"Struct1"), &(structProperty->Type));
+    EXPECT_FALSE (pProperty->IsDisplayLabelDefined);
+    EXPECT_STREQ (L"EmbeddedStruct", pProperty->DisplayLabel.c_str());
+    EXPECT_STREQ (L"", pProperty->Description.c_str());
+    EXPECT_EQ (pClass, &pProperty->Class);
+    EXPECT_FALSE (pProperty->IsReadOnly);
+   
+    for each (PropertyP pProperty in pClass->Properties)
+        {
+        wprintf (L"TestClass contains property: %s of type %s\n", pProperty->Name.c_str(), pProperty->TypeName.c_str());
+        }
+    
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -208,123 +333,8 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenDeserializingWidgetsECSchema)
     
     SchemaDeserializationStatus status = Schema::ReadXMLFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml");   
 
-    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);    
-    EXPECT_STREQ (L"Widgets", schema->Name.c_str());
-    EXPECT_STREQ (L"wid", schema->NamespacePrefix.c_str());
-    EXPECT_STREQ (L"Widgets Display Label", schema->DisplayLabel.c_str());
-    EXPECT_TRUE (schema->IsDisplayLabelDefined);
-    EXPECT_STREQ (L"Widgets Description", schema->Description.c_str());
-    EXPECT_EQ (9, schema->VersionMajor);
-    EXPECT_EQ (6, schema->VersionMinor);        
-    
-    for each (ClassP pClass in schema->Classes)
-        {
-        wprintf (L"Widgets contains class: '%s' with display label '%s'\n", pClass->Name.c_str(), pClass->DisplayLabel.c_str());
-        }
-
-    ClassP pClass = schema->GetClassP(L"ClassDoesNotExistInSchema");
-    EXPECT_FALSE (pClass);
-
-    pClass = schema->GetClassP(L"ecProject");
-    ASSERT_TRUE (pClass);
-    EXPECT_STREQ (L"ecProject", pClass->Name.c_str());    
-    EXPECT_STREQ (L"Project", pClass->DisplayLabel.c_str());
-    EXPECT_TRUE (pClass->IsDisplayLabelDefined);
-    EXPECT_STREQ (L"Project Class", pClass->Description.c_str());
-    EXPECT_FALSE (pClass->IsStruct);
-    EXPECT_FALSE (pClass->IsCustomAttributeClass);
-    EXPECT_TRUE (pClass->IsDomainClass);
-    EXPECT_FALSE (pClass->HasBaseClasses());
-    PropertyP pProperty = pClass->GetPropertyP (L"Name");
-    EXPECT_TRUE (pProperty);
-    EXPECT_STREQ (L"Name", pProperty->Name.c_str());
-    EXPECT_TRUE (pProperty->IsPrimitive);
-    EXPECT_FALSE (pProperty->IsStruct);
-    EXPECT_FALSE (pProperty->IsArray);
-    EXPECT_STREQ (L"string", pProperty->TypeName.c_str());
-    EXPECT_EQ (PRIMITIVETYPE_String, pProperty->GetAsPrimitiveProperty()->Type);
-    EXPECT_TRUE (pProperty->IsDisplayLabelDefined);
-    EXPECT_STREQ (L"Project Name", pProperty->DisplayLabel.c_str());
-    EXPECT_STREQ (L"", pProperty->Description.c_str());
-    EXPECT_EQ (pClass, &pProperty->Class);
-    EXPECT_FALSE (pProperty->IsReadOnly);
-
-    pProperty = pClass->GetPropertyP (L"PropertyDoesNotExistInClass");
-    EXPECT_FALSE (pProperty);
-
-    pClass = schema->GetClassP(L"AccessCustomAttributes");
-    ASSERT_TRUE (pClass);
-    EXPECT_STREQ (L"AccessCustomAttributes", pClass->Name.c_str());    
-    EXPECT_STREQ (L"AccessCustomAttributes", pClass->DisplayLabel.c_str());
-    EXPECT_FALSE (pClass->IsDisplayLabelDefined);
-    EXPECT_STREQ (L"", pClass->Description.c_str());
-    EXPECT_FALSE (pClass->IsStruct);
-    EXPECT_TRUE (pClass->IsCustomAttributeClass);
-    EXPECT_FALSE (pClass->IsDomainClass);
-    EXPECT_FALSE (pClass->HasBaseClasses());
-
-    pClass = schema->GetClassP(L"Struct1");
-    ASSERT_TRUE (pClass);
-    EXPECT_STREQ (L"Struct1", pClass->Name.c_str());    
-    EXPECT_STREQ (L"Struct1", pClass->DisplayLabel.c_str());
-    EXPECT_FALSE (pClass->IsDisplayLabelDefined);
-    EXPECT_STREQ (L"", pClass->Description.c_str());
-    EXPECT_TRUE (pClass->IsStruct);
-    EXPECT_FALSE (pClass->IsCustomAttributeClass);
-    EXPECT_FALSE (pClass->IsDomainClass);
-    EXPECT_FALSE (pClass->HasBaseClasses());
-
-    pClass = schema->GetClassP(L"Struct2");
-    ASSERT_TRUE (pClass);
-    EXPECT_STREQ (L"Struct2", pClass->Name.c_str());    
-    EXPECT_STREQ (L"Struct2", pClass->DisplayLabel.c_str());
-    EXPECT_FALSE (pClass->IsDisplayLabelDefined);
-    EXPECT_STREQ (L"", pClass->Description.c_str());
-    EXPECT_TRUE (pClass->IsStruct);
-    EXPECT_FALSE (pClass->IsCustomAttributeClass);
-    EXPECT_TRUE (pClass->IsDomainClass);
-    EXPECT_FALSE (pClass->HasBaseClasses());
-    pProperty = pClass->GetPropertyP (L"NestedArray");
-    EXPECT_TRUE (pProperty);
-    EXPECT_STREQ (L"NestedArray", pProperty->Name.c_str());
-    EXPECT_FALSE (pProperty->IsPrimitive);
-    EXPECT_FALSE (pProperty->IsStruct);
-    EXPECT_TRUE (pProperty->IsArray);
-    EXPECT_STREQ (L"Struct1", pProperty->TypeName.c_str());
-    ArrayPropertyP arrayProperty = pProperty->GetAsArrayProperty();
-    EXPECT_EQ (ELEMENTCLASSIFICATION_Struct, arrayProperty->ElementClassification);
-    EXPECT_EQ (schema->GetClassP(L"Struct1"), arrayProperty->StructElementType);
-    EXPECT_EQ (0, arrayProperty->MinOccurs);
-    EXPECT_EQ (UINT_MAX, arrayProperty->MaxOccurs);    
-    EXPECT_FALSE (pProperty->IsDisplayLabelDefined);
-    EXPECT_STREQ (L"NestedArray", pProperty->DisplayLabel.c_str());
-    EXPECT_STREQ (L"", pProperty->Description.c_str());
-    EXPECT_EQ (pClass, &pProperty->Class);
-    EXPECT_FALSE (pProperty->IsReadOnly);
-
-    pClass = schema->GetClassP(L"TestClass");
-    ASSERT_TRUE (pClass);
-    EXPECT_TRUE (pClass->HasBaseClasses());
-    pProperty = pClass->GetPropertyP (L"EmbeddedStruct");
-    EXPECT_TRUE (pProperty);
-    EXPECT_STREQ (L"EmbeddedStruct", pProperty->Name.c_str());
-    EXPECT_FALSE (pProperty->IsPrimitive);
-    EXPECT_TRUE (pProperty->IsStruct);
-    EXPECT_FALSE (pProperty->IsArray);
-    EXPECT_STREQ (L"Struct1", pProperty->TypeName.c_str());
-    StructPropertyP structProperty = pProperty->GetAsStructProperty();    
-    EXPECT_EQ (schema->GetClassP(L"Struct1"), &(structProperty->Type));
-    EXPECT_FALSE (pProperty->IsDisplayLabelDefined);
-    EXPECT_STREQ (L"EmbeddedStruct", pProperty->DisplayLabel.c_str());
-    EXPECT_STREQ (L"", pProperty->Description.c_str());
-    EXPECT_EQ (pClass, &pProperty->Class);
-    EXPECT_FALSE (pProperty->IsReadOnly);
-   
-    for each (PropertyP pProperty in pClass->Properties)
-        {
-        wprintf (L"TestClass contains property: %s of type %s\n", pProperty->Name.c_str(), pProperty->TypeName.c_str());
-        }
-    
+    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);  
+    VerifyWidgetsSchema(schema);  
     CoUninitialize();
     };
 
@@ -392,4 +402,77 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromString
     CoUninitialize();
     };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
+    {
+    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+    SchemaPtr schema;
+    
+    SchemaDeserializationStatus status = Schema::ReadXMLFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml");
+    wprintf(L"Verifying original schema from file.\n"); 
+    VerifyWidgetsSchema(schema);
+
+    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);
+
+    const wchar_t *ecSchemaXmlString;
+    
+    SchemaSerializationStatus status2 = schema->WriteXmlToString(ecSchemaXmlString);
+    EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status2);
+    
+    SchemaPtr deserializedSchema;
+    status = Schema::ReadXMLFromString(deserializedSchema, ecSchemaXmlString);
+    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status); 
+    wprintf(L"Verifying schema deserialized from string.\n");
+    VerifyWidgetsSchema(deserializedSchema);
+
+    CoUninitialize();
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingStream)
+    {
+    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+    SchemaPtr schema;
+    
+    SchemaDeserializationStatus status = Schema::ReadXMLFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml");
+    wprintf(L"Verifying original schema from file.\n"); 
+    VerifyWidgetsSchema(schema);
+
+    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);    
+    LPSTREAM stream = NULL;
+    HRESULT res = ::CreateStreamOnHGlobal(NULL,TRUE,&stream);
+
+    SchemaSerializationStatus status2 = schema->WriteXmlToStream(stream);
+    EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status2);
+    
+    LARGE_INTEGER liPos = {0};
+    stream->Seek(liPos, STREAM_SEEK_SET, NULL);
+
+    SchemaPtr deserializedSchema;
+    status = Schema::ReadXMLFromStream(deserializedSchema, stream);
+    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status); 
+    wprintf(L"Verifying schema deserialized from stream.\n");
+    VerifyWidgetsSchema(deserializedSchema);
+
+    CoUninitialize();
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(SchemaSerializationTest, ExpectErrorWhenCOMNotInitialized)
+    {
+    SchemaPtr schema;        
+    Schema::CreateSchema(schema, L"Widget");
+    
+    DISABLE_ASSERTS
+    SchemaSerializationStatus status = schema->WriteXmlToFile (L"t");
+        
+    EXPECT_EQ (SCHEMA_SERIALIZATION_STATUS_FailedToInitializeMsmxl, status);
+    };
+    
 END_BENTLEY_EC_NAMESPACE

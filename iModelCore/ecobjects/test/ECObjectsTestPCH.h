@@ -2,7 +2,7 @@
 |
 |     $Source: ecobjects/nativeatp/ECObjectsTestPCH.h $
 |
-|  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,6 +11,10 @@
    // Need to reach in and grab this header since it won't be part of the published API yet we still
    // need to utilize it in the published API tests
    #include "..\..\PublicAPI\ECObjects\DesignByContract.h"
+#endif
+
+#ifndef BENTLEY_EXCLUDE_WINDOWS_HEADERS
+#include <msxml6\msxml6.tlh>
 #endif
 
 #include <ECObjects\ECObjectsAPI.h>

@@ -6,7 +6,7 @@
 |       $Date: 2005/11/07 15:38:45 $
 |     $Author: EarlinLutz $
 |
-|  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -23,9 +23,8 @@ Class::~Class
 )
     {
     // NEEDSWORK make sure everything is destroyed
-    wprintf (L"~~~~ Destroying ECClass %s\n", this->Name.c_str());
-
-    wprintf (L"     Freeing memory for %d properties\n", m_propertyMap.size());
+    Logger::GetLogger()->tracev (L"~~~~ Destroying ECClass %s\n", this->Name.c_str());
+    Logger::GetLogger()->tracev  (L"     Freeing memory for %d properties\n", m_propertyMap.size());
     for each (std::pair<const wchar_t * , PropertyP> entry in m_propertyMap)
         delete entry.second;
     
@@ -145,7 +144,7 @@ const wchar_t * isStruct
 
     ECObjectsStatus status = ECXml::ParseBooleanString (m_isStruct, isStruct);
     if (ECOBJECTS_STATUS_Success != status)
-        wprintf (L"Failed to parse the isStruct string '%s' for ECClass '%s'.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE L"\n", isStruct, this->Name.c_str());
+        Logger::GetLogger()->warningv  (L"Failed to parse the isStruct string '%s' for ECClass '%s'.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE L"\n", isStruct, this->Name.c_str());
         
     return status;
     }
@@ -184,7 +183,7 @@ const wchar_t * isCustomAttributeClass
 
     ECObjectsStatus status = ECXml::ParseBooleanString (m_isCustomAttributeClass, isCustomAttributeClass);
     if (ECOBJECTS_STATUS_Success != status)
-        wprintf (L"Failed to parse the isCustomAttributeClass string '%s' for ECClass '%s'.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE L"\n", isCustomAttributeClass, this->Name.c_str());
+        Logger::GetLogger()->warningv  (L"Failed to parse the isCustomAttributeClass string '%s' for ECClass '%s'.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE L"\n", isCustomAttributeClass, this->Name.c_str());
         
     return status;
     }
@@ -223,7 +222,7 @@ const wchar_t * isDomainClass
 
     ECObjectsStatus status = ECXml::ParseBooleanString (m_isDomainClass, isDomainClass);
     if (ECOBJECTS_STATUS_Success != status)
-        wprintf (L"Failed to parse the isDomainClass string '%s' for ECClass '%s'.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE L"\n", isDomainClass, this->Name.c_str());
+        Logger::GetLogger()->warningv  (L"Failed to parse the isDomainClass string '%s' for ECClass '%s'.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE L"\n", isDomainClass, this->Name.c_str());
         
     return status;
     }
@@ -251,7 +250,7 @@ PropertyP&                 pProperty
     resultPair = m_propertyMap.insert (std::pair<const wchar_t *, PropertyP> (pProperty->Name.c_str(), pProperty));
     if (resultPair.second == false)
         {
-        wprintf (L"Can not create property '%s' because it already exists in the schema", pProperty->Name.c_str());
+        Logger::GetLogger()->warningv  (L"Can not create property '%s' because it already exists in the schema", pProperty->Name.c_str());
         delete pProperty;
         pProperty = NULL;        
         return ECOBJECTS_STATUS_NamedItemAlreadyExists;
@@ -367,7 +366,7 @@ MSXML2::IXMLDOMNode& classNode
         std::wstring className;
         if (ECOBJECTS_STATUS_Success != Class::ParseClassName (namespacePrefix, className, qualifiedClassName))
             {
-            wprintf (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the value '%s' that can not be parsed.", 
+            Logger::GetLogger()->warningv (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the value '%s' that can not be parsed.", 
                 this->Name.c_str(), qualifiedClassName.c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXML;
             }
@@ -375,7 +374,7 @@ MSXML2::IXMLDOMNode& classNode
         SchemaP resolvedSchema = Schema.GetSchemaByNamespacePrefixP (namespacePrefix);
         if (NULL == resolvedSchema)
             {
-            wprintf (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the namespace prefix '%s' that can not be resolved to a referenced schema.", 
+            Logger::GetLogger()->warningv  (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the namespace prefix '%s' that can not be resolved to a referenced schema.", 
                 this->Name.c_str(), namespacePrefix.c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXML;
             }
@@ -383,7 +382,7 @@ MSXML2::IXMLDOMNode& classNode
         ClassP baseClass = resolvedSchema->GetClassP (className);
         if (NULL == baseClass)
             {
-            wprintf (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'", 
+            Logger::GetLogger()->warningv  (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'", 
                 this->Name.c_str(), qualifiedClassName.c_str(), className.c_str(), resolvedSchema->Name.c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXML;
             }
@@ -407,13 +406,13 @@ MSXML2::IXMLDOMNode& classNode
         SchemaDeserializationStatus status = pProperty->_ReadXML(xmlNodePtr);
         if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
             {
-            wprintf (L"Invalid ECSchemaXML: Failed to deserialize properties of ECClass '%s' in the ECSchema '%s'\n", this->Name.c_str(), this->Schema.Name.c_str());                
+            Logger::GetLogger()->warningv  (L"Invalid ECSchemaXML: Failed to deserialize properties of ECClass '%s' in the ECSchema '%s'\n", this->Name.c_str(), this->Schema.Name.c_str());                
             return status;
             }
         
         if (ECOBJECTS_STATUS_Success != this->AddProperty (pProperty))
             {
-            wprintf (L"Invalid ECSchemaXML: Failed to deserialize ECClass '%s' in the ECSchema '%s' because a problem occurred while adding ECProperty '%s'\n", 
+            Logger::GetLogger()->warningv  (L"Invalid ECSchemaXML: Failed to deserialize ECClass '%s' in the ECSchema '%s' because a problem occurred while adding ECProperty '%s'\n", 
                 this->Name.c_str(), this->Schema.Name.c_str(), pProperty->Name.c_str());                
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXML;
             }
@@ -422,6 +421,53 @@ MSXML2::IXMLDOMNode& classNode
     return SCHEMA_DESERIALIZATION_STATUS_Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaSerializationStatus Class::Serialize
+(
+MSXML2::IXMLDOMElementPtr parentNode
+)
+    {
+    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+    MSXML2::IXMLDOMTextPtr textPtr = NULL;
+    MSXML2::IXMLDOMAttributePtr attributePtr;
+
+    CREATE_AND_ADD_TEXT_NODE("\n    ", parentNode);
+    CREATE_AND_ADD_TEXT_NODE("\n    ", parentNode);
+
+    MSXML2::IXMLDOMElementPtr classPtr = NULL;
+    
+    if (NULL == dynamic_cast<RelationshipClassP>((ClassP)this))
+        classPtr = parentNode->ownerDocument->createNode(NODE_ELEMENT, EC_CLASS_ELEMENT, ECXML_URI_2_0);
+    else
+        classPtr = parentNode->ownerDocument->createNode(NODE_ELEMENT, EC_RELATIONSHIP_CLASS_ELEMENT, ECXML_URI_2_0);
+    
+    APPEND_CHILD_TO_PARENT(classPtr, parentNode);
+    
+    WRITE_XML_ATTRIBUTE(TYPE_NAME_ATTRIBUTE, this->Name.c_str(), classPtr);
+    WRITE_OPTIONAL_XML_ATTRIBUTE(DESCRIPTION_ATTRIBUTE, Description, classPtr);
+    if (IsDisplayLabelDefined)
+        WRITE_OPTIONAL_XML_ATTRIBUTE(DISPLAY_LABEL_ATTRIBUTE, DisplayLabel, classPtr);
+    WRITE_OPTIONAL_BOOL_XML_ATTRIBUTE(IS_STRUCT_ATTRIBUTE, IsStruct, classPtr);
+    WRITE_OPTIONAL_BOOL_XML_ATTRIBUTE(IS_CUSTOMATTRIBUTE_ATTRIBUTE, IsCustomAttributeClass, classPtr);
+    WRITE_BOOL_XML_ATTRIBUTE(IS_DOMAINCLASS_ATTRIBUTE, IsDomainClass, classPtr);
+    
+    for each (const ClassP& baseClass in m_baseClasses)
+        {
+        MSXML2::IXMLDOMElementPtr basePtr = parentNode->ownerDocument->createNode(NODE_ELEMENT, EC_BASE_CLASS_ELEMENT, ECXML_URI_2_0);
+        basePtr->text = baseClass->Name.c_str();
+        CREATE_AND_ADD_TEXT_NODE("\n        ", classPtr);
+        APPEND_CHILD_TO_PARENT(basePtr, classPtr);
+        }
+        
+    for each (PropertyP prop in Properties)
+        {
+        prop->_Serialize(classPtr);
+        }
+    CREATE_AND_ADD_TEXT_NODE("\n    ", classPtr);
+    return status;
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -434,7 +480,7 @@ std::wstring const& qualifiedClassName
     {
     if (0 == qualifiedClassName.length())
         {
-        wprintf (L"Failed to parse a prefix and class name from a qualified class name because the string is empty.");
+        Logger::GetLogger()->warningv  (L"Failed to parse a prefix and class name from a qualified class name because the string is empty.");
         return ECOBJECTS_STATUS_ParseError;
         }
         
@@ -448,7 +494,7 @@ std::wstring const& qualifiedClassName
 
     if (qualifiedClassName.length() == colonIndex + 1)
         {
-        wprintf (L"Failed to parse a prefix and class name from the qualified class name '%s' because the string ends with a colon.  There must be characters after the colon.", 
+        Logger::GetLogger()->warningv  (L"Failed to parse a prefix and class name from the qualified class name '%s' because the string ends with a colon.  There must be characters after the colon.", 
             qualifiedClassName.c_str());
         return ECOBJECTS_STATUS_ParseError;
         }

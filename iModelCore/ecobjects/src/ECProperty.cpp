@@ -6,7 +6,7 @@
 |       $Date: 2005/11/07 15:38:45 $
 |     $Author: EarlinLutz $
 |
-|  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -126,7 +126,7 @@ const wchar_t * isReadOnly
     bool bReadOnly;
     ECObjectsStatus status = ECXml::ParseBooleanString (bReadOnly, isReadOnly);
     if (ECOBJECTS_STATUS_Success != status)
-        wprintf (L"Failed to parse the isReadOnly string '%s' for ECProperty '%s'.\n", isReadOnly, this->Name.c_str());
+        Logger::GetLogger()->errorv (L"Failed to parse the isReadOnly string '%s' for ECProperty '%s'.\n", isReadOnly, this->Name.c_str());
     else
         SetIsReadOnly (bReadOnly);
         
@@ -252,6 +252,17 @@ MSXML2::IXMLDOMNode& propertyNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
+SchemaSerializationStatus Property::_Serialize
+(
+MSXML2::IXMLDOMElementPtr parentNode
+)
+    {
+    return SCHEMA_SERIALIZATION_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
 SchemaDeserializationStatus PrimitiveProperty::_ReadXML
 (
 MSXML2::IXMLDOMNode& propertyNode
@@ -270,9 +281,37 @@ MSXML2::IXMLDOMNode& propertyNode
     // For Primitive & Array properties we ignore parse errors and default to string.  Struct properties will require a resolvable typename.
     READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (TYPE_NAME_ATTRIBUTE,           this, TypeName)  
     if (ECOBJECTS_STATUS_Success != setterStatus)
-        wprintf (L"Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.\n", this->Name.c_str(), this->TypeName.c_str());        
+        Logger::GetLogger()->warningv (L"Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.\n", this->Name.c_str(), this->TypeName.c_str());        
 
     return SCHEMA_DESERIALIZATION_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaSerializationStatus PrimitiveProperty::_Serialize
+(
+MSXML2::IXMLDOMElementPtr parentNode
+)
+    {
+    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+
+    MSXML2::IXMLDOMTextPtr textPtr = NULL;
+    MSXML2::IXMLDOMAttributePtr attributePtr;
+
+    CREATE_AND_ADD_TEXT_NODE("\n        ", parentNode);
+
+    MSXML2::IXMLDOMElementPtr propertyPtr = parentNode->ownerDocument->createNode(NODE_ELEMENT, EC_PROPERTY_ELEMENT, ECXML_URI_2_0);;
+    APPEND_CHILD_TO_PARENT(propertyPtr, parentNode);
+    
+    WRITE_XML_ATTRIBUTE(PROPERTY_NAME_ATTRIBUTE, this->GetName().c_str(), propertyPtr);
+    WRITE_OPTIONAL_XML_ATTRIBUTE(TYPE_NAME_ATTRIBUTE, TypeName, propertyPtr);
+    WRITE_OPTIONAL_XML_ATTRIBUTE(DESCRIPTION_ATTRIBUTE, Description, propertyPtr);
+    if (IsDisplayLabelDefined)
+        WRITE_OPTIONAL_XML_ATTRIBUTE(DISPLAY_LABEL_ATTRIBUTE, DisplayLabel, propertyPtr);
+    WRITE_OPTIONAL_BOOL_XML_ATTRIBUTE(READONLY_ATTRIBUTE, IsReadOnly, propertyPtr);
+    
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -297,7 +336,7 @@ std::wstring const& typeName
     ECObjectsStatus status = ECXml::ParsePrimitiveType (primitiveType, typeName);
     if (ECOBJECTS_STATUS_Success != status)
         {            
-        wprintf (L"Failed to set the type name of ECProperty '%s' to '%s' because the typeName could not be parsed into a primitive type.\n", this->Name.c_str(), typeName.c_str());        
+        Logger::GetLogger()->errorv (L"Failed to set the type name of ECProperty '%s' to '%s' because the typeName could not be parsed into a primitive type.\n", this->Name.c_str(), typeName.c_str());        
         return status;
         }
 
@@ -338,7 +377,7 @@ ClassCR  ecClass
     std::wstring const* namespacePrefix = primarySchema.ResolveNamespacePrefix (ecClass.Schema);
     if (!EXPECTED_CONDITION (NULL != namespacePrefix))
         {
-        wprintf (L"warning: Can not qualify an ECClass name with a namespace prefix unless the schema containing the ECClass is referenced by the primary schema.\n"
+        Logger::GetLogger()->warningv (L"warning: Can not qualify an ECClass name with a namespace prefix unless the schema containing the ECClass is referenced by the primary schema.\n"
             L"The class name will remain unqualified.\n  Primary Schema: %s\n  ECClass: %s\n Schema containing ECClass: %s\n", primarySchema.Name.c_str(), ecClass.Name.c_str(), ecClass.Schema.Name.c_str());
         return ecClass.Name;
         }
@@ -372,6 +411,34 @@ MSXML2::IXMLDOMNode& propertyNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
+SchemaSerializationStatus StructProperty::_Serialize
+(
+MSXML2::IXMLDOMElementPtr parentNode
+)
+    {
+    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+
+    MSXML2::IXMLDOMTextPtr textPtr = NULL;
+    MSXML2::IXMLDOMAttributePtr attributePtr;
+
+    CREATE_AND_ADD_TEXT_NODE("\n        ", parentNode);
+
+    MSXML2::IXMLDOMElementPtr propertyPtr = parentNode->ownerDocument->createNode(NODE_ELEMENT, EC_STRUCTPROPERTY_ELEMENT, ECXML_URI_2_0);;
+    APPEND_CHILD_TO_PARENT(propertyPtr, parentNode);
+    
+    WRITE_XML_ATTRIBUTE(PROPERTY_NAME_ATTRIBUTE, this->GetName().c_str(), propertyPtr);
+    WRITE_OPTIONAL_XML_ATTRIBUTE(TYPE_NAME_ATTRIBUTE, TypeName, propertyPtr);
+    WRITE_OPTIONAL_XML_ATTRIBUTE(DESCRIPTION_ATTRIBUTE, Description, propertyPtr);
+    if (IsDisplayLabelDefined)
+        WRITE_OPTIONAL_XML_ATTRIBUTE(DISPLAY_LABEL_ATTRIBUTE, DisplayLabel, propertyPtr);
+    WRITE_OPTIONAL_BOOL_XML_ATTRIBUTE(READONLY_ATTRIBUTE, IsReadOnly, propertyPtr);
+    
+    return status;    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
 std::wstring StructProperty::_GetTypeName
 (
 ) const
@@ -397,14 +464,14 @@ PropertyCR ecProperty
     ECObjectsStatus status = Class::ParseClassName (namespacePrefix, className, typeName);
     if (ECOBJECTS_STATUS_Success != status)
         {
-        wprintf (L"Can not resolve the type name '%s' as a struct type because the typeName could not be parsed.\n", typeName.c_str());
+        Logger::GetLogger()->warningv (L"Can not resolve the type name '%s' as a struct type because the typeName could not be parsed.\n", typeName.c_str());
         return status;
         }
     
     SchemaP resolvedSchema = ecProperty.Class.Schema.GetSchemaByNamespacePrefixP (namespacePrefix);
     if (NULL == resolvedSchema)
         {
-        wprintf (L"Can not resolve the type name '%s' as a struct type because the namespacePrefix '%s' can not be resolved to the primary or a referenced schema.\n", 
+        Logger::GetLogger()->warningv (L"Can not resolve the type name '%s' as a struct type because the namespacePrefix '%s' can not be resolved to the primary or a referenced schema.\n", 
             typeName.c_str(), namespacePrefix.c_str());
         return ECOBJECTS_STATUS_SchemaNotFound;
         }
@@ -412,7 +479,7 @@ PropertyCR ecProperty
     structClass = resolvedSchema->GetClassP (className);
     if (NULL == structClass)
         {
-        wprintf (L"Can not resolve the type name '%s' as a struct type because ECClass '%s' does not exist in the schema '%s'.\n", 
+        Logger::GetLogger()->warningv (L"Can not resolve the type name '%s' as a struct type because ECClass '%s' does not exist in the schema '%s'.\n", 
             typeName.c_str(), className.c_str(), resolvedSchema->Name.c_str());
         return ECOBJECTS_STATUS_ClassNotFound;
         }
@@ -432,7 +499,7 @@ std::wstring const& typeName
     ECObjectsStatus status = ResolveStructType (structClass, typeName, *this);
     if (ECOBJECTS_STATUS_Success != status)
         {
-        wprintf (L"Failed to set the type name of ECStructProperty '%s' to '%s' because the typeName could not be parsed into a resolvable ECClass.\n", this->Name.c_str(), typeName.c_str());        
+        Logger::GetLogger()->errorv (L"Failed to set the type name of ECStructProperty '%s' to '%s' because the typeName could not be parsed into a resolvable ECClass.\n", this->Name.c_str(), typeName.c_str());        
         return status;
         }
     else
@@ -489,9 +556,51 @@ MSXML2::IXMLDOMNode& propertyNode
     // For Primitive & Array properties we ignore parse errors and default to string.  Struct properties will require a resolvable typename.
     READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (TYPE_NAME_ATTRIBUTE,           this, TypeName)  
     if (ECOBJECTS_STATUS_Success != setterStatus)
-        wprintf (L"Defaulting the type of ECArrayProperty '%s' to '%s' in reaction to non-fatal parse error.\n", this->Name.c_str(), this->TypeName.c_str());        
+        Logger::GetLogger()->warningv (L"Defaulting the type of ECArrayProperty '%s' to '%s' in reaction to non-fatal parse error.\n", this->Name.c_str(), this->TypeName.c_str());        
 
     return SCHEMA_DESERIALIZATION_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaSerializationStatus ArrayProperty::_Serialize
+(
+MSXML2::IXMLDOMElementPtr parentNode
+)
+    {
+    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+
+    MSXML2::IXMLDOMTextPtr textPtr = NULL;
+    MSXML2::IXMLDOMAttributePtr attributePtr;
+
+    CREATE_AND_ADD_TEXT_NODE("\n        ", parentNode);
+
+    MSXML2::IXMLDOMElementPtr propertyPtr = parentNode->ownerDocument->createNode(NODE_ELEMENT, EC_ARRAYPROPERTY_ELEMENT, ECXML_URI_2_0);;
+    APPEND_CHILD_TO_PARENT(propertyPtr, parentNode);
+    
+    WRITE_XML_ATTRIBUTE(PROPERTY_NAME_ATTRIBUTE, this->GetName().c_str(), propertyPtr);
+    WRITE_OPTIONAL_XML_ATTRIBUTE(TYPE_NAME_ATTRIBUTE, TypeName, propertyPtr);
+    WRITE_OPTIONAL_XML_ATTRIBUTE(DESCRIPTION_ATTRIBUTE, Description, propertyPtr);
+    if (IsDisplayLabelDefined)
+        WRITE_OPTIONAL_XML_ATTRIBUTE(DISPLAY_LABEL_ATTRIBUTE, DisplayLabel, propertyPtr);
+    WRITE_OPTIONAL_BOOL_XML_ATTRIBUTE(READONLY_ATTRIBUTE, IsReadOnly, propertyPtr);
+    
+    wchar_t buf[64];
+    swprintf(buf, sizeof(buf), L"%u", m_minOccurs);
+    WRITE_XML_ATTRIBUTE(MIN_OCCURS_ATTRIBUTE, buf, propertyPtr);
+
+    if (m_maxOccurs != UINT_MAX)
+        {
+        swprintf(buf, sizeof(buf), L"%u", m_maxOccurs);
+        WRITE_XML_ATTRIBUTE(MAX_OCCURS_ATTRIBUTE, buf, propertyPtr);
+        }
+    else
+        {
+        WRITE_XML_ATTRIBUTE(MAX_OCCURS_ATTRIBUTE, ECXML_UNBOUNDED, propertyPtr);
+        }
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -530,7 +639,7 @@ std::wstring const& typeName
     if (ECOBJECTS_STATUS_Success == status)
         return SetStructElementType (structClass);
 
-    wprintf (L"Failed to set the type name of ArrayProperty '%s' to '%s' because the typeName could not be parsed into a resolvable type.\n", this->Name.c_str(), typeName.c_str());        
+    Logger::GetLogger()->errorv (L"Failed to set the type name of ArrayProperty '%s' to '%s' because the typeName could not be parsed into a resolvable type.\n", this->Name.c_str(), typeName.c_str());        
     return ECOBJECTS_STATUS_ParseError;
     }
 
@@ -629,7 +738,7 @@ std::wstring const& minOccurs
     int count = swscanf (minOccurs.c_str(), L"%u", &iMinOccurs);
     if (count != 1)
         {
-        wprintf (L"Failed to set MinOccurs of ECProperty '%s' to '%s' because the value could not be parsed.  It must be a valid unsigned integer.",
+        Logger::GetLogger()->errorv (L"Failed to set MinOccurs of ECProperty '%s' to '%s' because the value could not be parsed.  It must be a valid unsigned integer.",
                  this->Name.c_str(), minOccurs.c_str());        
         return ECOBJECTS_STATUS_ParseError;
         }    
@@ -677,7 +786,7 @@ std::wstring const& maxOccurs
             iMaxOccurs = UINT_MAX;
         else
             {
-            wprintf (L"Failed to set MaxOccurs of ECProperty '%s' to '%s' because the value could not be parsed.  It must be a valid unsigned integer or the string 'unbounded'.",
+            Logger::GetLogger()->errorv (L"Failed to set MaxOccurs of ECProperty '%s' to '%s' because the value could not be parsed.  It must be a valid unsigned integer or the string 'unbounded'.",
                      this->Name.c_str(), maxOccurs.c_str());        
             return ECOBJECTS_STATUS_ParseError;
             }

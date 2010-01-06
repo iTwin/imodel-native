@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECObjects.h $
 |
-|  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -87,7 +87,8 @@ BEGIN_BENTLEY_EC_NAMESPACE
 typedef enum ECErrorCategories
     {
     ECOBJECTS_ERROR_BASE                    = 0x31000,
-    SCHEMA_DESERIALIZATION_STATUS_BASE      = 0x32000
+    SCHEMA_DESERIALIZATION_STATUS_BASE      = 0x32000,
+    SCHEMA_SERIALIZATION_STATUS_BASE        = 0x33000
     } ECErrorCategories;
 
 
@@ -122,6 +123,14 @@ enum SchemaDeserializationStatus
     SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXML                    = SCHEMA_DESERIALIZATION_STATUS_BASE + 0x03,
     };
 
+enum SchemaSerializationStatus
+    {
+    SCHEMA_SERIALIZATION_STATUS_Success                                 = SUCCESS,
+    SCHEMA_SERIALIZATION_STATUS_FailedToInitializeMsmxl                 = SCHEMA_SERIALIZATION_STATUS_BASE + 0x01,
+    SCHEMA_SERIALIZATION_STATUS_FailedToSaveXml                         = SCHEMA_SERIALIZATION_STATUS_BASE + 0x02,
+    SCHEMA_SERIALIZATION_STATUS_FailedToCreateXml                       = SCHEMA_SERIALIZATION_STATUS_BASE + 0x03
+    };
+    
 END_BENTLEY_EC_NAMESPACE
 
 USING_NAMESPACE_BENTLEY

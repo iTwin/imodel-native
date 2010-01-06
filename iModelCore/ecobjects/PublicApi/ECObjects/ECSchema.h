@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECSchema.h $
 |
-|  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -86,10 +86,12 @@ enum ArrayElementClassification
     #define MSXML2_IXMLDOMNode      void *
     #define MSXML2_IXMLDOMNodePtr   void *
     #define MSXML2_IXMLDOMDocument2 void *
+    #define MSXML2_IXMLDOMElementPtr void *
 #else
     #define MSXML2_IXMLDOMNode      MSXML2::IXMLDOMNode
     #define MSXML2_IXMLDOMNodePtr   MSXML2::IXMLDOMNodePtr
     #define MSXML2_IXMLDOMDocument2 MSXML2::IXMLDOMDocument2
+    #define MSXML2_IXMLDOMElementPtr MSXML2::IXMLDOMElementPtr
 #endif
 
 /*=================================================================================**//**
@@ -115,6 +117,8 @@ protected:
     ECObjectsStatus SetName (std::wstring const& name);    
 
     virtual SchemaDeserializationStatus _ReadXML (MSXML2_IXMLDOMNode& propertyNode);
+    virtual SchemaSerializationStatus _Serialize(MSXML2_IXMLDOMElementPtr parentNode);
+
     virtual bool _IsPrimitive () const { return false; }
     virtual bool _IsStruct () const { return false; }
     virtual bool _IsArray () const { return false; }
@@ -169,6 +173,7 @@ private:
 
 protected:
     virtual SchemaDeserializationStatus _ReadXML (MSXML2_IXMLDOMNode& propertyNode) override;
+    virtual SchemaSerializationStatus _Serialize(MSXML2_IXMLDOMElementPtr parentNode) override;
     virtual bool _IsPrimitive () const override { return true;}
     virtual std::wstring _GetTypeName () const override;
     virtual ECObjectsStatus _SetTypeName (std::wstring const& typeName) override;
@@ -194,6 +199,7 @@ private:
 
 protected:
     virtual SchemaDeserializationStatus _ReadXML (MSXML2_IXMLDOMNode& propertyNode) override;
+    virtual SchemaSerializationStatus _Serialize(MSXML2_IXMLDOMElementPtr parentNode) override;
     virtual bool _IsStruct () const override { return true;}
     virtual std::wstring _GetTypeName () const override;
     virtual ECObjectsStatus _SetTypeName (std::wstring const& typeName) override;
@@ -234,6 +240,7 @@ private:
 
 protected:
     virtual SchemaDeserializationStatus _ReadXML (MSXML2_IXMLDOMNode& propertyNode) override;
+    virtual SchemaSerializationStatus _Serialize(MSXML2_IXMLDOMElementPtr parentNode) override;
     virtual bool _IsArray () const override { return true;}
     virtual std::wstring _GetTypeName () const override;
     virtual ECObjectsStatus _SetTypeName (std::wstring const& typeName) override;
@@ -354,6 +361,8 @@ protected:
     //! @param[in]  classNode       The XML DOM node to read
     //! @return   Status code
     virtual SchemaDeserializationStatus ReadXMLContents (MSXML2_IXMLDOMNode& classNode);    
+    
+    virtual SchemaSerializationStatus Serialize(MSXML2_IXMLDOMElementPtr parentNode);
 
 /*__PUBLISH_SECTION_START__*/
 
@@ -509,6 +518,7 @@ private:
     ~Schema();    
 
     static SchemaDeserializationStatus ReadXML (SchemaPtr& schemaOut, MSXML2_IXMLDOMDocument2& pXmlDoc);
+    SchemaSerializationStatus WriteXml (MSXML2_IXMLDOMDocument2* pXmlDoc);
 
     ECObjectsStatus AddClass (ClassP& pClass);
     ECObjectsStatus SetVersionFromString (std::wstring const& versionString);
@@ -579,8 +589,40 @@ public:
     //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
     ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXMLFromString (SchemaPtr& schemaOut, const wchar_t * ecSchemaXml);
 
-    //NEEDSWORK need a mechansim to ReadXML from a stream    
+    //! Deserializes an ECXML schema from an IStream.
+    //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and
+    //! uninitialize COM using CoInitialize/CoUninitialize</b>
+    //! @param[out]   schemaOut           The deserialized schema
+    //! @param[in]    ecSchemaXmlStream   The IStream containing ECSchemaXML to deserialize
+    //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
+    //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
+    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXMLFromStream (SchemaPtr& schemaOut, IStream * ecSchemaXmlStream);
 
+
+    //! Serializes an ECXML schema to a string
+    //! Xml Serialization utilizes MSXML through COM. <b>Any thread calling this method must therefore be certain to initialize and
+    //! uninitialize COM using CoInitialize/CoUninitialize</b>
+    //! @param[out] ecSchemaXml     The string containing the Xml of the serialized schema
+    //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml
+    //          will contain the serialized schema.  Otherwise, ecSchemaXml will be unmodified
+    ECOBJECTS_EXPORT SchemaSerializationStatus WriteXmlToString (const wchar_t * & ecSchemaXml);
+    
+    //! Serializes an ECXML schema to a file
+    //! Xml Serialization utilizes MSXML through COM. <b>Any thread calling this method must therefore be certain to initialize and
+    //! uninitialize COM using CoInitialize/CoUninitialize</b>
+    //! @param[in]  ecSchemaXmlFile  The absolute path of the file to serialize the schema to
+    //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the file pointed
+    //          to by ecSchemaXmlFile will contain the serialized schema.  Otherwise, the file will be unmodified
+    ECOBJECTS_EXPORT SchemaSerializationStatus WriteXmlToFile (const wchar_t * ecSchemaXmlFile);
+    
+    //! Serializes an ECXML schema to an IStream
+    //! Xml Serialization utilizes MSXML through COM. <b>Any thread calling this method must therefore be certain to initialize and
+    //! uninitialize COM using CoInitialize/CoUninitialize</b>
+    //! @param[in]  ecSchemaXmlStream   The IStream to write the serialized XML to
+    //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the IStream
+    //! will contain the serialized schema.
+    ECOBJECTS_EXPORT SchemaSerializationStatus WriteXmlToStream (IStream * ecSchemaXmlStream);
+    
 }; // Schema
 
 
@@ -589,3 +631,4 @@ END_BENTLEY_EC_NAMESPACE
 #undef MSXML2_IXMLDOMNode
 #undef MSXML2_IXMLDOMNodePtr
 #undef MSXML2_IXMLDOMDocument2
+#undef MSXML2_IXMLDOMElementPtr

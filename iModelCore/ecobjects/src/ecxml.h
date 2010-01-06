@@ -2,7 +2,7 @@
 |
 |     $Source: ecobjects/native/ecxml.h $
 |
-|  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -96,6 +96,45 @@ static const std::wstring EMPTY_STRING = L"";
     if (ECOBJECTS_STATUS_Success != _setInPointer->Set##_setInPropertyName ((const wchar_t *)attributePtr->text))       \
         return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXML;
 
+#define CREATE_AND_ADD_TEXT_NODE(_text, _parent) \
+    textPtr = _parent->ownerDocument->createTextNode(_text); \
+    if (NULL != textPtr)\
+        APPEND_CHILD_TO_PARENT(textPtr, _parent);
+    
+#define APPEND_CHILD_TO_PARENT(_child, _parent) \
+    if (NULL == _child)\
+        return SCHEMA_SERIALIZATION_STATUS_FailedToCreateXml;\
+    if (NULL == _parent->appendChild(_child))\
+        return SCHEMA_SERIALIZATION_STATUS_FailedToCreateXml; 
+
+#define WRITE_XML_ATTRIBUTE(_xmlAttributeName, _value, _parent) \
+    if (NULL == (attributePtr = _parent->ownerDocument->createAttribute(_xmlAttributeName))) \
+        return SCHEMA_SERIALIZATION_STATUS_FailedToCreateXml; \
+    attributePtr->Putvalue(_value); \
+    _parent->setAttributeNode(attributePtr);
+
+#define WRITE_BOOL_XML_ATTRIBUTE(_xmlAttributeName, _getPropertyName, _parent) \
+    if (this->Get##_getPropertyName() == true)\
+        { \
+        WRITE_XML_ATTRIBUTE(_xmlAttributeName, L"true", _parent); \
+        } \
+   else \
+        { \
+        WRITE_XML_ATTRIBUTE(_xmlAttributeName, L"false", _parent); \
+        } 
+
+#define WRITE_OPTIONAL_XML_ATTRIBUTE(_xmlAttributeName, _getPropertyName, _parent) \
+    if (!this->Get##_getPropertyName().empty())\
+        { \
+        WRITE_XML_ATTRIBUTE(_xmlAttributeName, this->Get##_getPropertyName().c_str(), _parent); \
+        }
+        
+#define WRITE_OPTIONAL_BOOL_XML_ATTRIBUTE(_xmlAttributeName, _getPropertyName, _parent) \
+    if (this->Get##_getPropertyName() == true)\
+        { \
+        WRITE_XML_ATTRIBUTE(_xmlAttributeName, L"true", _parent); \
+        }
+    
 BEGIN_BENTLEY_EC_NAMESPACE
 
 struct ECXml abstract
