@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+
+    <!--
+   Write diagnostic messages to a log file that will "roll" when it reaches a size of 10mb. 
+   Keep around the last 5 of these files to assist in diagnostics if needed.
+-->
+
+    <appender name="OUTDEVICE" class="org.apache.log4j.ConsoleAppender">
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{ISO8601} %-5p [%t] %c - %m%n"/>
+        </layout>
+    </appender>
+
+    <!--
+    Establishing a category for a logger allows you to customize the output
+    settings for the log output. The 'name' attribute needs to correspond to
+    a logger established via the LoggerRegistry::getLogger() method.
+    
+    If you do not choose to establish a category for a logger, log output
+    configuration is handled by the 'root' configuration file element.
+
+    For example, adding a 'category' tag named pwise.system containing 
+    a 'priority' tag with a value of 'info' means that all logging messages
+    logged with the category pwise.system (with a severity of 'info' or 
+    greater) will be logged.
+    
+    Possible priorities: all, debug, info, warn, error, fatal, off
+
+    <category name="catname">                     <priority value="all"/></category>
+-->
+
+    <!-- 
+     The root category will be used to specify the options for any category or option not
+     specified not explicitly specifed in a category node.
+-->
+    <root>
+        <priority value="INFO" />
+        <appender-ref ref="OUTDEVICE" />
+    </root>
+
+</log4j:configuration>
