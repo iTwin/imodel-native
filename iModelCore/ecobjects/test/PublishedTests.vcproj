@@ -99,6 +99,10 @@
 			>
 		</Filter>
 		<File
+			RelativePath=".\log4cxx_properties.xml"
+			>
+		</File>
+		<File
 			RelativePath=".\publishedCompileRules.mki"
 			>
 		</File>
