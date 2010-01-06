@@ -13,6 +13,41 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/09
++---------------+---------------+---------------+---------------+---------------+------*/
+DataType        DataTypeFromPrimitiveType (PrimitiveType primitiveType)
+    {
+    switch (primitiveType)
+        {
+        case PRIMITIVETYPE_Integer: return DATATYPE_Integer32;
+        case PRIMITIVETYPE_Long:    return DATATYPE_Long64;
+        case PRIMITIVETYPE_Double:  return DATATYPE_Double;
+        case PRIMITIVETYPE_String:  return DATATYPE_String;
+        default:                    return DATATYPE_Uninitialized;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/09
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            DataTypeIsFixedSize (DataType dataType)
+    {
+    switch (dataType)
+        {
+        case DATATYPE_Integer32:
+        case DATATYPE_Long64:
+        case DATATYPE_Double:
+            return true;
+        case DATATYPE_String:
+            return false;
+        default:
+            assert(false && "Unsupported data type");
+            return false;
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -83,13 +118,12 @@ UInt32          PropertyLayout::GetSizeInFixedSection () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassLayout::ClassLayout() : m_state(AcceptingFixedSizeProperties), 
                              m_class(NULL),
-                             m_classID(0),
+                             m_classIndex(0),
                              m_nProperties(0), 
                              m_nullflagsOffset (0),
                              m_offset(sizeof(InstanceFlags)), // The first 32 bits are reserved for flags/future
                              m_sizeOfFixedSection(0)
     {
-    
     };
     
 /*---------------------------------------------------------------------------------**//**
@@ -98,7 +132,7 @@ ClassLayout::ClassLayout() : m_state(AcceptingFixedSizeProperties),
 void            ClassLayout::Dump () const
     {
     ILogger *logger = Logger::GetLogger();
-    logger->tracev (L"ECClassIndex=%i, ECClass.Name=%s\n", m_classID, m_className.c_str());
+    logger->tracev (L"ECClassIndex=%i, ECClass.Name=%s\n", m_classIndex, m_className.c_str());
     for each (PropertyLayout layout in m_propertyLayouts)
         {
         logger->tracev (layout.ToString().c_str());
@@ -111,18 +145,6 @@ void            ClassLayout::Dump () const
 +---------------+---------------+---------------+---------------+---------------+------*/    
 UInt32          ClassLayout::GetSizeOfFixedSection() const
     {
-    if (m_sizeOfFixedSection != 0)
-        return m_sizeOfFixedSection;
-        
-    PropertyLayoutCR lastPropertyLayout = m_propertyLayouts[m_propertyLayouts.size() - 1];
-    
-    UInt32  size = (UInt32)lastPropertyLayout.GetOffset() + lastPropertyLayout.GetSizeInFixedSection();
-    
-    if (!lastPropertyLayout.IsFixedSized())
-        size += sizeof(SecondaryOffset); // There is one additional SecondaryOffset tracking the end of the last variable-sized value
-    
-    const_cast<ClassLayout*>(this)->m_sizeOfFixedSection = size;
-    
     return m_sizeOfFixedSection;
     }
     
@@ -168,10 +190,15 @@ void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 byt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          ClassLayout::GetBytesUsed(byte const * data) const
+UInt32          ClassLayout::CalculateBytesUsed(byte const * data) const
     {
-    if (m_sizeOfFixedSection == 0)
+    DEBUG_EXPECT (0 != m_sizeOfFixedSection);
+    if (m_sizeOfFixedSection == 0)//GetSizeOfFixedSection
         return 0;
+        
+    PropertyLayoutCR lastPropertyLayout = m_propertyLayouts[m_propertyLayouts.size() - 1];  // WIP_FUSION: if _GetBytesUsed shows up in profiler, we may want to add bool m_hasVariableSizedValues;
+    if (lastPropertyLayout.IsFixedSized())
+        return m_sizeOfFixedSection;
 
     SecondaryOffset * pLast = (SecondaryOffset*)(data + m_sizeOfFixedSection - sizeof(SecondaryOffset));
     
@@ -182,9 +209,9 @@ UInt32          ClassLayout::GetBytesUsed(byte const * data) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt16          ClassLayout::GetClassID() const
+UInt16          ClassLayout::GetClassIndex() const
     {
-    return m_classID;
+    return m_classIndex;
     } 
     
 /*---------------------------------------------------------------------------------**//**
@@ -196,127 +223,99 @@ std::wstring    ClassLayout::GetClassName() const
     }
     
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
+* @bsimethod                                                    JoshSchifter    12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            MemoryInstanceSupport::ShiftValueData(ClassLayoutCR classLayout, byte * data, PropertyLayoutCR propertyLayout, Int32 shiftBy)
+void            ClassLayout::AddProperties (ClassCR ecClass, wchar_t const * nameRoot, bool addingFixedSizeProps)
     {
-    DEBUG_EXPECT (0 != shiftBy && "It is a pointless waste of time to shift nothing");
-    DEBUG_EXPECT (!propertyLayout.IsFixedSized() && "The propertyLayout should be that of the variable-sized property whose size is increasing");
-    DEBUG_EXPECT (classLayout.GetSizeOfFixedSection() > 0 && "The ClassLayout has not been initialized");
-    
-    SecondaryOffset * pLast = (SecondaryOffset*)(data + classLayout.GetSizeOfFixedSection() - sizeof(SecondaryOffset));
-    SecondaryOffset * pAdjusting = (SecondaryOffset*)(data + propertyLayout.GetOffset());
-    SecondaryOffset * pCurrent = pAdjusting + 1; // start at the one AFTER the property whose value's size is adjusting
-    DEBUG_EXPECT (pCurrent <= pLast);
-    DEBUG_EXPECT ((*pCurrent - *pAdjusting + shiftBy) >= 0 && "shiftBy cannot be such that it would cause the adjusting property to shrink to a negative size");
-    
-    UInt32 bytesToMove = *pLast - *pCurrent;
-    if (bytesToMove > 0)
+    for each (PropertyP property in ecClass.GetProperties())
         {
-        byte * source = data + *pCurrent;
-        byte * destination = source + shiftBy;
-        memmove (destination, source, bytesToMove); // WIP_FUSION: not using the IMemoryProvider. Use Modify data
-        }
-
-    UInt32 sizeOfSecondaryOffsetsToShift = (UInt32)(((byte*)pLast - (byte*)pCurrent) + sizeof (SecondaryOffset));
-    UInt32 nSecondaryOffsetsToShift = sizeOfSecondaryOffsetsToShift / sizeof(SecondaryOffset);
-    SecondaryOffset * shiftedSecondaryOffsets = (SecondaryOffset*)alloca (sizeOfSecondaryOffsetsToShift);
-    for (UInt32 i = 0; i < nSecondaryOffsetsToShift; i++)
-    //while (pCurrent <= pLast) // WIP_FUSION: calculate the size of these to be changed, allocate a buffer on the stack for the new values, then use ModifyData
-        {
-        shiftedSecondaryOffsets[i] = pCurrent[i] + shiftBy;
-        //*pCurrent += shiftBy; // WIP_FUSION: not using the IMemoryProvider
-        //++pCurrent;
-        }
+        std::wstring    propName = property->GetName();
         
-    UInt32 offsetOfCurrent = (UInt32)((byte*)pCurrent - data);
-    ModifyData (offsetOfCurrent, shiftedSecondaryOffsets, sizeOfSecondaryOffsetsToShift);
+        if (NULL != nameRoot)
+            propName = std::wstring (nameRoot) + L"." + propName;
+
+        if (property->GetIsPrimitive())
+            {
+            PrimitivePropertyP  primitiveProp = property->GetAsPrimitiveProperty();
+            DataType            dataType = DataTypeFromPrimitiveType (primitiveProp->GetType());
+
+            if (DATATYPE_Uninitialized == dataType)
+                { assert (false && "Unimplemented Primitive Type"); continue; }
+
+            bool isFixedSize = DataTypeIsFixedSize(dataType);
+
+            if (addingFixedSizeProps && isFixedSize)
+                AddFixedSizeProperty (propName.c_str(), dataType);
+            else
+            if ( ! addingFixedSizeProps && ! isFixedSize)
+                AddVariableSizeProperty (propName.c_str(), dataType);
+            }
+        else
+        if (property->GetIsStruct())
+            {
+            StructPropertyP  structProp = property->GetAsStructProperty();
+            ClassCR          nestedClass = structProp->GetType();
+            
+            AddProperties (nestedClass, propName.c_str(), addingFixedSizeProps);
+            }
+        else
+        if (property->GetIsArray())
+            {
+            assert (false && "Arrays are not implemented");
+
+            //AddArrayProperty (L"ArrayOfInts",   EC::DATATYPE_String);
+            /* WIP_FUSION: deal with array later.
+            Arrays of structs will get sliced so that they appear to be arrays of a single value type.
+            For example, an array of Manufacturer would show up as three PropertyLayout objects:
+            ArrayOfManufacturers[]           // This only holds the count. It is fixed size. The count is the max count of any of the value arrays, below
+            ArrayOfManufacturers[].Name      // This only holds "Name" values. It is variable sized unless the array has a hard upper limit.
+            ArrayOfManufacturers[].AccountNo // This only holds "AccountNo" values. It is variable sized unless the array has a hard upper limit.
+
+            For a given array of fixed-sized values, the memory layout will be: count, nullflags, element, element, element
+            ...and we have random access to the elements.
+
+            For an array of variable-sized values, we follow the same pattern as the overall StandaloneInstance
+            and have a fixed-sized section (an array of SecondaryOffsets) followed by a variable-sized section holding the actual values.
+            For efficiency, when adding array elements, you really, really want to reserve them in advance, otherwise every
+            new element increases the size of the fixed-sized section, forcing a shift of the entire variable-sized section.
+
+            Even though we "slice" arrays of structs, when we add a new 'struct value' to the array, we really need to keep all
+            of the 'slices' in synch, e.g. we can't increase the length of ArrayOfManufacturers[].Name without also increasing
+            the length of ArrayOfManufacturers[].AccountNo. Hmmm... possibly they should all share the same count.
+
+            After 32 elements we have to insert another 4 bytes of nullflags, which also complicates the calculation of offsets
+            and the shifting of values in the case of arrays of variable-sized values.
+
+            Multidimensional arrays:
+            ArrayOfManufacturers[].Aliases[]
+            For this 2D array, we essentially have an array (ArrayOfManufacturers) where every element is an array of strings
+            (Aliases). In the outer array, we lookup the right array of Aliases. Within that array of Aliases, layout is
+            identical to a normal array of strings.
+
+            The tricky part is that when the nested Aliases array needs more memory, it must propagate a memory request back to
+            its outer array, which may in turn need to request more space for its "value", which may need to request more memory
+            from the "instance", which may have to realloc and move the whole shebang, in order to accomplish it.
+
+            Need to figure out how to really handle this recursively in a consistent way....
+            */
+
+            }
+        }
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ClassLayout::SetClass (ClassCR ecClass, UInt16 classID)
+StatusInt       ClassLayout::SetClass (ClassCR ecClass, UInt16 classIndex)
     {
-    m_class = &ecClass;
-    m_classID = classID;
-    m_className = ecClass.GetName(); // WIP_FUSION: remove this redundant information
-    // WIP_FUSION: iterate through the EC::Properties of the EC::Class and build the layout
-    
-    // WIP_FUSION: fake it til we make it
-    /* Fake a layout for
-    
-        struct ManufacturerInfo
-            {
-            std::wstring    m_name;
-            int             m_accountNo;
-            };    
-    
-        int                             m_A;
-        int                             m_AA;
-        ::Int64                         m_C;
-        std::wstring                    m_B;
-        std::wstring                    m_S;
-        int[]                           m_arrayOfInts;
-        ManufacturerInfo                m_manufacturer;
-        std::vector<std::wstring>       m_aliases;
-        std::vector<ManufacturerInfo>   m_arrayOfStructs;
-    */
-    
-    AddFixedSizeProperty (L"A",                      EC::DATATYPE_Integer32);
-    AddFixedSizeProperty (L"AA",                     EC::DATATYPE_Integer32);
-    AddFixedSizeProperty (L"C",                      EC::DATATYPE_Long64);
-    AddFixedSizeProperty (L"D",                      EC::DATATYPE_Double);
-    AddFixedSizeProperty (L"Manufacturer.AccountNo", EC::DATATYPE_Integer32);
-    
-    AddVariableSizeProperty (L"B",                   EC::DATATYPE_String);
-    AddVariableSizeProperty (L"S",                   EC::DATATYPE_String);
-    AddVariableSizeProperty (L"Manufacturer.Name",   EC::DATATYPE_String);
+    m_class      = &ecClass;
+    m_classIndex = classIndex;
+    m_className  = ecClass.GetName(); // WIP_FUSION: remove this redundant information
 
-    for (int i = 0; i < N_FINAL_STRING_PROPS_IN_FAKE_CLASS; i++)
-        {
-        wchar_t propertyName[66];
-        swprintf (propertyName, L"Property%i", i);
-        AddVariableSizeProperty (propertyName,       EC::DATATYPE_String);
-        }
-    
-    //AddArrayProperty (L"ArrayOfInts",   EC::DATATYPE_String);
-    /* WIP_FUSION: deal with array later.
-    Arrays of structs will get sliced so that they appear to be arrays of a single value type.
-    For example, an array of Manufacturer would show up as three PropertyLayout objects:
-    ArrayOfManufacturers[]           // This only holds the count. It is fixed size. The count is the max count of any of the value arrays, below
-    ArrayOfManufacturers[].Name      // This only holds "Name" values. It is variable sized unless the array has a hard upper limit.
-    ArrayOfManufacturers[].AccountNo // This only holds "AccountNo" values. It is variable sized unless the array has a hard upper limit.
-    
-    For a given array of fixed-sized values, the memory layout will be: count, nullflags, element, element, element
-    ...and we have random access to the elements.
-    
-    For an array of variable-sized values, we follow the same pattern as the overall StandaloneInstance
-    and have a fixed-sized section (an array of SecondaryOffsets) followed by a variable-sized section holding the actual values.
-    For efficiency, when adding array elements, you really, really want to reserve them in advance, otherwise every
-    new element increases the size of the fixed-sized section, forcing a shift of the entire variable-sized section.
-    
-    Even though we "slice" arrays of structs, when we add a new 'struct value' to the array, we really need to keep all 
-    of the 'slices' in synch, e.g. we can't increase the length of ArrayOfManufacturers[].Name without also increasing
-    the length of ArrayOfManufacturers[].AccountNo. Hmmm... possibly they should all share the same count.
-    
-    After 32 elements we have to insert another 4 bytes of nullflags, which also complicates the calculation of offsets
-    and the shifting of values in the case of arrays of variable-sized values.
-    
-    Multidimensional arrays:
-    ArrayOfManufacturers[].Aliases[]
-    For this 2D array, we essentially have an array (ArrayOfManufacturers) where every element is an array of strings
-    (Aliases). In the outer array, we lookup the right array of Aliases. Within that array of Aliases, layout is 
-    identical to a normal array of strings.
-    
-    The tricky part is that when the nested Aliases array needs more memory, it must propagate a memory request back to
-    its outer array, which may in turn need to request more space for its "value", which may need to request more memory
-    from the "instance", which may have to realloc and move the whole shebang, in order to accomplish it.
-    
-    Need to figure out how to really handle this recursively in a consistent way....
-    
-    */
-    
+    // Iterate through the EC::Properties of the EC::Class and build the layout
+    AddProperties (ecClass, NULL, true);
+    AddProperties (ecClass, NULL, false);
+
     FinishLayout ();
     
     //wprintf (L"ECClass name=%s\n", ecClass.GetName().c_str());
@@ -328,9 +327,9 @@ StatusInt       ClassLayout::SetClass (ClassCR ecClass, UInt16 classID)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/  
-ClassCP         ClassLayout::GetClass () const
+ClassCR         ClassLayout::GetClass () const
     {
-    return m_class;
+    return *m_class;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -345,6 +344,23 @@ StatusInt       ClassLayout::FinishLayout ()
         m_propertyLayoutLookup[propertyLayout->GetAccessString()] = propertyLayout;
         }
         
+    // Calculate size of fixed section    
+    if (0 >= m_propertyLayouts.size())
+        {
+        m_sizeOfFixedSection = 0;
+        }
+    else
+        {
+        PropertyLayoutCR lastPropertyLayout = m_propertyLayouts[m_propertyLayouts.size() - 1];
+
+        UInt32  size = (UInt32)lastPropertyLayout.GetOffset() + lastPropertyLayout.GetSizeInFixedSection();
+
+        if (!lastPropertyLayout.IsFixedSized())
+            size += sizeof(SecondaryOffset); // There is one additional SecondaryOffset tracking the end of the last variable-sized value
+
+        m_sizeOfFixedSection = size;
+        }
+            
 #ifndef NDEBUG
     DEBUG_EXPECT (m_nProperties == m_propertyLayouts.size());
     if (0 == m_propertyLayouts.size())
@@ -481,24 +497,18 @@ StatusInt       ClassLayout::GetPropertyLayoutByIndex (PropertyLayoutCP & proper
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-MemoryEnablerSupport::MemoryEnablerSupport (ClassCR ecClass, UInt16 classID)
-    {
-    // FUSION_WIP: sometimes, this will be loaded from the file
-    m_classLayout.SetClass(ecClass, classID);
-    }
-    
-MemoryEnablerSupport::MemoryEnablerSupport (ClassLayoutCR classLayout) : m_classLayout (classLayout)
+ClassLayoutHolder::ClassLayoutHolder (ClassLayoutCR classLayout) : m_classLayout (classLayout)
     {
     }    
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-MemoryEnablerSupport::MemoryEnablerSupport (ClassCR ecClass, UInt16 classID, UInt32 enablerID, std::wstring name) 
+ClassLayoutCR    ClassLayoutHolder::GetClassLayout() const 
     {
-    m_classLayout.SetClass(ecClass, classID);
+    return m_classLayout;
     }
-        
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -506,7 +516,7 @@ byte const *    MemoryInstanceSupport::GetAddressOfValue (PropertyLayoutCR prope
     {
     UInt32 offset = propertyLayout.GetOffset();
     
-    byte const * data = GetDataForRead();
+    byte const * data = _GetDataForRead();
     byte const * pValue = data + offset;
     
     if (propertyLayout.IsFixedSized())
@@ -522,20 +532,20 @@ byte const *    MemoryInstanceSupport::GetAddressOfValue (PropertyLayoutCR prope
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            MemoryInstanceSupport::IsNull (PropertyLayoutCR propertyLayout) const
+bool            MemoryInstanceSupport::IsValueNull (PropertyLayoutCR propertyLayout) const
     {
-    NullflagsBitmask const * nullflags = (NullflagsBitmask const *)(GetDataForRead() + propertyLayout.GetNullflagsOffset());
+    NullflagsBitmask const * nullflags = (NullflagsBitmask const *)(_GetDataForRead() + propertyLayout.GetNullflagsOffset());
     return (0 != (*nullflags & propertyLayout.GetNullflagsBitmask()));
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            MemoryInstanceSupport::SetNull (PropertyLayoutCR propertyLayout, bool isNull)
+void            MemoryInstanceSupport::SetValueNull (PropertyLayoutCR propertyLayout, bool isNull)
     {
     NullflagsBitmask mask = propertyLayout.GetNullflagsBitmask();
     
-    NullflagsBitmask * nullflags = (NullflagsBitmask *)(GetDataForWrite() + propertyLayout.GetNullflagsOffset());
+    NullflagsBitmask * nullflags = (NullflagsBitmask *)(_GetDataForWrite() + propertyLayout.GetNullflagsOffset());
     if (isNull && 0 == (*nullflags & mask))
         *nullflags |= mask; // turn on the null bit
     else if (!isNull && mask == (*nullflags & mask))
@@ -552,7 +562,7 @@ UInt32          MemoryInstanceSupport::GetOffsetOfValue (PropertyLayoutCR proper
     if (propertyLayout.IsFixedSized())
         return offset;
 
-    byte const * data = GetDataForRead();
+    byte const * data = _GetDataForRead();
     SecondaryOffset const * pSecondaryOffset = (SecondaryOffset const *)(data + offset);
 
     SecondaryOffset secondaryOffset = *pSecondaryOffset;
@@ -566,7 +576,7 @@ UInt32          MemoryInstanceSupport::GetOffsetOfValue (PropertyLayoutCR proper
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       MemoryInstanceSupport::EnsureSpaceIsAvailable (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded)
     {
-    byte const *             data = GetDataForRead();
+    byte const *             data = _GetDataForRead();
     SecondaryOffset*         pSecondaryOffset = (SecondaryOffset*)(data + propertyLayout.GetOffset());
     SecondaryOffset*         pNextSecondaryOffset = pSecondaryOffset + 1;
     UInt32 availableBytes = *pNextSecondaryOffset - *pSecondaryOffset;
@@ -575,44 +585,75 @@ StatusInt       MemoryInstanceSupport::EnsureSpaceIsAvailable (ClassLayoutCR cla
     if (bytesNeeded <= availableBytes)
         return SUCCESS;
 #endif
-    UInt32 bytesUsed = classLayout.GetBytesUsed(data);
+    UInt32 bytesUsed = classLayout.CalculateBytesUsed(data);
     Int32 additionalBytesNeeded = bytesNeeded - availableBytes;
     
     if (additionalBytesNeeded <= 0)
         return SUCCESS;
         
-    Int32 additionalBytesAvailable = GetBytesAllocated() - bytesUsed;
+    UInt32 bytesAllocated = _GetBytesAllocated();    
+    Int32 additionalBytesAvailable = bytesAllocated - bytesUsed;
     
+    StatusInt status = SUCCESS;
+    UInt32 growBy = additionalBytesNeeded - additionalBytesAvailable;
     if (additionalBytesNeeded > additionalBytesAvailable)
-        GrowAllocation (additionalBytesNeeded - additionalBytesAvailable);
+        {
+        status = _GrowAllocation (growBy);
+        UInt32 newBytesAllocated = _GetBytesAllocated();
+        DEBUG_EXPECT (newBytesAllocated >= bytesAllocated + growBy);
+        bytesAllocated = newBytesAllocated;
+        }
     
-    byte * writeableData = GetDataForWrite();
-    DEBUG_EXPECT (bytesUsed == classLayout.GetBytesUsed(writeableData));
+    if (SUCCESS != status)
+        return status;
+        
+    byte * writeableData = _GetDataForWrite();
+    DEBUG_EXPECT (bytesUsed == classLayout.CalculateBytesUsed(writeableData));
     
-    ShiftValueData(classLayout, writeableData, propertyLayout, additionalBytesNeeded);
+    status = ShiftValueData(classLayout, writeableData, bytesAllocated, propertyLayout, additionalBytesNeeded);
 
-    DEBUG_EXPECT (0 == bytesUsed || (bytesUsed + additionalBytesNeeded == classLayout.GetBytesUsed(writeableData)));
+    DEBUG_EXPECT (0 == bytesUsed || (bytesUsed + additionalBytesNeeded == classLayout.CalculateBytesUsed(writeableData)));
     
-    return SUCCESS;
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            MemoryInstanceSupport::AllocateAndInitializeMemory (ClassLayoutCR classLayout)
+StatusInt       MemoryInstanceSupport::ShiftValueData(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated, PropertyLayoutCR propertyLayout, Int32 shiftBy)
     {
-    DEBUG_EXPECT (!IsMemoryInitialized());
+    DEBUG_EXPECT (0 != shiftBy && "It is a pointless waste of time to shift nothing");
+    DEBUG_EXPECT (!propertyLayout.IsFixedSized() && "The propertyLayout should be that of the variable-sized property whose size is increasing");
+    DEBUG_EXPECT (classLayout.GetSizeOfFixedSection() > 0 && "The ClassLayout has not been initialized");
     
-    UInt32 bytesUsed = classLayout.GetSizeOfFixedSection();
+    SecondaryOffset * pLast = (SecondaryOffset*)(data + classLayout.GetSizeOfFixedSection() - sizeof(SecondaryOffset));
+    SecondaryOffset * pAdjusting = (SecondaryOffset*)(data + propertyLayout.GetOffset());
+    SecondaryOffset * pCurrent = pAdjusting + 1; // start at the one AFTER the property whose value's size is adjusting
+    DEBUG_EXPECT (pCurrent <= pLast);
+    DEBUG_EXPECT ((*pCurrent - *pAdjusting + shiftBy) >= 0 && "shiftBy cannot be such that it would cause the adjusting property to shrink to a negative size");
     
-    AllocateBytes (bytesUsed);
-    
-    UInt32 bytesAllocated = GetBytesAllocated();
-    
-    byte * data = GetDataForWrite();
-    classLayout.InitializeMemoryForInstance (data, bytesAllocated);
-    
-    // WIP_FUSION: could initialize default values here.
+    UInt32 bytesToMove = *pLast - *pCurrent;
+    if (bytesToMove > 0)
+        {
+        byte * source = data + *pCurrent;
+        byte * destination = source + shiftBy;
+        
+        DEBUG_EXPECT (destination + bytesToMove <= data + bytesAllocated && "Attempted to move memory beyond the end of the allocated XAttribute.");
+        if (destination + bytesToMove > data + bytesAllocated)
+            return ERROR;
+            
+        memmove (destination, source, bytesToMove); // WIP_FUSION: Use Modify data, instead
+        }
+
+    // Shift all secondaryOffsets for variable-sized property values following the one that just got larger
+    UInt32 sizeOfSecondaryOffsetsToShift = (UInt32)(((byte*)pLast - (byte*)pCurrent) + sizeof (SecondaryOffset));
+    UInt32 nSecondaryOffsetsToShift = sizeOfSecondaryOffsetsToShift / sizeof(SecondaryOffset);
+    SecondaryOffset * shiftedSecondaryOffsets = (SecondaryOffset*)alloca (sizeOfSecondaryOffsetsToShift);
+    for (UInt32 i = 0; i < nSecondaryOffsetsToShift; i++)
+        shiftedSecondaryOffsets[i] = pCurrent[i] + shiftBy;
+        
+    UInt32 offsetOfCurrent = (UInt32)((byte*)pCurrent - data);
+    return _ModifyData (offsetOfCurrent, shiftedSecondaryOffsets, sizeOfSecondaryOffsetsToShift);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -625,20 +666,11 @@ void            MemoryInstanceSupport::InitializeMemory(ClassLayoutCR classLayou
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/    
-UInt32          MemoryInstanceSupport::GetBytesUsed (ClassLayoutCR classLayout, byte const * data) const
-    {
-    return classLayout.GetBytesUsed (data);
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       MemoryInstanceSupport::GetValueFromMemory (ValueR v, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const
     {
-    if (IsNull(propertyLayout))
+    if (IsValueNull(propertyLayout))
         {
-        //v.Clear();
         v.SetToNull();
         return SUCCESS;
         }
@@ -692,9 +724,6 @@ StatusInt       MemoryInstanceSupport::GetValueFromMemory (ClassLayoutCR classLa
     PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
     PRECONDITION (Instance::AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true), ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices);
                 
-    // WIP_FUSION: check null flags first!
-    IMemoryProviderCR memoryProvider = *this;
-
     PropertyLayoutCP propertyLayout = NULL;
     StatusInt status = classLayout.GetPropertyLayout (propertyLayout, propertyAccessString);
     if (SUCCESS != status || NULL == propertyLayout)
@@ -710,8 +739,7 @@ StatusInt       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayo
     {
     PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
     PRECONDITION (Instance::AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true), ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices);
-                
-    IMemoryProviderR memoryProvider = *this;
+    //UInt32 bytesAllocated = _GetBytesAllocated();    
 
     PropertyLayoutCP propertyLayout = NULL;
     StatusInt status = classLayout.GetPropertyLayout (propertyLayout, propertyAccessString); // WIP_FUSION: If it only has one error, let it just return null
@@ -720,33 +748,35 @@ StatusInt       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayo
         
     if (v.IsNull())
         {
-        SetNull (*propertyLayout, true);
+        SetValueNull (*propertyLayout, true);
         return SUCCESS;
         }
         
-    SetNull (*propertyLayout, false);
+    SetValueNull (*propertyLayout, false);
                 
     if (propertyLayout->GetDataType() != v.GetDataType())
         return ERROR; // WIP_FUSION ERROR_DataTypeMismatch
     
     UInt32 offset = GetOffsetOfValue (*propertyLayout);
-    
+#ifdef EC_TRACE_MEMORY 
+    wprintf (L"SetValue %s of 0x%x at offset=%d to %s.\n", propertyAccessString, this, offset, v.ToString().c_str());
+#endif    
     switch (propertyLayout->GetDataType())
         {
         case DATATYPE_Integer32:
             {
             Int32 value = v.GetInteger();
-            return ModifyData (offset, &value, sizeof(value));
+            return _ModifyData (offset, &value, sizeof(value));
             }
         case DATATYPE_Long64:
             {
             Int64 value = v.GetLong();
-            return ModifyData (offset, &value, sizeof(value));
+            return _ModifyData (offset, &value, sizeof(value));
             }
         case DATATYPE_Double:
             {
             double value = v.GetDouble();
-            return ModifyData (offset, &value, sizeof(value));
+            return _ModifyData (offset, &value, sizeof(value));
             }       
         case DATATYPE_String:
             {
@@ -757,7 +787,7 @@ StatusInt       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayo
             if (SUCCESS != status)
                 return status;
                 
-            return ModifyData (offset, value, bytesNeeded);
+            return _ModifyData (offset, value, bytesNeeded);
             }
         default:
             {
@@ -774,11 +804,19 @@ StatusInt       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayo
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayout) const
     {
-    byte const * data = GetDataForRead();
+    static bool s_skipDump = false;
+    static int s_dumpCount = 0;
+    s_dumpCount++;
     
-    wprintf (L"ECClass=%s at address = 0x%8.0x\n", classLayout.GetClassName().c_str(), data);
+    byte const * data = _GetDataForRead();
+    
+    wprintf (L"======================= Dump #%d ===================================\n", s_dumpCount);
+    if (s_skipDump)
+        return;
+        
+    wprintf (L"ECClass=%s at address = 0x%0x\n", classLayout.GetClass().GetName().c_str(), data);
     InstanceFlags flags = *(InstanceFlags*)data;
-    wprintf (L"  [0x%8.0x][%4.d] InstanceFlags = 0x%08.x\n", data, 0, flags);
+    wprintf (L"  [0x%0x][%4.d] InstanceFlags = 0x%08.x\n", data, 0, flags);
     
     UInt32 nProperties = classLayout.GetPropertyCount ();
     
@@ -791,7 +829,7 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
         {
         UInt32 offset = sizeof(InstanceFlags) + i * sizeof(NullflagsBitmask);
         byte const * address = offset + data;
-        wprintf (L"  [0x%8.x][%4.d] Nullflags[%d] = 0x%8.x\n", address, offset, i, *(NullflagsBitmask*)(data + offset));
+        wprintf (L"  [0x%x][%4.d] Nullflags[%d] = 0x%x\n", address, offset, i, *(NullflagsBitmask*)(data + offset));
         }
     
     for (UInt32 i = 0; i < nProperties; i++)
@@ -812,19 +850,19 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
         std::wstring valueAsString = v.ToString();
            
         if (propertyLayout->IsFixedSized())
-            wprintf (L"  [0x%8.x][%4.d] %s = %s\n", address, offset, propertyLayout->GetAccessString(), valueAsString.c_str());
+            wprintf (L"  [0x%x][%4.d] %s = %s\n", address, offset, propertyLayout->GetAccessString(), valueAsString.c_str());
         else
             {
             SecondaryOffset secondaryOffset = *(SecondaryOffset*)address;
             byte const * realAddress = data + secondaryOffset;
             
-            wprintf (L"  [0x%8.x][%4.d] -> [0x%8.x][%4.d] %s = %s\n", address, offset, realAddress, secondaryOffset, propertyLayout->GetAccessString(), valueAsString.c_str());
+            wprintf (L"  [0x%x][%4.d] -> [0x%x][%4.d] %s = %s\n", address, offset, realAddress, secondaryOffset, propertyLayout->GetAccessString(), valueAsString.c_str());
             }
         }
         
     UInt32 offsetOfLast = classLayout.GetSizeOfFixedSection() - sizeof(SecondaryOffset);
     SecondaryOffset * pLast = (SecondaryOffset*)(data + offsetOfLast);
-    wprintf (L"  [0x%8.x][%4.d] Offset of TheEnd = %d\n", pLast, offsetOfLast, *pLast);
+    wprintf (L"  [0x%x][%4.d] Offset of TheEnd = %d\n", pLast, offsetOfLast, *pLast);
     }
     
 END_BENTLEY_EC_NAMESPACE

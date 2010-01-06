@@ -23,26 +23,25 @@ Instance::Instance()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring        Instance::GetInstanceID() const
+std::wstring        Instance::GetInstanceId() const
     {
-    return _GetInstanceID();
+    return _GetInstanceId();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassCP     Instance::GetClass() const 
+ClassCR             Instance::GetClass() const 
     {
-    EnablerCP enabler = GetEnabler();
-    PRECONDITION(NULL != enabler, NULL)
+    EnablerCR enabler = GetEnabler();
         
-    return enabler->GetClass();
+    return enabler.GetClass();
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-bool Instance::AccessStringAndNIndicesAgree (const wchar_t * propertyAccessString, UInt32 nIndices, bool errorIfFalse)
+bool                Instance::AccessStringAndNIndicesAgree (const wchar_t * propertyAccessString, UInt32 nIndices, bool errorIfFalse)
     {
     const wchar_t * pointerToBrackets = pointerToBrackets = wcsstr (propertyAccessString, L"[]"); ;
     int nBrackets = 0;
@@ -62,7 +61,7 @@ bool Instance::AccessStringAndNIndicesAgree (const wchar_t * propertyAccessStrin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/   
-EnablerCP            Instance::GetEnabler() const
+EnablerCR           Instance::GetEnabler() const
     {
     return _GetEnabler();
     }
@@ -78,7 +77,7 @@ bool                Instance::IsReadOnly() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StatusInt            Instance::GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+StatusInt           Instance::GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
     {
     return _GetValue (v, propertyAccessString, nIndices, indices);
     }
@@ -86,7 +85,7 @@ StatusInt            Instance::GetValue (ValueR v, const wchar_t * propertyAcces
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StatusInt            Instance::SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices, UInt32 const * indices)
+StatusInt           Instance::SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices, UInt32 const * indices)
     {
     return _SetValue (propertyAccessString, v, nIndices, indices);
     }
@@ -94,7 +93,7 @@ StatusInt            Instance::SetValue (const wchar_t * propertyAccessString, V
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StatusInt            Instance::GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 index) const
+StatusInt           Instance::GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 index) const
     {
     return _GetValue (v, propertyAccessString, 1, &index);
     }
@@ -102,7 +101,7 @@ StatusInt            Instance::GetValue (ValueR v, const wchar_t * propertyAcces
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StatusInt            Instance::SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 index)
+StatusInt           Instance::SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 index)
     {
     return _SetValue (propertyAccessString, v, 1, &index);
     }
@@ -110,7 +109,7 @@ StatusInt            Instance::SetValue (const wchar_t * propertyAccessString, V
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
-StatusInt Instance::GetInteger (int & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+StatusInt           Instance::GetInteger (int & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
     {
     Value v;
     StatusInt status = _GetValue (v, propertyAccessString, 0, NULL);
@@ -122,7 +121,7 @@ StatusInt Instance::GetInteger (int & value, const wchar_t * propertyAccessStrin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/                
-StatusInt Instance::GetDouble (double& value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+StatusInt           Instance::GetDouble (double& value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
     {
     Value v;
     StatusInt status = _GetValue (v, propertyAccessString, 0, NULL);
@@ -133,7 +132,7 @@ StatusInt Instance::GetDouble (double& value, const wchar_t * propertyAccessStri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/       
-StatusInt Instance::GetString (const wchar_t * & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+StatusInt           Instance::GetString (const wchar_t * & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
     {
     Value v;
     StatusInt status = _GetValue (v, propertyAccessString, 0, NULL);
@@ -145,49 +144,39 @@ StatusInt Instance::GetString (const wchar_t * & value, const wchar_t * property
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Instance::InsertArrayElement (const wchar_t * propertyAccessString, ValueCR v, UInt32 index)
+StatusInt           Instance::InsertArrayElement (const wchar_t * propertyAccessString, ValueCR v, UInt32 index)
     {
-    IArrayManipulatorCP manipulator = dynamic_cast<IArrayManipulatorCP>(GetEnabler());
-    if (NULL == manipulator)
-        return ECOBJECTS_STATUS_OperationNotSupported;
-        
-    PropertyP property = GetClass()->GetPropertyP (propertyAccessString);
-    if (NULL == property)
-        return ERROR;
-        
-    return manipulator->InsertArrayElement(*this, propertyAccessString, v, index);
+    return ECOBJECTS_STATUS_OperationNotSupported;
     } 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Instance::RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index)
+StatusInt           Instance::RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index)
     {
-    IArrayManipulatorCP manipulator = dynamic_cast<IArrayManipulatorCP>(GetEnabler());
-    if (NULL == manipulator)
-        return ECOBJECTS_STATUS_OperationNotSupported;
-        
-    PropertyP property = GetClass()->GetPropertyP (propertyAccessString);
-    if (NULL == property)
-        return ERROR;
-        
-    return manipulator->RemoveArrayElement(*this, propertyAccessString, index);
+    return ECOBJECTS_STATUS_OperationNotSupported;
     } 
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Instance::ClearArray (const wchar_t * propertyAccessString)
+StatusInt           Instance::ClearArray (const wchar_t * propertyAccessString)
     {
-    IArrayManipulatorCP manipulator = dynamic_cast<IArrayManipulatorCP>(GetEnabler());
-    if (NULL == manipulator)
-        return ECOBJECTS_STATUS_OperationNotSupported;
-        
-    PropertyP property = GetClass()->GetPropertyP (propertyAccessString);
-    if (NULL == property)
-        return ERROR;
-        
-    return manipulator->ClearArray(*this, propertyAccessString);
+    return ECOBJECTS_STATUS_OperationNotSupported;
     }     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+void                Instance::Dump () const
+    {
+    _Dump();
+    }
  
+ /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     12/09
++---------------+---------------+---------------+---------------+---------------+------*/
+void                Instance::Free ()
+    {
+    _Free();
+    }
 END_BENTLEY_EC_NAMESPACE

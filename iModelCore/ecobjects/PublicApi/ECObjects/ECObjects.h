@@ -56,13 +56,12 @@ EC_TYPEDEFS(RelationshipInstance);
 
 EC_TYPEDEFS(Enabler);
 EC_TYPEDEFS(IArrayManipulator);
-EC_TYPEDEFS(ICreateInstance);
 
 EC_TYPEDEFS(ClassLayout);
 EC_TYPEDEFS(PropertyLayout);
 EC_TYPEDEFS(StandaloneInstance);
 EC_TYPEDEFS(StandaloneInstanceFactory);
-EC_TYPEDEFS(MemoryEnablerSupport);
+EC_TYPEDEFS(ClassLayoutHolder);
 
 #define EXPORTED_PROPERTY(TYPE, NAME) \
     ECOBJECTS_EXPORT TYPE Get##NAME() const; \
