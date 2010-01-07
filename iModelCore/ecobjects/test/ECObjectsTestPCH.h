@@ -13,9 +13,5 @@
    #include "..\..\PublicAPI\ECObjects\DesignByContract.h"
 #endif
 
-#ifndef BENTLEY_EXCLUDE_WINDOWS_HEADERS
-#include <msxml6\msxml6.tlh>
-#endif
-
 #include <ECObjects\ECObjectsAPI.h>
 #include <gtest\gtest.h>
