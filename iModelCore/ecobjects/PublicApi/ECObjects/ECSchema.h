@@ -596,7 +596,7 @@ public:
     //! @param[in]    ecSchemaXmlStream   The IStream containing ECSchemaXML to deserialize
     //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
     //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
-    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXMLFromStream (SchemaPtr& schemaOut, IStream * ecSchemaXmlStream);
+    //ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXMLFromStream (SchemaPtr& schemaOut, IStream * ecSchemaXmlStream);
 
 
     //! Serializes an ECXML schema to a string
@@ -621,7 +621,7 @@ public:
     //! @param[in]  ecSchemaXmlStream   The IStream to write the serialized XML to
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the IStream
     //! will contain the serialized schema.
-    ECOBJECTS_EXPORT SchemaSerializationStatus WriteXmlToStream (IStream * ecSchemaXmlStream);
+    //ECOBJECTS_EXPORT SchemaSerializationStatus WriteXmlToStream (IStream * ecSchemaXmlStream);
     
 }; // Schema
 

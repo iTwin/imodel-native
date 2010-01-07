@@ -670,31 +670,31 @@ const wchar_t *     ecSchemaXml
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus Schema::ReadXMLFromStream
-(
-SchemaPtr&          schemaOut, 
-IStream *           ecSchemaXmlStream
-)
-    {                  
-    SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
-
-    MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;        
-    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_DESERIALIZATION_STATUS_FailedToInitializeMsmxl);
-    xmlDocPtr->put_validateOnParse(VARIANT_TRUE);
-    xmlDocPtr->put_async(VARIANT_FALSE);
-    
-    VARIANT_BOOL returnCode = xmlDocPtr->load(ecSchemaXmlStream);
-    if (returnCode != VARIANT_TRUE)
-        {
-        LogXmlLoadError(xmlDocPtr);
-        return SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml;
-        }
-
-    status = ReadXML (schemaOut, xmlDocPtr);
-    if (ECOBJECTS_STATUS_Success != status)
-        Logger::GetLogger()->errorv (L"Failed to deserialize XML from stream\n");
-    return status;
-    }
+//SchemaDeserializationStatus Schema::ReadXMLFromStream
+//(
+//SchemaPtr&          schemaOut, 
+//IStream *           ecSchemaXmlStream
+//)
+//    {                  
+//    SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
+//
+//    MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;        
+//    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_DESERIALIZATION_STATUS_FailedToInitializeMsmxl);
+//    xmlDocPtr->put_validateOnParse(VARIANT_TRUE);
+//    xmlDocPtr->put_async(VARIANT_FALSE);
+//    
+//    VARIANT_BOOL returnCode = xmlDocPtr->load(ecSchemaXmlStream);
+//    if (returnCode != VARIANT_TRUE)
+//        {
+//        LogXmlLoadError(xmlDocPtr);
+//        return SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml;
+//        }
+//
+//    status = ReadXML (schemaOut, xmlDocPtr);
+//    if (ECOBJECTS_STATUS_Success != status)
+//        Logger::GetLogger()->errorv (L"Failed to deserialize XML from stream\n");
+//    return status;
+//    }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
@@ -752,28 +752,28 @@ const wchar_t * ecSchemaXmlFile
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus Schema::WriteXmlToStream
-(
-IStream * ecSchemaXmlStream
-)
-    {
-    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
-
-    MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;        
-    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_SERIALIZATION_STATUS_FailedToInitializeMsmxl);
-    xmlDocPtr->put_validateOnParse(VARIANT_TRUE);
-    xmlDocPtr->put_async(VARIANT_FALSE);
-    xmlDocPtr->put_preserveWhiteSpace(VARIANT_TRUE);
-    xmlDocPtr->put_resolveExternals(VARIANT_FALSE);
-    
-    status = WriteXml(xmlDocPtr);
-    if (status != SCHEMA_SERIALIZATION_STATUS_Success)
-        return status;
-        
-    VERIFY_HRESULT_OK(xmlDocPtr->save(ecSchemaXmlStream), SCHEMA_SERIALIZATION_STATUS_FailedToSaveXml);
-
-    return status;
-    }
+//SchemaSerializationStatus Schema::WriteXmlToStream
+//(
+//IStream * ecSchemaXmlStream
+//)
+//    {
+//    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+//
+//    MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;        
+//    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_SERIALIZATION_STATUS_FailedToInitializeMsmxl);
+//    xmlDocPtr->put_validateOnParse(VARIANT_TRUE);
+//    xmlDocPtr->put_async(VARIANT_FALSE);
+//    xmlDocPtr->put_preserveWhiteSpace(VARIANT_TRUE);
+//    xmlDocPtr->put_resolveExternals(VARIANT_FALSE);
+//    
+//    status = WriteXml(xmlDocPtr);
+//    if (status != SCHEMA_SERIALIZATION_STATUS_Success)
+//        return status;
+//        
+//    VERIFY_HRESULT_OK(xmlDocPtr->save(ecSchemaXmlStream), SCHEMA_SERIALIZATION_STATUS_FailedToSaveXml);
+//
+//    return status;
+//    }
      
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
