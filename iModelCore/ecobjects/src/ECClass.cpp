@@ -25,6 +25,9 @@ Class::~Class
     // NEEDSWORK make sure everything is destroyed
     Logger::GetLogger()->tracev (L"~~~~ Destroying ECClass %s\n", this->Name.c_str());
     Logger::GetLogger()->tracev  (L"     Freeing memory for %d properties\n", m_propertyMap.size());
+    
+    m_propertyList.clear();
+    
     for each (std::pair<const wchar_t * , PropertyP> entry in m_propertyMap)
         delete entry.second;
     
@@ -256,6 +259,7 @@ PropertyP&                 pProperty
         return ECOBJECTS_STATUS_NamedItemAlreadyExists;
         }
 
+    m_propertyList.push_back(pProperty);
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -524,7 +528,7 @@ PropertyContainerCR Class::GetProperties
 +---------------+---------------+---------------+---------------+---------------+------*/
 PropertyContainer::const_iterator  PropertyContainer::begin () const
     {
-    return PropertyContainer::const_iterator(m_propertyMap.begin());        
+    return PropertyContainer::const_iterator(m_propertyList.begin());        
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -532,7 +536,7 @@ PropertyContainer::const_iterator  PropertyContainer::begin () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 PropertyContainer::const_iterator  PropertyContainer::end () const
     {
-    return PropertyContainer::const_iterator(m_propertyMap.end());        
+    return PropertyContainer::const_iterator(m_propertyList.end());        
     }   
 
 /*---------------------------------------------------------------------------------**//**
@@ -540,7 +544,7 @@ PropertyContainer::const_iterator  PropertyContainer::end () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 PropertyContainer::const_iterator& PropertyContainer::const_iterator::operator++()
     {
-    m_state->m_mapIterator++;    
+    m_state->m_listIterator++;    
     return *this;
     }
 
@@ -549,7 +553,7 @@ PropertyContainer::const_iterator& PropertyContainer::const_iterator::operator++
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            PropertyContainer::const_iterator::operator!= (const_iterator const& rhs) const
     {
-    return (m_state->m_mapIterator != rhs.m_state->m_mapIterator);
+    return (m_state->m_listIterator != rhs.m_state->m_listIterator);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -557,8 +561,8 @@ bool            PropertyContainer::const_iterator::operator!= (const_iterator co
 +---------------+---------------+---------------+---------------+---------------+------*/
 PropertyP       PropertyContainer::const_iterator::operator*() const
     {
-    std::pair<const wchar_t * , PropertyP> mapPair = *(m_state->m_mapIterator);
-    return mapPair.second;
+    PropertyP pProperty = *(m_state->m_listIterator);
+    return pProperty;
     };
 
 END_BENTLEY_EC_NAMESPACE

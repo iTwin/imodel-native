@@ -35,6 +35,7 @@ bool operator()(const wchar_t * s1, const wchar_t * s2) const
     }
 };
 
+typedef std::list<PropertyP> PropertyList;
 typedef stdext::hash_map<const wchar_t * , PropertyP, stdext::hash_compare<const wchar_t *, less_str>>   PropertyMap;
 typedef stdext::hash_map<const wchar_t * , ClassP, stdext::hash_compare<const wchar_t *, less_str>> ClassMap;
 /*__PUBLISH_SECTION_START__*/
@@ -267,9 +268,11 @@ private:
     friend struct Class;
         
     PropertyMap const&     m_propertyMap;
-    
-    PropertyContainer (PropertyMap const& propertyMap) 
-        : m_propertyMap (propertyMap) {};
+    PropertyList const&     m_propertyList;
+        
+    PropertyContainer (PropertyMap const& propertyMap, PropertyList const& propertyList) 
+        : m_propertyMap (propertyMap), m_propertyList(propertyList) {};
+
 
 /*__PUBLISH_SECTION_START__*/
 
@@ -282,10 +285,10 @@ public:
         friend struct const_iterator;
 /*__PUBLISH_SECTION_END__*/
         public:            
-            PropertyMap::const_iterator     m_mapIterator;                   
+            PropertyList::const_iterator     m_listIterator;                   
 
-            IteratorState (PropertyMap::const_iterator mapIterator) { m_mapIterator = mapIterator; };
-            static RefCountedPtr<IteratorState> Create (PropertyMap::const_iterator mapIterator) { return new IteratorState(mapIterator); };
+            IteratorState (PropertyList::const_iterator listIterator) { m_listIterator = listIterator; };
+            static RefCountedPtr<IteratorState> Create (PropertyList::const_iterator listIterator) { return new IteratorState(listIterator); };
 /*__PUBLISH_SECTION_START__*/                        
         };
 
@@ -299,7 +302,7 @@ public:
         RefCountedPtr<IteratorState>   m_state;
 
 /*__PUBLISH_SECTION_END__*/
-        const_iterator (PropertyMap::const_iterator mapIterator) { m_state = IteratorState::Create (mapIterator); };
+        const_iterator (PropertyList::const_iterator listIterator) { m_state = IteratorState::Create (listIterator); };
 /*__PUBLISH_SECTION_START__*/                        
 
     public:
@@ -339,7 +342,8 @@ private:
 
     // Needswork:  Does STL provide any type of hypbrid list/dictionary collection?  We need fast lookup by name as well as retained order.  For now we will
     // just use a hash_map but we need to start retaining order once we implement serialization.
-    PropertyMap m_propertyMap;    
+    PropertyMap m_propertyMap;
+    PropertyList m_propertyList;    
     
     ECObjectsStatus AddProperty (PropertyP& pProperty);    
 
@@ -347,7 +351,7 @@ protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
     //  of a schema.
-    Class (SchemaCR schema) : m_schema(schema), m_isStruct(false), m_isCustomAttributeClass(false), m_isDomainClass(true), m_propertyContainer(PropertyContainer(m_propertyMap)){ };
+    Class (SchemaCR schema) : m_schema(schema), m_isStruct(false), m_isCustomAttributeClass(false), m_isDomainClass(true), m_propertyContainer(PropertyContainer(m_propertyMap, m_propertyList)){ };
     ~Class();    
 
     // schemas index class by name so publicly name can not be reset
