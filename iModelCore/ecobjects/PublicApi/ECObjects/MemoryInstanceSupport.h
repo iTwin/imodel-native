@@ -30,7 +30,7 @@ struct PropertyLayout
 friend ClassLayout;    
 private:
     std::wstring        m_accessString;
-    DataType            m_dataType;
+    PrimitiveType       m_primitiveType;
     
     // Using UInt32 instead of size_t below because we will persist this struct in an XAttribute. It will never be very big.
     UInt32              m_offset; //! An offset to either the data holding that property’s value (for fixed-size values) or to the offset at which the properties value can be found.
@@ -41,14 +41,14 @@ private:
   //PropertyCP          m_property; // WIP_FUSION: optional? YAGNI?
     
 public:
-    PropertyLayout (wchar_t const * accessString, DataType dataType, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask) : //, PropertyCP property) :
-        m_accessString(accessString), m_dataType(dataType), m_offset(offset), m_nullflagsOffset(nullflagsOffset), 
+    PropertyLayout (wchar_t const * accessString, PrimitiveType primitiveType, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask) : //, PropertyCP property) :
+        m_accessString(accessString), m_primitiveType(primitiveType), m_offset(offset), m_nullflagsOffset(nullflagsOffset), 
         m_nullflagsBitmask (nullflagsBitmask) {}; //, m_property(property) {};
 
     inline UInt32           GetOffset() const           { return m_offset; }
     inline UInt32           GetNullflagsOffset() const  { return m_nullflagsOffset; }
     inline NullflagsBitmask GetNullflagsBitmask() const { return m_nullflagsBitmask; }
-    inline DataType         GetDataType() const         { return m_dataType; }
+    inline PrimitiveType         GetPrimitiveType() const         { return m_primitiveType; }
     inline wchar_t const *  GetAccessString() const     { return m_accessString.c_str(); }
     
     bool                    IsFixedSized() const;
@@ -93,9 +93,9 @@ private:
     UInt32                  m_sizeOfFixedSection;
     
     void                    AddProperties (ClassCR ecClass, wchar_t const * nameRoot, bool addFixedSize);
-    StatusInt               AddProperty (wchar_t const * accessString, DataType datatype, size_t size);
-    StatusInt               AddFixedSizeProperty (wchar_t const * accessString, DataType datatype);
-    StatusInt               AddVariableSizeProperty (wchar_t const * accessString, DataType datatype);
+    StatusInt               AddProperty (wchar_t const * accessString, PrimitiveType primitiveType, size_t size);
+    StatusInt               AddFixedSizeProperty (wchar_t const * accessString, PrimitiveType primitiveType);
+    StatusInt               AddVariableSizeProperty (wchar_t const * accessString, PrimitiveType primitiveType);
     StatusInt               FinishLayout ();
     std::wstring            GetClassName() const;
 
@@ -113,7 +113,7 @@ public:
     
     void                    InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const;
     
-    static UInt32           GetPropertyValueSize (DataType datatype); // WIP_FUSION: move to ecvalue.h
+    static UInt32           GetPropertyValueSize (PrimitiveType primitiveType); // WIP_FUSION: move to ecvalue.h
     UInt32                  GetSizeOfFixedSection() const;
     
     //! Determines the number of bytes used, so far
