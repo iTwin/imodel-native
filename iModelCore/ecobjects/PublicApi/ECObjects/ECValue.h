@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECValue.h $
 |
-|  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -35,15 +35,23 @@ BEGIN_BENTLEY_EC_NAMESPACE
 struct ArrayInfo  // FUSION_WIP: this could also fit into 8 bytes if packed properly
     {
 private:
-    DataType        m_elementDataType; // FUSION_WIP This and m_isFizedSize could each be a UInt16 to pack more nicely.
+    union
+        {
+        ArrayElementClassification  m_elementClassification;
+        PrimitiveType               m_elementPrimitiveType;
+        };    
     bool            m_isFixedSize;     // FUSION_WIP Store this as some other (blittable) type.
     UInt32          m_count;
             
 public:
-    void Initialize (DataType elementDataType, UInt32 count, bool isFixedSize); // cannot have a real constructor due to inclusion in a union
+    void InitializeStructArray (UInt32 count, bool isFixedSize); // cannot have a real constructor due to inclusion in a union
+    void InitializePrimitiveArray (PrimitiveType elementPrimitiveType, UInt32 count, bool isFixedSize); // cannot have a real constructor due to inclusion in a union
     UInt32      GetCount() const;
-    bool        IsFixedSize() const;
-    DataType    GetElementDataType() const;
+    bool        IsFixedSize() const;    
+    bool        IsPrimitiveArray() const;
+    bool        IsStructArray() const;
+    ValueClassification GetElementClassification() const;    
+    PrimitiveType       GetElementPrimitiveType() const;
     };
 
 //! Variant-like object representing the value of a conceptual ECPropertyValue. 
@@ -55,7 +63,11 @@ public:
 struct Value
     {
 private:        
-    DataType    m_dataType;   // WIP_FUSION These could pack nicely as a UInt16 followed by two UInt8s
+    union
+        {
+        ValueClassification     m_classification;
+        PrimitiveType           m_primitiveType;
+        };
     bool        m_isNull;     
     bool        m_isReadOnly; // Really indicates that the property from which this came is readonly... not the value itself.
     
@@ -84,8 +96,8 @@ protected:
         ArrayInfo       m_arrayInfo;
         };
 
-    void        DeepCopy (ValueCR v);
-    inline void ConstructUninitialized();
+    void DeepCopy (ValueCR v);
+    void ConstructUninitialized();
                 
 public:
     ECOBJECTS_EXPORT void            Clear();
@@ -95,30 +107,35 @@ public:
     
     ECOBJECTS_EXPORT Value ();
     ECOBJECTS_EXPORT Value (ValueCR v);
-    ECOBJECTS_EXPORT Value (DataType dataType);
+    ECOBJECTS_EXPORT Value (ValueClassification classification);
+    ECOBJECTS_EXPORT Value (PrimitiveType primitiveType);
     
     ECOBJECTS_EXPORT explicit Value (::Int32 integer32);
     ECOBJECTS_EXPORT explicit Value (::Int64 long64);
     ECOBJECTS_EXPORT explicit Value (const wchar_t * string, bool holdADuplicate = true);
 
-    ECOBJECTS_EXPORT inline void     SetReadOnly(bool isReadOnly) { m_isReadOnly = isReadOnly; };
+    ECOBJECTS_EXPORT void     SetReadOnly(bool isReadOnly);
 
-    ECOBJECTS_EXPORT inline bool     IsReadOnly()        const { return m_isReadOnly; };
-    ECOBJECTS_EXPORT inline bool     IsNull()            const { return m_isNull; };
-    ECOBJECTS_EXPORT void            SetToNull();
+    ECOBJECTS_EXPORT bool     IsReadOnly() const;
+    ECOBJECTS_EXPORT bool     IsNull() const;
+    ECOBJECTS_EXPORT void     SetToNull();
 
-    ECOBJECTS_EXPORT inline DataType GetDataType()       const { return m_dataType; };
-    ECOBJECTS_EXPORT inline bool     IsUninitialized ()  const { return m_dataType == DATATYPE_Uninitialized; };
+    ECOBJECTS_EXPORT ValueClassification GetClassification() const;
+    ECOBJECTS_EXPORT bool     IsUninitialized () const;
     
-    ECOBJECTS_EXPORT inline bool     IsString ()         const { return m_dataType == DATATYPE_String; };
-    ECOBJECTS_EXPORT inline bool     IsInteger ()        const { return m_dataType == DATATYPE_Integer32; };
-    ECOBJECTS_EXPORT inline bool     IsLong ()           const { return m_dataType == DATATYPE_Long64; };
-    ECOBJECTS_EXPORT inline bool     IsDouble ()         const { return m_dataType == DATATYPE_Double; };
+    ECOBJECTS_EXPORT bool     IsString () const;
+    ECOBJECTS_EXPORT bool     IsInteger () const;
+    ECOBJECTS_EXPORT bool     IsLong () const;
+    ECOBJECTS_EXPORT bool     IsDouble () const;
     
-    ECOBJECTS_EXPORT inline bool     IsArray ()          const { return m_dataType == DATATYPE_Array; };
-    ECOBJECTS_EXPORT inline bool     IsStruct ()         const { return m_dataType == DATATYPE_Struct; };
+    ECOBJECTS_EXPORT bool     IsArray () const;
+    ECOBJECTS_EXPORT bool     IsStruct () const;
+    ECOBJECTS_EXPORT bool     IsPrimitive () const;
         
-    ECOBJECTS_EXPORT StatusInt       SetArrayInfo (DataType dataType, UInt32 count, bool isFixedSize, bool isReadOnly);
+    ECOBJECTS_EXPORT PrimitiveType   GetPrimitiveType() const;
+
+    ECOBJECTS_EXPORT StatusInt       SetStructArrayInfo (UInt32 count, bool isFixedSize, bool isReadOnly);
+    ECOBJECTS_EXPORT StatusInt       SetPrimitiveArrayInfo (PrimitiveType primitiveElementtype, UInt32 count, bool isFixedSize, bool isReadOnly);
     ECOBJECTS_EXPORT ArrayInfo       GetArrayInfo();
     
     ECOBJECTS_EXPORT Int32           GetInteger() const;

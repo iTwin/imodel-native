@@ -38,44 +38,59 @@ bool operator()(const wchar_t * s1, const wchar_t * s2) const
 typedef std::list<PropertyP> PropertyList;
 typedef stdext::hash_map<const wchar_t * , PropertyP, stdext::hash_compare<const wchar_t *, less_str>>   PropertyMap;
 typedef stdext::hash_map<const wchar_t * , ClassP, stdext::hash_compare<const wchar_t *, less_str>> ClassMap;
+
+
+// ValueClassification, ArrayElementClassification & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 
+// ValueClassification or ArrayElementClassification is necessary, we can union PrimitiveType in the same 16-bit memory location and get some synergy between the two.
+// If you add more values to the ValueClassification enum please be sure to note that these are bit flags and not incremental values.  Also be sure the value does not
+// exceed a single byte.
 /*__PUBLISH_SECTION_START__*/
-
-//NEEDSWORK reconcile DataType & PrimitiveType
-
-//! Enumeration of primitive datatypes supported by native "ECObjects" implementation.
-//! These should correspond to all of the datatypes supported in .NET ECObjects
-enum DataType //NEEDSWORK: Could or should I define this to be a UInt8 in order to save space per value?
+//! Represents the classification of the data type of an EC Value.  The classification is not the data type itself, but a category of type
+//! such as struct, array or primitive.
+enum ValueClassification : unsigned short
     {
-    DATATYPE_Uninitialized                  = 0,
-    DATATYPE_Array                          = 1,
-    DATATYPE_Struct                         = 2,
-    DATATYPE_Integer32                      = 3,
-    DATATYPE_Long64                         = 4,
-    DATATYPE_String                         = 5,
-    DATATYPE_Double                         = 6,
+    VALUECLASSIFICATION_Uninitialized                  = 0x00,
+    VALUECLASSIFICATION_Primitive                      = 0x01,
+    VALUECLASSIFICATION_Struct                         = 0x02,    
+    VALUECLASSIFICATION_Array                          = 0x04,    
     };
 
-//NEEDSWORK types: common geometry, installed primitives
+/*__PUBLISH_SECTION_END__*/
+// ValueClassification, ArrayElementClassification & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 
+// ValueClassification or ArrayElementClassification is necessary, we can union PrimitiveType in the same 16-bit memory location and get some synergy between the two.
+// If you add more values to the ArrayElementClassification enum please be sure to note that these are bit flags and not incremental values.  Also be sure the value does not
+// exceed a single byte.
+/*__PUBLISH_SECTION_START__*/
+//! Represents the classification of the data type of an EC array element.  The classification is not the data type itself, but a category of type.
+//! Currently an ECArray can only contain primitive or struct data types.
+enum ArrayElementClassification : unsigned short
+    {
+    ELEMENTCLASSIFICATION_Primitive       = 0x01,
+    ELEMENTCLASSIFICATION_Struct          = 0x02
+    };
+
+/*__PUBLISH_SECTION_END__*/
+// ValueClassification, ArrayElementClassification & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 
+// ValueClassification or ArrayElementClassification is necessary, we can union PrimitiveType in the same 16-bit memory location and get some synergy between the two.
+// If you add more values to the PrimitiveType enum please be sure to note that the lower order byte must stay fixed as '1' and the upper order byte can be incremented.
 // If you add any additional types you must update 
 //    - ECXML_TYPENAME_X constants
 //    - PrimitiveProperty::_GetTypeName
-enum PrimitiveType
+// NEEDSWORK types: common geometry, installed primitives
+/*__PUBLISH_SECTION_START__*/
+//! Enumeration of primitive datatypes supported by native "ECObjects" implementation.
+//! These should correspond to all of the datatypes supported in .NET ECObjects
+enum PrimitiveType : unsigned short
     {
-    PRIMITIVETYPE_Binary                    = 0,
-    PRIMITIVETYPE_Boolean                   = 1,
-    PRIMITIVETYPE_DateTime                  = 2,
-    PRIMITIVETYPE_Double                    = 3,
-    PRIMITIVETYPE_Integer                   = 4,
-    PRIMITIVETYPE_Long                      = 5,
-    PRIMITIVETYPE_Point2D                   = 6,
-    PRIMITIVETYPE_Point3D                   = 7,
-    PRIMITIVETYPE_String                    = 8
-    };
-
-enum ArrayElementClassification
-    {
-    ELEMENTCLASSIFICATION_Primitive       = 0,
-    ELEMENTCLASSIFICATION_Struct          = 1
+    PRIMITIVETYPE_Binary                    = 0x101,
+    PRIMITIVETYPE_Boolean                   = 0x201,
+    PRIMITIVETYPE_DateTime                  = 0x301,
+    PRIMITIVETYPE_Double                    = 0x401,
+    PRIMITIVETYPE_Integer                   = 0x501,
+    PRIMITIVETYPE_Long                      = 0x601,
+    PRIMITIVETYPE_Point2D                   = 0x701,
+    PRIMITIVETYPE_Point3D                   = 0x801,
+    PRIMITIVETYPE_String                    = 0x901
     };
 
 // NEEDSWORK - unsure what the best way is to model ECProperty.  Managed implementation has a single ECProperty and introduces an ECType concept.  My gut is that

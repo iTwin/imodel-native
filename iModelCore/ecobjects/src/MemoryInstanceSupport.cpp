@@ -13,71 +13,35 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-DataType        DataTypeFromPrimitiveType (PrimitiveType primitiveType)
+bool            PrimitiveTypeIsFixedSize (PrimitiveType primitiveType)
     {
     switch (primitiveType)
         {
-        case PRIMITIVETYPE_Integer: return DATATYPE_Integer32;
-        case PRIMITIVETYPE_Long:    return DATATYPE_Long64;
-        case PRIMITIVETYPE_Double:  return DATATYPE_Double;
-        case PRIMITIVETYPE_String:  return DATATYPE_String;
-        default:                    return DATATYPE_Uninitialized;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    12/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            DataTypeIsFixedSize (DataType dataType)
-    {
-    switch (dataType)
-        {
-        case DATATYPE_Integer32:
-        case DATATYPE_Long64:
-        case DATATYPE_Double:
+        case PRIMITIVETYPE_Integer:
+        case PRIMITIVETYPE_Long:
+        case PRIMITIVETYPE_Double:
             return true;
-        case DATATYPE_String:
+        case PRIMITIVETYPE_String:
             return false;
         default:
-            assert(false && "Unsupported data type");
+            DEBUG_FAIL("Unsupported data type");
             return false;
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-wchar_t const * GetDatatypeName (DataType datatype) // WIP_FUSION: move to Value.h or nearby
-    {
-    switch (datatype)
-        {
-        // WIP_FUSION: names should match the .NET ECObjects names
-        case DATATYPE_Integer32:
-            return L"integer32";
-        case DATATYPE_String:
-            return L"string";
-        case DATATYPE_Double:
-            return L"double";
-        case DATATYPE_Long64:
-            return L"long64";            
-        default:
-            return L"UNKNOWN!";
-        }
-    }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::wstring    PropertyLayout::ToString ()
     {
-    wchar_t const * datatype = GetDatatypeName (m_dataType);
+    std::wstring const& primitiveType = ECXml::GetPrimitiveTypeName (m_primitiveType);
     
     wchar_t line[1024];
-    swprintf (line, sizeof(line)/sizeof(wchar_t), L"%32s %16s offset=%3i nullflagsOffset=%3i, nullflagsBitmask=0x%08.X", m_accessString.c_str(), datatype, m_offset, m_nullflagsOffset, m_nullflagsBitmask);
+    swprintf (line, sizeof(line)/sizeof(wchar_t), L"%32s %16s offset=%3i nullflagsOffset=%3i, nullflagsBitmask=0x%08.X", m_accessString.c_str(), primitiveType.c_str(), m_offset, m_nullflagsOffset, m_nullflagsBitmask);
         
     return line;
     }
@@ -88,18 +52,7 @@ std::wstring    PropertyLayout::ToString ()
 bool            PropertyLayout::IsFixedSized () const
     {
     // WIP_FUSION: when we have m_modifiers, they will determine if it is fixed size... could have fixed size string or variable int (added at end)
-    switch (m_dataType)
-        {
-        case DATATYPE_Integer32:
-        case DATATYPE_Long64:
-        case DATATYPE_Double:
-            return true;
-        case DATATYPE_String:
-            return false;
-        default:
-            DEBUG_FAIL("Unknown datatype encountered");
-            return false;
-        }
+    return PrimitiveTypeIsFixedSize (m_primitiveType);
     }
       
 /*---------------------------------------------------------------------------------**//**
@@ -110,7 +63,7 @@ UInt32          PropertyLayout::GetSizeInFixedSection () const
     if (!IsFixedSized())
         return sizeof(SecondaryOffset);
         
-    return ClassLayout::GetPropertyValueSize(m_dataType);
+    return ClassLayout::GetPropertyValueSize(m_primitiveType);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -237,18 +190,15 @@ void            ClassLayout::AddProperties (ClassCR ecClass, wchar_t const * nam
         if (property->GetIsPrimitive())
             {
             PrimitivePropertyP  primitiveProp = property->GetAsPrimitiveProperty();
-            DataType            dataType = DataTypeFromPrimitiveType (primitiveProp->GetType());
+            PrimitiveType       primitiveType = primitiveProp->GetType();
 
-            if (DATATYPE_Uninitialized == dataType)
-                { assert (false && "Unimplemented Primitive Type"); continue; }
-
-            bool isFixedSize = DataTypeIsFixedSize(dataType);
+            bool isFixedSize = PrimitiveTypeIsFixedSize(primitiveType);
 
             if (addingFixedSizeProps && isFixedSize)
-                AddFixedSizeProperty (propName.c_str(), dataType);
+                AddFixedSizeProperty (propName.c_str(), primitiveType);
             else
             if ( ! addingFixedSizeProps && ! isFixedSize)
-                AddVariableSizeProperty (propName.c_str(), dataType);
+                AddVariableSizeProperty (propName.c_str(), primitiveType);
             }
         else
         if (property->GetIsStruct())
@@ -384,15 +334,15 @@ StatusInt       ClassLayout::FinishLayout ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-UInt32          ClassLayout::GetPropertyValueSize (DataType datatype) // WIP_FUSION: Move to ECValue.h
+UInt32          ClassLayout::GetPropertyValueSize (PrimitiveType primitivetype) // WIP_FUSION: Move to ECValue.h
     {
-    switch (datatype)
+    switch (primitivetype)
         {
-        case EC::DATATYPE_Integer32:
+        case EC::PRIMITIVETYPE_Integer:
             return sizeof(Int32);
-        case EC::DATATYPE_Long64:
+        case EC::PRIMITIVETYPE_Long:
             return sizeof(Int64);
-        case EC::DATATYPE_Double:
+        case EC::PRIMITIVETYPE_Double:
             return sizeof(double);
         default:
             DEBUG_FAIL("Most datatypes have not yet been implemented... or perhaps you have passed in a variable-sized type.");
@@ -403,7 +353,7 @@ UInt32          ClassLayout::GetPropertyValueSize (DataType datatype) // WIP_FUS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StatusInt       ClassLayout::AddProperty (wchar_t const * accessString, DataType datatype, size_t size) // WIP_FUSION: use UInt32 instead of size
+StatusInt       ClassLayout::AddProperty (wchar_t const * accessString, PrimitiveType primitivetype, size_t size) // WIP_FUSION: use UInt32 instead of size
     {
     UInt32  positionInCurrentNullFlags = m_nProperties % 32;
     NullflagsBitmask  nullflagsBitmask = 0x01 << positionInCurrentNullFlags;
@@ -417,7 +367,7 @@ StatusInt       ClassLayout::AddProperty (wchar_t const * accessString, DataType
             m_propertyLayouts[i].m_offset += sizeof(NullflagsBitmask); // Offsets of already-added property layouts need to get bumped up
         } 
 
-    PropertyLayout propertyLayout (accessString, datatype, m_offset, m_nullflagsOffset, nullflagsBitmask);
+    PropertyLayout propertyLayout (accessString, primitivetype, m_offset, m_nullflagsOffset, nullflagsBitmask);
 
     m_nProperties++;
     m_offset += (UInt32)size;
@@ -430,20 +380,20 @@ StatusInt       ClassLayout::AddProperty (wchar_t const * accessString, DataType
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StatusInt       ClassLayout::AddFixedSizeProperty (wchar_t const * accessString, DataType datatype)
+StatusInt       ClassLayout::AddFixedSizeProperty (wchar_t const * accessString, PrimitiveType primitivetype)
     {
     if (m_state != AcceptingFixedSizeProperties)
         return ERROR; // ClassLayoutNotAcceptingFixedSizeProperties
     
-    size_t size = GetPropertyValueSize (datatype);
+    size_t size = GetPropertyValueSize (primitivetype);
     
-    return AddProperty (accessString, datatype, size);
+    return AddProperty (accessString, primitivetype, size);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/ 
-StatusInt       ClassLayout::AddVariableSizeProperty (wchar_t const * accessString, DataType datatype)
+StatusInt       ClassLayout::AddVariableSizeProperty (wchar_t const * accessString, PrimitiveType primitivetype)
     {
     if (m_state == AcceptingFixedSizeProperties)
         m_state = AcceptingVariableSizeProperties;
@@ -452,7 +402,7 @@ StatusInt       ClassLayout::AddVariableSizeProperty (wchar_t const * accessStri
         
     size_t size = sizeof(SecondaryOffset); // the offset will just point to this secondary offset
 
-    return AddProperty (accessString, datatype, size);
+    return AddProperty (accessString, primitivetype, size);
     }  
 
 /*---------------------------------------------------------------------------------**//**
@@ -677,30 +627,30 @@ StatusInt       MemoryInstanceSupport::GetValueFromMemory (ValueR v, PropertyLay
         
     byte const * pValue = GetAddressOfValue (propertyLayout);
     
-    switch (propertyLayout.GetDataType())
+    switch (propertyLayout.GetPrimitiveType())
         {
-        case DATATYPE_Integer32:
+        case PRIMITIVETYPE_Integer:
             {
             Int32 value;
             memcpy (&value, pValue, sizeof(value));
             v.SetInteger (value);
             return SUCCESS;
             }
-        case DATATYPE_Long64:
+        case PRIMITIVETYPE_Long:
             {
             Int64 value;
             memcpy (&value, pValue, sizeof(value));
             v.SetLong (value);
             return SUCCESS;
             }            
-        case DATATYPE_Double:
+        case PRIMITIVETYPE_Double:
             {
             double value;
             memcpy (&value, pValue, sizeof(value));
             v.SetDouble (value);
             return SUCCESS;
             }            
-        case DATATYPE_String:
+        case PRIMITIVETYPE_String:
             {
             wchar_t * pString = (wchar_t *)pValue;
             v.SetString (pString, false); // WIP_FUSION: We are passing false for "makeDuplicateCopy" to avoid the allocation 
@@ -754,31 +704,31 @@ StatusInt       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayo
         
     SetValueNull (*propertyLayout, false);
                 
-    if (propertyLayout->GetDataType() != v.GetDataType())
+    if (propertyLayout->GetPrimitiveType() != v.GetPrimitiveType())
         return ERROR; // WIP_FUSION ERROR_DataTypeMismatch
     
     UInt32 offset = GetOffsetOfValue (*propertyLayout);
 #ifdef EC_TRACE_MEMORY 
     wprintf (L"SetValue %s of 0x%x at offset=%d to %s.\n", propertyAccessString, this, offset, v.ToString().c_str());
 #endif    
-    switch (propertyLayout->GetDataType())
+    switch (propertyLayout->GetPrimitiveType())
         {
-        case DATATYPE_Integer32:
+        case PRIMITIVETYPE_Integer:
             {
             Int32 value = v.GetInteger();
             return _ModifyData (offset, &value, sizeof(value));
             }
-        case DATATYPE_Long64:
+        case PRIMITIVETYPE_Long:
             {
             Int64 value = v.GetLong();
             return _ModifyData (offset, &value, sizeof(value));
             }
-        case DATATYPE_Double:
+        case PRIMITIVETYPE_Double:
             {
             double value = v.GetDouble();
             return _ModifyData (offset, &value, sizeof(value));
             }       
-        case DATATYPE_String:
+        case PRIMITIVETYPE_String:
             {
             wchar_t const * value = v.GetString();
             UInt32 bytesNeeded = (UInt32)(sizeof(wchar_t) * (wcslen(value) + 1));

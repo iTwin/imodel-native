@@ -56,7 +56,7 @@ SchemaPtr schema
     EXPECT_FALSE (pProperty->IsStruct);
     EXPECT_FALSE (pProperty->IsArray);
     EXPECT_STREQ (L"string", pProperty->TypeName.c_str());
-    EXPECT_EQ (PRIMITIVETYPE_String, pProperty->GetAsPrimitiveProperty()->Type);
+    EXPECT_TRUE (PRIMITIVETYPE_String == pProperty->GetAsPrimitiveProperty()->Type);
     EXPECT_TRUE (pProperty->IsDisplayLabelDefined);
     EXPECT_STREQ (L"Project Name", pProperty->DisplayLabel.c_str());
     EXPECT_STREQ (L"", pProperty->Description.c_str());
@@ -106,7 +106,7 @@ SchemaPtr schema
     EXPECT_TRUE (pProperty->IsArray);
     EXPECT_STREQ (L"Struct1", pProperty->TypeName.c_str());
     ArrayPropertyP arrayProperty = pProperty->GetAsArrayProperty();
-    EXPECT_EQ (ELEMENTCLASSIFICATION_Struct, arrayProperty->ElementClassification);
+    EXPECT_TRUE (ELEMENTCLASSIFICATION_Struct == arrayProperty->ElementClassification);
     EXPECT_EQ (schema->GetClassP(L"Struct1"), arrayProperty->StructElementType);
     EXPECT_EQ (0, arrayProperty->MinOccurs);
     EXPECT_EQ (UINT_MAX, arrayProperty->MaxOccurs);    
@@ -389,7 +389,7 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromString
     EXPECT_FALSE (pProperty->IsStruct);
     EXPECT_FALSE (pProperty->IsArray);
     EXPECT_STREQ (L"string", pProperty->TypeName.c_str());
-    EXPECT_EQ (PRIMITIVETYPE_String, pProperty->GetAsPrimitiveProperty()->Type);
+    EXPECT_TRUE (PRIMITIVETYPE_String == pProperty->GetAsPrimitiveProperty()->Type);
     EXPECT_TRUE (pProperty->IsDisplayLabelDefined);
     EXPECT_STREQ (L"Project Name", pProperty->DisplayLabel.c_str());
     EXPECT_STREQ (L"", pProperty->Description.c_str());
