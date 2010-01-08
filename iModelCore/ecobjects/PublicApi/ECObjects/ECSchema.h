@@ -102,12 +102,12 @@ enum PrimitiveType : unsigned short
     #define MSXML2_IXMLDOMNode      void *
     #define MSXML2_IXMLDOMNodePtr   void *
     #define MSXML2_IXMLDOMDocument2 void *
-    #define MSXML2_IXMLDOMElementPtr void *
+    #define MSXML2_IXMLDOMElement void *
 #else
     #define MSXML2_IXMLDOMNode      MSXML2::IXMLDOMNode
     #define MSXML2_IXMLDOMNodePtr   MSXML2::IXMLDOMNodePtr
     #define MSXML2_IXMLDOMDocument2 MSXML2::IXMLDOMDocument2
-    #define MSXML2_IXMLDOMElementPtr MSXML2::IXMLDOMElementPtr
+    #define MSXML2_IXMLDOMElement   MSXML2::IXMLDOMElement
 #endif
 
 /*=================================================================================**//**
@@ -132,8 +132,9 @@ protected:
     Property (ClassCR ecClass) : m_class(ecClass), m_readOnly(false), m_baseProperty(NULL) {};        
     ECObjectsStatus SetName (std::wstring const& name);    
 
-    virtual SchemaDeserializationStatus _ReadXML (MSXML2_IXMLDOMNode& propertyNode);
-    virtual SchemaSerializationStatus _Serialize(MSXML2_IXMLDOMElementPtr parentNode);
+    virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode);
+    virtual SchemaSerializationStatus _WriteXml(MSXML2_IXMLDOMElement& parentNode);
+    SchemaSerializationStatus _WriteXml(MSXML2_IXMLDOMElement& parentNode, const wchar_t *elementName);
 
     virtual bool _IsPrimitive () const { return false; }
     virtual bool _IsStruct () const { return false; }
@@ -188,8 +189,8 @@ private:
     PrimitiveProperty (ClassCR ecClass) : m_primitiveType(PRIMITIVETYPE_String), Property(ecClass) {};
 
 protected:
-    virtual SchemaDeserializationStatus _ReadXML (MSXML2_IXMLDOMNode& propertyNode) override;
-    virtual SchemaSerializationStatus _Serialize(MSXML2_IXMLDOMElementPtr parentNode) override;
+    virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode) override;
+    virtual SchemaSerializationStatus _WriteXml(MSXML2_IXMLDOMElement& parentNode) override;
     virtual bool _IsPrimitive () const override { return true;}
     virtual std::wstring _GetTypeName () const override;
     virtual ECObjectsStatus _SetTypeName (std::wstring const& typeName) override;
@@ -214,8 +215,8 @@ private:
     StructProperty (ClassCR ecClass) : m_structType(NULL), Property(ecClass) {};
 
 protected:
-    virtual SchemaDeserializationStatus _ReadXML (MSXML2_IXMLDOMNode& propertyNode) override;
-    virtual SchemaSerializationStatus _Serialize(MSXML2_IXMLDOMElementPtr parentNode) override;
+    virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode) override;
+    virtual SchemaSerializationStatus _WriteXml(MSXML2_IXMLDOMElement& parentNode) override;
     virtual bool _IsStruct () const override { return true;}
     virtual std::wstring _GetTypeName () const override;
     virtual ECObjectsStatus _SetTypeName (std::wstring const& typeName) override;
@@ -255,8 +256,8 @@ private:
     ECObjectsStatus SetMaxOccurs (std::wstring const& maxOccurs);          
 
 protected:
-    virtual SchemaDeserializationStatus _ReadXML (MSXML2_IXMLDOMNode& propertyNode) override;
-    virtual SchemaSerializationStatus _Serialize(MSXML2_IXMLDOMElementPtr parentNode) override;
+    virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode) override;
+    virtual SchemaSerializationStatus _WriteXml(MSXML2_IXMLDOMElement& parentNode) override;
     virtual bool _IsArray () const override { return true;}
     virtual std::wstring _GetTypeName () const override;
     virtual ECObjectsStatus _SetTypeName (std::wstring const& typeName) override;
@@ -372,16 +373,16 @@ protected:
     // schemas index class by name so publicly name can not be reset
     ECObjectsStatus SetName (std::wstring const& name);    
 
-    virtual SchemaDeserializationStatus ReadXMLAttributes (MSXML2_IXMLDOMNode& classNode);
+    virtual SchemaDeserializationStatus ReadXmlAttributes (MSXML2_IXMLDOMNode& classNode);
 
     //! Uses the specified xml node (which must conform to an ECClass as defined in ECSchemaXML) to populate the base classes and properties of this class.
     //! Before this method is invoked the schema containing the class must have loaded all schema references and stubs for all classes within
     //! the schema itself otherwise the method may fail because such dependencies can not be located.
     //! @param[in]  classNode       The XML DOM node to read
     //! @return   Status code
-    virtual SchemaDeserializationStatus ReadXMLContents (MSXML2_IXMLDOMNode& classNode);    
+    virtual SchemaDeserializationStatus ReadXmlContents (MSXML2_IXMLDOMNode& classNode);    
     
-    virtual SchemaSerializationStatus Serialize(MSXML2_IXMLDOMElementPtr parentNode);
+    virtual SchemaSerializationStatus WriteXml(MSXML2_IXMLDOMElement& parentNode);
 
 /*__PUBLISH_SECTION_START__*/
 
@@ -536,15 +537,15 @@ private:
     Schema () : m_versionMajor (DEFAULT_VERSION_MAJOR), m_versionMinor (DEFAULT_VERSION_MINOR), m_classContainer(ClassContainer(m_classMap)) {};
     ~Schema();    
 
-    static SchemaDeserializationStatus ReadXML (SchemaPtr& schemaOut, MSXML2_IXMLDOMDocument2& pXmlDoc);
+    static SchemaDeserializationStatus ReadXml (SchemaPtr& schemaOut, MSXML2_IXMLDOMDocument2& pXmlDoc);
     SchemaSerializationStatus WriteXml (MSXML2_IXMLDOMDocument2* pXmlDoc);
 
     ECObjectsStatus AddClass (ClassP& pClass);
     ECObjectsStatus SetVersionFromString (std::wstring const& versionString);
 
     typedef std::vector<std::pair<ClassP, MSXML2_IXMLDOMNodePtr>>  ClassDeserializationVector;
-    SchemaDeserializationStatus ReadClassStubsFromXML(MSXML2_IXMLDOMNode& schemaNodePtr,ClassDeserializationVector& classes);
-    SchemaDeserializationStatus ReadClassContentsFromXML(ClassDeserializationVector&  classes);
+    SchemaDeserializationStatus ReadClassStubsFromXml(MSXML2_IXMLDOMNode& schemaNodePtr,ClassDeserializationVector& classes);
+    SchemaDeserializationStatus ReadClassContentsFromXml(ClassDeserializationVector&  classes);
 
 /*__PUBLISH_SECTION_START__*/
 public:    
@@ -597,7 +598,7 @@ public:
     //! @param[in]    ecSchemaXmlFile     The absolute path of the file to deserialize.
     //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
     //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
-    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXMLFromFile (SchemaPtr& schemaOut, const wchar_t * ecSchemaXmlFile);
+    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromFile (SchemaPtr& schemaOut, const wchar_t * ecSchemaXmlFile);
 
     //! Deserializes an ECXML schema from a string.
     //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and
@@ -606,7 +607,7 @@ public:
     //! @param[in]    ecSchemaXml         The string containing ECSchemaXML to deserialize
     //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
     //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
-    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXMLFromString (SchemaPtr& schemaOut, const wchar_t * ecSchemaXml);
+    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromString (SchemaPtr& schemaOut, const wchar_t * ecSchemaXml);
 
     //! Deserializes an ECXML schema from an IStream.
     //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and
@@ -615,7 +616,7 @@ public:
     //! @param[in]    ecSchemaXmlStream   The IStream containing ECSchemaXML to deserialize
     //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
     //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
-    //ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXMLFromStream (SchemaPtr& schemaOut, IStream * ecSchemaXmlStream);
+    //ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromStream (SchemaPtr& schemaOut, IStream * ecSchemaXmlStream);
 
 
     //! Serializes an ECXML schema to a string

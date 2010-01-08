@@ -227,7 +227,7 @@ ArrayPropertyP Property::GetAsArrayProperty
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus Property::_ReadXML
+SchemaDeserializationStatus Property::_ReadXml
 (
 MSXML2::IXMLDOMNode& propertyNode
 )
@@ -252,23 +252,51 @@ MSXML2::IXMLDOMNode& propertyNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus Property::_Serialize
+SchemaSerializationStatus Property::_WriteXml
 (
-MSXML2::IXMLDOMElementPtr parentNode
+MSXML2::IXMLDOMElement& parentNode
 )
     {
-    return SCHEMA_SERIALIZATION_STATUS_Success;
+    return _WriteXml(parentNode, EC_PROPERTY_ELEMENT);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaSerializationStatus Property::_WriteXml
+(
+MSXML2::IXMLDOMElement& parentNode,
+const wchar_t *elementName
+)
+    {
+    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+
+    MSXML2::IXMLDOMTextPtr textPtr = NULL;
+    MSXML2::IXMLDOMAttributePtr attributePtr;
+
+    CREATE_AND_ADD_TEXT_NODE("\n        ", (&parentNode));
+
+    MSXML2::IXMLDOMElementPtr propertyPtr = parentNode.ownerDocument->createNode(NODE_ELEMENT, elementName, ECXML_URI_2_0);;
+    APPEND_CHILD_TO_PARENT(propertyPtr, (&parentNode));
+    
+    WRITE_XML_ATTRIBUTE(PROPERTY_NAME_ATTRIBUTE, this->GetName().c_str(), propertyPtr);
+    WRITE_XML_ATTRIBUTE(TYPE_NAME_ATTRIBUTE, this->GetTypeName().c_str(), propertyPtr);
+    WRITE_OPTIONAL_XML_ATTRIBUTE(DESCRIPTION_ATTRIBUTE, Description, propertyPtr);
+    if (IsDisplayLabelDefined)
+        WRITE_OPTIONAL_XML_ATTRIBUTE(DISPLAY_LABEL_ATTRIBUTE, DisplayLabel, propertyPtr);
+    WRITE_OPTIONAL_BOOL_XML_ATTRIBUTE(READONLY_ATTRIBUTE, IsReadOnly, propertyPtr);
+    
+    return status;    
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus PrimitiveProperty::_ReadXML
+SchemaDeserializationStatus PrimitiveProperty::_ReadXml
 (
 MSXML2::IXMLDOMNode& propertyNode
 )
     {  
-    SchemaDeserializationStatus status = __super::_ReadXML(propertyNode);
+    SchemaDeserializationStatus status = __super::_ReadXml(propertyNode);
     if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
         return status;
 
@@ -289,29 +317,12 @@ MSXML2::IXMLDOMNode& propertyNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus PrimitiveProperty::_Serialize
+SchemaSerializationStatus PrimitiveProperty::_WriteXml
 (
-MSXML2::IXMLDOMElementPtr parentNode
+MSXML2_IXMLDOMElement& parentNode
 )
     {
-    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
-
-    MSXML2::IXMLDOMTextPtr textPtr = NULL;
-    MSXML2::IXMLDOMAttributePtr attributePtr;
-
-    CREATE_AND_ADD_TEXT_NODE("\n        ", parentNode);
-
-    MSXML2::IXMLDOMElementPtr propertyPtr = parentNode->ownerDocument->createNode(NODE_ELEMENT, EC_PROPERTY_ELEMENT, ECXML_URI_2_0);;
-    APPEND_CHILD_TO_PARENT(propertyPtr, parentNode);
-    
-    WRITE_XML_ATTRIBUTE(PROPERTY_NAME_ATTRIBUTE, this->GetName().c_str(), propertyPtr);
-    WRITE_OPTIONAL_XML_ATTRIBUTE(TYPE_NAME_ATTRIBUTE, TypeName, propertyPtr);
-    WRITE_OPTIONAL_XML_ATTRIBUTE(DESCRIPTION_ATTRIBUTE, Description, propertyPtr);
-    if (IsDisplayLabelDefined)
-        WRITE_OPTIONAL_XML_ATTRIBUTE(DISPLAY_LABEL_ATTRIBUTE, DisplayLabel, propertyPtr);
-    WRITE_OPTIONAL_BOOL_XML_ATTRIBUTE(READONLY_ATTRIBUTE, IsReadOnly, propertyPtr);
-    
-    return status;
+    return __super::_WriteXml(parentNode, EC_PROPERTY_ELEMENT);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -390,12 +401,12 @@ ClassCR  ecClass
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus StructProperty::_ReadXML
+SchemaDeserializationStatus StructProperty::_ReadXml
 (
 MSXML2::IXMLDOMNode& propertyNode
 )
     {  
-    SchemaDeserializationStatus status = __super::_ReadXML(propertyNode);
+    SchemaDeserializationStatus status = __super::_ReadXml(propertyNode);
     if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
         return status;
 
@@ -407,34 +418,16 @@ MSXML2::IXMLDOMNode& propertyNode
 
     return SCHEMA_DESERIALIZATION_STATUS_Success;
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus StructProperty::_Serialize
+SchemaSerializationStatus StructProperty::_WriteXml
 (
-MSXML2::IXMLDOMElementPtr parentNode
+MSXML2::IXMLDOMElement& parentNode
 )
     {
-    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
-
-    MSXML2::IXMLDOMTextPtr textPtr = NULL;
-    MSXML2::IXMLDOMAttributePtr attributePtr;
-
-    CREATE_AND_ADD_TEXT_NODE("\n        ", parentNode);
-
-    MSXML2::IXMLDOMElementPtr propertyPtr = parentNode->ownerDocument->createNode(NODE_ELEMENT, EC_STRUCTPROPERTY_ELEMENT, ECXML_URI_2_0);;
-    APPEND_CHILD_TO_PARENT(propertyPtr, parentNode);
-    
-    WRITE_XML_ATTRIBUTE(PROPERTY_NAME_ATTRIBUTE, this->GetName().c_str(), propertyPtr);
-    WRITE_OPTIONAL_XML_ATTRIBUTE(TYPE_NAME_ATTRIBUTE, TypeName, propertyPtr);
-    WRITE_OPTIONAL_XML_ATTRIBUTE(DESCRIPTION_ATTRIBUTE, Description, propertyPtr);
-    if (IsDisplayLabelDefined)
-        WRITE_OPTIONAL_XML_ATTRIBUTE(DISPLAY_LABEL_ATTRIBUTE, DisplayLabel, propertyPtr);
-    WRITE_OPTIONAL_BOOL_XML_ATTRIBUTE(READONLY_ATTRIBUTE, IsReadOnly, propertyPtr);
-    
-    return status;    }
-
+    return __super::_WriteXml(parentNode, EC_STRUCTPROPERTY_ELEMENT);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
@@ -536,12 +529,12 @@ ClassCR structType
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus ArrayProperty::_ReadXML
+SchemaDeserializationStatus ArrayProperty::_ReadXml
 (
 MSXML2::IXMLDOMNode& propertyNode
 )
     {  
-    SchemaDeserializationStatus status = __super::_ReadXML(propertyNode);
+    SchemaDeserializationStatus status = __super::_ReadXml(propertyNode);
     if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
         return status;
 
@@ -564,28 +557,25 @@ MSXML2::IXMLDOMNode& propertyNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus ArrayProperty::_Serialize
+SchemaSerializationStatus ArrayProperty::_WriteXml
 (
-MSXML2::IXMLDOMElementPtr parentNode
+MSXML2::IXMLDOMElement& parentNode
 )
     {
-    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
-
-    MSXML2::IXMLDOMTextPtr textPtr = NULL;
+    SchemaSerializationStatus status = __super::_WriteXml(parentNode, EC_ARRAYPROPERTY_ELEMENT);
+    if (status != SCHEMA_SERIALIZATION_STATUS_Success)
+        return status;
+        
     MSXML2::IXMLDOMAttributePtr attributePtr;
 
-    CREATE_AND_ADD_TEXT_NODE("\n        ", parentNode);
+    MSXML2::IXMLDOMElementPtr propertyPtr = parentNode.lastChild;
+    if (NULL == propertyPtr)
+        return SCHEMA_SERIALIZATION_STATUS_FailedToCreateXml;
+        
+    // verify that this really is the current array property element
+    if (wcscmp(propertyPtr->nodeName, EC_ARRAYPROPERTY_ELEMENT) != 0)
+        return SCHEMA_SERIALIZATION_STATUS_FailedToCreateXml;
 
-    MSXML2::IXMLDOMElementPtr propertyPtr = parentNode->ownerDocument->createNode(NODE_ELEMENT, EC_ARRAYPROPERTY_ELEMENT, ECXML_URI_2_0);;
-    APPEND_CHILD_TO_PARENT(propertyPtr, parentNode);
-    
-    WRITE_XML_ATTRIBUTE(PROPERTY_NAME_ATTRIBUTE, this->GetName().c_str(), propertyPtr);
-    WRITE_OPTIONAL_XML_ATTRIBUTE(TYPE_NAME_ATTRIBUTE, TypeName, propertyPtr);
-    WRITE_OPTIONAL_XML_ATTRIBUTE(DESCRIPTION_ATTRIBUTE, Description, propertyPtr);
-    if (IsDisplayLabelDefined)
-        WRITE_OPTIONAL_XML_ATTRIBUTE(DISPLAY_LABEL_ATTRIBUTE, DisplayLabel, propertyPtr);
-    WRITE_OPTIONAL_BOOL_XML_ATTRIBUTE(READONLY_ATTRIBUTE, IsReadOnly, propertyPtr);
-    
     wchar_t buf[64];
     swprintf(buf, sizeof(buf), L"%u", m_minOccurs);
     WRITE_XML_ATTRIBUTE(MIN_OCCURS_ATTRIBUTE, buf, propertyPtr);

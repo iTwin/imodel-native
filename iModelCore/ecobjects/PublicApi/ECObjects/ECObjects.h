@@ -119,7 +119,7 @@ enum SchemaDeserializationStatus
     SCHEMA_DESERIALIZATION_STATUS_Success                               = SUCCESS,
     SCHEMA_DESERIALIZATION_STATUS_FailedToInitializeMsmxl               = SCHEMA_DESERIALIZATION_STATUS_BASE + 0x01,
     SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml                      = SCHEMA_DESERIALIZATION_STATUS_BASE + 0x02,
-    SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXML                    = SCHEMA_DESERIALIZATION_STATUS_BASE + 0x03,
+    SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml                    = SCHEMA_DESERIALIZATION_STATUS_BASE + 0x03,
     };
 
 enum SchemaSerializationStatus

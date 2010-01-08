@@ -180,7 +180,7 @@ SchemaPtr       CreateTestSchema ()
 
     SchemaPtr schema = NULL;
 
-    EXPECT_EQ (SUCCESS, Schema::ReadXMLFromString (schema, schemaXMLString.c_str()));
+    EXPECT_EQ (SUCCESS, Schema::ReadXmlFromString (schema, schemaXMLString.c_str()));
 
     return schema;
     }

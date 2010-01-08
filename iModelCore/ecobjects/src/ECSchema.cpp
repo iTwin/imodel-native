@@ -394,7 +394,7 @@ SchemaCR    schema
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus Schema::ReadClassStubsFromXML
+SchemaDeserializationStatus Schema::ReadClassStubsFromXml
 (
 MSXML2::IXMLDOMNode& schemaNode,
 ClassDeserializationVector&  classes
@@ -424,11 +424,11 @@ ClassDeserializationVector&  classes
             pClass = pRelationshipClass;
             }
 
-        if (SCHEMA_DESERIALIZATION_STATUS_Success != (status = pClass->ReadXMLAttributes(xmlNodePtr)))
+        if (SCHEMA_DESERIALIZATION_STATUS_Success != (status = pClass->ReadXmlAttributes(xmlNodePtr)))
             return status;           
 
         if (ECOBJECTS_STATUS_Success != this->AddClass (pClass))
-            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXML;
+            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
 
         if (NULL == pRelationshipClass)
             Logger::GetLogger()->tracev (L"    Created Class Stub: %s\n", pClass->Name.c_str());
@@ -447,7 +447,7 @@ ClassDeserializationVector&  classes
    base classes, properties & relationship endpoints.
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus Schema::ReadClassContentsFromXML
+SchemaDeserializationStatus Schema::ReadClassContentsFromXml
 (
 ClassDeserializationVector&  classes
 )
@@ -461,7 +461,7 @@ ClassDeserializationVector&  classes
         {
         pClass = classesIterator->first;
         xmlNodePtr = classesIterator->second;
-        status = pClass->ReadXMLContents (xmlNodePtr);
+        status = pClass->ReadXmlContents (xmlNodePtr);
         if (SCHEMA_DESERIALIZATION_STATUS_Success != status)
             return status;
         }
@@ -472,7 +472,7 @@ ClassDeserializationVector&  classes
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus Schema::ReadXML
+SchemaDeserializationStatus Schema::ReadXml
 (
 SchemaPtr&                          schemaOut, 
 MSXML2::IXMLDOMDocument2&           pXmlDoc
@@ -486,7 +486,7 @@ MSXML2::IXMLDOMDocument2&           pXmlDoc
     if (NULL == xmlNodePtr)
         {
         Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: Missing a top-level " EC_SCHEMA_ELEMENT L" node in the " ECXML_URI_2_0 L" namespace\n");
-        return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXML;
+        return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
         }
     
     MSXML2::IXMLDOMNodePtr schemaNodePtr = xmlNodePtr;       
@@ -497,11 +497,11 @@ MSXML2::IXMLDOMDocument2&           pXmlDoc
     if ((NULL == nodeAttributesPtr) || (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMA_NAME_ATTRIBUTE))))
         {
         Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: " EC_SCHEMA_ELEMENT L" element must contain a schemaName attribute\n");
-        return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXML;
+        return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
         }
 
     if (ECOBJECTS_STATUS_Success != CreateSchema (schemaOut, (const wchar_t *)attributePtr->text))
-        return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXML;
+        return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
 
     // OPTIONAL attributes - If these attributes exist they MUST be valid        
     READ_OPTIONAL_XML_ATTRIBUTE (SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE,         schemaOut, NamespacePrefix)
@@ -517,13 +517,13 @@ MSXML2::IXMLDOMDocument2&           pXmlDoc
             schemaOut->Name.c_str(), schemaOut->VersionMajor, schemaOut->VersionMinor);
 
     ClassDeserializationVector classes;
-    if (SCHEMA_DESERIALIZATION_STATUS_Success != (status = schemaOut->ReadClassStubsFromXML (schemaNodePtr, classes)))
+    if (SCHEMA_DESERIALIZATION_STATUS_Success != (status = schemaOut->ReadClassStubsFromXml (schemaNodePtr, classes)))
         return status;
 
     // NEEDSWORK Find and deserialize referenced schemas
 
     // NEEDSWORK Class inheritance (base classes, properties & relationship endpoints)
-    if (SCHEMA_DESERIALIZATION_STATUS_Success != (status = schemaOut->ReadClassContentsFromXML (classes)))
+    if (SCHEMA_DESERIALIZATION_STATUS_Success != (status = schemaOut->ReadClassContentsFromXml (classes)))
         return status;
 
     // NEEDSWORK Custom attributes (schema, classes, properties, etc)
@@ -556,7 +556,8 @@ MSXML2::IXMLDOMDocument2* pXmlDoc
     WRITE_XML_ATTRIBUTE(SCHEMA_NAME_ATTRIBUTE, this->Name.c_str(), schemaElementPtr);
     WRITE_OPTIONAL_XML_ATTRIBUTE(SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE, NamespacePrefix, schemaElementPtr);
     WRITE_OPTIONAL_XML_ATTRIBUTE(DESCRIPTION_ATTRIBUTE, Description, schemaElementPtr);
-    WRITE_OPTIONAL_XML_ATTRIBUTE(DISPLAY_LABEL_ATTRIBUTE, DisplayLabel, schemaElementPtr);
+    if (IsDisplayLabelDefined)
+        WRITE_OPTIONAL_XML_ATTRIBUTE(DISPLAY_LABEL_ATTRIBUTE, DisplayLabel, schemaElementPtr);
     
     wchar_t versionString[8];
     swprintf(versionString, 8, L"%02d.%02d", m_versionMajor, m_versionMinor);
@@ -567,10 +568,12 @@ MSXML2::IXMLDOMDocument2* pXmlDoc
     // NEEDSWORK Serialize custom attributes
     
     std::vector<std::wstring> alreadySerializedClasses;
+    // sort the classes by name so the order in which they are serialized is predictable.
+    
     for each (ClassP pClass in Classes)
         {
         // NEEDSWORK Make sure haven't already serialized this class
-        pClass->Serialize(schemaElementPtr);
+        pClass->WriteXml(schemaElementPtr);
         }
         
     CREATE_AND_ADD_TEXT_NODE(L"\n", schemaElementPtr);
@@ -612,7 +615,7 @@ MSXML2::IXMLDOMDocument2& pXmlDoc
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus Schema::ReadXMLFromFile
+SchemaDeserializationStatus Schema::ReadXmlFromFile
 (
 SchemaPtr&          schemaOut, 
 const wchar_t *     ecSchemaXmlFile
@@ -632,7 +635,7 @@ const wchar_t *     ecSchemaXmlFile
         return SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml;
         }
 
-    status = ReadXML (schemaOut, xmlDocPtr);
+    status = ReadXml (schemaOut, xmlDocPtr);
     if (ECOBJECTS_STATUS_Success != status)
         Logger::GetLogger()->errorv (L"Failed to deserialize XML file: %s\n", ecSchemaXmlFile);
     return status;
@@ -641,7 +644,7 @@ const wchar_t *     ecSchemaXmlFile
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus Schema::ReadXMLFromString
+SchemaDeserializationStatus Schema::ReadXmlFromString
 (
 SchemaPtr&          schemaOut, 
 const wchar_t *     ecSchemaXml
@@ -661,7 +664,7 @@ const wchar_t *     ecSchemaXml
         return SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml;
         }
 
-    status = ReadXML (schemaOut, xmlDocPtr);
+    status = ReadXml (schemaOut, xmlDocPtr);
     if (ECOBJECTS_STATUS_Success != status)
         Logger::GetLogger()->errorv (L"Failed to deserialize XML from string: %s\n", ecSchemaXml);
     return status;
@@ -670,7 +673,7 @@ const wchar_t *     ecSchemaXml
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-//SchemaDeserializationStatus Schema::ReadXMLFromStream
+//SchemaDeserializationStatus Schema::ReadXmlFromStream
 //(
 //SchemaPtr&          schemaOut, 
 //IStream *           ecSchemaXmlStream
@@ -690,7 +693,7 @@ const wchar_t *     ecSchemaXml
 //        return SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml;
 //        }
 //
-//    status = ReadXML (schemaOut, xmlDocPtr);
+//    status = ReadXml (schemaOut, xmlDocPtr);
 //    if (ECOBJECTS_STATUS_Success != status)
 //        Logger::GetLogger()->errorv (L"Failed to deserialize XML from stream\n");
 //    return status;

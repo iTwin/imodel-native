@@ -79,7 +79,7 @@ static const std::wstring EMPTY_STRING = L"";
 #define READ_OPTIONAL_XML_ATTRIBUTE(_xmlAttributeName, _setInPointer, _setInPropertyName)   \
     if ((NULL != (attributePtr = nodeAttributesPtr->getNamedItem (_xmlAttributeName))) &&   \
         (ECOBJECTS_STATUS_Success != _setInPointer->Set##_setInPropertyName ((const wchar_t *)attributePtr->text))) \
-            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXML;
+            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
 
 #define READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS(_xmlAttributeName, _setInPointer, _setInPropertyName)   \
     if (NULL != (attributePtr = nodeAttributesPtr->getNamedItem (_xmlAttributeName)))   \
@@ -91,10 +91,10 @@ static const std::wstring EMPTY_STRING = L"";
     if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (_xmlAttributeName)))     \
         {   \
         wprintf (L"Invalid ECSchemaXML: %s element must contain a " _xmlAttributeName L" attribute\n", (const wchar_t *)_elementName);     \
-        return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXML;        \
+        return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;        \
         }       \
     if (ECOBJECTS_STATUS_Success != _setInPointer->Set##_setInPropertyName ((const wchar_t *)attributePtr->text))       \
-        return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXML;
+        return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
 
 #define CREATE_AND_ADD_TEXT_NODE(_text, _parent) \
     textPtr = _parent->ownerDocument->createTextNode(_text); \

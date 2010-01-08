@@ -322,7 +322,7 @@ bool Class::HasBaseClasses
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus Class::ReadXMLAttributes
+SchemaDeserializationStatus Class::ReadXmlAttributes
 (
 MSXML2::IXMLDOMNode& classNode
 )
@@ -353,7 +353,7 @@ MSXML2::IXMLDOMNode& classNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus Class::ReadXMLContents
+SchemaDeserializationStatus Class::ReadXmlContents
 (
 MSXML2::IXMLDOMNode& classNode
 )
@@ -372,7 +372,7 @@ MSXML2::IXMLDOMNode& classNode
             {
             Logger::GetLogger()->warningv (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the value '%s' that can not be parsed.", 
                 this->Name.c_str(), qualifiedClassName.c_str());
-            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXML;
+            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
         
         SchemaP resolvedSchema = Schema.GetSchemaByNamespacePrefixP (namespacePrefix);
@@ -380,7 +380,7 @@ MSXML2::IXMLDOMNode& classNode
             {
             Logger::GetLogger()->warningv  (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the namespace prefix '%s' that can not be resolved to a referenced schema.", 
                 this->Name.c_str(), namespacePrefix.c_str());
-            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXML;
+            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
 
         ClassP baseClass = resolvedSchema->GetClassP (className);
@@ -388,11 +388,11 @@ MSXML2::IXMLDOMNode& classNode
             {
             Logger::GetLogger()->warningv  (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'", 
                 this->Name.c_str(), qualifiedClassName.c_str(), className.c_str(), resolvedSchema->Name.c_str());
-            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXML;
+            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
 
         if (ECOBJECTS_STATUS_Success != AddBaseClass(*baseClass))
-            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXML;
+            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
         }
 
     // Build properties
@@ -407,7 +407,7 @@ MSXML2::IXMLDOMNode& classNode
         else if (0 == wcscmp (xmlNodePtr->baseName, EC_STRUCTPROPERTY_ELEMENT))
             pProperty = new StructProperty (*this);
 
-        SchemaDeserializationStatus status = pProperty->_ReadXML(xmlNodePtr);
+        SchemaDeserializationStatus status = pProperty->_ReadXml(xmlNodePtr);
         if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
             {
             Logger::GetLogger()->warningv  (L"Invalid ECSchemaXML: Failed to deserialize properties of ECClass '%s' in the ECSchema '%s'\n", this->Name.c_str(), this->Schema.Name.c_str());                
@@ -418,7 +418,7 @@ MSXML2::IXMLDOMNode& classNode
             {
             Logger::GetLogger()->warningv  (L"Invalid ECSchemaXML: Failed to deserialize ECClass '%s' in the ECSchema '%s' because a problem occurred while adding ECProperty '%s'\n", 
                 this->Name.c_str(), this->Schema.Name.c_str(), pProperty->Name.c_str());                
-            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXML;
+            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
         }
 
@@ -428,26 +428,26 @@ MSXML2::IXMLDOMNode& classNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus Class::Serialize
+SchemaSerializationStatus Class::WriteXml
 (
-MSXML2::IXMLDOMElementPtr parentNode
+MSXML2::IXMLDOMElement& parentNode
 )
     {
     SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
     MSXML2::IXMLDOMTextPtr textPtr = NULL;
     MSXML2::IXMLDOMAttributePtr attributePtr;
 
-    CREATE_AND_ADD_TEXT_NODE("\n    ", parentNode);
-    CREATE_AND_ADD_TEXT_NODE("\n    ", parentNode);
+    CREATE_AND_ADD_TEXT_NODE("\n    ", (&parentNode));
+    CREATE_AND_ADD_TEXT_NODE("\n    ", (&parentNode));
 
     MSXML2::IXMLDOMElementPtr classPtr = NULL;
     
     if (NULL == dynamic_cast<RelationshipClassP>((ClassP)this))
-        classPtr = parentNode->ownerDocument->createNode(NODE_ELEMENT, EC_CLASS_ELEMENT, ECXML_URI_2_0);
+        classPtr = parentNode.ownerDocument->createNode(NODE_ELEMENT, EC_CLASS_ELEMENT, ECXML_URI_2_0);
     else
-        classPtr = parentNode->ownerDocument->createNode(NODE_ELEMENT, EC_RELATIONSHIP_CLASS_ELEMENT, ECXML_URI_2_0);
+        classPtr = parentNode.ownerDocument->createNode(NODE_ELEMENT, EC_RELATIONSHIP_CLASS_ELEMENT, ECXML_URI_2_0);
     
-    APPEND_CHILD_TO_PARENT(classPtr, parentNode);
+    APPEND_CHILD_TO_PARENT(classPtr, (&parentNode));
     
     WRITE_XML_ATTRIBUTE(TYPE_NAME_ATTRIBUTE, this->Name.c_str(), classPtr);
     WRITE_OPTIONAL_XML_ATTRIBUTE(DESCRIPTION_ATTRIBUTE, Description, classPtr);
@@ -459,7 +459,7 @@ MSXML2::IXMLDOMElementPtr parentNode
     
     for each (const ClassP& baseClass in m_baseClasses)
         {
-        MSXML2::IXMLDOMElementPtr basePtr = parentNode->ownerDocument->createNode(NODE_ELEMENT, EC_BASE_CLASS_ELEMENT, ECXML_URI_2_0);
+        MSXML2::IXMLDOMElementPtr basePtr = parentNode.ownerDocument->createNode(NODE_ELEMENT, EC_BASE_CLASS_ELEMENT, ECXML_URI_2_0);
         basePtr->text = baseClass->Name.c_str();
         CREATE_AND_ADD_TEXT_NODE("\n        ", classPtr);
         APPEND_CHILD_TO_PARENT(basePtr, classPtr);
@@ -467,7 +467,7 @@ MSXML2::IXMLDOMElementPtr parentNode
         
     for each (PropertyP prop in Properties)
         {
-        prop->_Serialize(classPtr);
+        prop->_WriteXml(classPtr);
         }
     CREATE_AND_ADD_TEXT_NODE("\n    ", classPtr);
     return status;
