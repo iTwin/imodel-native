@@ -9,6 +9,7 @@
 #pragma once
 
 #include <ECObjects\ECObjects.h>
+#include <hash_map>
 
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
 
@@ -58,7 +59,8 @@ public:
     
     std::wstring ToString();
     };
-    
+
+#define USE_HASHMAP_IN_CLASSLAYOUT    
 /*=================================================================================**//**
 * @bsistruct                                                     CaseyMullen    10/09
 +===============+===============+===============+===============+===============+======*/      
@@ -67,7 +69,11 @@ struct ClassLayout
     friend MemoryInstanceSupport;
 private:
     struct StringComparer {bool operator()(wchar_t const * s1, wchar_t const * s2) const   {return wcscmp (s1, s2) < 0;}};
+#ifdef USE_HASHMAP_IN_CLASSLAYOUT    
+    typedef stdext::hash_map<wchar_t const *, PropertyLayoutCP, stdext::hash_compare<const wchar_t *, StringComparer>>   PropertyLayoutLookup;
+#else
     typedef std::map<wchar_t const *, PropertyLayoutCP, StringComparer> PropertyLayoutLookup;
+#endif    
     typedef std::vector<PropertyLayout>                                 PropertyLayoutVector;
     
     enum State
@@ -158,7 +164,6 @@ private:
          
 protected:
     ECOBJECTS_EXPORT void       InitializeMemory(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated) const;
-    //ECOBJECTS_EXPORT UInt32     GetBytesUsed (ClassLayoutCR classLayout, byte const * data) const;
     ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ValueR v, PropertyLayoutCR propertyLayout,      UInt32 nIndices, UInt32 const * indices) const;
     ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ClassLayoutCR classLayout, ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const;
     ECOBJECTS_EXPORT StatusInt  SetValueToMemory (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, ValueCR v,  UInt32 nIndices, UInt32 const * indices);      
