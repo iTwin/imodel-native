@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/native/StandaloneInstance.cpp $
+|     $Source: ecobjects/native/StandaloneECInstance.cpp $
 |
 |   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -12,8 +12,8 @@ BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
-StandaloneInstance::StandaloneInstance (StandaloneInstanceEnablerCR enabler, byte * data, UInt32 size) :
-        m_standaloneEnabler(const_cast<StandaloneInstanceEnablerP>(&enabler)), // WIP_FUSION: can we get rid of the const cast?
+StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, byte * data, UInt32 size) :
+        m_standaloneEnabler(const_cast<StandaloneECEnablerP>(&enabler)), // WIP_FUSION: can we get rid of the const cast?
         m_bytesAllocated(size), m_data(data) 
     {
     }
@@ -21,7 +21,7 @@ StandaloneInstance::StandaloneInstance (StandaloneInstanceEnablerCR enabler, byt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
-void                StandaloneInstance::ClearValues ()
+void                StandaloneECInstance::ClearValues ()
     {
     InitializeMemory (m_standaloneEnabler->GetClassLayout(), m_data, m_bytesAllocated);
     }
@@ -29,9 +29,9 @@ void                StandaloneInstance::ClearValues ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
-StandaloneInstanceP StandaloneInstance::CreateFromUninitializedMemory (StandaloneInstanceEnablerCR enabler, byte * data, UInt32 size)
+StandaloneECInstanceP StandaloneECInstance::CreateFromUninitializedMemory (StandaloneECEnablerCR enabler, byte * data, UInt32 size)
     {
-    StandaloneInstanceP instance = new StandaloneInstance (enabler, data, size);
+    StandaloneECInstanceP instance = new StandaloneECInstance (enabler, data, size);
     instance->ClearValues();
     
     return instance;
@@ -40,15 +40,15 @@ StandaloneInstanceP StandaloneInstance::CreateFromUninitializedMemory (Standalon
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
-StandaloneInstanceP StandaloneInstance::CreateFromInitializedMemory (StandaloneInstanceEnablerCR enabler, byte * data, UInt32 size)
+StandaloneECInstanceP StandaloneECInstance::CreateFromInitializedMemory (StandaloneECEnablerCR enabler, byte * data, UInt32 size)
     {
-    return new StandaloneInstance (enabler, data, size);
+    return new StandaloneECInstance (enabler, data, size);
     }    
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void                StandaloneInstance::_Free ()
+void                StandaloneECInstance::_Free ()
     { 
     delete this;
     };
@@ -56,7 +56,7 @@ void                StandaloneInstance::_Free ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void                StandaloneInstance::_Dump() const
+void                StandaloneECInstance::_Dump() const
     {
     return DumpInstanceData (m_standaloneEnabler->GetClassLayout());
     }
@@ -64,7 +64,7 @@ void                StandaloneInstance::_Dump() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-EnablerCR           StandaloneInstance::_GetEnabler() const
+ECEnablerCR           StandaloneECInstance::_GetEnabler() const
     {
     return *m_standaloneEnabler;
     }
@@ -72,7 +72,7 @@ EnablerCR           StandaloneInstance::_GetEnabler() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool                StandaloneInstance::_IsReadOnly() const
+bool                StandaloneECInstance::_IsReadOnly() const
     {
     return false;
     }
@@ -80,13 +80,13 @@ bool                StandaloneInstance::_IsReadOnly() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-std::wstring        StandaloneInstance::_GetInstanceId() const
+std::wstring        StandaloneECInstance::_GetInstanceId() const
     {
     if (m_instanceId.size() == 0)
         {
         wchar_t id[1024];
         swprintf(id, sizeof(id)/sizeof(wchar_t), L"%s-0x%X", _GetEnabler().GetClass().GetName().c_str(), this);
-        StandaloneInstanceP thisNotConst = const_cast<StandaloneInstanceP>(this);
+        StandaloneECInstanceP thisNotConst = const_cast<StandaloneECInstanceP>(this);
         thisNotConst->m_instanceId = id;        
         }
         
@@ -97,7 +97,7 @@ std::wstring        StandaloneInstance::_GetInstanceId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool                StandaloneInstance::_IsMemoryInitialized () const
+bool                StandaloneECInstance::_IsMemoryInitialized () const
     {
     return m_data != NULL;
     }
@@ -105,7 +105,7 @@ bool                StandaloneInstance::_IsMemoryInitialized () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-byte const *        StandaloneInstance::_GetDataForRead () const
+byte const *        StandaloneECInstance::_GetDataForRead () const
     {
     return m_data;
     }
@@ -113,7 +113,7 @@ byte const *        StandaloneInstance::_GetDataForRead () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-byte *              StandaloneInstance::_GetDataForWrite () const
+byte *              StandaloneECInstance::_GetDataForWrite () const
     {
     return m_data;
     }
@@ -121,7 +121,7 @@ byte *              StandaloneInstance::_GetDataForWrite () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           StandaloneInstance::_ModifyData (UInt32 offset, void const * newData, UInt32 dataLength)
+StatusInt           StandaloneECInstance::_ModifyData (UInt32 offset, void const * newData, UInt32 dataLength)
     {
     PRECONDITION (NULL != m_data, ERROR);
     PRECONDITION (offset + dataLength <= m_bytesAllocated, ERROR); //WIP_FUSION ERROR_MemoryBoundsOverrun
@@ -134,7 +134,7 @@ StatusInt           StandaloneInstance::_ModifyData (UInt32 offset, void const *
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32              StandaloneInstance::GetBytesUsed () const
+UInt32              StandaloneECInstance::GetBytesUsed () const
     {
     if (NULL == m_data)
         return 0;
@@ -145,7 +145,7 @@ UInt32              StandaloneInstance::GetBytesUsed () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-byte const *         StandaloneInstance::GetDataForRead () const
+byte const *         StandaloneECInstance::GetDataForRead () const
     {
     return _GetDataForRead();
     }
@@ -153,7 +153,7 @@ byte const *         StandaloneInstance::GetDataForRead () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutCR        StandaloneInstance::GetClassLayout () const
+ClassLayoutCR        StandaloneECInstance::GetClassLayout () const
     {
     return m_standaloneEnabler->GetClassLayout();
     }
@@ -161,7 +161,7 @@ ClassLayoutCR        StandaloneInstance::GetClassLayout () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32              StandaloneInstance::_GetBytesAllocated () const
+UInt32              StandaloneECInstance::_GetBytesAllocated () const
     {
     return m_bytesAllocated;
     }
@@ -169,7 +169,7 @@ UInt32              StandaloneInstance::_GetBytesAllocated () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void                StandaloneInstance::_ShrinkAllocation (UInt32 newAllocation)
+void                StandaloneECInstance::_ShrinkAllocation (UInt32 newAllocation)
     {
     DEBUG_EXPECT (false && "WIP_FUSION: needs implementation");
     } 
@@ -177,7 +177,7 @@ void                StandaloneInstance::_ShrinkAllocation (UInt32 newAllocation)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void                StandaloneInstance::_FreeAllocation ()
+void                StandaloneECInstance::_FreeAllocation ()
     {
     free (m_data); 
     m_data = NULL;
@@ -186,13 +186,13 @@ void                StandaloneInstance::_FreeAllocation ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           StandaloneInstance::_GrowAllocation (UInt32 bytesNeeded)
+StatusInt           StandaloneECInstance::_GrowAllocation (UInt32 bytesNeeded)
     {
     DEBUG_EXPECT (m_bytesAllocated > 0);
     DEBUG_EXPECT (NULL != m_data);
     // WIP_FUSION: add performance counter
             
-    UInt32 newSize = 2 * (m_bytesAllocated + bytesNeeded); // Assume the growing trend will continue. The StandaloneInstanceFactory will ensure that the final instances are trimmed down to an appropriate size
+    UInt32 newSize = 2 * (m_bytesAllocated + bytesNeeded); // Assume the growing trend will continue. The StandaloneECInstanceFactory will ensure that the final instances are trimmed down to an appropriate size
     byte * reallocedData = (byte*)realloc(m_data, newSize);
     DEBUG_EXPECT (NULL != reallocedData);
     if (NULL == reallocedData)
@@ -207,7 +207,7 @@ StatusInt           StandaloneInstance::_GrowAllocation (UInt32 bytesNeeded)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           StandaloneInstance::_GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+StatusInt           StandaloneECInstance::_GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
     {
     ClassLayoutCR classLayout = m_standaloneEnabler->GetClassLayout();
     
@@ -217,7 +217,7 @@ StatusInt           StandaloneInstance::_GetValue (ValueR v, const wchar_t * pro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           StandaloneInstance::_SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices, UInt32 const * indices)
+StatusInt           StandaloneECInstance::_SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 nIndices, UInt32 const * indices)
     {
     ClassLayoutCR classLayout = m_standaloneEnabler->GetClassLayout();
     StatusInt status = SetValueToMemory (classLayout, propertyAccessString, v, nIndices, indices);
@@ -228,10 +228,10 @@ StatusInt           StandaloneInstance::_SetValue (const wchar_t * propertyAcces
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneInstanceFactory::StandaloneInstanceFactory (ClassLayoutCR classLayout, UInt32 slack, UInt32 initialBufferSize) : 
+StandaloneECInstanceFactory::StandaloneECInstanceFactory (ClassLayoutCR classLayout, UInt32 slack, UInt32 initialBufferSize) : 
     m_nBegun(0), m_nFinished (0), m_nReallocationRequests(0),
     m_instanceUnderConstruction (NULL), m_minimumSlack (slack), m_data (NULL), m_size (0),
-    m_standaloneEnabler (*(new StandaloneInstanceEnabler (classLayout)))
+    m_standaloneEnabler (*(new StandaloneECEnabler (classLayout)))
     {
     UInt32 sizeOfFixedSection = classLayout.GetSizeOfFixedSection();
     
@@ -244,12 +244,12 @@ StandaloneInstanceFactory::StandaloneInstanceFactory (ClassLayoutCR classLayout,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-BentleyStatus   StandaloneInstanceFactory::BeginConstruction (StandaloneInstanceP& instance)
+BentleyStatus   StandaloneECInstanceFactory::BeginConstruction (StandaloneECInstanceP& instance)
     {
-    PRECONDITION (NULL == instance && "The StandaloneInstance passed to BeginConstruction must be NULL", ERROR);
+    PRECONDITION (NULL == instance && "The StandaloneECInstance passed to BeginConstruction must be NULL", ERROR);
     if (NULL != m_instanceUnderConstruction)
         {
-        // WIP_FUSION: Log message "Programmer Error: Attempted to create a new Instance of %s under construction while there is already one under construction by this factory", m_enabler.GetClass().GetName().c_str());
+        // WIP_FUSION: Log message "Programmer Error: Attempted to create a new IECInstance of %s under construction while there is already one under construction by this factory", m_enabler.GetClass().GetName().c_str());
         PRECONDITION (NULL == m_instanceUnderConstruction && "A given factory can only have one instance under construction at a time", ERROR);
         }
 
@@ -261,7 +261,7 @@ BentleyStatus   StandaloneInstanceFactory::BeginConstruction (StandaloneInstance
         // WIP_FUSION: log it in debug, as a malloc
         }
         
-    m_instanceUnderConstruction = StandaloneInstance::CreateFromUninitializedMemory (m_standaloneEnabler, m_data, m_size);
+    m_instanceUnderConstruction = StandaloneECInstance::CreateFromUninitializedMemory (m_standaloneEnabler, m_data, m_size);
     instance = m_instanceUnderConstruction;
     
     return SUCCESS;
@@ -270,12 +270,12 @@ BentleyStatus   StandaloneInstanceFactory::BeginConstruction (StandaloneInstance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-BentleyStatus   StandaloneInstanceFactory::FinishConstruction (StandaloneInstanceP& instance)
+BentleyStatus   StandaloneECInstanceFactory::FinishConstruction (StandaloneECInstanceP& instance)
     {
     PRECONDITION (NULL != instance, ERROR);
     if (instance != m_instanceUnderConstruction)
         {
-        // WIP_FUSION: Log message "Programmer Error: Attempted to finish a new Instance of %s that is not under construction by this factory!", m_enabler.GetClass().GetName().c_str());
+        // WIP_FUSION: Log message "Programmer Error: Attempted to finish a new IECInstance of %s that is not under construction by this factory!", m_enabler.GetClass().GetName().c_str());
         PRECONDITION (instance == m_instanceUnderConstruction && "Attempted to finish an instance that is not under construction by this factory!", ERROR);
         }
 
@@ -290,7 +290,7 @@ BentleyStatus   StandaloneInstanceFactory::FinishConstruction (StandaloneInstanc
         ++m_nReallocationRequests;
         m_size = instance->m_bytesAllocated;
                 
-        m_data = NULL; // The StandaloneInstance realloced our original buffer, and thereby took ownership of it
+        m_data = NULL; // The StandaloneECInstance realloced our original buffer, and thereby took ownership of it
         // We don't malloc the new buffer at this time... maybe this is the last time we'll ever be called
         return SUCCESS;
         }
@@ -312,7 +312,7 @@ BentleyStatus   StandaloneInstanceFactory::FinishConstruction (StandaloneInstanc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-BentleyStatus   StandaloneInstanceFactory::CancelConstruction (StandaloneInstanceP& instance)
+BentleyStatus   StandaloneECInstanceFactory::CancelConstruction (StandaloneECInstanceP& instance)
     {
     FinishConstruction (instance); // Not the most efficient thing to do, but the logic is much simpler this way.
     delete instance;
@@ -325,7 +325,7 @@ BentleyStatus   StandaloneInstanceFactory::CancelConstruction (StandaloneInstanc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-UInt32          StandaloneInstanceFactory::GetReallocationCount ()
+UInt32          StandaloneECInstanceFactory::GetReallocationCount ()
     {
     return m_nReallocationRequests;
     }
@@ -333,7 +333,7 @@ UInt32          StandaloneInstanceFactory::GetReallocationCount ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-UInt32          StandaloneInstanceFactory::GetBegunCount ()
+UInt32          StandaloneECInstanceFactory::GetBegunCount ()
     {
     return m_nBegun;
     }
@@ -341,7 +341,7 @@ UInt32          StandaloneInstanceFactory::GetBegunCount ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-UInt32          StandaloneInstanceFactory::GetFinishedCount ()
+UInt32          StandaloneECInstanceFactory::GetFinishedCount ()
     {
     return m_nFinished;
     }        
@@ -349,8 +349,8 @@ UInt32          StandaloneInstanceFactory::GetFinishedCount ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StandaloneInstanceEnabler::StandaloneInstanceEnabler (ClassLayoutCR classLayout) :
-    Enabler (classLayout.GetClass()),
+StandaloneECEnabler::StandaloneECEnabler (ClassLayoutCR classLayout) :
+    ECEnabler (classLayout.GetClass()),
     ClassLayoutHolder (classLayout)
     {
     }
@@ -358,17 +358,17 @@ StandaloneInstanceEnabler::StandaloneInstanceEnabler (ClassLayoutCR classLayout)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StandaloneInstanceEnablerPtr StandaloneInstanceEnabler::CreateEnabler (ClassLayoutCR classLayout)
+StandaloneECEnablerPtr StandaloneECEnabler::CreateEnabler (ClassLayoutCR classLayout)
     {
-    return new StandaloneInstanceEnabler (classLayout);
+    return new StandaloneECEnabler (classLayout);
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-wchar_t const * StandaloneInstanceEnabler::_GetName() const
+wchar_t const * StandaloneECEnabler::_GetName() const
     {
-    return L"Bentley::EC::StandaloneInstanceEnabler";
+    return L"Bentley::EC::StandaloneECEnabler";
     }
         
 END_BENTLEY_EC_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |     $Source: ecobjects/native/ECEnabler.cpp $
 |
-|   $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -12,22 +12,22 @@ BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-Enabler::~Enabler() {}
+ECEnabler::~ECEnabler() {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-Enabler::Enabler() {}
+ECEnabler::ECEnabler() {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-Enabler::Enabler(ClassCR ecClass) : m_ecClass (&ecClass) {};
+ECEnabler::ECEnabler(ECClassCR ecClass) : m_ecClass (&ecClass) {};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-wchar_t const * Enabler::GetName() const
+wchar_t const * ECEnabler::GetName() const
     {
     return _GetName();
     }
@@ -35,7 +35,7 @@ wchar_t const * Enabler::GetName() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassCR Enabler::GetClass() const 
+ECClassCR ECEnabler::GetClass() const 
     {
     return *m_ecClass;
     }

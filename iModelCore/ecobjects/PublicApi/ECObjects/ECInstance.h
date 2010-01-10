@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECInstance.h $
 |
-|   $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,44 +12,44 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-//! EC::Instance is the native equivalent of a .NET IECInstance.
+//! EC::IECInstance is the native equivalent of a .NET IECInstance.
 //! Unlike IECInstance, it is not a pure interface, but is a concrete struct.
 //! Whereas in .NET, one might implement IECInstance, or use the "Lightweight" system
 //! in Bentley.ECObjects.Lightweight, in native "ECObjects" you write a class that implements
-//! the EC::Enabler interface and one or more related interfaces to supply functionality 
-//! to the EC::Instance.
+//! the EC::ECEnabler interface and one or more related interfaces to supply functionality 
+//! to the EC::IECInstance.
 //! We could call these "enabled" instances as opposed to "lightweight".
-//! @see Enabler
-struct Instance
+//! @see ECEnabler
+struct IECInstance
     {
 private:
 protected:    
-    ECOBJECTS_EXPORT Instance(); 
-    ECOBJECTS_EXPORT ~Instance(){};
+    ECOBJECTS_EXPORT IECInstance(); 
+    ECOBJECTS_EXPORT ~IECInstance(){};
     ECOBJECTS_EXPORT virtual std::wstring _GetInstanceId() const = 0; // Virtual and returning std::wstring because a subclass may want to calculate it on demand
-    ECOBJECTS_EXPORT virtual StatusInt    _GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const = 0;
-    ECOBJECTS_EXPORT virtual StatusInt    _SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices = 0, UInt32 const * indices = NULL) = 0;
-    ECOBJECTS_EXPORT virtual EnablerCR    _GetEnabler() const = 0;
+    ECOBJECTS_EXPORT virtual StatusInt    _GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const = 0;
+    ECOBJECTS_EXPORT virtual StatusInt    _SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 nIndices = 0, UInt32 const * indices = NULL) = 0;
+    ECOBJECTS_EXPORT virtual ECEnablerCR  _GetEnabler() const = 0;
     ECOBJECTS_EXPORT virtual bool         _IsReadOnly() const = 0;
     //! This should dump the instance's property values using the logger
     ECOBJECTS_EXPORT virtual void         _Dump () const = 0;
     ECOBJECTS_EXPORT virtual void         _Free () = 0;
     
 public:
-    ECOBJECTS_EXPORT EnablerCR            GetEnabler() const;
+    ECOBJECTS_EXPORT ECEnablerCR          GetEnabler() const;
     ECOBJECTS_EXPORT std::wstring         GetInstanceId() const;
     ECOBJECTS_EXPORT bool                 IsReadOnly() const;
     
-    ECOBJECTS_EXPORT ClassCR              GetClass() const;
-    ECOBJECTS_EXPORT StatusInt            GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
-    ECOBJECTS_EXPORT StatusInt            SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices = 0, UInt32 const * indices = NULL);
-    ECOBJECTS_EXPORT StatusInt            GetValue (ValueR v, const wchar_t * propertyAccessString, UInt32 index) const;
-    ECOBJECTS_EXPORT StatusInt            SetValue (const wchar_t * propertyAccessString, ValueCR v, UInt32 index);
+    ECOBJECTS_EXPORT ECClassCR            GetClass() const;
+    ECOBJECTS_EXPORT StatusInt            GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
+    ECOBJECTS_EXPORT StatusInt            SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 nIndices = 0, UInt32 const * indices = NULL);
+    ECOBJECTS_EXPORT StatusInt            GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 index) const;
+    ECOBJECTS_EXPORT StatusInt            SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 index);
         
     //! Contract:
     //! - For all of the methods, the propertyAccessString should be in the "array element" form, 
     //!   e.g. "Aliases[]" instead of "Aliases"         
-    StatusInt   InsertArrayElement (const wchar_t * propertyAccessString, ValueCR v, UInt32 index); //WIP_FUSION Return the new count?
+    StatusInt   InsertArrayElement (const wchar_t * propertyAccessString, ECValueCR v, UInt32 index); //WIP_FUSION Return the new count?
     StatusInt   RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index); //WIP_FUSION return the removed one? YAGNI? Return the new count?
     StatusInt   ClearArray (const wchar_t * propertyAccessString);    
     
@@ -62,18 +62,18 @@ public:
     ECOBJECTS_EXPORT StatusInt GetDouble (double & value, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
     ECOBJECTS_EXPORT StatusInt GetString (const wchar_t * & value, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
     ECOBJECTS_EXPORT void      Dump () const;
-    //! Call this instead of "delete" to ensure that the EC::Instance is freed from the same heap that it was allocated.
-    //! This method does not affect the persisted EC::Instance (if it has been persisted)
+    //! Call this instead of "delete" to ensure that the EC::IECInstance is freed from the same heap that it was allocated.
+    //! This method does not affect the persisted EC::IECInstance (if it has been persisted)
     ECOBJECTS_EXPORT void      Free ();
     
     };
     
-//! EC::RelationshipInstance is the native equivalent of a .NET IECRelationshipInstance.
-//! @see Instance, RelationshipClass
-struct RelationshipInstance : public Instance
+//! EC::IECRelationshipInstance is the native equivalent of a .NET IECRelationshipInstance.
+//! @see IECInstance, ECRelationshipClass
+struct IECRelationshipInstance : public IECInstance
     {
 private:
-    //needswork: needs EC::Instance Source/Target
+    //needswork: needs EC::IECInstance Source/Target
     };
         
 END_BENTLEY_EC_NAMESPACE

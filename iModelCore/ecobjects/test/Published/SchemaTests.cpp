@@ -20,7 +20,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 void VerifyWidgetsSchema
 (
-SchemaPtr schema
+ECSchemaPtr schema
 )
     {
     EXPECT_STREQ (L"Widgets", schema->Name.c_str());
@@ -31,12 +31,12 @@ SchemaPtr schema
     EXPECT_EQ (9, schema->VersionMajor);
     EXPECT_EQ (6, schema->VersionMinor);        
     
-    for each (ClassP pClass in schema->Classes)
+    for each (ECClassP pClass in schema->Classes)
         {
         wprintf (L"Widgets contains class: '%s' with display label '%s'\n", pClass->Name.c_str(), pClass->DisplayLabel.c_str());
         }
 
-    ClassP pClass = schema->GetClassP(L"ClassDoesNotExistInSchema");
+    ECClassP pClass = schema->GetClassP(L"ClassDoesNotExistInSchema");
     EXPECT_FALSE (pClass);
 
     pClass = schema->GetClassP(L"ecProject");
@@ -49,7 +49,7 @@ SchemaPtr schema
     EXPECT_FALSE (pClass->IsCustomAttributeClass);
     EXPECT_TRUE (pClass->IsDomainClass);
     EXPECT_FALSE (pClass->HasBaseClasses());
-    PropertyP pProperty = pClass->GetPropertyP (L"Name");
+    ECPropertyP pProperty = pClass->GetPropertyP (L"Name");
     EXPECT_TRUE (pProperty);
     EXPECT_STREQ (L"Name", pProperty->Name.c_str());
     EXPECT_TRUE (pProperty->IsPrimitive);
@@ -105,8 +105,8 @@ SchemaPtr schema
     EXPECT_FALSE (pProperty->IsStruct);
     EXPECT_TRUE (pProperty->IsArray);
     EXPECT_STREQ (L"Struct1", pProperty->TypeName.c_str());
-    ArrayPropertyP arrayProperty = pProperty->GetAsArrayProperty();
-    EXPECT_TRUE (ELEMENTCLASSIFICATION_Struct == arrayProperty->ElementClassification);
+    ArrayECPropertyP arrayProperty = pProperty->GetAsArrayProperty();
+    EXPECT_TRUE (ARRAYKIND_Struct == arrayProperty->Kind);
     EXPECT_EQ (schema->GetClassP(L"Struct1"), arrayProperty->StructElementType);
     EXPECT_EQ (0, arrayProperty->MinOccurs);
     EXPECT_EQ (UINT_MAX, arrayProperty->MaxOccurs);    
@@ -126,7 +126,7 @@ SchemaPtr schema
     EXPECT_TRUE (pProperty->IsStruct);
     EXPECT_FALSE (pProperty->IsArray);
     EXPECT_STREQ (L"Struct1", pProperty->TypeName.c_str());
-    StructPropertyP structProperty = pProperty->GetAsStructProperty();    
+    StructECPropertyP structProperty = pProperty->GetAsStructProperty();    
     EXPECT_EQ (schema->GetClassP(L"Struct1"), &(structProperty->Type));
     EXPECT_FALSE (pProperty->IsDisplayLabelDefined);
     EXPECT_STREQ (L"EmbeddedStruct", pProperty->DisplayLabel.c_str());
@@ -134,7 +134,7 @@ SchemaPtr schema
     EXPECT_EQ (pClass, &pProperty->Class);
     EXPECT_FALSE (pProperty->IsReadOnly);
    
-    for each (PropertyP pProperty in pClass->Properties)
+    for each (ECPropertyP pProperty in pClass->Properties)
         {
         wprintf (L"TestClass contains property: %s of type %s\n", pProperty->Name.c_str(), pProperty->TypeName.c_str());
         }
@@ -145,10 +145,10 @@ SchemaPtr schema
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SchemaDeserializationTest, ExpectErrorWhenCOMNotInitialized)
     {
-    SchemaPtr schema;        
+    ECSchemaPtr schema;        
     
     DISABLE_ASSERTS
-    SchemaDeserializationStatus status = Schema::ReadXmlFromFile (schema, L"t");
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, L"t");
         
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_FailedToInitializeMsmxl, status);
     };
@@ -159,9 +159,9 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenCOMNotInitialized)
 TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileDoesNotExist)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    SchemaPtr schema;
+    ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = Schema::ReadXmlFromFile (schema, SCHEMAS_PATH L"ThisFileIsntReal.xml");   
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"ThisFileIsntReal.xml");   
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml, status);
     
@@ -174,9 +174,9 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileDoesNotExist)
 TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNodes)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    SchemaPtr schema;
+    ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = Schema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingNodes.01.00.ecschema.xml");   
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingNodes.01.00.ecschema.xml");   
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml, status);
     
@@ -189,9 +189,9 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNodes)
 TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsIllFormed)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    SchemaPtr schema;
+    ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = Schema::ReadXmlFromFile (schema, SCHEMAS_PATH L"IllFormedXml.01.00.ecschema.xml");   
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"IllFormedXml.01.00.ecschema.xml");   
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml, status);
     
@@ -204,9 +204,9 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsIllFormed)
 TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingECSchemaNode)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    SchemaPtr schema;
+    ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = Schema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingECSchemaNode.01.00.ecschema.xml");   
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingECSchemaNode.01.00.ecschema.xml");   
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
     
@@ -220,9 +220,9 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingECSchemaNode)
 TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNamespace)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    SchemaPtr schema;
+    ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = Schema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingNamespace.01.00.ecschema.xml");   
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingNamespace.01.00.ecschema.xml");   
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
     
@@ -235,9 +235,9 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNamespace)
 TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasUnsupportedNamespace)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    SchemaPtr schema;
+    ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = Schema::ReadXmlFromFile (schema, SCHEMAS_PATH L"UnsupportedECXmlNamespace.01.00.ecschema.xml");   
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"UnsupportedECXmlNamespace.01.00.ecschema.xml");   
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
     
@@ -250,9 +250,9 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasUnsupportedNamespace)
 TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingSchemaNameAttribute)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    SchemaPtr schema;
+    ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = Schema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingSchemaName.01.00.ecschema.xml");   
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingSchemaName.01.00.ecschema.xml");   
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
     
@@ -265,9 +265,9 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingSchemaNameAttrib
 TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingClassNameAttribute)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    SchemaPtr schema;
+    ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = Schema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingClassName.01.00.ecschema.xml");   
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingClassName.01.00.ecschema.xml");   
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
     
@@ -280,9 +280,9 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingClassNameAttribu
 TEST(SchemaDeserializationTest, ExpectSuccessWhenXmlFileHasInvalidVersionString)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    SchemaPtr schema;
+    ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = Schema::ReadXmlFromFile (schema, SCHEMAS_PATH L"InvalidVersionString.01.00.ecschema.xml");   
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"InvalidVersionString.01.00.ecschema.xml");   
     EXPECT_EQ (1, schema->VersionMajor);
     EXPECT_EQ (0, schema->VersionMinor);
 
@@ -297,9 +297,9 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenXmlFileHasInvalidVersionString)
 TEST(SchemaDeserializationTest, ExpectSuccessWhenECSchemaContainsOnlyRequiredAttributes)
     {                
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    SchemaPtr schema;
+    ECSchemaPtr schema;
 
-    SchemaDeserializationStatus status = Schema::ReadXmlFromFile (schema, SCHEMAS_PATH L"OnlyRequiredECSchemaAttributes.01.00.ecschema.xml");   
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"OnlyRequiredECSchemaAttributes.01.00.ecschema.xml");   
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);    
     EXPECT_STREQ (L"OnlyRequiredECSchemaAttributes", schema->Name.c_str());
@@ -310,7 +310,7 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenECSchemaContainsOnlyRequiredAtt
     EXPECT_EQ (1, schema->VersionMajor);
     EXPECT_EQ (0, schema->VersionMinor);
     
-    ClassP pClass = schema->GetClassP(L"OnlyRequiredECClassAttributes");    
+    ECClassP pClass = schema->GetClassP(L"OnlyRequiredECClassAttributes");    
     ASSERT_TRUE (pClass);
     EXPECT_STREQ (L"OnlyRequiredECClassAttributes", pClass->Name.c_str());    
     EXPECT_STREQ (L"OnlyRequiredECClassAttributes", pClass->DisplayLabel.c_str());
@@ -329,9 +329,9 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenECSchemaContainsOnlyRequiredAtt
 TEST(SchemaDeserializationTest, ExpectSuccessWhenDeserializingWidgetsECSchema)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    SchemaPtr schema;
+    ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = Schema::ReadXmlFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml");   
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml");   
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);  
     VerifyWidgetsSchema(schema);  
@@ -344,13 +344,13 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenDeserializingWidgetsECSchema)
 TEST(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromString)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    SchemaPtr schema;
+    ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = Schema::ReadXmlFromString (schema, 
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromString (schema, 
         L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         L"<ECSchema schemaName=\"Widgets\" version=\"09.06\" displayLabel=\"Widgets Display Label\" description=\"Widgets Description\" nameSpacePrefix=\"wid\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
         L"<ECSchemaReference name=\"EditorCustomAttributes\" version=\"01.00\" prefix=\"beca\" />"
-        L"    <ECClass typeName=\"ecProject\" description=\"Project Class\" displayLabel=\"Project\" isDomainClass=\"True\">"
+        L"    <ECClass typeName=\"ecProject\" description=\"Project ECClass\" displayLabel=\"Project\" isDomainClass=\"True\">"
         L"       <ECProperty propertyName=\"Name\" typeName=\"string\" displayLabel=\"Project Name\" />"
         L"    </ECClass>"
         L"</ECSchema>");   
@@ -364,12 +364,12 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromString
     EXPECT_EQ (9, schema->VersionMajor);
     EXPECT_EQ (6, schema->VersionMinor);        
     
-    for each (ClassP pClass in schema->Classes)
+    for each (ECClassP pClass in schema->Classes)
         {
         wprintf (L"Widgets contains class: '%s' with display label '%s'\n", pClass->Name.c_str(), pClass->DisplayLabel.c_str());
         }
 
-    ClassP pClass = schema->GetClassP(L"ClassDoesNotExistInSchema");
+    ECClassP pClass = schema->GetClassP(L"ClassDoesNotExistInSchema");
     EXPECT_FALSE (pClass);
 
     pClass = schema->GetClassP(L"ecProject");
@@ -377,12 +377,12 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromString
     EXPECT_STREQ (L"ecProject", pClass->Name.c_str());    
     EXPECT_STREQ (L"Project", pClass->DisplayLabel.c_str());
     EXPECT_TRUE (pClass->IsDisplayLabelDefined);
-    EXPECT_STREQ (L"Project Class", pClass->Description.c_str());
+    EXPECT_STREQ (L"Project ECClass", pClass->Description.c_str());
     EXPECT_FALSE (pClass->IsStruct);
     EXPECT_FALSE (pClass->IsCustomAttributeClass);
     EXPECT_TRUE (pClass->IsDomainClass);
     EXPECT_FALSE (pClass->HasBaseClasses());
-    PropertyP pProperty = pClass->GetPropertyP (L"Name");
+    ECPropertyP pProperty = pClass->GetPropertyP (L"Name");
     EXPECT_TRUE (pProperty);
     EXPECT_STREQ (L"Name", pProperty->Name.c_str());
     EXPECT_TRUE (pProperty->IsPrimitive);
@@ -408,9 +408,9 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromString
 TEST(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    SchemaPtr schema;
+    ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = Schema::ReadXmlFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml");
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml");
     wprintf(L"Verifying original schema from file.\n"); 
     VerifyWidgetsSchema(schema);
 
@@ -421,8 +421,8 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
     SchemaSerializationStatus status2 = schema->WriteXmlToString(ecSchemaXmlString);
     EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status2);
     
-    SchemaPtr deserializedSchema;
-    status = Schema::ReadXmlFromString(deserializedSchema, ecSchemaXmlString);
+    ECSchemaPtr deserializedSchema;
+    status = ECSchema::ReadXmlFromString(deserializedSchema, ecSchemaXmlString);
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status); 
     wprintf(L"Verifying schema deserialized from string.\n");
     VerifyWidgetsSchema(deserializedSchema);
@@ -436,9 +436,9 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
 //TEST(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingStream)
 //    {
 //    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-//    SchemaPtr schema;
+//    ECSchemaPtr schema;
 //    
-//    SchemaDeserializationStatus status = Schema::ReadXmlFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml");
+//    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml");
 //    wprintf(L"Verifying original schema from file.\n"); 
 //    VerifyWidgetsSchema(schema);
 //
@@ -452,8 +452,8 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
 //    LARGE_INTEGER liPos = {0};
 //    stream->Seek(liPos, STREAM_SEEK_SET, NULL);
 //
-//    SchemaPtr deserializedSchema;
-//    status = Schema::ReadXmlFromStream(deserializedSchema, stream);
+//    ECSchemaPtr deserializedSchema;
+//    status = ECSchema::ReadXmlFromStream(deserializedSchema, stream);
 //    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status); 
 //    wprintf(L"Verifying schema deserialized from stream.\n");
 //    VerifyWidgetsSchema(deserializedSchema);
@@ -466,8 +466,8 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SchemaSerializationTest, ExpectErrorWhenCOMNotInitialized)
     {
-    SchemaPtr schema;        
-    Schema::CreateSchema(schema, L"Widget");
+    ECSchemaPtr schema;        
+    ECSchema::CreateSchema(schema, L"Widget");
     
     DISABLE_ASSERTS
     SchemaSerializationStatus status = schema->WriteXmlToFile (L"t");

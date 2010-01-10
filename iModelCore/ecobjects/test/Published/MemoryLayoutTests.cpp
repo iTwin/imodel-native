@@ -17,7 +17,7 @@ using namespace std;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyString (InstanceR instance, ValueR v, wchar_t const * accessString, wchar_t const * value)
+void VerifyString (IECInstanceR instance, ECValueR v, wchar_t const * accessString, wchar_t const * value)
     {
     v.Clear();
     EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
@@ -27,7 +27,7 @@ void VerifyString (InstanceR instance, ValueR v, wchar_t const * accessString, w
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void SetAndVerifyString (InstanceR instance, ValueR v, wchar_t const * accessString, wchar_t const * value)
+void SetAndVerifyString (IECInstanceR instance, ECValueR v, wchar_t const * accessString, wchar_t const * value)
     {
     v.SetString(value);
     EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
@@ -37,7 +37,7 @@ void SetAndVerifyString (InstanceR instance, ValueR v, wchar_t const * accessStr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyInteger (InstanceR instance, ValueR v, wchar_t const * accessString, UInt32 value)
+void VerifyInteger (IECInstanceR instance, ECValueR v, wchar_t const * accessString, UInt32 value)
     {
     v.Clear();
     EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
@@ -47,7 +47,7 @@ void VerifyInteger (InstanceR instance, ValueR v, wchar_t const * accessString, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void SetAndVerifyInteger (InstanceR instance, ValueR v, wchar_t const * accessString, UInt32 value)
+void SetAndVerifyInteger (IECInstanceR instance, ECValueR v, wchar_t const * accessString, UInt32 value)
     {
     v.SetInteger(value);
     EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
@@ -57,7 +57,7 @@ void SetAndVerifyInteger (InstanceR instance, ValueR v, wchar_t const * accessSt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyDouble (InstanceR instance, ValueR v, wchar_t const * accessString, double value)
+void VerifyDouble (IECInstanceR instance, ECValueR v, wchar_t const * accessString, double value)
     {
     v.Clear();
     EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
@@ -67,7 +67,7 @@ void VerifyDouble (InstanceR instance, ValueR v, wchar_t const * accessString, d
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void SetAndVerifyDouble (InstanceR instance, ValueR v, wchar_t const * accessString, double value)
+void SetAndVerifyDouble (IECInstanceR instance, ECValueR v, wchar_t const * accessString, double value)
     {
     v.SetDouble(value);
     EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
@@ -77,7 +77,7 @@ void SetAndVerifyDouble (InstanceR instance, ValueR v, wchar_t const * accessStr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyLong (InstanceR instance, ValueR v, wchar_t const * accessString, UInt64 value)
+void VerifyLong (IECInstanceR instance, ECValueR v, wchar_t const * accessString, UInt64 value)
     {
     v.Clear();
     EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
@@ -87,7 +87,7 @@ void VerifyLong (InstanceR instance, ValueR v, wchar_t const * accessString, UIn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void SetAndVerifyLong (InstanceR instance, ValueR v, wchar_t const * accessString, UInt64 value)
+void SetAndVerifyLong (IECInstanceR instance, ECValueR v, wchar_t const * accessString, UInt64 value)
     {
     v.SetLong(value);
     EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
@@ -174,13 +174,13 @@ std::wstring    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaPtr       CreateTestSchema ()
+ECSchemaPtr       CreateTestSchema ()
     {
     std::wstring schemaXMLString = GetTestSchemaXMLString (L"TestSchema", 0, 0, L"TestClass");
 
-    SchemaPtr schema = NULL;
+    ECSchemaPtr schema = NULL;
 
-    EXPECT_EQ (SUCCESS, Schema::ReadXmlFromString (schema, schemaXMLString.c_str()));
+    EXPECT_EQ (SUCCESS, ECSchema::ReadXmlFromString (schema, schemaXMLString.c_str()));
 
     return schema;
     }
@@ -188,9 +188,9 @@ SchemaPtr       CreateTestSchema ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/  
-void ExerciseInstance (InstanceR instance, wchar_t* valueForFinalStrings)
+void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     {   
-    Value v;
+    ECValue v;
     
     StatusInt status = instance.GetValue (v, L"D");
     
@@ -266,16 +266,16 @@ TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
-    SchemaPtr schema = CreateTestSchema();
-    ClassP ecClass = schema->GetClassP (L"TestClass");
+    ECSchemaPtr schema = CreateTestSchema();
+    ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);
     
     ClassLayout classLayout;
     classLayout.SetClass (*ecClass, 42);
-    StandaloneInstanceEnablerPtr enabler = StandaloneInstanceEnabler::CreateEnabler (classLayout);
-    EC::StandaloneInstanceFactoryP factory = new StandaloneInstanceFactory (classLayout);
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (classLayout);
+    EC::StandaloneECInstanceFactoryP factory = new StandaloneECInstanceFactory (classLayout);
     
-    EC::StandaloneInstanceP instance = NULL;
+    EC::StandaloneECInstanceP instance = NULL;
     EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));    
     
     wstring instanceId = instance->GetInstanceId();
@@ -294,7 +294,7 @@ TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST (MemoryLayoutTests, Values) // move it!
     {
-    Value i(3);
+    ECValue i(3);
     EXPECT_TRUE (i.IsInteger());
     EXPECT_TRUE (!i.IsNull());
     EXPECT_EQ (3, i.GetInteger());
@@ -310,7 +310,7 @@ TEST (MemoryLayoutTests, Values) // move it!
     EXPECT_TRUE (i.IsUninitialized());
     EXPECT_TRUE (i.IsNull());
     
-    Value v;
+    ECValue v;
     EXPECT_TRUE (v.IsUninitialized());
     EXPECT_TRUE (v.IsNull());
     
@@ -319,16 +319,16 @@ TEST (MemoryLayoutTests, Values) // move it!
     EXPECT_TRUE (v.IsDouble());
     EXPECT_EQ (doubleValue, v.GetDouble());
     
-    Value nullInt = Value(EC::PRIMITIVETYPE_Integer);
+    ECValue nullInt = ECValue(EC::PRIMITIVETYPE_Integer);
     EXPECT_TRUE (nullInt.IsNull());
     EXPECT_TRUE (nullInt.IsInteger());
 
-    Value long64 ((::Int64)3);
+    ECValue long64 ((::Int64)3);
     EXPECT_TRUE (!long64.IsNull());
     EXPECT_TRUE (long64.IsLong());
     EXPECT_EQ (3, long64.GetLong());
 
-    Value s(L"Hello");
+    ECValue s(L"Hello");
     EXPECT_TRUE (s.IsString());
     EXPECT_TRUE (!s.IsNull());
     EXPECT_STREQ (L"Hello", s.GetString());
@@ -341,7 +341,7 @@ TEST (MemoryLayoutTests, Values) // move it!
     EXPECT_TRUE (s.IsNull());
     EXPECT_TRUE (NULL == s.GetString());
     
-    Value snull((wchar_t*)NULL);
+    ECValue snull((wchar_t*)NULL);
     EXPECT_TRUE (snull.IsString());
     EXPECT_TRUE (snull.IsNull());
     wchar_t const * wcnull = snull.GetString();
@@ -355,19 +355,19 @@ TEST (MemoryLayoutTests, TestSetGetNull)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
-    SchemaPtr schema = CreateTestSchema();
-    ClassP ecClass = schema->GetClassP (L"TestClass");
+    ECSchemaPtr schema = CreateTestSchema();
+    ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);
         
     ClassLayout classLayout;
     classLayout.SetClass (*ecClass, 42);
-    StandaloneInstanceEnablerPtr enabler = StandaloneInstanceEnabler::CreateEnabler (classLayout);
-    EC::StandaloneInstanceFactoryP factory = new StandaloneInstanceFactory (classLayout);
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (classLayout);
+    EC::StandaloneECInstanceFactoryP factory = new StandaloneECInstanceFactory (classLayout);
     
-    EC::StandaloneInstanceP instance = NULL;
+    EC::StandaloneECInstanceP instance = NULL;
     EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
     
-    Value v;
+    ECValue v;
     
     EXPECT_TRUE (SUCCESS == instance->GetValue (v, L"D"));
     EXPECT_TRUE (v.IsNull());
@@ -395,7 +395,7 @@ TEST (MemoryLayoutTests, TestSetGetNull)
     CoUninitialize();
     }
     
-void SetStringToSpecifiedNumberOfCharacters (InstanceR instance, int nChars)
+void SetStringToSpecifiedNumberOfCharacters (IECInstanceR instance, int nChars)
     {
     wchar_t * string = (wchar_t *)alloca ((nChars + 1) * sizeof(wchar_t));
     string[0] = '\0';
@@ -407,7 +407,7 @@ void SetStringToSpecifiedNumberOfCharacters (InstanceR instance, int nChars)
         wcscat (string, digitAsString);
         }
         
-    Value v(string);
+    ECValue v(string);
     EXPECT_TRUE (SUCCESS == instance.SetValue (L"S", v));
     }
 
@@ -415,18 +415,18 @@ TEST (MemoryLayoutTests, DemonstrateInstanceFactory)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
-    SchemaPtr schema = CreateTestSchema();
-    ClassP ecClass = schema->GetClassP (L"TestClass");
+    ECSchemaPtr schema = CreateTestSchema();
+    ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);
         
     ClassLayout classLayout;
     classLayout.SetClass (*ecClass, 42);
-    StandaloneInstanceEnablerPtr enabler = StandaloneInstanceEnabler::CreateEnabler (classLayout);
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (classLayout);
 
-    EC::StandaloneInstanceP instance = NULL;
+    EC::StandaloneECInstanceP instance = NULL;
     
     UInt32 slack = 0;
-    EC::StandaloneInstanceFactoryP factory = new StandaloneInstanceFactory (classLayout, slack);
+    EC::StandaloneECInstanceFactoryP factory = new StandaloneECInstanceFactory (classLayout, slack);
 
     EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));    
     SetStringToSpecifiedNumberOfCharacters (*instance, 1); // There is no headroom, so this tiny addition triggers a realloc
@@ -447,7 +447,7 @@ TEST (MemoryLayoutTests, DemonstrateInstanceFactory)
     EXPECT_TRUE (SUCCESS == factory->FinishConstruction(instance));
     EXPECT_EQ (2, factory->GetReallocationCount()); // No new realloc, because it double its size when it realloced
     
-    factory = new StandaloneInstanceFactory (classLayout, slack, 4000);
+    factory = new StandaloneECInstanceFactory (classLayout, slack, 4000);
     instance = NULL;
     EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
     EXPECT_EQ (0, factory->GetReallocationCount()); 
@@ -469,8 +469,8 @@ TEST (MemoryLayoutTests, DemonstrateInstanceFactory)
     EXPECT_TRUE (SUCCESS == factory->CancelConstruction(instance));
     
     // The factory only keeps one "under construction" at a time... and it tracks which one it is.
-    EC::StandaloneInstanceP oldInstance = instance;    
-    factory = new StandaloneInstanceFactory (classLayout, slack, 2000);
+    EC::StandaloneECInstanceP oldInstance = instance;    
+    factory = new StandaloneECInstanceFactory (classLayout, slack, 2000);
     instance = NULL;
     EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
     DISABLE_ASSERTS // Otherwise, the lines below would trigger assert.

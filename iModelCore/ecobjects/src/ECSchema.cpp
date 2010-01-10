@@ -17,13 +17,13 @@ BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
-Schema::~Schema
+ECSchema::~ECSchema
 (
 )
     {
     // NEEDSWORK make sure everything is destroyed
-    Logger::GetLogger()->infov (L"~~~~ Destroying Schema: %s\n", GetName().c_str());
-    stdext::hash_map<const wchar_t * , ClassP>::const_iterator classIterator, classEnd;        
+    Logger::GetLogger()->infov (L"~~~~ Destroying ECSchema: %s\n", GetName().c_str());
+    stdext::hash_map<const wchar_t * , ECClassP>::const_iterator classIterator, classEnd;        
     classIterator = m_classMap.begin();
     classEnd = m_classMap.end();
     Logger::GetLogger()->tracev (L"     Freeing memory for %d classes\n", m_classMap.size());
@@ -49,7 +49,7 @@ Schema::~Schema
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring const& Schema::GetName
+std::wstring const& ECSchema::GetName
 (
 ) const
     {
@@ -59,7 +59,7 @@ std::wstring const& Schema::GetName
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Schema::SetName
+ECObjectsStatus ECSchema::SetName
 (
 std::wstring const& name
 )
@@ -72,7 +72,7 @@ std::wstring const& name
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring const& Schema::GetNamespacePrefix
+std::wstring const& ECSchema::GetNamespacePrefix
 (
 ) const
     {        
@@ -82,7 +82,7 @@ std::wstring const& Schema::GetNamespacePrefix
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Schema::SetNamespacePrefix
+ECObjectsStatus ECSchema::SetNamespacePrefix
 (
 std::wstring const& namespacePrefix
 )
@@ -94,7 +94,7 @@ std::wstring const& namespacePrefix
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring const& Schema::GetDescription
+std::wstring const& ECSchema::GetDescription
 (
 ) const
     {
@@ -104,7 +104,7 @@ std::wstring const& Schema::GetDescription
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Schema::SetDescription
+ECObjectsStatus ECSchema::SetDescription
 (
 std::wstring const& description
 )
@@ -116,7 +116,7 @@ std::wstring const& description
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring const& Schema::GetDisplayLabel
+std::wstring const& ECSchema::GetDisplayLabel
 (
 ) const
     {
@@ -126,7 +126,7 @@ std::wstring const& Schema::GetDisplayLabel
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Schema::SetDisplayLabel
+ECObjectsStatus ECSchema::SetDisplayLabel
 (
 std::wstring const& displayLabel
 )
@@ -138,7 +138,7 @@ std::wstring const& displayLabel
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Schema::GetIsDisplayLabelDefined
+bool ECSchema::GetIsDisplayLabelDefined
 (
 ) const
     {
@@ -148,7 +148,7 @@ bool Schema::GetIsDisplayLabelDefined
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 Schema::GetVersionMajor
+UInt32 ECSchema::GetVersionMajor
 (
 ) const
     {
@@ -158,7 +158,7 @@ UInt32 Schema::GetVersionMajor
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Schema::SetVersionMajor
+ECObjectsStatus ECSchema::SetVersionMajor
 (
 const UInt32 versionMajor
 )
@@ -170,7 +170,7 @@ const UInt32 versionMajor
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 Schema::GetVersionMinor
+UInt32 ECSchema::GetVersionMinor
 (
 ) const
     {
@@ -180,7 +180,7 @@ UInt32 Schema::GetVersionMinor
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Schema::SetVersionMinor
+ECObjectsStatus ECSchema::SetVersionMinor
 (
 const UInt32 versionMinor
 )
@@ -192,12 +192,12 @@ const UInt32 versionMinor
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassP Schema::GetClassP
+ECClassP ECSchema::GetClassP
 (
 std::wstring const& name
 ) const
     {
-    stdext::hash_map<const wchar_t *, ClassP>::const_iterator  classIterator;
+    stdext::hash_map<const wchar_t *, ECClassP>::const_iterator  classIterator;
     classIterator = m_classMap.find (name.c_str());
     
     if ( classIterator != m_classMap.end() )
@@ -209,13 +209,13 @@ std::wstring const& name
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Schema::AddClass 
+ECObjectsStatus ECSchema::AddClass 
 (
-ClassP&                 pClass
+ECClassP&                 pClass
 )
     {
-    std::pair < stdext::hash_map<const wchar_t *, ClassP>::iterator, bool > resultPair;
-    resultPair = m_classMap.insert (std::pair<const wchar_t *, ClassP> (pClass->Name.c_str(), pClass));
+    std::pair < stdext::hash_map<const wchar_t *, ECClassP>::iterator, bool > resultPair;
+    resultPair = m_classMap.insert (std::pair<const wchar_t *, ECClassP> (pClass->Name.c_str(), pClass));
     if (resultPair.second == false)
         {
         Logger::GetLogger()->warningv (L"Can not create class '%s' because it already exists in the schema", pClass->Name.c_str());
@@ -230,13 +230,13 @@ ClassP&                 pClass
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Schema::CreateClass 
+ECObjectsStatus ECSchema::CreateClass 
 (
-ClassP&                 pClass, 
+ECClassP&                 pClass, 
 std::wstring const&     name
 )
     {
-    pClass = new Class(*this);
+    pClass = new ECClass(*this);
     ECObjectsStatus status = pClass->SetName (name);
     if (ECOBJECTS_STATUS_Success != status)
         return status;
@@ -247,19 +247,19 @@ std::wstring const&     name
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Schema::CreateRelationshipClass 
+ECObjectsStatus ECSchema::CreateRelationshipClass 
 (
-RelationshipClassP&     pClass, 
+ECRelationshipClassP&     pClass, 
 std::wstring const&     name
 )
     {
-    pClass = new RelationshipClass(*this);
+    pClass = new ECRelationshipClass(*this);
     ECObjectsStatus status = pClass->SetName (name);
     if (ECOBJECTS_STATUS_Success != status)
         return status;
 
-    std::pair < stdext::hash_map<const wchar_t *, ClassP>::iterator, bool > resultPair;
-    resultPair = m_classMap.insert (std::pair<const wchar_t *, ClassP> (pClass->Name.c_str(), pClass));
+    std::pair < stdext::hash_map<const wchar_t *, ECClassP>::iterator, bool > resultPair;
+    resultPair = m_classMap.insert (std::pair<const wchar_t *, ECClassP> (pClass->Name.c_str(), pClass));
     if (resultPair.second == false)
         {
         delete pClass;
@@ -275,7 +275,7 @@ std::wstring const&     name
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Schema::ParseVersionString 
+ECObjectsStatus ECSchema::ParseVersionString 
 (
 UInt32&                 versionMajor, 
 UInt32&                 versionMinor, 
@@ -330,7 +330,7 @@ std::wstring const&     versionString
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Schema::SetVersionFromString 
+ECObjectsStatus ECSchema::SetVersionFromString 
 (
 std::wstring const& versionString
 )
@@ -349,26 +349,26 @@ std::wstring const& versionString
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Schema::CreateSchema
+ECObjectsStatus ECSchema::CreateSchema
 (
-SchemaPtr&              schemaOut, 
+ECSchemaPtr&              schemaOut, 
 std::wstring const&     schemaName
 )
     {    
-    schemaOut = new Schema();
+    schemaOut = new ECSchema();
     return schemaOut->SetName (schemaName);
     }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaP Schema::GetSchemaByNamespacePrefixP
+ECSchemaP ECSchema::GetSchemaByNamespacePrefixP
 (
 std::wstring const&     namespacePrefix
 ) const
     {
     if ((namespacePrefix.length() == 0) || (namespacePrefix == m_namespacePrefix))
-        return (SchemaP)this;
+        return (ECSchemaP)this;
 
     // NEEDSWORK lookup referenced schema by prefix
 
@@ -378,9 +378,9 @@ std::wstring const&     namespacePrefix
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring const* Schema::ResolveNamespacePrefix
+std::wstring const* ECSchema::ResolveNamespacePrefix
 (
-SchemaCR    schema
+ECSchemaCR    schema
 ) const
     {
     if (&schema == this)
@@ -394,7 +394,7 @@ SchemaCR    schema
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus Schema::ReadClassStubsFromXml
+SchemaDeserializationStatus ECSchema::ReadClassStubsFromXml
 (
 MSXML2::IXMLDOMNode& schemaNode,
 ClassDeserializationVector&  classes
@@ -402,12 +402,12 @@ ClassDeserializationVector&  classes
     {
     SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
 
-    // Create Class Stubs (no attributes or properties)
+    // Create ECClass Stubs (no attributes or properties)
     size_t classElementLength = wcslen (EC_CLASS_ELEMENT);
     MSXML2::IXMLDOMNodeListPtr xmlNodeListPtr = schemaNode.selectNodes (EC_NAMESPACE_PREFIX L":" EC_CLASS_ELEMENT L" | " EC_NAMESPACE_PREFIX L":" EC_RELATIONSHIP_CLASS_ELEMENT);
     _bstr_t baseName;    
-    ClassP pClass;
-    RelationshipClassP pRelationshipClass;
+    ECClassP pClass;
+    ECRelationshipClassP pRelationshipClass;
     MSXML2::IXMLDOMNodePtr xmlNodePtr;
     while (NULL != (xmlNodePtr = xmlNodeListPtr->nextNode()))
         {        
@@ -415,12 +415,12 @@ ClassDeserializationVector&  classes
         
         if (baseName.length() == classElementLength)
             {            
-            pClass = new Class (*this);
+            pClass = new ECClass (*this);
             pRelationshipClass = NULL;
             }
         else
             {            
-            pRelationshipClass = new RelationshipClass (*this);            
+            pRelationshipClass = new ECRelationshipClass (*this);            
             pClass = pRelationshipClass;
             }
 
@@ -431,9 +431,9 @@ ClassDeserializationVector&  classes
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
 
         if (NULL == pRelationshipClass)
-            Logger::GetLogger()->tracev (L"    Created Class Stub: %s\n", pClass->Name.c_str());
+            Logger::GetLogger()->tracev (L"    Created ECClass Stub: %s\n", pClass->Name.c_str());
         else
-            Logger::GetLogger()->tracev (L"    Created Relationship Class Stub: %s\n", pClass->Name.c_str());
+            Logger::GetLogger()->tracev (L"    Created Relationship ECClass Stub: %s\n", pClass->Name.c_str());
 
         classes.push_back (std::make_pair (pClass, xmlNodePtr));
         }
@@ -443,11 +443,11 @@ ClassDeserializationVector&  classes
 /*---------------------------------------------------------------------------------**//**
  - Expects class stubs have already been read and created.  They are stored in the vector passed into this method.
  - Expects referenced schemas have been resolved and deserialized so that base classes & structs in other schemas can be located.
- - Reads the contents of each XML node cached in the classes vector and populates the in-memory EC:Class with
+ - Reads the contents of each XML node cached in the classes vector and populates the in-memory EC:ECClass with
    base classes, properties & relationship endpoints.
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus Schema::ReadClassContentsFromXml
+SchemaDeserializationStatus ECSchema::ReadClassContentsFromXml
 (
 ClassDeserializationVector&  classes
 )
@@ -455,7 +455,7 @@ ClassDeserializationVector&  classes
     SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
 
     ClassDeserializationVector::const_iterator  classesStart, classesEnd, classesIterator;
-    ClassP pClass;
+    ECClassP pClass;
     MSXML2::IXMLDOMNodePtr xmlNodePtr;
     for(classesStart = classes.begin(), classesEnd = classes.end(), classesIterator = classesStart; classesIterator != classesEnd; classesIterator++)
         {
@@ -472,14 +472,13 @@ ClassDeserializationVector&  classes
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus Schema::ReadXml
+SchemaDeserializationStatus ECSchema::ReadXml
 (
-SchemaPtr&                          schemaOut, 
+ECSchemaPtr&                        schemaOut, 
 MSXML2::IXMLDOMDocument2&           pXmlDoc
 )
     {            
     SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
-    
     
     pXmlDoc.setProperty("SelectionNamespaces", L"xmlns:" EC_NAMESPACE_PREFIX L"='" ECXML_URI_2_0 L"'");
     MSXML2::IXMLDOMNodePtr xmlNodePtr = pXmlDoc.selectSingleNode (L"/" EC_NAMESPACE_PREFIX L":" EC_SCHEMA_ELEMENT);
@@ -522,7 +521,7 @@ MSXML2::IXMLDOMDocument2&           pXmlDoc
 
     // NEEDSWORK Find and deserialize referenced schemas
 
-    // NEEDSWORK Class inheritance (base classes, properties & relationship endpoints)
+    // NEEDSWORK ECClass inheritance (base classes, properties & relationship endpoints)
     if (SCHEMA_DESERIALIZATION_STATUS_Success != (status = schemaOut->ReadClassContentsFromXml (classes)))
         return status;
 
@@ -534,7 +533,7 @@ MSXML2::IXMLDOMDocument2&           pXmlDoc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                               
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus Schema::WriteXml
+SchemaSerializationStatus ECSchema::WriteXml
 (
 MSXML2::IXMLDOMDocument2* pXmlDoc
 )
@@ -570,7 +569,7 @@ MSXML2::IXMLDOMDocument2* pXmlDoc
     std::vector<std::wstring> alreadySerializedClasses;
     // sort the classes by name so the order in which they are serialized is predictable.
     
-    for each (ClassP pClass in Classes)
+    for each (ECClassP pClass in Classes)
         {
         // NEEDSWORK Make sure haven't already serialized this class
         pClass->WriteXml(schemaElementPtr);
@@ -615,9 +614,9 @@ MSXML2::IXMLDOMDocument2& pXmlDoc
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus Schema::ReadXmlFromFile
+SchemaDeserializationStatus ECSchema::ReadXmlFromFile
 (
-SchemaPtr&          schemaOut, 
+ECSchemaPtr&          schemaOut, 
 const wchar_t *     ecSchemaXmlFile
 )
     {                  
@@ -644,9 +643,9 @@ const wchar_t *     ecSchemaXmlFile
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus Schema::ReadXmlFromString
+SchemaDeserializationStatus ECSchema::ReadXmlFromString
 (
-SchemaPtr&          schemaOut, 
+ECSchemaPtr&          schemaOut, 
 const wchar_t *     ecSchemaXml
 )
     {                  
@@ -673,9 +672,9 @@ const wchar_t *     ecSchemaXml
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-//SchemaDeserializationStatus Schema::ReadXmlFromStream
+//SchemaDeserializationStatus ECSchema::ReadXmlFromStream
 //(
-//SchemaPtr&          schemaOut, 
+//ECSchemaPtr&          schemaOut, 
 //IStream *           ecSchemaXmlStream
 //)
 //    {                  
@@ -702,7 +701,7 @@ const wchar_t *     ecSchemaXml
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus Schema::WriteXmlToString
+SchemaSerializationStatus ECSchema::WriteXmlToString
 (
 const wchar_t*  &ecSchemaXml
 )
@@ -729,7 +728,7 @@ const wchar_t*  &ecSchemaXml
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus Schema::WriteXmlToFile
+SchemaSerializationStatus ECSchema::WriteXmlToFile
 (
 const wchar_t * ecSchemaXmlFile
 )
@@ -755,7 +754,7 @@ const wchar_t * ecSchemaXmlFile
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-//SchemaSerializationStatus Schema::WriteXmlToStream
+//SchemaSerializationStatus ECSchema::WriteXmlToStream
 //(
 //IStream * ecSchemaXmlStream
 //)
@@ -781,7 +780,7 @@ const wchar_t * ecSchemaXmlFile
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassContainerCR Schema::GetClasses
+ECClassContainerCR ECSchema::GetClasses
 (
 ) const
     {
@@ -791,23 +790,23 @@ ClassContainerCR Schema::GetClasses
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassContainer::const_iterator  ClassContainer::begin () const
+ECClassContainer::const_iterator  ECClassContainer::begin () const
     {
-    return ClassContainer::const_iterator(m_classMap.begin());        
+    return ECClassContainer::const_iterator(m_classMap.begin());        
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassContainer::const_iterator  ClassContainer::end () const
+ECClassContainer::const_iterator  ECClassContainer::end () const
     {
-    return ClassContainer::const_iterator(m_classMap.end());        
+    return ECClassContainer::const_iterator(m_classMap.end());        
     }   
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassContainer::const_iterator& ClassContainer::const_iterator::operator++()
+ECClassContainer::const_iterator& ECClassContainer::const_iterator::operator++()
     {
     m_state->m_mapIterator++;    
     return *this;
@@ -816,7 +815,7 @@ ClassContainer::const_iterator& ClassContainer::const_iterator::operator++()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool    ClassContainer::const_iterator::operator!= (const_iterator const& rhs) const
+bool    ECClassContainer::const_iterator::operator!= (const_iterator const& rhs) const
     {
     return (m_state->m_mapIterator != rhs.m_state->m_mapIterator);
     }
@@ -824,9 +823,9 @@ bool    ClassContainer::const_iterator::operator!= (const_iterator const& rhs) c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassP   ClassContainer::const_iterator::operator*() const
+ECClassP   ECClassContainer::const_iterator::operator*() const
     {
-    std::pair<const wchar_t * , ClassP> mapPair = *(m_state->m_mapIterator);
+    std::pair<const wchar_t * , ECClassP> mapPair = *(m_state->m_mapIterator);
     return mapPair.second;
     };
 

@@ -18,7 +18,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
-Class::~Class
+ECClass::~ECClass
 (
 )
     {
@@ -28,7 +28,7 @@ Class::~Class
     
     m_propertyList.clear();
     
-    for each (std::pair<const wchar_t * , PropertyP> entry in m_propertyMap)
+    for each (std::pair<const wchar_t * , ECPropertyP> entry in m_propertyMap)
         delete entry.second;
     
     m_propertyMap.clear();
@@ -39,7 +39,7 @@ Class::~Class
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring const& Class::GetName
+std::wstring const& ECClass::GetName
 (
 ) const
     {        
@@ -49,7 +49,7 @@ std::wstring const& Class::GetName
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Class::SetName
+ECObjectsStatus ECClass::SetName
 (
 std::wstring const& name
 )
@@ -62,7 +62,7 @@ std::wstring const& name
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring const& Class::GetDescription
+std::wstring const& ECClass::GetDescription
 (
 ) const
     {
@@ -72,7 +72,7 @@ std::wstring const& Class::GetDescription
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Class::SetDescription
+ECObjectsStatus ECClass::SetDescription
 (
 std::wstring const& description
 )
@@ -84,7 +84,7 @@ std::wstring const& description
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring const& Class::GetDisplayLabel
+std::wstring const& ECClass::GetDisplayLabel
 (
 ) const
     {
@@ -94,7 +94,7 @@ std::wstring const& Class::GetDisplayLabel
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Class::SetDisplayLabel
+ECObjectsStatus ECClass::SetDisplayLabel
 (
 std::wstring const& displayLabel
 )
@@ -106,7 +106,7 @@ std::wstring const& displayLabel
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Class::GetIsDisplayLabelDefined
+bool ECClass::GetIsDisplayLabelDefined
 (
 ) const
     {
@@ -116,7 +116,7 @@ bool Class::GetIsDisplayLabelDefined
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Class::GetIsStruct
+bool ECClass::GetIsStruct
 (
 ) const
     {
@@ -126,7 +126,7 @@ bool Class::GetIsStruct
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Class::SetIsStruct
+ECObjectsStatus ECClass::SetIsStruct
 (
 bool isStruct
 )
@@ -138,7 +138,7 @@ bool isStruct
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Class::SetIsStruct
+ECObjectsStatus ECClass::SetIsStruct
 (
 const wchar_t * isStruct
 )
@@ -155,7 +155,7 @@ const wchar_t * isStruct
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Class::GetIsCustomAttributeClass
+bool ECClass::GetIsCustomAttributeClass
 (
 ) const
     {
@@ -165,7 +165,7 @@ bool Class::GetIsCustomAttributeClass
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Class::SetIsCustomAttributeClass
+ECObjectsStatus ECClass::SetIsCustomAttributeClass
 (
 bool isCustomAttributeClass
 )
@@ -177,7 +177,7 @@ bool isCustomAttributeClass
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Class::SetIsCustomAttributeClass
+ECObjectsStatus ECClass::SetIsCustomAttributeClass
 (
 const wchar_t * isCustomAttributeClass
 )
@@ -194,7 +194,7 @@ const wchar_t * isCustomAttributeClass
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Class::GetIsDomainClass
+bool ECClass::GetIsDomainClass
 (
 ) const
     {
@@ -204,7 +204,7 @@ bool Class::GetIsDomainClass
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Class::SetIsDomainClass
+ECObjectsStatus ECClass::SetIsDomainClass
 (
 bool isDomainClass
 )
@@ -216,7 +216,7 @@ bool isDomainClass
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Class::SetIsDomainClass
+ECObjectsStatus ECClass::SetIsDomainClass
 (
 const wchar_t * isDomainClass
 )
@@ -233,7 +233,7 @@ const wchar_t * isDomainClass
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaCR Class::GetSchema
+ECSchemaCR ECClass::GetSchema
 (
 ) const
     {
@@ -243,14 +243,14 @@ SchemaCR Class::GetSchema
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Class::AddProperty
+ECObjectsStatus ECClass::AddProperty
 (
-PropertyP&                 pProperty
+ECPropertyP&                 pProperty
 )
     {
     // NEEDSWORK - need to account for property override behaviors if the property already exists in a base class
-    std::pair < stdext::hash_map<const wchar_t *, PropertyP>::iterator, bool > resultPair;
-    resultPair = m_propertyMap.insert (std::pair<const wchar_t *, PropertyP> (pProperty->Name.c_str(), pProperty));
+    std::pair < stdext::hash_map<const wchar_t *, ECPropertyP>::iterator, bool > resultPair;
+    resultPair = m_propertyMap.insert (std::pair<const wchar_t *, ECPropertyP> (pProperty->Name.c_str(), pProperty));
     if (resultPair.second == false)
         {
         Logger::GetLogger()->warningv  (L"Can not create property '%s' because it already exists in the schema", pProperty->Name.c_str());
@@ -267,12 +267,12 @@ PropertyP&                 pProperty
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-PropertyP Class::GetPropertyP
+ECPropertyP ECClass::GetPropertyP
 (
 std::wstring const& propertyName
 ) const
     {
-    stdext::hash_map<const wchar_t *, PropertyP>::const_iterator  propertyIterator;
+    stdext::hash_map<const wchar_t *, ECPropertyP>::const_iterator  propertyIterator;
     propertyIterator = m_propertyMap.find (propertyName.c_str());
     
     if ( propertyIterator != m_propertyMap.end() )
@@ -282,10 +282,10 @@ std::wstring const& propertyName
 
 
     // not found yet, search the inheritence hierarchy
-    std::vector<ClassP>::const_iterator baseClassIterator;
-    for each (const ClassP& baseClass in m_baseClasses)
+    std::vector<ECClassP>::const_iterator baseClassIterator;
+    for each (const ECClassP& baseClass in m_baseClasses)
         {
-        PropertyP baseProperty = baseClass->GetPropertyP (propertyName);
+        ECPropertyP baseProperty = baseClass->GetPropertyP (propertyName);
         if (NULL != baseProperty)
             return baseProperty;
         }
@@ -294,13 +294,13 @@ std::wstring const& propertyName
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Class::AddBaseClass
+ECObjectsStatus ECClass::AddBaseClass
 (
-ClassCR baseClass
+ECClassCR baseClass
 )
     {
     // NEEDSWORK - ensure the base class does not already exist
-    m_baseClasses.push_back ((ClassP)&baseClass);
+    m_baseClasses.push_back ((ECClassP)&baseClass);
 
     // NEEDSWORK - validate property overrides are correct
 
@@ -312,7 +312,7 @@ ClassCR baseClass
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Class::HasBaseClasses
+bool ECClass::HasBaseClasses
 (
 )
     {
@@ -322,7 +322,7 @@ bool Class::HasBaseClasses
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus Class::ReadXmlAttributes
+SchemaDeserializationStatus ECClass::ReadXmlAttributes
 (
 MSXML2::IXMLDOMNode& classNode
 )
@@ -353,7 +353,7 @@ MSXML2::IXMLDOMNode& classNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus Class::ReadXmlContents
+SchemaDeserializationStatus ECClass::ReadXmlContents
 (
 MSXML2::IXMLDOMNode& classNode
 )
@@ -368,14 +368,14 @@ MSXML2::IXMLDOMNode& classNode
         // Parse the potentially qualified class name into a namespace prefix and short class name
         std::wstring namespacePrefix;
         std::wstring className;
-        if (ECOBJECTS_STATUS_Success != Class::ParseClassName (namespacePrefix, className, qualifiedClassName))
+        if (ECOBJECTS_STATUS_Success != ECClass::ParseClassName (namespacePrefix, className, qualifiedClassName))
             {
             Logger::GetLogger()->warningv (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the value '%s' that can not be parsed.", 
                 this->Name.c_str(), qualifiedClassName.c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
         
-        SchemaP resolvedSchema = Schema.GetSchemaByNamespacePrefixP (namespacePrefix);
+        ECSchemaP resolvedSchema = Schema.GetSchemaByNamespacePrefixP (namespacePrefix);
         if (NULL == resolvedSchema)
             {
             Logger::GetLogger()->warningv  (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the namespace prefix '%s' that can not be resolved to a referenced schema.", 
@@ -383,7 +383,7 @@ MSXML2::IXMLDOMNode& classNode
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
 
-        ClassP baseClass = resolvedSchema->GetClassP (className);
+        ECClassP baseClass = resolvedSchema->GetClassP (className);
         if (NULL == baseClass)
             {
             Logger::GetLogger()->warningv  (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'", 
@@ -399,13 +399,13 @@ MSXML2::IXMLDOMNode& classNode
     xmlNodeListPtr = classNode.selectNodes (EC_NAMESPACE_PREFIX L":" EC_PROPERTY_ELEMENT L" | " EC_NAMESPACE_PREFIX L":" EC_ARRAYPROPERTY_ELEMENT L" | " EC_NAMESPACE_PREFIX L":" EC_STRUCTPROPERTY_ELEMENT);
     while (NULL != (xmlNodePtr = xmlNodeListPtr->nextNode()))
         {   
-        PropertyP pProperty = NULL;
+        ECPropertyP pProperty = NULL;
         if (0 == wcscmp (xmlNodePtr->baseName, EC_PROPERTY_ELEMENT))
-            pProperty = new PrimitiveProperty (*this);
+            pProperty = new PrimitiveECProperty (*this);
         else if (0 == wcscmp (xmlNodePtr->baseName, EC_ARRAYPROPERTY_ELEMENT))
-            pProperty = new ArrayProperty (*this);
+            pProperty = new ArrayECProperty (*this);
         else if (0 == wcscmp (xmlNodePtr->baseName, EC_STRUCTPROPERTY_ELEMENT))
-            pProperty = new StructProperty (*this);
+            pProperty = new StructECProperty (*this);
 
         SchemaDeserializationStatus status = pProperty->_ReadXml(xmlNodePtr);
         if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
@@ -428,7 +428,7 @@ MSXML2::IXMLDOMNode& classNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus Class::WriteXml
+SchemaSerializationStatus ECClass::WriteXml
 (
 MSXML2::IXMLDOMElement& parentNode
 )
@@ -442,7 +442,7 @@ MSXML2::IXMLDOMElement& parentNode
 
     MSXML2::IXMLDOMElementPtr classPtr = NULL;
     
-    if (NULL == dynamic_cast<RelationshipClassP>((ClassP)this))
+    if (NULL == dynamic_cast<ECRelationshipClassP>((ECClassP)this))
         classPtr = parentNode.ownerDocument->createNode(NODE_ELEMENT, EC_CLASS_ELEMENT, ECXML_URI_2_0);
     else
         classPtr = parentNode.ownerDocument->createNode(NODE_ELEMENT, EC_RELATIONSHIP_CLASS_ELEMENT, ECXML_URI_2_0);
@@ -457,7 +457,7 @@ MSXML2::IXMLDOMElement& parentNode
     WRITE_OPTIONAL_BOOL_XML_ATTRIBUTE(IS_CUSTOMATTRIBUTE_ATTRIBUTE, IsCustomAttributeClass, classPtr);
     WRITE_BOOL_XML_ATTRIBUTE(IS_DOMAINCLASS_ATTRIBUTE, IsDomainClass, classPtr);
     
-    for each (const ClassP& baseClass in m_baseClasses)
+    for each (const ECClassP& baseClass in m_baseClasses)
         {
         MSXML2::IXMLDOMElementPtr basePtr = parentNode.ownerDocument->createNode(NODE_ELEMENT, EC_BASE_CLASS_ELEMENT, ECXML_URI_2_0);
         basePtr->text = baseClass->Name.c_str();
@@ -465,7 +465,7 @@ MSXML2::IXMLDOMElement& parentNode
         APPEND_CHILD_TO_PARENT(basePtr, classPtr);
         }
         
-    for each (PropertyP prop in Properties)
+    for each (ECPropertyP prop in Properties)
         {
         prop->_WriteXml(classPtr);
         }
@@ -475,7 +475,7 @@ MSXML2::IXMLDOMElement& parentNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Class::ParseClassName 
+ECObjectsStatus ECClass::ParseClassName 
 (
 std::wstring & prefix, 
 std::wstring & className, 
@@ -516,7 +516,7 @@ std::wstring const& qualifiedClassName
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-PropertyContainerCR Class::GetProperties
+ECPropertyContainerCR ECClass::GetProperties
 (
 ) const
     {
@@ -526,23 +526,23 @@ PropertyContainerCR Class::GetProperties
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-PropertyContainer::const_iterator  PropertyContainer::begin () const
+ECPropertyContainer::const_iterator  ECPropertyContainer::begin () const
     {
-    return PropertyContainer::const_iterator(m_propertyList.begin());        
+    return ECPropertyContainer::const_iterator(m_propertyList.begin());        
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-PropertyContainer::const_iterator  PropertyContainer::end () const
+ECPropertyContainer::const_iterator  ECPropertyContainer::end () const
     {
-    return PropertyContainer::const_iterator(m_propertyList.end());        
+    return ECPropertyContainer::const_iterator(m_propertyList.end());        
     }   
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-PropertyContainer::const_iterator& PropertyContainer::const_iterator::operator++()
+ECPropertyContainer::const_iterator& ECPropertyContainer::const_iterator::operator++()
     {
     m_state->m_listIterator++;    
     return *this;
@@ -551,7 +551,7 @@ PropertyContainer::const_iterator& PropertyContainer::const_iterator::operator++
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            PropertyContainer::const_iterator::operator!= (const_iterator const& rhs) const
+bool            ECPropertyContainer::const_iterator::operator!= (const_iterator const& rhs) const
     {
     return (m_state->m_listIterator != rhs.m_state->m_listIterator);
     }
@@ -559,9 +559,9 @@ bool            PropertyContainer::const_iterator::operator!= (const_iterator co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-PropertyP       PropertyContainer::const_iterator::operator*() const
+ECPropertyP       ECPropertyContainer::const_iterator::operator*() const
     {
-    PropertyP pProperty = *(m_state->m_listIterator);
+    ECPropertyP pProperty = *(m_state->m_listIterator);
     return pProperty;
     };
 

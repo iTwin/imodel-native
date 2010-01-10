@@ -63,7 +63,7 @@
 
 // If you add any additional ECXML typenames you must update 
 //    - enum PrimitiveType
-//    - PrimitiveProperty::_GetTypeName
+//    - PrimitiveECProperty::_GetTypeName
 static const std::wstring ECXML_TYPENAME_BINARY             = L"binary";
 static const std::wstring ECXML_TYPENAME_BOOLEAN            = L"boolean";
 static const std::wstring ECXML_TYPENAME_DATETIME           = L"dateTime";

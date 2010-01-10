@@ -178,9 +178,9 @@ std::wstring    ClassLayout::GetClassName() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ClassLayout::AddProperties (ClassCR ecClass, wchar_t const * nameRoot, bool addingFixedSizeProps)
+void            ClassLayout::AddProperties (ECClassCR ecClass, wchar_t const * nameRoot, bool addingFixedSizeProps)
     {
-    for each (PropertyP property in ecClass.GetProperties())
+    for each (ECPropertyP property in ecClass.GetProperties())
         {
         std::wstring    propName = property->GetName();
         
@@ -189,7 +189,7 @@ void            ClassLayout::AddProperties (ClassCR ecClass, wchar_t const * nam
 
         if (property->GetIsPrimitive())
             {
-            PrimitivePropertyP  primitiveProp = property->GetAsPrimitiveProperty();
+            PrimitiveECPropertyP  primitiveProp = property->GetAsPrimitiveProperty();
             PrimitiveType       primitiveType = primitiveProp->GetType();
 
             bool isFixedSize = PrimitiveTypeIsFixedSize(primitiveType);
@@ -203,8 +203,8 @@ void            ClassLayout::AddProperties (ClassCR ecClass, wchar_t const * nam
         else
         if (property->GetIsStruct())
             {
-            StructPropertyP  structProp = property->GetAsStructProperty();
-            ClassCR          nestedClass = structProp->GetType();
+            StructECPropertyP  structProp = property->GetAsStructProperty();
+            ECClassCR          nestedClass = structProp->GetType();
             
             AddProperties (nestedClass, propName.c_str(), addingFixedSizeProps);
             }
@@ -224,7 +224,7 @@ void            ClassLayout::AddProperties (ClassCR ecClass, wchar_t const * nam
             For a given array of fixed-sized values, the memory layout will be: count, nullflags, element, element, element
             ...and we have random access to the elements.
 
-            For an array of variable-sized values, we follow the same pattern as the overall StandaloneInstance
+            For an array of variable-sized values, we follow the same pattern as the overall StandaloneECInstance
             and have a fixed-sized section (an array of SecondaryOffsets) followed by a variable-sized section holding the actual values.
             For efficiency, when adding array elements, you really, really want to reserve them in advance, otherwise every
             new element increases the size of the fixed-sized section, forcing a shift of the entire variable-sized section.
@@ -256,13 +256,13 @@ void            ClassLayout::AddProperties (ClassCR ecClass, wchar_t const * nam
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ClassLayout::SetClass (ClassCR ecClass, UInt16 classIndex)
+StatusInt       ClassLayout::SetClass (ECClassCR ecClass, UInt16 classIndex)
     {
     m_class      = &ecClass;
     m_classIndex = classIndex;
     m_className  = ecClass.GetName(); // WIP_FUSION: remove this redundant information
 
-    // Iterate through the EC::Properties of the EC::Class and build the layout
+    // Iterate through the EC::Properties of the EC::ECClass and build the layout
     AddProperties (ecClass, NULL, true);
     AddProperties (ecClass, NULL, false);
 
@@ -277,7 +277,7 @@ StatusInt       ClassLayout::SetClass (ClassCR ecClass, UInt16 classIndex)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/  
-ClassCR         ClassLayout::GetClass () const
+ECClassCR         ClassLayout::GetClass () const
     {
     return *m_class;
     }
@@ -617,7 +617,7 @@ void            MemoryInstanceSupport::InitializeMemory(ClassLayoutCR classLayou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       MemoryInstanceSupport::GetValueFromMemory (ValueR v, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const
+StatusInt       MemoryInstanceSupport::GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const
     {
     if (IsValueNull(propertyLayout))
         {
@@ -658,7 +658,7 @@ StatusInt       MemoryInstanceSupport::GetValueFromMemory (ValueR v, PropertyLay
                                           // to be aware. The wchar_t* they get back would get invalidated if the 
                                           // XAttribute or other IMemoryProvider got reallocated, or the string got moved.
                                           // The caller must immediately use (e.g. marshal or copy) the returned value.
-                                          // Optionally, the caller could ask the EC::Value to make a duplicate? 
+                                          // Optionally, the caller could ask the EC::ECValue to make a duplicate? 
             return SUCCESS;            
             }
         }
@@ -669,10 +669,10 @@ StatusInt       MemoryInstanceSupport::GetValueFromMemory (ValueR v, PropertyLay
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       MemoryInstanceSupport::GetValueFromMemory (ClassLayoutCR classLayout, ValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+StatusInt       MemoryInstanceSupport::GetValueFromMemory (ClassLayoutCR classLayout, ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
     {
     PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
-    PRECONDITION (Instance::AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true), ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices);
+    PRECONDITION (IECInstance::AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true), ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices);
                 
     PropertyLayoutCP propertyLayout = NULL;
     StatusInt status = classLayout.GetPropertyLayout (propertyLayout, propertyAccessString);
@@ -685,10 +685,10 @@ StatusInt       MemoryInstanceSupport::GetValueFromMemory (ClassLayoutCR classLa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, ValueCR v, UInt32 nIndices, UInt32 const * indices)
+StatusInt       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, ECValueCR v, UInt32 nIndices, UInt32 const * indices)
     {
     PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
-    PRECONDITION (Instance::AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true), ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices);
+    PRECONDITION (IECInstance::AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true), ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices);
     //UInt32 bytesAllocated = _GetBytesAllocated();    
 
     PropertyLayoutCP propertyLayout = NULL;
@@ -795,7 +795,7 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
         UInt32 offset = propertyLayout->GetOffset();
         byte const * address = data + offset;
             
-        Value v;
+        ECValue v;
         GetValueFromMemory (v, *propertyLayout, 0, NULL);
         std::wstring valueAsString = v.ToString();
            

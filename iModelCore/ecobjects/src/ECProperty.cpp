@@ -17,7 +17,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassCR Property::GetClass
+ECClassCR ECProperty::GetClass
 (
 ) const
     {
@@ -27,7 +27,7 @@ ClassCR Property::GetClass
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring const& Property::GetName
+std::wstring const& ECProperty::GetName
 (
 ) const
     {
@@ -37,7 +37,7 @@ std::wstring const& Property::GetName
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Property::SetName
+ECObjectsStatus ECProperty::SetName
 (
 std::wstring const& name
 )
@@ -50,7 +50,7 @@ std::wstring const& name
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring const& Property::GetDescription
+std::wstring const& ECProperty::GetDescription
 (
 ) const
     {
@@ -60,7 +60,7 @@ std::wstring const& Property::GetDescription
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Property::SetDescription
+ECObjectsStatus ECProperty::SetDescription
 (
 std::wstring const& description
 )
@@ -72,7 +72,7 @@ std::wstring const& description
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring const& Property::GetDisplayLabel
+std::wstring const& ECProperty::GetDisplayLabel
 (
 ) const
     {
@@ -82,7 +82,7 @@ std::wstring const& Property::GetDisplayLabel
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Property::SetDisplayLabel
+ECObjectsStatus ECProperty::SetDisplayLabel
 (
 std::wstring const& displayLabel
 )
@@ -94,7 +94,7 @@ std::wstring const& displayLabel
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Property::GetIsReadOnly
+bool ECProperty::GetIsReadOnly
 (
 ) const
     {
@@ -104,7 +104,7 @@ bool Property::GetIsReadOnly
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Property::SetIsReadOnly
+ECObjectsStatus ECProperty::SetIsReadOnly
 (
 bool readOnly
 )
@@ -116,7 +116,7 @@ bool readOnly
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Property::SetIsReadOnly
+ECObjectsStatus ECProperty::SetIsReadOnly
 (
 const wchar_t * isReadOnly
 )
@@ -136,7 +136,7 @@ const wchar_t * isReadOnly
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Property::GetIsDisplayLabelDefined
+bool ECProperty::GetIsDisplayLabelDefined
 (
 ) const
     {
@@ -146,7 +146,7 @@ bool Property::GetIsDisplayLabelDefined
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring Property::GetTypeName
+std::wstring ECProperty::GetTypeName
 (
 ) const
     {
@@ -156,7 +156,7 @@ std::wstring Property::GetTypeName
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus Property::SetTypeName
+ECObjectsStatus ECProperty::SetTypeName
 (
 std::wstring typeName
 )
@@ -167,7 +167,7 @@ std::wstring typeName
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Property::GetIsPrimitive
+bool ECProperty::GetIsPrimitive
 (
 ) const
     {
@@ -177,17 +177,17 @@ bool Property::GetIsPrimitive
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-PrimitivePropertyP Property::GetAsPrimitiveProperty
+PrimitiveECPropertyP ECProperty::GetAsPrimitiveProperty
 (
 ) const
     {
-    return dynamic_cast<PrimitivePropertyP>((PropertyP)this);
+    return dynamic_cast<PrimitiveECPropertyP>((ECPropertyP)this);
     }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Property::GetIsStruct
+bool ECProperty::GetIsStruct
 (
 ) const
     {
@@ -197,17 +197,17 @@ bool Property::GetIsStruct
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-StructPropertyP Property::GetAsStructProperty
+StructECPropertyP ECProperty::GetAsStructProperty
 (
 ) const
     {
-    return dynamic_cast<StructPropertyP>((PropertyP)this);
+    return dynamic_cast<StructECPropertyP>((ECPropertyP)this);
     }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Property::GetIsArray
+bool ECProperty::GetIsArray
 (
 ) const
     {
@@ -217,17 +217,17 @@ bool Property::GetIsArray
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ArrayPropertyP Property::GetAsArrayProperty
+ArrayECPropertyP ECProperty::GetAsArrayProperty
 (
 ) const
     {
-    return dynamic_cast<ArrayPropertyP>((PropertyP)this);
+    return dynamic_cast<ArrayECPropertyP>((ECPropertyP)this);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus Property::_ReadXml
+SchemaDeserializationStatus ECProperty::_ReadXml
 (
 MSXML2::IXMLDOMNode& propertyNode
 )
@@ -252,7 +252,7 @@ MSXML2::IXMLDOMNode& propertyNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus Property::_WriteXml
+SchemaSerializationStatus ECProperty::_WriteXml
 (
 MSXML2::IXMLDOMElement& parentNode
 )
@@ -262,7 +262,7 @@ MSXML2::IXMLDOMElement& parentNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus Property::_WriteXml
+SchemaSerializationStatus ECProperty::_WriteXml
 (
 MSXML2::IXMLDOMElement& parentNode,
 const wchar_t *elementName
@@ -291,7 +291,7 @@ const wchar_t *elementName
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus PrimitiveProperty::_ReadXml
+SchemaDeserializationStatus PrimitiveECProperty::_ReadXml
 (
 MSXML2::IXMLDOMNode& propertyNode
 )
@@ -317,7 +317,7 @@ MSXML2::IXMLDOMNode& propertyNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus PrimitiveProperty::_WriteXml
+SchemaSerializationStatus PrimitiveECProperty::_WriteXml
 (
 MSXML2_IXMLDOMElement& parentNode
 )
@@ -328,7 +328,7 @@ MSXML2_IXMLDOMElement& parentNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring PrimitiveProperty::_GetTypeName
+std::wstring PrimitiveECProperty::_GetTypeName
 (
 ) const
     {
@@ -338,7 +338,7 @@ std::wstring PrimitiveProperty::_GetTypeName
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus PrimitiveProperty::_SetTypeName 
+ECObjectsStatus PrimitiveECProperty::_SetTypeName 
 (
 std::wstring const& typeName
 )
@@ -357,7 +357,7 @@ std::wstring const& typeName
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-PrimitiveType PrimitiveProperty::GetType
+PrimitiveType PrimitiveECProperty::GetType
 (
 ) const
     {
@@ -367,7 +367,7 @@ PrimitiveType PrimitiveProperty::GetType
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus PrimitiveProperty::SetType
+ECObjectsStatus PrimitiveECProperty::SetType
 (
 PrimitiveType primitiveType
 )
@@ -381,15 +381,15 @@ PrimitiveType primitiveType
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::wstring GetQualifiedClassName
 (
-SchemaCR primarySchema,
-ClassCR  ecClass
+ECSchemaCR primarySchema,
+ECClassCR  ecClass
 )
     {
     std::wstring const* namespacePrefix = primarySchema.ResolveNamespacePrefix (ecClass.Schema);
     if (!EXPECTED_CONDITION (NULL != namespacePrefix))
         {
         Logger::GetLogger()->warningv (L"warning: Can not qualify an ECClass name with a namespace prefix unless the schema containing the ECClass is referenced by the primary schema.\n"
-            L"The class name will remain unqualified.\n  Primary Schema: %s\n  ECClass: %s\n Schema containing ECClass: %s\n", primarySchema.Name.c_str(), ecClass.Name.c_str(), ecClass.Schema.Name.c_str());
+            L"The class name will remain unqualified.\n  Primary ECSchema: %s\n  ECClass: %s\n ECSchema containing ECClass: %s\n", primarySchema.Name.c_str(), ecClass.Name.c_str(), ecClass.Schema.Name.c_str());
         return ecClass.Name;
         }
     if (namespacePrefix->empty())
@@ -401,7 +401,7 @@ ClassCR  ecClass
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus StructProperty::_ReadXml
+SchemaDeserializationStatus StructECProperty::_ReadXml
 (
 MSXML2::IXMLDOMNode& propertyNode
 )
@@ -421,7 +421,7 @@ MSXML2::IXMLDOMNode& propertyNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus StructProperty::_WriteXml
+SchemaSerializationStatus StructECProperty::_WriteXml
 (
 MSXML2::IXMLDOMElement& parentNode
 )
@@ -432,7 +432,7 @@ MSXML2::IXMLDOMElement& parentNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring StructProperty::_GetTypeName
+std::wstring StructECProperty::_GetTypeName
 (
 ) const
     {
@@ -446,22 +446,22 @@ std::wstring StructProperty::_GetTypeName
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ResolveStructType
 (
-ClassP & structClass,
+ECClassP & structClass,
 std::wstring const& typeName,
-PropertyCR ecProperty
+ECPropertyCR ecProperty
 )
     {
     // typeName may potentially be qualified so we must parse into a namespace prefix and short class name
     std::wstring namespacePrefix;
     std::wstring className;
-    ECObjectsStatus status = Class::ParseClassName (namespacePrefix, className, typeName);
+    ECObjectsStatus status = ECClass::ParseClassName (namespacePrefix, className, typeName);
     if (ECOBJECTS_STATUS_Success != status)
         {
         Logger::GetLogger()->warningv (L"Can not resolve the type name '%s' as a struct type because the typeName could not be parsed.\n", typeName.c_str());
         return status;
         }
     
-    SchemaP resolvedSchema = ecProperty.Class.Schema.GetSchemaByNamespacePrefixP (namespacePrefix);
+    ECSchemaP resolvedSchema = ecProperty.Class.Schema.GetSchemaByNamespacePrefixP (namespacePrefix);
     if (NULL == resolvedSchema)
         {
         Logger::GetLogger()->warningv (L"Can not resolve the type name '%s' as a struct type because the namespacePrefix '%s' can not be resolved to the primary or a referenced schema.\n", 
@@ -483,12 +483,12 @@ PropertyCR ecProperty
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus StructProperty::_SetTypeName 
+ECObjectsStatus StructECProperty::_SetTypeName 
 (
 std::wstring const& typeName
 )
     {
-    ClassP structClass;
+    ECClassP structClass;
     ECObjectsStatus status = ResolveStructType (structClass, typeName, *this);
     if (ECOBJECTS_STATUS_Success != status)
         {
@@ -502,7 +502,7 @@ std::wstring const& typeName
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassCR StructProperty::GetType
+ECClassCR StructECProperty::GetType
 (
 ) const
     {        
@@ -513,9 +513,9 @@ ClassCR StructProperty::GetType
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus StructProperty::SetType
+ECObjectsStatus StructECProperty::SetType
 (
-ClassCR structType
+ECClassCR structType
 )
     {            
     PRECONDITION (structType.IsStruct, ECOBJECTS_STATUS_PreconditionViolated);
@@ -529,7 +529,7 @@ ClassCR structType
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus ArrayProperty::_ReadXml
+SchemaDeserializationStatus ArrayECProperty::_ReadXml
 (
 MSXML2::IXMLDOMNode& propertyNode
 )
@@ -557,7 +557,7 @@ MSXML2::IXMLDOMNode& propertyNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus ArrayProperty::_WriteXml
+SchemaSerializationStatus ArrayECProperty::_WriteXml
 (
 MSXML2::IXMLDOMElement& parentNode
 )
@@ -596,15 +596,15 @@ MSXML2::IXMLDOMElement& parentNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring ArrayProperty::_GetTypeName
+std::wstring ArrayECProperty::_GetTypeName
 (
 ) const
     {    
-    switch (ElementClassification)
+    switch (Kind)
         {
-        case ELEMENTCLASSIFICATION_Primitive:
+        case ARRAYKIND_Primitive:
             return ECXml::GetPrimitiveTypeName (m_primitiveType);
-        case ELEMENTCLASSIFICATION_Struct:
+        case ARRAYKIND_Struct:
             return GetQualifiedClassName (this->Class.Schema, *m_structType);
         default:
             return EMPTY_STRING;
@@ -614,7 +614,7 @@ std::wstring ArrayProperty::_GetTypeName
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ArrayProperty::_SetTypeName 
+ECObjectsStatus ArrayECProperty::_SetTypeName 
 (
 std::wstring const& typeName
 )
@@ -624,29 +624,29 @@ std::wstring const& typeName
     if (ECOBJECTS_STATUS_Success == status)
         return SetPrimitiveElementType (primitiveType);
     
-    ClassP structClass;
+    ECClassP structClass;
     status = ResolveStructType (structClass, typeName, *this);
     if (ECOBJECTS_STATUS_Success == status)
         return SetStructElementType (structClass);
 
-    Logger::GetLogger()->errorv (L"Failed to set the type name of ArrayProperty '%s' to '%s' because the typeName could not be parsed into a resolvable type.\n", this->Name.c_str(), typeName.c_str());        
+    Logger::GetLogger()->errorv (L"Failed to set the type name of ArrayECProperty '%s' to '%s' because the typeName could not be parsed into a resolvable type.\n", this->Name.c_str(), typeName.c_str());        
     return ECOBJECTS_STATUS_ParseError;
     }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ArrayElementClassification ArrayProperty::GetElementClassification
+ArrayKind ArrayECProperty::GetKind
 (
 ) const
     {
-    return m_elementClassification;
+    return m_arrayKind;
     }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-PrimitiveType ArrayProperty::GetPrimitiveElementType
+PrimitiveType ArrayECProperty::GetPrimitiveElementType
 (
 ) const
     {
@@ -656,12 +656,12 @@ PrimitiveType ArrayProperty::GetPrimitiveElementType
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ArrayProperty::SetPrimitiveElementType
+ECObjectsStatus ArrayECProperty::SetPrimitiveElementType
 (
 PrimitiveType primitiveType
 )
     {        
-    m_elementClassification = ELEMENTCLASSIFICATION_Primitive;
+    m_arrayKind = ARRAYKIND_Primitive;
     m_primitiveType = primitiveType;
     return ECOBJECTS_STATUS_Success;
     }
@@ -669,7 +669,7 @@ PrimitiveType primitiveType
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassCP ArrayProperty::GetStructElementType
+ECClassCP ArrayECProperty::GetStructElementType
 (
 ) const
     {
@@ -679,16 +679,16 @@ ClassCP ArrayProperty::GetStructElementType
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ArrayProperty::SetStructElementType
+ECObjectsStatus ArrayECProperty::SetStructElementType
 (
-ClassCP structType
+ECClassCP structType
 )
     {        
     PRECONDITION (NULL != structType, ECOBJECTS_STATUS_PreconditionViolated);
     PRECONDITION (structType->IsStruct, ECOBJECTS_STATUS_PreconditionViolated);
 
     // NEEDSWORK ensure the type is in a referenced schema of the class containing the property
-    m_elementClassification = ELEMENTCLASSIFICATION_Struct;
+    m_arrayKind = ARRAYKIND_Struct;
     m_structType = structType;
     return ECOBJECTS_STATUS_Success;
     }
@@ -696,7 +696,7 @@ ClassCP structType
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 ArrayProperty::GetMinOccurs
+UInt32 ArrayECProperty::GetMinOccurs
 (
 ) const
     {
@@ -706,7 +706,7 @@ UInt32 ArrayProperty::GetMinOccurs
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ArrayProperty::SetMinOccurs
+ECObjectsStatus ArrayECProperty::SetMinOccurs
 (
 UInt32 minOccurs
 )
@@ -719,7 +719,7 @@ UInt32 minOccurs
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ArrayProperty::SetMinOccurs
+ECObjectsStatus ArrayECProperty::SetMinOccurs
 (
 std::wstring const& minOccurs
 )
@@ -740,7 +740,7 @@ std::wstring const& minOccurs
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 ArrayProperty::GetMaxOccurs
+UInt32 ArrayECProperty::GetMaxOccurs
 (
 ) const
     {
@@ -750,7 +750,7 @@ UInt32 ArrayProperty::GetMaxOccurs
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ArrayProperty::SetMaxOccurs
+ECObjectsStatus ArrayECProperty::SetMaxOccurs
 (
 UInt32 maxOccurs
 )
@@ -763,7 +763,7 @@ UInt32 maxOccurs
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ArrayProperty::SetMaxOccurs
+ECObjectsStatus ArrayECProperty::SetMaxOccurs
 (
 std::wstring const& maxOccurs
 )

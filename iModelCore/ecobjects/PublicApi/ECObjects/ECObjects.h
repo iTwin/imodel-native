@@ -40,27 +40,27 @@
         END_BENTLEY_EC_NAMESPACE
 
 
-EC_TYPEDEFS(Value);
+EC_TYPEDEFS(ECValue);
 EC_TYPEDEFS(ArrayInfo);
-EC_TYPEDEFS(Schema);
-EC_TYPEDEFS(Property);
-EC_TYPEDEFS(PrimitiveProperty);
-EC_TYPEDEFS(StructProperty);
-EC_TYPEDEFS(ArrayProperty);
-EC_TYPEDEFS(PropertyContainer);
-EC_TYPEDEFS(ClassContainer);
-EC_TYPEDEFS(Class);
-EC_TYPEDEFS(RelationshipClass);
-EC_TYPEDEFS(Instance);
-EC_TYPEDEFS(RelationshipInstance);
+EC_TYPEDEFS(ECSchema);
+EC_TYPEDEFS(ECProperty);
+EC_TYPEDEFS(PrimitiveECProperty);
+EC_TYPEDEFS(StructECProperty);
+EC_TYPEDEFS(ArrayECProperty);
+EC_TYPEDEFS(ECPropertyContainer);
+EC_TYPEDEFS(ECClassContainer);
+EC_TYPEDEFS(ECClass);
+EC_TYPEDEFS(ECRelationshipClass);
+EC_TYPEDEFS(IECInstance);
+EC_TYPEDEFS(IECRelationshipInstance);
 
-EC_TYPEDEFS(Enabler);
+EC_TYPEDEFS(ECEnabler);
 EC_TYPEDEFS(IArrayManipulator);
 
 EC_TYPEDEFS(ClassLayout);
 EC_TYPEDEFS(PropertyLayout);
-EC_TYPEDEFS(StandaloneInstance);
-EC_TYPEDEFS(StandaloneInstanceFactory);
+EC_TYPEDEFS(StandaloneECInstance);
+EC_TYPEDEFS(StandaloneECInstanceFactory);
 EC_TYPEDEFS(ClassLayoutHolder);
 
 #define EXPORTED_PROPERTY(TYPE, NAME) \

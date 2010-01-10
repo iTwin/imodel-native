@@ -106,7 +106,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\ecf\ecobjects\native\StandaloneInstance.cpp"
+				RelativePath=".\StandaloneECInstance.cpp"
 				>
 			</File>
 		</Filter>
@@ -156,7 +156,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\ecf\PublicApi\ECObjects\StandaloneInstance.h"
+				RelativePath="..\..\PublicApi\ECObjects\StandaloneECInstance.h"
 				>
 			</File>
 		</Filter>

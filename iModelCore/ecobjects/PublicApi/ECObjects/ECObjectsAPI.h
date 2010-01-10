@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECObjectsAPI.h $
 |
-|  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -52,7 +52,7 @@
 #include <ECObjects\ECSchema.h>
 #include <ECObjects\ECValue.h>
 #include <ECObjects\MemoryInstanceSupport.h>
-#include <ECObjects\StandaloneInstance.h>
+#include <ECObjects\StandaloneECInstance.h>
 
 /*__PUBLISH_SECTION_END__*/
 #include <ECObjects\DesignByContract.h>

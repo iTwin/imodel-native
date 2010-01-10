@@ -12,7 +12,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            Value::SetReadOnly(bool isReadOnly) 
+void            ECValue::SetReadOnly(bool isReadOnly) 
     { 
     m_isReadOnly = isReadOnly; 
     }
@@ -20,7 +20,7 @@ void            Value::SetReadOnly(bool isReadOnly)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            Value::IsReadOnly() const 
+bool            ECValue::IsReadOnly() const 
     { 
     return m_isReadOnly; 
     }
@@ -28,7 +28,7 @@ bool            Value::IsReadOnly() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            Value::IsNull() const 
+bool            ECValue::IsNull() const 
     { 
     return m_isNull; 
     }
@@ -36,23 +36,23 @@ bool            Value::IsNull() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ValueClassification     Value::GetClassification() const 
+ValueKind     ECValue::GetKind() const 
     { 
-    return (ValueClassification) (m_classification & 0xFF);
+    return (ValueKind) (m_valueKind & 0xFF);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            Value::IsUninitialized () const 
+bool            ECValue::IsUninitialized () const 
     { 
-    return GetClassification() == VALUECLASSIFICATION_Uninitialized; 
+    return GetKind() == VALUEKIND_Uninitialized; 
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            Value::IsString () const 
+bool            ECValue::IsString () const 
     { 
     return m_primitiveType == PRIMITIVETYPE_String; 
     }
@@ -60,7 +60,7 @@ bool            Value::IsString () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            Value::IsInteger () const 
+bool            ECValue::IsInteger () const 
     { 
     return m_primitiveType == PRIMITIVETYPE_Integer; 
     }
@@ -68,7 +68,7 @@ bool            Value::IsInteger () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            Value::IsLong () const 
+bool            ECValue::IsLong () const 
     { 
     return m_primitiveType == PRIMITIVETYPE_Long; 
     }
@@ -76,7 +76,7 @@ bool            Value::IsLong () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            Value::IsDouble () const 
+bool            ECValue::IsDouble () const 
     { 
     return m_primitiveType == PRIMITIVETYPE_Double; 
     }
@@ -84,37 +84,37 @@ bool            Value::IsDouble () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            Value::IsArray () const 
+bool            ECValue::IsArray () const 
     { 
-    return GetClassification() == VALUECLASSIFICATION_Array; 
+    return GetKind() == VALUEKIND_Array; 
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            Value::IsStruct () const 
+bool            ECValue::IsStruct () const 
     { 
-    return GetClassification() == VALUECLASSIFICATION_Struct; 
+    return GetKind() == VALUEKIND_Struct; 
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            Value::IsPrimitive () const 
+bool            ECValue::IsPrimitive () const 
     { 
-    return GetClassification() == VALUECLASSIFICATION_Primitive; 
+    return GetKind() == VALUEKIND_Primitive; 
     }
 
 /*---------------------------------------------------------------------------------**//**
 * Copies this value, including all strings and array values held by this value.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            Value::ConstructUninitialized()
+void            ECValue::ConstructUninitialized()
     {
-    int size = sizeof (Value); // currently 32 bytes
+    int size = sizeof (ECValue); // currently 32 bytes
     memset (this, 0xBAADF00D, size); // avoid accidental misinterpretation of uninitialized data
     
-    m_classification    = VALUECLASSIFICATION_Uninitialized;
+    m_valueKind    = VALUEKIND_Uninitialized;
     m_isNull            = true;
     m_isReadOnly        = false;
     }
@@ -124,16 +124,16 @@ void            Value::ConstructUninitialized()
 * It duplicates string values, even if the original did not hold a duplicate that is was responsible for freeing.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            Value::DeepCopy (ValueCR v)
+void            ECValue::DeepCopy (ECValueCR v)
     {
-    memcpy (this, &v, sizeof(Value));
+    memcpy (this, &v, sizeof(ECValue));
 
     if (IsNull())
         return;
         
-    switch (m_classification)
+    switch (m_valueKind)
         {            
-        case VALUECLASSIFICATION_Struct:
+        case VALUEKIND_Struct:
             {
             assert (false && "Needs work: copy the struct value");
             break;
@@ -156,7 +156,7 @@ void            Value::DeepCopy (ValueCR v)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            Value::SetToNull()
+void            ECValue::SetToNull()
     {
     if (IsString())
         SetString (NULL);
@@ -166,11 +166,11 @@ void            Value::SetToNull()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            Value::Clear()
+void            ECValue::Clear()
     {
     if (IsNull())
         {
-        m_classification = VALUECLASSIFICATION_Uninitialized;
+        m_valueKind = VALUEKIND_Uninitialized;
         return;
         }
         
@@ -189,22 +189,22 @@ void            Value::Clear()
         }
         
     m_isNull = true;
-    m_classification = VALUECLASSIFICATION_Uninitialized;            
+    m_valueKind = VALUEKIND_Uninitialized;            
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-Value::~Value()
+ECValue::~ECValue()
     {
     Clear();
-    memset (this, 0xBAADF00D, sizeof(Value)); // try to make use of destructed values more obvious
+    memset (this, 0xBAADF00D, sizeof(ECValue)); // try to make use of destructed values more obvious
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ValueR Value::operator= (ValueCR rhs)
+ECValueR ECValue::operator= (ECValueCR rhs)
     {
     DeepCopy(rhs);
     return *this;
@@ -215,7 +215,7 @@ ValueR Value::operator= (ValueCR rhs)
 * Construct an uninitialized value
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-Value::Value ()
+ECValue::ECValue ()
     {
     ConstructUninitialized();
     }
@@ -223,31 +223,31 @@ Value::Value ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-Value::Value (ValueCR v)
+ECValue::ECValue (ECValueCR v)
     {
     DeepCopy (v);
     }
     
 /*---------------------------------------------------------------------------------**//**
-*  Construct a Null EC::Value (of a specific type, but with IsNull = true)
+*  Construct a Null EC::ECValue (of a specific type, but with IsNull = true)
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-Value::Value (ValueClassification classification) : m_classification(classification), m_isNull(true)
+ECValue::ECValue (ValueKind classification) : m_valueKind(classification), m_isNull(true)
     {
     }       
 
 /*---------------------------------------------------------------------------------**//**
-*  Construct a Null EC::Value (of a specific type, but with IsNull = true)
+*  Construct a Null EC::ECValue (of a specific type, but with IsNull = true)
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-Value::Value (PrimitiveType primitiveType) : m_primitiveType(primitiveType), m_isNull(true)
+ECValue::ECValue (PrimitiveType primitiveType) : m_primitiveType(primitiveType), m_isNull(true)
     {
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-Value::Value (::Int32 integer32)
+ECValue::ECValue (::Int32 integer32)
     {
     ConstructUninitialized();
     SetInteger (integer32);
@@ -256,18 +256,18 @@ Value::Value (::Int32 integer32)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-Value::Value (::Int64 long64)
+ECValue::ECValue (::Int64 long64)
     {
     ConstructUninitialized();
     SetLong (long64);
     };
             
 /*---------------------------------------------------------------------------------**//**
-* @param holdADuplicate     IN  If true, EC::Value will make a duplicate, otherwise 
-* EC::Value holds the original pointer. Intended only for use when initializing arrays of strings, to avoid duplicating them twice.
+* @param holdADuplicate     IN  If true, EC::ECValue will make a duplicate, otherwise 
+* EC::ECValue holds the original pointer. Intended only for use when initializing arrays of strings, to avoid duplicating them twice.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-Value::Value (const wchar_t * string, bool holdADuplicate)
+ECValue::ECValue (const wchar_t * string, bool holdADuplicate)
     {
     ConstructUninitialized();
     SetString (string, holdADuplicate);
@@ -276,18 +276,18 @@ Value::Value (const wchar_t * string, bool holdADuplicate)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin    10/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-PrimitiveType         Value::GetPrimitiveType() const
+PrimitiveType         ECValue::GetPrimitiveType() const
     {
-    PRECONDITION (IsPrimitive() && "Tried to get the primitive type of an EC::Value that is not classified as a primitive.", (PrimitiveType)0);    
+    PRECONDITION (IsPrimitive() && "Tried to get the primitive type of an EC::ECValue that is not classified as a primitive.", (PrimitiveType)0);    
     return m_primitiveType;
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-::Int32         Value::GetInteger() const
+::Int32         ECValue::GetInteger() const
     {
-    PRECONDITION (IsInteger() && "Tried to get integer value from an EC::Value that is not an integer.", 0);
+    PRECONDITION (IsInteger() && "Tried to get integer value from an EC::ECValue that is not an integer.", 0);
     PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", 0);
     return m_integer32;
     };
@@ -295,7 +295,7 @@ PrimitiveType         Value::GetPrimitiveType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       Value::SetInteger (::Int32 integer)
+StatusInt       ECValue::SetInteger (::Int32 integer)
     {
     m_isNull    = false;
     m_primitiveType  = PRIMITIVETYPE_Integer;
@@ -307,9 +307,9 @@ StatusInt       Value::SetInteger (::Int32 integer)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-::Int64         Value::GetLong() const
+::Int64         ECValue::GetLong() const
     {
-    PRECONDITION (IsLong() && "Tried to get long64 value from an EC::Value that is not an long64.", 0);
+    PRECONDITION (IsLong() && "Tried to get long64 value from an EC::ECValue that is not an long64.", 0);
     PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", 0);
     return m_long64;
     };
@@ -317,7 +317,7 @@ StatusInt       Value::SetInteger (::Int32 integer)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       Value::SetLong (::Int64 long64)
+StatusInt       ECValue::SetLong (::Int64 long64)
     {
     m_isNull    = false;
     m_primitiveType  = PRIMITIVETYPE_Long;
@@ -329,9 +329,9 @@ StatusInt       Value::SetLong (::Int64 long64)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-double          Value::GetDouble() const
+double          ECValue::GetDouble() const
     {
-    PRECONDITION (IsDouble() && "Tried to get double value from an EC::Value that is not an double.", std::numeric_limits<double>::quiet_NaN());
+    PRECONDITION (IsDouble() && "Tried to get double value from an EC::ECValue that is not an double.", std::numeric_limits<double>::quiet_NaN());
     PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", std::numeric_limits<double>::quiet_NaN());
     return m_double;
     };
@@ -339,7 +339,7 @@ double          Value::GetDouble() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       Value::SetDouble (double value)
+StatusInt       ECValue::SetDouble (double value)
     {
     m_isNull    = false;
     m_primitiveType  = PRIMITIVETYPE_Double;
@@ -351,18 +351,18 @@ StatusInt       Value::SetDouble (double value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-const wchar_t * Value::GetString() const
+const wchar_t * ECValue::GetString() const
     {
-    PRECONDITION (IsString() && "Tried to get string value from an EC::Value that is not a string.", L"<Programmer Error: Attempted to get string value from EC::Value that is not a string.>");
+    PRECONDITION (IsString() && "Tried to get string value from an EC::ECValue that is not a string.", L"<Programmer Error: Attempted to get string value from EC::ECValue that is not a string.>");
     return m_stringInfo.m_string;
     };
     
 /*---------------------------------------------------------------------------------**//**
-* @param holdADuplicate     IN  If true, EC::Value will make a duplicate, otherwise 
-*                               EC::Value holds the original pointer
+* @param holdADuplicate     IN  If true, EC::ECValue will make a duplicate, otherwise 
+*                               EC::ECValue holds the original pointer
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Value::SetString (const wchar_t * string, bool holdADuplicate)
+StatusInt ECValue::SetString (const wchar_t * string, bool holdADuplicate)
     {
     Clear();
         
@@ -388,13 +388,13 @@ StatusInt Value::SetString (const wchar_t * string, bool holdADuplicate)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-std::wstring    Value::ToString () const
+std::wstring    ECValue::ToString () const
     {
     if (IsNull())
         return L"<null>";
         
     std::wostringstream valueAsString;
-    switch (m_classification)
+    switch (m_valueKind)
         {
         case PRIMITIVETYPE_Integer:
             {
@@ -418,7 +418,7 @@ std::wstring    Value::ToString () const
             }
         default:
             {
-            valueAsString << L"EC::Value::ToString needs work... unsupported data type";
+            valueAsString << L"EC::ECValue::ToString needs work... unsupported data type";
             break;          
             }            
         }
@@ -430,11 +430,11 @@ std::wstring    Value::ToString () const
 * @param        capacity IN  Estimated size of the array.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       Value::SetStructArrayInfo (UInt32 count, bool isFixedSize, bool isReadOnly)
+StatusInt       ECValue::SetStructArrayInfo (UInt32 count, bool isFixedSize, bool isReadOnly)
     {
     Clear();
         
-    m_classification                = VALUECLASSIFICATION_Array;
+    m_valueKind                = VALUEKIND_Array;
     m_isReadOnly                    = isReadOnly;    
 
     m_arrayInfo.InitializeStructArray (count, isFixedSize);
@@ -446,11 +446,11 @@ StatusInt       Value::SetStructArrayInfo (UInt32 count, bool isFixedSize, bool 
 * @param        capacity IN  Estimated size of the array.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       Value::SetPrimitiveArrayInfo (PrimitiveType primitiveElementType, UInt32 count, bool isFixedSize, bool isReadOnly)
+StatusInt       ECValue::SetPrimitiveArrayInfo (PrimitiveType primitiveElementType, UInt32 count, bool isFixedSize, bool isReadOnly)
     {
     Clear();
         
-    m_classification                = VALUECLASSIFICATION_Array;
+    m_valueKind                = VALUEKIND_Array;
     m_isReadOnly                    = isReadOnly;    
 
     m_arrayInfo.InitializePrimitiveArray (primitiveElementType, count, isFixedSize);
@@ -461,7 +461,7 @@ StatusInt       Value::SetPrimitiveArrayInfo (PrimitiveType primitiveElementType
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ArrayInfo       Value::GetArrayInfo()
+ArrayInfo       ECValue::GetArrayInfo()
     {
     assert (IsArray());
     
@@ -473,7 +473,7 @@ ArrayInfo       Value::GetArrayInfo()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ArrayInfo::InitializeStructArray (UInt32 count, bool isFixedSize)
     {
-    m_elementClassification = ELEMENTCLASSIFICATION_Struct;
+    m_arrayKind = ARRAYKIND_Struct;
     m_count           = count;
     m_isFixedSize     = isFixedSize;
     }
@@ -507,9 +507,9 @@ bool            ArrayInfo::IsFixedSize() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ValueClassification        ArrayInfo::GetElementClassification() const
+ValueKind        ArrayInfo::GetKind() const
     {        
-    return (ValueClassification) (m_elementClassification & 0xFF); 
+    return (ValueKind) (m_arrayKind & 0xFF); 
     }  
 
 /*---------------------------------------------------------------------------------**//**
@@ -526,7 +526,7 @@ PrimitiveType        ArrayInfo::GetElementPrimitiveType() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool        ArrayInfo::IsPrimitiveArray() const
     {        
-    return GetElementClassification() == ELEMENTCLASSIFICATION_Primitive; 
+    return GetKind() == ARRAYKIND_Primitive; 
     }  
 
 /*---------------------------------------------------------------------------------**//**
@@ -534,7 +534,7 @@ bool        ArrayInfo::IsPrimitiveArray() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool        ArrayInfo::IsStructArray() const
     {        
-    return GetElementClassification() == ELEMENTCLASSIFICATION_Struct; 
+    return GetKind() == ARRAYKIND_Struct; 
     }  
 
 END_BENTLEY_EC_NAMESPACE
