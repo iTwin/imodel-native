@@ -127,7 +127,7 @@ public:
     };
     
 //! Holds a ClassLayoutCR and provides a public method by which to access it.
-//! Used by StandaloneECEnabler and XDataEnabler
+//! Used by StandaloneECEnabler and ECXDataEnabler
 struct ClassLayoutHolder
     {
 private:
@@ -142,7 +142,7 @@ public:
 
 
 //! Base class for EC::IECInstance implementations that get/set values from a block of memory, 
-//! e.g. StandaloneECInstance and XDataInstance
+//! e.g. StandaloneECInstance and ECXDataInstance
 struct MemoryInstanceSupport
     {
 private:    
