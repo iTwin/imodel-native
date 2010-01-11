@@ -270,10 +270,12 @@ TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);
     
-    ClassLayout classLayout;
-    classLayout.SetClass (*ecClass, 42);
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (classLayout);
-    EC::StandaloneECInstanceFactoryP factory = new StandaloneECInstanceFactory (classLayout);
+    SchemaLayout schemaLayout;
+    schemaLayout.SetSchemaIndex(24);
+
+    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout);
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*classLayout);
+    EC::StandaloneECInstanceFactoryP factory = new StandaloneECInstanceFactory (*classLayout);
     
     EC::StandaloneECInstanceP instance = NULL;
     EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));    
@@ -285,6 +287,8 @@ TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
     
     instance->Dump();
     
+    delete classLayout;
+
     // instance.Compact()... then check values again
     CoUninitialize();
     };
@@ -359,10 +363,12 @@ TEST (MemoryLayoutTests, TestSetGetNull)
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);
         
-    ClassLayout classLayout;
-    classLayout.SetClass (*ecClass, 42);
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (classLayout);
-    EC::StandaloneECInstanceFactoryP factory = new StandaloneECInstanceFactory (classLayout);
+    SchemaLayout schemaLayout;
+    schemaLayout.SetSchemaIndex(24);
+
+    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout);
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*classLayout);
+    EC::StandaloneECInstanceFactoryP factory = new StandaloneECInstanceFactory (*classLayout);
     
     EC::StandaloneECInstanceP instance = NULL;
     EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
@@ -392,6 +398,8 @@ TEST (MemoryLayoutTests, TestSetGetNull)
     EXPECT_TRUE (SUCCESS == instance->GetValue (v, L"S"));
     EXPECT_FALSE (v.IsNull());     
 
+    delete classLayout;
+
     CoUninitialize();
     }
     
@@ -419,14 +427,16 @@ TEST (MemoryLayoutTests, DemonstrateInstanceFactory)
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);
         
-    ClassLayout classLayout;
-    classLayout.SetClass (*ecClass, 42);
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (classLayout);
+    SchemaLayout schemaLayout;
+    schemaLayout.SetSchemaIndex(24);
+
+    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout);
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*classLayout);
 
     EC::StandaloneECInstanceP instance = NULL;
     
     UInt32 slack = 0;
-    EC::StandaloneECInstanceFactoryP factory = new StandaloneECInstanceFactory (classLayout, slack);
+    EC::StandaloneECInstanceFactoryP factory = new StandaloneECInstanceFactory (*classLayout, slack);
 
     EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));    
     SetStringToSpecifiedNumberOfCharacters (*instance, 1); // There is no headroom, so this tiny addition triggers a realloc
@@ -447,7 +457,7 @@ TEST (MemoryLayoutTests, DemonstrateInstanceFactory)
     EXPECT_TRUE (SUCCESS == factory->FinishConstruction(instance));
     EXPECT_EQ (2, factory->GetReallocationCount()); // No new realloc, because it double its size when it realloced
     
-    factory = new StandaloneECInstanceFactory (classLayout, slack, 4000);
+    factory = new StandaloneInstanceFactory (classLayout, slack, 4000);
     instance = NULL;
     EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
     EXPECT_EQ (0, factory->GetReallocationCount()); 
@@ -470,7 +480,7 @@ TEST (MemoryLayoutTests, DemonstrateInstanceFactory)
     
     // The factory only keeps one "under construction" at a time... and it tracks which one it is.
     EC::StandaloneECInstanceP oldInstance = instance;    
-    factory = new StandaloneECInstanceFactory (classLayout, slack, 2000);
+    factory = new StandaloneInstanceFactory (classLayout, slack, 2000);
     instance = NULL;
     EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
     DISABLE_ASSERTS // Otherwise, the lines below would trigger assert.
@@ -478,6 +488,8 @@ TEST (MemoryLayoutTests, DemonstrateInstanceFactory)
     EXPECT_TRUE (SUCCESS != factory->FinishConstruction(oldInstance));    
     EXPECT_TRUE (SUCCESS == factory->FinishConstruction(instance));    
     EXPECT_TRUE (SUCCESS != factory->FinishConstruction(instance)); // It can only finish once
+
+    delete classLayout;
 
     CoUninitialize();
     }
