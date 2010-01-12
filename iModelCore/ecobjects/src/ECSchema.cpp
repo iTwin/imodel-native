@@ -23,14 +23,14 @@ ECSchema::~ECSchema
     {
     // NEEDSWORK make sure everything is destroyed
     Logger::GetLogger()->infov (L"~~~~ Destroying ECSchema: %s\n", GetName().c_str());
-    ClassMap::const_iterator classIterator, classEnd;        
-    classIterator = m_classMap.begin();
-    classEnd = m_classMap.end();
+    ClassMap::iterator          classIterator = m_classMap.begin();
+    ClassMap::const_iterator    classEnd = m_classMap.end();        
     Logger::GetLogger()->tracev (L"     Freeing memory for %d classes\n", m_classMap.size());
     while (classIterator != classEnd)
         {
-        delete classIterator->second;        
+        ECClassP ecClass = classIterator->second;        
         classIterator = m_classMap.erase(classIterator);        
+        delete ecClass;
         }
 
     assert (m_classMap.empty());
