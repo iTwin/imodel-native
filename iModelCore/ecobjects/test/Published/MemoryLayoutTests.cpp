@@ -457,7 +457,7 @@ TEST (MemoryLayoutTests, DemonstrateInstanceFactory)
     EXPECT_TRUE (SUCCESS == factory->FinishConstruction(instance));
     EXPECT_EQ (2, factory->GetReallocationCount()); // No new realloc, because it double its size when it realloced
     
-    factory = new StandaloneInstanceFactory (classLayout, slack, 4000);
+    factory = new StandaloneECInstanceFactory (*classLayout, slack, 4000);
     instance = NULL;
     EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
     EXPECT_EQ (0, factory->GetReallocationCount()); 
@@ -480,7 +480,7 @@ TEST (MemoryLayoutTests, DemonstrateInstanceFactory)
     
     // The factory only keeps one "under construction" at a time... and it tracks which one it is.
     EC::StandaloneECInstanceP oldInstance = instance;    
-    factory = new StandaloneInstanceFactory (classLayout, slack, 2000);
+    factory = new StandaloneECInstanceFactory (*classLayout, slack, 2000);
     instance = NULL;
     EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
     DISABLE_ASSERTS // Otherwise, the lines below would trigger assert.

@@ -260,7 +260,7 @@ void            ClassLayout::AddProperties (ECClassCR ecClass, wchar_t const * n
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutP    ClassLayout::CreateEmpty (ClassCR ecClass, ClassIndex classIndex, SchemaLayoutCR schemaLayout)
+ClassLayoutP    ClassLayout::CreateEmpty (ECClassCR ecClass, ClassIndex classIndex, SchemaLayoutCR schemaLayout)
     {
     ClassLayoutP classLayout = new ClassLayout(schemaLayout);
 
@@ -272,7 +272,7 @@ ClassLayoutP    ClassLayout::CreateEmpty (ClassCR ecClass, ClassIndex classIndex
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutP    ClassLayout::BuildFromClass (ClassCR ecClass, ClassIndex classIndex, SchemaLayoutCR schemaLayout)
+ClassLayoutP    ClassLayout::BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaLayoutCR schemaLayout)
     {
     ClassLayoutP classLayout = CreateEmpty (ecClass, classIndex, schemaLayout);
 
@@ -499,7 +499,7 @@ SchemaLayoutEntry*  SchemaLayout::GetEntry (ClassIndex classIndex)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaLayoutEntry*  SchemaLayout::FindEntry (ClassCR ecClass)
+SchemaLayoutEntry*  SchemaLayout::FindEntry (ECClassCR ecClass)
     {
     for each (SchemaLayoutEntry* entry in m_entries)
         {

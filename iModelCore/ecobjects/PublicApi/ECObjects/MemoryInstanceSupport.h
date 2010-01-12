@@ -115,7 +115,7 @@ private:
 
 public:
     ECOBJECTS_EXPORT static ClassLayoutP BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaLayoutCR schemaLayout);
-    ECOBJECTS_EXPORT StatusInt       SetClass (ECClassCR ecClass, UInt16 classIndex);
+    ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (ECClassCR ecClass, ClassIndex classIndex, SchemaLayoutCR schemaLayout);
 
     ECOBJECTS_EXPORT ECClassCR  GetClass () const;
     ECOBJECTS_EXPORT UInt16     GetClassIndex() const;
@@ -162,7 +162,7 @@ public:
     ECOBJECTS_EXPORT void                   SetSchemaIndex(SchemaIndex i) { m_schemaIndex = i; }
     ECOBJECTS_EXPORT BentleyStatus          AddClassLayout (ClassLayoutCR, ClassIndex, bool isPersistent);
     ECOBJECTS_EXPORT SchemaLayoutEntry*     GetEntry (ClassIndex classIndex);
-    ECOBJECTS_EXPORT SchemaLayoutEntry*     FindEntry (ClassCR ecClass);
+    ECOBJECTS_EXPORT SchemaLayoutEntry*     FindEntry (ECClassCR ecClass);
     ECOBJECTS_EXPORT BentleyStatus          FindAvailableClassIndex (ClassIndex&);
 };
 
