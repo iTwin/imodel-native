@@ -23,7 +23,7 @@ ECSchema::~ECSchema
     {
     // NEEDSWORK make sure everything is destroyed
     Logger::GetLogger()->infov (L"~~~~ Destroying ECSchema: %s\n", GetName().c_str());
-    stdext::hash_map<const wchar_t * , ECClassP>::const_iterator classIterator, classEnd;        
+    ClassMap::const_iterator classIterator, classEnd;        
     classIterator = m_classMap.begin();
     classEnd = m_classMap.end();
     Logger::GetLogger()->tracev (L"     Freeing memory for %d classes\n", m_classMap.size());
@@ -197,7 +197,7 @@ ECClassP ECSchema::GetClassP
 std::wstring const& name
 ) const
     {
-    stdext::hash_map<const wchar_t *, ECClassP>::const_iterator  classIterator;
+    ClassMap::const_iterator  classIterator;
     classIterator = m_classMap.find (name.c_str());
     
     if ( classIterator != m_classMap.end() )
