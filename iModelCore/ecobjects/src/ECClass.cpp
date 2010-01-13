@@ -317,14 +317,17 @@ ECClassCR baseClass
             return ECOBJECTS_STATUS_SchemaNotFound;
             }
         }
-        
-    std::pair < stdext::hash_map<const wchar_t *, ECClassP>::iterator, bool > resultPair;
-    resultPair = m_baseClassMap.insert (std::pair<const wchar_t *, ECClassP> (baseClass.Name.c_str(), (ECClassP)&baseClass));
-    if (resultPair.second == false)
+
+    ECBaseClassesVector::const_iterator baseClassIterator;
+    for (baseClassIterator = m_baseClasses.begin(); baseClassIterator != m_baseClasses.end(); baseClassIterator++)
         {
-        Logger::GetLogger()->warningv (L"Can not add class '%s' as a base class to '%s' because it already exists as a base class", baseClass.Name.c_str(), m_name.c_str());
-        return ECOBJECTS_STATUS_NamedItemAlreadyExists;
+        if (*baseClassIterator == (ECClassP)&baseClass)
+            {
+            Logger::GetLogger()->warningv (L"Can not add class '%s' as a base class to '%s' because it already exists as a base class", baseClass.Name.c_str(), m_name.c_str());
+            return ECOBJECTS_STATUS_NamedItemAlreadyExists;
+            }
         }
+    m_baseClasses.push_back((ECClassP)&baseClass);
 
     // NEEDSWORK - validate property overrides are correct
 
@@ -340,7 +343,7 @@ bool ECClass::HasBaseClasses
 (
 )
     {
-    return (m_baseClasses.begin() != m_baseClasses.end());
+    return (m_baseClasses.size() > 0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -575,7 +578,7 @@ ECClassCR  ecClass
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassContainerCR ECClass::GetBaseClasses
+const ECBaseClassesVector& ECClass::GetBaseClasses
 (
 ) const
     {

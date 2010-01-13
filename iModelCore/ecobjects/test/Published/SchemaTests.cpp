@@ -433,20 +433,20 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(SchemaDeserializationTest, ExpectSuccessWhenSerializingToFile)
-    {
-    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    ECSchemaPtr schema;
-    
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml");
-    wprintf(L"Verifying original schema from file.\n"); 
-    VerifyWidgetsSchema(schema);
-
-    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);
-
-    SchemaSerializationStatus status2 = schema->WriteXmlToFile(L"d:\\temp\\test.xml");
-    CoUninitialize();
-    }
+//TEST(SchemaDeserializationTest, ExpectSuccessWhenSerializingToFile)
+//    {
+//    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+//    ECSchemaPtr schema;
+//    
+//    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml");
+//    wprintf(L"Verifying original schema from file.\n"); 
+//    VerifyWidgetsSchema(schema);
+//
+//    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);
+//
+//    SchemaSerializationStatus status2 = schema->WriteXmlToFile(L"d:\\temp\\test.xml");
+//    CoUninitialize();
+//    }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    

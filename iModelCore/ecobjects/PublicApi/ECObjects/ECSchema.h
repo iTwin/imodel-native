@@ -333,6 +333,134 @@ public:
 
 }; 
 
+typedef std::vector<ECClassP> ECBaseClassesVector;
+/*=================================================================================**//**
+//
+//! The in-memory representation of an ECClass as defined by ECSchemaXML
+//
++===============+===============+===============+===============+===============+======*/
+struct ECClass /*__PUBLISH_ABSTRACT__*/
+{
+/*__PUBLISH_SECTION_END__*/
+
+friend struct ECSchema;
+friend struct ECPropertyContainer;
+
+private:
+    std::wstring            m_name;
+    std::wstring            m_displayLabel;
+    std::wstring            m_description;
+    bool                    m_isStruct;
+    bool                    m_isCustomAttributeClass;
+    bool                    m_isDomainClass;
+    ECSchemaCR              m_schema;
+    ECBaseClassesVector     m_baseClasses;
+    ECPropertyContainer     m_propertyContainer;
+
+    // Needswork:  Does STL provide any type of hypbrid list/dictionary collection?  We need fast lookup by name as well as retained order.  For now we will
+    // just use a hash_map but we need to start retaining order once we implement serialization.
+    PropertyMap             m_propertyMap;
+    PropertyList            m_propertyList;    
+    
+    ECObjectsStatus                     AddProperty (ECPropertyP& pProperty);    
+
+protected:
+    //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
+    //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
+    //  of a schema.
+    ECClass (ECSchemaCR schema) : m_schema(schema), m_isStruct(false), m_isCustomAttributeClass(false), m_isDomainClass(true),
+         m_propertyContainer(ECPropertyContainer(m_propertyMap, m_propertyList)){ };
+    ~ECClass();    
+
+    // schemas index class by name so publicly name can not be reset
+    ECObjectsStatus                     SetName (std::wstring const& name);    
+
+    virtual SchemaDeserializationStatus ReadXmlAttributes (MSXML2_IXMLDOMNode& classNode);
+
+    //! Uses the specified xml node (which must conform to an ECClass as defined in ECSchemaXML) to populate the base classes and properties of this class.
+    //! Before this method is invoked the schema containing the class must have loaded all schema references and stubs for all classes within
+    //! the schema itself otherwise the method may fail because such dependencies can not be located.
+    //! @param[in]  classNode       The XML DOM node to read
+    //! @return   Status code
+    virtual SchemaDeserializationStatus ReadXmlContents (MSXML2_IXMLDOMNode& classNode);    
+    
+    virtual SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode) const;
+    SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode, const wchar_t * elementName) const;
+
+/*__PUBLISH_SECTION_START__*/
+
+public:    
+    EXPORTED_READONLY_PROPERTY (ECSchemaCR,             Schema);                
+    // schemas index class by name so publicly name can not be reset
+    EXPORTED_READONLY_PROPERTY (std::wstring const&,    Name);        
+    EXPORTED_READONLY_PROPERTY (bool,                   IsDisplayLabelDefined);    
+    EXPORTED_READONLY_PROPERTY (ECPropertyContainerCR,  Properties); 
+    EXPORTED_READONLY_PROPERTY (const ECBaseClassesVector&,     BaseClasses);   
+
+    EXPORTED_PROPERTY  (std::wstring const&,            Description);
+    EXPORTED_PROPERTY  (std::wstring const&,            DisplayLabel);
+    EXPORTED_PROPERTY  (bool,                           IsStruct);    
+    EXPORTED_PROPERTY  (bool,                           IsCustomAttributeClass);    
+    EXPORTED_PROPERTY  (bool,                           IsDomainClass);    
+    
+    ECOBJECTS_EXPORT ECObjectsStatus SetIsStruct (const wchar_t * isStruct);          
+    ECOBJECTS_EXPORT ECObjectsStatus SetIsCustomAttributeClass (const wchar_t * isCustomAttribute);
+    ECOBJECTS_EXPORT ECObjectsStatus SetIsDomainClass (const wchar_t * isDomainClass);
+    ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass);
+    ECOBJECTS_EXPORT bool            HasBaseClasses();
+
+    //NEEDSWORK: Is method (test if is or derived from class X)
+
+    //! Get a property by name within the context of this class and its base classes.
+    //! The pointer returned by this method is valid until the ECClass containing the property is destroyed or the property
+    //! is removed from the class.
+    //! @param[in]  name     The name of the property to lookup.
+    //! @return   A pointer to an EC::ECProperty if the named property exists within the current class; otherwise, NULL
+    ECOBJECTS_EXPORT ECPropertyP     GetPropertyP (std::wstring const& name) const;
+
+    // ************************************************************************************************************************
+    // ************************************  STATIC METHODS *******************************************************************
+    // ************************************************************************************************************************
+
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseClassName (std::wstring & prefix, std::wstring & className, std::wstring const& qualifiedClassName);
+    ECOBJECTS_EXPORT static std::wstring GetQualifiedClassName(ECSchemaCR primarySchema, ECClassCR ecClass);
+    
+   
+}; // ECClass
+
+/*=================================================================================**//**
+//
+//! The in-memory representation of a relationship class as defined by ECSchemaXML
+//
++===============+===============+===============+===============+===============+======*/
+struct ECRelationshipClass /*__PUBLISH_ABSTRACT__*/ : public ECClass
+{
+/*__PUBLISH_SECTION_END__*/
+friend struct ECSchema;
+
+// NEEDSWORK  missing full implementation
+private:
+    //std::wstring     m_strength;
+    //std::wstring     m_strengthDirection;
+
+    //  Lifecycle management:  For now, to keep it simple, the class constructor is private.  The schema implementation will
+    //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
+    //  of a schema.
+    ECRelationshipClass (ECSchemaCR schema) : ECClass (schema) {};
+
+protected:
+    virtual SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode) const override;
+
+/*__PUBLISH_SECTION_START__*/
+public:
+    //EXPORTED_PROPERTY (std::wstring const&, Strength);                
+    //EXPORTED_PROPERTY (std::wstring const&, StrengthDirection);                
+
+}; // ECRelationshipClass
+
+typedef std::vector<ECSchemaP> ECSchemaReferenceVector;
+typedef RefCountedPtr<ECSchema>                  ECSchemaPtr;
+
 /*=================================================================================**//**
 //
 //! Supports STL like iterator of classes in a schema
@@ -391,135 +519,6 @@ public:
     ECOBJECTS_EXPORT const_iterator end ()   const;
 
 }; 
-
-/*=================================================================================**//**
-//
-//! The in-memory representation of an ECClass as defined by ECSchemaXML
-//
-+===============+===============+===============+===============+===============+======*/
-struct ECClass /*__PUBLISH_ABSTRACT__*/
-{
-/*__PUBLISH_SECTION_END__*/
-
-friend struct ECSchema;
-friend struct ECPropertyContainer;
-
-private:
-    std::wstring            m_name;
-    std::wstring            m_displayLabel;
-    std::wstring            m_description;
-    bool                    m_isStruct;
-    bool                    m_isCustomAttributeClass;
-    bool                    m_isDomainClass;
-    ECSchemaCR              m_schema;
-    ECClassContainer        m_baseClasses;
-    ECPropertyContainer     m_propertyContainer;
-
-    ClassMap                m_baseClassMap;
-    // Needswork:  Does STL provide any type of hypbrid list/dictionary collection?  We need fast lookup by name as well as retained order.  For now we will
-    // just use a hash_map but we need to start retaining order once we implement serialization.
-    PropertyMap             m_propertyMap;
-    PropertyList            m_propertyList;    
-    
-    ECObjectsStatus                     AddProperty (ECPropertyP& pProperty);    
-
-protected:
-    //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
-    //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
-    //  of a schema.
-    ECClass (ECSchemaCR schema) : m_schema(schema), m_isStruct(false), m_isCustomAttributeClass(false), m_isDomainClass(true),
-         m_propertyContainer(ECPropertyContainer(m_propertyMap, m_propertyList)), m_baseClasses(ECClassContainer(m_baseClassMap)){ };
-    ~ECClass();    
-
-    // schemas index class by name so publicly name can not be reset
-    ECObjectsStatus                     SetName (std::wstring const& name);    
-
-    virtual SchemaDeserializationStatus ReadXmlAttributes (MSXML2_IXMLDOMNode& classNode);
-
-    //! Uses the specified xml node (which must conform to an ECClass as defined in ECSchemaXML) to populate the base classes and properties of this class.
-    //! Before this method is invoked the schema containing the class must have loaded all schema references and stubs for all classes within
-    //! the schema itself otherwise the method may fail because such dependencies can not be located.
-    //! @param[in]  classNode       The XML DOM node to read
-    //! @return   Status code
-    virtual SchemaDeserializationStatus ReadXmlContents (MSXML2_IXMLDOMNode& classNode);    
-    
-    virtual SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode) const;
-    SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode, const wchar_t * elementName) const;
-
-/*__PUBLISH_SECTION_START__*/
-
-public:    
-    EXPORTED_READONLY_PROPERTY (ECSchemaCR,             Schema);                
-    // schemas index class by name so publicly name can not be reset
-    EXPORTED_READONLY_PROPERTY (std::wstring const&,    Name);        
-    EXPORTED_READONLY_PROPERTY (bool,                   IsDisplayLabelDefined);    
-    EXPORTED_READONLY_PROPERTY (ECPropertyContainerCR,  Properties); 
-    EXPORTED_READONLY_PROPERTY (ECClassContainerCR,     BaseClasses);   
-
-    EXPORTED_PROPERTY  (std::wstring const&,            Description);
-    EXPORTED_PROPERTY  (std::wstring const&,            DisplayLabel);
-    EXPORTED_PROPERTY  (bool,                           IsStruct);    
-    EXPORTED_PROPERTY  (bool,                           IsCustomAttributeClass);    
-    EXPORTED_PROPERTY  (bool,                           IsDomainClass);    
-    
-    ECOBJECTS_EXPORT ECObjectsStatus SetIsStruct (const wchar_t * isStruct);          
-    ECOBJECTS_EXPORT ECObjectsStatus SetIsCustomAttributeClass (const wchar_t * isCustomAttribute);
-    ECOBJECTS_EXPORT ECObjectsStatus SetIsDomainClass (const wchar_t * isDomainClass);
-    ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass);
-    ECOBJECTS_EXPORT bool            HasBaseClasses();
-    //NEEDSWORK: Method to iterate/get base classes
-    
-    //NEEDSWORK: Is method (test if is or derived from class X)
-
-    //! Get a property by name within the context of this class and its base classes.
-    //! The pointer returned by this method is valid until the ECClass containing the property is destroyed or the property
-    //! is removed from the class.
-    //! @param[in]  name     The name of the property to lookup.
-    //! @return   A pointer to an EC::ECProperty if the named property exists within the current class; otherwise, NULL
-    ECOBJECTS_EXPORT ECPropertyP     GetPropertyP (std::wstring const& name) const;
-
-    // ************************************************************************************************************************
-    // ************************************  STATIC METHODS *******************************************************************
-    // ************************************************************************************************************************
-
-    ECOBJECTS_EXPORT static ECObjectsStatus ParseClassName (std::wstring & prefix, std::wstring & className, std::wstring const& qualifiedClassName);
-    ECOBJECTS_EXPORT static std::wstring GetQualifiedClassName(ECSchemaCR primarySchema, ECClassCR ecClass);
-    
-   
-}; // ECClass
-
-/*=================================================================================**//**
-//
-//! The in-memory representation of a relationship class as defined by ECSchemaXML
-//
-+===============+===============+===============+===============+===============+======*/
-struct ECRelationshipClass /*__PUBLISH_ABSTRACT__*/ : public ECClass
-{
-/*__PUBLISH_SECTION_END__*/
-friend struct ECSchema;
-
-// NEEDSWORK  missing full implementation
-private:
-    //std::wstring     m_strength;
-    //std::wstring     m_strengthDirection;
-
-    //  Lifecycle management:  For now, to keep it simple, the class constructor is private.  The schema implementation will
-    //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
-    //  of a schema.
-    ECRelationshipClass (ECSchemaCR schema) : ECClass (schema) {};
-
-protected:
-    virtual SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode) const override;
-
-/*__PUBLISH_SECTION_START__*/
-public:
-    //EXPORTED_PROPERTY (std::wstring const&, Strength);                
-    //EXPORTED_PROPERTY (std::wstring const&, StrengthDirection);                
-
-}; // ECRelationshipClass
-
-typedef std::vector<ECSchemaP> ECSchemaReferenceVector;
-typedef RefCountedPtr<ECSchema>                  ECSchemaPtr;
 
 /*=================================================================================**//**
 //
