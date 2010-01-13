@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <hash_map>
+#include <set>
 
 //#define EC_TRACE_MEMORY
 
