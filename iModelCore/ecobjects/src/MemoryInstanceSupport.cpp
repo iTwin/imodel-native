@@ -78,7 +78,7 @@ ClassLayout::ClassLayout(SchemaLayoutCR schemaLayout)
     m_classIndex(0),
     m_nProperties(0), 
     m_nullflagsOffset (0),
-    m_offset(sizeof(InstanceFlags)), // The first 32 bits are reserved for flags/future
+    m_offset(sizeof(InstanceHeader)),
     m_sizeOfFixedSection(0)
     {
     };
@@ -111,8 +111,13 @@ UInt32          ClassLayout::GetSizeOfFixedSection() const
 void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const
     {
     UInt32 sizeOfFixedSection = GetSizeOfFixedSection();
-    memset (data, 0, sizeof(InstanceFlags)); 
+    memset (data, 0, sizeof(InstanceHeader)); 
     
+    InstanceHeader& header = *(InstanceHeader*) data;
+    header.m_schemaIndex   = m_schemaLayout.GetSchemaIndex();
+    header.m_classIndex    = m_classIndex;
+    header.m_instanceFlags = 0;
+
     UInt32 bitsPerMask = (sizeof(NullflagsBitmask) * 8);
     UInt32 nNullflagsBitmasks = (UInt32)m_propertyLayouts.size() / bitsPerMask;
     if ( (m_propertyLayouts.size() % bitsPerMask > 0))
@@ -120,7 +125,7 @@ void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 byt
     
     for (UInt32 i = 0; i < nNullflagsBitmasks; i++)
         {
-        NullflagsBitmask * nullflags = (NullflagsBitmask *)(data + sizeof(InstanceFlags) + i * sizeof (NullflagsBitmask));
+        NullflagsBitmask * nullflags = (NullflagsBitmask *)(data + sizeof(InstanceHeader) + i * sizeof (NullflagsBitmask));
         *nullflags = NULLFLAGS_BITMASK_AllOn;
         }
             
@@ -163,6 +168,14 @@ UInt32          ClassLayout::CalculateBytesUsed(byte const * data) const
     return *pLast;
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaLayoutCR  ClassLayout::GetSchemaLayout() const
+    {
+    return m_schemaLayout;
+    } 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -347,10 +360,10 @@ StatusInt       ClassLayout::FinishLayout ()
     if ( (m_propertyLayouts.size() % bitsPerMask > 0) )
         ++nNullflagsBitmasks;
     
-    DEBUG_EXPECT (m_propertyLayouts[0].m_offset == sizeof(InstanceFlags) + nNullflagsBitmasks * sizeof(NullflagsBitmask));
+    DEBUG_EXPECT (m_propertyLayouts[0].m_offset == sizeof(InstanceHeader) + nNullflagsBitmasks * sizeof(NullflagsBitmask));
     for (UInt32 i = 0; i < m_propertyLayouts.size(); i++)
         {
-        UInt32 expectedNullflagsOffset = (i / bitsPerMask * sizeof(NullflagsBitmask)) + sizeof(InstanceFlags);
+        UInt32 expectedNullflagsOffset = (i / bitsPerMask * sizeof(NullflagsBitmask)) + sizeof(InstanceHeader);
         DEBUG_EXPECT (m_propertyLayouts[i].m_nullflagsOffset == expectedNullflagsOffset);
         }     
 #endif
@@ -387,7 +400,11 @@ StatusInt       ClassLayout::AddProperty (wchar_t const * accessString, Primitiv
     if (0 == positionInCurrentNullFlags)
         {
         // It is time to add a new set of Nullflags
-        m_nullflagsOffset = m_nullflagsOffset + sizeof(NullflagsBitmask);
+        if (0 == m_nProperties)
+            m_nullflagsOffset = sizeof(InstanceHeader);
+        else
+            m_nullflagsOffset = m_nullflagsOffset + sizeof(NullflagsBitmask);
+
         m_offset += sizeof(NullflagsBitmask);
         for (UInt32 i = 0; i < m_propertyLayouts.size(); i++)
             m_propertyLayouts[i].m_offset += sizeof(NullflagsBitmask); // Offsets of already-added property layouts need to get bumped up
@@ -548,6 +565,14 @@ ClassLayoutHolder::ClassLayoutHolder (ClassLayoutCR classLayout) : m_classLayout
 ClassLayoutCR    ClassLayoutHolder::GetClassLayout() const 
     {
     return m_classLayout;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceHeader const&    MemoryInstanceSupport::PeekInstanceHeader (void const* data)
+    {
+    return * ((InstanceHeader const*) data);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -856,8 +881,11 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
         return;
         
     wprintf (L"ECClass=%s at address = 0x%0x\n", classLayout.GetClass().GetName().c_str(), data);
-    InstanceFlags flags = *(InstanceFlags*)data;
-    wprintf (L"  [0x%0x][%4.d] InstanceFlags = 0x%08.x\n", data, 0, flags);
+    InstanceHeader& header = *(InstanceHeader*)data;
+
+    wprintf (L"  [0x%0x][%4.d] SchemaIndex = %d\n",        &header.m_schemaIndex,  (byte*)&header.m_schemaIndex   - data, header.m_schemaIndex);
+    wprintf (L"  [0x%0x][%4.d] ClassIndex  = %d\n",        &header.m_classIndex,   (byte*)&header.m_classIndex    - data, header.m_classIndex);
+    wprintf (L"  [0x%0x][%4.d] InstanceFlags = 0x%08.x\n", &header.m_instanceFlags,(byte*)&header.m_instanceFlags - data, header.m_instanceFlags);
     
     UInt32 nProperties = classLayout.GetPropertyCount ();
     
@@ -868,7 +896,7 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
     
     for (UInt32 i = 0; i < nNullflagsBitmasks; i++)
         {
-        UInt32 offset = sizeof(InstanceFlags) + i * sizeof(NullflagsBitmask);
+        UInt32 offset = sizeof(InstanceHeader) + i * sizeof(NullflagsBitmask);
         byte const * address = offset + data;
         wprintf (L"  [0x%x][%4.d] Nullflags[%d] = 0x%x\n", address, offset, i, *(NullflagsBitmask*)(data + offset));
         }
