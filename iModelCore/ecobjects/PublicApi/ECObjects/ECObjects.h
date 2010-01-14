@@ -57,6 +57,7 @@ EC_TYPEDEFS(IECRelationshipInstance);
 EC_TYPEDEFS(ECEnabler);
 EC_TYPEDEFS(IArrayManipulator);
 
+EC_TYPEDEFS(SchemaLayout);
 EC_TYPEDEFS(ClassLayout);
 EC_TYPEDEFS(PropertyLayout);
 EC_TYPEDEFS(StandaloneECInstance);

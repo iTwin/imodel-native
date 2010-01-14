@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
+#include    <algorithm>
 
 // SHRINK_TO_FIT will cause space reserved for variable-sized values to be reduced to the minimum upon every set operation.
 // SHRINK_TO_FIT is not recommended and is mainly for testing. It it better to "compact" everything at once
@@ -69,13 +70,16 @@ UInt32          PropertyLayout::GetSizeInFixedSection () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayout::ClassLayout() : m_state(AcceptingFixedSizeProperties), 
-                             m_class(NULL),
-                             m_classIndex(0),
-                             m_nProperties(0), 
-                             m_nullflagsOffset (0),
-                             m_offset(sizeof(InstanceFlags)), // The first 32 bits are reserved for flags/future
-                             m_sizeOfFixedSection(0)
+ClassLayout::ClassLayout(SchemaLayoutCR schemaLayout) 
+    : 
+    m_schemaLayout (schemaLayout),
+    m_state(AcceptingFixedSizeProperties), 
+    m_class(NULL),
+    m_classIndex(0),
+    m_nProperties(0), 
+    m_nullflagsOffset (0),
+    m_offset(sizeof(InstanceFlags)), // The first 32 bits are reserved for flags/future
+    m_sizeOfFixedSection(0)
     {
     };
     
@@ -254,23 +258,45 @@ void            ClassLayout::AddProperties (ECClassCR ecClass, wchar_t const * n
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassLayoutP    ClassLayout::CreateEmpty (ECClassCR ecClass, ClassIndex classIndex, SchemaLayoutCR schemaLayout)
+    {
+    ClassLayoutP classLayout = new ClassLayout(schemaLayout);
+
+    classLayout->SetClass (ecClass, classIndex);
+
+    return classLayout;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassLayoutP    ClassLayout::BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaLayoutCR schemaLayout)
+    {
+    ClassLayoutP classLayout = CreateEmpty (ecClass, classIndex, schemaLayout);
+
+    // Iterate through the EC::Properties of the EC::Class and build the layout
+    classLayout->AddProperties (ecClass, NULL, true);
+    classLayout->AddProperties (ecClass, NULL, false);
+
+    classLayout->FinishLayout ();
+    
+    //wprintf (L"ECClass name=%s\n", ecClass.GetName().c_str());
+    //Dump();
+
+    return classLayout;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ClassLayout::SetClass (ECClassCR ecClass, UInt16 classIndex)
+BentleyStatus   ClassLayout::SetClass (ECClassCR ecClass, UInt16 classIndex)
     {
     m_class      = &ecClass;
     m_classIndex = classIndex;
     m_className  = ecClass.GetName(); // WIP_FUSION: remove this redundant information
 
-    // Iterate through the EC::Properties of the EC::ECClass and build the layout
-    AddProperties (ecClass, NULL, true);
-    AddProperties (ecClass, NULL, false);
-
-    FinishLayout ();
-    
-    //wprintf (L"ECClass name=%s\n", ecClass.GetName().c_str());
-    //Dump();
-    
     return SUCCESS;
     }
 
@@ -442,6 +468,71 @@ StatusInt       ClassLayout::GetPropertyLayoutByIndex (PropertyLayoutCP & proper
         
     propertyLayout = &m_propertyLayouts[propertyIndex];
     return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   SchemaLayout::AddClassLayout (ClassLayoutCR classLayout, ClassIndex classIndex, bool isPersistent)
+    {
+    if (m_entries.size() <= classIndex)
+        m_entries.resize (20 + classIndex);
+
+    assert (NULL == m_entries[classIndex] && "Class Index is already in use");
+
+    m_entries[classIndex] = new SchemaLayoutEntry (classLayout, isPersistent);
+
+    return ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaLayoutEntry*  SchemaLayout::GetEntry (ClassIndex classIndex)
+    {
+    if (m_entries.size() <= classIndex)
+        return NULL;
+
+    return m_entries[classIndex];
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaLayoutEntry*  SchemaLayout::FindEntry (ECClassCR ecClass)
+    {
+    for each (SchemaLayoutEntry* entry in m_entries)
+        {
+        if (NULL == entry)
+            continue;
+
+        if (&entry->m_classLayout.GetClass() == &ecClass)
+            return entry;
+        }
+
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   SchemaLayout::FindAvailableClassIndex(ClassIndex& classIndex)
+    {
+    SchemaLayoutEntry* nullVal = NULL;
+    SchemaLayoutEntryArray::iterator iter = std::find (m_entries.begin(), m_entries.end(), nullVal);
+
+    size_t firstNullIndex = iter - m_entries.begin();
+
+    if (USHRT_MAX > firstNullIndex)
+        { 
+        classIndex = (UInt16) firstNullIndex;
+        return SUCCESS;
+        }
+
+    // The max size for classIndex is 0xffff, but if we reach that limit,
+    // most likely something else has gone wrong.
+    assert(false);
+    return ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
