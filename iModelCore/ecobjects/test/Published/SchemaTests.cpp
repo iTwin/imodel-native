@@ -488,7 +488,9 @@ TEST(SchemaSerializationTest, ExpectErrorWhenCOMNotInitialized)
     ECSchema::CreateSchema(schema, L"Widget");
     
     DISABLE_ASSERTS
-    SchemaSerializationStatus status = schema->WriteXmlToFile (L"t");
+    const wchar_t *ecSchemaXmlString;
+    
+    SchemaSerializationStatus status = schema->WriteXmlToString(ecSchemaXmlString);
         
     EXPECT_EQ (SCHEMA_SERIALIZATION_STATUS_FailedToInitializeMsmxl, status);
     };
@@ -529,10 +531,15 @@ TEST(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     
 //    const wchar_t *ecSchemaXmlString;
     
-    SchemaSerializationStatus status2 = schema->WriteXmlToFile(L"d:\\temp\\base.xml");
+    //SchemaSerializationStatus status2 = schema->WriteXmlToFile(L"d:\\temp\\base.xml");
+    //
+    //ECSchemaPtr schema4;
+    //SchemaDeserializationStatus status3 = ECSchema::ReadXmlFromFile (schema4, L"d:\\temp\\base.xml");
     
-    ECSchemaPtr schema4;
-    SchemaDeserializationStatus status3 = ECSchema::ReadXmlFromFile (schema4, L"d:\\temp\\base.xml");
+    const wchar_t *ecSchemaXmlString;
+    
+    SchemaSerializationStatus status2 = schema->WriteXmlToString(ecSchemaXmlString);
+    EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status2);
     
     CoUninitialize();
     }
