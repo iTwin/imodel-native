@@ -390,6 +390,31 @@ UInt32          ClassLayout::GetPropertyValueSize (PrimitiveType primitivetype) 
     }
   
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/10
++---------------+---------------+---------------+---------------+---------------+------*/    
+void            ClassLayout::AddPropertyDirect
+(
+wchar_t const * accessString,
+PrimitiveType   primitivetype,
+UInt32          offset,
+UInt32          nullflagsOffset,
+UInt32          nullflagsBitmask
+)
+    {
+    PropertyLayout propertyLayout (accessString, primitivetype, offset, nullflagsOffset, nullflagsBitmask);
+
+    m_nProperties++;
+   
+    m_propertyLayouts.push_back(propertyLayout);
+
+    if (m_offset < offset)
+        m_offset = offset;
+
+    if (m_nullflagsOffset < nullflagsOffset)
+        m_nullflagsOffset = nullflagsOffset;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
 StatusInt       ClassLayout::AddProperty (wchar_t const * accessString, PrimitiveType primitivetype, size_t size) // WIP_FUSION: use UInt32 instead of size

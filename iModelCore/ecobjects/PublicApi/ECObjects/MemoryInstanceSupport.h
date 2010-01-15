@@ -5,7 +5,7 @@
 |   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-//__PUBLISH_SECTION_START__
+/*__PUBLISH_SECTION_START__*/
 #pragma once
 
 #include <ECObjects\ECObjects.h>
@@ -109,12 +109,11 @@ private:
     State                   m_state;
     UInt32                  m_offset;
     UInt32                  m_sizeOfFixedSection;
-    
+
     void                    AddProperties (ECClassCR ecClass, wchar_t const * nameRoot, bool addFixedSize);
     StatusInt               AddProperty (wchar_t const * accessString, PrimitiveType primitiveType, size_t size);
     StatusInt               AddFixedSizeProperty (wchar_t const * accessString, PrimitiveType primitiveType);
     StatusInt               AddVariableSizeProperty (wchar_t const * accessString, PrimitiveType primitiveType);
-    StatusInt               FinishLayout ();
     std::wstring            GetClassName() const;
 
     BentleyStatus           SetClass (ECClassCR ecClass, UInt16 classIndex);
@@ -133,6 +132,11 @@ public:
     ECOBJECTS_EXPORT StatusInt      GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const;
     // WIP_FUSION add StatusInt      GetPropertyIndex (UInt32& propertyIndex, wchar_t const * accessString);
     
+/*__PUBLISH_SECTION_END__*/
+    ECOBJECTS_EXPORT void           AddPropertyDirect (wchar_t const * accessString, PrimitiveType primitivetype, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask);
+    ECOBJECTS_EXPORT StatusInt      FinishLayout ();
+/*__PUBLISH_SECTION_START__*/
+
     void                        Dump() const;
     
     void                        InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const;
