@@ -39,6 +39,16 @@
 *
 * \section ECObjectsApiOverview Overview
 *
+* \section Logging
+* ECObjects makes use of the BSI logger for logging warnings and errors in the code, as well
+* as debug information.  If the calling application has configured a logger already, ECObjects
+* will log to that logger.  Otherwise, ECObjects will register a new logger and then try to
+* configure it as follows:
+*   -# If the environment variable "ECOBJECTS_LOGGING_CONFIG" is set, it will use the file pointed
+*      to by this path as the configuration file.
+*   -# It will next look in the same directory as the ECObjects.dll for a file named "log4cxx_properties.xml"
+*   -# As a default, it will configure a basic logger that will log WARNING and above messages to the
+*      console
 *
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
