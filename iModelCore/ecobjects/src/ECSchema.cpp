@@ -22,7 +22,8 @@ ECSchema::~ECSchema
 )
     {
     // NEEDSWORK make sure everything is destroyed
-    Logger::GetLogger()->infov (L"~~~~ Destroying ECSchema: %s\n", GetName().c_str());
+    wchar_t const * schemaName = GetName().c_str();
+    Logger::GetLogger()->infov (L"~~~~ Destroying ECSchema: %s\n", schemaName);
     ClassMap::iterator          classIterator = m_classMap.begin();
     ClassMap::const_iterator    classEnd = m_classMap.end();        
     Logger::GetLogger()->tracev (L"     Freeing memory for %d classes\n", m_classMap.size());

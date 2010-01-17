@@ -303,7 +303,7 @@ BentleyStatus   ClassLayout::SetClass (ECClassCR ecClass, UInt16 classIndex)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/  
-ECClassCR         ClassLayout::GetClass () const
+ECClassCR       ClassLayout::GetClass () const
     {
     return *m_class;
     }
@@ -590,7 +590,7 @@ void            MemoryInstanceSupport::SetValueNull (PropertyLayoutCR propertyLa
     if (isNull && 0 == (*nullflags & mask))
         *nullflags |= mask; // turn on the null bit
     else if (!isNull && mask == (*nullflags & mask))
-        *nullflags ^= mask; // turn off the null bit
+        *nullflags ^= mask; // turn off the null bit // WIP_FUSION: Needs to use ModifyData
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -658,6 +658,16 @@ StatusInt       MemoryInstanceSupport::EnsureSpaceIsAvailable (ClassLayoutCR cla
     return status;
     }
 
+static int s_shiftSecondaryOffsetsInPlace = false; 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/
+void            MemoryInstanceSupport::SetShiftSecondaryOffsetsInPlace (bool inPlace)
+    {
+    s_shiftSecondaryOffsetsInPlace = inPlace;
+    }
+        
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -683,16 +693,26 @@ StatusInt       MemoryInstanceSupport::ShiftValueData(ClassLayoutCR classLayout,
         if (destination + bytesToMove > data + bytesAllocated)
             return ERROR;
             
-        memmove (destination, source, bytesToMove); // WIP_FUSION: Use Modify data, instead
+        memmove (destination, source, bytesToMove); // WIP_FUSION: Use Modify data, instead. Need method from Keith.
         }
 
-    // Shift all secondaryOffsets for variable-sized property values following the one that just got larger
+    // Shift all secondaryOffsets for variable-sized property values that follow the one that just got larger
     UInt32 sizeOfSecondaryOffsetsToShift = (UInt32)(((byte*)pLast - (byte*)pCurrent) + sizeof (SecondaryOffset));
+    
+    if (s_shiftSecondaryOffsetsInPlace)
+        {
+        for (SecondaryOffset * pSecondaryOffset = pCurrent; pSecondaryOffset <= pLast; ++pSecondaryOffset)
+            *pSecondaryOffset += shiftBy;
+            
+        return SUCCESS;
+        }
+        
     UInt32 nSecondaryOffsetsToShift = sizeOfSecondaryOffsetsToShift / sizeof(SecondaryOffset);
+
     SecondaryOffset * shiftedSecondaryOffsets = (SecondaryOffset*)alloca (sizeOfSecondaryOffsetsToShift);
     for (UInt32 i = 0; i < nSecondaryOffsetsToShift; i++)
         shiftedSecondaryOffsets[i] = pCurrent[i] + shiftBy;
-        
+    
     UInt32 offsetOfCurrent = (UInt32)((byte*)pCurrent - data);
     return _ModifyData (offsetOfCurrent, shiftedSecondaryOffsets, sizeOfSecondaryOffsetsToShift);
     }
@@ -822,7 +842,7 @@ StatusInt       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayo
         case PRIMITIVETYPE_String:
             {
             wchar_t const * value = v.GetString();
-            UInt32 bytesNeeded = (UInt32)(sizeof(wchar_t) * (wcslen(value) + 1));
+            UInt32 bytesNeeded = (UInt32)(sizeof(wchar_t) * (wcslen(value) + 1)); // WIP_FUSION: what if the caller could tell us the size?
             
             StatusInt status = EnsureSpaceIsAvailable (classLayout, *propertyLayout, bytesNeeded);
             if (SUCCESS != status)

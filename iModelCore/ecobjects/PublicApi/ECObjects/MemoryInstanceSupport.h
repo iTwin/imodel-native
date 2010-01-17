@@ -180,7 +180,6 @@ public:
     ECOBJECTS_EXPORT ClassLayoutCR  GetClassLayout() const;
     };
 
-
 //! Base class for EC::IECInstance implementations that get/set values from a block of memory, 
 //! e.g. StandaloneECInstance and ECXDataInstance
 struct MemoryInstanceSupport
@@ -229,6 +228,10 @@ protected:
     
     //! Free any allocated memory
     virtual void                _FreeAllocation () = 0;
+
+public:
+    ECOBJECTS_EXPORT static void SetShiftSecondaryOffsetsInPlace (bool inPlace);
     };
+
 
 END_BENTLEY_EC_NAMESPACE
