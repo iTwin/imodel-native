@@ -433,6 +433,24 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
+//TEST(SchemaDeserializationTest, ExpectSuccessWhenSerializingToFile)
+//    {
+//    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+//    ECSchemaPtr schema;
+//    
+//    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml");
+//    wprintf(L"Verifying original schema from file.\n"); 
+//    VerifyWidgetsSchema(schema);
+//
+//    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);
+//
+//    SchemaSerializationStatus status2 = schema->WriteXmlToFile(L"d:\\temp\\test.xml");
+//    CoUninitialize();
+//    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
 //TEST(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingStream)
 //    {
 //    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
@@ -470,9 +488,60 @@ TEST(SchemaSerializationTest, ExpectErrorWhenCOMNotInitialized)
     ECSchema::CreateSchema(schema, L"Widget");
     
     DISABLE_ASSERTS
-    SchemaSerializationStatus status = schema->WriteXmlToFile (L"t");
+    const wchar_t *ecSchemaXmlString;
+    
+    SchemaSerializationStatus status = schema->WriteXmlToString(ecSchemaXmlString);
         
     EXPECT_EQ (SCHEMA_SERIALIZATION_STATUS_FailedToInitializeMsmxl, status);
     };
+    
+TEST(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
+    {
+    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+
+    ECSchemaPtr schema;
+    ECSchemaPtr schema2;
+    ECSchemaPtr schema3;
+    
+    ECSchema::CreateSchema(schema, L"Widget");
+    ECSchema::CreateSchema(schema2, L"BaseSchema");
+    ECSchema::CreateSchema(schema3, L"BaseSchema2");
+    
+    schema->NamespacePrefix = L"ecw";
+    schema2->NamespacePrefix = L"base";
+    schema3->NamespacePrefix = L"base";
+    
+    ECClassP class1;
+    ECClassP baseClass;
+    ECClassP anotherBase;
+    ECClassP gadget;
+    ECClassP bolt;
+    schema->CreateClass(class1, L"TestClass");
+    schema->CreateClass(gadget, L"Gadget");
+    schema->CreateClass(bolt, L"Bolt");
+    schema2->CreateClass(baseClass, L"BaseClass");
+    schema3->CreateClass(anotherBase, L"AnotherBase");
+    
+    EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, class1->AddBaseClass(*baseClass));
+    schema->AddReferencedSchema(*schema2);
+    schema->AddReferencedSchema(*schema3);
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->AddBaseClass(*baseClass));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->AddBaseClass(*anotherBase));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, gadget->AddBaseClass(*class1));
+    
+//    const wchar_t *ecSchemaXmlString;
+    
+    //SchemaSerializationStatus status2 = schema->WriteXmlToFile(L"d:\\temp\\base.xml");
+    //
+    //ECSchemaPtr schema4;
+    //SchemaDeserializationStatus status3 = ECSchema::ReadXmlFromFile (schema4, L"d:\\temp\\base.xml");
+    
+    const wchar_t *ecSchemaXmlString;
+    
+    SchemaSerializationStatus status2 = schema->WriteXmlToString(ecSchemaXmlString);
+    EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status2);
+    
+    CoUninitialize();
+    }
     
 END_BENTLEY_EC_NAMESPACE

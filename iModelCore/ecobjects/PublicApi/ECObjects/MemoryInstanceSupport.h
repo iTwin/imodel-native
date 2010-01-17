@@ -17,6 +17,9 @@ EC_TYPEDEFS(MemoryInstanceSupport);
 
 BEGIN_BENTLEY_EC_NAMESPACE
     
+typedef UInt16 ClassIndex;
+typedef UInt16 SchemaIndex;
+
 typedef UInt32 NullflagsBitmask;
 typedef UInt32 InstanceFlags;
 typedef UInt32 SecondaryOffset;
@@ -132,7 +135,7 @@ private:
         };
     
     // These members are expected to be persisted  
-    UInt16                  m_classIndex; // Unique per some context, e.g. per DgnFile
+    ClassIndex              m_classIndex; // Unique per some context, e.g. per DgnFile
     std::wstring            m_className; // WIP_FUSION: remove this redundant information and just use m_class. But we still need to persist the name.
     UInt32                  m_nProperties;
     
@@ -140,6 +143,7 @@ private:
     PropertyLayoutLookup    m_propertyLayoutLookup;
     
     // These members are transient
+    SchemaLayoutCR          m_schemaLayout;
     ECClassCP               m_class;
     UInt32                  m_nullflagsOffset;
     State                   m_state;
@@ -154,9 +158,14 @@ private:
     StatusInt               FinishLayout ();
     std::wstring            GetClassName() const;
 
+    BentleyStatus           SetClass (ECClassCR ecClass, UInt16 classIndex);
+
+    ClassLayout(SchemaLayoutCR schemaLayout);
+
 public:
-    ECOBJECTS_EXPORT ClassLayout();
-    ECOBJECTS_EXPORT StatusInt  SetClass (ECClassCR ecClass, UInt16 classIndex);
+    ECOBJECTS_EXPORT static ClassLayoutP BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaLayoutCR schemaLayout);
+    ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (ECClassCR ecClass, ClassIndex classIndex, SchemaLayoutCR schemaLayout);
+
     ECOBJECTS_EXPORT ECClassCR  GetClass () const;
     ECOBJECTS_EXPORT UInt16     GetClassIndex() const;
     ECOBJECTS_EXPORT UInt32     GetPropertyCount () const;
@@ -175,6 +184,37 @@ public:
     ECOBJECTS_EXPORT UInt32     CalculateBytesUsed(byte const * data) const;
     };
     
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/      
+struct SchemaLayoutEntry
+    {
+    bool                m_persistent;
+    ClassLayoutCR       m_classLayout;
+
+    SchemaLayoutEntry (ClassLayoutCR l, bool p) : m_classLayout(l), m_persistent(p) { }
+    };
+
+typedef std::vector<SchemaLayoutEntry*>  SchemaLayoutEntryArray;
+
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/      
+struct SchemaLayout
+{
+private:
+    SchemaIndex             m_schemaIndex;
+    SchemaLayoutEntryArray  m_entries;
+
+public:
+    ECOBJECTS_EXPORT SchemaIndex            GetSchemaIndex() { return m_schemaIndex; }
+    ECOBJECTS_EXPORT void                   SetSchemaIndex(SchemaIndex i) { m_schemaIndex = i; }
+    ECOBJECTS_EXPORT BentleyStatus          AddClassLayout (ClassLayoutCR, ClassIndex, bool isPersistent);
+    ECOBJECTS_EXPORT SchemaLayoutEntry*     GetEntry (ClassIndex classIndex);
+    ECOBJECTS_EXPORT SchemaLayoutEntry*     FindEntry (ECClassCR ecClass);
+    ECOBJECTS_EXPORT BentleyStatus          FindAvailableClassIndex (ClassIndex&);
+};
+
 //! Holds a ClassLayoutCR and provides a public method by which to access it.
 //! Used by StandaloneECEnabler and ECXDataEnabler
 struct ClassLayoutHolder
