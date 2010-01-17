@@ -20,8 +20,49 @@ BEGIN_BENTLEY_EC_NAMESPACE
 typedef UInt32 NullflagsBitmask;
 typedef UInt32 InstanceFlags;
 typedef UInt32 SecondaryOffset;
+typedef UInt32 ArrayCount;
 
 #define NULLFLAGS_BITMASK_AllOn     0xFFFFFFFF
+
+/// WIP, not sure this belongs here or that we even need the struct but I'm defining it for now just to experiment with some ideas.
+struct ECTypeDescriptor
+    {
+private:
+    ValueKind       m_typeKind;
+
+    union
+        {
+        ArrayKind       m_arrayKind;
+        PrimitiveType   m_primitiveType;
+        };  
+    ECTypeDescriptor () : m_typeKind ((ValueKind) 0), m_primitiveType ((PrimitiveType) 0) { };
+
+public:
+    static ECTypeDescriptor   CreatePrimitiveTypeDescriptor (PrimitiveType primitiveType) 
+        { ECTypeDescriptor type; type.m_typeKind = VALUEKIND_Primitive; type.m_primitiveType = primitiveType; return type; }
+    static ECTypeDescriptor   CreatePrimitiveArrayTypeDescriptor (PrimitiveType primitiveType) 
+        { ECTypeDescriptor type; type.m_typeKind = VALUEKIND_Array; type.m_primitiveType = primitiveType; return type; }
+    static ECTypeDescriptor   CreateStructArrayTypeDescriptor () 
+        { ECTypeDescriptor type; type.m_typeKind = VALUEKIND_Array; type.m_arrayKind = ARRAYKIND_Struct; return type; }
+    static ECTypeDescriptor   CreateStructTypeDescriptor () 
+        { ECTypeDescriptor type; type.m_typeKind = VALUEKIND_Struct; type.m_arrayKind = (ArrayKind)0; return type; }
+
+    ECTypeDescriptor (PrimitiveType primitiveType) : m_typeKind (VALUEKIND_Primitive), m_primitiveType (primitiveType) { };
+
+    inline ValueKind        GetTypeKind() const         { return m_typeKind; }
+    inline ArrayKind        GetArrayKind() const        { return (ArrayKind)(m_arrayKind & 0xFF); }    
+    inline bool             IsPrimitive() const         { return (GetTypeKind() == VALUEKIND_Primitive ); }
+    inline bool             IsStruct() const            { return (GetTypeKind() == VALUEKIND_Struct ); }
+    inline bool             IsArray() const             { return (GetTypeKind() == VALUEKIND_Array ); }
+    inline bool             IsPrimitiveArray() const    { return (GetTypeKind() == VALUEKIND_Array ) && (GetArrayKind() == ARRAYKIND_Primitive); }
+    inline bool             IsStructArray() const       { return (GetTypeKind() == VALUEKIND_Array ) && (GetArrayKind() == ARRAYKIND_Struct); }
+    inline PrimitiveType    GetPrimitiveType() const    { return m_primitiveType; }
+    };
+
+enum ArrayModifierFlags : UInt32
+    {
+    ARRAYMODIFIERFLAGS_IsFixedSize    = 0x01
+    };
 
 /*=================================================================================**//**
 * @bsistruct                                                     CaseyMullen    10/09
@@ -30,27 +71,34 @@ struct PropertyLayout
     {
 friend ClassLayout;    
 private:
-    std::wstring            m_accessString;
-    PrimitiveType           m_primitiveType;
+    std::wstring            m_accessString;        
+    ECTypeDescriptor        m_typeDescriptor;
     
     // Using UInt32 instead of size_t below because we will persist this struct in an XAttribute. It will never be very big.
     UInt32                  m_offset; //! An offset to either the data holding that property’s value (for fixed-size values) or to the offset at which the properties value can be found.
-  //UInt32                  m_modifierFlags //! Can be used to indicate that a string should be treated as fixed size, with a max length, or that a longer fixed size type should be treated as an optional variable-sized type, or that for a string that only an entry to a StringTable is Stored, or that a default value should be used.
-  //UInt32                  m_modifierData  //! Data used with the modifier flag, like the length of a fixed-sized string.
+    UInt32                  m_modifierFlags; //! Can be used to indicate that a string should be treated as fixed size, with a max length, or that a longer fixed size type should be treated as an optional variable-sized type, or that for a string that only an entry to a StringTable is Stored, or that a default value should be used.
+    UInt32                  m_modifierData;  //! Data used with the modifier flag, like the length of a fixed-sized string.
     UInt32                  m_nullflagsOffset;
     NullflagsBitmask        m_nullflagsBitmask;
   //ECPropertyCP            m_property; // WIP_FUSION: optional? YAGNI?
+
+    // transient data
+    int                     m_expectedIndices; // we can calculate this from access string on construction
     
 public:
-    PropertyLayout (wchar_t const * accessString, PrimitiveType primitiveType, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask) : //, ECPropertyCP property) :
-        m_accessString(accessString), m_primitiveType(primitiveType), m_offset(offset), m_nullflagsOffset(nullflagsOffset), 
-        m_nullflagsBitmask (nullflagsBitmask) {}; //, m_property(property) {};
+    PropertyLayout (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask, UInt32 modifierFlags = 0, UInt32 modifierData = 0) : //, ECPropertyCP property) :
+        m_accessString(accessString), m_typeDescriptor(typeDescriptor), m_offset(offset), m_nullflagsOffset(nullflagsOffset), 
+        m_nullflagsBitmask (nullflagsBitmask), m_modifierFlags (modifierFlags), m_modifierData (modifierData) 
+        { m_expectedIndices = IECInstance::ParseExpectedNIndices(accessString);  if (m_typeDescriptor.IsArray()) m_expectedIndices++; }; //, m_property(property) {};
 
     inline UInt32           GetOffset() const           { return m_offset; }
     inline UInt32           GetNullflagsOffset() const  { return m_nullflagsOffset; }
     inline NullflagsBitmask GetNullflagsBitmask() const { return m_nullflagsBitmask; }
-    inline PrimitiveType    GetPrimitiveType() const    { return m_primitiveType; }
+    inline ECTypeDescriptor GetTypeDescriptor() const   { return m_typeDescriptor; }
     inline wchar_t const *  GetAccessString() const     { return m_accessString.c_str(); }
+    inline int              GetExpectedIndices() const  { return m_expectedIndices; }
+    inline UInt32           GetModifierFlags() const    { return m_modifierFlags; }
+    inline UInt32           GetModifierData() const     { return m_modifierData; }
     
     bool                    IsFixedSized() const;
     //! Gets the size required for this PropertyValue in the fixed Section of the IECInstance's memory
@@ -99,9 +147,10 @@ private:
     UInt32                  m_sizeOfFixedSection;
     
     void                    AddProperties (ECClassCR ecClass, wchar_t const * nameRoot, bool addFixedSize);
-    StatusInt               AddProperty (wchar_t const * accessString, PrimitiveType primitiveType, size_t size);
-    StatusInt               AddFixedSizeProperty (wchar_t const * accessString, PrimitiveType primitiveType);
-    StatusInt               AddVariableSizeProperty (wchar_t const * accessString, PrimitiveType primitiveType);
+    StatusInt               AddProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor, UInt32 size, UInt32 modifierFlags = 0, UInt32 modifierData = 0);
+    StatusInt               AddFixedSizeProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor);
+    StatusInt               AddFixedSizeArrayProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor, UInt32 arrayCount);
+    StatusInt               AddVariableSizeProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor);
     StatusInt               FinishLayout ();
     std::wstring            GetClassName() const;
 
@@ -119,7 +168,7 @@ public:
     
     void                        InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const;
     
-    static UInt32               GetPropertyValueSize (PrimitiveType primitiveType); // WIP_FUSION: move to ecvalue.h
+    static UInt32               GetFixedPrimitiveValueSize (PrimitiveType primitiveType); // WIP_FUSION: move to ecvalue.h
     UInt32                      GetSizeOfFixedSection() const;
     
     //! Determines the number of bytes used, so far
@@ -140,16 +189,22 @@ public:
     ECOBJECTS_EXPORT ClassLayoutCR  GetClassLayout() const;
     };
 
-
 //! Base class for EC::IECInstance implementations that get/set values from a block of memory, 
 //! e.g. StandaloneECInstance and ECXDataInstance
 struct MemoryInstanceSupport
     {
 private:    
-    byte const *                GetAddressOfValue (PropertyLayoutCR propertyLayout) const;
-    UInt32                      GetOffsetOfValue (PropertyLayoutCR propertyLayout) const;
-    bool                        IsValueNull (PropertyLayoutCR propertyLayout) const;
-    void                        SetValueNull (PropertyLayoutCR propertyLayout, bool isNull);
+    byte const *                GetAddressOfPrimitiveValue (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;
+    UInt32                      GetOffsetOfPropertyValue (PropertyLayoutCR propertyLayout) const;
+    UInt32                      GetOffsetOfPrimitiveValue (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;
+    UInt32                      GetOffsetOfArrayIndex (PropertyLayoutCR propertyLayout, UInt32 index) const;
+    UInt32                      GetOffsetOfArrayIndexValue (PropertyLayoutCR propertyLayout, UInt32 index) const;
+    bool                        IsPrimitiveValueNull (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;
+    void                        SetPrimitiveValueNull (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices, bool isNull);
+
+    UInt32                      GetArrayOffsetAndCount (UInt32& arrayOffset, PropertyLayoutCR propertyLayout) const;
+    StatusInt                   GetPrimitiveValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;
+    StatusInt                   SetPrimitiveValueToMemory   (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices);
     
     //! Shifts the values' data and adjusts SecondaryOffsets for all variable-sized property values 
     //! AFTER the given one, to make room for additional bytes needed for the property value of the given PropertyLayout
@@ -159,8 +214,11 @@ private:
     //! @param propertyLayout PropertyLayout of the variable-sized property whose size is increasing
     //! @param shiftBy        Positive or negative! Memory will be moved and SecondaryOffsets will be adjusted by this amount
     StatusInt                   ShiftValueData(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated, PropertyLayoutCR propertyLayout, Int32 shiftBy);
+    StatusInt                   ShiftArrayIndexValueData(PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 arrayCount, Int32 shiftBy);
         
     StatusInt                   EnsureSpaceIsAvailable (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded);
+    StatusInt                   EnsureSpaceIsAvailableForArrayIndexValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 bytesNeeded);
+    StatusInt                   GrowPropertyValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 additionalbytesNeeded);
          
 protected:
     ECOBJECTS_EXPORT void       InitializeMemory(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated) const;

@@ -41,7 +41,7 @@ ECClassCR             IECInstance::GetClass() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-bool                IECInstance::AccessStringAndNIndicesAgree (const wchar_t * propertyAccessString, UInt32 nIndices, bool errorIfFalse)
+int             IECInstance::ParseExpectedNIndices (const wchar_t * propertyAccessString)
     {
     const wchar_t * pointerToBrackets = pointerToBrackets = wcsstr (propertyAccessString, L"[]"); ;
     int nBrackets = 0;
@@ -50,12 +50,9 @@ bool                IECInstance::AccessStringAndNIndicesAgree (const wchar_t * p
         nBrackets++;
         pointerToBrackets += 2; // skip past the brackets
         pointerToBrackets = wcsstr (pointerToBrackets, L"[]"); ;
-        }
+        }   
     
-    assert (!errorIfFalse || (nIndices == nBrackets && "nIndices must match the number of brackets '[]' found in the propertyAccessString"));
-    //WIP_FUSION log this as an error if errorIfFalse!
-    
-    return (nIndices == nBrackets);
+    return nBrackets;
     }
         
 /*---------------------------------------------------------------------------------**//**
