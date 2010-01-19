@@ -850,14 +850,15 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
     s_dumpCount++;
     
     byte const * data = _GetDataForRead();
+    Bentley::NativeLogging::ILogger *logger = Logger::GetLogger();
     
-    wprintf (L"======================= Dump #%d ===================================\n", s_dumpCount);
+    logger->tracev (L"======================= Dump #%d ===================================\n", s_dumpCount);
     if (s_skipDump)
         return;
-        
-    wprintf (L"ECClass=%s at address = 0x%0x\n", classLayout.GetClass().GetName().c_str(), data);
+  
+    logger->tracev (L"ECClass=%s at address = 0x%0x\n", classLayout.GetClass().GetName().c_str(), data);
     InstanceFlags flags = *(InstanceFlags*)data;
-    wprintf (L"  [0x%0x][%4.d] InstanceFlags = 0x%08.x\n", data, 0, flags);
+    logger->tracev (L"  [0x%0x][%4.d] InstanceFlags = 0x%08.x\n", data, 0, flags);
     
     UInt32 nProperties = classLayout.GetPropertyCount ();
     
@@ -870,7 +871,7 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
         {
         UInt32 offset = sizeof(InstanceFlags) + i * sizeof(NullflagsBitmask);
         byte const * address = offset + data;
-        wprintf (L"  [0x%x][%4.d] Nullflags[%d] = 0x%x\n", address, offset, i, *(NullflagsBitmask*)(data + offset));
+        logger->tracev (L"  [0x%x][%4.d] Nullflags[%d] = 0x%x\n", address, offset, i, *(NullflagsBitmask*)(data + offset));
         }
     
     for (UInt32 i = 0; i < nProperties; i++)
@@ -879,7 +880,7 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
         StatusInt status = classLayout.GetPropertyLayoutByIndex (propertyLayout, i);
         if (SUCCESS != status)
             {
-            wprintf (L"Error (%d) returned while getting PropertyLayout #%d", status, i);
+            logger->tracev (L"Error (%d) returned while getting PropertyLayout #%d", status, i);
             return;
             }
 
@@ -891,19 +892,19 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
         std::wstring valueAsString = v.ToString();
            
         if (propertyLayout->IsFixedSized())
-            wprintf (L"  [0x%x][%4.d] %s = %s\n", address, offset, propertyLayout->GetAccessString(), valueAsString.c_str());
+            logger->tracev (L"  [0x%x][%4.d] %s = %s\n", address, offset, propertyLayout->GetAccessString(), valueAsString.c_str());
         else
             {
             SecondaryOffset secondaryOffset = *(SecondaryOffset*)address;
             byte const * realAddress = data + secondaryOffset;
             
-            wprintf (L"  [0x%x][%4.d] -> [0x%x][%4.d] %s = %s\n", address, offset, realAddress, secondaryOffset, propertyLayout->GetAccessString(), valueAsString.c_str());
+            logger->tracev (L"  [0x%x][%4.d] -> [0x%x][%4.d] %s = %s\n", address, offset, realAddress, secondaryOffset, propertyLayout->GetAccessString(), valueAsString.c_str());
             }
         }
         
     UInt32 offsetOfLast = classLayout.GetSizeOfFixedSection() - sizeof(SecondaryOffset);
     SecondaryOffset * pLast = (SecondaryOffset*)(data + offsetOfLast);
-    wprintf (L"  [0x%x][%4.d] Offset of TheEnd = %d\n", pLast, offsetOfLast, *pLast);
+    logger->tracev (L"  [0x%x][%4.d] Offset of TheEnd = %d\n", pLast, offsetOfLast, *pLast);
     }
     
 END_BENTLEY_EC_NAMESPACE
