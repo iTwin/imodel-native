@@ -22,10 +22,10 @@ ECSchema::~ECSchema
 )
     {
     // NEEDSWORK make sure everything is destroyed
-    Logger::GetLogger()->infov (L"~~~~ Destroying ECSchema: %s\n", GetName().c_str());
+    Logger::GetLogger()->debugv (L"~~~~ Destroying ECSchema: %s\n", GetName().c_str());
     ClassMap::iterator          classIterator = m_classMap.begin();
     ClassMap::const_iterator    classEnd = m_classMap.end();        
-    Logger::GetLogger()->tracev (L"     Freeing memory for %d classes\n", m_classMap.size());
+    Logger::GetLogger()->debugv(L"     Freeing memory for %d classes\n", m_classMap.size());
     while (classIterator != classEnd)
         {
         ECClassP ecClass = classIterator->second;        
@@ -386,11 +386,54 @@ ECSchemaCR    schema
     if (&schema == this)
         return &EMPTY_STRING;
 
-    // NEEDSWORK support referenced schemas
+    stdext::hash_map<ECSchemaP, const std::wstring *>::const_iterator schemaIterator = m_referencedSchemaNamespaceMap.find((ECSchemaP) &schema);
+    if (schemaIterator != m_referencedSchemaNamespaceMap.end())
+        {
+        return schemaIterator->second;
+        }
 
     return NULL;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+ECClassContainerCR ECSchema::GetClasses
+(
+) const
+    {
+    return m_classContainer;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+const ECSchemaReferenceVector& ECSchema::GetReferencedSchemas
+(
+) const
+    {
+    return m_refSchemaList;
+    }
+  
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::AddReferencedSchema
+(
+Bentley::EC::ECSchemaCR refSchema
+)
+    {
+    ECSchemaReferenceVector::const_iterator schemaIterator;
+    for (schemaIterator = m_refSchemaList.begin(); schemaIterator != m_refSchemaList.end(); schemaIterator++)
+        {
+        if (*schemaIterator == (ECSchemaP) &refSchema)
+            return ECOBJECTS_STATUS_NamedItemAlreadyExists;
+        }
+            
+    m_refSchemaList.push_back((ECSchemaP) &refSchema);
+    
+    return ECOBJECTS_STATUS_Success;
+    }  
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -515,11 +558,11 @@ MSXML2::IXMLDOMDocument2&           pXmlDoc
         Logger::GetLogger()->warningv (L"Invalid version attribute has been ignored while deserializing ECSchema '%s'.  The default version number %d.%d has been applied.\n", 
             schemaOut->Name.c_str(), schemaOut->VersionMajor, schemaOut->VersionMinor);
 
+    // NEEDSWORK Find and deserialize referenced schemas
+
     ClassDeserializationVector classes;
     if (SCHEMA_DESERIALIZATION_STATUS_Success != (status = schemaOut->ReadClassStubsFromXml (schemaNodePtr, classes)))
         return status;
-
-    // NEEDSWORK Find and deserialize referenced schemas
 
     // NEEDSWORK ECClass inheritance (base classes, properties & relationship endpoints)
     if (SCHEMA_DESERIALIZATION_STATUS_Success != (status = schemaOut->ReadClassContentsFromXml (classes)))
@@ -530,6 +573,160 @@ MSXML2::IXMLDOMDocument2&           pXmlDoc
     return SCHEMA_DESERIALIZATION_STATUS_Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool ClassNameComparer
+(
+ECClassP class1, 
+ECClassP class2
+)
+    {
+    // null values are always less than non-null values
+    if (NULL == class1)
+        return true;
+    if (NULL == class2)
+        return false;
+    int comparison = wcscmp(class1->Name.c_str(), class2->Name.c_str());
+    return (comparison <= 0);
+    }
+  
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaSerializationStatus ECSchema::WriteSchemaReferences
+(
+MSXML2::IXMLDOMElement &parentNode
+)
+    {
+    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+    ECSchemaReferenceVector referencedSchemas = GetReferencedSchemas();
+    
+    std::set<const std::wstring> usedPrefixes;
+    std::set<const std::wstring>::const_iterator setIterator;
+    m_referencedSchemaNamespaceMap.clear();
+    ECSchemaReferenceVector::const_iterator schemaIterator;
+    for (schemaIterator = m_refSchemaList.begin(); schemaIterator != m_refSchemaList.end(); schemaIterator++)
+        {
+        ECSchemaP refSchema = *schemaIterator;
+        std::wstring *prefix = new std::wstring(refSchema->NamespacePrefix);
+        if (prefix->length() == 0)
+            prefix = new std::wstring(L"s");
+            
+        setIterator = usedPrefixes.find(*prefix);
+        if (setIterator != usedPrefixes.end())
+            {
+            int subScript;
+            for (subScript = 1; subScript < 500; subScript++)
+                {
+                wchar_t temp[256];
+                swprintf(temp, 256, L"%s%d", prefix->c_str(), subScript);
+                std::wstring tryPrefix(temp);
+                setIterator = usedPrefixes.find(tryPrefix);
+                if (setIterator == usedPrefixes.end())
+                    {
+                    prefix = new std::wstring(tryPrefix);
+                    break;
+                    }
+                }
+            }
+        usedPrefixes.insert(prefix->c_str());
+        m_referencedSchemaNamespaceMap.insert(std::pair<ECSchemaP, const std::wstring *> (refSchema, prefix));
+        }
+
+    MSXML2::IXMLDOMTextPtr textPtr = NULL;
+    MSXML2::IXMLDOMAttributePtr attributePtr;
+    MSXML2::IXMLDOMElementPtr schemaPtr = NULL;
+    
+    stdext::hash_map<ECSchemaP, const std::wstring *>::const_iterator iterator;
+    for (iterator = m_referencedSchemaNamespaceMap.begin(); iterator != m_referencedSchemaNamespaceMap.end(); iterator++)
+        {
+        std::pair<ECSchemaP, const std::wstring *> mapPair = *(iterator);
+        ECSchemaP refSchema = mapPair.first;
+        CREATE_AND_ADD_TEXT_NODE("\n    ", (&parentNode));
+        schemaPtr = parentNode.ownerDocument->createNode(NODE_ELEMENT, EC_SCHEMAREFERENCE_ELEMENT, ECXML_URI_2_0);
+        APPEND_CHILD_TO_PARENT(schemaPtr, (&parentNode));
+        
+        WRITE_XML_ATTRIBUTE(SCHEMAREF_NAME_ATTRIBUTE, refSchema->Name.c_str(), schemaPtr);
+        
+        wchar_t versionString[8];
+        swprintf(versionString, 8, L"%02d.%02d", refSchema->VersionMajor, refSchema->VersionMinor);
+        WRITE_XML_ATTRIBUTE(SCHEMAREF_VERSION_ATTRIBUTE, versionString, schemaPtr);
+        const std::wstring *prefix = mapPair.second;
+        WRITE_XML_ATTRIBUTE(SCHEMAREF_PREFIX_ATTRIBUTE, prefix->c_str(), schemaPtr);
+        }
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaSerializationStatus ECSchema::WriteClass
+(
+MSXML2::IXMLDOMElement &parentNode, 
+Bentley::EC::ECClassCR ecClass
+)
+    {
+    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+    // don't serialize any classes that aren't in the schema we're serializing.
+    if (&(ecClass.Schema) != this)
+        return status;
+    
+    std::set<const wchar_t *>::const_iterator setIterator;
+    setIterator = m_alreadySerializedClasses.find(ecClass.Name.c_str());
+    // Make sure we don't serialize any class twice
+    if (setIterator != m_alreadySerializedClasses.end())
+        return status;
+    else
+        m_alreadySerializedClasses.insert(ecClass.Name.c_str());
+        
+    // NEEDSWORK name validation?
+    // don't serialize a class with an invalid name
+    
+    // serialize the base classes first.
+    for each (ECClassP baseClass in ecClass.BaseClasses)
+        {
+        WriteClass(parentNode, *baseClass);
+        }
+       
+    WritePropertyDependencies(parentNode, ecClass); 
+    // NEEDSWORK: SerializeCustomAttributeDependencies
+    
+    ecClass.WriteXml(parentNode);
+    
+    return status;
+    }  
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaSerializationStatus ECSchema::WritePropertyDependencies
+(
+MSXML2::IXMLDOMElement &parentNode, 
+Bentley::EC::ECClassCR ecClass
+)  
+    {
+    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+    
+    for each (ECPropertyP prop in ecClass.Properties)
+        {
+        if (prop->IsStruct)
+            {
+            StructECPropertyP structProperty = prop->GetAsStructProperty();
+            WriteClass(parentNode, structProperty->Type);
+            }
+        else if (prop->IsArray)
+            {
+            ArrayECPropertyP arrayProperty = prop->GetAsArrayProperty();
+            if (arrayProperty->GetKind() == ARRAYKIND_Struct)
+                {
+                WriteClass(parentNode, *(arrayProperty->GetStructElementType()));
+                }
+            }
+        }
+    return status;
+    }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                               
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -562,20 +759,24 @@ MSXML2::IXMLDOMDocument2* pXmlDoc
     swprintf(versionString, 8, L"%02d.%02d", m_versionMajor, m_versionMinor);
     WRITE_XML_ATTRIBUTE(SCHEMA_VERSION_ATTRIBUTE, versionString, schemaElementPtr);
 
-    // NEEDSWORK Serialize schema references
+    WriteSchemaReferences(schemaElementPtr);
     
     // NEEDSWORK Serialize custom attributes
     
-    std::vector<std::wstring> alreadySerializedClasses;
+    std::list<ECClassP> sortedClasses;
     // sort the classes by name so the order in which they are serialized is predictable.
-    
     for each (ECClassP pClass in Classes)
+        sortedClasses.push_back(pClass);
+        
+    sortedClasses.sort(ClassNameComparer);
+    
+    for each (ECClassP pClass in sortedClasses)
         {
-        // NEEDSWORK Make sure haven't already serialized this class
-        pClass->WriteXml(schemaElementPtr);
+        WriteClass(schemaElementPtr, *pClass);
         }
         
     CREATE_AND_ADD_TEXT_NODE(L"\n", schemaElementPtr);
+    m_alreadySerializedClasses.clear();
     return status;
     }
 /*---------------------------------------------------------------------------------**//**
@@ -776,16 +977,6 @@ const wchar_t * ecSchemaXmlFile
 //
 //    return status;
 //    }
-     
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECClassContainerCR ECSchema::GetClasses
-(
-) const
-    {
-    return m_classContainer;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   

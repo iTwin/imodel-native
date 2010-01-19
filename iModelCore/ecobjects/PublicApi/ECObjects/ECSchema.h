@@ -333,6 +333,7 @@ public:
 
 }; 
 
+typedef std::vector<ECClassP> ECBaseClassesVector;
 /*=================================================================================**//**
 //
 //! The in-memory representation of an ECClass as defined by ECSchemaXML
@@ -353,7 +354,7 @@ private:
     bool                    m_isCustomAttributeClass;
     bool                    m_isDomainClass;
     ECSchemaCR              m_schema;
-    std::vector<ECClassP>   m_baseClasses;
+    ECBaseClassesVector     m_baseClasses;
     ECPropertyContainer     m_propertyContainer;
 
     // Needswork:  Does STL provide any type of hypbrid list/dictionary collection?  We need fast lookup by name as well as retained order.  For now we will
@@ -367,7 +368,8 @@ protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
     //  of a schema.
-    ECClass (ECSchemaCR schema) : m_schema(schema), m_isStruct(false), m_isCustomAttributeClass(false), m_isDomainClass(true), m_propertyContainer(ECPropertyContainer(m_propertyMap, m_propertyList)){ };
+    ECClass (ECSchemaCR schema) : m_schema(schema), m_isStruct(false), m_isCustomAttributeClass(false), m_isDomainClass(true),
+         m_propertyContainer(ECPropertyContainer(m_propertyMap, m_propertyList)){ };
     ~ECClass();    
 
     // schemas index class by name so publicly name can not be reset
@@ -382,7 +384,8 @@ protected:
     //! @return   Status code
     virtual SchemaDeserializationStatus ReadXmlContents (MSXML2_IXMLDOMNode& classNode);    
     
-    virtual SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode);
+    virtual SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode) const;
+    SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode, const wchar_t * elementName) const;
 
 /*__PUBLISH_SECTION_START__*/
 
@@ -391,7 +394,8 @@ public:
     // schemas index class by name so publicly name can not be reset
     EXPORTED_READONLY_PROPERTY (std::wstring const&,    Name);        
     EXPORTED_READONLY_PROPERTY (bool,                   IsDisplayLabelDefined);    
-    EXPORTED_READONLY_PROPERTY (ECPropertyContainerCR,  Properties);    
+    EXPORTED_READONLY_PROPERTY (ECPropertyContainerCR,  Properties); 
+    EXPORTED_READONLY_PROPERTY (const ECBaseClassesVector&,     BaseClasses);   
 
     EXPORTED_PROPERTY  (std::wstring const&,            Description);
     EXPORTED_PROPERTY  (std::wstring const&,            DisplayLabel);
@@ -404,7 +408,7 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus SetIsDomainClass (const wchar_t * isDomainClass);
     ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass);
     ECOBJECTS_EXPORT bool            HasBaseClasses();
-    //NEEDSWORK: Method to iterate/get base classes
+
     //NEEDSWORK: Is method (test if is or derived from class X)
 
     //! Get a property by name within the context of this class and its base classes.
@@ -419,7 +423,9 @@ public:
     // ************************************************************************************************************************
 
     ECOBJECTS_EXPORT static ECObjectsStatus ParseClassName (std::wstring & prefix, std::wstring & className, std::wstring const& qualifiedClassName);
-
+    ECOBJECTS_EXPORT static std::wstring GetQualifiedClassName(ECSchemaCR primarySchema, ECClassCR ecClass);
+    
+   
 }; // ECClass
 
 /*=================================================================================**//**
@@ -442,12 +448,18 @@ private:
     //  of a schema.
     ECRelationshipClass (ECSchemaCR schema) : ECClass (schema) {};
 
+protected:
+    virtual SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode) const override;
+
 /*__PUBLISH_SECTION_START__*/
 public:
     //EXPORTED_PROPERTY (std::wstring const&, Strength);                
     //EXPORTED_PROPERTY (std::wstring const&, StrengthDirection);                
 
 }; // ECRelationshipClass
+
+typedef std::vector<ECSchemaP> ECSchemaReferenceVector;
+typedef RefCountedPtr<ECSchema>                  ECSchemaPtr;
 
 /*=================================================================================**//**
 //
@@ -459,6 +471,7 @@ struct      ECClassContainer /*__PUBLISH_ABSTRACT__*/
 /*__PUBLISH_SECTION_END__*/
 private:
     friend struct ECSchema;
+    friend struct ECClass;
         
     ClassMap const&     m_classMap;
     
@@ -507,8 +520,6 @@ public:
 
 }; 
 
-typedef RefCountedPtr<ECSchema>                  ECSchemaPtr;
-
 /*=================================================================================**//**
 //
 //! The in-memory representation of a schema as defined by ECSchemaXML
@@ -532,6 +543,11 @@ private:
 
     // maps class name -> class pointer    
     ClassMap m_classMap;
+    
+    ECSchemaReferenceVector m_refSchemaList;
+    
+    std::set<const wchar_t *> m_alreadySerializedClasses;
+    stdext::hash_map<ECSchemaP, const std::wstring *> m_referencedSchemaNamespaceMap;
 
     // Hide these as part of the RefCounted pattern    
     ECSchema () : m_versionMajor (DEFAULT_VERSION_MAJOR), m_versionMinor (DEFAULT_VERSION_MINOR), m_classContainer(ECClassContainer(m_classMap)) {};
@@ -546,6 +562,10 @@ private:
     typedef std::vector<std::pair<ECClassP, MSXML2_IXMLDOMNodePtr>>  ClassDeserializationVector;
     SchemaDeserializationStatus         ReadClassStubsFromXml(MSXML2_IXMLDOMNode& schemaNodePtr,ClassDeserializationVector& classes);
     SchemaDeserializationStatus         ReadClassContentsFromXml(ClassDeserializationVector&  classes);
+    
+    SchemaSerializationStatus           WriteSchemaReferences(MSXML2_IXMLDOMElement& parentNode);
+    SchemaSerializationStatus           WriteClass(MSXML2_IXMLDOMElement& parentNode, ECClassCR ecClass);
+    SchemaSerializationStatus           WritePropertyDependencies(MSXML2_IXMLDOMElement& parentNode, ECClassCR ecClass);
 
 /*__PUBLISH_SECTION_START__*/
 public:    
@@ -562,7 +582,7 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    CreateClass (ECClassP& ecClass, std::wstring const& name);
     ECOBJECTS_EXPORT ECObjectsStatus    CreateRelationshipClass (ECRelationshipClassP& relationshipClass, std::wstring const& name);
 
-    //! Get a schema by namespace prefix within the context of this schema and it's referenced schemas.
+    //! Get a schema by namespace prefix within the context of this schema and its referenced schemas.
     //! It is important to note that this method does not return a RefCountedPtr.  If you want to hold a pointer to the returned schema that will exceed the
     //! lifetime of the RefCountedPtr on which you invoked this method then it is critical you assign the return value to a ECSchemaPtr.   
     //! @param[in]  namespacePrefix     The prefix of the schema to lookup in the context of this schema and it's references.
@@ -570,8 +590,8 @@ public:
     //! @return   A non-refcounted pointer to an EC::ECSchema if it can be successfully resolved from the specified namespacePrefix; otherwise, NULL
     ECOBJECTS_EXPORT ECSchemaP          GetSchemaByNamespacePrefixP(std::wstring const& namespacePrefix) const;
 
-    //! Resolve a namespace prefix for the specified schema within the context of this schema and it's references.
-    //! @param[in]  schema     The schemato lookup a namespace prefix in the context of this schema and it's references.    
+    //! Resolve a namespace prefix for the specified schema within the context of this schema and its references.
+    //! @param[in]  schema     The schema to lookup a namespace prefix in the context of this schema and its references.    
     //! @return   The namespace prefix if schema is a referenced schema; empty string if the schema is the current schema; otherwise, NULL
     ECOBJECTS_EXPORT std::wstring const* ResolveNamespacePrefix(ECSchemaCR schema) const;
 
@@ -583,6 +603,13 @@ public:
     //! @return   A pointer to an EC::ECClass if the named class exists in within the current schema; otherwise, NULL
     ECOBJECTS_EXPORT ECClassP           GetClassP (std::wstring const& name) const;
 
+    //! Gets the other schemas that are used by classes within this schema.
+    //! Referenced schemas are the schemas that contain definitions of base classes,
+    //! embedded structures, and custom attributes of classes within this schema.
+    ECOBJECTS_EXPORT const ECSchemaReferenceVector& GetReferencedSchemas() const;
+    
+    ECOBJECTS_EXPORT ECObjectsStatus AddReferencedSchema(ECSchemaCR refSchema);
+    
     // ************************************************************************************************************************
     // ************************************  STATIC METHODS *******************************************************************
     // ************************************************************************************************************************
@@ -609,6 +636,7 @@ public:
     //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
     ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromString (ECSchemaPtr& schemaOut, const wchar_t * ecSchemaXml);
 
+/*
     //! Deserializes an ECXML schema from an IStream.
     //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and
     //! uninitialize COM using CoInitialize/CoUninitialize</b>
@@ -617,7 +645,7 @@ public:
     //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
     //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
     //ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromStream (ECSchemaPtr& schemaOut, IStream * ecSchemaXmlStream);
-
+*/
 
     //! Serializes an ECXML schema to a string
     //! Xml Serialization utilizes MSXML through COM. <b>Any thread calling this method must therefore be certain to initialize and
@@ -635,6 +663,7 @@ public:
     //          to by ecSchemaXmlFile will contain the serialized schema.  Otherwise, the file will be unmodified
     ECOBJECTS_EXPORT SchemaSerializationStatus          WriteXmlToFile (const wchar_t * ecSchemaXmlFile);
     
+    /*
     //! Serializes an ECXML schema to an IStream
     //! Xml Serialization utilizes MSXML through COM. <b>Any thread calling this method must therefore be certain to initialize and
     //! uninitialize COM using CoInitialize/CoUninitialize</b>
@@ -642,6 +671,7 @@ public:
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the IStream
     //! will contain the serialized schema.
     //ECOBJECTS_EXPORT SchemaSerializationStatus WriteXmlToStream (IStream * ecSchemaXmlStream);
+    */
     
 }; // ECSchema
 
