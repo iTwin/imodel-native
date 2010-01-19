@@ -124,22 +124,30 @@ void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 byt
         *nullflags = NULLFLAGS_BITMASK_AllOn;
         }
             
+    bool isFirstVariableSizedProperty = true;
     for (UInt32 i = 0; i < m_propertyLayouts.size(); ++i)
         {
         PropertyLayoutCR layout = m_propertyLayouts[i];
-        if (!layout.IsFixedSized())
+        if (layout.IsFixedSized())
+            continue;
+        
+        DEBUG_EXPECT (layout.GetOffset() % 4 == 0 && "We expect secondaryOffsets to be aligned on a 4 byte boundary");
+            
+        SecondaryOffset* secondaryOffset = (SecondaryOffset*)(data + layout.GetOffset());
+
+        if (isFirstVariableSizedProperty)
             {
-            DEBUG_EXPECT (layout.GetOffset() % 4 == 0 && "We expect secondaryOffsets to be aligned on a 4 byte boundary");
-            
-            SecondaryOffset* secondaryOffset = (SecondaryOffset*)(data + layout.GetOffset());
             *secondaryOffset = sizeOfFixedSection;
-            
-            bool isLastLayout = (i + 1 == m_propertyLayouts.size());
-            if (isLastLayout)
-                {
-                ++secondaryOffset; // A SecondaryOffset beyond the last one for a property value, holding the end of the variable-sized section
-                *secondaryOffset = sizeOfFixedSection;
-                }
+            isFirstVariableSizedProperty = false;
+            }
+        else
+            *secondaryOffset = 0; // Keep all but the first one zero until used
+        
+        bool isLastLayout = (i + 1 == m_propertyLayouts.size());
+        if (isLastLayout)
+            {
+            ++secondaryOffset; // A SecondaryOffset beyond the last one for a property value, holding the end of the variable-sized section
+            *secondaryOffset = sizeOfFixedSection;
             }
         }
     }
@@ -607,7 +615,6 @@ UInt32          MemoryInstanceSupport::GetOffsetOfValue (PropertyLayoutCR proper
     SecondaryOffset const * pSecondaryOffset = (SecondaryOffset const *)(data + offset);
 
     SecondaryOffset secondaryOffset = *pSecondaryOffset;
-    DEBUG_EXPECT (0 != secondaryOffset && "The instance is not initialized!");
     
     return secondaryOffset;
     }    
@@ -615,12 +622,29 @@ UInt32          MemoryInstanceSupport::GetOffsetOfValue (PropertyLayoutCR proper
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       MemoryInstanceSupport::EnsureSpaceIsAvailable (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded)
+StatusInt       MemoryInstanceSupport::EnsureSpaceIsAvailable (UInt32& offset, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded)
     {
     byte const *             data = _GetDataForRead();
     SecondaryOffset*         pSecondaryOffset = (SecondaryOffset*)(data + propertyLayout.GetOffset());
     SecondaryOffset*         pNextSecondaryOffset = pSecondaryOffset + 1;
-    UInt32 availableBytes = *pNextSecondaryOffset - *pSecondaryOffset;
+    
+    if (0 == *pSecondaryOffset)
+        {
+        SecondaryOffset* pPriorOffset;
+        for (pPriorOffset = pSecondaryOffset - 1; 0 == *pPriorOffset; --pPriorOffset)
+            ; // We have found the first non-zero secondaryOffset before this one
+            
+        for (SecondaryOffset* pOffsetToBackfill = pPriorOffset + 1; pOffsetToBackfill <= pSecondaryOffset; ++pOffsetToBackfill)
+            *pOffsetToBackfill = *pPriorOffset; // Backfill zeros. We can only have zero SecondaryOffsets after a property value that has been set.
+        }
+
+    UInt32 availableBytes = 0;
+    if (0 == *pNextSecondaryOffset)
+        *pNextSecondaryOffset = *pSecondaryOffset; // WIP_FUSION: Use ModifyData // As long as we have zeros, it as if the last non-zero one were the value to use whereever there is a zero... 
+    else        
+        availableBytes = *pNextSecondaryOffset - *pSecondaryOffset;
+
+    offset = *pSecondaryOffset;
     
 #ifndef SHRINK_TO_FIT    
     if (bytesNeeded <= availableBytes)
@@ -698,20 +722,25 @@ StatusInt       MemoryInstanceSupport::ShiftValueData(ClassLayoutCR classLayout,
 
     // Shift all secondaryOffsets for variable-sized property values that follow the one that just got larger
     UInt32 sizeOfSecondaryOffsetsToShift = (UInt32)(((byte*)pLast - (byte*)pCurrent) + sizeof (SecondaryOffset));
-    
     if (s_shiftSecondaryOffsetsInPlace)
         {
-        for (SecondaryOffset * pSecondaryOffset = pCurrent; pSecondaryOffset <= pLast; ++pSecondaryOffset)
-            *pSecondaryOffset += shiftBy;
-            
+        for (SecondaryOffset * pSecondaryOffset = pCurrent; 
+             pSecondaryOffset < pLast && 0 != *pSecondaryOffset;  // stop when we hit a zero
+             ++pSecondaryOffset)
+            *pSecondaryOffset += shiftBy; 
+        
+        *pLast += shiftBy; // always do the last one
         return SUCCESS;
         }
         
     UInt32 nSecondaryOffsetsToShift = sizeOfSecondaryOffsetsToShift / sizeof(SecondaryOffset);
 
     SecondaryOffset * shiftedSecondaryOffsets = (SecondaryOffset*)alloca (sizeOfSecondaryOffsetsToShift);
-    for (UInt32 i = 0; i < nSecondaryOffsetsToShift; i++)
+    memset (shiftedSecondaryOffsets, 0, sizeOfSecondaryOffsetsToShift);
+    for (UInt32 i = 0; i < nSecondaryOffsetsToShift - 1 && 0 != pCurrent[i]; i++) // stop when we hit a zero
         shiftedSecondaryOffsets[i] = pCurrent[i] + shiftBy;
+        
+    shiftedSecondaryOffsets[nSecondaryOffsetsToShift - 1] = pCurrent[nSecondaryOffsetsToShift - 1] + shiftBy; // always do the last one
     
     UInt32 offsetOfCurrent = (UInt32)((byte*)pCurrent - data);
     return _ModifyData (offsetOfCurrent, shiftedSecondaryOffsets, sizeOfSecondaryOffsetsToShift);
@@ -844,7 +873,7 @@ StatusInt       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayo
             wchar_t const * value = v.GetString();
             UInt32 bytesNeeded = (UInt32)(sizeof(wchar_t) * (wcslen(value) + 1)); // WIP_FUSION: what if the caller could tell us the size?
             
-            StatusInt status = EnsureSpaceIsAvailable (classLayout, *propertyLayout, bytesNeeded);
+            StatusInt status = EnsureSpaceIsAvailable (offset, classLayout, *propertyLayout, bytesNeeded);
             if (SUCCESS != status)
                 return status;
                 
