@@ -379,28 +379,6 @@ PrimitiveType primitiveType
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring GetQualifiedClassName
-(
-ECSchemaCR primarySchema,
-ECClassCR  ecClass
-)
-    {
-    std::wstring const* namespacePrefix = primarySchema.ResolveNamespacePrefix (ecClass.Schema);
-    if (!EXPECTED_CONDITION (NULL != namespacePrefix))
-        {
-        Logger::GetLogger()->warningv (L"warning: Can not qualify an ECClass name with a namespace prefix unless the schema containing the ECClass is referenced by the primary schema.\n"
-            L"The class name will remain unqualified.\n  Primary ECSchema: %s\n  ECClass: %s\n ECSchema containing ECClass: %s\n", primarySchema.Name.c_str(), ecClass.Name.c_str(), ecClass.Schema.Name.c_str());
-        return ecClass.Name;
-        }
-    if (namespacePrefix->empty())
-        return ecClass.Name;
-    else
-        return *namespacePrefix + L":" + ecClass.Name;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
-+---------------+---------------+---------------+---------------+---------------+------*/
 SchemaDeserializationStatus StructECProperty::_ReadXml
 (
 MSXML2::IXMLDOMNode& propertyNode
@@ -438,7 +416,7 @@ std::wstring StructECProperty::_GetTypeName
     {
     if (!EXPECTED_CONDITION (NULL != m_structType))
         return EMPTY_STRING;
-    return GetQualifiedClassName (this->Class.Schema, *m_structType);
+    return ECClass::GetQualifiedClassName (this->Class.Schema, *m_structType);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -590,6 +568,11 @@ MSXML2::IXMLDOMElement& parentNode
         WRITE_XML_ATTRIBUTE(MAX_OCCURS_ATTRIBUTE, ECXML_UNBOUNDED, propertyPtr);
         }
 
+    if (m_arrayKind == ARRAYKIND_Struct)
+        {
+        WRITE_XML_ATTRIBUTE(IS_STRUCT_ATTRIBUTE, L"true", propertyPtr);
+        }
+        
     return status;
     }
 
@@ -605,7 +588,7 @@ std::wstring ArrayECProperty::_GetTypeName
         case ARRAYKIND_Primitive:
             return ECXml::GetPrimitiveTypeName (m_primitiveType);
         case ARRAYKIND_Struct:
-            return GetQualifiedClassName (this->Class.Schema, *m_structType);
+            return ECClass::GetQualifiedClassName (this->Class.Schema, *m_structType);
         default:
             return EMPTY_STRING;
         }

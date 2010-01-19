@@ -282,7 +282,6 @@ std::wstring const& propertyName
 
 
     // not found yet, search the inheritence hierarchy
-    std::vector<ECClassP>::const_iterator baseClassIterator;
     for each (const ECClassP& baseClass in m_baseClasses)
         {
         ECPropertyP baseProperty = baseClass->GetPropertyP (propertyName);
@@ -299,8 +298,36 @@ ECObjectsStatus ECClass::AddBaseClass
 ECClassCR baseClass
 )
     {
-    // NEEDSWORK - ensure the base class does not already exist
-    m_baseClasses.push_back ((ECClassP)&baseClass);
+    if (&(baseClass.Schema) != &(this->Schema))
+        {
+        bool foundRefSchema = false;
+        ECSchemaReferenceVector referencedSchemas = m_schema.GetReferencedSchemas();
+        ECSchemaReferenceVector::const_iterator schemaIterator;
+        for (schemaIterator = referencedSchemas.begin(); schemaIterator != referencedSchemas.end(); schemaIterator++)
+            {
+            ECSchemaP refSchema = *schemaIterator;
+            if (refSchema == &(baseClass.Schema))
+                {
+                foundRefSchema = true;
+                break;
+                }
+            }
+        if (foundRefSchema == false)
+            {
+            return ECOBJECTS_STATUS_SchemaNotFound;
+            }
+        }
+
+    ECBaseClassesVector::const_iterator baseClassIterator;
+    for (baseClassIterator = m_baseClasses.begin(); baseClassIterator != m_baseClasses.end(); baseClassIterator++)
+        {
+        if (*baseClassIterator == (ECClassP)&baseClass)
+            {
+            Logger::GetLogger()->warningv (L"Can not add class '%s' as a base class to '%s' because it already exists as a base class", baseClass.Name.c_str(), m_name.c_str());
+            return ECOBJECTS_STATUS_NamedItemAlreadyExists;
+            }
+        }
+    m_baseClasses.push_back((ECClassP)&baseClass);
 
     // NEEDSWORK - validate property overrides are correct
 
@@ -426,12 +453,13 @@ MSXML2::IXMLDOMNode& classNode
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
+* @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaSerializationStatus ECClass::WriteXml
 (
-MSXML2::IXMLDOMElement& parentNode
-)
+MSXML2::IXMLDOMElement &parentNode, 
+const wchar_t *elementName
+) const
     {
     SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
     MSXML2::IXMLDOMTextPtr textPtr = NULL;
@@ -442,10 +470,7 @@ MSXML2::IXMLDOMElement& parentNode
 
     MSXML2::IXMLDOMElementPtr classPtr = NULL;
     
-    if (NULL == dynamic_cast<ECRelationshipClassP>((ECClassP)this))
-        classPtr = parentNode.ownerDocument->createNode(NODE_ELEMENT, EC_CLASS_ELEMENT, ECXML_URI_2_0);
-    else
-        classPtr = parentNode.ownerDocument->createNode(NODE_ELEMENT, EC_RELATIONSHIP_CLASS_ELEMENT, ECXML_URI_2_0);
+    classPtr = parentNode.ownerDocument->createNode(NODE_ELEMENT, elementName, ECXML_URI_2_0);
     
     APPEND_CHILD_TO_PARENT(classPtr, (&parentNode));
     
@@ -460,11 +485,14 @@ MSXML2::IXMLDOMElement& parentNode
     for each (const ECClassP& baseClass in m_baseClasses)
         {
         MSXML2::IXMLDOMElementPtr basePtr = parentNode.ownerDocument->createNode(NODE_ELEMENT, EC_BASE_CLASS_ELEMENT, ECXML_URI_2_0);
-        basePtr->text = baseClass->Name.c_str();
+        basePtr->text = (ECClass::GetQualifiedClassName(Schema, *baseClass)).c_str();
+        
         CREATE_AND_ADD_TEXT_NODE("\n        ", classPtr);
         APPEND_CHILD_TO_PARENT(basePtr, classPtr);
         }
         
+    // NEEDSWORK: Serialize Custom Attributes
+    
     for each (ECPropertyP prop in Properties)
         {
         prop->_WriteXml(classPtr);
@@ -472,6 +500,18 @@ MSXML2::IXMLDOMElement& parentNode
     CREATE_AND_ADD_TEXT_NODE("\n    ", classPtr);
     return status;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaSerializationStatus ECClass::WriteXml
+(
+MSXML2::IXMLDOMElement& parentNode
+) const
+    {
+    return WriteXml(parentNode, EC_CLASS_ELEMENT);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -513,6 +553,38 @@ std::wstring const& qualifiedClassName
     return ECOBJECTS_STATUS_Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+std::wstring ECClass::GetQualifiedClassName
+(
+ECSchemaCR primarySchema,
+ECClassCR  ecClass
+)
+    {
+    std::wstring const* namespacePrefix = primarySchema.ResolveNamespacePrefix (ecClass.Schema);
+    if (!EXPECTED_CONDITION (NULL != namespacePrefix))
+        {
+        Logger::GetLogger()->warningv (L"warning: Can not qualify an ECClass name with a namespace prefix unless the schema containing the ECClass is referenced by the primary schema.\n"
+            L"The class name will remain unqualified.\n  Primary ECSchema: %s\n  ECClass: %s\n ECSchema containing ECClass: %s\n", primarySchema.Name.c_str(), ecClass.Name.c_str(), ecClass.Schema.Name.c_str());
+        return ecClass.Name;
+        }
+    if (namespacePrefix->empty())
+        return ecClass.Name;
+    else
+        return *namespacePrefix + L":" + ecClass.Name;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+const ECBaseClassesVector& ECClass::GetBaseClasses
+(
+) const
+    {
+    return m_baseClasses;
+    }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -564,5 +636,38 @@ ECPropertyP       ECPropertyContainer::const_iterator::operator*() const
     ECPropertyP pProperty = *(m_state->m_listIterator);
     return pProperty;
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaSerializationStatus ECRelationshipClass::WriteXml
+(
+MSXML2::IXMLDOMElement& parentNode
+) const
+    {
+    // NEEDSWORK: Serialize constraint dependencies
+    
+    SchemaSerializationStatus status = __super::WriteXml(parentNode, EC_RELATIONSHIP_CLASS_ELEMENT);
+    
+    if (status != SCHEMA_SERIALIZATION_STATUS_Success)
+        return status;
+        
+    MSXML2::IXMLDOMAttributePtr attributePtr;
+
+    MSXML2::IXMLDOMElementPtr propertyPtr = parentNode.lastChild;
+    if (NULL == propertyPtr)
+        return SCHEMA_SERIALIZATION_STATUS_FailedToCreateXml;
+        
+    // verify that this really is the current relationship class element
+    if (wcscmp(propertyPtr->nodeName, EC_RELATIONSHIP_CLASS_ELEMENT) != 0)
+        return SCHEMA_SERIALIZATION_STATUS_FailedToCreateXml;
+        
+    // NEEDSWORK: Full implementation
+    //WRITE_OPTIONAL_XML_ATTRIBUTE(STRENGTH_ATTRIBUTE, Strength, propertyPtr);
+    //WRITE_OPTIONAL_XML_ATTRIBUTE(STRENGTHDIRECTION_ATTRIBUTE, StrengthDirection, propertyPtr);
+    
+    return status;
+    }
+
 
 END_BENTLEY_EC_NAMESPACE

@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
+#include    <algorithm>
 
 // SHRINK_TO_FIT will cause space reserved for variable-sized values to be reduced to the minimum upon every set operation.
 // SHRINK_TO_FIT is not recommended and is mainly for testing. It it better to "compact" everything at once
@@ -69,13 +70,16 @@ UInt32          PropertyLayout::GetSizeInFixedSection () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayout::ClassLayout() : m_state(AcceptingFixedSizeProperties), 
-                             m_class(NULL),
-                             m_classIndex(0),
-                             m_nProperties(0), 
-                             m_nullflagsOffset (0),
-                             m_offset(sizeof(InstanceFlags)), // The first 32 bits are reserved for flags/future
-                             m_sizeOfFixedSection(0)
+ClassLayout::ClassLayout(SchemaLayoutCR schemaLayout) 
+    : 
+    m_schemaLayout (schemaLayout),
+    m_state(AcceptingFixedSizeProperties), 
+    m_class(NULL),
+    m_classIndex(0),
+    m_nProperties(0), 
+    m_nullflagsOffset (0),
+    m_offset(sizeof(InstanceFlags)), // The first 32 bits are reserved for flags/future
+    m_sizeOfFixedSection(0)
     {
     };
     
@@ -254,23 +258,45 @@ void            ClassLayout::AddProperties (ECClassCR ecClass, wchar_t const * n
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassLayoutP    ClassLayout::CreateEmpty (ECClassCR ecClass, ClassIndex classIndex, SchemaLayoutCR schemaLayout)
+    {
+    ClassLayoutP classLayout = new ClassLayout(schemaLayout);
+
+    classLayout->SetClass (ecClass, classIndex);
+
+    return classLayout;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassLayoutP    ClassLayout::BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaLayoutCR schemaLayout)
+    {
+    ClassLayoutP classLayout = CreateEmpty (ecClass, classIndex, schemaLayout);
+
+    // Iterate through the EC::Properties of the EC::Class and build the layout
+    classLayout->AddProperties (ecClass, NULL, true);
+    classLayout->AddProperties (ecClass, NULL, false);
+
+    classLayout->FinishLayout ();
+    
+    //wprintf (L"ECClass name=%s\n", ecClass.GetName().c_str());
+    //Dump();
+
+    return classLayout;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ClassLayout::SetClass (ECClassCR ecClass, UInt16 classIndex)
+BentleyStatus   ClassLayout::SetClass (ECClassCR ecClass, UInt16 classIndex)
     {
     m_class      = &ecClass;
     m_classIndex = classIndex;
     m_className  = ecClass.GetName(); // WIP_FUSION: remove this redundant information
 
-    // Iterate through the EC::Properties of the EC::ECClass and build the layout
-    AddProperties (ecClass, NULL, true);
-    AddProperties (ecClass, NULL, false);
-
-    FinishLayout ();
-    
-    //wprintf (L"ECClass name=%s\n", ecClass.GetName().c_str());
-    //Dump();
-    
     return SUCCESS;
     }
 
@@ -442,6 +468,71 @@ StatusInt       ClassLayout::GetPropertyLayoutByIndex (PropertyLayoutCP & proper
         
     propertyLayout = &m_propertyLayouts[propertyIndex];
     return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   SchemaLayout::AddClassLayout (ClassLayoutCR classLayout, ClassIndex classIndex, bool isPersistent)
+    {
+    if (m_entries.size() <= classIndex)
+        m_entries.resize (20 + classIndex);
+
+    assert (NULL == m_entries[classIndex] && "Class Index is already in use");
+
+    m_entries[classIndex] = new SchemaLayoutEntry (classLayout, isPersistent);
+
+    return ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaLayoutEntry*  SchemaLayout::GetEntry (ClassIndex classIndex)
+    {
+    if (m_entries.size() <= classIndex)
+        return NULL;
+
+    return m_entries[classIndex];
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaLayoutEntry*  SchemaLayout::FindEntry (ECClassCR ecClass)
+    {
+    for each (SchemaLayoutEntry* entry in m_entries)
+        {
+        if (NULL == entry)
+            continue;
+
+        if (&entry->m_classLayout.GetClass() == &ecClass)
+            return entry;
+        }
+
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   SchemaLayout::FindAvailableClassIndex(ClassIndex& classIndex)
+    {
+    SchemaLayoutEntry* nullVal = NULL;
+    SchemaLayoutEntryArray::iterator iter = std::find (m_entries.begin(), m_entries.end(), nullVal);
+
+    size_t firstNullIndex = iter - m_entries.begin();
+
+    if (USHRT_MAX > firstNullIndex)
+        { 
+        classIndex = (UInt16) firstNullIndex;
+        return SUCCESS;
+        }
+
+    // The max size for classIndex is 0xffff, but if we reach that limit,
+    // most likely something else has gone wrong.
+    assert(false);
+    return ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -759,14 +850,15 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
     s_dumpCount++;
     
     byte const * data = _GetDataForRead();
+    Bentley::NativeLogging::ILogger *logger = Logger::GetLogger();
     
-    wprintf (L"======================= Dump #%d ===================================\n", s_dumpCount);
+    logger->tracev (L"======================= Dump #%d ===================================\n", s_dumpCount);
     if (s_skipDump)
         return;
-        
-    wprintf (L"ECClass=%s at address = 0x%0x\n", classLayout.GetClass().GetName().c_str(), data);
+  
+    logger->tracev (L"ECClass=%s at address = 0x%0x\n", classLayout.GetClass().GetName().c_str(), data);
     InstanceFlags flags = *(InstanceFlags*)data;
-    wprintf (L"  [0x%0x][%4.d] InstanceFlags = 0x%08.x\n", data, 0, flags);
+    logger->tracev (L"  [0x%0x][%4.d] InstanceFlags = 0x%08.x\n", data, 0, flags);
     
     UInt32 nProperties = classLayout.GetPropertyCount ();
     
@@ -779,7 +871,7 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
         {
         UInt32 offset = sizeof(InstanceFlags) + i * sizeof(NullflagsBitmask);
         byte const * address = offset + data;
-        wprintf (L"  [0x%x][%4.d] Nullflags[%d] = 0x%x\n", address, offset, i, *(NullflagsBitmask*)(data + offset));
+        logger->tracev (L"  [0x%x][%4.d] Nullflags[%d] = 0x%x\n", address, offset, i, *(NullflagsBitmask*)(data + offset));
         }
     
     for (UInt32 i = 0; i < nProperties; i++)
@@ -788,7 +880,7 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
         StatusInt status = classLayout.GetPropertyLayoutByIndex (propertyLayout, i);
         if (SUCCESS != status)
             {
-            wprintf (L"Error (%d) returned while getting PropertyLayout #%d", status, i);
+            logger->tracev (L"Error (%d) returned while getting PropertyLayout #%d", status, i);
             return;
             }
 
@@ -800,19 +892,19 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
         std::wstring valueAsString = v.ToString();
            
         if (propertyLayout->IsFixedSized())
-            wprintf (L"  [0x%x][%4.d] %s = %s\n", address, offset, propertyLayout->GetAccessString(), valueAsString.c_str());
+            logger->tracev (L"  [0x%x][%4.d] %s = %s\n", address, offset, propertyLayout->GetAccessString(), valueAsString.c_str());
         else
             {
             SecondaryOffset secondaryOffset = *(SecondaryOffset*)address;
             byte const * realAddress = data + secondaryOffset;
             
-            wprintf (L"  [0x%x][%4.d] -> [0x%x][%4.d] %s = %s\n", address, offset, realAddress, secondaryOffset, propertyLayout->GetAccessString(), valueAsString.c_str());
+            logger->tracev (L"  [0x%x][%4.d] -> [0x%x][%4.d] %s = %s\n", address, offset, realAddress, secondaryOffset, propertyLayout->GetAccessString(), valueAsString.c_str());
             }
         }
         
     UInt32 offsetOfLast = classLayout.GetSizeOfFixedSection() - sizeof(SecondaryOffset);
     SecondaryOffset * pLast = (SecondaryOffset*)(data + offsetOfLast);
-    wprintf (L"  [0x%x][%4.d] Offset of TheEnd = %d\n", pLast, offsetOfLast, *pLast);
+    logger->tracev (L"  [0x%x][%4.d] Offset of TheEnd = %d\n", pLast, offsetOfLast, *pLast);
     }
     
 END_BENTLEY_EC_NAMESPACE
