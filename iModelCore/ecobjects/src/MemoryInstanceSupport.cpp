@@ -911,7 +911,7 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
 
     logger->tracev (L"  [0x%0x][%4.d] SchemaIndex = %d\n",        &header.m_schemaIndex,  (byte*)&header.m_schemaIndex   - data, header.m_schemaIndex);
     logger->tracev (L"  [0x%0x][%4.d] ClassIndex  = %d\n",        &header.m_classIndex,   (byte*)&header.m_classIndex    - data, header.m_classIndex);
-    logger->tracev (L"  [0x%0x][%4.d] InstanceFlags = 0x%08.x\n", data, 0, flags);
+    logger->tracev (L"  [0x%0x][%4.d] InstanceFlags = 0x%08.x\n", &header.m_instanceFlags,(byte*)&header.m_instanceFlags - data, header.m_instanceFlags);
     
     UInt32 nProperties = classLayout.GetPropertyCount ();
     
