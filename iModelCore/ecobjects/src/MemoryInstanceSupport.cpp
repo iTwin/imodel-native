@@ -682,14 +682,12 @@ StatusInt       MemoryInstanceSupport::EnsureSpaceIsAvailable (UInt32& offset, C
     return status;
     }
 
-static int s_shiftSecondaryOffsetsInPlace = false; 
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
+* @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            MemoryInstanceSupport::SetShiftSecondaryOffsetsInPlace (bool inPlace)
+MemoryInstanceSupport::MemoryInstanceSupport (bool allowWritingDirectlyToInstanceMemory) :
+    m_allowWritingDirectlyToInstanceMemory (allowWritingDirectlyToInstanceMemory) 
     {
-    s_shiftSecondaryOffsetsInPlace = inPlace;
     }
         
 /*---------------------------------------------------------------------------------**//**
@@ -722,7 +720,7 @@ StatusInt       MemoryInstanceSupport::ShiftValueData(ClassLayoutCR classLayout,
 
     // Shift all secondaryOffsets for variable-sized property values that follow the one that just got larger
     UInt32 sizeOfSecondaryOffsetsToShift = (UInt32)(((byte*)pLast - (byte*)pCurrent) + sizeof (SecondaryOffset));
-    if (s_shiftSecondaryOffsetsInPlace)
+    if (m_allowWritingDirectlyToInstanceMemory)
         {
         for (SecondaryOffset * pSecondaryOffset = pCurrent; 
              pSecondaryOffset < pLast && 0 != *pSecondaryOffset;  // stop when we hit a zero
@@ -856,6 +854,7 @@ StatusInt       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayo
         case PRIMITIVETYPE_Integer:
             {
             Int32 value = v.GetInteger();
+            // WIP_FUSION: would it speed things up to poke directly when m_allowWritingDirectlyToInstanceMemory is true?
             return _ModifyData (offset, &value, sizeof(value));
             }
         case PRIMITIVETYPE_Long:
@@ -877,6 +876,7 @@ StatusInt       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayo
             if (SUCCESS != status)
                 return status;
                 
+            // WIP_FUSION: would it speed things up to poke directly when m_allowWritingDirectlyToInstanceMemory is true?
             return _ModifyData (offset, value, bytesNeeded);
             }
         default:

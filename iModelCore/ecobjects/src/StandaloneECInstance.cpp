@@ -13,6 +13,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
 StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, byte * data, UInt32 size) :
+        MemoryInstanceSupport (true),
         m_standaloneEnabler(const_cast<StandaloneECEnablerP>(&enabler)), // WIP_FUSION: can we get rid of the const cast?
         m_bytesAllocated(size), m_data(data) 
     {

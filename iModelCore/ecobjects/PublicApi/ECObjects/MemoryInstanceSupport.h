@@ -184,7 +184,8 @@ public:
 //! e.g. StandaloneECInstance and ECXDataInstance
 struct MemoryInstanceSupport
     {
-private:    
+private:
+    bool                        m_allowWritingDirectlyToInstanceMemory;
     byte const *                GetAddressOfValue (PropertyLayoutCR propertyLayout) const;
     UInt32                      GetOffsetOfValue (PropertyLayoutCR propertyLayout) const;
     bool                        IsValueNull (PropertyLayoutCR propertyLayout) const;
@@ -202,6 +203,11 @@ private:
     StatusInt                   EnsureSpaceIsAvailable (UInt32& offset, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded);
          
 protected:
+    //! Constructor used by subclasses
+    //! @param allowWritingDirectlyToInstanceMemory     If true, MemoryInstanceSupport is allowed to memset, memmove, and poke at the 
+    //!                                                 memory directly, e.g. for StandaloneECIntance.
+    //!                                                 If false, all modifications must happen through _ModifyData, e.g. for ECXData.
+    ECOBJECTS_EXPORT            MemoryInstanceSupport (bool allowWritingDirectlyToInstanceMemory);
     ECOBJECTS_EXPORT void       InitializeMemory(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated) const;
     ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout,      UInt32 nIndices, UInt32 const * indices) const;
     ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ClassLayoutCR classLayout, ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const;
@@ -228,9 +234,6 @@ protected:
     
     //! Free any allocated memory
     virtual void                _FreeAllocation () = 0;
-
-public:
-    ECOBJECTS_EXPORT static void SetShiftSecondaryOffsetsInPlace (bool inPlace);
     };
 
 
