@@ -165,22 +165,30 @@ void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 byt
     UInt32 nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks ((UInt32)m_propertyLayouts.size());
     InitializeNullFlags ((NullflagsBitmask *)(data + sizeof (InstanceFlags)), nNullflagsBitmasks);
             
+    bool isFirstVariableSizedProperty = true;
     for (UInt32 i = 0; i < m_propertyLayouts.size(); ++i)
         {
         PropertyLayoutCR layout = m_propertyLayouts[i];
-        if (!layout.IsFixedSized())
+        if (layout.IsFixedSized())
+            continue;
+        
+        DEBUG_EXPECT (layout.GetOffset() % 4 == 0 && "We expect secondaryOffsets to be aligned on a 4 byte boundary");
+            
+        SecondaryOffset* secondaryOffset = (SecondaryOffset*)(data + layout.GetOffset());
+
+        if (isFirstVariableSizedProperty)
             {
-            DEBUG_EXPECT (layout.GetOffset() % 4 == 0 && "We expect secondaryOffsets to be aligned on a 4 byte boundary");
-            
-            SecondaryOffset* secondaryOffset = (SecondaryOffset*)(data + layout.GetOffset());
             *secondaryOffset = sizeOfFixedSection;
-            
-            bool isLastLayout = (i + 1 == m_propertyLayouts.size());
-            if (isLastLayout)
-                {
-                ++secondaryOffset; // A SecondaryOffset beyond the last one for a property value, holding the end of the variable-sized section
-                *secondaryOffset = sizeOfFixedSection;
-                }
+            isFirstVariableSizedProperty = false;
+            }
+        else
+            *secondaryOffset = 0; // Keep all but the first one zero until used
+        
+        bool isLastLayout = (i + 1 == m_propertyLayouts.size());
+        if (isLastLayout)
+            {
+            ++secondaryOffset; // A SecondaryOffset beyond the last one for a property value, holding the end of the variable-sized section
+            *secondaryOffset = sizeOfFixedSection;
             }
         else if (layout.GetTypeDescriptor().IsPrimitiveArray())
             {
@@ -359,7 +367,7 @@ BentleyStatus   ClassLayout::SetClass (ECClassCR ecClass, UInt16 classIndex)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/  
-ECClassCR         ClassLayout::GetClass () const
+ECClassCR       ClassLayout::GetClass () const
     {
     return *m_class;
     }    
@@ -722,7 +730,7 @@ void            MemoryInstanceSupport::SetPrimitiveValueNull (PropertyLayoutCR p
     if (isNull && 0 == (*nullflags & nullflagsBitmask))
         *nullflags |= nullflagsBitmask; // turn on the null bit
     else if (!isNull && nullflagsBitmask == (*nullflags & nullflagsBitmask))
-        *nullflags ^= nullflagsBitmask; // turn off the null bit
+        *nullflags ^= nullflagsBitmask; // turn off the null bit // WIP_FUSION: Needs to use ModifyData
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -739,7 +747,6 @@ UInt32          MemoryInstanceSupport::GetOffsetOfPropertyValue (PropertyLayoutC
     SecondaryOffset const * pSecondaryOffset = (SecondaryOffset const *)(data + offset);
 
     SecondaryOffset secondaryOffset = *pSecondaryOffset;
-    DEBUG_EXPECT (0 != secondaryOffset && "The instance is not initialized!");
     
     return secondaryOffset;
     }   
@@ -795,12 +802,29 @@ UInt32          MemoryInstanceSupport::GetOffsetOfArrayIndexValue (PropertyLayou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       MemoryInstanceSupport::EnsureSpaceIsAvailable (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded)
+StatusInt       MemoryInstanceSupport::EnsureSpaceIsAvailable (UInt32& offset, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded)
     {
     byte const *             data = _GetDataForRead();
     SecondaryOffset*         pSecondaryOffset = (SecondaryOffset*)(data + propertyLayout.GetOffset());
     SecondaryOffset*         pNextSecondaryOffset = pSecondaryOffset + 1;
-    UInt32 availableBytes = *pNextSecondaryOffset - *pSecondaryOffset;
+    
+    if (0 == *pSecondaryOffset)
+        {
+        SecondaryOffset* pPriorOffset;
+        for (pPriorOffset = pSecondaryOffset - 1; 0 == *pPriorOffset; --pPriorOffset)
+            ; // We have found the first non-zero secondaryOffset before this one
+            
+        for (SecondaryOffset* pOffsetToBackfill = pPriorOffset + 1; pOffsetToBackfill <= pSecondaryOffset; ++pOffsetToBackfill)
+            *pOffsetToBackfill = *pPriorOffset; // Backfill zeros. We can only have zero SecondaryOffsets after a property value that has been set.
+        }
+
+    UInt32 availableBytes = 0;
+    if (0 == *pNextSecondaryOffset)
+        *pNextSecondaryOffset = *pSecondaryOffset; // WIP_FUSION: Use ModifyData // As long as we have zeros, it as if the last non-zero one were the value to use whereever there is a zero... 
+    else        
+        availableBytes = *pNextSecondaryOffset - *pSecondaryOffset;
+
+    offset = *pSecondaryOffset;
     
 #ifndef SHRINK_TO_FIT    
     if (bytesNeeded <= availableBytes)
@@ -885,6 +909,16 @@ StatusInt       MemoryInstanceSupport::GrowPropertyValue (ClassLayoutCR classLay
     return status;
     }
 
+static int s_shiftSecondaryOffsetsInPlace = false; 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/
+void            MemoryInstanceSupport::SetShiftSecondaryOffsetsInPlace (bool inPlace)
+    {
+    s_shiftSecondaryOffsetsInPlace = inPlace;
+    }
+        
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -910,16 +944,31 @@ StatusInt       MemoryInstanceSupport::ShiftValueData(ClassLayoutCR classLayout,
         if (destination + bytesToMove > data + bytesAllocated)
             return ERROR;
             
-        memmove (destination, source, bytesToMove); // WIP_FUSION: Use Modify data, instead
+        memmove (destination, source, bytesToMove); // WIP_FUSION: Use Modify data, instead. Need method from Keith.
         }
 
-    // Shift all secondaryOffsets for variable-sized property values following the one that just got larger
+    // Shift all secondaryOffsets for variable-sized property values that follow the one that just got larger
     UInt32 sizeOfSecondaryOffsetsToShift = (UInt32)(((byte*)pLast - (byte*)pCurrent) + sizeof (SecondaryOffset));
+    if (s_shiftSecondaryOffsetsInPlace)
+        {
+        for (SecondaryOffset * pSecondaryOffset = pCurrent; 
+             pSecondaryOffset < pLast && 0 != *pSecondaryOffset;  // stop when we hit a zero
+             ++pSecondaryOffset)
+            *pSecondaryOffset += shiftBy; 
+        
+        *pLast += shiftBy; // always do the last one
+        return SUCCESS;
+        }
+        
     UInt32 nSecondaryOffsetsToShift = sizeOfSecondaryOffsetsToShift / sizeof(SecondaryOffset);
+
     SecondaryOffset * shiftedSecondaryOffsets = (SecondaryOffset*)alloca (sizeOfSecondaryOffsetsToShift);
-    for (UInt32 i = 0; i < nSecondaryOffsetsToShift; i++)
+    memset (shiftedSecondaryOffsets, 0, sizeOfSecondaryOffsetsToShift);
+    for (UInt32 i = 0; i < nSecondaryOffsetsToShift - 1 && 0 != pCurrent[i]; i++) // stop when we hit a zero
         shiftedSecondaryOffsets[i] = pCurrent[i] + shiftBy;
         
+    shiftedSecondaryOffsets[nSecondaryOffsetsToShift - 1] = pCurrent[nSecondaryOffsetsToShift - 1] + shiftBy; // always do the last one
+    
     UInt32 offsetOfCurrent = (UInt32)((byte*)pCurrent - data);
     return _ModifyData (offsetOfCurrent, shiftedSecondaryOffsets, sizeOfSecondaryOffsetsToShift);
     }
@@ -1114,13 +1163,13 @@ StatusInt       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueCR v, C
         case PRIMITIVETYPE_String:
             {
             wchar_t const * value = v.GetString();
-            UInt32 bytesNeeded = (UInt32)(sizeof(wchar_t) * (wcslen(value) + 1));
+            UInt32 bytesNeeded = (UInt32)(sizeof(wchar_t) * (wcslen(value) + 1)); // WIP_FUSION: what if the caller could tell us the size?
             
             StatusInt status;
             if (1 == nIndices)
                 status = EnsureSpaceIsAvailableForArrayIndexValue (classLayout, propertyLayout, *indices, bytesNeeded);
             else
-                status = EnsureSpaceIsAvailable (classLayout, propertyLayout, bytesNeeded);
+            StatusInt status = EnsureSpaceIsAvailable (offset, classLayout, propertyLayout, bytesNeeded);
             if (SUCCESS != status)
                 return status;
                 
@@ -1183,14 +1232,15 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
     s_dumpCount++;
     
     byte const * data = _GetDataForRead();
+    Bentley::NativeLogging::ILogger *logger = Logger::GetLogger();
     
-    wprintf (L"======================= Dump #%d ===================================\n", s_dumpCount);
+    logger->tracev (L"======================= Dump #%d ===================================\n", s_dumpCount);
     if (s_skipDump)
         return;
-        
-    wprintf (L"ECClass=%s at address = 0x%0x\n", classLayout.GetClass().GetName().c_str(), data);
+  
+    logger->tracev (L"ECClass=%s at address = 0x%0x\n", classLayout.GetClass().GetName().c_str(), data);
     InstanceFlags flags = *(InstanceFlags*)data;
-    wprintf (L"  [0x%0x][%4.d] InstanceFlags = 0x%08.x\n", data, 0, flags);
+    logger->tracev (L"  [0x%0x][%4.d] InstanceFlags = 0x%08.x\n", data, 0, flags);
     
     UInt32 nProperties = classLayout.GetPropertyCount ();
     
@@ -1200,7 +1250,7 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
         {
         UInt32 offset = sizeof(InstanceFlags) + i * sizeof(NullflagsBitmask);
         byte const * address = offset + data;
-        wprintf (L"  [0x%x][%4.d] Nullflags[%d] = 0x%x\n", address, offset, i, *(NullflagsBitmask*)(data + offset));
+        logger->tracev (L"  [0x%x][%4.d] Nullflags[%d] = 0x%x\n", address, offset, i, *(NullflagsBitmask*)(data + offset));
         }
     
     for (UInt32 i = 0; i < nProperties; i++)
@@ -1209,7 +1259,7 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
         StatusInt status = classLayout.GetPropertyLayoutByIndex (propertyLayout, i);
         if (SUCCESS != status)
             {
-            wprintf (L"Error (%d) returned while getting PropertyLayout #%d", status, i);
+            logger->tracev (L"Error (%d) returned while getting PropertyLayout #%d", status, i);
             return;
             }
 
@@ -1221,19 +1271,19 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
         std::wstring valueAsString = v.ToString();
            
         if (propertyLayout->IsFixedSized())
-            wprintf (L"  [0x%x][%4.d] %s = %s\n", address, offset, propertyLayout->GetAccessString(), valueAsString.c_str());
+            logger->tracev (L"  [0x%x][%4.d] %s = %s\n", address, offset, propertyLayout->GetAccessString(), valueAsString.c_str());
         else
             {
             SecondaryOffset secondaryOffset = *(SecondaryOffset*)address;
             byte const * realAddress = data + secondaryOffset;
             
-            wprintf (L"  [0x%x][%4.d] -> [0x%x][%4.d] %s = %s\n", address, offset, realAddress, secondaryOffset, propertyLayout->GetAccessString(), valueAsString.c_str());
+            logger->tracev (L"  [0x%x][%4.d] -> [0x%x][%4.d] %s = %s\n", address, offset, realAddress, secondaryOffset, propertyLayout->GetAccessString(), valueAsString.c_str());
             }
         }
         
     UInt32 offsetOfLast = classLayout.GetSizeOfFixedSection() - sizeof(SecondaryOffset);
     SecondaryOffset * pLast = (SecondaryOffset*)(data + offsetOfLast);
-    wprintf (L"  [0x%x][%4.d] Offset of TheEnd = %d\n", pLast, offsetOfLast, *pLast);
+    logger->tracev (L"  [0x%x][%4.d] Offset of TheEnd = %d\n", pLast, offsetOfLast, *pLast);
     }
     
 END_BENTLEY_EC_NAMESPACE

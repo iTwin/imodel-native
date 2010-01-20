@@ -6,10 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-//! @cond NODOC
 
-#include <hash_map>
-#include <set>
 
 //#define EC_TRACE_MEMORY
 
@@ -58,7 +55,9 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <hash_map>
 #include <limits>
+#include <set>
 
 #include <ECObjects\ECEnabler.h>
 #include <ECObjects\ECInstance.h>
@@ -73,4 +72,3 @@
 // This define is checked from the ECObjects Published ATPs to ensure that they are building against the published header files.
 #define NON_PUBLISHED_HEADER_INCLUDED
 
-//! @endcond

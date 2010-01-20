@@ -256,7 +256,7 @@ private:
     StatusInt                   ShiftValueData(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated, PropertyLayoutCR propertyLayout, Int32 shiftBy);
     StatusInt                   ShiftArrayIndexValueData(PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 arrayCount, Int32 shiftBy);
         
-    StatusInt                   EnsureSpaceIsAvailable (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded);
+    StatusInt                   EnsureSpaceIsAvailable (UInt32& offset, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded);
     StatusInt                   EnsureSpaceIsAvailableForArrayIndexValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 bytesNeeded);
     StatusInt                   GrowPropertyValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 additionalbytesNeeded);
          
@@ -287,6 +287,10 @@ protected:
     
     //! Free any allocated memory
     virtual void                _FreeAllocation () = 0;
+
+public:
+    ECOBJECTS_EXPORT static void SetShiftSecondaryOffsetsInPlace (bool inPlace);
     };
+
 
 END_BENTLEY_EC_NAMESPACE
