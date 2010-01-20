@@ -61,7 +61,6 @@ EC_TYPEDEFS(SchemaLayout);
 EC_TYPEDEFS(ClassLayout);
 EC_TYPEDEFS(PropertyLayout);
 EC_TYPEDEFS(StandaloneECInstance);
-EC_TYPEDEFS(StandaloneECInstanceFactory);
 EC_TYPEDEFS(ClassLayoutHolder);
 
 #define EXPORTED_PROPERTY(TYPE, NAME) \
