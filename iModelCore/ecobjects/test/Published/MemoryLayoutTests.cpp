@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
 #include <comdef.h>
+#include "StopWatch.h"
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -184,7 +185,43 @@ ECSchemaPtr       CreateTestSchema ()
 
     return schema;
     }
+    
+typedef std::vector<std::wstring> NameVector;
+static std::vector<std::wstring> s_propertyNames;
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaPtr       CreateProfilingSchema (int nStrings)
+    {
+    s_propertyNames.clear();
+    
+    std::wstring schemaXml = 
+                    L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                    L"<ECSchema schemaName=\"ProfilingSchema\" nameSpacePrefix=\"p\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+                    L"    <ECClass typeName=\"Pidget\" isDomainClass=\"True\">";
+
+    for (int i = 0; i < nStrings; i++)
+        {
+        wchar_t propertyName[32];
+        swprintf(propertyName, L"StringProperty%02d", i);
+        s_propertyNames.push_back (propertyName);
+        wchar_t const * propertyFormat = 
+                    L"        <ECProperty propertyName=\"%s\" typeName=\"string\" />";
+        wchar_t propertyXml[128];
+        swprintf (propertyXml, propertyFormat, propertyName);
+        schemaXml += propertyXml;
+        }                    
+
+    schemaXml +=    L"    </ECClass>"
+                    L"</ECSchema>";
+
+    ECSchemaPtr schema = NULL;
+    EXPECT_EQ (SUCCESS, ECSchema::ReadXmlFromString (schema, schemaXml.c_str()));
+
+    return schema;
+    }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/  
@@ -492,6 +529,52 @@ TEST (MemoryLayoutTests, DemonstrateInstanceFactory)
     delete classLayout;
 
     CoUninitialize();
+    }
+
+void SetValuesForProfiling (StandaloneECInstanceR instance)
+    {
+    for (NameVector::const_iterator it = s_propertyNames.begin(); it != s_propertyNames.end(); ++it)
+        instance.SetStringValue (it->c_str(), it->c_str());
+    }
+    
+TEST (MemoryLayoutTests, ProfileSettingValues)
+    {
+    int nStrings = 100;
+    int nInstances = 100000;
+    
+    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+
+    ECSchemaPtr schema = CreateProfilingSchema(nStrings);
+    ECClassP ecClass = schema->GetClassP (L"Pidget");
+    ASSERT_TRUE (ecClass);
+        
+    SchemaLayout schemaLayout;
+    schemaLayout.SetSchemaIndex(24);
+
+    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout);
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*classLayout);
+
+    EC::StandaloneECInstanceP instance = NULL;
+    
+    UInt32 slack = 0;
+    EC::StandaloneECInstanceFactoryP factory = new StandaloneECInstanceFactory (*classLayout, slack);
+
+    EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));    
+    EXPECT_TRUE (SUCCESS == factory->FinishConstruction(instance));
+
+    double elapsedSeconds = 0.0;
+    StopWatch timer (L"Time setting of values in a new StandaloneECInstance", true);
+    for (int i = 0; i < nInstances; i++)
+        {
+        timer.Start();
+        SetValuesForProfiling (*instance);
+        timer.Stop();
+        
+        elapsedSeconds += timer.GetElapsedSeconds();
+        instance->ClearValues();
+        }
+    
+    wprintf (L"  %d StandaloneECInstances with %d string properties initialized in %.4f seconds.\n", nInstances, nStrings, elapsedSeconds);
     }
     
 
