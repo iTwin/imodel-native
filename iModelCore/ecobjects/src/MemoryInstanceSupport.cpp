@@ -1169,7 +1169,7 @@ StatusInt       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueCR v, C
             if (1 == nIndices)
                 status = EnsureSpaceIsAvailableForArrayIndexValue (classLayout, propertyLayout, *indices, bytesNeeded);
             else
-            StatusInt status = EnsureSpaceIsAvailable (offset, classLayout, propertyLayout, bytesNeeded);
+                status = EnsureSpaceIsAvailable (offset, classLayout, propertyLayout, bytesNeeded);
             if (SUCCESS != status)
                 return status;
                 
