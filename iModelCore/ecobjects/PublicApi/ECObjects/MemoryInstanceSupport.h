@@ -171,6 +171,8 @@ private:
     SchemaLayoutEntryArray  m_entries;
 
 public:
+    ECOBJECTS_EXPORT SchemaLayout() : m_schemaIndex(0) {}
+
     ECOBJECTS_EXPORT SchemaIndex            GetSchemaIndex() const { return m_schemaIndex; }
     ECOBJECTS_EXPORT void                   SetSchemaIndex(SchemaIndex i) { m_schemaIndex = i; }
     ECOBJECTS_EXPORT BentleyStatus          AddClassLayout (ClassLayoutCR, ClassIndex, bool isPersistent);
