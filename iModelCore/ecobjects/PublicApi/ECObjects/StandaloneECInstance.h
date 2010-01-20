@@ -45,7 +45,7 @@ private:
     static StandaloneECInstanceP CreateFromInitializedMemory (StandaloneECEnablerCR enabler, byte * data, UInt32 size);
         
 protected:
-    virtual ECEnablerCR       _GetEnabler() const override;
+    virtual ECEnablerCR     _GetEnabler() const override;
     
     virtual std::wstring    _GetInstanceId() const override;
     virtual bool            _IsReadOnly() const override;        

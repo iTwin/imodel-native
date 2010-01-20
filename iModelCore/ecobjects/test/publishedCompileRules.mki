@@ -2,13 +2,15 @@
 #
 #  $Source: ecobjects/nativeatp/publishedCompileRules.mki $
 #
-#  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
 #########################################################################################
 # Compile the list of tests. 
 #########################################################################################
+$(o)StopWatch$(oext)          : $(baseDir)Published/StopWatch.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
+
 $(o)SchemaTests$(oext)        : $(baseDir)Published/SchemaTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
 
 $(o)MacroTests$(oext)         : $(baseDir)Published/MacroTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
