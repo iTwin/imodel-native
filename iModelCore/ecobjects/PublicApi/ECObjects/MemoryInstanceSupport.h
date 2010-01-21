@@ -145,15 +145,14 @@ private:
     
     // These members are expected to be persisted  
     ClassIndex              m_classIndex; // Unique per some context, e.g. per DgnFile
-    std::wstring            m_className; // WIP_FUSION: remove this redundant information and just use m_class. But we still need to persist the name.
+    std::wstring            m_className;
     UInt32                  m_nProperties;
     
     PropertyLayoutVector    m_propertyLayouts; // This is the primary collection, there is a secondary map for lookup by name, below.
     PropertyLayoutLookup    m_propertyLayoutLookup;
     
     // These members are transient
-    SchemaLayoutCR          m_schemaLayout;
-    ECClassCP               m_class;
+    SchemaIndex             m_schemaIndex;
     UInt32                  m_nullflagsOffset;
     State                   m_state;
     UInt32                  m_offset;
@@ -164,19 +163,18 @@ private:
     StatusInt               AddFixedSizeProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor);
     StatusInt               AddFixedSizeArrayProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor, UInt32 arrayCount);
     StatusInt               AddVariableSizeProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor);
-    std::wstring            GetClassName() const;
 
     BentleyStatus           SetClass (ECClassCR ecClass, UInt16 classIndex);
 
-    ClassLayout(SchemaLayoutCR schemaLayout);
+    ClassLayout(SchemaIndex schemaIndex);
 
 public:
-    ECOBJECTS_EXPORT static ClassLayoutP BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaLayoutCR schemaLayout);
-    ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (ECClassCR ecClass, ClassIndex classIndex, SchemaLayoutCR schemaLayout);
+    ECOBJECTS_EXPORT static ClassLayoutP BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex);
+    ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex);
 
-    ECOBJECTS_EXPORT ECClassCR      GetClass () const;
-    ECOBJECTS_EXPORT UInt16         GetClassIndex() const;
-    ECOBJECTS_EXPORT SchemaLayoutCR GetSchemaLayout () const;
+    ECOBJECTS_EXPORT std::wstring   GetClassName() const;
+    ECOBJECTS_EXPORT ClassIndex     GetClassIndex() const;
+    ECOBJECTS_EXPORT SchemaIndex    GetSchemaIndex () const;
     ECOBJECTS_EXPORT UInt32         GetPropertyCount () const;
     ECOBJECTS_EXPORT StatusInt      GetPropertyLayout (PropertyLayoutCP & propertyLayout, wchar_t const * accessString) const;
     ECOBJECTS_EXPORT StatusInt      GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const;
@@ -221,13 +219,17 @@ private:
     SchemaLayoutEntryArray  m_entries;
 
 public:
+    ECOBJECTS_EXPORT SchemaLayout(SchemaIndex index) : m_schemaIndex(index) {}
+
+    // NEEDSWORK: remove these
     ECOBJECTS_EXPORT SchemaLayout() : m_schemaIndex(0) {}
+    ECOBJECTS_EXPORT void SetSchemaIndex(SchemaIndex i) {m_schemaIndex = i;}
+
 
     ECOBJECTS_EXPORT SchemaIndex            GetSchemaIndex() const { return m_schemaIndex; }
-    ECOBJECTS_EXPORT void                   SetSchemaIndex(SchemaIndex i) { m_schemaIndex = i; }
     ECOBJECTS_EXPORT BentleyStatus          AddClassLayout (ClassLayoutCR, ClassIndex, bool isPersistent);
     ECOBJECTS_EXPORT SchemaLayoutEntry*     GetEntry (ClassIndex classIndex);
-    ECOBJECTS_EXPORT SchemaLayoutEntry*     FindEntry (ECClassCR ecClass);
+    ECOBJECTS_EXPORT SchemaLayoutEntry*     FindEntry (wchar_t const * className);
     ECOBJECTS_EXPORT BentleyStatus          FindAvailableClassIndex (ClassIndex&);
 };
 
