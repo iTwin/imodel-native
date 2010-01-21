@@ -5,7 +5,7 @@
 |   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-//__PUBLISH_SECTION_START__
+/*__PUBLISH_SECTION_START__*/
 #pragma once
 
 #include <ECObjects\ECObjects.h>
@@ -26,6 +26,14 @@ typedef UInt32 SecondaryOffset;
 
 #define NULLFLAGS_BITMASK_AllOn     0xFFFFFFFF
 
+struct  InstanceHeader
+    {
+    SchemaIndex     m_schemaIndex;
+    ClassIndex      m_classIndex;
+
+    InstanceFlags   m_instanceFlags;
+    };
+
 /*=================================================================================**//**
 * @bsistruct                                                     CaseyMullen    10/09
 +===============+===============+===============+===============+===============+======*/      
@@ -37,7 +45,7 @@ private:
     PrimitiveType           m_primitiveType;
     
     // Using UInt32 instead of size_t below because we will persist this struct in an XAttribute. It will never be very big.
-    UInt32                  m_offset; //! An offset to either the data holding that property’s value (for fixed-size values) or to the offset at which the properties value can be found.
+    UInt32                  m_offset; //! An offset to either the data holding that property's value (for fixed-size values) or to the offset at which the properties value can be found.
   //UInt32                  m_modifierFlags //! Can be used to indicate that a string should be treated as fixed size, with a max length, or that a longer fixed size type should be treated as an optional variable-sized type, or that for a string that only an entry to a StringTable is Stored, or that a default value should be used.
   //UInt32                  m_modifierData  //! Data used with the modifier flag, like the length of a fixed-sized string.
     UInt32                  m_nullflagsOffset;
@@ -101,12 +109,11 @@ private:
     State                   m_state;
     UInt32                  m_offset;
     UInt32                  m_sizeOfFixedSection;
-    
+
     void                    AddProperties (ECClassCR ecClass, wchar_t const * nameRoot, bool addFixedSize);
     StatusInt               AddProperty (wchar_t const * accessString, PrimitiveType primitiveType, size_t size);
     StatusInt               AddFixedSizeProperty (wchar_t const * accessString, PrimitiveType primitiveType);
     StatusInt               AddVariableSizeProperty (wchar_t const * accessString, PrimitiveType primitiveType);
-    StatusInt               FinishLayout ();
     std::wstring            GetClassName() const;
 
     BentleyStatus           SetClass (ECClassCR ecClass, UInt16 classIndex);
@@ -117,13 +124,19 @@ public:
     ECOBJECTS_EXPORT static ClassLayoutP BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaLayoutCR schemaLayout);
     ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (ECClassCR ecClass, ClassIndex classIndex, SchemaLayoutCR schemaLayout);
 
-    ECOBJECTS_EXPORT ECClassCR  GetClass () const;
-    ECOBJECTS_EXPORT UInt16     GetClassIndex() const;
-    ECOBJECTS_EXPORT UInt32     GetPropertyCount () const;
-    ECOBJECTS_EXPORT StatusInt  GetPropertyLayout (PropertyLayoutCP & propertyLayout, wchar_t const * accessString) const;
-    ECOBJECTS_EXPORT StatusInt  GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const;
-    // WIP_FUSION add StatusInt GetPropertyIndex (UInt32& propertyIndex, wchar_t const * accessString);
+    ECOBJECTS_EXPORT ECClassCR      GetClass () const;
+    ECOBJECTS_EXPORT UInt16         GetClassIndex() const;
+    ECOBJECTS_EXPORT SchemaLayoutCR GetSchemaLayout () const;
+    ECOBJECTS_EXPORT UInt32         GetPropertyCount () const;
+    ECOBJECTS_EXPORT StatusInt      GetPropertyLayout (PropertyLayoutCP & propertyLayout, wchar_t const * accessString) const;
+    ECOBJECTS_EXPORT StatusInt      GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const;
+    // WIP_FUSION add StatusInt      GetPropertyIndex (UInt32& propertyIndex, wchar_t const * accessString);
     
+/*__PUBLISH_SECTION_END__*/
+    ECOBJECTS_EXPORT void           AddPropertyDirect (wchar_t const * accessString, PrimitiveType primitivetype, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask);
+    ECOBJECTS_EXPORT StatusInt      FinishLayout ();
+/*__PUBLISH_SECTION_START__*/
+
     void                        Dump() const;
     
     void                        InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const;
@@ -158,7 +171,9 @@ private:
     SchemaLayoutEntryArray  m_entries;
 
 public:
-    ECOBJECTS_EXPORT SchemaIndex            GetSchemaIndex() { return m_schemaIndex; }
+    ECOBJECTS_EXPORT SchemaLayout() : m_schemaIndex(0) {}
+
+    ECOBJECTS_EXPORT SchemaIndex            GetSchemaIndex() const { return m_schemaIndex; }
     ECOBJECTS_EXPORT void                   SetSchemaIndex(SchemaIndex i) { m_schemaIndex = i; }
     ECOBJECTS_EXPORT BentleyStatus          AddClassLayout (ClassLayoutCR, ClassIndex, bool isPersistent);
     ECOBJECTS_EXPORT SchemaLayoutEntry*     GetEntry (ClassIndex classIndex);
@@ -230,7 +245,8 @@ protected:
     virtual void                _FreeAllocation () = 0;
 
 public:
-    ECOBJECTS_EXPORT static void SetShiftSecondaryOffsetsInPlace (bool inPlace);
+    ECOBJECTS_EXPORT static void                    SetShiftSecondaryOffsetsInPlace (bool inPlace);
+    ECOBJECTS_EXPORT static InstanceHeader const&   PeekInstanceHeader (void const* data);
     };
 
 
