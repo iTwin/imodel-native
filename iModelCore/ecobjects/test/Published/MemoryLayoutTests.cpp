@@ -631,7 +631,7 @@ void SetValuesForProfiling (StandaloneECInstanceR instance)
 TEST (MemoryLayoutTests, ProfileSettingValues)
     {
     int nStrings = 100;
-    int nInstances = 10;
+    int nInstances = 1000;
     
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
