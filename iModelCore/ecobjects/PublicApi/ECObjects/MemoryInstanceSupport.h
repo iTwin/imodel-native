@@ -92,7 +92,7 @@ public:
     PropertyLayout (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask, UInt32 modifierFlags = 0, UInt32 modifierData = 0) : //, ECPropertyCP property) :
         m_accessString(accessString), m_typeDescriptor(typeDescriptor), m_offset(offset), m_nullflagsOffset(nullflagsOffset), 
         m_nullflagsBitmask (nullflagsBitmask), m_modifierFlags (modifierFlags), m_modifierData (modifierData) 
-        { m_expectedIndices = IECInstance::ParseExpectedNIndices(accessString);  if (m_typeDescriptor.IsArray()) m_expectedIndices++; }; //, m_property(property) {};
+        { m_expectedIndices = IECInstance::ParseExpectedNIndices(accessString); }; //, m_property(property) {};
 
     inline UInt32           GetOffset() const           { return m_offset; }
     inline UInt32           GetNullflagsOffset() const  { return m_nullflagsOffset; }

@@ -46,12 +46,13 @@ private:
 public:
     void InitializeStructArray (UInt32 count, bool isFixedSize); // cannot have a real constructor due to inclusion in a union
     void InitializePrimitiveArray (PrimitiveType elementPrimitiveType, UInt32 count, bool isFixedSize); // cannot have a real constructor due to inclusion in a union
-    UInt32          GetCount() const;
-    bool            IsFixedSize() const;    
-    bool            IsPrimitiveArray() const;
-    bool            IsStructArray() const;
-    ValueKind       GetKind() const;    
-    PrimitiveType   GetElementPrimitiveType() const;
+    
+    ECOBJECTS_EXPORT UInt32          GetCount() const;
+    ECOBJECTS_EXPORT bool            IsFixedSize() const;    
+    ECOBJECTS_EXPORT bool            IsPrimitiveArray() const;
+    ECOBJECTS_EXPORT bool            IsStructArray() const;
+    ECOBJECTS_EXPORT ValueKind       GetKind() const;    
+    ECOBJECTS_EXPORT PrimitiveType   GetElementPrimitiveType() const;
     };
 
 //! Variant-like object representing the value of a conceptual ECPropertyValue. 

@@ -382,11 +382,6 @@ StatusInt       ClassLayout::FinishLayout ()
         {
         PropertyLayoutCP propertyLayout = &m_propertyLayouts[i];
         m_propertyLayoutLookup[propertyLayout->GetAccessString()] = propertyLayout;
-        if (propertyLayout->GetTypeDescriptor().IsArray())
-            {
-            std::wstring arrayAccessString = std::wstring(propertyLayout->GetAccessString()) + L"[]";            
-            m_propertyLayoutLookup[arrayAccessString.c_str()] = propertyLayout;
-            }
         }
         
     // Calculate size of fixed section    
@@ -459,7 +454,14 @@ StatusInt       ClassLayout::AddProperty (wchar_t const * accessString, ECTypeDe
             m_propertyLayouts[i].m_offset += sizeof(NullflagsBitmask); // Offsets of already-added property layouts need to get bumped up
         } 
 
-    PropertyLayout propertyLayout (accessString, typeDescriptor, m_offset, m_nullflagsOffset, nullflagsBitmask, modifierFlags, modifierData);
+    // WIP_FUSION, for now all accessors of array property layouts are stored with the brackets appended.  This means all access to array values through an
+    // IECInstance must include the brackets.  If you want to obtain an array element value then you specify an index.  If you want to obtain an array info value
+    // then you do not specify an index.  I'd like to consider an update to this so if an access string does not include the [] then we always return the ArrayInfo value.
+    std::wstring tempAccessString = accessString;
+    if (typeDescriptor.IsArray())
+        tempAccessString += L"[]";            
+
+    PropertyLayout propertyLayout (tempAccessString.c_str(), typeDescriptor, m_offset, m_nullflagsOffset, nullflagsBitmask, modifierFlags, modifierData);
 
     m_nProperties++;
     m_offset += (UInt32)size;
@@ -488,8 +490,8 @@ StatusInt       ClassLayout::AddFixedSizeProperty (wchar_t const * accessString,
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/    
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/ 
 StatusInt       ClassLayout::AddFixedSizeArrayProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount)
     {
     PRECONDITION (m_state == AcceptingFixedSizeProperties, ERROR); // ClassLayoutNotAcceptingFixedSizeProperties    
@@ -682,6 +684,9 @@ UInt32          MemoryInstanceSupport::GetOffsetOfPrimitiveValue (PropertyLayout
         return GetOffsetOfArrayIndexValue (propertyLayout, *indices);
     } 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 void   PrepareToAccessNullFlags (UInt32& nullflagsOffset, UInt32& nullflagsBitmask, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices)
     {
     // Since this is a private method and we are concerned about performance we do not do any parameter checking here.  nIndices must be 0 or 1
@@ -752,7 +757,7 @@ UInt32          MemoryInstanceSupport::GetOffsetOfPropertyValue (PropertyLayoutC
     }   
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
+* @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 UInt32          MemoryInstanceSupport::GetOffsetOfArrayIndex (PropertyLayoutCR propertyLayout, UInt32 index) const
     {    
@@ -779,7 +784,7 @@ UInt32          MemoryInstanceSupport::GetOffsetOfArrayIndex (PropertyLayoutCR p
     }  
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
+* @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 UInt32          MemoryInstanceSupport::GetOffsetOfArrayIndexValue (PropertyLayoutCR propertyLayout, UInt32 index) const
     {    
@@ -840,7 +845,7 @@ StatusInt       MemoryInstanceSupport::EnsureSpaceIsAvailable (UInt32& offset, C
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
+* @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       MemoryInstanceSupport::EnsureSpaceIsAvailableForArrayIndexValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 bytesNeeded)
     {
@@ -876,7 +881,7 @@ StatusInt       MemoryInstanceSupport::EnsureSpaceIsAvailableForArrayIndexValue 
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
+* @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       MemoryInstanceSupport::GrowPropertyValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 additionalBytesNeeded)
     {
@@ -974,7 +979,7 @@ StatusInt       MemoryInstanceSupport::ShiftValueData(ClassLayoutCR classLayout,
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
+* @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       MemoryInstanceSupport::ShiftArrayIndexValueData(PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 arrayCount, Int32 shiftBy)
     {
@@ -1073,7 +1078,7 @@ StatusInt       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValueR v, 
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
+* @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       MemoryInstanceSupport::GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const
     {
@@ -1181,7 +1186,7 @@ StatusInt       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueCR v, C
     }        
     
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
+* @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, ECValueCR v, UInt32 nIndices, UInt32 const * indices)
     {
