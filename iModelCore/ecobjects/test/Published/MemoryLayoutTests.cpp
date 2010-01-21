@@ -636,13 +636,13 @@ TEST (MemoryLayoutTests, ProfileSettingValues)
     SchemaLayout schemaLayout;
     schemaLayout.SetSchemaIndex(24);
 
-    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout);
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*classLayout);
+    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, CLASSINDEX_Test, SCHEMAINDEX_Test);
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);
 
     EC::StandaloneECInstanceP instance = NULL;
     
     UInt32 slack = 0;
-    EC::StandaloneECInstanceFactoryP factory = new StandaloneECInstanceFactory (*classLayout, slack);
+    EC::StandaloneECInstanceFactoryP factory = new StandaloneECInstanceFactory (*ecClass, *classLayout, slack);
 
     ASSERT_TRUE (SUCCESS == factory->BeginConstruction (instance));    
     ASSERT_TRUE (SUCCESS == factory->FinishConstruction(instance));
