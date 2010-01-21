@@ -70,11 +70,10 @@ UInt32          PropertyLayout::GetSizeInFixedSection () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayout::ClassLayout(SchemaLayoutCR schemaLayout) 
+ClassLayout::ClassLayout(SchemaIndex schemaIndex) 
     : 
-    m_schemaLayout (schemaLayout),
+    m_schemaIndex (schemaIndex),
     m_state(AcceptingFixedSizeProperties), 
-    m_class(NULL),
     m_classIndex(0),
     m_nProperties(0), 
     m_nullflagsOffset (0),
@@ -114,7 +113,7 @@ void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 byt
     memset (data, 0, sizeof(InstanceHeader)); 
     
     InstanceHeader& header = *(InstanceHeader*) data;
-    header.m_schemaIndex   = m_schemaLayout.GetSchemaIndex();
+    header.m_schemaIndex   = m_schemaIndex;
     header.m_classIndex    = m_classIndex;
     header.m_instanceFlags = 0;
 
@@ -171,15 +170,15 @@ UInt32          ClassLayout::CalculateBytesUsed(byte const * data) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaLayoutCR  ClassLayout::GetSchemaLayout() const
+SchemaIndex     ClassLayout::GetSchemaIndex() const
     {
-    return m_schemaLayout;
+    return m_schemaIndex;
     } 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt16          ClassLayout::GetClassIndex() const
+ClassIndex      ClassLayout::GetClassIndex() const
     {
     return m_classIndex;
     } 
@@ -273,9 +272,9 @@ void            ClassLayout::AddProperties (ECClassCR ecClass, wchar_t const * n
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutP    ClassLayout::CreateEmpty (ECClassCR ecClass, ClassIndex classIndex, SchemaLayoutCR schemaLayout)
+ClassLayoutP    ClassLayout::CreateEmpty (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex)
     {
-    ClassLayoutP classLayout = new ClassLayout(schemaLayout);
+    ClassLayoutP classLayout = new ClassLayout(schemaIndex);
 
     classLayout->SetClass (ecClass, classIndex);
 
@@ -285,9 +284,9 @@ ClassLayoutP    ClassLayout::CreateEmpty (ECClassCR ecClass, ClassIndex classInd
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutP    ClassLayout::BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaLayoutCR schemaLayout)
+ClassLayoutP    ClassLayout::BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex)
     {
-    ClassLayoutP classLayout = CreateEmpty (ecClass, classIndex, schemaLayout);
+    ClassLayoutP classLayout = CreateEmpty (ecClass, classIndex, schemaIndex);
 
     // Iterate through the EC::Properties of the EC::Class and build the layout
     classLayout->AddProperties (ecClass, NULL, true);
@@ -306,19 +305,10 @@ ClassLayoutP    ClassLayout::BuildFromClass (ECClassCR ecClass, ClassIndex class
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   ClassLayout::SetClass (ECClassCR ecClass, UInt16 classIndex)
     {
-    m_class      = &ecClass;
     m_classIndex = classIndex;
-    m_className  = ecClass.GetName(); // WIP_FUSION: remove this redundant information
+    m_className  = ecClass.GetName();
 
     return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/  
-ECClassCR         ClassLayout::GetClass () const
-    {
-    return *m_class;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -541,14 +531,14 @@ SchemaLayoutEntry*  SchemaLayout::GetEntry (ClassIndex classIndex)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaLayoutEntry*  SchemaLayout::FindEntry (ECClassCR ecClass)
+SchemaLayoutEntry*  SchemaLayout::FindEntry (wchar_t const * className)
     {
     for each (SchemaLayoutEntry* entry in m_entries)
         {
         if (NULL == entry)
             continue;
 
-        if (&entry->m_classLayout.GetClass() == &ecClass)
+        if (0 == wcsicmp (entry->m_classLayout.GetClassName().c_str(), className))
             return entry;
         }
 
@@ -906,7 +896,7 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
     if (s_skipDump)
         return;
   
-    logger->tracev (L"ECClass=%s at address = 0x%0x\n", classLayout.GetClass().GetName().c_str(), data);
+    logger->tracev (L"ECClass=%s at address = 0x%0x\n", classLayout.GetClassName().c_str(), data);
     InstanceHeader& header = *(InstanceHeader*)data;
 
     logger->tracev (L"  [0x%0x][%4.d] SchemaIndex = %d\n",        &header.m_schemaIndex,  (byte*)&header.m_schemaIndex   - data, header.m_schemaIndex);

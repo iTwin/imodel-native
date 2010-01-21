@@ -228,10 +228,10 @@ StatusInt           StandaloneECInstance::_SetValue (const wchar_t * propertyAcc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneECInstanceFactory::StandaloneECInstanceFactory (ClassLayoutCR classLayout, UInt32 slack, UInt32 initialBufferSize) : 
+StandaloneECInstanceFactory::StandaloneECInstanceFactory (ECClassCR ecClass, ClassLayoutCR classLayout, UInt32 slack, UInt32 initialBufferSize) : 
     m_nBegun(0), m_nFinished (0), m_nReallocationRequests(0),
     m_instanceUnderConstruction (NULL), m_minimumSlack (slack), m_data (NULL), m_size (0),
-    m_standaloneEnabler (*(new StandaloneECEnabler (classLayout)))
+    m_standaloneEnabler (*(new StandaloneECEnabler (ecClass, classLayout)))
     {
     UInt32 sizeOfFixedSection = classLayout.GetSizeOfFixedSection();
     
@@ -349,8 +349,8 @@ UInt32          StandaloneECInstanceFactory::GetFinishedCount ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StandaloneECEnabler::StandaloneECEnabler (ClassLayoutCR classLayout) :
-    ECEnabler (classLayout.GetClass()),
+StandaloneECEnabler::StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR classLayout) :
+    ECEnabler (ecClass),
     ClassLayoutHolder (classLayout)
     {
     }
@@ -358,9 +358,9 @@ StandaloneECEnabler::StandaloneECEnabler (ClassLayoutCR classLayout) :
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StandaloneECEnablerPtr StandaloneECEnabler::CreateEnabler (ClassLayoutCR classLayout)
+StandaloneECEnablerPtr StandaloneECEnabler::CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout)
     {
-    return new StandaloneECEnabler (classLayout);
+    return new StandaloneECEnabler (ecClass, classLayout);
     }
     
 /*---------------------------------------------------------------------------------**//**

@@ -87,7 +87,7 @@ public:
     //!                 fixed-length section of the instance, then that size will be used initially.
     //!                 After creation of a few new instances, the buffer will self-adjust to an appropriate size,
     //!                 but you can use this to ensure an appropriate size from the outset.
-    ECOBJECTS_EXPORT StandaloneECInstanceFactory (ClassLayoutCR classLayout, UInt32 slack = 0, UInt32 initialBufferSize = 0);
+    ECOBJECTS_EXPORT StandaloneECInstanceFactory (ECClassCR ecClass, ClassLayoutCR classLayout, UInt32 slack = 0, UInt32 initialBufferSize = 0);
     
     //! Creates a new @ref StandaloneECInstance in an "Under Construction" state. Use with @ref FinishConstruction method.
     //! While "under construction" the instance uses a buffer provided by the factory. The factory keeps a 
@@ -137,11 +137,11 @@ struct StandaloneECEnabler : public ClassLayoutHolder, public ECEnabler
     {
 friend StandaloneECInstanceFactory;    
 private: 
-    StandaloneECEnabler (ClassLayoutCR classLayout);
+    StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR classLayout);
 protected:    
     virtual wchar_t const * _GetName() const override;
         
 public: 
-    ECOBJECTS_EXPORT static StandaloneECEnablerPtr CreateEnabler (ClassLayoutCR classLayout);
+    ECOBJECTS_EXPORT static StandaloneECEnablerPtr CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout);
     };    
 END_BENTLEY_EC_NAMESPACE
