@@ -14,6 +14,8 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
+const UInt32 BITS_PER_NULLFLAGSBITMASK = (sizeof(NullflagsBitmask) * 8);
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -33,16 +35,52 @@ bool            PrimitiveTypeIsFixedSize (PrimitiveType primitiveType)
         }
     }
 
-    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    AdamKlatzkin    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+inline UInt32   CalculateNumberNullFlagsBitmasks (UInt32 numberOfItems)
+    {
+    UInt32 nNullflagsBitmasks = numberOfItems / BITS_PER_NULLFLAGSBITMASK;
+    if ( (numberOfItems % BITS_PER_NULLFLAGSBITMASK > 0) )
+        ++nNullflagsBitmasks;
+    return nNullflagsBitmasks;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    AdamKlatzkin    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+inline void     InitializeNullFlags (NullflagsBitmask * nullFlagsStart, UInt32 numberOfGroups)
+    {
+    NullflagsBitmask* nullflagsLocation = nullFlagsStart;
+    for (UInt32 i = 0; i < numberOfGroups; i++, nullflagsLocation++)
+        *nullflagsLocation = NULLFLAGS_BITMASK_AllOn;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    AdamKlatzkin    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+inline UInt32   CalculateFixedArraySize (UInt32 fixedCount, PrimitiveType primitiveType)
+    {
+    return (CalculateNumberNullFlagsBitmasks (fixedCount) * sizeof (NullflagsBitmask)) + 
+        (fixedCount *ClassLayout::GetFixedPrimitiveValueSize(primitiveType));
+    }
+            
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::wstring    PropertyLayout::ToString ()
-    {
-    std::wstring const& primitiveType = ECXml::GetPrimitiveTypeName (m_primitiveType);
+    {    
+    std::wstring typeName;
+    if ((m_typeDescriptor.IsPrimitive()) || (m_typeDescriptor.IsPrimitiveArray()))
+        typeName = ECXml::GetPrimitiveTypeName (m_typeDescriptor.GetPrimitiveType());
+    else
+        typeName = L"struct";
+
+    if (m_typeDescriptor.IsArray())
+        typeName += L"[]";
     
     wchar_t line[1024];
-    swprintf (line, sizeof(line)/sizeof(wchar_t), L"%32s %16s offset=%3i nullflagsOffset=%3i, nullflagsBitmask=0x%08.X", m_accessString.c_str(), primitiveType.c_str(), m_offset, m_nullflagsOffset, m_nullflagsBitmask);
+    swprintf (line, sizeof(line)/sizeof(wchar_t), L"%32s %16s offset=%3i nullflagsOffset=%3i, nullflagsBitmask=0x%08.X", m_accessString.c_str(), typeName.c_str(), m_offset, m_nullflagsOffset, m_nullflagsBitmask);
         
     return line;
     }
@@ -53,7 +91,9 @@ std::wstring    PropertyLayout::ToString ()
 bool            PropertyLayout::IsFixedSized () const
     {
     // WIP_FUSION: when we have m_modifiers, they will determine if it is fixed size... could have fixed size string or variable int (added at end)
-    return PrimitiveTypeIsFixedSize (m_primitiveType);
+    return ( ( m_typeDescriptor.IsPrimitive() || 
+               (m_typeDescriptor.IsPrimitiveArray() && (m_modifierFlags & ARRAYMODIFIERFLAGS_IsFixedSize))
+             ) && PrimitiveTypeIsFixedSize (m_typeDescriptor.GetPrimitiveType()));
     }
       
 /*---------------------------------------------------------------------------------**//**
@@ -63,8 +103,17 @@ UInt32          PropertyLayout::GetSizeInFixedSection () const
     {
     if (!IsFixedSized())
         return sizeof(SecondaryOffset);
+
+    if (m_typeDescriptor.IsPrimitive())        
+        return ClassLayout::GetFixedPrimitiveValueSize(m_typeDescriptor.GetPrimitiveType());
+    else if (m_typeDescriptor.IsPrimitiveArray())
+        {
+        UInt32 fixedCount = m_modifierData; // WIP_FUSION for now assume modifier data holds the count but I'm not sure if that is the right place for this.
+        return CalculateFixedArraySize (fixedCount, m_typeDescriptor.GetPrimitiveType());
+        }
         
-    return ClassLayout::GetPropertyValueSize(m_primitiveType);
+    DEBUG_FAIL("Can not determine size in fixed section for datatype");
+    return 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -118,16 +167,8 @@ void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 byt
     header.m_classIndex    = m_classIndex;
     header.m_instanceFlags = 0;
 
-    UInt32 bitsPerMask = (sizeof(NullflagsBitmask) * 8);
-    UInt32 nNullflagsBitmasks = (UInt32)m_propertyLayouts.size() / bitsPerMask;
-    if ( (m_propertyLayouts.size() % bitsPerMask > 0))
-        ++nNullflagsBitmasks;
-    
-    for (UInt32 i = 0; i < nNullflagsBitmasks; i++)
-        {
-        NullflagsBitmask * nullflags = (NullflagsBitmask *)(data + sizeof(InstanceHeader) + i * sizeof (NullflagsBitmask));
-        *nullflags = NULLFLAGS_BITMASK_AllOn;
-        }
+    UInt32 nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks ((UInt32)m_propertyLayouts.size());
+    InitializeNullFlags ((NullflagsBitmask *)(data + sizeof (InstanceHeader)), nNullflagsBitmasks);
             
     bool isFirstVariableSizedProperty = true;
     for (UInt32 i = 0; i < m_propertyLayouts.size(); ++i)
@@ -153,6 +194,11 @@ void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 byt
             {
             ++secondaryOffset; // A SecondaryOffset beyond the last one for a property value, holding the end of the variable-sized section
             *secondaryOffset = sizeOfFixedSection;
+            }
+        else if (layout.GetTypeDescriptor().IsPrimitiveArray())
+            {
+            nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks (layout.GetModifierData());
+            InitializeNullFlags ((NullflagsBitmask *)(data + layout.GetOffset()), nNullflagsBitmasks);
             }
         }
     }
@@ -235,8 +281,18 @@ void            ClassLayout::AddProperties (ECClassCR ecClass, wchar_t const * n
             }
         else
         if (property->GetIsArray())
-            {
-            assert (false && "Arrays are not implemented");
+            {            
+            ArrayECPropertyP  arrayProp = property->GetAsArrayProperty();            
+            ArrayKind arrayKind = arrayProp->GetKind();
+            if (arrayKind == ARRAYKIND_Primitive)
+                {
+                bool isFixedSize = (arrayProp->GetMinOccurs() == arrayProp->GetMaxOccurs()) && PrimitiveTypeIsFixedSize (arrayProp->GetPrimitiveElementType());
+                
+                if (addingFixedSizeProps && isFixedSize)
+                    AddFixedSizeArrayProperty (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()), arrayProp->GetMinOccurs());
+                else if (!addingFixedSizeProps && !isFixedSize)
+                    AddVariableSizeProperty (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()));
+                }
 
             //AddArrayProperty (L"ArrayOfInts",   EC::DATATYPE_String);
             /* WIP_FUSION: deal with array later.
@@ -327,7 +383,7 @@ BentleyStatus   ClassLayout::SetClass (ECClassCR ecClass, UInt16 classIndex)
 ECClassCR       ClassLayout::GetClass () const
     {
     return *m_class;
-    }
+    }    
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
@@ -363,15 +419,12 @@ StatusInt       ClassLayout::FinishLayout ()
     if (0 == m_propertyLayouts.size())
         return SUCCESS;
     
-    UInt32 bitsPerMask = (sizeof(NullflagsBitmask) * 8);
-    UInt32 nNullflagsBitmasks = (UInt32)m_propertyLayouts.size() / bitsPerMask;
-    if ( (m_propertyLayouts.size() % bitsPerMask > 0) )
-        ++nNullflagsBitmasks;
+    UInt32 nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks ((UInt32)m_propertyLayouts.size());
     
     DEBUG_EXPECT (m_propertyLayouts[0].m_offset == sizeof(InstanceHeader) + nNullflagsBitmasks * sizeof(NullflagsBitmask));
     for (UInt32 i = 0; i < m_propertyLayouts.size(); i++)
         {
-        UInt32 expectedNullflagsOffset = (i / bitsPerMask * sizeof(NullflagsBitmask)) + sizeof(InstanceHeader);
+        UInt32 expectedNullflagsOffset = (i / BITS_PER_NULLFLAGSBITMASK * sizeof(NullflagsBitmask)) + sizeof(InstanceHeader);
         DEBUG_EXPECT (m_propertyLayouts[i].m_nullflagsOffset == expectedNullflagsOffset);
         }     
 #endif
@@ -381,7 +434,7 @@ StatusInt       ClassLayout::FinishLayout ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-UInt32          ClassLayout::GetPropertyValueSize (PrimitiveType primitivetype) // WIP_FUSION: Move to ECValue.h
+UInt32          ClassLayout::GetFixedPrimitiveValueSize (PrimitiveType primitivetype) // WIP_FUSION: Move to ECValue.h
     {
     switch (primitivetype)
         {
@@ -425,7 +478,7 @@ UInt32          nullflagsBitmask
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StatusInt       ClassLayout::AddProperty (wchar_t const * accessString, PrimitiveType primitivetype, size_t size) // WIP_FUSION: use UInt32 instead of size
+StatusInt       ClassLayout::AddProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 size, UInt32 modifierFlags, UInt32 modifierData)
     {
     UInt32  positionInCurrentNullFlags = m_nProperties % 32;
     NullflagsBitmask  nullflagsBitmask = 0x01 << positionInCurrentNullFlags;
@@ -443,7 +496,14 @@ StatusInt       ClassLayout::AddProperty (wchar_t const * accessString, Primitiv
             m_propertyLayouts[i].m_offset += sizeof(NullflagsBitmask); // Offsets of already-added property layouts need to get bumped up
         } 
 
-    PropertyLayout propertyLayout (accessString, primitivetype, m_offset, m_nullflagsOffset, nullflagsBitmask);
+    // WIP_FUSION, for now all accessors of array property layouts are stored with the brackets appended.  This means all access to array values through an
+    // IECInstance must include the brackets.  If you want to obtain an array element value then you specify an index.  If you want to obtain an array info value
+    // then you do not specify an index.  I'd like to consider an update to this so if an access string does not include the [] then we always return the ArrayInfo value.
+    std::wstring tempAccessString = accessString;
+    if (typeDescriptor.IsArray())
+        tempAccessString += L"[]";            
+
+    PropertyLayout propertyLayout (tempAccessString.c_str(), typeDescriptor, m_offset, m_nullflagsOffset, nullflagsBitmask, modifierFlags, modifierData);
 
     m_nProperties++;
     m_offset += (UInt32)size;
@@ -456,29 +516,46 @@ StatusInt       ClassLayout::AddProperty (wchar_t const * accessString, Primitiv
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StatusInt       ClassLayout::AddFixedSizeProperty (wchar_t const * accessString, PrimitiveType primitivetype)
+StatusInt       ClassLayout::AddFixedSizeProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor)
     {
-    if (m_state != AcceptingFixedSizeProperties)
-        return ERROR; // ClassLayoutNotAcceptingFixedSizeProperties
+    PRECONDITION (m_state == AcceptingFixedSizeProperties, ERROR); // ClassLayoutNotAcceptingFixedSizeProperties    
     
-    size_t size = GetPropertyValueSize (primitivetype);
+    if (!typeDescriptor.IsPrimitive())
+        {
+        DEBUG_FAIL ("We currently only support fixed sized properties for primitive types");
+        return ERROR;
+        }
     
-    return AddProperty (accessString, primitivetype, size);
+    UInt32 size = GetFixedPrimitiveValueSize (typeDescriptor.GetPrimitiveType());
+    
+    return AddProperty (accessString, typeDescriptor, size);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/ 
+StatusInt       ClassLayout::AddFixedSizeArrayProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount)
+    {
+    PRECONDITION (m_state == AcceptingFixedSizeProperties, ERROR); // ClassLayoutNotAcceptingFixedSizeProperties    
+    
+    UInt32 size = CalculateFixedArraySize (arrayCount, typeDescriptor.GetPrimitiveType());
+    
+    return AddProperty (accessString, typeDescriptor, size, ARRAYMODIFIERFLAGS_IsFixedSize, arrayCount);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/ 
-StatusInt       ClassLayout::AddVariableSizeProperty (wchar_t const * accessString, PrimitiveType primitivetype)
+StatusInt       ClassLayout::AddVariableSizeProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor)
     {
     if (m_state == AcceptingFixedSizeProperties)
         m_state = AcceptingVariableSizeProperties;
     else if (m_state != AcceptingVariableSizeProperties)
         return ERROR; // ClassLayoutNotAcceptingVariableSizeProperties  
         
-    size_t size = sizeof(SecondaryOffset); // the offset will just point to this secondary offset
+    UInt32 size = sizeof(SecondaryOffset); // the offset will just point to this secondary offset
 
-    return AddProperty (accessString, primitivetype, size);
+    return AddProperty (accessString, typeDescriptor, size);
     }  
 
 /*---------------------------------------------------------------------------------**//**
@@ -609,52 +686,112 @@ InstanceHeader const&    MemoryInstanceSupport::PeekInstanceHeader (void const* 
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
+* @bsimethod                                                    AdamKlatzkin    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-byte const *    MemoryInstanceSupport::GetAddressOfValue (PropertyLayoutCR propertyLayout) const
+UInt32          MemoryInstanceSupport::GetArrayOffsetAndCount (UInt32& arrayOffset, PropertyLayoutCR propertyLayout) const
     {
-    UInt32 offset = propertyLayout.GetOffset();
-    
-    byte const * data = _GetDataForRead();
-    byte const * pValue = data + offset;
-    
     if (propertyLayout.IsFixedSized())
-        return pValue;
-    
-    SecondaryOffset secondaryOffset = *((SecondaryOffset*)pValue);
-    DEBUG_EXPECT (0 != secondaryOffset && "The instance is not initialized!");
-    
-    pValue = data + secondaryOffset;
-    return pValue;
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            MemoryInstanceSupport::IsValueNull (PropertyLayoutCR propertyLayout) const
-    {
-    NullflagsBitmask const * nullflags = (NullflagsBitmask const *)(_GetDataForRead() + propertyLayout.GetNullflagsOffset());
-    return (0 != (*nullflags & propertyLayout.GetNullflagsBitmask()));
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            MemoryInstanceSupport::SetValueNull (PropertyLayoutCR propertyLayout, bool isNull)
-    {
-    NullflagsBitmask mask = propertyLayout.GetNullflagsBitmask();
-    
-    NullflagsBitmask * nullflags = (NullflagsBitmask *)(_GetDataForWrite() + propertyLayout.GetNullflagsOffset());
-    if (isNull && 0 == (*nullflags & mask))
-        *nullflags |= mask; // turn on the null bit
-    else if (!isNull && mask == (*nullflags & mask))
-        *nullflags ^= mask; // turn off the null bit // WIP_FUSION: Needs to use ModifyData
+        {
+        arrayOffset = propertyLayout.GetOffset();
+        return propertyLayout.GetModifierData();
+        }
+    else
+        {
+        SecondaryOffset* pSecondaryOffset = (SecondaryOffset*)(_GetDataForRead() + propertyLayout.GetOffset());
+        SecondaryOffset* pNextOffset = pSecondaryOffset++;
+
+        DEBUG_EXPECT (0 != *pSecondaryOffset && "The instance is not initialized!");
+        DEBUG_EXPECT (0 != *pNextOffset && "The instance is not initialized!");
+        
+        arrayOffset = *pSecondaryOffset;
+        if (arrayOffset == *pNextOffset)
+            return 0;
+
+        byte const * pCount = _GetDataForRead() + arrayOffset;
+        return *((ArrayCount*)pCount);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          MemoryInstanceSupport::GetOffsetOfValue (PropertyLayoutCR propertyLayout) const
+byte const *    MemoryInstanceSupport::GetAddressOfPrimitiveValue (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const
+    {
+    if (nIndices == 0)
+        return _GetDataForRead() + GetOffsetOfPropertyValue (propertyLayout);
+    else
+        return _GetDataForRead() + GetOffsetOfArrayIndexValue (propertyLayout, *indices);
+    } 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32          MemoryInstanceSupport::GetOffsetOfPrimitiveValue (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const
+    {
+    if (nIndices == 0)
+        return GetOffsetOfPropertyValue (propertyLayout);
+    else
+        return GetOffsetOfArrayIndexValue (propertyLayout, *indices);
+    } 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+void   PrepareToAccessNullFlags (UInt32& nullflagsOffset, UInt32& nullflagsBitmask, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices)
+    {
+    // Since this is a private method and we are concerned about performance we do not do any parameter checking here.  nIndices must be 0 or 1
+    // and we assume if it is 1 that we are obtaining the value from a primitive array.  We also assume that count has already been validated against 
+    // the specified index.   
+    if (nIndices == 0)
+        {
+        nullflagsOffset = propertyLayout.GetNullflagsOffset();
+        nullflagsBitmask = propertyLayout.GetNullflagsBitmask();
+        }
+    else if (nIndices == 1)
+        {
+        if (propertyLayout.IsFixedSized())
+            nullflagsOffset = propertyLayout.GetOffset();
+        else
+            nullflagsOffset = *((SecondaryOffset*)propertyLayout.GetOffset()) + sizeof (ArrayCount);
+
+        nullflagsOffset += (*indices / BITS_PER_NULLFLAGSBITMASK * sizeof(NullflagsBitmask));
+        nullflagsBitmask = 0x01 << (*indices % BITS_PER_NULLFLAGSBITMASK);
+        }
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            MemoryInstanceSupport::IsPrimitiveValueNull (PropertyLayoutCR propertyLayout,  UInt32 nIndices, UInt32 const * indices) const
+    {
+    UInt32 nullflagsOffset;
+    UInt32 nullflagsBitmask;
+    PrepareToAccessNullFlags (nullflagsOffset, nullflagsBitmask, propertyLayout, nIndices, indices);
+
+    NullflagsBitmask const * nullflags = (NullflagsBitmask const *)(_GetDataForRead() + nullflagsOffset);
+    return (0 != (*nullflags & nullflagsBitmask));    
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/
+void            MemoryInstanceSupport::SetPrimitiveValueNull (PropertyLayoutCR propertyLayout,  UInt32 nIndices, UInt32 const * indices, bool isNull)
+    {  
+    UInt32 nullflagsOffset;
+    UInt32 nullflagsBitmask;
+    PrepareToAccessNullFlags (nullflagsOffset, nullflagsBitmask, propertyLayout, nIndices, indices);   
+    
+    NullflagsBitmask * nullflags = (NullflagsBitmask *)(_GetDataForWrite() + nullflagsOffset);
+    if (isNull && 0 == (*nullflags & nullflagsBitmask))
+        *nullflags |= nullflagsBitmask; // turn on the null bit
+    else if (!isNull && nullflagsBitmask == (*nullflags & nullflagsBitmask))
+        *nullflags ^= nullflagsBitmask; // turn off the null bit // WIP_FUSION: Needs to use ModifyData
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32          MemoryInstanceSupport::GetOffsetOfPropertyValue (PropertyLayoutCR propertyLayout) const
     {
     UInt32 offset = propertyLayout.GetOffset();
     
@@ -667,7 +804,55 @@ UInt32          MemoryInstanceSupport::GetOffsetOfValue (PropertyLayoutCR proper
     SecondaryOffset secondaryOffset = *pSecondaryOffset;
     
     return secondaryOffset;
-    }    
+    }   
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32          MemoryInstanceSupport::GetOffsetOfArrayIndex (PropertyLayoutCR propertyLayout, UInt32 index) const
+    {    
+    // Since this is a private method and we are concerned about performance we do not do any release build parameter checking here.  
+    // We assume that count has already been validated against the specified index.    
+    DEBUG_EXPECT (propertyLayout.GetTypeDescriptor().IsArray());
+    UInt32 primaryOffset;
+    UInt32 arrayOffset;
+    UInt32 count = GetArrayOffsetAndCount (arrayOffset, propertyLayout);
+    DEBUG_EXPECT (count > index);
+    if (propertyLayout.IsFixedSized())
+        primaryOffset = arrayOffset;
+    else
+        primaryOffset = arrayOffset + sizeof (ArrayCount);
+
+    primaryOffset += (CalculateNumberNullFlagsBitmasks (count) * sizeof (NullflagsBitmask));
+
+    if (PrimitiveTypeIsFixedSize (propertyLayout.GetTypeDescriptor().GetPrimitiveType()))
+        return primaryOffset += (index * ClassLayout::GetFixedPrimitiveValueSize (propertyLayout.GetTypeDescriptor().GetPrimitiveType()));
+
+    primaryOffset += index * sizeof (SecondaryOffset);
+
+    return primaryOffset;
+    }  
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32          MemoryInstanceSupport::GetOffsetOfArrayIndexValue (PropertyLayoutCR propertyLayout, UInt32 index) const
+    {    
+    UInt32 primaryOffset = GetOffsetOfArrayIndex (propertyLayout, index);
+
+    if (PrimitiveTypeIsFixedSize (propertyLayout.GetTypeDescriptor().GetPrimitiveType()))
+        return primaryOffset;
+    
+    byte const * data = _GetDataForRead();
+    SecondaryOffset const * pSecondaryOffset = (SecondaryOffset const *)(data + primaryOffset);
+
+    SecondaryOffset secondaryOffset = *pSecondaryOffset;
+    DEBUG_EXPECT (0 != secondaryOffset && "The instance is not initialized!");
+    
+    // The stored secondary offset of an array element is relative to the beginning of the array.  We expect this method to return
+    // an offset to the array element that is relative to the start of the instance data.
+    return primaryOffset + secondaryOffset;
+    }  
         
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
@@ -700,14 +885,61 @@ StatusInt       MemoryInstanceSupport::EnsureSpaceIsAvailable (UInt32& offset, C
     if (bytesNeeded <= availableBytes)
         return SUCCESS;
 #endif
-    UInt32 bytesUsed = classLayout.CalculateBytesUsed(data);
+    
     Int32 additionalBytesNeeded = bytesNeeded - availableBytes;
     
     if (additionalBytesNeeded <= 0)
         return SUCCESS;
         
+    return GrowPropertyValue (classLayout, propertyLayout, additionalBytesNeeded);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       MemoryInstanceSupport::EnsureSpaceIsAvailableForArrayIndexValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 bytesNeeded)
+    {
+    UInt32 arrayOffset;
+    UInt32 arrayCount = GetArrayOffsetAndCount (arrayOffset, propertyLayout);
+    byte const *             data = _GetDataForRead();
+    SecondaryOffset* pSecondaryOffset = (SecondaryOffset*)(data + GetOffsetOfArrayIndex (propertyLayout, arrayIndex));
+    SecondaryOffset* pNextSecondaryOffset;
+    if (arrayIndex == arrayCount - 1) 
+        pNextSecondaryOffset =  (SecondaryOffset*)(_GetDataForRead() + propertyLayout.GetOffset()) + 1;
+    else 
+        pNextSecondaryOffset = pSecondaryOffset + 1;
+    UInt32 availableBytes = *pNextSecondaryOffset - *pSecondaryOffset;
+    
+#ifndef SHRINK_TO_FIT    
+    if (bytesNeeded <= availableBytes)
+        return SUCCESS;
+#endif    
+    Int32 additionalBytesNeeded = bytesNeeded - availableBytes;
+    
+    if (additionalBytesNeeded <= 0)
+        return SUCCESS;
+    
+    StatusInt status = GrowPropertyValue (classLayout, propertyLayout, additionalBytesNeeded);
+
+    if (SUCCESS != status)
+        return status;
+
+    if (arrayIndex < arrayCount - 1)
+        return ShiftArrayIndexValueData(propertyLayout, arrayIndex, arrayCount, additionalBytesNeeded);
+    else
+        return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       MemoryInstanceSupport::GrowPropertyValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 additionalBytesNeeded)
+    {
+    byte const * data = _GetDataForWrite();
+    UInt32 bytesUsed = classLayout.CalculateBytesUsed(data);
+        
     UInt32 bytesAllocated = _GetBytesAllocated();    
-    Int32 additionalBytesAvailable = bytesAllocated - bytesUsed;
+    UInt32 additionalBytesAvailable = bytesAllocated - bytesUsed;
     
     StatusInt status = SUCCESS;
     UInt32 growBy = additionalBytesNeeded - additionalBytesAvailable;
@@ -795,6 +1027,42 @@ StatusInt       MemoryInstanceSupport::ShiftValueData(ClassLayoutCR classLayout,
     UInt32 offsetOfCurrent = (UInt32)((byte*)pCurrent - data);
     return _ModifyData (offsetOfCurrent, shiftedSecondaryOffsets, sizeOfSecondaryOffsetsToShift);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       MemoryInstanceSupport::ShiftArrayIndexValueData(PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 arrayCount, Int32 shiftBy)
+    {
+    DEBUG_EXPECT (0 != shiftBy && "It is a pointless waste of time to shift nothing");
+    DEBUG_EXPECT (arrayIndex < arrayCount - 1 && "It is a pointless waste of time to shift nothing");
+
+    byte * data = _GetDataForWrite();
+    SecondaryOffset* pNextProperty = (SecondaryOffset*)(data + propertyLayout.GetOffset()) + 1;
+    SecondaryOffset indexValueOffset = GetOffsetOfArrayIndexValue (propertyLayout, arrayIndex + 1); // start at the one AFTER the index whose value's size is adjusting
+    
+    UInt32 bytesToMove = *pNextProperty - indexValueOffset;
+    DEBUG_EXPECT (bytesToMove > 0);
+
+    byte * source = data + indexValueOffset;
+    byte * destination = source + shiftBy;
+    
+    DEBUG_EXPECT (destination + bytesToMove <= (byte *)*pNextProperty && "Attempted to move memory beyond the end of the reserved memory for this property.");
+    if (destination + bytesToMove > (byte *)*pNextProperty)
+        return ERROR;
+        
+    memmove (destination, source, bytesToMove); // WIP_FUSION: Use Modify data, instead
+
+    // Shift all secondaryOffsets for indices following the one that just got larger
+    UInt32 sizeOfSecondaryOffsetsToShift = (arrayCount - arrayIndex) * sizeof (SecondaryOffset);
+    UInt32 nSecondaryOffsetsToShift = arrayCount - arrayIndex;
+    SecondaryOffset * shiftedSecondaryOffsets = (SecondaryOffset*)alloca (sizeOfSecondaryOffsetsToShift);
+    SecondaryOffset * pCurrent = (SecondaryOffset*)(data + GetOffsetOfArrayIndex (propertyLayout, arrayIndex + 1));
+    for (UInt32 i = 0; i < nSecondaryOffsetsToShift; i++)
+        shiftedSecondaryOffsets[i] = pCurrent[i] + shiftBy;
+        
+    UInt32 offsetOfCurrent = (UInt32)((byte*)pCurrent - data);
+    return _ModifyData (offsetOfCurrent, shiftedSecondaryOffsets, sizeOfSecondaryOffsetsToShift);
+    }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
@@ -803,21 +1071,24 @@ void            MemoryInstanceSupport::InitializeMemory(ClassLayoutCR classLayou
     {
     classLayout.InitializeMemoryForInstance (data, bytesAllocated);
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
+* @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       MemoryInstanceSupport::GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const
+StatusInt       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const
     {
-    if (IsValueNull(propertyLayout))
+    DEBUG_EXPECT (propertyLayout.GetExpectedIndices() == nIndices);   
+
+    if (IsPrimitiveValueNull(propertyLayout, nIndices, indices))
         {
         v.SetToNull();
         return SUCCESS;
-        }
-        
-    byte const * pValue = GetAddressOfValue (propertyLayout);
-    
-    switch (propertyLayout.GetPrimitiveType())
+        }    
+
+    byte const * pValue = GetAddressOfPrimitiveValue (propertyLayout, nIndices, indices);
+
+    ECTypeDescriptor typeDescriptor = propertyLayout.GetTypeDescriptor();    
+    switch (typeDescriptor.GetPrimitiveType())
         {
         case PRIMITIVETYPE_Integer:
             {
@@ -852,8 +1123,46 @@ StatusInt       MemoryInstanceSupport::GetValueFromMemory (ECValueR v, PropertyL
             return SUCCESS;            
             }
         }
-    
+
     POSTCONDITION (false && "datatype not implemented", ERROR);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       MemoryInstanceSupport::GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const
+    {
+    // AZK To obtain a value from memory for a memory based PropertyLayout relative to this instance, the value must be embedded in the memory block contained by this instance.
+    // Therefore nIndices must be <= 1.  If it is greater then 1 then the property accessor would be to some property nested within an array of structs.  Due to
+    // polymorphic struct arrays we do not store struct array values in the same memory block
+    PRECONDITION (nIndices <= 1, ERROR);
+
+    ECTypeDescriptor typeDescriptor = propertyLayout.GetTypeDescriptor();
+    if (typeDescriptor.IsPrimitive())
+        {
+        if (!EXPECTED_CONDITION (nIndices == 0))        
+            return ERROR;
+        return GetPrimitiveValueFromMemory (v, propertyLayout, nIndices, indices);
+        }
+    else if (typeDescriptor.IsPrimitiveArray())
+        {
+        UInt32 arrayOffset;
+        UInt32 arrayCount = GetArrayOffsetAndCount (arrayOffset, propertyLayout);
+        if (nIndices == 0)
+            {            
+            v.SetPrimitiveArrayInfo (typeDescriptor.GetPrimitiveType(), arrayCount, false); // WIP_FUSION support variable sized arrays
+            return SUCCESS;
+            }
+        else
+            {
+            if (*indices >= arrayCount)
+                return ERROR; // WIP_FUSION ERROR_InvalidIndex
+
+            return GetPrimitiveValueFromMemory (v, propertyLayout, nIndices, indices);
+            }
+        }
+
+    POSTCONDITION (false && "Can not obtain value from memory using the specified property layout because it is an unsupported datatype", ERROR);        
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -862,46 +1171,34 @@ StatusInt       MemoryInstanceSupport::GetValueFromMemory (ECValueR v, PropertyL
 StatusInt       MemoryInstanceSupport::GetValueFromMemory (ClassLayoutCR classLayout, ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
     {
     PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
-    PRECONDITION (IECInstance::AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true), ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices);
+    //PRECONDITION (IECInstance::AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true), ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices);
                 
     PropertyLayoutCP propertyLayout = NULL;
     StatusInt status = classLayout.GetPropertyLayout (propertyLayout, propertyAccessString);
     if (SUCCESS != status || NULL == propertyLayout)
-        return ERROR; // WIP_FUSION ERROR_PropertyNotFound
-        
+        return ERROR; // WIP_FUSION ERROR_PropertyNotFound        
+
     return GetValueFromMemory (v, *propertyLayout, nIndices, indices);
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, ECValueCR v, UInt32 nIndices, UInt32 const * indices)
-    {
-    PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
-    PRECONDITION (IECInstance::AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true), ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices);
-    //UInt32 bytesAllocated = _GetBytesAllocated();    
-
-    PropertyLayoutCP propertyLayout = NULL;
-    StatusInt status = classLayout.GetPropertyLayout (propertyLayout, propertyAccessString); // WIP_FUSION: If it only has one error, let it just return null
-    if (SUCCESS != status || NULL == propertyLayout)
-        return ERROR; // WIP_FUSION ERROR_PropertyNotFound
-        
+StatusInt       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices)
+    {        
     if (v.IsNull())
         {
-        SetValueNull (*propertyLayout, true);
+        SetPrimitiveValueNull (propertyLayout, nIndices, indices, true);
         return SUCCESS;
         }
         
-    SetValueNull (*propertyLayout, false);
-                
-    if (propertyLayout->GetPrimitiveType() != v.GetPrimitiveType())
-        return ERROR; // WIP_FUSION ERROR_DataTypeMismatch
+    SetPrimitiveValueNull (propertyLayout, nIndices, indices, false);
     
-    UInt32 offset = GetOffsetOfValue (*propertyLayout);
+    UInt32 offset = GetOffsetOfPrimitiveValue (propertyLayout, nIndices, indices);
 #ifdef EC_TRACE_MEMORY 
     wprintf (L"SetValue %s of 0x%x at offset=%d to %s.\n", propertyAccessString, this, offset, v.ToString().c_str());
 #endif    
-    switch (propertyLayout->GetPrimitiveType())
+    switch (propertyLayout.GetTypeDescriptor().GetPrimitiveType())
         {
         case PRIMITIVETYPE_Integer:
             {
@@ -923,21 +1220,62 @@ StatusInt       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayo
             wchar_t const * value = v.GetString();
             UInt32 bytesNeeded = (UInt32)(sizeof(wchar_t) * (wcslen(value) + 1)); // WIP_FUSION: what if the caller could tell us the size?
             
-            StatusInt status = EnsureSpaceIsAvailable (offset, classLayout, *propertyLayout, bytesNeeded);
+            StatusInt status;
+            if (1 == nIndices)
+                status = EnsureSpaceIsAvailableForArrayIndexValue (classLayout, propertyLayout, *indices, bytesNeeded);
+            else
+                status = EnsureSpaceIsAvailable (offset, classLayout, propertyLayout, bytesNeeded);
             if (SUCCESS != status)
                 return status;
                 
             return _ModifyData (offset, value, bytesNeeded);
             }
-        default:
-            {
-            assert(false && L"DataType not implemented");
+        }
+
+    POSTCONDITION (false && "datatype not implemented", ERROR);
+    }        
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, ECValueCR v, UInt32 nIndices, UInt32 const * indices)
+    {
+    PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
+    // AZK To obtain a value from memory for a memory based PropertyLayout relative to this instance, the value must be embedded in the memory block contained by this instance.
+    // Therefore nIndices must be <= 1.  If it is greater then 1 then the property accessor would be to some property nested within an array of structs.  Due to
+    // polymorphic struct arrays we do not store struct array values in the same memory block
+    PRECONDITION (nIndices <= 1, ERROR);
+
+    PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
+    //PRECONDITION (IECInstance::AccessStringAndNIndicesAgree(propertyAccessString, nIndices, true), ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices);
+                
+    PropertyLayoutCP propertyLayout = NULL;
+    StatusInt status = classLayout.GetPropertyLayout (propertyLayout, propertyAccessString);
+    if (SUCCESS != status || NULL == propertyLayout)
+        return ERROR; // WIP_FUSION ERROR_PropertyNotFound        
+
+    ECTypeDescriptor typeDescriptor = propertyLayout->GetTypeDescriptor();
+    if (typeDescriptor.IsPrimitive())
+        {
+        if (!EXPECTED_CONDITION (nIndices == 0))        
             return ERROR;
+        return SetPrimitiveValueToMemory (v, classLayout, *propertyLayout, nIndices, indices);
+        }
+    else if (typeDescriptor.IsPrimitiveArray())
+        {
+        UInt32 arrayOffset;
+        UInt32 arrayCount = GetArrayOffsetAndCount (arrayOffset, *propertyLayout);
+        if (nIndices == 1)
+            {            
+            if (*indices >= arrayCount)
+                return ERROR; // WIP_FUSION ERROR_InvalidIndex
+
+            return SetPrimitiveValueToMemory (v, classLayout, *propertyLayout, nIndices, indices);
             }
         }
 
-    return SUCCESS;
-    }        
+    POSTCONDITION (false && "Can not set the value to memory using the specified property layout because it is an unsupported datatype", ERROR);
+    }  
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
@@ -964,10 +1302,7 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
     
     UInt32 nProperties = classLayout.GetPropertyCount ();
     
-    UInt32 bitsPerMask = (sizeof(NullflagsBitmask) * 8);
-    UInt32 nNullflagsBitmasks = nProperties / bitsPerMask;
-    if ( (nProperties % bitsPerMask) > 0)
-        ++nNullflagsBitmasks;
+    UInt32 nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks (nProperties);
     
     for (UInt32 i = 0; i < nNullflagsBitmasks; i++)
         {
