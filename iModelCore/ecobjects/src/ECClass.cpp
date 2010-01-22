@@ -301,8 +301,8 @@ ECClassCR baseClass
     if (&(baseClass.Schema) != &(this->Schema))
         {
         bool foundRefSchema = false;
-        ECSchemaReferenceVector referencedSchemas = m_schema.GetReferencedSchemas();
-        ECSchemaReferenceVector::const_iterator schemaIterator;
+        ECSchemaReferenceList referencedSchemas = m_schema.GetReferencedSchemas();
+        ECSchemaReferenceList::const_iterator schemaIterator;
         for (schemaIterator = referencedSchemas.begin(); schemaIterator != referencedSchemas.end(); schemaIterator++)
             {
             ECSchemaP refSchema = *schemaIterator;

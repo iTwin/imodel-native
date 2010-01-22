@@ -543,5 +543,38 @@ TEST(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     
     CoUninitialize();
     }
+
+TEST(SchemaReferenceTest, AddAndRemoveReferencedSchemas)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, L"TestSchema");
     
+    ECSchemaPtr refSchema;
+    ECSchema::CreateSchema(refSchema, L"RefSchema");
+    
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(*refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_NamedItemAlreadyExists, schema->AddReferencedSchema(*refSchema));
+    
+    ECSchemaReferenceList refList = schema->GetReferencedSchemas();
+    ECSchemaReferenceList::const_iterator schemaIterator;
+    for (schemaIterator = refList.begin(); schemaIterator != refList.end(); schemaIterator++)
+        {
+        if (*schemaIterator == refSchema.get())
+            break;
+        }
+        
+    EXPECT_FALSE(schemaIterator == refList.end());
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(*refSchema));
+    
+    refList = schema->GetReferencedSchemas();
+    for (schemaIterator = refList.begin(); schemaIterator != refList.end(); schemaIterator++)
+        {
+        if (*schemaIterator == refSchema.get())
+            break;
+        }
+        
+    EXPECT_TRUE(schemaIterator == refList.end());
+    EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, schema->RemoveReferencedSchema(*refSchema));
+    }
+       
 END_BENTLEY_EC_NAMESPACE

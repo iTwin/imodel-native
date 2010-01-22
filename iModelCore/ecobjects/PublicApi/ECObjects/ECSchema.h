@@ -458,7 +458,7 @@ public:
 
 }; // ECRelationshipClass
 
-typedef std::vector<ECSchemaP> ECSchemaReferenceVector;
+typedef std::list<ECSchemaP> ECSchemaReferenceList;
 typedef RefCountedPtr<ECSchema>                  ECSchemaPtr;
 
 /*=================================================================================**//**
@@ -544,7 +544,7 @@ private:
     // maps class name -> class pointer    
     ClassMap m_classMap;
     
-    ECSchemaReferenceVector m_refSchemaList;
+    ECSchemaReferenceList m_refSchemaList;
     
     std::set<const wchar_t *> m_alreadySerializedClasses;
     stdext::hash_map<ECSchemaP, const std::wstring *> m_referencedSchemaNamespaceMap;
@@ -606,9 +606,17 @@ public:
     //! Gets the other schemas that are used by classes within this schema.
     //! Referenced schemas are the schemas that contain definitions of base classes,
     //! embedded structures, and custom attributes of classes within this schema.
-    ECOBJECTS_EXPORT const ECSchemaReferenceVector& GetReferencedSchemas() const;
+    ECOBJECTS_EXPORT const ECSchemaReferenceList& GetReferencedSchemas() const;
     
+    //! Adds an ECSchema as a referenced schema in this schema.
+    //! It is necessary to add any ECSchema as a referenced schema that will be used when adding a base
+    //! class from a different schema, or custom attributes from a different schema.
+    //! @param[in]  refSchema   The schema to add as a referenced schema
     ECOBJECTS_EXPORT ECObjectsStatus AddReferencedSchema(ECSchemaCR refSchema);
+    
+    //! Removes an ECSchema from the list of referenced schemas
+    //! @param[in]  refSchema   The schema that should be removed from the list of referenced schemas
+    ECOBJECTS_EXPORT ECObjectsStatus RemoveReferencedSchema(ECSchemaCR refSchema);
     
     // ************************************************************************************************************************
     // ************************************  STATIC METHODS *******************************************************************
@@ -636,7 +644,8 @@ public:
     //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
     ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromString (ECSchemaPtr& schemaOut, const wchar_t * ecSchemaXml);
 
-/*
+/**************** commented out because there are problems with the include for IStream
+
     //! Deserializes an ECXML schema from an IStream.
     //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and
     //! uninitialize COM using CoInitialize/CoUninitialize</b>

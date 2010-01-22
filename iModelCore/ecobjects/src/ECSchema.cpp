@@ -408,7 +408,7 @@ ECClassContainerCR ECSchema::GetClasses
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-const ECSchemaReferenceVector& ECSchema::GetReferencedSchemas
+const ECSchemaReferenceList& ECSchema::GetReferencedSchemas
 (
 ) const
     {
@@ -423,7 +423,7 @@ ECObjectsStatus ECSchema::AddReferencedSchema
 Bentley::EC::ECSchemaCR refSchema
 )
     {
-    ECSchemaReferenceVector::const_iterator schemaIterator;
+    ECSchemaReferenceList::const_iterator schemaIterator;
     for (schemaIterator = m_refSchemaList.begin(); schemaIterator != m_refSchemaList.end(); schemaIterator++)
         {
         if (*schemaIterator == (ECSchemaP) &refSchema)
@@ -433,7 +433,28 @@ Bentley::EC::ECSchemaCR refSchema
     m_refSchemaList.push_back((ECSchemaP) &refSchema);
     
     return ECOBJECTS_STATUS_Success;
-    }  
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::RemoveReferencedSchema
+(
+Bentley::EC::ECSchemaCR refSchema
+)
+    {
+    ECSchemaReferenceList::const_iterator schemaIterator;
+    for (schemaIterator = m_refSchemaList.begin(); schemaIterator != m_refSchemaList.end(); schemaIterator++)
+        {
+        if (*schemaIterator == (ECSchemaP) &refSchema)
+            {
+            m_refSchemaList.erase(schemaIterator);
+            return ECOBJECTS_STATUS_Success;
+            }
+        }
+    return ECOBJECTS_STATUS_SchemaNotFound;
+    }
+    
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -600,12 +621,12 @@ MSXML2::IXMLDOMElement &parentNode
 )
     {
     SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
-    ECSchemaReferenceVector referencedSchemas = GetReferencedSchemas();
+    ECSchemaReferenceList referencedSchemas = GetReferencedSchemas();
     
     std::set<const std::wstring> usedPrefixes;
     std::set<const std::wstring>::const_iterator setIterator;
     m_referencedSchemaNamespaceMap.clear();
-    ECSchemaReferenceVector::const_iterator schemaIterator;
+    ECSchemaReferenceList::const_iterator schemaIterator;
     for (schemaIterator = m_refSchemaList.begin(); schemaIterator != m_refSchemaList.end(); schemaIterator++)
         {
         ECSchemaP refSchema = *schemaIterator;
