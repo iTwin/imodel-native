@@ -291,6 +291,60 @@ std::wstring const& propertyName
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::AddProperty
+(
+ECPropertyP ecProperty,
+const std::wstring &name
+)
+    {
+    ECObjectsStatus status = ecProperty->SetName (name);
+    if (ECOBJECTS_STATUS_Success != status)
+        return status;
+
+    return AddProperty (ecProperty);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::CreatePrimitiveProperty
+(
+PrimitiveECPropertyP &ecProperty, 
+const std::wstring &name
+)
+    {
+    ecProperty = new PrimitiveECProperty(*this);
+    return AddProperty(ecProperty, name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::CreateStructProperty
+(
+StructECPropertyP &ecProperty, 
+const std::wstring &name
+)
+    {
+    ecProperty = new StructECProperty(*this);
+    return AddProperty(ecProperty, name);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::CreateArrayProperty
+(
+ArrayECPropertyP &ecProperty, 
+const std::wstring &name
+)
+    {
+    ecProperty = new ArrayECProperty(*this);
+    return AddProperty(ecProperty, name);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::AddBaseClass

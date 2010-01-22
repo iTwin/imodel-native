@@ -362,7 +362,8 @@ private:
     PropertyMap             m_propertyMap;
     PropertyList            m_propertyList;    
     
-    ECObjectsStatus                     AddProperty (ECPropertyP& pProperty);    
+    ECObjectsStatus                     AddProperty (ECPropertyP& pProperty);
+    ECObjectsStatus                     AddProperty (ECPropertyP pProperty, std::wstring const& name);
 
 protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
@@ -409,6 +410,10 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass);
     ECOBJECTS_EXPORT bool            HasBaseClasses();
 
+    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, std::wstring const& name);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, std::wstring const& name);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, std::wstring const& name);
+     
     //NEEDSWORK: Is method (test if is or derived from class X)
 
     //! Get a property by name within the context of this class and its base classes.
