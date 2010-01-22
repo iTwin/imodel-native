@@ -41,7 +41,7 @@ ECClassCR             IECInstance::GetClass() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-bool                IECInstance::AccessStringAndNIndicesAgree (const wchar_t * propertyAccessString, UInt32 nIndices, bool errorIfFalse)
+int             IECInstance::ParseExpectedNIndices (const wchar_t * propertyAccessString)
     {
     const wchar_t * pointerToBrackets = pointerToBrackets = wcsstr (propertyAccessString, L"[]"); ;
     int nBrackets = 0;
@@ -50,12 +50,9 @@ bool                IECInstance::AccessStringAndNIndicesAgree (const wchar_t * p
         nBrackets++;
         pointerToBrackets += 2; // skip past the brackets
         pointerToBrackets = wcsstr (pointerToBrackets, L"[]"); ;
-        }
+        }   
     
-    assert (!errorIfFalse || (nIndices == nBrackets && "nIndices must match the number of brackets '[]' found in the propertyAccessString"));
-    //WIP_FUSION log this as an error if errorIfFalse!
-    
-    return (nIndices == nBrackets);
+    return nBrackets;
     }
         
 /*---------------------------------------------------------------------------------**//**
@@ -135,12 +132,34 @@ StatusInt           IECInstance::GetDouble (double& value, const wchar_t * prope
 StatusInt           IECInstance::GetString (const wchar_t * & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
     {
     ECValue v;
-    StatusInt status = _GetValue (v, propertyAccessString, 0, NULL);
+    StatusInt status = _GetValue (v, propertyAccessString, nIndices, indices);
     value = v.GetString();
 
     return status;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     01/10
++---------------+---------------+---------------+---------------+---------------+------*/       
+StatusInt           IECInstance::SetIntegerValue (const wchar_t * propertyAccessString, int value, UInt32 nIndices, UInt32 const * indices)
+    {
+    ECValue v(value);
+    StatusInt status = _SetValue (propertyAccessString, v, nIndices, indices);
+
+    return status;    
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     01/10
++---------------+---------------+---------------+---------------+---------------+------*/       
+StatusInt           IECInstance::SetStringValue  (const wchar_t * propertyAccessString, const wchar_t * value, UInt32 nIndices, UInt32 const * indices)
+    {
+    ECValue v(value, false);
+    StatusInt status = _SetValue (propertyAccessString, v, nIndices, indices);
+
+    return status;    
+    }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/

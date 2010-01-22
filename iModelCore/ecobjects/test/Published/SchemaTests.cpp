@@ -145,6 +145,12 @@ ECSchemaPtr schema
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SchemaDeserializationTest, ExpectErrorWhenCOMNotInitialized)
     {
+    // HACK The stopwatch class causes COM to get initialized and therefore if tests using it are executed before this test, we will fail because
+    // COM is initialized.  I don't know anyway to force COM to uninitialize or to check if it is currently initialized so as a hack I'm just
+    // uninitializing 20 times.  In the future if any test causes CoInitialize to get invoked 20 times or more then we will start breaking here.    
+    for (int i=0;i<20;i++)
+        CoUninitialize();
+        
     ECSchemaPtr schema;        
     
     DISABLE_ASSERTS
@@ -483,7 +489,13 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SchemaSerializationTest, ExpectErrorWhenCOMNotInitialized)
-    {
+    {    
+    // HACK The stopwatch class causes COM to get initialized and therefore if tests using it are executed before this test, we will fail because
+    // COM is initialized.  I don't know anyway to force COM to uninitialize or to check if it is currently initialized so as a hack I'm just
+    // uninitializing 20 times.  In the future if any test causes CoInitialize to get invoked 20 times or more then we will start breaking here.
+    for (int i=0;i<20;i++)
+        CoUninitialize();    
+        
     ECSchemaPtr schema;        
     ECSchema::CreateSchema(schema, L"Widget");
     

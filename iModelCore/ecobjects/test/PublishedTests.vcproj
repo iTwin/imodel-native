@@ -29,7 +29,7 @@
 				CleanCommandLine="C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ecf -f ecftest -p ECObjectsPublishedTests -v4 -n build -c"
 				Output="ECObjectsTest_Published.exe"
 				PreprocessorDefinitions="WIN32;_DEBUG"
-				IncludeSearchPath="&quot;$(OutRoot)Win$(PROCESSOR_ARCHITECTURE)\BuildContexts\ecf\VendorAPI\&quot;;&quot;$(VCInstallDir)INCLUDE\&quot;;&quot;$(OutRoot)Win$(PROCESSOR_ARCHITECTURE)\BuildContexts\ecf\SubParts\PublishedAPI\&quot;"
+				IncludeSearchPath="&quot;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\ecf\VendorAPI\&quot;;&quot;$(VCInstallDir)INCLUDE\&quot;;&quot;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\ecf\SubParts\PublishedAPI\&quot;"
 				ForcedIncludes=""
 				AssemblySearchPath=""
 				ForcedUsingAssemblies=""
@@ -81,6 +81,10 @@
 				RelativePath=".\Published\SchemaTests.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\Published\StopWatch.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -89,6 +93,10 @@
 			>
 			<File
 				RelativePath=".\ECObjectsTestPCH.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Published\StopWatch.h"
 				>
 			</File>
 		</Filter>

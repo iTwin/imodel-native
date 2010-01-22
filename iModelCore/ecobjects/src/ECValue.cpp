@@ -430,12 +430,11 @@ std::wstring    ECValue::ToString () const
 * @param        capacity IN  Estimated size of the array.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ECValue::SetStructArrayInfo (UInt32 count, bool isFixedSize, bool isReadOnly)
+StatusInt       ECValue::SetStructArrayInfo (UInt32 count, bool isFixedSize)
     {
     Clear();
         
     m_valueKind                = VALUEKIND_Array;
-    m_isReadOnly                    = isReadOnly;    
 
     m_arrayInfo.InitializeStructArray (count, isFixedSize);
     
@@ -446,12 +445,11 @@ StatusInt       ECValue::SetStructArrayInfo (UInt32 count, bool isFixedSize, boo
 * @param        capacity IN  Estimated size of the array.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ECValue::SetPrimitiveArrayInfo (PrimitiveType primitiveElementType, UInt32 count, bool isFixedSize, bool isReadOnly)
+StatusInt       ECValue::SetPrimitiveArrayInfo (PrimitiveType primitiveElementType, UInt32 count, bool isFixedSize)
     {
     Clear();
         
     m_valueKind                = VALUEKIND_Array;
-    m_isReadOnly                    = isReadOnly;    
 
     m_arrayInfo.InitializePrimitiveArray (primitiveElementType, count, isFixedSize);
     

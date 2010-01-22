@@ -29,7 +29,7 @@
 				CleanCommandLine="bmake +aD $(SrcEcf)ecobjects\native\native.mke"
 				Output="ecobjects.exe"
 				PreprocessorDefinitions="WIN32;_DEBUG"
-				IncludeSearchPath="&quot;$(VCInstallDir)INCLUDE\&quot;;&quot;$(SrcEcf)\PublicApi&quot;;&quot;$(OutRoot)Win$(PROCESSOR_ARCHITECTURE)\BuildContexts\Bentley\PublicAPI&quot;;&quot;$(OutRoot)Win$(PROCESSOR_ARCHITECTURE)\BuildContexts\bsibin\PublicAPI\&quot;"
+				IncludeSearchPath="&quot;$(VCInstallDir)INCLUDE\&quot;;&quot;$(SrcEcf)\PublicApi&quot;;&quot;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\Bentley\PublicAPI&quot;;&quot;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\bsibin\PublicAPI\&quot;"
 				ForcedIncludes=""
 				AssemblySearchPath=""
 				ForcedUsingAssemblies=""
@@ -98,6 +98,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ecxml.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Logger.cpp"
 				>
 			</File>
@@ -145,6 +149,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\ecf\PublicApi\ECObjects\ECValue.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ecxml.h"
 				>
 			</File>
 			<File
