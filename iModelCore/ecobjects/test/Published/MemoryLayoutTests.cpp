@@ -11,6 +11,9 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
+#define CLASSINDEX_Test  42
+#define SCHEMAINDEX_Test 24
+
 using namespace std;
 
 // WIP_FUSION: these verify methods are duplicated in DgnPlatformTest... how do we share that code?    
@@ -18,12 +21,20 @@ using namespace std;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyString (IECInstanceR instance, ECValueR v, wchar_t const * accessString, wchar_t const * value)
+void VerifyString (IECInstanceR instance, ECValueR v, wchar_t const * accessString, UInt32 nIndicies, UInt32 * indicies, wchar_t const * value)
     {
     v.Clear();
-    EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
+    EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString, nIndicies, indicies));
     EXPECT_STREQ (value, v.GetString());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/    
+void VerifyString (IECInstanceR instance, ECValueR v, wchar_t const * accessString, wchar_t const * value)
+    {
+    return VerifyString (instance, v, accessString, 0, NULL, value);
+    }    
         
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
@@ -34,16 +45,24 @@ void SetAndVerifyString (IECInstanceR instance, ECValueR v, wchar_t const * acce
     EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
     VerifyString (instance, v, accessString, value);
     }
+       
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/    
+void VerifyInteger (IECInstanceR instance, ECValueR v, wchar_t const * accessString, UInt32 nIndicies, UInt32 * indicies, UInt32 value)
+    {
+    v.Clear();
+    EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString, nIndicies, indicies));
+    EXPECT_EQ (value, v.GetInteger());
+    }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
 void VerifyInteger (IECInstanceR instance, ECValueR v, wchar_t const * accessString, UInt32 value)
     {
-    v.Clear();
-    EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
-    EXPECT_EQ (value, v.GetInteger());
-    }
+    return VerifyInteger (instance, v, accessString, 0, NULL, value);
+    }    
         
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
@@ -94,6 +113,65 @@ void SetAndVerifyLong (IECInstanceR instance, ECValueR v, wchar_t const * access
     EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
     VerifyLong (instance, v, accessString, value);
     } 
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    AdamKlatzkin     01/10
++---------------+---------------+---------------+---------------+---------------+------*/    
+void VerifyArrayCount (IECInstanceR instance, ECValueR v, wchar_t const * accessString, UInt32 count)
+    {
+    v.Clear();
+    EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
+    EXPECT_EQ (count, v.GetArrayInfo().GetCount());
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    AdamKlatzkin     01/10
++---------------+---------------+---------------+---------------+---------------+------*/    
+void VerifyOutOfBoundsError (IECInstanceR instance, ECValueR v, wchar_t const * accessString, UInt32 index)
+    {
+    v.Clear();    
+    // WIP_FUSION .. ERROR_InvalidIndex
+    EXPECT_TRUE (ERROR == instance.GetValue (v, accessString, 1, &index));
+    EXPECT_TRUE (ERROR == instance.SetValue (accessString, v, 1, &index));
+    }    
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    AdamKlatzkin     01/10
++---------------+---------------+---------------+---------------+---------------+------*/    
+void SetAndVerifyStringArray (IECInstanceR instance, ECValueR v, wchar_t const * accessString, wchar_t const * value, UInt32 count)
+    {
+    std::wstring incrementingString = value;
+    for (UInt32 i=0 ; i < count ; i++)        
+        {
+        incrementingString.append (L"X");
+        v.SetString(incrementingString.c_str());
+        EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v, 1, &i));
+        }
+    
+    incrementingString = value;    
+    for (UInt32 i=0 ; i < count ; i++)        
+        {
+        incrementingString.append (L"X");
+        VerifyString (instance, v, accessString, 1, &i, incrementingString.c_str());
+        }
+    }  
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    AdamKlatzkin     01/10
++---------------+---------------+---------------+---------------+---------------+------*/    
+void SetAndVerifyIntegerArray (IECInstanceR instance, ECValueR v, wchar_t const * accessString, UInt32 baseValue, UInt32 count)
+    {
+    for (UInt32 i=0 ; i < count ; i++)        
+        {
+        v.SetInteger(baseValue + i);        
+        EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v, 1, &i));
+        }
+        
+    for (UInt32 i=0 ; i < count ; i++)        
+        {
+        VerifyInteger (instance, v, accessString, 1, &i, baseValue + i);
+        }
+    }      
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/09
@@ -107,6 +185,7 @@ std::wstring    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versio
                     L"        <ECProperty propertyName=\"AccountNo\" typeName=\"int\" />"
                     L"    </ECClass>"
                     L"    <ECClass typeName=\"%s\" isDomainClass=\"True\">"
+                    L"        <ECArrayProperty propertyName=\"BeginningArray\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"A\" typeName=\"int\" />"
                     L"        <ECProperty propertyName=\"AA\" typeName=\"int\" />"
                     L"        <ECProperty propertyName=\"B\" typeName=\"string\" />"
@@ -132,6 +211,10 @@ std::wstring    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versio
                     L"        <ECProperty propertyName=\"Property15\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"Property16\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"Property17\" typeName=\"string\" />"
+                    L"        <ECArrayProperty propertyName=\"FixedArrayFixedElement\" typeName=\"int\" minOccurs=\"10\" maxOccurs=\"10\"/>"
+                    L"        <ECArrayProperty propertyName=\"VariableArrayFixedElement\" typeName=\"int\"/>"
+                    L"        <ECArrayProperty propertyName=\"FixedArrayVariableElement\" typeName=\"string\" minOccurs=\"10\" maxOccurs=\"10\"/>"
+                    L"        <ECArrayProperty propertyName=\"VariableArrayVariableElement\" typeName=\"string\"/>"
                     L"        <ECProperty propertyName=\"Property18\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"Property19\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"Property20\" typeName=\"string\" />"
@@ -162,6 +245,7 @@ std::wstring    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versio
                     L"        <ECProperty propertyName=\"Property45\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"Property46\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"Property47\" typeName=\"string\" />"
+                    L"        <ECArrayProperty propertyName=\"EndingArray\" typeName=\"string\" />"
                     L"    </ECClass>"
                     L"</ECSchema>";
 
@@ -181,7 +265,7 @@ ECSchemaPtr       CreateTestSchema ()
 
     ECSchemaPtr schema = NULL;
 
-    EXPECT_EQ (SUCCESS, ECSchema::ReadXmlFromString (schema, schemaXMLString.c_str()));
+    EXPECT_EQ (SUCCESS, ECSchema::ReadXmlFromString (schema, schemaXMLString.c_str()));   
 
     return schema;
     }
@@ -275,25 +359,32 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
         swprintf (propertyName, L"Property%i", i);
         VerifyString (instance, v, propertyName, valueForFinalStrings);
         }    
-               
-#if later        
-    // array of ints
-    UInt32 indices[1];
-    for (int i = 0; i < 3; i++)
-        {
-        v.SetInteger(i + 1);
-        indices[0] = i;
-        EXPECT_TRUE (SUCCESS == instance.SetValue (L"ArrayOfInts[]", v, 1, indices));
-        }
-
-    for (int i = 0; i < 3; i++)
-        {
-        v.Clear();
-        indices[0] = i;
-        EXPECT_TRUE (SUCCESS == instance.GetValue (v, L"ArrayOfInts[]", 1, indices));
-        EXPECT_TRUE (i + 1 == v.GetInteger());
-        }
-#endif        
+        
+    VerifyArrayCount (instance, v, L"BeginningArray[]", 0);
+    VerifyArrayCount (instance, v, L"FixedArrayFixedElement[]", 10);
+    VerifyArrayCount (instance, v, L"VariableArrayFixedElement[]", 0);
+    //NEEDSWORK, arrays of this type are not initializing to the correct size
+    //VerifyArrayCount (instance, v, L"FixedArrayVariableElement[]", 10);
+    VerifyArrayCount (instance, v, L"VariableArrayVariableElement[]", 0);
+    VerifyArrayCount (instance, v, L"EndingArray[]", 0);
+    
+    // WIP_FUSION, verify other properties of ArrayInfo are correct
+    // WIP_FUSION, verify we can not change the size of fixed arrays        
+    
+    VerifyOutOfBoundsError (instance, v, L"BeginningArray[]", 1);
+    VerifyOutOfBoundsError (instance, v, L"FixedArrayFixedElement[]", 11);
+    VerifyOutOfBoundsError (instance, v, L"VariableArrayFixedElement[]", 1);
+    VerifyOutOfBoundsError (instance, v, L"FixedArrayVariableElement[]", 11);
+    VerifyOutOfBoundsError (instance, v, L"VariableArrayVariableElement[]", 1);
+    VerifyOutOfBoundsError (instance, v, L"EndingArray[]", 1);    
+    
+    SetAndVerifyIntegerArray (instance, v, L"FixedArrayFixedElement[]", 172, 10);
+    //NEEDSWORK, arrays of this type are not initializing to the correct size
+    //SetAndVerifyStringArray (instance, v, L"FixedArrayVariableElement[]", L"BaseString", 10);   
+                       
+    // WIP_FUSION, insert array members
+    // WIP_FUSION, remove array members
+    // WIP_FUSION, clear array
     }
                  
 /*---------------------------------------------------------------------------------**//**
@@ -304,14 +395,15 @@ TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
     ECSchemaPtr schema = CreateTestSchema();
+    ASSERT_TRUE (schema != NULL);
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);
     
     SchemaLayout schemaLayout;
     schemaLayout.SetSchemaIndex(24);
 
-    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout);
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*classLayout);
+    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);
     
     EC::StandaloneECInstanceP instance = enabler->CreateInstance();
     wstring instanceId = instance->GetInstanceId();
@@ -332,7 +424,7 @@ TEST (MemoryLayoutTests, Values) // move it!
     ECValue i(3);
     EXPECT_TRUE (i.IsInteger());
     EXPECT_TRUE (!i.IsNull());
-    EXPECT_EQ (3, i.GetInteger());
+    EXPECT_EQ (3, i.GetInteger());    
     i.SetInteger(4);
     EXPECT_EQ (4, i.GetInteger());
     
@@ -391,14 +483,15 @@ TEST (MemoryLayoutTests, TestSetGetNull)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
     ECSchemaPtr schema = CreateTestSchema();
+    ASSERT_TRUE (schema != NULL);
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);
         
     SchemaLayout schemaLayout;
     schemaLayout.SetSchemaIndex(24);
 
-    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout);
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*classLayout);
+    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);
     
     EC::StandaloneECInstanceP instance = enabler->CreateInstance();
     ECValue v;
@@ -465,8 +558,8 @@ TEST (MemoryLayoutTests, ProfileSettingValues)
     SchemaLayout schemaLayout;
     schemaLayout.SetSchemaIndex(24);
 
-    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout);
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*classLayout);
+    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);
 
     EC::StandaloneECInstanceP instance = enabler->CreateInstance();
     

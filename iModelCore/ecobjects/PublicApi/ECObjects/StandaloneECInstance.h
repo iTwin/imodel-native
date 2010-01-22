@@ -64,12 +64,12 @@ public: // These must be public so that ECXDataEnabler can get at the guts of St
 struct StandaloneECEnabler : public ClassLayoutHolder, public ECEnabler
     {
 private: 
-    StandaloneECEnabler (ClassLayoutCR classLayout);
+    StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR classLayout);
 protected:    
     virtual wchar_t const * _GetName() const override;
         
 public: 
-    ECOBJECTS_EXPORT static StandaloneECEnablerPtr CreateEnabler (ClassLayoutCR classLayout);
+    ECOBJECTS_EXPORT static StandaloneECEnablerPtr CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout);
     ECOBJECTS_EXPORT StandaloneECInstanceP         CreateInstance (UInt32 minimumInitialSize = 0);
     //ECOBJECTS_EXPORT StandaloneECInstanceP         CreateInstanceFromUninitializedMemory (byte * data, UInt32 size);
     //! Used to construct from another memory source like ECXData. The caller is claiming that the memory

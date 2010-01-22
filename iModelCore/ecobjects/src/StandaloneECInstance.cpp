@@ -224,8 +224,8 @@ StatusInt           StandaloneECInstance::_SetValue (const wchar_t * propertyAcc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StandaloneECEnabler::StandaloneECEnabler (ClassLayoutCR classLayout) :
-    ECEnabler (classLayout.GetClass()),
+StandaloneECEnabler::StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR classLayout) :
+    ECEnabler (ecClass),
     ClassLayoutHolder (classLayout)
     {
     }
@@ -233,9 +233,9 @@ StandaloneECEnabler::StandaloneECEnabler (ClassLayoutCR classLayout) :
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StandaloneECEnablerPtr  StandaloneECEnabler::CreateEnabler (ClassLayoutCR classLayout)
+StandaloneECEnablerPtr StandaloneECEnabler::CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout)
     {
-    return new StandaloneECEnabler (classLayout);
+    return new StandaloneECEnabler (ecClass, classLayout);
     }
     
 /*---------------------------------------------------------------------------------**//**
