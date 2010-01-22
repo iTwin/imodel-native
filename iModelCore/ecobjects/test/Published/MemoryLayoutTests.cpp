@@ -399,18 +399,15 @@ TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);
     
-    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, CLASSINDEX_Test, SCHEMAINDEX_Test);
+    SchemaLayout schemaLayout;
+    schemaLayout.SetSchemaIndex(24);
+
+    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
     StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);
-    EC::StandaloneECInstanceFactoryP factory = new StandaloneECInstanceFactory (*ecClass, *classLayout);
     
-    EC::StandaloneECInstanceP instance = NULL;
-    ASSERT_TRUE (SUCCESS == factory->BeginConstruction (instance));    
-    
+    EC::StandaloneECInstanceP instance = enabler->CreateInstance();
     wstring instanceId = instance->GetInstanceId();
-    
     ExerciseInstance (*instance, L"Test");
-    ASSERT_TRUE (SUCCESS == factory->FinishConstruction (instance));    
-    
     instance->Dump();
     
     delete classLayout;
@@ -490,13 +487,13 @@ TEST (MemoryLayoutTests, TestSetGetNull)
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);
         
-    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, CLASSINDEX_Test, SCHEMAINDEX_Test);
+    SchemaLayout schemaLayout;
+    schemaLayout.SetSchemaIndex(24);
+
+    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
     StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);
-    EC::StandaloneECInstanceFactoryP factory = new StandaloneECInstanceFactory (*ecClass, *classLayout);
     
-    EC::StandaloneECInstanceP instance = NULL;
-    ASSERT_TRUE (SUCCESS == factory->BeginConstruction (instance));
-    
+    EC::StandaloneECInstanceP instance = enabler->CreateInstance();
     ECValue v;
     
     EXPECT_TRUE (SUCCESS == instance->GetValue (v, L"D"));
@@ -514,8 +511,6 @@ TEST (MemoryLayoutTests, TestSetGetNull)
         
     SetAndVerifyString (*instance, v, L"S", L"Yo!");
 
-    factory->FinishConstruction(instance);
-    
     EXPECT_TRUE (SUCCESS == instance->GetValue (v, L"D"));
     EXPECT_TRUE (v.IsNull());    
     
@@ -543,79 +538,6 @@ void SetStringToSpecifiedNumberOfCharacters (IECInstanceR instance, int nChars)
     EXPECT_TRUE (SUCCESS == instance.SetValue (L"S", v));
     }
 
-TEST (MemoryLayoutTests, DemonstrateInstanceFactory)
-    {
-    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-
-    ECSchemaPtr schema = CreateTestSchema();
-    ASSERT_TRUE (schema != NULL);
-    ECClassP ecClass = schema->GetClassP (L"TestClass");
-    ASSERT_TRUE (ecClass);
-        
-    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, CLASSINDEX_Test, SCHEMAINDEX_Test);
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);
-
-    EC::StandaloneECInstanceP instance = NULL;
-    
-    UInt32 slack = 0;
-    EC::StandaloneECInstanceFactoryP factory = new StandaloneECInstanceFactory (*ecClass, *classLayout, slack);
-
-    EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));    
-    SetStringToSpecifiedNumberOfCharacters (*instance, 1); // There is no headroom, so this tiny addition triggers a realloc
-    EXPECT_EQ (0, factory->GetReallocationCount()); // Realloc not noticed until the instance is finished
-    EXPECT_TRUE (SUCCESS == factory->FinishConstruction(instance));
-    EXPECT_EQ (1, factory->GetReallocationCount());
-    
-    instance = NULL;
-    EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
-    EXPECT_EQ (1, factory->GetReallocationCount());
-    SetStringToSpecifiedNumberOfCharacters (*instance, 10);
-    EXPECT_TRUE (SUCCESS == factory->FinishConstruction(instance));
-    EXPECT_EQ (1, factory->GetReallocationCount()); // No new realloc, because it doubled its size when it realloced
-    
-    instance = NULL;
-    EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
-    SetStringToSpecifiedNumberOfCharacters (*instance, 1000);  // This is big enough to trigger another realloc.
-    EXPECT_TRUE (SUCCESS == factory->FinishConstruction(instance));
-    EXPECT_EQ (2, factory->GetReallocationCount()); // No new realloc, because it double its size when it realloced
-    
-    factory = new StandaloneECInstanceFactory (*ecClass, *classLayout, slack, 4000);
-    instance = NULL;
-    EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
-    EXPECT_EQ (0, factory->GetReallocationCount()); 
-    SetStringToSpecifiedNumberOfCharacters (*instance, 1000);
-    EXPECT_TRUE (SUCCESS == factory->FinishConstruction(instance));
-    EXPECT_EQ (0, factory->GetReallocationCount()); // We made it big enough the first time
-
-    // Test CancelConstruction
-    instance = NULL;
-    EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
-    SetStringToSpecifiedNumberOfCharacters (*instance, 1000);
-    EXPECT_TRUE (SUCCESS == factory->CancelConstruction(instance));
-    EXPECT_EQ (NULL, instance);
-    
-    // Ensure we can continue to use the factory after a cancel
-    instance = NULL;
-    EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
-    SetStringToSpecifiedNumberOfCharacters (*instance, 1000);
-    EXPECT_TRUE (SUCCESS == factory->CancelConstruction(instance));
-    
-    // The factory only keeps one "under construction" at a time... and it tracks which one it is.
-    EC::StandaloneECInstanceP oldInstance = instance;    
-    factory = new StandaloneECInstanceFactory (*ecClass, *classLayout, slack, 2000);
-    instance = NULL;
-    EXPECT_TRUE (SUCCESS == factory->BeginConstruction (instance));
-    DISABLE_ASSERTS // Otherwise, the lines below would trigger assert.
-    EXPECT_TRUE (SUCCESS != factory->BeginConstruction (oldInstance));
-    EXPECT_TRUE (SUCCESS != factory->FinishConstruction(oldInstance));    
-    EXPECT_TRUE (SUCCESS == factory->FinishConstruction(instance));    
-    EXPECT_TRUE (SUCCESS != factory->FinishConstruction(instance)); // It can only finish once
-
-    delete classLayout;
-
-    CoUninitialize();
-    }
-
 void SetValuesForProfiling (StandaloneECInstanceR instance)
     {
     for (NameVector::const_iterator it = s_propertyNames.begin(); it != s_propertyNames.end(); ++it)
@@ -636,17 +558,12 @@ TEST (MemoryLayoutTests, ProfileSettingValues)
     SchemaLayout schemaLayout;
     schemaLayout.SetSchemaIndex(24);
 
-    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, CLASSINDEX_Test, SCHEMAINDEX_Test);
+    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
     StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);
 
-    EC::StandaloneECInstanceP instance = NULL;
+    EC::StandaloneECInstanceP instance = enabler->CreateInstance();
     
     UInt32 slack = 0;
-    EC::StandaloneECInstanceFactoryP factory = new StandaloneECInstanceFactory (*ecClass, *classLayout, slack);
-
-    ASSERT_TRUE (SUCCESS == factory->BeginConstruction (instance));    
-    ASSERT_TRUE (SUCCESS == factory->FinishConstruction(instance));
-
     double elapsedSeconds = 0.0;
     StopWatch timer (L"Time setting of values in a new StandaloneECInstance", true);
     for (int i = 0; i < nInstances; i++)
