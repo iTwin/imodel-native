@@ -164,13 +164,13 @@ private:
     StatusInt               AddFixedSizeArrayProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor, UInt32 arrayCount);
     StatusInt               AddVariableSizeProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor);
 
-    BentleyStatus           SetClass (ECClassCR ecClass, UInt16 classIndex);
+    BentleyStatus           SetClass (wchar_t const *  className, UInt16 classIndex);
 
     ClassLayout(SchemaIndex schemaIndex);
 
 public:
     ECOBJECTS_EXPORT static ClassLayoutP BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex);
-    ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex);
+    ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (wchar_t const *  className, ClassIndex classIndex, SchemaIndex schemaIndex);
 
     ECOBJECTS_EXPORT std::wstring   GetClassName() const;
     ECOBJECTS_EXPORT ClassIndex     GetClassIndex() const;

@@ -336,11 +336,11 @@ void            ClassLayout::AddProperties (ECClassCR ecClass, wchar_t const * n
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutP    ClassLayout::CreateEmpty (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex)
+ClassLayoutP    ClassLayout::CreateEmpty (wchar_t const* className, ClassIndex classIndex, SchemaIndex schemaIndex)
     {
     ClassLayoutP classLayout = new ClassLayout(schemaIndex);
 
-    classLayout->SetClass (ecClass, classIndex);
+    classLayout->SetClass (className, classIndex);
 
     return classLayout;
     }
@@ -350,7 +350,7 @@ ClassLayoutP    ClassLayout::CreateEmpty (ECClassCR ecClass, ClassIndex classInd
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassLayoutP    ClassLayout::BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex)
     {
-    ClassLayoutP classLayout = CreateEmpty (ecClass, classIndex, schemaIndex);
+    ClassLayoutP classLayout = CreateEmpty (ecClass.GetName().c_str(), classIndex, schemaIndex);
 
     // Iterate through the EC::Properties of the EC::Class and build the layout
     classLayout->AddProperties (ecClass, NULL, true);
@@ -358,19 +358,16 @@ ClassLayoutP    ClassLayout::BuildFromClass (ECClassCR ecClass, ClassIndex class
 
     classLayout->FinishLayout ();
     
-    //wprintf (L"ECClass name=%s\n", ecClass.GetName().c_str());
-    //Dump();
-
     return classLayout;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   ClassLayout::SetClass (ECClassCR ecClass, UInt16 classIndex)
+BentleyStatus   ClassLayout::SetClass (wchar_t const* className, UInt16 classIndex)
     {
     m_classIndex = classIndex;
-    m_className  = ecClass.GetName();
+    m_className  = className;
 
     return SUCCESS;
     }
