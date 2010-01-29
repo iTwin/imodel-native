@@ -9,17 +9,67 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
     
+int g_totalAllocs = 0;
+int g_totalFrees  = 0;
+int g_currentLive = 0;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstance::IECInstance()
     {
+    g_totalAllocs++;
+    g_currentLive++;
+
     size_t sizeofInstance = sizeof(IECInstance);
     size_t sizeofVoid = sizeof (void*);
     
-    assert (sizeof(IECInstance) == sizeof (void*) && L"Increasing the size or memory layout of the base EC::IECInstance will adversely affect subclasses. Think of this as a pure interface... to which you would never be able to add (additional) data, either");
+    assert (sizeof(IECInstance) == sizeof (RefCountedBase) && L"Increasing the size or memory layout of the base EC::IECInstance will adversely affect subclasses. Think of this as a pure interface... to which you would never be able to add (additional) data, either");
     };    
         
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstance::~IECInstance()
+    {
+    g_totalFrees++;
+    g_currentLive--;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void IECInstance::Debug_DumpAllocationStats(const wchar_t* prefix)
+    {
+    if (prefix)
+        printf ("%S", prefix);
+
+    printf (" Live Objects: %d, Total Allocs: %d, TotalFrees: %d\n", g_currentLive, g_totalAllocs, g_totalFrees);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void IECInstance::Debug_GetAllocationStats(int* currentLive, int* totalAllocs, int* totalFrees)
+    {
+    if (currentLive)
+        *currentLive = g_currentLive;
+
+    if (totalAllocs)
+        *totalAllocs = g_totalAllocs;
+
+    if (totalFrees)
+        *totalFrees  = g_totalFrees;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void IECInstance::Debug_ResetAllocationStats()
+    {
+    g_totalAllocs = g_totalFrees = g_currentLive = 0;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -183,6 +233,7 @@ StatusInt           IECInstance::ClearArray (const wchar_t * propertyAccessStrin
     {
     return ECOBJECTS_STATUS_OperationNotSupported;
     }     
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -191,11 +242,4 @@ void                IECInstance::Dump () const
     _Dump();
     }
  
- /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     12/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void                IECInstance::Free ()
-    {
-    _Free();
-    }
 END_BENTLEY_EC_NAMESPACE

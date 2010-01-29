@@ -15,7 +15,8 @@ EC_TYPEDEFS(StandaloneECEnabler);
 BEGIN_BENTLEY_EC_NAMESPACE
 
 #define STANDALONEENABLER_EnablerID     0x00EC3E30 // WIP_FUSION: get a real id
-typedef RefCountedPtr<StandaloneECEnabler> StandaloneECEnablerPtr;
+typedef RefCountedPtr<StandaloneECEnabler>  StandaloneECEnablerPtr;
+typedef RefCountedPtr<StandaloneECInstance> StandaloneECInstancePtr;
     
 //! EC::StandaloneECInstance is the native equivalent of a .NET "Heavyweight" ECInstance.
 //! It holds the values in memory that it allocates... laid out according to the ClassLayout
@@ -50,7 +51,6 @@ protected:
     virtual StatusInt       _GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const override;
     virtual StatusInt       _SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 nIndices, UInt32 const * indices) override;      
     virtual void            _Dump () const;
-    virtual void            _Free () override;
     virtual byte const *    _GetDataForRead () const;
     virtual UInt32          _GetBytesAllocated () const;
     
