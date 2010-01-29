@@ -164,13 +164,13 @@ private:
     StatusInt               AddFixedSizeArrayProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor, UInt32 arrayCount);
     StatusInt               AddVariableSizeProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor);
 
-    BentleyStatus           SetClass (ECClassCR ecClass, UInt16 classIndex);
+    BentleyStatus           SetClass (wchar_t const *  className, UInt16 classIndex);
 
     ClassLayout(SchemaIndex schemaIndex);
 
 public:
     ECOBJECTS_EXPORT static ClassLayoutP BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex);
-    ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex);
+    ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (wchar_t const *  className, ClassIndex classIndex, SchemaIndex schemaIndex);
 
     ECOBJECTS_EXPORT std::wstring   GetClassName() const;
     ECOBJECTS_EXPORT ClassIndex     GetClassIndex() const;
@@ -251,7 +251,8 @@ public:
 //! e.g. StandaloneECInstance and ECXDataInstance
 struct MemoryInstanceSupport
     {
-private:    
+private:
+    bool                        m_allowWritingDirectlyToInstanceMemory;
     byte const *                GetAddressOfPrimitiveValue (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;
     UInt32                      GetOffsetOfPropertyValue (PropertyLayoutCR propertyLayout) const;
     UInt32                      GetOffsetOfPrimitiveValue (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;
@@ -279,6 +280,11 @@ private:
     StatusInt                   GrowPropertyValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 additionalbytesNeeded);
          
 protected:
+    //! Constructor used by subclasses
+    //! @param allowWritingDirectlyToInstanceMemory     If true, MemoryInstanceSupport is allowed to memset, memmove, and poke at the 
+    //!                                                 memory directly, e.g. for StandaloneECIntance.
+    //!                                                 If false, all modifications must happen through _ModifyData, e.g. for ECXData.
+    ECOBJECTS_EXPORT            MemoryInstanceSupport (bool allowWritingDirectlyToInstanceMemory);
     ECOBJECTS_EXPORT void       InitializeMemory(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated) const;
     ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout,      UInt32 nIndices, UInt32 const * indices) const;
     ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ClassLayoutCR classLayout, ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const;
@@ -305,9 +311,8 @@ protected:
     
     //! Free any allocated memory
     virtual void                _FreeAllocation () = 0;
-
+    
 public:
-    ECOBJECTS_EXPORT static void                    SetShiftSecondaryOffsetsInPlace (bool inPlace);
     ECOBJECTS_EXPORT static InstanceHeader const&   PeekInstanceHeader (void const* data);
     };
 
