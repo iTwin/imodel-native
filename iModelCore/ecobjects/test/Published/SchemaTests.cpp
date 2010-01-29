@@ -422,13 +422,13 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);
 
-    const wchar_t *ecSchemaXmlString;
+    std::wstring ecSchemaXmlString;
     
     SchemaSerializationStatus status2 = schema->WriteXmlToString(ecSchemaXmlString);
     EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status2);
     
     ECSchemaPtr deserializedSchema;
-    status = ECSchema::ReadXmlFromString(deserializedSchema, ecSchemaXmlString);
+    status = ECSchema::ReadXmlFromString(deserializedSchema, ecSchemaXmlString.c_str());
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status); 
     wprintf(L"Verifying schema deserialized from string.\n");
     VerifyWidgetsSchema(deserializedSchema);
@@ -500,7 +500,7 @@ TEST(SchemaSerializationTest, ExpectErrorWhenCOMNotInitialized)
     ECSchema::CreateSchema(schema, L"Widget");
     
     DISABLE_ASSERTS
-    const wchar_t *ecSchemaXmlString;
+    std::wstring ecSchemaXmlString;
     
     SchemaSerializationStatus status = schema->WriteXmlToString(ecSchemaXmlString);
         
@@ -548,7 +548,7 @@ TEST(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     //ECSchemaPtr schema4;
     //SchemaDeserializationStatus status3 = ECSchema::ReadXmlFromFile (schema4, L"d:\\temp\\base.xml");
     
-    const wchar_t *ecSchemaXmlString;
+    std::wstring ecSchemaXmlString;
     
     SchemaSerializationStatus status2 = schema->WriteXmlToString(ecSchemaXmlString);
     EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status2);

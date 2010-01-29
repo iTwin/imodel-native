@@ -534,6 +534,66 @@ ClassDeserializationVector&  classes
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaDeserializationStatus ECSchema::ReadSchemaReferencesFromXml
+(
+MSXML2::IXMLDOMNode& schemaNode
+)
+    {
+    SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
+    
+    m_referencedSchemaNamespaceMap.clear();
+
+    MSXML2::IXMLDOMNodeListPtr xmlNodeListPtr = schemaNode.selectNodes (EC_NAMESPACE_PREFIX L":" EC_SCHEMAREFERENCE_ELEMENT L" | " EC_NAMESPACE_PREFIX L":" EC_RELATIONSHIP_CLASS_ELEMENT);
+    MSXML2::IXMLDOMNodePtr xmlNodePtr;
+    
+    while (NULL != (xmlNodePtr = xmlNodeListPtr->nextNode()))
+        {
+        MSXML2::IXMLDOMNamedNodeMapPtr nodeAttributesPtr = xmlNodePtr->attributes;
+        MSXML2::IXMLDOMNodePtr attributePtr;
+
+        if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMAREF_NAME_ATTRIBUTE)))
+            {
+            Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_NAME_ATTRIBUTE L" attribute\n", (const wchar_t *)xmlNodePtr->baseName);
+            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            }
+            
+        const wchar_t *schemaName = (const wchar_t*) attributePtr->text;
+
+        if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMAREF_PREFIX_ATTRIBUTE)))
+            {
+            Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_PREFIX_ATTRIBUTE L" attribute\n", (const wchar_t *)xmlNodePtr->baseName);
+            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            }
+        const wchar_t *prefix = (const wchar_t*) attributePtr->text;
+
+        if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMAREF_VERSION_ATTRIBUTE)))
+            {
+            Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_VERSION_ATTRIBUTE L" attribute\n", (const wchar_t *)xmlNodePtr->baseName);
+            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            }
+        const wchar_t *versionString = (const wchar_t*) attributePtr->text;
+        
+        UInt32 versionMajor;
+        UInt32 versionMinor;
+        if (ECOBJECTS_STATUS_Success != ParseVersionString (versionMajor, versionMinor, versionString))
+            {
+            Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: unable to parse version string for referenced schema %s.", schemaName);
+            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            }
+            
+        // If the schema (uselessly) references itself, just skip it
+        if (wcscmp(m_name.c_str(), schemaName) == 0)
+            continue;
+            
+            
+        }
+        
+    return status;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaDeserializationStatus ECSchema::ReadXml
@@ -580,6 +640,8 @@ MSXML2::IXMLDOMDocument2&           pXmlDoc
             schemaOut->Name.c_str(), schemaOut->VersionMajor, schemaOut->VersionMinor);
 
     // NEEDSWORK Find and deserialize referenced schemas
+    if (SCHEMA_DESERIALIZATION_STATUS_Success != (status = schemaOut->ReadSchemaReferencesFromXml(schemaNodePtr)))
+        return status;
 
     ClassDeserializationVector classes;
     if (SCHEMA_DESERIALIZATION_STATUS_Success != (status = schemaOut->ReadClassStubsFromXml (schemaNodePtr, classes)))
@@ -925,7 +987,7 @@ const wchar_t *     ecSchemaXml
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaSerializationStatus ECSchema::WriteXmlToString
 (
-const wchar_t*  &ecSchemaXml
+std::wstring  &ecSchemaXml
 )
     {
     SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
