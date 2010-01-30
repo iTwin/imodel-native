@@ -545,7 +545,7 @@ MSXML2::IXMLDOMNode& schemaNode
     
     m_referencedSchemaNamespaceMap.clear();
 
-    MSXML2::IXMLDOMNodeListPtr xmlNodeListPtr = schemaNode.selectNodes (EC_NAMESPACE_PREFIX L":" EC_SCHEMAREFERENCE_ELEMENT L" | " EC_NAMESPACE_PREFIX L":" EC_RELATIONSHIP_CLASS_ELEMENT);
+    MSXML2::IXMLDOMNodeListPtr xmlNodeListPtr = schemaNode.selectNodes (EC_NAMESPACE_PREFIX L":" EC_SCHEMAREFERENCE_ELEMENT);
     MSXML2::IXMLDOMNodePtr xmlNodePtr;
     
     while (NULL != (xmlNodePtr = xmlNodeListPtr->nextNode()))
