@@ -277,7 +277,7 @@ public:
 //! Container holding ECProperties that supports STL like iteration
 //
 +===============+===============+===============+===============+===============+======*/
-struct      ECPropertyContainer /*__PUBLISH_ABSTRACT__*/
+struct ECPropertyContainer /*__PUBLISH_ABSTRACT__*/
 {
 /*__PUBLISH_SECTION_END__*/
 private:
@@ -471,7 +471,7 @@ typedef RefCountedPtr<ECSchema>                  ECSchemaPtr;
 //! Supports STL like iterator of classes in a schema
 //
 +===============+===============+===============+===============+===============+======*/
-struct      ECClassContainer /*__PUBLISH_ABSTRACT__*/
+struct ECClassContainer /*__PUBLISH_ABSTRACT__*/
 {
 /*__PUBLISH_SECTION_END__*/
 private:
