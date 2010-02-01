@@ -422,13 +422,13 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);
 
-    const wchar_t *ecSchemaXmlString;
+    std::wstring ecSchemaXmlString;
     
     SchemaSerializationStatus status2 = schema->WriteXmlToString(ecSchemaXmlString);
     EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status2);
     
     ECSchemaPtr deserializedSchema;
-    status = ECSchema::ReadXmlFromString(deserializedSchema, ecSchemaXmlString);
+    status = ECSchema::ReadXmlFromString(deserializedSchema, ecSchemaXmlString.c_str());
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status); 
     wprintf(L"Verifying schema deserialized from string.\n");
     VerifyWidgetsSchema(deserializedSchema);
@@ -500,7 +500,7 @@ TEST(SchemaSerializationTest, ExpectErrorWhenCOMNotInitialized)
     ECSchema::CreateSchema(schema, L"Widget");
     
     DISABLE_ASSERTS
-    const wchar_t *ecSchemaXmlString;
+    std::wstring ecSchemaXmlString;
     
     SchemaSerializationStatus status = schema->WriteXmlToString(ecSchemaXmlString);
         
@@ -548,7 +548,7 @@ TEST(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     //ECSchemaPtr schema4;
     //SchemaDeserializationStatus status3 = ECSchema::ReadXmlFromFile (schema4, L"d:\\temp\\base.xml");
     
-    const wchar_t *ecSchemaXmlString;
+    std::wstring ecSchemaXmlString;
     
     SchemaSerializationStatus status2 = schema->WriteXmlToString(ecSchemaXmlString);
     EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status2);
@@ -588,5 +588,35 @@ TEST(SchemaReferenceTest, AddAndRemoveReferencedSchemas)
     EXPECT_TRUE(schemaIterator == refList.end());
     EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, schema->RemoveReferencedSchema(*refSchema));
     }
-       
+
+TEST(ClassPropertiesTest, ExpectPropertiesInOrder)
+    {
+    std::vector<const wchar_t *> propertyNames;
+    propertyNames.push_back(L"beta");
+    propertyNames.push_back(L"gamma");
+    propertyNames.push_back(L"delta");
+    propertyNames.push_back(L"alpha");
+    
+    ECSchemaPtr schema;
+    ECClassP class1;
+    PrimitiveECPropertyP property1;
+    PrimitiveECPropertyP property2;
+    PrimitiveECPropertyP property3;
+    PrimitiveECPropertyP property4;
+    
+    ECSchema::CreateSchema(schema, L"TestSchema");
+    schema->CreateClass(class1, L"TestClass");
+    class1->CreatePrimitiveProperty(property1, L"beta");
+    class1->CreatePrimitiveProperty(property2, L"gamma");
+    class1->CreatePrimitiveProperty(property3, L"delta");
+    class1->CreatePrimitiveProperty(property4, L"alpha");
+    
+    int i = 0;
+    for each (ECPropertyP prop in class1->Properties)
+        {
+        EXPECT_EQ(propertyNames[i], prop->Name);
+        i++;
+        }
+    }
+          
 END_BENTLEY_EC_NAMESPACE

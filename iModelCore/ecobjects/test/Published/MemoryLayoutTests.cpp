@@ -11,9 +11,6 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-#define CLASSINDEX_Test  42
-#define SCHEMAINDEX_Test 24
-
 using namespace std;
 
 // WIP_FUSION: these verify methods are duplicated in DgnPlatformTest... how do we share that code?    

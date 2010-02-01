@@ -362,7 +362,8 @@ private:
     PropertyMap             m_propertyMap;
     PropertyList            m_propertyList;    
     
-    ECObjectsStatus                     AddProperty (ECPropertyP& pProperty);    
+    ECObjectsStatus                     AddProperty (ECPropertyP& pProperty);
+    ECObjectsStatus                     AddProperty (ECPropertyP pProperty, std::wstring const& name);
 
 protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
@@ -409,6 +410,10 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass);
     ECOBJECTS_EXPORT bool            HasBaseClasses();
 
+    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, std::wstring const& name);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, std::wstring const& name);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, std::wstring const& name);
+     
     //NEEDSWORK: Is method (test if is or derived from class X)
 
     //! Get a property by name within the context of this class and its base classes.
@@ -562,6 +567,7 @@ private:
     typedef std::vector<std::pair<ECClassP, MSXML2_IXMLDOMNodePtr>>  ClassDeserializationVector;
     SchemaDeserializationStatus         ReadClassStubsFromXml(MSXML2_IXMLDOMNode& schemaNodePtr,ClassDeserializationVector& classes);
     SchemaDeserializationStatus         ReadClassContentsFromXml(ClassDeserializationVector&  classes);
+    SchemaDeserializationStatus         ReadSchemaReferencesFromXml(MSXML2_IXMLDOMNode& schemaNodePtr);
     
     SchemaSerializationStatus           WriteSchemaReferences(MSXML2_IXMLDOMElement& parentNode);
     SchemaSerializationStatus           WriteClass(MSXML2_IXMLDOMElement& parentNode, ECClassCR ecClass);
@@ -662,7 +668,7 @@ public:
     //! @param[out] ecSchemaXml     The string containing the Xml of the serialized schema
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml
     //          will contain the serialized schema.  Otherwise, ecSchemaXml will be unmodified
-    ECOBJECTS_EXPORT SchemaSerializationStatus          WriteXmlToString (const wchar_t * & ecSchemaXml);
+    ECOBJECTS_EXPORT SchemaSerializationStatus          WriteXmlToString (std::wstring & ecSchemaXml);
     
     //! Serializes an ECXML schema to a file
     //! Xml Serialization utilizes MSXML through COM. <b>Any thread calling this method must therefore be certain to initialize and
