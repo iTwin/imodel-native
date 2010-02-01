@@ -81,6 +81,12 @@ protected:
         const wchar_t *     m_string;
         bool                m_freeWhenDone;   // WIP_FUSION: this could be stored in the "header"... shared with other DataTypes that need to be freed
         };                                    //             and it would make max size of StringInfo be 8 bytes
+
+    struct BinaryInfo
+        {
+        const byte *        m_data;
+        size_t              m_size;
+        };
         
     union
         {
@@ -95,6 +101,7 @@ protected:
         DPoint3d        m_dpoint3d;   
 #endif
         ArrayInfo       m_arrayInfo;
+        BinaryInfo      m_binaryInfo;
         };
 
     void DeepCopy (ECValueCR v);
@@ -114,6 +121,7 @@ public:
     ECOBJECTS_EXPORT explicit ECValue (::Int32 integer32);
     ECOBJECTS_EXPORT explicit ECValue (::Int64 long64);
     ECOBJECTS_EXPORT explicit ECValue (const wchar_t * string, bool holdADuplicate = true);
+    ECOBJECTS_EXPORT explicit ECValue (const byte * blob, size_t size);
 
     ECOBJECTS_EXPORT void           SetReadOnly(bool isReadOnly);
 
@@ -128,6 +136,7 @@ public:
     ECOBJECTS_EXPORT bool           IsInteger () const;
     ECOBJECTS_EXPORT bool           IsLong () const;
     ECOBJECTS_EXPORT bool           IsDouble () const;
+    ECOBJECTS_EXPORT bool           IsBinary () const;
     
     ECOBJECTS_EXPORT bool           IsArray () const;
     ECOBJECTS_EXPORT bool           IsStruct () const;
@@ -143,19 +152,22 @@ public:
     ECOBJECTS_EXPORT StatusInt      SetPrimitiveArrayInfo (PrimitiveType primitiveElementtype, UInt32 count, bool isFixedSize);
     ECOBJECTS_EXPORT ArrayInfo      GetArrayInfo();
     
-    ECOBJECTS_EXPORT Int32          GetInteger() const;
+    ECOBJECTS_EXPORT Int32          GetInteger () const;
     ECOBJECTS_EXPORT StatusInt      SetInteger (Int32 integer);
     
-    ECOBJECTS_EXPORT Int64          GetLong() const;
+    ECOBJECTS_EXPORT Int64          GetLong () const;
     ECOBJECTS_EXPORT StatusInt      SetLong (Int64 long64);
     
     //! @returns    The double held by the ECValue, or std::numeric_limits<double>::quiet_NaN() if it is not a double or IsNull
-    ECOBJECTS_EXPORT double         GetDouble() const;
+    ECOBJECTS_EXPORT double         GetDouble () const;
     ECOBJECTS_EXPORT StatusInt      SetDouble (double value);  
         
-    ECOBJECTS_EXPORT const wchar_t *GetString() const;
+    ECOBJECTS_EXPORT const wchar_t *GetString () const;
     ECOBJECTS_EXPORT StatusInt      SetString (const wchar_t * string, bool holdADuplicate = true);
-    
+
+    ECOBJECTS_EXPORT const byte *   GetBinary (size_t& size) const;
+    ECOBJECTS_EXPORT StatusInt      SetBinary (const byte * string, size_t size);
+        
     //! This is intended for debugging purposes, not for presentation purposes.
     ECOBJECTS_EXPORT std::wstring   ToString () const;
     

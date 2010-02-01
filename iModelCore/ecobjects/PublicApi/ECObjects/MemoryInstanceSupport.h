@@ -12,7 +12,8 @@
 #include <hash_map>
 
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
-
+#define PROPERTYLAYOUT_Source_ECPointer L"Source ECPointer"
+#define PROPERTYLAYOUT_Target_ECPointer L"Target ECPointer"
 EC_TYPEDEFS(MemoryInstanceSupport);
 
 BEGIN_BENTLEY_EC_NAMESPACE
@@ -157,6 +158,9 @@ private:
     State                   m_state;
     UInt32                  m_offset;
     UInt32                  m_sizeOfFixedSection;
+    bool                    m_isRelationshipClass;
+    int                     m_propertyIndexOfSourceECPointer;
+    int                     m_propertyIndexOfTargetECPointer;
     
     void                    AddProperties (ECClassCR ecClass, wchar_t const * nameRoot, bool addFixedSize);
     StatusInt               AddProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor, UInt32 size, UInt32 modifierFlags = 0, UInt32 modifierData = 0);
@@ -185,17 +189,16 @@ public:
     ECOBJECTS_EXPORT StatusInt      FinishLayout ();
 /*__PUBLISH_SECTION_START__*/
 
-    void                        Dump() const;
+    void                            Dump() const;
     
-    void                        InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const;
+    void                            InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const;
     
-    static UInt32               GetFixedPrimitiveValueSize (PrimitiveType primitiveType); // WIP_FUSION: move to ecvalue.h
-    UInt32                      GetSizeOfFixedSection() const;
+    static UInt32                   GetFixedPrimitiveValueSize (PrimitiveType primitiveType); // WIP_FUSION: move to ecvalue.h
+    UInt32                          GetSizeOfFixedSection() const;
     
     //! Determines the number of bytes used, so far
-    ECOBJECTS_EXPORT UInt32     CalculateBytesUsed(byte const * data) const;
+    ECOBJECTS_EXPORT UInt32         CalculateBytesUsed(byte const * data) const;
     };
-    
 /*=================================================================================**//**
 * @bsistruct
 +===============+===============+===============+===============+===============+======*/      
