@@ -35,6 +35,7 @@ private:
     //! The StandaloneECInstance will take ownership of the memory
     StandaloneECInstance (StandaloneECEnablerCR enabler, byte * data, UInt32 size);
     StandaloneECInstance (StandaloneECEnablerCR enabler, UInt32 minimumBufferSize);
+    ~StandaloneECInstance ();
     
     virtual bool      _IsMemoryInitialized () const;
     virtual byte *    _GetDataForWrite () const;

@@ -41,10 +41,10 @@ IECInstance::~IECInstance()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void IECInstance::Debug_DumpAllocationStats(const wchar_t* prefix)
     {
-    if (prefix)
-        printf ("%S", prefix);
+    if (!prefix)
+        prefix = L"";
 
-    printf (" Live Objects: %d, Total Allocs: %d, TotalFrees: %d\n", g_currentLive, g_totalAllocs, g_totalFrees);
+    Logger::GetLogger()->debugv (L"%s Live Objects: %d, Total Allocs: %d, TotalFrees: %d", prefix, g_currentLive, g_totalAllocs, g_totalFrees);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -33,6 +33,11 @@ StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, UInt3
     ClearValues();
     }
     
+StandaloneECInstance::~StandaloneECInstance ()
+    {
+    Logger::GetLogger()->tracev (L"StandaloneECInstance at 0x%x is being destructed. It references enabler 0x%x", this, m_standaloneEnabler);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        

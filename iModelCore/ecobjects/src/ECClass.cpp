@@ -23,8 +23,8 @@ ECClass::~ECClass
 )
     {
     // NEEDSWORK make sure everything is destroyed
-    Logger::GetLogger()->tracev (L"~~~~ Destroying ECClass %s\n", this->Name.c_str());
-    Logger::GetLogger()->tracev  (L"     Freeing memory for %d properties\n", m_propertyMap.size());
+    //Logger::GetLogger()->tracev (L"~~~~ Destroying ECClass %s\n", this->Name.c_str());
+    //Logger::GetLogger()->tracev  (L"     Freeing memory for %d properties\n", m_propertyMap.size());
     
     m_propertyList.clear();
     
