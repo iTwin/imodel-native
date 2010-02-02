@@ -36,7 +36,7 @@ bool            ECValue::IsNull() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ValueKind     ECValue::GetKind() const 
+ValueKind       ECValue::GetKind() const 
     { 
     return (ValueKind) (m_valueKind & 0xFF);
     }
@@ -56,7 +56,13 @@ bool            ECValue::IsString () const
     { 
     return m_primitiveType == PRIMITIVETYPE_String; 
     }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            ECValue::IsBinary () const 
+    { 
+    return m_primitiveType == PRIMITIVETYPE_Binary; 
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -263,7 +269,7 @@ ECValue::ECValue (::Int64 long64)
     };
             
 /*---------------------------------------------------------------------------------**//**
-* @param holdADuplicate     IN  If true, EC::ECValue will make a duplicate, otherwise 
+* @param holdADuplicate     If true, EC::ECValue will make a duplicate, otherwise 
 * EC::ECValue holds the original pointer. Intended only for use when initializing arrays of strings, to avoid duplicating them twice.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -271,12 +277,23 @@ ECValue::ECValue (const wchar_t * string, bool holdADuplicate)
     {
     ConstructUninitialized();
     SetString (string, holdADuplicate);
-    };    
+    };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    AdamKlatzkin    10/10
+* The ECValue is never responsible for freeing the memory... its creator is. 
+* The consumer of the ECValue should make a copy of the memory.
+* @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-PrimitiveType         ECValue::GetPrimitiveType() const
+ECValue::ECValue (const byte * data, size_t size)
+    {
+    ConstructUninitialized();
+    SetBinary (data, size);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    AdamKlatzkin    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+PrimitiveType   ECValue::GetPrimitiveType() const
     {
     PRECONDITION (IsPrimitive() && "Tried to get the primitive type of an EC::ECValue that is not classified as a primitive.", (PrimitiveType)0);    
     return m_primitiveType;
@@ -399,6 +416,32 @@ StatusInt ECValue::SetString (const wchar_t * string, bool holdADuplicate)
     return SUCCESS;
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+const byte * ECValue::GetBinary(size_t& size) const
+    {
+    PRECONDITION (IsBinary() && "Tried to get binarydata from an EC::ECValue that is not binary.", NULL);
+    size = m_binaryInfo.m_size;
+    return m_binaryInfo.m_data;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt ECValue::SetBinary (const byte * data, size_t size)
+    {
+    PRECONDITION (NULL != data && size != 0, ERROR);
+    Clear();
+
+    m_primitiveType = PRIMITIVETYPE_Binary;
+    m_binaryInfo.m_data = data;
+    m_binaryInfo.m_size = size;
+    m_isNull = false;
+
+    return SUCCESS;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
@@ -530,7 +573,7 @@ bool            ArrayInfo::IsFixedCount() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ValueKind        ArrayInfo::GetKind() const
+ValueKind       ArrayInfo::GetKind() const
     {        
     return (ValueKind) (m_arrayKind & 0xFF); 
     }  
@@ -538,7 +581,7 @@ ValueKind        ArrayInfo::GetKind() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-PrimitiveType        ArrayInfo::GetElementPrimitiveType() const
+PrimitiveType   ArrayInfo::GetElementPrimitiveType() const
     {        
     PRECONDITION (IsPrimitiveArray() && "Tried to get the element primitive type of an ArrayInfo that is not classified as a primitive array.", (PrimitiveType)0);    
     return m_elementPrimitiveType;
@@ -547,7 +590,7 @@ PrimitiveType        ArrayInfo::GetElementPrimitiveType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool        ArrayInfo::IsPrimitiveArray() const
+bool            ArrayInfo::IsPrimitiveArray() const
     {        
     return GetKind() == ARRAYKIND_Primitive; 
     }  
@@ -555,7 +598,7 @@ bool        ArrayInfo::IsPrimitiveArray() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool        ArrayInfo::IsStructArray() const
+bool            ArrayInfo::IsStructArray() const
     {        
     return GetKind() == ARRAYKIND_Struct; 
     }  

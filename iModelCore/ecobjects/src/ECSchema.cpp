@@ -22,10 +22,10 @@ ECSchema::~ECSchema
 )
     {
     // NEEDSWORK make sure everything is destroyed
-    Logger::GetLogger()->debugv (L"~~~~ Destroying ECSchema: %s\n", GetName().c_str());
+    //Logger::GetLogger()->debugv (L"~~~~ Destroying ECSchema: %s\n", GetName().c_str());
     ClassMap::iterator          classIterator = m_classMap.begin();
     ClassMap::const_iterator    classEnd = m_classMap.end();        
-    Logger::GetLogger()->debugv(L"     Freeing memory for %d classes\n", m_classMap.size());
+    //Logger::GetLogger()->debugv(L"     Freeing memory for %d classes\n", m_classMap.size());
     while (classIterator != classEnd)
         {
         ECClassP ecClass = classIterator->second;        
@@ -408,7 +408,7 @@ ECClassContainerCR ECSchema::GetClasses
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-const ECSchemaReferenceVector& ECSchema::GetReferencedSchemas
+const ECSchemaReferenceList& ECSchema::GetReferencedSchemas
 (
 ) const
     {
@@ -423,7 +423,7 @@ ECObjectsStatus ECSchema::AddReferencedSchema
 Bentley::EC::ECSchemaCR refSchema
 )
     {
-    ECSchemaReferenceVector::const_iterator schemaIterator;
+    ECSchemaReferenceList::const_iterator schemaIterator;
     for (schemaIterator = m_refSchemaList.begin(); schemaIterator != m_refSchemaList.end(); schemaIterator++)
         {
         if (*schemaIterator == (ECSchemaP) &refSchema)
@@ -433,7 +433,28 @@ Bentley::EC::ECSchemaCR refSchema
     m_refSchemaList.push_back((ECSchemaP) &refSchema);
     
     return ECOBJECTS_STATUS_Success;
-    }  
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::RemoveReferencedSchema
+(
+Bentley::EC::ECSchemaCR refSchema
+)
+    {
+    ECSchemaReferenceList::const_iterator schemaIterator;
+    for (schemaIterator = m_refSchemaList.begin(); schemaIterator != m_refSchemaList.end(); schemaIterator++)
+        {
+        if (*schemaIterator == (ECSchemaP) &refSchema)
+            {
+            m_refSchemaList.erase(schemaIterator);
+            return ECOBJECTS_STATUS_Success;
+            }
+        }
+    return ECOBJECTS_STATUS_SchemaNotFound;
+    }
+    
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -513,6 +534,66 @@ ClassDeserializationVector&  classes
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaDeserializationStatus ECSchema::ReadSchemaReferencesFromXml
+(
+MSXML2::IXMLDOMNode& schemaNode
+)
+    {
+    SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
+    
+    m_referencedSchemaNamespaceMap.clear();
+
+    MSXML2::IXMLDOMNodeListPtr xmlNodeListPtr = schemaNode.selectNodes (EC_NAMESPACE_PREFIX L":" EC_SCHEMAREFERENCE_ELEMENT);
+    MSXML2::IXMLDOMNodePtr xmlNodePtr;
+    
+    while (NULL != (xmlNodePtr = xmlNodeListPtr->nextNode()))
+        {
+        MSXML2::IXMLDOMNamedNodeMapPtr nodeAttributesPtr = xmlNodePtr->attributes;
+        MSXML2::IXMLDOMNodePtr attributePtr;
+
+        if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMAREF_NAME_ATTRIBUTE)))
+            {
+            Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_NAME_ATTRIBUTE L" attribute\n", (const wchar_t *)xmlNodePtr->baseName);
+            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            }
+            
+        const wchar_t *schemaName = (const wchar_t*) attributePtr->text;
+
+        if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMAREF_PREFIX_ATTRIBUTE)))
+            {
+            Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_PREFIX_ATTRIBUTE L" attribute\n", (const wchar_t *)xmlNodePtr->baseName);
+            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            }
+        const wchar_t *prefix = (const wchar_t*) attributePtr->text;
+
+        if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMAREF_VERSION_ATTRIBUTE)))
+            {
+            Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_VERSION_ATTRIBUTE L" attribute\n", (const wchar_t *)xmlNodePtr->baseName);
+            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            }
+        const wchar_t *versionString = (const wchar_t*) attributePtr->text;
+        
+        UInt32 versionMajor;
+        UInt32 versionMinor;
+        if (ECOBJECTS_STATUS_Success != ParseVersionString (versionMajor, versionMinor, versionString))
+            {
+            Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: unable to parse version string for referenced schema %s.", schemaName);
+            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            }
+            
+        // If the schema (uselessly) references itself, just skip it
+        if (wcscmp(m_name.c_str(), schemaName) == 0)
+            continue;
+            
+            
+        }
+        
+    return status;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaDeserializationStatus ECSchema::ReadXml
@@ -559,6 +640,8 @@ MSXML2::IXMLDOMDocument2&           pXmlDoc
             schemaOut->Name.c_str(), schemaOut->VersionMajor, schemaOut->VersionMinor);
 
     // NEEDSWORK Find and deserialize referenced schemas
+    if (SCHEMA_DESERIALIZATION_STATUS_Success != (status = schemaOut->ReadSchemaReferencesFromXml(schemaNodePtr)))
+        return status;
 
     ClassDeserializationVector classes;
     if (SCHEMA_DESERIALIZATION_STATUS_Success != (status = schemaOut->ReadClassStubsFromXml (schemaNodePtr, classes)))
@@ -600,12 +683,12 @@ MSXML2::IXMLDOMElement &parentNode
 )
     {
     SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
-    ECSchemaReferenceVector referencedSchemas = GetReferencedSchemas();
+    ECSchemaReferenceList referencedSchemas = GetReferencedSchemas();
     
     std::set<const std::wstring> usedPrefixes;
     std::set<const std::wstring>::const_iterator setIterator;
     m_referencedSchemaNamespaceMap.clear();
-    ECSchemaReferenceVector::const_iterator schemaIterator;
+    ECSchemaReferenceList::const_iterator schemaIterator;
     for (schemaIterator = m_refSchemaList.begin(); schemaIterator != m_refSchemaList.end(); schemaIterator++)
         {
         ECSchemaP refSchema = *schemaIterator;
@@ -904,7 +987,7 @@ const wchar_t *     ecSchemaXml
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaSerializationStatus ECSchema::WriteXmlToString
 (
-const wchar_t*  &ecSchemaXml
+std::wstring  &ecSchemaXml
 )
     {
     SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;

@@ -28,6 +28,7 @@ bool            PrimitiveTypeIsFixedSize (PrimitiveType primitiveType)
         case PRIMITIVETYPE_Double:
             return true;
         case PRIMITIVETYPE_String:
+        case PRIMITIVETYPE_Binary:
             return false;
         default:
             DEBUG_FAIL("Unsupported data type");
@@ -130,16 +131,15 @@ UInt32          PropertyLayout::GetSizeInFixedSection () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayout::ClassLayout(SchemaLayoutCR schemaLayout) 
-    : 
-    m_schemaLayout (schemaLayout),
+ClassLayout::ClassLayout(SchemaIndex schemaIndex) : 
+    m_schemaIndex (schemaIndex),
     m_state(AcceptingFixedSizeProperties), 
-    m_class(NULL),
     m_classIndex(0),
     m_nProperties(0), 
-    m_nullflagsOffset (0),
-    m_offset(sizeof(InstanceFlags)), // The first 32 bits are reserved for flags/future
-    m_sizeOfFixedSection(0)
+    m_nullflagsOffset (sizeof(InstanceHeader)),
+    m_offset(sizeof(InstanceHeader) + sizeof(NullflagsBitmask)),
+    m_sizeOfFixedSection(0), 
+    m_isRelationshipClass(false), m_propertyIndexOfSourceECPointer(-1), m_propertyIndexOfTargetECPointer(-1)
     {
     };
     
@@ -171,10 +171,15 @@ UInt32          ClassLayout::GetSizeOfFixedSection() const
 void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const
     {
     UInt32 sizeOfFixedSection = GetSizeOfFixedSection();
-    memset (data, 0, sizeof(InstanceFlags)); 
+    memset (data, 0, sizeof(InstanceHeader)); 
     
+    InstanceHeader& header = *(InstanceHeader*) data;
+    header.m_schemaIndex   = m_schemaIndex;
+    header.m_classIndex    = m_classIndex;
+    header.m_instanceFlags = 0;
+
     UInt32 nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks ((UInt32)m_propertyLayouts.size());
-    InitializeNullFlags ((NullflagsBitmask *)(data + sizeof (InstanceFlags)), nNullflagsBitmasks);
+    InitializeNullFlags ((NullflagsBitmask *)(data + sizeof (InstanceHeader)), nNullflagsBitmasks);
             
     bool isFirstVariableSizedProperty = true;
     for (UInt32 i = 0; i < m_propertyLayouts.size(); ++i)
@@ -231,9 +236,17 @@ UInt32          ClassLayout::CalculateBytesUsed(byte const * data) const
     }
     
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaIndex     ClassLayout::GetSchemaIndex() const
+    {
+    return m_schemaIndex;
+    } 
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt16          ClassLayout::GetClassIndex() const
+ClassIndex      ClassLayout::GetClassIndex() const
     {
     return m_classIndex;
     } 
@@ -261,26 +274,23 @@ void            ClassLayout::AddProperties (ECClassCR ecClass, wchar_t const * n
         if (property->GetIsPrimitive())
             {
             PrimitiveECPropertyP  primitiveProp = property->GetAsPrimitiveProperty();
-            PrimitiveType       primitiveType = primitiveProp->GetType();
+            PrimitiveType         primitiveType = primitiveProp->GetType();
 
             bool isFixedSize = PrimitiveTypeIsFixedSize(primitiveType);
 
             if (addingFixedSizeProps && isFixedSize)
                 AddFixedSizeProperty (propName.c_str(), primitiveType);
-            else
-            if ( ! addingFixedSizeProps && ! isFixedSize)
+            else if ( ! addingFixedSizeProps && ! isFixedSize)
                 AddVariableSizeProperty (propName.c_str(), primitiveType);
             }
-        else
-        if (property->GetIsStruct())
+        else if (property->GetIsStruct())
             {
             StructECPropertyP  structProp = property->GetAsStructProperty();
             ECClassCR          nestedClass = structProp->GetType();
             
             AddProperties (nestedClass, propName.c_str(), addingFixedSizeProps);
             }
-        else
-        if (property->GetIsArray())
+        else if (property->GetIsArray())
             {            
             ArrayECPropertyP  arrayProp = property->GetAsArrayProperty();            
             ArrayKind arrayKind = arrayProp->GetKind();
@@ -343,11 +353,11 @@ void            ClassLayout::AddProperties (ECClassCR ecClass, wchar_t const * n
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutP    ClassLayout::CreateEmpty (ECClassCR ecClass, ClassIndex classIndex, SchemaLayoutCR schemaLayout)
+ClassLayoutP    ClassLayout::CreateEmpty (wchar_t const* className, ClassIndex classIndex, SchemaIndex schemaIndex)
     {
-    ClassLayoutP classLayout = new ClassLayout(schemaLayout);
+    ClassLayoutP classLayout = new ClassLayout(schemaIndex);
 
-    classLayout->SetClass (ecClass, classIndex);
+    classLayout->SetClass (className, classIndex);
 
     return classLayout;
     }
@@ -355,30 +365,33 @@ ClassLayoutP    ClassLayout::CreateEmpty (ECClassCR ecClass, ClassIndex classInd
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutP    ClassLayout::BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaLayoutCR schemaLayout)
+ClassLayoutP    ClassLayout::BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex)
     {
-    ClassLayoutP classLayout = CreateEmpty (ecClass, classIndex, schemaLayout);
+    ClassLayoutP classLayout = CreateEmpty (ecClass.GetName().c_str(), classIndex, schemaIndex);
+    classLayout->m_isRelationshipClass = (dynamic_cast<ECRelationshipClassCP>(&ecClass) != NULL);
 
-    // Iterate through the EC::Properties of the EC::Class and build the layout
+    // Iterate through the ECProperties of the ECClass and build the layout
     classLayout->AddProperties (ecClass, NULL, true);
     classLayout->AddProperties (ecClass, NULL, false);
 
+    if (classLayout->m_isRelationshipClass)
+        {
+        classLayout->AddVariableSizeProperty (PROPERTYLAYOUT_Source_ECPointer, PRIMITIVETYPE_Binary);
+        classLayout->AddVariableSizeProperty (PROPERTYLAYOUT_Target_ECPointer, PRIMITIVETYPE_Binary);
+        }
+
     classLayout->FinishLayout ();
     
-    //wprintf (L"ECClass name=%s\n", ecClass.GetName().c_str());
-    //Dump();
-
     return classLayout;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   ClassLayout::SetClass (ECClassCR ecClass, UInt16 classIndex)
+BentleyStatus   ClassLayout::SetClass (wchar_t const* className, UInt16 classIndex)
     {
-    m_class      = &ecClass;
     m_classIndex = classIndex;
-    m_className  = ecClass.GetName(); // WIP_FUSION: remove this redundant information
+    m_className  = className;
 
     return SUCCESS;
     }
@@ -386,16 +399,9 @@ BentleyStatus   ClassLayout::SetClass (ECClassCR ecClass, UInt16 classIndex)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/  
-ECClassCR       ClassLayout::GetClass () const
-    {
-    return *m_class;
-    }    
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/  
 StatusInt       ClassLayout::FinishLayout ()
     {
+    DEBUG_EXPECT (m_nProperties == m_propertyLayouts.size());
     m_state = Closed;
     for (UInt32 i = 0; i < m_propertyLayouts.size(); i++)
         {
@@ -404,33 +410,27 @@ StatusInt       ClassLayout::FinishLayout ()
         }
         
     // Calculate size of fixed section    
-    if (0 >= m_propertyLayouts.size())
+    if (0 == m_propertyLayouts.size())
         {
         m_sizeOfFixedSection = 0;
-        }
-    else
-        {
-        PropertyLayoutCR lastPropertyLayout = m_propertyLayouts[m_propertyLayouts.size() - 1];
-
-        UInt32  size = (UInt32)lastPropertyLayout.GetOffset() + lastPropertyLayout.GetSizeInFixedSection();
-
-        if (!lastPropertyLayout.IsFixedSized())
-            size += sizeof(SecondaryOffset); // There is one additional SecondaryOffset tracking the end of the last variable-sized value
-
-        m_sizeOfFixedSection = size;
-        }
-            
-#ifndef NDEBUG
-    DEBUG_EXPECT (m_nProperties == m_propertyLayouts.size());
-    if (0 == m_propertyLayouts.size())
         return SUCCESS;
-    
+        }
+
+    PropertyLayoutCR lastPropertyLayout = m_propertyLayouts[m_propertyLayouts.size() - 1];
+    UInt32    size = lastPropertyLayout.GetOffset() + lastPropertyLayout.GetSizeInFixedSection();
+
+    if ( ! lastPropertyLayout.IsFixedSized())
+        size += sizeof(SecondaryOffset); // There is one additional SecondaryOffset tracking the end of the last variable-sized value
+
+    m_sizeOfFixedSection = size;
+
+#ifndef NDEBUG
     UInt32 nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks ((UInt32)m_propertyLayouts.size());
-    
-    DEBUG_EXPECT (m_propertyLayouts[0].m_offset == sizeof(InstanceFlags) + nNullflagsBitmasks * sizeof(NullflagsBitmask));
+    DEBUG_EXPECT (m_propertyLayouts[0].m_offset == sizeof(InstanceHeader) + nNullflagsBitmasks * sizeof(NullflagsBitmask));
+
     for (UInt32 i = 0; i < m_propertyLayouts.size(); i++)
         {
-        UInt32 expectedNullflagsOffset = (i / BITS_PER_NULLFLAGSBITMASK * sizeof(NullflagsBitmask)) + sizeof(InstanceFlags);
+        UInt32 expectedNullflagsOffset = (i / BITS_PER_NULLFLAGSBITMASK * sizeof(NullflagsBitmask)) + sizeof(InstanceHeader);
         DEBUG_EXPECT (m_propertyLayouts[i].m_nullflagsOffset == expectedNullflagsOffset);
         }     
 #endif
@@ -457,6 +457,46 @@ UInt32          ClassLayout::GetFixedPrimitiveValueSize (PrimitiveType primitive
     }
   
 /*---------------------------------------------------------------------------------**//**
+* This method is called by SchemaLayoutElementHandler's BuildClassLayout() when deserializing ClassLayouts,
+* as well as when building them with BuildFromClass
+* @bsimethod                                                    JoshSchifter    01/10
++---------------+---------------+---------------+---------------+---------------+------*/     
+void            ClassLayout::AddPropertyDirect
+(
+wchar_t const * accessString,
+PrimitiveType   primitivetype,
+UInt32          offset,
+UInt32          nullflagsOffset,
+UInt32          nullflagsBitmask
+)
+    {
+    PropertyLayout propertyLayout (accessString, primitivetype, offset, nullflagsOffset, nullflagsBitmask);
+
+    m_nProperties++;
+   
+    m_propertyLayouts.push_back(propertyLayout);
+
+    if (m_offset < offset)
+        m_offset = offset;
+
+    if (m_nullflagsOffset < nullflagsOffset)
+        m_nullflagsOffset = nullflagsOffset;
+
+    // Remember indices of source and target ECPointers for fast lookup
+    if (0 == wcscmp (PROPERTYLAYOUT_Source_ECPointer, accessString))
+        {
+        m_isRelationshipClass = true;
+        m_propertyIndexOfSourceECPointer = m_nProperties - 1;
+        }
+        
+    if (0 == wcscmp (PROPERTYLAYOUT_Target_ECPointer, accessString))
+        {
+        m_isRelationshipClass = true;
+        m_propertyIndexOfTargetECPointer = m_nProperties - 1;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
 StatusInt       ClassLayout::AddProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 size, UInt32 modifierFlags, UInt32 modifierData)
@@ -464,11 +504,11 @@ StatusInt       ClassLayout::AddProperty (wchar_t const * accessString, ECTypeDe
     UInt32  positionInCurrentNullFlags = m_nProperties % 32;
     NullflagsBitmask  nullflagsBitmask = 0x01 << positionInCurrentNullFlags;
     
-    if (0 == positionInCurrentNullFlags)
+    if (0 == positionInCurrentNullFlags && 0 != m_nProperties)
         {
         // It is time to add a new set of Nullflags
-        m_nullflagsOffset = m_nullflagsOffset + sizeof(NullflagsBitmask);
-        m_offset += sizeof(NullflagsBitmask);
+        m_nullflagsOffset += sizeof(NullflagsBitmask);
+        m_offset          += sizeof(NullflagsBitmask);
         for (UInt32 i = 0; i < m_propertyLayouts.size(); i++)
             m_propertyLayouts[i].m_offset += sizeof(NullflagsBitmask); // Offsets of already-added property layouts need to get bumped up
         } 
@@ -478,7 +518,7 @@ StatusInt       ClassLayout::AddProperty (wchar_t const * accessString, ECTypeDe
     // then you do not specify an index.  I'd like to consider an update to this so if an access string does not include the [] then we always return the ArrayInfo value.
     std::wstring tempAccessString = accessString;
     if (typeDescriptor.IsArray())
-        tempAccessString += L"[]";            
+        tempAccessString += L"[]";
 
     PropertyLayout propertyLayout (tempAccessString.c_str(), typeDescriptor, m_offset, m_nullflagsOffset, nullflagsBitmask, modifierFlags, modifierData);
 
@@ -618,14 +658,14 @@ SchemaLayoutEntry*  SchemaLayout::GetEntry (ClassIndex classIndex)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaLayoutEntry*  SchemaLayout::FindEntry (ECClassCR ecClass)
+SchemaLayoutEntry*  SchemaLayout::FindEntry (wchar_t const * className)
     {
     for each (SchemaLayoutEntry* entry in m_entries)
         {
         if (NULL == entry)
             continue;
 
-        if (&entry->m_classLayout.GetClass() == &ecClass)
+        if (0 == wcsicmp (entry->m_classLayout.GetClassName().c_str(), className))
             return entry;
         }
 
@@ -667,9 +707,7 @@ ClassLayoutHolder::ClassLayoutHolder (ClassLayoutCR classLayout) : m_classLayout
 ClassLayoutCR    ClassLayoutHolder::GetClassLayout() const 
     {
     return m_classLayout;
-    }
-    
-static int s_shiftSecondaryOffsetsInPlace = false; 
+    }    
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
@@ -680,11 +718,19 @@ UInt32          MemoryInstanceSupport::GetPropertyValueSize (PropertyLayoutCR pr
         return propertyLayout.GetSizeInFixedSection();
     else
         {
-        SecondaryOffset* pSecondaryOffset = (SecondaryOffset*)(_GetDataForRead() + propertyLayout.GetOffset());
+        SecondaryOffset* pSecondaryOffset = (SecondaryOffset*)(_GetData() + propertyLayout.GetOffset());
         SecondaryOffset* pNextOffset = pSecondaryOffset + 1;        
         return *pNextOffset - *pSecondaryOffset;        
         }
     }    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceHeader const&    MemoryInstanceSupport::PeekInstanceHeader (void const* data)
+    {
+    return * ((InstanceHeader const*) data);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin    01/10
@@ -697,7 +743,7 @@ UInt32          MemoryInstanceSupport::GetOffsetOfArray (PropertyLayoutCR proper
         }
     else
         {
-        SecondaryOffset* pSecondaryOffset = (SecondaryOffset*)(_GetDataForRead() + propertyLayout.GetOffset());        
+        SecondaryOffset* pSecondaryOffset = (SecondaryOffset*)(_GetData() + propertyLayout.GetOffset());        
         return *pSecondaryOffset;
         }
     }
@@ -722,14 +768,14 @@ ArrayCount      MemoryInstanceSupport::GetAllocatedArrayCount (PropertyLayoutCR 
         return propertyLayout.GetModifierData();
     else
         {
-        SecondaryOffset* pSecondaryOffset = (SecondaryOffset*)(_GetDataForRead() + propertyLayout.GetOffset());
+        SecondaryOffset* pSecondaryOffset = (SecondaryOffset*)(_GetData() + propertyLayout.GetOffset());
         SecondaryOffset* pNextOffset = pSecondaryOffset + 1;        
         
         SecondaryOffset arrayOffset = *pSecondaryOffset;
         if ((arrayOffset == 0) || (*pNextOffset == 0) || (arrayOffset == *pNextOffset))
             return 0;
 
-        byte const * pCount = _GetDataForRead() + arrayOffset;
+        byte const * pCount = _GetData() + arrayOffset;
         return *((ArrayCount*)pCount);
         }
     }    
@@ -740,11 +786,11 @@ ArrayCount      MemoryInstanceSupport::GetAllocatedArrayCount (PropertyLayoutCR 
 byte const *    MemoryInstanceSupport::GetAddressOfPrimitiveValue (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const
     {
     if (nIndices == 0)
-        return _GetDataForRead() + GetOffsetOfPropertyValue (propertyLayout);
+        return _GetData() + GetOffsetOfPropertyValue (propertyLayout);
     else
         {
         UInt32 arrayOffset = GetOffsetOfArray (propertyLayout);   
-        return _GetDataForRead() + GetOffsetOfArrayIndexValue (arrayOffset, propertyLayout, *indices);
+        return _GetData() + GetOffsetOfArrayIndexValue (arrayOffset, propertyLayout, *indices);
         }
     } 
 
@@ -780,7 +826,7 @@ void   MemoryInstanceSupport::PrepareToAccessNullFlags (UInt32& nullflagsOffset,
         if (propertyLayout.IsFixedSized())
             nullflagsOffset = propertyLayout.GetOffset();
         else
-            nullflagsOffset = *((SecondaryOffset*)(_GetDataForRead() + propertyLayout.GetOffset())) + sizeof (ArrayCount);
+            nullflagsOffset = *((SecondaryOffset*)(_GetData() + propertyLayout.GetOffset())) + sizeof (ArrayCount);
 
         nullflagsOffset += (*indices / BITS_PER_NULLFLAGSBITMASK * sizeof(NullflagsBitmask));
         nullflagsBitmask = 0x01 << (*indices % BITS_PER_NULLFLAGSBITMASK);
@@ -796,7 +842,7 @@ bool            MemoryInstanceSupport::IsPropertyValueNull (PropertyLayoutCR pro
     UInt32 nullflagsBitmask;
     PrepareToAccessNullFlags (nullflagsOffset, nullflagsBitmask, propertyLayout, nIndices, indices);
 
-    NullflagsBitmask const * nullflags = (NullflagsBitmask const *)(_GetDataForRead() + nullflagsOffset);
+    NullflagsBitmask const * nullflags = (NullflagsBitmask const *)(_GetData() + nullflagsOffset);
     return (0 != (*nullflags & nullflagsBitmask));    
     }
 
@@ -809,7 +855,7 @@ void            MemoryInstanceSupport::SetPropertyValueNull (PropertyLayoutCR pr
     UInt32 nullflagsBitmask;
     PrepareToAccessNullFlags (nullflagsOffset, nullflagsBitmask, propertyLayout, nIndices, indices);   
     
-    NullflagsBitmask * nullflags = (NullflagsBitmask *)(_GetDataForWrite() + nullflagsOffset);
+    NullflagsBitmask * nullflags = (NullflagsBitmask *)(_GetData() + nullflagsOffset);
     if (isNull && 0 == (*nullflags & nullflagsBitmask))
         *nullflags |= nullflagsBitmask; // turn on the null bit
     else if (!isNull && nullflagsBitmask == (*nullflags & nullflagsBitmask))
@@ -826,7 +872,7 @@ UInt32          MemoryInstanceSupport::GetOffsetOfPropertyValue (PropertyLayoutC
     if (propertyLayout.IsFixedSized())
         return offset;
 
-    byte const * data = _GetDataForRead();
+    byte const * data = _GetData();
     SecondaryOffset const * pSecondaryOffset = (SecondaryOffset const *)(data + offset);
 
     SecondaryOffset secondaryOffset = *pSecondaryOffset;
@@ -871,7 +917,7 @@ UInt32          MemoryInstanceSupport::GetOffsetOfArrayIndexValue (UInt32 arrayO
     if (IsArrayOfFixedSizeElements (propertyLayout))
         return arrayIndexOffset;
     
-    byte const * data = _GetDataForRead();
+    byte const * data = _GetData();
     SecondaryOffset const * pSecondaryOffset = (SecondaryOffset const *)(data + arrayIndexOffset);
 
     SecondaryOffset secondaryOffset = *pSecondaryOffset;
@@ -887,7 +933,7 @@ UInt32          MemoryInstanceSupport::GetOffsetOfArrayIndexValue (UInt32 arrayO
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       MemoryInstanceSupport::EnsureSpaceIsAvailable (UInt32& offset, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded)
     {
-    byte const *             data = _GetDataForRead();
+    byte const *             data = _GetData();
     SecondaryOffset*         pSecondaryOffset = (SecondaryOffset*)(data + propertyLayout.GetOffset());
     SecondaryOffset*         pNextSecondaryOffset = pSecondaryOffset + 1;
     
@@ -1005,7 +1051,7 @@ StatusInt       MemoryInstanceSupport::CreateNullArrayElementsAt (ClassLayoutCR 
     UInt32 sizeOfWriteBuffer = 0;
     
     // shift all data (fixed & variable) to the right of the inserted element 
-    byte const *             data = _GetDataForRead(); // need to get this value again since EnsureSpace may have re allocated    
+    byte const *             data = _GetData(); // need to get this value again since EnsureSpace may have re allocated    
     UInt32 offsetOfInsertionPoint = currentHeaderByteCount + (insertIndex * elementSizeInFixedSection);         
     byte const * pInsertFrom = data + arrayOffset + offsetOfInsertionPoint;
     byte const * pInsertTo = pInsertFrom + bytesNeeded;        
@@ -1040,7 +1086,7 @@ StatusInt       MemoryInstanceSupport::CreateNullArrayElementsAt (ClassLayoutCR 
          
         UInt32 insertedSecondaryOffsetByteCount = insertCount * elementSizeInFixedSection;       
         SecondaryOffset* pSecondaryOffset = (SecondaryOffset*)(pInsertTo - insertedSecondaryOffsetByteCount);
-        if (s_shiftSecondaryOffsetsInPlace)        
+        if (m_allowWritingDirectlyToInstanceMemory)
             pWriteBuffer = (byte*)pSecondaryOffset;
         else
             {
@@ -1060,7 +1106,7 @@ StatusInt       MemoryInstanceSupport::CreateNullArrayElementsAt (ClassLayoutCR 
             DEBUG_EXPECT (pSecondaryOffsetWriteBuffer[i] <=arrayByteCountAfterGrow);
             }
             
-        if (!s_shiftSecondaryOffsetsInPlace)
+        if (!m_allowWritingDirectlyToInstanceMemory)
             {
             UInt32 modifyOffset = (UInt32)(pInsertTo - data) - insertedSecondaryOffsetByteCount;
             status = _ModifyData (modifyOffset, pWriteBuffer, sizeOfWriteBuffer);            
@@ -1073,7 +1119,7 @@ StatusInt       MemoryInstanceSupport::CreateNullArrayElementsAt (ClassLayoutCR 
                 
     if (insertIndex > 0)
         {
-        byte const *             data = _GetDataForRead(); // need to get this value again since EnsureSpace may have re allocated            
+        byte const *             data = _GetData(); // need to get this value again since EnsureSpace may have re allocated            
         byte const * pShiftFrom = data + arrayOffset + currentHeaderByteCount;
         byte * pShiftTo = (byte*)(data + arrayOffset + newHeaderByteCount);
         UInt32 byteCountToShift = (UInt32)(pInsertFrom - pShiftFrom);                
@@ -1088,7 +1134,7 @@ StatusInt       MemoryInstanceSupport::CreateNullArrayElementsAt (ClassLayoutCR 
         // update all secondary offsets preceeding the insertion point since the size of the fixed section has changed and therefore all variable data has moved
         if (!hasFixedSizeElements)
             {                    
-            if (s_shiftSecondaryOffsetsInPlace)        
+            if (m_allowWritingDirectlyToInstanceMemory)
                 pWriteBuffer = pShiftTo;
             else if (sizeOfWriteBuffer < byteCountToShift)
                 {
@@ -1106,7 +1152,7 @@ StatusInt       MemoryInstanceSupport::CreateNullArrayElementsAt (ClassLayoutCR 
                 DEBUG_EXPECT (pSecondaryOffsetWriteBuffer[i] <= insertedSecondaryOffset);
                 }
                 
-            if (!s_shiftSecondaryOffsetsInPlace)
+            if (!m_allowWritingDirectlyToInstanceMemory)
                 {
                 UInt32 modifyOffset = (UInt32)(pShiftTo - data);
                 status = _ModifyData (modifyOffset, pWriteBuffer, byteCountToShift);
@@ -1119,7 +1165,7 @@ StatusInt       MemoryInstanceSupport::CreateNullArrayElementsAt (ClassLayoutCR 
         }
             
     // write the new array header (updated count & null flags)      
-    if (s_shiftSecondaryOffsetsInPlace)
+    if (m_allowWritingDirectlyToInstanceMemory)
         pWriteBuffer = (byte*)(data + arrayOffset);
     else
         {
@@ -1164,24 +1210,14 @@ StatusInt       MemoryInstanceSupport::CreateNullArrayElementsAt (ClassLayoutCR 
         if (0 == (*pNullflagsCurrent & nullflagsBitmask))
             *pNullflagsCurrent |= nullflagsBitmask; // turn on the null bit        
         }
-    if (!s_shiftSecondaryOffsetsInPlace)
+    if (!m_allowWritingDirectlyToInstanceMemory)
         {
         status = _ModifyData (arrayOffset, pWriteBuffer, newHeaderByteCount);
         if (SUCCESS != status)
             return status;        
         }                   
     
-    return SUCCESS;
-    
-    // NEEDSWORK .. Need to review and be certain that _GetDataForRead/Write is being used correctly.  Any time we enter a code path where we may do a write, we need
-    // to ensure
-    
-    // AFTER talking with Casey
-    // I can get rid of _GetDataForRead/Write & just create _GetData
-    // be very careful with Ensure invocations or antyhing that may realloc the buffer because previous ptr returned from _GetData will now be invalid
-    // when inserting elements in the array I will need to do 2 shifts but I should not have to shift the same data twice.  As long as I pad the shift of the
-    // first set of data with the delta needed for the second shift of data.    
-    
+    return SUCCESS;    
     // WIP_FUSION how do we deal with an error that occurs during the insert "transaction" after some data has already been moved/modified but we haven't finished?
     }
 
@@ -1191,11 +1227,11 @@ StatusInt       MemoryInstanceSupport::CreateNullArrayElementsAt (ClassLayoutCR 
 StatusInt       MemoryInstanceSupport::EnsureSpaceIsAvailableForArrayIndexValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 bytesNeeded)
     {    
     UInt32 arrayOffset = GetOffsetOfArray (propertyLayout);   
-    byte const *             data = _GetDataForRead();
+    byte const *             data = _GetData();
     SecondaryOffset* pIndexValueOffset = (SecondaryOffset*)(data + GetOffsetOfArrayIndex (arrayOffset, propertyLayout, arrayIndex));    
     SecondaryOffset indexValueOffset = arrayOffset + *pIndexValueOffset;    
     UInt32 arrayCount = GetAllocatedArrayCount (propertyLayout);
-    SecondaryOffset* pNextPropertyValueOffset = (SecondaryOffset*)(_GetDataForRead() + propertyLayout.GetOffset()) + 1;
+    SecondaryOffset* pNextPropertyValueOffset = (SecondaryOffset*)(_GetData() + propertyLayout.GetOffset()) + 1;
     SecondaryOffset nextIndexValueOffset;
     if (arrayIndex == arrayCount - 1) 
         nextIndexValueOffset = *pNextPropertyValueOffset;
@@ -1229,7 +1265,7 @@ StatusInt       MemoryInstanceSupport::EnsureSpaceIsAvailableForArrayIndexValue 
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       MemoryInstanceSupport::GrowPropertyValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 additionalBytesNeeded)
     {
-    byte const * data = _GetDataForWrite();
+    byte const * data = _GetData();
     UInt32 bytesUsed = classLayout.CalculateBytesUsed(data);
         
     UInt32 bytesAllocated = _GetBytesAllocated();    
@@ -1248,7 +1284,7 @@ StatusInt       MemoryInstanceSupport::GrowPropertyValue (ClassLayoutCR classLay
     if (SUCCESS != status)
         return status;
         
-    byte * writeableData = _GetDataForWrite();
+    byte * writeableData = (byte *)_GetData();
     DEBUG_EXPECT (bytesUsed == classLayout.CalculateBytesUsed(writeableData));
     
     status = ShiftValueData(classLayout, writeableData, bytesAllocated, propertyLayout, additionalBytesNeeded);
@@ -1259,11 +1295,11 @@ StatusInt       MemoryInstanceSupport::GrowPropertyValue (ClassLayoutCR classLay
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
+* @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            MemoryInstanceSupport::SetShiftSecondaryOffsetsInPlace (bool inPlace)
+MemoryInstanceSupport::MemoryInstanceSupport (bool allowWritingDirectlyToInstanceMemory) :
+    m_allowWritingDirectlyToInstanceMemory (allowWritingDirectlyToInstanceMemory) 
     {
-    s_shiftSecondaryOffsetsInPlace = inPlace;
     }
         
 /*---------------------------------------------------------------------------------**//**
@@ -1296,7 +1332,7 @@ StatusInt       MemoryInstanceSupport::ShiftValueData(ClassLayoutCR classLayout,
 
     // Shift all secondaryOffsets for variable-sized property values that follow the one that just got larger
     UInt32 sizeOfSecondaryOffsetsToShift = (UInt32)(((byte*)pLast - (byte*)pCurrent) + sizeof (SecondaryOffset));
-    if (s_shiftSecondaryOffsetsInPlace)
+    if (m_allowWritingDirectlyToInstanceMemory)
         {
         for (SecondaryOffset * pSecondaryOffset = pCurrent; 
              pSecondaryOffset < pLast && 0 != *pSecondaryOffset;  // stop when we hit a zero
@@ -1328,7 +1364,7 @@ StatusInt       MemoryInstanceSupport::ShiftArrayIndexValueData(PropertyLayoutCR
     DEBUG_EXPECT (0 != shiftBy && "It is a pointless waste of time to shift nothing");
     DEBUG_EXPECT (arrayIndex < arrayCount - 1 && "It is a pointless waste of time to shift nothing");
 
-    byte * data = _GetDataForWrite();
+    byte * data = (byte*)_GetData();
     SecondaryOffset* pNextProperty = (SecondaryOffset*)(data + propertyLayout.GetOffset()) + 1;
     UInt32 arrayOffset = GetOffsetOfArray (propertyLayout);   
     SecondaryOffset indexValueOffset = GetOffsetOfArrayIndexValue (arrayOffset, propertyLayout, arrayIndex + 1); // start at the one AFTER the index whose value's size is adjusting
@@ -1507,6 +1543,7 @@ StatusInt       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueCR v, C
         case PRIMITIVETYPE_Integer:
             {
             Int32 value = v.GetInteger();
+            // WIP_FUSION: would it speed things up to poke directly when m_allowWritingDirectlyToInstanceMemory is true?
             return _ModifyData (offset, &value, sizeof(value));
             }
         case PRIMITIVETYPE_Long:
@@ -1532,7 +1569,25 @@ StatusInt       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueCR v, C
             if (SUCCESS != status)
                 return status;
                 
+            // WIP_FUSION: would it speed things up to poke directly when m_allowWritingDirectlyToInstanceMemory is true?
             return _ModifyData (offset, value, bytesNeeded);
+            }
+        case PRIMITIVETYPE_Binary:
+            {
+            size_t size;
+            byte const * data = v.GetBinary (size);
+            UInt32 bytesNeeded = (UInt32)size;
+
+            StatusInt status;
+            if (1 == nIndices)
+                status = EnsureSpaceIsAvailableForArrayIndexValue (classLayout, propertyLayout, *indices, bytesNeeded);
+            else
+                status = EnsureSpaceIsAvailable (offset, classLayout, propertyLayout, bytesNeeded);
+            if (SUCCESS != status)
+                return status;
+                
+            // WIP_FUSION: would it speed things up to poke directly when m_allowWritingDirectlyToInstanceMemory is true?
+            return _ModifyData (offset, data, bytesNeeded);
             }
         }
 
@@ -1588,16 +1643,19 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
     static int s_dumpCount = 0;
     s_dumpCount++;
     
-    byte const * data = _GetDataForRead();
+    byte const * data = _GetData();
     Bentley::NativeLogging::ILogger *logger = Logger::GetLogger();
     
     logger->tracev (L"======================= Dump #%d ===================================\n", s_dumpCount);
     if (s_skipDump)
         return;
   
-    logger->tracev (L"ECClass=%s at address = 0x%0x\n", classLayout.GetClass().GetName().c_str(), data);
-    InstanceFlags flags = *(InstanceFlags*)data;
-    logger->tracev (L"  [0x%0x][%4.d] InstanceFlags = 0x%08.x\n", data, 0, flags);
+    logger->tracev (L"ECClass=%s at address = 0x%0x\n", classLayout.GetClassName().c_str(), data);
+    InstanceHeader& header = *(InstanceHeader*)data;
+
+    logger->tracev (L"  [0x%0x][%4.d] SchemaIndex = %d\n",        &header.m_schemaIndex,  (byte*)&header.m_schemaIndex   - data, header.m_schemaIndex);
+    logger->tracev (L"  [0x%0x][%4.d] ClassIndex  = %d\n",        &header.m_classIndex,   (byte*)&header.m_classIndex    - data, header.m_classIndex);
+    logger->tracev (L"  [0x%0x][%4.d] InstanceFlags = 0x%08.x\n", &header.m_instanceFlags,(byte*)&header.m_instanceFlags - data, header.m_instanceFlags);
     
     UInt32 nProperties = classLayout.GetPropertyCount ();
     
@@ -1605,7 +1663,7 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
     
     for (UInt32 i = 0; i < nNullflagsBitmasks; i++)
         {
-        UInt32 offset = sizeof(InstanceFlags) + i * sizeof(NullflagsBitmask);
+        UInt32 offset = sizeof(InstanceHeader) + i * sizeof(NullflagsBitmask);
         byte const * address = offset + data;
         logger->tracev (L"  [0x%x][%4.d] Nullflags[%d] = 0x%x\n", address, offset, i, *(NullflagsBitmask*)(data + offset));
         }

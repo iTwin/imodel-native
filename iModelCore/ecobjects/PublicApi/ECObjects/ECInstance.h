@@ -16,16 +16,16 @@ BEGIN_BENTLEY_EC_NAMESPACE
 //! Unlike IECInstance, it is not a pure interface, but is a concrete struct.
 //! Whereas in .NET, one might implement IECInstance, or use the "Lightweight" system
 //! in Bentley.ECObjects.Lightweight, in native "ECObjects" you write a class that implements
-//! the EC::ECEnabler interface and one or more related interfaces to supply functionality 
+//! the DgnECEnabler interface and one or more related interfaces to supply functionality 
 //! to the EC::IECInstance.
 //! We could call these "enabled" instances as opposed to "lightweight".
 //! @see ECEnabler
-struct IECInstance
+struct IECInstance : RefCountedBase
     {
 private:
 protected:    
     ECOBJECTS_EXPORT IECInstance(); 
-    ECOBJECTS_EXPORT ~IECInstance(){};
+    ECOBJECTS_EXPORT ~IECInstance();
     ECOBJECTS_EXPORT virtual std::wstring _GetInstanceId() const = 0; // Virtual and returning std::wstring because a subclass may want to calculate it on demand
     ECOBJECTS_EXPORT virtual StatusInt    _GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const = 0;
     ECOBJECTS_EXPORT virtual StatusInt    _SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 nIndices = 0, UInt32 const * indices = NULL) = 0;
@@ -37,7 +37,6 @@ protected:
     ECOBJECTS_EXPORT virtual bool         _IsReadOnly() const = 0;
     //! This should dump the instance's property values using the logger
     ECOBJECTS_EXPORT virtual void         _Dump () const = 0;
-    ECOBJECTS_EXPORT virtual void         _Free () = 0;
     
 public:
     ECOBJECTS_EXPORT ECEnablerCR          GetEnabler() const;
@@ -70,11 +69,9 @@ public:
     ECOBJECTS_EXPORT StatusInt SetStringValue  (const wchar_t * propertyAccessString, const wchar_t * value, UInt32 nIndices = 0, UInt32 const * indices = NULL);
     ECOBJECTS_EXPORT void      Dump () const;
 
-    //AZK not clear to me why we need this?  Is it fragile?  Can we just override delete?
-    //! Call this instead of "delete" to ensure that the EC::IECInstance is freed from the same heap that it was allocated.
-    //! This method does not affect the persisted EC::IECInstance (if it has been persisted)
-    ECOBJECTS_EXPORT void      Free ();
-    
+    ECOBJECTS_EXPORT static void      Debug_ResetAllocationStats ();
+    ECOBJECTS_EXPORT static void      Debug_DumpAllocationStats (const wchar_t* prefix);
+    ECOBJECTS_EXPORT static void      Debug_GetAllocationStats (int* currentLive, int* totalAllocs, int* totalFrees);
     };
     
 //! EC::IECRelationshipInstance is the native equivalent of a .NET IECRelationshipInstance.

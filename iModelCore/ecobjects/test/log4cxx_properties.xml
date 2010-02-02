@@ -1,14 +1,39 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<!--!DOCTYPE log4j:configuration SYSTEM "log4j.dtd"-->
 
 <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
 
     <!--
    Write diagnostic messages to a log file that will "roll" when it reaches a size of 10mb. 
    Keep around the last 5 of these files to assist in diagnostics if needed.
--->
+    -->
 
-    <appender name="OUTDEVICE" class="org.apache.log4j.ConsoleAppender">
+    <appender name="RollingFileAppender" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="${LOCALAPPDATA}\\Bentley\\Logs\\native_ecobjects.log"/> <!-- Required -->
+        <param name="MaxFileSize" value="10000000" /> <!-- Required -->
+        <param name="MaxBackupIndex" value="5"/> <!-- Required -->
+        <param name="createpath" value="true"/> <!-- Optional -->
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{ISO8601} %-5p [%t] %-40.40c - %m%n"/>
+        </layout>
+        <param name="Append" value="false"/><!-- this should make it create a new file each time -->
+    </appender>
+
+
+    <appender name="DevenvAppender" class="org.apache.log4j.DebuggerAppender">
+        <layout class="org.apache.log4j.PatternLayout">
+            <!--param name="ConversionPattern" value="%d{ISO8601} %-5p [%t] %-40.40c - %m%n"/-->
+            <param name="ConversionPattern" value="%-5p [%t] %-40.40c - %m%n"/>
+        </layout>
+    </appender>
+
+    <appender name="SocketAppender" class="org.apache.log4j.net.XMLSocketAppender">
+       <param name="RemoteHost" value="localhost"/>
+       <param name="Port" value="4560"/>
+       <param name="ReconnectionDelay" value="1000"/>
+    </appender>
+
+    <appender name="Console" class="org.apache.log4j.ConsoleAppender">
         <layout class="org.apache.log4j.PatternLayout">
             <param name="ConversionPattern" value="%d{ISO8601} %-5p [%t] %c - %m%n"/>
         </layout>
@@ -36,9 +61,14 @@
      The root category will be used to specify the options for any category or option not
      specified not explicitly specifed in a category node.
 -->
-    <root>
-        <priority value="INFO" />
-        <appender-ref ref="OUTDEVICE" />
+
+    <category name="NativeECObjects">   <priority value="info"/></category>
+    <category name="DgnEC">             <priority value="info"/></category>
+
+    <root>                            
+        <priority value="warn" />
+        <appender-ref ref="Console" />
+        <appender-ref ref="RollingFileAppender" />
     </root>
 
 </log4j:configuration>

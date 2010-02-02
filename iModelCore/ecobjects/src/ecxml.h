@@ -90,7 +90,7 @@ static const std::wstring EMPTY_STRING = L"";
 #define READ_REQUIRED_XML_ATTRIBUTE(_xmlAttributeName, _setInPointer, _setInPropertyName, _elementName)   \
     if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (_xmlAttributeName)))     \
         {   \
-        wprintf (L"Invalid ECSchemaXML: %s element must contain a " _xmlAttributeName L" attribute\n", (const wchar_t *)_elementName);     \
+        Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: %s element must contain a " _xmlAttributeName L" attribute\n", (const wchar_t *)_elementName);     \
         return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;        \
         }       \
     if (ECOBJECTS_STATUS_Success != _setInPointer->Set##_setInPropertyName ((const wchar_t *)attributePtr->text))       \

@@ -277,7 +277,7 @@ public:
 //! Container holding ECProperties that supports STL like iteration
 //
 +===============+===============+===============+===============+===============+======*/
-struct      ECPropertyContainer /*__PUBLISH_ABSTRACT__*/
+struct ECPropertyContainer /*__PUBLISH_ABSTRACT__*/
 {
 /*__PUBLISH_SECTION_END__*/
 private:
@@ -362,7 +362,8 @@ private:
     PropertyMap             m_propertyMap;
     PropertyList            m_propertyList;    
     
-    ECObjectsStatus                     AddProperty (ECPropertyP& pProperty);    
+    ECObjectsStatus                     AddProperty (ECPropertyP& pProperty);
+    ECObjectsStatus                     AddProperty (ECPropertyP pProperty, std::wstring const& name);
 
 protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
@@ -409,6 +410,10 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass);
     ECOBJECTS_EXPORT bool            HasBaseClasses();
 
+    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, std::wstring const& name);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, std::wstring const& name);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, std::wstring const& name);
+     
     //NEEDSWORK: Is method (test if is or derived from class X)
 
     //! Get a property by name within the context of this class and its base classes.
@@ -458,7 +463,7 @@ public:
 
 }; // ECRelationshipClass
 
-typedef std::vector<ECSchemaP> ECSchemaReferenceVector;
+typedef std::list<ECSchemaP> ECSchemaReferenceList;
 typedef RefCountedPtr<ECSchema>                  ECSchemaPtr;
 
 /*=================================================================================**//**
@@ -466,7 +471,7 @@ typedef RefCountedPtr<ECSchema>                  ECSchemaPtr;
 //! Supports STL like iterator of classes in a schema
 //
 +===============+===============+===============+===============+===============+======*/
-struct      ECClassContainer /*__PUBLISH_ABSTRACT__*/
+struct ECClassContainer /*__PUBLISH_ABSTRACT__*/
 {
 /*__PUBLISH_SECTION_END__*/
 private:
@@ -544,7 +549,7 @@ private:
     // maps class name -> class pointer    
     ClassMap m_classMap;
     
-    ECSchemaReferenceVector m_refSchemaList;
+    ECSchemaReferenceList m_refSchemaList;
     
     std::set<const wchar_t *> m_alreadySerializedClasses;
     stdext::hash_map<ECSchemaP, const std::wstring *> m_referencedSchemaNamespaceMap;
@@ -562,6 +567,7 @@ private:
     typedef std::vector<std::pair<ECClassP, MSXML2_IXMLDOMNodePtr>>  ClassDeserializationVector;
     SchemaDeserializationStatus         ReadClassStubsFromXml(MSXML2_IXMLDOMNode& schemaNodePtr,ClassDeserializationVector& classes);
     SchemaDeserializationStatus         ReadClassContentsFromXml(ClassDeserializationVector&  classes);
+    SchemaDeserializationStatus         ReadSchemaReferencesFromXml(MSXML2_IXMLDOMNode& schemaNodePtr);
     
     SchemaSerializationStatus           WriteSchemaReferences(MSXML2_IXMLDOMElement& parentNode);
     SchemaSerializationStatus           WriteClass(MSXML2_IXMLDOMElement& parentNode, ECClassCR ecClass);
@@ -606,9 +612,17 @@ public:
     //! Gets the other schemas that are used by classes within this schema.
     //! Referenced schemas are the schemas that contain definitions of base classes,
     //! embedded structures, and custom attributes of classes within this schema.
-    ECOBJECTS_EXPORT const ECSchemaReferenceVector& GetReferencedSchemas() const;
+    ECOBJECTS_EXPORT const ECSchemaReferenceList& GetReferencedSchemas() const;
     
+    //! Adds an ECSchema as a referenced schema in this schema.
+    //! It is necessary to add any ECSchema as a referenced schema that will be used when adding a base
+    //! class from a different schema, or custom attributes from a different schema.
+    //! @param[in]  refSchema   The schema to add as a referenced schema
     ECOBJECTS_EXPORT ECObjectsStatus AddReferencedSchema(ECSchemaCR refSchema);
+    
+    //! Removes an ECSchema from the list of referenced schemas
+    //! @param[in]  refSchema   The schema that should be removed from the list of referenced schemas
+    ECOBJECTS_EXPORT ECObjectsStatus RemoveReferencedSchema(ECSchemaCR refSchema);
     
     // ************************************************************************************************************************
     // ************************************  STATIC METHODS *******************************************************************
@@ -636,7 +650,8 @@ public:
     //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
     ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromString (ECSchemaPtr& schemaOut, const wchar_t * ecSchemaXml);
 
-/*
+/**************** commented out because there are problems with the include for IStream
+
     //! Deserializes an ECXML schema from an IStream.
     //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and
     //! uninitialize COM using CoInitialize/CoUninitialize</b>
@@ -653,7 +668,7 @@ public:
     //! @param[out] ecSchemaXml     The string containing the Xml of the serialized schema
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml
     //          will contain the serialized schema.  Otherwise, ecSchemaXml will be unmodified
-    ECOBJECTS_EXPORT SchemaSerializationStatus          WriteXmlToString (const wchar_t * & ecSchemaXml);
+    ECOBJECTS_EXPORT SchemaSerializationStatus          WriteXmlToString (std::wstring & ecSchemaXml);
     
     //! Serializes an ECXML schema to a file
     //! Xml Serialization utilizes MSXML through COM. <b>Any thread calling this method must therefore be certain to initialize and

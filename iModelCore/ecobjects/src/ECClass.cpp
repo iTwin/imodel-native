@@ -23,8 +23,8 @@ ECClass::~ECClass
 )
     {
     // NEEDSWORK make sure everything is destroyed
-    Logger::GetLogger()->tracev (L"~~~~ Destroying ECClass %s\n", this->Name.c_str());
-    Logger::GetLogger()->tracev  (L"     Freeing memory for %d properties\n", m_propertyMap.size());
+    //Logger::GetLogger()->tracev (L"~~~~ Destroying ECClass %s\n", this->Name.c_str());
+    //Logger::GetLogger()->tracev  (L"     Freeing memory for %d properties\n", m_propertyMap.size());
     
     m_propertyList.clear();
     
@@ -291,6 +291,60 @@ std::wstring const& propertyName
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::AddProperty
+(
+ECPropertyP ecProperty,
+const std::wstring &name
+)
+    {
+    ECObjectsStatus status = ecProperty->SetName (name);
+    if (ECOBJECTS_STATUS_Success != status)
+        return status;
+
+    return AddProperty (ecProperty);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::CreatePrimitiveProperty
+(
+PrimitiveECPropertyP &ecProperty, 
+const std::wstring &name
+)
+    {
+    ecProperty = new PrimitiveECProperty(*this);
+    return AddProperty(ecProperty, name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::CreateStructProperty
+(
+StructECPropertyP &ecProperty, 
+const std::wstring &name
+)
+    {
+    ecProperty = new StructECProperty(*this);
+    return AddProperty(ecProperty, name);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::CreateArrayProperty
+(
+ArrayECPropertyP &ecProperty, 
+const std::wstring &name
+)
+    {
+    ecProperty = new ArrayECProperty(*this);
+    return AddProperty(ecProperty, name);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::AddBaseClass
@@ -301,8 +355,8 @@ ECClassCR baseClass
     if (&(baseClass.Schema) != &(this->Schema))
         {
         bool foundRefSchema = false;
-        ECSchemaReferenceVector referencedSchemas = m_schema.GetReferencedSchemas();
-        ECSchemaReferenceVector::const_iterator schemaIterator;
+        ECSchemaReferenceList referencedSchemas = m_schema.GetReferencedSchemas();
+        ECSchemaReferenceList::const_iterator schemaIterator;
         for (schemaIterator = referencedSchemas.begin(); schemaIterator != referencedSchemas.end(); schemaIterator++)
             {
             ECSchemaP refSchema = *schemaIterator;

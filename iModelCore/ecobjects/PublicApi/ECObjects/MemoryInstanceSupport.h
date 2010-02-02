@@ -5,14 +5,15 @@
 |   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-//__PUBLISH_SECTION_START__
+/*__PUBLISH_SECTION_START__*/
 #pragma once
 
 #include <ECObjects\ECObjects.h>
 #include <hash_map>
 
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
-
+#define PROPERTYLAYOUT_Source_ECPointer L"Source ECPointer"
+#define PROPERTYLAYOUT_Target_ECPointer L"Target ECPointer"
 EC_TYPEDEFS(MemoryInstanceSupport);
 
 BEGIN_BENTLEY_EC_NAMESPACE
@@ -26,6 +27,15 @@ typedef UInt32 SecondaryOffset;
 typedef UInt32 ArrayCount;
 
 #define NULLFLAGS_BITMASK_AllOn     0xFFFFFFFF
+
+struct  InstanceHeader
+    {
+    SchemaIndex     m_schemaIndex;
+    ClassIndex      m_classIndex;
+
+    InstanceFlags   m_instanceFlags;
+    };
+
 
 /// WIP, not sure this belongs here or that we even need the struct but I'm defining it for now just to experiment with some ideas.
 struct ECTypeDescriptor
@@ -136,19 +146,21 @@ private:
     
     // These members are expected to be persisted  
     ClassIndex              m_classIndex; // Unique per some context, e.g. per DgnFile
-    std::wstring            m_className; // WIP_FUSION: remove this redundant information and just use m_class. But we still need to persist the name.
+    std::wstring            m_className;
     UInt32                  m_nProperties;
     
     PropertyLayoutVector    m_propertyLayouts; // This is the primary collection, there is a secondary map for lookup by name, below.
     PropertyLayoutLookup    m_propertyLayoutLookup;
     
     // These members are transient
-    SchemaLayoutCR          m_schemaLayout;
-    ECClassCP               m_class;
+    SchemaIndex             m_schemaIndex;
     UInt32                  m_nullflagsOffset;
     State                   m_state;
     UInt32                  m_offset;
     UInt32                  m_sizeOfFixedSection;
+    bool                    m_isRelationshipClass;
+    int                     m_propertyIndexOfSourceECPointer;
+    int                     m_propertyIndexOfTargetECPointer;
     
     void                    AddProperties (ECClassCR ecClass, wchar_t const * nameRoot, bool addFixedSize);
     StatusInt               AddProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 size, UInt32 modifierFlags = 0, UInt32 modifierData = 0);
@@ -156,35 +168,38 @@ private:
     StatusInt               AddFixedSizeArrayProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount);
     StatusInt               AddVariableSizeProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor);
     StatusInt               AddVariableSizeArrayPropertyWithFixedCount (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount);
-    StatusInt               FinishLayout ();
-    std::wstring            GetClassName() const;
 
-    BentleyStatus           SetClass (ECClassCR ecClass, UInt16 classIndex);
+    BentleyStatus           SetClass (wchar_t const *  className, UInt16 classIndex);
 
-    ClassLayout(SchemaLayoutCR schemaLayout);
+    ClassLayout(SchemaIndex schemaIndex);
 
 public:
-    ECOBJECTS_EXPORT static ClassLayoutP BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaLayoutCR schemaLayout);
-    ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (ECClassCR ecClass, ClassIndex classIndex, SchemaLayoutCR schemaLayout);
+    ECOBJECTS_EXPORT static ClassLayoutP BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex);
+    ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (wchar_t const *  className, ClassIndex classIndex, SchemaIndex schemaIndex);
 
-    ECOBJECTS_EXPORT ECClassCR  GetClass () const;
-    ECOBJECTS_EXPORT UInt16     GetClassIndex() const;
-    ECOBJECTS_EXPORT UInt32     GetPropertyCount () const;
-    ECOBJECTS_EXPORT StatusInt  GetPropertyLayout (PropertyLayoutCP & propertyLayout, wchar_t const * accessString) const;
-    ECOBJECTS_EXPORT StatusInt  GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const;
-    // WIP_FUSION add StatusInt GetPropertyIndex (UInt32& propertyIndex, wchar_t const * accessString);
+    ECOBJECTS_EXPORT std::wstring   GetClassName() const;
+    ECOBJECTS_EXPORT ClassIndex     GetClassIndex() const;
+    ECOBJECTS_EXPORT SchemaIndex    GetSchemaIndex () const;
+    ECOBJECTS_EXPORT UInt32         GetPropertyCount () const;
+    ECOBJECTS_EXPORT StatusInt      GetPropertyLayout (PropertyLayoutCP & propertyLayout, wchar_t const * accessString) const;
+    ECOBJECTS_EXPORT StatusInt      GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const;
+    // WIP_FUSION add StatusInt      GetPropertyIndex (UInt32& propertyIndex, wchar_t const * accessString);
     
-    void                        Dump() const;
+/*__PUBLISH_SECTION_END__*/
+    ECOBJECTS_EXPORT void           AddPropertyDirect (wchar_t const * accessString, PrimitiveType primitivetype, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask);
+    ECOBJECTS_EXPORT StatusInt      FinishLayout ();
+/*__PUBLISH_SECTION_START__*/
+
+    void                            Dump() const;
     
-    void                        InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const;
+    void                            InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const;
     
-    static UInt32               GetFixedPrimitiveValueSize (PrimitiveType primitiveType); // WIP_FUSION: move to ecvalue.h
-    UInt32                      GetSizeOfFixedSection() const;
+    static UInt32                   GetFixedPrimitiveValueSize (PrimitiveType primitiveType); // WIP_FUSION: move to ecvalue.h
+    UInt32                          GetSizeOfFixedSection() const;
     
     //! Determines the number of bytes used, so far
-    ECOBJECTS_EXPORT UInt32     CalculateBytesUsed(byte const * data) const;
+    ECOBJECTS_EXPORT UInt32         CalculateBytesUsed(byte const * data) const;
     };
-    
 /*=================================================================================**//**
 * @bsistruct
 +===============+===============+===============+===============+===============+======*/      
@@ -208,11 +223,17 @@ private:
     SchemaLayoutEntryArray  m_entries;
 
 public:
-    ECOBJECTS_EXPORT SchemaIndex            GetSchemaIndex() { return m_schemaIndex; }
-    ECOBJECTS_EXPORT void                   SetSchemaIndex(SchemaIndex i) { m_schemaIndex = i; }
+    ECOBJECTS_EXPORT SchemaLayout(SchemaIndex index) : m_schemaIndex(index) {}
+
+    // NEEDSWORK: remove these
+    ECOBJECTS_EXPORT SchemaLayout() : m_schemaIndex(0) {}
+    ECOBJECTS_EXPORT void SetSchemaIndex(SchemaIndex i) {m_schemaIndex = i;}
+
+
+    ECOBJECTS_EXPORT SchemaIndex            GetSchemaIndex() const { return m_schemaIndex; }
     ECOBJECTS_EXPORT BentleyStatus          AddClassLayout (ClassLayoutCR, ClassIndex, bool isPersistent);
     ECOBJECTS_EXPORT SchemaLayoutEntry*     GetEntry (ClassIndex classIndex);
-    ECOBJECTS_EXPORT SchemaLayoutEntry*     FindEntry (ECClassCR ecClass);
+    ECOBJECTS_EXPORT SchemaLayoutEntry*     FindEntry (wchar_t const * className);
     ECOBJECTS_EXPORT BentleyStatus          FindAvailableClassIndex (ClassIndex&);
 };
 
@@ -235,6 +256,8 @@ public:
 struct MemoryInstanceSupport
     {
 private:    
+    bool                        m_allowWritingDirectlyToInstanceMemory;
+	
     void                        PrepareToAccessNullFlags (UInt32& nullflagsOffset, UInt32& nullflagsBitmask, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;
     byte const *                GetAddressOfPrimitiveValue (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;
     UInt32                      GetOffsetOfPropertyValue (PropertyLayoutCR propertyLayout) const;
@@ -268,6 +291,11 @@ private:
     StatusInt                   CreateNullArrayElementsAt (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 insertIndex, UInt32 insertCount);
          
 protected:
+    //! Constructor used by subclasses
+    //! @param allowWritingDirectlyToInstanceMemory     If true, MemoryInstanceSupport is allowed to memset, memmove, and poke at the 
+    //!                                                 memory directly, e.g. for StandaloneECIntance.
+    //!                                                 If false, all modifications must happen through _ModifyData, e.g. for ECXData.
+    ECOBJECTS_EXPORT            MemoryInstanceSupport (bool allowWritingDirectlyToInstanceMemory);
     ECOBJECTS_EXPORT void       InitializeMemory(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated) const;
     ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout,      UInt32 nIndices, UInt32 const * indices) const;
     ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ClassLayoutCR classLayout, ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const;
@@ -278,8 +306,7 @@ protected:
     
     virtual bool                _IsMemoryInitialized () const = 0;    
     //! Get a pointer to the first byte of the data    
-    virtual byte const *        _GetDataForRead () const = 0;
-    virtual byte *              _GetDataForWrite () const = 0;
+    virtual byte const *        _GetData () const = 0;
     virtual StatusInt           _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength) = 0;
     virtual UInt32              _GetBytesAllocated () const = 0;
         
@@ -296,9 +323,9 @@ protected:
     
     //! Free any allocated memory
     virtual void                _FreeAllocation () = 0;
-
+    
 public:
-    ECOBJECTS_EXPORT static void SetShiftSecondaryOffsetsInPlace (bool inPlace);
+    ECOBJECTS_EXPORT static InstanceHeader const&   PeekInstanceHeader (void const* data);
     };
 
 

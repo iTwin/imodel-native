@@ -12,7 +12,10 @@ BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECEnabler::~ECEnabler() {}
+ECEnabler::~ECEnabler() 
+    {
+    Logger::GetLogger()->tracev (L"ECEnabler at 0x%x is being destructed.", this);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
