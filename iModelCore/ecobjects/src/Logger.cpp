@@ -39,6 +39,39 @@ DWORD bufferSize
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Casey.Mullen                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+std::wstring GetLogConfigurationFilename()
+    {
+    wchar_t filepath[_MAX_PATH];
+
+    if ((0 != GetEnvironmentVariableW(L"ECOBJECTS_LOGGING_CONFIG", filepath, _MAX_PATH)) && (0 ==_waccess(filepath, 0)))
+        {
+        wprintf (L"ECObjects.dll configuring logging with %s (Set by ECOBJECTS_LOGGING_CONFIG environment variable.)\n", filepath);
+        return filepath;
+        }
+    else if (SUCCESS == CheckProcessDirectory(filepath, sizeof(filepath)))
+        {
+        wprintf (L"ECObjects.dll configuring logging using %s. Override by setting ECOBJECTS_LOGGING_CONFIG in environment.\n", filepath);
+        return filepath;
+        }
+    else if (0 != GetEnvironmentVariableW(L"OutRoot", filepath, _MAX_PATH))
+        {
+        wchar_t * processorArchitecture = (8 == sizeof(void*)) ? L"Winx64" : L"Winx86";
+        wcscat (filepath, processorArchitecture);
+        wcscat (filepath, L"\\Product\\ECFrameworkNativeTest\\Tests\\native\\log4cxx_properties.xml");
+        
+        if (0 ==_waccess(filepath, 0))
+            {
+            wprintf (L"ECObjects.dll configuring logging with %s. Override by setting ECOBJECTS_LOGGING_CONFIG in environment.\n", filepath);
+            return filepath;
+            }
+        }
+    
+    return L"";
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 Bentley::NativeLogging::ILogger * Logger::GetLogger
@@ -49,17 +82,16 @@ void
     if (NULL == s_logger)
         {
         // If the hosting application hasn't already established a logging context
-        if (false == LoggerConfig::isInterfaceRegistered())
+        if ( ! LoggerConfig::isInterfaceRegistered())
             {
             Provider::Log4cxxLogger* pLog = new Provider::Log4cxxLogger;
-            wchar_t filepath[_MAX_PATH];
 
-            if ((0 != GetEnvironmentVariableW(L"ECOBJECTS_LOGGING_CONFIG", filepath, _MAX_PATH)) && (0 ==_waccess(filepath, 0)))
-                pLog->LoadConfiguration (filepath);
-            else if (SUCCESS == CheckProcessDirectory(filepath, sizeof(filepath)))
-                pLog->LoadConfiguration(filepath);
+            std::wstring filepath = GetLogConfigurationFilename();
+            if (filepath.size() > 0)
+                pLog->LoadConfiguration (filepath.c_str());
             else
                 {
+                wprintf (L"ECObjects.dll configuring loggging using basic configuration with ECObjectsNative level set to 'Warning'. Override by setting ECOBJECTS_LOGGING_CONFIG in environment.\n");
                 pLog->BasicConfiguration ();
                 pLog->SetSeverity(L"ECObjectsNative", LOG_WARNING);
                 }
