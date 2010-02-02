@@ -224,6 +224,44 @@ StatusInt           StandaloneECInstance::_SetValue (const wchar_t * propertyAcc
 
     return status;
     }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           StandaloneECInstance::_InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size)
+    {
+    ClassLayoutCR classLayout = m_standaloneEnabler->GetClassLayout();
+    StatusInt status = InsertNullArrayElementsAt (classLayout, propertyAccessString, index, size);
+    
+    return status;
+    } 
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           StandaloneECInstance::_AddArrayElements (const wchar_t * propertyAccessString, UInt32 size)
+    {
+    ClassLayoutCR classLayout = m_standaloneEnabler->GetClassLayout();    
+    StatusInt status = AddNullArrayElementsAt (classLayout, propertyAccessString, size);
+    
+    return status;
+    }        
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           StandaloneECInstance::_RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index)
+    {
+    return ECOBJECTS_STATUS_OperationNotSupported;
+    } 
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           StandaloneECInstance::_ClearArray (const wchar_t * propertyAccessString)
+    {
+    return ECOBJECTS_STATUS_OperationNotSupported;
+    }                      
  
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09

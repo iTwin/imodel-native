@@ -160,7 +160,7 @@ void            ECValue::SetToNull()
     {
     if (IsString())
         SetString (NULL);
-    else
+    else if (!IsArray()) // arrays can never be null       
         m_isNull = true; //WIP_FUSION handle other types
     }    
 /*---------------------------------------------------------------------------------**//**
@@ -281,6 +281,20 @@ PrimitiveType         ECValue::GetPrimitiveType() const
     PRECONDITION (IsPrimitive() && "Tried to get the primitive type of an EC::ECValue that is not classified as a primitive.", (PrimitiveType)0);    
     return m_primitiveType;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    AdamKlatzkin    10/10
++---------------+---------------+---------------+---------------+---------------+------*/    
+StatusInt       ECValue::SetPrimitiveType (PrimitiveType primitiveType)
+    {
+    if (m_primitiveType != primitiveType)
+        {
+        Clear();
+        m_primitiveType = primitiveType;
+        }
+        
+    return SUCCESS;
+    }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
@@ -394,33 +408,42 @@ std::wstring    ECValue::ToString () const
         return L"<null>";
         
     std::wostringstream valueAsString;
-    switch (m_valueKind)
+    
+    if (IsArray())
         {
-        case PRIMITIVETYPE_Integer:
+        ArrayInfo arrayInfo = GetArrayInfo();
+        valueAsString << "Count: " << arrayInfo.GetCount() << " IsFixedSize: " << arrayInfo.IsFixedCount();
+        }
+    else
+        {
+        switch (m_valueKind)
             {
-            valueAsString << GetInteger();
-            break;
+            case PRIMITIVETYPE_Integer:
+                {
+                valueAsString << GetInteger();
+                break;
+                }
+            case PRIMITIVETYPE_Long:
+                {
+                valueAsString << GetLong();
+                break;
+                }            
+            case PRIMITIVETYPE_Double:
+                {
+                valueAsString << GetDouble();
+                break;
+                }            
+            case PRIMITIVETYPE_String:
+                {
+                valueAsString << GetString();
+                break;          
+                }
+            default:
+                {
+                valueAsString << L"EC::ECValue::ToString needs work... unsupported data type";
+                break;          
+                }            
             }
-        case PRIMITIVETYPE_Long:
-            {
-            valueAsString << GetLong();
-            break;
-            }            
-        case PRIMITIVETYPE_Double:
-            {
-            valueAsString << GetDouble();
-            break;
-            }            
-        case PRIMITIVETYPE_String:
-            {
-            valueAsString << GetString();
-            break;          
-            }
-        default:
-            {
-            valueAsString << L"EC::ECValue::ToString needs work... unsupported data type";
-            break;          
-            }            
         }
         
     return valueAsString.str();
@@ -430,13 +453,13 @@ std::wstring    ECValue::ToString () const
 * @param        capacity IN  Estimated size of the array.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ECValue::SetStructArrayInfo (UInt32 count, bool isFixedSize)
+StatusInt       ECValue::SetStructArrayInfo (UInt32 count, bool isFixedCount)
     {
     Clear();
         
     m_valueKind                = VALUEKIND_Array;
 
-    m_arrayInfo.InitializeStructArray (count, isFixedSize);
+    m_arrayInfo.InitializeStructArray (count, isFixedCount);
     
     return SUCCESS;
     }
@@ -453,13 +476,15 @@ StatusInt       ECValue::SetPrimitiveArrayInfo (PrimitiveType primitiveElementTy
 
     m_arrayInfo.InitializePrimitiveArray (primitiveElementType, count, isFixedSize);
     
+    m_isNull = false; // arrays are never null
+    
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ArrayInfo       ECValue::GetArrayInfo()
+ArrayInfo       ECValue::GetArrayInfo() const
     {
     assert (IsArray());
     
@@ -469,21 +494,21 @@ ArrayInfo       ECValue::GetArrayInfo()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ArrayInfo::InitializeStructArray (UInt32 count, bool isFixedSize)
+void            ArrayInfo::InitializeStructArray (UInt32 count, bool isFixedCount)
     {
     m_arrayKind = ARRAYKIND_Struct;
     m_count           = count;
-    m_isFixedSize     = isFixedSize;
+    m_isFixedCount     = isFixedCount;
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ArrayInfo::InitializePrimitiveArray (PrimitiveType elementPrimitiveType, UInt32 count, bool isFixedSize)
+void            ArrayInfo::InitializePrimitiveArray (PrimitiveType elementPrimitiveType, UInt32 count, bool isFixedCount)
     {
     m_elementPrimitiveType = elementPrimitiveType;
     m_count           = count;
-    m_isFixedSize     = isFixedSize;
+    m_isFixedCount    = isFixedCount;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -497,9 +522,9 @@ UInt32          ArrayInfo::GetCount() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            ArrayInfo::IsFixedSize() const
+bool            ArrayInfo::IsFixedCount() const
     {
-    return m_isFixedSize;
+    return m_isFixedCount;
     }
     
 /*---------------------------------------------------------------------------------**//**

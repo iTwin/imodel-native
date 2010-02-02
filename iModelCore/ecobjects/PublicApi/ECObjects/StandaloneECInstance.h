@@ -51,10 +51,14 @@ protected:
     virtual bool            _IsReadOnly() const override;        
     virtual StatusInt       _GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const override;
     virtual StatusInt       _SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 nIndices, UInt32 const * indices) override;      
-    virtual void            _Dump () const;
+    virtual StatusInt       _InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size) override;
+    virtual StatusInt       _AddArrayElements (const wchar_t * propertyAccessString, UInt32 size) override;
+    virtual StatusInt       _RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index) override;
+    virtual StatusInt       _ClearArray (const wchar_t * propertyAccessString) override;    
+    virtual void            _Dump () const override;
     virtual void            _Free () override;
-    virtual byte const *    _GetDataForRead () const;
-    virtual UInt32          _GetBytesAllocated () const;
+    virtual byte const *    _GetDataForRead () const override;
+    virtual UInt32          _GetBytesAllocated () const override;
     
 public: // These must be public so that ECXDataEnabler can get at the guts of StandaloneECInstance to copy it into an XAttribute     
     ECOBJECTS_EXPORT byte const *         GetDataForRead () const;

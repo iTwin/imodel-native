@@ -29,6 +29,10 @@ protected:
     ECOBJECTS_EXPORT virtual std::wstring _GetInstanceId() const = 0; // Virtual and returning std::wstring because a subclass may want to calculate it on demand
     ECOBJECTS_EXPORT virtual StatusInt    _GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const = 0;
     ECOBJECTS_EXPORT virtual StatusInt    _SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 nIndices = 0, UInt32 const * indices = NULL) = 0;
+    ECOBJECTS_EXPORT virtual StatusInt    _InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size) = 0;
+    ECOBJECTS_EXPORT virtual StatusInt    _AddArrayElements (const wchar_t * propertyAccessString, UInt32 size) = 0;
+    ECOBJECTS_EXPORT virtual StatusInt    _RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index) = 0;
+    ECOBJECTS_EXPORT virtual StatusInt    _ClearArray (const wchar_t * propertyAccessString) = 0;    
     ECOBJECTS_EXPORT virtual ECEnablerCR  _GetEnabler() const = 0;
     ECOBJECTS_EXPORT virtual bool         _IsReadOnly() const = 0;
     //! This should dump the instance's property values using the logger
@@ -46,16 +50,16 @@ public:
     ECOBJECTS_EXPORT StatusInt            GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 index) const;
     ECOBJECTS_EXPORT StatusInt            SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 index);
         
-    // AZK Are these not exported just because we have not yet worked out the details?
     //! Contract:
     //! - For all of the methods, the propertyAccessString should be in the "array element" form, 
     //!   e.g. "Aliases[]" instead of "Aliases"         
-    StatusInt   InsertArrayElement (const wchar_t * propertyAccessString, ECValueCR v, UInt32 index); //WIP_FUSION Return the new count?
-    StatusInt   RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index); //WIP_FUSION return the removed one? YAGNI? Return the new count?
-    StatusInt   ClearArray (const wchar_t * propertyAccessString);    
+    ECOBJECTS_EXPORT StatusInt          InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size); //WIP_FUSION Return the new count?   
+    ECOBJECTS_EXPORT StatusInt          AddArrayElements (const wchar_t * propertyAccessString, UInt32 size); //WIP_FUSION Return the new count?
+    ECOBJECTS_EXPORT StatusInt          RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index); //WIP_FUSION return the removed one? YAGNI? Return the new count?
+    ECOBJECTS_EXPORT StatusInt          ClearArray (const wchar_t * propertyAccessString);    
     
     //WIP_FUSION ParseExpectedNIndices should move to AccessStringHelper struct... along with method to convert to/from .NET ECObjects style accessString
-    ECOBJECTS_EXPORT static int          ParseExpectedNIndices (const wchar_t * propertyAccessString);
+    ECOBJECTS_EXPORT static int         ParseExpectedNIndices (const wchar_t * propertyAccessString);
     
     // These are more than just convenience methods... they enable an access pattern 
     // from managed code that can get a value with only one managed to native transition    

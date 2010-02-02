@@ -64,7 +64,7 @@ public:
 
 enum ArrayModifierFlags : UInt32
     {
-    ARRAYMODIFIERFLAGS_IsFixedSize    = 0x01
+    ARRAYMODIFIERFLAGS_IsFixedCount    = 0x01
     };
 
 /*=================================================================================**//**
@@ -101,7 +101,7 @@ public:
     inline wchar_t const *  GetAccessString() const     { return m_accessString.c_str(); }
     inline int              GetExpectedIndices() const  { return m_expectedIndices; }
     inline UInt32           GetModifierFlags() const    { return m_modifierFlags; }
-    inline UInt32           GetModifierData() const     { return m_modifierData; }
+    inline UInt32           GetModifierData() const     { return m_modifierData; }    
     
     bool                    IsFixedSized() const;
     //! Gets the size required for this PropertyValue in the fixed Section of the IECInstance's memory
@@ -151,10 +151,11 @@ private:
     UInt32                  m_sizeOfFixedSection;
     
     void                    AddProperties (ECClassCR ecClass, wchar_t const * nameRoot, bool addFixedSize);
-    StatusInt               AddProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor, UInt32 size, UInt32 modifierFlags = 0, UInt32 modifierData = 0);
-    StatusInt               AddFixedSizeProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor);
-    StatusInt               AddFixedSizeArrayProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor, UInt32 arrayCount);
-    StatusInt               AddVariableSizeProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor);
+    StatusInt               AddProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 size, UInt32 modifierFlags = 0, UInt32 modifierData = 0);
+    StatusInt               AddFixedSizeProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor);
+    StatusInt               AddFixedSizeArrayProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount);
+    StatusInt               AddVariableSizeProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor);
+    StatusInt               AddVariableSizeArrayPropertyWithFixedCount (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount);
     StatusInt               FinishLayout ();
     std::wstring            GetClassName() const;
 
@@ -234,15 +235,19 @@ public:
 struct MemoryInstanceSupport
     {
 private:    
+    void                        PrepareToAccessNullFlags (UInt32& nullflagsOffset, UInt32& nullflagsBitmask, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;
     byte const *                GetAddressOfPrimitiveValue (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;
     UInt32                      GetOffsetOfPropertyValue (PropertyLayoutCR propertyLayout) const;
+    UInt32                      GetPropertyValueSize (PropertyLayoutCR propertyLayout) const;
     UInt32                      GetOffsetOfPrimitiveValue (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;
-    UInt32                      GetOffsetOfArrayIndex (PropertyLayoutCR propertyLayout, UInt32 index) const;
-    UInt32                      GetOffsetOfArrayIndexValue (PropertyLayoutCR propertyLayout, UInt32 index) const;
-    bool                        IsPrimitiveValueNull (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;
-    void                        SetPrimitiveValueNull (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices, bool isNull);
-
-    UInt32                      GetArrayOffsetAndCount (UInt32& arrayOffset, PropertyLayoutCR propertyLayout) const;
+    UInt32                      GetOffsetOfArray (PropertyLayoutCR propertyLayout) const;
+    UInt32                      GetOffsetOfArrayIndex (UInt32 arrayOffset, PropertyLayoutCR propertyLayout, UInt32 index) const;
+    UInt32                      GetOffsetOfArrayIndexValue (UInt32 arrayOffset, PropertyLayoutCR propertyLayout, UInt32 index) const;
+    bool                        IsPropertyValueNull (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;
+    void                        SetPropertyValueNull (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices, bool isNull);
+    
+    ArrayCount                  GetReservedArrayCount (PropertyLayoutCR propertyLayout) const;
+    ArrayCount                  GetAllocatedArrayCount (PropertyLayoutCR propertyLayout) const;
     StatusInt                   GetPrimitiveValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;
     StatusInt                   SetPrimitiveValueToMemory   (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices);
     
@@ -254,17 +259,21 @@ private:
     //! @param propertyLayout PropertyLayout of the variable-sized property whose size is increasing
     //! @param shiftBy        Positive or negative! Memory will be moved and SecondaryOffsets will be adjusted by this amount
     StatusInt                   ShiftValueData(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated, PropertyLayoutCR propertyLayout, Int32 shiftBy);
-    StatusInt                   ShiftArrayIndexValueData(PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 arrayCount, Int32 shiftBy);
+    StatusInt                   ShiftArrayIndexValueData(PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 arrayCount,  UInt32 endOfValueDataOffset, Int32 shiftBy);
         
     StatusInt                   EnsureSpaceIsAvailable (UInt32& offset, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded);
     StatusInt                   EnsureSpaceIsAvailableForArrayIndexValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 bytesNeeded);
     StatusInt                   GrowPropertyValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 additionalbytesNeeded);
+    
+    StatusInt                   CreateNullArrayElementsAt (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 insertIndex, UInt32 insertCount);
          
 protected:
     ECOBJECTS_EXPORT void       InitializeMemory(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated) const;
     ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout,      UInt32 nIndices, UInt32 const * indices) const;
     ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ClassLayoutCR classLayout, ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const;
     ECOBJECTS_EXPORT StatusInt  SetValueToMemory (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, ECValueCR v,  UInt32 nIndices, UInt32 const * indices);      
+    ECOBJECTS_EXPORT StatusInt  InsertNullArrayElementsAt (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, UInt32 insertIndex, UInt32 insertCount);
+    ECOBJECTS_EXPORT StatusInt  AddNullArrayElementsAt (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, UInt32 insertCount);
     ECOBJECTS_EXPORT void       DumpInstanceData (ClassLayoutCR classLayout) const;
     
     virtual bool                _IsMemoryInitialized () const = 0;    
