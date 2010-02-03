@@ -145,10 +145,6 @@ public:
     ECOBJECTS_EXPORT PrimitiveType  GetPrimitiveType() const;
     ECOBJECTS_EXPORT StatusInt      SetPrimitiveType(PrimitiveType primitiveElementType);
 
-    // AZK Is this really the best approach? These are really just for initializing an ECValue.  Callers can not change the primitive element type, or whether it is 
-    // fixed size after the fact.  They can change the size of variable size arrays but doing it through the value object is not necessarily the preferred approach.
-    // Maybe we should just expose these as constructors or static factory methods.
-    // Hmm, actually we expect to be able to reuse a value object as a flyweight so maybe this is the best approach.
     ECOBJECTS_EXPORT StatusInt      SetStructArrayInfo (UInt32 count, bool isFixedSize);
     ECOBJECTS_EXPORT StatusInt      SetPrimitiveArrayInfo (PrimitiveType primitiveElementtype, UInt32 count, bool isFixedSize);
     ECOBJECTS_EXPORT ArrayInfo      GetArrayInfo() const;

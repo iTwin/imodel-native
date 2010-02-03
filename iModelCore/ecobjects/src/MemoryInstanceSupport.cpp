@@ -19,7 +19,7 @@ const UInt32 BITS_PER_NULLFLAGSBITMASK = (sizeof(NullflagsBitmask) * 8);
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            PrimitiveTypeIsFixedSize (PrimitiveType primitiveType)
+static bool     PrimitiveTypeIsFixedSize (PrimitiveType primitiveType)
     {
     switch (primitiveType)
         {
@@ -37,9 +37,11 @@ bool            PrimitiveTypeIsFixedSize (PrimitiveType primitiveType)
     }
     
 /*---------------------------------------------------------------------------------**//**
+* internal helper method - no error checking.  Presumes caller has already determined
+* that propertyLayout is an array.
 * @bsimethod                                    Adam.Klatzkin                   02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/    
-bool        IsArrayOfFixedSizeElements (PropertyLayoutCR propertyLayout)
+static inline bool      IsArrayOfFixedSizeElements (PropertyLayoutCR propertyLayout)
     {
     if (PrimitiveTypeIsFixedSize (propertyLayout.GetTypeDescriptor().GetPrimitiveType()))
         return true;
@@ -50,7 +52,7 @@ bool        IsArrayOfFixedSizeElements (PropertyLayoutCR propertyLayout)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline UInt32   CalculateNumberNullFlagsBitmasks (UInt32 numberOfItems)
+static inline UInt32    CalculateNumberNullFlagsBitmasks (UInt32 numberOfItems)
     {
     UInt32 nNullflagsBitmasks = numberOfItems / BITS_PER_NULLFLAGSBITMASK;
     if ( (numberOfItems % BITS_PER_NULLFLAGSBITMASK > 0) )
@@ -61,7 +63,7 @@ inline UInt32   CalculateNumberNullFlagsBitmasks (UInt32 numberOfItems)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline void     InitializeNullFlags (NullflagsBitmask * nullFlagsStart, UInt32 numberOfGroups)
+static inline void      InitializeNullFlags (NullflagsBitmask * nullFlagsStart, UInt32 numberOfGroups)
     {
     NullflagsBitmask* nullflagsLocation = nullFlagsStart;
     for (UInt32 i = 0; i < numberOfGroups; i++, nullflagsLocation++)
@@ -69,9 +71,13 @@ inline void     InitializeNullFlags (NullflagsBitmask * nullFlagsStart, UInt32 n
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Fixed array properties (arrays that are entirely stored in the fixed section of an instance)
+* must have both a fixed element count and contain fixed size elements.  This method will calculate
+* size (in bytes) required to store such an array in a the instance fixed section.  It does not validate
+* that the conditions are met for storing the array there.  That exercise is left to the caller.
 * @bsimethod                                                    AdamKlatzkin    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline UInt32   CalculateFixedArraySize (UInt32 fixedCount, PrimitiveType primitiveType)
+static inline UInt32    CalculateFixedArrayPropertySize (UInt32 fixedCount, PrimitiveType primitiveType)
     {
     return (CalculateNumberNullFlagsBitmasks (fixedCount) * sizeof (NullflagsBitmask)) + 
         (fixedCount *ClassLayout::GetFixedPrimitiveValueSize(primitiveType));
@@ -121,7 +127,7 @@ UInt32          PropertyLayout::GetSizeInFixedSection () const
     else if (m_typeDescriptor.IsPrimitiveArray())
         {
         UInt32 fixedCount = m_modifierData; // WIP_FUSION for now assume modifier data holds the count but I'm not sure if that is the right place for this.
-        return CalculateFixedArraySize (fixedCount, m_typeDescriptor.GetPrimitiveType());
+        return CalculateFixedArrayPropertySize (fixedCount, m_typeDescriptor.GetPrimitiveType());
         }
         
     DEBUG_FAIL("Can not determine size in fixed section for datatype");
@@ -309,43 +315,6 @@ void            ClassLayout::AddProperties (ECClassCR ecClass, wchar_t const * n
                         AddVariableSizeProperty (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()));
                     }   
                 }
-
-            //AddArrayProperty (L"ArrayOfInts",   EC::DATATYPE_String);
-            /* WIP_FUSION: deal with array later.
-            Arrays of structs will get sliced so that they appear to be arrays of a single value type.
-            For example, an array of Manufacturer would show up as three PropertyLayout objects:
-            ArrayOfManufacturers[]           // This only holds the count. It is fixed size. The count is the max count of any of the value arrays, below
-            ArrayOfManufacturers[].Name      // This only holds "Name" values. It is variable sized unless the array has a hard upper limit.
-            ArrayOfManufacturers[].AccountNo // This only holds "AccountNo" values. It is variable sized unless the array has a hard upper limit.
-
-            For a given array of fixed-sized values, the memory layout will be: count, nullflags, element, element, element
-            ...and we have random access to the elements.
-
-            For an array of variable-sized values, we follow the same pattern as the overall StandaloneECInstance
-            and have a fixed-sized section (an array of SecondaryOffsets) followed by a variable-sized section holding the actual values.
-            For efficiency, when adding array elements, you really, really want to reserve them in advance, otherwise every
-            new element increases the size of the fixed-sized section, forcing a shift of the entire variable-sized section.
-
-            Even though we "slice" arrays of structs, when we add a new 'struct value' to the array, we really need to keep all
-            of the 'slices' in synch, e.g. we can't increase the length of ArrayOfManufacturers[].Name without also increasing
-            the length of ArrayOfManufacturers[].AccountNo. Hmmm... possibly they should all share the same count.
-
-            After 32 elements we have to insert another 4 bytes of nullflags, which also complicates the calculation of offsets
-            and the shifting of values in the case of arrays of variable-sized values.
-
-            Multidimensional arrays:
-            ArrayOfManufacturers[].Aliases[]
-            For this 2D array, we essentially have an array (ArrayOfManufacturers) where every element is an array of strings
-            (Aliases). In the outer array, we lookup the right array of Aliases. Within that array of Aliases, layout is
-            identical to a normal array of strings.
-
-            The tricky part is that when the nested Aliases array needs more memory, it must propagate a memory request back to
-            its outer array, which may in turn need to request more space for its "value", which may need to request more memory
-            from the "instance", which may have to realloc and move the whole shebang, in order to accomplish it.
-
-            Need to figure out how to really handle this recursively in a consistent way....
-            */
-
             }
         }
     }
@@ -555,7 +524,7 @@ StatusInt       ClassLayout::AddFixedSizeArrayProperty (wchar_t const * accessSt
     {
     PRECONDITION (m_state == AcceptingFixedSizeProperties, ERROR); // ClassLayoutNotAcceptingFixedSizeProperties    
     
-    UInt32 size = CalculateFixedArraySize (arrayCount, typeDescriptor.GetPrimitiveType());
+    UInt32 size = CalculateFixedArrayPropertySize (arrayCount, typeDescriptor.GetPrimitiveType());
     
     return AddProperty (accessString, typeDescriptor, size, ARRAYMODIFIERFLAGS_IsFixedCount, arrayCount);
     }
@@ -735,22 +704,6 @@ InstanceHeader const&    MemoryInstanceSupport::PeekInstanceHeader (void const* 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          MemoryInstanceSupport::GetOffsetOfArray (PropertyLayoutCR propertyLayout) const
-    {
-    if (propertyLayout.IsFixedSized())
-        {
-        return propertyLayout.GetOffset();
-        }
-    else
-        {
-        SecondaryOffset* pSecondaryOffset = (SecondaryOffset*)(_GetData() + propertyLayout.GetOffset());        
-        return *pSecondaryOffset;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    AdamKlatzkin    01/10
-+---------------+---------------+---------------+---------------+---------------+------*/
 ArrayCount      MemoryInstanceSupport::GetReservedArrayCount (PropertyLayoutCR propertyLayout) const
     {
     if (propertyLayout.GetModifierFlags() & ARRAYMODIFIERFLAGS_IsFixedCount)
@@ -783,39 +736,42 @@ ArrayCount      MemoryInstanceSupport::GetAllocatedArrayCount (PropertyLayoutCR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-byte const *    MemoryInstanceSupport::GetAddressOfPrimitiveValue (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const
+byte const *    MemoryInstanceSupport::GetAddressOfPropertyValue (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const
     {
     if (nIndices == 0)
         return _GetData() + GetOffsetOfPropertyValue (propertyLayout);
     else
         {
-        UInt32 arrayOffset = GetOffsetOfArray (propertyLayout);   
+        UInt32 arrayOffset = GetOffsetOfPropertyValue (propertyLayout);   
         return _GetData() + GetOffsetOfArrayIndexValue (arrayOffset, propertyLayout, *indices);
         }
     } 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          MemoryInstanceSupport::GetOffsetOfPrimitiveValue (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const
-    {
-    if (nIndices == 0)
-        return GetOffsetOfPropertyValue (propertyLayout);
-    else
-        {
-        UInt32 arrayOffset = GetOffsetOfArray (propertyLayout);   
-        return GetOffsetOfArrayIndexValue (arrayOffset, propertyLayout, *indices);
-        }
-    } 
-
-/*---------------------------------------------------------------------------------**//**
+* internal helper - no parameter checking
+* Determines the offset & bitmask necessary to access the null flag for a specified property or
+* the specified index of an element in an array proeprty.
+*
+* @param[OUT]   nullFlagsOffset     The offset of the null flags group.  This offset is relative to the
+*                                   beginning of the instance data.
+* @param[OUT]   nullflagsBitmask    The bitmask that should be used to access the null flag bit in the group at nullflagsOffset.
+* @param[IN]    propertyLayout      The propertyLayout to obtain nullflags lookup information for
+* @param[IN]    nIndicies           The number of indicies provided.  This value should be 0 if accessing the null flags for the property directly or
+*                                   1 if accessing the null flags for an element contained by an array property.
+* @param[IN]    indicies            The index number (starting at 0) of the array element to access null flags for.  NULL if nIndices == 0.  It is expected
+*                                   that the caller has validated this parameter is within a valid range (< ArrayCount).
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-void   MemoryInstanceSupport::PrepareToAccessNullFlags (UInt32& nullflagsOffset, UInt32& nullflagsBitmask, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const
+static void     PrepareToAccessNullFlags 
+(
+UInt32&             nullflagsOffset, 
+UInt32&             nullflagsBitmask, 
+byte const *        data, 
+PropertyLayoutCR    propertyLayout, 
+UInt32              nIndices, 
+UInt32 const *      indices
+)
     {
-    // Since this is a private method and we are concerned about performance we do not do any parameter checking here.  nIndices must be 0 or 1
-    // and we assume if it is 1 that we are obtaining the value from a primitive array.  We also assume that count has already been validated against 
-    // the specified index.   
     if (nIndices == 0)
         {
         nullflagsOffset = propertyLayout.GetNullflagsOffset();
@@ -826,7 +782,7 @@ void   MemoryInstanceSupport::PrepareToAccessNullFlags (UInt32& nullflagsOffset,
         if (propertyLayout.IsFixedSized())
             nullflagsOffset = propertyLayout.GetOffset();
         else
-            nullflagsOffset = *((SecondaryOffset*)(_GetData() + propertyLayout.GetOffset())) + sizeof (ArrayCount);
+            nullflagsOffset = *((SecondaryOffset*)(data + propertyLayout.GetOffset())) + sizeof (ArrayCount);
 
         nullflagsOffset += (*indices / BITS_PER_NULLFLAGSBITMASK * sizeof(NullflagsBitmask));
         nullflagsBitmask = 0x01 << (*indices % BITS_PER_NULLFLAGSBITMASK);
@@ -840,9 +796,10 @@ bool            MemoryInstanceSupport::IsPropertyValueNull (PropertyLayoutCR pro
     {
     UInt32 nullflagsOffset;
     UInt32 nullflagsBitmask;
-    PrepareToAccessNullFlags (nullflagsOffset, nullflagsBitmask, propertyLayout, nIndices, indices);
+    byte const * data = _GetData();
+    PrepareToAccessNullFlags (nullflagsOffset, nullflagsBitmask, data, propertyLayout, nIndices, indices);
 
-    NullflagsBitmask const * nullflags = (NullflagsBitmask const *)(_GetData() + nullflagsOffset);
+    NullflagsBitmask const * nullflags = (NullflagsBitmask const *)(data + nullflagsOffset);
     return (0 != (*nullflags & nullflagsBitmask));    
     }
 
@@ -853,39 +810,39 @@ void            MemoryInstanceSupport::SetPropertyValueNull (PropertyLayoutCR pr
     {  
     UInt32 nullflagsOffset;
     UInt32 nullflagsBitmask;
-    PrepareToAccessNullFlags (nullflagsOffset, nullflagsBitmask, propertyLayout, nIndices, indices);   
+    byte const * data = _GetData();
+    PrepareToAccessNullFlags (nullflagsOffset, nullflagsBitmask, data, propertyLayout, nIndices, indices);   
     
-    NullflagsBitmask * nullflags = (NullflagsBitmask *)(_GetData() + nullflagsOffset);
+    NullflagsBitmask * nullflags = (NullflagsBitmask *)(data + nullflagsOffset);
     if (isNull && 0 == (*nullflags & nullflagsBitmask))
         *nullflags |= nullflagsBitmask; // turn on the null bit
     else if (!isNull && nullflagsBitmask == (*nullflags & nullflagsBitmask))
         *nullflags ^= nullflagsBitmask; // turn off the null bit // WIP_FUSION: Needs to use ModifyData
-    }
+    }    
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          MemoryInstanceSupport::GetOffsetOfPropertyValue (PropertyLayoutCR propertyLayout) const
+UInt32          MemoryInstanceSupport::GetOffsetOfPropertyValue (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const
     {
     UInt32 offset = propertyLayout.GetOffset();
     
-    if (propertyLayout.IsFixedSized())
+    if (!propertyLayout.IsFixedSized())        
+        {
+        SecondaryOffset const * pSecondaryOffset = (SecondaryOffset const *)(_GetData() + offset);        
+        offset = *pSecondaryOffset;
+        }
+        
+    if (nIndices == 0)
         return offset;
-
-    byte const * data = _GetData();
-    SecondaryOffset const * pSecondaryOffset = (SecondaryOffset const *)(data + offset);
-
-    SecondaryOffset secondaryOffset = *pSecondaryOffset;
-    
-    return secondaryOffset;
+    else
+        return GetOffsetOfArrayIndexValue (offset, propertyLayout, *indices);
     }       
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 UInt32          MemoryInstanceSupport::GetOffsetOfArrayIndex (UInt32 arrayOffset, PropertyLayoutCR propertyLayout, UInt32 index) const
     {    
-    // Since this is a private method and we are concerned about performance we do not do any release build parameter checking here.  
-    // We assume that count has already been validated against the specified index.    
     DEBUG_EXPECT (propertyLayout.GetTypeDescriptor().IsArray());
     
     ArrayCount count = GetAllocatedArrayCount (propertyLayout);
@@ -1226,7 +1183,7 @@ StatusInt       MemoryInstanceSupport::CreateNullArrayElementsAt (ClassLayoutCR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       MemoryInstanceSupport::EnsureSpaceIsAvailableForArrayIndexValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 bytesNeeded)
     {    
-    UInt32 arrayOffset = GetOffsetOfArray (propertyLayout);   
+    UInt32 arrayOffset = GetOffsetOfPropertyValue (propertyLayout);   
     byte const *             data = _GetData();
     SecondaryOffset* pIndexValueOffset = (SecondaryOffset*)(data + GetOffsetOfArrayIndex (arrayOffset, propertyLayout, arrayIndex));    
     SecondaryOffset indexValueOffset = arrayOffset + *pIndexValueOffset;    
@@ -1366,7 +1323,7 @@ StatusInt       MemoryInstanceSupport::ShiftArrayIndexValueData(PropertyLayoutCR
 
     byte * data = (byte*)_GetData();
     SecondaryOffset* pNextProperty = (SecondaryOffset*)(data + propertyLayout.GetOffset()) + 1;
-    UInt32 arrayOffset = GetOffsetOfArray (propertyLayout);   
+    UInt32 arrayOffset = GetOffsetOfPropertyValue (propertyLayout);   
     SecondaryOffset indexValueOffset = GetOffsetOfArrayIndexValue (arrayOffset, propertyLayout, arrayIndex + 1); // start at the one AFTER the index whose value's size is adjusting
     
     UInt32 bytesToMove = endOfValueDataOffset - indexValueOffset;
@@ -1417,7 +1374,7 @@ StatusInt       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValueR v, 
         return SUCCESS;
         }    
 
-    byte const * pValue = GetAddressOfPrimitiveValue (propertyLayout, nIndices, indices);
+    byte const * pValue = GetAddressOfPropertyValue (propertyLayout, nIndices, indices);
 
     ECTypeDescriptor typeDescriptor = propertyLayout.GetTypeDescriptor();    
     switch (typeDescriptor.GetPrimitiveType())
@@ -1534,7 +1491,7 @@ StatusInt       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueCR v, C
         }        
     SetPropertyValueNull (propertyLayout, nIndices, indices, false);            
     
-    UInt32 offset = GetOffsetOfPrimitiveValue (propertyLayout, nIndices, indices);
+    UInt32 offset = GetOffsetOfPropertyValue (propertyLayout, nIndices, indices);
 #ifdef EC_TRACE_MEMORY 
     wprintf (L"SetValue %s of 0x%x at offset=%d to %s.\n", propertyAccessString, this, offset, v.ToString().c_str());
 #endif    
@@ -1704,7 +1661,7 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
                 {            
                 for (UInt32 i = 0; i < count; i++)
                     {                
-                    offset = GetOffsetOfArrayIndex (GetOffsetOfArray (*propertyLayout), *propertyLayout, i);
+                    offset = GetOffsetOfArrayIndex (GetOffsetOfPropertyValue (*propertyLayout), *propertyLayout, i);
                     address = data + offset;
                     GetValueFromMemory (v, *propertyLayout, 1, &i);
                     valueAsString = v.ToString();                
@@ -1712,7 +1669,7 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
                         logger->tracev (L"      [0x%x][%4.d] %d = %s\n", address, offset, i, valueAsString.c_str());
                     else
                         {
-                        SecondaryOffset secondaryOffset = GetOffsetOfArrayIndexValue (GetOffsetOfArray (*propertyLayout), *propertyLayout, i);
+                        SecondaryOffset secondaryOffset = GetOffsetOfArrayIndexValue (GetOffsetOfPropertyValue (*propertyLayout), *propertyLayout, i);
                         byte const * realAddress = data + secondaryOffset;
                         
                         logger->tracev (L"      [0x%x][%4.d] -> [0x%x][%4.d] %d = %s\n", address, offset, realAddress, secondaryOffset, i, valueAsString.c_str());                    
