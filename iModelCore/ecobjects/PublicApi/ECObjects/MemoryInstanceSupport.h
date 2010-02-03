@@ -154,6 +154,7 @@ private:
     
     // These members are transient
     SchemaIndex             m_schemaIndex;
+    bool                    m_isPersisted;
     UInt32                  m_nullflagsOffset;
     State                   m_state;
     UInt32                  m_offset;
@@ -177,8 +178,11 @@ public:
     ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (wchar_t const *  className, ClassIndex classIndex, SchemaIndex schemaIndex);
 
     ECOBJECTS_EXPORT std::wstring   GetClassName() const;
+    // These members are only meaningful in the context of a consumer like DgnHandlers.dll that actually handles persistence of ClassLayouts
     ECOBJECTS_EXPORT ClassIndex     GetClassIndex() const;
     ECOBJECTS_EXPORT SchemaIndex    GetSchemaIndex () const;
+    ECOBJECTS_EXPORT bool           IsPersisted () const;
+    ECOBJECTS_EXPORT void           SetIsPersisted (bool isPersisted) const;
     ECOBJECTS_EXPORT UInt32         GetPropertyCount () const;
     ECOBJECTS_EXPORT StatusInt      GetPropertyLayout (PropertyLayoutCP & propertyLayout, wchar_t const * accessString) const;
     ECOBJECTS_EXPORT StatusInt      GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const;
@@ -199,18 +203,8 @@ public:
     //! Determines the number of bytes used, so far
     ECOBJECTS_EXPORT UInt32         CalculateBytesUsed(byte const * data) const;
     };
-/*=================================================================================**//**
-* @bsistruct
-+===============+===============+===============+===============+===============+======*/      
-struct SchemaLayoutEntry
-    {
-    bool                m_persistent;
-    ClassLayoutCR       m_classLayout;
 
-    SchemaLayoutEntry (ClassLayoutCR l, bool p) : m_classLayout(l), m_persistent(p) { }
-    };
-
-typedef std::vector<SchemaLayoutEntry*>  SchemaLayoutEntryArray;
+typedef std::vector<ClassLayoutCP>  ClassLayoutVector;
 
 /*=================================================================================**//**
 * @bsistruct
@@ -219,20 +213,20 @@ struct SchemaLayout
 {
 private:
     SchemaIndex             m_schemaIndex;
-    SchemaLayoutEntryArray  m_entries;
+    ClassLayoutVector       m_classLayouts;
 
 public:
     ECOBJECTS_EXPORT SchemaLayout(SchemaIndex index) : m_schemaIndex(index) {}
 
     // NEEDSWORK: remove these
-    ECOBJECTS_EXPORT SchemaLayout() : m_schemaIndex(0) {}
-    ECOBJECTS_EXPORT void SetSchemaIndex(SchemaIndex i) {m_schemaIndex = i;}
+    //ECOBJECTS_EXPORT SchemaLayout() : m_schemaIndex(0) {}
+    //ECOBJECTS_EXPORT void SetSchemaIndex(SchemaIndex i) {m_schemaIndex = i;}
 
 
     ECOBJECTS_EXPORT SchemaIndex            GetSchemaIndex() const { return m_schemaIndex; }
     ECOBJECTS_EXPORT BentleyStatus          AddClassLayout (ClassLayoutCR, ClassIndex, bool isPersistent);
-    ECOBJECTS_EXPORT SchemaLayoutEntry*     GetEntry (ClassIndex classIndex);
-    ECOBJECTS_EXPORT SchemaLayoutEntry*     FindEntry (wchar_t const * className);
+    ECOBJECTS_EXPORT ClassLayoutCP          GetClassLayout (ClassIndex classIndex);
+    ECOBJECTS_EXPORT ClassLayoutCP          FindClassLayout (wchar_t const * className);
     ECOBJECTS_EXPORT BentleyStatus          FindAvailableClassIndex (ClassIndex&);
 };
 
