@@ -215,7 +215,7 @@ StatusInt           StandaloneECInstance::_SetValue (const wchar_t * propertyAcc
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt           StandaloneECInstance::_InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size)
     {
-    ClassLayoutCR classLayout = m_standaloneEnabler->GetClassLayout();
+    ClassLayoutCR classLayout = m_sharedWipEnabler->GetClassLayout();
     StatusInt status = InsertNullArrayElementsAt (classLayout, propertyAccessString, index, size);
     
     return status;
@@ -226,7 +226,7 @@ StatusInt           StandaloneECInstance::_InsertArrayElements (const wchar_t * 
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt           StandaloneECInstance::_AddArrayElements (const wchar_t * propertyAccessString, UInt32 size)
     {
-    ClassLayoutCR classLayout = m_standaloneEnabler->GetClassLayout();    
+    ClassLayoutCR classLayout = m_sharedWipEnabler->GetClassLayout();    
     StatusInt status = AddNullArrayElementsAt (classLayout, propertyAccessString, size);
     
     return status;
