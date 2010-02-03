@@ -36,8 +36,8 @@ bool operator()(const wchar_t * s1, const wchar_t * s2) const
 };
 
 typedef std::list<ECPropertyP> PropertyList;
-typedef stdext::hash_map<const wchar_t * , ECPropertyP, stdext::hash_compare<const wchar_t *, less_str>>   PropertyMap;
-typedef stdext::hash_map<const wchar_t * , ECClassP, stdext::hash_compare<const wchar_t *, less_str>> ClassMap;
+typedef stdext::hash_map<const wchar_t * , ECPropertyP, stdext::hash_compare<const wchar_t *, less_str>> PropertyMap;
+typedef stdext::hash_map<const wchar_t * , ECClassP, stdext::hash_compare<const wchar_t *, less_str>>    ClassMap;
 
 
 // ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 
@@ -51,8 +51,8 @@ enum ValueKind : unsigned short
     {
     VALUEKIND_Uninitialized                  = 0x00,
     VALUEKIND_Primitive                      = 0x01,
-    VALUEKIND_Struct                         = 0x02,    
-    VALUEKIND_Array                          = 0x04,    
+    VALUEKIND_Struct                         = 0x02,
+    VALUEKIND_Array                          = 0x04,
     };
 
 /*__PUBLISH_SECTION_END__*/

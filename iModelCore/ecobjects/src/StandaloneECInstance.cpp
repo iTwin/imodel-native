@@ -14,7 +14,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/        
 StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, byte * data, UInt32 size) :
         MemoryInstanceSupport (true),
-        m_standaloneEnabler(const_cast<StandaloneECEnablerP>(&enabler)), // WIP_FUSION: can we get rid of the const cast?
+        m_sharedWipEnabler(const_cast<StandaloneECEnablerP>(&enabler)), // WIP_FUSION: can we get rid of the const cast?
         m_bytesAllocated(size), m_data(data) 
     {
     }
@@ -24,7 +24,7 @@ StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, byte 
 +---------------+---------------+---------------+---------------+---------------+------*/        
 StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, UInt32 minimumBufferSize) :
         MemoryInstanceSupport (true),
-        m_standaloneEnabler(const_cast<StandaloneECEnablerP>(&enabler)), // WIP_FUSION: can we get rid of the const cast?
+        m_sharedWipEnabler(const_cast<StandaloneECEnablerP>(&enabler)), // WIP_FUSION: can we get rid of the const cast?
         m_bytesAllocated(0), m_data(NULL) 
     {
     UInt32 size = max (minimumBufferSize, enabler.GetClassLayout().GetSizeOfFixedSection());
@@ -35,7 +35,7 @@ StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, UInt3
     
 StandaloneECInstance::~StandaloneECInstance ()
     {
-    Logger::GetLogger()->tracev (L"StandaloneECInstance at 0x%x is being destructed. It references enabler 0x%x", this, m_standaloneEnabler);
+    //Logger::GetLogger()->tracev (L"StandaloneECInstance at 0x%x is being destructed. It references enabler 0x%x", this, m_sharedWipEnabler);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -43,7 +43,7 @@ StandaloneECInstance::~StandaloneECInstance ()
 +---------------+---------------+---------------+---------------+---------------+------*/        
 void                StandaloneECInstance::ClearValues ()
     {
-    InitializeMemory (m_standaloneEnabler->GetClassLayout(), m_data, m_bytesAllocated);
+    InitializeMemory (m_sharedWipEnabler->GetClassLayout(), m_data, m_bytesAllocated);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -51,7 +51,7 @@ void                StandaloneECInstance::ClearValues ()
 +---------------+---------------+---------------+---------------+---------------+------*/    
 void                StandaloneECInstance::_Dump() const
     {
-    return DumpInstanceData (m_standaloneEnabler->GetClassLayout());
+    return DumpInstanceData (m_sharedWipEnabler->GetClassLayout());
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -59,7 +59,7 @@ void                StandaloneECInstance::_Dump() const
 +---------------+---------------+---------------+---------------+---------------+------*/    
 ECEnablerCR         StandaloneECInstance::_GetEnabler() const
     {
-    return *m_standaloneEnabler;
+    return *m_sharedWipEnabler;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -124,7 +124,7 @@ UInt32              StandaloneECInstance::GetBytesUsed () const
     if (NULL == m_data)
         return 0;
 
-    return m_standaloneEnabler->GetClassLayout().CalculateBytesUsed(m_data);
+    return m_sharedWipEnabler->GetClassLayout().CalculateBytesUsed(m_data);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -140,7 +140,7 @@ byte const *        StandaloneECInstance::GetData () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassLayoutCR       StandaloneECInstance::GetClassLayout () const
     {
-    return m_standaloneEnabler->GetClassLayout();
+    return m_sharedWipEnabler->GetClassLayout();
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -194,7 +194,7 @@ StatusInt           StandaloneECInstance::_GrowAllocation (UInt32 bytesNeeded)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt           StandaloneECInstance::_GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
     {
-    ClassLayoutCR classLayout = m_standaloneEnabler->GetClassLayout();
+    ClassLayoutCR classLayout = m_sharedWipEnabler->GetClassLayout();
     
     return GetValueFromMemory (classLayout, v, propertyAccessString, nIndices, indices);
     }
@@ -204,7 +204,7 @@ StatusInt           StandaloneECInstance::_GetValue (ECValueR v, const wchar_t *
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt           StandaloneECInstance::_SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 nIndices, UInt32 const * indices)
     {
-    ClassLayoutCR classLayout = m_standaloneEnabler->GetClassLayout();
+    ClassLayoutCR classLayout = m_sharedWipEnabler->GetClassLayout();
     StatusInt status = SetValueToMemory (classLayout, propertyAccessString, v, nIndices, indices);
 
     return status;

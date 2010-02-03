@@ -548,8 +548,7 @@ TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);
     
-    SchemaLayout schemaLayout;
-    schemaLayout.SetSchemaIndex(24);
+    SchemaLayout schemaLayout (24);
 
     ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
     StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);
@@ -639,8 +638,7 @@ TEST (MemoryLayoutTests, TestSetGetNull)
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);
         
-    SchemaLayout schemaLayout;
-    schemaLayout.SetSchemaIndex(24);
+    SchemaLayout schemaLayout (24);
 
     ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
     StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);
@@ -709,8 +707,7 @@ TEST (MemoryLayoutTests, ProfileSettingValues)
     ECClassP ecClass = schema->GetClassP (L"Pidget");
     ASSERT_TRUE (ecClass);
         
-    SchemaLayout schemaLayout;
-    schemaLayout.SetSchemaIndex(24);
+    SchemaLayout schemaLayout(24);
 
     ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
     StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);

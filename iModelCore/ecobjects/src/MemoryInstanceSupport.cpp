@@ -139,9 +139,10 @@ UInt32          PropertyLayout::GetSizeInFixedSection () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassLayout::ClassLayout(SchemaIndex schemaIndex) : 
     m_schemaIndex (schemaIndex),
-    m_state(AcceptingFixedSizeProperties), 
+    m_isPersisted(false),
+    m_state(AcceptingFixedSizeProperties),
     m_classIndex(0),
-    m_nProperties(0), 
+    m_nProperties(0),
     m_nullflagsOffset (sizeof(InstanceHeader)),
     m_offset(sizeof(InstanceHeader) + sizeof(NullflagsBitmask)),
     m_sizeOfFixedSection(0), 
@@ -264,7 +265,23 @@ std::wstring    ClassLayout::GetClassName() const
     {
     return m_className;
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            ClassLayout::IsPersisted() const
+    {
+    return m_isPersisted;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ClassLayout::SetIsPersisted (bool isPersisted) const
+    {
+    const_cast<ClassLayoutP>(this)->m_isPersisted = isPersisted;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -603,39 +620,39 @@ StatusInt       ClassLayout::GetPropertyLayoutByIndex (PropertyLayoutCP & proper
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   SchemaLayout::AddClassLayout (ClassLayoutCR classLayout, ClassIndex classIndex, bool isPersistent)
     {
-    if (m_entries.size() <= classIndex)
-        m_entries.resize (20 + classIndex);
+    if (m_classLayouts.size() <= classIndex)
+        m_classLayouts.resize (20 + classIndex, NULL);
 
-    assert (NULL == m_entries[classIndex] && "Class Index is already in use");
+    assert (NULL == m_classLayouts[classIndex] && "ClassIndex is already in use");
 
-    m_entries[classIndex] = new SchemaLayoutEntry (classLayout, isPersistent);
+    m_classLayouts[classIndex] = &classLayout;
 
-    return ERROR;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaLayoutEntry*  SchemaLayout::GetEntry (ClassIndex classIndex)
+ClassLayoutCP  SchemaLayout::GetClassLayout (ClassIndex classIndex)
     {
-    if (m_entries.size() <= classIndex)
+    if (m_classLayouts.size() <= classIndex)
         return NULL;
 
-    return m_entries[classIndex];
+    return m_classLayouts[classIndex];
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaLayoutEntry*  SchemaLayout::FindEntry (wchar_t const * className)
+ClassLayoutCP  SchemaLayout::FindClassLayout (wchar_t const * className)
     {
-    for each (SchemaLayoutEntry* entry in m_entries)
+    for each (ClassLayoutCP classLayout in m_classLayouts)
         {
-        if (NULL == entry)
+        if (NULL == classLayout)
             continue;
 
-        if (0 == wcsicmp (entry->m_classLayout.GetClassName().c_str(), className))
-            return entry;
+        if (0 == wcsicmp (classLayout->GetClassName().c_str(), className))
+            return classLayout;
         }
 
     return NULL;
@@ -646,10 +663,10 @@ SchemaLayoutEntry*  SchemaLayout::FindEntry (wchar_t const * className)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   SchemaLayout::FindAvailableClassIndex(ClassIndex& classIndex)
     {
-    SchemaLayoutEntry* nullVal = NULL;
-    SchemaLayoutEntryArray::iterator iter = std::find (m_entries.begin(), m_entries.end(), nullVal);
+    ClassLayoutP nullVal = NULL;
+    ClassLayoutVector::iterator iter = std::find (m_classLayouts.begin(), m_classLayouts.end(), nullVal);
 
-    size_t firstNullIndex = iter - m_entries.begin();
+    size_t firstNullIndex = iter - m_classLayouts.begin();
 
     if (USHRT_MAX > firstNullIndex)
         { 
