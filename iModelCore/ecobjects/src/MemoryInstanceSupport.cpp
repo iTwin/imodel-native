@@ -618,7 +618,8 @@ StatusInt       ClassLayout::GetPropertyLayoutByIndex (PropertyLayoutCP & proper
 BentleyStatus   SchemaLayout::AddClassLayout (ClassLayoutCR classLayout, ClassIndex classIndex, bool isPersistent)
     {
     if (m_classLayouts.size() <= classIndex)
-        m_classLayouts.resize (20 + classIndex, NULL);
+        m_classLayouts.resize (1 + classIndex, NULL); // WIP_FUSION: Increase the increment to 20, later. 
+                                                      // Keep the increment low for now, to ensure that resizing has not ill side effects.
 
     assert (NULL == m_classLayouts[classIndex] && "ClassIndex is already in use");
 
