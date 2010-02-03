@@ -215,10 +215,68 @@ public:
     ECOBJECTS_EXPORT ClassLayoutCR  GetClassLayout() const;
     };
 
+/*__PUBLISH_SECTION_END__*/    
+//! An internal helper used by MemoryInstanceSupport to resize (add/remove elements) array property values
+struct      ArrayResizer
+    {
+    friend MemoryInstanceSupport;
+    
+private:
+    ClassLayoutCR           m_classLayout;
+    PropertyLayoutCR        m_propertyLayout;
+    MemoryInstanceSupportR  m_instance;
+    
+    UInt32          m_arrayOffset;
+    
+    UInt32          m_resizeIndex;
+    UInt32          m_resizeElementCount;
+    UInt32          m_resizeByteCount; // bytesNeeded
+        
+    PrimitiveType   m_elementType;
+    bool            m_elementTypeIsFixedSize;
+    UInt32          m_elementSizeInFixedSection;
+    
+    // state variables for pre resize
+    ArrayCount      m_preAllocatedArrayCount;
+    UInt32          m_preNullFlagBitmasksCount;
+    UInt32          m_preHeaderByteCount;
+    UInt32          m_preFixedSectionByteCount;
+    UInt32          m_preArrayByteCount;    
+    
+    // state variables for post resize
+    ArrayCount      m_postAllocatedArrayCount;
+    UInt32          m_postNullFlagBitmasksCount;
+    UInt32          m_postHeaderByteCount;
+    UInt32          m_postFixedSectionByteCount;    
+    SecondaryOffset m_postSecondaryOffsetOfResizeIndex;
+    
+    // pointers to memory that must be shifted during resize
+    byte const *    m_pResizeIndexPreShift;
+    byte const *    m_pResizeIndexPostShift;    
+    
+    byte const *    m_data;
+
+    ArrayResizer (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, MemoryInstanceSupportR instance, UInt32 resizeIndex, UInt32 resizeElementCount);
+        
+    StatusInt       ShiftDataFollowingResizeIndex ();
+    StatusInt       SetSecondaryOffsetsFollowingResizeIndex ();
+    StatusInt       ShiftDataPreceedingResizeIndex ();
+    StatusInt       SetSecondaryOffsetsPreceedingResizeIndex (SecondaryOffset* pSecondaryOffset, UInt32 byteCountToSet);    
+    StatusInt       WriteArrayHeader ();
+        
+    static StatusInt    CreateNullArrayElementsAt (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, MemoryInstanceSupportR instance, UInt32 insertIndex, UInt32 insertCount);
+    
+    };
+/*__PUBLISH_SECTION_START__*/    
+
 //! Base class for EC::IECInstance implementations that get/set values from a block of memory, 
 //! e.g. StandaloneECInstance and ECXDataInstance
 struct MemoryInstanceSupport
     {
+/*__PUBLISH_SECTION_END__*/    
+    friend  ArrayResizer;
+/*__PUBLISH_SECTION_START__*/    
+    
 private:    
     bool                        m_allowWritingDirectlyToInstanceMemory;
 	   
@@ -275,9 +333,7 @@ private:
         
     StatusInt                   EnsureSpaceIsAvailable (UInt32& offset, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded);
     StatusInt                   EnsureSpaceIsAvailableForArrayIndexValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 bytesNeeded);
-    StatusInt                   GrowPropertyValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 additionalbytesNeeded);   
-    
-    StatusInt       CreateNullArrayElementsAt (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 insertIndex, UInt32 insertCount);
+    StatusInt                   GrowPropertyValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 additionalbytesNeeded);           
          
 protected:
     //! Constructor used by subclasses
@@ -315,7 +371,7 @@ protected:
     
 public:
     ECOBJECTS_EXPORT static InstanceHeader const&   PeekInstanceHeader (void const* data);
-    };
+    };    
 
 
 END_BENTLEY_EC_NAMESPACE

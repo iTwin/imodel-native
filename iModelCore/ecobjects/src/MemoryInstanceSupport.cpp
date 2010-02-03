@@ -944,7 +944,7 @@ StatusInt       MemoryInstanceSupport::InsertNullArrayElementsAt (ClassLayoutCR 
     
     PRECONDITION (insertCount > 0, ERROR)        
     
-    return CreateNullArrayElementsAt (classLayout, propertyLayout, insertIndex, insertCount);
+    return ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, insertIndex, insertCount);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -966,217 +966,8 @@ StatusInt       MemoryInstanceSupport::AddNullArrayElementsAt (ClassLayoutCR cla
     
     PRECONDITION (count > 0, ERROR)        
     
-    return CreateNullArrayElementsAt (classLayout, propertyLayout, GetAllocatedArrayCount (propertyLayout), count);
-    }    
-    
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Adam.Klatzkin                   01/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       MemoryInstanceSupport::CreateNullArrayElementsAt (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 insertIndex, UInt32 insertCount)
-    {                
-    UInt32 arrayCount = GetAllocatedArrayCount (propertyLayout);    
-    PRECONDITION (insertIndex <= arrayCount, ERROR);
-        
-    // we only need to grow the fixed section of the array
-    UInt32 elementSizeInFixedSection;
-    PrimitiveType elementType = propertyLayout.GetTypeDescriptor().GetPrimitiveType();
-    bool hasFixedSizeElements = IsArrayOfFixedSizeElements (propertyLayout);
-    if (hasFixedSizeElements)
-        elementSizeInFixedSection = ClassLayout::GetFixedPrimitiveValueSize (elementType);
-    else
-        elementSizeInFixedSection = sizeof (SecondaryOffset);
-    
-    UInt32 currentNullFlagBitmasksCount = CalculateNumberNullFlagsBitmasks (arrayCount);    
-    UInt32 currentHeaderByteCount = (arrayCount == 0) ? 0 : sizeof (ArrayCount) + (currentNullFlagBitmasksCount * sizeof (NullflagsBitmask));
-    UInt32 currentFixedSectionByteCount = currentHeaderByteCount + (arrayCount * elementSizeInFixedSection);
-    UInt32 currentArrayByteCount = GetPropertyValueSize (propertyLayout);
-    
-    UInt32 newArrayCount = arrayCount + insertCount;
-    UInt32 newNullFlagBitmasksCount = CalculateNumberNullFlagsBitmasks (newArrayCount);
-    UInt32 newHeaderByteCount = sizeof (ArrayCount) + (newNullFlagBitmasksCount * sizeof (NullflagsBitmask));
-    UInt32 newFixedSectionByteCount = newHeaderByteCount + (newArrayCount * elementSizeInFixedSection);
-    
-    UInt32 bytesNeeded = newFixedSectionByteCount - currentFixedSectionByteCount;
-    
-    UInt32 arrayOffset;
-    StatusInt status = EnsureSpaceIsAvailable (arrayOffset, classLayout, propertyLayout, currentArrayByteCount + bytesNeeded);
-    if (SUCCESS != status)
-        return status;       
-        
-    byte * pWriteBuffer;              
-    UInt32 sizeOfWriteBuffer = 0;
-    
-    // shift all data (fixed & variable) to the right of the inserted element 
-    byte const *             data = _GetData(); // need to get this value again since EnsureSpace may have re allocated    
-    UInt32 offsetOfInsertionPoint = currentHeaderByteCount + (insertIndex * elementSizeInFixedSection);         
-    byte const * pInsertFrom = data + arrayOffset + offsetOfInsertionPoint;
-    byte const * pInsertTo = pInsertFrom + bytesNeeded;        
-    #ifndef NDEBUG
-    UInt32 arrayByteCountAfterGrow = GetPropertyValueSize (propertyLayout);
-    byte const * pNextProperty = data + arrayOffset + arrayByteCountAfterGrow;
-    DEBUG_EXPECT (pNextProperty == data + *((SecondaryOffset*)(data + propertyLayout.GetOffset()) + 1));
-    #endif    
-    if (currentArrayByteCount > offsetOfInsertionPoint)
-        {        
-        UInt32 byteCountToShift = currentArrayByteCount - offsetOfInsertionPoint;        
-        DEBUG_EXPECT (pInsertTo + byteCountToShift <= pNextProperty); 
-        memmove ((byte*)pInsertTo, pInsertFrom, byteCountToShift); // WIP_FUSION .. use _MoveData, waiting on Keith
-        }
-           
-    // initialize the inserted secondary offsets and update all shifted secondary offsets         
-    SecondaryOffset insertedSecondaryOffset;
-    if (!hasFixedSizeElements)
-        {
-        UInt32 nSecondaryOffsetsShifted;        
-        if (arrayCount > insertIndex)
-            {
-            nSecondaryOffsetsShifted = arrayCount - insertIndex;
-            insertedSecondaryOffset = *((SecondaryOffset*)pInsertTo) + bytesNeeded;
-            }
-        else
-            {
-            nSecondaryOffsetsShifted = 0;
-            insertedSecondaryOffset = GetPropertyValueSize (propertyLayout); // this is a relative index, not absolute
-            }
-        DEBUG_EXPECT (insertedSecondaryOffset <= arrayByteCountAfterGrow);
-         
-        UInt32 insertedSecondaryOffsetByteCount = insertCount * elementSizeInFixedSection;       
-        SecondaryOffset* pSecondaryOffset = (SecondaryOffset*)(pInsertTo - insertedSecondaryOffsetByteCount);
-        if (m_allowWritingDirectlyToInstanceMemory)
-            pWriteBuffer = (byte*)pSecondaryOffset;
-        else
-            {
-            sizeOfWriteBuffer = insertedSecondaryOffsetByteCount + (nSecondaryOffsetsShifted * sizeof (SecondaryOffset));
-            pWriteBuffer = (byte*)alloca (sizeOfWriteBuffer);  
-            }        
-            
-        // initialize inserted secondary offsets
-        SecondaryOffset* pSecondaryOffsetWriteBuffer = (SecondaryOffset*)pWriteBuffer;
-        for (UInt32 i = 0; i < insertCount ; i++)
-            pSecondaryOffsetWriteBuffer[i] = insertedSecondaryOffset;
-        
-        // update shifted secondary offsets        
-        for (UInt32 i = insertCount; i < nSecondaryOffsetsShifted + insertCount ;i++)
-            {
-            pSecondaryOffsetWriteBuffer[i] = pSecondaryOffset[i] + bytesNeeded;
-            DEBUG_EXPECT (pSecondaryOffsetWriteBuffer[i] <=arrayByteCountAfterGrow);
-            }
-            
-        if (!m_allowWritingDirectlyToInstanceMemory)
-            {
-            UInt32 modifyOffset = (UInt32)(pInsertTo - data) - insertedSecondaryOffsetByteCount;
-            status = _ModifyData (modifyOffset, pWriteBuffer, sizeOfWriteBuffer);            
-            DEBUG_EXPECT (data + modifyOffset + sizeOfWriteBuffer <= pNextProperty);
-            if (SUCCESS != status)
-                return status;        
-            }                
-        }
-
-                
-    if (insertIndex > 0)
-        {
-        byte const *             data = _GetData(); // need to get this value again since EnsureSpace may have re allocated            
-        byte const * pShiftFrom = data + arrayOffset + currentHeaderByteCount;
-        byte * pShiftTo = (byte*)(data + arrayOffset + newHeaderByteCount);
-        UInt32 byteCountToShift = (UInt32)(pInsertFrom - pShiftFrom);                
-        
-        // shift all the elements in the fixed section preceding the insert point if we needed to grow the nullflags bitmask            
-        if ((pShiftTo != pShiftFrom))
-            {
-            memmove (pShiftTo, pShiftFrom, byteCountToShift); // WIP_FUSION .. use _MoveData, waiting on Keith
-            DEBUG_EXPECT (pShiftTo + byteCountToShift <= pInsertTo); 
-            }
-            
-        // update all secondary offsets preceeding the insertion point since the size of the fixed section has changed and therefore all variable data has moved
-        if (!hasFixedSizeElements)
-            {                    
-            if (m_allowWritingDirectlyToInstanceMemory)
-                pWriteBuffer = pShiftTo;
-            else if (sizeOfWriteBuffer < byteCountToShift)
-                {
-                sizeOfWriteBuffer = byteCountToShift;
-                pWriteBuffer = (byte*)alloca (sizeOfWriteBuffer);  
-                }        
-                            
-            // update shifted secondary offsets        
-            SecondaryOffset* pSecondaryOffset = (SecondaryOffset*)pShiftTo;
-            SecondaryOffset* pSecondaryOffsetWriteBuffer = (SecondaryOffset*)pWriteBuffer;
-
-            for (UInt32 i = 0; i < insertIndex ;i++)
-                {
-                pSecondaryOffsetWriteBuffer[i] = pSecondaryOffset[i] + bytesNeeded;
-                DEBUG_EXPECT (pSecondaryOffsetWriteBuffer[i] <= insertedSecondaryOffset);
-                }
-                
-            if (!m_allowWritingDirectlyToInstanceMemory)
-                {
-                UInt32 modifyOffset = (UInt32)(pShiftTo - data);
-                status = _ModifyData (modifyOffset, pWriteBuffer, byteCountToShift);
-                DEBUG_EXPECT (modifyOffset >= newHeaderByteCount);
-                DEBUG_EXPECT (data + modifyOffset + byteCountToShift <= pInsertTo);
-                if (SUCCESS != status)
-                    return status;        
-                }                    
-            }      
-        }
-            
-    // write the new array header (updated count & null flags)      
-    if (m_allowWritingDirectlyToInstanceMemory)
-        pWriteBuffer = (byte*)(data + arrayOffset);
-    else
-        {
-        if (newHeaderByteCount > sizeOfWriteBuffer)
-            {        
-            pWriteBuffer = (byte*)alloca (newHeaderByteCount);     
-            sizeOfWriteBuffer = newHeaderByteCount;
-            }
-        memcpy (pWriteBuffer, data + arrayOffset, currentHeaderByteCount); 
-        }        
-    *((UInt32*)pWriteBuffer) = newArrayCount;
-    NullflagsBitmask* pNullflagsStart = (NullflagsBitmask*)(pWriteBuffer + sizeof (ArrayCount));
-    NullflagsBitmask* pNullflagsCurrent;
-    NullflagsBitmask  nullflagsBitmask;
-    if (newNullFlagBitmasksCount > currentNullFlagBitmasksCount)
-        InitializeNullFlags (pNullflagsStart + currentNullFlagBitmasksCount, newNullFlagBitmasksCount - currentNullFlagBitmasksCount);
-    // shift all the nullflags bits right    
-    bool isNull;
-    UInt32 numberShifted;
-    if (arrayCount > insertIndex)
-        numberShifted = arrayCount - insertIndex;
-    else
-        numberShifted = 0;
-    for (UInt32 i = 1 ; i <= numberShifted ; i++)
-        {
-        pNullflagsCurrent = pNullflagsStart + ((arrayCount - i) / BITS_PER_NULLFLAGSBITMASK);
-        nullflagsBitmask = 0x01 << ((arrayCount - i) % BITS_PER_NULLFLAGSBITMASK);
-        isNull = (0 != (*pNullflagsCurrent & nullflagsBitmask));    
-        
-        pNullflagsCurrent = pNullflagsStart + ((newArrayCount - i) / BITS_PER_NULLFLAGSBITMASK);
-        nullflagsBitmask = 0x01 << ((newArrayCount - i) % BITS_PER_NULLFLAGSBITMASK);        
-        if (isNull && 0 == (*pNullflagsCurrent & nullflagsBitmask))
-            *pNullflagsCurrent |= nullflagsBitmask; // turn on the null bit
-        else if (!isNull && nullflagsBitmask == (*pNullflagsCurrent & nullflagsBitmask))
-            *pNullflagsCurrent ^= nullflagsBitmask; // turn off the null bit // WIP_FUSION: Needs to use ModifyData   
-        }
-    // initilize inserted nullflags bits
-    for (UInt32 i=0;i < insertCount ; i++)
-        {
-        pNullflagsCurrent = pNullflagsStart + ((insertIndex + i) / BITS_PER_NULLFLAGSBITMASK);
-        nullflagsBitmask = 0x01 << ((insertIndex + i) % BITS_PER_NULLFLAGSBITMASK);
-        if (0 == (*pNullflagsCurrent & nullflagsBitmask))
-            *pNullflagsCurrent |= nullflagsBitmask; // turn on the null bit        
-        }
-    if (!m_allowWritingDirectlyToInstanceMemory)
-        {
-        status = _ModifyData (arrayOffset, pWriteBuffer, newHeaderByteCount);
-        if (SUCCESS != status)
-            return status;        
-        }                   
-    
-    return SUCCESS;    
-    // WIP_FUSION how do we deal with an error that occurs during the insert "transaction" after some data has already been moved/modified but we haven't finished?
-    }
+    return ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, GetAllocatedArrayCount (propertyLayout), count);
+    }         
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
@@ -1487,7 +1278,7 @@ StatusInt       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueCR v, C
              
     if (isInUninitializedFixedCountArray)
         {
-        CreateNullArrayElementsAt (classLayout, propertyLayout, 0, GetReservedArrayCount (propertyLayout));
+        ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, 0, GetReservedArrayCount (propertyLayout));
         }        
     SetPropertyValueNull (propertyLayout, nIndices, indices, false);            
     
@@ -1683,5 +1474,276 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
     SecondaryOffset * pLast = (SecondaryOffset*)(data + offsetOfLast);
     logger->tracev (L"  [0x%x][%4.d] Offset of TheEnd = %d\n", pLast, offsetOfLast, *pLast);
     }
+    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ArrayResizer::ArrayResizer (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, MemoryInstanceSupportR instance, UInt32 resizeIndex, UInt32 resizeElementCount) : m_classLayout (classLayout),
+        m_propertyLayout (propertyLayout), m_instance (instance), m_resizeIndex (resizeIndex), m_resizeElementCount (resizeElementCount)    
+    {                
+    m_preAllocatedArrayCount = m_instance.GetAllocatedArrayCount (propertyLayout);    
+            
+    m_elementType = propertyLayout.GetTypeDescriptor().GetPrimitiveType();
+    m_elementTypeIsFixedSize = IsArrayOfFixedSizeElements (propertyLayout);
+    if (m_elementTypeIsFixedSize)
+        m_elementSizeInFixedSection = ClassLayout::GetFixedPrimitiveValueSize (m_elementType);
+    else
+        m_elementSizeInFixedSection = sizeof (SecondaryOffset);
+    
+    m_preNullFlagBitmasksCount = CalculateNumberNullFlagsBitmasks (m_preAllocatedArrayCount);    
+    m_preHeaderByteCount = (m_preAllocatedArrayCount == 0) ? 0 : sizeof (ArrayCount) + (m_preNullFlagBitmasksCount * sizeof (NullflagsBitmask));
+    m_preFixedSectionByteCount = m_preHeaderByteCount + (m_preAllocatedArrayCount * m_elementSizeInFixedSection);
+    m_preArrayByteCount = instance.GetPropertyValueSize (propertyLayout);
+    
+    m_postAllocatedArrayCount = m_preAllocatedArrayCount + m_resizeElementCount;
+    m_postNullFlagBitmasksCount = CalculateNumberNullFlagsBitmasks (m_postAllocatedArrayCount);
+    m_postHeaderByteCount = sizeof (ArrayCount) + (m_postNullFlagBitmasksCount * sizeof (NullflagsBitmask));
+    m_postFixedSectionByteCount = m_postHeaderByteCount + (m_postAllocatedArrayCount * m_elementSizeInFixedSection);
+    
+    m_resizeByteCount = m_postFixedSectionByteCount - m_preFixedSectionByteCount;    
+    }    
+
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   02/2010
++---------------+---------------+---------------+---------------+---------------+------*/    
+StatusInt            ArrayResizer::ShiftDataFollowingResizeIndex ()
+    {
+    // shift all data (fixed & variable) to the right of the element where the resixe should occur
+    UInt32 offsetOfResizePoint = m_preHeaderByteCount + (m_resizeIndex * m_elementSizeInFixedSection);         
+    m_pResizeIndexPreShift = m_data + m_arrayOffset + offsetOfResizePoint;
+    m_pResizeIndexPostShift = m_pResizeIndexPreShift + m_resizeByteCount;        
+    #ifndef NDEBUG
+    UInt32 arrayByteCountAfterGrow = m_instance.GetPropertyValueSize (m_propertyLayout);
+    byte const * pNextProperty = m_data + m_arrayOffset + arrayByteCountAfterGrow;
+    DEBUG_EXPECT (pNextProperty == m_data + *((SecondaryOffset*)(m_data + m_propertyLayout.GetOffset()) + 1));
+    #endif    
+    if (m_preArrayByteCount > offsetOfResizePoint)
+        {        
+        UInt32 byteCountToShift = m_preArrayByteCount - offsetOfResizePoint;        
+        DEBUG_EXPECT (m_pResizeIndexPostShift + byteCountToShift <= pNextProperty); 
+        memmove ((byte*)m_pResizeIndexPostShift, m_pResizeIndexPreShift, byteCountToShift); // WIP_FUSION .. use _MoveData, waiting on Keith
+        }
+        
+    return SetSecondaryOffsetsFollowingResizeIndex();        
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt            ArrayResizer::SetSecondaryOffsetsFollowingResizeIndex ()
+    {
+    // initialize the inserted secondary offsets and update all shifted secondary offsets         
+    StatusInt status = SUCCESS;
+    
+    if (m_elementTypeIsFixedSize)
+        return status;  // There are no secondary offsets to update
+        
+    byte * pWriteBuffer;              
+    UInt32 sizeOfWriteBuffer = 0;                
+    UInt32 nSecondaryOffsetsShifted;        
+    if (m_preAllocatedArrayCount > m_resizeIndex)
+        {
+        nSecondaryOffsetsShifted = m_preAllocatedArrayCount - m_resizeIndex;
+        m_postSecondaryOffsetOfResizeIndex = *((SecondaryOffset*)m_pResizeIndexPostShift) + m_resizeByteCount;
+        }
+    else
+        {
+        nSecondaryOffsetsShifted = 0;
+        m_postSecondaryOffsetOfResizeIndex = m_instance.GetPropertyValueSize (m_propertyLayout); // this is a relative index, not absolute
+        }
+    DEBUG_EXPECT (m_postSecondaryOffsetOfResizeIndex <= m_instance.GetPropertyValueSize (m_propertyLayout));
+     
+    UInt32 insertedSecondaryOffsetByteCount = m_resizeElementCount * m_elementSizeInFixedSection;       
+    SecondaryOffset* pSecondaryOffset = (SecondaryOffset*)(m_pResizeIndexPostShift - insertedSecondaryOffsetByteCount);
+    if (m_instance.m_allowWritingDirectlyToInstanceMemory)
+        pWriteBuffer = (byte*)pSecondaryOffset;
+    else
+        {
+        sizeOfWriteBuffer = insertedSecondaryOffsetByteCount + (nSecondaryOffsetsShifted * sizeof (SecondaryOffset));
+        pWriteBuffer = (byte*)alloca (sizeOfWriteBuffer);  
+        }        
+        
+    // initialize inserted secondary offsets
+    SecondaryOffset* pSecondaryOffsetWriteBuffer = (SecondaryOffset*)pWriteBuffer;
+    for (UInt32 i = 0; i < m_resizeElementCount ; i++)
+        pSecondaryOffsetWriteBuffer[i] = m_postSecondaryOffsetOfResizeIndex;
+    
+    // update shifted secondary offsets        
+    for (UInt32 i = m_resizeElementCount; i < nSecondaryOffsetsShifted + m_resizeElementCount ;i++)
+        {
+        pSecondaryOffsetWriteBuffer[i] = pSecondaryOffset[i] + m_resizeByteCount;
+        DEBUG_EXPECT (pSecondaryOffsetWriteBuffer[i] <= m_instance.GetPropertyValueSize (m_propertyLayout));
+        }
+        
+    if (!m_instance.m_allowWritingDirectlyToInstanceMemory)
+        {
+        UInt32 modifyOffset = (UInt32)(m_pResizeIndexPostShift - m_data) - insertedSecondaryOffsetByteCount;
+        status = m_instance._ModifyData (modifyOffset, pWriteBuffer, sizeOfWriteBuffer);            
+        DEBUG_EXPECT (m_data + modifyOffset + sizeOfWriteBuffer <= m_data + m_arrayOffset + m_instance.GetPropertyValueSize (m_propertyLayout));
+        if (SUCCESS != status)
+            return status;        
+        }            
+        
+    return status;    
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt            ArrayResizer::ShiftDataPreceedingResizeIndex ()    
+    {    
+    StatusInt status = SUCCESS;
+    if (m_resizeIndex == 0)
+        return status;
+    
+    byte const * pShiftFrom = m_data + m_arrayOffset + m_preHeaderByteCount;
+    byte * pShiftTo = (byte*)(m_data + m_arrayOffset + m_postHeaderByteCount);
+    UInt32 byteCountToShift = (UInt32)(m_pResizeIndexPreShift - pShiftFrom);                
+    
+    // shift all the elements in the fixed section preceding the insert point if we needed to grow the nullflags bitmask            
+    if ((pShiftTo != pShiftFrom))
+        {
+        memmove (pShiftTo, pShiftFrom, byteCountToShift); // WIP_FUSION .. use _MoveData, waiting on Keith
+        DEBUG_EXPECT (pShiftTo + byteCountToShift <= m_pResizeIndexPostShift); 
+        }
+        
+    return SetSecondaryOffsetsPreceedingResizeIndex((SecondaryOffset*)pShiftTo, byteCountToShift);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt            ArrayResizer::SetSecondaryOffsetsPreceedingResizeIndex (SecondaryOffset* pSecondaryOffset, UInt32 byteCountToSet)            
+    {
+    // update all secondary offsets preceeding the insertion point since the size of the fixed section has changed and therefore all variable data has moved
+    StatusInt status = SUCCESS;
+    
+    if (m_elementTypeIsFixedSize)
+        return status;
+    
+    byte * pWriteBuffer;              
+    UInt32 sizeOfWriteBuffer = 0;           
+    if (m_instance.m_allowWritingDirectlyToInstanceMemory)
+        pWriteBuffer = (byte*)pSecondaryOffset;
+    else
+        {
+        sizeOfWriteBuffer = byteCountToSet;
+        pWriteBuffer = (byte*)alloca (sizeOfWriteBuffer);  
+        }        
+                    
+    // update shifted secondary offsets        
+    SecondaryOffset* pSecondaryOffsetWriteBuffer = (SecondaryOffset*)pWriteBuffer;
+
+    for (UInt32 i = 0; i < m_resizeIndex ;i++)
+        {
+        pSecondaryOffsetWriteBuffer[i] = pSecondaryOffset[i] + m_resizeByteCount;
+        DEBUG_EXPECT (pSecondaryOffsetWriteBuffer[i] <= m_postSecondaryOffsetOfResizeIndex);
+        }
+        
+    if (!m_instance.m_allowWritingDirectlyToInstanceMemory)
+        {
+        UInt32 modifyOffset = (UInt32)((byte*)pSecondaryOffset - m_data);
+        status = m_instance._ModifyData (modifyOffset, pWriteBuffer, byteCountToSet);
+        DEBUG_EXPECT (modifyOffset >= m_postHeaderByteCount);
+        DEBUG_EXPECT (m_data + modifyOffset + byteCountToSet <= m_pResizeIndexPostShift);
+        if (SUCCESS != status)
+            return status;        
+        }               
+        
+    return status;     
+    }      
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt            ArrayResizer::WriteArrayHeader ()                
+    {
+    StatusInt status = SUCCESS;
+    byte * pWriteBuffer;              
+    UInt32 sizeOfWriteBuffer = 0;       
+        
+    // write the new array header (updated count & null flags)      
+    if (m_instance.m_allowWritingDirectlyToInstanceMemory)
+        pWriteBuffer = (byte*)(m_data + m_arrayOffset);
+    else
+        {  
+        pWriteBuffer = (byte*)alloca (m_postHeaderByteCount);     
+        sizeOfWriteBuffer = m_postHeaderByteCount;
+        memcpy (pWriteBuffer, m_data + m_arrayOffset, m_preHeaderByteCount); 
+        }        
+    *((UInt32*)pWriteBuffer) = m_postAllocatedArrayCount;
+    NullflagsBitmask* pNullflagsStart = (NullflagsBitmask*)(pWriteBuffer + sizeof (ArrayCount));
+    NullflagsBitmask* pNullflagsCurrent;
+    NullflagsBitmask  nullflagsBitmask;
+    if (m_postNullFlagBitmasksCount > m_preNullFlagBitmasksCount)
+        InitializeNullFlags (pNullflagsStart + m_preNullFlagBitmasksCount, m_postNullFlagBitmasksCount - m_preNullFlagBitmasksCount);
+        
+    // shift all the nullflags bits right    
+    bool isNull;
+    UInt32 numberShifted;
+    if (m_preAllocatedArrayCount > m_resizeIndex)
+        numberShifted = m_preAllocatedArrayCount - m_resizeIndex;
+    else
+        numberShifted = 0;
+    for (UInt32 i = 1 ; i <= numberShifted ; i++)
+        {
+        pNullflagsCurrent = pNullflagsStart + ((m_preAllocatedArrayCount - i) / BITS_PER_NULLFLAGSBITMASK);
+        nullflagsBitmask = 0x01 << ((m_preAllocatedArrayCount - i) % BITS_PER_NULLFLAGSBITMASK);
+        isNull = (0 != (*pNullflagsCurrent & nullflagsBitmask));    
+        
+        pNullflagsCurrent = pNullflagsStart + ((m_postAllocatedArrayCount - i) / BITS_PER_NULLFLAGSBITMASK);
+        nullflagsBitmask = 0x01 << ((m_postAllocatedArrayCount - i) % BITS_PER_NULLFLAGSBITMASK);        
+        if (isNull && 0 == (*pNullflagsCurrent & nullflagsBitmask))
+            *pNullflagsCurrent |= nullflagsBitmask; // turn on the null bit
+        else if (!isNull && nullflagsBitmask == (*pNullflagsCurrent & nullflagsBitmask))
+            *pNullflagsCurrent ^= nullflagsBitmask; // turn off the null bit // WIP_FUSION: Needs to use ModifyData   
+        }
+        
+    // initilize inserted nullflags bits
+    for (UInt32 i=0;i < m_resizeElementCount ; i++)
+        {
+        pNullflagsCurrent = pNullflagsStart + ((m_resizeIndex + i) / BITS_PER_NULLFLAGSBITMASK);
+        nullflagsBitmask = 0x01 << ((m_resizeIndex + i) % BITS_PER_NULLFLAGSBITMASK);
+        if (0 == (*pNullflagsCurrent & nullflagsBitmask))
+            *pNullflagsCurrent |= nullflagsBitmask; // turn on the null bit        
+        }
+    if (!m_instance.m_allowWritingDirectlyToInstanceMemory)
+        {
+        status = m_instance._ModifyData (m_arrayOffset, pWriteBuffer, m_postHeaderByteCount);
+        if (SUCCESS != status)
+            return status;        
+        }                       
+        
+    return status;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       ArrayResizer::CreateNullArrayElementsAt (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, MemoryInstanceSupportR instance, UInt32 insertIndex, UInt32 insertCount)
+    {                        
+    ArrayResizer resizer (classLayout, propertyLayout, instance, insertIndex, insertCount);
+    PRECONDITION (resizer.m_resizeIndex <= resizer.m_preAllocatedArrayCount, ERROR);        
+    
+    StatusInt status = instance.EnsureSpaceIsAvailable (resizer.m_arrayOffset, classLayout, propertyLayout, resizer.m_preArrayByteCount + resizer.m_resizeByteCount);
+    if (SUCCESS != status)
+        return status;       
+        
+    resizer.m_data = resizer.m_instance._GetData();
+    status = resizer.ShiftDataFollowingResizeIndex();        
+    if (SUCCESS != status)
+        return status;
+        
+    status = resizer.ShiftDataPreceedingResizeIndex();        
+    if (SUCCESS != status)
+        return status;        
+    
+    status = resizer.WriteArrayHeader();
+
+    return status;    
+    // WIP_FUSION how do we deal with an error that occurs during the insert "transaction" after some data has already been moved/modified but we haven't finished?
+    }    
     
 END_BENTLEY_EC_NAMESPACE
