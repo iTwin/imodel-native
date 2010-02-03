@@ -283,6 +283,22 @@ void            ClassLayout::SetIsPersisted (bool isPersisted) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+int   ClassLayout::GetSourceECPointerIndex () const
+    {
+    return m_propertyIndexOfSourceECPointer;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+int   ClassLayout::GetTargetECPointerIndex () const
+    {
+    return m_propertyIndexOfSourceECPointer;
+    }    
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ClassLayout::AddProperties (ECClassCR ecClass, wchar_t const * nameRoot, bool addingFixedSizeProps)
@@ -621,7 +637,8 @@ StatusInt       ClassLayout::GetPropertyLayoutByIndex (PropertyLayoutCP & proper
 BentleyStatus   SchemaLayout::AddClassLayout (ClassLayoutCR classLayout, ClassIndex classIndex, bool isPersistent)
     {
     if (m_classLayouts.size() <= classIndex)
-        m_classLayouts.resize (20 + classIndex, NULL);
+        m_classLayouts.resize (1 + classIndex, NULL); // WIP_FUSION: Increase the increment to 20, later. 
+                                                      // Keep the increment low for now, to ensure that resizing has not ill side effects.
 
     assert (NULL == m_classLayouts[classIndex] && "ClassIndex is already in use");
 
@@ -633,7 +650,7 @@ BentleyStatus   SchemaLayout::AddClassLayout (ClassLayoutCR classLayout, ClassIn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutCP  SchemaLayout::GetClassLayout (ClassIndex classIndex)
+ClassLayoutCP   SchemaLayout::GetClassLayout (ClassIndex classIndex)
     {
     if (m_classLayouts.size() <= classIndex)
         return NULL;
@@ -644,7 +661,7 @@ ClassLayoutCP  SchemaLayout::GetClassLayout (ClassIndex classIndex)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutCP  SchemaLayout::FindClassLayout (wchar_t const * className)
+ClassLayoutCP   SchemaLayout::FindClassLayout (wchar_t const * className)
     {
     for each (ClassLayoutCP classLayout in m_classLayouts)
         {
@@ -690,7 +707,7 @@ ClassLayoutHolder::ClassLayoutHolder (ClassLayoutCR classLayout) : m_classLayout
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutCR    ClassLayoutHolder::GetClassLayout() const 
+ClassLayoutCR   ClassLayoutHolder::GetClassLayout() const 
     {
     return m_classLayout;
     }    
