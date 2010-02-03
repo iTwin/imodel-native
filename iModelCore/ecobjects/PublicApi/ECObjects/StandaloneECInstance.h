@@ -25,7 +25,7 @@ struct StandaloneECInstance : IECInstance, MemoryInstanceSupport
     {
 friend StandaloneECEnabler;
 private:
-    StandaloneECEnablerP m_standaloneEnabler; 
+    StandaloneECEnablerP m_sharedWipEnabler; 
     std::wstring         m_instanceId;
     
     byte *               m_data;
