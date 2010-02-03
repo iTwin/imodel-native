@@ -264,6 +264,22 @@ void            ClassLayout::SetIsPersisted (bool isPersisted) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+int   ClassLayout::GetSourceECPointerIndex () const
+    {
+    return m_propertyIndexOfSourceECPointer;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+int   ClassLayout::GetTargetECPointerIndex () const
+    {
+    return m_propertyIndexOfSourceECPointer;
+    }    
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ClassLayout::AddProperties (ECClassCR ecClass, wchar_t const * nameRoot, bool addingFixedSizeProps)
@@ -631,7 +647,7 @@ BentleyStatus   SchemaLayout::AddClassLayout (ClassLayoutCR classLayout, ClassIn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutCP  SchemaLayout::GetClassLayout (ClassIndex classIndex)
+ClassLayoutCP   SchemaLayout::GetClassLayout (ClassIndex classIndex)
     {
     if (m_classLayouts.size() <= classIndex)
         return NULL;
@@ -642,7 +658,7 @@ ClassLayoutCP  SchemaLayout::GetClassLayout (ClassIndex classIndex)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutCP  SchemaLayout::FindClassLayout (wchar_t const * className)
+ClassLayoutCP   SchemaLayout::FindClassLayout (wchar_t const * className)
     {
     for each (ClassLayoutCP classLayout in m_classLayouts)
         {
@@ -688,7 +704,7 @@ ClassLayoutHolder::ClassLayoutHolder (ClassLayoutCR classLayout) : m_classLayout
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutCR    ClassLayoutHolder::GetClassLayout() const 
+ClassLayoutCR   ClassLayoutHolder::GetClassLayout() const 
     {
     return m_classLayout;
     }
