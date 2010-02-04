@@ -95,11 +95,11 @@ struct ClassLayout
 private:
     struct StringComparer {bool operator()(wchar_t const * s1, wchar_t const * s2) const   {return wcscmp (s1, s2) < 0;}};
 #ifdef USE_HASHMAP_IN_CLASSLAYOUT    
-    typedef stdext::hash_map<wchar_t const *, PropertyLayoutCP, stdext::hash_compare<const wchar_t *, StringComparer>>   PropertyLayoutLookup;
+    typedef stdext::hash_map<wchar_t const *, PropertyLayoutCP, stdext::hash_compare<const wchar_t *, StringComparer>>   PropertyLayoutMap;
 #else
-    typedef std::map<wchar_t const *, PropertyLayoutCP, StringComparer> PropertyLayoutLookup;
+    typedef std::map<wchar_t const *, PropertyLayoutCP, StringComparer> PropertyLayoutMap;
 #endif    
-    typedef std::vector<PropertyLayout>                                 PropertyLayoutVector;
+    typedef std::vector<PropertyLayout>                                 PropertyLayoutVector; // WIP_FUSION: needs to be vector of PropertyLayoutP
     
     enum State
         {
@@ -114,7 +114,7 @@ private:
     UInt32                  m_nProperties;
     
     PropertyLayoutVector    m_propertyLayouts; // This is the primary collection, there is a secondary map for lookup by name, below.
-    PropertyLayoutLookup    m_propertyLayoutLookup;
+    PropertyLayoutMap       m_propertyLayoutMap;
     
     // These members are transient
     SchemaIndex             m_schemaIndex;
@@ -148,8 +148,7 @@ public:
     ECOBJECTS_EXPORT SchemaIndex    GetSchemaIndex () const;
     ECOBJECTS_EXPORT bool           IsPersisted () const;
     ECOBJECTS_EXPORT void           SetIsPersisted (bool isPersisted) const;
-    ECOBJECTS_EXPORT int            GetSourceECPointerIndex () const;
-    ECOBJECTS_EXPORT int            GetTargetECPointerIndex () const;
+    ECOBJECTS_EXPORT int            GetECPointerIndex (ECRelationshipEnd end) const;
     
     ECOBJECTS_EXPORT UInt32         GetPropertyCount () const;
     ECOBJECTS_EXPORT StatusInt      GetPropertyLayout (PropertyLayoutCP & propertyLayout, wchar_t const * accessString) const;

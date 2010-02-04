@@ -285,18 +285,13 @@ void            ClassLayout::SetIsPersisted (bool isPersisted) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-int   ClassLayout::GetSourceECPointerIndex () const
+int   ClassLayout::GetECPointerIndex (ECRelationshipEnd end) const
     {
-    return m_propertyIndexOfSourceECPointer;
+    if (end == ECRelationshipEnd_Source)
+        return m_propertyIndexOfSourceECPointer;
+    else
+        return m_propertyIndexOfTargetECPointer;
     }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen    01/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-int   ClassLayout::GetTargetECPointerIndex () const
-    {
-    return m_propertyIndexOfSourceECPointer;
-    }    
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/09
@@ -408,7 +403,7 @@ StatusInt       ClassLayout::FinishLayout ()
     for (UInt32 i = 0; i < m_propertyLayouts.size(); i++)
         {
         PropertyLayoutCP propertyLayout = &m_propertyLayouts[i];
-        m_propertyLayoutLookup[propertyLayout->GetAccessString()] = propertyLayout;
+        m_propertyLayoutMap[propertyLayout->GetAccessString()] = propertyLayout;
         }
         
     // Calculate size of fixed section    
@@ -605,9 +600,9 @@ UInt32          ClassLayout::GetPropertyCount () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ClassLayout::GetPropertyLayout (PropertyLayoutCP & propertyLayout, wchar_t const * accessString) const
     {
-    PropertyLayoutLookup::const_iterator it = m_propertyLayoutLookup.find(accessString);
+    PropertyLayoutMap::const_iterator it = m_propertyLayoutMap.find(accessString);
     
-    if (it == m_propertyLayoutLookup.end())
+    if (it == m_propertyLayoutMap.end())
         {
         return ECOBJECTS_STATUS_PropertyNotFound;
         }
