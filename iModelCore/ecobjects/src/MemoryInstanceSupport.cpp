@@ -140,11 +140,7 @@ UInt32          PropertyLayout::GetSizeInFixedSection () const
 ClassLayout::ClassLayout(SchemaIndex schemaIndex) : 
     m_schemaIndex (schemaIndex),
     m_isPersisted(false),
-    m_state(AcceptingFixedSizeProperties),
     m_classIndex(0),
-    m_nProperties(0),
-    m_nullflagsOffset (sizeof(InstanceHeader)),
-    m_offset(sizeof(InstanceHeader) + sizeof(NullflagsBitmask)),
     m_sizeOfFixedSection(0), 
     m_isRelationshipClass(false), m_propertyIndexOfSourceECPointer(-1), m_propertyIndexOfTargetECPointer(-1)
     {
@@ -185,7 +181,7 @@ void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 byt
     header.m_classIndex    = m_classIndex;
     header.m_instanceFlags = 0;
 
-    UInt32 nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks ((UInt32)m_propertyLayouts.size());
+    UInt32 nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks (GetPropertyCount());
     InitializeNullFlags ((NullflagsBitmask *)(data + sizeof (InstanceHeader)), nNullflagsBitmasks);
             
     bool isFirstVariableSizedProperty = true;
@@ -283,9 +279,104 @@ void            ClassLayout::SetIsPersisted (bool isPersisted) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/    
+void            ClassLayout::Factory::AddProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 size, UInt32 modifierFlags, UInt32 modifierData)
+    {
+    UInt32  positionInCurrentNullFlags = m_underConstruction.GetPropertyCount() % 32;
+    NullflagsBitmask  nullflagsBitmask = 0x01 << positionInCurrentNullFlags;
+    
+    if (0 == positionInCurrentNullFlags && 0 != m_underConstruction.GetPropertyCount())
+        {
+        // It is time to add a new set of Nullflags
+        m_nullflagsOffset += sizeof(NullflagsBitmask);
+        m_offset          += sizeof(NullflagsBitmask);
+        for (UInt32 i = 0; i < m_underConstruction.GetPropertyCount(); i++)
+            m_underConstruction.m_propertyLayouts[i].m_offset += sizeof(NullflagsBitmask); // Offsets of already-added property layouts need to get bumped up
+        } 
+
+    // WIP_FUSION, for now all accessors of array property layouts are stored with the brackets appended.  This means all access to array values through an
+    // IECInstance must include the brackets.  If you want to obtain an array element value then you specify an index.  If you want to obtain an array info value
+    // then you do not specify an index.  I'd like to consider an update to this so if an access string does not include the [] then we always return the ArrayInfo value.
+    std::wstring tempAccessString = accessString;
+    if (typeDescriptor.IsArray())
+        tempAccessString += L"[]";
+
+    PropertyLayout propertyLayout (tempAccessString.c_str(), typeDescriptor, m_offset, m_nullflagsOffset, nullflagsBitmask, modifierFlags, modifierData);
+
+    m_offset += (UInt32)size;
+   
+    m_underConstruction.m_propertyLayouts.push_back(propertyLayout);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/    
+void            ClassLayout::Factory::AddFixedSizeProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor)
+    {
+    if (!EXPECTED_CONDITION (m_state == AcceptingFixedSizeProperties)) // ClassLayoutNotAcceptingFixedSizeProperties    
+        return;
+    
+    if (!typeDescriptor.IsPrimitive())
+        {
+        DEBUG_FAIL ("We currently only support fixed sized properties for primitive types");
+        return;
+        }
+    
+    UInt32 size = GetFixedPrimitiveValueSize (typeDescriptor.GetPrimitiveType());
+    
+    AddProperty (accessString, typeDescriptor, size);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/ 
+void            ClassLayout::Factory::AddFixedSizeArrayProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount)
+    {
+    if (!EXPECTED_CONDITION (m_state == AcceptingFixedSizeProperties)) // ClassLayoutNotAcceptingFixedSizeProperties    
+        return;
+    
+    UInt32 size = CalculateFixedArrayPropertySize (arrayCount, typeDescriptor.GetPrimitiveType());
+    
+    AddProperty (accessString, typeDescriptor, size, ARRAYMODIFIERFLAGS_IsFixedCount, arrayCount);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/ 
+void            ClassLayout::Factory::AddVariableSizeProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor)
+    {
+    if (m_state == AcceptingFixedSizeProperties)
+        m_state = AcceptingVariableSizeProperties;
+
+    if (!EXPECTED_CONDITION (m_state == AcceptingVariableSizeProperties)) // ClassLayoutNotAcceptingVariableSizeProperties    
+        return;
+        
+    UInt32 size = sizeof(SecondaryOffset); // the offset will just point to this secondary offset
+
+    AddProperty (accessString, typeDescriptor, size);
+    }  
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/ 
+void            ClassLayout::Factory::AddVariableSizeArrayPropertyWithFixedCount (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount)
+    {
+    if (m_state == AcceptingFixedSizeProperties)
+        m_state = AcceptingVariableSizeProperties;
+
+    if (!EXPECTED_CONDITION (m_state == AcceptingVariableSizeProperties)) // ClassLayoutNotAcceptingVariableSizeProperties    
+        return;
+        
+    UInt32 size = sizeof(SecondaryOffset); // the offset will just point to this secondary offset
+    
+    AddProperty (accessString, typeDescriptor, size, ARRAYMODIFIERFLAGS_IsFixedCount, arrayCount);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ClassLayout::AddProperties (ECClassCR ecClass, wchar_t const * nameRoot, bool addingFixedSizeProps)
+void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, wchar_t const * nameRoot, bool addingFixedSizeProps)
     {
     for each (ECPropertyP property in ecClass.GetProperties())
         {
@@ -314,8 +405,8 @@ void            ClassLayout::AddProperties (ECClassCR ecClass, wchar_t const * n
             AddProperties (nestedClass, propName.c_str(), addingFixedSizeProps);
             }
         else if (property->GetIsArray())
-            {            
-            ArrayECPropertyP  arrayProp = property->GetAsArrayProperty();            
+            {
+            ArrayECPropertyP  arrayProp = property->GetAsArrayProperty();
             ArrayKind arrayKind = arrayProp->GetKind();
             if (arrayKind == ARRAYKIND_Primitive)
                 {
@@ -330,10 +421,55 @@ void            ClassLayout::AddProperties (ECClassCR ecClass, wchar_t const * n
                         AddVariableSizeArrayPropertyWithFixedCount (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()), arrayProp->GetMinOccurs());
                     else
                         AddVariableSizeProperty (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()));
-                    }   
+                    }
                 }
             }
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassLayoutP    ClassLayout::Factory::DoBuildClassLayout ()
+    {
+    m_underConstruction.m_isRelationshipClass = (dynamic_cast<ECRelationshipClassCP>(&m_ecClass) != NULL);
+
+    // Iterate through the ECProperties of the ECClass and build the layout
+    AddProperties (m_ecClass, NULL, true);
+    AddProperties (m_ecClass, NULL, false);
+
+    if (m_underConstruction.m_isRelationshipClass)
+        {
+        AddVariableSizeProperty (PROPERTYLAYOUT_Source_ECPointer, PRIMITIVETYPE_Binary);
+        AddVariableSizeProperty (PROPERTYLAYOUT_Target_ECPointer, PRIMITIVETYPE_Binary);
+        }
+
+    m_underConstruction.FinishLayout ();
+    
+    return &m_underConstruction;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassLayout::Factory::Factory (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex)
+    : 
+    m_ecClass (ecClass),
+    m_state   (AcceptingFixedSizeProperties),
+    m_offset  (sizeof(InstanceHeader) + sizeof(NullflagsBitmask)),
+    m_nullflagsOffset (sizeof(InstanceHeader)),
+    m_underConstruction (*ClassLayout::CreateEmpty (m_ecClass.GetName().c_str(), classIndex, schemaIndex))
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassLayoutP    ClassLayout::BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex)
+    {
+    Factory     factory (ecClass, classIndex, schemaIndex);
+
+    return factory.DoBuildClassLayout ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -345,29 +481,6 @@ ClassLayoutP    ClassLayout::CreateEmpty (wchar_t const* className, ClassIndex c
 
     classLayout->SetClass (className, classIndex);
 
-    return classLayout;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutP    ClassLayout::BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex)
-    {
-    ClassLayoutP classLayout = CreateEmpty (ecClass.GetName().c_str(), classIndex, schemaIndex);
-    classLayout->m_isRelationshipClass = (dynamic_cast<ECRelationshipClassCP>(&ecClass) != NULL);
-
-    // Iterate through the ECProperties of the ECClass and build the layout
-    classLayout->AddProperties (ecClass, NULL, true);
-    classLayout->AddProperties (ecClass, NULL, false);
-
-    if (classLayout->m_isRelationshipClass)
-        {
-        classLayout->AddVariableSizeProperty (PROPERTYLAYOUT_Source_ECPointer, PRIMITIVETYPE_Binary);
-        classLayout->AddVariableSizeProperty (PROPERTYLAYOUT_Target_ECPointer, PRIMITIVETYPE_Binary);
-        }
-
-    classLayout->FinishLayout ();
-    
     return classLayout;
     }
 
@@ -387,8 +500,6 @@ BentleyStatus   ClassLayout::SetClass (wchar_t const* className, UInt16 classInd
 +---------------+---------------+---------------+---------------+---------------+------*/  
 StatusInt       ClassLayout::FinishLayout ()
     {
-    DEBUG_EXPECT (m_nProperties == m_propertyLayouts.size());
-    m_state = Closed;
     for (UInt32 i = 0; i < m_propertyLayouts.size(); i++)
         {
         PropertyLayoutCP propertyLayout = &m_propertyLayouts[i];
@@ -458,130 +569,28 @@ UInt32          nullflagsBitmask
     {
     PropertyLayout propertyLayout (accessString, primitivetype, offset, nullflagsOffset, nullflagsBitmask);
 
-    m_nProperties++;
-   
     m_propertyLayouts.push_back(propertyLayout);
-
-    if (m_offset < offset)
-        m_offset = offset;
-
-    if (m_nullflagsOffset < nullflagsOffset)
-        m_nullflagsOffset = nullflagsOffset;
 
     // Remember indices of source and target ECPointers for fast lookup
     if (0 == wcscmp (PROPERTYLAYOUT_Source_ECPointer, accessString))
         {
         m_isRelationshipClass = true;
-        m_propertyIndexOfSourceECPointer = m_nProperties - 1;
+        m_propertyIndexOfSourceECPointer = GetPropertyCount() - 1;
         }
         
     if (0 == wcscmp (PROPERTYLAYOUT_Target_ECPointer, accessString))
         {
         m_isRelationshipClass = true;
-        m_propertyIndexOfTargetECPointer = m_nProperties - 1;
+        m_propertyIndexOfTargetECPointer = GetPropertyCount() - 1;
         }
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/    
-StatusInt       ClassLayout::AddProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 size, UInt32 modifierFlags, UInt32 modifierData)
-    {
-    UInt32  positionInCurrentNullFlags = m_nProperties % 32;
-    NullflagsBitmask  nullflagsBitmask = 0x01 << positionInCurrentNullFlags;
-    
-    if (0 == positionInCurrentNullFlags && 0 != m_nProperties)
-        {
-        // It is time to add a new set of Nullflags
-        m_nullflagsOffset += sizeof(NullflagsBitmask);
-        m_offset          += sizeof(NullflagsBitmask);
-        for (UInt32 i = 0; i < m_propertyLayouts.size(); i++)
-            m_propertyLayouts[i].m_offset += sizeof(NullflagsBitmask); // Offsets of already-added property layouts need to get bumped up
-        } 
-
-    // WIP_FUSION, for now all accessors of array property layouts are stored with the brackets appended.  This means all access to array values through an
-    // IECInstance must include the brackets.  If you want to obtain an array element value then you specify an index.  If you want to obtain an array info value
-    // then you do not specify an index.  I'd like to consider an update to this so if an access string does not include the [] then we always return the ArrayInfo value.
-    std::wstring tempAccessString = accessString;
-    if (typeDescriptor.IsArray())
-        tempAccessString += L"[]";
-
-    PropertyLayout propertyLayout (tempAccessString.c_str(), typeDescriptor, m_offset, m_nullflagsOffset, nullflagsBitmask, modifierFlags, modifierData);
-
-    m_nProperties++;
-    m_offset += (UInt32)size;
-   
-    m_propertyLayouts.push_back(propertyLayout);
-    
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/    
-StatusInt       ClassLayout::AddFixedSizeProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor)
-    {
-    PRECONDITION (m_state == AcceptingFixedSizeProperties, ERROR); // ClassLayoutNotAcceptingFixedSizeProperties    
-    
-    if (!typeDescriptor.IsPrimitive())
-        {
-        DEBUG_FAIL ("We currently only support fixed sized properties for primitive types");
-        return ERROR;
-        }
-    
-    UInt32 size = GetFixedPrimitiveValueSize (typeDescriptor.GetPrimitiveType());
-    
-    return AddProperty (accessString, typeDescriptor, size);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Adam.Klatzkin                   01/2010
-+---------------+---------------+---------------+---------------+---------------+------*/ 
-StatusInt       ClassLayout::AddFixedSizeArrayProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount)
-    {
-    PRECONDITION (m_state == AcceptingFixedSizeProperties, ERROR); // ClassLayoutNotAcceptingFixedSizeProperties    
-    
-    UInt32 size = CalculateFixedArrayPropertySize (arrayCount, typeDescriptor.GetPrimitiveType());
-    
-    return AddProperty (accessString, typeDescriptor, size, ARRAYMODIFIERFLAGS_IsFixedCount, arrayCount);
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Adam.Klatzkin                   01/2010
-+---------------+---------------+---------------+---------------+---------------+------*/ 
-StatusInt       ClassLayout::AddVariableSizeArrayPropertyWithFixedCount (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount)
-    {
-    if (m_state == AcceptingFixedSizeProperties)
-        m_state = AcceptingVariableSizeProperties;
-    else if (m_state != AcceptingVariableSizeProperties)
-        return ERROR; // ClassLayoutNotAcceptingVariableSizeProperties  
-        
-    UInt32 size = sizeof(SecondaryOffset); // the offset will just point to this secondary offset
-    
-    return AddProperty (accessString, typeDescriptor, size, ARRAYMODIFIERFLAGS_IsFixedCount, arrayCount);
-    }    
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/ 
-StatusInt       ClassLayout::AddVariableSizeProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor)
-    {
-    if (m_state == AcceptingFixedSizeProperties)
-        m_state = AcceptingVariableSizeProperties;
-    else if (m_state != AcceptingVariableSizeProperties)
-        return ERROR; // ClassLayoutNotAcceptingVariableSizeProperties  
-        
-    UInt32 size = sizeof(SecondaryOffset); // the offset will just point to this secondary offset
-
-    return AddProperty (accessString, typeDescriptor, size);
-    }  
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 UInt32          ClassLayout::GetPropertyCount () const
     {
-    return m_nProperties;
+    return (UInt32) m_propertyLayouts.size();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1423,7 +1432,6 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
     logger->tracev (L"  [0x%0x][%4.d] InstanceFlags = 0x%08.x\n", &header.m_instanceFlags,(byte*)&header.m_instanceFlags - data, header.m_instanceFlags);
     
     UInt32 nProperties = classLayout.GetPropertyCount ();
-    
     UInt32 nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks (nProperties);
     
     for (UInt32 i = 0; i < nNullflagsBitmasks; i++)

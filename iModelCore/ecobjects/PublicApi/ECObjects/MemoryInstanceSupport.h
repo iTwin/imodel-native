@@ -111,7 +111,6 @@ private:
     // These members are expected to be persisted  
     ClassIndex              m_classIndex; // Unique per some context, e.g. per DgnFile
     std::wstring            m_className;
-    UInt32                  m_nProperties;
     
     PropertyLayoutVector    m_propertyLayouts; // This is the primary collection, there is a secondary map for lookup by name, below.
     PropertyLayoutLookup    m_propertyLayoutLookup;
@@ -119,20 +118,32 @@ private:
     // These members are transient
     SchemaIndex             m_schemaIndex;
     bool                    m_isPersisted;
-    UInt32                  m_nullflagsOffset;
-    State                   m_state;
-    UInt32                  m_offset;
     UInt32                  m_sizeOfFixedSection;
     bool                    m_isRelationshipClass;
     int                     m_propertyIndexOfSourceECPointer;
     int                     m_propertyIndexOfTargetECPointer;
     
-    void                    AddProperties (ECClassCR ecClass, wchar_t const * nameRoot, bool addFixedSize);
-    StatusInt               AddProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 size, UInt32 modifierFlags = 0, UInt32 modifierData = 0);
-    StatusInt               AddFixedSizeProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor);
-    StatusInt               AddFixedSizeArrayProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount);
-    StatusInt               AddVariableSizeProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor);
-    StatusInt               AddVariableSizeArrayPropertyWithFixedCount (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount);
+    struct  Factory
+    {
+    friend ClassLayout;
+
+    private:
+        State           m_state;
+        ECClassCR       m_ecClass;
+        UInt32          m_offset;
+        UInt32          m_nullflagsOffset;
+        ClassLayoutR    m_underConstruction;
+
+        void        AddProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor, UInt32 size, UInt32 modifierFlags = 0, UInt32 modifierData = 0);
+        void        AddFixedSizeProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor);
+        void        AddFixedSizeArrayProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor, UInt32 arrayCount);
+        void        AddVariableSizeProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor);
+        void        AddVariableSizeArrayPropertyWithFixedCount (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount);		
+        void        AddProperties (ECClassCR ecClass, wchar_t const * nameRoot, bool addFixedSize);
+
+        Factory (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex);
+        ClassLayoutP DoBuildClassLayout ();
+    };
 
     BentleyStatus           SetClass (wchar_t const *  className, UInt16 classIndex);
 
