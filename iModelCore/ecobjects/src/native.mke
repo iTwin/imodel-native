@@ -89,8 +89,9 @@ DLM_EXP_DEST      = $(o)
 DLM_NOINITFUNC    = 1
 DLM_NOMSBUILTINS  = 1
 DLM_NOENTRY       = 1
-DLM_LIBRARY_FILES = $(BuildContext)SubParts/Libs/Bentley.lib $(BuildContext)SubParts/Libs/bsilog-1.1.lib $(BuildContext)SubParts/Libs/bsilog4cxx-1.1.lib
-#DLM_NT_LIBS       + advapi32.lib user32.lib wininet.lib ole32.lib
+FORCE_DELAYLOAD   = 1
+DLM_LIBRARY_FILES = $(BuildContext)SubParts/Libs/bsilog4cxx-1.1.lib  # delay loaded
+DLM_NT_LIBS       = $(BuildContext)SubParts/Libs/bsilog-1.1.lib 
 DLM_USE_LIBPREFIX = 1
 DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
