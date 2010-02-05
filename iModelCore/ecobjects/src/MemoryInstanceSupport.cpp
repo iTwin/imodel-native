@@ -279,6 +279,17 @@ void            ClassLayout::SetIsPersisted (bool isPersisted) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+int   ClassLayout::GetECPointerIndex (ECRelationshipEnd end) const
+    {
+    if (end == ECRelationshipEnd_Source)
+        return m_propertyIndexOfSourceECPointer;
+    else
+        return m_propertyIndexOfTargetECPointer;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
 void            ClassLayout::Factory::AddProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 size, UInt32 modifierFlags, UInt32 modifierData)
@@ -503,7 +514,7 @@ StatusInt       ClassLayout::FinishLayout ()
     for (UInt32 i = 0; i < m_propertyLayouts.size(); i++)
         {
         PropertyLayoutCP propertyLayout = &m_propertyLayouts[i];
-        m_propertyLayoutLookup[propertyLayout->GetAccessString()] = propertyLayout;
+        m_propertyLayoutMap[propertyLayout->GetAccessString()] = propertyLayout;
         }
         
     // Calculate size of fixed section    
@@ -598,9 +609,9 @@ UInt32          ClassLayout::GetPropertyCount () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ClassLayout::GetPropertyLayout (PropertyLayoutCP & propertyLayout, wchar_t const * accessString) const
     {
-    PropertyLayoutLookup::const_iterator it = m_propertyLayoutLookup.find(accessString);
+    PropertyLayoutMap::const_iterator it = m_propertyLayoutMap.find(accessString);
     
-    if (it == m_propertyLayoutLookup.end())
+    if (it == m_propertyLayoutMap.end())
         {
         return ECOBJECTS_STATUS_PropertyNotFound;
         }
@@ -630,7 +641,8 @@ StatusInt       ClassLayout::GetPropertyLayoutByIndex (PropertyLayoutCP & proper
 BentleyStatus   SchemaLayout::AddClassLayout (ClassLayoutCR classLayout, ClassIndex classIndex, bool isPersistent)
     {
     if (m_classLayouts.size() <= classIndex)
-        m_classLayouts.resize (20 + classIndex, NULL);
+        m_classLayouts.resize (1 + classIndex, NULL); // WIP_FUSION: Increase the increment to 20, later. 
+                                                      // Keep the increment low for now, to ensure that resizing has not ill side effects.
 
     assert (NULL == m_classLayouts[classIndex] && "ClassIndex is already in use");
 
@@ -642,7 +654,7 @@ BentleyStatus   SchemaLayout::AddClassLayout (ClassLayoutCR classLayout, ClassIn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutCP  SchemaLayout::GetClassLayout (ClassIndex classIndex)
+ClassLayoutCP   SchemaLayout::GetClassLayout (ClassIndex classIndex)
     {
     if (m_classLayouts.size() <= classIndex)
         return NULL;
@@ -653,7 +665,7 @@ ClassLayoutCP  SchemaLayout::GetClassLayout (ClassIndex classIndex)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutCP  SchemaLayout::FindClassLayout (wchar_t const * className)
+ClassLayoutCP   SchemaLayout::FindClassLayout (wchar_t const * className)
     {
     for each (ClassLayoutCP classLayout in m_classLayouts)
         {
@@ -699,7 +711,7 @@ ClassLayoutHolder::ClassLayoutHolder (ClassLayoutCR classLayout) : m_classLayout
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutCR    ClassLayoutHolder::GetClassLayout() const 
+ClassLayoutCR   ClassLayoutHolder::GetClassLayout() const 
     {
     return m_classLayout;
     }    
