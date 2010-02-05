@@ -98,15 +98,7 @@ bool                StandaloneECInstance::_IsMemoryInitialized () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-byte const *        StandaloneECInstance::_GetDataForRead () const
-    {
-    return m_data;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-byte *              StandaloneECInstance::_GetDataForWrite () const
+byte const *        StandaloneECInstance::_GetData () const
     {
     return m_data;
     }
@@ -138,9 +130,9 @@ UInt32              StandaloneECInstance::GetBytesUsed () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-byte const *        StandaloneECInstance::GetDataForRead () const
+byte const *        StandaloneECInstance::GetData () const
     {
-    return _GetDataForRead();
+    return _GetData();
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -217,6 +209,44 @@ StatusInt           StandaloneECInstance::_SetValue (const wchar_t * propertyAcc
 
     return status;
     }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           StandaloneECInstance::_InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size)
+    {
+    ClassLayoutCR classLayout = m_sharedWipEnabler->GetClassLayout();
+    StatusInt status = InsertNullArrayElementsAt (classLayout, propertyAccessString, index, size);
+    
+    return status;
+    } 
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           StandaloneECInstance::_AddArrayElements (const wchar_t * propertyAccessString, UInt32 size)
+    {
+    ClassLayoutCR classLayout = m_sharedWipEnabler->GetClassLayout();    
+    StatusInt status = AddNullArrayElementsAt (classLayout, propertyAccessString, size);
+    
+    return status;
+    }        
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           StandaloneECInstance::_RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index)
+    {
+    return ECOBJECTS_STATUS_OperationNotSupported;
+    } 
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           StandaloneECInstance::_ClearArray (const wchar_t * propertyAccessString)
+    {
+    return ECOBJECTS_STATUS_OperationNotSupported;
+    }                      
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09

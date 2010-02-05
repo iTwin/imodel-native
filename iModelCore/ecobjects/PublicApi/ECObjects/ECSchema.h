@@ -93,6 +93,38 @@ enum PrimitiveType : unsigned short
     PRIMITIVETYPE_String                    = 0x901
     };
 
+//=======================================================================================    
+//! Used to represent the type of an ECProperty
+struct ECTypeDescriptor
+{
+private:
+    ValueKind       m_typeKind;
+
+    union
+        {
+        ArrayKind       m_arrayKind;
+        PrimitiveType   m_primitiveType;
+        };  
+    ECTypeDescriptor () : m_typeKind ((ValueKind) 0), m_primitiveType ((PrimitiveType) 0) { };
+
+public:
+    ECOBJECTS_EXPORT static ECTypeDescriptor   CreatePrimitiveTypeDescriptor (PrimitiveType primitiveType);
+    ECOBJECTS_EXPORT static ECTypeDescriptor   CreatePrimitiveArrayTypeDescriptor (PrimitiveType primitiveType);
+    ECOBJECTS_EXPORT static ECTypeDescriptor   CreateStructArrayTypeDescriptor ();
+    ECOBJECTS_EXPORT static ECTypeDescriptor   CreateStructTypeDescriptor ();
+
+    ECTypeDescriptor (PrimitiveType primitiveType) : m_typeKind (VALUEKIND_Primitive), m_primitiveType (primitiveType) { };
+
+    inline ValueKind        GetTypeKind() const         { return m_typeKind; }
+    inline ArrayKind        GetArrayKind() const        { return (ArrayKind)(m_arrayKind & 0xFF); }    
+    inline bool             IsPrimitive() const         { return (GetTypeKind() == VALUEKIND_Primitive ); }
+    inline bool             IsStruct() const            { return (GetTypeKind() == VALUEKIND_Struct ); }
+    inline bool             IsArray() const             { return (GetTypeKind() == VALUEKIND_Array ); }
+    inline bool             IsPrimitiveArray() const    { return (GetTypeKind() == VALUEKIND_Array ) && (GetArrayKind() == ARRAYKIND_Primitive); }
+    inline bool             IsStructArray() const       { return (GetTypeKind() == VALUEKIND_Array ) && (GetArrayKind() == ARRAYKIND_Struct); }
+    inline PrimitiveType    GetPrimitiveType() const    { return m_primitiveType; }
+};    
+
 // NEEDSWORK - unsure what the best way is to model ECProperty.  Managed implementation has a single ECProperty and introduces an ECType concept.  My gut is that
 // this is overkill for the native implementation.  Alternatively we could have a single ECProperty class that could act as primitive/struct/array or we can take the
 // appoach I've implemented below.
@@ -110,11 +142,9 @@ enum PrimitiveType : unsigned short
     #define MSXML2_IXMLDOMElement   MSXML2::IXMLDOMElement
 #endif
 
-/*=================================================================================**//**
-//
+
+//=======================================================================================
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
-//
-+===============+===============+===============+===============+===============+======*/
 struct ECProperty abstract
 {
 /*__PUBLISH_SECTION_END__*/
@@ -174,11 +204,9 @@ public:
     ECOBJECTS_EXPORT StructECPropertyP          GetAsStructProperty () const;
 };
 
-/*=================================================================================**//**
-//
+
+//=======================================================================================
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
-//
-+===============+===============+===============+===============+===============+======*/
 struct PrimitiveECProperty /*__PUBLISH_ABSTRACT__*/ : public ECProperty
 {
 /*__PUBLISH_SECTION_END__*/
@@ -200,11 +228,9 @@ public:
     EXPORTED_PROPERTY  (PrimitiveType, Type);    
 };
 
-/*=================================================================================**//**
-//
+
+//=======================================================================================
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
-//
-+===============+===============+===============+===============+===============+======*/
 struct StructECProperty /*__PUBLISH_ABSTRACT__*/ : public ECProperty
 {
 /*__PUBLISH_SECTION_END__*/
@@ -228,11 +254,9 @@ public:
     EXPORTED_PROPERTY  (ECClassCR, Type);    
 };
 
-/*=================================================================================**//**
-//
+
+//=======================================================================================
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
-//
-+===============+===============+===============+===============+===============+======*/
 struct ArrayECProperty /*__PUBLISH_ABSTRACT__*/ : public ECProperty
 {
 /*__PUBLISH_SECTION_END__*/
@@ -272,11 +296,8 @@ public:
     EXPORTED_PROPERTY  (UInt32,             MaxOccurs);     
 };
 
-/*=================================================================================**//**
-//
+//=======================================================================================
 //! Container holding ECProperties that supports STL like iteration
-//
-+===============+===============+===============+===============+===============+======*/
 struct ECPropertyContainer /*__PUBLISH_ABSTRACT__*/
 {
 /*__PUBLISH_SECTION_END__*/
@@ -293,9 +314,8 @@ private:
 /*__PUBLISH_SECTION_START__*/
 
 public:    
-    /*=================================================================================**//**
-    * @bsistruct
-    +===============+===============+===============+===============+===============+======*/
+    //=======================================================================================
+    // @bsistruct
     struct IteratorState /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
         {        
         friend struct const_iterator;
@@ -308,9 +328,8 @@ public:
 /*__PUBLISH_SECTION_START__*/                        
         };
 
-    /*=================================================================================**//**
-    * @bsistruct
-    +===============+===============+===============+===============+===============+======*/
+    //=======================================================================================
+    // @bsistruct
     struct const_iterator
     {    
     private:                
@@ -334,11 +353,9 @@ public:
 }; 
 
 typedef std::vector<ECClassP> ECBaseClassesVector;
-/*=================================================================================**//**
-//
+
+//=======================================================================================
 //! The in-memory representation of an ECClass as defined by ECSchemaXML
-//
-+===============+===============+===============+===============+===============+======*/
 struct ECClass /*__PUBLISH_ABSTRACT__*/
 {
 /*__PUBLISH_SECTION_END__*/
@@ -433,11 +450,8 @@ public:
    
 }; // ECClass
 
-/*=================================================================================**//**
-//
+//=======================================================================================
 //! The in-memory representation of a relationship class as defined by ECSchemaXML
-//
-+===============+===============+===============+===============+===============+======*/
 struct ECRelationshipClass /*__PUBLISH_ABSTRACT__*/ : public ECClass
 {
 /*__PUBLISH_SECTION_END__*/
@@ -466,11 +480,8 @@ public:
 typedef std::list<ECSchemaP> ECSchemaReferenceList;
 typedef RefCountedPtr<ECSchema>                  ECSchemaPtr;
 
-/*=================================================================================**//**
-//
+//=======================================================================================
 //! Supports STL like iterator of classes in a schema
-//
-+===============+===============+===============+===============+===============+======*/
 struct ECClassContainer /*__PUBLISH_ABSTRACT__*/
 {
 /*__PUBLISH_SECTION_END__*/
@@ -485,9 +496,8 @@ private:
 /*__PUBLISH_SECTION_START__*/
 
 public:    
-    /*=================================================================================**//**
-    * @bsistruct
-    +===============+===============+===============+===============+===============+======*/
+    //=======================================================================================
+    // @bsistruct
     struct IteratorState /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
         {        
         friend struct const_iterator;
@@ -500,9 +510,8 @@ public:
 /*__PUBLISH_SECTION_START__*/                        
         };
 
-    /*=================================================================================**//**
-    * @bsistruct
-    +===============+===============+===============+===============+===============+======*/
+    //=======================================================================================
+    // @bsistruct
     struct const_iterator
     {    
     private:                
@@ -525,11 +534,9 @@ public:
 
 }; 
 
-/*=================================================================================**//**
-//
+
+//=======================================================================================
 //! The in-memory representation of a schema as defined by ECSchemaXML
-//
-+===============+===============+===============+===============+===============+======*/
 struct ECSchema /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
 {
 /*__PUBLISH_SECTION_END__*/

@@ -94,6 +94,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ECType.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\ecf\ecobjects\native\ECValue.cpp"
 				>
 			</File>

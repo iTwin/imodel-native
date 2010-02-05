@@ -40,15 +40,15 @@ private:
         ArrayKind       m_arrayKind;
         PrimitiveType   m_elementPrimitiveType;
         };    
-    bool                m_isFixedSize;     // FUSION_WIP Store this as some other (blittable) type.
+    bool                m_isFixedCount;     // FUSION_WIP Store this as some other (blittable) type.
     UInt32              m_count;
             
 public:
     void InitializeStructArray (UInt32 count, bool isFixedSize); // cannot have a real constructor due to inclusion in a union
-    void InitializePrimitiveArray (PrimitiveType elementPrimitiveType, UInt32 count, bool isFixedSize); // cannot have a real constructor due to inclusion in a union
+    void InitializePrimitiveArray (PrimitiveType elementPrimitiveType, UInt32 count, bool isFixedCount); // cannot have a real constructor due to inclusion in a union
     
     ECOBJECTS_EXPORT UInt32          GetCount() const;
-    ECOBJECTS_EXPORT bool            IsFixedSize() const;    
+    ECOBJECTS_EXPORT bool            IsFixedCount() const;    
     ECOBJECTS_EXPORT bool            IsPrimitiveArray() const;
     ECOBJECTS_EXPORT bool            IsStructArray() const;
     ECOBJECTS_EXPORT ValueKind       GetKind() const;    
@@ -143,14 +143,11 @@ public:
     ECOBJECTS_EXPORT bool           IsPrimitive () const;
         
     ECOBJECTS_EXPORT PrimitiveType  GetPrimitiveType() const;
+    ECOBJECTS_EXPORT StatusInt      SetPrimitiveType(PrimitiveType primitiveElementType);
 
-    // AZK Is this really the best approach? These are really just for initializing an ECValue.  Callers can not change the primitive element type, or whether it is 
-    // fixed size after the fact.  They can change the size of variable size arrays but doing it through the value object is not necessarily the preferred approach.
-    // Maybe we should just expose these as constructors or static factory methods.
-    // Hmm, actually we expect to be able to reuse a value object as a flyweight so maybe this is the best approach.
     ECOBJECTS_EXPORT StatusInt      SetStructArrayInfo (UInt32 count, bool isFixedSize);
     ECOBJECTS_EXPORT StatusInt      SetPrimitiveArrayInfo (PrimitiveType primitiveElementtype, UInt32 count, bool isFixedSize);
-    ECOBJECTS_EXPORT ArrayInfo      GetArrayInfo();
+    ECOBJECTS_EXPORT ArrayInfo      GetArrayInfo() const;
     
     ECOBJECTS_EXPORT Int32          GetInteger () const;
     ECOBJECTS_EXPORT StatusInt      SetInteger (Int32 integer);

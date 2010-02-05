@@ -38,7 +38,6 @@ private:
     ~StandaloneECInstance ();
     
     virtual bool      _IsMemoryInitialized () const;
-    virtual byte *    _GetDataForWrite () const;
     virtual StatusInt _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength);    
     virtual void      _ShrinkAllocation (UInt32 newAllocation);
     virtual void      _FreeAllocation ();
@@ -51,12 +50,16 @@ protected:
     virtual bool            _IsReadOnly() const override;        
     virtual StatusInt       _GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const override;
     virtual StatusInt       _SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 nIndices, UInt32 const * indices) override;      
-    virtual void            _Dump () const;
-    virtual byte const *    _GetDataForRead () const;
-    virtual UInt32          _GetBytesAllocated () const;
+    virtual StatusInt       _InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size) override;
+    virtual StatusInt       _AddArrayElements (const wchar_t * propertyAccessString, UInt32 size) override;
+    virtual StatusInt       _RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index) override;
+    virtual StatusInt       _ClearArray (const wchar_t * propertyAccessString) override;    
+    virtual void            _Dump () const override;
+    virtual byte const *    _GetData () const override;
+    virtual UInt32          _GetBytesAllocated () const override;
     
 public: // These must be public so that ECXDataEnabler can get at the guts of StandaloneECInstance to copy it into an XAttribute     
-    ECOBJECTS_EXPORT byte const *         GetDataForRead () const;
+    ECOBJECTS_EXPORT byte const *         GetData () const;
     ECOBJECTS_EXPORT UInt32               GetBytesUsed () const;
     ECOBJECTS_EXPORT void                 ClearValues ();
     ECOBJECTS_EXPORT ClassLayoutCR        GetClassLayout() const;

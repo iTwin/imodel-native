@@ -36,49 +36,13 @@ struct  InstanceHeader
     InstanceFlags   m_instanceFlags;
     };
 
-
-/// WIP, not sure this belongs here or that we even need the struct but I'm defining it for now just to experiment with some ideas.
-struct ECTypeDescriptor
-    {
-private:
-    ValueKind       m_typeKind;
-
-    union
-        {
-        ArrayKind       m_arrayKind;
-        PrimitiveType   m_primitiveType;
-        };  
-    ECTypeDescriptor () : m_typeKind ((ValueKind) 0), m_primitiveType ((PrimitiveType) 0) { };
-
-public:
-    static ECTypeDescriptor   CreatePrimitiveTypeDescriptor (PrimitiveType primitiveType) 
-        { ECTypeDescriptor type; type.m_typeKind = VALUEKIND_Primitive; type.m_primitiveType = primitiveType; return type; }
-    static ECTypeDescriptor   CreatePrimitiveArrayTypeDescriptor (PrimitiveType primitiveType) 
-        { ECTypeDescriptor type; type.m_typeKind = VALUEKIND_Array; type.m_primitiveType = primitiveType; return type; }
-    static ECTypeDescriptor   CreateStructArrayTypeDescriptor () 
-        { ECTypeDescriptor type; type.m_typeKind = VALUEKIND_Array; type.m_arrayKind = ARRAYKIND_Struct; return type; }
-    static ECTypeDescriptor   CreateStructTypeDescriptor () 
-        { ECTypeDescriptor type; type.m_typeKind = VALUEKIND_Struct; type.m_arrayKind = (ArrayKind)0; return type; }
-
-    ECTypeDescriptor (PrimitiveType primitiveType) : m_typeKind (VALUEKIND_Primitive), m_primitiveType (primitiveType) { };
-
-    inline ValueKind        GetTypeKind() const         { return m_typeKind; }
-    inline ArrayKind        GetArrayKind() const        { return (ArrayKind)(m_arrayKind & 0xFF); }    
-    inline bool             IsPrimitive() const         { return (GetTypeKind() == VALUEKIND_Primitive ); }
-    inline bool             IsStruct() const            { return (GetTypeKind() == VALUEKIND_Struct ); }
-    inline bool             IsArray() const             { return (GetTypeKind() == VALUEKIND_Array ); }
-    inline bool             IsPrimitiveArray() const    { return (GetTypeKind() == VALUEKIND_Array ) && (GetArrayKind() == ARRAYKIND_Primitive); }
-    inline bool             IsStructArray() const       { return (GetTypeKind() == VALUEKIND_Array ) && (GetArrayKind() == ARRAYKIND_Struct); }
-    inline PrimitiveType    GetPrimitiveType() const    { return m_primitiveType; }
-    };
-
 enum ArrayModifierFlags : UInt32
     {
-    ARRAYMODIFIERFLAGS_IsFixedSize    = 0x01
+    ARRAYMODIFIERFLAGS_IsFixedCount    = 0x01
     };
 
 /*=================================================================================**//**
-* @bsistruct                                                     CaseyMullen    10/09
+* @bsistruct
 +===============+===============+===============+===============+===============+======*/      
 struct PropertyLayout
     {
@@ -111,7 +75,7 @@ public:
     inline wchar_t const *  GetAccessString() const     { return m_accessString.c_str(); }
     inline int              GetExpectedIndices() const  { return m_expectedIndices; }
     inline UInt32           GetModifierFlags() const    { return m_modifierFlags; }
-    inline UInt32           GetModifierData() const     { return m_modifierData; }
+    inline UInt32           GetModifierData() const     { return m_modifierData; }    
     
     bool                    IsFixedSized() const;
     //! Gets the size required for this PropertyValue in the fixed Section of the IECInstance's memory
@@ -123,7 +87,7 @@ public:
 
 #define USE_HASHMAP_IN_CLASSLAYOUT    
 /*=================================================================================**//**
-* @bsistruct                                                     CaseyMullen    10/09
+* @bsistruct
 +===============+===============+===============+===============+===============+======*/      
 struct ClassLayout
     {
@@ -147,7 +111,6 @@ private:
     // These members are expected to be persisted  
     ClassIndex              m_classIndex; // Unique per some context, e.g. per DgnFile
     std::wstring            m_className;
-    UInt32                  m_nProperties;
     
     PropertyLayoutVector    m_propertyLayouts; // This is the primary collection, there is a secondary map for lookup by name, below.
     PropertyLayoutLookup    m_propertyLayoutLookup;
@@ -155,19 +118,32 @@ private:
     // These members are transient
     SchemaIndex             m_schemaIndex;
     bool                    m_isPersisted;
-    UInt32                  m_nullflagsOffset;
-    State                   m_state;
-    UInt32                  m_offset;
     UInt32                  m_sizeOfFixedSection;
     bool                    m_isRelationshipClass;
     int                     m_propertyIndexOfSourceECPointer;
     int                     m_propertyIndexOfTargetECPointer;
     
-    void                    AddProperties (ECClassCR ecClass, wchar_t const * nameRoot, bool addFixedSize);
-    StatusInt               AddProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor, UInt32 size, UInt32 modifierFlags = 0, UInt32 modifierData = 0);
-    StatusInt               AddFixedSizeProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor);
-    StatusInt               AddFixedSizeArrayProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor, UInt32 arrayCount);
-    StatusInt               AddVariableSizeProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor);
+    struct  Factory
+    {
+    friend ClassLayout;
+
+    private:
+        State           m_state;
+        ECClassCR       m_ecClass;
+        UInt32          m_offset;
+        UInt32          m_nullflagsOffset;
+        ClassLayoutR    m_underConstruction;
+
+        void        AddProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor, UInt32 size, UInt32 modifierFlags = 0, UInt32 modifierData = 0);
+        void        AddFixedSizeProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor);
+        void        AddFixedSizeArrayProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor, UInt32 arrayCount);
+        void        AddVariableSizeProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor);
+        void        AddVariableSizeArrayPropertyWithFixedCount (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount);		
+        void        AddProperties (ECClassCR ecClass, wchar_t const * nameRoot, bool addFixedSize);
+
+        Factory (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex);
+        ClassLayoutP DoBuildClassLayout ();
+    };
 
     BentleyStatus           SetClass (wchar_t const *  className, UInt16 classIndex);
 
@@ -247,23 +223,111 @@ public:
     ECOBJECTS_EXPORT ClassLayoutCR  GetClassLayout() const;
     };
 
+/*__PUBLISH_SECTION_END__*/    
+//! An internal helper used by MemoryInstanceSupport to resize (add/remove elements) array property values
+struct      ArrayResizer
+    {
+    friend MemoryInstanceSupport;
+    
+private:
+    ClassLayoutCR           m_classLayout;
+    PropertyLayoutCR        m_propertyLayout;
+    MemoryInstanceSupportR  m_instance;
+    
+    UInt32          m_arrayOffset;
+    
+    UInt32          m_resizeIndex;
+    UInt32          m_resizeElementCount;
+    UInt32          m_resizeByteCount; // bytesNeeded
+        
+    PrimitiveType   m_elementType;
+    bool            m_elementTypeIsFixedSize;
+    UInt32          m_elementSizeInFixedSection;
+    
+    // state variables for pre resize
+    ArrayCount      m_preAllocatedArrayCount;
+    UInt32          m_preNullFlagBitmasksCount;
+    UInt32          m_preHeaderByteCount;
+    UInt32          m_preFixedSectionByteCount;
+    UInt32          m_preArrayByteCount;    
+    
+    // state variables for post resize
+    ArrayCount      m_postAllocatedArrayCount;
+    UInt32          m_postNullFlagBitmasksCount;
+    UInt32          m_postHeaderByteCount;
+    UInt32          m_postFixedSectionByteCount;    
+    SecondaryOffset m_postSecondaryOffsetOfResizeIndex;
+    
+    // pointers to memory that must be shifted during resize
+    byte const *    m_pResizeIndexPreShift;
+    byte const *    m_pResizeIndexPostShift;    
+    
+    byte const *    m_data;
+
+    ArrayResizer (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, MemoryInstanceSupportR instance, UInt32 resizeIndex, UInt32 resizeElementCount);
+        
+    StatusInt       ShiftDataFollowingResizeIndex ();
+    StatusInt       SetSecondaryOffsetsFollowingResizeIndex ();
+    StatusInt       ShiftDataPreceedingResizeIndex ();
+    StatusInt       SetSecondaryOffsetsPreceedingResizeIndex (SecondaryOffset* pSecondaryOffset, UInt32 byteCountToSet);    
+    StatusInt       WriteArrayHeader ();
+        
+    static StatusInt    CreateNullArrayElementsAt (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, MemoryInstanceSupportR instance, UInt32 insertIndex, UInt32 insertCount);
+    
+    };
+/*__PUBLISH_SECTION_START__*/    
+
 //! Base class for EC::IECInstance implementations that get/set values from a block of memory, 
 //! e.g. StandaloneECInstance and ECXDataInstance
 struct MemoryInstanceSupport
     {
-private:
+/*__PUBLISH_SECTION_END__*/    
+    friend  ArrayResizer;
+/*__PUBLISH_SECTION_START__*/    
+    
+private:    
     bool                        m_allowWritingDirectlyToInstanceMemory;
-    byte const *                GetAddressOfPrimitiveValue (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;
-    UInt32                      GetOffsetOfPropertyValue (PropertyLayoutCR propertyLayout) const;
-    UInt32                      GetOffsetOfPrimitiveValue (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;
-    UInt32                      GetOffsetOfArrayIndex (PropertyLayoutCR propertyLayout, UInt32 index) const;
-    UInt32                      GetOffsetOfArrayIndexValue (PropertyLayoutCR propertyLayout, UInt32 index) const;
-    bool                        IsPrimitiveValueNull (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;
-    void                        SetPrimitiveValueNull (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices, bool isNull);
-
-    UInt32                      GetArrayOffsetAndCount (UInt32& arrayOffset, PropertyLayoutCR propertyLayout) const;
-    StatusInt                   GetPrimitiveValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;
-    StatusInt                   SetPrimitiveValueToMemory   (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices);
+	   
+    //! Returns the offset of the property value relative to the start of the instance data.
+    //! If nIndices is > 0 then the offset of the array element value is returned.
+    UInt32              GetOffsetOfPropertyValue (PropertyLayoutCR propertyLayout, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
+    //! Returns the size in bytes of the property value
+    UInt32              GetPropertyValueSize (PropertyLayoutCR propertyLayout) const;
+	//! Returns the address of the property value 
+	//! If nIndices is > 0 then the address of the array element value is returned
+    byte const *        GetAddressOfPropertyValue (PropertyLayoutCR propertyLayout, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;    
+    //! Returns the offset of the specified array index relative to the start of the instance data.
+    //! Note that this offset does not necessarily contain the index value.  If the element type is fixed it contains the value but if it is a variable
+    //! size type then the index contains a secondary offset.  If you need the offset of the actual element value then use GetOffsetOfArrayIndexValue
+    //! This method does not do any parameter checking.  It is the responsibility of the caller to ensure the property is an array and the index is in
+    //! a valid range.
+    UInt32              GetOffsetOfArrayIndex (UInt32 arrayOffset, PropertyLayoutCR propertyLayout, UInt32 index) const;
+    //! Returns the offset of the specified array index value relative to the start of the instance data.
+    //! This method does not do any parameter checking.  It is the responsibility of the caller to ensure the property is an array and the index is in
+    //! a valid range.
+    UInt32              GetOffsetOfArrayIndexValue (UInt32 arrayOffset, PropertyLayoutCR propertyLayout, UInt32 index) const;
+    //! Returns true if the property value is null; otherwise false
+    //! If nIndices is > 0 then the null check is based on the array element at the specified index
+    bool                IsPropertyValueNull (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;
+    //! Sets the null bit of the specified property to the value indicated by isNull
+    //! If nIndices is > 0 then the null bit is set for the array element at the specified index    
+    void                SetPropertyValueNull (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices, bool isNull);    
+    //! Returns the number of elements in the specfieid array that are currently reserved but not necessarily allocated.
+    //! This is important when an array has a minimum size but has not yet been initialized.  We delay initializing the memory for the minimum # of elements until
+    //! the first value is set.  If an array does not have a minimum element count then GetReservedArrayCount will always equal GetAllocatedArrayCount
+    //! This value is always >= the value returned by GetAllocatedArrayCount.
+    //! This is the value used to set the count on an ArrayInfo value object that will be returned to a caller via GetValueFromMemory.  It is an implementation detail
+    //! of memory based instances as to whether or not the physical memory to back that array count has actually been allocated.
+    ArrayCount          GetReservedArrayCount (PropertyLayoutCR propertyLayout) const;
+    //! Returns the number of elements in the specfieid array that are currently allocated in the instance data memory block.
+    //! See the description of GetReservedArrayCount for explanation about the differences between the two.
+    ArrayCount          GetAllocatedArrayCount (PropertyLayoutCR propertyLayout) const;
+    //! Obtains the current primitive value for the specified property
+    //! If nIndices is > 0 then the primitive value for the array element at the specified index is obtained.
+    StatusInt           GetPrimitiveValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;
+    //! Sets the primitive value for the specified property
+    //! If nIndices is > 0 then the primitive value for the array element at the specified index is set.
+    StatusInt           SetPrimitiveValueToMemory   (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices);
     
     //! Shifts the values' data and adjusts SecondaryOffsets for all variable-sized property values 
     //! AFTER the given one, to make room for additional bytes needed for the property value of the given PropertyLayout
@@ -273,11 +337,11 @@ private:
     //! @param propertyLayout PropertyLayout of the variable-sized property whose size is increasing
     //! @param shiftBy        Positive or negative! Memory will be moved and SecondaryOffsets will be adjusted by this amount
     StatusInt                   ShiftValueData(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated, PropertyLayoutCR propertyLayout, Int32 shiftBy);
-    StatusInt                   ShiftArrayIndexValueData(PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 arrayCount, Int32 shiftBy);
+    StatusInt                   ShiftArrayIndexValueData(PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 arrayCount,  UInt32 endOfValueDataOffset, Int32 shiftBy);
         
     StatusInt                   EnsureSpaceIsAvailable (UInt32& offset, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded);
     StatusInt                   EnsureSpaceIsAvailableForArrayIndexValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 bytesNeeded);
-    StatusInt                   GrowPropertyValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 additionalbytesNeeded);
+    StatusInt                   GrowPropertyValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 additionalbytesNeeded);           
          
 protected:
     //! Constructor used by subclasses
@@ -289,12 +353,13 @@ protected:
     ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout,      UInt32 nIndices, UInt32 const * indices) const;
     ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ClassLayoutCR classLayout, ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const;
     ECOBJECTS_EXPORT StatusInt  SetValueToMemory (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, ECValueCR v,  UInt32 nIndices, UInt32 const * indices);      
+    ECOBJECTS_EXPORT StatusInt  InsertNullArrayElementsAt (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, UInt32 insertIndex, UInt32 insertCount);
+    ECOBJECTS_EXPORT StatusInt  AddNullArrayElementsAt (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, UInt32 insertCount);
     ECOBJECTS_EXPORT void       DumpInstanceData (ClassLayoutCR classLayout) const;
     
     virtual bool                _IsMemoryInitialized () const = 0;    
     //! Get a pointer to the first byte of the data    
-    virtual byte const *        _GetDataForRead () const = 0;
-    virtual byte *              _GetDataForWrite () const = 0;
+    virtual byte const *        _GetData () const = 0;
     virtual StatusInt           _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength) = 0;
     virtual UInt32              _GetBytesAllocated () const = 0;
         
@@ -314,7 +379,7 @@ protected:
     
 public:
     ECOBJECTS_EXPORT static InstanceHeader const&   PeekInstanceHeader (void const* data);
-    };
+    };    
 
 
 END_BENTLEY_EC_NAMESPACE

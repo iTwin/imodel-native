@@ -114,11 +114,12 @@ void SetAndVerifyLong (IECInstanceR instance, ECValueR v, wchar_t const * access
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyArrayCount (IECInstanceR instance, ECValueR v, wchar_t const * accessString, UInt32 count)
+void VerifyArrayInfo (IECInstanceR instance, ECValueR v, wchar_t const * accessString, UInt32 count, bool isFixedCount)
     {
     v.Clear();
     EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
     EXPECT_EQ (count, v.GetArrayInfo().GetCount());
+    EXPECT_EQ (isFixedCount, v.GetArrayInfo().IsFixedCount());
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -135,6 +136,21 @@ void VerifyOutOfBoundsError (IECInstanceR instance, ECValueR v, wchar_t const * 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/    
+void VerifyStringArray (IECInstanceR instance, ECValueR v, wchar_t const * accessString, wchar_t const * value, UInt32 start, UInt32 count)
+    {
+    std::wstring incrementingString = value;
+   
+    for (UInt32 i=start ; i < start + count ; i++)        
+        {
+        incrementingString.append (L"X");
+        VerifyString (instance, v, accessString, 1, &i, incrementingString.c_str());
+        }
+    }  
+              
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    AdamKlatzkin     01/10
++---------------+---------------+---------------+---------------+---------------+------*/    
 void SetAndVerifyStringArray (IECInstanceR instance, ECValueR v, wchar_t const * accessString, wchar_t const * value, UInt32 count)
     {
     std::wstring incrementingString = value;
@@ -145,13 +161,19 @@ void SetAndVerifyStringArray (IECInstanceR instance, ECValueR v, wchar_t const *
         EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v, 1, &i));
         }
     
-    incrementingString = value;    
-    for (UInt32 i=0 ; i < count ; i++)        
-        {
-        incrementingString.append (L"X");
-        VerifyString (instance, v, accessString, 1, &i, incrementingString.c_str());
-        }
+    VerifyStringArray (instance, v, accessString, value, 0, count);
     }  
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    AdamKlatzkin     01/10
++---------------+---------------+---------------+---------------+---------------+------*/    
+void VerifyIntegerArray (IECInstanceR instance, ECValueR v, wchar_t const * accessString, UInt32 baseValue, UInt32 start, UInt32 count)
+    {       
+    for (UInt32 i=start ; i < start + count ; i++)        
+        {
+        VerifyInteger (instance, v, accessString, 1, &i, baseValue++);
+        }
+    }        
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin     01/10
@@ -164,11 +186,21 @@ void SetAndVerifyIntegerArray (IECInstanceR instance, ECValueR v, wchar_t const 
         EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v, 1, &i));
         }
         
-    for (UInt32 i=0 ; i < count ; i++)        
-        {
-        VerifyInteger (instance, v, accessString, 1, &i, baseValue + i);
-        }
+    VerifyIntegerArray (instance, v, accessString, baseValue, 0, count);
     }      
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+void VerifyIsNullArrayElements (IECInstanceR instance, ECValueR v, wchar_t const * accessString, UInt32 start, UInt32 count, bool isNull)
+    {
+    for (UInt32 i = start ; i < start + count ; i++)    
+        {
+        v.Clear();
+        EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString, 1, &i));
+        EXPECT_TRUE (isNull == v.IsNull());        
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/09
@@ -200,6 +232,7 @@ std::wstring    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versio
                     L"        <ECProperty propertyName=\"Property7\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"Property8\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"Property9\" typeName=\"string\" />"
+                    L"        <ECArrayProperty propertyName=\"FixedArrayFixedElement\" typeName=\"int\" minOccurs=\"10\" maxOccurs=\"10\"/>"                    
                     L"        <ECProperty propertyName=\"Property10\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"Property11\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"Property12\" typeName=\"string\" />"
@@ -207,11 +240,9 @@ std::wstring    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versio
                     L"        <ECProperty propertyName=\"Property14\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"Property15\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"Property16\" typeName=\"string\" />"
-                    L"        <ECProperty propertyName=\"Property17\" typeName=\"string\" />"
-                    L"        <ECArrayProperty propertyName=\"FixedArrayFixedElement\" typeName=\"int\" minOccurs=\"10\" maxOccurs=\"10\"/>"
+                    L"        <ECProperty propertyName=\"Property17\" typeName=\"string\" />"                    
                     L"        <ECArrayProperty propertyName=\"VariableArrayFixedElement\" typeName=\"int\"/>"
-                    L"        <ECArrayProperty propertyName=\"FixedArrayVariableElement\" typeName=\"string\" minOccurs=\"10\" maxOccurs=\"10\"/>"
-                    L"        <ECArrayProperty propertyName=\"VariableArrayVariableElement\" typeName=\"string\"/>"
+                    L"        <ECArrayProperty propertyName=\"FixedArrayVariableElement\" typeName=\"string\" minOccurs=\"12\" maxOccurs=\"12\"/>"                    
                     L"        <ECProperty propertyName=\"Property18\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"Property19\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"Property20\" typeName=\"string\" />"
@@ -222,6 +253,7 @@ std::wstring    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versio
                     L"        <ECProperty propertyName=\"Property25\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"Property26\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"Property27\" typeName=\"string\" />"
+                    L"        <ECArrayProperty propertyName=\"VariableArrayVariableElement\" typeName=\"string\"/>"
                     L"        <ECProperty propertyName=\"Property28\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"Property29\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"Property30\" typeName=\"string\" />"
@@ -304,19 +336,94 @@ ECSchemaPtr       CreateProfilingSchema (int nStrings)
     }
     
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+void ExerciseVariableCountIntArray (IECInstanceR instance, ECValue& v, wchar_t* arrayAccessor, int baseValue)
+    {
+    // test insertion in an empty array
+    ASSERT_TRUE (SUCCESS == instance.InsertArrayElements (arrayAccessor, 0, 5));
+    VerifyArrayInfo             (instance, v, arrayAccessor, 5, false);
+    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 5, true);    
+    SetAndVerifyIntegerArray    (instance, v, arrayAccessor, baseValue, 5);   
+    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 5, false);
+    VerifyOutOfBoundsError      (instance, v, arrayAccessor, 5);
+    // test insertion in the middle of an array
+    ASSERT_TRUE (SUCCESS == instance.InsertArrayElements (arrayAccessor, 3, 3));    
+    VerifyArrayInfo             (instance, v, arrayAccessor, 8, false);
+    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 3, false);
+    VerifyIntegerArray          (instance, v, arrayAccessor, baseValue, 0, 3);
+    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 3, 3, true);
+    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 6, 2, false);
+    VerifyIntegerArray          (instance, v, arrayAccessor, baseValue + 3, 6, 2);
+    SetAndVerifyIntegerArray    (instance, v, arrayAccessor, baseValue, 8);   
+    // test insertion at the beginning of an array
+    ASSERT_TRUE (SUCCESS == instance.InsertArrayElements (arrayAccessor, 0, 4));    
+    VerifyArrayInfo             (instance, v, arrayAccessor, 12, false);
+    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 4, true);
+    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 4, 8, false);
+    VerifyIntegerArray          (instance, v, arrayAccessor, baseValue, 4, 8);    
+    SetAndVerifyIntegerArray    (instance, v, arrayAccessor, baseValue, 12);     
+    // test insertion at the end of an array
+    ASSERT_TRUE (SUCCESS == instance.AddArrayElements (arrayAccessor, 2));    
+    VerifyArrayInfo             (instance, v, arrayAccessor, 14, false);    
+    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 12, 2, true);
+    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 12, false);
+    VerifyIntegerArray          (instance, v, arrayAccessor, baseValue, 0, 12);    
+    SetAndVerifyIntegerArray    (instance, v, arrayAccessor, baseValue, 14);               
+    }    
+       
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+void ExerciseVariableCountStringArray (IECInstanceR instance, ECValue& v, wchar_t* arrayAccessor, wchar_t* stringSeed)
+    {
+    // test insertion in an empty array
+    ASSERT_TRUE (SUCCESS == instance.InsertArrayElements (arrayAccessor, 0, 5));
+    VerifyArrayInfo             (instance, v, arrayAccessor, 5, false);
+    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 5, true);    
+    SetAndVerifyStringArray     (instance, v, arrayAccessor, stringSeed, 5);   
+    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 5, false);
+    VerifyOutOfBoundsError      (instance, v, arrayAccessor, 5);
+    // test insertion in the middle of an array
+    ASSERT_TRUE (SUCCESS == instance.InsertArrayElements (arrayAccessor, 3, 3));    
+    VerifyArrayInfo             (instance, v, arrayAccessor, 8, false);
+    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 3, false);
+    VerifyStringArray           (instance, v, arrayAccessor, stringSeed, 0, 3);
+    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 3, 3, true);
+    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 6, 2, false);
+    std::wstring stringSeedXXX(stringSeed);
+    stringSeedXXX.append (L"XXX");
+    VerifyStringArray           (instance, v, arrayAccessor, stringSeedXXX.c_str(), 6, 2);
+    SetAndVerifyStringArray     (instance, v, arrayAccessor, stringSeed, 8);   
+    // test insertion at the beginning of an array
+    ASSERT_TRUE (SUCCESS == instance.InsertArrayElements (arrayAccessor, 0, 4));    
+    VerifyArrayInfo             (instance, v, arrayAccessor, 12, false);
+    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 4, true);
+    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 4, 8, false);
+    VerifyStringArray           (instance, v, arrayAccessor, stringSeed, 4, 8);    
+    SetAndVerifyStringArray     (instance, v, arrayAccessor, stringSeed, 12);     
+    // test insertion at the end of an array
+    ASSERT_TRUE (SUCCESS == instance.AddArrayElements (arrayAccessor, 2));    
+    VerifyArrayInfo             (instance, v, arrayAccessor, 14, false);    
+    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 12, 2, true);
+    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 12, false);
+    VerifyStringArray           (instance, v, arrayAccessor, stringSeed, 0, 12);    
+    SetAndVerifyStringArray     (instance, v, arrayAccessor, stringSeed, 14);               
+    }
+    
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/  
 void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     {   
-    ECValue v;
-    
+    ECValue v;    
     StatusInt status = instance.GetValue (v, L"D");
     
     double doubleValue = 1.0/3.0;
     SetAndVerifyDouble (instance, v, L"D", doubleValue);
 
     SetAndVerifyInteger (instance, v, L"A", 97);
-    SetAndVerifyInteger (instance, v, L"AA", 12);
+    SetAndVerifyInteger (instance, v, L"AA", 12);   
     
     SetAndVerifyString (instance, v, L"B", L"Happy");
     SetAndVerifyString (instance, v, L"B", L"Very Happy");
@@ -341,8 +448,62 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
         wchar_t propertyName[66];
         swprintf (propertyName, L"Property%i", i);
         SetAndVerifyString (instance, v, propertyName, valueForFinalStrings);
-        }
-           
+        }          
+        
+    VerifyArrayInfo (instance, v, L"BeginningArray[]", 0, false);
+    VerifyArrayInfo (instance, v, L"FixedArrayFixedElement[]", 10, true);
+    VerifyArrayInfo (instance, v, L"VariableArrayFixedElement[]", 0, false);
+    VerifyArrayInfo (instance, v, L"FixedArrayVariableElement[]", 12, true);
+    VerifyArrayInfo (instance, v, L"VariableArrayVariableElement[]", 0, false);
+    VerifyArrayInfo (instance, v, L"EndingArray[]", 0, false);
+    
+    // WIP_FUSION, verify other properties of ArrayInfo are correct    
+    
+    {
+    DISABLE_ASSERTS
+    // verify we can not change the size of fixed arrays        
+    ASSERT_TRUE (SUCCESS != instance.InsertArrayElements (L"FixedArrayFixedElement[]", 0, 1));
+    ASSERT_TRUE (SUCCESS != instance.InsertArrayElements (L"FixedArrayFixedElement[]", 10, 1));
+    ASSERT_TRUE (SUCCESS != instance.AddArrayElements    (L"FixedArrayFixedElement[]", 1));
+    ASSERT_TRUE (SUCCESS != instance.InsertArrayElements (L"FixedArrayVariableElement[]", 0, 1));
+    ASSERT_TRUE (SUCCESS != instance.InsertArrayElements (L"FixedArrayVariableElement[]", 12, 1));
+    ASSERT_TRUE (SUCCESS != instance.AddArrayElements    (L"FixedArrayVariableElement[]", 1));
+    
+    // verify constraints of array insertion are enforced
+    ASSERT_TRUE (SUCCESS != instance.InsertArrayElements (L"NonExistArray", 0, 1));
+    ASSERT_TRUE (SUCCESS != instance.InsertArrayElements (L"BeginningArray", 0, 1)); // missing brackets
+    ASSERT_TRUE (SUCCESS != instance.InsertArrayElements (L"BeginningArray[]", 2, 1)); // insert index is invalid    
+    ASSERT_TRUE (SUCCESS != instance.InsertArrayElements (L"BeginningArray[]", 0, 0)); // insert count is invalid    
+    }
+    
+    VerifyOutOfBoundsError (instance, v, L"BeginningArray[]", 0);
+    VerifyOutOfBoundsError (instance, v, L"FixedArrayFixedElement[]", 10);
+    VerifyOutOfBoundsError (instance, v, L"VariableArrayFixedElement[]", 0);
+    VerifyOutOfBoundsError (instance, v, L"FixedArrayVariableElement[]", 12);
+    VerifyOutOfBoundsError (instance, v, L"VariableArrayVariableElement[]", 0);
+    VerifyOutOfBoundsError (instance, v, L"EndingArray[]", 0);                               
+    
+    VerifyIsNullArrayElements (instance, v, L"FixedArrayFixedElement[]", 0, 10, true);
+    SetAndVerifyIntegerArray (instance, v, L"FixedArrayFixedElement[]", 172, 10);
+    VerifyIsNullArrayElements (instance, v, L"FixedArrayFixedElement[]", 0, 10, false);
+    SetAndVerifyIntegerArray (instance, v, L"FixedArrayFixedElement[]", 283, 10);    
+    
+    VerifyIsNullArrayElements (instance, v, L"FixedArrayVariableElement[]", 0, 12, true);
+    SetAndVerifyStringArray (instance, v, L"FixedArrayVariableElement[]", L"BaseString", 12);       
+    VerifyIsNullArrayElements (instance, v, L"FixedArrayVariableElement[]", 0, 12, false);
+    SetAndVerifyStringArray (instance, v, L"FixedArrayVariableElement[]", L"LaaaaaaargeString", 10);       
+    VerifyStringArray (instance, v, L"FixedArrayVariableElement[]", L"BaseStringXXXXXXXXXX", 10, 2);
+    SetAndVerifyStringArray (instance, v, L"FixedArrayVariableElement[]", L"XString", 12);           
+    
+    ExerciseVariableCountStringArray (instance, v, L"BeginningArray[]", L"BAValue");
+    ExerciseVariableCountIntArray    (instance, v, L"VariableArrayFixedElement[]", 57);
+    ExerciseVariableCountStringArray (instance, v, L"VariableArrayVariableElement[]", L"Var+Var");
+    ExerciseVariableCountStringArray (instance, v, L"EndingArray[]", L"EArray");        
+    
+    // WIP_FUSION, add array members                       
+    // WIP_FUSION, remove array members
+    // WIP_FUSION, clear array
+    
     // Make sure that everything still has the final value that we expected
     VerifyString (instance, v, L"S", largeString);
     VerifyInteger (instance, v, L"A", 97);
@@ -356,32 +517,23 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
         swprintf (propertyName, L"Property%i", i);
         VerifyString (instance, v, propertyName, valueForFinalStrings);
         }    
-        
-    VerifyArrayCount (instance, v, L"BeginningArray[]", 0);
-    VerifyArrayCount (instance, v, L"FixedArrayFixedElement[]", 10);
-    VerifyArrayCount (instance, v, L"VariableArrayFixedElement[]", 0);
-    //NEEDSWORK, arrays of this type are not initializing to the correct size
-    //VerifyArrayCount (instance, v, L"FixedArrayVariableElement[]", 10);
-    VerifyArrayCount (instance, v, L"VariableArrayVariableElement[]", 0);
-    VerifyArrayCount (instance, v, L"EndingArray[]", 0);
-    
-    // WIP_FUSION, verify other properties of ArrayInfo are correct
-    // WIP_FUSION, verify we can not change the size of fixed arrays        
-    
-    VerifyOutOfBoundsError (instance, v, L"BeginningArray[]", 1);
-    VerifyOutOfBoundsError (instance, v, L"FixedArrayFixedElement[]", 11);
-    VerifyOutOfBoundsError (instance, v, L"VariableArrayFixedElement[]", 1);
-    VerifyOutOfBoundsError (instance, v, L"FixedArrayVariableElement[]", 11);
-    VerifyOutOfBoundsError (instance, v, L"VariableArrayVariableElement[]", 1);
-    VerifyOutOfBoundsError (instance, v, L"EndingArray[]", 1);    
-    
-    SetAndVerifyIntegerArray (instance, v, L"FixedArrayFixedElement[]", 172, 10);
-    //NEEDSWORK, arrays of this type are not initializing to the correct size
-    //SetAndVerifyStringArray (instance, v, L"FixedArrayVariableElement[]", L"BaseString", 10);   
-                       
-    // WIP_FUSION, insert array members
-    // WIP_FUSION, remove array members
-    // WIP_FUSION, clear array
+    VerifyArrayInfo     (instance, v, L"FixedArrayFixedElement[]", 10, true);
+    VerifyIntegerArray  (instance, v, L"FixedArrayFixedElement[]", 283, 0, 10);             
+    VerifyArrayInfo     (instance, v, L"BeginningArray[]", 14, false);
+    VerifyIsNullArrayElements   (instance, v, L"BeginningArray[]", 0, 14, false);
+    VerifyStringArray   (instance, v, L"BeginningArray[]", L"BAValue", 0, 14);        
+    VerifyArrayInfo     (instance, v, L"FixedArrayVariableElement[]", 12, true);
+    VerifyIsNullArrayElements   (instance, v, L"FixedArrayVariableElement[]", 0, 12, false);
+    VerifyStringArray   (instance, v, L"FixedArrayVariableElement[]", L"XString", 0, 12);           
+    VerifyArrayInfo     (instance, v, L"VariableArrayFixedElement[]", 14, false);
+    VerifyIsNullArrayElements   (instance, v, L"VariableArrayFixedElement[]", 0, 14, false);
+    VerifyIntegerArray  (instance, v, L"VariableArrayFixedElement[]", 57, 0, 14);                   
+    VerifyArrayInfo     (instance, v, L"VariableArrayVariableElement[]", 14, false);
+    VerifyIsNullArrayElements   (instance, v, L"VariableArrayVariableElement[]", 0, 14, false);
+    VerifyStringArray   (instance, v, L"VariableArrayVariableElement[]", L"Var+Var", 0, 14);               
+    VerifyArrayInfo     (instance, v, L"EndingArray[]", 14, false);
+    VerifyIsNullArrayElements   (instance, v, L"EndingArray[]", 0, 14, false);
+    VerifyStringArray   (instance, v, L"EndingArray[]", L"EArray", 0, 14);                      
     }
                  
 /*---------------------------------------------------------------------------------**//**
@@ -403,6 +555,7 @@ TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
     
     EC::StandaloneECInstanceP instance = enabler->CreateInstance();
     wstring instanceId = instance->GetInstanceId();
+    instance->Dump();
     ExerciseInstance (*instance, L"Test");
     instance->Dump();
     
@@ -469,6 +622,8 @@ TEST (MemoryLayoutTests, Values) // move it!
     EXPECT_TRUE (snull.IsNull());
     wchar_t const * wcnull = snull.GetString();
     EXPECT_EQ (NULL, s.GetString());
+    
+    // WIP_FUSION - test array values
     }
   
 /*---------------------------------------------------------------------------------**//**
@@ -511,6 +666,8 @@ TEST (MemoryLayoutTests, TestSetGetNull)
     
     EXPECT_TRUE (SUCCESS == instance->GetValue (v, L"S"));
     EXPECT_FALSE (v.IsNull());     
+    
+    // WIP_FUSION test arrays
 
     delete classLayout;
 

@@ -211,29 +211,36 @@ StatusInt           IECInstance::SetStringValue  (const wchar_t * propertyAccess
     }
     
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
+* @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           IECInstance::InsertArrayElement (const wchar_t * propertyAccessString, ECValueCR v, UInt32 index)
+StatusInt           IECInstance::InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size)
     {
-    return ECOBJECTS_STATUS_OperationNotSupported;
-    } 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           IECInstance::RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index)
-    {
-    return ECOBJECTS_STATUS_OperationNotSupported;
+    return _InsertArrayElements (propertyAccessString, index, size);
     } 
     
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           IECInstance::AddArrayElements (const wchar_t * propertyAccessString, UInt32 size)
+    {
+    return _AddArrayElements (propertyAccessString, size);
+    }        
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           IECInstance::RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index)
+    {
+    return _RemoveArrayElement (propertyAccessString, index);
+    } 
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt           IECInstance::ClearArray (const wchar_t * propertyAccessString)
     {
-    return ECOBJECTS_STATUS_OperationNotSupported;
-    }     
-
+    return _ClearArray (propertyAccessString);
+    }           
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/

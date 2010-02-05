@@ -2,14 +2,14 @@
 #
 #  $Source: ecobjects/nativeatp/ECObjectsNativeTest.run.mke $
 #
-#  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 %include mdl.mki
 
 always:
-     $(OutputRootDir)Product/ECFrameworkNativeTest/Tests/native/ECObjectsTest_Published.exe
-     $(OutputRootDir)Product/ECFrameworkNativeTest/Tests/native/ECObjectsTest_NonPublished.exe
+     $(OutputRootDir)Product/ECFrameworkNativeTest/Tests/ECObjectsTest_Published.exe
+     $(OutputRootDir)Product/ECFrameworkNativeTest/Tests/ECObjectsTest_NonPublished.exe
 
 
 
