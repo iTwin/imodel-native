@@ -514,7 +514,7 @@ StatusInt       ClassLayout::FinishLayout ()
     for (UInt32 i = 0; i < m_propertyLayouts.size(); i++)
         {
         PropertyLayoutCP propertyLayout = &m_propertyLayouts[i];
-        m_propertyLayoutLookup[propertyLayout->GetAccessString()] = propertyLayout;
+        m_propertyLayoutMap[propertyLayout->GetAccessString()] = propertyLayout;
         }
         
     // Calculate size of fixed section    
@@ -609,9 +609,9 @@ UInt32          ClassLayout::GetPropertyCount () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ClassLayout::GetPropertyLayout (PropertyLayoutCP & propertyLayout, wchar_t const * accessString) const
     {
-    PropertyLayoutLookup::const_iterator it = m_propertyLayoutLookup.find(accessString);
+    PropertyLayoutMap::const_iterator it = m_propertyLayoutMap.find(accessString);
     
-    if (it == m_propertyLayoutLookup.end())
+    if (it == m_propertyLayoutMap.end())
         {
         return ECOBJECTS_STATUS_PropertyNotFound;
         }

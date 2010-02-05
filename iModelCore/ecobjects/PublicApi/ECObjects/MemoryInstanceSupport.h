@@ -95,11 +95,11 @@ struct ClassLayout
 private:
     struct StringComparer {bool operator()(wchar_t const * s1, wchar_t const * s2) const   {return wcscmp (s1, s2) < 0;}};
 #ifdef USE_HASHMAP_IN_CLASSLAYOUT    
-    typedef stdext::hash_map<wchar_t const *, PropertyLayoutCP, stdext::hash_compare<const wchar_t *, StringComparer>>   PropertyLayoutLookup;
+    typedef stdext::hash_map<wchar_t const *, PropertyLayoutCP, stdext::hash_compare<const wchar_t *, StringComparer>>   PropertyLayoutMap;
 #else
-    typedef std::map<wchar_t const *, PropertyLayoutCP, StringComparer> PropertyLayoutLookup;
+    typedef std::map<wchar_t const *, PropertyLayoutCP, StringComparer> PropertyLayoutMap;
 #endif    
-    typedef std::vector<PropertyLayout>                                 PropertyLayoutVector;
+    typedef std::vector<PropertyLayout>                                 PropertyLayoutVector; // WIP_FUSION: needs to be vector of PropertyLayoutP
     
     enum State
         {
@@ -113,7 +113,7 @@ private:
     std::wstring            m_className;
     
     PropertyLayoutVector    m_propertyLayouts; // This is the primary collection, there is a secondary map for lookup by name, below.
-    PropertyLayoutLookup    m_propertyLayoutLookup;
+    PropertyLayoutMap       m_propertyLayoutMap;
     
     // These members are transient
     SchemaIndex             m_schemaIndex;
