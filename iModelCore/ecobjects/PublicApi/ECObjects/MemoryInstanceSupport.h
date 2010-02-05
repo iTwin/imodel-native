@@ -159,8 +159,7 @@ public:
     ECOBJECTS_EXPORT SchemaIndex    GetSchemaIndex () const;
     ECOBJECTS_EXPORT bool           IsPersisted () const;
     ECOBJECTS_EXPORT void           SetIsPersisted (bool isPersisted) const;
-    ECOBJECTS_EXPORT int            GetSourceECPointerIndex () const;
-    ECOBJECTS_EXPORT int            GetTargetECPointerIndex () const;
+    ECOBJECTS_EXPORT int            GetECPointerIndex (ECRelationshipEnd end) const;
     
     ECOBJECTS_EXPORT UInt32         GetPropertyCount () const;
     ECOBJECTS_EXPORT StatusInt      GetPropertyLayout (PropertyLayoutCP & propertyLayout, wchar_t const * accessString) const;

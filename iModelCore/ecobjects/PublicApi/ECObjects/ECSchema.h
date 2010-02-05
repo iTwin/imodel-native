@@ -450,6 +450,8 @@ public:
    
 }; // ECClass
 
+enum ECRelationshipEnd { ECRelationshipEnd_Source = 0, ECRelationshipEnd_Target };
+
 //=======================================================================================
 //! The in-memory representation of a relationship class as defined by ECSchemaXML
 struct ECRelationshipClass /*__PUBLISH_ABSTRACT__*/ : public ECClass

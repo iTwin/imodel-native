@@ -279,6 +279,17 @@ void            ClassLayout::SetIsPersisted (bool isPersisted) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+int   ClassLayout::GetECPointerIndex (ECRelationshipEnd end) const
+    {
+    if (end == ECRelationshipEnd_Source)
+        return m_propertyIndexOfSourceECPointer;
+    else
+        return m_propertyIndexOfTargetECPointer;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
 void            ClassLayout::Factory::AddProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 size, UInt32 modifierFlags, UInt32 modifierData)
