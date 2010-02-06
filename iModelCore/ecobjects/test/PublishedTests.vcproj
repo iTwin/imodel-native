@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="PublishedTests"
+	Name="ECObjectsPublishedTests"
 	ProjectGUID="{885B170C-2635-4A7D-9532-8A4AE95B2561}"
 	RootNamespace="PublishedTests"
 	Keyword="MakeFileProj"
