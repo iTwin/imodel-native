@@ -257,7 +257,7 @@ ClassIndex      ClassLayout::GetClassIndex() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-std::wstring    ClassLayout::GetClassName() const
+std::wstring    ClassLayout::GetECClassName() const
     {
     return m_className;
     }
@@ -672,7 +672,7 @@ ClassLayoutCP   SchemaLayout::FindClassLayout (wchar_t const * className)
         if (NULL == classLayout)
             continue;
 
-        if (0 == wcsicmp (classLayout->GetClassName().c_str(), className))
+        if (0 == wcsicmp (classLayout->GetECClassName().c_str(), className))
             return classLayout;
         }
 
@@ -1436,7 +1436,7 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
     if (s_skipDump)
         return;
   
-    logger->tracev (L"ECClass=%s at address = 0x%0x\n", classLayout.GetClassName().c_str(), data);
+    logger->tracev (L"ECClass=%s at address = 0x%0x\n", classLayout.GetECClassName().c_str(), data);
     InstanceHeader& header = *(InstanceHeader*)data;
 
     logger->tracev (L"  [0x%0x][%4.d] SchemaIndex = %d\n",        &header.m_schemaIndex,  (byte*)&header.m_schemaIndex   - data, header.m_schemaIndex);
