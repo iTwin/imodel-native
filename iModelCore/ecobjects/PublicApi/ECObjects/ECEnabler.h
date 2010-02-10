@@ -19,7 +19,7 @@ typedef RefCountedPtr<ECEnabler>                  EnablerPtr;
 struct ECEnabler : RefCountedBase
     {
 private:
-    ECClassCP                 m_ecClass;
+    ECClassCR                 m_ecClass;
 
     ECEnabler(); // Hidden as part of the RefCounted pattern
     
@@ -42,7 +42,10 @@ protected:
     ECOBJECTS_EXPORT virtual wchar_t const * _GetName() const = 0;
 
 public:
-    
+    UInt32                           m_privateRefCount;
+    ECOBJECTS_EXPORT UInt32          AddRef();
+    ECOBJECTS_EXPORT UInt32          Release();
+
     //! Primarily for debugging/logging purposes. Should match your fully-qualified class name
     ECOBJECTS_EXPORT wchar_t const * GetName() const;
     

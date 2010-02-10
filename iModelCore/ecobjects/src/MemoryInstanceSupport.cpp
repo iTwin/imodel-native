@@ -257,7 +257,7 @@ ClassIndex      ClassLayout::GetClassIndex() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-std::wstring    ClassLayout::GetClassName() const
+std::wstring const &  ClassLayout::GetClassName() const
     {
     return m_className;
     }
@@ -653,7 +653,7 @@ BentleyStatus   SchemaLayout::AddClassLayout (ClassLayoutCR classLayout, ClassIn
     assert (NULL == m_classLayouts[classIndex] && "ClassIndex is already in use");
 
     m_classLayouts[classIndex] = &classLayout;
-
+    
     return SUCCESS;
     }
 
@@ -683,6 +683,14 @@ ClassLayoutCP   SchemaLayout::FindClassLayout (wchar_t const * className)
         }
 
     return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen    02/10
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32          SchemaLayout::GetMaxIndex()
+    {
+    return m_classLayouts.size() - 1;
     }
 
 /*---------------------------------------------------------------------------------**//**

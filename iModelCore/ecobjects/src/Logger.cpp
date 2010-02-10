@@ -59,7 +59,7 @@ std::wstring GetLogConfigurationFilename()
         {
         wchar_t * processorArchitecture = (8 == sizeof(void*)) ? L"Winx64" : L"Winx86";
         wcscat (filepath, processorArchitecture);
-        wcscat (filepath, L"\\Product\\ECFrameworkNativeTest\\Tests\\native\\log4cxx_properties.xml");
+        wcscat (filepath, L"\\Product\\ECFrameworkNativeTest\\Tests\\log4cxx_properties.xml");
         
         if (0 ==_waccess(filepath, 0))
             {

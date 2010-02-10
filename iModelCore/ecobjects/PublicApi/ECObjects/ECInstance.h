@@ -16,7 +16,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 //! Unlike IECInstance, it is not a pure interface, but is a concrete struct.
 //! Whereas in .NET, one might implement IECInstance, or use the "Lightweight" system
 //! in Bentley.ECObjects.Lightweight, in native "ECObjects" you write a class that implements
-//! the DgnECEnabler interface and one or more related interfaces to supply functionality 
+//! the DgnECInstanceEnabler interface and one or more related interfaces to supply functionality 
 //! to the EC::IECInstance.
 //! We could call these "enabled" instances as opposed to "lightweight".
 //! @see ECEnabler
@@ -72,6 +72,7 @@ public:
     ECOBJECTS_EXPORT static void      Debug_ResetAllocationStats ();
     ECOBJECTS_EXPORT static void      Debug_DumpAllocationStats (const wchar_t* prefix);
     ECOBJECTS_EXPORT static void      Debug_GetAllocationStats (int* currentLive, int* totalAllocs, int* totalFrees);
+    ECOBJECTS_EXPORT static void      Debug_ReportLeaks (std::vector<std::wstring> classNamesToExclude);
     };
     
 //! EC::IECRelationshipInstance is the native equivalent of a .NET IECRelationshipInstance.

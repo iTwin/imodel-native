@@ -58,7 +58,7 @@ protected:
     virtual byte const *    _GetData () const override;
     virtual UInt32          _GetBytesAllocated () const override;
     
-public: // These must be public so that ECXDataEnabler can get at the guts of StandaloneECInstance to copy it into an XAttribute     
+public: // These must be public so that ECXInstanceEnabler can get at the guts of StandaloneECInstance to copy it into an XAttribute     
     ECOBJECTS_EXPORT byte const *         GetData () const;
     ECOBJECTS_EXPORT UInt32               GetBytesUsed () const;
     ECOBJECTS_EXPORT void                 ClearValues ();
