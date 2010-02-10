@@ -154,7 +154,7 @@ public:
     ECOBJECTS_EXPORT static ClassLayoutP BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex);
     ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (wchar_t const *  className, ClassIndex classIndex, SchemaIndex schemaIndex);
 
-    ECOBJECTS_EXPORT std::wstring   GetClassName() const;
+    ECOBJECTS_EXPORT std::wstring const & GetClassName() const;
     // These members are only meaningful in the context of a consumer like DgnHandlers.dll that actually handles persistence of ClassLayouts
     ECOBJECTS_EXPORT ClassIndex     GetClassIndex() const;
     ECOBJECTS_EXPORT SchemaIndex    GetSchemaIndex () const;
@@ -207,6 +207,9 @@ public:
     ECOBJECTS_EXPORT ClassLayoutCP          GetClassLayout (ClassIndex classIndex);
     ECOBJECTS_EXPORT ClassLayoutCP          FindClassLayout (wchar_t const * className);
     ECOBJECTS_EXPORT BentleyStatus          FindAvailableClassIndex (ClassIndex&);
+    // This may often correspond to "number of ClassLayouts - 1", but not necessarily, because there can be gaps
+    // so when you call GetClassLayout (index) you might get NULLs. Even the last one could be NULL.
+    ECOBJECTS_EXPORT UInt32                 GetMaxIndex ();
 };
 
 //! Holds a ClassLayoutCR and provides a public method by which to access it.
