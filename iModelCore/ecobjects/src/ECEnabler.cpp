@@ -9,17 +9,6 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-/*#define DEBUG_ENABLER_LEAKS
-#ifdef DEBUG_ENABLER_LEAKS
-typedef std::map<ECEnabler*, UInt32> DebugInstanceLeakMap;
-DebugInstanceLeakMap    g_debugInstanceLeakMap;
-#endif*/
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-//ECEnabler::ECEnabler() : m_privateRefCount(0) {}
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -46,7 +35,7 @@ ECEnabler::~ECEnabler()
 UInt32      ECEnabler::AddRef()
     {
     m_privateRefCount++;
-    wprintf (L"++(%d)%S(%s) Refcount increased to %d.\n", m_privateRefCount, typeid(*this).name(), m_ecClass.GetName().c_str(), m_privateRefCount);
+    Logger::GetLogger()->tracev (L"++(%d)%S(%s) Refcount increased to %d.", m_privateRefCount, typeid(*this).name(), m_ecClass.GetName().c_str(), m_privateRefCount);
     
     return RefCountedBase::AddRef();
     }
@@ -57,7 +46,7 @@ UInt32      ECEnabler::AddRef()
 UInt32      ECEnabler::Release()
     { 
     --m_privateRefCount;
-    wprintf (L"--(%d)%S(%s) Refcount decreased to %d.\n", m_privateRefCount, typeid(*this).name(), m_ecClass.GetName().c_str(), m_privateRefCount);
+    Logger::GetLogger()->tracev (L"--(%d)%S(%s) Refcount decreased to %d.", m_privateRefCount, typeid(*this).name(), m_ecClass.GetName().c_str(), m_privateRefCount);
     return RefCountedBase::Release();
     }
 
