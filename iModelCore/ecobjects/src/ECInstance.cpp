@@ -13,7 +13,7 @@ UInt32 g_totalAllocs = 0;
 UInt32 g_totalFrees  = 0;
 UInt32 g_currentLive = 0;
 
-#define DEBUG_INSTANCE_LEAKS
+//#define DEBUG_INSTANCE_LEAKS
 #ifdef DEBUG_INSTANCE_LEAKS
 typedef std::map<IECInstance*, UInt32> DebugInstanceLeakMap;
 DebugInstanceLeakMap    g_debugInstanceLeakMap;
