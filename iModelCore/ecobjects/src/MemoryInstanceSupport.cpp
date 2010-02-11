@@ -690,7 +690,7 @@ ClassLayoutCP   SchemaLayout::FindClassLayout (wchar_t const * className)
 +---------------+---------------+---------------+---------------+---------------+------*/
 UInt32          SchemaLayout::GetMaxIndex()
     {
-    return m_classLayouts.size() - 1;
+    return (UInt32)m_classLayouts.size() - 1;
     }
 
 /*---------------------------------------------------------------------------------**//**
