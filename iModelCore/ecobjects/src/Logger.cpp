@@ -31,7 +31,7 @@ DWORD bufferSize
     wchar_t executingDrive[_MAX_DRIVE];
     _wsplitpath(strExePath, executingDrive, executingDirectory, NULL, NULL);
 
-    // Look for a file called "logging.config.xml.xml" in the executing process's directory
+    // Look for a file called "logging.config.xml" in the executing process's directory
     _wmakepath(filepath, executingDrive, executingDirectory, L"logging.config.xml", L"xml");
     if (0 == _waccess(filepath, 0))
         return SUCCESS;

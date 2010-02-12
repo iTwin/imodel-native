@@ -45,7 +45,7 @@
 * these rules:
 *   -# If the environment variable "BENTLEY_LOGGING_CONFIG" is set, it will use the file pointed
 *      to by this path as the configuration file.
-*   -# It will next look in the same directory as the ECObjects.dll for a file named "logging.config.xml.xml"
+*   -# It will next look in the same directory as the ECObjects.dll for a file named "logging.config.xml"
 *   -# It will next look for $(OutRoot)WinX86(or 64)\Product\ECFrameworkNativeTest\Tests\logging.config.xml
 *   -# As a default, it will not configure any logger.
 *
