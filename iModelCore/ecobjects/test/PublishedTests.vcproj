@@ -107,7 +107,7 @@
 			>
 		</Filter>
 		<File
-			RelativePath=".\log4cxx_properties.xml"
+			RelativePath=".\logging.config.xml"
 			>
 		</File>
 		<File

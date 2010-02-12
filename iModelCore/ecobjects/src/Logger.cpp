@@ -31,8 +31,8 @@ DWORD bufferSize
     wchar_t executingDrive[_MAX_DRIVE];
     _wsplitpath(strExePath, executingDrive, executingDirectory, NULL, NULL);
 
-    // Look for a file called "log4cxx_properties.xml" in the executing process's directory
-    _wmakepath(filepath, executingDrive, executingDirectory, L"log4cxx_properties", L"xml");
+    // Look for a file called "logging.config.xml.xml" in the executing process's directory
+    _wmakepath(filepath, executingDrive, executingDirectory, L"logging.config.xml", L"xml");
     if (0 == _waccess(filepath, 0))
         return SUCCESS;
     return ERROR;
@@ -45,25 +45,25 @@ std::wstring GetLogConfigurationFilename()
     {
     wchar_t filepath[_MAX_PATH];
 
-    if ((0 != GetEnvironmentVariableW(L"ECOBJECTS_LOGGING_CONFIG", filepath, _MAX_PATH)) && (0 ==_waccess(filepath, 0)))
+    if ((0 != GetEnvironmentVariableW(L"BENTLEY_LOGGING_CONFIG", filepath, _MAX_PATH)) && (0 ==_waccess(filepath, 0)))
         {
-        wprintf (L"ECObjects.dll configuring logging with %s (Set by ECOBJECTS_LOGGING_CONFIG environment variable.)\n", filepath);
+        wprintf (L"ECObjects.dll configuring logging with %s (Set by BENTLEY_LOGGING_CONFIG environment variable.)\n", filepath);
         return filepath;
         }
     else if (SUCCESS == CheckProcessDirectory(filepath, sizeof(filepath)))
         {
-        wprintf (L"ECObjects.dll configuring logging using %s. Override by setting ECOBJECTS_LOGGING_CONFIG in environment.\n", filepath);
+        wprintf (L"ECObjects.dll configuring logging using %s. Override by setting BENTLEY_LOGGING_CONFIG in environment.\n", filepath);
         return filepath;
         }
     else if (0 != GetEnvironmentVariableW(L"OutRoot", filepath, _MAX_PATH))
         {
         wchar_t * processorArchitecture = (8 == sizeof(void*)) ? L"Winx64" : L"Winx86";
         wcscat (filepath, processorArchitecture);
-        wcscat (filepath, L"\\Product\\ECFrameworkNativeTest\\Tests\\log4cxx_properties.xml");
+        wcscat (filepath, L"\\Product\\ECFrameworkNativeTest\\Tests\\logging.config.xml");
         
         if (0 ==_waccess(filepath, 0))
             {
-            wprintf (L"ECObjects.dll configuring logging with %s. Override by setting ECOBJECTS_LOGGING_CONFIG in environment.\n", filepath);
+            wprintf (L"ECObjects.dll configuring logging with %s. Override by setting BENTLEY_LOGGING_CONFIG in environment.\n", filepath);
             return filepath;
             }
         }
@@ -91,7 +91,7 @@ void
                 pLog->LoadConfiguration (filepath.c_str());
             else
                 {
-                wprintf (L"ECObjects.dll configuring loggging using basic configuration with ECObjectsNative level set to 'Warning'. Override by setting ECOBJECTS_LOGGING_CONFIG in environment.\n");
+                wprintf (L"ECObjects.dll configuring loggging using basic configuration with ECObjectsNative level set to 'Warning'. Override by setting BENTLEY_LOGGING_CONFIG in environment.\n");
                 pLog->BasicConfiguration ();
                 pLog->SetSeverity(L"ECObjectsNative", LOG_WARNING);
                 }

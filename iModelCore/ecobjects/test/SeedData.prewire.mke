@@ -11,5 +11,5 @@
 always:
    @CreateSymLinks.py -d"$(OutputRootDir)BuildContexts/ecfTest/Delivery/SeedData=$(ecobjectsSrc)nativeatp/SeedData"
    
-$(OutputRootDir)BuildContexts/ecfTest/Delivery/log4cxx_properties.xml: $(ecobjectsSrc)nativeatp/log4cxx_properties.xml
+$(OutputRootDir)BuildContexts/ecfTest/Delivery/logging.config.xml: $(ecobjectsSrc)nativeatp/logging.config.xml
     $(LinkFirstDepToFirstTarget)
