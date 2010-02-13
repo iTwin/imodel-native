@@ -41,7 +41,7 @@ ECSchema::~ECSchema
         {
         CECSchemaReference & schemaRef = *sit;
         if (NULL != schemaRef.m_pECSchema)
-            delete schemaRef.m_pECSchema; //needswork: are we sure that something else isn't holding it... we need a DgnECSchemaManager
+            delete schemaRef.m_pECSchema; //needswork: are we sure that something else isn't holding it... we need a DgnECManager
         }
     m_referencedSchemas.clear();*/
     }
