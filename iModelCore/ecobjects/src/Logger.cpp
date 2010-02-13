@@ -67,7 +67,7 @@ std::wstring GetLogConfigurationFilename()
             return filepath;
             }
         }
-    
+
     return L"";
     }
 
