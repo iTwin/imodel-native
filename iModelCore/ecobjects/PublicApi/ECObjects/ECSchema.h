@@ -429,8 +429,12 @@ public:
     ECOBJECTS_EXPORT bool            HasBaseClasses();
 
     ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, std::wstring const& name);
+    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, std::wstring const& name, PrimitiveType primitiveType);
     ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, std::wstring const& name);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, std::wstring const& name, ECClassCR structType);
     ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, std::wstring const& name);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, std::wstring const& name, PrimitiveType primitiveType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, std::wstring const& name, ECClassCP structType);
      
     //NEEDSWORK: Is method (test if is or derived from class X)
 
@@ -552,7 +556,7 @@ enum SchemaMatchType
 struct IECSchemaLocator
 {
 public:
-    virtual ECOBJECTS_EXPORT ECSchemaP LocateSchema(const wchar_t *name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, void * schemaContext) const = 0;
+    virtual ECOBJECTS_EXPORT ECSchemaPtr LocateSchema(const wchar_t *name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, void * schemaContext) const = 0;
 };
 
 
@@ -595,8 +599,8 @@ private:
     SchemaDeserializationStatus         ReadClassStubsFromXml(MSXML2_IXMLDOMNode& schemaNodePtr,ClassDeserializationVector& classes);
     SchemaDeserializationStatus         ReadClassContentsFromXml(ClassDeserializationVector&  classes);
     SchemaDeserializationStatus         ReadSchemaReferencesFromXml(MSXML2_IXMLDOMNode& schemaNodePtr, const std::vector<IECSchemaLocatorP> * schemaLocators, const std::vector<const wchar_t *> * schemaPaths, void * schemaContext);
-    ECSchemaP                           LocateSchema(const std::vector<IECSchemaLocatorP> * schemaLocators, const std::vector<const wchar_t *> * schemaPaths, const wchar_t * name, UInt32& versionMajor, UInt32& versionMinor, SchemaMap * schemasUnderConstruction);
-    ECSchemaP                           LocateSchemaByPath(const std::vector<IECSchemaLocatorP> * schemaLocators, const std::vector<const wchar_t *> * schemaPaths, const wchar_t * name, UInt32& versionMajor, UInt32& versionMinor, SchemaMap * schemasUnderConstruction);
+    ECSchemaPtr                         LocateSchema(const std::vector<IECSchemaLocatorP> * schemaLocators, const std::vector<const wchar_t *> * schemaPaths, const wchar_t * name, UInt32& versionMajor, UInt32& versionMinor, SchemaMap * schemasUnderConstruction);
+    ECSchemaPtr                         LocateSchemaByPath(const std::vector<IECSchemaLocatorP> * schemaLocators, const std::vector<const wchar_t *> * schemaPaths, const wchar_t * name, UInt32& versionMajor, UInt32& versionMinor, SchemaMap * schemasUnderConstruction);
     
     SchemaSerializationStatus           WriteSchemaReferences(MSXML2_IXMLDOMElement& parentNode);
     SchemaSerializationStatus           WriteClass(MSXML2_IXMLDOMElement& parentNode, ECClassCR ecClass);

@@ -321,6 +321,23 @@ const std::wstring &name
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::CreatePrimitiveProperty
+(
+PrimitiveECPropertyP &ecProperty, 
+const std::wstring &name,
+PrimitiveType primitiveType
+)
+    {
+    ecProperty = new PrimitiveECProperty(*this);
+    ECObjectsStatus status = AddProperty(ecProperty, name);
+    if (status != ECOBJECTS_STATUS_Success)
+        return status;
+    ecProperty->Type = primitiveType;
+    return ECOBJECTS_STATUS_Success;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::CreateStructProperty
 (
 StructECPropertyP &ecProperty, 
@@ -329,6 +346,24 @@ const std::wstring &name
     {
     ecProperty = new StructECProperty(*this);
     return AddProperty(ecProperty, name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::CreateStructProperty
+(
+StructECPropertyP &ecProperty, 
+const std::wstring &name,
+ECClassCR structType
+)
+    {
+    ecProperty = new StructECProperty(*this);
+    ECObjectsStatus status = AddProperty(ecProperty, name);
+    if (status != ECOBJECTS_STATUS_Success)
+        return status;
+    ecProperty->Type = structType;
+    return ECOBJECTS_STATUS_Success;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -342,6 +377,42 @@ const std::wstring &name
     {
     ecProperty = new ArrayECProperty(*this);
     return AddProperty(ecProperty, name);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::CreateArrayProperty
+(
+ArrayECPropertyP &ecProperty, 
+const std::wstring &name,
+PrimitiveType primitiveType
+)
+    {
+    ecProperty = new ArrayECProperty(*this);
+    ECObjectsStatus status = AddProperty(ecProperty, name);
+    if (status != ECOBJECTS_STATUS_Success)
+        return status;
+    ecProperty->PrimitiveElementType = primitiveType;
+    return ECOBJECTS_STATUS_Success;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::CreateArrayProperty
+(
+ArrayECPropertyP &ecProperty, 
+const std::wstring &name,
+ECClassCP structType
+)
+    {
+    ecProperty = new ArrayECProperty(*this);
+    ECObjectsStatus status = AddProperty(ecProperty, name);
+    if (status != ECOBJECTS_STATUS_Success)
+        return status;
+    ecProperty->StructElementType = structType;
+    return ECOBJECTS_STATUS_Success;
     }
     
 /*---------------------------------------------------------------------------------**//**

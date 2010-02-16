@@ -641,15 +641,15 @@ void * schemaContext
         if (wcscmp(m_name.c_str(), schemaName) == 0)
             continue;
             
-        ECSchemaP referencedSchema = LocateSchema(schemaLocators, schemaPaths, schemaName, versionMajor, versionMinor, underConstruction);
-        if (NULL == referencedSchema)
+        ECSchemaPtr referencedSchema = LocateSchema(schemaLocators, schemaPaths, schemaName, versionMajor, versionMinor, underConstruction);
+        if (!referencedSchema.IsValid())
             {
             Logger::GetLogger()->errorv(L"Unable to locate referenced schema %s.%02d.%02d", schemaName, versionMajor, versionMinor);
             if (needToDelete)
                 delete underConstruction;
             return SCHEMA_DESERIALIZATION_STATUS_ReferencedSchemaNotFound;
             }
-        AddReferencedSchema(*referencedSchema);
+        AddReferencedSchema(*(new ECSchema(*(referencedSchema.get()))));
         }
     if (needToDelete)
         delete underConstruction;
@@ -661,7 +661,7 @@ void * schemaContext
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP ECSchema::LocateSchema
+ECSchemaPtr ECSchema::LocateSchema
 (    
 const std::vector<IECSchemaLocatorP> * schemaLocators, 
 const std::vector<const wchar_t *> * schemaPaths,
@@ -682,7 +682,7 @@ SchemaMap* schemasUnderConstruction
         return finder->second;
         }
     
-    ECSchemaP referencedSchema = NULL;
+    ECSchemaPtr schemaPtr;
     if (NULL != schemaLocators)
         {
         std::vector<IECSchemaLocatorP>::const_iterator locator;
@@ -690,17 +690,17 @@ SchemaMap* schemasUnderConstruction
             {
             IECSchemaLocatorP schemaLocator = *locator;
             if (NULL != schemaLocator)
-                referencedSchema = schemaLocator->LocateSchema(name, versionMajor, versionMinor, SCHEMAMATCHTYPE_LatestCompatible, schemasUnderConstruction);
-            if (NULL != referencedSchema)
-                return referencedSchema;
+                schemaPtr = schemaLocator->LocateSchema(name, versionMajor, versionMinor, SCHEMAMATCHTYPE_LatestCompatible, schemasUnderConstruction);
+            if (schemaPtr.IsValid())
+                return schemaPtr;
             }
         }
         
     if (NULL != schemaPaths)
         {
-        referencedSchema = LocateSchemaByPath(schemaLocators, schemaPaths, name, versionMajor, versionMinor, schemasUnderConstruction);
-        if (NULL != referencedSchema)
-            return referencedSchema;
+        schemaPtr = LocateSchemaByPath(schemaLocators, schemaPaths, name, versionMajor, versionMinor, schemasUnderConstruction);
+        if (schemaPtr.IsValid())
+            return schemaPtr;
         }
         
     // try in standard path locations for the schema
@@ -724,7 +724,7 @@ SchemaMap* schemasUnderConstruction
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP ECSchema::LocateSchemaByPath
+ECSchemaPtr ECSchema::LocateSchemaByPath
 (
 const std::vector<IECSchemaLocatorP> * schemaLocators, 
 const std::vector<const wchar_t *> * schemaPaths,
@@ -755,10 +755,10 @@ SchemaMap * schemasUnderConstruction
 
         if (ECSchema::ReadXmlFromFile (schemaOut, filePath, schemaLocators, schemaPaths, schemasUnderConstruction) != SCHEMA_DESERIALIZATION_STATUS_Success)
             continue;
-        ECSchemaP referencedSchema = new ECSchema(*schemaOut);
-        return referencedSchema;
+        
+        return schemaOut;
         }
-    return NULL;
+    return schemaOut;
     }
 
 /*---------------------------------------------------------------------------------**//**
