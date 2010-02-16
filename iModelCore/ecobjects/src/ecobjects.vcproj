@@ -106,6 +106,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\FileUtilities.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Logger.cpp"
 				>
 			</File>
@@ -157,6 +161,10 @@
 			</File>
 			<File
 				RelativePath=".\ecxml.h"
+				>
+			</File>
+			<File
+				RelativePath=".\FileUtilities.h"
 				>
 			</File>
 			<File
