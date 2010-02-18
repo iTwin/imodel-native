@@ -257,7 +257,7 @@ ClassIndex      ClassLayout::GetClassIndex() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-std::wstring    ClassLayout::GetClassName() const
+std::wstring const &  ClassLayout::GetECClassName() const
     {
     return m_className;
     }
@@ -314,10 +314,10 @@ void            ClassLayout::Factory::AddProperty (wchar_t const * accessString,
         tempAccessString += L"[]";
 
     PropertyLayout propertyLayout (tempAccessString.c_str(), typeDescriptor, m_offset, m_nullflagsOffset, nullflagsBitmask, modifierFlags, modifierData);
+    m_underConstruction.m_propertyLayouts.push_back(propertyLayout);
+    m_underConstruction.CheckForECPointers (accessString);
 
     m_offset += (UInt32)size;
-   
-    m_underConstruction.m_propertyLayouts.push_back(propertyLayout);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -442,7 +442,7 @@ void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, wchar_t 
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassLayoutP    ClassLayout::Factory::DoBuildClassLayout ()
-    {
+    { //ECLogger::Log->debugv (L"Building ClassLayout for ECClass %s", m_ecClass->GetName().c_str());
     m_underConstruction.m_isRelationshipClass = (dynamic_cast<ECRelationshipClassCP>(&m_ecClass) != NULL);
 
     // Iterate through the ECProperties of the ECClass and build the layout
@@ -565,8 +565,26 @@ UInt32          ClassLayout::GetFixedPrimitiveValueSize (PrimitiveType primitive
     }
   
 /*---------------------------------------------------------------------------------**//**
-* This method is called by SchemaLayoutElementHandler's BuildClassLayout() when deserializing ClassLayouts,
-* as well as when building them with BuildFromClass
+* @bsimethod                                                    CaseyMullen    01/10
++---------------+---------------+---------------+---------------+---------------+------*/     
+void            ClassLayout::CheckForECPointers (wchar_t const * accessString)
+    {
+    // Remember indices of source and target ECPointers for fast lookup
+    if (0 == wcscmp (PROPERTYLAYOUT_Source_ECPointer, accessString))
+        {
+        m_isRelationshipClass = true;
+        m_propertyIndexOfSourceECPointer = GetPropertyCount() - 1;
+        }
+        
+    if (0 == wcscmp (PROPERTYLAYOUT_Target_ECPointer, accessString))
+        {
+        m_isRelationshipClass = true;
+        m_propertyIndexOfTargetECPointer = GetPropertyCount() - 1;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Called by SchemaLayoutElementHandler's BuildClassLayout() when deserializing ClassLayouts
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/     
 void            ClassLayout::AddPropertyDirect
@@ -581,19 +599,7 @@ UInt32          nullflagsBitmask
     PropertyLayout propertyLayout (accessString, primitivetype, offset, nullflagsOffset, nullflagsBitmask);
 
     m_propertyLayouts.push_back(propertyLayout);
-
-    // Remember indices of source and target ECPointers for fast lookup
-    if (0 == wcscmp (PROPERTYLAYOUT_Source_ECPointer, accessString))
-        {
-        m_isRelationshipClass = true;
-        m_propertyIndexOfSourceECPointer = GetPropertyCount() - 1;
-        }
-        
-    if (0 == wcscmp (PROPERTYLAYOUT_Target_ECPointer, accessString))
-        {
-        m_isRelationshipClass = true;
-        m_propertyIndexOfTargetECPointer = GetPropertyCount() - 1;
-        }
+    CheckForECPointers (accessString);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -647,7 +653,7 @@ BentleyStatus   SchemaLayout::AddClassLayout (ClassLayoutCR classLayout, ClassIn
     assert (NULL == m_classLayouts[classIndex] && "ClassIndex is already in use");
 
     m_classLayouts[classIndex] = &classLayout;
-
+    
     return SUCCESS;
     }
 
@@ -672,11 +678,19 @@ ClassLayoutCP   SchemaLayout::FindClassLayout (wchar_t const * className)
         if (NULL == classLayout)
             continue;
 
-        if (0 == wcsicmp (classLayout->GetClassName().c_str(), className))
+        if (0 == wcsicmp (classLayout->GetECClassName().c_str(), className))
             return classLayout;
         }
 
     return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen    02/10
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32          SchemaLayout::GetMaxIndex()
+    {
+    return (UInt32)m_classLayouts.size() - 1;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -734,7 +748,7 @@ UInt32          MemoryInstanceSupport::GetPropertyValueSize (PropertyLayoutCR pr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceHeader const&    MemoryInstanceSupport::PeekInstanceHeader (void const* data)
+InstanceHeader const& MemoryInstanceSupport::PeekInstanceHeader (void const* data)
     {
     return * ((InstanceHeader const*) data);
     }
@@ -783,7 +797,28 @@ byte const *    MemoryInstanceSupport::GetAddressOfPropertyValue (PropertyLayout
         UInt32 arrayOffset = GetOffsetOfPropertyValue (propertyLayout);   
         return _GetData() + GetOffsetOfArrayIndexValue (arrayOffset, propertyLayout, *indices);
         }
-    } 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32          MemoryInstanceSupport::GetSizeOfVariableLengthPropertyValue (PropertyLayoutCR propertyLayout) const
+    {
+    DEBUG_EXPECT ( ! propertyLayout.IsFixedSized());
+    UInt32 offset = propertyLayout.GetOffset();
+    SecondaryOffset const * pSecondaryOffset = (SecondaryOffset const *)(_GetData() + offset);
+    
+    SecondaryOffset secondaryOffset = *pSecondaryOffset;
+    if (0 == secondaryOffset)
+        return 0;
+
+    SecondaryOffset nextSecondaryOffset = *(pSecondaryOffset + 1);
+    if (0 == nextSecondaryOffset)
+        return 0;
+
+    UInt32 size = nextSecondaryOffset - secondaryOffset;
+    return size;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * internal helper - no parameter checking
@@ -865,9 +900,9 @@ UInt32          MemoryInstanceSupport::GetOffsetOfPropertyValue (PropertyLayoutC
     {
     UInt32 offset = propertyLayout.GetOffset();
     
-    if (!propertyLayout.IsFixedSized())        
+    if (!propertyLayout.IsFixedSized())
         {
-        SecondaryOffset const * pSecondaryOffset = (SecondaryOffset const *)(_GetData() + offset);        
+        SecondaryOffset const * pSecondaryOffset = (SecondaryOffset const *)(_GetData() + offset);
         offset = *pSecondaryOffset;
         }
         
@@ -1228,7 +1263,13 @@ StatusInt       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValueR v, 
             memcpy (&value, pValue, sizeof(value));
             v.SetDouble (value);
             return SUCCESS;
-            }            
+            }
+        case PRIMITIVETYPE_Binary:
+            {
+            UInt32 size = GetSizeOfVariableLengthPropertyValue (propertyLayout);
+            v.SetBinary (pValue, size);
+            return SUCCESS;
+            }  
         case PRIMITIVETYPE_String:
             {
             wchar_t * pString = (wchar_t *)pValue;
@@ -1436,7 +1477,7 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
     if (s_skipDump)
         return;
   
-    logger->tracev (L"ECClass=%s at address = 0x%0x\n", classLayout.GetClassName().c_str(), data);
+    logger->tracev (L"ECClass=%s at address = 0x%0x\n", classLayout.GetECClassName().c_str(), data);
     InstanceHeader& header = *(InstanceHeader*)data;
 
     logger->tracev (L"  [0x%0x][%4.d] SchemaIndex = %d\n",        &header.m_schemaIndex,  (byte*)&header.m_schemaIndex   - data, header.m_schemaIndex);

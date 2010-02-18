@@ -22,10 +22,10 @@ ECSchema::~ECSchema
 )
     {
     // NEEDSWORK make sure everything is destroyed
-    //Logger::GetLogger()->debugv (L"~~~~ Destroying ECSchema: %s\n", GetName().c_str());
+    Logger::GetLogger()->debugv (L"~~~~ Destroying ECSchema: %s\n", GetName().c_str());
     ClassMap::iterator          classIterator = m_classMap.begin();
     ClassMap::const_iterator    classEnd = m_classMap.end();        
-    //Logger::GetLogger()->debugv(L"     Freeing memory for %d classes\n", m_classMap.size());
+    Logger::GetLogger()->debugv(L"     Freeing memory for %d classes\n", m_classMap.size());
     while (classIterator != classEnd)
         {
         ECClassP ecClass = classIterator->second;        
@@ -41,7 +41,7 @@ ECSchema::~ECSchema
         {
         CECSchemaReference & schemaRef = *sit;
         if (NULL != schemaRef.m_pECSchema)
-            delete schemaRef.m_pECSchema; //needswork: are we sure that something else isn't holding it... we need a DgnECSchemaManager
+            delete schemaRef.m_pECSchema; //needswork: are we sure that something else isn't holding it... we need a DgnECManager
         }
     m_referencedSchemas.clear();*/
     }

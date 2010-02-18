@@ -122,6 +122,7 @@ private:
     bool                    m_isRelationshipClass;
     int                     m_propertyIndexOfSourceECPointer;
     int                     m_propertyIndexOfTargetECPointer;
+    void                    CheckForECPointers (wchar_t const * accessString);
     
     struct  Factory
     {
@@ -138,7 +139,7 @@ private:
         void        AddFixedSizeProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor);
         void        AddFixedSizeArrayProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor, UInt32 arrayCount);
         void        AddVariableSizeProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor);
-        void        AddVariableSizeArrayPropertyWithFixedCount (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount);		
+        void        AddVariableSizeArrayPropertyWithFixedCount (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount);        
         void        AddProperties (ECClassCR ecClass, wchar_t const * nameRoot, bool addFixedSize);
 
         Factory (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex);
@@ -153,7 +154,7 @@ public:
     ECOBJECTS_EXPORT static ClassLayoutP BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex);
     ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (wchar_t const *  className, ClassIndex classIndex, SchemaIndex schemaIndex);
 
-    ECOBJECTS_EXPORT std::wstring   GetClassName() const;
+    ECOBJECTS_EXPORT std::wstring const & GetECClassName() const;
     // These members are only meaningful in the context of a consumer like DgnHandlers.dll that actually handles persistence of ClassLayouts
     ECOBJECTS_EXPORT ClassIndex     GetClassIndex() const;
     ECOBJECTS_EXPORT SchemaIndex    GetSchemaIndex () const;
@@ -206,10 +207,13 @@ public:
     ECOBJECTS_EXPORT ClassLayoutCP          GetClassLayout (ClassIndex classIndex);
     ECOBJECTS_EXPORT ClassLayoutCP          FindClassLayout (wchar_t const * className);
     ECOBJECTS_EXPORT BentleyStatus          FindAvailableClassIndex (ClassIndex&);
+    // This may often correspond to "number of ClassLayouts - 1", but not necessarily, because there can be gaps
+    // so when you call GetClassLayout (index) you might get NULLs. Even the last one could be NULL.
+    ECOBJECTS_EXPORT UInt32                 GetMaxIndex ();
 };
 
 //! Holds a ClassLayoutCR and provides a public method by which to access it.
-//! Used by StandaloneECEnabler and ECXDataEnabler
+//! Used by StandaloneECEnabler and ECXInstanceEnabler
 struct ClassLayoutHolder
     {
 private:
@@ -277,7 +281,7 @@ private:
 /*__PUBLISH_SECTION_START__*/    
 
 //! Base class for EC::IECInstance implementations that get/set values from a block of memory, 
-//! e.g. StandaloneECInstance and ECXDataInstance
+//! e.g. StandaloneECInstance and ECXInstance
 struct MemoryInstanceSupport
     {
 /*__PUBLISH_SECTION_END__*/    
@@ -286,31 +290,41 @@ struct MemoryInstanceSupport
     
 private:    
     bool                        m_allowWritingDirectlyToInstanceMemory;
-	   
+       
     //! Returns the offset of the property value relative to the start of the instance data.
     //! If nIndices is > 0 then the offset of the array element value is returned.
     UInt32              GetOffsetOfPropertyValue (PropertyLayoutCR propertyLayout, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
+    
     //! Returns the size in bytes of the property value
     UInt32              GetPropertyValueSize (PropertyLayoutCR propertyLayout) const;
-	//! Returns the address of the property value 
-	//! If nIndices is > 0 then the address of the array element value is returned
+    
+    //! Returns the address of the property value 
+    //! If nIndices is > 0 then the address of the array element value is returned
     byte const *        GetAddressOfPropertyValue (PropertyLayoutCR propertyLayout, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;    
+    
+    //! Returns the size of a variable-sized property value by calculating the difference in secondary offsets
+    UInt32              GetSizeOfVariableLengthPropertyValue (PropertyLayoutCR propertyLayout) const;
+    
     //! Returns the offset of the specified array index relative to the start of the instance data.
     //! Note that this offset does not necessarily contain the index value.  If the element type is fixed it contains the value but if it is a variable
     //! size type then the index contains a secondary offset.  If you need the offset of the actual element value then use GetOffsetOfArrayIndexValue
     //! This method does not do any parameter checking.  It is the responsibility of the caller to ensure the property is an array and the index is in
     //! a valid range.
     UInt32              GetOffsetOfArrayIndex (UInt32 arrayOffset, PropertyLayoutCR propertyLayout, UInt32 index) const;
+    
     //! Returns the offset of the specified array index value relative to the start of the instance data.
     //! This method does not do any parameter checking.  It is the responsibility of the caller to ensure the property is an array and the index is in
     //! a valid range.
     UInt32              GetOffsetOfArrayIndexValue (UInt32 arrayOffset, PropertyLayoutCR propertyLayout, UInt32 index) const;
+    
     //! Returns true if the property value is null; otherwise false
     //! If nIndices is > 0 then the null check is based on the array element at the specified index
     bool                IsPropertyValueNull (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;
+    
     //! Sets the null bit of the specified property to the value indicated by isNull
     //! If nIndices is > 0 then the null bit is set for the array element at the specified index    
     void                SetPropertyValueNull (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices, bool isNull);    
+    
     //! Returns the number of elements in the specfieid array that are currently reserved but not necessarily allocated.
     //! This is important when an array has a minimum size but has not yet been initialized.  We delay initializing the memory for the minimum # of elements until
     //! the first value is set.  If an array does not have a minimum element count then GetReservedArrayCount will always equal GetAllocatedArrayCount
@@ -318,12 +332,15 @@ private:
     //! This is the value used to set the count on an ArrayInfo value object that will be returned to a caller via GetValueFromMemory.  It is an implementation detail
     //! of memory based instances as to whether or not the physical memory to back that array count has actually been allocated.
     ArrayCount          GetReservedArrayCount (PropertyLayoutCR propertyLayout) const;
+    
     //! Returns the number of elements in the specfieid array that are currently allocated in the instance data memory block.
     //! See the description of GetReservedArrayCount for explanation about the differences between the two.
     ArrayCount          GetAllocatedArrayCount (PropertyLayoutCR propertyLayout) const;
+    
     //! Obtains the current primitive value for the specified property
     //! If nIndices is > 0 then the primitive value for the array element at the specified index is obtained.
     StatusInt           GetPrimitiveValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;
+    
     //! Sets the primitive value for the specified property
     //! If nIndices is > 0 then the primitive value for the array element at the specified index is set.
     StatusInt           SetPrimitiveValueToMemory   (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices);
@@ -357,6 +374,7 @@ protected:
     ECOBJECTS_EXPORT void       DumpInstanceData (ClassLayoutCR classLayout) const;
     
     virtual bool                _IsMemoryInitialized () const = 0;    
+    
     //! Get a pointer to the first byte of the data    
     virtual byte const *        _GetData () const = 0;
     virtual StatusInt           _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength) = 0;

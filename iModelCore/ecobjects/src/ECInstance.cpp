@@ -9,9 +9,15 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
     
-int g_totalAllocs = 0;
-int g_totalFrees  = 0;
-int g_currentLive = 0;
+UInt32 g_totalAllocs = 0;
+UInt32 g_totalFrees  = 0;
+UInt32 g_currentLive = 0;
+
+//#define DEBUG_INSTANCE_LEAKS
+#ifdef DEBUG_INSTANCE_LEAKS
+typedef std::map<IECInstance*, UInt32> DebugInstanceLeakMap;
+DebugInstanceLeakMap    g_debugInstanceLeakMap;
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
@@ -20,18 +26,25 @@ IECInstance::IECInstance()
     {
     g_totalAllocs++;
     g_currentLive++;
+#ifdef DEBUG_INSTANCE_LEAKS
+    g_debugInstanceLeakMap[this] = g_totalAllocs; // record this so we know if it was the 1st, 2nd allocation
+#endif
 
     size_t sizeofInstance = sizeof(IECInstance);
     size_t sizeofVoid = sizeof (void*);
     
     assert (sizeof(IECInstance) == sizeof (RefCountedBase) && L"Increasing the size or memory layout of the base EC::IECInstance will adversely affect subclasses. Think of this as a pure interface... to which you would never be able to add (additional) data, either");
     };    
-        
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstance::~IECInstance()
     {
+#ifdef DEBUG_INSTANCE_LEAKS
+    g_debugInstanceLeakMap.erase(this);
+#endif
+
     g_totalFrees++;
     g_currentLive--;
     }
@@ -44,7 +57,51 @@ void IECInstance::Debug_DumpAllocationStats(const wchar_t* prefix)
     if (!prefix)
         prefix = L"";
 
-    Logger::GetLogger()->debugv (L"%s Live Objects: %d, Total Allocs: %d, TotalFrees: %d", prefix, g_currentLive, g_totalAllocs, g_totalFrees);
+    Logger::GetLogger()->debugv (L"%s Live IECInstances: %d, Total Allocs: %d, TotalFrees: %d", prefix, g_currentLive, g_totalAllocs, g_totalFrees);
+#ifdef DEBUG_INSTANCE_LEAKS
+    for each (DebugInstanceLeakMap::value_type leak in g_debugInstanceLeakMap)
+        {
+        IECInstance* leakedInstance = leak.first;
+        UInt32    orderOfAllocation = leak.second;
+        Logger::GetLogger()->debugv (L"Leaked the %dth IECInstance that was allocated.", orderOfAllocation);
+        leakedInstance->Dump();
+        }
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen    02/10
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IsExcluded(std::wstring& className, std::vector<std::wstring> classNamesToExclude)
+    {
+    for each (std::wstring excludedClass in classNamesToExclude)
+        {
+        if (0 == className.compare (excludedClass))
+            return true;
+        }
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen    02/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void IECInstance::Debug_ReportLeaks(std::vector<std::wstring> classNamesToExclude)
+    {
+#ifdef DEBUG_INSTANCE_LEAKS
+    for each (DebugInstanceLeakMap::value_type leak in g_debugInstanceLeakMap)
+        {
+        IECInstance* leakedInstance = leak.first;
+        UInt32    orderOfAllocation = leak.second;
+        
+        std::wstring className = leakedInstance->GetClass().GetName();
+        if (IsExcluded (className, classNamesToExclude))
+            continue;
+        
+        Logger::GetLogger()->errorv (L"Leaked the %dth IECInstance that was allocated: ECClass=%s, InstanceId=%s", 
+            orderOfAllocation, className.c_str(), leakedInstance->GetInstanceId().c_str());
+        leakedInstance->Dump();
+        }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
