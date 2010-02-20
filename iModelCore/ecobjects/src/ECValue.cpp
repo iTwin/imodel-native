@@ -439,7 +439,7 @@ const byte * ECValue::GetBinary(size_t& size) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt ECValue::SetBinary (const byte * data, size_t size)
     {
-    PRECONDITION (NULL != data && size != 0, ERROR);
+    PRECONDITION (NULL != data, ERROR);
     Clear();
 
     m_primitiveType = PRIMITIVETYPE_Binary;

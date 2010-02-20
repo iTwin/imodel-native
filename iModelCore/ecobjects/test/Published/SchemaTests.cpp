@@ -154,7 +154,7 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenCOMNotInitialized)
     ECSchemaPtr schema;        
     
     DISABLE_ASSERTS
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, L"t");
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, L"t", NULL, NULL);
         
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_FailedToInitializeMsmxl, status);
     };
@@ -167,7 +167,7 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileDoesNotExist)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"ThisFileIsntReal.xml");   
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"ThisFileIsntReal.xml", NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml, status);
     
@@ -182,7 +182,7 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNodes)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingNodes.01.00.ecschema.xml");   
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingNodes.01.00.ecschema.xml", NULL, NULL);  
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml, status);
     
@@ -197,7 +197,7 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsIllFormed)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"IllFormedXml.01.00.ecschema.xml");   
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"IllFormedXml.01.00.ecschema.xml", NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml, status);
     
@@ -212,7 +212,7 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingECSchemaNode)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingECSchemaNode.01.00.ecschema.xml");   
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingECSchemaNode.01.00.ecschema.xml", NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
     
@@ -228,7 +228,7 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNamespace)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingNamespace.01.00.ecschema.xml");   
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingNamespace.01.00.ecschema.xml", NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
     
@@ -243,7 +243,7 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasUnsupportedNamespace)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"UnsupportedECXmlNamespace.01.00.ecschema.xml");   
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"UnsupportedECXmlNamespace.01.00.ecschema.xml", NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
     
@@ -258,7 +258,7 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingSchemaNameAttrib
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingSchemaName.01.00.ecschema.xml");   
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingSchemaName.01.00.ecschema.xml", NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
     
@@ -273,7 +273,7 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingClassNameAttribu
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingClassName.01.00.ecschema.xml");   
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingClassName.01.00.ecschema.xml", NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
     
@@ -288,7 +288,7 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenXmlFileHasInvalidVersionString)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"InvalidVersionString.01.00.ecschema.xml");   
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"InvalidVersionString.01.00.ecschema.xml", NULL, NULL);
     EXPECT_EQ (1, schema->VersionMajor);
     EXPECT_EQ (0, schema->VersionMinor);
 
@@ -305,7 +305,7 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenECSchemaContainsOnlyRequiredAtt
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
 
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"OnlyRequiredECSchemaAttributes.01.00.ecschema.xml");   
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"OnlyRequiredECSchemaAttributes.01.00.ecschema.xml", NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);    
     EXPECT_STREQ (L"OnlyRequiredECSchemaAttributes", schema->Name.c_str());
@@ -337,7 +337,7 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenDeserializingWidgetsECSchema)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml");   
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml", NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);  
     VerifyWidgetsSchema(schema);  
@@ -359,7 +359,7 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromString
         L"    <ECClass typeName=\"ecProject\" description=\"Project ECClass\" displayLabel=\"Project\" isDomainClass=\"True\">"
         L"       <ECProperty propertyName=\"Name\" typeName=\"string\" displayLabel=\"Project Name\" />"
         L"    </ECClass>"
-        L"</ECSchema>");   
+        L"</ECSchema>", NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);    
     EXPECT_STREQ (L"Widgets", schema->Name.c_str());
@@ -416,7 +416,7 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml");
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml", NULL, NULL);
     wprintf(L"Verifying original schema from file.\n"); 
     VerifyWidgetsSchema(schema);
 
@@ -428,7 +428,7 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
     EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status2);
     
     ECSchemaPtr deserializedSchema;
-    status = ECSchema::ReadXmlFromString(deserializedSchema, ecSchemaXmlString.c_str());
+    status = ECSchema::ReadXmlFromString(deserializedSchema, ecSchemaXmlString.c_str(), NULL, NULL);
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status); 
     wprintf(L"Verifying schema deserialized from string.\n");
     VerifyWidgetsSchema(deserializedSchema);
@@ -589,6 +589,171 @@ TEST(SchemaReferenceTest, AddAndRemoveReferencedSchemas)
     EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, schema->RemoveReferencedSchema(*refSchema));
     }
 
+TEST(SchemaReferenceTest, ExpectSuccessWithCircularReferences)
+    {
+    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+    ECSchemaPtr schema;
+    
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"CircleSchema.01.00.ecschema.xml", NULL, NULL);
+    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);
+
+    CoUninitialize();
+    }
+    
+TEST(SchemaCreationTest, CanFullyCreateASchema)
+    {
+    ECSchemaPtr testSchema;
+    ECSchema::CreateSchema(testSchema, L"TestSchema");
+    testSchema->NamespacePrefix = L"ts";
+    testSchema->Description = L"Schema for testing programmatic construction";
+    testSchema->DisplayLabel = L"Test Schema";
+    testSchema->VersionMajor = 1;
+    testSchema->VersionMinor = 2;
+    
+    EXPECT_TRUE(testSchema->IsDisplayLabelDefined);
+    EXPECT_EQ(1, testSchema->VersionMajor);
+    EXPECT_EQ(2, testSchema->VersionMinor);
+    EXPECT_EQ(0, wcscmp(testSchema->Name.c_str(), L"TestSchema"));
+    EXPECT_EQ(0, wcscmp(testSchema->NamespacePrefix.c_str(), L"ts"));
+    EXPECT_EQ(0, wcscmp(testSchema->Description.c_str(), L"Schema for testing programmatic construction"));
+    EXPECT_EQ(0, wcscmp(testSchema->DisplayLabel.c_str(), L"Test Schema"));
+    
+    ECSchemaPtr schema2;
+    ECSchema::CreateSchema(schema2, L"BaseSchema");
+    
+    testSchema->AddReferencedSchema(*schema2);
+    
+    ECClassP class1;
+    ECClassP baseClass;
+    ECClassP structClass;
+
+    testSchema->CreateClass(class1, L"TestClass");
+    testSchema->CreateClass(structClass, L"StructClass");
+    schema2->CreateClass(baseClass, L"BaseClass");
+    
+    class1->Description = L"Class for testing purposes";
+    class1->DisplayLabel = L"Test Class";
+    
+    EXPECT_EQ(0, wcscmp(class1->Description.c_str(), L"Class for testing purposes"));
+    EXPECT_EQ(0, wcscmp(class1->DisplayLabel.c_str(), L"Test Class"));
+    EXPECT_FALSE(class1->IsStruct);
+    EXPECT_FALSE(class1->IsCustomAttributeClass);
+    EXPECT_TRUE(class1->IsDomainClass);
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->AddBaseClass(*baseClass));
+    EXPECT_TRUE(class1->HasBaseClasses());
+    
+    structClass->IsStruct = true;
+    EXPECT_TRUE(structClass->IsStruct);
+    EXPECT_TRUE(structClass->IsDomainClass);
+    
+    PrimitiveECPropertyP stringProp;
+    StructECPropertyP structProp;
+    ArrayECPropertyP nestedArrayProp;
+    ArrayECPropertyP primitiveArrayProp;
+    
+    class1->CreatePrimitiveProperty(stringProp, L"String Member");
+    class1->CreateStructProperty(structProp, L"Struct Member");
+    class1->CreateArrayProperty(nestedArrayProp, L"NestedArray");
+    class1->CreateArrayProperty(primitiveArrayProp, L"PrimitiveArray");
+    
+    structProp->Type = *structClass;
+    nestedArrayProp->StructElementType = structClass;
+    primitiveArrayProp->PrimitiveElementType = PRIMITIVETYPE_Long;
+    primitiveArrayProp->MinOccurs = 1;
+    primitiveArrayProp->MaxOccurs = 10;
+    
+    EXPECT_TRUE(ARRAYKIND_Struct == nestedArrayProp->Kind);
+    EXPECT_TRUE(ARRAYKIND_Primitive == primitiveArrayProp->Kind);
+    EXPECT_EQ(0, nestedArrayProp->MinOccurs);
+    EXPECT_EQ(UINT_MAX, nestedArrayProp->MaxOccurs);
+    EXPECT_EQ(1, primitiveArrayProp->MinOccurs);
+    EXPECT_EQ(10, primitiveArrayProp->MaxOccurs);
+    
+    EXPECT_TRUE(stringProp->IsPrimitive);
+    EXPECT_FALSE(stringProp->IsStruct);
+    EXPECT_FALSE(stringProp->IsArray);
+    
+    EXPECT_FALSE(structProp->IsPrimitive);
+    EXPECT_TRUE(structProp->IsStruct);
+    EXPECT_FALSE(structProp->IsArray);
+    
+    EXPECT_FALSE(primitiveArrayProp->IsPrimitive);
+    EXPECT_FALSE(primitiveArrayProp->IsStruct);
+    EXPECT_TRUE(primitiveArrayProp->IsArray);
+    
+    EXPECT_FALSE(stringProp->IsReadOnly);
+    
+    EXPECT_EQ(0, wcscmp(stringProp->TypeName.c_str(), L"string"));
+    EXPECT_TRUE(PRIMITIVETYPE_String == stringProp->Type);
+    EXPECT_EQ(0, wcscmp(structProp->TypeName.c_str(), L"StructClass"));
+    
+    PrimitiveECPropertyP binaryProperty;
+    PrimitiveECPropertyP booleanProperty;
+    PrimitiveECPropertyP dateTimeProperty;
+    PrimitiveECPropertyP doubleProperty;
+    PrimitiveECPropertyP integerProperty;
+    PrimitiveECPropertyP longProperty;
+    PrimitiveECPropertyP point2DProperty;
+    PrimitiveECPropertyP point3DProperty;
+    
+    class1->CreatePrimitiveProperty(binaryProperty, L"BinaryProp");
+    class1->CreatePrimitiveProperty(booleanProperty, L"BooleanProp");
+    class1->CreatePrimitiveProperty(dateTimeProperty, L"DateTimeProp");
+    class1->CreatePrimitiveProperty(doubleProperty, L"DoubleProp");
+    class1->CreatePrimitiveProperty(integerProperty, L"IntProp");
+    class1->CreatePrimitiveProperty(longProperty, L"LongProp");
+    class1->CreatePrimitiveProperty(point2DProperty, L"Point2DProp");
+    class1->CreatePrimitiveProperty(point3DProperty, L"Point3DProp");
+    
+    EXPECT_EQ(ECOBJECTS_STATUS_ParseError, binaryProperty->TypeName = L"fake");
+    
+    binaryProperty->TypeName = L"binary";
+    booleanProperty->TypeName = L"boolean";
+    dateTimeProperty->TypeName = L"dateTime";
+    doubleProperty->TypeName = L"double";
+    integerProperty->TypeName = L"int";
+    longProperty->TypeName = L"long";
+    point2DProperty->TypeName = L"point2d";
+    point3DProperty->TypeName = L"point3d";
+    
+    EXPECT_TRUE(PRIMITIVETYPE_Binary == binaryProperty->Type);
+    EXPECT_TRUE(PRIMITIVETYPE_Boolean == booleanProperty->Type);
+    EXPECT_TRUE(PRIMITIVETYPE_DateTime == dateTimeProperty->Type);
+    EXPECT_TRUE(PRIMITIVETYPE_Double == doubleProperty->Type);
+    EXPECT_TRUE(PRIMITIVETYPE_Integer == integerProperty->Type);
+    EXPECT_TRUE(PRIMITIVETYPE_Long == longProperty->Type);
+    EXPECT_TRUE(PRIMITIVETYPE_Point2D == point2DProperty->Type);
+    EXPECT_TRUE(PRIMITIVETYPE_Point3D == point3DProperty->Type);
+
+    class1->CreatePrimitiveProperty(binaryProperty, L"BinaryProp2", PRIMITIVETYPE_Binary);
+    class1->CreatePrimitiveProperty(booleanProperty, L"BooleanProp2", PRIMITIVETYPE_Boolean);
+    class1->CreatePrimitiveProperty(dateTimeProperty, L"DateTimeProp2", PRIMITIVETYPE_DateTime);
+    class1->CreatePrimitiveProperty(doubleProperty, L"DoubleProp2", PRIMITIVETYPE_Double);
+    class1->CreatePrimitiveProperty(integerProperty, L"IntProp2", PRIMITIVETYPE_Integer);
+    class1->CreatePrimitiveProperty(longProperty, L"LongProp2", PRIMITIVETYPE_Long);
+    class1->CreatePrimitiveProperty(point2DProperty, L"Point2DProp2", PRIMITIVETYPE_Point2D);
+    class1->CreatePrimitiveProperty(point3DProperty, L"Point3DProp2", PRIMITIVETYPE_Point3D);
+
+    EXPECT_TRUE(PRIMITIVETYPE_Binary == binaryProperty->Type);
+    EXPECT_TRUE(PRIMITIVETYPE_Boolean == booleanProperty->Type);
+    EXPECT_TRUE(PRIMITIVETYPE_DateTime == dateTimeProperty->Type);
+    EXPECT_TRUE(PRIMITIVETYPE_Double == doubleProperty->Type);
+    EXPECT_TRUE(PRIMITIVETYPE_Integer == integerProperty->Type);
+    EXPECT_TRUE(PRIMITIVETYPE_Long == longProperty->Type);
+    EXPECT_TRUE(PRIMITIVETYPE_Point2D == point2DProperty->Type);
+    EXPECT_TRUE(PRIMITIVETYPE_Point3D == point3DProperty->Type);
+
+    class1->CreateStructProperty(structProp, L"Struct Member2", *structClass);
+    class1->CreateArrayProperty(nestedArrayProp, L"NestedArray2", structClass);
+    class1->CreateArrayProperty(primitiveArrayProp, L"PrimitiveArray2", PRIMITIVETYPE_Integer);
+    EXPECT_TRUE(ARRAYKIND_Struct == nestedArrayProp->Kind);
+    EXPECT_TRUE(ARRAYKIND_Primitive == primitiveArrayProp->Kind);
+    EXPECT_EQ(0, wcscmp(structProp->TypeName.c_str(), L"StructClass"));
+    EXPECT_EQ(0, wcscmp(nestedArrayProp->TypeName.c_str(), L"StructClass"));
+    EXPECT_EQ(0, wcscmp(primitiveArrayProp->TypeName.c_str(), L"int"));
+
+    }
+    
 TEST(ClassPropertiesTest, ExpectPropertiesInOrder)
     {
     std::vector<const wchar_t *> propertyNames;

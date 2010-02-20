@@ -43,9 +43,11 @@ MultiCompileDepends=$(_MakeFileSpec)
 #----------------------------------------------------------------------
 #   Objects that go into the ECObjects library
 #----------------------------------------------------------------------
-ECObjectsHeaders = $(ecobjectsPublicAPISrc)ECObjects.h $(ecobjectsPublicAPISrc)ECSchema.h $(ecobjectsPublicAPISrc)ECValue.h $(ecobjectsPublicAPISrc)ECInstance.h $(ecobjectsPublicAPISrc)ECEnabler.h $(ecobjectsPublicAPISrc)designbycontract.h $(baseDir)ecxml.h $(baseDir)Logger.h
+ECObjectsHeaders = $(ecobjectsPublicAPISrc)ECObjects.h $(ecobjectsPublicAPISrc)ECSchema.h $(ecobjectsPublicAPISrc)ECValue.h $(ecobjectsPublicAPISrc)ECInstance.h $(ecobjectsPublicAPISrc)ECEnabler.h $(ecobjectsPublicAPISrc)designbycontract.h $(baseDir)ecxml.h $(baseDir)Logger.h $(baseDir)FileUtilities.h
 
 $(o)ecxml.obj           : $(baseDir)ecxml.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+
+$(o)FileUtilities.obj   : $(baseDir)FileUtilities.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
 $(o)ecschema.obj        : $(baseDir)ecschema.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
@@ -101,3 +103,12 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 #   NEEDSWORK : Temporary settings
 #----------------------------------------------------------------------
 %include dlmLink.mki
+
+#----------------------------------------------------------------------
+#  Instead of embedding the standard schemas, now just deliver them
+#----------------------------------------------------------------------
+always:
+    @CreateSymLinks.py -m"$(ContextDeliveryDir)/Schemas/=$(ecobjectsSrc)Standards/*.xml"
+    @CreateSymLinks.py -m"$(ContextDeliveryDir)/Schemas/General/=$(ecobjectsSrc)Standards/General/*.xml"
+    @CreateSymLinks.py -m"$(ContextDeliveryDir)/Schemas/LibraryUnits/=$(ecobjectsSrc)Standards/LibraryUnits/*.xml"
+    

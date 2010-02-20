@@ -38,6 +38,7 @@ bool operator()(const wchar_t * s1, const wchar_t * s2) const
 typedef std::list<ECPropertyP> PropertyList;
 typedef stdext::hash_map<const wchar_t * , ECPropertyP, stdext::hash_compare<const wchar_t *, less_str>> PropertyMap;
 typedef stdext::hash_map<const wchar_t * , ECClassP, stdext::hash_compare<const wchar_t *, less_str>>    ClassMap;
+typedef stdext::hash_map<const wchar_t * , ECSchemaP, stdext::hash_compare<const wchar_t *, less_str>>   SchemaMap;
 
 
 // ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 
@@ -428,8 +429,12 @@ public:
     ECOBJECTS_EXPORT bool            HasBaseClasses();
 
     ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, std::wstring const& name);
+    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, std::wstring const& name, PrimitiveType primitiveType);
     ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, std::wstring const& name);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, std::wstring const& name, ECClassCR structType);
     ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, std::wstring const& name);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, std::wstring const& name, PrimitiveType primitiveType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, std::wstring const& name, ECClassCP structType);
      
     //NEEDSWORK: Is method (test if is or derived from class X)
 
@@ -536,8 +541,25 @@ public:
 
 }; 
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct
++---------------+---------------+---------------+---------------+---------------+------*/
+enum SchemaMatchType
+    {
+    SCHEMAMATCHTYPE_Exact               =   0,  //! Find exact VersionMajor, VersionMinor match.
+    SCHEMAMATCHTYPE_LatestCompatible    =   1,  //! Find latest version with matching VersionMajor and VersionMinor that is equal or greater.
+    SCHEMAMATCHTYPE_Latest              =   2,  //! Find latest version.
+    };
+    
 //=======================================================================================
+//! Interface implemented by class that provides schema location services.</summary>
+struct IECSchemaLocator
+{
+public:
+    virtual ECOBJECTS_EXPORT ECSchemaPtr LocateSchema(const wchar_t *name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, void * schemaContext) const = 0;
+};
+
+
 //! The in-memory representation of a schema as defined by ECSchemaXML
 struct ECSchema /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
 {
@@ -567,7 +589,7 @@ private:
     ECSchema () : m_versionMajor (DEFAULT_VERSION_MAJOR), m_versionMinor (DEFAULT_VERSION_MINOR), m_classContainer(ECClassContainer(m_classMap)) {};
     ~ECSchema();    
 
-    static SchemaDeserializationStatus  ReadXml (ECSchemaPtr& schemaOut, MSXML2_IXMLDOMDocument2& pXmlDoc);
+    static SchemaDeserializationStatus  ReadXml (ECSchemaPtr& schemaOut, MSXML2_IXMLDOMDocument2& pXmlDoc, const std::vector<IECSchemaLocatorP> * schemaLocators, const std::vector<const wchar_t *> * schemaPaths, void * schemaContext);
     SchemaSerializationStatus           WriteXml (MSXML2_IXMLDOMDocument2* pXmlDoc);
 
     ECObjectsStatus                     AddClass (ECClassP& pClass);
@@ -576,7 +598,9 @@ private:
     typedef std::vector<std::pair<ECClassP, MSXML2_IXMLDOMNodePtr>>  ClassDeserializationVector;
     SchemaDeserializationStatus         ReadClassStubsFromXml(MSXML2_IXMLDOMNode& schemaNodePtr,ClassDeserializationVector& classes);
     SchemaDeserializationStatus         ReadClassContentsFromXml(ClassDeserializationVector&  classes);
-    SchemaDeserializationStatus         ReadSchemaReferencesFromXml(MSXML2_IXMLDOMNode& schemaNodePtr);
+    SchemaDeserializationStatus         ReadSchemaReferencesFromXml(MSXML2_IXMLDOMNode& schemaNodePtr, const std::vector<IECSchemaLocatorP> * schemaLocators, const std::vector<const wchar_t *> * schemaPaths, void * schemaContext);
+    ECSchemaPtr                         LocateSchema(const std::vector<IECSchemaLocatorP> * schemaLocators, const std::vector<const wchar_t *> * schemaPaths, const std::wstring & name, UInt32& versionMajor, UInt32& versionMinor, SchemaMap * schemasUnderConstruction);
+    ECSchemaPtr                         LocateSchemaByPath(const std::vector<IECSchemaLocatorP> * schemaLocators, const std::vector<const wchar_t *> * schemaPaths, const std::wstring & name, UInt32& versionMajor, UInt32& versionMinor, SchemaMap * schemasUnderConstruction);
     
     SchemaSerializationStatus           WriteSchemaReferences(MSXML2_IXMLDOMElement& parentNode);
     SchemaSerializationStatus           WriteClass(MSXML2_IXMLDOMElement& parentNode, ECClassCR ecClass);
@@ -632,44 +656,6 @@ public:
     //! Removes an ECSchema from the list of referenced schemas
     //! @param[in]  refSchema   The schema that should be removed from the list of referenced schemas
     ECOBJECTS_EXPORT ECObjectsStatus RemoveReferencedSchema(ECSchemaCR refSchema);
-    
-    // ************************************************************************************************************************
-    // ************************************  STATIC METHODS *******************************************************************
-    // ************************************************************************************************************************
-
-    ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema (ECSchemaPtr& schemaOut, std::wstring const& schemaName);
-    ECOBJECTS_EXPORT static ECObjectsStatus ParseVersionString (UInt32& versionMajor, UInt32& versionMinor, std::wstring const& versionString);
-    
-
-    //! Deserializes an ECXML schema from a file.
-    //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and
-    //! uninitialize COM using CoInitialize/CoUninitialize</b>
-    //! @param[out]   schemaOut           The deserialized schema
-    //! @param[in]    ecSchemaXmlFile     The absolute path of the file to deserialize.
-    //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
-    //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
-    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromFile (ECSchemaPtr& schemaOut, const wchar_t * ecSchemaXmlFile);
-
-    //! Deserializes an ECXML schema from a string.
-    //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and
-    //! uninitialize COM using CoInitialize/CoUninitialize</b>
-    //! @param[out]   schemaOut           The deserialized schema
-    //! @param[in]    ecSchemaXml         The string containing ECSchemaXML to deserialize
-    //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
-    //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
-    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromString (ECSchemaPtr& schemaOut, const wchar_t * ecSchemaXml);
-
-/**************** commented out because there are problems with the include for IStream
-
-    //! Deserializes an ECXML schema from an IStream.
-    //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and
-    //! uninitialize COM using CoInitialize/CoUninitialize</b>
-    //! @param[out]   schemaOut           The deserialized schema
-    //! @param[in]    ecSchemaXmlStream   The IStream containing ECSchemaXML to deserialize
-    //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
-    //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
-    //ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromStream (ECSchemaPtr& schemaOut, IStream * ecSchemaXmlStream);
-*/
 
     //! Serializes an ECXML schema to a string
     //! Xml Serialization utilizes MSXML through COM. <b>Any thread calling this method must therefore be certain to initialize and
@@ -697,8 +683,52 @@ public:
     //ECOBJECTS_EXPORT SchemaSerializationStatus WriteXmlToStream (IStream * ecSchemaXmlStream);
     */
     
-}; // ECSchema
+    // ************************************************************************************************************************
+    // ************************************  STATIC METHODS *******************************************************************
+    // ************************************************************************************************************************
 
+    ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema (ECSchemaPtr& schemaOut, std::wstring const& schemaName);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseVersionString (UInt32& versionMajor, UInt32& versionMinor, std::wstring const& versionString);
+    ECOBJECTS_EXPORT static bool SchemasMatch (SchemaMatchType matchType,
+                          const wchar_t * soughtName,    UInt32 soughtMajor,    UInt32 soughtMinor,
+                          const wchar_t * candidateName, UInt32 candidateMajor, UInt32 candidateMinor);
+
+
+    //! Deserializes an ECXML schema from a file.
+    //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and
+    //! uninitialize COM using CoInitialize/CoUninitialize</b>
+    //! @param[out]   schemaOut           The deserialized schema
+    //! @param[in]    ecSchemaXmlFile     The absolute path of the file to deserialize.
+    //! @param[in]    schemaLocators      A list of IECSchemaLocatorP that will be used to locate referenced schemas
+    //! @param[in]    schemaPaths         A list of paths that should be searched to locate referenced schemas
+    //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
+    //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
+    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromFile (ECSchemaPtr& schemaOut, const wchar_t * ecSchemaXmlFile, const std::vector<IECSchemaLocatorP> * schemaLocators, const std::vector<const wchar_t *> * schemaPaths, void * schemaContext = NULL);
+
+    //! Deserializes an ECXML schema from a string.
+    //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and
+    //! uninitialize COM using CoInitialize/CoUninitialize</b>
+    //! @param[out]   schemaOut           The deserialized schema
+    //! @param[in]    ecSchemaXml         The string containing ECSchemaXML to deserialize
+    //! @param[in]    schemaLocators      A list of IECSchemaLocatorP that will be used to locate referenced schemas
+    //! @param[in]    schemaPaths         A list of paths that should be searched to locate referenced schemas
+    //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
+    //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
+    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromString (ECSchemaPtr& schemaOut, const wchar_t * ecSchemaXml, const std::vector<IECSchemaLocatorP> * schemaLocators, const std::vector<const wchar_t *> * schemaPaths, void * schemaContext = NULL);
+
+/**************** commented out because there are problems with the include for IStream
+
+    //! Deserializes an ECXML schema from an IStream.
+    //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and
+    //! uninitialize COM using CoInitialize/CoUninitialize</b>
+    //! @param[out]   schemaOut           The deserialized schema
+    //! @param[in]    ecSchemaXmlStream   The IStream containing ECSchemaXML to deserialize
+    //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
+    //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
+    //ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromStream (ECSchemaPtr& schemaOut, IStream * ecSchemaXmlStream);
+*/
+    
+}; // ECSchema
 
 END_BENTLEY_EC_NAMESPACE
 

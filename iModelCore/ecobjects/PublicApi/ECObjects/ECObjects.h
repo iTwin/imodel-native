@@ -53,6 +53,7 @@ EC_TYPEDEFS(ECClass);
 EC_TYPEDEFS(ECRelationshipClass);
 EC_TYPEDEFS(IECInstance);
 EC_TYPEDEFS(IECRelationshipInstance);
+EC_TYPEDEFS(IECSchemaLocator);
 
 EC_TYPEDEFS(ECEnabler);
 EC_TYPEDEFS(IArrayManipulator);
@@ -120,6 +121,7 @@ enum SchemaDeserializationStatus
     SCHEMA_DESERIALIZATION_STATUS_FailedToInitializeMsmxl               = SCHEMA_DESERIALIZATION_STATUS_BASE + 0x01,
     SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml                      = SCHEMA_DESERIALIZATION_STATUS_BASE + 0x02,
     SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml                    = SCHEMA_DESERIALIZATION_STATUS_BASE + 0x03,
+    SCHEMA_DESERIALIZATION_STATUS_ReferencedSchemaNotFound              = SCHEMA_DESERIALIZATION_STATUS_BASE + 0x04,
     };
 
 enum SchemaSerializationStatus
