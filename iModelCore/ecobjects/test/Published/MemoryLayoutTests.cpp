@@ -248,6 +248,7 @@ std::wstring    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versio
                     L"        <ECProperty propertyName=\"Property20\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"Property21\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"Property22\" typeName=\"string\" />"
+                    L"        <ECArrayProperty propertyName=\"ManufacturerArray\" typeName=\"Manufacturer\"/>"
                     L"        <ECProperty propertyName=\"Property23\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"Property24\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"Property25\" typeName=\"string\" />"
@@ -412,6 +413,121 @@ void ExerciseVariableCountStringArray (IECInstanceR instance, ECValue& v, wchar_
     }
     
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+void VerifyVariableCountManufacturerArray (IECInstanceR instance, ECValue& v, wchar_t* arrayAccessor)
+    {    
+    VerifyArrayInfo (instance, v, arrayAccessor, 4, false);
+    EXPECT_TRUE (SUCCESS == instance.GetValue (v, arrayAccessor));    
+    VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 4, false);
+    UInt32 index = 0;
+    EXPECT_TRUE (SUCCESS == instance.GetValue (v, arrayAccessor, 1, &index));    
+    EXPECT_TRUE (v.IsStruct());    
+    IECInstancePtr manufInst = v.GetStruct();
+    VerifyString (*manufInst, v, L"Name", L"Nissan");
+    VerifyInteger (*manufInst, v, L"AccountNo", 3475);
+    index = 1;
+    EXPECT_TRUE (SUCCESS == instance.GetValue (v, arrayAccessor, 1, &index));    
+    EXPECT_TRUE (v.IsStruct());    
+    manufInst = v.GetStruct();
+    VerifyString (*manufInst, v, L"Name", L"Ford");
+    VerifyInteger (*manufInst, v, L"AccountNo", 381);    
+    index = 2;
+    EXPECT_TRUE (SUCCESS == instance.GetValue (v, arrayAccessor, 1, &index));    
+    EXPECT_TRUE (v.IsStruct());    
+    manufInst = v.GetStruct();
+    VerifyString (*manufInst, v, L"Name", L"Chrysler");
+    VerifyInteger (*manufInst, v, L"AccountNo", 81645);    
+    index = 3;
+    EXPECT_TRUE (SUCCESS == instance.GetValue (v, arrayAccessor, 1, &index));    
+    EXPECT_TRUE (v.IsStruct());    
+    manufInst = v.GetStruct();
+    VerifyString (*manufInst, v, L"Name", L"Toyota");
+    VerifyInteger (*manufInst, v, L"AccountNo", 6823);    
+    }  
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+void ExerciseVariableCountManufacturerArray (IECInstanceR instance, StandaloneECEnablerR manufacturerEnabler, ECValue& v, wchar_t* arrayAccessor)
+    {    
+    // WIP_FUSION, review this process of setting array eleeents.  Is it easy enough?
+    VerifyArrayInfo (instance, v, arrayAccessor, 0, false);
+    
+    // create an array of two values
+    ASSERT_TRUE (SUCCESS == instance.AddArrayElements (arrayAccessor, 2));
+    VerifyArrayInfo (instance, v, arrayAccessor, 2, false);
+    VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 2, true);
+    IECInstancePtr manufInst = manufacturerEnabler.CreateInstance();    
+    SetAndVerifyString (*manufInst, v, L"Name", L"Nissan");
+    SetAndVerifyInteger (*manufInst, v, L"AccountNo", 3475);
+    v.SetStruct (*manufInst);
+    UInt32 index = 0;
+    ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 1, &index));
+    manufInst = manufacturerEnabler.CreateInstance();    
+    SetAndVerifyString (*manufInst, v, L"Name", L"Kia");
+    SetAndVerifyInteger (*manufInst, v, L"AccountNo", 1791);
+    v.SetStruct (*manufInst);
+    index = 1;
+    ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 1, &index));    
+    VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 2, false);    
+   
+    // insert two elements in the middle of the array   
+    ASSERT_TRUE (SUCCESS == instance.InsertArrayElements (arrayAccessor, 1, 2));
+    VerifyArrayInfo (instance, v, arrayAccessor, 4, false);
+    VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 1, false);
+    VerifyIsNullArrayElements (instance, v, arrayAccessor, 1, 2, true);
+    VerifyIsNullArrayElements (instance, v, arrayAccessor, 3, 1, false);
+    manufInst = manufacturerEnabler.CreateInstance();    
+    SetAndVerifyString (*manufInst, v, L"Name", L"Ford");
+    SetAndVerifyInteger (*manufInst, v, L"AccountNo", 381);
+    v.SetStruct (*manufInst);
+    index = 1;
+    ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 1, &index)); 
+    manufInst = manufacturerEnabler.CreateInstance();    
+    SetAndVerifyString (*manufInst, v, L"Name", L"Chrysler");
+    SetAndVerifyInteger (*manufInst, v, L"AccountNo", 81645);
+    v.SetStruct (*manufInst);
+    index = 2;
+    ASSERT_TRUE (SUCCESS ==instance.SetValue (arrayAccessor, v, 1, &index));        
+    VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 4, false);
+    
+    // ensure we can set a struct array value to NULL        
+    v.SetToNull();
+    index = 3;
+    ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 1, &index));        
+    VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 3, false);
+    VerifyIsNullArrayElements (instance, v, arrayAccessor, 3, 1, true);
+    manufInst = manufacturerEnabler.CreateInstance();    
+    SetAndVerifyString (*manufInst, v, L"Name", L"Acura");
+    SetAndVerifyInteger (*manufInst, v, L"AccountNo", 6);
+    v.SetStruct (*manufInst);
+    ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 1, &index));        
+    VerifyIsNullArrayElements (instance, v, arrayAccessor, 3, 1, false);
+    manufInst = manufacturerEnabler.CreateInstance();    
+    SetAndVerifyString (*manufInst, v, L"Name", L"Toyota");
+    SetAndVerifyInteger (*manufInst, v, L"AccountNo", 6823);
+    v.SetStruct (*manufInst);
+    ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 1, &index));        
+    
+    // ensure we can't set the array elements to other primitive types
+    {
+    // WIP_FUSION - these are busted need to fix
+    DISABLE_ASSERTS    
+    v.SetInteger (35);    
+    index = 2;
+    //ASSERT_TRUE (ERROR == instance.SetValue (arrayAccessor, v, 1, &index));        
+    v.SetString (L"foobar");    
+    index = 0;
+    //ASSERT_TRUE (ERROR == instance.SetValue (arrayAccessor, v, 1, &index));            
+    }
+    
+    // WIP_FUSION ensure we can not set the array to an instance of a struct that is not of the type (or derived from the type) of the property    
+        
+    VerifyVariableCountManufacturerArray (instance, v, arrayAccessor);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/  
 void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
@@ -500,6 +616,14 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     ExerciseVariableCountStringArray (instance, v, L"VariableArrayVariableElement[]", L"Var+Var");
     ExerciseVariableCountStringArray (instance, v, L"EndingArray[]", L"EArray");        
     
+    ECClassP manufacturerClass = instance.GetClass().GetSchema().GetClassP (L"Manufacturer");
+    ASSERT_TRUE (manufacturerClass);   
+    ClassLayoutP manufClassLayout = ClassLayout::BuildFromClass (*manufacturerClass, 43, 24);
+    StandaloneECEnablerPtr manufEnabler = StandaloneECEnabler::CreateEnabler (*manufacturerClass, *manufClassLayout);        
+    ExerciseVariableCountManufacturerArray (instance, *manufEnabler, v, L"ManufacturerArray[]");    
+    
+    // WIP_FUSION verify I can set array elements to NULL        
+            
     // WIP_FUSION, add array members                       
     // WIP_FUSION, remove array members
     // WIP_FUSION, clear array
@@ -533,7 +657,12 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     VerifyStringArray   (instance, v, L"VariableArrayVariableElement[]", L"Var+Var", 0, 14);               
     VerifyArrayInfo     (instance, v, L"EndingArray[]", 14, false);
     VerifyIsNullArrayElements   (instance, v, L"EndingArray[]", 0, 14, false);
-    VerifyStringArray   (instance, v, L"EndingArray[]", L"EArray", 0, 14);                      
+    VerifyStringArray   (instance, v, L"EndingArray[]", L"EArray", 0, 14);                
+    VerifyVariableCountManufacturerArray (instance, v, L"ManufacturerArray[]");     
+    
+    instance.Dump();
+    
+    delete manufClassLayout;             
     }
                  
 /*---------------------------------------------------------------------------------**//**
@@ -551,13 +680,12 @@ TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
     SchemaLayout schemaLayout (24);
 
     ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);        
     
     EC::StandaloneECInstanceP instance = enabler->CreateInstance();
     wstring instanceId = instance->GetInstanceId();
     instance->Dump();
     ExerciseInstance (*instance, L"Test");
-    instance->Dump();
     
     delete classLayout;
 

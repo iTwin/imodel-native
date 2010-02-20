@@ -337,13 +337,6 @@ private:
     //! See the description of GetReservedArrayCount for explanation about the differences between the two.
     ArrayCount          GetAllocatedArrayCount (PropertyLayoutCR propertyLayout) const;
     
-    //! Obtains the current primitive value for the specified property
-    //! If nIndices is > 0 then the primitive value for the array element at the specified index is obtained.
-    StatusInt           GetPrimitiveValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;
-    
-    //! Sets the primitive value for the specified property
-    //! If nIndices is > 0 then the primitive value for the array element at the specified index is set.
-    StatusInt           SetPrimitiveValueToMemory   (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices);
     
     //! Shifts the values' data and adjusts SecondaryOffsets for all variable-sized property values 
     //! AFTER the given one, to make room for additional bytes needed for the property value of the given PropertyLayout
@@ -366,12 +359,31 @@ protected:
     //!                                                 If false, all modifications must happen through _ModifyData, e.g. for ECXData.
     ECOBJECTS_EXPORT            MemoryInstanceSupport (bool allowWritingDirectlyToInstanceMemory);
     ECOBJECTS_EXPORT void       InitializeMemory(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated) const;
-    ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout,      UInt32 nIndices, UInt32 const * indices) const;
+    //! Obtains the current primitive value for the specified property
+    //! If nIndices is > 0 then the primitive value for the array element at the specified index is obtained.
+    //! This is protected because implementors of _GetStructArrayArrayValueFromMemory should call it to obtain the binary primitive value that they stored
+    //! when _SetStructArrayValueToMemory was invoked as a means to locate the externalized struct array value.
+    ECOBJECTS_EXPORT StatusInt  GetPrimitiveValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;    
+    //! Sets the primitive value for the specified property
+    //! If nIndices is > 0 then the primitive value for the array element at the specified index is set.
+    //! This is protected because implementors of _SetStructArrayArrayValueToMemory should call it to store a binary primitive value that can be retrieved
+    //! when _GetStructArrayValueFromMemory is invoked as a means to locate the externalized struct array value.
+    ECOBJECTS_EXPORT StatusInt  SetPrimitiveValueToMemory   (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices);    
+    ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;
     ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ClassLayoutCR classLayout, ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const;
     ECOBJECTS_EXPORT StatusInt  SetValueToMemory (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, ECValueCR v,  UInt32 nIndices, UInt32 const * indices);      
     ECOBJECTS_EXPORT StatusInt  InsertNullArrayElementsAt (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, UInt32 insertIndex, UInt32 insertCount);
     ECOBJECTS_EXPORT StatusInt  AddNullArrayElementsAt (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, UInt32 insertCount);
     ECOBJECTS_EXPORT void       DumpInstanceData (ClassLayoutCR classLayout) const;
+    
+    //! Sets the in-memory value of the array index of the specified property to be the struct value as held by v
+    //! Since struct arrays support polymorphic values, we do not support storing the full struct value in the data section of the instance.  It must be externalized, therefore
+    //! it is implementation specific and left to the implementation of the instance to store the value.  Before returning, the implementation should call into SetPrimitiveValueToMemory
+    //! with a binary token that will actually be stored with the instance at the array index value that can then be used to locate the externalized struct value.
+    //! Note that top-level struct properties will automatically be stored in the data section of the instance.  It is only struct array values that must be stored
+    //! externally.
+    virtual StatusInt           _SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) = 0;
+    virtual StatusInt           _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const = 0;
     
     virtual bool                _IsMemoryInitialized () const = 0;    
     

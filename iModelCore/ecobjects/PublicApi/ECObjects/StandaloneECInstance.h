@@ -30,6 +30,12 @@ private:
     
     byte *               m_data;
     UInt32               m_bytesAllocated;
+    
+    // WIP_FUSION Is this a good enough implementation for StandaloneECInstace?
+    typedef int StructValueIdentifier;
+    StructValueIdentifier           m_structValueId;
+    std::map<StructValueIdentifier, IECInstancePtr>   m_structValueMap;
+    
      
 private:
     //! The StandaloneECInstance will take ownership of the memory
@@ -57,6 +63,9 @@ protected:
     virtual void            _Dump () const override;
     virtual byte const *    _GetData () const override;
     virtual UInt32          _GetBytesAllocated () const override;
+    
+    virtual StatusInt       _SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) override;    
+    virtual StatusInt       _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const override;
     
 public: // These must be public so that ECXInstanceEnabler can get at the guts of StandaloneECInstance to copy it into an XAttribute     
     ECOBJECTS_EXPORT byte const *         GetData () const;

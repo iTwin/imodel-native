@@ -102,6 +102,8 @@ protected:
 #endif
         ArrayInfo       m_arrayInfo;
         BinaryInfo      m_binaryInfo;
+        
+        IECInstanceP  m_structInstance;
         };
 
     void DeepCopy (ECValueCR v);
@@ -164,6 +166,9 @@ public:
 
     ECOBJECTS_EXPORT const byte *   GetBinary (size_t& size) const;
     ECOBJECTS_EXPORT StatusInt      SetBinary (const byte * string, size_t size);
+    
+    ECOBJECTS_EXPORT IECInstancePtr  GetStruct() const;
+    ECOBJECTS_EXPORT StatusInt       SetStruct (IECInstanceR structInstance);
         
     //! This is intended for debugging purposes, not for presentation purposes.
     ECOBJECTS_EXPORT std::wstring   ToString () const;

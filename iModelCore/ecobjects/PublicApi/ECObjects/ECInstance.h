@@ -12,6 +12,8 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
+typedef RefCountedPtr<IECInstance> IECInstancePtr;
+
 //! EC::IECInstance is the native equivalent of a .NET IECInstance.
 //! Unlike IECInstance, it is not a pure interface, but is a concrete struct.
 //! Whereas in .NET, one might implement IECInstance, or use the "Lightweight" system

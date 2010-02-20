@@ -62,7 +62,7 @@
      specified not explicitly specifed in a category node.
 -->
 
-    <category name="NativeECObjects">   <priority value="info"/></category>
+    <category name="ECObjectsNative">   <priority value="info"/></category>
     <category name="DgnEC">             <priority value="info"/></category>
 
     <root>                            

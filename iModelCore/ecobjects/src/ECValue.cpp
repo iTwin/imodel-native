@@ -166,7 +166,10 @@ void            ECValue::SetToNull()
     {
     if (IsString())
         SetString (NULL);
-    else if (!IsArray()) // arrays can never be null       
+    else if (IsStruct())    
+        m_structInstance = NULL;
+    
+    if (!IsArray()) // arrays can never be null       
         m_isNull = true; //WIP_FUSION handle other types
     }    
 /*---------------------------------------------------------------------------------**//**
@@ -192,6 +195,11 @@ void            ECValue::Clear()
             free (const_cast<wchar_t *>(m_stringInfo.m_string));
             
         m_stringInfo.m_string = NULL;
+        }
+        
+    if (IsStruct())
+        {
+        m_structInstance = NULL;
         }
         
     m_isNull = true;
@@ -441,6 +449,28 @@ StatusInt ECValue::SetBinary (const byte * data, size_t size)
 
     return SUCCESS;
     }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr  ECValue::GetStruct() const
+    {
+    PRECONDITION (IsStruct() && "Tried to get struct value from an EC::ECValue that is not a struct.", 0);
+    return m_structInstance;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       ECValue::SetStruct (IECInstanceR structInstance)
+    {
+    Clear();
+    m_isNull    = false;
+    m_valueKind = VALUEKIND_Struct;    
+    m_structInstance = &structInstance;        
+    
+    return SUCCESS;
+    }    
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
