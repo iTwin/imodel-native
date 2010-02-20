@@ -607,7 +607,7 @@ void * schemaContext
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
             
-        const wchar_t *schemaName = (const wchar_t*) attributePtr->text;
+        std::wstring schemaName = (const wchar_t*) attributePtr->text;
 
         if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMAREF_PREFIX_ATTRIBUTE)))
             {
@@ -616,7 +616,7 @@ void * schemaContext
                 delete underConstruction;
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
-        const wchar_t *prefix = (const wchar_t*) attributePtr->text;
+        std::wstring prefix = (const wchar_t*) attributePtr->text;
 
         if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMAREF_VERSION_ATTRIBUTE)))
             {
@@ -625,26 +625,26 @@ void * schemaContext
                 delete underConstruction;
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
-        const wchar_t *versionString = (const wchar_t*) attributePtr->text;
-        
+        std::wstring versionString = (const wchar_t*) attributePtr->text;
+
         UInt32 versionMajor;
         UInt32 versionMinor;
-        if (ECOBJECTS_STATUS_Success != ParseVersionString (versionMajor, versionMinor, versionString))
+        if (ECOBJECTS_STATUS_Success != ParseVersionString (versionMajor, versionMinor, versionString.c_str()))
             {
-            Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: unable to parse version string for referenced schema %s.", schemaName);
+            Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: unable to parse version string for referenced schema %s.", schemaName.c_str());
             if (needToDelete)
                 delete underConstruction;
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
             
         // If the schema (uselessly) references itself, just skip it
-        if (wcscmp(m_name.c_str(), schemaName) == 0)
+        if (m_name.compare(schemaName) == 0)
             continue;
-            
+
         ECSchemaPtr referencedSchema = LocateSchema(schemaLocators, schemaPaths, schemaName, versionMajor, versionMinor, underConstruction);
         if (!referencedSchema.IsValid())
             {
-            Logger::GetLogger()->errorv(L"Unable to locate referenced schema %s.%02d.%02d", schemaName, versionMajor, versionMinor);
+            Logger::GetLogger()->errorv(L"Unable to locate referenced schema %s.%02d.%02d", schemaName.c_str(), versionMajor, versionMinor);
             if (needToDelete)
                 delete underConstruction;
             return SCHEMA_DESERIALIZATION_STATUS_ReferencedSchemaNotFound;
@@ -665,7 +665,7 @@ ECSchemaPtr ECSchema::LocateSchema
 (    
 const std::vector<IECSchemaLocatorP> * schemaLocators, 
 const std::vector<const wchar_t *> * schemaPaths,
-const wchar_t * name,
+const std::wstring & name,
 UInt32& versionMajor,
 UInt32& versionMinor,
 SchemaMap* schemasUnderConstruction
@@ -690,7 +690,7 @@ SchemaMap* schemasUnderConstruction
             {
             IECSchemaLocatorP schemaLocator = *locator;
             if (NULL != schemaLocator)
-                schemaPtr = schemaLocator->LocateSchema(name, versionMajor, versionMinor, SCHEMAMATCHTYPE_LatestCompatible, schemasUnderConstruction);
+                schemaPtr = schemaLocator->LocateSchema(name.c_str(), versionMajor, versionMinor, SCHEMAMATCHTYPE_LatestCompatible, schemasUnderConstruction);
             if (schemaPtr.IsValid())
                 return schemaPtr;
             }
@@ -728,7 +728,7 @@ ECSchemaPtr ECSchema::LocateSchemaByPath
 (
 const std::vector<IECSchemaLocatorP> * schemaLocators, 
 const std::vector<const wchar_t *> * schemaPaths,
-const wchar_t * name,
+const std::wstring & name,
 UInt32& versionMajor,
 UInt32& versionMinor,
 SchemaMap * schemasUnderConstruction
@@ -740,7 +740,7 @@ SchemaMap * schemasUnderConstruction
     swprintf(versionString, 24, L".%02d.*.ecschema.xml", versionMajor);
     std::wstring schemaName = name;
     schemaName += versionString;
-    
+
     for (path = schemaPaths->begin(); path != schemaPaths->end(); path++)
         {
         std::wstring schemaPath = *path;
