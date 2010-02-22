@@ -24,9 +24,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="bmake $(SrcEcf)ecobjects\native\native.mke"
-				ReBuildCommandLine="bmake +a $(SrcEcf)ecobjects\native\native.mke"
-				CleanCommandLine="bmake +aD $(SrcEcf)ecobjects\native\native.mke"
+				BuildCommandLine="C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild ECObjectsNative -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) "
+				ReBuildCommandLine="C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild ECObjectsNative -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)  -f"
+				CleanCommandLine="C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild ECObjectsNative -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)  -c"
 				Output="ecobjects.exe"
 				PreprocessorDefinitions="WIN32;_DEBUG"
 				IncludeSearchPath="&quot;$(VCInstallDir)INCLUDE\&quot;;&quot;$(SrcEcf)\PublicApi&quot;;&quot;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\Bentley\PublicAPI&quot;;&quot;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\bsibin\PublicAPI\&quot;"
