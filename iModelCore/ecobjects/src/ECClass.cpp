@@ -412,6 +412,20 @@ ECClassCP structType
     ecProperty->StructElementType = structType;
     return ECOBJECTS_STATUS_Success;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECClass::CheckBaseClassCycles
+(
+ECClassCP thisClass, 
+ECClassCP proposedParentClass
+)
+    {
+    if (thisClass == proposedParentClass || ClassesAreEqualByName(thisClass, proposedParentClass))
+        return true;
+    return false;
+    }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
@@ -441,6 +455,9 @@ ECClassCR baseClass
             }
         }
 
+    if (this == &baseClass || ClassesAreEqualByName(this, &baseClass) || TraverseBaseClasses(&CheckBaseClassCycles, true, this))
+        return ECOBJECTS_STATUS_BaseClassUnacceptable;
+        
     ECBaseClassesVector::const_iterator baseClassIterator;
     for (baseClassIterator = m_baseClasses.begin(); baseClassIterator != m_baseClasses.end(); baseClassIterator++)
         {
@@ -469,6 +486,67 @@ bool ECClass::HasBaseClasses
     return (m_baseClasses.size() > 0);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECClass::Is
+(
+ECClassCP targetClass
+)
+    {
+    if (NULL == targetClass)
+        return false;
+    
+    if (ClassesAreEqualByName(this, targetClass))
+        return true;
+            
+    return TraverseBaseClasses(&ClassesAreEqualByName, true, targetClass);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECClass::ClassesAreEqualByName
+(
+ECClassCP thisClass, 
+ECClassCP thatClass
+)
+    {
+    return ((thisClass == thatClass) ||
+            ( (0 == thisClass->Name.compare(thatClass->Name)) &&
+              (0 == thisClass->Schema.Name.compare(thatClass->Schema.Name)) &&
+              (thisClass->Schema.VersionMajor == thatClass->Schema.VersionMajor) &&
+              (thisClass->Schema.VersionMinor == thatClass->Schema.VersionMinor)));
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECClass::TraverseBaseClasses
+(
+TraversalDelegate traverseMethod, 
+bool recursive,
+ECClassCP arg
+)
+    {
+    if (m_baseClasses.size() == 0)
+        return false;
+        
+    for each (const ECClassP& baseClass in m_baseClasses)
+        {
+        if (traverseMethod(baseClass, arg))
+            return true;
+            
+        if (recursive)
+            {
+            if (baseClass->TraverseBaseClasses(traverseMethod, recursive, arg))
+                return true;
+            }
+        }
+        
+    return false;
+    }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -761,6 +839,90 @@ ECPropertyP       ECPropertyContainer::const_iterator::operator*() const
     };
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StrengthType ECRelationshipClass::GetStrength
+(
+) const
+    {
+    return m_strength;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipClass::SetStrength
+(
+StrengthType strength
+)
+    {
+    m_strength = strength;
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipClass::SetStrength
+(
+const wchar_t *strength
+)
+    {
+    PRECONDITION (NULL != strength, ECOBJECTS_STATUS_PreconditionViolated);
+
+    StrengthType strengthType;
+    ECObjectsStatus status = ECXml::ParseStrengthType(strengthType, strength);
+    if (ECOBJECTS_STATUS_Success != status)
+        Logger::GetLogger()->errorv (L"Failed to parse the Strength string '%s' for ECRelationshipClass '%s'.\n", strength, this->Name.c_str());
+    else
+        SetStrength (strengthType);
+        
+    return status;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelatedInstanceDirection ECRelationshipClass::GetStrengthDirection
+(
+) const
+    {
+    return m_strengthDirection;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipClass::SetStrengthDirection
+(
+ECRelatedInstanceDirection direction
+)
+    {
+    m_strengthDirection = direction;
+    return ECOBJECTS_STATUS_Success;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipClass::SetStrengthDirection
+(
+const wchar_t *directionString
+)
+    {
+    PRECONDITION (NULL != directionString, ECOBJECTS_STATUS_PreconditionViolated);
+
+    ECRelatedInstanceDirection direction;
+    ECObjectsStatus status = ECXml::ParseDirectionString(direction, directionString);
+    if (ECOBJECTS_STATUS_Success != status)
+        Logger::GetLogger()->errorv (L"Failed to parse the ECRelatedInstanceDirection string '%s' for ECRelationshipClass '%s'.\n", directionString, this->Name.c_str());
+    else
+        SetStrengthDirection (direction);
+        
+    return status;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaSerializationStatus ECRelationshipClass::WriteXml
@@ -786,11 +948,46 @@ MSXML2::IXMLDOMElement& parentNode
         return SCHEMA_SERIALIZATION_STATUS_FailedToCreateXml;
         
     // NEEDSWORK: Full implementation
-    //WRITE_OPTIONAL_XML_ATTRIBUTE(STRENGTH_ATTRIBUTE, Strength, propertyPtr);
-    //WRITE_OPTIONAL_XML_ATTRIBUTE(STRENGTHDIRECTION_ATTRIBUTE, StrengthDirection, propertyPtr);
+    WRITE_XML_ATTRIBUTE(STRENGTH_ATTRIBUTE, ECXml::StrengthToString(m_strength).c_str(), propertyPtr);
+    WRITE_XML_ATTRIBUTE(STRENGTHDIRECTION_ATTRIBUTE, ECXml::DirectionToString(m_strengthDirection).c_str(), propertyPtr);
     
     return status;
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaDeserializationStatus ECRelationshipClass::ReadXmlAttributes
+(
+MSXML2::IXMLDOMNode &classNode
+)
+    {
+    SchemaDeserializationStatus status = __super::ReadXmlAttributes(classNode);
+    if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
+        return status;
+        
+    MSXML2::IXMLDOMNamedNodeMapPtr nodeAttributesPtr = classNode.attributes;
+    MSXML2::IXMLDOMNodePtr attributePtr;
+    
+    READ_OPTIONAL_XML_ATTRIBUTE (STRENGTH_ATTRIBUTE, this, Strength)
+    READ_OPTIONAL_XML_ATTRIBUTE (STRENGTHDIRECTION_ATTRIBUTE, this, StrengthDirection)
+    
+    return SCHEMA_DESERIALIZATION_STATUS_Success;
+    }
+ 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaDeserializationStatus ECRelationshipClass::ReadXmlContents
+(
+MSXML2::IXMLDOMNode &classNode
+)
+    {
+    SchemaDeserializationStatus status = __super::ReadXmlContents(classNode);
+    if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
+        return status;
+        
+    return SCHEMA_DESERIALIZATION_STATUS_Success;
+    }
+    
 END_BENTLEY_EC_NAMESPACE

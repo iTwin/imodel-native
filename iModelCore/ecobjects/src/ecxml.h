@@ -76,6 +76,13 @@ static const std::wstring ECXML_TYPENAME_STRING             = L"string";
 
 static const std::wstring EMPTY_STRING = L"";
 
+static const std::wstring ECXML_STRENGTH_REFERENCING        = L"referencing";
+static const std::wstring ECXML_STRENGTH_HOLDING            = L"holding";
+static const std::wstring ECXML_STRENGTH_EMBEDDING          = L"embedding";
+
+static const std::wstring ECXML_DIRECTION_FORWARD           = L"forward";
+static const std::wstring ECXML_DIRECTION_BACKWARD          = L"backward";
+
 #define READ_OPTIONAL_XML_ATTRIBUTE(_xmlAttributeName, _setInPointer, _setInPropertyName)   \
     if ((NULL != (attributePtr = nodeAttributesPtr->getNamedItem (_xmlAttributeName))) &&   \
         (ECOBJECTS_STATUS_Success != _setInPointer->Set##_setInPropertyName ((const wchar_t *)attributePtr->text))) \
@@ -143,6 +150,10 @@ public:
     static ECObjectsStatus ParseBooleanString(bool & booleanValue,const wchar_t * booleanString);
     static std::wstring const& GetPrimitiveTypeName (PrimitiveType primitiveType);
     static ECObjectsStatus ParsePrimitiveType (PrimitiveType& primitiveType,std::wstring const& typeName);
+    static std::wstring const& StrengthToString (StrengthType strength);
+    static ECObjectsStatus ParseStrengthType (StrengthType& strength, std::wstring const& strengthString);
+    static std::wstring const& DirectionToString (ECRelatedInstanceDirection direction);
+    static ECObjectsStatus ParseDirectionString (ECRelatedInstanceDirection& direction, std::wstring const& directionString);
 };
 
 END_BENTLEY_EC_NAMESPACE

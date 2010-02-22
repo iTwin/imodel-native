@@ -355,6 +355,10 @@ public:
 
 typedef std::vector<ECClassP> ECBaseClassesVector;
 
+/*__PUBLISH_SECTION_END__*/
+typedef bool (*TraversalDelegate) (ECClassCP, ECClassCP);
+/*__PUBLISH_SECTION_START__*/
+
 //=======================================================================================
 //! The in-memory representation of an ECClass as defined by ECSchemaXML
 struct ECClass /*__PUBLISH_ABSTRACT__*/
@@ -382,6 +386,10 @@ private:
     
     ECObjectsStatus                     AddProperty (ECPropertyP& pProperty);
     ECObjectsStatus                     AddProperty (ECPropertyP pProperty, std::wstring const& name);
+    
+    static bool ClassesAreEqualByName(ECClassCP thisClass, ECClassCP thatClass);
+    static bool CheckBaseClassCycles(ECClassCP thisClass, ECClassCP proposedParentClass);
+    bool TraverseBaseClasses(TraversalDelegate traverseMethod, bool recursive, ECClassCP arg);
 
 protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
@@ -422,11 +430,33 @@ public:
     EXPORTED_PROPERTY  (bool,                           IsCustomAttributeClass);    
     EXPORTED_PROPERTY  (bool,                           IsDomainClass);    
     
-    ECOBJECTS_EXPORT ECObjectsStatus SetIsStruct (const wchar_t * isStruct);          
+    //! Sets the bool value of whether this class can be used as a struct
+    //! @param[in] isStruct String representation of true/false
+    //! @return    Success if the string is parsed into a bool
+    ECOBJECTS_EXPORT ECObjectsStatus SetIsStruct (const wchar_t * isStruct);
+    
+    //! Sets the bool value of whether this class can be used as a custom attribte
+    //! @param[in] isCustomAttribute String representation of true/false
+    //! @return    Success if the string is parsed into a bool
     ECOBJECTS_EXPORT ECObjectsStatus SetIsCustomAttributeClass (const wchar_t * isCustomAttribute);
+    
+    //! Sets the bool value of whether this class can be used as a domain object
+    //! @param[in] isDomainClass String representation of true/false
+    //! @return    Success if the string is parsed into a bool
     ECOBJECTS_EXPORT ECObjectsStatus SetIsDomainClass (const wchar_t * isDomainClass);
+    
+    //! Adds a base class
+    //! You cannot add a base class if it creates a cycle. For example, if A is a base class
+    //! of B, and B is a base class of C, you cannot make C a base class of A. Attempting to do
+    //! so will return an error.
+    //! @param[in] The class to derive from
     ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass);
+    
+    //! Returns whether there are any base classes for this class
     ECOBJECTS_EXPORT bool            HasBaseClasses();
+    
+    //! Returns true if the class is the type specified or derived from it.
+    ECOBJECTS_EXPORT bool            Is(ECClassCP targetClass);
 
     ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, std::wstring const& name);
     ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, std::wstring const& name, PrimitiveType primitiveType);
@@ -436,8 +466,6 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, std::wstring const& name, PrimitiveType primitiveType);
     ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, std::wstring const& name, ECClassCP structType);
      
-    //NEEDSWORK: Is method (test if is or derived from class X)
-
     //! Get a property by name within the context of this class and its base classes.
     //! The pointer returned by this method is valid until the ECClass containing the property is destroyed or the property
     //! is removed from the class.
@@ -456,7 +484,37 @@ public:
 }; // ECClass
 
 enum ECRelationshipEnd { ECRelationshipEnd_Source = 0, ECRelationshipEnd_Target };
-
+//! Used to describe the direction of a related instance within the context
+//! of an IECRelationshipInstance
+enum ECRelatedInstanceDirection
+    {
+    //! Related instance is the target in the relationship instance
+    STRENGTHDIRECTION_Forward = 1,
+    //! Related instance is the source in the relationship instance
+    STRENGTHDIRECTION_Backward = 2
+    };
+ 
+//! The various strengths supported on a relationship class.
+enum StrengthType
+    {
+    //!  'Referencing' relationships imply no ownership and no cascading deletes when the
+    //! object on either end of the relationship is deleted.  For example, a document
+    //! object may have a reference to the User that last modified it.
+    //! This is like "Association" in UML.
+    STRENGTHTYPE_Referencing,
+    //! 'Holding' relationships imply shared ownership.  A given object can be "held" by
+    //! many different objects, and the object will not get deleted unless all of the
+    //! objects holding it are first deleted (or the relationships severed.)
+    //! This is like "Aggregation" in UML.
+    STRENGTHTYPE_Holding,
+    //! 'Embedding' relationships imply exclusive ownership and cascading deletes.  An
+    //! object that is the target of an 'embedding' relationship may also be the target
+    //! of other 'referencing' relationships, but cannot be the target of any 'holding'
+    //! relationships.  For examples, a Folder 'embeds' the Documents that it contains.
+    //! This is like "Composition" in UML.
+    STRENGTHTYPE_Embedding
+    } ;
+    
 //=======================================================================================
 //! The in-memory representation of a relationship class as defined by ECSchemaXML
 struct ECRelationshipClass /*__PUBLISH_ABSTRACT__*/ : public ECClass
@@ -466,27 +524,33 @@ friend struct ECSchema;
 
 // NEEDSWORK  missing full implementation
 private:
-    //std::wstring     m_strength;
-    //std::wstring     m_strengthDirection;
+    StrengthType     m_strength;
+    ECRelatedInstanceDirection     m_strengthDirection;
 
     //  Lifecycle management:  For now, to keep it simple, the class constructor is private.  The schema implementation will
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
     //  of a schema.
-    ECRelationshipClass (ECSchemaCR schema) : ECClass (schema) {};
-
+    ECRelationshipClass (ECSchemaCR schema) : ECClass (schema), m_strength( STRENGTHTYPE_Referencing), m_strengthDirection(STRENGTHDIRECTION_Forward) {};
+    
+    ECObjectsStatus SetStrength(const wchar_t * strength);
+    ECObjectsStatus SetStrengthDirection(const wchar_t *direction);
+    
 protected:
     virtual SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode) const override;
 
+    virtual SchemaDeserializationStatus ReadXmlAttributes (MSXML2_IXMLDOMNode& classNode) override;
+    virtual SchemaDeserializationStatus ReadXmlContents (MSXML2_IXMLDOMNode& classNode) override;
+
 /*__PUBLISH_SECTION_START__*/
 public:
-    //EXPORTED_PROPERTY (std::wstring const&, Strength);                
-    //EXPORTED_PROPERTY (std::wstring const&, StrengthDirection);                
+    EXPORTED_PROPERTY (StrengthType, Strength);                
+    EXPORTED_PROPERTY (ECRelatedInstanceDirection, StrengthDirection);
+    EXPORTED_READONLY_PROPERTY (bool, IsExplicit);
 
 }; // ECRelationshipClass
 
 typedef std::list<ECSchemaP> ECSchemaReferenceList;
 typedef RefCountedPtr<ECSchema>                  ECSchemaPtr;
-
 //=======================================================================================
 //! Supports STL like iterator of classes in a schema
 struct ECClassContainer /*__PUBLISH_ABSTRACT__*/
@@ -546,11 +610,14 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 enum SchemaMatchType
     {
-    SCHEMAMATCHTYPE_Exact               =   0,  //! Find exact VersionMajor, VersionMinor match.
-    SCHEMAMATCHTYPE_LatestCompatible    =   1,  //! Find latest version with matching VersionMajor and VersionMinor that is equal or greater.
-    SCHEMAMATCHTYPE_Latest              =   2,  //! Find latest version.
+    //! Find exact VersionMajor, VersionMinor match.
+    SCHEMAMATCHTYPE_Exact               =   0,
+    //! Find latest version with matching VersionMajor and VersionMinor that is equal or greater.
+    SCHEMAMATCHTYPE_LatestCompatible    =   1,
+    //! Find latest version.
+    SCHEMAMATCHTYPE_Latest              =   2,
     };
-    
+   
 //=======================================================================================
 //! Interface implemented by class that provides schema location services.</summary>
 struct IECSchemaLocator
