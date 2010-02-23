@@ -455,7 +455,7 @@ ECClassCR baseClass
             }
         }
 
-    if (this == &baseClass || ClassesAreEqualByName(this, &baseClass) || TraverseBaseClasses(&CheckBaseClassCycles, true, this))
+    if (this == &baseClass || ClassesAreEqualByName(this, &baseClass) || baseClass.TraverseBaseClasses(&CheckBaseClassCycles, true, this))
         return ECOBJECTS_STATUS_BaseClassUnacceptable;
         
     ECBaseClassesVector::const_iterator baseClassIterator;
@@ -527,7 +527,7 @@ bool ECClass::TraverseBaseClasses
 TraversalDelegate traverseMethod, 
 bool recursive,
 ECClassCP arg
-)
+) const
     {
     if (m_baseClasses.size() == 0)
         return false;

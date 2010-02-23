@@ -389,7 +389,7 @@ private:
     
     static bool ClassesAreEqualByName(ECClassCP thisClass, ECClassCP thatClass);
     static bool CheckBaseClassCycles(ECClassCP thisClass, ECClassCP proposedParentClass);
-    bool TraverseBaseClasses(TraversalDelegate traverseMethod, bool recursive, ECClassCP arg);
+    bool TraverseBaseClasses(TraversalDelegate traverseMethod, bool recursive, ECClassCP arg) const;
 
 protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
