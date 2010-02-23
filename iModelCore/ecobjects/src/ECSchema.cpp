@@ -718,6 +718,16 @@ SchemaMap* schemasUnderConstruction
     filepath[wcslen(filepath)-1] = '\0';
     standardPaths.push_back(filepath);
 
+    wchar_t schemaPath[_MAX_PATH];
+    wchar_t generalPath[_MAX_PATH];
+    wchar_t libraryPath[_MAX_PATH];
+    
+    swprintf(schemaPath, _MAX_PATH, L"%s\\Schemas", filepath);
+    swprintf(generalPath, _MAX_PATH, L"%s\\Schemas\\General", filepath);
+    swprintf(libraryPath, _MAX_PATH, L"%s\\Schemas\\LibraryUnits", filepath);
+    standardPaths.push_back(schemaPath);
+    standardPaths.push_back(generalPath);
+    standardPaths.push_back(libraryPath);
     return LocateSchemaByPath(schemaLocators, &standardPaths, name, versionMajor, versionMinor, schemasUnderConstruction);
     }
     
