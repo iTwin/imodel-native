@@ -30,6 +30,12 @@ static bool     PrimitiveTypeIsFixedSize (PrimitiveType primitiveType)
         case PRIMITIVETYPE_String:
         case PRIMITIVETYPE_Binary:
             return false;
+        // the following are not yet implemented
+        case PRIMITIVETYPE_Boolean:
+        case PRIMITIVETYPE_Point2D:
+        case PRIMITIVETYPE_Point3D:
+        case PRIMITIVETYPE_DateTime: 
+            return true;
         default:
             DEBUG_FAIL("Unsupported data type");
             return false;
@@ -568,6 +574,15 @@ UInt32          ClassLayout::GetFixedPrimitiveValueSize (PrimitiveType primitive
             return sizeof(Int64);
         case EC::PRIMITIVETYPE_Double:
             return sizeof(double);
+        // the following are not yet implemented
+        case PRIMITIVETYPE_Boolean:
+            return sizeof(bool);
+        case PRIMITIVETYPE_Point2D:
+            return 2*sizeof(double);
+        case PRIMITIVETYPE_Point3D:
+            return 3*sizeof(double);
+        case PRIMITIVETYPE_DateTime:
+            return sizeof(long); //ticks
         default:
             DEBUG_FAIL("Most datatypes have not yet been implemented... or perhaps you have passed in a variable-sized type.");
             return 0;

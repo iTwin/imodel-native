@@ -751,6 +751,39 @@ TEST (MemoryLayoutTests, Values) // move it!
     wchar_t const * wcnull = snull.GetString();
     EXPECT_EQ (NULL, s.GetString());
     
+    //bool
+    ECValue boolVal;
+    boolVal.SetBoolean (true);
+    EXPECT_TRUE (boolVal.IsBoolean());
+    EXPECT_TRUE (boolVal.GetBoolean());
+
+    //DPoint3d
+    DPoint3d inPoint3 = {10.0, 100.0, 1000.0};
+    ECValue pntVal3;
+    pntVal3.SetPoint3D (inPoint3);
+    DPoint3d outPoint3 = pntVal3.GetPoint3D ();
+    EXPECT_TRUE (pntVal3.IsPoint3D());
+    EXPECT_TRUE (0 == memcmp(&inPoint3, &outPoint3, sizeof(outPoint3)));
+
+    //DPoint2d
+    DPoint2d inPoint2 = {10.0, 100.0};
+    ECValue pntVal2;
+    pntVal2.SetPoint2D (inPoint2);
+    EXPECT_TRUE (pntVal2.IsPoint2D());
+    DPoint2d outPoint2 = pntVal2.GetPoint2D ();
+    EXPECT_TRUE (0 == memcmp(&inPoint2, &outPoint2, sizeof(outPoint2)));
+
+    // DateTime
+    ECValue dateValue;
+    SystemTime now = SystemTime::GetLocalTime();
+    SystemTime nowtoo;
+    SystemTime nowUTC = SystemTime::GetSystemTime();
+    dateValue.SetDateTime (now);
+    Int64 ticks = dateValue.GetDateTimeTicks ();
+    EXPECT_TRUE (dateValue.IsDateTime());
+    dateValue.GetDateTime (nowtoo);
+    EXPECT_TRUE (0 == memcmp(&nowtoo, &now, sizeof(nowtoo)));
+
     // WIP_FUSION - test array values
     }
   

@@ -754,7 +754,43 @@ TEST(SchemaCreationTest, CanFullyCreateASchema)
 
     }
     
-TEST(ClassPropertiesTest, ExpectPropertiesInOrder)
+TEST(ClassTest, ExpectErrorWithCircularBaseClasses)
+    {
+    ECSchemaPtr schema;
+    ECClassP class1;
+    ECClassP baseClass1;
+    ECClassP baseClass2;
+    
+    ECSchema::CreateSchema(schema, L"TestSchema");
+    schema->CreateClass(class1, L"TestClass");
+    schema->CreateClass(baseClass1, L"BaseClass1");
+    schema->CreateClass(baseClass2, L"BaseClass2");
+    
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->AddBaseClass(*baseClass1));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, baseClass1->AddBaseClass(*baseClass2));
+    EXPECT_EQ(ECOBJECTS_STATUS_BaseClassUnacceptable, baseClass2->AddBaseClass(*class1));
+    }
+    
+TEST(ClassTest, IsTests)
+    {
+    ECSchemaPtr schema;
+    ECClassP class1;
+    ECClassP baseClass1;
+    ECClassP baseClass2;
+    
+    ECSchema::CreateSchema(schema, L"TestSchema");
+    schema->CreateClass(class1, L"TestClass");
+    schema->CreateClass(baseClass1, L"BaseClass1");
+    schema->CreateClass(baseClass2, L"BaseClass2");
+    
+    EXPECT_FALSE(class1->Is(baseClass1));
+    class1->AddBaseClass(*baseClass1);
+    EXPECT_TRUE(class1->Is(baseClass1));
+    
+    }
+    
+    
+TEST(ClassTest, ExpectPropertiesInOrder)
     {
     std::vector<const wchar_t *> propertyNames;
     propertyNames.push_back(L"beta");

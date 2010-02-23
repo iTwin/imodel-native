@@ -9,26 +9,30 @@
 /*__PUBLISH_SECTION_START__*/
 
 #include <ECObjects\ECObjects.h>
-
-#if get_these_from_geomlibs // WIP_FUSION
-// needswork, need to reconcile these with the dpoint types defined in geomlibs
-struct DPoint2d
-    {
-    double x;
-    double y;
-    };
-    
-struct DPoint3d
-    {
-    double x;
-    double y;
-    double z;
-    };
-#endif
+#include <Geom\GeomApi.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-    
+//! SystemTime structure is used to set and get time data from ECValue objects.
+//! @group "ECInstance"
+//! @see ECValue
+struct SystemTime
+{
+public:
+    unsigned short wYear;
+    unsigned short wMonth;
+    unsigned short wDayOfWeek;
+    unsigned short wDay;
+    unsigned short wHour;
+    unsigned short wMinute;
+    unsigned short wSecond;
+    unsigned short wMilliseconds;
+
+    ECOBJECTS_EXPORT SystemTime(unsigned short year=1601, unsigned short month=1, unsigned short day=1, unsigned short hour=0, unsigned short minute=0, unsigned short second=0, unsigned short milliseconds=0);
+    ECOBJECTS_EXPORT static SystemTime GetLocalTime();
+    ECOBJECTS_EXPORT static SystemTime GetSystemTime();
+    };
+
 //! Information about an array in an EC::IECInstance. Does not contain the actual elements.
 //! @group "ECInstance"
 //! @see ECValue
@@ -95,11 +99,9 @@ protected:
         ::Int64         m_long64;
         double          m_double;
         StringInfo      m_stringInfo;
-        const wchar_t * m_dateTime;
-#if get_these_from_geomlibs
+        ::Int64         m_dateTime;
         DPoint2d        m_dPoint2d;   
-        DPoint3d        m_dpoint3d;   
-#endif
+        DPoint3d        m_dPoint3d;   
         ArrayInfo       m_arrayInfo;
         BinaryInfo      m_binaryInfo;
         
@@ -139,7 +141,12 @@ public:
     ECOBJECTS_EXPORT bool           IsLong () const;
     ECOBJECTS_EXPORT bool           IsDouble () const;
     ECOBJECTS_EXPORT bool           IsBinary () const;
+    ECOBJECTS_EXPORT bool           IsBoolean () const;
     
+    ECOBJECTS_EXPORT bool           IsPoint2D () const; 
+    ECOBJECTS_EXPORT bool           IsPoint3D () const; 
+    ECOBJECTS_EXPORT bool           IsDateTime () const; 
+
     ECOBJECTS_EXPORT bool           IsArray () const;
     ECOBJECTS_EXPORT bool           IsStruct () const;
     ECOBJECTS_EXPORT bool           IsPrimitive () const;
@@ -156,7 +163,10 @@ public:
     
     ECOBJECTS_EXPORT Int64          GetLong () const;
     ECOBJECTS_EXPORT StatusInt      SetLong (Int64 long64);
-    
+ 
+    ECOBJECTS_EXPORT bool           GetBoolean () const;
+    ECOBJECTS_EXPORT StatusInt      SetBoolean (bool value);
+
     //! @returns    The double held by the ECValue, or std::numeric_limits<double>::quiet_NaN() if it is not a double or IsNull
     ECOBJECTS_EXPORT double         GetDouble () const;
     ECOBJECTS_EXPORT StatusInt      SetDouble (double value);  
@@ -170,6 +180,19 @@ public:
     ECOBJECTS_EXPORT IECInstancePtr  GetStruct() const;
     ECOBJECTS_EXPORT StatusInt       SetStruct (IECInstanceR structInstance);
         
+    ECOBJECTS_EXPORT StatusInt      GetDateTime(SystemTime& systemTime);
+    ECOBJECTS_EXPORT StatusInt      SetDateTime (SystemTime& systemTime); 
+
+    ECOBJECTS_EXPORT Int64          GetDateTimeTicks() const;
+    ECOBJECTS_EXPORT StatusInt      SetDateTimeTicks (Int64 value);
+
+    ECOBJECTS_EXPORT DPoint2d       GetPoint2D() const;
+    ECOBJECTS_EXPORT StatusInt      SetPoint2D (DPoint2d value);
+
+    ECOBJECTS_EXPORT DPoint3d       GetPoint3D() const;
+    ECOBJECTS_EXPORT StatusInt      SetPoint3D (DPoint3d value);
+
+
     //! This is intended for debugging purposes, not for presentation purposes.
     ECOBJECTS_EXPORT std::wstring   ToString () const;
     

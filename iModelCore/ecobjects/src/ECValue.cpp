@@ -6,8 +6,58 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
+#include <windows.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+SystemTime::SystemTime
+(
+unsigned short year, 
+unsigned short month, 
+unsigned short day, 
+unsigned short hour, 
+unsigned short minute, 
+unsigned short second, 
+unsigned short milliseconds
+)
+    {
+    wYear =  (year >= 1601 && year < 9999) ? year : 1601;
+    wMonth = (month > 0 && month <= 12)? month : 1;
+    wDay = (day > 0 && day <= 31) ? day : 1; // TODO: need better validation
+    wHour = (hour >= 0 && hour < 24) ? hour : 0;
+    wMinute = (minute >= 0 && minute < 60) ? minute : 0;
+    wSecond = (second >= 0 && second < 60) ? second : 0;
+    wMilliseconds = (milliseconds >= 0 && milliseconds < 1000) ? milliseconds : 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Time in local time zone
+* @bsimethod                                    Bill.Steinbock                  02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+SystemTime SystemTime::GetLocalTime()
+    {
+    SYSTEMTIME wtime;
+    ::GetLocalTime(&wtime);
+    SystemTime time;
+    memcpy (&time, &wtime, sizeof(time));
+    return time;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* UTC time
+* @bsimethod                                    Bill.Steinbock                  02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+SystemTime SystemTime::GetSystemTime()
+    {
+    SYSTEMTIME wtime;
+    ::GetSystemTime(&wtime);
+    SystemTime time;
+    memcpy (&time, &wtime, sizeof(time));
+    return time;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
@@ -56,6 +106,7 @@ bool            ECValue::IsString () const
     { 
     return m_primitiveType == PRIMITIVETYPE_String; 
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -63,6 +114,7 @@ bool            ECValue::IsBinary () const
     { 
     return m_primitiveType == PRIMITIVETYPE_Binary; 
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -87,6 +139,38 @@ bool            ECValue::IsDouble () const
     return m_primitiveType == PRIMITIVETYPE_Double; 
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            ECValue::IsBoolean () const 
+    { 
+    return m_primitiveType == PRIMITIVETYPE_Boolean; 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            ECValue::IsPoint2D () const 
+    { 
+    return m_primitiveType == PRIMITIVETYPE_Point2D; 
+    }
+                                       
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            ECValue::IsPoint3D () const 
+    { 
+    return m_primitiveType == PRIMITIVETYPE_Point3D; 
+    }
+
+ /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            ECValue::IsDateTime () const 
+    { 
+    return m_primitiveType == PRIMITIVETYPE_DateTime; 
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -224,7 +308,6 @@ ECValueR ECValue::operator= (ECValueCR rhs)
     return *this;
     }        
     
-
 /*---------------------------------------------------------------------------------**//**
 * Construct an uninitialized value
 * @bsimethod                                                    CaseyMullen     09/09
@@ -383,6 +466,155 @@ StatusInt       ECValue::SetDouble (double value)
     m_isNull    = false;
     m_primitiveType  = PRIMITIVETYPE_Double;
     m_double    = value;
+    
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bool          ECValue::GetBoolean() const
+    {
+    PRECONDITION (IsBoolean() && "Tried to get boolean value from an EC::ECValue that is not a boolean.", 0);
+    PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", 0);
+    return m_boolean;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       ECValue::SetBoolean (bool value)
+    {
+    m_isNull         = false;
+    m_primitiveType  = PRIMITIVETYPE_Boolean;
+    m_boolean        = value;
+    
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+Int64          ECValue::GetDateTimeTicks() const
+    {
+    PRECONDITION (IsDateTime() && "Tried to get DateTime value from an EC::ECValue that is not a DateTime.", 0);
+    PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", 0);
+    return m_dateTime;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       ECValue::SetDateTimeTicks (Int64 value)
+    {
+    m_isNull         = false;
+    m_primitiveType  = PRIMITIVETYPE_DateTime;
+    m_dateTime       = value;
+    
+    return SUCCESS;
+    }
+
+//////////////////////////////////////////////////////////////////////////////////////////
+// Native Code
+// FILETIME   - A file time is a 64-bit value that represents the number of 100-nanosecond 
+//              intervals that have elapsed since 00:00:00 01/01/1601.
+//
+// SYSTEMTIME - A structure that specifies a date and time, using individual members for 
+//              the month, day, year, weekday, hour, minute, second, and millisecond.
+//
+//---------------------------------------------------------------------------------------
+// Managed Code
+// DateTime   - The DateTime.Ticks value stored in a ECXAttribute represents the number 
+//              of 100-nanosecond  intervals that have elapsed since 00:00:00 01/01/01 
+//////////////////////////////////////////////////////////////////////////////////////////
+
+static const Int64 TICKADJUSTMENT = 504911232000000000;     // ticks between 01/01/01 and 01/01/1601
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt          ECValue::GetDateTime (SystemTime& systemTime) 
+    {
+    Int64 systemDateTicks = GetDateTimeTicks ();
+
+    // m_dateTime is number of ticks since 00:00:00 01/01/01 - Fileticks are relative to 00:00:00 01/01/1601
+    systemDateTicks -= TICKADJUSTMENT; 
+    FILETIME fileTime;
+    fileTime.dwLowDateTime  = systemDateTicks & 0xffffffff;
+    fileTime.dwHighDateTime = systemDateTicks >> 32;
+    SYSTEMTIME  tempTime;
+    if (FileTimeToSystemTime (&fileTime, &tempTime))
+        {
+        memcpy (&systemTime, &tempTime, sizeof(systemTime));
+        return SUCCESS;
+        }
+
+    return ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt          ECValue::SetDateTime (SystemTime& systemTime) 
+    {
+    FILETIME fileTime;
+    SYSTEMTIME wtime;
+    memcpy (&wtime, &systemTime, sizeof(wtime));
+
+    // m_dateTime is number of ticks since 00:00:00 01/01/01 - Fileticks are relative to 00:00:00 01/01/1601
+    if (SystemTimeToFileTime (&wtime, &fileTime))
+        {
+        Int64 systemDateTicks = (Int64)fileTime.dwLowDateTime | ((Int64)fileTime.dwHighDateTime << 32);
+        systemDateTicks += TICKADJUSTMENT; 
+        return SetDateTimeTicks (systemDateTicks);
+        }
+
+    return ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint2d          ECValue::GetPoint2D() const
+    {
+    DPoint2d badValue = {0.0,0.0};
+    PRECONDITION (IsPoint2D() && "Tried to get Point2D value from an EC::ECValue that is not a Point2D.", badValue);
+    PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", badValue);
+    return m_dPoint2d;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       ECValue::SetPoint2D (DPoint2d value)
+    {
+    m_isNull         = false;
+    m_primitiveType  = PRIMITIVETYPE_Point2D;
+    m_dPoint2d       = value;
+    
+    return SUCCESS;
+    }
+
+ /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint3d          ECValue::GetPoint3D() const
+    {
+    DPoint3d badValue = {0.0,0.0,0.0};
+
+    PRECONDITION (IsPoint3D() && "Tried to get Point3D value from an EC::ECValue that is not a Point3D.", badValue);
+    PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", badValue);
+    return m_dPoint3d;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       ECValue::SetPoint3D (DPoint3d value)
+    {
+    m_isNull         = false;
+    m_primitiveType  = PRIMITIVETYPE_Point3D;
+    m_dPoint3d       = value;
     
     return SUCCESS;
     }
@@ -632,5 +864,6 @@ bool            ArrayInfo::IsStructArray() const
     {        
     return GetKind() == ARRAYKIND_Struct; 
     }  
+
 
 END_BENTLEY_EC_NAMESPACE
