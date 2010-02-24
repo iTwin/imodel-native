@@ -358,7 +358,43 @@ ECValue::ECValue (::Int64 long64)
     ConstructUninitialized();
     SetLong (long64);
     };
-            
+         
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValue::ECValue (DPoint2dR point2d)
+    {
+    ConstructUninitialized();
+    SetPoint2D (point2d);
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValue::ECValue (DPoint3dR point3d)
+    {
+    ConstructUninitialized();
+    SetPoint3D (point3d);
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValue::ECValue (bool value)
+    {
+    ConstructUninitialized();
+    SetBoolean (value);
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValue::ECValue (SystemTime& time)
+    {
+    ConstructUninitialized();
+    SetDateTime (time);
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @param holdADuplicate     If true, EC::ECValue will make a duplicate, otherwise 
 * EC::ECValue holds the original pointer. Intended only for use when initializing arrays of strings, to avoid duplicating them twice.
@@ -586,7 +622,7 @@ DPoint2d          ECValue::GetPoint2D() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ECValue::SetPoint2D (DPoint2d value)
+StatusInt       ECValue::SetPoint2D (DPoint2dR value)
     {
     m_isNull         = false;
     m_primitiveType  = PRIMITIVETYPE_Point2D;
@@ -610,7 +646,7 @@ DPoint3d          ECValue::GetPoint3D() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ECValue::SetPoint3D (DPoint3d value)
+StatusInt       ECValue::SetPoint3D (DPoint3dR value)
     {
     m_isNull         = false;
     m_primitiveType  = PRIMITIVETYPE_Point3D;

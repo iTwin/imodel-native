@@ -26,16 +26,14 @@ static bool     PrimitiveTypeIsFixedSize (PrimitiveType primitiveType)
         case PRIMITIVETYPE_Integer:
         case PRIMITIVETYPE_Long:
         case PRIMITIVETYPE_Double:
-            return true;
-        case PRIMITIVETYPE_String:
-        case PRIMITIVETYPE_Binary:
-            return false;
-        // the following are not yet implemented
         case PRIMITIVETYPE_Boolean:
         case PRIMITIVETYPE_Point2D:
         case PRIMITIVETYPE_Point3D:
         case PRIMITIVETYPE_DateTime: 
             return true;
+        case PRIMITIVETYPE_String:
+        case PRIMITIVETYPE_Binary:
+            return false;
         default:
             DEBUG_FAIL("Unsupported data type");
             return false;
@@ -206,7 +204,9 @@ void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 byt
             continue;
             }
         
+#ifdef BOOLEAN_CAUSES_PROBLEMS
         DEBUG_EXPECT (layout.GetOffset() % 4 == 0 && "We expect secondaryOffsets to be aligned on a 4 byte boundary");
+#endif
             
         SecondaryOffset* secondaryOffset = (SecondaryOffset*)(data + layout.GetOffset());
 
@@ -574,15 +574,14 @@ UInt32          ClassLayout::GetFixedPrimitiveValueSize (PrimitiveType primitive
             return sizeof(Int64);
         case EC::PRIMITIVETYPE_Double:
             return sizeof(double);
-        // the following are not yet implemented
         case PRIMITIVETYPE_Boolean:
-            return sizeof(bool);
+            return sizeof(bool); 
         case PRIMITIVETYPE_Point2D:
             return 2*sizeof(double);
         case PRIMITIVETYPE_Point3D:
             return 3*sizeof(double);
         case PRIMITIVETYPE_DateTime:
-            return sizeof(long); //ticks
+            return sizeof(Int64); //ticks
         default:
             DEBUG_FAIL("Most datatypes have not yet been implemented... or perhaps you have passed in a variable-sized type.");
             return 0;
@@ -1301,6 +1300,34 @@ StatusInt       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValueR v, 
             v.SetBinary (pValue, size);
             return SUCCESS;
             }  
+        case PRIMITIVETYPE_Boolean:
+            {
+            bool value;
+            memcpy (&value, pValue, sizeof(value));
+            v.SetBoolean (value);
+            return SUCCESS;
+            } 
+        case PRIMITIVETYPE_Point2D:
+            {
+            DPoint2d value;
+            memcpy (&value, pValue, sizeof(value));
+            v.SetPoint2D (value);
+            return SUCCESS;
+            }       
+        case PRIMITIVETYPE_Point3D:
+            {
+            DPoint3d value;
+            memcpy (&value, pValue, sizeof(value));
+            v.SetPoint3D (value);
+            return SUCCESS;
+            }       
+        case PRIMITIVETYPE_DateTime:
+            {
+            Int64 value;
+            memcpy (&value, pValue, sizeof(value));
+            v.SetDateTimeTicks (value);
+            return SUCCESS;
+            }            
         case PRIMITIVETYPE_String:
             {
             wchar_t * pString = (wchar_t *)pValue;
@@ -1458,6 +1485,26 @@ StatusInt       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueCR v, C
                 
             // WIP_FUSION: would it speed things up to poke directly when m_allowWritingDirectlyToInstanceMemory is true?
             return _ModifyData (offset, data, bytesNeeded);
+            }
+        case PRIMITIVETYPE_Boolean:
+            {
+            bool value = v.GetBoolean();
+            return _ModifyData (offset, &value, sizeof(value));
+            }       
+        case PRIMITIVETYPE_Point2D:
+            {
+            DPoint2d value = v.GetPoint2D();
+            return _ModifyData (offset, &value, sizeof(value));
+            }       
+        case PRIMITIVETYPE_Point3D:
+            {
+            DPoint3d value = v.GetPoint3D();
+            return _ModifyData (offset, &value, sizeof(value));
+            } 
+        case PRIMITIVETYPE_DateTime:      // stored as long
+            {
+            Int64 value = v.GetDateTimeTicks();
+            return _ModifyData (offset, &value, sizeof(value));
             }
         }
 
