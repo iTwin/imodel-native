@@ -104,6 +104,8 @@ protected:
         DPoint3d        m_dPoint3d;   
         ArrayInfo       m_arrayInfo;
         BinaryInfo      m_binaryInfo;
+        
+        IECInstanceP  m_structInstance;
         };
 
     void DeepCopy (ECValueCR v);
@@ -174,6 +176,9 @@ public:
 
     ECOBJECTS_EXPORT const byte *   GetBinary (size_t& size) const;
     ECOBJECTS_EXPORT StatusInt      SetBinary (const byte * string, size_t size);
+    
+    ECOBJECTS_EXPORT IECInstancePtr  GetStruct() const;
+    ECOBJECTS_EXPORT StatusInt       SetStruct (IECInstanceR structInstance);
         
     ECOBJECTS_EXPORT StatusInt      GetDateTime(SystemTime& systemTime);
     ECOBJECTS_EXPORT StatusInt      SetDateTime (SystemTime& systemTime); 

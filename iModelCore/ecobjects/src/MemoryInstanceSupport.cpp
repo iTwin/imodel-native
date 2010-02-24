@@ -49,7 +49,9 @@ static bool     PrimitiveTypeIsFixedSize (PrimitiveType primitiveType)
 +---------------+---------------+---------------+---------------+---------------+------*/    
 static inline bool      IsArrayOfFixedSizeElements (PropertyLayoutCR propertyLayout)
     {
-    if (PrimitiveTypeIsFixedSize (propertyLayout.GetTypeDescriptor().GetPrimitiveType()))
+    ECTypeDescriptor typedescriptor = propertyLayout.GetTypeDescriptor();
+    
+    if ((typedescriptor.IsPrimitiveArray()) && (PrimitiveTypeIsFixedSize (typedescriptor.GetPrimitiveType())))
         return true;
     else
         return false;
@@ -439,6 +441,14 @@ void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, wchar_t 
                     else
                         AddVariableSizeProperty (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()));
                     }
+                }
+            else if ((arrayKind == ARRAYKIND_Struct) && (!addingFixedSizeProps))
+                {
+                bool isFixedArrayCount = (arrayProp->GetMinOccurs() == arrayProp->GetMaxOccurs());
+                if (isFixedArrayCount)
+                    AddVariableSizeArrayPropertyWithFixedCount (propName.c_str(), ECTypeDescriptor::CreateStructArrayTypeDescriptor(), arrayProp->GetMinOccurs());
+                else
+                    AddVariableSizeProperty (propName.c_str(), ECTypeDescriptor::CreateStructArrayTypeDescriptor());                
                 }
             }
         }
@@ -1255,8 +1265,14 @@ StatusInt       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValueR v, 
 
     byte const * pValue = GetAddressOfPropertyValue (propertyLayout, nIndices, indices);
 
-    ECTypeDescriptor typeDescriptor = propertyLayout.GetTypeDescriptor();    
-    switch (typeDescriptor.GetPrimitiveType())
+    ECTypeDescriptor typeDescriptor = propertyLayout.GetTypeDescriptor();
+    PrimitiveType primitiveType;
+    if (typeDescriptor.IsPrimitive() || (typeDescriptor.IsPrimitiveArray()))
+        primitiveType = typeDescriptor.GetPrimitiveType();
+    else
+        primitiveType = PRIMITIVETYPE_Binary;
+        
+    switch (primitiveType)       
         {
         case PRIMITIVETYPE_Integer:
             {
@@ -1317,26 +1333,31 @@ StatusInt       MemoryInstanceSupport::GetValueFromMemory (ECValueR v, PropertyL
         if (!EXPECTED_CONDITION (nIndices == 0))        
             return ERROR;
         return GetPrimitiveValueFromMemory (v, propertyLayout, nIndices, indices);
-        }
-    else if (typeDescriptor.IsPrimitiveArray())
+        }    
+    else if (typeDescriptor.IsArray())
         {                
         UInt32 arrayCount = GetReservedArrayCount (propertyLayout);
         
         if (nIndices == 0)
             {    
             bool isFixedArrayCount = propertyLayout.GetModifierFlags() & ARRAYMODIFIERFLAGS_IsFixedCount;                            
-            v.SetPrimitiveArrayInfo (typeDescriptor.GetPrimitiveType(), arrayCount, isFixedArrayCount);
-            return SUCCESS;
+            if (typeDescriptor.IsPrimitiveArray())
+                return v.SetPrimitiveArrayInfo (typeDescriptor.GetPrimitiveType(), arrayCount, isFixedArrayCount);
+            else if (typeDescriptor.IsStructArray())
+                return v.SetStructArrayInfo (arrayCount, isFixedArrayCount);
             }
         else
             {                        
             if (*indices >= arrayCount)
                 return ERROR; // WIP_FUSION ERROR_InvalidIndex                
 
-            return GetPrimitiveValueFromMemory (v, propertyLayout, nIndices, indices);
+            if (typeDescriptor.IsPrimitiveArray())
+                return GetPrimitiveValueFromMemory (v, propertyLayout, nIndices, indices);
+            else if (typeDescriptor.IsStructArray())
+                return _GetStructArrayValueFromMemory (v, propertyLayout, nIndices, indices);       
             }
         }
-
+        
     POSTCONDITION (false && "Can not obtain value from memory using the specified property layout because it is an unsupported datatype", ERROR);        
     }
     
@@ -1380,7 +1401,14 @@ StatusInt       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueCR v, C
 #ifdef EC_TRACE_MEMORY 
     wprintf (L"SetValue %s of 0x%x at offset=%d to %s.\n", propertyAccessString, this, offset, v.ToString().c_str());
 #endif    
-    switch (propertyLayout.GetTypeDescriptor().GetPrimitiveType())
+    ECTypeDescriptor typeDescriptor = propertyLayout.GetTypeDescriptor();
+    PrimitiveType primitiveType;
+    if (typeDescriptor.IsPrimitive() || (typeDescriptor.IsPrimitiveArray()))
+        primitiveType = typeDescriptor.GetPrimitiveType();
+    else
+        primitiveType = PRIMITIVETYPE_Binary;
+        
+    switch (primitiveType)
         {
         case PRIMITIVETYPE_Integer:
             {
@@ -1434,7 +1462,7 @@ StatusInt       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueCR v, C
         }
 
     POSTCONDITION (false && "datatype not implemented", ERROR);
-    }        
+    }            
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
@@ -1462,14 +1490,17 @@ StatusInt       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayo
             return ERROR;
         return SetPrimitiveValueToMemory (v, classLayout, *propertyLayout, nIndices, indices);
         }
-    else if (typeDescriptor.IsPrimitiveArray())
+    else if (typeDescriptor.IsArray())
         {
         if (nIndices == 1)
             {            
             if (*indices >= GetReservedArrayCount (*propertyLayout))
                 return ERROR; // WIP_FUSION ERROR_InvalidIndex
 
-            return SetPrimitiveValueToMemory (v, classLayout, *propertyLayout, nIndices, indices);
+            if (typeDescriptor.IsPrimitiveArray())
+                return SetPrimitiveValueToMemory (v, classLayout, *propertyLayout, nIndices, indices);
+            else if (typeDescriptor.IsStructArray())               
+                return _SetStructArrayValueToMemory (v, classLayout, *propertyLayout, nIndices, indices);       
             }
         }
 
@@ -1577,7 +1608,11 @@ ArrayResizer::ArrayResizer (ClassLayoutCR classLayout, PropertyLayoutCR property
     {                
     m_preAllocatedArrayCount = m_instance.GetAllocatedArrayCount (propertyLayout);    
             
-    m_elementType = propertyLayout.GetTypeDescriptor().GetPrimitiveType();
+    ECTypeDescriptor typeDescriptor = propertyLayout.GetTypeDescriptor();
+    if (typeDescriptor.IsPrimitiveArray())
+        m_elementType = typeDescriptor.GetPrimitiveType();
+    else
+        m_elementType = PRIMITIVETYPE_Binary;
     m_elementTypeIsFixedSize = IsArrayOfFixedSizeElements (propertyLayout);
     if (m_elementTypeIsFixedSize)
         m_elementSizeInFixedSection = ClassLayout::GetFixedPrimitiveValueSize (m_elementType);

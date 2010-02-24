@@ -15,7 +15,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, byte * data, UInt32 size) :
         MemoryInstanceSupport (true),
         m_sharedWipEnabler(const_cast<StandaloneECEnablerP>(&enabler)), // WIP_FUSION: can we get rid of the const cast?
-        m_bytesAllocated(size), m_data(data) 
+        m_bytesAllocated(size), m_data(data), m_structValueId (0)
     {
     }
 
@@ -25,7 +25,7 @@ StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, byte 
 StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, UInt32 minimumBufferSize) :
         MemoryInstanceSupport (true),
         m_sharedWipEnabler(const_cast<StandaloneECEnablerP>(&enabler)), // WIP_FUSION: can we get rid of the const cast?
-        m_bytesAllocated(0), m_data(NULL) 
+        m_bytesAllocated(0), m_data(NULL), m_structValueId (0)
     {
     UInt32 size = max (minimumBufferSize, enabler.GetClassLayout().GetSizeOfFixedSection());
     m_data = (byte*)malloc (size);
@@ -247,6 +247,59 @@ StatusInt           StandaloneECInstance::_ClearArray (const wchar_t * propertyA
     {
     return ECOBJECTS_STATUS_OperationNotSupported;
     }                      
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   02/2010
++---------------+---------------+---------------+---------------+---------------+------*/    
+StatusInt       StandaloneECInstance::_GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const
+    {
+    ECValue binaryValue;
+    StatusInt status = GetPrimitiveValueFromMemory (binaryValue, propertyLayout, nIndices, indices);      
+    if ((status != SUCCESS) || (binaryValue.IsNull()))
+        return status;
+                    
+    size_t size;
+    StructValueIdentifier structValueId = *(StructValueIdentifier*)binaryValue.GetBinary (size);    
+
+    // WIP_FUSION - is there realy no better way to do this?  something like m_structValueMap[x];
+    IECInstancePtr instancePtr = NULL;
+    std::map<StructValueIdentifier, IECInstancePtr>::const_iterator  instanceIterator;
+    instanceIterator = m_structValueMap.find (structValueId);    
+    if ( instanceIterator != m_structValueMap.end() )
+        instancePtr = instanceIterator->second;
+       
+    v.SetStruct (*instancePtr);
+    
+    return SUCCESS;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       StandaloneECInstance::_SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices)
+    {
+    IECInstancePtr p;
+    ECValue binaryValue (PRIMITIVETYPE_Binary);
+    m_structValueId++;
+    if (v.IsNull())
+        {
+        p = NULL;
+        binaryValue.SetToNull();
+        }
+    else
+        {
+        p = v.GetStruct();    
+        binaryValue.SetBinary ((const byte *)&(m_structValueId), sizeof (StructValueIdentifier));
+        }
+        
+    StatusInt status = SetPrimitiveValueToMemory (binaryValue, classLayout, propertyLayout, nIndices, indices);      
+    if (status != SUCCESS)
+        return status;
+                    
+    m_structValueMap[m_structValueId] = p;
+    
+    return SUCCESS; 
+    }    
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
