@@ -68,7 +68,7 @@
     <root>                            
         <priority value="warn" />
         <appender-ref ref="Console" />
-        <appender-ref ref="RollingFileAppender" />
+        <!--appender-ref ref="RollingFileAppender" /--> <!-- Keep this commented out by default since we do not want to write to localappdata on firebug & PRG machines-->
     </root>
 
 </log4j:configuration>
