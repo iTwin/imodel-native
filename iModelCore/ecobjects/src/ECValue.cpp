@@ -719,6 +719,10 @@ std::wstring    ECValue::ToString () const
         ArrayInfo arrayInfo = GetArrayInfo();
         valueAsString << "Count: " << arrayInfo.GetCount() << " IsFixedSize: " << arrayInfo.IsFixedCount();
         }
+    else if (IsStruct())
+        {
+        valueAsString << "IECInstance containing struct value";
+        }
     else
         {
         switch (m_valueKind)
@@ -742,7 +746,7 @@ std::wstring    ECValue::ToString () const
                 {
                 valueAsString << GetString();
                 break;          
-                }
+                }            
             default:
                 {
                 valueAsString << L"EC::ECValue::ToString needs work... unsupported data type";
@@ -765,6 +769,8 @@ StatusInt       ECValue::SetStructArrayInfo (UInt32 count, bool isFixedCount)
     m_valueKind                = VALUEKIND_Array;
 
     m_arrayInfo.InitializeStructArray (count, isFixedCount);
+    
+    m_isNull = false; // arrays are never null
     
     return SUCCESS;
     }
