@@ -1635,7 +1635,12 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
                         byte const * realAddress = data + secondaryOffset;
                         
                         logger->tracev (L"      [0x%x][%4.d] -> [0x%x][%4.d] %d = %s\n", address, offset, realAddress, secondaryOffset, i, valueAsString.c_str());                    
-                        }              
+                        }     
+                    if (v.IsStruct())
+                        {
+                        v.GetStruct()->Dump();
+                        logger->tracev (L"=================== END Struct Instance ===========================\n");
+                        }         
                     }
                 }
             }

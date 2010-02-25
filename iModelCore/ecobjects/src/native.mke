@@ -104,21 +104,3 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 #----------------------------------------------------------------------
 %include dlmLink.mki
 
-#----------------------------------------------------------------------
-#  Instead of embedding the standard schemas, now just deliver them.
-#  We have to list them out individually because in the source tree we
-#  have past versions, but we only want to deliver the latest version
-#----------------------------------------------------------------------
-always:
-    @CreateSymLinks.py -f"$(ContextDeliveryDir)/Schemas/Bentley_Standard_CustomAttributes.01.02.ecschema.xml=$(ecobjectsSrc)Standards/Bentley_Standard_CustomAttributes.01.02.ecschema.xml"
-    @CreateSymLinks.py -f"$(ContextDeliveryDir)/Schemas/Bentley_Standard_Classes.01.00.ecschema.xml=$(ecobjectsSrc)Standards/Bentley_Standard_Classes.01.00.ecschema.xml"
-    @CreateSymLinks.py -f"$(ContextDeliveryDir)/Schemas/General/Bentley_Common_Classes.01.00.ecschema.xml=$(ecobjectsSrc)Standards/General/Bentley_Common_Classes.01.00.ecschema.xml"
-    @CreateSymLinks.py -f"$(ContextDeliveryDir)/Schemas/LibraryUnits/Dimension_Schema.01.00.ecschema.xml=$(ecobjectsSrc)Standards/LibraryUnits/Dimension_Schema.01.00.ecschema.xml"
-    @CreateSymLinks.py -f"$(ContextDeliveryDir)/Schemas/LibraryUnits/iip_mdb_customAttributes.01.00.ecschema.xml=$(ecobjectsSrc)Standards/LibraryUnits/iip_mdb_customAttributes.01.00.ecschema.xml"
-    @CreateSymLinks.py -f"$(ContextDeliveryDir)/Schemas/LibraryUnits/KindOfQuantity_Schema.01.01.ecschema.xml=$(ecobjectsSrc)Standards/LibraryUnits/KindOfQuantity_Schema.01.01.ecschema.xml"
-    @CreateSymLinks.py -f"$(ContextDeliveryDir)/Schemas/LibraryUnits/rdl_customAttributes.01.00.ecschema.xml=$(ecobjectsSrc)Standards/LibraryUnits/rdl_customAttributes.01.00.ecschema.xml"
-    @CreateSymLinks.py -f"$(ContextDeliveryDir)/Schemas/LibraryUnits/SIUnitSystemDefaults.01.00.ecschema.xml=$(ecobjectsSrc)Standards/LibraryUnits/SIUnitSystemDefaults.01.00.ecschema.xml"
-    @CreateSymLinks.py -f"$(ContextDeliveryDir)/Schemas/LibraryUnits/Unit_Attributes.01.00.ecschema.xml=$(ecobjectsSrc)Standards/LibraryUnits/Unit_Attributes.01.00.ecschema.xml"
-    @CreateSymLinks.py -f"$(ContextDeliveryDir)/Schemas/LibraryUnits/Units_Schema.01.00.ecschema.xml=$(ecobjectsSrc)Standards/LibraryUnits/Units_Schema.01.00.ecschema.xml"
-    @CreateSymLinks.py -f"$(ContextDeliveryDir)/Schemas/LibraryUnits/USCustomaryUnitSystemDefaults.01.00.ecschema.xml=$(ecobjectsSrc)Standards/LibraryUnits/USCustomaryUnitSystemDefaults.01.00.ecschema.xml"
-    
