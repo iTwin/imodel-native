@@ -17,6 +17,7 @@ StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, byte 
         m_sharedWipEnabler(const_cast<StandaloneECEnablerP>(&enabler)), // WIP_FUSION: can we get rid of the const cast?
         m_bytesAllocated(size), m_data(data), m_structValueId (0)
     {
+    m_sharedWipEnabler->AddRef ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -31,10 +32,13 @@ StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, UInt3
     m_data = (byte*)malloc (size);
     m_bytesAllocated = size;
     ClearValues();
+    m_sharedWipEnabler->AddRef ();
     }
     
 StandaloneECInstance::~StandaloneECInstance ()
     {
+    m_sharedWipEnabler->Release ();
+
     //Logger::GetLogger()->tracev (L"StandaloneECInstance at 0x%x is being destructed. It references enabler 0x%x", this, m_sharedWipEnabler);
     }
 
