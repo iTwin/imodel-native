@@ -781,6 +781,8 @@ TEST (MemoryLayoutTests, Values) // move it!
     DPoint3d outPoint3 = pntVal3.GetPoint3D ();
     EXPECT_TRUE (pntVal3.IsPoint3D());
     EXPECT_TRUE (0 == memcmp(&inPoint3, &outPoint3, sizeof(outPoint3)));
+    std::wstring point3Str = pntVal3.ToString();
+    EXPECT_TRUE (0 == point3Str.compare (L"{10,100,1000}"));
 
     //DPoint2d
     DPoint2d inPoint2 = {10.0, 100.0};
@@ -788,16 +790,21 @@ TEST (MemoryLayoutTests, Values) // move it!
     EXPECT_TRUE (pntVal2.IsPoint2D());
     DPoint2d outPoint2 = pntVal2.GetPoint2D ();
     EXPECT_TRUE (0 == memcmp(&inPoint2, &outPoint2, sizeof(outPoint2)));
+    std::wstring point2Str = pntVal2.ToString();
+    EXPECT_TRUE (0 == point2Str.compare (L"{10,100}"));
 
     // DateTime
     SystemTime now = SystemTime::GetLocalTime();
     ECValue dateValue (now);
-    SystemTime nowtoo;
     SystemTime nowUTC = SystemTime::GetSystemTime();
     Int64 ticks = dateValue.GetDateTimeTicks ();
     EXPECT_TRUE (dateValue.IsDateTime());
-    dateValue.GetDateTime (nowtoo);
+    SystemTime nowtoo = dateValue.GetDateTime ();
     EXPECT_TRUE (0 == memcmp(&nowtoo, &now, sizeof(nowtoo)));
+    ECValue fixedDate;
+    fixedDate.SetDateTimeTicks (634027121070910000);
+    std::wstring dateStr = fixedDate.ToString();
+    EXPECT_TRUE (0 == point2Str.compare (L"#2010/2/25-16:28:27:91#"));
 
     // WIP_FUSION - test array values
     }

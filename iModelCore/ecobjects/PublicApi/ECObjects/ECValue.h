@@ -31,6 +31,7 @@ public:
     ECOBJECTS_EXPORT SystemTime(unsigned short year=1601, unsigned short month=1, unsigned short day=1, unsigned short hour=0, unsigned short minute=0, unsigned short second=0, unsigned short milliseconds=0);
     ECOBJECTS_EXPORT static SystemTime GetLocalTime();
     ECOBJECTS_EXPORT static SystemTime GetSystemTime();
+    ECOBJECTS_EXPORT std::wstring      ToString ();
     };
 
 //! Information about an array in an EC::IECInstance. Does not contain the actual elements.
@@ -184,7 +185,7 @@ public:
     ECOBJECTS_EXPORT IECInstancePtr  GetStruct() const;
     ECOBJECTS_EXPORT StatusInt       SetStruct (IECInstanceR structInstance);
         
-    ECOBJECTS_EXPORT StatusInt      GetDateTime(SystemTime& systemTime);
+    ECOBJECTS_EXPORT SystemTime     GetDateTime() const;
     ECOBJECTS_EXPORT StatusInt      SetDateTime (SystemTime& systemTime); 
 
     ECOBJECTS_EXPORT Int64          GetDateTimeTicks() const;
