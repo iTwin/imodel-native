@@ -573,31 +573,7 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     VerifyArrayInfo (instance, v, L"VariableArrayVariableElement[]", 0, false);
     VerifyArrayInfo (instance, v, L"EndingArray[]", 0, false);
     
-    // WIP_FUSION, verify other properties of ArrayInfo are correct    
-    
-    {
-    DISABLE_ASSERTS
-    // verify we can not change the size of fixed arrays        
-    ASSERT_TRUE (SUCCESS != instance.InsertArrayElements (L"FixedArrayFixedElement[]", 0, 1));
-    ASSERT_TRUE (SUCCESS != instance.InsertArrayElements (L"FixedArrayFixedElement[]", 10, 1));
-    ASSERT_TRUE (SUCCESS != instance.AddArrayElements    (L"FixedArrayFixedElement[]", 1));
-    ASSERT_TRUE (SUCCESS != instance.InsertArrayElements (L"FixedArrayVariableElement[]", 0, 1));
-    ASSERT_TRUE (SUCCESS != instance.InsertArrayElements (L"FixedArrayVariableElement[]", 12, 1));
-    ASSERT_TRUE (SUCCESS != instance.AddArrayElements    (L"FixedArrayVariableElement[]", 1));
-    
-    // verify constraints of array insertion are enforced
-    ASSERT_TRUE (SUCCESS != instance.InsertArrayElements (L"NonExistArray", 0, 1));
-    ASSERT_TRUE (SUCCESS != instance.InsertArrayElements (L"BeginningArray", 0, 1)); // missing brackets
-    ASSERT_TRUE (SUCCESS != instance.InsertArrayElements (L"BeginningArray[]", 2, 1)); // insert index is invalid    
-    ASSERT_TRUE (SUCCESS != instance.InsertArrayElements (L"BeginningArray[]", 0, 0)); // insert count is invalid    
-    }
-    
-    VerifyOutOfBoundsError (instance, v, L"BeginningArray[]", 0);
-    VerifyOutOfBoundsError (instance, v, L"FixedArrayFixedElement[]", 10);
-    VerifyOutOfBoundsError (instance, v, L"VariableArrayFixedElement[]", 0);
-    VerifyOutOfBoundsError (instance, v, L"FixedArrayVariableElement[]", 12);
-    VerifyOutOfBoundsError (instance, v, L"VariableArrayVariableElement[]", 0);
-    VerifyOutOfBoundsError (instance, v, L"EndingArray[]", 0);                               
+    // WIP_FUSION, verify other properties of ArrayInfo are correct                        
     
     VerifyIsNullArrayElements (instance, v, L"FixedArrayFixedElement[]", 0, 10, true);
     SetAndVerifyIntegerArray (instance, v, L"FixedArrayFixedElement[]", 172, 10);
@@ -692,6 +668,49 @@ TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
     // instance.Compact()... then check values again
     CoUninitialize();
     };
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(MemoryLayoutTests, ExpectErrorsWhenViolatingArrayConstraints)
+    {
+    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+    ECSchemaPtr schema = CreateTestSchema();
+    ASSERT_TRUE (schema != NULL);
+    ECClassP ecClass = schema->GetClassP (L"TestClass");
+    ASSERT_TRUE (ecClass);    
+    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, 24);
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);            
+    EC::StandaloneECInstanceP instance = enabler->CreateInstance();
+
+    {
+    DISABLE_ASSERTS
+    // verify we can not change the size of fixed arrays        
+    ASSERT_TRUE (SUCCESS != instance->InsertArrayElements (L"FixedArrayFixedElement[]", 0, 1));
+    ASSERT_TRUE (SUCCESS != instance->InsertArrayElements (L"FixedArrayFixedElement[]", 10, 1));
+    ASSERT_TRUE (SUCCESS != instance->AddArrayElements    (L"FixedArrayFixedElement[]", 1));
+    ASSERT_TRUE (SUCCESS != instance->InsertArrayElements (L"FixedArrayVariableElement[]", 0, 1));
+    ASSERT_TRUE (SUCCESS != instance->InsertArrayElements (L"FixedArrayVariableElement[]", 12, 1));
+    ASSERT_TRUE (SUCCESS != instance->AddArrayElements    (L"FixedArrayVariableElement[]", 1));
+    
+    // verify constraints of array insertion are enforced
+    ASSERT_TRUE (SUCCESS != instance->InsertArrayElements (L"NonExistArray", 0, 1));
+    ASSERT_TRUE (SUCCESS != instance->InsertArrayElements (L"BeginningArray", 0, 1)); // missing brackets
+    ASSERT_TRUE (SUCCESS != instance->InsertArrayElements (L"BeginningArray[]", 2, 1)); // insert index is invalid    
+    ASSERT_TRUE (SUCCESS != instance->InsertArrayElements (L"BeginningArray[]", 0, 0)); // insert count is invalid    
+    }
+    
+    ECValue v;
+    VerifyOutOfBoundsError (*instance, v, L"BeginningArray[]", 0);
+    VerifyOutOfBoundsError (*instance, v, L"FixedArrayFixedElement[]", 10);
+    VerifyOutOfBoundsError (*instance, v, L"VariableArrayFixedElement[]", 0);
+    VerifyOutOfBoundsError (*instance, v, L"FixedArrayVariableElement[]", 12);
+    VerifyOutOfBoundsError (*instance, v, L"VariableArrayVariableElement[]", 0);
+    VerifyOutOfBoundsError (*instance, v, L"EndingArray[]", 0);                     
+    
+    delete classLayout;
+    CoUninitialize();
+    };    
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
@@ -752,33 +771,29 @@ TEST (MemoryLayoutTests, Values) // move it!
     EXPECT_EQ (NULL, s.GetString());
     
     //bool
-    ECValue boolVal;
-    boolVal.SetBoolean (true);
+    ECValue boolVal(true);
     EXPECT_TRUE (boolVal.IsBoolean());
     EXPECT_TRUE (boolVal.GetBoolean());
 
     //DPoint3d
     DPoint3d inPoint3 = {10.0, 100.0, 1000.0};
-    ECValue pntVal3;
-    pntVal3.SetPoint3D (inPoint3);
+    ECValue pntVal3(inPoint3);
     DPoint3d outPoint3 = pntVal3.GetPoint3D ();
     EXPECT_TRUE (pntVal3.IsPoint3D());
     EXPECT_TRUE (0 == memcmp(&inPoint3, &outPoint3, sizeof(outPoint3)));
 
     //DPoint2d
     DPoint2d inPoint2 = {10.0, 100.0};
-    ECValue pntVal2;
-    pntVal2.SetPoint2D (inPoint2);
+    ECValue pntVal2 (inPoint2);
     EXPECT_TRUE (pntVal2.IsPoint2D());
     DPoint2d outPoint2 = pntVal2.GetPoint2D ();
     EXPECT_TRUE (0 == memcmp(&inPoint2, &outPoint2, sizeof(outPoint2)));
 
     // DateTime
-    ECValue dateValue;
     SystemTime now = SystemTime::GetLocalTime();
+    ECValue dateValue (now);
     SystemTime nowtoo;
     SystemTime nowUTC = SystemTime::GetSystemTime();
-    dateValue.SetDateTime (now);
     Int64 ticks = dateValue.GetDateTimeTicks ();
     EXPECT_TRUE (dateValue.IsDateTime());
     dateValue.GetDateTime (nowtoo);

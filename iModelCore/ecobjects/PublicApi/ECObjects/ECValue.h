@@ -121,11 +121,15 @@ public:
     ECOBJECTS_EXPORT ECValue (ECValueCR v);
     ECOBJECTS_EXPORT ECValue (ValueKind classification);
     ECOBJECTS_EXPORT ECValue (PrimitiveType primitiveType);
-    
+
     ECOBJECTS_EXPORT explicit ECValue (::Int32 integer32);
     ECOBJECTS_EXPORT explicit ECValue (::Int64 long64);
     ECOBJECTS_EXPORT explicit ECValue (const wchar_t * string, bool holdADuplicate = true);
     ECOBJECTS_EXPORT explicit ECValue (const byte * blob, size_t size);
+    ECOBJECTS_EXPORT explicit ECValue (DPoint2dR point2d);
+    ECOBJECTS_EXPORT explicit ECValue (DPoint3dR point3d);
+    ECOBJECTS_EXPORT explicit ECValue (bool value);
+    ECOBJECTS_EXPORT explicit ECValue (SystemTime& time);
 
     ECOBJECTS_EXPORT void           SetReadOnly(bool isReadOnly);
 
@@ -187,10 +191,10 @@ public:
     ECOBJECTS_EXPORT StatusInt      SetDateTimeTicks (Int64 value);
 
     ECOBJECTS_EXPORT DPoint2d       GetPoint2D() const;
-    ECOBJECTS_EXPORT StatusInt      SetPoint2D (DPoint2d value);
+    ECOBJECTS_EXPORT StatusInt      SetPoint2D (DPoint2dR value);
 
     ECOBJECTS_EXPORT DPoint3d       GetPoint3D() const;
-    ECOBJECTS_EXPORT StatusInt      SetPoint3D (DPoint3d value);
+    ECOBJECTS_EXPORT StatusInt      SetPoint3D (DPoint3dR value);
 
 
     //! This is intended for debugging purposes, not for presentation purposes.
