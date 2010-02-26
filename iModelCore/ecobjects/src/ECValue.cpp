@@ -34,6 +34,18 @@ unsigned short milliseconds
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+std::wstring SystemTime::ToString
+(
+)
+    {
+    std::wostringstream valueAsString;
+    valueAsString << "#" << wYear << "/" << wMonth << "/" << wDay << "-" << wHour << ":" << wMinute << ":" << wSecond << ":" << wMilliseconds << "#";
+    return valueAsString.str();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Time in local time zone
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -569,9 +581,12 @@ static const Int64 TICKADJUSTMENT = 504911232000000000;     // ticks between 01/
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt          ECValue::GetDateTime (SystemTime& systemTime) 
+SystemTime          ECValue::GetDateTime () const
     {
-    Int64 systemDateTicks = GetDateTimeTicks ();
+    SystemTime systemTime;
+    Int64      systemDateTicks = GetDateTimeTicks ();
+
+    memset (&systemTime, 0, sizeof(systemTime));
 
     // m_dateTime is number of ticks since 00:00:00 01/01/01 - Fileticks are relative to 00:00:00 01/01/1601
     systemDateTicks -= TICKADJUSTMENT; 
@@ -580,12 +595,9 @@ StatusInt          ECValue::GetDateTime (SystemTime& systemTime)
     fileTime.dwHighDateTime = systemDateTicks >> 32;
     SYSTEMTIME  tempTime;
     if (FileTimeToSystemTime (&fileTime, &tempTime))
-        {
         memcpy (&systemTime, &tempTime, sizeof(systemTime));
-        return SUCCESS;
-        }
 
-    return ERROR;
+    return systemTime;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -755,6 +767,10 @@ std::wstring    ECValue::ToString () const
         ArrayInfo arrayInfo = GetArrayInfo();
         valueAsString << "Count: " << arrayInfo.GetCount() << " IsFixedSize: " << arrayInfo.IsFixedCount();
         }
+    else if (IsStruct())
+        {
+        valueAsString << "IECInstance containing struct value";
+        }
     else
         {
         switch (m_valueKind)
@@ -778,7 +794,31 @@ std::wstring    ECValue::ToString () const
                 {
                 valueAsString << GetString();
                 break;          
+                }            
+            case PRIMITIVETYPE_Boolean:
+                {
+                valueAsString << GetString();
+                break;          
                 }
+            case PRIMITIVETYPE_Point2D:
+                {
+                DPoint2d point = GetPoint2D();
+                valueAsString << "{" << point.x << "," << point.y << "}";
+                break;          
+                }
+            case PRIMITIVETYPE_Point3D:
+                {
+                DPoint3d point = GetPoint3D();
+                valueAsString << "{" << point.x << "," << point.y << ","<< point.z << "}";
+                break;          
+                }
+            case PRIMITIVETYPE_DateTime:
+                {
+                SystemTime timeDate = GetDateTime();
+                valueAsString << timeDate.ToString();
+                break;          
+                }
+
             default:
                 {
                 valueAsString << L"EC::ECValue::ToString needs work... unsupported data type";
@@ -801,6 +841,8 @@ StatusInt       ECValue::SetStructArrayInfo (UInt32 count, bool isFixedCount)
     m_valueKind                = VALUEKIND_Array;
 
     m_arrayInfo.InitializeStructArray (count, isFixedCount);
+    
+    m_isNull = false; // arrays are never null
     
     return SUCCESS;
     }
