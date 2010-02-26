@@ -18,10 +18,13 @@ using namespace std;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyString (IECInstanceR instance, ECValueR v, wchar_t const * accessString, UInt32 nIndicies, UInt32 * indicies, wchar_t const * value)
+void VerifyString (IECInstanceR instance, ECValueR v, wchar_t const * accessString, bool useIndex, UInt32 index, wchar_t const * value)
     {
     v.Clear();
-    EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString, nIndicies, indicies));
+    if (useIndex)
+        EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString, index));
+    else
+        EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
     EXPECT_STREQ (value, v.GetString());
     }
 
@@ -30,7 +33,7 @@ void VerifyString (IECInstanceR instance, ECValueR v, wchar_t const * accessStri
 +---------------+---------------+---------------+---------------+---------------+------*/    
 void VerifyString (IECInstanceR instance, ECValueR v, wchar_t const * accessString, wchar_t const * value)
     {
-    return VerifyString (instance, v, accessString, 0, NULL, value);
+    return VerifyString (instance, v, accessString, false, 0, value);
     }    
         
 /*---------------------------------------------------------------------------------**//**
@@ -46,10 +49,13 @@ void SetAndVerifyString (IECInstanceR instance, ECValueR v, wchar_t const * acce
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyInteger (IECInstanceR instance, ECValueR v, wchar_t const * accessString, UInt32 nIndicies, UInt32 * indicies, UInt32 value)
+void VerifyInteger (IECInstanceR instance, ECValueR v, wchar_t const * accessString, bool useIndex, UInt32 index, UInt32 value)
     {
     v.Clear();
-    EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString, nIndicies, indicies));
+    if (useIndex)
+        EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString, index));
+    else
+        EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
     EXPECT_EQ (value, v.GetInteger());
     }
     
@@ -58,7 +64,7 @@ void VerifyInteger (IECInstanceR instance, ECValueR v, wchar_t const * accessStr
 +---------------+---------------+---------------+---------------+---------------+------*/    
 void VerifyInteger (IECInstanceR instance, ECValueR v, wchar_t const * accessString, UInt32 value)
     {
-    return VerifyInteger (instance, v, accessString, 0, NULL, value);
+    return VerifyInteger (instance, v, accessString, false, 0, value);
     }    
         
 /*---------------------------------------------------------------------------------**//**
@@ -129,8 +135,8 @@ void VerifyOutOfBoundsError (IECInstanceR instance, ECValueR v, wchar_t const * 
     {
     v.Clear();    
     // WIP_FUSION .. ERROR_InvalidIndex
-    EXPECT_TRUE (ERROR == instance.GetValue (v, accessString, 1, &index));
-    EXPECT_TRUE (ERROR == instance.SetValue (accessString, v, 1, &index));
+    EXPECT_TRUE (ERROR == instance.GetValue (v, accessString, index));
+    EXPECT_TRUE (ERROR == instance.SetValue (accessString, v, index));
     }    
     
 /*---------------------------------------------------------------------------------**//**
@@ -143,7 +149,7 @@ void VerifyStringArray (IECInstanceR instance, ECValueR v, wchar_t const * acces
     for (UInt32 i=start ; i < start + count ; i++)        
         {
         incrementingString.append (L"X");
-        VerifyString (instance, v, accessString, 1, &i, incrementingString.c_str());
+        VerifyString (instance, v, accessString, true, i, incrementingString.c_str());
         }
     }  
               
@@ -158,7 +164,7 @@ void SetAndVerifyStringArray (IECInstanceR instance, ECValueR v, wchar_t const *
         {
         incrementingString.append (L"X");
         v.SetString(incrementingString.c_str());
-        EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v, 1, &i));
+        EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v, i));
         }
     
     VerifyStringArray (instance, v, accessString, value, 0, count);
@@ -171,7 +177,7 @@ void VerifyIntegerArray (IECInstanceR instance, ECValueR v, wchar_t const * acce
     {       
     for (UInt32 i=start ; i < start + count ; i++)        
         {
-        VerifyInteger (instance, v, accessString, 1, &i, baseValue++);
+        VerifyInteger (instance, v, accessString, true, i, baseValue++);
         }
     }        
     
@@ -183,7 +189,7 @@ void SetAndVerifyIntegerArray (IECInstanceR instance, ECValueR v, wchar_t const 
     for (UInt32 i=0 ; i < count ; i++)        
         {
         v.SetInteger(baseValue + i);        
-        EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v, 1, &i));
+        EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v, i));
         }
         
     VerifyIntegerArray (instance, v, accessString, baseValue, 0, count);
@@ -197,7 +203,7 @@ void VerifyIsNullArrayElements (IECInstanceR instance, ECValueR v, wchar_t const
     for (UInt32 i = start ; i < start + count ; i++)    
         {
         v.Clear();
-        EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString, 1, &i));
+        EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString, i));
         EXPECT_TRUE (isNull == v.IsNull());        
         }
     }
@@ -420,26 +426,22 @@ void VerifyVariableCountManufacturerArray (IECInstanceR instance, ECValue& v, wc
     VerifyArrayInfo (instance, v, arrayAccessor, 4, false);
     EXPECT_TRUE (SUCCESS == instance.GetValue (v, arrayAccessor));    
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 4, false);
-    UInt32 index = 0;
-    EXPECT_TRUE (SUCCESS == instance.GetValue (v, arrayAccessor, 1, &index));    
+    EXPECT_TRUE (SUCCESS == instance.GetValue (v, arrayAccessor, 0));    
     EXPECT_TRUE (v.IsStruct());    
     IECInstancePtr manufInst = v.GetStruct();
     VerifyString (*manufInst, v, L"Name", L"Nissan");
     VerifyInteger (*manufInst, v, L"AccountNo", 3475);
-    index = 1;
-    EXPECT_TRUE (SUCCESS == instance.GetValue (v, arrayAccessor, 1, &index));    
+    EXPECT_TRUE (SUCCESS == instance.GetValue (v, arrayAccessor, 1));    
     EXPECT_TRUE (v.IsStruct());    
     manufInst = v.GetStruct();
     VerifyString (*manufInst, v, L"Name", L"Ford");
     VerifyInteger (*manufInst, v, L"AccountNo", 381);    
-    index = 2;
-    EXPECT_TRUE (SUCCESS == instance.GetValue (v, arrayAccessor, 1, &index));    
+    EXPECT_TRUE (SUCCESS == instance.GetValue (v, arrayAccessor, 2));    
     EXPECT_TRUE (v.IsStruct());    
     manufInst = v.GetStruct();
     VerifyString (*manufInst, v, L"Name", L"Chrysler");
     VerifyInteger (*manufInst, v, L"AccountNo", 81645);    
-    index = 3;
-    EXPECT_TRUE (SUCCESS == instance.GetValue (v, arrayAccessor, 1, &index));    
+    EXPECT_TRUE (SUCCESS == instance.GetValue (v, arrayAccessor, 3));    
     EXPECT_TRUE (v.IsStruct());    
     manufInst = v.GetStruct();
     VerifyString (*manufInst, v, L"Name", L"Toyota");
@@ -462,14 +464,12 @@ void ExerciseVariableCountManufacturerArray (IECInstanceR instance, StandaloneEC
     SetAndVerifyString (*manufInst, v, L"Name", L"Nissan");
     SetAndVerifyInteger (*manufInst, v, L"AccountNo", 3475);
     v.SetStruct (*manufInst);
-    UInt32 index = 0;
-    ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 1, &index));
+    ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 0));
     manufInst = manufacturerEnabler.CreateInstance();    
     SetAndVerifyString (*manufInst, v, L"Name", L"Kia");
     SetAndVerifyInteger (*manufInst, v, L"AccountNo", 1791);
     v.SetStruct (*manufInst);
-    index = 1;
-    ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 1, &index));    
+    ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 1));    
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 2, false);    
    
     // insert two elements in the middle of the array   
@@ -482,43 +482,40 @@ void ExerciseVariableCountManufacturerArray (IECInstanceR instance, StandaloneEC
     SetAndVerifyString (*manufInst, v, L"Name", L"Ford");
     SetAndVerifyInteger (*manufInst, v, L"AccountNo", 381);
     v.SetStruct (*manufInst);
-    index = 1;
-    ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 1, &index)); 
+    ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 1)); 
     manufInst = manufacturerEnabler.CreateInstance();    
     SetAndVerifyString (*manufInst, v, L"Name", L"Chrysler");
     SetAndVerifyInteger (*manufInst, v, L"AccountNo", 81645);
     v.SetStruct (*manufInst);
-    index = 2;
-    ASSERT_TRUE (SUCCESS ==instance.SetValue (arrayAccessor, v, 1, &index));        
+    ASSERT_TRUE (SUCCESS ==instance.SetValue (arrayAccessor, v, 2));        
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 4, false);
     
     // ensure we can set a struct array value to NULL        
     v.SetToNull();
-    index = 3;
-    ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 1, &index));        
+    ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 3));        
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 3, false);
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 3, 1, true);
     manufInst = manufacturerEnabler.CreateInstance();    
     SetAndVerifyString (*manufInst, v, L"Name", L"Acura");
     SetAndVerifyInteger (*manufInst, v, L"AccountNo", 6);
     v.SetStruct (*manufInst);
-    ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 1, &index));        
+    ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 3));        
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 3, 1, false);
     manufInst = manufacturerEnabler.CreateInstance();    
     SetAndVerifyString (*manufInst, v, L"Name", L"Toyota");
     SetAndVerifyInteger (*manufInst, v, L"AccountNo", 6823);
     v.SetStruct (*manufInst);
-    ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 1, &index));        
+    ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 3));        
     
     // ensure we can't set the array elements to other primitive types
     {
     // WIP_FUSION - these are busted need to fix
     DISABLE_ASSERTS    
     v.SetInteger (35);    
-    index = 2;
+    //index = 2;
     //ASSERT_TRUE (ERROR == instance.SetValue (arrayAccessor, v, 1, &index));        
     v.SetString (L"foobar");    
-    index = 0;
+    //index = 0;
     //ASSERT_TRUE (ERROR == instance.SetValue (arrayAccessor, v, 1, &index));            
     }
     

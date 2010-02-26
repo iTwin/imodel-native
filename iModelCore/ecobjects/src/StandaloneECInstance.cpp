@@ -196,24 +196,44 @@ StatusInt           StandaloneECInstance::_GrowAllocation (UInt32 bytesNeeded)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           StandaloneECInstance::_GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+StatusInt           StandaloneECInstance::_GetValue (ECValueR v, const wchar_t * propertyAccessString) const
     {
     ClassLayoutCR classLayout = m_sharedWipEnabler->GetClassLayout();
     
-    return GetValueFromMemory (classLayout, v, propertyAccessString, nIndices, indices);
+    return GetValueFromMemory (classLayout, v, propertyAccessString);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           StandaloneECInstance::_GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 index) const
+    {
+    ClassLayoutCR classLayout = m_sharedWipEnabler->GetClassLayout();
     
+    return GetValueFromMemory (classLayout, v, propertyAccessString, true, index);
+    }
+        
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           StandaloneECInstance::_SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 nIndices, UInt32 const * indices)
+StatusInt           StandaloneECInstance::_SetValue (const wchar_t * propertyAccessString, ECValueCR v)
     {
     ClassLayoutCR classLayout = m_sharedWipEnabler->GetClassLayout();
-    StatusInt status = SetValueToMemory (classLayout, propertyAccessString, v, nIndices, indices);
+    StatusInt status = SetValueToMemory (classLayout, propertyAccessString, v);
 
     return status;
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           StandaloneECInstance::_SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 index)
+    {
+    ClassLayoutCR classLayout = m_sharedWipEnabler->GetClassLayout();
+    StatusInt status = SetValueToMemory (classLayout, propertyAccessString, v, true, index);
+
+    return status;
+    }    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -255,10 +275,10 @@ StatusInt           StandaloneECInstance::_ClearArray (const wchar_t * propertyA
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StatusInt       StandaloneECInstance::_GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const
+StatusInt       StandaloneECInstance::_GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const
     {
     ECValue binaryValue;
-    StatusInt status = GetPrimitiveValueFromMemory (binaryValue, propertyLayout, nIndices, indices);      
+    StatusInt status = GetPrimitiveValueFromMemory (binaryValue, propertyLayout, true, index);      
     if ((status != SUCCESS) || (binaryValue.IsNull()))
         return status;
                     
@@ -280,7 +300,7 @@ StatusInt       StandaloneECInstance::_GetStructArrayValueFromMemory (ECValueR v
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       StandaloneECInstance::_SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices)
+StatusInt       StandaloneECInstance::_SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index)
     {
     IECInstancePtr p;
     ECValue binaryValue (PRIMITIVETYPE_Binary);
@@ -296,7 +316,7 @@ StatusInt       StandaloneECInstance::_SetStructArrayValueToMemory (ECValueCR v,
         binaryValue.SetBinary ((const byte *)&(m_structValueId), sizeof (StructValueIdentifier));
         }
         
-    StatusInt status = SetPrimitiveValueToMemory (binaryValue, classLayout, propertyLayout, nIndices, indices);      
+    StatusInt status = SetPrimitiveValueToMemory (binaryValue, classLayout, propertyLayout, true, index);      
     if (status != SUCCESS)
         return status;
                     

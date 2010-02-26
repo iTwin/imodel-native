@@ -58,22 +58,17 @@ private:
     UInt32                  m_nullflagsOffset;
     NullflagsBitmask        m_nullflagsBitmask;
   //ECPropertyCP            m_property; // WIP_FUSION: optional? YAGNI?
-
-    // transient data
-    int                     m_expectedIndices; // we can calculate this from access string on construction
     
 public:
     PropertyLayout (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask, UInt32 modifierFlags = 0, UInt32 modifierData = 0) : //, ECPropertyCP property) :
         m_accessString(accessString), m_typeDescriptor(typeDescriptor), m_offset(offset), m_nullflagsOffset(nullflagsOffset), 
-        m_nullflagsBitmask (nullflagsBitmask), m_modifierFlags (modifierFlags), m_modifierData (modifierData) 
-        { m_expectedIndices = IECInstance::ParseExpectedNIndices(accessString); }; //, m_property(property) {};
+        m_nullflagsBitmask (nullflagsBitmask), m_modifierFlags (modifierFlags), m_modifierData (modifierData) { }; //, m_property(property) {};
 
     inline UInt32           GetOffset() const           { return m_offset; }
     inline UInt32           GetNullflagsOffset() const  { return m_nullflagsOffset; }
     inline NullflagsBitmask GetNullflagsBitmask() const { return m_nullflagsBitmask; }
     inline ECTypeDescriptor GetTypeDescriptor() const   { return m_typeDescriptor; }
     inline wchar_t const *  GetAccessString() const     { return m_accessString.c_str(); }
-    inline int              GetExpectedIndices() const  { return m_expectedIndices; }
     inline UInt32           GetModifierFlags() const    { return m_modifierFlags; }
     inline UInt32           GetModifierData() const     { return m_modifierData; }    
     
@@ -293,14 +288,15 @@ private:
        
     //! Returns the offset of the property value relative to the start of the instance data.
     //! If nIndices is > 0 then the offset of the array element value is returned.
-    UInt32              GetOffsetOfPropertyValue (PropertyLayoutCR propertyLayout, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
+    UInt32              GetOffsetOfPropertyValue (PropertyLayoutCR propertyLayout, bool useIndex = false, UInt32 index = 0) const;
     
     //! Returns the size in bytes of the property value
     UInt32              GetPropertyValueSize (PropertyLayoutCR propertyLayout) const;
     
     //! Returns the address of the property value 
     //! If nIndices is > 0 then the address of the array element value is returned
-    byte const *        GetAddressOfPropertyValue (PropertyLayoutCR propertyLayout, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;    
+    byte const *        GetAddressOfPropertyValue (PropertyLayoutCR propertyLayout) const;    
+    byte const *        GetAddressOfPropertyValue (PropertyLayoutCR propertyLayout, UInt32 index) const;    
     
     //! Returns the size of a variable-sized property value by calculating the difference in secondary offsets
     UInt32              GetSizeOfVariableLengthPropertyValue (PropertyLayoutCR propertyLayout) const;
@@ -319,11 +315,11 @@ private:
     
     //! Returns true if the property value is null; otherwise false
     //! If nIndices is > 0 then the null check is based on the array element at the specified index
-    bool                IsPropertyValueNull (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;
+    bool                IsPropertyValueNull (PropertyLayoutCR propertyLayout, bool useIndex = false, UInt32 index = 0) const;
     
     //! Sets the null bit of the specified property to the value indicated by isNull
     //! If nIndices is > 0 then the null bit is set for the array element at the specified index    
-    void                SetPropertyValueNull (PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices, bool isNull);    
+    void                SetPropertyValueNull (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, bool isNull);    
     
     //! Returns the number of elements in the specfieid array that are currently reserved but not necessarily allocated.
     //! This is important when an array has a minimum size but has not yet been initialized.  We delay initializing the memory for the minimum # of elements until
@@ -363,15 +359,18 @@ protected:
     //! If nIndices is > 0 then the primitive value for the array element at the specified index is obtained.
     //! This is protected because implementors of _GetStructArrayArrayValueFromMemory should call it to obtain the binary primitive value that they stored
     //! when _SetStructArrayValueToMemory was invoked as a means to locate the externalized struct array value.
-    ECOBJECTS_EXPORT StatusInt  GetPrimitiveValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;    
+    ECOBJECTS_EXPORT StatusInt  GetPrimitiveValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, bool useIndex = false, UInt32 index = 0) const;    
     //! Sets the primitive value for the specified property
     //! If nIndices is > 0 then the primitive value for the array element at the specified index is set.
     //! This is protected because implementors of _SetStructArrayArrayValueToMemory should call it to store a binary primitive value that can be retrieved
     //! when _GetStructArrayValueFromMemory is invoked as a means to locate the externalized struct array value.
-    ECOBJECTS_EXPORT StatusInt  SetPrimitiveValueToMemory   (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices);    
-    ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const;
-    ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ClassLayoutCR classLayout, ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const;
-    ECOBJECTS_EXPORT StatusInt  SetValueToMemory (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, ECValueCR v,  UInt32 nIndices, UInt32 const * indices);      
+    ECOBJECTS_EXPORT StatusInt  SetPrimitiveValueToMemory   (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, bool useIndex = false, UInt32 index = 0);    
+    ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout) const;
+    ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const;    
+    ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ClassLayoutCR classLayout, ECValueR v, const wchar_t * propertyAccessString, bool useIndex = false, UInt32 index = 0) const;
+    ECOBJECTS_EXPORT StatusInt  SetValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout);          
+    ECOBJECTS_EXPORT StatusInt  SetValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index);              
+    ECOBJECTS_EXPORT StatusInt  SetValueToMemory (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, ECValueCR v,  bool useIndex = false, UInt32 index = 0);      
     ECOBJECTS_EXPORT StatusInt  InsertNullArrayElementsAt (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, UInt32 insertIndex, UInt32 insertCount);
     ECOBJECTS_EXPORT StatusInt  AddNullArrayElementsAt (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, UInt32 insertCount);
     ECOBJECTS_EXPORT void       DumpInstanceData (ClassLayoutCR classLayout) const;
@@ -382,8 +381,8 @@ protected:
     //! with a binary token that will actually be stored with the instance at the array index value that can then be used to locate the externalized struct value.
     //! Note that top-level struct properties will automatically be stored in the data section of the instance.  It is only struct array values that must be stored
     //! externally.
-    virtual StatusInt           _SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) = 0;
-    virtual StatusInt           _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const = 0;
+    virtual StatusInt           _SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index) = 0;
+    virtual StatusInt           _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const = 0;
     
     virtual bool                _IsMemoryInitialized () const = 0;    
     

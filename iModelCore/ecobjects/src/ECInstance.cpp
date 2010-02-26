@@ -181,54 +181,64 @@ bool                IECInstance::IsReadOnly() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StatusInt           IECInstance::GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
-    {
-    return _GetValue (v, propertyAccessString, nIndices, indices);
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/    
-StatusInt           IECInstance::SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 nIndices, UInt32 const * indices)
-    {
-    return _SetValue (propertyAccessString, v, nIndices, indices);
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/    
 StatusInt           IECInstance::GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 index) const
     {
-    return _GetValue (v, propertyAccessString, 1, &index);
+    return _GetValue (v, propertyAccessString, index);
     }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           IECInstance::GetValue (ECValueR v, const wchar_t * propertyAccessString) const
+    {
+    return _GetValue (v, propertyAccessString);
+    }    
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
 StatusInt           IECInstance::SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 index)
     {
-    return _SetValue (propertyAccessString, v, 1, &index);
+    return _SetValue (propertyAccessString, v, index);
     }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   02/2010
++---------------+---------------+---------------+---------------+---------------+------*/    
+StatusInt           IECInstance::SetValue (const wchar_t * propertyAccessString, ECValueCR v)
+    {
+    return _SetValue (propertyAccessString, v);
+    }        
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
 StatusInt           IECInstance::GetInteger (int & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
     {
+    PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
     ECValue v;
-    StatusInt status = _GetValue (v, propertyAccessString, 0, NULL);
+    StatusInt status;
+    if (nIndices == 1)
+        status = _GetValue (v, propertyAccessString, *indices);
+    else
+        status = _GetValue (v, propertyAccessString);
     value = v.GetInteger();
     
     return status;
-    }
+    }    
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/                
 StatusInt           IECInstance::GetDouble (double& value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
     {
+    PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
     ECValue v;
-    StatusInt status = _GetValue (v, propertyAccessString, 0, NULL);
+    StatusInt status;
+    if (nIndices == 1)
+        status = _GetValue (v, propertyAccessString, *indices);
+    else
+        status = _GetValue (v, propertyAccessString);
     value = v.GetDouble();
     return status;
     }
@@ -238,8 +248,13 @@ StatusInt           IECInstance::GetDouble (double& value, const wchar_t * prope
 +---------------+---------------+---------------+---------------+---------------+------*/       
 StatusInt           IECInstance::GetString (const wchar_t * & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
     {
+    PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
     ECValue v;
-    StatusInt status = _GetValue (v, propertyAccessString, nIndices, indices);
+    StatusInt status;
+    if (nIndices == 1)
+        status = _GetValue (v, propertyAccessString, *indices);
+    else
+        status = _GetValue (v, propertyAccessString);
     value = v.GetString();
 
     return status;
@@ -250,8 +265,13 @@ StatusInt           IECInstance::GetString (const wchar_t * & value, const wchar
 +---------------+---------------+---------------+---------------+---------------+------*/       
 StatusInt           IECInstance::SetIntegerValue (const wchar_t * propertyAccessString, int value, UInt32 nIndices, UInt32 const * indices)
     {
+    PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
     ECValue v(value);
-    StatusInt status = _SetValue (propertyAccessString, v, nIndices, indices);
+    StatusInt status;
+    if (nIndices == 1)
+        status = _SetValue (propertyAccessString, v, *indices);
+    else
+        status = _SetValue (propertyAccessString, v);
 
     return status;    
     }
@@ -261,8 +281,13 @@ StatusInt           IECInstance::SetIntegerValue (const wchar_t * propertyAccess
 +---------------+---------------+---------------+---------------+---------------+------*/       
 StatusInt           IECInstance::SetStringValue  (const wchar_t * propertyAccessString, const wchar_t * value, UInt32 nIndices, UInt32 const * indices)
     {
+    PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
     ECValue v(value, false);
-    StatusInt status = _SetValue (propertyAccessString, v, nIndices, indices);
+    StatusInt status;
+    if (nIndices == 1)
+        status = _SetValue (propertyAccessString, v, *indices);
+    else
+        status = _SetValue (propertyAccessString, v);    
 
     return status;    
     }

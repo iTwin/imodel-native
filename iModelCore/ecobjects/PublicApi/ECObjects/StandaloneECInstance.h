@@ -54,8 +54,10 @@ protected:
     
     virtual std::wstring    _GetInstanceId() const override;
     virtual bool            _IsReadOnly() const override;        
-    virtual StatusInt       _GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const override;
-    virtual StatusInt       _SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 nIndices, UInt32 const * indices) override;      
+    virtual StatusInt       _GetValue (ECValueR v, const wchar_t * propertyAccessString) const override;
+    virtual StatusInt       _GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 index) const override;
+    virtual StatusInt       _SetValue (const wchar_t * propertyAccessString, ECValueCR v) override;      
+    virtual StatusInt       _SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 index) override;      
     virtual StatusInt       _InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size) override;
     virtual StatusInt       _AddArrayElements (const wchar_t * propertyAccessString, UInt32 size) override;
     virtual StatusInt       _RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index) override;
@@ -64,8 +66,8 @@ protected:
     virtual byte const *    _GetData () const override;
     virtual UInt32          _GetBytesAllocated () const override;
     
-    virtual StatusInt       _SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) override;    
-    virtual StatusInt       _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 nIndices, UInt32 const * indices) const override;
+    virtual StatusInt       _SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index) override;    
+    virtual StatusInt       _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const override;
     
 public: // These must be public so that ECXInstanceEnabler can get at the guts of StandaloneECInstance to copy it into an XAttribute     
     ECOBJECTS_EXPORT byte const *         GetData () const;
