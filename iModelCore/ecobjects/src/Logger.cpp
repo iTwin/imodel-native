@@ -23,13 +23,13 @@ wchar_t *filepath,
 DWORD bufferSize
 )
     {
-    wchar_t strExePath [MAX_PATH];
-    if (0 == (GetModuleFileNameW (NULL, strExePath, MAX_PATH)))
+    std::wstring dllPath = ECFileUtilities::GetDllPath();
+    if (0 == dllPath.length())
         return ERROR;
         
     wchar_t executingDirectory[_MAX_DIR];
     wchar_t executingDrive[_MAX_DRIVE];
-    _wsplitpath(strExePath, executingDrive, executingDirectory, NULL, NULL);
+    _wsplitpath(dllPath.c_str(), executingDrive, executingDirectory, NULL, NULL);
 
     // Look for a file called "logging.config.xml" in the executing process's directory
     _wmakepath(filepath, executingDrive, executingDirectory, L"logging.config.xml", L"xml");
