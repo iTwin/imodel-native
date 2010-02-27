@@ -801,7 +801,7 @@ TEST (MemoryLayoutTests, Values) // move it!
     ECValue fixedDate;
     fixedDate.SetDateTimeTicks (634027121070910000);
     std::wstring dateStr = fixedDate.ToString();
-    EXPECT_TRUE (0 == point2Str.compare (L"#2010/2/25-16:28:27:91#"));
+    EXPECT_TRUE (0 == dateStr.compare (L"#2010/2/25-16:28:27:91#"));
 
     // WIP_FUSION - test array values
     }
