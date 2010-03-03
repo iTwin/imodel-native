@@ -125,6 +125,7 @@ public:
 
     ECOBJECTS_EXPORT explicit ECValue (::Int32 integer32);
     ECOBJECTS_EXPORT explicit ECValue (::Int64 long64);
+    ECOBJECTS_EXPORT explicit ECValue (double doubleVal);
     ECOBJECTS_EXPORT explicit ECValue (const wchar_t * string, bool holdADuplicate = true);
     ECOBJECTS_EXPORT explicit ECValue (const byte * blob, size_t size);
     ECOBJECTS_EXPORT explicit ECValue (DPoint2dR point2d);

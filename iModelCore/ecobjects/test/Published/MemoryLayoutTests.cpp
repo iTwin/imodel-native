@@ -219,6 +219,17 @@ std::wstring    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versio
                     L"        <ECProperty propertyName=\"Name\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"AccountNo\" typeName=\"int\" />"
                     L"    </ECClass>"
+                    L"    <ECClass typeName=\"CadData\" isStruct=\"True\" isDomainClass=\"True\">"
+                    L"        <ECProperty propertyName=\"Name\"         typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Count\"        typeName=\"int\" />"
+                    L"        <ECProperty propertyName=\"StartPoint\"   typeName=\"point3d\" />"
+                    L"        <ECProperty propertyName=\"EndPoint\"     typeName=\"point3d\" />"
+                    L"        <ECProperty propertyName=\"Size\"         typeName=\"point2d\" />"
+                    L"        <ECProperty propertyName=\"Length\"       typeName=\"double\"  />"
+                    L"        <ECProperty propertyName=\"Install_Date\" typeName=\"dateTime\"  />"
+                    L"        <ECProperty propertyName=\"Service_Date\" typeName=\"dateTime\"  />"
+                    L"        <ECProperty propertyName=\"Field_Tested\" typeName=\"boolean\"  />"
+                    L"    </ECClass>"
                     L"    <ECClass typeName=\"%s\" isDomainClass=\"True\">"
                     L"        <ECArrayProperty propertyName=\"BeginningArray\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"A\" typeName=\"int\" />"
@@ -665,7 +676,78 @@ TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
     // instance.Compact()... then check values again
     CoUninitialize();
     };
+  
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(MemoryLayoutTests, DirectSetStandaloneInstance)
+    {
+    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+
+    ECSchemaPtr schema = CreateTestSchema();
+    ASSERT_TRUE (schema != NULL);
+    ECClassP ecClass = schema->GetClassP (L"CadData");
+    ASSERT_TRUE (ecClass);
     
+    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 0, 0);
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);        
+    
+    EC::StandaloneECInstanceP instance = enabler->CreateInstance();
+
+    DPoint2d   inSize = {10.5, 22.3};
+    DPoint3d   inPoint1 = {10.10, 11.11, 12.12};
+    DPoint3d   inPoint2 ={100.100, 110.110, 120.120};
+    SystemTime inTime = SystemTime::GetLocalTime();
+    int        inCount = 100;
+    double     inLength = 432.178;
+    bool       inTest = true;
+    Int64      inTicks = 634027121070910000;
+
+    DPoint2d   outSize;   
+    DPoint3d   outPoint1; 
+    DPoint3d   outPoint2; 
+    SystemTime outTime;   
+    int        outCount;  
+    double     outLength; 
+    bool       outTest;   
+    Int64      outTicks;
+    const wchar_t*  outNameP;
+
+    instance->SetIntegerValue  (L"Count", inCount);
+    instance->SetStringValue   (L"Name", L"Test");
+    instance->SetDoubleValue   (L"Length", inLength);
+    instance->SetBooleanValue  (L"Field_Tested", inTest);
+    instance->SetPoint2DValue  (L"Size", inSize);
+    instance->SetPoint3DValue  (L"StartPoint", inPoint1);
+    instance->SetPoint3DValue  (L"EndPoint", inPoint2);
+    instance->SetDateTimeTicks (L"Install_Date", inTicks);
+    instance->SetDateTimeValue (L"Service_Date", SystemTime::GetLocalTime());
+    
+    EXPECT_TRUE (0 == instance->GetInteger (outCount, L"Count"));
+    EXPECT_TRUE (outCount == inCount);
+    EXPECT_TRUE (0 == instance->GetString (outNameP, L"Name"));
+    EXPECT_STREQ (L"Test", outNameP);
+    EXPECT_TRUE (0 == instance->GetDouble (outLength, L"Length"));
+    EXPECT_TRUE (inLength == outLength);
+    EXPECT_TRUE (0 == instance->GetBoolean (outTest, L"Field_Tested"));
+    EXPECT_TRUE (inTest == outTest);
+    EXPECT_TRUE (0 == instance->GetPoint2D (outSize, L"Size"));
+    EXPECT_TRUE (0 == memcmp (&inSize, &outSize, sizeof(inSize)));
+    EXPECT_TRUE (0 == instance->GetPoint3D (outPoint1, L"StartPoint"));
+    EXPECT_TRUE (0 == memcmp (&inPoint1, &outPoint1, sizeof(inPoint1)));
+    EXPECT_TRUE (0 == instance->GetPoint3D (outPoint2, L"EndPoint"));
+    EXPECT_TRUE (0 == memcmp (&inPoint2, &outPoint2, sizeof(inPoint2)));
+    EXPECT_TRUE (0 == instance->GetDateTime (outTime, L"Service_Date"));
+    EXPECT_TRUE (0 == memcmp (&inTime, &outTime, sizeof(inTime)));
+    EXPECT_TRUE (0 == instance->GetDateTimeTicks (outTicks, L"Install_Date"));
+    EXPECT_TRUE (inTicks == outTicks);
+
+    delete classLayout;
+
+    // instance.Compact()... then check values again
+    CoUninitialize();
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/

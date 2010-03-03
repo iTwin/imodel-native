@@ -63,6 +63,7 @@ EC_TYPEDEFS(ClassLayout);
 EC_TYPEDEFS(PropertyLayout);
 EC_TYPEDEFS(StandaloneECInstance);
 EC_TYPEDEFS(ClassLayoutHolder);
+EC_TYPEDEFS(SystemTime);
 
 #define EXPORTED_PROPERTY(TYPE, NAME) \
     ECOBJECTS_EXPORT TYPE Get##NAME() const; \
