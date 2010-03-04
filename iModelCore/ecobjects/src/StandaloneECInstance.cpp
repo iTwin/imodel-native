@@ -364,7 +364,7 @@ wchar_t const *         StandaloneECEnabler::_GetName() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
-StandaloneECInstanceP   StandaloneECEnabler::CreateInstance (UInt32 minimumBufferSize)
+StandaloneECInstancePtr   StandaloneECEnabler::CreateInstance (UInt32 minimumBufferSize)
     {
     return new StandaloneECInstance (*this, minimumBufferSize);
     }    

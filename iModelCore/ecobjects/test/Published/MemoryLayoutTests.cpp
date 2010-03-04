@@ -471,12 +471,12 @@ void ExerciseVariableCountManufacturerArray (IECInstanceR instance, StandaloneEC
     ASSERT_TRUE (SUCCESS == instance.AddArrayElements (arrayAccessor, 2));
     VerifyArrayInfo (instance, v, arrayAccessor, 2, false);
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 2, true);
-    IECInstancePtr manufInst = manufacturerEnabler.CreateInstance();    
+    IECInstancePtr manufInst = manufacturerEnabler.CreateInstance().get();    
     SetAndVerifyString (*manufInst, v, L"Name", L"Nissan");
     SetAndVerifyInteger (*manufInst, v, L"AccountNo", 3475);
     v.SetStruct (*manufInst);
     ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 0));
-    manufInst = manufacturerEnabler.CreateInstance();    
+    manufInst = manufacturerEnabler.CreateInstance().get();    
     SetAndVerifyString (*manufInst, v, L"Name", L"Kia");
     SetAndVerifyInteger (*manufInst, v, L"AccountNo", 1791);
     v.SetStruct (*manufInst);
@@ -489,12 +489,12 @@ void ExerciseVariableCountManufacturerArray (IECInstanceR instance, StandaloneEC
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 1, false);
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 1, 2, true);
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 3, 1, false);
-    manufInst = manufacturerEnabler.CreateInstance();    
+    manufInst = manufacturerEnabler.CreateInstance().get();    
     SetAndVerifyString (*manufInst, v, L"Name", L"Ford");
     SetAndVerifyInteger (*manufInst, v, L"AccountNo", 381);
     v.SetStruct (*manufInst);
     ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 1)); 
-    manufInst = manufacturerEnabler.CreateInstance();    
+    manufInst = manufacturerEnabler.CreateInstance().get();    
     SetAndVerifyString (*manufInst, v, L"Name", L"Chrysler");
     SetAndVerifyInteger (*manufInst, v, L"AccountNo", 81645);
     v.SetStruct (*manufInst);
@@ -506,13 +506,13 @@ void ExerciseVariableCountManufacturerArray (IECInstanceR instance, StandaloneEC
     ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 3));        
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 3, false);
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 3, 1, true);
-    manufInst = manufacturerEnabler.CreateInstance();    
+    manufInst = manufacturerEnabler.CreateInstance().get();    
     SetAndVerifyString (*manufInst, v, L"Name", L"Acura");
     SetAndVerifyInteger (*manufInst, v, L"AccountNo", 6);
     v.SetStruct (*manufInst);
     ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 3));        
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 3, 1, false);
-    manufInst = manufacturerEnabler.CreateInstance();    
+    manufInst = manufacturerEnabler.CreateInstance().get();    
     SetAndVerifyString (*manufInst, v, L"Name", L"Toyota");
     SetAndVerifyInteger (*manufInst, v, L"AccountNo", 6823);
     v.SetStruct (*manufInst);
@@ -666,7 +666,7 @@ TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
     ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
     StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);        
     
-    EC::StandaloneECInstanceP instance = enabler->CreateInstance();
+    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     wstring instanceId = instance->GetInstanceId();
     instance->Dump();
     ExerciseInstance (*instance, L"Test");
@@ -692,7 +692,7 @@ TEST(MemoryLayoutTests, DirectSetStandaloneInstance)
     ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 0, 0);
     StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);        
     
-    EC::StandaloneECInstanceP instance = enabler->CreateInstance();
+    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     DPoint2d   inSize = {10.5, 22.3};
     DPoint3d   inPoint1 = {10.10, 11.11, 12.12};
@@ -760,7 +760,7 @@ TEST(MemoryLayoutTests, ExpectErrorsWhenViolatingArrayConstraints)
     ASSERT_TRUE (ecClass);    
     ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, 24);
     StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);            
-    EC::StandaloneECInstanceP instance = enabler->CreateInstance();
+    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     {
     DISABLE_ASSERTS
@@ -905,7 +905,7 @@ TEST (MemoryLayoutTests, TestSetGetNull)
     ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
     StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);
     
-    EC::StandaloneECInstanceP instance = enabler->CreateInstance();
+    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     ECValue v;
     
     EXPECT_TRUE (SUCCESS == instance->GetValue (v, L"D"));
@@ -974,7 +974,7 @@ TEST (MemoryLayoutTests, ProfileSettingValues)
     ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
     StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);
 
-    EC::StandaloneECInstanceP instance = enabler->CreateInstance();
+    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     
     UInt32 slack = 0;
     double elapsedSeconds = 0.0;

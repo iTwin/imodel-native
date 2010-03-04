@@ -85,7 +85,7 @@ protected:
         
 public: 
     ECOBJECTS_EXPORT static StandaloneECEnablerPtr CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout);
-    ECOBJECTS_EXPORT StandaloneECInstanceP         CreateInstance (UInt32 minimumInitialSize = 0);
+    ECOBJECTS_EXPORT StandaloneECInstancePtr       CreateInstance (UInt32 minimumInitialSize = 0);
     //ECOBJECTS_EXPORT StandaloneECInstanceP         CreateInstanceFromUninitializedMemory (byte * data, UInt32 size);
     //! Used to construct from another memory source like ECXData. The caller is claiming that the memory
     //! has been properly initialized with the classLayout that was passed in
