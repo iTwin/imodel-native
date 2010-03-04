@@ -185,5 +185,142 @@ std::wstring const&         directionString
         
     return ECOBJECTS_STATUS_Success;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECXml::ParseCardinalityString
+(
+UInt32 &lowerLimit, 
+UInt32 &upperLimit, 
+const std::wstring &cardinalityString
+)
+    {
+    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+    if (0 == cardinalityString.compare(L"1"))
+        {
+        Logger::GetLogger()->warningv(L"Legacy cardinality of '1' interpreted as '(1,1)'");
+        lowerLimit = 1;
+        upperLimit = 1;
+        return status;
+        }
         
+    if ((0 == cardinalityString.compare(L"UNBOUNDED")) || (0 == cardinalityString.compare(L"Unbounded")) ||
+             (0 == cardinalityString.compare(L"unbounded")) || (0 == cardinalityString.compare(L"n")) ||
+             (0 == cardinalityString.compare(L"N")))
+        {
+        Logger::GetLogger()->warningv(L"Legacy cardinality of '%s' interpreted as '(0,n)'", cardinalityString);
+        lowerLimit = 0;
+        upperLimit = UINT_MAX;
+        return status;
+        }
+    
+    std::wstring cardinalityWithoutSpaces = cardinalityString;
+    cardinalityWithoutSpaces.erase(remove_if(cardinalityWithoutSpaces.begin(), cardinalityWithoutSpaces.end(), ::isspace), cardinalityWithoutSpaces.end()); 
+    size_t openParenIndex = cardinalityWithoutSpaces.find('(');
+    if (openParenIndex == std::string::npos)
+        {
+        if (0 == swscanf(cardinalityWithoutSpaces.c_str(), L"%d", &upperLimit))
+            return ECOBJECTS_STATUS_ParseError;
+        Logger::GetLogger()->warningv(L"Legacy cardinality of '%d' interpreted as '(0,%d)'", upperLimit, upperLimit);
+        lowerLimit = 0;
+        return status;
+        }
+        
+    if (openParenIndex != 0 && cardinalityWithoutSpaces.find(')') != cardinalityWithoutSpaces.length() - 1)
+        {
+        Logger::GetLogger()->warningv(L"Cardinality string '%s' is invalid.", cardinalityString.c_str());
+        return ECOBJECTS_STATUS_ParseError;
+        }
+     
+    int scanned = swscanf(cardinalityWithoutSpaces.c_str(), L"(%d,%d)", &lowerLimit, &upperLimit);
+    if (2 == scanned)
+        return ECOBJECTS_STATUS_Success;
+        
+    if (0 == scanned)
+        {
+        Logger::GetLogger()->warningv(L"Cardinality string '%s' is invalid.", cardinalityString.c_str());
+        return ECOBJECTS_STATUS_ParseError;
+        }
+    
+    // Otherwise, we just assume the upper limit is 'n' or 'N' and is unbounded
+    upperLimit = UINT_MAX;
+    return status;
+    }
+ 
+void FormatXmlNode
+(
+MSXML2::IXMLDOMNode& domNode,
+UInt32 indentLevel
+)
+    {
+    MSXML2::IXMLDOMTextPtr textPtr = NULL;
+    if (domNode.nodeType == NODE_TEXT)
+        return;
+    
+    bool textOnly = true;
+    if (domNode.hasChildNodes())
+        {
+        MSXML2::IXMLDOMNodeListPtr xmlNodeListPtr = domNode.childNodes;
+        MSXML2::IXMLDOMNodePtr xmlNodePtr;
+        while (NULL != (xmlNodePtr = xmlNodeListPtr->nextNode()) && textOnly)
+            {
+            if (xmlNodePtr->nodeType != NODE_TEXT)
+                textOnly = false;
+            }
+        }
+        
+    if (domNode.hasChildNodes())
+        {
+        // Add a newline before the children
+        if (!textOnly)
+            {
+            textPtr = domNode.ownerDocument->createTextNode("\n");
+            domNode.insertBefore(textPtr, _variant_t(domNode.firstChild.GetInterfacePtr()));
+            }
+            
+        // Format the children
+        MSXML2::IXMLDOMNodeListPtr xmlNodeListPtr = domNode.childNodes;
+        MSXML2::IXMLDOMNodePtr xmlNodePtr;
+        while (NULL != (xmlNodePtr = xmlNodeListPtr->nextNode()))
+            {
+            FormatXmlNode(*xmlNodePtr, indentLevel + 4);
+            }
+        }
+        
+    // Format this element
+    if (indentLevel > 0)
+        {
+        char *spaces = new char[indentLevel+1];
+        for (UInt32 i = 0; i < indentLevel; i++)
+            spaces[i] = ' ';
+        spaces[indentLevel] = '\0';
+        // Indent before this element
+        textPtr = domNode.ownerDocument->createTextNode(spaces);
+        domNode.parentNode->insertBefore(textPtr, _variant_t(&domNode));
+
+        // Indent after the last child node
+        if (!textOnly)
+            {
+            textPtr = domNode.ownerDocument->createTextNode(spaces);
+            domNode.appendChild(textPtr);
+            }
+        
+        textPtr = domNode.ownerDocument->createTextNode("\n");
+        IXMLDOMNodePtr sibling = domNode.nextSibling;
+        if (NULL == sibling)
+            domNode.parentNode->appendChild(textPtr);
+        else
+            domNode.parentNode->insertBefore(textPtr, _variant_t(sibling.GetInterfacePtr()));
+        delete spaces;
+        }    
+    }
+    
+void ECXml::FormatXml
+(
+MSXML2::IXMLDOMDocument2 *pXmlDoc
+)
+    {
+    FormatXmlNode(pXmlDoc->documentElement, 0);
+    }
 END_BENTLEY_EC_NAMESPACE

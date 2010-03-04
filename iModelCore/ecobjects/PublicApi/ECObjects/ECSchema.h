@@ -354,6 +354,7 @@ public:
 }; 
 
 typedef std::vector<ECClassP> ECBaseClassesVector;
+typedef std::vector<ECClassP> ECConstraintClassesVector;
 
 /*__PUBLISH_SECTION_END__*/
 typedef bool (*TraversalDelegate) (ECClassCP, ECClassCP);
@@ -453,10 +454,10 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass);
     
     //! Returns whether there are any base classes for this class
-    ECOBJECTS_EXPORT bool            HasBaseClasses();
+    ECOBJECTS_EXPORT bool            HasBaseClasses() const;
     
     //! Returns true if the class is the type specified or derived from it.
-    ECOBJECTS_EXPORT bool            Is(ECClassCP targetClass);
+    ECOBJECTS_EXPORT bool            Is(ECClassCP targetClass) const;
 
     ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, std::wstring const& name);
     ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, std::wstring const& name, PrimitiveType primitiveType);
@@ -515,6 +516,118 @@ enum StrengthType
     STRENGTHTYPE_Embedding
     } ;
     
+//! This class describes the cardinality of a relationship. It is based on the
+//!     Martin notation. Valid cardinalities are (x,y) where x is smaller or equal to y,
+//!     x >= 0 and y >= 1 or y = n (where n represents infinity).
+//!     For example, (0,1), (1,1), (1,n), (0,n), (1,10), (2,5), ...
+struct RelationshipCardinality 
+{
+/*__PUBLISH_SECTION_END__*/
+private:
+    UInt32     m_lowerLimit;
+    UInt32     m_upperLimit;
+
+/*__PUBLISH_SECTION_START__*/    
+public:
+    //! Default constructor.  Creates a cardinality of (0, 1)
+    ECOBJECTS_EXPORT RelationshipCardinality();
+    
+    //! Constructor with lower and upper limit parameters.
+    //! @param[in]  lowerLimit  must be less than or equal to upperLimit and greater than or equal to 0
+    //! @param[in]  upperLimit  must be greater than or equal to lowerLimit and greater than 0
+    ECOBJECTS_EXPORT RelationshipCardinality(UInt32 lowerLimit, UInt32 upperLimit);
+    
+    //! Returns the lower limit of the cardinality
+    EXPORTED_READONLY_PROPERTY  (UInt32, LowerLimit);
+    //! Returns the upper limit of the cardinality
+    EXPORTED_READONLY_PROPERTY  (UInt32, UpperLimit);
+    
+    //! Indicates if the cardinality is unbound (ie, upper limit is equal to "n")
+    ECOBJECTS_EXPORT bool IsUpperLimitUnbounded() const;
+    
+    //! Converts the cardinality to a string, for example "(0,n)", "(1,1)"
+    ECOBJECTS_EXPORT std::wstring ToString() const;
+
+    // ************************************************************************************************************************
+    // ************************************  STATIC METHODS *******************************************************************
+    // ************************************************************************************************************************
+    
+    ECOBJECTS_EXPORT static RelationshipCardinalityCR ZeroOne();
+    ECOBJECTS_EXPORT static RelationshipCardinalityCR ZeroMany();
+    ECOBJECTS_EXPORT static RelationshipCardinalityCR OneOne();
+    ECOBJECTS_EXPORT static RelationshipCardinalityCR OneMany();
+};
+   
+
+//=======================================================================================
+//! The in-memory representation of the source and target constraints for an ECRelationshipClass as defined by ECSchemaXML
+struct ECRelationshipConstraint 
+{
+friend struct ECRelationshipClass;
+
+/*__PUBLISH_SECTION_END__*/
+private:
+    // NEEDSWORK: To be completely compatible, we need to store an ECRelationshipConstraintClass with properties in order
+    // to support implicit relationships.  For now, just support explicit relationships
+//    stdext::hash_map<ECClassCP, ECRelationshipConstrainClassCP> m_constraintClasses;
+
+    ECConstraintClassesVector        m_constraintClasses;
+    
+    std::wstring    m_roleLabel;
+    bool            m_isPolymorphic;
+    bool            m_isMultiple;
+    RelationshipCardinality*   m_cardinality;
+    ECRelationshipClassP        m_relClass;
+    
+    ECObjectsStatus SetCardinality(const wchar_t *cardinality);
+    ECObjectsStatus SetCardinality(UInt32& lowerLimit, UInt32& upperLimit);
+    
+    SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode, std::wstring const& elementName) const;
+    SchemaDeserializationStatus ReadXml(MSXML2_IXMLDOMNode& constraintNode);
+    
+    ~ECRelationshipConstraint();
+    
+/*__PUBLISH_SECTION_START__*/    
+public:
+    //! Initializes a new instance of the ECRelationshipConstraint class.
+    //! IsPolymorphic defaults to true and IsMultiple defaults to false 
+    ECRelationshipConstraint(ECRelationshipClassP relationshipClass);
+    
+    //! Initializes a new instance of the ECRelationshipConstraint class
+    ECRelationshipConstraint(ECRelationshipClassP relationshipClass, bool isMultiple);
+    
+    //! Returns true if the constraint allows for a variable number of classes
+    EXPORTED_READONLY_PROPERTY  (bool, IsMultiple);
+    
+    //! Gets or sets the label of the constraint role in the relationship.
+    //! If the role label is not defined, the display label of the relationship class is returned
+    EXPORTED_PROPERTY (std::wstring const, RoleLabel);
+    
+    ECOBJECTS_EXPORT bool IsRoleLabelDefined() const;
+    
+    //! Returns true if this constraint can also relate to instances of subclasses of classes
+    //! applied to the constraint.
+    EXPORTED_PROPERTY   (bool, IsPolymorphic) ;
+    
+    //! Sets the bool value of whether this constraint can also relate to instances of subclasses of classes applied to the constraint.
+    //! @param[in] isPolymorphic String representation of true/false
+    //! @return    Success if the string is parsed into a bool
+    ECOBJECTS_EXPORT ECObjectsStatus SetIsPolymorphic(const wchar_t* isPolymorphic);
+    
+    //! Gets the cardinality of the constraint in the relationship
+    EXPORTED_PROPERTY (RelationshipCardinalityCR, Cardinality) ;
+    
+    //! Adds the specified class to the constraint.
+    //! If the constraint is variable, add will add the class to the list of classes applied to the constraint.  Otherwise, Add
+    //! will replace the current class applied to the constraint with the new class.
+    //! @param[in] classConstraint  The class to add
+    ECOBJECTS_EXPORT ECObjectsStatus AddClass(ECClassCR classConstraint);
+    
+    //! Returns the classes applied to the constraint.
+    EXPORTED_READONLY_PROPERTY (const ECConstraintClassesVector&, Classes);
+    
+};
+
 //=======================================================================================
 //! The in-memory representation of a relationship class as defined by ECSchemaXML
 struct ECRelationshipClass /*__PUBLISH_ABSTRACT__*/ : public ECClass
@@ -526,11 +639,14 @@ friend struct ECSchema;
 private:
     StrengthType     m_strength;
     ECRelatedInstanceDirection     m_strengthDirection;
+    ECRelationshipConstraintP      m_target;
+    ECRelationshipConstraintP      m_source;
 
     //  Lifecycle management:  For now, to keep it simple, the class constructor is private.  The schema implementation will
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
     //  of a schema.
-    ECRelationshipClass (ECSchemaCR schema) : ECClass (schema), m_strength( STRENGTHTYPE_Referencing), m_strengthDirection(STRENGTHDIRECTION_Forward) {};
+    ECRelationshipClass (ECSchemaCR schema);
+    ~ECRelationshipClass ();
     
     ECObjectsStatus SetStrength(const wchar_t * strength);
     ECObjectsStatus SetStrengthDirection(const wchar_t *direction);
@@ -545,6 +661,10 @@ protected:
 public:
     EXPORTED_PROPERTY (StrengthType, Strength);                
     EXPORTED_PROPERTY (ECRelatedInstanceDirection, StrengthDirection);
+    //! Gets the constraint at the target end of the relationship
+    EXPORTED_READONLY_PROPERTY (ECRelationshipConstraintR, Target);
+    //! Gets the constraint at the source end of the relationship
+    EXPORTED_READONLY_PROPERTY (ECRelationshipConstraintR, Source);
     EXPORTED_READONLY_PROPERTY (bool, IsExplicit);
 
 }; // ECRelationshipClass
@@ -559,6 +679,7 @@ struct ECClassContainer /*__PUBLISH_ABSTRACT__*/
 private:
     friend struct ECSchema;
     friend struct ECClass;
+    friend struct ECRelationshipConstraint;
         
     ClassMap const&     m_classMap;
     
@@ -625,7 +746,6 @@ struct IECSchemaLocator
 public:
     virtual ECOBJECTS_EXPORT ECSchemaPtr LocateSchema(const wchar_t *name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, void * schemaContext) const = 0;
 };
-
 
 //! The in-memory representation of a schema as defined by ECSchemaXML
 struct ECSchema /*__PUBLISH_ABSTRACT__*/ : RefCountedBase

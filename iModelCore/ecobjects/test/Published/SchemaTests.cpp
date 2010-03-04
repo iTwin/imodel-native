@@ -140,6 +140,7 @@ ECSchemaPtr schema
         }
     
     }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -444,7 +445,7 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
 //    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 //    ECSchemaPtr schema;
 //    
-//    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml");
+//    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml", NULL, NULL);
 //    wprintf(L"Verifying original schema from file.\n"); 
 //    VerifyWidgetsSchema(schema);
 //
@@ -626,10 +627,13 @@ TEST(SchemaCreationTest, CanFullyCreateASchema)
     ECClassP class1;
     ECClassP baseClass;
     ECClassP structClass;
+    ECClassP relatedClass;
+    ECRelationshipClassP relationshipClass;
 
     testSchema->CreateClass(class1, L"TestClass");
     testSchema->CreateClass(structClass, L"StructClass");
     schema2->CreateClass(baseClass, L"BaseClass");
+    testSchema->CreateClass(relatedClass, L"RelatedClass");
     
     class1->Description = L"Class for testing purposes";
     class1->DisplayLabel = L"Test Class";
@@ -752,6 +756,54 @@ TEST(SchemaCreationTest, CanFullyCreateASchema)
     EXPECT_EQ(0, wcscmp(nestedArrayProp->TypeName.c_str(), L"StructClass"));
     EXPECT_EQ(0, wcscmp(primitiveArrayProp->TypeName.c_str(), L"int"));
 
+    testSchema->CreateRelationshipClass(relationshipClass, L"RelationshipClass");
+    EXPECT_TRUE(STRENGTHTYPE_Referencing == relationshipClass->Strength);
+    relationshipClass->Strength = STRENGTHTYPE_Embedding;
+    EXPECT_TRUE(STRENGTHTYPE_Embedding == relationshipClass->Strength);
+    
+    EXPECT_TRUE(STRENGTHDIRECTION_Forward == relationshipClass->StrengthDirection);
+    relationshipClass->StrengthDirection = STRENGTHDIRECTION_Backward;
+    EXPECT_TRUE(STRENGTHDIRECTION_Backward == relationshipClass->StrengthDirection);
+    
+    EXPECT_FALSE(relationshipClass->Source.IsMultiple);
+    EXPECT_TRUE(relationshipClass->Target.IsMultiple);
+    
+    EXPECT_TRUE(relationshipClass->Target.IsPolymorphic);
+    EXPECT_TRUE(relationshipClass->Source.IsPolymorphic);
+    relationshipClass->Source.IsPolymorphic = false;
+    EXPECT_FALSE(relationshipClass->Source.IsPolymorphic);
+    
+    relationshipClass->Description = L"Relates the test class to the related class";
+    relationshipClass->DisplayLabel = L"TestRelationshipClass";
+    
+    EXPECT_EQ(0, relationshipClass->Source.Classes.size());
+    EXPECT_EQ(0, relationshipClass->Target.Classes.size());
+    
+    relationshipClass->Source.AddClass(*structClass);
+    EXPECT_EQ(1, relationshipClass->Source.Classes.size());
+    relationshipClass->Source.AddClass(*class1);
+    EXPECT_EQ(1, relationshipClass->Source.Classes.size());
+    
+    relationshipClass->Target.AddClass(*relatedClass);
+    EXPECT_EQ(1, relationshipClass->Target.Classes.size());
+    relationshipClass->Target.AddClass(*relatedClass);
+    EXPECT_EQ(1, relationshipClass->Target.Classes.size());
+    relationshipClass->Target.AddClass(*structClass);
+    EXPECT_EQ(2, relationshipClass->Target.Classes.size());
+    
+    EXPECT_EQ(0, relationshipClass->Source.Cardinality.LowerLimit);
+    EXPECT_EQ(0, relationshipClass->Target.Cardinality.LowerLimit);
+    EXPECT_EQ(1, relationshipClass->Source.Cardinality.UpperLimit);
+    EXPECT_EQ(1, relationshipClass->Target.Cardinality.UpperLimit);
+    
+    relationshipClass->Source.Cardinality = RelationshipCardinality::OneMany();
+    EXPECT_EQ(1, relationshipClass->Source.Cardinality.LowerLimit);
+    EXPECT_TRUE(relationshipClass->Source.Cardinality.IsUpperLimitUnbounded());
+    
+    RelationshipCardinality *card = new RelationshipCardinality(2, 5);
+    relationshipClass->Target.Cardinality = *card;
+    EXPECT_EQ(2, relationshipClass->Target.Cardinality.LowerLimit);
+    EXPECT_EQ(5, relationshipClass->Target.Cardinality.UpperLimit);
     }
     
 TEST(ClassTest, ExpectErrorWithCircularBaseClasses)
@@ -819,5 +871,5 @@ TEST(ClassTest, ExpectPropertiesInOrder)
         i++;
         }
     }
-          
+         
 END_BENTLEY_EC_NAMESPACE
