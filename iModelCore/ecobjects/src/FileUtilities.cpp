@@ -33,5 +33,43 @@ StatusInt ECFileNameIterator::GetNextFileName (wchar_t * name)
     m_valid = 0 != ::FindNextFileW (m_findHandle, &m_findData);
     return  SUCCESS;
     }
+ 
+
+   
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/03
++---------------+---------------+---------------+---------------+---------------+------*/
+static void*    getDLLInstance ()
+    {
+    MEMORY_BASIC_INFORMATION    mbi;
+    if (VirtualQuery ((void*)&getDLLInstance, &mbi, sizeof mbi))
+        return mbi.AllocationBase;
+
+    return 0;
+    }
+ 
+std::wstring ECFileUtilities::s_dllPath = L"";
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Carole.MacDonald 02/10
++---------------+---------------+---------------+---------------+---------------+------*/
+std::wstring ECFileUtilities::GetDllPath()
+    {
+    if (!s_dllPath.empty())
+        return s_dllPath;
+
+    HINSTANCE ecobjectsHInstance = (HINSTANCE) getDLLInstance();
+    wchar_t strExePath [MAX_PATH];
+    if (0 == (GetModuleFileNameW (ecobjectsHInstance, strExePath, MAX_PATH)))
+        return L"";
+        
+    wchar_t executingDirectory[_MAX_DIR];
+    wchar_t executingDrive[_MAX_DRIVE];
+    _wsplitpath(strExePath, executingDrive, executingDirectory, NULL, NULL);
+    wchar_t filepath[_MAX_PATH];
+    _wmakepath(filepath, executingDrive, executingDirectory, NULL, NULL);
+    s_dllPath = filepath;
+    return filepath;
+    
+    }     
 END_BENTLEY_EC_NAMESPACE

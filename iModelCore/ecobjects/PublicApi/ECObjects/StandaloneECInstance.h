@@ -30,6 +30,12 @@ private:
     
     byte *               m_data;
     UInt32               m_bytesAllocated;
+    
+    // WIP_FUSION Is this a good enough implementation for StandaloneECInstace?
+    typedef int StructValueIdentifier;
+    StructValueIdentifier           m_structValueId;
+    std::map<StructValueIdentifier, IECInstancePtr>   m_structValueMap;
+    
      
 private:
     //! The StandaloneECInstance will take ownership of the memory
@@ -48,8 +54,10 @@ protected:
     
     virtual std::wstring    _GetInstanceId() const override;
     virtual bool            _IsReadOnly() const override;        
-    virtual StatusInt       _GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const override;
-    virtual StatusInt       _SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 nIndices, UInt32 const * indices) override;      
+    virtual StatusInt       _GetValue (ECValueR v, const wchar_t * propertyAccessString) const override;
+    virtual StatusInt       _GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 index) const override;
+    virtual StatusInt       _SetValue (const wchar_t * propertyAccessString, ECValueCR v) override;      
+    virtual StatusInt       _SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 index) override;      
     virtual StatusInt       _InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size) override;
     virtual StatusInt       _AddArrayElements (const wchar_t * propertyAccessString, UInt32 size) override;
     virtual StatusInt       _RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index) override;
@@ -57,6 +65,9 @@ protected:
     virtual void            _Dump () const override;
     virtual byte const *    _GetData () const override;
     virtual UInt32          _GetBytesAllocated () const override;
+    
+    virtual StatusInt       _SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index) override;    
+    virtual StatusInt       _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const override;
     
 public: // These must be public so that ECXInstanceEnabler can get at the guts of StandaloneECInstance to copy it into an XAttribute     
     ECOBJECTS_EXPORT byte const *         GetData () const;
@@ -74,7 +85,7 @@ protected:
         
 public: 
     ECOBJECTS_EXPORT static StandaloneECEnablerPtr CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout);
-    ECOBJECTS_EXPORT StandaloneECInstanceP         CreateInstance (UInt32 minimumInitialSize = 0);
+    ECOBJECTS_EXPORT StandaloneECInstancePtr       CreateInstance (UInt32 minimumInitialSize = 0);
     //ECOBJECTS_EXPORT StandaloneECInstanceP         CreateInstanceFromUninitializedMemory (byte * data, UInt32 size);
     //! Used to construct from another memory source like ECXData. The caller is claiming that the memory
     //! has been properly initialized with the classLayout that was passed in

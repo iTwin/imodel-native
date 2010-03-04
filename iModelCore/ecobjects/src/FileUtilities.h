@@ -25,4 +25,14 @@ public:
     StatusInt GetNextFileName (wchar_t * name);
      };
 
+struct ECFileUtilities
+    {
+private:
+    static std::wstring s_dllPath;
+    ECFileUtilities(void) {}
+    
+public:
+    static std::wstring GetDllPath();
+    };
+
 END_BENTLEY_EC_NAMESPACE

@@ -34,6 +34,18 @@ unsigned short milliseconds
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+std::wstring SystemTime::ToString
+(
+)
+    {
+    std::wostringstream valueAsString;
+    valueAsString << "#" << wYear << "/" << wMonth << "/" << wDay << "-" << wHour << ":" << wMinute << ":" << wSecond << ":" << wMilliseconds << "#";
+    return valueAsString.str();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Time in local time zone
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -250,7 +262,10 @@ void            ECValue::SetToNull()
     {
     if (IsString())
         SetString (NULL);
-    else if (!IsArray()) // arrays can never be null       
+    else if (IsStruct())    
+        m_structInstance = NULL;
+    
+    if (!IsArray()) // arrays can never be null       
         m_isNull = true; //WIP_FUSION handle other types
     }    
 /*---------------------------------------------------------------------------------**//**
@@ -276,6 +291,11 @@ void            ECValue::Clear()
             free (const_cast<wchar_t *>(m_stringInfo.m_string));
             
         m_stringInfo.m_string = NULL;
+        }
+        
+    if (IsStruct())
+        {
+        m_structInstance = NULL;
         }
         
     m_isNull = true;
@@ -350,7 +370,52 @@ ECValue::ECValue (::Int64 long64)
     ConstructUninitialized();
     SetLong (long64);
     };
-            
+        
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValue::ECValue (double doubleVal)
+    {
+    ConstructUninitialized();
+    SetDouble (doubleVal);
+    };
+        
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValue::ECValue (DPoint2dR point2d)
+    {
+    ConstructUninitialized();
+    SetPoint2D (point2d);
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValue::ECValue (DPoint3dR point3d)
+    {
+    ConstructUninitialized();
+    SetPoint3D (point3d);
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValue::ECValue (bool value)
+    {
+    ConstructUninitialized();
+    SetBoolean (value);
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValue::ECValue (SystemTime& time)
+    {
+    ConstructUninitialized();
+    SetDateTime (time);
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @param holdADuplicate     If true, EC::ECValue will make a duplicate, otherwise 
 * EC::ECValue holds the original pointer. Intended only for use when initializing arrays of strings, to avoid duplicating them twice.
@@ -525,9 +590,12 @@ static const Int64 TICKADJUSTMENT = 504911232000000000;     // ticks between 01/
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt          ECValue::GetDateTime (SystemTime& systemTime) 
+SystemTime          ECValue::GetDateTime () const
     {
-    Int64 systemDateTicks = GetDateTimeTicks ();
+    SystemTime systemTime;
+    Int64      systemDateTicks = GetDateTimeTicks ();
+
+    memset (&systemTime, 0, sizeof(systemTime));
 
     // m_dateTime is number of ticks since 00:00:00 01/01/01 - Fileticks are relative to 00:00:00 01/01/1601
     systemDateTicks -= TICKADJUSTMENT; 
@@ -536,12 +604,9 @@ StatusInt          ECValue::GetDateTime (SystemTime& systemTime)
     fileTime.dwHighDateTime = systemDateTicks >> 32;
     SYSTEMTIME  tempTime;
     if (FileTimeToSystemTime (&fileTime, &tempTime))
-        {
         memcpy (&systemTime, &tempTime, sizeof(systemTime));
-        return SUCCESS;
-        }
 
-    return ERROR;
+    return systemTime;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -578,7 +643,7 @@ DPoint2d          ECValue::GetPoint2D() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ECValue::SetPoint2D (DPoint2d value)
+StatusInt       ECValue::SetPoint2D (DPoint2dR value)
     {
     m_isNull         = false;
     m_primitiveType  = PRIMITIVETYPE_Point2D;
@@ -602,7 +667,7 @@ DPoint3d          ECValue::GetPoint3D() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ECValue::SetPoint3D (DPoint3d value)
+StatusInt       ECValue::SetPoint3D (DPoint3dR value)
     {
     m_isNull         = false;
     m_primitiveType  = PRIMITIVETYPE_Point3D;
@@ -673,6 +738,28 @@ StatusInt ECValue::SetBinary (const byte * data, size_t size)
 
     return SUCCESS;
     }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr  ECValue::GetStruct() const
+    {
+    PRECONDITION (IsStruct() && "Tried to get struct value from an EC::ECValue that is not a struct.", 0);
+    return m_structInstance;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       ECValue::SetStruct (IECInstanceR structInstance)
+    {
+    Clear();
+    m_isNull    = false;
+    m_valueKind = VALUEKIND_Struct;    
+    m_structInstance = &structInstance;        
+    
+    return SUCCESS;
+    }    
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
@@ -688,6 +775,10 @@ std::wstring    ECValue::ToString () const
         {
         ArrayInfo arrayInfo = GetArrayInfo();
         valueAsString << "Count: " << arrayInfo.GetCount() << " IsFixedSize: " << arrayInfo.IsFixedCount();
+        }
+    else if (IsStruct())
+        {
+        valueAsString << "IECInstance containing struct value";
         }
     else
         {
@@ -712,7 +803,31 @@ std::wstring    ECValue::ToString () const
                 {
                 valueAsString << GetString();
                 break;          
+                }            
+            case PRIMITIVETYPE_Boolean:
+                {
+                valueAsString << GetString();
+                break;          
                 }
+            case PRIMITIVETYPE_Point2D:
+                {
+                DPoint2d point = GetPoint2D();
+                valueAsString << "{" << point.x << "," << point.y << "}";
+                break;          
+                }
+            case PRIMITIVETYPE_Point3D:
+                {
+                DPoint3d point = GetPoint3D();
+                valueAsString << "{" << point.x << "," << point.y << ","<< point.z << "}";
+                break;          
+                }
+            case PRIMITIVETYPE_DateTime:
+                {
+                SystemTime timeDate = GetDateTime();
+                valueAsString << timeDate.ToString();
+                break;          
+                }
+
             default:
                 {
                 valueAsString << L"EC::ECValue::ToString needs work... unsupported data type";
@@ -735,6 +850,8 @@ StatusInt       ECValue::SetStructArrayInfo (UInt32 count, bool isFixedCount)
     m_valueKind                = VALUEKIND_Array;
 
     m_arrayInfo.InitializeStructArray (count, isFixedCount);
+    
+    m_isNull = false; // arrays are never null
     
     return SUCCESS;
     }

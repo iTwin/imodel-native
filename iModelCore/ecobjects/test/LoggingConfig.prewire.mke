@@ -1,14 +1,11 @@
 #*--------------------------------------------------------------------------------------+
 #
-#     $Source: ecobjects/nativeatp/SeedData.prewire.mke $
+#     $Source: ecobjects/nativeatp/LoggingConfig.prewire.mke $
 #
 #  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
-
-# Wire in seed data
-always:
-   @CreateSymLinks.py -d"$(OutputRootDir)BuildContexts/ecfTest/Delivery/SeedData=$(ecobjectsSrc)nativeatp/SeedData"
    
-
+$(OutputRootDir)BuildContexts/ecfTest/Delivery/logging.config.xml: $(ecobjectsSrc)nativeatp/logging.config.xml
+    $(LinkFirstDepToFirstTarget)

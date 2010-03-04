@@ -104,11 +104,3 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 #----------------------------------------------------------------------
 %include dlmLink.mki
 
-#----------------------------------------------------------------------
-#  Instead of embedding the standard schemas, now just deliver them
-#----------------------------------------------------------------------
-always:
-    @CreateSymLinks.py -m"$(ContextDeliveryDir)/Schemas/=$(ecobjectsSrc)Standards/*.xml"
-    @CreateSymLinks.py -m"$(ContextDeliveryDir)/Schemas/General/=$(ecobjectsSrc)Standards/General/*.xml"
-    @CreateSymLinks.py -m"$(ContextDeliveryDir)/Schemas/LibraryUnits/=$(ecobjectsSrc)Standards/LibraryUnits/*.xml"
-    

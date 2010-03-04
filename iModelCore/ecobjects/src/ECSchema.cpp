@@ -706,18 +706,22 @@ SchemaMap* schemasUnderConstruction
     // try in standard path locations for the schema
     
     std::vector<const wchar_t *> standardPaths;
-        wchar_t strExePath [MAX_PATH];
-    if (0 == (GetModuleFileNameW (NULL, strExePath, MAX_PATH)))
+    std::wstring dllPath = ECFileUtilities::GetDllPath();
+    if (0 == dllPath.length())
         return NULL;
         
-    wchar_t executingDirectory[_MAX_DIR];
-    wchar_t executingDrive[_MAX_DRIVE];
-    _wsplitpath(strExePath, executingDrive, executingDirectory, NULL, NULL);
-    wchar_t filepath[_MAX_PATH];
-    _wmakepath(filepath, executingDrive, executingDirectory, NULL, NULL);
-    filepath[wcslen(filepath)-1] = '\0';
-    standardPaths.push_back(filepath);
-
+    standardPaths.push_back(dllPath.c_str());
+    
+    wchar_t schemaPath[_MAX_PATH];
+    wchar_t generalPath[_MAX_PATH];
+    wchar_t libraryPath[_MAX_PATH];
+    
+    swprintf(schemaPath, _MAX_PATH, L"%s\\Schemas", dllPath.c_str());
+    swprintf(generalPath, _MAX_PATH, L"%s\\Schemas\\General", dllPath.c_str());
+    swprintf(libraryPath, _MAX_PATH, L"%s\\Schemas\\LibraryUnits", dllPath.c_str());
+    standardPaths.push_back(schemaPath);
+    standardPaths.push_back(generalPath);
+    standardPaths.push_back(libraryPath);
     return LocateSchemaByPath(schemaLocators, &standardPaths, name, versionMajor, versionMinor, schemasUnderConstruction);
     }
     

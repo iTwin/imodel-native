@@ -8,9 +8,12 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include <ECObjects\ECObjects.h>
+#include "ECObjects.h"
+#include <Geom\GeomApi.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
+
+typedef RefCountedPtr<IECInstance> IECInstancePtr;
 
 //! EC::IECInstance is the native equivalent of a .NET IECInstance.
 //! Unlike IECInstance, it is not a pure interface, but is a concrete struct.
@@ -27,8 +30,10 @@ protected:
     ECOBJECTS_EXPORT IECInstance(); 
     ECOBJECTS_EXPORT ~IECInstance();
     ECOBJECTS_EXPORT virtual std::wstring _GetInstanceId() const = 0; // Virtual and returning std::wstring because a subclass may want to calculate it on demand
-    ECOBJECTS_EXPORT virtual StatusInt    _GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const = 0;
-    ECOBJECTS_EXPORT virtual StatusInt    _SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 nIndices = 0, UInt32 const * indices = NULL) = 0;
+    ECOBJECTS_EXPORT virtual StatusInt    _GetValue (ECValueR v, const wchar_t * propertyAccessString) const = 0;
+    ECOBJECTS_EXPORT virtual StatusInt    _GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 index) const = 0;
+    ECOBJECTS_EXPORT virtual StatusInt    _SetValue (const wchar_t * propertyAccessString, ECValueCR v) = 0;    
+    ECOBJECTS_EXPORT virtual StatusInt    _SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 index) = 0;
     ECOBJECTS_EXPORT virtual StatusInt    _InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size) = 0;
     ECOBJECTS_EXPORT virtual StatusInt    _AddArrayElements (const wchar_t * propertyAccessString, UInt32 size) = 0;
     ECOBJECTS_EXPORT virtual StatusInt    _RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index) = 0;
@@ -44,9 +49,9 @@ public:
     ECOBJECTS_EXPORT bool                 IsReadOnly() const;
     
     ECOBJECTS_EXPORT ECClassCR            GetClass() const;
-    ECOBJECTS_EXPORT StatusInt            GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
-    ECOBJECTS_EXPORT StatusInt            SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 nIndices = 0, UInt32 const * indices = NULL);
+    ECOBJECTS_EXPORT StatusInt            GetValue (ECValueR v, const wchar_t * propertyAccessString) const;    
     ECOBJECTS_EXPORT StatusInt            GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 index) const;
+    ECOBJECTS_EXPORT StatusInt            SetValue (const wchar_t * propertyAccessString, ECValueCR v);    
     ECOBJECTS_EXPORT StatusInt            SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 index);
         
     //! Contract:
@@ -62,11 +67,24 @@ public:
     
     // These are more than just convenience methods... they enable an access pattern 
     // from managed code that can get a value with only one managed to native transition    
-    ECOBJECTS_EXPORT StatusInt GetInteger (int & value,             const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
-    ECOBJECTS_EXPORT StatusInt GetDouble  (double & value,          const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
-    ECOBJECTS_EXPORT StatusInt GetString  (const wchar_t * & value, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
-    ECOBJECTS_EXPORT StatusInt SetIntegerValue (const wchar_t * propertyAccessString, int value,             UInt32 nIndices = 0, UInt32 const * indices = NULL);
-    ECOBJECTS_EXPORT StatusInt SetStringValue  (const wchar_t * propertyAccessString, const wchar_t * value, UInt32 nIndices = 0, UInt32 const * indices = NULL);
+    ECOBJECTS_EXPORT StatusInt GetInteger       (int & value,             const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
+    ECOBJECTS_EXPORT StatusInt GetDouble        (double & value,          const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
+    ECOBJECTS_EXPORT StatusInt GetString        (const wchar_t * & value, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
+    ECOBJECTS_EXPORT StatusInt GetBoolean       (bool & value,            const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
+    ECOBJECTS_EXPORT StatusInt GetPoint2D       (DPoint2dR value,         const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
+    ECOBJECTS_EXPORT StatusInt GetPoint3D       (DPoint3dR value,         const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
+    ECOBJECTS_EXPORT StatusInt GetDateTime      (SystemTimeR value,       const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
+    ECOBJECTS_EXPORT StatusInt GetDateTimeTicks (Int64 & value,           const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
+
+    ECOBJECTS_EXPORT StatusInt SetIntegerValue  (const wchar_t * propertyAccessString, int value,             UInt32 nIndices = 0, UInt32 const * indices = NULL);
+    ECOBJECTS_EXPORT StatusInt SetStringValue   (const wchar_t * propertyAccessString, const wchar_t * value, UInt32 nIndices = 0, UInt32 const * indices = NULL);
+    ECOBJECTS_EXPORT StatusInt SetDoubleValue   (const wchar_t * propertyAccessString, double value,          UInt32 nIndices = 0, UInt32 const * indices = NULL);
+    ECOBJECTS_EXPORT StatusInt SetBooleanValue  (const wchar_t * propertyAccessString, bool value,            UInt32 nIndices = 0, UInt32 const * indices = NULL);
+    ECOBJECTS_EXPORT StatusInt SetPoint2DValue  (const wchar_t * propertyAccessString, DPoint2dR value,       UInt32 nIndices = 0, UInt32 const * indices = NULL);
+    ECOBJECTS_EXPORT StatusInt SetPoint3DValue  (const wchar_t * propertyAccessString, DPoint3dR value,       UInt32 nIndices = 0, UInt32 const * indices = NULL);
+    ECOBJECTS_EXPORT StatusInt SetDateTimeValue (const wchar_t * propertyAccessString, SystemTimeR value,     UInt32 nIndices = 0, UInt32 const * indices = NULL);
+    ECOBJECTS_EXPORT StatusInt SetDateTimeTicks (const wchar_t * propertyAccessString, Int64 value,           UInt32 nIndices = 0, UInt32 const * indices = NULL);
+
     ECOBJECTS_EXPORT void      Dump () const;
 
     ECOBJECTS_EXPORT static void      Debug_ResetAllocationStats ();

@@ -15,8 +15,9 @@ BEGIN_BENTLEY_EC_NAMESPACE
 StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, byte * data, UInt32 size) :
         MemoryInstanceSupport (true),
         m_sharedWipEnabler(const_cast<StandaloneECEnablerP>(&enabler)), // WIP_FUSION: can we get rid of the const cast?
-        m_bytesAllocated(size), m_data(data) 
+        m_bytesAllocated(size), m_data(data), m_structValueId (0)
     {
+    m_sharedWipEnabler->AddRef ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -25,16 +26,19 @@ StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, byte 
 StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, UInt32 minimumBufferSize) :
         MemoryInstanceSupport (true),
         m_sharedWipEnabler(const_cast<StandaloneECEnablerP>(&enabler)), // WIP_FUSION: can we get rid of the const cast?
-        m_bytesAllocated(0), m_data(NULL) 
+        m_bytesAllocated(0), m_data(NULL), m_structValueId (0)
     {
     UInt32 size = max (minimumBufferSize, enabler.GetClassLayout().GetSizeOfFixedSection());
     m_data = (byte*)malloc (size);
     m_bytesAllocated = size;
     ClearValues();
+    m_sharedWipEnabler->AddRef ();
     }
     
 StandaloneECInstance::~StandaloneECInstance ()
     {
+    m_sharedWipEnabler->Release ();
+
     //Logger::GetLogger()->tracev (L"StandaloneECInstance at 0x%x is being destructed. It references enabler 0x%x", this, m_sharedWipEnabler);
     }
 
@@ -192,24 +196,44 @@ StatusInt           StandaloneECInstance::_GrowAllocation (UInt32 bytesNeeded)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           StandaloneECInstance::_GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+StatusInt           StandaloneECInstance::_GetValue (ECValueR v, const wchar_t * propertyAccessString) const
     {
     ClassLayoutCR classLayout = m_sharedWipEnabler->GetClassLayout();
     
-    return GetValueFromMemory (classLayout, v, propertyAccessString, nIndices, indices);
+    return GetValueFromMemory (classLayout, v, propertyAccessString);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           StandaloneECInstance::_GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 index) const
+    {
+    ClassLayoutCR classLayout = m_sharedWipEnabler->GetClassLayout();
     
+    return GetValueFromMemory (classLayout, v, propertyAccessString, true, index);
+    }
+        
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           StandaloneECInstance::_SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 nIndices, UInt32 const * indices)
+StatusInt           StandaloneECInstance::_SetValue (const wchar_t * propertyAccessString, ECValueCR v)
     {
     ClassLayoutCR classLayout = m_sharedWipEnabler->GetClassLayout();
-    StatusInt status = SetValueToMemory (classLayout, propertyAccessString, v, nIndices, indices);
+    StatusInt status = SetValueToMemory (classLayout, propertyAccessString, v);
 
     return status;
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           StandaloneECInstance::_SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 index)
+    {
+    ClassLayoutCR classLayout = m_sharedWipEnabler->GetClassLayout();
+    StatusInt status = SetValueToMemory (classLayout, propertyAccessString, v, true, index);
+
+    return status;
+    }    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -247,6 +271,59 @@ StatusInt           StandaloneECInstance::_ClearArray (const wchar_t * propertyA
     {
     return ECOBJECTS_STATUS_OperationNotSupported;
     }                      
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   02/2010
++---------------+---------------+---------------+---------------+---------------+------*/    
+StatusInt       StandaloneECInstance::_GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const
+    {
+    ECValue binaryValue;
+    StatusInt status = GetPrimitiveValueFromMemory (binaryValue, propertyLayout, true, index);      
+    if ((status != SUCCESS) || (binaryValue.IsNull()))
+        return status;
+                    
+    size_t size;
+    StructValueIdentifier structValueId = *(StructValueIdentifier*)binaryValue.GetBinary (size);    
+
+    // WIP_FUSION - is there realy no better way to do this?  something like m_structValueMap[x];
+    IECInstancePtr instancePtr = NULL;
+    std::map<StructValueIdentifier, IECInstancePtr>::const_iterator  instanceIterator;
+    instanceIterator = m_structValueMap.find (structValueId);    
+    if ( instanceIterator != m_structValueMap.end() )
+        instancePtr = instanceIterator->second;
+       
+    v.SetStruct (*instancePtr);
+    
+    return SUCCESS;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       StandaloneECInstance::_SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index)
+    {
+    IECInstancePtr p;
+    ECValue binaryValue (PRIMITIVETYPE_Binary);
+    m_structValueId++;
+    if (v.IsNull())
+        {
+        p = NULL;
+        binaryValue.SetToNull();
+        }
+    else
+        {
+        p = v.GetStruct();    
+        binaryValue.SetBinary ((const byte *)&(m_structValueId), sizeof (StructValueIdentifier));
+        }
+        
+    StatusInt status = SetPrimitiveValueToMemory (binaryValue, classLayout, propertyLayout, true, index);      
+    if (status != SUCCESS)
+        return status;
+                    
+    m_structValueMap[m_structValueId] = p;
+    
+    return SUCCESS; 
+    }    
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
@@ -287,7 +364,7 @@ wchar_t const *         StandaloneECEnabler::_GetName() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
-StandaloneECInstanceP   StandaloneECEnabler::CreateInstance (UInt32 minimumBufferSize)
+StandaloneECInstancePtr   StandaloneECEnabler::CreateInstance (UInt32 minimumBufferSize)
     {
     return new StandaloneECInstance (*this, minimumBufferSize);
     }    
