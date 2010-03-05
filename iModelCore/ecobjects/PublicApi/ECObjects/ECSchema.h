@@ -450,7 +450,7 @@ public:
     //! You cannot add a base class if it creates a cycle. For example, if A is a base class
     //! of B, and B is a base class of C, you cannot make C a base class of A. Attempting to do
     //! so will return an error.
-    //! @param[in] The class to derive from
+    //! @param[in] baseClass The class to derive from
     ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass);
     
     //! Returns whether there are any base classes for this class
@@ -888,6 +888,7 @@ public:
     //! @param[in]    ecSchemaXmlFile     The absolute path of the file to deserialize.
     //! @param[in]    schemaLocators      A list of IECSchemaLocatorP that will be used to locate referenced schemas
     //! @param[in]    schemaPaths         A list of paths that should be searched to locate referenced schemas
+    //! @param[in]    schemaContext       Usually NULL, but when used it is usually a pointer to a SchemaMap used to locate referenced schemas
     //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
     //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
     ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromFile (ECSchemaPtr& schemaOut, const wchar_t * ecSchemaXmlFile, const std::vector<IECSchemaLocatorP> * schemaLocators, const std::vector<const wchar_t *> * schemaPaths, void * schemaContext = NULL);
@@ -899,6 +900,7 @@ public:
     //! @param[in]    ecSchemaXml         The string containing ECSchemaXML to deserialize
     //! @param[in]    schemaLocators      A list of IECSchemaLocatorP that will be used to locate referenced schemas
     //! @param[in]    schemaPaths         A list of paths that should be searched to locate referenced schemas
+    //! @param[in]    schemaContext       Usually NULL, but when used it is usually a pointer to a SchemaMap used to locate referenced schemas
     //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
     //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
     ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromString (ECSchemaPtr& schemaOut, const wchar_t * ecSchemaXml, const std::vector<IECSchemaLocatorP> * schemaLocators, const std::vector<const wchar_t *> * schemaPaths, void * schemaContext = NULL);
