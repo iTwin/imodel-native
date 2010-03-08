@@ -289,6 +289,25 @@ std::wstring const& propertyName
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::RemoveProperty
+(
+const std::wstring &name
+)
+    {
+    stdext::hash_map<const wchar_t *, ECPropertyP>::const_iterator  propertyIterator;
+    propertyIterator = m_propertyMap.find (name.c_str());
+    
+    if ( propertyIterator == m_propertyMap.end() )
+        return ECOBJECTS_STATUS_ClassNotFound;
+        
+    m_propertyList.remove(propertyIterator->second);
+    m_propertyMap.erase(propertyIterator);
+    return ECOBJECTS_STATUS_Success;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::AddProperty
@@ -458,7 +477,7 @@ ECClassCR baseClass
     if (this == &baseClass || ClassesAreEqualByName(this, &baseClass) || baseClass.TraverseBaseClasses(&CheckBaseClassCycles, true, this))
         return ECOBJECTS_STATUS_BaseClassUnacceptable;
         
-    ECBaseClassesVector::const_iterator baseClassIterator;
+    ECBaseClassesList::const_iterator baseClassIterator;
     for (baseClassIterator = m_baseClasses.begin(); baseClassIterator != m_baseClasses.end(); baseClassIterator++)
         {
         if (*baseClassIterator == (ECClassP)&baseClass)
@@ -484,6 +503,33 @@ bool ECClass::HasBaseClasses
 ) const
     {
     return (m_baseClasses.size() > 0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::RemoveBaseClass
+(
+ECClassCR baseClass
+)
+    {
+    ECBaseClassesList::const_iterator baseClassIterator;
+    for (baseClassIterator = m_baseClasses.begin(); baseClassIterator != m_baseClasses.end(); baseClassIterator++)
+        {
+        if (*baseClassIterator == (ECClassP)&baseClass)
+            {
+            break;
+            }
+        }
+        
+    if (m_baseClasses.end() == baseClassIterator)
+        {
+        Logger::GetLogger()->warningv(L"Class '%s' is not a base class of class '%s'", baseClass.Name, m_name);
+        return ECOBJECTS_STATUS_ClassNotFound;
+        }
+        
+    m_baseClasses.remove((ECClassP)&baseClass);
+    return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -774,7 +820,7 @@ ECClassCR  ecClass
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-const ECBaseClassesVector& ECClass::GetBaseClasses
+const ECBaseClassesList& ECClass::GetBaseClasses
 (
 ) const
     {
@@ -1123,7 +1169,7 @@ ECClassCR classConstraint
         m_constraintClasses.clear();
     else
         {
-        ECConstraintClassesVector::const_iterator constraintClassIterator;
+        ECConstraintClassesList::const_iterator constraintClassIterator;
         for (constraintClassIterator = m_constraintClasses.begin(); constraintClassIterator != m_constraintClasses.end(); constraintClassIterator++)
             {
             if (*constraintClassIterator == (ECClassP)&classConstraint)
@@ -1134,11 +1180,32 @@ ECClassCR classConstraint
     
     return ECOBJECTS_STATUS_Success;       
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipConstraint::RemoveClass
+(
+ECClassCR classConstraint
+)
+    {
+    ECConstraintClassesList::const_iterator constraintClassIterator;
+    for (constraintClassIterator = m_constraintClasses.begin(); constraintClassIterator != m_constraintClasses.end(); constraintClassIterator++)
+        {
+        if (*constraintClassIterator == (ECClassP)&classConstraint)
+            {
+            m_constraintClasses.remove(*constraintClassIterator);
+            return ECOBJECTS_STATUS_Success;
+            }
+        }
+        
+    return ECOBJECTS_STATUS_ClassNotFound;
+    }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-const ECConstraintClassesVector& ECRelationshipConstraint::GetClasses
+const ECConstraintClassesList& ECRelationshipConstraint::GetClasses
 (
 ) const
     {
