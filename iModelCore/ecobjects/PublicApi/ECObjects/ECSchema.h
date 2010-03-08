@@ -353,8 +353,8 @@ public:
 
 }; 
 
-typedef std::vector<ECClassP> ECBaseClassesVector;
-typedef std::vector<ECClassP> ECConstraintClassesVector;
+typedef std::list<ECClassP> ECBaseClassesList;
+typedef std::list<ECClassP> ECConstraintClassesList;
 
 /*__PUBLISH_SECTION_END__*/
 typedef bool (*TraversalDelegate) (ECClassCP, ECClassCP);
@@ -377,7 +377,7 @@ private:
     bool                    m_isCustomAttributeClass;
     bool                    m_isDomainClass;
     ECSchemaCR              m_schema;
-    ECBaseClassesVector     m_baseClasses;
+    ECBaseClassesList       m_baseClasses;
     ECPropertyContainer     m_propertyContainer;
 
     // Needswork:  Does STL provide any type of hypbrid list/dictionary collection?  We need fast lookup by name as well as retained order.  For now we will
@@ -423,7 +423,7 @@ public:
     EXPORTED_READONLY_PROPERTY (std::wstring const&,    Name);        
     EXPORTED_READONLY_PROPERTY (bool,                   IsDisplayLabelDefined);    
     EXPORTED_READONLY_PROPERTY (ECPropertyContainerCR,  Properties); 
-    EXPORTED_READONLY_PROPERTY (const ECBaseClassesVector&,     BaseClasses);   
+    EXPORTED_READONLY_PROPERTY (const ECBaseClassesList&,     BaseClasses);   
 
     EXPORTED_PROPERTY  (std::wstring const&,            Description);
     EXPORTED_PROPERTY  (std::wstring const&,            DisplayLabel);
@@ -456,6 +456,9 @@ public:
     //! Returns whether there are any base classes for this class
     ECOBJECTS_EXPORT bool            HasBaseClasses() const;
     
+    //! Removes a base class.
+    ECOBJECTS_EXPORT ECObjectsStatus RemoveBaseClass(ECClassCR baseClass);
+    
     //! Returns true if the class is the type specified or derived from it.
     ECOBJECTS_EXPORT bool            Is(ECClassCP targetClass) const;
 
@@ -466,6 +469,10 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, std::wstring const& name);
     ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, std::wstring const& name, PrimitiveType primitiveType);
     ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, std::wstring const& name, ECClassCP structType);
+    
+    //! Remove the named property
+    //! @param[in] name The name of the property to be removed
+    ECOBJECTS_EXPORT ECObjectsStatus RemoveProperty(std::wstring const& name);
      
     //! Get a property by name within the context of this class and its base classes.
     //! The pointer returned by this method is valid until the ECClass containing the property is destroyed or the property
@@ -571,7 +578,7 @@ private:
     // to support implicit relationships.  For now, just support explicit relationships
 //    stdext::hash_map<ECClassCP, ECRelationshipConstrainClassCP> m_constraintClasses;
 
-    ECConstraintClassesVector        m_constraintClasses;
+    ECConstraintClassesList        m_constraintClasses;
     
     std::wstring    m_roleLabel;
     bool            m_isPolymorphic;
@@ -623,8 +630,12 @@ public:
     //! @param[in] classConstraint  The class to add
     ECOBJECTS_EXPORT ECObjectsStatus AddClass(ECClassCR classConstraint);
     
+    //! Removes the specified class from the constraint.
+    //! @param[in] classConstraint  The class to remove
+    ECOBJECTS_EXPORT ECObjectsStatus RemoveClass(ECClassCR classConstraint);
+    
     //! Returns the classes applied to the constraint.
-    EXPORTED_READONLY_PROPERTY (const ECConstraintClassesVector&, Classes);
+    EXPORTED_READONLY_PROPERTY (const ECConstraintClassesList&, Classes);
     
 };
 

@@ -470,11 +470,74 @@ Bentley::EC::ECSchemaCR refSchema
         {
         if (*schemaIterator == (ECSchemaP) &refSchema)
             {
-            m_refSchemaList.erase(schemaIterator);
-            return ECOBJECTS_STATUS_Success;
+//            m_refSchemaList.erase(schemaIterator);
+//            return ECOBJECTS_STATUS_Success;
+            break;
             }
         }
-    return ECOBJECTS_STATUS_SchemaNotFound;
+    if (m_refSchemaList.end() == schemaIterator)
+        return ECOBJECTS_STATUS_SchemaNotFound;
+        
+    // Can only remove the reference if nothing actually references it.
+    
+    for each (ECClassP ecClass in Classes)
+        {
+        // First, check each base class to see if the base class uses that schema
+        for each (ECClassP baseClass in ecClass->BaseClasses)
+            {
+            if ((ECSchemaP) &(baseClass->Schema) == *schemaIterator)
+                {
+                return ECOBJECTS_STATUS_SchemaInUse;
+                }
+            }
+            
+        // If it is a relationship class, check the constraints to make sure the constraints don't use that schema
+        ECRelationshipClassP relClass = dynamic_cast<ECRelationshipClassP>(ecClass);
+        if (NULL != relClass)
+            {
+            for each (ECClassP target in relClass->Target.Classes)
+                {
+                if ((ECSchemaP) &(target->Schema) == *schemaIterator)
+                    {
+                    return ECOBJECTS_STATUS_SchemaInUse;
+                    }
+                }
+            for each (ECClassP source in relClass->Source.Classes)
+                {
+                if ((ECSchemaP) &(source->Schema) == *schemaIterator)
+                    {
+                    return ECOBJECTS_STATUS_SchemaInUse;
+                    }
+                }
+            }
+            
+        // And make sure that there are no struct types from another schema
+        for each (ECPropertyP prop in ecClass->Properties)
+            {
+            ECClassCP typeClass;
+            if (prop->IsStruct)
+                {
+                typeClass = &(prop->GetAsStructProperty()->Type);
+                }
+            else if (prop->IsArray)
+                {
+                typeClass = prop->GetAsArrayProperty()->StructElementType;
+                }
+            else
+                {
+                typeClass = NULL;
+                }
+            if (NULL == typeClass)
+                continue;
+            if (this->Name.compare(typeClass->Schema.Name) == 0 && this->VersionMajor == typeClass->Schema.VersionMajor &&
+                this->VersionMinor == typeClass->Schema.VersionMinor)
+                continue;
+            return ECOBJECTS_STATUS_SchemaInUse;
+            }
+        }
+
+    m_refSchemaList.erase(schemaIterator);        
+    return ECOBJECTS_STATUS_Success;
     }
     
 /*---------------------------------------------------------------------------------**//**
