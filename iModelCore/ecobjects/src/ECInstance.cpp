@@ -211,6 +211,23 @@ StatusInt           IECInstance::SetValue (const wchar_t * propertyAccessString,
     }        
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           IECInstance::GetLong (Int64 & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+    {
+    PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
+    ECValue v;
+    StatusInt status;
+    if (nIndices == 1)
+        status = _GetValue (v, propertyAccessString, *indices);
+    else
+        status = _GetValue (v, propertyAccessString);
+    value = v.GetLong();
+    
+    return status;
+    }    
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
 StatusInt           IECInstance::GetInteger (int & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
@@ -338,6 +355,22 @@ StatusInt IECInstance::GetDateTimeTicks (Int64 & value, const wchar_t * property
         status = _GetValue (v, propertyAccessString);
     value = v.GetDateTimeTicks();
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     01/10
++---------------+---------------+---------------+---------------+---------------+------*/       
+StatusInt           IECInstance::SetLongValue (const wchar_t * propertyAccessString, Int64 value, UInt32 nIndices, UInt32 const * indices)
+    {
+    PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
+    ECValue v(value);
+    StatusInt status;
+    if (nIndices == 1)
+        status = _SetValue (propertyAccessString, v, *indices);
+    else
+        status = _SetValue (propertyAccessString, v);
+
+    return status;    
     }
 
 /*---------------------------------------------------------------------------------**//**

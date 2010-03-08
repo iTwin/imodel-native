@@ -68,6 +68,7 @@ public:
     // These are more than just convenience methods... they enable an access pattern 
     // from managed code that can get a value with only one managed to native transition    
     ECOBJECTS_EXPORT StatusInt GetInteger       (int & value,             const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
+    ECOBJECTS_EXPORT StatusInt GetLong          (Int64 & value,           const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
     ECOBJECTS_EXPORT StatusInt GetDouble        (double & value,          const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
     ECOBJECTS_EXPORT StatusInt GetString        (const wchar_t * & value, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
     ECOBJECTS_EXPORT StatusInt GetBoolean       (bool & value,            const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
@@ -76,6 +77,7 @@ public:
     ECOBJECTS_EXPORT StatusInt GetDateTime      (SystemTimeR value,       const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
     ECOBJECTS_EXPORT StatusInt GetDateTimeTicks (Int64 & value,           const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL) const;
 
+    ECOBJECTS_EXPORT StatusInt SetLongValue     (const wchar_t * propertyAccessString, Int64 value,           UInt32 nIndices = 0, UInt32 const * indices = NULL);
     ECOBJECTS_EXPORT StatusInt SetIntegerValue  (const wchar_t * propertyAccessString, int value,             UInt32 nIndices = 0, UInt32 const * indices = NULL);
     ECOBJECTS_EXPORT StatusInt SetStringValue   (const wchar_t * propertyAccessString, const wchar_t * value, UInt32 nIndices = 0, UInt32 const * indices = NULL);
     ECOBJECTS_EXPORT StatusInt SetDoubleValue   (const wchar_t * propertyAccessString, double value,          UInt32 nIndices = 0, UInt32 const * indices = NULL);

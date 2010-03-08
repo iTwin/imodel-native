@@ -764,7 +764,11 @@ UInt32          MemoryInstanceSupport::GetPropertyValueSize (PropertyLayoutCR pr
     else
         {
         SecondaryOffset* pSecondaryOffset = (SecondaryOffset*)(_GetData() + propertyLayout.GetOffset());
-        SecondaryOffset* pNextOffset = pSecondaryOffset + 1;        
+        SecondaryOffset* pNextOffset = pSecondaryOffset + 1;    
+
+        if ((*pNextOffset == 0))
+            return 0;
+
         return *pNextOffset - *pSecondaryOffset;        
         }
     }    
