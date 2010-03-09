@@ -228,6 +228,9 @@ void            ECValue::ConstructUninitialized()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECValue::DeepCopy (ECValueCR v)
     {
+    if (this == &v)
+        return;
+
     memcpy (this, &v, sizeof(ECValue));
 
     if (IsNull())
@@ -237,7 +240,22 @@ void            ECValue::DeepCopy (ECValueCR v)
         {            
         case VALUEKIND_Struct:
             {
+            //WIP_FUSION 
             assert (false && "Needs work: copy the struct value");
+            break;
+            }
+
+        case VALUEKIND_Array:
+            {
+            //WIP_FUSION 
+            assert (false && "It's impossible to 'copy' an array -- the data is not here");
+            break;
+            }
+
+        case PRIMITIVETYPE_Binary:
+            {
+            //WIP_FUSION 
+            assert (false && "Needs work: can we copy a binary value? BinaryInfo::m_data is a pointer into somebody's storage container?!");
             break;
             }
 
@@ -245,9 +263,15 @@ void            ECValue::DeepCopy (ECValueCR v)
             m_stringInfo.m_freeWhenDone = false; // prevent SetString from attempting to free the string that was temporarily copied by memset
             SetString (v.m_stringInfo.m_string);
             break;
-        // the memset takes care of these...            
+
+        // the memcpy takes care of these...            
+        case PRIMITIVETYPE_Boolean:
         case PRIMITIVETYPE_Integer:
         case PRIMITIVETYPE_Long:
+        case PRIMITIVETYPE_Double:
+        case PRIMITIVETYPE_Point2D:
+        case PRIMITIVETYPE_Point3D:
+        case PRIMITIVETYPE_DateTime:
             break;
                         
         default:
