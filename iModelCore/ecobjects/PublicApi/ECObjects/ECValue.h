@@ -91,6 +91,7 @@ protected:
         {
         const byte *        m_data;
         size_t              m_size;
+        bool                m_freeWhenDone;
         };
         
     union
@@ -180,10 +181,11 @@ public:
     ECOBJECTS_EXPORT StatusInt      SetString (const wchar_t * string, bool holdADuplicate = true);
 
     ECOBJECTS_EXPORT const byte *   GetBinary (size_t& size) const;
-    ECOBJECTS_EXPORT StatusInt      SetBinary (const byte * string, size_t size);
+    ECOBJECTS_EXPORT StatusInt      SetBinary (const byte * string, size_t size, bool holdADuplicate = false);
     
     ECOBJECTS_EXPORT IECInstancePtr  GetStruct() const;
     ECOBJECTS_EXPORT StatusInt       SetStruct (IECInstanceR structInstance);
+    ECOBJECTS_EXPORT StatusInt       SetToNullStruct ();
         
     ECOBJECTS_EXPORT SystemTime     GetDateTime() const;
     ECOBJECTS_EXPORT StatusInt      SetDateTime (SystemTime& systemTime); 

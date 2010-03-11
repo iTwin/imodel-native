@@ -227,7 +227,7 @@ void            ECValue::ConstructUninitialized()
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECValue::DeepCopy (ECValueCR v)
-    {
+    {     
     memcpy (this, &v, sizeof(ECValue));
 
     if (IsNull())
@@ -260,10 +260,16 @@ void            ECValue::DeepCopy (ECValueCR v)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECValue::SetToNull()
     {
+    if (IsNull())
+        return;
+        
     if (IsString())
         SetString (NULL);
-    else if (IsStruct())    
-        m_structInstance = NULL;
+    else if (IsStruct())
+        {        
+        m_structInstance->Release();
+        m_structInstance = NULL;        
+        }
     
     if (!IsArray()) // arrays can never be null       
         m_isNull = true; //WIP_FUSION handle other types
@@ -292,9 +298,16 @@ void            ECValue::Clear()
             
         m_stringInfo.m_string = NULL;
         }
-        
-    if (IsStruct())
+    else if (IsBinary())
         {
+        if (m_binaryInfo.m_freeWhenDone)
+            free ((void*)m_binaryInfo.m_data);
+        m_binaryInfo.m_data = NULL;
+        m_binaryInfo.m_size = 0;            
+        }
+    else if (IsStruct())
+        {
+        m_structInstance->Release();
         m_structInstance = NULL;
         }
         
@@ -467,6 +480,7 @@ StatusInt       ECValue::SetPrimitiveType (PrimitiveType primitiveType)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ECValue::SetInteger (::Int32 integer)
     {
+    Clear();
     m_isNull    = false;
     m_primitiveType  = PRIMITIVETYPE_Integer;
     m_integer32 = integer;
@@ -489,6 +503,7 @@ StatusInt       ECValue::SetInteger (::Int32 integer)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ECValue::SetLong (::Int64 long64)
     {
+    Clear();
     m_isNull    = false;
     m_primitiveType  = PRIMITIVETYPE_Long;
     m_long64    = long64;
@@ -511,6 +526,7 @@ double          ECValue::GetDouble() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ECValue::SetDouble (double value)
     {
+    Clear();
     m_isNull    = false;
     m_primitiveType  = PRIMITIVETYPE_Double;
     m_double    = value;
@@ -533,6 +549,7 @@ bool          ECValue::GetBoolean() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ECValue::SetBoolean (bool value)
     {
+    Clear();
     m_isNull         = false;
     m_primitiveType  = PRIMITIVETYPE_Boolean;
     m_boolean        = value;
@@ -555,6 +572,7 @@ Int64          ECValue::GetDateTimeTicks() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ECValue::SetDateTimeTicks (Int64 value)
     {
+    Clear();
     m_isNull         = false;
     m_primitiveType  = PRIMITIVETYPE_DateTime;
     m_dateTime       = value;
@@ -605,6 +623,7 @@ SystemTime          ECValue::GetDateTime () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt          ECValue::SetDateTime (SystemTime& systemTime) 
     {
+    Clear();
     FILETIME fileTime;
     SYSTEMTIME wtime;
     memcpy (&wtime, &systemTime, sizeof(wtime));
@@ -636,6 +655,7 @@ DPoint2d          ECValue::GetPoint2D() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ECValue::SetPoint2D (DPoint2dR value)
     {
+    Clear();
     m_isNull         = false;
     m_primitiveType  = PRIMITIVETYPE_Point2D;
     m_dPoint2d       = value;
@@ -660,6 +680,7 @@ DPoint3d          ECValue::GetPoint3D() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ECValue::SetPoint3D (DPoint3dR value)
     {
+    Clear();
     m_isNull         = false;
     m_primitiveType  = PRIMITIVETYPE_Point3D;
     m_dPoint3d       = value;
@@ -717,15 +738,24 @@ const byte * ECValue::GetBinary(size_t& size) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ECValue::SetBinary (const byte * data, size_t size)
+StatusInt ECValue::SetBinary (const byte * data, size_t size, bool holdADuplicate)
     {
     PRECONDITION (NULL != data, ERROR);
     Clear();
 
     m_primitiveType = PRIMITIVETYPE_Binary;
-    m_binaryInfo.m_data = data;
+    m_binaryInfo.m_freeWhenDone = holdADuplicate;
     m_binaryInfo.m_size = size;
     m_isNull = false;
+    
+    if (holdADuplicate)
+        {
+        void * duplicateData = malloc (size);
+        memcpy (duplicateData, data, size);        
+        m_binaryInfo.m_data = (const byte *)duplicateData;
+        }
+    else
+        m_binaryInfo.m_data = data;
 
     return SUCCESS;
     }
@@ -736,7 +766,7 @@ StatusInt ECValue::SetBinary (const byte * data, size_t size)
 IECInstancePtr  ECValue::GetStruct() const
     {
     PRECONDITION (IsStruct() && "Tried to get struct value from an EC::ECValue that is not a struct.", 0);
-    return m_structInstance;
+    return m_structInstance;    
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -748,9 +778,22 @@ StatusInt       ECValue::SetStruct (IECInstanceR structInstance)
     m_isNull    = false;
     m_valueKind = VALUEKIND_Struct;    
     m_structInstance = &structInstance;        
+    m_structInstance->AddRef();
     
     return SUCCESS;
     }    
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       ECValue::SetToNullStruct ()
+    {
+    Clear();
+    m_isNull    = true;
+    m_valueKind = VALUEKIND_Struct;    
+    
+    return SUCCESS;
+    }        
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
