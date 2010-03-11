@@ -102,12 +102,7 @@ static const std::wstring ECXML_DIRECTION_BACKWARD          = L"backward";
         }       \
     if (ECOBJECTS_STATUS_Success != _setInPointer->Set##_setInPropertyName ((const wchar_t *)attributePtr->text))       \
         return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
-
-#define CREATE_AND_ADD_TEXT_NODE(_text, _parent) \
-    textPtr = _parent->ownerDocument->createTextNode(_text); \
-    if (NULL != textPtr)\
-        APPEND_CHILD_TO_PARENT(textPtr, _parent);
-    
+        
 #define APPEND_CHILD_TO_PARENT(_child, _parent) \
     if (NULL == _child)\
         return SCHEMA_SERIALIZATION_STATUS_FailedToCreateXml;\
@@ -123,11 +118,11 @@ static const std::wstring ECXML_DIRECTION_BACKWARD          = L"backward";
 #define WRITE_BOOL_XML_ATTRIBUTE(_xmlAttributeName, _getPropertyName, _parent) \
     if (this->Get##_getPropertyName() == true)\
         { \
-        WRITE_XML_ATTRIBUTE(_xmlAttributeName, L"true", _parent); \
+        WRITE_XML_ATTRIBUTE(_xmlAttributeName, L"True", _parent); \
         } \
    else \
         { \
-        WRITE_XML_ATTRIBUTE(_xmlAttributeName, L"false", _parent); \
+        WRITE_XML_ATTRIBUTE(_xmlAttributeName, L"False", _parent); \
         } 
 
 #define WRITE_OPTIONAL_XML_ATTRIBUTE(_xmlAttributeName, _getPropertyName, _parent) \
@@ -139,7 +134,7 @@ static const std::wstring ECXML_DIRECTION_BACKWARD          = L"backward";
 #define WRITE_OPTIONAL_BOOL_XML_ATTRIBUTE(_xmlAttributeName, _getPropertyName, _parent) \
     if (this->Get##_getPropertyName() == true)\
         { \
-        WRITE_XML_ATTRIBUTE(_xmlAttributeName, L"true", _parent); \
+        WRITE_XML_ATTRIBUTE(_xmlAttributeName, L"True", _parent); \
         }
     
 BEGIN_BENTLEY_EC_NAMESPACE
@@ -154,6 +149,8 @@ public:
     static ECObjectsStatus ParseStrengthType (StrengthType& strength, std::wstring const& strengthString);
     static std::wstring const& DirectionToString (ECRelatedInstanceDirection direction);
     static ECObjectsStatus ParseDirectionString (ECRelatedInstanceDirection& direction, std::wstring const& directionString);
+    static ECObjectsStatus ParseCardinalityString (UInt32& lowerLimit, UInt32& upperLimit, std::wstring const& cardinalityString);
+    static void FormatXml(MSXML2::IXMLDOMDocument2* pXmlDoc);
 };
 
 END_BENTLEY_EC_NAMESPACE

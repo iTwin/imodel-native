@@ -273,8 +273,6 @@ const wchar_t *elementName
     MSXML2::IXMLDOMTextPtr textPtr = NULL;
     MSXML2::IXMLDOMAttributePtr attributePtr;
 
-    CREATE_AND_ADD_TEXT_NODE("\n        ", (&parentNode));
-
     MSXML2::IXMLDOMElementPtr propertyPtr = parentNode.ownerDocument->createNode(NODE_ELEMENT, elementName, ECXML_URI_2_0);;
     APPEND_CHILD_TO_PARENT(propertyPtr, (&parentNode));
     
@@ -570,7 +568,7 @@ MSXML2::IXMLDOMElement& parentNode
 
     if (m_arrayKind == ARRAYKIND_Struct)
         {
-        WRITE_XML_ATTRIBUTE(IS_STRUCT_ATTRIBUTE, L"true", propertyPtr);
+        WRITE_XML_ATTRIBUTE(IS_STRUCT_ATTRIBUTE, L"True", propertyPtr);
         }
         
     return status;

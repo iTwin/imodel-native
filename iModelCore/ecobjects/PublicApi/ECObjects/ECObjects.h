@@ -51,6 +51,8 @@ EC_TYPEDEFS(ECPropertyContainer);
 EC_TYPEDEFS(ECClassContainer);
 EC_TYPEDEFS(ECClass);
 EC_TYPEDEFS(ECRelationshipClass);
+EC_TYPEDEFS(ECRelationshipConstraint);
+EC_TYPEDEFS(RelationshipCardinality);
 EC_TYPEDEFS(IECInstance);
 EC_TYPEDEFS(IECRelationshipInstance);
 EC_TYPEDEFS(IECSchemaLocator);
@@ -63,6 +65,7 @@ EC_TYPEDEFS(ClassLayout);
 EC_TYPEDEFS(PropertyLayout);
 EC_TYPEDEFS(StandaloneECInstance);
 EC_TYPEDEFS(ClassLayoutHolder);
+EC_TYPEDEFS(SystemTime);
 
 #define EXPORTED_PROPERTY(TYPE, NAME) \
     ECOBJECTS_EXPORT TYPE Get##NAME() const; \
@@ -113,7 +116,8 @@ enum ECObjectsStatus
     ECOBJECTS_STATUS_PreconditionViolated                              = ECOBJECTS_ERROR_BASE + 0x0D,
     ECOBJECTS_STATUS_SchemaNotFound                                    = ECOBJECTS_ERROR_BASE + 0x0E,
     ECOBJECTS_STATUS_ClassNotFound                                     = ECOBJECTS_ERROR_BASE + 0x0F,
-    ECOBJECTS_STATUS_BaseClassUnacceptable                             = ECOBJECTS_ERROR_BASE + 0x10
+    ECOBJECTS_STATUS_BaseClassUnacceptable                             = ECOBJECTS_ERROR_BASE + 0x10,
+    ECOBJECTS_STATUS_SchemaInUse                                       = ECOBJECTS_ERROR_BASE + 0x11,
     }; 
 
 enum SchemaDeserializationStatus

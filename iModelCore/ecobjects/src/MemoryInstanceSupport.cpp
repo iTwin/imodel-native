@@ -792,9 +792,7 @@ UInt32          MemoryInstanceSupport::GetPropertyValueSize (PropertyLayoutCR pr
         byte const *             data = _GetData();
         SecondaryOffset* pIndexValueOffset = (SecondaryOffset*)(data + GetOffsetOfArrayIndex (arrayOffset, propertyLayout, index));    
         SecondaryOffset indexValueOffset = arrayOffset + *pIndexValueOffset;    
-        if (0 == indexValueOffset)
             return 0;
-            
         UInt32 arrayCount = GetAllocatedArrayCount (propertyLayout);
         SecondaryOffset* pNextPropertyValueOffset = (SecondaryOffset*)(data + propertyLayout.GetOffset()) + 1;
         SecondaryOffset nextIndexValueOffset;

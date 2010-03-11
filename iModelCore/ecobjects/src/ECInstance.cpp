@@ -211,6 +211,23 @@ StatusInt           IECInstance::SetValue (const wchar_t * propertyAccessString,
     }        
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           IECInstance::GetLong (Int64 & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+    {
+    PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
+    ECValue v;
+    StatusInt status;
+    if (nIndices == 1)
+        status = _GetValue (v, propertyAccessString, *indices);
+    else
+        status = _GetValue (v, propertyAccessString);
+    value = v.GetLong();
+    
+    return status;
+    }    
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
 StatusInt           IECInstance::GetInteger (int & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
@@ -261,6 +278,102 @@ StatusInt           IECInstance::GetString (const wchar_t * & value, const wchar
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt IECInstance::GetBoolean (bool & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+    {
+    PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
+    ECValue v;
+    StatusInt status;
+    if (nIndices == 1)
+        status = _GetValue (v, propertyAccessString, *indices);
+    else
+        status = _GetValue (v, propertyAccessString);
+    value = v.GetBoolean();
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt IECInstance::GetPoint2D (DPoint2d & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+    {
+    PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
+    ECValue v;
+    StatusInt status;
+    if (nIndices == 1)
+        status = _GetValue (v, propertyAccessString, *indices);
+    else
+        status = _GetValue (v, propertyAccessString);
+    value = v.GetPoint2D();
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt IECInstance::GetPoint3D (DPoint3d & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+    {
+    PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
+    ECValue v;
+    StatusInt status;
+    if (nIndices == 1)
+        status = _GetValue (v, propertyAccessString, *indices);
+    else
+        status = _GetValue (v, propertyAccessString);
+    value = v.GetPoint3D();
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt IECInstance::GetDateTime (SystemTime & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+    {
+    PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
+    ECValue v;
+    StatusInt status;
+    if (nIndices == 1)
+        status = _GetValue (v, propertyAccessString, *indices);
+    else
+        status = _GetValue (v, propertyAccessString);
+    value = v.GetDateTime();
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt IECInstance::GetDateTimeTicks (Int64 & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+    {
+    PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
+    ECValue v;
+    StatusInt status;
+    if (nIndices == 1)
+        status = _GetValue (v, propertyAccessString, *indices);
+    else
+        status = _GetValue (v, propertyAccessString);
+    value = v.GetDateTimeTicks();
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     01/10
++---------------+---------------+---------------+---------------+---------------+------*/       
+StatusInt           IECInstance::SetLongValue (const wchar_t * propertyAccessString, Int64 value, UInt32 nIndices, UInt32 const * indices)
+    {
+    PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
+    ECValue v(value);
+    StatusInt status;
+    if (nIndices == 1)
+        status = _SetValue (propertyAccessString, v, *indices);
+    else
+        status = _SetValue (propertyAccessString, v);
+
+    return status;    
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/       
 StatusInt           IECInstance::SetIntegerValue (const wchar_t * propertyAccessString, int value, UInt32 nIndices, UInt32 const * indices)
@@ -277,6 +390,22 @@ StatusInt           IECInstance::SetIntegerValue (const wchar_t * propertyAccess
     }
     
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  03/2010
++---------------+---------------+---------------+---------------+---------------+------*/       
+StatusInt           IECInstance::SetDoubleValue (const wchar_t * propertyAccessString, double value, UInt32 nIndices, UInt32 const * indices)
+    {
+    PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
+    ECValue v(value);
+    StatusInt status;
+    if (nIndices == 1)
+        status = _SetValue (propertyAccessString, v, *indices);
+    else
+        status = _SetValue (propertyAccessString, v);
+
+    return status;    
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/       
 StatusInt           IECInstance::SetStringValue  (const wchar_t * propertyAccessString, const wchar_t * value, UInt32 nIndices, UInt32 const * indices)
@@ -292,6 +421,88 @@ StatusInt           IECInstance::SetStringValue  (const wchar_t * propertyAccess
     return status;    
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt IECInstance::SetBooleanValue  (const wchar_t * propertyAccessString, bool value, UInt32 nIndices, UInt32 const * indices)
+    {
+    PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
+    ECValue v(value);
+    StatusInt status;
+    if (nIndices == 1)
+        status = _SetValue (propertyAccessString, v, *indices);
+    else
+        status = _SetValue (propertyAccessString, v);
+
+    return status;    
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt IECInstance::SetPoint2DValue  (const wchar_t * propertyAccessString, DPoint2dR value, UInt32 nIndices, UInt32 const * indices)
+    {
+    PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
+    ECValue v(value);
+    StatusInt status;
+    if (nIndices == 1)
+        status = _SetValue (propertyAccessString, v, *indices);
+    else
+        status = _SetValue (propertyAccessString, v);
+
+    return status;    
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt IECInstance::SetPoint3DValue  (const wchar_t * propertyAccessString, DPoint3dR value, UInt32 nIndices, UInt32 const * indices)
+    {
+    PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
+    ECValue v(value);
+    StatusInt status;
+    if (nIndices == 1)
+        status = _SetValue (propertyAccessString, v, *indices);
+    else
+        status = _SetValue (propertyAccessString, v);
+
+    return status;    
+    }
+   
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt IECInstance::SetDateTimeValue (const wchar_t * propertyAccessString, SystemTime& value, UInt32 nIndices, UInt32 const * indices)
+    {
+    PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
+    ECValue v(value);
+    StatusInt status;
+    if (nIndices == 1)
+        status = _SetValue (propertyAccessString, v, *indices);
+    else
+        status = _SetValue (propertyAccessString, v);
+
+    return status;    
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt IECInstance::SetDateTimeTicks (const wchar_t * propertyAccessString, Int64 value, UInt32 nIndices, UInt32 const * indices)
+    {
+    PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
+    ECValue v;
+    v.SetDateTimeTicks(value);
+
+    StatusInt status;
+    if (nIndices == 1)
+        status = _SetValue (propertyAccessString, v, *indices);
+    else
+        status = _SetValue (propertyAccessString, v);
+
+    return status;    
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/

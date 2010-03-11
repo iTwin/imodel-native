@@ -218,7 +218,7 @@ ECObjectsStatus ECClass::SetIsDomainClass
 (
 const wchar_t * isDomainClass
 )
-    {        
+    {
     PRECONDITION (NULL != isDomainClass, ECOBJECTS_STATUS_PreconditionViolated);
 
     ECObjectsStatus status = ECXml::ParseBooleanString (m_isDomainClass, isDomainClass);
@@ -288,6 +288,25 @@ std::wstring const& propertyName
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::RemoveProperty
+(
+const std::wstring &name
+)
+    {
+    stdext::hash_map<const wchar_t *, ECPropertyP>::const_iterator  propertyIterator;
+    propertyIterator = m_propertyMap.find (name.c_str());
+    
+    if ( propertyIterator == m_propertyMap.end() )
+        return ECOBJECTS_STATUS_ClassNotFound;
+        
+    m_propertyList.remove(propertyIterator->second);
+    m_propertyMap.erase(propertyIterator);
+    return ECOBJECTS_STATUS_Success;
+    }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -458,7 +477,7 @@ ECClassCR baseClass
     if (this == &baseClass || ClassesAreEqualByName(this, &baseClass) || baseClass.TraverseBaseClasses(&CheckBaseClassCycles, true, this))
         return ECOBJECTS_STATUS_BaseClassUnacceptable;
         
-    ECBaseClassesVector::const_iterator baseClassIterator;
+    ECBaseClassesList::const_iterator baseClassIterator;
     for (baseClassIterator = m_baseClasses.begin(); baseClassIterator != m_baseClasses.end(); baseClassIterator++)
         {
         if (*baseClassIterator == (ECClassP)&baseClass)
@@ -481,9 +500,36 @@ ECClassCR baseClass
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECClass::HasBaseClasses
 (
-)
+) const
     {
     return (m_baseClasses.size() > 0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::RemoveBaseClass
+(
+ECClassCR baseClass
+)
+    {
+    ECBaseClassesList::const_iterator baseClassIterator;
+    for (baseClassIterator = m_baseClasses.begin(); baseClassIterator != m_baseClasses.end(); baseClassIterator++)
+        {
+        if (*baseClassIterator == (ECClassP)&baseClass)
+            {
+            break;
+            }
+        }
+        
+    if (m_baseClasses.end() == baseClassIterator)
+        {
+        Logger::GetLogger()->warningv(L"Class '%s' is not a base class of class '%s'", baseClass.Name, m_name);
+        return ECOBJECTS_STATUS_ClassNotFound;
+        }
+        
+    m_baseClasses.remove((ECClassP)&baseClass);
+    return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -492,7 +538,7 @@ bool ECClass::HasBaseClasses
 bool ECClass::Is
 (
 ECClassCP targetClass
-)
+) const
     {
     if (NULL == targetClass)
         return false;
@@ -666,9 +712,6 @@ const wchar_t *elementName
     MSXML2::IXMLDOMTextPtr textPtr = NULL;
     MSXML2::IXMLDOMAttributePtr attributePtr;
 
-    CREATE_AND_ADD_TEXT_NODE("\n    ", (&parentNode));
-    CREATE_AND_ADD_TEXT_NODE("\n    ", (&parentNode));
-
     MSXML2::IXMLDOMElementPtr classPtr = NULL;
     
     classPtr = parentNode.ownerDocument->createNode(NODE_ELEMENT, elementName, ECXML_URI_2_0);
@@ -680,15 +723,14 @@ const wchar_t *elementName
     if (IsDisplayLabelDefined)
         WRITE_OPTIONAL_XML_ATTRIBUTE(DISPLAY_LABEL_ATTRIBUTE, DisplayLabel, classPtr);
     WRITE_OPTIONAL_BOOL_XML_ATTRIBUTE(IS_STRUCT_ATTRIBUTE, IsStruct, classPtr);
-    WRITE_OPTIONAL_BOOL_XML_ATTRIBUTE(IS_CUSTOMATTRIBUTE_ATTRIBUTE, IsCustomAttributeClass, classPtr);
     WRITE_BOOL_XML_ATTRIBUTE(IS_DOMAINCLASS_ATTRIBUTE, IsDomainClass, classPtr);
+    WRITE_OPTIONAL_BOOL_XML_ATTRIBUTE(IS_CUSTOMATTRIBUTE_ATTRIBUTE, IsCustomAttributeClass, classPtr);
     
     for each (const ECClassP& baseClass in m_baseClasses)
         {
         MSXML2::IXMLDOMElementPtr basePtr = parentNode.ownerDocument->createNode(NODE_ELEMENT, EC_BASE_CLASS_ELEMENT, ECXML_URI_2_0);
         basePtr->text = (ECClass::GetQualifiedClassName(Schema, *baseClass)).c_str();
         
-        CREATE_AND_ADD_TEXT_NODE("\n        ", classPtr);
         APPEND_CHILD_TO_PARENT(basePtr, classPtr);
         }
         
@@ -698,7 +740,6 @@ const wchar_t *elementName
         {
         prop->_WriteXml(classPtr);
         }
-    CREATE_AND_ADD_TEXT_NODE("\n    ", classPtr);
     return status;
     }
 
@@ -779,7 +820,7 @@ ECClassCR  ecClass
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-const ECBaseClassesVector& ECClass::GetBaseClasses
+const ECBaseClassesList& ECClass::GetBaseClasses
 (
 ) const
     {
@@ -838,6 +879,514 @@ ECPropertyP       ECPropertyContainer::const_iterator::operator*() const
     return pProperty;
     };
 
+static RelationshipCardinality s_zeroOneCardinality(0, 1);
+static RelationshipCardinality s_zeroManyCardinality(0, UINT_MAX);
+static RelationshipCardinality s_oneOneCardinality(1, 1);
+static RelationshipCardinality s_oneManyCardinality(1, UINT_MAX);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+RelationshipCardinality::RelationshipCardinality
+(
+)
+    {
+    m_lowerLimit = 0;
+    m_upperLimit = 1;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+RelationshipCardinality::RelationshipCardinality
+(
+UInt32 lowerLimit,
+UInt32 upperLimit
+)
+    {
+    EXPECTED_CONDITION (lowerLimit <= upperLimit);
+    EXPECTED_CONDITION (lowerLimit >= 0);
+    EXPECTED_CONDITION (upperLimit > 0);
+    m_lowerLimit = lowerLimit;
+    m_upperLimit = upperLimit;
+    }
+  
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32 RelationshipCardinality::GetLowerLimit
+(
+) const
+    {
+    return m_lowerLimit;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32 RelationshipCardinality::GetUpperLimit
+(
+) const
+    {
+    return m_upperLimit;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RelationshipCardinality::IsUpperLimitUnbounded 
+(
+) const
+    {
+    return m_upperLimit == UINT_MAX;
+    }
+  
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+std::wstring RelationshipCardinality::ToString
+(
+) const
+    {
+    wchar_t cardinalityString[32];
+    
+    if (UINT_MAX == m_upperLimit)
+        {
+        swprintf(cardinalityString, 32, L"(%d,N)", m_lowerLimit);
+        }
+    else
+        swprintf(cardinalityString, 32, L"(%d,%d)", m_lowerLimit, m_upperLimit);
+        
+    return cardinalityString;
+        
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+RelationshipCardinalityCR RelationshipCardinality::ZeroOne
+(
+)
+    {
+    return s_zeroOneCardinality;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+RelationshipCardinalityCR RelationshipCardinality::ZeroMany
+(
+)
+    {
+    return s_zeroManyCardinality;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+RelationshipCardinalityCR RelationshipCardinality::OneOne
+(
+)
+    {
+    return s_oneOneCardinality;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+RelationshipCardinalityCR RelationshipCardinality::OneMany
+(
+)
+    {
+    return s_oneManyCardinality;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraint::ECRelationshipConstraint
+(
+ECRelationshipClassP relationshipClass
+)
+    {
+    m_relClass = relationshipClass;
+    m_cardinality = &s_zeroOneCardinality;
+    m_isMultiple = false;
+    m_isPolymorphic = true;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraint::ECRelationshipConstraint
+(
+ECRelationshipClassP relationshipClass, 
+bool isMultiple
+)
+    {
+    m_relClass = relationshipClass;
+    m_isMultiple = isMultiple;
+    m_cardinality = &s_zeroOneCardinality;
+    m_isPolymorphic = true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraint::~ECRelationshipConstraint
+(
+)
+    {
+     if ((m_cardinality != &s_zeroOneCardinality) && (m_cardinality != &s_zeroManyCardinality) &&
+        (m_cardinality != &s_oneOneCardinality) && (m_cardinality != &s_oneManyCardinality))
+        delete m_cardinality;
+    } 
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaDeserializationStatus ECRelationshipConstraint::ReadXml
+(
+MSXML2::IXMLDOMNode &constraintNode
+)
+    {
+    SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
+    
+    MSXML2::IXMLDOMNamedNodeMapPtr nodeAttributesPtr = constraintNode.attributes;
+    MSXML2::IXMLDOMNodePtr attributePtr;
+ 
+    ECObjectsStatus setterStatus;
+    READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS(POLYMORPHIC_ATTRIBUTE, this, IsPolymorphic);
+    READ_OPTIONAL_XML_ATTRIBUTE(ROLELABEL_ATTRIBUTE, this, RoleLabel);
+    READ_OPTIONAL_XML_ATTRIBUTE(CARDINALITY_ATTRIBUTE, this, Cardinality);
+    
+    MSXML2::IXMLDOMNodeListPtr xmlNodeListPtr = constraintNode.selectNodes(EC_NAMESPACE_PREFIX L":" EC_CONSTRAINTCLASS_ELEMENT);
+    MSXML2::IXMLDOMNodePtr xmlNodePtr;
+    
+    while (NULL != (xmlNodePtr = xmlNodeListPtr->nextNode()))
+        {
+        MSXML2::IXMLDOMNamedNodeMapPtr constraintClassAttributesPtr = xmlNodePtr->attributes;
+        if (NULL == (attributePtr = constraintClassAttributesPtr->getNamedItem(CONSTRAINTCLASSNAME_ATTRIBUTE)))
+            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+        std::wstring constraintClassName = attributePtr->text;  
+        
+        // Parse the potentially qualified class name into a namespace prefix and short class name
+        std::wstring namespacePrefix;
+        std::wstring className;
+        if (ECOBJECTS_STATUS_Success != ECClass::ParseClassName (namespacePrefix, className, constraintClassName))
+            {
+            Logger::GetLogger()->warningv (L"Invalid ECSchemaXML: The ECRelationshipConstraint contains a " CONSTRAINTCLASSNAME_ATTRIBUTE L" attribute with the value '%s' that can not be parsed.", 
+                constraintClassName.c_str());
+            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            }
+        
+        ECSchemaP resolvedSchema = m_relClass->Schema.GetSchemaByNamespacePrefixP (namespacePrefix);
+        if (NULL == resolvedSchema)
+            {
+            Logger::GetLogger()->warningv  (L"Invalid ECSchemaXML: ECRelationshipConstraint contains a " CONSTRAINTCLASSNAME_ATTRIBUTE L" attribute with the namespace prefix '%s' that can not be resolved to a referenced schema.", 
+                namespacePrefix.c_str());
+            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            }
+
+        ECClassP constraintClass = resolvedSchema->GetClassP (className);
+        if (NULL == constraintClass)
+            {
+            Logger::GetLogger()->warningv  (L"Invalid ECSchemaXML: The ECRelationshipConstraint contains a " CONSTRAINTCLASSNAME_ATTRIBUTE L" attribute with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'", 
+                constraintClassName.c_str(), className.c_str(), resolvedSchema->Name.c_str());
+            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            }
+            AddClass(*constraintClass);
+        }
+    return status;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaSerializationStatus ECRelationshipConstraint::WriteXml
+(
+MSXML2::IXMLDOMElement &parentNode, 
+const std::wstring &elementName
+) const
+    {
+    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+    MSXML2::IXMLDOMTextPtr textPtr = NULL;
+    MSXML2::IXMLDOMAttributePtr attributePtr;
+
+    MSXML2::IXMLDOMElementPtr constraintPtr = NULL;
+    
+    constraintPtr = parentNode.ownerDocument->createNode(NODE_ELEMENT, elementName.c_str(), ECXML_URI_2_0);
+    
+    APPEND_CHILD_TO_PARENT(constraintPtr, (&parentNode));
+    
+    WRITE_XML_ATTRIBUTE(CARDINALITY_ATTRIBUTE, m_cardinality->ToString().c_str(), constraintPtr);
+    if (IsRoleLabelDefined())
+        {
+        WRITE_XML_ATTRIBUTE(ROLELABEL_ATTRIBUTE, m_roleLabel.c_str(), constraintPtr);
+        }
+    WRITE_BOOL_XML_ATTRIBUTE(POLYMORPHIC_ATTRIBUTE, IsPolymorphic, constraintPtr);
+        
+    for each (ECClassP constraint in m_constraintClasses)
+        {
+        MSXML2::IXMLDOMElementPtr constraintClassPtr = NULL;
+        constraintClassPtr = parentNode.ownerDocument->createNode(NODE_ELEMENT, EC_CONSTRAINTCLASS_ELEMENT, ECXML_URI_2_0);
+        APPEND_CHILD_TO_PARENT(constraintClassPtr, constraintPtr);
+        WRITE_XML_ATTRIBUTE(CONSTRAINTCLASSNAME_ATTRIBUTE, ECClass::GetQualifiedClassName(m_relClass->Schema, *constraint).c_str(), constraintClassPtr);
+        }
+    
+    return status;
+    }
+   
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipConstraint::AddClass
+(
+ECClassCR classConstraint
+)
+    {
+    if (&(classConstraint.Schema) != &(m_relClass->Schema))
+        {
+        bool foundRefSchema = false;
+        ECSchemaReferenceList referencedSchemas = m_relClass->Schema.GetReferencedSchemas();
+        ECSchemaReferenceList::const_iterator schemaIterator;
+        for (schemaIterator = referencedSchemas.begin(); schemaIterator != referencedSchemas.end(); schemaIterator++)
+            {
+            ECSchemaP refSchema = *schemaIterator;
+            if (refSchema == &(classConstraint.Schema))
+                {
+                foundRefSchema = true;
+                break;
+                }
+            }
+        if (foundRefSchema == false)
+            {
+            return ECOBJECTS_STATUS_SchemaNotFound;
+            }
+        }
+
+    if (!m_isMultiple)
+        m_constraintClasses.clear();
+    else
+        {
+        ECConstraintClassesList::const_iterator constraintClassIterator;
+        for (constraintClassIterator = m_constraintClasses.begin(); constraintClassIterator != m_constraintClasses.end(); constraintClassIterator++)
+            {
+            if (*constraintClassIterator == (ECClassP)&classConstraint)
+                return ECOBJECTS_STATUS_Success;
+            }
+        }
+    m_constraintClasses.push_back((ECClassP)&classConstraint);
+    
+    return ECOBJECTS_STATUS_Success;       
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipConstraint::RemoveClass
+(
+ECClassCR classConstraint
+)
+    {
+    ECConstraintClassesList::const_iterator constraintClassIterator;
+    for (constraintClassIterator = m_constraintClasses.begin(); constraintClassIterator != m_constraintClasses.end(); constraintClassIterator++)
+        {
+        if (*constraintClassIterator == (ECClassP)&classConstraint)
+            {
+            m_constraintClasses.remove(*constraintClassIterator);
+            return ECOBJECTS_STATUS_Success;
+            }
+        }
+        
+    return ECOBJECTS_STATUS_ClassNotFound;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+const ECConstraintClassesList& ECRelationshipConstraint::GetClasses
+(
+) const
+    {
+    return m_constraintClasses;
+    }
+     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECRelationshipConstraint::GetIsMultiple
+(
+) const
+    {
+    return m_isMultiple;
+    }
+  
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECRelationshipConstraint::GetIsPolymorphic
+(
+) const
+    {
+    return m_isPolymorphic;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipConstraint::SetIsPolymorphic
+(
+bool value
+)
+    {
+    m_isPolymorphic = value;
+    return ECOBJECTS_STATUS_Success;
+    }
+   
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipConstraint::SetIsPolymorphic
+(
+const wchar_t *isPolymorphic
+)
+    {
+    PRECONDITION (NULL != isPolymorphic, ECOBJECTS_STATUS_PreconditionViolated);
+
+    ECObjectsStatus status = ECXml::ParseBooleanString (m_isPolymorphic, isPolymorphic);
+    if (ECOBJECTS_STATUS_Success != status)
+        Logger::GetLogger()->warningv  (L"Failed to parse the isPolymorphic string '%s' for ECRelationshipConstraint.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE L"\n", isPolymorphic);
+        
+    return status;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+RelationshipCardinalityCR ECRelationshipConstraint::GetCardinality
+(
+) const
+    {
+    return *m_cardinality;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipConstraint::SetCardinality
+(
+UInt32& lowerLimit,
+UInt32& upperLimit
+)
+    {
+    if (lowerLimit == 0 && upperLimit == 1)
+        m_cardinality = &s_zeroOneCardinality;
+    else if (lowerLimit == 0 && upperLimit == UINT_MAX)
+        m_cardinality = &s_zeroManyCardinality;
+    else if (lowerLimit == 1 && upperLimit == 1)
+        m_cardinality = &s_oneOneCardinality;
+    else if (lowerLimit == 1 && upperLimit == UINT_MAX)
+        m_cardinality = &s_oneManyCardinality;
+    else
+        m_cardinality = new RelationshipCardinality(lowerLimit, upperLimit);
+    return ECOBJECTS_STATUS_Success;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipConstraint::SetCardinality
+(
+RelationshipCardinalityCR cardinality
+)
+    {
+    m_cardinality = new RelationshipCardinality(cardinality.LowerLimit, cardinality.UpperLimit);
+    return ECOBJECTS_STATUS_Success;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipConstraint::SetCardinality
+(
+const wchar_t *cardinality
+)
+    {
+    PRECONDITION (NULL != cardinality, ECOBJECTS_STATUS_PreconditionViolated);
+    UInt32 lowerLimit;
+    UInt32 upperLimit;
+    ECObjectsStatus status = ECXml::ParseCardinalityString(lowerLimit, upperLimit, cardinality);
+    if (ECOBJECTS_STATUS_Success != status)
+        {
+        Logger::GetLogger()->errorv (L"Failed to parse the RelationshipCardinality string '%s'.\n", cardinality);
+        return ECOBJECTS_STATUS_ParseError;
+        }
+    else
+        m_cardinality = new RelationshipCardinality(lowerLimit, upperLimit);
+        
+    return ECOBJECTS_STATUS_Success;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECRelationshipConstraint::IsRoleLabelDefined
+(
+) const
+    {
+    return m_roleLabel.length() != 0;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+std::wstring const ECRelationshipConstraint::GetRoleLabel
+(
+) const
+    {
+    if (m_roleLabel.length() != 0)
+        return m_roleLabel;
+        
+    if (&(m_relClass->Target) == this)
+        return m_relClass->DisplayLabel + L" (Reversed)";
+    return m_relClass->DisplayLabel;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipConstraint::SetRoleLabel
+(
+const std::wstring value
+)
+    {
+    m_roleLabel = value;
+    return ECOBJECTS_STATUS_Success;
+    }
+  
+     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipClass::ECRelationshipClass
+(
+EC::ECSchemaCR schema
+): ECClass (schema), m_strength( STRENGTHTYPE_Referencing), m_strengthDirection(STRENGTHDIRECTION_Forward) 
+    {
+    m_source = new ECRelationshipConstraint(this, false);
+    m_target = new ECRelationshipConstraint(this, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipClass::~ECRelationshipClass()
+    {
+    delete m_source;
+    delete m_target;
+    }
+        
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -921,7 +1470,27 @@ const wchar_t *directionString
         
     return status;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraintR ECRelationshipClass::GetSource
+(
+) const
+    {
+    return *m_source;
+    }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraintR ECRelationshipClass::GetTarget
+(
+) const
+    {
+    return *m_target;
+    }
+        
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -930,8 +1499,7 @@ SchemaSerializationStatus ECRelationshipClass::WriteXml
 MSXML2::IXMLDOMElement& parentNode
 ) const
     {
-    // NEEDSWORK: Serialize constraint dependencies
-    
+        
     SchemaSerializationStatus status = __super::WriteXml(parentNode, EC_RELATIONSHIP_CLASS_ELEMENT);
     
     if (status != SCHEMA_SERIALIZATION_STATUS_Success)
@@ -950,6 +1518,9 @@ MSXML2::IXMLDOMElement& parentNode
     // NEEDSWORK: Full implementation
     WRITE_XML_ATTRIBUTE(STRENGTH_ATTRIBUTE, ECXml::StrengthToString(m_strength).c_str(), propertyPtr);
     WRITE_XML_ATTRIBUTE(STRENGTHDIRECTION_ATTRIBUTE, ECXml::DirectionToString(m_strengthDirection).c_str(), propertyPtr);
+    
+    m_source->WriteXml(propertyPtr, EC_SOURCECONSTRAINT_ELEMENT);
+    m_target->WriteXml(propertyPtr, EC_TARGETCONSTRAINT_ELEMENT);
     
     return status;
     }
@@ -986,6 +1557,14 @@ MSXML2::IXMLDOMNode &classNode
     SchemaDeserializationStatus status = __super::ReadXmlContents(classNode);
     if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
         return status;
+        
+    MSXML2::IXMLDOMNodePtr xmlNodePtr = classNode.selectSingleNode (EC_NAMESPACE_PREFIX L":" EC_SOURCECONSTRAINT_ELEMENT);
+    if (NULL != xmlNodePtr)
+        m_source->ReadXml(xmlNodePtr);
+    
+    xmlNodePtr = classNode.selectSingleNode (EC_NAMESPACE_PREFIX L":" EC_TARGETCONSTRAINT_ELEMENT);
+    if (NULL != xmlNodePtr)
+        m_target->ReadXml(xmlNodePtr);
         
     return SCHEMA_DESERIALIZATION_STATUS_Success;
     }

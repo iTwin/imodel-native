@@ -353,7 +353,8 @@ public:
 
 }; 
 
-typedef std::vector<ECClassP> ECBaseClassesVector;
+typedef std::list<ECClassP> ECBaseClassesList;
+typedef std::list<ECClassP> ECConstraintClassesList;
 
 /*__PUBLISH_SECTION_END__*/
 typedef bool (*TraversalDelegate) (ECClassCP, ECClassCP);
@@ -376,7 +377,7 @@ private:
     bool                    m_isCustomAttributeClass;
     bool                    m_isDomainClass;
     ECSchemaCR              m_schema;
-    ECBaseClassesVector     m_baseClasses;
+    ECBaseClassesList       m_baseClasses;
     ECPropertyContainer     m_propertyContainer;
 
     // Needswork:  Does STL provide any type of hypbrid list/dictionary collection?  We need fast lookup by name as well as retained order.  For now we will
@@ -422,7 +423,7 @@ public:
     EXPORTED_READONLY_PROPERTY (std::wstring const&,    Name);        
     EXPORTED_READONLY_PROPERTY (bool,                   IsDisplayLabelDefined);    
     EXPORTED_READONLY_PROPERTY (ECPropertyContainerCR,  Properties); 
-    EXPORTED_READONLY_PROPERTY (const ECBaseClassesVector&,     BaseClasses);   
+    EXPORTED_READONLY_PROPERTY (const ECBaseClassesList&,     BaseClasses);   
 
     EXPORTED_PROPERTY  (std::wstring const&,            Description);
     EXPORTED_PROPERTY  (std::wstring const&,            DisplayLabel);
@@ -449,14 +450,17 @@ public:
     //! You cannot add a base class if it creates a cycle. For example, if A is a base class
     //! of B, and B is a base class of C, you cannot make C a base class of A. Attempting to do
     //! so will return an error.
-    //! @param[in] The class to derive from
+    //! @param[in] baseClass The class to derive from
     ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass);
     
     //! Returns whether there are any base classes for this class
-    ECOBJECTS_EXPORT bool            HasBaseClasses();
+    ECOBJECTS_EXPORT bool            HasBaseClasses() const;
+    
+    //! Removes a base class.
+    ECOBJECTS_EXPORT ECObjectsStatus RemoveBaseClass(ECClassCR baseClass);
     
     //! Returns true if the class is the type specified or derived from it.
-    ECOBJECTS_EXPORT bool            Is(ECClassCP targetClass);
+    ECOBJECTS_EXPORT bool            Is(ECClassCP targetClass) const;
 
     ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, std::wstring const& name);
     ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, std::wstring const& name, PrimitiveType primitiveType);
@@ -465,6 +469,10 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, std::wstring const& name);
     ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, std::wstring const& name, PrimitiveType primitiveType);
     ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, std::wstring const& name, ECClassCP structType);
+    
+    //! Remove the named property
+    //! @param[in] name The name of the property to be removed
+    ECOBJECTS_EXPORT ECObjectsStatus RemoveProperty(std::wstring const& name);
      
     //! Get a property by name within the context of this class and its base classes.
     //! The pointer returned by this method is valid until the ECClass containing the property is destroyed or the property
@@ -515,6 +523,122 @@ enum StrengthType
     STRENGTHTYPE_Embedding
     } ;
     
+//! This class describes the cardinality of a relationship. It is based on the
+//!     Martin notation. Valid cardinalities are (x,y) where x is smaller or equal to y,
+//!     x >= 0 and y >= 1 or y = n (where n represents infinity).
+//!     For example, (0,1), (1,1), (1,n), (0,n), (1,10), (2,5), ...
+struct RelationshipCardinality 
+{
+/*__PUBLISH_SECTION_END__*/
+private:
+    UInt32     m_lowerLimit;
+    UInt32     m_upperLimit;
+
+/*__PUBLISH_SECTION_START__*/    
+public:
+    //! Default constructor.  Creates a cardinality of (0, 1)
+    ECOBJECTS_EXPORT RelationshipCardinality();
+    
+    //! Constructor with lower and upper limit parameters.
+    //! @param[in]  lowerLimit  must be less than or equal to upperLimit and greater than or equal to 0
+    //! @param[in]  upperLimit  must be greater than or equal to lowerLimit and greater than 0
+    ECOBJECTS_EXPORT RelationshipCardinality(UInt32 lowerLimit, UInt32 upperLimit);
+    
+    //! Returns the lower limit of the cardinality
+    EXPORTED_READONLY_PROPERTY  (UInt32, LowerLimit);
+    //! Returns the upper limit of the cardinality
+    EXPORTED_READONLY_PROPERTY  (UInt32, UpperLimit);
+    
+    //! Indicates if the cardinality is unbound (ie, upper limit is equal to "n")
+    ECOBJECTS_EXPORT bool IsUpperLimitUnbounded() const;
+    
+    //! Converts the cardinality to a string, for example "(0,n)", "(1,1)"
+    ECOBJECTS_EXPORT std::wstring ToString() const;
+
+    // ************************************************************************************************************************
+    // ************************************  STATIC METHODS *******************************************************************
+    // ************************************************************************************************************************
+    
+    ECOBJECTS_EXPORT static RelationshipCardinalityCR ZeroOne();
+    ECOBJECTS_EXPORT static RelationshipCardinalityCR ZeroMany();
+    ECOBJECTS_EXPORT static RelationshipCardinalityCR OneOne();
+    ECOBJECTS_EXPORT static RelationshipCardinalityCR OneMany();
+};
+   
+
+//=======================================================================================
+//! The in-memory representation of the source and target constraints for an ECRelationshipClass as defined by ECSchemaXML
+struct ECRelationshipConstraint 
+{
+friend struct ECRelationshipClass;
+
+/*__PUBLISH_SECTION_END__*/
+private:
+    // NEEDSWORK: To be completely compatible, we need to store an ECRelationshipConstraintClass with properties in order
+    // to support implicit relationships.  For now, just support explicit relationships
+//    stdext::hash_map<ECClassCP, ECRelationshipConstrainClassCP> m_constraintClasses;
+
+    ECConstraintClassesList        m_constraintClasses;
+    
+    std::wstring    m_roleLabel;
+    bool            m_isPolymorphic;
+    bool            m_isMultiple;
+    RelationshipCardinality*   m_cardinality;
+    ECRelationshipClassP        m_relClass;
+    
+    ECObjectsStatus SetCardinality(const wchar_t *cardinality);
+    ECObjectsStatus SetCardinality(UInt32& lowerLimit, UInt32& upperLimit);
+    
+    SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode, std::wstring const& elementName) const;
+    SchemaDeserializationStatus ReadXml(MSXML2_IXMLDOMNode& constraintNode);
+    
+    ~ECRelationshipConstraint();
+    
+/*__PUBLISH_SECTION_START__*/    
+public:
+    //! Initializes a new instance of the ECRelationshipConstraint class.
+    //! IsPolymorphic defaults to true and IsMultiple defaults to false 
+    ECRelationshipConstraint(ECRelationshipClassP relationshipClass);
+    
+    //! Initializes a new instance of the ECRelationshipConstraint class
+    ECRelationshipConstraint(ECRelationshipClassP relationshipClass, bool isMultiple);
+    
+    //! Returns true if the constraint allows for a variable number of classes
+    EXPORTED_READONLY_PROPERTY  (bool, IsMultiple);
+    
+    //! Gets or sets the label of the constraint role in the relationship.
+    //! If the role label is not defined, the display label of the relationship class is returned
+    EXPORTED_PROPERTY (std::wstring const, RoleLabel);
+    
+    ECOBJECTS_EXPORT bool IsRoleLabelDefined() const;
+    
+    //! Returns true if this constraint can also relate to instances of subclasses of classes
+    //! applied to the constraint.
+    EXPORTED_PROPERTY   (bool, IsPolymorphic) ;
+    
+    //! Sets the bool value of whether this constraint can also relate to instances of subclasses of classes applied to the constraint.
+    //! @param[in] isPolymorphic String representation of true/false
+    //! @return    Success if the string is parsed into a bool
+    ECOBJECTS_EXPORT ECObjectsStatus SetIsPolymorphic(const wchar_t* isPolymorphic);
+    
+    //! Gets the cardinality of the constraint in the relationship
+    EXPORTED_PROPERTY (RelationshipCardinalityCR, Cardinality) ;
+    
+    //! Adds the specified class to the constraint.
+    //! If the constraint is variable, add will add the class to the list of classes applied to the constraint.  Otherwise, Add
+    //! will replace the current class applied to the constraint with the new class.
+    //! @param[in] classConstraint  The class to add
+    ECOBJECTS_EXPORT ECObjectsStatus AddClass(ECClassCR classConstraint);
+    
+    //! Removes the specified class from the constraint.
+    //! @param[in] classConstraint  The class to remove
+    ECOBJECTS_EXPORT ECObjectsStatus RemoveClass(ECClassCR classConstraint);
+    
+    //! Returns the classes applied to the constraint.
+    EXPORTED_READONLY_PROPERTY (const ECConstraintClassesList&, Classes);
+    
+};
+
 //=======================================================================================
 //! The in-memory representation of a relationship class as defined by ECSchemaXML
 struct ECRelationshipClass /*__PUBLISH_ABSTRACT__*/ : public ECClass
@@ -526,11 +650,14 @@ friend struct ECSchema;
 private:
     StrengthType     m_strength;
     ECRelatedInstanceDirection     m_strengthDirection;
+    ECRelationshipConstraintP      m_target;
+    ECRelationshipConstraintP      m_source;
 
     //  Lifecycle management:  For now, to keep it simple, the class constructor is private.  The schema implementation will
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
     //  of a schema.
-    ECRelationshipClass (ECSchemaCR schema) : ECClass (schema), m_strength( STRENGTHTYPE_Referencing), m_strengthDirection(STRENGTHDIRECTION_Forward) {};
+    ECRelationshipClass (ECSchemaCR schema);
+    ~ECRelationshipClass ();
     
     ECObjectsStatus SetStrength(const wchar_t * strength);
     ECObjectsStatus SetStrengthDirection(const wchar_t *direction);
@@ -545,6 +672,10 @@ protected:
 public:
     EXPORTED_PROPERTY (StrengthType, Strength);                
     EXPORTED_PROPERTY (ECRelatedInstanceDirection, StrengthDirection);
+    //! Gets the constraint at the target end of the relationship
+    EXPORTED_READONLY_PROPERTY (ECRelationshipConstraintR, Target);
+    //! Gets the constraint at the source end of the relationship
+    EXPORTED_READONLY_PROPERTY (ECRelationshipConstraintR, Source);
     EXPORTED_READONLY_PROPERTY (bool, IsExplicit);
 
 }; // ECRelationshipClass
@@ -559,6 +690,7 @@ struct ECClassContainer /*__PUBLISH_ABSTRACT__*/
 private:
     friend struct ECSchema;
     friend struct ECClass;
+    friend struct ECRelationshipConstraint;
         
     ClassMap const&     m_classMap;
     
@@ -625,7 +757,6 @@ struct IECSchemaLocator
 public:
     virtual ECOBJECTS_EXPORT ECSchemaPtr LocateSchema(const wchar_t *name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, void * schemaContext) const = 0;
 };
-
 
 //! The in-memory representation of a schema as defined by ECSchemaXML
 struct ECSchema /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
@@ -768,6 +899,7 @@ public:
     //! @param[in]    ecSchemaXmlFile     The absolute path of the file to deserialize.
     //! @param[in]    schemaLocators      A list of IECSchemaLocatorP that will be used to locate referenced schemas
     //! @param[in]    schemaPaths         A list of paths that should be searched to locate referenced schemas
+    //! @param[in]    schemaContext       Usually NULL, but when used it is usually a pointer to a SchemaMap used to locate referenced schemas
     //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
     //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
     ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromFile (ECSchemaPtr& schemaOut, const wchar_t * ecSchemaXmlFile, const std::vector<IECSchemaLocatorP> * schemaLocators, const std::vector<const wchar_t *> * schemaPaths, void * schemaContext = NULL);
@@ -779,6 +911,7 @@ public:
     //! @param[in]    ecSchemaXml         The string containing ECSchemaXML to deserialize
     //! @param[in]    schemaLocators      A list of IECSchemaLocatorP that will be used to locate referenced schemas
     //! @param[in]    schemaPaths         A list of paths that should be searched to locate referenced schemas
+    //! @param[in]    schemaContext       Usually NULL, but when used it is usually a pointer to a SchemaMap used to locate referenced schemas
     //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
     //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
     ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromString (ECSchemaPtr& schemaOut, const wchar_t * ecSchemaXml, const std::vector<IECSchemaLocatorP> * schemaLocators, const std::vector<const wchar_t *> * schemaPaths, void * schemaContext = NULL);

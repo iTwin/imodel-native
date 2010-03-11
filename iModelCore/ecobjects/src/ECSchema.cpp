@@ -470,11 +470,74 @@ Bentley::EC::ECSchemaCR refSchema
         {
         if (*schemaIterator == (ECSchemaP) &refSchema)
             {
-            m_refSchemaList.erase(schemaIterator);
-            return ECOBJECTS_STATUS_Success;
+//            m_refSchemaList.erase(schemaIterator);
+//            return ECOBJECTS_STATUS_Success;
+            break;
             }
         }
-    return ECOBJECTS_STATUS_SchemaNotFound;
+    if (m_refSchemaList.end() == schemaIterator)
+        return ECOBJECTS_STATUS_SchemaNotFound;
+        
+    // Can only remove the reference if nothing actually references it.
+    
+    for each (ECClassP ecClass in Classes)
+        {
+        // First, check each base class to see if the base class uses that schema
+        for each (ECClassP baseClass in ecClass->BaseClasses)
+            {
+            if ((ECSchemaP) &(baseClass->Schema) == *schemaIterator)
+                {
+                return ECOBJECTS_STATUS_SchemaInUse;
+                }
+            }
+            
+        // If it is a relationship class, check the constraints to make sure the constraints don't use that schema
+        ECRelationshipClassP relClass = dynamic_cast<ECRelationshipClassP>(ecClass);
+        if (NULL != relClass)
+            {
+            for each (ECClassP target in relClass->Target.Classes)
+                {
+                if ((ECSchemaP) &(target->Schema) == *schemaIterator)
+                    {
+                    return ECOBJECTS_STATUS_SchemaInUse;
+                    }
+                }
+            for each (ECClassP source in relClass->Source.Classes)
+                {
+                if ((ECSchemaP) &(source->Schema) == *schemaIterator)
+                    {
+                    return ECOBJECTS_STATUS_SchemaInUse;
+                    }
+                }
+            }
+            
+        // And make sure that there are no struct types from another schema
+        for each (ECPropertyP prop in ecClass->Properties)
+            {
+            ECClassCP typeClass;
+            if (prop->IsStruct)
+                {
+                typeClass = &(prop->GetAsStructProperty()->Type);
+                }
+            else if (prop->IsArray)
+                {
+                typeClass = prop->GetAsArrayProperty()->StructElementType;
+                }
+            else
+                {
+                typeClass = NULL;
+                }
+            if (NULL == typeClass)
+                continue;
+            if (this->Name.compare(typeClass->Schema.Name) == 0 && this->VersionMajor == typeClass->Schema.VersionMajor &&
+                this->VersionMinor == typeClass->Schema.VersionMinor)
+                continue;
+            return ECOBJECTS_STATUS_SchemaInUse;
+            }
+        }
+
+    m_refSchemaList.erase(schemaIterator);        
+    return ECOBJECTS_STATUS_Success;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -901,7 +964,6 @@ MSXML2::IXMLDOMElement &parentNode
         {
         std::pair<ECSchemaP, const std::wstring *> mapPair = *(iterator);
         ECSchemaP refSchema = mapPair.first;
-        CREATE_AND_ADD_TEXT_NODE("\n    ", (&parentNode));
         schemaPtr = parentNode.ownerDocument->createNode(NODE_ELEMENT, EC_SCHEMAREFERENCE_ELEMENT, ECXML_URI_2_0);
         APPEND_CHILD_TO_PARENT(schemaPtr, (&parentNode));
         
@@ -947,6 +1009,16 @@ Bentley::EC::ECClassCR ecClass
         WriteClass(parentNode, *baseClass);
         }
        
+    // Serialize relationship constraint dependencies
+    ECRelationshipClassP relClass = dynamic_cast<ECRelationshipClassP>((ECClassP) &ecClass);
+    if (NULL != relClass)
+        {
+        for each (ECClassP source in relClass->Source.Classes)
+            WriteClass(parentNode, *source);
+            
+        for each (ECClassP target in relClass->Target.Classes)
+            WriteClass(parentNode, *target);
+        }
     WritePropertyDependencies(parentNode, ecClass); 
     // NEEDSWORK: SerializeCustomAttributeDependencies
     
@@ -1006,17 +1078,18 @@ MSXML2::IXMLDOMDocument2* pXmlDoc
     APPEND_CHILD_TO_PARENT(schemaElementPtr, pXmlDoc);
     
     MSXML2::IXMLDOMAttributePtr attributePtr;
-    WRITE_XML_ATTRIBUTE(L"xmlns:" EC_NAMESPACE_PREFIX, ECXML_URI_2_0, schemaElementPtr);
-    WRITE_XML_ATTRIBUTE(SCHEMA_NAME_ATTRIBUTE, this->Name.c_str(), schemaElementPtr);
-    WRITE_OPTIONAL_XML_ATTRIBUTE(SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE, NamespacePrefix, schemaElementPtr);
-    WRITE_OPTIONAL_XML_ATTRIBUTE(DESCRIPTION_ATTRIBUTE, Description, schemaElementPtr);
-    if (IsDisplayLabelDefined)
-        WRITE_OPTIONAL_XML_ATTRIBUTE(DISPLAY_LABEL_ATTRIBUTE, DisplayLabel, schemaElementPtr);
-    
     wchar_t versionString[8];
     swprintf(versionString, 8, L"%02d.%02d", m_versionMajor, m_versionMinor);
+    WRITE_XML_ATTRIBUTE(SCHEMA_NAME_ATTRIBUTE, this->Name.c_str(), schemaElementPtr);
+    WRITE_OPTIONAL_XML_ATTRIBUTE(SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE, NamespacePrefix, schemaElementPtr);
     WRITE_XML_ATTRIBUTE(SCHEMA_VERSION_ATTRIBUTE, versionString, schemaElementPtr);
-
+    WRITE_OPTIONAL_XML_ATTRIBUTE(DESCRIPTION_ATTRIBUTE, Description, schemaElementPtr);
+    if (IsDisplayLabelDefined)
+        {
+        WRITE_OPTIONAL_XML_ATTRIBUTE(DISPLAY_LABEL_ATTRIBUTE, DisplayLabel, schemaElementPtr);
+        }
+    WRITE_XML_ATTRIBUTE(L"xmlns:" EC_NAMESPACE_PREFIX, ECXML_URI_2_0, schemaElementPtr);
+    
     WriteSchemaReferences(schemaElementPtr);
     
     // NEEDSWORK Serialize custom attributes
@@ -1033,8 +1106,8 @@ MSXML2::IXMLDOMDocument2* pXmlDoc
         WriteClass(schemaElementPtr, *pClass);
         }
         
-    CREATE_AND_ADD_TEXT_NODE(L"\n", schemaElementPtr);
     m_alreadySerializedClasses.clear();
+    ECXml::FormatXml(pXmlDoc);
     return status;
     }
 /*---------------------------------------------------------------------------------**//**

@@ -140,6 +140,7 @@ ECSchemaPtr schema
         }
     
     }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -444,7 +445,7 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
 //    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 //    ECSchemaPtr schema;
 //    
-//    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml");
+//    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml", NULL, NULL);
 //    wprintf(L"Verifying original schema from file.\n"); 
 //    VerifyWidgetsSchema(schema);
 //
@@ -589,6 +590,48 @@ TEST(SchemaReferenceTest, AddAndRemoveReferencedSchemas)
     EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, schema->RemoveReferencedSchema(*refSchema));
     }
 
+TEST(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, L"TestSchema");
+    
+    ECSchemaPtr refSchema;
+    ECSchema::CreateSchema(refSchema, L"RefSchema");
+    
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(*refSchema));
+    ECClassP class1;
+    ECClassP baseClass;
+    ECClassP structClass;
+            
+    refSchema->CreateClass(baseClass, L"BaseClass");
+    refSchema->CreateClass(structClass, L"StructClass");
+    schema->CreateClass(class1, L"TestClass");
+    structClass->IsStruct = true;
+    
+    class1->AddBaseClass(*baseClass);
+    EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
+    
+    class1->RemoveBaseClass(*baseClass);
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(*refSchema));
+
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(*refSchema));
+    StructECPropertyP structProp;
+    ArrayECPropertyP nestedArrayProp;
+    
+    class1->CreateStructProperty(structProp, L"Struct Member");
+    class1->CreateArrayProperty(nestedArrayProp, L"NestedArray");
+    
+    structProp->Type = *structClass;
+    nestedArrayProp->StructElementType = structClass;
+
+    EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
+    class1->RemoveProperty(L"Struct Member");
+    EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
+    class1->RemoveProperty(L"NestedArray");
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(*refSchema));
+    
+    }
+    
 TEST(SchemaReferenceTest, ExpectSuccessWithCircularReferences)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
@@ -626,10 +669,13 @@ TEST(SchemaCreationTest, CanFullyCreateASchema)
     ECClassP class1;
     ECClassP baseClass;
     ECClassP structClass;
+    ECClassP relatedClass;
+    ECRelationshipClassP relationshipClass;
 
     testSchema->CreateClass(class1, L"TestClass");
     testSchema->CreateClass(structClass, L"StructClass");
     schema2->CreateClass(baseClass, L"BaseClass");
+    testSchema->CreateClass(relatedClass, L"RelatedClass");
     
     class1->Description = L"Class for testing purposes";
     class1->DisplayLabel = L"Test Class";
@@ -752,6 +798,54 @@ TEST(SchemaCreationTest, CanFullyCreateASchema)
     EXPECT_EQ(0, wcscmp(nestedArrayProp->TypeName.c_str(), L"StructClass"));
     EXPECT_EQ(0, wcscmp(primitiveArrayProp->TypeName.c_str(), L"int"));
 
+    testSchema->CreateRelationshipClass(relationshipClass, L"RelationshipClass");
+    EXPECT_TRUE(STRENGTHTYPE_Referencing == relationshipClass->Strength);
+    relationshipClass->Strength = STRENGTHTYPE_Embedding;
+    EXPECT_TRUE(STRENGTHTYPE_Embedding == relationshipClass->Strength);
+    
+    EXPECT_TRUE(STRENGTHDIRECTION_Forward == relationshipClass->StrengthDirection);
+    relationshipClass->StrengthDirection = STRENGTHDIRECTION_Backward;
+    EXPECT_TRUE(STRENGTHDIRECTION_Backward == relationshipClass->StrengthDirection);
+    
+    EXPECT_FALSE(relationshipClass->Source.IsMultiple);
+    EXPECT_TRUE(relationshipClass->Target.IsMultiple);
+    
+    EXPECT_TRUE(relationshipClass->Target.IsPolymorphic);
+    EXPECT_TRUE(relationshipClass->Source.IsPolymorphic);
+    relationshipClass->Source.IsPolymorphic = false;
+    EXPECT_FALSE(relationshipClass->Source.IsPolymorphic);
+    
+    relationshipClass->Description = L"Relates the test class to the related class";
+    relationshipClass->DisplayLabel = L"TestRelationshipClass";
+    
+    EXPECT_EQ(0, relationshipClass->Source.Classes.size());
+    EXPECT_EQ(0, relationshipClass->Target.Classes.size());
+    
+    relationshipClass->Source.AddClass(*structClass);
+    EXPECT_EQ(1, relationshipClass->Source.Classes.size());
+    relationshipClass->Source.AddClass(*class1);
+    EXPECT_EQ(1, relationshipClass->Source.Classes.size());
+    
+    relationshipClass->Target.AddClass(*relatedClass);
+    EXPECT_EQ(1, relationshipClass->Target.Classes.size());
+    relationshipClass->Target.AddClass(*relatedClass);
+    EXPECT_EQ(1, relationshipClass->Target.Classes.size());
+    relationshipClass->Target.AddClass(*structClass);
+    EXPECT_EQ(2, relationshipClass->Target.Classes.size());
+    
+    EXPECT_EQ(0, relationshipClass->Source.Cardinality.LowerLimit);
+    EXPECT_EQ(0, relationshipClass->Target.Cardinality.LowerLimit);
+    EXPECT_EQ(1, relationshipClass->Source.Cardinality.UpperLimit);
+    EXPECT_EQ(1, relationshipClass->Target.Cardinality.UpperLimit);
+    
+    relationshipClass->Source.Cardinality = RelationshipCardinality::OneMany();
+    EXPECT_EQ(1, relationshipClass->Source.Cardinality.LowerLimit);
+    EXPECT_TRUE(relationshipClass->Source.Cardinality.IsUpperLimitUnbounded());
+    
+    RelationshipCardinality *card = new RelationshipCardinality(2, 5);
+    relationshipClass->Target.Cardinality = *card;
+    EXPECT_EQ(2, relationshipClass->Target.Cardinality.LowerLimit);
+    EXPECT_EQ(5, relationshipClass->Target.Cardinality.UpperLimit);
     }
     
 TEST(ClassTest, ExpectErrorWithCircularBaseClasses)
@@ -769,6 +863,39 @@ TEST(ClassTest, ExpectErrorWithCircularBaseClasses)
     EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->AddBaseClass(*baseClass1));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, baseClass1->AddBaseClass(*baseClass2));
     EXPECT_EQ(ECOBJECTS_STATUS_BaseClassUnacceptable, baseClass2->AddBaseClass(*class1));
+    }
+    
+TEST(ClassTest, AddAndRemoveBaseClass)
+    {
+    ECSchemaPtr schema;
+    ECClassP class1;
+    ECClassP baseClass1;
+    
+    ECSchema::CreateSchema(schema, L"TestSchema");
+    schema->CreateClass(class1, L"TestClass");
+    schema->CreateClass(baseClass1, L"BaseClass");
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->AddBaseClass(*baseClass1));
+
+    ECBaseClassesList classList = class1->GetBaseClasses();
+    ECBaseClassesList::const_iterator baseClassIterator;
+    for (baseClassIterator = classList.begin(); baseClassIterator != classList.end(); baseClassIterator++)
+        {
+        if (*baseClassIterator == baseClass1)
+            break;
+        }
+        
+    EXPECT_FALSE(baseClassIterator == classList.end());
+    
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->RemoveBaseClass(*baseClass1));
+    classList = class1->GetBaseClasses();
+    for (baseClassIterator = classList.begin(); baseClassIterator != classList.end(); baseClassIterator++)
+        {
+        if (*baseClassIterator == baseClass1)
+            break;
+        }
+        
+    EXPECT_TRUE(baseClassIterator == classList.end());
+    EXPECT_EQ(ECOBJECTS_STATUS_ClassNotFound, class1->RemoveBaseClass(*baseClass1));
     }
     
 TEST(ClassTest, IsTests)
@@ -818,6 +945,32 @@ TEST(ClassTest, ExpectPropertiesInOrder)
         EXPECT_EQ(propertyNames[i], prop->Name);
         i++;
         }
+    }
+   
+TEST(ClassTest, AddAndRemoveConstraintClasses)
+    {
+    ECSchemaPtr schema;
+    ECSchemaPtr refSchema;
+    
+    ECSchema::CreateSchema(schema, L"TestSchema");
+    ECSchema::CreateSchema(refSchema, L"RefSchema");
+    
+    ECRelationshipClassP relClass;
+    ECClassP targetClass;
+    ECClassP sourceClass;
+    
+    schema->CreateRelationshipClass(relClass, L"RElationshipClass");
+    schema->CreateClass(targetClass, L"Target");
+    refSchema->CreateClass(sourceClass, L"Source");
+    
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, relClass->Target.AddClass(*targetClass));
+    EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, relClass->Source.AddClass(*sourceClass));
+    
+    schema->AddReferencedSchema(*refSchema);
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, relClass->Source.AddClass(*sourceClass));
+    
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, relClass->Target.RemoveClass(*targetClass));
+    EXPECT_EQ(ECOBJECTS_STATUS_ClassNotFound, relClass->Target.RemoveClass(*targetClass));
     }
           
 END_BENTLEY_EC_NAMESPACE
