@@ -279,8 +279,14 @@ StatusInt       StandaloneECInstance::_GetStructArrayValueFromMemory (ECValueR v
     {
     ECValue binaryValue;
     StatusInt status = GetPrimitiveValueFromMemory (binaryValue, propertyLayout, true, index);      
-    if ((status != SUCCESS) || (binaryValue.IsNull()))
+    if (status != SUCCESS)
         return status;
+        
+    if (binaryValue.IsNull())
+        {
+        v.SetStruct(NULL);
+        return SUCCESS;
+        }        
                     
     size_t size;
     StructValueIdentifier structValueId = *(StructValueIdentifier*)binaryValue.GetBinary (size);    
@@ -292,7 +298,7 @@ StatusInt       StandaloneECInstance::_GetStructArrayValueFromMemory (ECValueR v
     if ( instanceIterator != m_structValueMap.end() )
         instancePtr = instanceIterator->second;
        
-    v.SetStruct (*instancePtr);
+    v.SetStruct (instancePtr.get());
     
     return SUCCESS;
     }
