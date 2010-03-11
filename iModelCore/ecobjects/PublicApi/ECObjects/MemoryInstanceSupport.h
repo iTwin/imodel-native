@@ -287,19 +287,18 @@ private:
     bool                        m_allowWritingDirectlyToInstanceMemory;
        
     //! Returns the offset of the property value relative to the start of the instance data.
-    //! If nIndices is > 0 then the offset of the array element value is returned.
+    //! If useIndex is true then the offset of the array element value at the specified index is returned.
     UInt32              GetOffsetOfPropertyValue (PropertyLayoutCR propertyLayout, bool useIndex = false, UInt32 index = 0) const;
     
     //! Returns the size in bytes of the property value
-    UInt32              GetPropertyValueSize (PropertyLayoutCR propertyLayout) const;
+    UInt32              GetPropertyValueSize (PropertyLayoutCR propertyLayout) const;   
+    //! Returns the size in bytes of the array element value at the specified index
+    UInt32              GetPropertyValueSize (PropertyLayoutCR propertyLayout, UInt32 index) const;    
     
-    //! Returns the address of the property value 
-    //! If nIndices is > 0 then the address of the array element value is returned
+    //! Returns the address of the property value     
     byte const *        GetAddressOfPropertyValue (PropertyLayoutCR propertyLayout) const;    
-    byte const *        GetAddressOfPropertyValue (PropertyLayoutCR propertyLayout, UInt32 index) const;    
-    
-    //! Returns the size of a variable-sized property value by calculating the difference in secondary offsets
-    UInt32              GetSizeOfVariableLengthPropertyValue (PropertyLayoutCR propertyLayout) const;
+    //! Returns the address of the array element value at the specified index
+    byte const *        GetAddressOfPropertyValue (PropertyLayoutCR propertyLayout, UInt32 index) const;        
     
     //! Returns the offset of the specified array index relative to the start of the instance data.
     //! Note that this offset does not necessarily contain the index value.  If the element type is fixed it contains the value but if it is a variable

@@ -762,12 +762,53 @@ UInt32          MemoryInstanceSupport::GetPropertyValueSize (PropertyLayoutCR pr
     if (propertyLayout.IsFixedSized())
         return propertyLayout.GetSizeInFixedSection();
     else
-        {
-        SecondaryOffset* pSecondaryOffset = (SecondaryOffset*)(_GetData() + propertyLayout.GetOffset());
-        SecondaryOffset* pNextOffset = pSecondaryOffset + 1;        
-        return *pNextOffset - *pSecondaryOffset;        
+        {    
+        UInt32 offset = propertyLayout.GetOffset();
+        SecondaryOffset const * pSecondaryOffset = (SecondaryOffset const *)(_GetData() + offset);
+        
+        SecondaryOffset secondaryOffset = *pSecondaryOffset;
+        if (0 == secondaryOffset)
+            return 0;
+
+        SecondaryOffset nextSecondaryOffset = *(pSecondaryOffset + 1);
+        if (0 == nextSecondaryOffset)
+            return 0;
+
+        UInt32 size = nextSecondaryOffset - secondaryOffset;
+        return size;
         }
     }    
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/    
+UInt32          MemoryInstanceSupport::GetPropertyValueSize (PropertyLayoutCR propertyLayout, UInt32 index) const
+    {
+    if (IsArrayOfFixedSizeElements (propertyLayout))
+        return ClassLayout::GetFixedPrimitiveValueSize (propertyLayout.GetTypeDescriptor().GetPrimitiveType());
+    else
+        {                            
+        UInt32 arrayOffset = GetOffsetOfPropertyValue (propertyLayout);   
+        byte const *             data = _GetData();
+        SecondaryOffset* pIndexValueOffset = (SecondaryOffset*)(data + GetOffsetOfArrayIndex (arrayOffset, propertyLayout, index));    
+        SecondaryOffset indexValueOffset = arrayOffset + *pIndexValueOffset;    
+        if (0 == indexValueOffset)
+            return 0;
+            
+        UInt32 arrayCount = GetAllocatedArrayCount (propertyLayout);
+        SecondaryOffset* pNextPropertyValueOffset = (SecondaryOffset*)(data + propertyLayout.GetOffset()) + 1;
+        SecondaryOffset nextIndexValueOffset;
+        if (index == arrayCount - 1) 
+            nextIndexValueOffset = *pNextPropertyValueOffset;
+        else 
+            nextIndexValueOffset = arrayOffset + *(pIndexValueOffset + 1);            
+        if (0 == nextIndexValueOffset)
+            return 0;
+            
+        UInt32 size = nextIndexValueOffset - indexValueOffset;        
+        return size;
+        }
+    }        
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
@@ -825,27 +866,6 @@ byte const *    MemoryInstanceSupport::GetAddressOfPropertyValue (PropertyLayout
     UInt32 arrayOffset = GetOffsetOfPropertyValue (propertyLayout);   
     return _GetData() + GetOffsetOfArrayIndexValue (arrayOffset, propertyLayout, index);
     }    
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          MemoryInstanceSupport::GetSizeOfVariableLengthPropertyValue (PropertyLayoutCR propertyLayout) const
-    {
-    DEBUG_EXPECT ( ! propertyLayout.IsFixedSized());
-    UInt32 offset = propertyLayout.GetOffset();
-    SecondaryOffset const * pSecondaryOffset = (SecondaryOffset const *)(_GetData() + offset);
-    
-    SecondaryOffset secondaryOffset = *pSecondaryOffset;
-    if (0 == secondaryOffset)
-        return 0;
-
-    SecondaryOffset nextSecondaryOffset = *(pSecondaryOffset + 1);
-    if (0 == nextSecondaryOffset)
-        return 0;
-
-    UInt32 size = nextSecondaryOffset - secondaryOffset;
-    return size;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * internal helper - no parameter checking
@@ -1090,18 +1110,7 @@ StatusInt       MemoryInstanceSupport::AddNullArrayElementsAt (ClassLayoutCR cla
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       MemoryInstanceSupport::EnsureSpaceIsAvailableForArrayIndexValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 bytesNeeded)
     {    
-    UInt32 arrayOffset = GetOffsetOfPropertyValue (propertyLayout);   
-    byte const *             data = _GetData();
-    SecondaryOffset* pIndexValueOffset = (SecondaryOffset*)(data + GetOffsetOfArrayIndex (arrayOffset, propertyLayout, arrayIndex));    
-    SecondaryOffset indexValueOffset = arrayOffset + *pIndexValueOffset;    
-    UInt32 arrayCount = GetAllocatedArrayCount (propertyLayout);
-    SecondaryOffset* pNextPropertyValueOffset = (SecondaryOffset*)(_GetData() + propertyLayout.GetOffset()) + 1;
-    SecondaryOffset nextIndexValueOffset;
-    if (arrayIndex == arrayCount - 1) 
-        nextIndexValueOffset = *pNextPropertyValueOffset;
-    else 
-        nextIndexValueOffset = arrayOffset + *(pIndexValueOffset + 1);
-    UInt32 availableBytes = nextIndexValueOffset - indexValueOffset;
+    UInt32 availableBytes = GetPropertyValueSize (propertyLayout, arrayIndex);
     
 #ifndef SHRINK_TO_FIT    
     if (bytesNeeded <= availableBytes)
@@ -1112,7 +1121,9 @@ StatusInt       MemoryInstanceSupport::EnsureSpaceIsAvailableForArrayIndexValue 
     if (additionalBytesNeeded <= 0)
         return SUCCESS;
     
-    UInt32 endOfValueDataPreGrow = *pNextPropertyValueOffset;
+    UInt32 arrayCount = GetAllocatedArrayCount (propertyLayout);
+    
+    UInt32 endOfValueDataPreGrow = *((SecondaryOffset*)(_GetData() + propertyLayout.GetOffset()) + 1);
     StatusInt status = GrowPropertyValue (classLayout, propertyLayout, additionalBytesNeeded);
 
     if (SUCCESS != status)
@@ -1319,7 +1330,11 @@ StatusInt       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValueR v, 
             }
         case PRIMITIVETYPE_Binary:
             {
-            UInt32 size = GetSizeOfVariableLengthPropertyValue (propertyLayout);
+            UInt32 size;
+            if (useIndex)
+                size = GetPropertyValueSize (propertyLayout, index);
+            else
+                size = GetPropertyValueSize (propertyLayout);
             v.SetBinary (pValue, size);
             return SUCCESS;
             }  
@@ -1508,7 +1523,13 @@ StatusInt       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueCR v, C
             if (SUCCESS != status)
                 return status;
                 
-            // WIP_FUSION: would it speed things up to poke directly when m_allowWritingDirectlyToInstanceMemory is true?
+            // WIP_FUSION We need to figure out the story for value size.  It is legitamate to have a non-null binary value that is
+            // 0 bytes in length.  Currently, we do not track that length anywhere.  How do we capture this in the case that the binary value was previously set to some
+            // value > 0 in length and we are not auto compressing property values.
+            if (bytesNeeded == 0)
+                return SUCCESS;
+            
+            // WIP_FUSION: would it speed things up to poke directly when m_allowWritingDirectlyToInstanceMemory is true?    
             return _ModifyData (offset, data, bytesNeeded);
             }
         case PRIMITIVETYPE_Boolean:
@@ -1563,7 +1584,7 @@ StatusInt       MemoryInstanceSupport::SetValueToMemory (ECValueCR v, ClassLayou
 
     if (typeDescriptor.IsPrimitiveArray())
         return SetPrimitiveValueToMemory (v, classLayout, propertyLayout, true, index);
-    else if (typeDescriptor.IsStructArray())               
+    else if (typeDescriptor.IsStructArray()) // WIP_FUSION ensure that the struct is valid to set as an index in this array.              
         return _SetStructArrayValueToMemory (v, classLayout, propertyLayout, index);       
 
     POSTCONDITION (false && "Can not set the value to memory using the specified property layout because it is an unsupported datatype", ERROR);
@@ -1658,8 +1679,16 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
                     {                
                     offset = GetOffsetOfArrayIndex (GetOffsetOfPropertyValue (*propertyLayout), *propertyLayout, i);
                     address = data + offset;
-                    GetValueFromMemory (v, *propertyLayout, i);
-                    valueAsString = v.ToString();                
+                    status = GetValueFromMemory (v, *propertyLayout, i);
+                    if (SUCCESS == status)            
+                        valueAsString = v.ToString();                
+                    else
+                        {
+                        wchar_t temp[1024];
+                        swprintf(temp, 1024, L"Error (%d) returned while obtaining array index value", status, i);
+                        valueAsString = std::wstring (temp);
+                        }
+
                     if (IsArrayOfFixedSizeElements (*propertyLayout))
                         logger->tracev (L"      [0x%x][%4.d] %d = %s\n", address, offset, i, valueAsString.c_str());
                     else
@@ -1669,7 +1698,7 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
                         
                         logger->tracev (L"      [0x%x][%4.d] -> [0x%x][%4.d] %d = %s\n", address, offset, realAddress, secondaryOffset, i, valueAsString.c_str());                    
                         }     
-                    if (v.IsStruct())
+                    if ((SUCCESS == status) && (!v.IsNull()) && (v.IsStruct()))
                         {
                         v.GetStruct()->Dump();
                         logger->tracev (L"=================== END Struct Instance ===========================\n");
