@@ -184,8 +184,7 @@ public:
     ECOBJECTS_EXPORT StatusInt      SetBinary (const byte * string, size_t size, bool holdADuplicate = false);
     
     ECOBJECTS_EXPORT IECInstancePtr  GetStruct() const;
-    ECOBJECTS_EXPORT StatusInt       SetStruct (IECInstanceR structInstance);
-    ECOBJECTS_EXPORT StatusInt       SetToNullStruct ();
+    ECOBJECTS_EXPORT StatusInt       SetStruct (IECInstanceP structInstance);
         
     ECOBJECTS_EXPORT SystemTime     GetDateTime() const;
     ECOBJECTS_EXPORT StatusInt      SetDateTime (SystemTime& systemTime); 

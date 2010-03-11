@@ -264,15 +264,27 @@ void            ECValue::SetToNull()
         return;
         
     if (IsString())
-        SetString (NULL);
+		{
+        if ((m_stringInfo.m_string != NULL) && (m_stringInfo.m_freeWhenDone))
+            free (const_cast<wchar_t *>(m_stringInfo.m_string));
+            
+        m_stringInfo.m_string = NULL;
+		}
+    else if (IsBinary())
+        {
+        if ((m_binaryInfo.m_data != NULL) && (m_binaryInfo.m_freeWhenDone))
+            free ((void*)m_binaryInfo.m_data);
+        m_binaryInfo.m_data = NULL;
+        m_binaryInfo.m_size = 0;            
+        }		
     else if (IsStruct())
-        {        
-        m_structInstance->Release();
+        {
+        if (m_structInstance != NULL)        
+            m_structInstance->Release();
         m_structInstance = NULL;        
         }
     
-    if (!IsArray()) // arrays can never be null       
-        m_isNull = true; //WIP_FUSION handle other types
+    m_isNull = true;
     }    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
@@ -290,29 +302,11 @@ void            ECValue::Clear()
         m_isNull = true;
         return;
         }
-        
-    if (IsString())
-        {
-        if (m_stringInfo.m_freeWhenDone)
-            free (const_cast<wchar_t *>(m_stringInfo.m_string));
-            
-        m_stringInfo.m_string = NULL;
-        }
-    else if (IsBinary())
-        {
-        if (m_binaryInfo.m_freeWhenDone)
-            free ((void*)m_binaryInfo.m_data);
-        m_binaryInfo.m_data = NULL;
-        m_binaryInfo.m_size = 0;            
-        }
-    else if (IsStruct())
-        {
-        m_structInstance->Release();
-        m_structInstance = NULL;
-        }
-        
-    m_isNull = true;
+		
+	SetToNull();	
     m_valueKind = VALUEKIND_Uninitialized;            
+	        
+        
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -740,14 +734,22 @@ const byte * ECValue::GetBinary(size_t& size) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt ECValue::SetBinary (const byte * data, size_t size, bool holdADuplicate)
     {
-    PRECONDITION (NULL != data, ERROR);
     Clear();
 
     m_primitiveType = PRIMITIVETYPE_Binary;
     m_binaryInfo.m_freeWhenDone = holdADuplicate;
-    m_binaryInfo.m_size = size;
-    m_isNull = false;
     
+    if (NULL == data)
+        {
+        m_binaryInfo.m_data = NULL;
+        m_binaryInfo.m_size = 0;
+        return SUCCESS;
+        }    
+    
+
+    m_isNull = false;
+
+    m_binaryInfo.m_size = size;    
     if (holdADuplicate)
         {
         void * duplicateData = malloc (size);
@@ -772,28 +774,26 @@ IECInstancePtr  ECValue::GetStruct() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ECValue::SetStruct (IECInstanceR structInstance)
+StatusInt       ECValue::SetStruct (IECInstanceP structInstance)
     {
     Clear();
-    m_isNull    = false;
+
     m_valueKind = VALUEKIND_Struct;    
-    m_structInstance = &structInstance;        
+        
+    if (NULL == structInstance)
+        {
+        m_structInstance = NULL;
+        return SUCCESS;
+        }  
+            
+    m_isNull    = false;
+
+    m_structInstance = structInstance;        
     m_structInstance->AddRef();
     
     return SUCCESS;
     }    
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Adam.Klatzkin                   02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ECValue::SetToNullStruct ()
-    {
-    Clear();
-    m_isNull    = true;
-    m_valueKind = VALUEKIND_Struct;    
-    
-    return SUCCESS;
-    }        
+      
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
