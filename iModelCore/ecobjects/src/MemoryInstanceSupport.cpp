@@ -613,14 +613,14 @@ void            ClassLayout::CheckForECPointers (wchar_t const * accessString)
 +---------------+---------------+---------------+---------------+---------------+------*/     
 void            ClassLayout::AddPropertyDirect
 (
-wchar_t const * accessString,
-PrimitiveType   primitivetype,
-UInt32          offset,
-UInt32          nullflagsOffset,
-UInt32          nullflagsBitmask
+wchar_t const *  accessString,
+ECTypeDescriptor typeDescriptor,
+UInt32           offset,
+UInt32           nullflagsOffset,
+UInt32           nullflagsBitmask
 )
     {
-    PropertyLayout propertyLayout (accessString, primitivetype, offset, nullflagsOffset, nullflagsBitmask);
+    PropertyLayout propertyLayout (accessString, typeDescriptor, offset, nullflagsOffset, nullflagsBitmask);
 
     m_propertyLayouts.push_back(propertyLayout);
     CheckForECPointers (accessString);
@@ -792,6 +792,7 @@ UInt32          MemoryInstanceSupport::GetPropertyValueSize (PropertyLayoutCR pr
         byte const *             data = _GetData();
         SecondaryOffset* pIndexValueOffset = (SecondaryOffset*)(data + GetOffsetOfArrayIndex (arrayOffset, propertyLayout, index));    
         SecondaryOffset indexValueOffset = arrayOffset + *pIndexValueOffset;    
+        if (0 == indexValueOffset)        
             return 0;
         UInt32 arrayCount = GetAllocatedArrayCount (propertyLayout);
         SecondaryOffset* pNextPropertyValueOffset = (SecondaryOffset*)(data + propertyLayout.GetOffset()) + 1;

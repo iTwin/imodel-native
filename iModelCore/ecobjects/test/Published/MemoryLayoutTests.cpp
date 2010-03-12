@@ -474,12 +474,12 @@ void ExerciseVariableCountManufacturerArray (IECInstanceR instance, StandaloneEC
     IECInstancePtr manufInst = manufacturerEnabler.CreateInstance().get();    
     SetAndVerifyString (*manufInst, v, L"Name", L"Nissan");
     SetAndVerifyInteger (*manufInst, v, L"AccountNo", 3475);
-    v.SetStruct (*manufInst);
+    v.SetStruct (manufInst.get());
     ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 0));
     manufInst = manufacturerEnabler.CreateInstance().get();    
     SetAndVerifyString (*manufInst, v, L"Name", L"Kia");
     SetAndVerifyInteger (*manufInst, v, L"AccountNo", 1791);
-    v.SetStruct (*manufInst);
+    v.SetStruct (manufInst.get());
     ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 1));    
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 2, false);    
    
@@ -492,12 +492,12 @@ void ExerciseVariableCountManufacturerArray (IECInstanceR instance, StandaloneEC
     manufInst = manufacturerEnabler.CreateInstance().get();    
     SetAndVerifyString (*manufInst, v, L"Name", L"Ford");
     SetAndVerifyInteger (*manufInst, v, L"AccountNo", 381);
-    v.SetStruct (*manufInst);
+    v.SetStruct (manufInst.get());
     ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 1)); 
     manufInst = manufacturerEnabler.CreateInstance().get();    
     SetAndVerifyString (*manufInst, v, L"Name", L"Chrysler");
     SetAndVerifyInteger (*manufInst, v, L"AccountNo", 81645);
-    v.SetStruct (*manufInst);
+    v.SetStruct (manufInst.get());
     ASSERT_TRUE (SUCCESS ==instance.SetValue (arrayAccessor, v, 2));        
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 4, false);
     
@@ -509,13 +509,13 @@ void ExerciseVariableCountManufacturerArray (IECInstanceR instance, StandaloneEC
     manufInst = manufacturerEnabler.CreateInstance().get();    
     SetAndVerifyString (*manufInst, v, L"Name", L"Acura");
     SetAndVerifyInteger (*manufInst, v, L"AccountNo", 6);
-    v.SetStruct (*manufInst);
+    v.SetStruct (manufInst.get());
     ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 3));        
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 3, 1, false);
     manufInst = manufacturerEnabler.CreateInstance().get();    
     SetAndVerifyString (*manufInst, v, L"Name", L"Toyota");
     SetAndVerifyInteger (*manufInst, v, L"AccountNo", 6823);
-    v.SetStruct (*manufInst);
+    v.SetStruct (manufInst.get());
     ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 3));        
     
     // ensure we can't set the array elements to other primitive types

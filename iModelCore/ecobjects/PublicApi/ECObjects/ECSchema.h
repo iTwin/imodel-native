@@ -105,8 +105,7 @@ private:
         {
         ArrayKind       m_arrayKind;
         PrimitiveType   m_primitiveType;
-        };  
-    ECTypeDescriptor () : m_typeKind ((ValueKind) 0), m_primitiveType ((PrimitiveType) 0) { };
+        };      
 
 public:
     ECOBJECTS_EXPORT static ECTypeDescriptor   CreatePrimitiveTypeDescriptor (PrimitiveType primitiveType);
@@ -116,6 +115,11 @@ public:
 
     ECTypeDescriptor (PrimitiveType primitiveType) : m_typeKind (VALUEKIND_Primitive), m_primitiveType (primitiveType) { };
 
+/*__PUBLISH_SECTION_END__*/
+    ECTypeDescriptor () : m_typeKind ((ValueKind) 0), m_primitiveType ((PrimitiveType) 0) { };
+    ECTypeDescriptor (ValueKind valueKind, short valueKindQualifier) : m_typeKind (valueKind), m_primitiveType ((PrimitiveType)valueKindQualifier) { };
+/*__PUBLISH_SECTION_START__*/    
+
     inline ValueKind        GetTypeKind() const         { return m_typeKind; }
     inline ArrayKind        GetArrayKind() const        { return (ArrayKind)(m_arrayKind & 0xFF); }    
     inline bool             IsPrimitive() const         { return (GetTypeKind() == VALUEKIND_Primitive ); }
@@ -124,6 +128,9 @@ public:
     inline bool             IsPrimitiveArray() const    { return (GetTypeKind() == VALUEKIND_Array ) && (GetArrayKind() == ARRAYKIND_Primitive); }
     inline bool             IsStructArray() const       { return (GetTypeKind() == VALUEKIND_Array ) && (GetArrayKind() == ARRAYKIND_Struct); }
     inline PrimitiveType    GetPrimitiveType() const    { return m_primitiveType; }
+/*__PUBLISH_SECTION_END__*/
+    inline short            GetTypeKindQualifier() const   { return m_primitiveType; }
+/*__PUBLISH_SECTION_START__*/        
 };    
 
 // NEEDSWORK - unsure what the best way is to model ECProperty.  Managed implementation has a single ECProperty and introduces an ECType concept.  My gut is that
