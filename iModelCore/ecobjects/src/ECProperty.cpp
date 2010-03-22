@@ -42,7 +42,9 @@ ECObjectsStatus ECProperty::SetName
 std::wstring const& name
 )
     {        
-    //NEEDSWORK name needs to be validated
+    if (!NameValidator::Validate(name))
+        return ECOBJECTS_STATUS_InvalidName;
+ 
     m_name = name;        
     return ECOBJECTS_STATUS_Success;
     }

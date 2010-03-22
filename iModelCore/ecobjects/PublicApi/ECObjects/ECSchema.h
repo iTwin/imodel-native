@@ -35,6 +35,12 @@ bool operator()(const wchar_t * s1, const wchar_t * s2) const
     }
 };
 
+struct NameValidator abstract
+{
+public:
+    static bool Validate(const std::wstring& name);
+};
+    
 typedef std::list<ECPropertyP> PropertyList;
 typedef stdext::hash_map<const wchar_t * , ECPropertyP, stdext::hash_compare<const wchar_t *, less_str>> PropertyMap;
 typedef stdext::hash_map<const wchar_t * , ECClassP, stdext::hash_compare<const wchar_t *, less_str>>    ClassMap;
@@ -392,8 +398,6 @@ private:
     
     ECObjectsStatus                     AddProperty (ECPropertyP& pProperty);
     ECObjectsStatus                     AddProperty (ECPropertyP pProperty, std::wstring const& name);
-    
-    static bool ValidateName(std::wstring const& name);
     
     static bool ClassesAreEqualByName(ECClassCP thisClass, ECClassCP thatClass);
     static bool CheckBaseClassCycles(ECClassCP thisClass, ECClassCP proposedParentClass);
