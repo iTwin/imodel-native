@@ -687,6 +687,8 @@ public:
 
 }; // ECRelationshipClass
 
+typedef RefCountedPtr<ECRelationshipClass>      ECRelationshipClassPtr;
+
 typedef std::list<ECSchemaP> ECSchemaReferenceList;
 typedef RefCountedPtr<ECSchema>                  ECSchemaPtr;
 //=======================================================================================
