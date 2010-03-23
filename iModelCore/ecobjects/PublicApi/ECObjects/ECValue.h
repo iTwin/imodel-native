@@ -121,8 +121,8 @@ public:
     
     ECOBJECTS_EXPORT ECValue ();
     ECOBJECTS_EXPORT ECValue (ECValueCR v);
-    ECOBJECTS_EXPORT ECValue (ValueKind classification);
-    ECOBJECTS_EXPORT ECValue (PrimitiveType primitiveType);
+    ECOBJECTS_EXPORT explicit ECValue (ValueKind classification);
+    ECOBJECTS_EXPORT explicit ECValue (PrimitiveType primitiveType);
 
     ECOBJECTS_EXPORT explicit ECValue (::Int32 integer32);
     ECOBJECTS_EXPORT explicit ECValue (::Int64 long64);
