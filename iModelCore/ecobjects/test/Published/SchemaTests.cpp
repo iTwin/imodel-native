@@ -731,7 +731,7 @@ TEST(SchemaCreationTest, CanFullyCreateASchema)
     
     EXPECT_EQ(0, wcscmp(stringProp->TypeName.c_str(), L"string"));
     EXPECT_TRUE(PRIMITIVETYPE_String == stringProp->Type);
-    EXPECT_EQ(0, wcscmp(structProp->TypeName.c_str(), L"StructClass"));
+    EXPECT_EQ(0, wcscmp(structProp->Type.Name.c_str(), L"StructClass"));
     
     PrimitiveECPropertyP binaryProperty;
     PrimitiveECPropertyP booleanProperty;
@@ -789,12 +789,12 @@ TEST(SchemaCreationTest, CanFullyCreateASchema)
     EXPECT_TRUE(PRIMITIVETYPE_Point2D == point2DProperty->Type);
     EXPECT_TRUE(PRIMITIVETYPE_Point3D == point3DProperty->Type);
 
-    class1->CreateStructProperty(structProp, L"Struct Member2", *structClass);
+    class1->CreateStructProperty(structProp, L"StructMember2", *structClass);
     class1->CreateArrayProperty(nestedArrayProp, L"NestedArray2", structClass);
     class1->CreateArrayProperty(primitiveArrayProp, L"PrimitiveArray2", PRIMITIVETYPE_Integer);
     EXPECT_TRUE(ARRAYKIND_Struct == nestedArrayProp->Kind);
     EXPECT_TRUE(ARRAYKIND_Primitive == primitiveArrayProp->Kind);
-    EXPECT_EQ(0, wcscmp(structProp->TypeName.c_str(), L"StructClass"));
+    EXPECT_EQ(0, wcscmp(structProp->Type.Name.c_str(), L"StructClass"));
     EXPECT_EQ(0, wcscmp(nestedArrayProp->TypeName.c_str(), L"StructClass"));
     EXPECT_EQ(0, wcscmp(primitiveArrayProp->TypeName.c_str(), L"int"));
 
