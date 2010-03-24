@@ -1357,4 +1357,28 @@ ECClassP   ECClassContainer::const_iterator::operator*() const
     return mapPair.second;
     };
 
+/*---------------------------------------------------------------------------------**//**
+* Validates a name and ensures a name contains only alphanumeric and underscore characters and does not start with a digit.
+*
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bool NameValidator::Validate
+(
+const std::wstring &name
+) 
+    {
+    if (name.empty())
+        return false;
+    if (isdigit(name[0]))
+        return false;
+    
+    for (std::wstring::size_type index = 0; index != name.length(); ++index)
+        {
+        if (!isalnum(name[index]) && '_' != name[index])
+            return false;
+        } 
+    return true;
+    }
+        
+
 END_BENTLEY_EC_NAMESPACE

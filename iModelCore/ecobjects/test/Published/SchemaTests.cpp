@@ -731,7 +731,7 @@ TEST(SchemaCreationTest, CanFullyCreateASchema)
     
     EXPECT_EQ(0, wcscmp(stringProp->TypeName.c_str(), L"string"));
     EXPECT_TRUE(PRIMITIVETYPE_String == stringProp->Type);
-    EXPECT_EQ(0, wcscmp(structProp->TypeName.c_str(), L"StructClass"));
+    EXPECT_EQ(0, wcscmp(structProp->Type.Name.c_str(), L"StructClass"));
     
     PrimitiveECPropertyP binaryProperty;
     PrimitiveECPropertyP booleanProperty;
@@ -789,12 +789,12 @@ TEST(SchemaCreationTest, CanFullyCreateASchema)
     EXPECT_TRUE(PRIMITIVETYPE_Point2D == point2DProperty->Type);
     EXPECT_TRUE(PRIMITIVETYPE_Point3D == point3DProperty->Type);
 
-    class1->CreateStructProperty(structProp, L"Struct Member2", *structClass);
+    class1->CreateStructProperty(structProp, L"StructMember2", *structClass);
     class1->CreateArrayProperty(nestedArrayProp, L"NestedArray2", structClass);
     class1->CreateArrayProperty(primitiveArrayProp, L"PrimitiveArray2", PRIMITIVETYPE_Integer);
     EXPECT_TRUE(ARRAYKIND_Struct == nestedArrayProp->Kind);
     EXPECT_TRUE(ARRAYKIND_Primitive == primitiveArrayProp->Kind);
-    EXPECT_EQ(0, wcscmp(structProp->TypeName.c_str(), L"StructClass"));
+    EXPECT_EQ(0, wcscmp(structProp->Type.Name.c_str(), L"StructClass"));
     EXPECT_EQ(0, wcscmp(nestedArrayProp->TypeName.c_str(), L"StructClass"));
     EXPECT_EQ(0, wcscmp(primitiveArrayProp->TypeName.c_str(), L"int"));
 
@@ -972,5 +972,38 @@ TEST(ClassTest, AddAndRemoveConstraintClasses)
     EXPECT_EQ(ECOBJECTS_STATUS_Success, relClass->Target.RemoveClass(*targetClass));
     EXPECT_EQ(ECOBJECTS_STATUS_ClassNotFound, relClass->Target.RemoveClass(*targetClass));
     }
+    
+//TEST(ClassTest, ExpectErrorWithBadClassName)
+//    {
+//    ECSchemaPtr schema;
+//    ECClassP class1;
+//    
+//    ECSchema::CreateSchema(schema, L"TestSchema");
+//    
+//    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L""));
+//    
+//    // name cannot be an empty string
+//    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L"    "));
+//    
+//    // name cannot contain special characters
+//    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L"&&&&"));
+//    
+//    // name cannot start with a digit
+//    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L"0InvalidName"));
+//    
+//    // name may include underscores
+//    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->CreateClass(class1, L"_____"));
+//    
+//    // % is an invalid character
+//    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L"%"));
+//    
+//    // a is a valid character
+//    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->CreateClass(class1, L"a"));
+//
+//    // Names can only include characters from the intersection of 7bit ascii and alphanumeric
+//    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L"abc123!@#"));
+//    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->CreateClass(class1, L"abc123"));
+//
+//    }
           
 END_BENTLEY_EC_NAMESPACE

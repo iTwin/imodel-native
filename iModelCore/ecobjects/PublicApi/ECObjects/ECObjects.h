@@ -118,6 +118,7 @@ enum ECObjectsStatus
     ECOBJECTS_STATUS_ClassNotFound                                     = ECOBJECTS_ERROR_BASE + 0x0F,
     ECOBJECTS_STATUS_BaseClassUnacceptable                             = ECOBJECTS_ERROR_BASE + 0x10,
     ECOBJECTS_STATUS_SchemaInUse                                       = ECOBJECTS_ERROR_BASE + 0x11,
+    ECOBJECTS_STATUS_InvalidName                                       = ECOBJECTS_ERROR_BASE + 0x12,
     }; 
 
 enum SchemaDeserializationStatus

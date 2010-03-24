@@ -35,6 +35,12 @@ bool operator()(const wchar_t * s1, const wchar_t * s2) const
     }
 };
 
+struct NameValidator abstract
+{
+public:
+    static bool Validate(const std::wstring& name);
+};
+    
 typedef std::list<ECPropertyP> PropertyList;
 typedef stdext::hash_map<const wchar_t * , ECPropertyP, stdext::hash_compare<const wchar_t *, less_str>> PropertyMap;
 typedef stdext::hash_map<const wchar_t * , ECClassP, stdext::hash_compare<const wchar_t *, less_str>>    ClassMap;
@@ -387,8 +393,6 @@ private:
     ECBaseClassesList       m_baseClasses;
     ECPropertyContainer     m_propertyContainer;
 
-    // Needswork:  Does STL provide any type of hypbrid list/dictionary collection?  We need fast lookup by name as well as retained order.  For now we will
-    // just use a hash_map but we need to start retaining order once we implement serialization.
     PropertyMap             m_propertyMap;
     PropertyList            m_propertyList;    
     
@@ -653,7 +657,6 @@ struct ECRelationshipClass /*__PUBLISH_ABSTRACT__*/ : public ECClass
 /*__PUBLISH_SECTION_END__*/
 friend struct ECSchema;
 
-// NEEDSWORK  missing full implementation
 private:
     StrengthType     m_strength;
     ECRelatedInstanceDirection     m_strengthDirection;
