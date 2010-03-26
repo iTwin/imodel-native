@@ -973,37 +973,37 @@ TEST(ClassTest, AddAndRemoveConstraintClasses)
     EXPECT_EQ(ECOBJECTS_STATUS_ClassNotFound, relClass->Target.RemoveClass(*targetClass));
     }
     
-//TEST(ClassTest, ExpectErrorWithBadClassName)
-//    {
-//    ECSchemaPtr schema;
-//    ECClassP class1;
-//    
-//    ECSchema::CreateSchema(schema, L"TestSchema");
-//    
-//    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L""));
-//    
-//    // name cannot be an empty string
-//    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L"    "));
-//    
-//    // name cannot contain special characters
-//    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L"&&&&"));
-//    
-//    // name cannot start with a digit
-//    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L"0InvalidName"));
-//    
-//    // name may include underscores
-//    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->CreateClass(class1, L"_____"));
-//    
-//    // % is an invalid character
-//    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L"%"));
-//    
-//    // a is a valid character
-//    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->CreateClass(class1, L"a"));
-//
-//    // Names can only include characters from the intersection of 7bit ascii and alphanumeric
-//    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L"abc123!@#"));
-//    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->CreateClass(class1, L"abc123"));
-//
-//    }
+TEST(ClassTest, ExpectErrorWithBadClassName)
+    {
+    ECSchemaPtr schema;
+    ECClassP class1;
+    
+    ECSchema::CreateSchema(schema, L"TestSchema");
+    
+    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L""));
+    
+    // name cannot be an empty string
+    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L"    "));
+    
+    // name cannot contain special characters
+    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L"&&&&"));
+    
+    // name cannot start with a digit
+    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L"0InvalidName"));
+    
+    // name may include underscores
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->CreateClass(class1, L"_____"));
+    
+    // % is an invalid character
+    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L"%"));
+    
+    // a is a valid character
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->CreateClass(class1, L"a"));
+
+    // Names can only include characters from the intersection of 7bit ascii and alphanumeric
+    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L"abc123!@#"));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->CreateClass(class1, L"abc123"));
+
+    }
           
 END_BENTLEY_EC_NAMESPACE
