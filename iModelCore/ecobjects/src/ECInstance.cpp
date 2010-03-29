@@ -222,7 +222,9 @@ StatusInt           IECInstance::GetLong (Int64 & value, const wchar_t * propert
         status = _GetValue (v, propertyAccessString, *indices);
     else
         status = _GetValue (v, propertyAccessString);
-    value = v.GetLong();
+        
+    if (status == SUCCESS)
+        value = v.GetLong();
     
     return status;
     }    
@@ -239,7 +241,9 @@ StatusInt           IECInstance::GetInteger (int & value, const wchar_t * proper
         status = _GetValue (v, propertyAccessString, *indices);
     else
         status = _GetValue (v, propertyAccessString);
-    value = v.GetInteger();
+        
+    if (status == SUCCESS)
+        value = v.GetInteger();
     
     return status;
     }    
@@ -256,7 +260,10 @@ StatusInt           IECInstance::GetDouble (double& value, const wchar_t * prope
         status = _GetValue (v, propertyAccessString, *indices);
     else
         status = _GetValue (v, propertyAccessString);
-    value = v.GetDouble();
+        
+    if (status == SUCCESS)        
+        value = v.GetDouble();
+        
     return status;
     }
 
@@ -272,7 +279,9 @@ StatusInt           IECInstance::GetString (const wchar_t * & value, const wchar
         status = _GetValue (v, propertyAccessString, *indices);
     else
         status = _GetValue (v, propertyAccessString);
-    value = v.GetString();
+        
+    if (status == SUCCESS)
+        value = v.GetString();
 
     return status;
     }
@@ -289,7 +298,10 @@ StatusInt IECInstance::GetBoolean (bool & value, const wchar_t * propertyAccessS
         status = _GetValue (v, propertyAccessString, *indices);
     else
         status = _GetValue (v, propertyAccessString);
-    value = v.GetBoolean();
+        
+    if (status == SUCCESS)
+        value = v.GetBoolean();
+        
     return status;
     }
 
@@ -305,7 +317,10 @@ StatusInt IECInstance::GetPoint2D (DPoint2d & value, const wchar_t * propertyAcc
         status = _GetValue (v, propertyAccessString, *indices);
     else
         status = _GetValue (v, propertyAccessString);
-    value = v.GetPoint2D();
+        
+    if (status == SUCCESS)
+        value = v.GetPoint2D();
+        
     return status;
     }
 
@@ -321,7 +336,10 @@ StatusInt IECInstance::GetPoint3D (DPoint3d & value, const wchar_t * propertyAcc
         status = _GetValue (v, propertyAccessString, *indices);
     else
         status = _GetValue (v, propertyAccessString);
-    value = v.GetPoint3D();
+        
+    if (status == SUCCESS)
+        value = v.GetPoint3D();
+        
     return status;
     }
 
@@ -337,7 +355,10 @@ StatusInt IECInstance::GetDateTime (SystemTime & value, const wchar_t * property
         status = _GetValue (v, propertyAccessString, *indices);
     else
         status = _GetValue (v, propertyAccessString);
-    value = v.GetDateTime();
+    
+    if (status == SUCCESS)
+        value = v.GetDateTime();
+        
     return status;
     }
 
@@ -353,7 +374,10 @@ StatusInt IECInstance::GetDateTimeTicks (Int64 & value, const wchar_t * property
         status = _GetValue (v, propertyAccessString, *indices);
     else
         status = _GetValue (v, propertyAccessString);
-    value = v.GetDateTimeTicks();
+    
+    if (status == SUCCESS)
+        value = v.GetDateTimeTicks();
+        
     return status;
     }
 
