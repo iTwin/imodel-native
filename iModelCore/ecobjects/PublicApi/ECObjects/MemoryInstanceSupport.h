@@ -176,6 +176,7 @@ public:
     
     //! Determines the number of bytes used, so far
     ECOBJECTS_EXPORT UInt32         CalculateBytesUsed(byte const * data) const;
+    ECOBJECTS_EXPORT bool           IsCompatible(ClassLayoutCR layout) const;
     };
 
 typedef std::vector<ClassLayoutCP>  ClassLayoutVector;

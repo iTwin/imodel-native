@@ -228,6 +228,58 @@ void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 byt
     }
   
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            ClassLayout::IsCompatible (ClassLayoutCR classLayout) const
+    {
+    if (0 != _wcsicmp (GetECClassName().c_str(), classLayout.GetECClassName().c_str()))
+        return false;
+
+    UInt32 nProperties = GetPropertyCount ();
+    if (nProperties != classLayout.GetPropertyCount())
+        return false;
+
+    for (UInt32 i = 0; i < nProperties; i++)
+        {
+        PropertyLayoutCP propertyLayout;
+        StatusInt status = GetPropertyLayoutByIndex (propertyLayout, i);
+        if (SUCCESS != status)
+            return false;
+
+        PropertyLayoutCP comparePropertyLayout;
+        status = classLayout.GetPropertyLayout (comparePropertyLayout, propertyLayout->GetAccessString());
+        if (SUCCESS != status)
+            return false;
+
+        if (comparePropertyLayout->GetTypeDescriptor().GetTypeKind() != propertyLayout->GetTypeDescriptor().GetTypeKind())
+            return false;
+
+        if (comparePropertyLayout->GetTypeDescriptor().IsStructArray() != propertyLayout->GetTypeDescriptor().IsStructArray())
+            return false;
+
+        if (propertyLayout->GetTypeDescriptor().IsPrimitiveArray())
+            {
+            if (!comparePropertyLayout->GetTypeDescriptor().IsPrimitiveArray())
+                return false;
+
+            if (comparePropertyLayout->GetTypeDescriptor().GetPrimitiveType() != propertyLayout->GetTypeDescriptor().GetPrimitiveType())
+                return false;
+            }
+
+        if (propertyLayout->GetTypeDescriptor().IsPrimitive())
+            {
+            if (!comparePropertyLayout->GetTypeDescriptor().IsPrimitive())
+                return false;
+
+            if (comparePropertyLayout->GetTypeDescriptor().GetPrimitiveType() != propertyLayout->GetTypeDescriptor().GetPrimitiveType())
+                return false;
+            }
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 UInt32          ClassLayout::CalculateBytesUsed(byte const * data) const
@@ -1712,7 +1764,6 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
     logger->tracev (L"  [0x%x][%4.d] Offset of TheEnd = %d\n", pLast, offsetOfLast, *pLast);
     }
     
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
