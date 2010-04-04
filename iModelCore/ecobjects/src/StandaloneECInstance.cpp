@@ -10,12 +10,12 @@
 BEGIN_BENTLEY_EC_NAMESPACE
 
 ///////////////////////////////////////////////////////////////////////////////////////////
-//  MemoryECInstance
+//  MemoryECInstanceBase
 ///////////////////////////////////////////////////////////////////////////////////////////
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-MemoryECInstance::MemoryECInstance (byte * data, UInt32 size, bool allowWritingDirectlyToInstanceMemory) :
+MemoryECInstanceBase::MemoryECInstanceBase (byte * data, UInt32 size, bool allowWritingDirectlyToInstanceMemory) :
         MemoryInstanceSupport (allowWritingDirectlyToInstanceMemory),
         m_bytesAllocated(size), m_data(data), m_structValueId (0)
     {
@@ -24,7 +24,7 @@ MemoryECInstance::MemoryECInstance (byte * data, UInt32 size, bool allowWritingD
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-MemoryECInstance::MemoryECInstance (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory) :
+MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory) :
         MemoryInstanceSupport (allowWritingDirectlyToInstanceMemory),
         m_bytesAllocated(0), m_data(NULL), m_structValueId (0)
     {
@@ -38,14 +38,14 @@ MemoryECInstance::MemoryECInstance (ClassLayoutCR classLayout, UInt32 minimumBuf
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-MemoryECInstance::~MemoryECInstance ()
+MemoryECInstanceBase::~MemoryECInstanceBase ()
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool                MemoryECInstance::_IsMemoryInitialized () const
+bool                MemoryECInstanceBase::_IsMemoryInitialized () const
     {
     return m_data != NULL;
     }
@@ -53,7 +53,7 @@ bool                MemoryECInstance::_IsMemoryInitialized () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           MemoryECInstance::_ModifyData (UInt32 offset, void const * newData, UInt32 dataLength)
+StatusInt           MemoryECInstanceBase::_ModifyData (UInt32 offset, void const * newData, UInt32 dataLength)
     {
     PRECONDITION (NULL != m_data, ERROR);
     PRECONDITION (offset + dataLength <= m_bytesAllocated, ERROR); //WIP_FUSION ERROR_MemoryBoundsOverrun
@@ -66,7 +66,7 @@ StatusInt           MemoryECInstance::_ModifyData (UInt32 offset, void const * n
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void                MemoryECInstance::_ShrinkAllocation (UInt32 newAllocation)
+void                MemoryECInstanceBase::_ShrinkAllocation (UInt32 newAllocation)
     {
     DEBUG_EXPECT (false && "WIP_FUSION: needs implementation");
     } 
@@ -74,7 +74,7 @@ void                MemoryECInstance::_ShrinkAllocation (UInt32 newAllocation)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void                MemoryECInstance::_FreeAllocation ()
+void                MemoryECInstanceBase::_FreeAllocation ()
     {
     free (m_data); 
     m_data = NULL;
@@ -83,7 +83,7 @@ void                MemoryECInstance::_FreeAllocation ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           MemoryECInstance::_GrowAllocation (UInt32 bytesNeeded)
+StatusInt           MemoryECInstanceBase::_GrowAllocation (UInt32 bytesNeeded)
     {
     DEBUG_EXPECT (m_bytesAllocated > 0);
     DEBUG_EXPECT (NULL != m_data);
@@ -102,121 +102,9 @@ StatusInt           MemoryECInstance::_GrowAllocation (UInt32 bytesNeeded)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/    
-std::wstring        MemoryECInstance::_GetInstanceId() const
-    {
-    if (m_instanceId.size() == 0)
-        {
-        wchar_t id[1024];
-        swprintf(id, sizeof(id)/sizeof(wchar_t), L"%s-0x%X", _GetEnabler().GetClass().GetName().c_str(), this);
-        MemoryECInstanceP thisNotConst = const_cast<MemoryECInstanceP>(this);
-        thisNotConst->m_instanceId = id;        
-        }
-        
-    return m_instanceId;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool                MemoryECInstance::_IsReadOnly() const
-    {
-    return false;
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           MemoryECInstance::_GetValue (ECValueR v, const wchar_t * propertyAccessString) const
-    {
-    ClassLayoutCR classLayout = GetClassLayout();
-    
-    return GetValueFromMemory (classLayout, v, propertyAccessString);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Adam.Klatzkin                   02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           MemoryECInstance::_GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 index) const
-    {
-    ClassLayoutCR classLayout = GetClassLayout();
-    
-    return GetValueFromMemory (classLayout, v, propertyAccessString, true, index);
-    }
-        
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           MemoryECInstance::_SetValue (const wchar_t * propertyAccessString, ECValueCR v)
-    {
-    ClassLayoutCR classLayout = GetClassLayout();
-    StatusInt status = SetValueToMemory (classLayout, propertyAccessString, v);
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Adam.Klatzkin                   02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           MemoryECInstance::_SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 index)
-    {
-    ClassLayoutCR classLayout = GetClassLayout();
-    StatusInt status = SetValueToMemory (classLayout, propertyAccessString, v, true, index);
-
-    return status;
-    }    
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Adam.Klatzkin                   01/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           MemoryECInstance::_InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size)
-    {
-    ClassLayoutCR classLayout = GetClassLayout();
-    StatusInt status = InsertNullArrayElementsAt (classLayout, propertyAccessString, index, size);
-    
-    return status;
-    } 
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Adam.Klatzkin                   01/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           MemoryECInstance::_AddArrayElements (const wchar_t * propertyAccessString, UInt32 size)
-    {
-    ClassLayoutCR classLayout = GetClassLayout();    
-    StatusInt status = AddNullArrayElementsAt (classLayout, propertyAccessString, size);
-    
-    return status;
-    }        
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Adam.Klatzkin                   01/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           MemoryECInstance::_RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index)
-    {
-    return ECOBJECTS_STATUS_OperationNotSupported;
-    } 
-
- /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Adam.Klatzkin                   01/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           MemoryECInstance::_ClearArray (const wchar_t * propertyAccessString)
-    {
-    return ECOBJECTS_STATUS_OperationNotSupported;
-    }                      
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/    
-void                MemoryECInstance::_Dump() const
-    {
-    return DumpInstanceData (GetClassLayout());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-byte const *        MemoryECInstance::_GetData () const
+byte const *        MemoryECInstanceBase::_GetData () const
     {
     return m_data;
     }
@@ -224,7 +112,7 @@ byte const *        MemoryECInstance::_GetData () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32              MemoryECInstance::_GetBytesAllocated () const
+UInt32              MemoryECInstanceBase::_GetBytesAllocated () const
     {
     return m_bytesAllocated;
     }
@@ -232,7 +120,7 @@ UInt32              MemoryECInstance::_GetBytesAllocated () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       MemoryECInstance::_SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index)
+StatusInt           MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index)
     {
     IECInstancePtr p;
     ECValue binaryValue (PRIMITIVETYPE_Binary);
@@ -260,7 +148,7 @@ StatusInt       MemoryECInstance::_SetStructArrayValueToMemory (ECValueCR v, Cla
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StatusInt       MemoryECInstance::_GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const
+StatusInt           MemoryECInstanceBase::_GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const
     {
     ECValue binaryValue;
     StatusInt status = GetPrimitiveValueFromMemory (binaryValue, propertyLayout, true, index);      
@@ -291,7 +179,7 @@ StatusInt       MemoryECInstance::_GetStructArrayValueFromMemory (ECValueR v, Pr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-byte const *        MemoryECInstance::GetData () const
+byte const *        MemoryECInstanceBase::GetData () const
     {
     return _GetData();
     }
@@ -299,7 +187,7 @@ byte const *        MemoryECInstance::GetData () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32              MemoryECInstance::GetBytesUsed () const
+UInt32              MemoryECInstanceBase::GetBytesUsed () const
     {
     if (NULL == m_data)
         return 0;
@@ -310,7 +198,7 @@ UInt32              MemoryECInstance::GetBytesUsed () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
-void                MemoryECInstance::ClearValues ()
+void                MemoryECInstanceBase::ClearValues ()
     {
     InitializeMemory (GetClassLayout(), m_data, m_bytesAllocated);
     }
@@ -318,7 +206,7 @@ void                MemoryECInstance::ClearValues ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutCR       MemoryECInstance::GetClassLayout () const
+ClassLayoutCR       MemoryECInstanceBase::GetClassLayout () const
     {
     return _GetClassLayout();
     }
@@ -330,7 +218,7 @@ ClassLayoutCR       MemoryECInstance::GetClassLayout () const
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
 StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, byte * data, UInt32 size) :
-        MemoryECInstance (data, size, true),
+        MemoryECInstanceBase (data, size, true),
         m_sharedWipEnabler(const_cast<StandaloneECEnablerP>(&enabler)) // WIP_FUSION: can we get rid of the const cast?
     {
     m_sharedWipEnabler->AddRef ();
@@ -340,7 +228,7 @@ StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, byte 
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/        
 StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, UInt32 minimumBufferSize) :
-        MemoryECInstance (enabler.GetClassLayout(), minimumBufferSize, true),
+        MemoryECInstanceBase (enabler.GetClassLayout(), minimumBufferSize, true),
         m_sharedWipEnabler(const_cast<StandaloneECEnablerP>(&enabler)) // WIP_FUSION: can we get rid of the const cast?
     {
     m_sharedWipEnabler->AddRef ();
@@ -389,6 +277,102 @@ ClassLayoutCR       StandaloneECInstance::_GetClassLayout () const
     return m_sharedWipEnabler->GetClassLayout();
     }
    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+bool                StandaloneECInstance::_IsReadOnly() const
+    {
+    return false;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           StandaloneECInstance::_GetValue (ECValueR v, const wchar_t * propertyAccessString) const
+    {
+    ClassLayoutCR classLayout = GetClassLayout();
+    
+    return GetValueFromMemory (classLayout, v, propertyAccessString);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           StandaloneECInstance::_GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 index) const
+    {
+    ClassLayoutCR classLayout = GetClassLayout();
+    
+    return GetValueFromMemory (classLayout, v, propertyAccessString, true, index);
+    }
+        
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           StandaloneECInstance::_SetValue (const wchar_t * propertyAccessString, ECValueCR v)
+    {
+    ClassLayoutCR classLayout = GetClassLayout();
+    StatusInt status = SetValueToMemory (classLayout, propertyAccessString, v);
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           StandaloneECInstance::_SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 index)
+    {
+    ClassLayoutCR classLayout = GetClassLayout();
+    StatusInt status = SetValueToMemory (classLayout, propertyAccessString, v, true, index);
+
+    return status;
+    }    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           StandaloneECInstance::_InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size)
+    {
+    ClassLayoutCR classLayout = GetClassLayout();
+    StatusInt status = InsertNullArrayElementsAt (classLayout, propertyAccessString, index, size);
+    
+    return status;
+    } 
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           StandaloneECInstance::_AddArrayElements (const wchar_t * propertyAccessString, UInt32 size)
+    {
+    ClassLayoutCR classLayout = GetClassLayout();    
+    StatusInt status = AddNullArrayElementsAt (classLayout, propertyAccessString, size);
+    
+    return status;
+    }        
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           StandaloneECInstance::_RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index)
+    {
+    return ECOBJECTS_STATUS_OperationNotSupported;
+    } 
+
+ /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           StandaloneECInstance::_ClearArray (const wchar_t * propertyAccessString)
+    {
+    return ECOBJECTS_STATUS_OperationNotSupported;
+    }                      
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/    
+void                StandaloneECInstance::_Dump() const
+    {
+    return DumpInstanceData (GetClassLayout());
+    }
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 //  StandaloneECEnabler
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -404,7 +388,7 @@ StandaloneECEnabler::StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR class
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StandaloneECEnablerPtr StandaloneECEnabler::CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout)
+StandaloneECEnablerPtr    StandaloneECEnabler::CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout)
     {
     return new StandaloneECEnabler (ecClass, classLayout);
     }
@@ -412,7 +396,7 @@ StandaloneECEnablerPtr StandaloneECEnabler::CreateEnabler (ECClassCR ecClass, Cl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-wchar_t const *         StandaloneECEnabler::_GetName() const
+wchar_t const *           StandaloneECEnabler::_GetName() const
     {
     return L"Bentley::EC::StandaloneECEnabler";
     }
