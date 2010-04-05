@@ -283,27 +283,24 @@ void            ECValue::DeepCopy (ECValueCR v)
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECValue::SetToNull()
-    {
-    if (IsNull())
-        return;
-        
+    {        
     if (IsString())
 		{
-        if ((m_stringInfo.m_string != NULL) && (m_stringInfo.m_freeWhenDone))
+        if ((!IsNull()) && (m_stringInfo.m_string != NULL) && (m_stringInfo.m_freeWhenDone))
             free (const_cast<wchar_t *>(m_stringInfo.m_string));
             
         m_stringInfo.m_string = NULL;
 		}
     else if (IsBinary())
         {
-        if ((m_binaryInfo.m_data != NULL) && (m_binaryInfo.m_freeWhenDone))
+        if ((!IsNull()) && (m_binaryInfo.m_data != NULL) && (m_binaryInfo.m_freeWhenDone))
             free ((void*)m_binaryInfo.m_data);
         m_binaryInfo.m_data = NULL;
         m_binaryInfo.m_size = 0;            
         }		
     else if (IsStruct())
         {
-        if (m_structInstance != NULL)        
+        if ((!IsNull()) && (m_structInstance != NULL)        )
             m_structInstance->Release();
         m_structInstance = NULL;        
         }
