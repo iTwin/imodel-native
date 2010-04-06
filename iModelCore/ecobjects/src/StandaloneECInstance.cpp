@@ -43,6 +43,18 @@ MemoryECInstanceBase::~MemoryECInstanceBase ()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+void MemoryECInstanceBase::SetData (byte * data, UInt32 size, bool freeExisitingData) //The MemoryECInstanceBase will take ownership of the memory
+    {
+    if (freeExisitingData && m_data)
+        free (m_data);
+
+    m_data = data;
+    m_bytesAllocated = size;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool                MemoryECInstanceBase::_IsMemoryInitialized () const

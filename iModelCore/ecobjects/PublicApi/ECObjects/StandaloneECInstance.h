@@ -55,7 +55,9 @@ protected:
 
     ECOBJECTS_EXPORT virtual ClassLayoutCR    _GetClassLayout () const = 0;
     
-public: // These must be public so that ECXInstanceEnabler can get at the guts of StandaloneECInstance to copy it into an XAttribute     
+public: // These must be public so that ECXInstanceEnabler can get at the guts of StandaloneECInstance to copy it into an XAttribute
+    ECOBJECTS_EXPORT void                     SetData (byte * data, UInt32 size, bool freeExisitingData); //The MemoryECInstanceBase will take ownership of the memory
+
     ECOBJECTS_EXPORT byte const *             GetData () const;
     ECOBJECTS_EXPORT UInt32                   GetBytesUsed () const;
     ECOBJECTS_EXPORT void                     ClearValues ();
