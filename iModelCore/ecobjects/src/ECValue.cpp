@@ -870,7 +870,7 @@ std::wstring    ECValue::ToString () const
                 }            
             case PRIMITIVETYPE_Boolean:
                 {
-                valueAsString << GetString();
+                valueAsString << GetBoolean()?"true":"false";
                 break;          
                 }
             case PRIMITIVETYPE_Point2D:
