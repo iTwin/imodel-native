@@ -947,6 +947,175 @@ TEST(ClassTest, ExpectPropertiesInOrder)
         }
     }
    
+TEST(ClassTest, ExpectPropertyFromBaseClass)
+    {
+    ECSchemaPtr schema;
+    ECClassP ab;
+    ECClassP cd;
+    ECClassP ef;
+    ECClassP gh;
+    ECClassP ij;
+    ECClassP kl;
+    ECClassP mn;
+    
+    PrimitiveECPropertyP a;
+    PrimitiveECPropertyP b;
+    PrimitiveECPropertyP c;
+    PrimitiveECPropertyP d;
+    PrimitiveECPropertyP e;
+    PrimitiveECPropertyP f;
+    PrimitiveECPropertyP g;
+    PrimitiveECPropertyP h;
+    PrimitiveECPropertyP i;
+    PrimitiveECPropertyP j;
+    PrimitiveECPropertyP k;
+    PrimitiveECPropertyP l;
+    PrimitiveECPropertyP m;
+    PrimitiveECPropertyP n;
+    
+    ECSchema::CreateSchema(schema, L"TestSchema");
+    schema->CreateClass(ab, L"ab");
+    schema->CreateClass(cd, L"cd");
+    schema->CreateClass(ef, L"ef");
+    schema->CreateClass(gh, L"gh");
+    schema->CreateClass(ij, L"ij");
+    schema->CreateClass(kl, L"kl");
+    schema->CreateClass(mn, L"mn");
+
+    ab->CreatePrimitiveProperty(a, L"a");
+    ab->CreatePrimitiveProperty(b, L"b");
+
+    cd->CreatePrimitiveProperty(c, L"c");
+    cd->CreatePrimitiveProperty(d, L"d");
+    
+    ef->CreatePrimitiveProperty(e, L"e");
+    ef->CreatePrimitiveProperty(f, L"f");
+    
+    gh->CreatePrimitiveProperty(g, L"g");
+    gh->CreatePrimitiveProperty(h, L"h");
+    
+    ij->CreatePrimitiveProperty(i, L"i");
+    ij->CreatePrimitiveProperty(j, L"j");
+    
+    kl->CreatePrimitiveProperty(k, L"k");
+    kl->CreatePrimitiveProperty(l, L"l");
+    
+    mn->CreatePrimitiveProperty(m, L"m");
+    mn->CreatePrimitiveProperty(n, L"n");
+    
+    ef->AddBaseClass(*ab);
+    ef->AddBaseClass(*cd);
+    
+    kl->AddBaseClass(*gh);
+    kl->AddBaseClass(*ij);
+    
+    mn->AddBaseClass(*ef);
+    mn->AddBaseClass(*kl);
+    
+    std::vector<ECPropertyP> testVector;
+    for each (ECPropertyP prop in mn->GetProperties(true))
+        testVector.push_back(prop);
+        
+    EXPECT_EQ(14, testVector.size());
+    EXPECT_EQ(L"i", testVector[0]->Name);
+    EXPECT_EQ(L"j", testVector[1]->Name);
+    EXPECT_EQ(L"g", testVector[2]->Name);
+    EXPECT_EQ(L"h", testVector[3]->Name);
+    EXPECT_EQ(L"k", testVector[4]->Name);
+    EXPECT_EQ(L"l", testVector[5]->Name);
+    EXPECT_EQ(L"c", testVector[6]->Name);
+    EXPECT_EQ(L"d", testVector[7]->Name);
+    EXPECT_EQ(L"a", testVector[8]->Name);
+    EXPECT_EQ(L"b", testVector[9]->Name);
+    EXPECT_EQ(L"e", testVector[10]->Name);
+    EXPECT_EQ(L"f", testVector[11]->Name);
+    EXPECT_EQ(L"m", testVector[12]->Name);
+    EXPECT_EQ(L"n", testVector[13]->Name);
+    
+    // now we add some duplicate properties to mn which will "override" those from the base classes
+    PrimitiveECPropertyP b2;
+    PrimitiveECPropertyP d2;
+    PrimitiveECPropertyP f2;
+    PrimitiveECPropertyP h2;
+    PrimitiveECPropertyP j2;
+    PrimitiveECPropertyP k2;
+    
+    mn->CreatePrimitiveProperty(b2, L"b");
+    mn->CreatePrimitiveProperty(d2, L"d");
+    mn->CreatePrimitiveProperty(f2, L"f");
+    mn->CreatePrimitiveProperty(h2, L"h");
+    mn->CreatePrimitiveProperty(j2, L"j");
+    mn->CreatePrimitiveProperty(k2, L"k");
+
+    testVector.clear();
+    for each (ECPropertyP prop in mn->GetProperties(true))
+        testVector.push_back(prop);
+        
+    EXPECT_EQ(14, testVector.size());
+    EXPECT_EQ(L"i", testVector[0]->Name);
+    EXPECT_EQ(L"g", testVector[1]->Name);
+    EXPECT_EQ(L"l", testVector[2]->Name);
+    EXPECT_EQ(L"c", testVector[3]->Name);
+    EXPECT_EQ(L"a", testVector[4]->Name);
+    EXPECT_EQ(L"e", testVector[5]->Name);
+    EXPECT_EQ(L"m", testVector[6]->Name);
+    EXPECT_EQ(L"n", testVector[7]->Name);
+    EXPECT_EQ(L"b", testVector[8]->Name);
+    EXPECT_EQ(L"d", testVector[9]->Name);
+    EXPECT_EQ(L"f", testVector[10]->Name);
+    EXPECT_EQ(L"h", testVector[11]->Name);
+    EXPECT_EQ(L"j", testVector[12]->Name);
+    EXPECT_EQ(L"k", testVector[13]->Name);
+
+    PrimitiveECPropertyP e2;
+    PrimitiveECPropertyP a2;
+    PrimitiveECPropertyP c2;
+    PrimitiveECPropertyP g2;
+
+    PrimitiveECPropertyP l2;
+    PrimitiveECPropertyP i2;
+    PrimitiveECPropertyP g3;
+
+    PrimitiveECPropertyP a3;
+    PrimitiveECPropertyP b3;
+    PrimitiveECPropertyP g4;
+    PrimitiveECPropertyP h3;
+
+    kl->CreatePrimitiveProperty(e2, L"e");
+    kl->CreatePrimitiveProperty(a2, L"a");
+    kl->CreatePrimitiveProperty(c2, L"c");
+    kl->CreatePrimitiveProperty(g2, L"g");
+    
+    ef->CreatePrimitiveProperty(l2, L"l");
+    gh->CreatePrimitiveProperty(i2, L"i");
+    ij->CreatePrimitiveProperty(g3, L"g");
+    
+    gh->CreatePrimitiveProperty(a3, L"a");
+    gh->CreatePrimitiveProperty(b3, L"b");
+    ab->CreatePrimitiveProperty(g4, L"g");
+    ab->CreatePrimitiveProperty(h3, L"h");
+
+    testVector.clear();
+    for each (ECPropertyP prop in mn->GetProperties(true))
+        testVector.push_back(prop);
+        
+    EXPECT_EQ(14, testVector.size());
+    EXPECT_EQ(L"i", testVector[0]->Name);
+    EXPECT_EQ(L"c", testVector[1]->Name);
+    EXPECT_EQ(L"a", testVector[2]->Name);
+    EXPECT_EQ(L"g", testVector[3]->Name);
+    EXPECT_EQ(L"e", testVector[4]->Name);
+    EXPECT_EQ(L"l", testVector[5]->Name);
+    EXPECT_EQ(L"m", testVector[6]->Name);
+    EXPECT_EQ(L"n", testVector[7]->Name);
+    EXPECT_EQ(L"b", testVector[8]->Name);
+    EXPECT_EQ(L"d", testVector[9]->Name);
+    EXPECT_EQ(L"f", testVector[10]->Name);
+    EXPECT_EQ(L"h", testVector[11]->Name);
+    EXPECT_EQ(L"j", testVector[12]->Name);
+    EXPECT_EQ(L"k", testVector[13]->Name);
+    }
+
 TEST(ClassTest, AddAndRemoveConstraintClasses)
     {
     ECSchemaPtr schema;

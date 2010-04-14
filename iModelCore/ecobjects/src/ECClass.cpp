@@ -260,6 +260,23 @@ ECPropertyP&                 pProperty
         return ECOBJECTS_STATUS_NamedItemAlreadyExists;
         }
 
+    ECPropertyP baseProperty = GetPropertyP(pProperty->Name);
+    if (NULL == baseProperty)
+        {
+        m_propertyList.push_back(pProperty);
+        return ECOBJECTS_STATUS_Success;
+        }
+
+    // Make sure that the property to override can be overridden by the current property type
+    if (pProperty->IsPrimitive)
+        {
+        if (!baseProperty->IsPrimitive)
+            return ECOBJECTS_STATUS_DataTypeMismatch;
+        PrimitiveECPropertyP primitiveNew = pProperty->GetAsPrimitiveProperty();
+        PrimitiveECPropertyP primitiveBase = baseProperty->GetAsPrimitiveProperty();
+        if (primitiveNew->Type != primitiveBase->Type)
+            return ECOBJECTS_STATUS_DataTypeMismatch;
+        }           
     m_propertyList.push_back(pProperty);
     return ECOBJECTS_STATUS_Success;
     }
@@ -278,9 +295,6 @@ std::wstring const& propertyName
     
     if ( propertyIterator != m_propertyMap.end() )
         return propertyIterator->second;
-    else
-        return NULL;
-
 
     // not found yet, search the inheritence hierarchy
     for each (const ECClassP& baseClass in m_baseClasses)
@@ -289,6 +303,7 @@ std::wstring const& propertyName
         if (NULL != baseProperty)
             return baseProperty;
         }
+    return NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -441,10 +456,14 @@ ECClassCP structType
 bool ECClass::CheckBaseClassCycles
 (
 ECClassCP thisClass, 
-ECClassCP proposedParentClass
+const void * arg
 )
     {
-    if (thisClass == proposedParentClass || ClassesAreEqualByName(thisClass, proposedParentClass))
+    ECClassCP proposedParent = static_cast<ECClassCP>(arg);
+    if (NULL == proposedParent)
+        return true;
+        
+    if (thisClass == proposedParent || ClassesAreEqualByName(thisClass, arg))
         return true;
     return false;
     }
@@ -558,16 +577,97 @@ ECClassCP targetClass
 bool ECClass::ClassesAreEqualByName
 (
 ECClassCP thisClass, 
-ECClassCP thatClass
+const void * arg
 )
     {
+    ECClassCP thatClass = static_cast<ECClassCP> (arg);
+    if (NULL == arg)
+        return true;
+        
     return ((thisClass == thatClass) ||
             ( (0 == thisClass->Name.compare(thatClass->Name)) &&
               (0 == thisClass->Schema.Name.compare(thatClass->Schema.Name)) &&
               (thisClass->Schema.VersionMajor == thatClass->Schema.VersionMajor) &&
               (thisClass->Schema.VersionMinor == thatClass->Schema.VersionMinor)));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyIterableCR ECClass::GetProperties
+(
+) const
+    {
+    ECPropertyIterable *iterable = new ECPropertyIterable(*this, false);
+    return *iterable;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::GetProperties
+(
+bool includeBaseProperties,
+PropertyList* propertyList
+) const
+    {
+    for each (ECPropertyP prop in m_propertyList)
+        propertyList->push_back(prop);
+        
+    if (!includeBaseProperties)
+        return ECOBJECTS_STATUS_Success;
+        
+    propertyList->reverse();
+    if (m_baseClasses.size() == 0)
+        return ECOBJECTS_STATUS_Success;
+        
+    TraverseBaseClasses(&AddUniquePropertiesToList, true, propertyList);
+    propertyList->reverse();
+    return ECOBJECTS_STATUS_Success;
+    }
     
+const ECPropertyIterable& ECClass::GetProperties
+(
+bool includeBaseProperties
+) const
+    {
+    ECPropertyIterable *iterable = new ECPropertyIterable(*this, includeBaseProperties);
+    return *iterable;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                04/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECClass::AddUniquePropertiesToList
+(
+ECClassCP currentBaseClass, 
+const void *arg
+)
+    {
+    const PropertyList* props = static_cast<const PropertyList*>(arg);
+    PropertyList* propertyList = const_cast<PropertyList*>(props);
+    
+    PropertyList newProperties;
+    PropertyList::iterator currentEnd = propertyList->end();
+    for each (ECPropertyP prop in currentBaseClass->GetProperties())
+        {
+        PropertyList::iterator testIter;
+        for (testIter = propertyList->begin(); testIter != currentEnd; testIter++)
+            {
+            ECPropertyP testProperty = *testIter;
+            if (testProperty->Name.compare(prop->Name) == 0)
+                break;
+            }
+        // we didn't find it
+        if (testIter == currentEnd)
+            newProperties.push_back(prop);
+        }
+        
+    newProperties.reverse();
+    for (PropertyList::iterator newIter = newProperties.begin(); newIter != newProperties.end(); newIter++)
+        propertyList->push_back(*newIter);
+    return false;
+    }    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -575,7 +675,7 @@ bool ECClass::TraverseBaseClasses
 (
 TraversalDelegate traverseMethod, 
 bool recursive,
-ECClassCP arg
+const void * arg
 ) const
     {
     if (m_baseClasses.size() == 0)
@@ -831,57 +931,89 @@ const ECBaseClassesList& ECClass::GetBaseClasses
     }
     
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
+* @bsimethod                                    Carole.MacDonald                04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyContainerCR ECClass::GetProperties
+ECPropertyIterable::const_iterator::const_iterator
 (
-) const
+ECClassCR ecClass, 
+bool includeBaseProperties
+)
     {
-    return m_propertyContainer;
+    m_state = IteratorState::Create (ecClass, includeBaseProperties); 
+    if (m_state->m_listIterator == m_state->m_properties->end())
+        m_isEnd = true;
+    else
+        m_isEnd = false; 
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyContainer::const_iterator  ECPropertyContainer::begin () const
+ECPropertyIterable::const_iterator  ECPropertyIterable::begin () const
     {
-    return ECPropertyContainer::const_iterator(m_propertyList.begin());        
+    return ECPropertyIterable::const_iterator(m_ecClass, m_includeBaseProperties);        
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyContainer::const_iterator  ECPropertyContainer::end () const
+ECPropertyIterable::const_iterator  ECPropertyIterable::end () const
     {
-    return ECPropertyContainer::const_iterator(m_propertyList.end());        
+    return ECPropertyIterable::const_iterator();        
     }   
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyContainer::const_iterator& ECPropertyContainer::const_iterator::operator++()
+ECPropertyIterable::const_iterator& ECPropertyIterable::const_iterator::operator++()
     {
-    m_state->m_listIterator++;    
+    m_state->m_listIterator++;
+    if (m_state->m_listIterator == m_state->m_properties->end())
+        m_isEnd = true;
     return *this;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            ECPropertyContainer::const_iterator::operator!= (const_iterator const& rhs) const
+bool            ECPropertyIterable::const_iterator::operator!= (const_iterator const& rhs) const
     {
+    if (m_isEnd && rhs.m_isEnd)
+        return false;
+    if (m_state.IsNull() && !(rhs.m_state.IsNull()))
+        return true;
+    if (!(m_state.IsNull()) && rhs.m_state.IsNull())
+        return true;
     return (m_state->m_listIterator != rhs.m_state->m_listIterator);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyP       ECPropertyContainer::const_iterator::operator*() const
+ECPropertyP       ECPropertyIterable::const_iterator::operator*() const
     {
+    if (m_isEnd)
+        return NULL;
     ECPropertyP pProperty = *(m_state->m_listIterator);
     return pProperty;
-    };
+    }
 
+ECPropertyIterable::IteratorState::IteratorState
+(
+ECClassCR ecClass,
+bool includeBaseProperties
+)
+    {
+    m_properties = new PropertyList();
+    ecClass.GetProperties(includeBaseProperties, m_properties);
+    m_listIterator = m_properties->begin();
+    }
+    
+ECPropertyIterable::IteratorState::~IteratorState()
+    {
+    delete m_properties;
+    }    
+    
 static RelationshipCardinality s_zeroOneCardinality(0, 1);
 static RelationshipCardinality s_zeroManyCardinality(0, UINT_MAX);
 static RelationshipCardinality s_oneOneCardinality(1, 1);
