@@ -731,9 +731,11 @@ const std::vector<const wchar_t *> * schemaPaths,
 const std::wstring & name,
 UInt32& versionMajor,
 UInt32& versionMinor,
-SchemaMap* schemasUnderConstruction
+void*   schemaContext
 )
     {
+    SchemaMap* schemasUnderConstruction = (SchemaMap*)schemaContext;
+
     // First check if there is a circular reference and this reference has already started to be de-serialized farther upstream
     std::wstring fullName(name);
     wchar_t version[10];
