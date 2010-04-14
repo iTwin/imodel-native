@@ -598,7 +598,7 @@ ECPropertyIterableCR ECClass::GetProperties
 (
 ) const
     {
-    ECPropertyIterable *iterable = new ECPropertyIterable(*this, false);
+    ECPropertyIterable *iterable = new ECPropertyIterable(*this, true);
     return *iterable;
     }
 

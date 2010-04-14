@@ -431,8 +431,6 @@ public:
     // schemas index class by name so publicly name can not be reset
     EXPORTED_READONLY_PROPERTY (std::wstring const&,    Name);        
     EXPORTED_READONLY_PROPERTY (bool,                   IsDisplayLabelDefined);
-    //! Returns ECProperties that are directly contained within this class.
-    //! See GetProperties(bool includeBaseProperties) to get a list of properties including those in the class's base class(es)
     EXPORTED_READONLY_PROPERTY (ECPropertyIterableCR,  Properties); 
     EXPORTED_READONLY_PROPERTY (const ECBaseClassesList&,     BaseClasses);   
 
