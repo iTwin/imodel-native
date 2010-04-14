@@ -947,7 +947,43 @@ TEST(ClassTest, ExpectPropertiesInOrder)
         }
     }
    
-TEST(ClassTest, ExpectPropertyFromBaseClass)
+TEST(ClassTest, ExpectProperties)
+    {
+    ECSchemaPtr schema;
+    ECClassP ab;
+    ECClassP cd;
+    ECClassP ef;
+    
+    PrimitiveECPropertyP a;
+    PrimitiveECPropertyP b;
+    PrimitiveECPropertyP c;
+    PrimitiveECPropertyP d;
+    PrimitiveECPropertyP e;
+    PrimitiveECPropertyP f;
+    
+    ECSchema::CreateSchema(schema, L"TestSchema");
+    schema->CreateClass(ab, L"ab");
+    schema->CreateClass(cd, L"cd");
+    schema->CreateClass(ef, L"ef");
+
+    ab->CreatePrimitiveProperty(a, L"a");
+    ab->CreatePrimitiveProperty(b, L"b");
+
+    cd->CreatePrimitiveProperty(c, L"c");
+    cd->CreatePrimitiveProperty(d, L"d");
+    
+    ef->CreatePrimitiveProperty(e, L"e");
+    ef->CreatePrimitiveProperty(f, L"f");
+    
+    cd->AddBaseClass(*ab);
+    ef->AddBaseClass(*cd);
+
+    EXPECT_TRUE(NULL != ef->GetPropertyP(L"e"));    
+    EXPECT_TRUE(NULL != ef->GetPropertyP(L"c"));    
+    EXPECT_TRUE(NULL != ef->GetPropertyP(L"a"));    
+    }
+    
+TEST(ClassTest, ExpectPropertiesFromBaseClass)
     {
     ECSchemaPtr schema;
     ECClassP ab;
