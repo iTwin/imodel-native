@@ -603,6 +603,18 @@ ECPropertyIterableCR ECClass::GetProperties
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                04/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+const ECPropertyIterable& ECClass::GetProperties
+(
+bool includeBaseProperties
+) const
+    {
+    ECPropertyIterable *iterable = new ECPropertyIterable(*this, includeBaseProperties);
+    return *iterable;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::GetProperties
@@ -626,15 +638,6 @@ PropertyList* propertyList
     return ECOBJECTS_STATUS_Success;
     }
     
-const ECPropertyIterable& ECClass::GetProperties
-(
-bool includeBaseProperties
-) const
-    {
-    ECPropertyIterable *iterable = new ECPropertyIterable(*this, includeBaseProperties);
-    return *iterable;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -649,7 +652,7 @@ const void *arg
     
     PropertyList newProperties;
     PropertyList::iterator currentEnd = propertyList->end();
-    for each (ECPropertyP prop in currentBaseClass->GetProperties())
+    for each (ECPropertyP prop in currentBaseClass->GetProperties(false))
         {
         PropertyList::iterator testIter;
         for (testIter = propertyList->begin(); testIter != currentEnd; testIter++)
@@ -839,7 +842,7 @@ const wchar_t *elementName
         
     // NEEDSWORK: Serialize Custom Attributes
     
-    for each (ECPropertyP prop in Properties)
+    for each (ECPropertyP prop in GetProperties(false))
         {
         prop->_WriteXml(classPtr);
         }

@@ -940,7 +940,7 @@ TEST(ClassTest, ExpectPropertiesInOrder)
     class1->CreatePrimitiveProperty(property4, L"alpha");
     
     int i = 0;
-    for each (ECPropertyP prop in class1->Properties)
+    for each (ECPropertyP prop in class1->GetProperties(false))
         {
         EXPECT_EQ(propertyNames[i], prop->Name);
         i++;

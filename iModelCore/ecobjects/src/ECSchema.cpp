@@ -512,7 +512,7 @@ Bentley::EC::ECSchemaCR refSchema
             }
             
         // And make sure that there are no struct types from another schema
-        for each (ECPropertyP prop in ecClass->Properties)
+        for each (ECPropertyP prop in ecClass->GetProperties(false))
             {
             ECClassCP typeClass;
             if (prop->IsStruct)
@@ -1040,7 +1040,7 @@ Bentley::EC::ECClassCR ecClass
     {
     SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
     
-    for each (ECPropertyP prop in ecClass.Properties)
+    for each (ECPropertyP prop in ecClass.GetProperties(false))
         {
         if (prop->IsStruct)
             {
