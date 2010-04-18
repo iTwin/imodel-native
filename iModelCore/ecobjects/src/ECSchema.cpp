@@ -397,9 +397,7 @@ std::wstring const&     namespacePrefix
     for (schemaIterator = m_refSchemaList.begin(); schemaIterator != m_refSchemaList.end(); schemaIterator++)
         {
         if (0 == namespacePrefix.compare ((*schemaIterator)->m_namespacePrefix))
-            {
             return (*schemaIterator);
-            }
         }
 
     return NULL;
