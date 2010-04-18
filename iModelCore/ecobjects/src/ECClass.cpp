@@ -448,7 +448,7 @@ ECClassCP proposedParentClass
         return true;
     return false;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -465,12 +465,13 @@ ECClassCR baseClass
         for (schemaIterator = referencedSchemas.begin(); schemaIterator != referencedSchemas.end(); schemaIterator++)
             {
             ECSchemaP refSchema = *schemaIterator;
-            if (refSchema == &(baseClass.Schema))
+            if (ECSchema::SchemasAreEqualByName (refSchema, &(baseClass.Schema)))
                 {
                 foundRefSchema = true;
                 break;
                 }
             }
+
         if (foundRefSchema == false)
             {
             return ECOBJECTS_STATUS_SchemaNotFound;

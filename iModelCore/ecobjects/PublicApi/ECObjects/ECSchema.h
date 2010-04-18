@@ -400,6 +400,7 @@ private:
     ECObjectsStatus                     AddProperty (ECPropertyP pProperty, std::wstring const& name);
     
     static bool ClassesAreEqualByName(ECClassCP thisClass, ECClassCP thatClass);
+
     static bool CheckBaseClassCycles(ECClassCP thisClass, ECClassCP proposedParentClass);
     bool TraverseBaseClasses(TraversalDelegate traverseMethod, bool recursive, ECClassCP arg) const;
 
@@ -902,6 +903,10 @@ public:
                           const wchar_t * soughtName,    UInt32 soughtMajor,    UInt32 soughtMinor,
                           const wchar_t * candidateName, UInt32 candidateMajor, UInt32 candidateMinor);
 
+    //! Compare two schemas and returns true if the schema pointers are equal or the names and version of the schemas are the same 
+    //! @param[out]   thisSchema           Pointer to schema
+    //! @param[out]   thatSchema           Pointer to schema
+    ECOBJECTS_EXPORT static bool SchemasAreEqualByName (ECSchemaCP thisSchema, ECSchemaCP thatSchema);
 
     //! Deserializes an ECXML schema from a file.
     //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and

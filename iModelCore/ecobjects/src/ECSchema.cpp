@@ -392,7 +392,15 @@ std::wstring const&     namespacePrefix
     if ((namespacePrefix.length() == 0) || (namespacePrefix == m_namespacePrefix))
         return (ECSchemaP)this;
 
-    // NEEDSWORK lookup referenced schema by prefix
+    // lookup referenced schema by prefix
+    ECSchemaReferenceList::const_iterator schemaIterator;
+    for (schemaIterator = m_refSchemaList.begin(); schemaIterator != m_refSchemaList.end(); schemaIterator++)
+        {
+        if (0 == namespacePrefix.compare ((*schemaIterator)->m_namespacePrefix))
+            {
+            return (*schemaIterator);
+            }
+        }
 
     return NULL;
     }
@@ -1207,6 +1215,17 @@ void * schemaContext
     if (ECOBJECTS_STATUS_Success != status)
         Logger::GetLogger()->errorv (L"Failed to deserialize XML from string: %s\n", ecSchemaXml);
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchema::SchemasAreEqualByName (ECSchemaCP thisSchema, ECSchemaCP thatSchema)
+    {
+    return ((thisSchema == thatSchema) ||
+            ( (0 == thisSchema->Name.compare(thatSchema->Name)) &&
+              (thisSchema->VersionMajor == thatSchema->VersionMajor) &&
+              (thisSchema->VersionMinor == thatSchema->VersionMinor)));
     }
     
 /*---------------------------------------------------------------------------------**//**
