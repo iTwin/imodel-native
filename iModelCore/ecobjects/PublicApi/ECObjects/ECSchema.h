@@ -312,65 +312,63 @@ public:
 
 //=======================================================================================
 //! Container holding ECProperties that supports STL like iteration
-struct ECPropertyContainer /*__PUBLISH_ABSTRACT__*/
+struct ECPropertyIterable /*__PUBLISH_ABSTRACT__*/
 {
 /*__PUBLISH_SECTION_END__*/
 private:
     friend struct ECClass;
-        
-    PropertyMap const&     m_propertyMap;
-    PropertyList const&    m_propertyList;
-        
-    ECPropertyContainer (PropertyMap const& propertyMap, PropertyList const& propertyList) 
-        : m_propertyMap (propertyMap), m_propertyList(propertyList) {};
-
-
+    
+    ECClassCR       m_ecClass;
+    bool            m_includeBaseProperties;
+    
+    ECPropertyIterable(ECClassCR ecClass, bool includeBaseProperties) : m_ecClass(ecClass), m_includeBaseProperties(includeBaseProperties) {};
+    
 /*__PUBLISH_SECTION_START__*/
+public:
 
-public:    
-    //=======================================================================================
-    // @bsistruct
     struct IteratorState /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
         {        
         friend struct const_iterator;
 /*__PUBLISH_SECTION_END__*/
         public:            
-            PropertyList::const_iterator     m_listIterator;                   
+            PropertyList::const_iterator     m_listIterator;
+            PropertyList*                    m_properties;
 
-            IteratorState (PropertyList::const_iterator listIterator) { m_listIterator = listIterator; };
-            static RefCountedPtr<IteratorState> Create (PropertyList::const_iterator listIterator) { return new IteratorState(listIterator); };
+            IteratorState (ECClassCR ecClass, bool includeBaseProperties);
+            ~IteratorState();
+            static RefCountedPtr<IteratorState> Create (ECClassCR ecClass, bool includeBaseProperties) 
+                { return new IteratorState(ecClass, includeBaseProperties); };
 /*__PUBLISH_SECTION_START__*/                        
         };
-
-    //=======================================================================================
-    // @bsistruct
+        
     struct const_iterator
-    {    
-    private:                
-        friend ECPropertyContainer;                   
-        RefCountedPtr<IteratorState>   m_state;
-
+        {
+        private:
+            friend ECPropertyIterable;
+            RefCountedPtr<IteratorState>   m_state;
+            bool m_isEnd;
+ 
 /*__PUBLISH_SECTION_END__*/
-        const_iterator (PropertyList::const_iterator listIterator) { m_state = IteratorState::Create (listIterator); };
+            const_iterator (ECClassCR ecClass, bool includeBaseProperties);
+            const_iterator () : m_isEnd(true) {};
 /*__PUBLISH_SECTION_START__*/                        
-
-    public:
-        ECOBJECTS_EXPORT const_iterator&     operator++();
-        ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const;
-        ECOBJECTS_EXPORT ECPropertyP         operator* () const;
-    };
+           
+        public:
+            ECOBJECTS_EXPORT const_iterator&     operator++();
+            ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const;
+            ECOBJECTS_EXPORT ECPropertyP         operator* () const;
+        };
 
 public:
     ECOBJECTS_EXPORT const_iterator begin () const;
-    ECOBJECTS_EXPORT const_iterator end ()   const;
-
-}; 
+    ECOBJECTS_EXPORT const_iterator end ()   const;    
+    };
 
 typedef std::list<ECClassP> ECBaseClassesList;
 typedef std::list<ECClassP> ECConstraintClassesList;
 
 /*__PUBLISH_SECTION_END__*/
-typedef bool (*TraversalDelegate) (ECClassCP, ECClassCP);
+typedef bool (*TraversalDelegate) (ECClassCP, const void *);
 /*__PUBLISH_SECTION_START__*/
 
 //=======================================================================================
@@ -380,7 +378,7 @@ struct ECClass /*__PUBLISH_ABSTRACT__*/
 /*__PUBLISH_SECTION_END__*/
 
 friend struct ECSchema;
-friend struct ECPropertyContainer;
+friend struct ECPropertyIterable::IteratorState;
 
 private:
     std::wstring            m_name;
@@ -391,7 +389,6 @@ private:
     bool                    m_isDomainClass;
     ECSchemaCR              m_schema;
     ECBaseClassesList       m_baseClasses;
-    ECPropertyContainer     m_propertyContainer;
 
     PropertyMap             m_propertyMap;
     PropertyList            m_propertyList;    
@@ -399,17 +396,18 @@ private:
     ECObjectsStatus                     AddProperty (ECPropertyP& pProperty);
     ECObjectsStatus                     AddProperty (ECPropertyP pProperty, std::wstring const& name);
     
-    static bool ClassesAreEqualByName(ECClassCP thisClass, ECClassCP thatClass);
+    static bool ClassesAreEqualByName(ECClassCP currentBaseClass, const void * arg);
 
-    static bool CheckBaseClassCycles(ECClassCP thisClass, ECClassCP proposedParentClass);
-    bool TraverseBaseClasses(TraversalDelegate traverseMethod, bool recursive, ECClassCP arg) const;
-
+    static bool CheckBaseClassCycles(ECClassCP currentBaseClass, const void * arg);
+    static bool AddUniquePropertiesToList(ECClassCP crrentBaseClass, const void * arg);
+    bool TraverseBaseClasses(TraversalDelegate traverseMethod, bool recursive, const void * arg) const;
+    ECOBJECTS_EXPORT ECObjectsStatus GetProperties(bool includeBaseProperties, PropertyList* propertyList) const;
+    
 protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
     //  of a schema.
-    ECClass (ECSchemaCR schema) : m_schema(schema), m_isStruct(false), m_isCustomAttributeClass(false), m_isDomainClass(true),
-         m_propertyContainer(ECPropertyContainer(m_propertyMap, m_propertyList)){ };
+    ECClass (ECSchemaCR schema) : m_schema(schema), m_isStruct(false), m_isCustomAttributeClass(false), m_isDomainClass(true){ };
     ~ECClass();    
 
     // schemas index class by name so publicly name can not be reset
@@ -433,8 +431,8 @@ public:
     EXPORTED_READONLY_PROPERTY (ECSchemaCR,             Schema);                
     // schemas index class by name so publicly name can not be reset
     EXPORTED_READONLY_PROPERTY (std::wstring const&,    Name);        
-    EXPORTED_READONLY_PROPERTY (bool,                   IsDisplayLabelDefined);    
-    EXPORTED_READONLY_PROPERTY (ECPropertyContainerCR,  Properties); 
+    EXPORTED_READONLY_PROPERTY (bool,                   IsDisplayLabelDefined);
+    EXPORTED_READONLY_PROPERTY (ECPropertyIterableCR,  Properties); 
     EXPORTED_READONLY_PROPERTY (const ECBaseClassesList&,     BaseClasses);   
 
     EXPORTED_PROPERTY  (std::wstring const&,            Description);
@@ -443,6 +441,11 @@ public:
     EXPORTED_PROPERTY  (bool,                           IsCustomAttributeClass);    
     EXPORTED_PROPERTY  (bool,                           IsDomainClass);    
     
+    //! Returns a list of properties for this class.
+    //! @param[in]  includeBaseProperties If true, then will return properties that are contained in this class's base class(es)
+    //! @return     An iterable container of ECProperties
+    ECOBJECTS_EXPORT ECPropertyIterableCR GetProperties(bool includeBaseProperties) const;
+
     //! Sets the bool value of whether this class can be used as a struct
     //! @param[in] isStruct String representation of true/false
     //! @return    Success if the string is parsed into a bool
