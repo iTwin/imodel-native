@@ -377,6 +377,9 @@ ECSchemaPtr&              schemaOut,
 std::wstring const&     schemaName
 )
     {    
+    if (!NameValidator::Validate(schemaName))
+        return ECOBJECTS_STATUS_InvalidName;
+
     schemaOut = new ECSchema();
     return schemaOut->SetName (schemaName);
     }

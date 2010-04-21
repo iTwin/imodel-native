@@ -1183,6 +1183,9 @@ TEST(ClassTest, ExpectErrorWithBadClassName)
     ECSchemaPtr schema;
     ECClassP class1;
     
+    // . is an invalid character
+    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, ECSchema::CreateSchema(schema, L"TestSchema.1.0"));
+
     ECSchema::CreateSchema(schema, L"TestSchema");
     
     EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L""));
@@ -1204,7 +1207,7 @@ TEST(ClassTest, ExpectErrorWithBadClassName)
     
     // a is a valid character
     EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->CreateClass(class1, L"a"));
-
+    
     // Names can only include characters from the intersection of 7bit ascii and alphanumeric
     EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L"abc123!@#"));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->CreateClass(class1, L"abc123"));
