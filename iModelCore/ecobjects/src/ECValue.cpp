@@ -411,7 +411,7 @@ ECValue::ECValue (double doubleVal)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (DPoint2dR point2d)
+ECValue::ECValue (DPoint2dCR point2d)
     {
     ConstructUninitialized();
     SetPoint2D (point2d);
@@ -420,7 +420,7 @@ ECValue::ECValue (DPoint2dR point2d)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (DPoint3dR point3d)
+ECValue::ECValue (DPoint3dCR point3d)
     {
     ConstructUninitialized();
     SetPoint3D (point3d);
@@ -677,7 +677,7 @@ DPoint2d          ECValue::GetPoint2D() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ECValue::SetPoint2D (DPoint2dR value)
+StatusInt       ECValue::SetPoint2D (DPoint2dCR value)
     {
     Clear();
     m_isNull         = false;
@@ -702,7 +702,7 @@ DPoint3d          ECValue::GetPoint3D() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ECValue::SetPoint3D (DPoint3dR value)
+StatusInt       ECValue::SetPoint3D (DPoint3dCR value)
     {
     Clear();
     m_isNull         = false;
