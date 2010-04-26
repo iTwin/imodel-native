@@ -82,8 +82,8 @@ public:
     ECOBJECTS_EXPORT StatusInt SetStringValue   (const wchar_t * propertyAccessString, const wchar_t * value, UInt32 nIndices = 0, UInt32 const * indices = NULL);
     ECOBJECTS_EXPORT StatusInt SetDoubleValue   (const wchar_t * propertyAccessString, double value,          UInt32 nIndices = 0, UInt32 const * indices = NULL);
     ECOBJECTS_EXPORT StatusInt SetBooleanValue  (const wchar_t * propertyAccessString, bool value,            UInt32 nIndices = 0, UInt32 const * indices = NULL);
-    ECOBJECTS_EXPORT StatusInt SetPoint2DValue  (const wchar_t * propertyAccessString, DPoint2dR value,       UInt32 nIndices = 0, UInt32 const * indices = NULL);
-    ECOBJECTS_EXPORT StatusInt SetPoint3DValue  (const wchar_t * propertyAccessString, DPoint3dR value,       UInt32 nIndices = 0, UInt32 const * indices = NULL);
+    ECOBJECTS_EXPORT StatusInt SetPoint2DValue  (const wchar_t * propertyAccessString, DPoint2dCR value,      UInt32 nIndices = 0, UInt32 const * indices = NULL);
+    ECOBJECTS_EXPORT StatusInt SetPoint3DValue  (const wchar_t * propertyAccessString, DPoint3dCR value,      UInt32 nIndices = 0, UInt32 const * indices = NULL);
     ECOBJECTS_EXPORT StatusInt SetDateTimeValue (const wchar_t * propertyAccessString, SystemTimeR value,     UInt32 nIndices = 0, UInt32 const * indices = NULL);
     ECOBJECTS_EXPORT StatusInt SetDateTimeTicks (const wchar_t * propertyAccessString, Int64 value,           UInt32 nIndices = 0, UInt32 const * indices = NULL);
 

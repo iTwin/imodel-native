@@ -464,7 +464,7 @@ StatusInt IECInstance::SetBooleanValue  (const wchar_t * propertyAccessString, b
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt IECInstance::SetPoint2DValue  (const wchar_t * propertyAccessString, DPoint2dR value, UInt32 nIndices, UInt32 const * indices)
+StatusInt IECInstance::SetPoint2DValue  (const wchar_t * propertyAccessString, DPoint2dCR value, UInt32 nIndices, UInt32 const * indices)
     {
     PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
     ECValue v(value);
@@ -480,7 +480,7 @@ StatusInt IECInstance::SetPoint2DValue  (const wchar_t * propertyAccessString, D
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt IECInstance::SetPoint3DValue  (const wchar_t * propertyAccessString, DPoint3dR value, UInt32 nIndices, UInt32 const * indices)
+StatusInt IECInstance::SetPoint3DValue  (const wchar_t * propertyAccessString, DPoint3dCR value, UInt32 nIndices, UInt32 const * indices)
     {
     PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
     ECValue v(value);
