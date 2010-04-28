@@ -69,7 +69,7 @@ std::wstring GetLogConfigurationFilename()
         }
 
     return L"";
-    }
+    }       
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
@@ -82,21 +82,18 @@ void
     if (NULL == s_logger)
         {
         // If the hosting application hasn't already established a logging context
-        if ( ! LoggerConfig::isInterfaceRegistered())
-            {
-            Provider::Log4cxxLogger* pLog = new Provider::Log4cxxLogger;
-
+        if ( !LoggerConfig::isInterfaceRegistered())
+            {       
             std::wstring filepath = GetLogConfigurationFilename();
             if (filepath.size() > 0)
-                pLog->LoadConfiguration (filepath.c_str());
-            else
-                {
-                wprintf (L"ECObjects.dll configuring loggging using basic configuration with ECObjectsNative level set to 'Warning'. Override by setting BENTLEY_LOGGING_CONFIG in environment.\n");
-                pLog->BasicConfiguration ();
-                pLog->SetSeverity(L"ECObjectsNative", LOG_WARNING);
-                }
-
-            LoggerConfig::registerLogInterface(pLog);
+                {   
+                Provider::Log4cxxLogger* pLog = new Provider::Log4cxxLogger ();
+                if (pLog != NULL)
+                    {                             
+                    pLog->LoadConfiguration (filepath.c_str());
+                    LoggerConfig::registerLogInterface(pLog);  
+                    }
+                }                      
             }
 
         s_logger = LoggerRegistry::getLogger (L"ECObjectsNative");

@@ -49,7 +49,7 @@ EC_TYPEDEFS(ECProperty);
 EC_TYPEDEFS(PrimitiveECProperty);
 EC_TYPEDEFS(StructECProperty);
 EC_TYPEDEFS(ArrayECProperty);
-EC_TYPEDEFS(ECPropertyContainer);
+EC_TYPEDEFS(ECPropertyIterable);
 EC_TYPEDEFS(ECClassContainer);
 EC_TYPEDEFS(ECClass);
 EC_TYPEDEFS(ECRelationshipClass);

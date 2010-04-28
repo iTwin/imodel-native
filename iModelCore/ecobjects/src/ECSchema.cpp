@@ -377,6 +377,9 @@ ECSchemaPtr&              schemaOut,
 std::wstring const&     schemaName
 )
     {    
+    if (!NameValidator::Validate(schemaName))
+        return ECOBJECTS_STATUS_InvalidName;
+
     schemaOut = new ECSchema();
     return schemaOut->SetName (schemaName);
     }
@@ -392,7 +395,13 @@ std::wstring const&     namespacePrefix
     if ((namespacePrefix.length() == 0) || (namespacePrefix == m_namespacePrefix))
         return (ECSchemaP)this;
 
-    // NEEDSWORK lookup referenced schema by prefix
+    // lookup referenced schema by prefix
+    ECSchemaReferenceList::const_iterator schemaIterator;
+    for (schemaIterator = m_refSchemaList.begin(); schemaIterator != m_refSchemaList.end(); schemaIterator++)
+        {
+        if (0 == namespacePrefix.compare ((*schemaIterator)->m_namespacePrefix))
+            return (*schemaIterator);
+        }
 
     return NULL;
     }
@@ -512,7 +521,7 @@ Bentley::EC::ECSchemaCR refSchema
             }
             
         // And make sure that there are no struct types from another schema
-        for each (ECPropertyP prop in ecClass->Properties)
+        for each (ECPropertyP prop in ecClass->GetProperties(false))
             {
             ECClassCP typeClass;
             if (prop->IsStruct)
@@ -731,9 +740,11 @@ const std::vector<const wchar_t *> * schemaPaths,
 const std::wstring & name,
 UInt32& versionMajor,
 UInt32& versionMinor,
-SchemaMap* schemasUnderConstruction
+void*   schemaContext
 )
     {
+    SchemaMap* schemasUnderConstruction = (SchemaMap*)schemaContext;
+
     // First check if there is a circular reference and this reference has already started to be de-serialized farther upstream
     std::wstring fullName(name);
     wchar_t version[10];
@@ -1038,7 +1049,7 @@ Bentley::EC::ECClassCR ecClass
     {
     SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
     
-    for each (ECPropertyP prop in ecClass.Properties)
+    for each (ECPropertyP prop in ecClass.GetProperties(false))
         {
         if (prop->IsStruct)
             {
@@ -1205,6 +1216,17 @@ void * schemaContext
     if (ECOBJECTS_STATUS_Success != status)
         Logger::GetLogger()->errorv (L"Failed to deserialize XML from string: %s\n", ecSchemaXml);
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchema::SchemasAreEqualByName (ECSchemaCP thisSchema, ECSchemaCP thatSchema)
+    {
+    return ((thisSchema == thatSchema) ||
+            ( (0 == thisSchema->Name.compare(thatSchema->Name)) &&
+              (thisSchema->VersionMajor == thatSchema->VersionMajor) &&
+              (thisSchema->VersionMinor == thatSchema->VersionMinor)));
     }
     
 /*---------------------------------------------------------------------------------**//**
