@@ -7,7 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+
 #define NO_USING_NAMESPACE_BENTLEY 1
+
 /*__PUBLISH_SECTION_START__*/
 
 #include <Bentley\Bentley.h>
@@ -92,7 +94,8 @@ typedef enum ECErrorCategories
     {
     ECOBJECTS_ERROR_BASE                    = 0x31000,
     SCHEMA_DESERIALIZATION_STATUS_BASE      = 0x32000,
-    SCHEMA_SERIALIZATION_STATUS_BASE        = 0x33000
+    SCHEMA_SERIALIZATION_STATUS_BASE        = 0x33000,
+    INSTANCE_DESERIALIZATION_STATUS_BASE    = 0x34000,
     } ECErrorCategories;
 
 
@@ -101,25 +104,25 @@ typedef enum ECErrorCategories
 +===============+===============+===============+===============+===============+======*/
 enum ECObjectsStatus
     {
-    ECOBJECTS_STATUS_Success                                           = SUCCESS,
-    ECOBJECTS_STATUS_PropertyNotFound                                  = ECOBJECTS_ERROR_BASE + 0x01,
-    ECOBJECTS_STATUS_DataTypeMismatch                                  = ECOBJECTS_ERROR_BASE + 0x02,
-    ECOBJECTS_STATUS_ECInstanceImplementationNotSupported              = ECOBJECTS_ERROR_BASE + 0x03,
-    ECOBJECTS_STATUS_InvalidPropertyAccessString                       = ECOBJECTS_ERROR_BASE + 0x04,
-    ECOBJECTS_STATUS_IndexOutOfRange                                   = ECOBJECTS_ERROR_BASE + 0x05,
-    ECOBJECTS_STATUS_ECClassNotSupported                               = ECOBJECTS_ERROR_BASE + 0x06,
-    ECOBJECTS_STATUS_ECSchemaNotSupported                              = ECOBJECTS_ERROR_BASE + 0x07,
-    ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices                 = ECOBJECTS_ERROR_BASE + 0x08,
-    ECOBJECTS_STATUS_EnablerNotFound                                   = ECOBJECTS_ERROR_BASE + 0x09,
-    ECOBJECTS_STATUS_OperationNotSupported                             = ECOBJECTS_ERROR_BASE + 0x0A,
-    ECOBJECTS_STATUS_ParseError                                        = ECOBJECTS_ERROR_BASE + 0x0B,
-    ECOBJECTS_STATUS_NamedItemAlreadyExists                            = ECOBJECTS_ERROR_BASE + 0x0C, 
-    ECOBJECTS_STATUS_PreconditionViolated                              = ECOBJECTS_ERROR_BASE + 0x0D,
-    ECOBJECTS_STATUS_SchemaNotFound                                    = ECOBJECTS_ERROR_BASE + 0x0E,
-    ECOBJECTS_STATUS_ClassNotFound                                     = ECOBJECTS_ERROR_BASE + 0x0F,
-    ECOBJECTS_STATUS_BaseClassUnacceptable                             = ECOBJECTS_ERROR_BASE + 0x10,
-    ECOBJECTS_STATUS_SchemaInUse                                       = ECOBJECTS_ERROR_BASE + 0x11,
-    ECOBJECTS_STATUS_InvalidName                                       = ECOBJECTS_ERROR_BASE + 0x12,
+    ECOBJECTS_STATUS_Success                                            = SUCCESS,
+    ECOBJECTS_STATUS_PropertyNotFound                                   = ECOBJECTS_ERROR_BASE + 0x01,
+    ECOBJECTS_STATUS_DataTypeMismatch                                   = ECOBJECTS_ERROR_BASE + 0x02,
+    ECOBJECTS_STATUS_ECInstanceImplementationNotSupported               = ECOBJECTS_ERROR_BASE + 0x03,
+    ECOBJECTS_STATUS_InvalidPropertyAccessString                        = ECOBJECTS_ERROR_BASE + 0x04,
+    ECOBJECTS_STATUS_IndexOutOfRange                                    = ECOBJECTS_ERROR_BASE + 0x05,
+    ECOBJECTS_STATUS_ECClassNotSupported                                = ECOBJECTS_ERROR_BASE + 0x06,
+    ECOBJECTS_STATUS_ECSchemaNotSupported                               = ECOBJECTS_ERROR_BASE + 0x07,
+    ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices                  = ECOBJECTS_ERROR_BASE + 0x08,
+    ECOBJECTS_STATUS_EnablerNotFound                                    = ECOBJECTS_ERROR_BASE + 0x09,
+    ECOBJECTS_STATUS_OperationNotSupported                              = ECOBJECTS_ERROR_BASE + 0x0A,
+    ECOBJECTS_STATUS_ParseError                                         = ECOBJECTS_ERROR_BASE + 0x0B,
+    ECOBJECTS_STATUS_NamedItemAlreadyExists                             = ECOBJECTS_ERROR_BASE + 0x0C, 
+    ECOBJECTS_STATUS_PreconditionViolated                               = ECOBJECTS_ERROR_BASE + 0x0D,
+    ECOBJECTS_STATUS_SchemaNotFound                                     = ECOBJECTS_ERROR_BASE + 0x0E,
+    ECOBJECTS_STATUS_ClassNotFound                                      = ECOBJECTS_ERROR_BASE + 0x0F,
+    ECOBJECTS_STATUS_BaseClassUnacceptable                              = ECOBJECTS_ERROR_BASE + 0x10,
+    ECOBJECTS_STATUS_SchemaInUse                                        = ECOBJECTS_ERROR_BASE + 0x11,
+    ECOBJECTS_STATUS_InvalidName                                        = ECOBJECTS_ERROR_BASE + 0x12,
     }; 
 
 enum SchemaDeserializationStatus
@@ -137,6 +140,35 @@ enum SchemaSerializationStatus
     SCHEMA_SERIALIZATION_STATUS_FailedToInitializeMsmxl                 = SCHEMA_SERIALIZATION_STATUS_BASE + 0x01,
     SCHEMA_SERIALIZATION_STATUS_FailedToSaveXml                         = SCHEMA_SERIALIZATION_STATUS_BASE + 0x02,
     SCHEMA_SERIALIZATION_STATUS_FailedToCreateXml                       = SCHEMA_SERIALIZATION_STATUS_BASE + 0x03
+    };
+
+enum InstanceDeserializationStatus
+    {
+    INSTANCE_DESERIALIZATION_STATUS_Success                             = 0,
+    INSTANCE_DESERIALIZATION_STATUS_FileNotFound                        = INSTANCE_DESERIALIZATION_STATUS_BASE + 1,
+    INSTANCE_DESERIALIZATION_STATUS_CantCreateStream                    = INSTANCE_DESERIALIZATION_STATUS_BASE + 2,
+    INSTANCE_DESERIALIZATION_STATUS_CantCreateXmlReader                 = INSTANCE_DESERIALIZATION_STATUS_BASE + 3,
+    INSTANCE_DESERIALIZATION_STATUS_CantSetStream                       = INSTANCE_DESERIALIZATION_STATUS_BASE + 4,
+    INSTANCE_DESERIALIZATION_STATUS_NoElementName                       = INSTANCE_DESERIALIZATION_STATUS_BASE + 5,
+    INSTANCE_DESERIALIZATION_STATUS_BadElement                          = INSTANCE_DESERIALIZATION_STATUS_BASE + 6,
+    INSTANCE_DESERIALIZATION_STATUS_UnrecognizedElement                 = INSTANCE_DESERIALIZATION_STATUS_BASE + 7,
+    INSTANCE_DESERIALIZATION_STATUS_EmptyElement                        = INSTANCE_DESERIALIZATION_STATUS_BASE + 8,
+    INSTANCE_DESERIALIZATION_STATUS_BadElementOrder                     = INSTANCE_DESERIALIZATION_STATUS_BASE + 9,
+    INSTANCE_DESERIALIZATION_STATUS_EndElementDoesntMatch               = INSTANCE_DESERIALIZATION_STATUS_BASE + 10,
+    INSTANCE_DESERIALIZATION_STATUS_XmlFileIncomplete                   = INSTANCE_DESERIALIZATION_STATUS_BASE + 11,
+    INSTANCE_DESERIALIZATION_STATUS_XmlParseError                       = INSTANCE_DESERIALIZATION_STATUS_BASE + 20,
+
+    INSTANCE_DESERIALIZATION_STATUS_ECClassNotFound                     = INSTANCE_DESERIALIZATION_STATUS_BASE + 30,
+    INSTANCE_DESERIALIZATION_STATUS_BadECProperty                       = INSTANCE_DESERIALIZATION_STATUS_BASE + 31,
+    INSTANCE_DESERIALIZATION_STATUS_BadPrimitivePropertyType            = INSTANCE_DESERIALIZATION_STATUS_BASE + 32,
+    INSTANCE_DESERIALIZATION_STATUS_BadBinaryData                       = INSTANCE_DESERIALIZATION_STATUS_BASE + 33,
+    INSTANCE_DESERIALIZATION_STATUS_BadTimeValue                        = INSTANCE_DESERIALIZATION_STATUS_BASE + 34,
+    INSTANCE_DESERIALIZATION_STATUS_BadDoubleValue                      = INSTANCE_DESERIALIZATION_STATUS_BASE + 35,
+    INSTANCE_DESERIALIZATION_STATUS_BadIntegerValue                     = INSTANCE_DESERIALIZATION_STATUS_BASE + 36,
+    INSTANCE_DESERIALIZATION_STATUS_BadLongValue                        = INSTANCE_DESERIALIZATION_STATUS_BASE + 37,
+    INSTANCE_DESERIALIZATION_STATUS_BadPoint2dValue                     = INSTANCE_DESERIALIZATION_STATUS_BASE + 38,
+    INSTANCE_DESERIALIZATION_STATUS_BadPoint3dValue                     = INSTANCE_DESERIALIZATION_STATUS_BASE + 39,
+    INSTANCE_DESERIALIZATION_STATUS_BadArrayElement                     = INSTANCE_DESERIALIZATION_STATUS_BASE + 40,
     };
     
 END_BENTLEY_EC_NAMESPACE

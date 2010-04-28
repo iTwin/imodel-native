@@ -11,6 +11,8 @@
 #include "ECObjects.h"
 #include <Geom\GeomApi.h>
 
+typedef struct IStream* IStreamP;
+
 BEGIN_BENTLEY_EC_NAMESPACE
 
 typedef RefCountedPtr<IECInstance> IECInstancePtr;
@@ -93,6 +95,10 @@ public:
     ECOBJECTS_EXPORT static void      Debug_DumpAllocationStats (const wchar_t* prefix);
     ECOBJECTS_EXPORT static void      Debug_GetAllocationStats (int* currentLive, int* totalAllocs, int* totalFrees);
     ECOBJECTS_EXPORT static void      Debug_ReportLeaks (std::vector<std::wstring> classNamesToExclude);
+
+    ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadXmlFromFile   (IECInstancePtr& ecInstance, const wchar_t* fileName, ECSchemaP schema);
+    ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadXmlFromStream (IECInstancePtr& ecInstance, IStreamP, ECSchemaP schema);
+
     };
     
 //! EC::IECRelationshipInstance is the native equivalent of a .NET IECRelationshipInstance.
