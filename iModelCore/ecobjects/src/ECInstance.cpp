@@ -628,8 +628,6 @@ private:
     CComPtr <IXmlReader>        m_xmlReader;
     ECSchemaPtr                 m_schema;
 
-    std::wstring                m_currentAccessString;
-
 public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
@@ -713,7 +711,11 @@ InstanceDeserializationStatus       ReadInstance (IECInstancePtr& ecInstance)
         switch (nodeType) 
             {
             case XmlNodeType_EndElement:
+                {
+                // we should not hit this.
+                assert (false);
                 return INSTANCE_DESERIALIZATION_STATUS_Success;
+                }
 
             case XmlNodeType_Element:
                 {
@@ -724,8 +726,8 @@ InstanceDeserializationStatus       ReadInstance (IECInstancePtr& ecInstance)
                 if (INSTANCE_DESERIALIZATION_STATUS_Success != (ixrStatus = GetInstance (&ecClass, ecInstance)))
                     return ixrStatus;
 
-                if (INSTANCE_DESERIALIZATION_STATUS_Success != (ixrStatus = ReadInstanceOrStructMembers (*ecClass, ecInstance.get())))
-                    return ixrStatus;
+                // this reads the property members and consumes the XmlNodeType_EndElement corresponding to this XmlNodeType_Element.
+                return ReadInstanceOrStructMembers (*ecClass, ecInstance.get(), NULL);
                 }
 
             default:
@@ -735,7 +737,6 @@ InstanceDeserializationStatus       ReadInstance (IECInstancePtr& ecInstance)
         }
 
     // should not get here.
-    assert (false);
     return TranslateStatus (status);
     }
 
@@ -864,11 +865,14 @@ InstanceDeserializationStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   ReadInstanceOrStructMembers (ECClassCR ecClass, IECInstanceP ecInstance)
+InstanceDeserializationStatus   ReadInstanceOrStructMembers (ECClassCR ecClass, IECInstanceP ecInstance, std::wstring* baseAccessString)
     {
-    // On entry, m_currentAccessString is set to the an empty string for the class, or
-    // to the access string leading to the struct if we're deserializing a struct.
-    // The reader is positioned such that if we hit a Node
+    // On entry, the reader is positioned in the content of an instance or struct.
+
+    // if it's an empty node, all members of the instance are NULL.
+    if (m_xmlReader->IsEmptyElement())
+        return INSTANCE_DESERIALIZATION_STATUS_Success;
+
     HRESULT         status;
     XmlNodeType     nodeType;
     while (S_OK == (status = m_xmlReader->Read (&nodeType)))
@@ -877,7 +881,7 @@ InstanceDeserializationStatus   ReadInstanceOrStructMembers (ECClassCR ecClass, 
             {
             case XmlNodeType_Element:
                 InstanceDeserializationStatus   propertyStatus;
-                if (INSTANCE_DESERIALIZATION_STATUS_Success != (propertyStatus = ReadProperty (ecClass, ecInstance)))
+                if (INSTANCE_DESERIALIZATION_STATUS_Success != (propertyStatus = ReadProperty (ecClass, ecInstance, baseAccessString)))
                     return propertyStatus;
                 break;
 
@@ -907,16 +911,11 @@ InstanceDeserializationStatus   ReadInstanceOrStructMembers (ECClassCR ecClass, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   ReadProperty (ECClassCR ecClass, IECInstanceP ecInstance)
+InstanceDeserializationStatus   ReadProperty (ECClassCR ecClass, IECInstanceP ecInstance, std::wstring* baseAccessString)
     {
-    // on entry, m_currentAccessString is set to the collection that this property is within.
-
-    // move to the element.
-    HRESULT         status;
-    if (FAILED (status = m_xmlReader->MoveToElement()))
-        return INSTANCE_DESERIALIZATION_STATUS_BadElement;
-
+    // on entry, the reader is positioned at the Element.
     // get the element name, which is the property name.
+    HRESULT         status;
     const wchar_t*        propertyName;
     if (FAILED (status = m_xmlReader->GetLocalName (&propertyName, NULL)))
         return INSTANCE_DESERIALIZATION_STATUS_NoElementName;
@@ -930,18 +929,15 @@ InstanceDeserializationStatus   ReadProperty (ECClassCR ecClass, IECInstanceP ec
         }
 
     // set up to save and restore the current access string.
-    StringSaver saveAccessString (m_currentAccessString);
-    m_currentAccessString.append (propertyName);
-
     PrimitiveECPropertyP    primitiveProperty;
     ArrayECPropertyP        arrayProperty;
     StructECPropertyP       structProperty;
     if (NULL != (primitiveProperty = ecProperty->GetAsPrimitiveProperty()))
-        return ReadPrimitiveProperty (primitiveProperty, ecInstance);
+        return ReadPrimitiveProperty (primitiveProperty, ecInstance, baseAccessString);
     else if (NULL != (arrayProperty = ecProperty->GetAsArrayProperty()))
-        return ReadArrayProperty (arrayProperty, ecInstance);
+        return ReadArrayProperty (arrayProperty, ecInstance, baseAccessString);
     else if (NULL != (structProperty = ecProperty->GetAsStructProperty()))
-        return ReadStructProperty (structProperty, ecInstance);
+        return ReadEmbeddedStructProperty (structProperty, ecInstance, baseAccessString);
 
     // should be one of those!
     assert (false);
@@ -951,55 +947,67 @@ InstanceDeserializationStatus   ReadProperty (ECClassCR ecClass, IECInstanceP ec
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   ReadPrimitiveProperty (PrimitiveECPropertyP primitiveProperty, IECInstanceP ecInstance)
+InstanceDeserializationStatus   ReadEmbeddedStructProperty (StructECPropertyP structProperty, IECInstanceP ecInstance, std::wstring* baseAccessString)
     {
-    // on entry, m_currentAccessString is set to the access string for this property, and we are in that element.
+    // empty element OK for struct - all members are null.
+    if (m_xmlReader->IsEmptyElement())
+        return INSTANCE_DESERIALIZATION_STATUS_Success;
+
+    std::wstring    thisAccessString;
+    if (NULL != baseAccessString)
+        AppendAccessString (thisAccessString, *baseAccessString, structProperty->Name);
+    else
+        thisAccessString = structProperty->Name.c_str();
+    thisAccessString.append (L".");
+
+    return ReadInstanceOrStructMembers (structProperty->Type, ecInstance, &thisAccessString);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/10
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceDeserializationStatus   ReadPrimitiveProperty (PrimitiveECPropertyP primitiveProperty, IECInstanceP ecInstance, std::wstring* baseAccessString)
+    {
+    // on entry, we are positioned in the PrimitiveProperty element.
     PrimitiveType                   propertyType = primitiveProperty->Type;
     InstanceDeserializationStatus   ixrStatus;
     ECValue         ecValue;
     if (INSTANCE_DESERIALIZATION_STATUS_Success != (ixrStatus = ReadPrimitiveValue (ecValue, propertyType)))
         return ixrStatus;
 
-    ecInstance->SetValue (m_currentAccessString.c_str(), ecValue);
+    StatusInt setStatus;
+    if (NULL == baseAccessString)
+        {
+        setStatus = ecInstance->SetValue (primitiveProperty->Name.c_str(), ecValue);
+        }
+    else
+        {
+        std::wstring compoundAccessString;
+        AppendAccessString (compoundAccessString, *baseAccessString, primitiveProperty->Name);
+        setStatus = ecInstance->SetValue (compoundAccessString.c_str(), ecValue);
+        }
+    assert (SUCCESS == setStatus);
+
     return INSTANCE_DESERIALIZATION_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   ReadStructProperty (StructECPropertyP structProperty, IECInstanceP owningInstance)
+InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayProperty, IECInstanceP ecInstance, std::wstring* baseAccessString)
     {
-    // on entry, m_currentAccessString is set to the access string for this array. We add the [] to it here.
-    // The reader is positioned at the element that indicates the start of the array.
-    ECClassCR                       structClass = structProperty->Type;
+    // on entry, the reader is positioned at the element that indicates the start of the array.
+    // empty element OK for array - no members.
+    if (m_xmlReader->IsEmptyElement())
+        return INSTANCE_DESERIALIZATION_STATUS_Success;
 
-    // we have to create an IECInstance 
-    SchemaLayout                    schemaLayout (24);
-    ClassLayoutP                    classLayout         = ClassLayout::BuildFromClass (structClass, 42, schemaLayout.GetSchemaIndex());
-    StandaloneECEnablerPtr          standaloneEnabler   = StandaloneECEnabler::CreateEnabler (structClass, *classLayout);
+    std::wstring    accessString;
+    if (NULL == baseAccessString)
+        accessString = arrayProperty->Name;    
+    else
+        AppendAccessString (accessString, *baseAccessString, arrayProperty->Name);
 
-    // create the instance.
-    IECInstancePtr                  structInstance      = standaloneEnabler->CreateInstance().get();
-
-    InstanceDeserializationStatus   ixrStatus;
-    if (INSTANCE_DESERIALIZATION_STATUS_Success != (ixrStatus = ReadInstanceOrStructMembers (structClass, structInstance.get())))
-        return ixrStatus;
-
-    // set the value 
-    ECValue structValue;
-    structValue.SetStruct (structInstance.get());
-    owningInstance->SetValue (m_currentAccessString.c_str(), structValue);
-    return INSTANCE_DESERIALIZATION_STATUS_Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   04/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayProperty, IECInstanceP ecInstance)
-    {
-    // on entry, m_currentAccessString is set to the access string for this array. We add the [] to it here.
-    // The reader is positioned at the element that indicates the start of the array.
-    m_currentAccessString.append (L"[]");
+    accessString.append (L"[]");
 
     // start the address out as zero.
     UInt32      index = 0;
@@ -1027,22 +1035,31 @@ InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayPropert
                     if (!ValidateArrayPrimitiveType (primitiveTypeName, memberType))
                         return INSTANCE_DESERIALIZATION_STATUS_BadArrayElement;
 
-                    // move into the element that contains the value of the primitive.
-                    if (FAILED (status = m_xmlReader->MoveToElement()))
-                        return INSTANCE_DESERIALIZATION_STATUS_BadElement;
-
                     // now we know the type and we are positioned at the element containing the value.
-                    // read it, populating the ECInstance using m_currentAccessString and m_arrayIndices.
+                    // read it, populating the ECInstance using accessString and arrayIndex.
                     InstanceDeserializationStatus   ixrStatus;
                     ECValue                         ecValue;
                     if (INSTANCE_DESERIALIZATION_STATUS_Success != (ixrStatus = ReadPrimitiveValue (ecValue, memberType)))
                         return ixrStatus;
 
-                    ecInstance->SetValue (m_currentAccessString.c_str(), ecValue, index);
+                    ecInstance->AddArrayElements (accessString.c_str(), 1);
+                    StatusInt   setStatus;
+                    if (SUCCESS != (setStatus = ecInstance->SetValue (accessString.c_str(), ecValue, index)))
+                        {
+                        assert (false);
+                        return INSTANCE_DESERIALIZATION_STATUS_CantSetValue;
+                        }
 
                     // increment the array index.
                     index++;
 
+                    break;
+                    }
+
+                case XmlNodeType_Text:
+                    {
+                    // we don't expend that there is any text in an array element, just child elements.
+                    assert (false);
                     break;
                     }
 
@@ -1082,24 +1099,12 @@ InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayPropert
                         return INSTANCE_DESERIALIZATION_STATUS_NoElementName;
 
                     ECClassCP   thisMemberType;
-                    if (NULL != (thisMemberType = ValidateArrayStructType (structName, structMemberType)))
+                    if (NULL == (thisMemberType = ValidateArrayStructType (structName, structMemberType)))
                         return INSTANCE_DESERIALIZATION_STATUS_BadArrayElement;
 
-                    // move into the element that contains the struct values.
-                    if (FAILED (status = m_xmlReader->MoveToElement()))
-                        return INSTANCE_DESERIALIZATION_STATUS_BadElement;
-
-                    IECInstancePtr  thisMemberInstance;
-
-                    // now we know the type and we are positioned at the element containing the value.
-                    // read it, populating the ECInstance using m_currentAccessString and m_arrayIndices.
-                    InstanceDeserializationStatus   ixrStatus;
-                    if (INSTANCE_DESERIALIZATION_STATUS_Success != (ixrStatus = ReadInstanceOrStructMembers (*thisMemberType, thisMemberInstance.get())))
+                    InstanceDeserializationStatus ixrStatus;
+                    if (INSTANCE_DESERIALIZATION_STATUS_Success != (ixrStatus = ReadStructArrayMember (*thisMemberType, ecInstance, accessString, index)))
                         return ixrStatus;
-
-                    ECValue ecValue;
-                    ecValue.SetStruct (thisMemberInstance.get());
-                    ecInstance->SetValue (m_currentAccessString.c_str(), ecValue, index);
 
                     // increment the array index.
                     index++;
@@ -1117,9 +1122,9 @@ InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayPropert
                     break;
                     }
                 }
-            // shouldn't get here.
-            return TranslateStatus (status);
             }
+        // shouldn't get here.
+        return TranslateStatus (status);
         }
     
     return INSTANCE_DESERIALIZATION_STATUS_Success;
@@ -1128,12 +1133,86 @@ InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayPropert
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
+InstanceDeserializationStatus   ReadStructArrayMember (ECClassCR structClass, IECInstanceP owningInstance, std::wstring& accessString, UInt32 index)
+    {
+    // On entry, the reader is positioned at the element that starts the struct.
+    // we have to create an IECInstance for the array member.
+    SchemaLayout                    schemaLayout (24);
+    ClassLayoutP                    classLayout         = ClassLayout::BuildFromClass (structClass, 42, schemaLayout.GetSchemaIndex());
+    StandaloneECEnablerPtr          standaloneEnabler   = StandaloneECEnabler::CreateEnabler (structClass, *classLayout);
+
+    // create the instance.
+    IECInstancePtr                  structInstance      = standaloneEnabler->CreateInstance().get();
+
+    InstanceDeserializationStatus   ixrStatus;
+    if (INSTANCE_DESERIALIZATION_STATUS_Success != (ixrStatus = ReadInstanceOrStructMembers (structClass, structInstance.get(), NULL)))
+        return ixrStatus;
+
+    // every StructArrayMember is a new ECInstance, 
+    // set the value 
+    ECValue structValue;
+    structValue.SetStruct (structInstance.get());
+
+    // add the value to the array.
+    owningInstance->AddArrayElements (accessString.c_str(), 1);
+    StatusInt setStatus = owningInstance->SetValue (accessString.c_str(), structValue, index);
+    assert (SUCCESS == setStatus);
+
+    return INSTANCE_DESERIALIZATION_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/10
++---------------+---------------+---------------+---------------+---------------+------*/
 InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propertyType)
     {
+    // The reader is positioned at the XmlNodeType_Element that holds the value. 
+    // We expect to find a Text element with the value, advance until we do.
+
+    // we don't expect an empty element when reading a primitive.
+    if (m_xmlReader->IsEmptyElement())
+        {
+        assert (false);
+        return INSTANCE_DESERIALIZATION_STATUS_EmptyElement;
+        }
+
     HRESULT         status;
+    XmlNodeType     nodeType;
+    while (S_OK == (status = m_xmlReader->Read (&nodeType)))
+        {
+        bool positionedAtText = false;
+        switch (nodeType) 
+            {
+            case XmlNodeType_Element:
+                assert (false);
+                return INSTANCE_DESERIALIZATION_STATUS_UnexpectedElement;
+
+            case XmlNodeType_EndElement:
+                // we have encountered the end of the class or struct without getting a value from the element.
+                assert (false);
+                return INSTANCE_DESERIALIZATION_STATUS_EmptyElement;
+
+            case XmlNodeType_Text:
+                {
+                // we do not expect there to be any "value" in a struct of class, only property nodes.
+                positionedAtText = true;
+                break;
+                }
+
+            default:
+                {
+                // simply ignore white space, comments, etc.
+                break;
+                }
+            }
+
+        if (positionedAtText)
+            break;
+        }
+
     const wchar_t*  propertyValueString;
     if (FAILED (status = m_xmlReader->GetValue (&propertyValueString, NULL)))
-    return TranslateStatus (status);
+        return TranslateStatus (status);
 
     switch (propertyType)
         {
@@ -1145,6 +1224,7 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
                 return ixrStatus;
 
             ecValue.SetBinary (&byteArray.front(), byteArray.size(), true);
+            break;
             }
 
         case PRIMITIVETYPE_Boolean:
@@ -1152,12 +1232,13 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
             bool    boolValue = ((0 == wcscmp (propertyValueString, L"True")) || (0 == wcscmp (propertyValueString, L"true")) || 
                                  (0 == wcscmp (propertyValueString, L"TRUE")) || (0 == wcscmp (propertyValueString, L"1")));
             ecValue.SetBoolean (boolValue);
+            break;
             }
 
         case PRIMITIVETYPE_DateTime:
             {
             Int64   ticks;
-            if (1 != swscanf (L"%I64d", propertyValueString, &ticks))
+            if (1 != swscanf (propertyValueString, L"%I64d", &ticks))
                 {
                 assert (false);
                 return INSTANCE_DESERIALIZATION_STATUS_BadTimeValue;
@@ -1170,7 +1251,7 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
         case PRIMITIVETYPE_Double:
             {
             double  doubleValue;
-            if (1 != swscanf (L"%lg", propertyValueString, &doubleValue))
+            if (1 != swscanf (propertyValueString, L"%lg", &doubleValue))
                 {
                 assert (false);
                 return INSTANCE_DESERIALIZATION_STATUS_BadDoubleValue;
@@ -1182,7 +1263,7 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
         case PRIMITIVETYPE_Integer:
             {
             Int32   intValue;
-            if (1 != swscanf (L"%d", propertyValueString, &intValue))
+            if (1 != swscanf (propertyValueString, L"%d", &intValue))
                 {
                 assert (false);
                 return INSTANCE_DESERIALIZATION_STATUS_BadIntegerValue;
@@ -1194,7 +1275,7 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
         case PRIMITIVETYPE_Long:
             {
             Int64   longValue;
-            if (1 != swscanf (L"%I64d", propertyValueString, &longValue))
+            if (1 != swscanf (propertyValueString, L"%I64d", &longValue))
                 {
                 assert (false);
                 return INSTANCE_DESERIALIZATION_STATUS_BadLongValue;
@@ -1206,7 +1287,7 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
         case PRIMITIVETYPE_Point2D:
             {
             DPoint2d point2d;
-            if (2 != swscanf (L"%lg,%lg", propertyValueString, &point2d.x, &point2d.y))
+            if (2 != swscanf (propertyValueString, L"%lg,%lg", &point2d.x, &point2d.y))
                 {
                 assert (false);
                 return INSTANCE_DESERIALIZATION_STATUS_BadPoint2dValue;
@@ -1218,7 +1299,7 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
         case PRIMITIVETYPE_Point3D:
             {
             DPoint3d point3d;
-            if (3 != swscanf (L"%lg,%lg", propertyValueString, &point3d.x, &point3d.y, &point3d.z))
+            if (3 != swscanf (propertyValueString, L"%lg,%lg,%lg", &point3d.x, &point3d.y, &point3d.z))
                 {
                 assert (false);
                 return INSTANCE_DESERIALIZATION_STATUS_BadPoint3dValue;
@@ -1241,13 +1322,12 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
         }
 
     // we want to find the EndElement for this node.
-    XmlNodeType     nodeType;
     while (S_OK == (status = m_xmlReader->Read (&nodeType)))
         {
         switch (nodeType) 
             {
             case XmlNodeType_Element:
-                return INSTANCE_DESERIALIZATION_STATUS_UnrecognizedElement;
+                return INSTANCE_DESERIALIZATION_STATUS_UnexpectedElement;
 
             case XmlNodeType_EndElement:
                 // we have encountered the end of the class or struct.
@@ -1261,7 +1341,18 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
             }
         }
 
-    return INSTANCE_DESERIALIZATION_STATUS_Success;
+    // shouldn't get here.
+    assert (false);
+    return TranslateStatus (status);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AppendAccessString (std::wstring& compoundAccessString, std::wstring& baseAccessString, const std::wstring& propertyName)
+    {
+    compoundAccessString = baseAccessString;
+    compoundAccessString.append (propertyName);
     }
 
 /*---------------------------------------------------------------------------------**//**
