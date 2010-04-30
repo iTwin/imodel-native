@@ -1183,6 +1183,9 @@ void * schemaContext
     status = ReadXml (schemaOut, xmlDocPtr, schemaLocators, schemaPaths, schemaContext);
     if (ECOBJECTS_STATUS_Success != status)
         Logger::GetLogger()->errorv (L"Failed to deserialize XML file: %s\n", ecSchemaXmlFile);
+    else
+        Logger::GetLogger()->infov (L"Native ECSchema Deserialized from file: fileName='%s', schemaName='%s.%d.%d' classCount='%d' address='0x%x'\n", 
+            ecSchemaXmlFile, schemaOut->Name.c_str(), schemaOut->VersionMajor, schemaOut->VersionMinor, schemaOut->m_classMap.size(), schemaOut.get());        
     return status;
     }
 
@@ -1215,6 +1218,9 @@ void * schemaContext
     status = ReadXml (schemaOut, xmlDocPtr, schemaLocators, schemaPaths, schemaContext);
     if (ECOBJECTS_STATUS_Success != status)
         Logger::GetLogger()->errorv (L"Failed to deserialize XML from string: %s\n", ecSchemaXml);
+    else
+        Logger::GetLogger()->infov (L"Native ECSchema Deserialized from string: schemaName='%s.%d.%d' classCount='%d' schemaAddress='0x%x'\n stringAddress='0x%x'", 
+            schemaOut->Name.c_str(), schemaOut->VersionMajor, schemaOut->VersionMinor, schemaOut->m_classMap.size(), schemaOut.get(), ecSchemaXml);
     return status;
     }
 
