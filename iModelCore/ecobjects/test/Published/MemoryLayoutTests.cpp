@@ -721,7 +721,7 @@ TEST(MemoryLayoutTests, DirectSetStandaloneInstance)
     instance->SetPoint3DValue  (L"StartPoint", inPoint1);
     instance->SetPoint3DValue  (L"EndPoint", inPoint2);
     instance->SetDateTimeTicks (L"Install_Date", inTicks);
-    instance->SetDateTimeValue (L"Service_Date", SystemTime::GetLocalTime());
+    instance->SetDateTimeValue (L"Service_Date", inTime);
     
     EXPECT_TRUE (0 == instance->GetInteger (outCount, L"Count"));
     EXPECT_TRUE (outCount == inCount);
