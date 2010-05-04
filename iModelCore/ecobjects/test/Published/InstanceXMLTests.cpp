@@ -8,6 +8,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
 #include <objbase.h>
+#include "TestFixture.h"
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -252,12 +253,12 @@ TEST(InstanceDeserializationTest, ExpectSucessWhenDeserializingSimpleInstance)
 
     ECSchemaPtr schema;        
     
-    SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, L"SimpleTest_FirstSchema.01.00.ecschema.xml", NULL, NULL);
+    SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), NULL, NULL);
         
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, schemaStatus);
 
     IECInstancePtr  testInstance;
-    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, L"SimpleTest_Instance.xml", schema.get());
+    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), schema.get());
 
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
     
