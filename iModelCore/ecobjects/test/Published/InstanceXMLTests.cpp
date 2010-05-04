@@ -266,7 +266,7 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(InstanceDeserializationTest, ExpectSucessWhenDeserializingSimpleInstance)
+TEST(InstanceDeserializationTest, ExpectSuccessWhenDeserializingSimpleInstance)
     {
     // must call CoInitialize - schema deserialization requires it.
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
@@ -339,13 +339,12 @@ void    VerifyPolymorphismInstance (IECInstanceCP testInstance)
     int         inSubClass2;
     EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetInteger (inSubClass2, L"InSubClass2"));
     EXPECT_EQ (5, inSubClass2);
-
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(PolymorphismDeserializationTest, ExpectSucessWhenDeserializingPolymorphismInstance)
+TEST(PolymorphismDeserializationTest, ExpectSuccessWhenDeserializingPolymorphismInstance)
     {
     // must call CoInitialize - schema deserialization requires it.
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
@@ -368,7 +367,7 @@ TEST(PolymorphismDeserializationTest, ExpectSucessWhenDeserializingPolymorphismI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(InstanceSerializationTest, ExpectSucessWhenSerializingInstance)
+TEST(InstanceSerializationTest, ExpectSuccessWhenSerializingInstance)
     {
     // must call CoInitialize - schema deserialization requires it.
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
