@@ -97,8 +97,10 @@ public:
     ECOBJECTS_EXPORT static void      Debug_ReportLeaks (std::vector<std::wstring> classNamesToExclude);
 
     ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadXmlFromFile   (IECInstancePtr& ecInstance, const wchar_t* fileName, ECSchemaP schema);
-    ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadXmlFromStream (IECInstancePtr& ecInstance, IStreamP, ECSchemaP schema);
+    ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadXmlFromStream (IECInstancePtr& ecInstance, IStreamP stream, ECSchemaP schema);
 
+    ECOBJECTS_EXPORT InstanceSerializationStatus            WriteXmlToFile   (const wchar_t* fileName);
+    ECOBJECTS_EXPORT InstanceSerializationStatus            WriteXmlToStream (IStreamP stream);
     };
     
 //! EC::IECRelationshipInstance is the native equivalent of a .NET IECRelationshipInstance.
