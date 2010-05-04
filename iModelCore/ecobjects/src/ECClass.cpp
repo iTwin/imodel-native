@@ -249,10 +249,10 @@ ECObjectsStatus ECClass::AddProperty
 ECPropertyP&                 pProperty
 )
     {
-    // NEEDSWORK - need to account for property override behaviors if the property already exists in a base class
-    std::pair < stdext::hash_map<const wchar_t *, ECPropertyP>::iterator, bool > resultPair;
-    resultPair = m_propertyMap.insert (std::pair<const wchar_t *, ECPropertyP> (pProperty->Name.c_str(), pProperty));
-    if (resultPair.second == false)
+    stdext::hash_map<const wchar_t *, ECPropertyP>::const_iterator propertyIterator;
+    
+    propertyIterator = m_propertyMap.find(pProperty->Name.c_str());
+    if (m_propertyMap.end() != propertyIterator)
         {
         Logger::GetLogger()->warningv  (L"Can not create property '%s' because it already exists in the schema", pProperty->Name.c_str());
         delete pProperty;
@@ -260,14 +260,16 @@ ECPropertyP&                 pProperty
         return ECOBJECTS_STATUS_NamedItemAlreadyExists;
         }
 
+    // It isn't part of this schema, but does it exist as a property on a baseClass?
     ECPropertyP baseProperty = GetPropertyP(pProperty->Name);
     if (NULL == baseProperty)
         {
+        m_propertyMap.insert (std::pair<const wchar_t *, ECPropertyP> (pProperty->Name.c_str(), pProperty));
         m_propertyList.push_back(pProperty);
         return ECOBJECTS_STATUS_Success;
         }
 
-    // Make sure that the property to override can be overridden by the current property type
+    // NEEDSWORK: Make sure that the property to override can be overridden by the current property type
     if (pProperty->IsPrimitive)
         {
         if (!baseProperty->IsPrimitive)
@@ -277,6 +279,7 @@ ECPropertyP&                 pProperty
         if (primitiveNew->Type != primitiveBase->Type)
             return ECOBJECTS_STATUS_DataTypeMismatch;
         }           
+    m_propertyMap.insert (std::pair<const wchar_t *, ECPropertyP> (pProperty->Name.c_str(), pProperty));
     m_propertyList.push_back(pProperty);
     return ECOBJECTS_STATUS_Success;
     }
