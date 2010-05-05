@@ -10,6 +10,8 @@
 #include <objbase.h>
 #include <comdef.h>
 
+#include "TestFixture.h"
+
 BEGIN_BENTLEY_EC_NAMESPACE
 
 // NEEDSWORK Improve strategy for seed data.  Should not be maintained in source.
@@ -168,7 +170,7 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileDoesNotExist)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"ThisFileIsntReal.xml", NULL, NULL);
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"ThisFileIsntReal.xml").c_str(), NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml, status);
     
@@ -183,7 +185,7 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNodes)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingNodes.01.00.ecschema.xml", NULL, NULL);  
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"MissingNodes.01.00.ecschema.xml").c_str(), NULL, NULL);  
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml, status);
     
@@ -198,7 +200,7 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsIllFormed)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"IllFormedXml.01.00.ecschema.xml", NULL, NULL);
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"IllFormedXml.01.00.ecschema.xml").c_str(), NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml, status);
     
@@ -213,7 +215,7 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingECSchemaNode)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingECSchemaNode.01.00.ecschema.xml", NULL, NULL);
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"MissingECSchemaNode.01.00.ecschema.xml").c_str(), NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
     
@@ -229,7 +231,7 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNamespace)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingNamespace.01.00.ecschema.xml", NULL, NULL);
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"MissingNamespace.01.00.ecschema.xml").c_str(), NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
     
@@ -244,7 +246,7 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasUnsupportedNamespace)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"UnsupportedECXmlNamespace.01.00.ecschema.xml", NULL, NULL);
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"UnsupportedECXmlNamespace.01.00.ecschema.xml").c_str(), NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
     
@@ -259,7 +261,7 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingSchemaNameAttrib
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingSchemaName.01.00.ecschema.xml", NULL, NULL);
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"MissingSchemaName.01.00.ecschema.xml").c_str(), NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
     
@@ -274,7 +276,7 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingClassNameAttribu
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingClassName.01.00.ecschema.xml", NULL, NULL);
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"MissingClassName.01.00.ecschema.xml").c_str(), NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
     
@@ -289,7 +291,7 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenXmlFileHasInvalidVersionString)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"InvalidVersionString.01.00.ecschema.xml", NULL, NULL);
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"InvalidVersionString.01.00.ecschema.xml").c_str(), NULL, NULL);
     EXPECT_EQ (1, schema->VersionMajor);
     EXPECT_EQ (0, schema->VersionMinor);
 
@@ -306,7 +308,7 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenECSchemaContainsOnlyRequiredAtt
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
 
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"OnlyRequiredECSchemaAttributes.01.00.ecschema.xml", NULL, NULL);
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"OnlyRequiredECSchemaAttributes.01.00.ecschema.xml").c_str(), NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);    
     EXPECT_STREQ (L"OnlyRequiredECSchemaAttributes", schema->Name.c_str());
@@ -338,7 +340,7 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenDeserializingWidgetsECSchema)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml", NULL, NULL);
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"Widgets.01.00.ecschema.xml").c_str(), NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);  
     VerifyWidgetsSchema(schema);  
@@ -417,7 +419,7 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml", NULL, NULL);
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"Widgets.01.00.ecschema.xml").c_str(), NULL, NULL);
     wprintf(L"Verifying original schema from file.\n"); 
     VerifyWidgetsSchema(schema);
 
@@ -637,7 +639,7 @@ TEST(SchemaReferenceTest, ExpectSuccessWithCircularReferences)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"CircleSchema.01.00.ecschema.xml", NULL, NULL);
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"CircleSchema.01.00.ecschema.xml").c_str(), NULL, NULL);
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);
 
     CoUninitialize();

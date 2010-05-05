@@ -70,6 +70,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Published\InstanceXMLTests.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Published\MacroTests.cpp"
 				>
 			</File>
@@ -85,6 +89,10 @@
 				RelativePath=".\Published\StopWatch.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\Published\TestFixture.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -97,6 +105,10 @@
 			</File>
 			<File
 				RelativePath=".\Published\StopWatch.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Published\TestFixture.h"
 				>
 			</File>
 		</Filter>
