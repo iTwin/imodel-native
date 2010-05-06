@@ -29,10 +29,16 @@ struct  Struct2
     };
 
 
+// set thie binary data member, and then
+static byte testBinaryData[] = { 0, 255,  1, 254,  2, 253,  3, 252,  4, 251,  5, 250,  6, 249,  7, 248,  8, 247,  9, 246, 10, 245, 11, 244, 12, 243, 13, 242, 14, 241, 15, 240, 16, 239, 17, 238, 18, 237,
+                                19, 236, 20, 235, 21, 234, 22, 233, 23, 232, 24, 231, 25, 230, 26, 229, 27, 228, 28, 227, 29, 226, 30, 225, 31, 224, 32, 223, 33, 222, 34, 221, 35, 220, 36, 219, 37, 218,
+                                38, 217, 39, 216, 40, 215, 41, 214, 42, 213, 43, 212, 44, 211, 45, 210, 46, 209, 47, 208, 48, 207, 49, 206, 50, 205, 51, 204, 52, 203, 53, 202, 54, 201, 55, 200, 56, 199, 
+                                57 };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    VerifyTestInstance (IECInstanceCP testInstance)
+void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty)
     {
     int         baseClassMember;
     EXPECT_EQ (SUCCESS, testInstance->GetInteger (baseClassMember, L"BaseClassMember"));
@@ -241,12 +247,27 @@ void    VerifyTestInstance (IECInstanceCP testInstance)
             EXPECT_EQ (struct2ExpectedValues[index].nestedArray[nestedIndex].struct1IntMember, nestedIntMember);
             }
         }
+
+    if (!checkBinaryProperty)
+        return;
+
+    ECValue         binaryMember;
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (binaryMember, L"TestBinary"));
+
+    size_t      numBytes;
+    const byte* byteData; 
+    if (NULL != (byteData = binaryMember.GetBinary (numBytes)))
+        {
+        EXPECT_EQ (_countof (testBinaryData), numBytes);
+        for (size_t index=0; index < _countof (testBinaryData); index++)
+            EXPECT_EQ (testBinaryData[index], byteData[index]);
+        }
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(InstanceDeserializationTest, ExpectSucessWhenDeserializingSimpleInstance)
+TEST(InstanceDeserializationTest, ExpectSuccessWhenDeserializingSimpleInstance)
     {
     // must call CoInitialize - schema deserialization requires it.
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
@@ -263,7 +284,131 @@ TEST(InstanceDeserializationTest, ExpectSucessWhenDeserializingSimpleInstance)
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
     
     testInstance->Dump();
-    VerifyTestInstance (testInstance.get());
+    VerifyTestInstance (testInstance.get(), false);
     };
+
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void    VerifyPolymorphismInstance (IECInstanceCP testInstance)
+    {
+    int         inRootClass;
+    EXPECT_EQ (SUCCESS, testInstance->GetInteger (inRootClass, L"InRootClass"));
+    EXPECT_EQ (-1, inRootClass);
+
+    // get and check the first member.
+    ECValue         polymorphArrayMember;
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (polymorphArrayMember, L"PolymorphArray[]", 0));
+    IECInstancePtr  polymorphArrayInstance = polymorphArrayMember.GetStruct();
+    EXPECT_EQ (true, polymorphArrayInstance.IsValid());
+    ECClassCR       arrayMember0Class = polymorphArrayInstance->GetClass();
+    EXPECT_STREQ (L"BaseClass", arrayMember0Class.Name.c_str());
+
+    int         inBaseClass;
+    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetInteger (inBaseClass, L"InBaseClass"));
+    EXPECT_EQ (0, inBaseClass);
+
+    // get and check the second member.
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (polymorphArrayMember, L"PolymorphArray[]", 1));
+    polymorphArrayInstance = polymorphArrayMember.GetStruct();
+    EXPECT_EQ (true, polymorphArrayInstance.IsValid());
+    ECClassCR arrayMember1Class = polymorphArrayInstance->GetClass();
+    EXPECT_STREQ (L"SubClass1", arrayMember1Class.Name.c_str());
+
+    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetInteger (inBaseClass, L"InBaseClass"));
+    EXPECT_EQ (1, inBaseClass);
+
+    int         inSubClass1;
+    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetInteger (inSubClass1, L"InSubClass1"));
+    EXPECT_EQ (2, inSubClass1);
+
+    // get and check the third member.
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (polymorphArrayMember, L"PolymorphArray[]", 2));
+    polymorphArrayInstance = polymorphArrayMember.GetStruct();
+    EXPECT_EQ (true, polymorphArrayInstance.IsValid());
+    ECClassCR arrayMember2Class = polymorphArrayInstance->GetClass();
+    EXPECT_STREQ (L"SubClass2", arrayMember2Class.Name.c_str());
+
+    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetInteger (inBaseClass, L"InBaseClass"));
+    EXPECT_EQ (3, inBaseClass);
+
+    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetInteger (inSubClass1, L"InSubClass1"));
+    EXPECT_EQ (4, inSubClass1);
+
+    int         inSubClass2;
+    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetInteger (inSubClass2, L"InSubClass2"));
+    EXPECT_EQ (5, inSubClass2);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(PolymorphismDeserializationTest, ExpectSuccessWhenDeserializingPolymorphismInstance)
+    {
+    // must call CoInitialize - schema deserialization requires it.
+    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+
+    ECSchemaPtr schema;        
+    
+    SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, L"Polymorphism.01.00.ecschema.xml", NULL, NULL);
+        
+    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, schemaStatus);
+
+    IECInstancePtr  testInstance;
+    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, L"PolymorphismInstance.xml", schema.get());
+
+    EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
+    
+    testInstance->Dump();
+    VerifyPolymorphismInstance (testInstance.get());
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(InstanceSerializationTest, ExpectSuccessWhenSerializingInstance)
+    {
+    // must call CoInitialize - schema deserialization requires it.
+    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+
+    ECSchemaPtr schema;        
+
+    // we get the instance we want to serialize by reading the instance from XML.
+    SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, L"SimpleTest_FirstSchema.01.00.ecschema.xml", NULL, NULL);
+        
+    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, schemaStatus);
+
+    // add a binary property to the class we are deserializing.
+    ECClassP    testClass;
+    if (NULL != (testClass = schema->GetClassP (L"TestClass")))
+        {
+        PrimitiveECPropertyP binaryProperty;
+        testClass->CreatePrimitiveProperty (binaryProperty, L"TestBinary", PRIMITIVETYPE_Binary);
+        }
+    
+    IECInstancePtr  testInstance;
+    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, L"SimpleTest_Instance.xml", schema.get());
+    EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
+
+    ECValue     binaryValue;
+    binaryValue.SetBinary (testBinaryData, _countof (testBinaryData), true);
+    EXPECT_EQ (SUCCESS, testInstance->SetValue (L"TestBinary", binaryValue));
+    
+    // verify that the instance is correct
+    VerifyTestInstance (testInstance.get(), true);
+
+    // now we write it out.
+    EXPECT_EQ (INSTANCE_SERIALIZATION_STATUS_Success, testInstance->WriteXmlToFile (L"c:\\temp\\OutputInstance.xml"));
+    
+    // then read it back.
+    IECInstancePtr  readbackInstance;
+    InstanceDeserializationStatus readbackStatus = IECInstance::ReadXmlFromFile (readbackInstance, L"c:\\temp\\OutputInstance.xml", schema.get());
+
+    EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
+    VerifyTestInstance (readbackInstance.get(), true);
+    };
+
 
 END_BENTLEY_EC_NAMESPACE
