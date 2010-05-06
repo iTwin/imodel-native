@@ -918,6 +918,98 @@ TEST(ClassTest, IsTests)
     
     }
     
+TEST(ClassTest, CanOverrideBaseProperties)
+    {
+    ECSchemaPtr schema;
+    ECClassP class1;
+    ECClassP baseClass1;
+    ECClassP structClass;
+    ECClassP structClass2;
+    
+    ECSchema::CreateSchema(schema, L"TestSchema");
+    schema->CreateClass(class1, L"TestClass");
+    schema->CreateClass(baseClass1, L"BaseClass1");
+    schema->CreateClass(structClass, L"ClassForStructs");
+    structClass->IsStruct = true;
+    schema->CreateClass(structClass2, L"ClassForStructs2");
+    structClass2->IsStruct = true;
+    class1->AddBaseClass(*baseClass1);
+    
+    PrimitiveECPropertyP baseStringProp;
+    PrimitiveECPropertyP baseIntProp;
+    PrimitiveECPropertyP baseDoubleProp;
+    StructECPropertyP baseStructProp;
+    ArrayECPropertyP baseStringArrayProperty;
+    ArrayECPropertyP baseStructProperty;
+    
+    baseClass1->CreatePrimitiveProperty(baseStringProp, L"StringProperty", PRIMITIVETYPE_String);
+    baseClass1->CreatePrimitiveProperty(baseIntProp, L"IntegerProperty", PRIMITIVETYPE_Integer);
+    baseClass1->CreatePrimitiveProperty(baseDoubleProp, L"DoubleProperty", PRIMITIVETYPE_Double);
+    baseClass1->CreateStructProperty(baseStructProp, L"StructProperty", *structClass);
+    baseClass1->CreateArrayProperty(baseStringArrayProperty, L"StringArrayProperty", PRIMITIVETYPE_String);
+    baseClass1->CreateArrayProperty(baseStructProperty, L"StructArrayProperty", structClass);
+    
+    PrimitiveECPropertyP longProperty;
+    PrimitiveECPropertyP stringProperty;
+    
+    // Primitives overriding primitives
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreatePrimitiveProperty(longProperty, L"StringProperty", PRIMITIVETYPE_Long));
+    EXPECT_EQ(NULL, longProperty);
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreatePrimitiveProperty(stringProperty, L"StringProperty", PRIMITIVETYPE_String));
+    class1->RemoveProperty(L"StringProperty");
+    
+    // Primitives overriding structs
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreatePrimitiveProperty(longProperty, L"StructProperty", PRIMITIVETYPE_Long));
+
+    // Primitives overriding arrays
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreatePrimitiveProperty(longProperty, L"StringArrayProperty", PRIMITIVETYPE_Long));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreatePrimitiveProperty(stringProperty, L"StringArrayProperty", PRIMITIVETYPE_String));
+    class1->RemoveProperty(L"StringArrayProperty");
+
+    StructECPropertyP structProperty;
+    // Structs overriding primitives
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateStructProperty(structProperty, L"IntegerProperty"));
+
+    // Structs overriding structs
+    // If we don't specify a struct type for the new property, then it should succeed
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateStructProperty(structProperty, L"StructProperty"));
+    class1->RemoveProperty(L"StructProperty");
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateStructProperty(structProperty, L"StructProperty", *structClass2));
+
+    // Structs overriding arrays
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateStructProperty(structProperty, L"StringArrayProperty"));
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateStructProperty(structProperty, L"StringArrayProperty", *structClass));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateStructProperty(structProperty, L"StructArrayProperty"));
+    class1->RemoveProperty(L"StructArrayProperty");
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateStructProperty(structProperty, L"StructArrayProperty", *structClass));
+    class1->RemoveProperty(L"StructArrayProperty");
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateStructProperty(structProperty, L"StructArrayProperty", *structClass2));
+
+    ArrayECPropertyP stringArrayProperty;
+    ArrayECPropertyP stringArrayProperty2;
+    ArrayECPropertyP structArrayProperty;
+    ArrayECPropertyP structArrayProperty2;
+    // Arrays overriding primitives
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateArrayProperty(stringArrayProperty, L"IntegerProperty", PRIMITIVETYPE_Long));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateArrayProperty(stringArrayProperty, L"StringProperty", PRIMITIVETYPE_String));
+    class1->RemoveProperty(L"StringProperty");
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateArrayProperty(stringArrayProperty2, L"StringProperty"));
+
+    // Arrays overriding structs
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateArrayProperty(structArrayProperty, L"StructProperty", structClass2));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateArrayProperty(structArrayProperty, L"StructProperty", structClass));
+    class1->RemoveProperty(L"StructProperty");
+
+    // the default array type is string if none is passed in
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateArrayProperty(structArrayProperty2, L"StructProperty"));
+    
+    ArrayECPropertyP intArrayProperty;
+    // Arrays overriding arrays
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateArrayProperty(intArrayProperty, L"StringArrayProperty", PRIMITIVETYPE_Long));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateArrayProperty(stringArrayProperty, L"StringArrayProperty", PRIMITIVETYPE_String));
+    class1->RemoveProperty(L"StringArrayProperty");
+
+    }
     
 TEST(ClassTest, ExpectPropertiesInOrder)
     {
