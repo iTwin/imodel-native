@@ -326,6 +326,36 @@ MSXML2_IXMLDOMElement& parentNode
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PrimitiveECProperty::_CanOverride
+(
+ECPropertyCR baseProperty
+) const
+    {
+    PrimitiveType basePrimitiveType;
+    
+    // normally, we do not allow a primitive property to override an array property.  However, there is a set of schemas that
+    // have been delivered that allow this behavior.  If the primitive property type is the same as the type used in the array, then
+    // we allow it to be overridden.
+    if (baseProperty.IsArray)
+        {
+        ArrayECPropertyP arrayProperty = baseProperty.GetAsArrayProperty();
+        if (ARRAYKIND_Struct == arrayProperty->Kind)
+            return false;
+        basePrimitiveType = arrayProperty->GetPrimitiveElementType();
+        }
+    else if (baseProperty.IsStruct)
+        return false;
+    else
+        {
+        basePrimitiveType = baseProperty.GetAsPrimitiveProperty()->Type;
+        }
+        
+    return (basePrimitiveType == m_primitiveType);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::wstring PrimitiveECProperty::_GetTypeName
@@ -407,6 +437,32 @@ MSXML2::IXMLDOMElement& parentNode
     return __super::_WriteXml(parentNode, EC_STRUCTPROPERTY_ELEMENT);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bool StructECProperty::_CanOverride
+(
+ECPropertyCR baseProperty
+) const
+    {
+
+    if (baseProperty.IsPrimitive)
+        return false;
+        
+    if (baseProperty.IsArray)
+        {
+        ArrayECPropertyP arrayProp = baseProperty.GetAsArrayProperty();
+        if (ARRAYKIND_Struct != arrayProp->Kind)
+            return false;
+        }
+
+    // if the struct type hasn't been set yet, we will say it can override
+    if (NULL == m_structType)
+        return true;
+
+    return (TypeName == baseProperty.TypeName);
+    }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -575,7 +631,17 @@ MSXML2::IXMLDOMElement& parentNode
         
     return status;
     }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ArrayECProperty::_CanOverride
+(
+ECPropertyCR baseProperty
+) const
+    {
+    return (TypeName == EMPTY_STRING) || (TypeName == baseProperty.TypeName);
+    }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/

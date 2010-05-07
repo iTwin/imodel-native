@@ -254,7 +254,7 @@ ECPropertyP&                 pProperty
     propertyIterator = m_propertyMap.find(pProperty->Name.c_str());
     if (m_propertyMap.end() != propertyIterator)
         {
-        Logger::GetLogger()->warningv  (L"Can not create property '%s' because it already exists in the schema", pProperty->Name.c_str());
+        Logger::GetLogger()->warningv  (L"Can not create property '%s' because it already exists in this ECClass", pProperty->Name.c_str());
         delete pProperty;
         pProperty = NULL;        
         return ECOBJECTS_STATUS_NamedItemAlreadyExists;
@@ -269,21 +269,14 @@ ECPropertyP&                 pProperty
         return ECOBJECTS_STATUS_Success;
         }
 
-    // NEEDSWORK: Make sure that the property to override can be overridden by the current property type
-    if (pProperty->IsPrimitive)
-        {
-        if (!baseProperty->IsPrimitive)
-            return ECOBJECTS_STATUS_DataTypeMismatch;
-        PrimitiveECPropertyP primitiveNew = pProperty->GetAsPrimitiveProperty();
-        PrimitiveECPropertyP primitiveBase = baseProperty->GetAsPrimitiveProperty();
-        if (primitiveNew->Type != primitiveBase->Type)
-            return ECOBJECTS_STATUS_DataTypeMismatch;
-        }           
+    ECObjectsStatus status = CanPropertyBeOverridden(*baseProperty, *pProperty);
+    if (ECOBJECTS_STATUS_Success != status)
+        return status;
+
     m_propertyMap.insert (std::pair<const wchar_t *, ECPropertyP> (pProperty->Name.c_str(), pProperty));
     m_propertyList.push_back(pProperty);
     return ECOBJECTS_STATUS_Success;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
@@ -309,6 +302,30 @@ std::wstring const& propertyName
     return NULL;
     }
 
+ECObjectsStatus ECClass::CanPropertyBeOverridden
+(
+ECPropertyCR baseProperty,
+ECPropertyCR newProperty
+) const
+    {
+    
+    // WIP_FUSION: If we add support for arrays to contain arrays, then we will need to implement the check that the managed code does
+    // to ensure that the same deepness of embedded arrays is used
+        
+    // If the type of base property is an array and the type of the current property is not an array (or vice-versa),
+    // return an error immediately.  Unfortunately, there are a class of schemas that have been delivered with this type
+    // of override.  So need to check if this is one of those schemas before returning an error
+    if ((baseProperty.IsArray && !newProperty.IsArray) || (!baseProperty.IsArray && newProperty.IsArray))
+        {
+        //if (!EC::ECSchema::SchemaAllowsOverridingArrays(this->Schema))
+        //    return ECOBJECTS_STATUS_DataTypeMismatch;
+        }
+    
+    if (!newProperty._CanOverride(baseProperty))
+        return ECOBJECTS_STATUS_DataTypeMismatch;
+    return ECOBJECTS_STATUS_Success; 
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -325,6 +342,8 @@ const std::wstring &name
         
     m_propertyList.remove(propertyIterator->second);
     m_propertyMap.erase(propertyIterator);
+    delete propertyIterator->second;
+
     return ECOBJECTS_STATUS_Success;
     }
     
@@ -367,10 +386,14 @@ PrimitiveType primitiveType
 )
     {
     ecProperty = new PrimitiveECProperty(*this);
+    ecProperty->Type = primitiveType;
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECOBJECTS_STATUS_Success)
+        {
+        delete ecProperty;
+        ecProperty = NULL;
         return status;
-    ecProperty->Type = primitiveType;
+        }
     return ECOBJECTS_STATUS_Success;
     }
 /*---------------------------------------------------------------------------------**//**
@@ -397,10 +420,14 @@ ECClassCR structType
 )
     {
     ecProperty = new StructECProperty(*this);
+    ecProperty->Type = structType;
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECOBJECTS_STATUS_Success)
+        {
+        delete ecProperty;
+        ecProperty = NULL;
         return status;
-    ecProperty->Type = structType;
+        }
     return ECOBJECTS_STATUS_Success;
     }
     
@@ -428,10 +455,14 @@ PrimitiveType primitiveType
 )
     {
     ecProperty = new ArrayECProperty(*this);
+    ecProperty->PrimitiveElementType = primitiveType;
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECOBJECTS_STATUS_Success)
+        {
+        delete ecProperty;
+        ecProperty = NULL;
         return status;
-    ecProperty->PrimitiveElementType = primitiveType;
+        }
     return ECOBJECTS_STATUS_Success;
     }
     
@@ -446,10 +477,13 @@ ECClassCP structType
 )
     {
     ecProperty = new ArrayECProperty(*this);
+    ecProperty->StructElementType = structType;
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECOBJECTS_STATUS_Success)
+        {
+        delete ecProperty;
         return status;
-    ecProperty->StructElementType = structType;
+        }
     return ECOBJECTS_STATUS_Success;
     }
 
