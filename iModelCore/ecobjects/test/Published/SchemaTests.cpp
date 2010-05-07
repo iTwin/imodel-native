@@ -300,6 +300,18 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenXmlFileHasInvalidVersionString)
     CoUninitialize();
     };
 
+TEST(SchemaDeserializationTest, ExpectSuccessWhenDeserializingSchemaWithBaseClassInReferencedFile)
+    {
+    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+    ECSchemaPtr schema;
+
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"SchemaThatReferences.01.00.ecschema.xml").c_str(), NULL, NULL);
+    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);    
+
+    ECClassP pClass = schema->GetClassP(L"circle");    
+    ASSERT_TRUE (pClass);
+    }    
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -538,8 +550,8 @@ TEST(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     schema3->CreateClass(anotherBase, L"AnotherBase");
     
     EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, class1->AddBaseClass(*baseClass));
-    schema->AddReferencedSchema(*schema2);
-    schema->AddReferencedSchema(*schema3);
+    schema->AddReferencedSchema(schema2);
+    schema->AddReferencedSchema(schema3);
     EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->AddBaseClass(*baseClass));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->AddBaseClass(*anotherBase));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, gadget->AddBaseClass(*class1));
@@ -567,29 +579,29 @@ TEST(SchemaReferenceTest, AddAndRemoveReferencedSchemas)
     ECSchemaPtr refSchema;
     ECSchema::CreateSchema(refSchema, L"RefSchema");
     
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(*refSchema));
-    EXPECT_EQ(ECOBJECTS_STATUS_NamedItemAlreadyExists, schema->AddReferencedSchema(*refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_NamedItemAlreadyExists, schema->AddReferencedSchema(refSchema));
     
     ECSchemaReferenceList refList = schema->GetReferencedSchemas();
     ECSchemaReferenceList::const_iterator schemaIterator;
     for (schemaIterator = refList.begin(); schemaIterator != refList.end(); schemaIterator++)
         {
-        if (*schemaIterator == refSchema.get())
+        if (*schemaIterator == refSchema)
             break;
         }
         
     EXPECT_FALSE(schemaIterator == refList.end());
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(*refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(refSchema));
     
     refList = schema->GetReferencedSchemas();
     for (schemaIterator = refList.begin(); schemaIterator != refList.end(); schemaIterator++)
         {
-        if (*schemaIterator == refSchema.get())
+        if (*schemaIterator == refSchema)
             break;
         }
         
     EXPECT_TRUE(schemaIterator == refList.end());
-    EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, schema->RemoveReferencedSchema(*refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, schema->RemoveReferencedSchema(refSchema));
     }
 
 TEST(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
@@ -600,7 +612,7 @@ TEST(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
     ECSchemaPtr refSchema;
     ECSchema::CreateSchema(refSchema, L"RefSchema");
     
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(*refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(refSchema));
     ECClassP class1;
     ECClassP baseClass;
     ECClassP structClass;
@@ -611,12 +623,12 @@ TEST(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
     structClass->IsStruct = true;
     
     class1->AddBaseClass(*baseClass);
-    EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
+    EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(refSchema));
     
     class1->RemoveBaseClass(*baseClass);
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(*refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(refSchema));
 
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(*refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(refSchema));
     StructECPropertyP structProp;
     ArrayECPropertyP nestedArrayProp;
     
@@ -626,11 +638,11 @@ TEST(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
     structProp->Type = *structClass;
     nestedArrayProp->StructElementType = structClass;
 
-    EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
+    EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(refSchema));
     class1->RemoveProperty(L"Struct Member");
-    EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
+    EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(refSchema));
     class1->RemoveProperty(L"NestedArray");
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(*refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(refSchema));
     
     }
     
@@ -666,7 +678,7 @@ TEST(SchemaCreationTest, CanFullyCreateASchema)
     ECSchemaPtr schema2;
     ECSchema::CreateSchema(schema2, L"BaseSchema");
     
-    testSchema->AddReferencedSchema(*schema2);
+    testSchema->AddReferencedSchema(schema2);
     
     ECClassP class1;
     ECClassP baseClass;
@@ -1265,7 +1277,7 @@ TEST(ClassTest, AddAndRemoveConstraintClasses)
     EXPECT_EQ(ECOBJECTS_STATUS_Success, relClass->Target.AddClass(*targetClass));
     EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, relClass->Source.AddClass(*sourceClass));
     
-    schema->AddReferencedSchema(*refSchema);
+    schema->AddReferencedSchema(refSchema);
     EXPECT_EQ(ECOBJECTS_STATUS_Success, relClass->Source.AddClass(*sourceClass));
     
     EXPECT_EQ(ECOBJECTS_STATUS_Success, relClass->Target.RemoveClass(*targetClass));

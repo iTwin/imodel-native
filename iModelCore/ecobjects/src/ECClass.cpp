@@ -520,7 +520,7 @@ ECClassCR baseClass
         ECSchemaReferenceList::const_iterator schemaIterator;
         for (schemaIterator = referencedSchemas.begin(); schemaIterator != referencedSchemas.end(); schemaIterator++)
             {
-            ECSchemaP refSchema = *schemaIterator;
+            ECSchemaP refSchema = (*schemaIterator).get();
             if (ECSchema::SchemasAreEqualByName (refSchema, &(baseClass.Schema)))
                 {
                 foundRefSchema = true;
@@ -1328,7 +1328,7 @@ ECClassCR classConstraint
         ECSchemaReferenceList::const_iterator schemaIterator;
         for (schemaIterator = referencedSchemas.begin(); schemaIterator != referencedSchemas.end(); schemaIterator++)
             {
-            ECSchemaP refSchema = *schemaIterator;
+            ECSchemaP refSchema = (*schemaIterator).get();
             if (refSchema == &(classConstraint.Schema))
                 {
                 foundRefSchema = true;
