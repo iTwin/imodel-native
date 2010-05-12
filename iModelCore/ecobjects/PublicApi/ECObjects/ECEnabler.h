@@ -40,6 +40,7 @@ protected:
     ECOBJECTS_EXPORT ECEnabler(ECClassCR ecClass);
 
     ECOBJECTS_EXPORT virtual wchar_t const * _GetName() const = 0;
+    ECOBJECTS_EXPORT virtual StatusInt _GetPropertyIndex (UInt32& propertyIndex, const wchar_t * propertyAccessString) const = 0;
 
 public:
     UInt32                           m_privateRefCount;
@@ -50,6 +51,7 @@ public:
     ECOBJECTS_EXPORT wchar_t const * GetName() const;
     
     ECOBJECTS_EXPORT ECClassCR       GetClass() const;
+    ECOBJECTS_EXPORT StatusInt       GetPropertyIndex (UInt32& propertyIndex, const wchar_t * propertyAccessString) const;
     };
 
 END_BENTLEY_EC_NAMESPACE

@@ -34,8 +34,12 @@ protected:
     ECOBJECTS_EXPORT virtual std::wstring _GetInstanceId() const = 0; // Virtual and returning std::wstring because a subclass may want to calculate it on demand
     ECOBJECTS_EXPORT virtual StatusInt    _GetValue (ECValueR v, const wchar_t * propertyAccessString) const = 0;
     ECOBJECTS_EXPORT virtual StatusInt    _GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 index) const = 0;
+    ECOBJECTS_EXPORT virtual StatusInt    _GetValue (ECValueR v, UInt32 propertyIndex, UInt32 arrayIndex) const = 0;
+    ECOBJECTS_EXPORT virtual StatusInt    _GetValue (ECValueR v, UInt32 propertyIndex) const = 0;
     ECOBJECTS_EXPORT virtual StatusInt    _SetValue (const wchar_t * propertyAccessString, ECValueCR v) = 0;    
     ECOBJECTS_EXPORT virtual StatusInt    _SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 index) = 0;
+    ECOBJECTS_EXPORT virtual StatusInt    _SetValue (UInt32 propertyIndex, ECValueCR v) = 0;
+    ECOBJECTS_EXPORT virtual StatusInt    _SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) = 0;
     ECOBJECTS_EXPORT virtual StatusInt    _InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size) = 0;
     ECOBJECTS_EXPORT virtual StatusInt    _AddArrayElements (const wchar_t * propertyAccessString, UInt32 size) = 0;
     ECOBJECTS_EXPORT virtual StatusInt    _RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index) = 0;
@@ -53,8 +57,12 @@ public:
     ECOBJECTS_EXPORT ECClassCR            GetClass() const;
     ECOBJECTS_EXPORT StatusInt            GetValue (ECValueR v, const wchar_t * propertyAccessString) const;    
     ECOBJECTS_EXPORT StatusInt            GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 index) const;
+    ECOBJECTS_EXPORT StatusInt            GetValue (ECValueR v, UInt32 propertyIndex) const;
+    ECOBJECTS_EXPORT StatusInt            GetValue (ECValueR v, UInt32 propertyIndex, UInt32 arrayIndex) const;
     ECOBJECTS_EXPORT StatusInt            SetValue (const wchar_t * propertyAccessString, ECValueCR v);    
     ECOBJECTS_EXPORT StatusInt            SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 index);
+    ECOBJECTS_EXPORT StatusInt            SetValue (UInt32 propertyIndex, ECValueCR v);
+    ECOBJECTS_EXPORT StatusInt            SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex);
         
     //! Contract:
     //! - For all of the methods, the propertyAccessString should be in the "array element" form, 

@@ -751,6 +751,75 @@ TEST(MemoryLayoutTests, DirectSetStandaloneInstance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST(MemoryLayoutTests, GetSetValuesByIndex)
+    {
+    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+
+    ECSchemaPtr schema = CreateTestSchema();
+    ASSERT_TRUE (schema != NULL);
+    ECClassP ecClass = schema->GetClassP (L"TestClass");
+    ASSERT_TRUE (ecClass);
+    
+    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 0, 0);
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);        
+    
+    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+
+    const wchar_t * accessString = L"Property34";
+
+    //UInt32          intValue = 12345;
+    const wchar_t * stringValue = L"Xyz";
+
+    //instance->SetIntegerValue  (accessString, intValue);
+    instance->SetStringValue  (accessString, stringValue);
+
+    ECValue value;    
+    UInt32  propertyIndex;
+    
+    EXPECT_TRUE (SUCCESS  == enabler->GetPropertyIndex (propertyIndex, accessString));
+    EXPECT_TRUE (SUCCESS  == instance->GetValue (value, propertyIndex));
+    //EXPECT_TRUE (intValue == value.GetInteger());
+    EXPECT_STREQ (stringValue, value.GetString());
+
+#if defined (TIMING_ACCESS_BYINDEX)
+    UInt32      numAccesses = 10000000;
+
+    double      elapsedTime1 = 0.0;
+    StopWatch   timer1 (L"Time getting values using index", true);
+
+    for (UInt32 i = 0; i < numAccesses; i++)
+        {
+        timer1.Start();
+        instance->GetValue (value, propertyIndex);
+        timer1.Stop();
+
+        elapsedTime1 += timer1.GetElapsedSeconds();
+        }
+
+    double      elapsedTime2 = 0.0;
+    StopWatch   timer2 (L"Time getting values using accessString", true);
+
+    for (UInt32 i = 0; i < numAccesses; i++)
+        {
+        timer2.Start();
+        instance->GetValue (value, accessString);
+        timer2.Stop();
+
+        elapsedTime2 += timer2.GetElapsedSeconds();
+        }
+
+    wprintf (L"Time to set %d values by: accessString = %.4f, index = %.4f\n", numAccesses, elapsedTime1, elapsedTime2);
+#endif
+
+    delete classLayout;
+
+    // instance.Compact()... then check values again
+    CoUninitialize();
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(MemoryLayoutTests, ExpectErrorsWhenViolatingArrayConstraints)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));

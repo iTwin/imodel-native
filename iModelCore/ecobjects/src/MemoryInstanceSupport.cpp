@@ -705,6 +705,31 @@ StatusInt       ClassLayout::GetPropertyLayout (PropertyLayoutCP & propertyLayou
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/10
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       ClassLayout::GetPropertyIndex (UInt32& propertyIndex, wchar_t const * accessString) const
+    {
+    PropertyLayoutCP    propertyLayout;
+
+    if (SUCCESS != GetPropertyLayout (propertyLayout, accessString))
+        return ERROR;
+
+    for (UInt32 i = 0; i < m_propertyLayouts.size(); i++)
+        {
+        PropertyLayoutCP candidate = &m_propertyLayouts[i];
+
+        if (propertyLayout == candidate)
+            {
+            propertyIndex = i;
+            return SUCCESS;
+            }
+        }
+
+    assert (false && "Property present in map but not in vector"); 
+    return ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ClassLayout::GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const
@@ -1495,6 +1520,22 @@ StatusInt       MemoryInstanceSupport::GetValueFromMemory (ClassLayoutCR classLa
     }    
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/10
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       MemoryInstanceSupport::GetValueFromMemory (ClassLayoutCR classLayout, ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const
+    {
+    PropertyLayoutCP propertyLayout = NULL;
+    StatusInt status = classLayout.GetPropertyLayoutByIndex (propertyLayout, propertyIndex);
+    if (SUCCESS != status || NULL == propertyLayout)
+        return ERROR; // WIP_FUSION ERROR_PropertyNotFound        
+
+    if (useArrayIndex)
+        return GetValueFromMemory (v, *propertyLayout, arrayIndex);
+    else
+        return GetValueFromMemory (v, *propertyLayout);
+    }    
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index)
@@ -1655,6 +1696,22 @@ StatusInt       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayo
 
     if (useIndex)
         return SetValueToMemory (v, classLayout, *propertyLayout, index);
+    else
+        return SetValueToMemory (v, classLayout, *propertyLayout);
+    }     
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/10
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayout, UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
+    {
+    PropertyLayoutCP propertyLayout = NULL;
+    StatusInt status = classLayout.GetPropertyLayoutByIndex (propertyLayout, propertyIndex);
+    if (SUCCESS != status || NULL == propertyLayout)
+        return ERROR; // WIP_FUSION ERROR_PropertyNotFound        
+
+    if (useArrayIndex)
+        return SetValueToMemory (v, classLayout, *propertyLayout, arrayIndex);
     else
         return SetValueToMemory (v, classLayout, *propertyLayout);
     }     

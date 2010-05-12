@@ -255,7 +255,6 @@ StandaloneECInstance::~StandaloneECInstance ()
 
     //Logger::GetLogger()->tracev (L"StandaloneECInstance at 0x%x is being destructed. It references enabler 0x%x", this, m_sharedWipEnabler);
     }
-
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
@@ -264,7 +263,7 @@ ECEnablerCR         StandaloneECInstance::_GetEnabler() const
     {
     return *m_sharedWipEnabler;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
@@ -277,10 +276,10 @@ std::wstring        StandaloneECInstance::_GetInstanceId() const
         StandaloneECInstanceP thisNotConst = const_cast<StandaloneECInstanceP>(this);
         thisNotConst->m_instanceId = id;        
         }
-        
+
     return m_instanceId;
     }
- 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -288,7 +287,7 @@ ClassLayoutCR       StandaloneECInstance::_GetClassLayout () const
     {
     return m_sharedWipEnabler->GetClassLayout();
     }
-   
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -296,14 +295,14 @@ bool                StandaloneECInstance::_IsReadOnly() const
     {
     return false;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt           StandaloneECInstance::_GetValue (ECValueR v, const wchar_t * propertyAccessString) const
     {
     ClassLayoutCR classLayout = GetClassLayout();
-    
+
     return GetValueFromMemory (classLayout, v, propertyAccessString);
     }
 
@@ -313,10 +312,30 @@ StatusInt           StandaloneECInstance::_GetValue (ECValueR v, const wchar_t *
 StatusInt           StandaloneECInstance::_GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 index) const
     {
     ClassLayoutCR classLayout = GetClassLayout();
-    
+
     return GetValueFromMemory (classLayout, v, propertyAccessString, true, index);
     }
-        
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/10
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           StandaloneECInstance::_GetValue (ECValueR v, UInt32 propertyIndex) const
+    {
+    ClassLayoutCR classLayout = GetClassLayout();
+
+    return GetValueFromMemory (classLayout, v, propertyIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/10
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           StandaloneECInstance::_GetValue (ECValueR v, UInt32 propertyIndex, UInt32 arrayIndex) const
+    {
+    ClassLayoutCR classLayout = GetClassLayout();
+
+    return GetValueFromMemory (classLayout, v, propertyIndex, true, arrayIndex);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -335,6 +354,28 @@ StatusInt           StandaloneECInstance::_SetValue (const wchar_t * propertyAcc
     {
     ClassLayoutCR classLayout = GetClassLayout();
     StatusInt status = SetValueToMemory (classLayout, propertyAccessString, v, true, index);
+
+    return status;
+    }    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/10
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           StandaloneECInstance::_SetValue (UInt32 propertyIndex, ECValueCR v)
+    {
+    ClassLayoutCR classLayout = GetClassLayout();
+    StatusInt status = SetValueToMemory (classLayout, propertyIndex, v);
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/10
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           StandaloneECInstance::_SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 index)
+    {
+    ClassLayoutCR classLayout = GetClassLayout();
+    StatusInt status = SetValueToMemory (classLayout, propertyIndex, v, true, index);
 
     return status;
     }    
@@ -413,6 +454,16 @@ wchar_t const *           StandaloneECEnabler::_GetName() const
     return L"Bentley::EC::StandaloneECEnabler";
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/10
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt           StandaloneECEnabler::_GetPropertyIndex(UInt32& propertyIndex, const wchar_t * propertyAccessString) const
+    {
+    ClassLayoutCR       classLayout = GetClassLayout();
+
+    return classLayout.GetPropertyIndex (propertyIndex, propertyAccessString);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        

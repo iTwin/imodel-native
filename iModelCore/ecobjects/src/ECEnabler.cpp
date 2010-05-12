@@ -53,18 +53,9 @@ UInt32      ECEnabler::Release()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-wchar_t const * ECEnabler::GetName() const
-    {
-    return _GetName();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCR ECEnabler::GetClass() const 
-    {
-    return m_ecClass;
-    }
+ECClassCR           ECEnabler::GetClass() const  { return m_ecClass; }
+wchar_t const *     ECEnabler::GetName() const { return _GetName(); }
+StatusInt           ECEnabler::GetPropertyIndex (UInt32& propertyIndex, const wchar_t * accessString) const { return _GetPropertyIndex (propertyIndex, accessString); }
 
 END_BENTLEY_EC_NAMESPACE
     

@@ -165,50 +165,17 @@ int             IECInstance::ParseExpectedNIndices (const wchar_t * propertyAcce
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/   
-ECEnablerCR           IECInstance::GetEnabler() const
-    {
-    return _GetEnabler();
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/   
-bool                IECInstance::IsReadOnly() const
-    {
-    return _IsReadOnly();
-    }
+ECEnablerCR         IECInstance::GetEnabler() const { return _GetEnabler();  }
+bool                IECInstance::IsReadOnly() const { return _IsReadOnly();  }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/    
-StatusInt           IECInstance::GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 index) const
-    {
-    return _GetValue (v, propertyAccessString, index);
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Adam.Klatzkin                   02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           IECInstance::GetValue (ECValueR v, const wchar_t * propertyAccessString) const
-    {
-    return _GetValue (v, propertyAccessString);
-    }    
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/    
-StatusInt           IECInstance::SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 index)
-    {
-    return _SetValue (propertyAccessString, v, index);
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Adam.Klatzkin                   02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/    
-StatusInt           IECInstance::SetValue (const wchar_t * propertyAccessString, ECValueCR v)
-    {
-    return _SetValue (propertyAccessString, v);
-    }        
+StatusInt           IECInstance::GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 index) const { return _GetValue (v, propertyAccessString, index); }
+StatusInt           IECInstance::GetValue (ECValueR v, const wchar_t * propertyAccessString) const { return _GetValue (v, propertyAccessString); }
+StatusInt           IECInstance::GetValue (ECValueR v, UInt32 propertyIndex) const { return _GetValue (v, propertyIndex); }
+StatusInt           IECInstance::GetValue (ECValueR v, UInt32 propertyIndex, UInt32 arrayIndex) const { return _GetValue (v, propertyIndex, arrayIndex); }
+StatusInt           IECInstance::SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 index) { return _SetValue (propertyAccessString, v, index); }
+StatusInt           IECInstance::SetValue (const wchar_t * propertyAccessString, ECValueCR v) { return _SetValue (propertyAccessString, v); }
+StatusInt           IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v) { return _SetValue (propertyIndex, v); }
+StatusInt           IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) { return _SetValue (propertyIndex, v, arrayIndex); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
