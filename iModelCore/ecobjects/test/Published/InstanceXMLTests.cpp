@@ -352,12 +352,12 @@ TEST(PolymorphismDeserializationTest, ExpectSuccessWhenDeserializingPolymorphism
 
     ECSchemaPtr schema;        
     
-    SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, L"Polymorphism.01.00.ecschema.xml", NULL, NULL);
+    SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"Polymorphism.01.00.ecschema.xml").c_str(), NULL, NULL);
         
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, schemaStatus);
 
     IECInstancePtr  testInstance;
-    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, L"PolymorphismInstance.xml", schema.get());
+    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"PolymorphismInstance.xml").c_str(), schema.get());
 
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
     
@@ -376,7 +376,7 @@ TEST(InstanceSerializationTest, ExpectSuccessWhenSerializingInstance)
     ECSchemaPtr schema;        
 
     // we get the instance we want to serialize by reading the instance from XML.
-    SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, L"SimpleTest_FirstSchema.01.00.ecschema.xml", NULL, NULL);
+    SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), NULL, NULL);
         
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, schemaStatus);
 
@@ -389,7 +389,7 @@ TEST(InstanceSerializationTest, ExpectSuccessWhenSerializingInstance)
         }
     
     IECInstancePtr  testInstance;
-    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, L"SimpleTest_Instance.xml", schema.get());
+    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), schema.get());
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
 
     ECValue     binaryValue;
