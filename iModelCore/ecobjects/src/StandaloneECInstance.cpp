@@ -299,72 +299,30 @@ bool                StandaloneECInstance::_IsReadOnly() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           StandaloneECInstance::_GetValue (ECValueR v, const wchar_t * propertyAccessString) const
+StatusInt           StandaloneECInstance::_GetValue (ECValueR v, const wchar_t * propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const
     {
     ClassLayoutCR classLayout = GetClassLayout();
 
-    return GetValueFromMemory (classLayout, v, propertyAccessString);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Adam.Klatzkin                   02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           StandaloneECInstance::_GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 index) const
-    {
-    ClassLayoutCR classLayout = GetClassLayout();
-
-    return GetValueFromMemory (classLayout, v, propertyAccessString, true, index);
+    return GetValueFromMemory (classLayout, v, propertyAccessString, useArrayIndex, arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           StandaloneECInstance::_GetValue (ECValueR v, UInt32 propertyIndex) const
+StatusInt           StandaloneECInstance::_GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const
     {
     ClassLayoutCR classLayout = GetClassLayout();
 
-    return GetValueFromMemory (classLayout, v, propertyIndex);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    05/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           StandaloneECInstance::_GetValue (ECValueR v, UInt32 propertyIndex, UInt32 arrayIndex) const
-    {
-    ClassLayoutCR classLayout = GetClassLayout();
-
-    return GetValueFromMemory (classLayout, v, propertyIndex, true, arrayIndex);
+    return GetValueFromMemory (classLayout, v, propertyIndex, useArrayIndex, arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           StandaloneECInstance::_SetValue (const wchar_t * propertyAccessString, ECValueCR v)
+StatusInt           StandaloneECInstance::_SetValue (const wchar_t * propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
     {
     ClassLayoutCR classLayout = GetClassLayout();
-    StatusInt status = SetValueToMemory (classLayout, propertyAccessString, v);
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Adam.Klatzkin                   02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           StandaloneECInstance::_SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 index)
-    {
-    ClassLayoutCR classLayout = GetClassLayout();
-    StatusInt status = SetValueToMemory (classLayout, propertyAccessString, v, true, index);
-
-    return status;
-    }    
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    05/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           StandaloneECInstance::_SetValue (UInt32 propertyIndex, ECValueCR v)
-    {
-    ClassLayoutCR classLayout = GetClassLayout();
-    StatusInt status = SetValueToMemory (classLayout, propertyIndex, v);
+    StatusInt status = SetValueToMemory (classLayout, propertyAccessString, v, useArrayIndex, arrayIndex);
 
     return status;
     }
@@ -372,13 +330,13 @@ StatusInt           StandaloneECInstance::_SetValue (UInt32 propertyIndex, ECVal
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           StandaloneECInstance::_SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 index)
+StatusInt           StandaloneECInstance::_SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
     {
     ClassLayoutCR classLayout = GetClassLayout();
-    StatusInt status = SetValueToMemory (classLayout, propertyIndex, v, true, index);
+    StatusInt status = SetValueToMemory (classLayout, propertyIndex, v, useArrayIndex, arrayIndex);
 
     return status;
-    }    
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010

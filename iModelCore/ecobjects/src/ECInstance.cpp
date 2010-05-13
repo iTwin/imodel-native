@@ -168,14 +168,14 @@ int             IECInstance::ParseExpectedNIndices (const wchar_t * propertyAcce
 ECEnablerCR         IECInstance::GetEnabler() const { return _GetEnabler();  }
 bool                IECInstance::IsReadOnly() const { return _IsReadOnly();  }
 
-StatusInt           IECInstance::GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 index) const { return _GetValue (v, propertyAccessString, index); }
-StatusInt           IECInstance::GetValue (ECValueR v, const wchar_t * propertyAccessString) const { return _GetValue (v, propertyAccessString); }
-StatusInt           IECInstance::GetValue (ECValueR v, UInt32 propertyIndex) const { return _GetValue (v, propertyIndex); }
-StatusInt           IECInstance::GetValue (ECValueR v, UInt32 propertyIndex, UInt32 arrayIndex) const { return _GetValue (v, propertyIndex, arrayIndex); }
-StatusInt           IECInstance::SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 index) { return _SetValue (propertyAccessString, v, index); }
-StatusInt           IECInstance::SetValue (const wchar_t * propertyAccessString, ECValueCR v) { return _SetValue (propertyAccessString, v); }
-StatusInt           IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v) { return _SetValue (propertyIndex, v); }
-StatusInt           IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) { return _SetValue (propertyIndex, v, arrayIndex); }
+StatusInt           IECInstance::GetValue (ECValueR v, const wchar_t * propertyAccessString) const { return _GetValue (v, propertyAccessString, false, 0); }
+StatusInt           IECInstance::GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 arrayIndex) const { return _GetValue (v, propertyAccessString, true, arrayIndex); }
+StatusInt           IECInstance::GetValue (ECValueR v, UInt32 propertyIndex) const { return _GetValue (v, propertyIndex, false, 0); }
+StatusInt           IECInstance::GetValue (ECValueR v, UInt32 propertyIndex, UInt32 arrayIndex) const { return _GetValue (v, propertyIndex, true, arrayIndex); }
+StatusInt           IECInstance::SetValue (const wchar_t * propertyAccessString, ECValueCR v) { return _SetValue (propertyAccessString, v, false, 0); }
+StatusInt           IECInstance::SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 arrayIndex) { return _SetValue (propertyAccessString, v, true, arrayIndex); }
+StatusInt           IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v) { return _SetValue (propertyIndex, v, false, 0); }
+StatusInt           IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) { return _SetValue (propertyIndex, v, true, arrayIndex); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
@@ -186,9 +186,9 @@ StatusInt           IECInstance::GetLong (Int64 & value, const wchar_t * propert
     ECValue v;
     StatusInt status;
     if (nIndices == 1)
-        status = _GetValue (v, propertyAccessString, *indices);
+        status = GetValue (v, propertyAccessString, *indices);
     else
-        status = _GetValue (v, propertyAccessString);
+        status = GetValue (v, propertyAccessString);
         
     if (status == SUCCESS)
         value = v.GetLong();
@@ -205,9 +205,9 @@ StatusInt           IECInstance::GetInteger (int & value, const wchar_t * proper
     ECValue v;
     StatusInt status;
     if (nIndices == 1)
-        status = _GetValue (v, propertyAccessString, *indices);
+        status = GetValue (v, propertyAccessString, *indices);
     else
-        status = _GetValue (v, propertyAccessString);
+        status = GetValue (v, propertyAccessString);
         
     if (status == SUCCESS)
         value = v.GetInteger();
@@ -224,9 +224,9 @@ StatusInt           IECInstance::GetDouble (double& value, const wchar_t * prope
     ECValue v;
     StatusInt status;
     if (nIndices == 1)
-        status = _GetValue (v, propertyAccessString, *indices);
+        status = GetValue (v, propertyAccessString, *indices);
     else
-        status = _GetValue (v, propertyAccessString);
+        status = GetValue (v, propertyAccessString);
         
     if (status == SUCCESS)        
         value = v.GetDouble();
@@ -243,9 +243,9 @@ StatusInt           IECInstance::GetString (const wchar_t * & value, const wchar
     ECValue v;
     StatusInt status;
     if (nIndices == 1)
-        status = _GetValue (v, propertyAccessString, *indices);
+        status = GetValue (v, propertyAccessString, *indices);
     else
-        status = _GetValue (v, propertyAccessString);
+        status = GetValue (v, propertyAccessString);
         
     if (status == SUCCESS)
         value = v.GetString();
@@ -262,9 +262,9 @@ StatusInt IECInstance::GetBoolean (bool & value, const wchar_t * propertyAccessS
     ECValue v;
     StatusInt status;
     if (nIndices == 1)
-        status = _GetValue (v, propertyAccessString, *indices);
+        status = GetValue (v, propertyAccessString, *indices);
     else
-        status = _GetValue (v, propertyAccessString);
+        status = GetValue (v, propertyAccessString);
         
     if (status == SUCCESS)
         value = v.GetBoolean();
@@ -281,9 +281,9 @@ StatusInt IECInstance::GetPoint2D (DPoint2d & value, const wchar_t * propertyAcc
     ECValue v;
     StatusInt status;
     if (nIndices == 1)
-        status = _GetValue (v, propertyAccessString, *indices);
+        status = GetValue (v, propertyAccessString, *indices);
     else
-        status = _GetValue (v, propertyAccessString);
+        status = GetValue (v, propertyAccessString);
         
     if (status == SUCCESS)
         value = v.GetPoint2D();
@@ -300,9 +300,9 @@ StatusInt IECInstance::GetPoint3D (DPoint3d & value, const wchar_t * propertyAcc
     ECValue v;
     StatusInt status;
     if (nIndices == 1)
-        status = _GetValue (v, propertyAccessString, *indices);
+        status = GetValue (v, propertyAccessString, *indices);
     else
-        status = _GetValue (v, propertyAccessString);
+        status = GetValue (v, propertyAccessString);
         
     if (status == SUCCESS)
         value = v.GetPoint3D();
@@ -319,9 +319,9 @@ StatusInt IECInstance::GetDateTime (SystemTime & value, const wchar_t * property
     ECValue v;
     StatusInt status;
     if (nIndices == 1)
-        status = _GetValue (v, propertyAccessString, *indices);
+        status = GetValue (v, propertyAccessString, *indices);
     else
-        status = _GetValue (v, propertyAccessString);
+        status = GetValue (v, propertyAccessString);
     
     if (status == SUCCESS)
         value = v.GetDateTime();
@@ -338,9 +338,9 @@ StatusInt IECInstance::GetDateTimeTicks (Int64 & value, const wchar_t * property
     ECValue v;
     StatusInt status;
     if (nIndices == 1)
-        status = _GetValue (v, propertyAccessString, *indices);
+        status = GetValue (v, propertyAccessString, *indices);
     else
-        status = _GetValue (v, propertyAccessString);
+        status = GetValue (v, propertyAccessString);
     
     if (status == SUCCESS)
         value = v.GetDateTimeTicks();
@@ -357,9 +357,9 @@ StatusInt           IECInstance::SetLongValue (const wchar_t * propertyAccessStr
     ECValue v(value);
     StatusInt status;
     if (nIndices == 1)
-        status = _SetValue (propertyAccessString, v, *indices);
+        status = SetValue (propertyAccessString, v, *indices);
     else
-        status = _SetValue (propertyAccessString, v);
+        status = SetValue (propertyAccessString, v);
 
     return status;    
     }
@@ -373,9 +373,9 @@ StatusInt           IECInstance::SetIntegerValue (const wchar_t * propertyAccess
     ECValue v(value);
     StatusInt status;
     if (nIndices == 1)
-        status = _SetValue (propertyAccessString, v, *indices);
+        status = SetValue (propertyAccessString, v, *indices);
     else
-        status = _SetValue (propertyAccessString, v);
+        status = SetValue (propertyAccessString, v);
 
     return status;    
     }
@@ -389,9 +389,9 @@ StatusInt           IECInstance::SetDoubleValue (const wchar_t * propertyAccessS
     ECValue v(value);
     StatusInt status;
     if (nIndices == 1)
-        status = _SetValue (propertyAccessString, v, *indices);
+        status = SetValue (propertyAccessString, v, *indices);
     else
-        status = _SetValue (propertyAccessString, v);
+        status = SetValue (propertyAccessString, v);
 
     return status;    
     }
@@ -405,9 +405,9 @@ StatusInt           IECInstance::SetStringValue  (const wchar_t * propertyAccess
     ECValue v(value, false);
     StatusInt status;
     if (nIndices == 1)
-        status = _SetValue (propertyAccessString, v, *indices);
+        status = SetValue (propertyAccessString, v, *indices);
     else
-        status = _SetValue (propertyAccessString, v);    
+        status = SetValue (propertyAccessString, v);
 
     return status;    
     }
@@ -421,9 +421,9 @@ StatusInt IECInstance::SetBooleanValue  (const wchar_t * propertyAccessString, b
     ECValue v(value);
     StatusInt status;
     if (nIndices == 1)
-        status = _SetValue (propertyAccessString, v, *indices);
+        status = SetValue (propertyAccessString, v, *indices);
     else
-        status = _SetValue (propertyAccessString, v);
+        status = SetValue (propertyAccessString, v);
 
     return status;    
     }
@@ -437,9 +437,9 @@ StatusInt IECInstance::SetPoint2DValue  (const wchar_t * propertyAccessString, D
     ECValue v(value);
     StatusInt status;
     if (nIndices == 1)
-        status = _SetValue (propertyAccessString, v, *indices);
+        status = SetValue (propertyAccessString, v, *indices);
     else
-        status = _SetValue (propertyAccessString, v);
+        status = SetValue (propertyAccessString, v);
 
     return status;    
     }
@@ -453,9 +453,9 @@ StatusInt IECInstance::SetPoint3DValue  (const wchar_t * propertyAccessString, D
     ECValue v(value);
     StatusInt status;
     if (nIndices == 1)
-        status = _SetValue (propertyAccessString, v, *indices);
+        status = SetValue (propertyAccessString, v, *indices);
     else
-        status = _SetValue (propertyAccessString, v);
+        status = SetValue (propertyAccessString, v);
 
     return status;    
     }
@@ -469,9 +469,9 @@ StatusInt IECInstance::SetDateTimeValue (const wchar_t * propertyAccessString, S
     ECValue v(value);
     StatusInt status;
     if (nIndices == 1)
-        status = _SetValue (propertyAccessString, v, *indices);
+        status = SetValue (propertyAccessString, v, *indices);
     else
-        status = _SetValue (propertyAccessString, v);
+        status = SetValue (propertyAccessString, v);
 
     return status;    
     }
@@ -487,9 +487,9 @@ StatusInt IECInstance::SetDateTimeTicks (const wchar_t * propertyAccessString, I
 
     StatusInt status;
     if (nIndices == 1)
-        status = _SetValue (propertyAccessString, v, *indices);
+        status = SetValue (propertyAccessString, v, *indices);
     else
-        status = _SetValue (propertyAccessString, v);
+        status = SetValue (propertyAccessString, v);
 
     return status;    
     }

@@ -87,14 +87,10 @@ protected:
     // IECInstance
     virtual std::wstring    _GetInstanceId() const override;
     virtual bool            _IsReadOnly() const override;        
-    virtual StatusInt       _GetValue (ECValueR v, const wchar_t * propertyAccessString) const override;
-    virtual StatusInt       _GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 index) const override;
-    virtual StatusInt       _GetValue (ECValueR v, UInt32 propertyIndex) const override;
-    virtual StatusInt       _GetValue (ECValueR v, UInt32 propertyIndex, UInt32 arrayIndex) const override;
-    virtual StatusInt       _SetValue (const wchar_t * propertyAccessString, ECValueCR v) override;      
-    virtual StatusInt       _SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 index) override;      
-    virtual StatusInt       _SetValue (UInt32 propertyIndex, ECValueCR v) override;      
-    virtual StatusInt       _SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) override;      
+    virtual StatusInt       _GetValue (ECValueR v, const wchar_t * propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const override;
+    virtual StatusInt       _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
+    virtual StatusInt       _SetValue (const wchar_t * propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
+    virtual StatusInt       _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
 
     virtual StatusInt       _InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size) override;
     virtual StatusInt       _AddArrayElements (const wchar_t * propertyAccessString, UInt32 size) override;
