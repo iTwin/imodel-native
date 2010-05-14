@@ -36,10 +36,10 @@ protected:
     ECOBJECTS_EXPORT virtual StatusInt    _GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 index) const = 0;
     ECOBJECTS_EXPORT virtual StatusInt    _SetValue (const wchar_t * propertyAccessString, ECValueCR v) = 0;    
     ECOBJECTS_EXPORT virtual StatusInt    _SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 index) = 0;
-    ECOBJECTS_EXPORT virtual StatusInt    _InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size) = 0;
-    ECOBJECTS_EXPORT virtual StatusInt    _AddArrayElements (const wchar_t * propertyAccessString, UInt32 size) = 0;
-    ECOBJECTS_EXPORT virtual StatusInt    _RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index) = 0;
-    ECOBJECTS_EXPORT virtual StatusInt    _ClearArray (const wchar_t * propertyAccessString) = 0;    
+    ECOBJECTS_EXPORT virtual ECObjectsStatus _InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size) = 0;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus _AddArrayElements (const wchar_t * propertyAccessString, UInt32 size) = 0;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus _RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index) = 0;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus _ClearArray (const wchar_t * propertyAccessString) = 0;    
     ECOBJECTS_EXPORT virtual ECEnablerCR  _GetEnabler() const = 0;
     ECOBJECTS_EXPORT virtual bool         _IsReadOnly() const = 0;
     //! This should dump the instance's property values using the logger
@@ -59,10 +59,10 @@ public:
     //! Contract:
     //! - For all of the methods, the propertyAccessString should be in the "array element" form, 
     //!   e.g. "Aliases[]" instead of "Aliases"         
-    ECOBJECTS_EXPORT StatusInt          InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size); //WIP_FUSION Return the new count?   
-    ECOBJECTS_EXPORT StatusInt          AddArrayElements (const wchar_t * propertyAccessString, UInt32 size); //WIP_FUSION Return the new count?
-    ECOBJECTS_EXPORT StatusInt          RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index); //WIP_FUSION return the removed one? YAGNI? Return the new count?
-    ECOBJECTS_EXPORT StatusInt          ClearArray (const wchar_t * propertyAccessString);    
+    ECOBJECTS_EXPORT ECObjectsStatus      InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size); //WIP_FUSION Return the new count?   
+    ECOBJECTS_EXPORT ECObjectsStatus      AddArrayElements (const wchar_t * propertyAccessString, UInt32 size); //WIP_FUSION Return the new count?
+    ECOBJECTS_EXPORT ECObjectsStatus      RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index); //WIP_FUSION return the removed one? YAGNI? Return the new count?
+    ECOBJECTS_EXPORT ECObjectsStatus      ClearArray (const wchar_t * propertyAccessString);    
     
     //WIP_FUSION ParseExpectedNIndices should move to AccessStringHelper struct... along with method to convert to/from .NET ECObjects style accessString
     ECOBJECTS_EXPORT static int         ParseExpectedNIndices (const wchar_t * propertyAccessString);

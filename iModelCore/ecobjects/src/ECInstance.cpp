@@ -530,7 +530,7 @@ StatusInt IECInstance::SetDateTimeTicks (const wchar_t * propertyAccessString, I
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           IECInstance::InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size)
+ECObjectsStatus           IECInstance::InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size)
     {
     return _InsertArrayElements (propertyAccessString, index, size);
     } 
@@ -538,7 +538,7 @@ StatusInt           IECInstance::InsertArrayElements (const wchar_t * propertyAc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           IECInstance::AddArrayElements (const wchar_t * propertyAccessString, UInt32 size)
+ECObjectsStatus           IECInstance::AddArrayElements (const wchar_t * propertyAccessString, UInt32 size)
     {
     return _AddArrayElements (propertyAccessString, size);
     }        
@@ -546,7 +546,7 @@ StatusInt           IECInstance::AddArrayElements (const wchar_t * propertyAcces
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           IECInstance::RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index)
+ECObjectsStatus           IECInstance::RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index)
     {
     return _RemoveArrayElement (propertyAccessString, index);
     } 
@@ -554,7 +554,7 @@ StatusInt           IECInstance::RemoveArrayElement (const wchar_t * propertyAcc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           IECInstance::ClearArray (const wchar_t * propertyAccessString)
+ECObjectsStatus           IECInstance::ClearArray (const wchar_t * propertyAccessString)
     {
     return _ClearArray (propertyAccessString);
     }           

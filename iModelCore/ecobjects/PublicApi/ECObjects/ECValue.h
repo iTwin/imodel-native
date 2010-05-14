@@ -159,45 +159,45 @@ public:
     ECOBJECTS_EXPORT bool           IsPrimitive () const;
         
     ECOBJECTS_EXPORT PrimitiveType  GetPrimitiveType() const;
-    ECOBJECTS_EXPORT StatusInt      SetPrimitiveType(PrimitiveType primitiveElementType);
+    ECOBJECTS_EXPORT BentleyStatus  SetPrimitiveType(PrimitiveType primitiveElementType);
 
-    ECOBJECTS_EXPORT StatusInt      SetStructArrayInfo (UInt32 count, bool isFixedSize);
-    ECOBJECTS_EXPORT StatusInt      SetPrimitiveArrayInfo (PrimitiveType primitiveElementtype, UInt32 count, bool isFixedSize);
+    ECOBJECTS_EXPORT ECObjectsStatus  SetStructArrayInfo (UInt32 count, bool isFixedSize);
+    ECOBJECTS_EXPORT ECObjectsStatus  SetPrimitiveArrayInfo (PrimitiveType primitiveElementtype, UInt32 count, bool isFixedSize);
     ECOBJECTS_EXPORT ArrayInfo      GetArrayInfo() const;
     
     ECOBJECTS_EXPORT Int32          GetInteger () const;
-    ECOBJECTS_EXPORT StatusInt      SetInteger (Int32 integer);
+    ECOBJECTS_EXPORT BentleyStatus  SetInteger (Int32 integer);
     
     ECOBJECTS_EXPORT Int64          GetLong () const;
-    ECOBJECTS_EXPORT StatusInt      SetLong (Int64 long64);
+    ECOBJECTS_EXPORT BentleyStatus  SetLong (Int64 long64);
  
     ECOBJECTS_EXPORT bool           GetBoolean () const;
-    ECOBJECTS_EXPORT StatusInt      SetBoolean (bool value);
+    ECOBJECTS_EXPORT BentleyStatus  SetBoolean (bool value);
 
     //! @returns    The double held by the ECValue, or std::numeric_limits<double>::quiet_NaN() if it is not a double or IsNull
     ECOBJECTS_EXPORT double         GetDouble () const;
-    ECOBJECTS_EXPORT StatusInt      SetDouble (double value);  
+    ECOBJECTS_EXPORT BentleyStatus  SetDouble (double value);  
         
     ECOBJECTS_EXPORT const wchar_t *GetString () const;
-    ECOBJECTS_EXPORT StatusInt      SetString (const wchar_t * string, bool holdADuplicate = true);
+    ECOBJECTS_EXPORT BentleyStatus  SetString (const wchar_t * string, bool holdADuplicate = true);
 
     ECOBJECTS_EXPORT const byte *   GetBinary (size_t& size) const;
-    ECOBJECTS_EXPORT StatusInt      SetBinary (const byte * data, size_t size, bool holdADuplicate = false);
+    ECOBJECTS_EXPORT BentleyStatus  SetBinary (const byte * data, size_t size, bool holdADuplicate = false);
     
     ECOBJECTS_EXPORT IECInstancePtr  GetStruct() const;
-    ECOBJECTS_EXPORT StatusInt       SetStruct (IECInstanceP structInstance);
+    ECOBJECTS_EXPORT BentleyStatus   SetStruct (IECInstanceP structInstance);
         
     ECOBJECTS_EXPORT SystemTime     GetDateTime() const;
-    ECOBJECTS_EXPORT StatusInt      SetDateTime (SystemTime& systemTime); 
+    ECOBJECTS_EXPORT BentleyStatus  SetDateTime (SystemTime& systemTime); 
 
     ECOBJECTS_EXPORT Int64          GetDateTimeTicks() const;
-    ECOBJECTS_EXPORT StatusInt      SetDateTimeTicks (Int64 value);
+    ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 value);
 
     ECOBJECTS_EXPORT DPoint2d       GetPoint2D() const;
-    ECOBJECTS_EXPORT StatusInt      SetPoint2D (DPoint2dCR value);
+    ECOBJECTS_EXPORT BentleyStatus  SetPoint2D (DPoint2dCR value);
 
     ECOBJECTS_EXPORT DPoint3d       GetPoint3D() const;
-    ECOBJECTS_EXPORT StatusInt      SetPoint3D (DPoint3dCR value);
+    ECOBJECTS_EXPORT BentleyStatus  SetPoint3D (DPoint3dCR value);
 
 
     //! This is intended for debugging purposes, not for presentation purposes.

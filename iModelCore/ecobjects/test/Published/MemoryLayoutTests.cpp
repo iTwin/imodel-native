@@ -135,8 +135,9 @@ void VerifyOutOfBoundsError (IECInstanceR instance, ECValueR v, wchar_t const * 
     {
     v.Clear();    
     // WIP_FUSION .. ERROR_InvalidIndex
-    EXPECT_TRUE (ERROR == instance.GetValue (v, accessString, index));
-    EXPECT_TRUE (ERROR == instance.SetValue (accessString, v, index));
+    // CGM - instance.GetValue() is still returning a StatusInt, but the underlying method is now returning an ECObjectsStatus
+    EXPECT_TRUE (ECOBJECTS_STATUS_IndexOutOfRange == instance.GetValue (v, accessString, index));
+    EXPECT_TRUE (ECOBJECTS_STATUS_IndexOutOfRange == instance.SetValue (accessString, v, index));
     }    
     
 /*---------------------------------------------------------------------------------**//**
@@ -348,7 +349,7 @@ ECSchemaPtr       CreateProfilingSchema (int nStrings)
                     L"</ECSchema>";
 
     ECSchemaPtr schema = NULL;
-    EXPECT_EQ (SUCCESS, ECSchema::ReadXmlFromString (schema, schemaXml.c_str(), NULL, NULL));
+    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, ECSchema::ReadXmlFromString (schema, schemaXml.c_str(), NULL, NULL));
 
     return schema;
     }
@@ -359,14 +360,14 @@ ECSchemaPtr       CreateProfilingSchema (int nStrings)
 void ExerciseVariableCountIntArray (IECInstanceR instance, ECValue& v, wchar_t* arrayAccessor, int baseValue)
     {
     // test insertion in an empty array
-    ASSERT_TRUE (SUCCESS == instance.InsertArrayElements (arrayAccessor, 0, 5));
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success == instance.InsertArrayElements (arrayAccessor, 0, 5));
     VerifyArrayInfo             (instance, v, arrayAccessor, 5, false);
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 5, true);    
     SetAndVerifyIntegerArray    (instance, v, arrayAccessor, baseValue, 5);   
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 5, false);
     VerifyOutOfBoundsError      (instance, v, arrayAccessor, 5);
     // test insertion in the middle of an array
-    ASSERT_TRUE (SUCCESS == instance.InsertArrayElements (arrayAccessor, 3, 3));    
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success == instance.InsertArrayElements (arrayAccessor, 3, 3));    
     VerifyArrayInfo             (instance, v, arrayAccessor, 8, false);
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 3, false);
     VerifyIntegerArray          (instance, v, arrayAccessor, baseValue, 0, 3);
@@ -375,14 +376,14 @@ void ExerciseVariableCountIntArray (IECInstanceR instance, ECValue& v, wchar_t* 
     VerifyIntegerArray          (instance, v, arrayAccessor, baseValue + 3, 6, 2);
     SetAndVerifyIntegerArray    (instance, v, arrayAccessor, baseValue, 8);   
     // test insertion at the beginning of an array
-    ASSERT_TRUE (SUCCESS == instance.InsertArrayElements (arrayAccessor, 0, 4));    
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success == instance.InsertArrayElements (arrayAccessor, 0, 4));    
     VerifyArrayInfo             (instance, v, arrayAccessor, 12, false);
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 4, true);
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 4, 8, false);
     VerifyIntegerArray          (instance, v, arrayAccessor, baseValue, 4, 8);    
     SetAndVerifyIntegerArray    (instance, v, arrayAccessor, baseValue, 12);     
     // test insertion at the end of an array
-    ASSERT_TRUE (SUCCESS == instance.AddArrayElements (arrayAccessor, 2));    
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success == instance.AddArrayElements (arrayAccessor, 2));    
     VerifyArrayInfo             (instance, v, arrayAccessor, 14, false);    
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 12, 2, true);
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 12, false);
@@ -396,14 +397,14 @@ void ExerciseVariableCountIntArray (IECInstanceR instance, ECValue& v, wchar_t* 
 void ExerciseVariableCountStringArray (IECInstanceR instance, ECValue& v, wchar_t* arrayAccessor, wchar_t* stringSeed)
     {
     // test insertion in an empty array
-    ASSERT_TRUE (SUCCESS == instance.InsertArrayElements (arrayAccessor, 0, 5));
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success == instance.InsertArrayElements (arrayAccessor, 0, 5));
     VerifyArrayInfo             (instance, v, arrayAccessor, 5, false);
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 5, true);    
     SetAndVerifyStringArray     (instance, v, arrayAccessor, stringSeed, 5);   
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 5, false);
     VerifyOutOfBoundsError      (instance, v, arrayAccessor, 5);
     // test insertion in the middle of an array
-    ASSERT_TRUE (SUCCESS == instance.InsertArrayElements (arrayAccessor, 3, 3));    
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success == instance.InsertArrayElements (arrayAccessor, 3, 3));    
     VerifyArrayInfo             (instance, v, arrayAccessor, 8, false);
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 3, false);
     VerifyStringArray           (instance, v, arrayAccessor, stringSeed, 0, 3);
@@ -414,14 +415,14 @@ void ExerciseVariableCountStringArray (IECInstanceR instance, ECValue& v, wchar_
     VerifyStringArray           (instance, v, arrayAccessor, stringSeedXXX.c_str(), 6, 2);
     SetAndVerifyStringArray     (instance, v, arrayAccessor, stringSeed, 8);   
     // test insertion at the beginning of an array
-    ASSERT_TRUE (SUCCESS == instance.InsertArrayElements (arrayAccessor, 0, 4));    
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success == instance.InsertArrayElements (arrayAccessor, 0, 4));    
     VerifyArrayInfo             (instance, v, arrayAccessor, 12, false);
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 4, true);
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 4, 8, false);
     VerifyStringArray           (instance, v, arrayAccessor, stringSeed, 4, 8);    
     SetAndVerifyStringArray     (instance, v, arrayAccessor, stringSeed, 12);     
     // test insertion at the end of an array
-    ASSERT_TRUE (SUCCESS == instance.AddArrayElements (arrayAccessor, 2));    
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success == instance.AddArrayElements (arrayAccessor, 2));    
     VerifyArrayInfo             (instance, v, arrayAccessor, 14, false);    
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 12, 2, true);
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 12, false);
@@ -468,7 +469,7 @@ void ExerciseVariableCountManufacturerArray (IECInstanceR instance, StandaloneEC
     VerifyArrayInfo (instance, v, arrayAccessor, 0, false);
     
     // create an array of two values
-    ASSERT_TRUE (SUCCESS == instance.AddArrayElements (arrayAccessor, 2));
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success == instance.AddArrayElements (arrayAccessor, 2));
     VerifyArrayInfo (instance, v, arrayAccessor, 2, false);
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 2, true);
     IECInstancePtr manufInst = manufacturerEnabler.CreateInstance().get();    
@@ -484,7 +485,7 @@ void ExerciseVariableCountManufacturerArray (IECInstanceR instance, StandaloneEC
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 2, false);    
    
     // insert two elements in the middle of the array   
-    ASSERT_TRUE (SUCCESS == instance.InsertArrayElements (arrayAccessor, 1, 2));
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success == instance.InsertArrayElements (arrayAccessor, 1, 2));
     VerifyArrayInfo (instance, v, arrayAccessor, 4, false);
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 1, false);
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 1, 2, true);
@@ -765,18 +766,18 @@ TEST(MemoryLayoutTests, ExpectErrorsWhenViolatingArrayConstraints)
     {
     DISABLE_ASSERTS
     // verify we can not change the size of fixed arrays        
-    ASSERT_TRUE (SUCCESS != instance->InsertArrayElements (L"FixedArrayFixedElement[]", 0, 1));
-    ASSERT_TRUE (SUCCESS != instance->InsertArrayElements (L"FixedArrayFixedElement[]", 10, 1));
-    ASSERT_TRUE (SUCCESS != instance->AddArrayElements    (L"FixedArrayFixedElement[]", 1));
-    ASSERT_TRUE (SUCCESS != instance->InsertArrayElements (L"FixedArrayVariableElement[]", 0, 1));
-    ASSERT_TRUE (SUCCESS != instance->InsertArrayElements (L"FixedArrayVariableElement[]", 12, 1));
-    ASSERT_TRUE (SUCCESS != instance->AddArrayElements    (L"FixedArrayVariableElement[]", 1));
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"FixedArrayFixedElement[]", 0, 1));
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"FixedArrayFixedElement[]", 10, 1));
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->AddArrayElements    (L"FixedArrayFixedElement[]", 1));
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"FixedArrayVariableElement[]", 0, 1));
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"FixedArrayVariableElement[]", 12, 1));
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->AddArrayElements    (L"FixedArrayVariableElement[]", 1));
     
     // verify constraints of array insertion are enforced
-    ASSERT_TRUE (SUCCESS != instance->InsertArrayElements (L"NonExistArray", 0, 1));
-    ASSERT_TRUE (SUCCESS != instance->InsertArrayElements (L"BeginningArray", 0, 1)); // missing brackets
-    ASSERT_TRUE (SUCCESS != instance->InsertArrayElements (L"BeginningArray[]", 2, 1)); // insert index is invalid    
-    ASSERT_TRUE (SUCCESS != instance->InsertArrayElements (L"BeginningArray[]", 0, 0)); // insert count is invalid    
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"NonExistArray", 0, 1));
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"BeginningArray", 0, 1)); // missing brackets
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"BeginningArray[]", 2, 1)); // insert index is invalid    
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"BeginningArray[]", 0, 0)); // insert count is invalid    
     }
     
     ECValue v;

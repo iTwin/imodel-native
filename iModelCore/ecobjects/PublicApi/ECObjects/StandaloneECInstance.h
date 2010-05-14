@@ -43,15 +43,15 @@ protected:
     ECOBJECTS_EXPORT ~MemoryECInstanceBase ();
 
     ECOBJECTS_EXPORT virtual bool             _IsMemoryInitialized () const;
-    ECOBJECTS_EXPORT virtual StatusInt        _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength);    
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength);    
     ECOBJECTS_EXPORT virtual void             _ShrinkAllocation (UInt32 newAllocation);
     ECOBJECTS_EXPORT virtual void             _FreeAllocation ();
-    ECOBJECTS_EXPORT virtual StatusInt        _GrowAllocation (UInt32 bytesNeeded);        
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _GrowAllocation (UInt32 bytesNeeded);        
 
     ECOBJECTS_EXPORT virtual byte const *     _GetData () const override;
     ECOBJECTS_EXPORT virtual UInt32           _GetBytesAllocated () const override;
-    ECOBJECTS_EXPORT virtual StatusInt        _SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index) override;    
-    ECOBJECTS_EXPORT virtual StatusInt        _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const override;  
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index) override;    
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const override;  
 
     ECOBJECTS_EXPORT virtual ClassLayoutCR    _GetClassLayout () const = 0;
     
@@ -91,10 +91,10 @@ protected:
     virtual StatusInt       _GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 index) const override;
     virtual StatusInt       _SetValue (const wchar_t * propertyAccessString, ECValueCR v) override;      
     virtual StatusInt       _SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 index) override;      
-    virtual StatusInt       _InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size) override;
-    virtual StatusInt       _AddArrayElements (const wchar_t * propertyAccessString, UInt32 size) override;
-    virtual StatusInt       _RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index) override;
-    virtual StatusInt       _ClearArray (const wchar_t * propertyAccessString) override;    
+    virtual ECObjectsStatus   _InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size) override;
+    virtual ECObjectsStatus   _AddArrayElements (const wchar_t * propertyAccessString, UInt32 size) override;
+    virtual ECObjectsStatus   _RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index) override;
+    virtual ECObjectsStatus   _ClearArray (const wchar_t * propertyAccessString) override;    
     virtual void            _Dump () const override;
     virtual ClassLayoutCR   _GetClassLayout () const;
     virtual ECEnablerCR     _GetEnabler() const override;

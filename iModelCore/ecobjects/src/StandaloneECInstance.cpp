@@ -65,14 +65,14 @@ bool                MemoryECInstanceBase::_IsMemoryInitialized () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           MemoryECInstanceBase::_ModifyData (UInt32 offset, void const * newData, UInt32 dataLength)
+ECObjectsStatus           MemoryECInstanceBase::_ModifyData (UInt32 offset, void const * newData, UInt32 dataLength)
     {
-    PRECONDITION (NULL != m_data, ERROR);
-    PRECONDITION (offset + dataLength <= m_bytesAllocated, ERROR); //WIP_FUSION ERROR_MemoryBoundsOverrun
+    PRECONDITION (NULL != m_data, ECOBJECTS_STATUS_PreconditionViolated);
+    PRECONDITION (offset + dataLength <= m_bytesAllocated, ECOBJECTS_STATUS_MemoryBoundsOverrun);
     byte * dest = m_data + offset;
     memcpy (dest, newData, dataLength);
     
-    return SUCCESS;
+    return ECOBJECTS_STATUS_Success;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -95,7 +95,7 @@ void                MemoryECInstanceBase::_FreeAllocation ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           MemoryECInstanceBase::_GrowAllocation (UInt32 bytesNeeded)
+ECObjectsStatus           MemoryECInstanceBase::_GrowAllocation (UInt32 bytesNeeded)
     {
     DEBUG_EXPECT (m_bytesAllocated > 0);
     DEBUG_EXPECT (NULL != m_data);
@@ -105,12 +105,12 @@ StatusInt           MemoryECInstanceBase::_GrowAllocation (UInt32 bytesNeeded)
     byte * reallocedData = (byte*)realloc(m_data, newSize);
     DEBUG_EXPECT (NULL != reallocedData);
     if (NULL == reallocedData)
-        return ERROR;
+        return ECOBJECTS_STATUS_UnableToAllocateMemory;
         
     m_data = reallocedData;    
     m_bytesAllocated = newSize;
     
-    return SUCCESS;
+    return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -132,7 +132,7 @@ UInt32              MemoryECInstanceBase::_GetBytesAllocated () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index)
+ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index)
     {
     IECInstancePtr p;
     ECValue binaryValue (PRIMITIVETYPE_Binary);
@@ -148,29 +148,29 @@ StatusInt           MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueC
         binaryValue.SetBinary ((const byte *)&(m_structValueId), sizeof (StructValueIdentifier));
         }
         
-    StatusInt status = SetPrimitiveValueToMemory (binaryValue, classLayout, propertyLayout, true, index);      
-    if (status != SUCCESS)
+    ECObjectsStatus status = SetPrimitiveValueToMemory (binaryValue, classLayout, propertyLayout, true, index);      
+    if (status != ECOBJECTS_STATUS_Success)
         return status;
                     
     m_structValueMap[m_structValueId] = p;
     
-    return SUCCESS; 
+    return ECOBJECTS_STATUS_Success; 
     }    
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StatusInt           MemoryECInstanceBase::_GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const
+ECObjectsStatus           MemoryECInstanceBase::_GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const
     {
     ECValue binaryValue;
-    StatusInt status = GetPrimitiveValueFromMemory (binaryValue, propertyLayout, true, index);      
-    if (status != SUCCESS)
+    ECObjectsStatus status = GetPrimitiveValueFromMemory (binaryValue, propertyLayout, true, index);      
+    if (status != ECOBJECTS_STATUS_Success)
         return status;
         
     if (binaryValue.IsNull())
         {
         v.SetStruct(NULL);
-        return SUCCESS;
+        return ECOBJECTS_STATUS_Success;
         }        
                     
     size_t size;
@@ -185,7 +185,7 @@ StatusInt           MemoryECInstanceBase::_GetStructArrayValueFromMemory (ECValu
        
     v.SetStruct (instancePtr.get());
     
-    return SUCCESS;
+    return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -342,10 +342,10 @@ StatusInt           StandaloneECInstance::_SetValue (const wchar_t * propertyAcc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           StandaloneECInstance::_InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size)
+ECObjectsStatus           StandaloneECInstance::_InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size)
     {
     ClassLayoutCR classLayout = GetClassLayout();
-    StatusInt status = InsertNullArrayElementsAt (classLayout, propertyAccessString, index, size);
+    ECObjectsStatus status = InsertNullArrayElementsAt (classLayout, propertyAccessString, index, size);
     
     return status;
     } 
@@ -353,10 +353,10 @@ StatusInt           StandaloneECInstance::_InsertArrayElements (const wchar_t * 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           StandaloneECInstance::_AddArrayElements (const wchar_t * propertyAccessString, UInt32 size)
+ECObjectsStatus           StandaloneECInstance::_AddArrayElements (const wchar_t * propertyAccessString, UInt32 size)
     {
     ClassLayoutCR classLayout = GetClassLayout();    
-    StatusInt status = AddNullArrayElementsAt (classLayout, propertyAccessString, size);
+    ECObjectsStatus status = AddNullArrayElementsAt (classLayout, propertyAccessString, size);
     
     return status;
     }        
@@ -364,7 +364,7 @@ StatusInt           StandaloneECInstance::_AddArrayElements (const wchar_t * pro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           StandaloneECInstance::_RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index)
+ECObjectsStatus           StandaloneECInstance::_RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index)
     {
     return ECOBJECTS_STATUS_OperationNotSupported;
     } 
@@ -372,7 +372,7 @@ StatusInt           StandaloneECInstance::_RemoveArrayElement (const wchar_t * p
  /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           StandaloneECInstance::_ClearArray (const wchar_t * propertyAccessString)
+ECObjectsStatus           StandaloneECInstance::_ClearArray (const wchar_t * propertyAccessString)
     {
     return ECOBJECTS_STATUS_OperationNotSupported;
     }                      
