@@ -40,125 +40,103 @@ static byte testBinaryData[] = { 0, 255,  1, 254,  2, 253,  3, 252,  4, 251,  5,
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty)
     {
-    int         baseClassMember;
-    EXPECT_EQ (SUCCESS, testInstance->GetInteger (baseClassMember, L"BaseClassMember"));
-    EXPECT_EQ (987, baseClassMember);
+    ECValue ecValue;
 
-    int         integerMember;
-    EXPECT_EQ (SUCCESS, testInstance->GetInteger (integerMember, L"IntegerMember"));
-    EXPECT_EQ (12, integerMember);
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"BaseClassMember"));
+    EXPECT_EQ (987, ecValue.GetInteger());
 
-    int         customFormatInt;
-    EXPECT_EQ (SUCCESS, testInstance->GetInteger (customFormatInt, L"CustomFormatInt"));
-    EXPECT_EQ (13, customFormatInt);
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"IntegerMember"));
+    EXPECT_EQ (12, ecValue.GetInteger());
 
-    bool        booleanMember;
-    EXPECT_EQ (SUCCESS, testInstance->GetBoolean (booleanMember, L"BooleanMember"));
-    EXPECT_EQ (false, booleanMember);
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"CustomFormatInt"));
+    EXPECT_EQ (13, ecValue.GetInteger());
 
-    double      doubleMember;
-    EXPECT_EQ (SUCCESS, testInstance->GetDouble (doubleMember, L"DoubleMember"));
-    EXPECT_EQ (456.789, doubleMember);
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"BooleanMember"));
+    EXPECT_EQ (false, ecValue.GetBoolean());
 
-    const wchar_t*  stringMember;
-    EXPECT_EQ (SUCCESS, testInstance->GetString (stringMember, L"StringMember"));
-    EXPECT_STREQ (stringMember, L"Test string");
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"DoubleMember"));
+    EXPECT_EQ (456.789, ecValue.GetDouble());
 
-    const wchar_t*  fileNameMember;
-    EXPECT_EQ (SUCCESS, testInstance->GetString (fileNameMember, L"FileNameMember"));
-    EXPECT_STREQ (fileNameMember, L"c:\\usr\\barry\\test.txt");
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"StringMember"));
+    EXPECT_STREQ (ecValue.GetString(), L"Test string");
 
-    int         negativeMember;
-    EXPECT_EQ (SUCCESS, testInstance->GetInteger (negativeMember, L"NegativeMember"));
-    EXPECT_EQ (-42, negativeMember);
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FileNameMember"));
+    EXPECT_STREQ (ecValue.GetString(), L"c:\\usr\\barry\\test.txt");
 
-    Int64       dateTimeMember;
-    EXPECT_EQ (SUCCESS, testInstance->GetDateTimeTicks (dateTimeMember, L"DateTimeMember"));
-    EXPECT_EQ (633374681466664305, dateTimeMember);
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"NegativeMember"));
+    EXPECT_EQ (-42, ecValue.GetInteger());
 
-    DPoint3d    startPoint;
-    EXPECT_EQ (SUCCESS, testInstance->GetPoint3D (startPoint, L"StartPoint"));
-    EXPECT_EQ (1.1, startPoint.x);
-    EXPECT_EQ (2.2, startPoint.y);
-    EXPECT_EQ (3.3, startPoint.z);
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"DateTimeMember"));
+    EXPECT_EQ (633374681466664305, ecValue.GetDateTimeTicks());
 
-    DPoint3d    endPoint;
-    EXPECT_EQ (SUCCESS, testInstance->GetPoint3D (endPoint, L"EndPoint"));
-    EXPECT_EQ (4.4, endPoint.x);
-    EXPECT_EQ (7.7, endPoint.y);
-    EXPECT_EQ (6.6, endPoint.z);
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"StartPoint"));
+    EXPECT_EQ (1.1, ecValue.GetPoint3D().x);
+    EXPECT_EQ (2.2, ecValue.GetPoint3D().y);
+    EXPECT_EQ (3.3, ecValue.GetPoint3D().z);
 
-    bool        structBoolMember;
-    EXPECT_EQ (SUCCESS, testInstance->GetBoolean (structBoolMember, L"SecondEmbeddedStruct.Struct1BoolMember"));
-    EXPECT_EQ (false, structBoolMember);
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"EndPoint"));
+    EXPECT_EQ (4.4, ecValue.GetPoint3D().x);
+    EXPECT_EQ (7.7, ecValue.GetPoint3D().y);
+    EXPECT_EQ (6.6, ecValue.GetPoint3D().z);
 
-    int         structIntMember;
-    EXPECT_EQ (SUCCESS, testInstance->GetInteger (structIntMember, L"SecondEmbeddedStruct.Struct1IntMember"));
-    EXPECT_EQ (4, structIntMember);
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"SecondEmbeddedStruct.Struct1BoolMember"));
+    EXPECT_EQ (false, ecValue.GetBoolean());
 
-    double      structDoubleMember;
-    EXPECT_EQ (SUCCESS, testInstance->GetDouble (structDoubleMember, L"FormattedStruct.Struct3DoubleMember"));
-    EXPECT_EQ (false, structBoolMember);
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"SecondEmbeddedStruct.Struct1IntMember"));
+    EXPECT_EQ (4, ecValue.GetInteger());
 
-    int         struct3IntMember;
-    EXPECT_EQ (SUCCESS, testInstance->GetInteger (struct3IntMember, L"FormattedStruct.Struct3IntMember"));
-    EXPECT_EQ (531992, struct3IntMember);
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStruct.Struct3DoubleMember"));
+    EXPECT_EQ (17.443, ecValue.GetDouble());
+
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStruct.Struct3IntMember"));
+    EXPECT_EQ (531992, ecValue.GetInteger());
     
-    bool        struct3BoolMember;
-    EXPECT_EQ (SUCCESS, testInstance->GetBoolean (struct3BoolMember, L"FormattedStruct.Struct3BoolMember"));
-    EXPECT_EQ (true, struct3BoolMember);
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStruct.Struct3BoolMember"));
+    EXPECT_EQ (true, ecValue.GetBoolean());
 
     int         expectedInts[] = {0, 101, 202, 303, 404, 505, 606, 707, 808, 909};
     for (UInt32 index=0; index < _countof (expectedInts); index++)
         {
-        int     arrayInt;
-        EXPECT_EQ (SUCCESS, testInstance->GetInteger (arrayInt, L"FormattedArray[]", 1, &index));
-        EXPECT_EQ (expectedInts[index], arrayInt);
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedArray[]", index));
+        EXPECT_EQ (expectedInts[index], ecValue.GetInteger());
         }
 
     int         moreInts[] = {41556, 32757, 56789, 32757, 21482 };
     for (UInt32 index=0; index < _countof (moreInts); index++)
         {
-        int     arrayInt;
-        EXPECT_EQ (SUCCESS, testInstance->GetInteger (arrayInt, L"IntArray[]", 1, &index));
-        EXPECT_EQ (moreInts[index], arrayInt);
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"IntArray[]", index));
+        EXPECT_EQ (moreInts[index], ecValue.GetInteger());
         }
 
-    int     oneMemberIntArrayValue;
-    UInt32  zero = 0;
-    EXPECT_EQ (SUCCESS, testInstance->GetInteger (oneMemberIntArrayValue, L"OneMemberIntArray[]", 1, &zero));
-    EXPECT_EQ (3, oneMemberIntArrayValue);
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"OneMemberIntArray[]", 0));
+    EXPECT_EQ (3, ecValue.GetInteger());
 
     DPoint3d    expectedPoints[] = { {4.0, 0.0, 0.0}, {1.0, 1.0, 1.0}, {2.0, 2.0, 2.0}, {3.0, 3.0, 3.0}, {4.0, 4.0, 4.0}, {5.0, 5.0, 5.0} };
     for (UInt32 index=0; index < _countof (expectedPoints); index++)
         {
-        DPoint3d    arrayPoint;
-        EXPECT_EQ (SUCCESS, testInstance->GetPoint3D (arrayPoint, L"PointArray[]", 1, &index));
-        EXPECT_EQ (expectedPoints[index].x, arrayPoint.x);
-        EXPECT_EQ (expectedPoints[index].y, arrayPoint.y);
-        EXPECT_EQ (expectedPoints[index].z, arrayPoint.z);
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"PointArray[]", index));
+        EXPECT_EQ (expectedPoints[index].x, ecValue.GetPoint3D().x);
+        EXPECT_EQ (expectedPoints[index].y, ecValue.GetPoint3D().y);
+        EXPECT_EQ (expectedPoints[index].z, ecValue.GetPoint3D().z);
         }
 
     for (UInt32 index=0; index < 300; index++)
         {
-        Int64       arrayDateTime;
-        EXPECT_EQ (SUCCESS, testInstance->GetDateTimeTicks (arrayDateTime, L"DateArray[]", 1, &index));
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"DateArray[]", index));
         }
 
     for (UInt32 index=0; index < 300; index++)
         {
-        const wchar_t*      arrayString;
-        EXPECT_EQ (SUCCESS, testInstance->GetString (arrayString, L"StringArray[]", 1, &index));
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"StringArray[]", index));
         wchar_t     expectedString[128];
         swprintf (expectedString, L"String %d", index%30);
-        EXPECT_STREQ (expectedString, arrayString);
+        EXPECT_STREQ (expectedString, ecValue.GetString());
         }
 
     for (UInt32 index=0; index < 100; index++)
         {
-        int     smallIntValue;
-        EXPECT_EQ (SUCCESS, testInstance->GetInteger (smallIntValue, L"SmallIntArray[]", 1, &index));
-        EXPECT_EQ (index, smallIntValue);
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"SmallIntArray[]", index));
+        EXPECT_EQ (index, ecValue.GetInteger());
         }
 
     // test the structArray of Struct2's that contains a nested array of Struct1's. Here's the data we expect:
@@ -203,7 +181,6 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
         IECInstancePtr  structArrayInstance = structArrayMember.GetStruct();
         EXPECT_EQ (true, structArrayInstance.IsValid());
         
-        const wchar_t*  stringValue;
         if (struct2ExpectedValues[index].struct2StringMemberNull)
             {
             // This throws an assert rather than returning ERROR.
@@ -211,11 +188,10 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
             }
         else
             {
-            EXPECT_EQ (SUCCESS, structArrayInstance->GetString (stringValue, L"Struct2StringMember"));
-            EXPECT_STREQ (struct2ExpectedValues[index].struct2StringMember, stringValue);
+            EXPECT_EQ (SUCCESS, structArrayInstance->GetValue (ecValue, L"Struct2StringMember"));
+            EXPECT_STREQ (struct2ExpectedValues[index].struct2StringMember, ecValue.GetString());
             }
 
-        double          doubleValue;
         if (struct2ExpectedValues[index].struct2DoubleMemberNull)
             {
             // This throws an assert rather than returning ERROR.
@@ -223,8 +199,8 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
             }
         else
             {
-            EXPECT_EQ (SUCCESS, structArrayInstance->GetDouble (doubleValue, L"Struct2DoubleMember"));
-            EXPECT_EQ (struct2ExpectedValues[index].struct2DoubleMember, doubleValue);
+            EXPECT_EQ (SUCCESS, structArrayInstance->GetValue (ecValue, L"Struct2DoubleMember"));
+            EXPECT_EQ (struct2ExpectedValues[index].struct2DoubleMember, ecValue.GetDouble());
             }
 
         // now try to get the array of structs, if expected.
@@ -238,13 +214,11 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
             IECInstancePtr  nestedInstance = nestedArrayMember.GetStruct();
             EXPECT_EQ (true, nestedInstance.IsValid());
             
-            bool        nestedBoolMember;
-            EXPECT_EQ (SUCCESS, nestedInstance->GetBoolean (nestedBoolMember, L"Struct1BoolMember"));
-            EXPECT_EQ (struct2ExpectedValues[index].nestedArray[nestedIndex].struct1BoolMember, nestedBoolMember);
+            EXPECT_EQ (SUCCESS, nestedInstance->GetValue (ecValue, L"Struct1BoolMember"));
+            EXPECT_EQ (struct2ExpectedValues[index].nestedArray[nestedIndex].struct1BoolMember, ecValue.GetBoolean());
 
-            int         nestedIntMember;
-            EXPECT_EQ (SUCCESS, nestedInstance->GetInteger (nestedIntMember, L"Struct1IntMember"));
-            EXPECT_EQ (struct2ExpectedValues[index].nestedArray[nestedIndex].struct1IntMember, nestedIntMember);
+            EXPECT_EQ (SUCCESS, nestedInstance->GetValue (ecValue, L"Struct1IntMember"));
+            EXPECT_EQ (struct2ExpectedValues[index].nestedArray[nestedIndex].struct1IntMember, ecValue.GetInteger());
             }
         }
 
@@ -294,52 +268,48 @@ TEST(InstanceDeserializationTest, ExpectSuccessWhenDeserializingSimpleInstance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    VerifyPolymorphismInstance (IECInstanceCP testInstance)
     {
-    int         inRootClass;
-    EXPECT_EQ (SUCCESS, testInstance->GetInteger (inRootClass, L"InRootClass"));
-    EXPECT_EQ (-1, inRootClass);
+    ECValue     ecValue;
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"InRootClass"));
+    EXPECT_EQ (-1, ecValue.GetInteger());
 
     // get and check the first member.
-    ECValue         polymorphArrayMember;
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (polymorphArrayMember, L"PolymorphArray[]", 0));
-    IECInstancePtr  polymorphArrayInstance = polymorphArrayMember.GetStruct();
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"PolymorphArray[]", 0));
+    IECInstancePtr  polymorphArrayInstance = ecValue.GetStruct();
     EXPECT_EQ (true, polymorphArrayInstance.IsValid());
     ECClassCR       arrayMember0Class = polymorphArrayInstance->GetClass();
     EXPECT_STREQ (L"BaseClass", arrayMember0Class.Name.c_str());
 
-    int         inBaseClass;
-    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetInteger (inBaseClass, L"InBaseClass"));
-    EXPECT_EQ (0, inBaseClass);
+    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetValue (ecValue, L"InBaseClass"));
+    EXPECT_EQ (0, ecValue.GetInteger());
 
     // get and check the second member.
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (polymorphArrayMember, L"PolymorphArray[]", 1));
-    polymorphArrayInstance = polymorphArrayMember.GetStruct();
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"PolymorphArray[]", 1));
+    polymorphArrayInstance = ecValue.GetStruct();
     EXPECT_EQ (true, polymorphArrayInstance.IsValid());
     ECClassCR arrayMember1Class = polymorphArrayInstance->GetClass();
     EXPECT_STREQ (L"SubClass1", arrayMember1Class.Name.c_str());
 
-    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetInteger (inBaseClass, L"InBaseClass"));
-    EXPECT_EQ (1, inBaseClass);
+    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetValue (ecValue, L"InBaseClass"));
+    EXPECT_EQ (1, ecValue.GetInteger());
 
-    int         inSubClass1;
-    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetInteger (inSubClass1, L"InSubClass1"));
-    EXPECT_EQ (2, inSubClass1);
+    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetValue (ecValue, L"InSubClass1"));
+    EXPECT_EQ (2, ecValue.GetInteger());
 
     // get and check the third member.
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (polymorphArrayMember, L"PolymorphArray[]", 2));
-    polymorphArrayInstance = polymorphArrayMember.GetStruct();
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"PolymorphArray[]", 2));
+    polymorphArrayInstance = ecValue.GetStruct();
     EXPECT_EQ (true, polymorphArrayInstance.IsValid());
     ECClassCR arrayMember2Class = polymorphArrayInstance->GetClass();
     EXPECT_STREQ (L"SubClass2", arrayMember2Class.Name.c_str());
 
-    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetInteger (inBaseClass, L"InBaseClass"));
-    EXPECT_EQ (3, inBaseClass);
+    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetValue (ecValue, L"InBaseClass"));
+    EXPECT_EQ (3, ecValue.GetInteger());
 
-    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetInteger (inSubClass1, L"InSubClass1"));
-    EXPECT_EQ (4, inSubClass1);
+    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetValue (ecValue, L"InSubClass1"));
+    EXPECT_EQ (4, ecValue.GetInteger());
 
-    int         inSubClass2;
-    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetInteger (inSubClass2, L"InSubClass2"));
-    EXPECT_EQ (5, inSubClass2);
+    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetValue (ecValue, L"InSubClass2"));
+    EXPECT_EQ (5, ecValue.GetInteger());
     }
     
 /*---------------------------------------------------------------------------------**//**

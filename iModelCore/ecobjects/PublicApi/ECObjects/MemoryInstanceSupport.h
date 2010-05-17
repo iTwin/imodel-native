@@ -160,7 +160,7 @@ public:
     ECOBJECTS_EXPORT UInt32         GetPropertyCount () const;
     ECOBJECTS_EXPORT ECObjectsStatus      GetPropertyLayout (PropertyLayoutCP & propertyLayout, wchar_t const * accessString) const;
     ECOBJECTS_EXPORT ECObjectsStatus      GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const;
-    // WIP_FUSION add StatusInt      GetPropertyIndex (UInt32& propertyIndex, wchar_t const * accessString);
+    ECOBJECTS_EXPORT StatusInt      GetPropertyIndex (UInt32& propertyIndex, wchar_t const * accessString) const;
     
 /*__PUBLISH_SECTION_END__*/
     ECOBJECTS_EXPORT void           AddPropertyDirect (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask);
@@ -368,9 +368,11 @@ protected:
     ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout) const;
     ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const;    
     ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ClassLayoutCR classLayout, ECValueR v, const wchar_t * propertyAccessString, bool useIndex = false, UInt32 index = 0) const;
+    ECOBJECTS_EXPORT StatusInt  GetValueFromMemory (ClassLayoutCR classLayout, ECValueR v, UInt32 propertyIndex, bool useArrayIndex = false, UInt32 arrayIndex = 0) const;
     ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout);          
     ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index);              
     ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, ECValueCR v,  bool useIndex = false, UInt32 index = 0);      
+    ECOBJECTS_EXPORT StatusInt  SetValueToMemory (ClassLayoutCR classLayout, UInt32 propertyIndex, ECValueCR v, bool useArrayIndex = false, UInt32 arrayIndex = 0);      
     ECOBJECTS_EXPORT ECObjectsStatus  InsertNullArrayElementsAt (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, UInt32 insertIndex, UInt32 insertCount);
     ECOBJECTS_EXPORT ECObjectsStatus  AddNullArrayElementsAt (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, UInt32 insertCount);
     ECOBJECTS_EXPORT void       DumpInstanceData (ClassLayoutCR classLayout) const;
