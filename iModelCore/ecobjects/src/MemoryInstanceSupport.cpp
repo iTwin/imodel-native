@@ -707,12 +707,13 @@ ECObjectsStatus       ClassLayout::GetPropertyLayout (PropertyLayoutCP & propert
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ClassLayout::GetPropertyIndex (UInt32& propertyIndex, wchar_t const * accessString) const
+ECObjectsStatus     ClassLayout::GetPropertyIndex (UInt32& propertyIndex, wchar_t const * accessString) const
     {
     PropertyLayoutCP    propertyLayout;
 
-    if (SUCCESS != GetPropertyLayout (propertyLayout, accessString))
-        return ERROR;
+    ECObjectsStatus status = GetPropertyLayout (propertyLayout, accessString);
+    if (ECOBJECTS_STATUS_Success != status)
+        return status;
 
     for (UInt32 i = 0; i < m_propertyLayouts.size(); i++)
         {
@@ -721,12 +722,12 @@ StatusInt       ClassLayout::GetPropertyIndex (UInt32& propertyIndex, wchar_t co
         if (propertyLayout == candidate)
             {
             propertyIndex = i;
-            return SUCCESS;
+            return ECOBJECTS_STATUS_Success;
             }
         }
 
     assert (false && "Property present in map but not in vector"); 
-    return ERROR;
+    return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1522,12 +1523,12 @@ ECObjectsStatus       MemoryInstanceSupport::GetValueFromMemory (ClassLayoutCR c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       MemoryInstanceSupport::GetValueFromMemory (ClassLayoutCR classLayout, ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const
+ECObjectsStatus  MemoryInstanceSupport::GetValueFromMemory (ClassLayoutCR classLayout, ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const
     {
     PropertyLayoutCP propertyLayout = NULL;
-    StatusInt status = classLayout.GetPropertyLayoutByIndex (propertyLayout, propertyIndex);
-    if (SUCCESS != status || NULL == propertyLayout)
-        return ERROR; // WIP_FUSION ERROR_PropertyNotFound        
+    ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (propertyLayout, propertyIndex);
+    if (ECOBJECTS_STATUS_Success != status || NULL == propertyLayout)
+        return ECOBJECTS_STATUS_PropertyNotFound;    
 
     if (useArrayIndex)
         return GetValueFromMemory (v, *propertyLayout, arrayIndex);
@@ -1703,12 +1704,12 @@ ECObjectsStatus       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR cla
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayout, UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
+ECObjectsStatus       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayout, UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
     {
     PropertyLayoutCP propertyLayout = NULL;
-    StatusInt status = classLayout.GetPropertyLayoutByIndex (propertyLayout, propertyIndex);
-    if (SUCCESS != status || NULL == propertyLayout)
-        return ERROR; // WIP_FUSION ERROR_PropertyNotFound        
+    ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (propertyLayout, propertyIndex);
+    if (ECOBJECTS_STATUS_Success != status || NULL == propertyLayout)
+        return ECOBJECTS_STATUS_PropertyNotFound;   
 
     if (useArrayIndex)
         return SetValueToMemory (v, classLayout, *propertyLayout, arrayIndex);
