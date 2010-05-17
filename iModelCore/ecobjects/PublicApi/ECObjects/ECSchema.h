@@ -188,6 +188,8 @@ protected:
     virtual std::wstring                _GetTypeName () const abstract;
     virtual ECObjectsStatus             _SetTypeName (std::wstring const& typeName) abstract;
 
+    virtual bool                        _CanOverride(ECPropertyCR baseProperty) const abstract;
+    
 /*__PUBLISH_SECTION_START__*/
 public:    
     EXPORTED_READONLY_PROPERTY (ECClassCR,              Class);   
@@ -236,6 +238,8 @@ protected:
     virtual bool                        _IsPrimitive () const override { return true;}
     virtual std::wstring                _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (std::wstring const& typeName) override;
+    virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
+    
 
 /*__PUBLISH_SECTION_START__*/
 public:    
@@ -260,6 +264,7 @@ protected:
     virtual bool                        _IsStruct () const override { return true;}
     virtual std::wstring                _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (std::wstring const& typeName) override;
+    virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
 
 /*__PUBLISH_SECTION_START__*/
 public:    
@@ -299,6 +304,7 @@ protected:
     virtual bool                        _IsArray () const override { return true;}
     virtual std::wstring                _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (std::wstring const& typeName) override;
+    virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
 
 /*__PUBLISH_SECTION_START__*/
 public:      
@@ -402,7 +408,8 @@ private:
     static bool AddUniquePropertiesToList(ECClassCP crrentBaseClass, const void * arg);
     bool TraverseBaseClasses(TraversalDelegate traverseMethod, bool recursive, const void * arg) const;
     ECOBJECTS_EXPORT ECObjectsStatus GetProperties(bool includeBaseProperties, PropertyList* propertyList) const;
-    
+
+    ECObjectsStatus CanPropertyBeOverridden(ECPropertyCR baseProperty, ECPropertyCR newProperty) const;
 protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
@@ -696,8 +703,8 @@ public:
 
 typedef RefCountedPtr<ECRelationshipClass>      ECRelationshipClassPtr;
 
-typedef std::list<ECSchemaP> ECSchemaReferenceList;
 typedef RefCountedPtr<ECSchema>                  ECSchemaPtr;
+typedef std::list<ECSchemaPtr> ECSchemaReferenceList;
 //=======================================================================================
 //! Supports STL like iterator of classes in a schema
 struct ECClassContainer /*__PUBLISH_ABSTRACT__*/
@@ -864,11 +871,11 @@ public:
     //! It is necessary to add any ECSchema as a referenced schema that will be used when adding a base
     //! class from a different schema, or custom attributes from a different schema.
     //! @param[in]  refSchema   The schema to add as a referenced schema
-    ECOBJECTS_EXPORT ECObjectsStatus AddReferencedSchema(ECSchemaCR refSchema);
+    ECOBJECTS_EXPORT ECObjectsStatus AddReferencedSchema(ECSchemaPtr refSchema);
     
     //! Removes an ECSchema from the list of referenced schemas
     //! @param[in]  refSchema   The schema that should be removed from the list of referenced schemas
-    ECOBJECTS_EXPORT ECObjectsStatus RemoveReferencedSchema(ECSchemaCR refSchema);
+    ECOBJECTS_EXPORT ECObjectsStatus RemoveReferencedSchema(ECSchemaPtr refSchema);
 
     //! Serializes an ECXML schema to a string
     //! Xml Serialization utilizes MSXML through COM. <b>Any thread calling this method must therefore be certain to initialize and

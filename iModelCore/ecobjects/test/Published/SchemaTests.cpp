@@ -300,6 +300,18 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenXmlFileHasInvalidVersionString)
     CoUninitialize();
     };
 
+TEST(SchemaDeserializationTest, ExpectSuccessWhenDeserializingSchemaWithBaseClassInReferencedFile)
+    {
+    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+    ECSchemaPtr schema;
+
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"SchemaThatReferences.01.00.ecschema.xml").c_str(), NULL, NULL);
+    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);    
+
+    ECClassP pClass = schema->GetClassP(L"circle");    
+    ASSERT_TRUE (pClass);
+    }    
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -538,8 +550,8 @@ TEST(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     schema3->CreateClass(anotherBase, L"AnotherBase");
     
     EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, class1->AddBaseClass(*baseClass));
-    schema->AddReferencedSchema(*schema2);
-    schema->AddReferencedSchema(*schema3);
+    schema->AddReferencedSchema(schema2);
+    schema->AddReferencedSchema(schema3);
     EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->AddBaseClass(*baseClass));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->AddBaseClass(*anotherBase));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, gadget->AddBaseClass(*class1));
@@ -567,29 +579,29 @@ TEST(SchemaReferenceTest, AddAndRemoveReferencedSchemas)
     ECSchemaPtr refSchema;
     ECSchema::CreateSchema(refSchema, L"RefSchema");
     
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(*refSchema));
-    EXPECT_EQ(ECOBJECTS_STATUS_NamedItemAlreadyExists, schema->AddReferencedSchema(*refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_NamedItemAlreadyExists, schema->AddReferencedSchema(refSchema));
     
     ECSchemaReferenceList refList = schema->GetReferencedSchemas();
     ECSchemaReferenceList::const_iterator schemaIterator;
     for (schemaIterator = refList.begin(); schemaIterator != refList.end(); schemaIterator++)
         {
-        if (*schemaIterator == refSchema.get())
+        if (*schemaIterator == refSchema)
             break;
         }
         
     EXPECT_FALSE(schemaIterator == refList.end());
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(*refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(refSchema));
     
     refList = schema->GetReferencedSchemas();
     for (schemaIterator = refList.begin(); schemaIterator != refList.end(); schemaIterator++)
         {
-        if (*schemaIterator == refSchema.get())
+        if (*schemaIterator == refSchema)
             break;
         }
         
     EXPECT_TRUE(schemaIterator == refList.end());
-    EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, schema->RemoveReferencedSchema(*refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, schema->RemoveReferencedSchema(refSchema));
     }
 
 TEST(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
@@ -600,7 +612,7 @@ TEST(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
     ECSchemaPtr refSchema;
     ECSchema::CreateSchema(refSchema, L"RefSchema");
     
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(*refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(refSchema));
     ECClassP class1;
     ECClassP baseClass;
     ECClassP structClass;
@@ -611,12 +623,12 @@ TEST(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
     structClass->IsStruct = true;
     
     class1->AddBaseClass(*baseClass);
-    EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
+    EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(refSchema));
     
     class1->RemoveBaseClass(*baseClass);
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(*refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(refSchema));
 
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(*refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(refSchema));
     StructECPropertyP structProp;
     ArrayECPropertyP nestedArrayProp;
     
@@ -626,11 +638,11 @@ TEST(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
     structProp->Type = *structClass;
     nestedArrayProp->StructElementType = structClass;
 
-    EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
+    EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(refSchema));
     class1->RemoveProperty(L"Struct Member");
-    EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
+    EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(refSchema));
     class1->RemoveProperty(L"NestedArray");
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(*refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(refSchema));
     
     }
     
@@ -666,7 +678,7 @@ TEST(SchemaCreationTest, CanFullyCreateASchema)
     ECSchemaPtr schema2;
     ECSchema::CreateSchema(schema2, L"BaseSchema");
     
-    testSchema->AddReferencedSchema(*schema2);
+    testSchema->AddReferencedSchema(schema2);
     
     ECClassP class1;
     ECClassP baseClass;
@@ -918,6 +930,98 @@ TEST(ClassTest, IsTests)
     
     }
     
+TEST(ClassTest, CanOverrideBaseProperties)
+    {
+    ECSchemaPtr schema;
+    ECClassP class1;
+    ECClassP baseClass1;
+    ECClassP structClass;
+    ECClassP structClass2;
+    
+    ECSchema::CreateSchema(schema, L"TestSchema");
+    schema->CreateClass(class1, L"TestClass");
+    schema->CreateClass(baseClass1, L"BaseClass1");
+    schema->CreateClass(structClass, L"ClassForStructs");
+    structClass->IsStruct = true;
+    schema->CreateClass(structClass2, L"ClassForStructs2");
+    structClass2->IsStruct = true;
+    class1->AddBaseClass(*baseClass1);
+    
+    PrimitiveECPropertyP baseStringProp;
+    PrimitiveECPropertyP baseIntProp;
+    PrimitiveECPropertyP baseDoubleProp;
+    StructECPropertyP baseStructProp;
+    ArrayECPropertyP baseStringArrayProperty;
+    ArrayECPropertyP baseStructProperty;
+    
+    baseClass1->CreatePrimitiveProperty(baseStringProp, L"StringProperty", PRIMITIVETYPE_String);
+    baseClass1->CreatePrimitiveProperty(baseIntProp, L"IntegerProperty", PRIMITIVETYPE_Integer);
+    baseClass1->CreatePrimitiveProperty(baseDoubleProp, L"DoubleProperty", PRIMITIVETYPE_Double);
+    baseClass1->CreateStructProperty(baseStructProp, L"StructProperty", *structClass);
+    baseClass1->CreateArrayProperty(baseStringArrayProperty, L"StringArrayProperty", PRIMITIVETYPE_String);
+    baseClass1->CreateArrayProperty(baseStructProperty, L"StructArrayProperty", structClass);
+    
+    PrimitiveECPropertyP longProperty;
+    PrimitiveECPropertyP stringProperty;
+    
+    // Primitives overriding primitives
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreatePrimitiveProperty(longProperty, L"StringProperty", PRIMITIVETYPE_Long));
+    EXPECT_EQ(NULL, longProperty);
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreatePrimitiveProperty(stringProperty, L"StringProperty", PRIMITIVETYPE_String));
+    class1->RemoveProperty(L"StringProperty");
+    
+    // Primitives overriding structs
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreatePrimitiveProperty(longProperty, L"StructProperty", PRIMITIVETYPE_Long));
+
+    // Primitives overriding arrays
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreatePrimitiveProperty(longProperty, L"StringArrayProperty", PRIMITIVETYPE_Long));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreatePrimitiveProperty(stringProperty, L"StringArrayProperty", PRIMITIVETYPE_String));
+    class1->RemoveProperty(L"StringArrayProperty");
+
+    StructECPropertyP structProperty;
+    // Structs overriding primitives
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateStructProperty(structProperty, L"IntegerProperty"));
+
+    // Structs overriding structs
+    // If we don't specify a struct type for the new property, then it should succeed
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateStructProperty(structProperty, L"StructProperty"));
+    class1->RemoveProperty(L"StructProperty");
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateStructProperty(structProperty, L"StructProperty", *structClass2));
+
+    // Structs overriding arrays
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateStructProperty(structProperty, L"StringArrayProperty"));
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateStructProperty(structProperty, L"StringArrayProperty", *structClass));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateStructProperty(structProperty, L"StructArrayProperty"));
+    class1->RemoveProperty(L"StructArrayProperty");
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateStructProperty(structProperty, L"StructArrayProperty", *structClass));
+    class1->RemoveProperty(L"StructArrayProperty");
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateStructProperty(structProperty, L"StructArrayProperty", *structClass2));
+
+    ArrayECPropertyP stringArrayProperty;
+    ArrayECPropertyP stringArrayProperty2;
+    ArrayECPropertyP structArrayProperty;
+    ArrayECPropertyP structArrayProperty2;
+    // Arrays overriding primitives
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateArrayProperty(stringArrayProperty, L"IntegerProperty", PRIMITIVETYPE_Long));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateArrayProperty(stringArrayProperty, L"StringProperty", PRIMITIVETYPE_String));
+    class1->RemoveProperty(L"StringProperty");
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateArrayProperty(stringArrayProperty2, L"StringProperty"));
+
+    // Arrays overriding structs
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateArrayProperty(structArrayProperty, L"StructProperty", structClass2));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateArrayProperty(structArrayProperty, L"StructProperty", structClass));
+    class1->RemoveProperty(L"StructProperty");
+
+    // the default array type is string if none is passed in
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateArrayProperty(structArrayProperty2, L"StructProperty"));
+    
+    ArrayECPropertyP intArrayProperty;
+    // Arrays overriding arrays
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateArrayProperty(intArrayProperty, L"StringArrayProperty", PRIMITIVETYPE_Long));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateArrayProperty(stringArrayProperty, L"StringArrayProperty", PRIMITIVETYPE_String));
+    class1->RemoveProperty(L"StringArrayProperty");
+
+    }
     
 TEST(ClassTest, ExpectPropertiesInOrder)
     {
@@ -1173,7 +1277,7 @@ TEST(ClassTest, AddAndRemoveConstraintClasses)
     EXPECT_EQ(ECOBJECTS_STATUS_Success, relClass->Target.AddClass(*targetClass));
     EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, relClass->Source.AddClass(*sourceClass));
     
-    schema->AddReferencedSchema(*refSchema);
+    schema->AddReferencedSchema(refSchema);
     EXPECT_EQ(ECOBJECTS_STATUS_Success, relClass->Source.AddClass(*sourceClass));
     
     EXPECT_EQ(ECOBJECTS_STATUS_Success, relClass->Target.RemoveClass(*targetClass));

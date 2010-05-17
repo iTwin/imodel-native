@@ -544,41 +544,57 @@ END_BENTLEY_EC_NAMESPACE
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-
-
-// =====================================================================================
-// StringSaver class
-// =====================================================================================
-struct  StringSaver
-{
-private:
-    std::wstring    m_savedString;
-    std::wstring&   m_stringDestination;
-public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-StringSaver (std::wstring& stringToSave) : m_stringDestination (stringToSave)
+static void             AppendAccessString (std::wstring& compoundAccessString, std::wstring& baseAccessString, const std::wstring& propertyName)
     {
-    // save the contents.
-    m_savedString = stringToSave;
+    compoundAccessString = baseAccessString;
+    compoundAccessString.append (propertyName);
     }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   04/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-~StringSaver()
-    {
-    m_stringDestination = m_savedString;
-    }
-};
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   05/10
++---------------+---------------+---------------+---------------+---------------+------*/
+static const wchar_t*   GetPrimitiveTypeString (PrimitiveType primitiveType)
+    {
+    switch (primitiveType)
+        {
+        case PRIMITIVETYPE_Binary:
+            return L"binary";
+
+        case PRIMITIVETYPE_Boolean:
+            return L"boolean";
+
+        case PRIMITIVETYPE_DateTime:
+            return L"dateTime";
+
+        case PRIMITIVETYPE_Double:
+            return L"double";
+
+        case PRIMITIVETYPE_Integer:
+            return L"int";
+
+        case PRIMITIVETYPE_Long:
+            return L"long";
+
+        case PRIMITIVETYPE_Point2D:
+            return L"point2d";
+
+        case PRIMITIVETYPE_Point3D:
+            return L"point3d";
+
+        case PRIMITIVETYPE_String:
+            return L"string";
+        }
+
+    assert (false);
+    return L"";
+    }
 
 
 typedef std::vector<byte>   T_ByteArray;
 
-// =====================================================================================
-// InstanceXMLReader class
-// =====================================================================================
 static const wchar_t INSTANCEID_ATTRIBUTE[]         = L"instanceID";
 static const wchar_t SOURCECLASS_ATTRIBUTE[]        = L"sourceClass";
 static const wchar_t SOURCEINSTANCEID_ATTRIBUTE[]   = L"sourceInstanceID";
@@ -586,9 +602,11 @@ static const wchar_t TARGETCLASS_ATTRIBUTE[]        = L"targetClass";
 static const wchar_t TARGETINSTANCEID_ATTRIBUTE[]   = L"targetInstanceID";
 static const wchar_t XMLNS_ATTRIBUTE[]              = L"xmlns";
 
+// =====================================================================================
+// InstanceXMLReader class
+// =====================================================================================
 struct  InstanceXmlReader
 {
-
 private:
     std::wstring                m_fileName;
     CComPtr <IStream>           m_stream;
@@ -627,7 +645,7 @@ InstanceDeserializationStatus       Init ()
     if (NULL == m_stream)
         {
         if FAILED (status = SHCreateStreamOnFileW (m_fileName.c_str (), STGM_READ, &m_stream))
-            return INSTANCE_DESERIALIZATION_STATUS_CantCreateStream;
+            return INSTANCE_DESERIALIZATION_STATUS_FileNotFound;
         }
 
     if (NULL == m_xmlReader)
@@ -895,7 +913,6 @@ InstanceDeserializationStatus   ReadProperty (ECClassCR ecClass, IECInstanceP ec
         return SkipToElementEnd ();
         }
 
-    // set up to save and restore the current access string.
     PrimitiveECPropertyP    primitiveProperty;
     ArrayECPropertyP        arrayProperty;
     StructECPropertyP       structProperty;
@@ -1316,15 +1333,6 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            AppendAccessString (std::wstring& compoundAccessString, std::wstring& baseAccessString, const std::wstring& propertyName)
-    {
-    compoundAccessString = baseAccessString;
-    compoundAccessString.append (propertyName);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   04/10
-+---------------+---------------+---------------+---------------+---------------+------*/
 InstanceDeserializationStatus   ConvertStringToByteArray (T_ByteArray& byteData, const wchar_t* stringData)
     {
     // the length of stringData should be a muttiple of four.
@@ -1358,8 +1366,8 @@ InstanceDeserializationStatus   ConvertStringToByteArray (T_ByteArray& byteData,
             else if (charValue == L'=')
                 {
                 // = should only appear in the last two characters of the string.
-                assert ( stringLen - (iPos + jPos) < 2);
-                numBytesToPush = jPos;
+                assert ( stringLen - (iPos + jPos) <= 2);
+                numBytesToPush = jPos-1;
                 break;
                 }
             else
@@ -1386,38 +1394,7 @@ InstanceDeserializationStatus   ConvertStringToByteArray (T_ByteArray& byteData,
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ValidateArrayPrimitiveType (const wchar_t* typeFound, PrimitiveType expectedType)
     {
-    switch (expectedType)
-        {
-        case PRIMITIVETYPE_Binary:
-            return (0 == wcscmp (typeFound, L"binary"));
-
-        case PRIMITIVETYPE_Boolean:
-            return (0 == wcscmp (typeFound, L"boolean"));
-
-        case PRIMITIVETYPE_DateTime:
-            return (0 == wcscmp (typeFound, L"dateTime"));
-
-        case PRIMITIVETYPE_Double:
-            return (0 == wcscmp (typeFound, L"double"));
-
-        case PRIMITIVETYPE_Integer:
-            return (0 == wcscmp (typeFound, L"int"));
-
-        case PRIMITIVETYPE_Long:
-            return (0 == wcscmp (typeFound, L"long"));
-
-        case PRIMITIVETYPE_Point2D:
-            return (0 == wcscmp (typeFound, L"point2d"));
-
-        case PRIMITIVETYPE_Point3D:
-            return (0 == wcscmp (typeFound, L"point3d"));
-
-        case PRIMITIVETYPE_String:
-            return (0 == wcscmp (typeFound, L"string"));
-        }
-
-    assert (false);
-    return false;
+    return (0 == wcscmp (typeFound, GetPrimitiveTypeString (expectedType)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1477,14 +1454,468 @@ UInt32          GetLineNumber ()
 
 };
 
+
+// =====================================================================================
+// InstanceXMLWriter class
+// =====================================================================================
+struct  InstanceXmlWriter
+{
+private:
+    std::wstring                m_fileName;
+    CComPtr <IStream>           m_stream;
+    CComPtr <IXmlWriter>        m_xmlWriter;
+    ECSchemaPtr                 m_schema;
+    bool                        m_compacted;
+
+public:
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   05/10
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceXmlWriter (CComPtr <IStream> stream)
+    {
+    m_stream            = stream;
+    m_xmlWriter         = NULL;
+    m_compacted         = false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   05/10
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceXmlWriter (std::wstring fileName)
+    {
+    m_fileName          = fileName;
+    m_stream            = NULL;
+    m_xmlWriter         = NULL;
+    m_compacted         = false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   05/10
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceSerializationStatus     Init ()
+    {
+    // different constructors set different members, according to the source of the stream and the writer.
+    HRESULT     status;
+    if (NULL == m_stream)
+        {
+        if FAILED (status = SHCreateStreamOnFileW (m_fileName.c_str (), STGM_CREATE | STGM_WRITE, &m_stream))
+            return INSTANCE_SERIALIZATION_STATUS_CantCreateStream;
+        }
+
+    if (NULL == m_xmlWriter)
+        {
+        if (FAILED (status = CreateXmlWriter (__uuidof(IXmlWriter), (void**) &m_xmlWriter, NULL)))
+            return INSTANCE_SERIALIZATION_STATUS_CantCreateXmlWriter;
+
+        if (FAILED (status= m_xmlWriter->SetOutput (m_stream)))
+            return INSTANCE_SERIALIZATION_STATUS_CantSetStream;
+
+        if (!m_compacted)
+            m_xmlWriter->SetProperty (XmlWriterProperty_Indent, true);
+        }
+    return INSTANCE_SERIALIZATION_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/10
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceSerializationStatus     WriteInstance (IECInstanceCR instance)
+    {
+    ECClassCR               ecClass     = instance.GetClass();
+    ECSchemaCR              ecSchema    = ecClass.Schema;
+
+    HRESULT status;
+    if (S_OK != (status = m_xmlWriter->WriteStartDocument (XmlStandalone_Omit)))
+        return TranslateStatus (status);
+
+    // start by writing the name of the class as an element, with the schema name as the namespace.
+    if (S_OK != (status = m_xmlWriter->WriteStartElement (NULL, ecClass.Name.c_str(), ecSchema.Name.c_str())))
+        return TranslateStatus (status);
+
+    WritePropertiesOfClassOrStructArrayMember (ecClass, instance, NULL);
+
+    if (S_OK != (status = m_xmlWriter->WriteEndElement ()))
+        return TranslateStatus (status);
+
+    m_xmlWriter->WriteEndDocument ();
+
+    m_xmlWriter->Flush();
+
+    return INSTANCE_SERIALIZATION_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/10
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceSerializationStatus     WritePropertiesOfClassOrStructArrayMember (ECClassCR ecClass, IECInstanceCR ecInstance, std::wstring* baseAccessString)
+    {
+    ECPropertyIterableCR    collection  = ecClass.GetProperties (true);
+    for each (ECPropertyP ecProperty in collection)
+        {
+        PrimitiveECPropertyP        primitiveProperty;
+        ArrayECPropertyP            arrayProperty;
+        StructECPropertyP           structProperty;
+        InstanceSerializationStatus ixwStatus;
+            
+        if (NULL != (primitiveProperty = ecProperty->GetAsPrimitiveProperty()))
+            ixwStatus = WritePrimitiveProperty (*primitiveProperty, ecInstance, baseAccessString);
+        else if (NULL != (arrayProperty = ecProperty->GetAsArrayProperty()))
+            ixwStatus = WriteArrayProperty (*arrayProperty, ecInstance, baseAccessString);
+        else if (NULL != (structProperty = ecProperty->GetAsStructProperty()))
+            ixwStatus = WriteEmbeddedStructProperty (*structProperty, ecInstance, baseAccessString);
+
+        if (INSTANCE_SERIALIZATION_STATUS_Success != ixwStatus)
+            {
+            assert (false);
+            return ixwStatus;
+            }
+        }
+
+     return INSTANCE_SERIALIZATION_STATUS_Success;
+     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/10
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceSerializationStatus     WritePrimitiveProperty (PrimitiveECPropertyR primitiveProperty, IECInstanceCR ecInstance, std::wstring* baseAccessString)
+    {
+    StatusInt           getStatus;
+    ECValue             ecValue;
+    std::wstring const& propertyName = primitiveProperty.Name;
+
+    if (NULL == baseAccessString)
+        {
+        getStatus = ecInstance.GetValue (ecValue, propertyName.c_str());
+        }
+    else
+        {
+        std::wstring compoundAccessString;
+        AppendAccessString (compoundAccessString, *baseAccessString, propertyName);
+        getStatus = ecInstance.GetValue (ecValue, compoundAccessString.c_str());
+        }
+
+    // couldn't get, or NULL value, write nothing.
+    if ( (SUCCESS != getStatus) || ecValue.IsNull() )
+        return INSTANCE_SERIALIZATION_STATUS_Success;
+
+    HRESULT     status;
+    if (S_OK != (status = m_xmlWriter->WriteStartElement (NULL, propertyName.c_str(), NULL)))
+        return TranslateStatus (status);
+
+    InstanceSerializationStatus     ixwStatus;
+    PrimitiveType                   propertyType = primitiveProperty.Type;
+    if (INSTANCE_SERIALIZATION_STATUS_Success != (ixwStatus = WritePrimitiveValue (ecValue, propertyType)))
+        return ixwStatus;
+
+    if (S_OK != (status = m_xmlWriter->WriteEndElement ()))
+        return TranslateStatus (status);
+
+    return INSTANCE_SERIALIZATION_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/10
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceSerializationStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType propertyType)
+    {
+    wchar_t     outString[512];
+
+    // write the content according to type.
+    switch (propertyType)
+        {
+        case PRIMITIVETYPE_Binary:
+            {
+            size_t      numBytes;
+            const byte* byteData; 
+            if (NULL != (byteData = ecValue.GetBinary (numBytes)))
+                {
+                std::wstring    byteString = ConvertByteArrayToString (byteData, numBytes);
+                HRESULT         status;
+                if (S_OK != (status = m_xmlWriter->WriteChars (byteString.c_str(), static_cast <UINT> (byteString.length()))))
+                    return TranslateStatus (status);
+                else
+                    return INSTANCE_SERIALIZATION_STATUS_Success;
+                }
+            else
+                return INSTANCE_SERIALIZATION_STATUS_Success;
+            break;
+            }
+
+        case PRIMITIVETYPE_Boolean:
+            {
+            wcscpy (outString, ecValue.GetBoolean () ? L"True" : L"False");
+            break;
+            }
+
+        case PRIMITIVETYPE_DateTime:
+            {
+            swprintf (outString, L"%I64d", ecValue.GetDateTimeTicks());
+            break;
+            }
+
+        case PRIMITIVETYPE_Double:
+            {
+            swprintf (outString, L"%.13g", ecValue.GetDouble());
+            break;
+            }
+
+        case PRIMITIVETYPE_Integer:
+            {
+            swprintf (outString, L"%d", ecValue.GetInteger());
+            break;
+            }
+
+        case PRIMITIVETYPE_Long:
+            {
+            swprintf (outString, L"%I64d", ecValue.GetLong());
+            break;
+            }
+
+        case PRIMITIVETYPE_Point2D:
+            {
+            DPoint2d    point2d = ecValue.GetPoint2D();
+            swprintf (outString, L"%.13g,%.13g", point2d.x, point2d.y);
+            break;
+            }
+
+        case PRIMITIVETYPE_Point3D:
+            {
+            DPoint3d    point3d = ecValue.GetPoint3D();
+            swprintf (outString, L"%.13g,%.13g,%.13g", point3d.x, point3d.y, point3d.z);
+            break;
+            }
+
+        case PRIMITIVETYPE_String:
+            {
+            const wchar_t*  stringValue = ecValue.GetString ();
+            HRESULT         status;
+            if (S_OK != (status = m_xmlWriter->WriteChars (stringValue, static_cast <UINT> (wcslen (stringValue)))))
+                return TranslateStatus (status);
+            return INSTANCE_SERIALIZATION_STATUS_Success;
+            }
+
+        default:
+            {
+            assert (false);
+            return INSTANCE_SERIALIZATION_STATUS_BadPrimitivePropertyType;
+            }
+        }
+
+    HRESULT     status;
+    if (S_OK != (status = m_xmlWriter->WriteChars (outString, static_cast <UINT> (wcslen (outString)))))
+        return TranslateStatus (status);
+
+    return INSTANCE_SERIALIZATION_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/10
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceSerializationStatus     WriteArrayProperty (ArrayECPropertyR arrayProperty, IECInstanceCR ecInstance, std::wstring* baseAccessString)
+    {
+    ArrayKind       arrayKind = arrayProperty.Kind;
+
+    std::wstring    accessString;
+    if (NULL == baseAccessString)
+        accessString = arrayProperty.Name;    
+    else
+        AppendAccessString (accessString, *baseAccessString, arrayProperty.Name);
+
+    accessString.append (L"[]");
+
+    // no members, don't write anything.
+    ECValue         ecValue;
+    if (SUCCESS != ecInstance.GetValue (ecValue, accessString.c_str(), 0) || ecValue.IsNull())
+        return INSTANCE_SERIALIZATION_STATUS_Success;
+
+    // write the start element, which consists of the member name.
+    HRESULT     status;
+
+    if (S_OK != (status = m_xmlWriter->WriteStartElement (NULL, arrayProperty.Name.c_str(), NULL)))
+        return TranslateStatus (status);
+
+    InstanceSerializationStatus     ixwStatus;
+    if (ARRAYKIND_Primitive == arrayKind)
+        {
+        PrimitiveType   memberType  = arrayProperty.PrimitiveElementType;
+        const wchar_t*  typeString  = GetPrimitiveTypeString (memberType);
+        for (int index=0; ; index++)
+            {
+            if (SUCCESS != ecInstance.GetValue (ecValue, accessString.c_str(), index))
+                break;
+
+            if (S_OK != (status = m_xmlWriter->WriteStartElement (NULL, typeString, NULL)))
+                return TranslateStatus (status);
+
+            // write the primitve value
+            if (INSTANCE_SERIALIZATION_STATUS_Success != (ixwStatus = WritePrimitiveValue (ecValue, memberType)))
+                {
+                assert (false);
+                return ixwStatus;
+                }
+
+            if (S_OK != (status = m_xmlWriter->WriteEndElement ()))
+                return TranslateStatus (status);
+            }
+        }
+    else if (ARRAYKIND_Struct == arrayKind)
+        {
+        ECClassCP   memberClass = arrayProperty.StructElementType;
+        for (int index=0; ; index++)
+            {
+            if (SUCCESS != ecInstance.GetValue (ecValue, accessString.c_str(), index))
+                break;
+
+            // the XML element tag is the struct type.
+            assert (ecValue.IsStruct());
+
+            IECInstancePtr  structInstance = ecValue.GetStruct();
+            if (!structInstance.IsValid())
+                {
+                assert (false);
+                break;
+                }
+
+            ECClassCR   structClass = structInstance->GetClass();
+            assert (structClass.Is (memberClass));
+
+            if (S_OK != (status = m_xmlWriter->WriteStartElement (NULL, structClass.Name.c_str(), NULL)))
+                return TranslateStatus (status);
+
+            WritePropertiesOfClassOrStructArrayMember (structClass, *structInstance.get(), NULL);
+
+            if (S_OK != (status = m_xmlWriter->WriteEndElement ()))
+                return TranslateStatus (status);
+            }
+        }
+    else
+        {
+        // unexpected arrayKind - should never happen.
+        assert (false);
+        }
+
+
+    // write the end element for the array as a whole.
+    if (S_OK != (status = m_xmlWriter->WriteEndElement ()))
+        return TranslateStatus (status);
+
+    return INSTANCE_SERIALIZATION_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   05/10
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceSerializationStatus     WriteEmbeddedStructProperty (StructECPropertyR structProperty, IECInstanceCR ecInstance, std::wstring* baseAccessString)
+    {
+    // the tag of the element for an embedded struct is the property name.
+    HRESULT     status;
+    if (S_OK != (status = m_xmlWriter->WriteStartElement (NULL, structProperty.Name.c_str(), NULL)))
+        return TranslateStatus (status);
+
+    std::wstring    thisAccessString;
+    if (NULL != baseAccessString)
+        AppendAccessString (thisAccessString, *baseAccessString, structProperty.Name);
+    else
+        thisAccessString = structProperty.Name.c_str();
+    thisAccessString.append (L".");
+
+    ECClassCR   structClass = structProperty.Type;
+    WritePropertiesOfClassOrStructArrayMember (structClass, ecInstance, &thisAccessString);
+
+    // write the end element for the array as a whole.
+    if (S_OK != (status = m_xmlWriter->WriteEndElement ()))
+        return TranslateStatus (status);
+
+    return INSTANCE_SERIALIZATION_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/10
++---------------+---------------+---------------+---------------+---------------+------*/
+std::wstring    ConvertByteArrayToString (const byte *byteData, size_t numBytes)
+    {
+    static const wchar_t    base64Chars[] = {L"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"};
+
+    if (0 == numBytes)
+        return L"";
+
+    // from each 3 bytes we get 4 output characters, rounded up.
+    std::wstring    outString;
+    for (size_t iByte=0; iByte < numBytes; iByte += 3)
+        {
+        UInt32      nextThreeBytes = byteData[iByte] | (byteData[iByte+1] << 8) | (byteData[iByte+2] << 16);
+
+        for (size_t jPos=0; jPos < 4; jPos++)
+            {
+            byte    sixBits = nextThreeBytes & 0x3f;
+
+            if ( (iByte + jPos) < (numBytes + 1) )
+                outString.append (1, base64Chars[sixBits]);
+            else
+                outString.append (1, L'=');
+            
+            nextThreeBytes = nextThreeBytes >> 6;
+            }
+        }
+
+    return outString;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   05/10
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceSerializationStatus     TranslateStatus (HRESULT status)
+    {
+#if 0
+    struct ErrorMap { HRESULT m_hResult; InstanceSerializationStatus m_ixrStatus; };
+    // I'm not sure what the possible errors are when writing, so this method does pretty much nothing.
+    static ErrorMap s_errorMap[] = 
+        {
+        { WC_E_DECLELEMENT,         INSTANCE_DESERIALIZATION_STATUS_BadElement              },
+        { WC_E_NAME,                INSTANCE_DESERIALIZATION_STATUS_NoElementName           },  
+        { WC_E_ELEMENTMATCH,        INSTANCE_DESERIALIZATION_STATUS_EndElementDoesntMatch   },
+        { WC_E_ENTITYCONTENT,       INSTANCE_DESERIALIZATION_STATUS_BadElement              },      
+        { S_FALSE,                  INSTANCE_DESERIALIZATION_STATUS_XmlFileIncomplete       },
+        };
+    
+    for (int iError=0; iError < _countof (s_errorMap); iError++)
+        {
+        if (status == s_errorMap[iError].m_hResult)
+            return s_errorMap[iError].m_ixrStatus;
+        }
+#endif
+    return INSTANCE_SERIALIZATION_STATUS_XmlWriteError;
+    }
+
+};
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceDeserializationStatus   IECInstance::ReadXmlFromFile (IECInstancePtr& ecInstance, const wchar_t* fileName, ECSchemaP schema)
     {
     InstanceXmlReader reader (schema, fileName);
-    reader.Init ();
+
+    InstanceDeserializationStatus   status;
+    if (INSTANCE_DESERIALIZATION_STATUS_Success != (status = reader.Init ()))
+        return status;
+
     return reader.ReadInstance (ecInstance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/10
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceSerializationStatus     IECInstance::WriteXmlToFile (const wchar_t* fileName)
+    {
+    InstanceXmlWriter writer (fileName);
+
+    InstanceSerializationStatus   status;
+    if (INSTANCE_DESERIALIZATION_STATUS_Success != (status = writer.Init ()))
+        return status;
+
+    return writer.WriteInstance (*this);
     }
 
 END_BENTLEY_EC_NAMESPACE
