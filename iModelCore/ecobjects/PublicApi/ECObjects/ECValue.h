@@ -199,6 +199,7 @@ public:
     ECOBJECTS_EXPORT DPoint3d       GetPoint3D() const;
     ECOBJECTS_EXPORT BentleyStatus  SetPoint3D (DPoint3dCR value);
 
+    static UInt32                   GetFixedPrimitiveValueSize (PrimitiveType primitiveType);
 
     //! This is intended for debugging purposes, not for presentation purposes.
     ECOBJECTS_EXPORT std::wstring   ToString () const;

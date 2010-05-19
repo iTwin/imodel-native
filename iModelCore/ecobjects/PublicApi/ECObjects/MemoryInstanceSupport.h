@@ -171,7 +171,6 @@ public:
     
     void                            InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const;
     
-    static UInt32                   GetFixedPrimitiveValueSize (PrimitiveType primitiveType); // WIP_FUSION: move to ecvalue.h
     UInt32                          GetSizeOfFixedSection() const;
     
     //! Determines the number of bytes used, so far

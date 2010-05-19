@@ -86,7 +86,7 @@ static inline void      InitializeNullFlags (NullflagsBitmask * nullFlagsStart, 
 static inline UInt32    CalculateFixedArrayPropertySize (UInt32 fixedCount, PrimitiveType primitiveType)
     {
     return (CalculateNumberNullFlagsBitmasks (fixedCount) * sizeof (NullflagsBitmask)) + 
-        (fixedCount *ClassLayout::GetFixedPrimitiveValueSize(primitiveType));
+        (fixedCount *ECValue::GetFixedPrimitiveValueSize(primitiveType));
     }  
             
 /*---------------------------------------------------------------------------------**//**
@@ -129,7 +129,7 @@ UInt32          PropertyLayout::GetSizeInFixedSection () const
         return sizeof(SecondaryOffset);
 
     if (m_typeDescriptor.IsPrimitive())        
-        return ClassLayout::GetFixedPrimitiveValueSize(m_typeDescriptor.GetPrimitiveType());
+        return ECValue::GetFixedPrimitiveValueSize(m_typeDescriptor.GetPrimitiveType());
     else if (m_typeDescriptor.IsPrimitiveArray())
         {
         UInt32 fixedCount = m_modifierData; // WIP_FUSION for now assume modifier data holds the count but I'm not sure if that is the right place for this.
@@ -394,7 +394,7 @@ void            ClassLayout::Factory::AddFixedSizeProperty (wchar_t const * acce
         return;
         }
     
-    UInt32 size = GetFixedPrimitiveValueSize (typeDescriptor.GetPrimitiveType());
+    UInt32 size = ECValue::GetFixedPrimitiveValueSize (typeDescriptor.GetPrimitiveType());
     
     AddProperty (accessString, typeDescriptor, size);
     }
@@ -613,33 +613,6 @@ ECObjectsStatus       ClassLayout::FinishLayout ()
     return ECOBJECTS_STATUS_Success;
     }
     
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/    
-UInt32          ClassLayout::GetFixedPrimitiveValueSize (PrimitiveType primitivetype) // WIP_FUSION: Move to ECValue.h
-    {
-    switch (primitivetype)
-        {
-        case EC::PRIMITIVETYPE_Integer:
-            return sizeof(Int32);
-        case EC::PRIMITIVETYPE_Long:
-            return sizeof(Int64);
-        case EC::PRIMITIVETYPE_Double:
-            return sizeof(double);
-        case PRIMITIVETYPE_Boolean:
-            return sizeof(bool); 
-        case PRIMITIVETYPE_Point2D:
-            return 2*sizeof(double);
-        case PRIMITIVETYPE_Point3D:
-            return 3*sizeof(double);
-        case PRIMITIVETYPE_DateTime:
-            return sizeof(Int64); //ticks
-        default:
-            DEBUG_FAIL("Most datatypes have not yet been implemented... or perhaps you have passed in a variable-sized type.");
-            return 0;
-        }
-    }
-  
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/     
@@ -863,7 +836,7 @@ UInt32          MemoryInstanceSupport::GetPropertyValueSize (PropertyLayoutCR pr
 UInt32          MemoryInstanceSupport::GetPropertyValueSize (PropertyLayoutCR propertyLayout, UInt32 index) const
     {
     if (IsArrayOfFixedSizeElements (propertyLayout))
-        return ClassLayout::GetFixedPrimitiveValueSize (propertyLayout.GetTypeDescriptor().GetPrimitiveType());
+        return ECValue::GetFixedPrimitiveValueSize (propertyLayout.GetTypeDescriptor().GetPrimitiveType());
     else
         {                            
         UInt32 arrayOffset = GetOffsetOfPropertyValue (propertyLayout);   
@@ -1070,7 +1043,7 @@ UInt32          MemoryInstanceSupport::GetOffsetOfArrayIndex (UInt32 arrayOffset
     primaryOffset += (CalculateNumberNullFlagsBitmasks (count) * sizeof (NullflagsBitmask));
 
     if (IsArrayOfFixedSizeElements (propertyLayout))
-        primaryOffset += (index * ClassLayout::GetFixedPrimitiveValueSize (propertyLayout.GetTypeDescriptor().GetPrimitiveType()));
+        primaryOffset += (index * ECValue::GetFixedPrimitiveValueSize (propertyLayout.GetTypeDescriptor().GetPrimitiveType()));
     else
         primaryOffset += index * sizeof (SecondaryOffset);
 
@@ -1837,7 +1810,7 @@ ArrayResizer::ArrayResizer (ClassLayoutCR classLayout, PropertyLayoutCR property
         m_elementType = PRIMITIVETYPE_Binary;
     m_elementTypeIsFixedSize = IsArrayOfFixedSizeElements (propertyLayout);
     if (m_elementTypeIsFixedSize)
-        m_elementSizeInFixedSection = ClassLayout::GetFixedPrimitiveValueSize (m_elementType);
+        m_elementSizeInFixedSection = ECValue::GetFixedPrimitiveValueSize (m_elementType);
     else
         m_elementSizeInFixedSection = sizeof (SecondaryOffset);
     

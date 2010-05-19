@@ -946,7 +946,34 @@ ArrayInfo       ECValue::GetArrayInfo() const
     
     return m_arrayInfo;
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/    
+UInt32          ECValue::GetFixedPrimitiveValueSize (PrimitiveType primitivetype)
+    {
+    switch (primitivetype)
+        {
+        case EC::PRIMITIVETYPE_Integer:
+            return sizeof(Int32);
+        case EC::PRIMITIVETYPE_Long:
+            return sizeof(Int64);
+        case EC::PRIMITIVETYPE_Double:
+            return sizeof(double);
+        case PRIMITIVETYPE_Boolean:
+            return sizeof(bool); 
+        case PRIMITIVETYPE_Point2D:
+            return 2*sizeof(double);
+        case PRIMITIVETYPE_Point3D:
+            return 3*sizeof(double);
+        case PRIMITIVETYPE_DateTime:
+            return sizeof(Int64); //ticks
+        default:
+            DEBUG_FAIL("Most datatypes have not yet been implemented... or perhaps you have passed in a variable-sized type.");
+            return 0;
+        }
+    }
+      
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
