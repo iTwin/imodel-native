@@ -633,8 +633,8 @@ ClassDeserializationVector&  classes
 SchemaDeserializationStatus ECSchema::ReadSchemaReferencesFromXml
 (
 MSXML2::IXMLDOMNode& schemaNode, 
-const std::vector<IECSchemaLocatorP> * schemaLocators, 
-const std::vector<const wchar_t *> * schemaPaths,
+const bvector<IECSchemaLocatorP> * schemaLocators, 
+const bvector<const wchar_t *> * schemaPaths,
 void * schemaContext
 )
     {
@@ -735,8 +735,8 @@ void * schemaContext
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaPtr ECSchema::LocateSchema
 (    
-const std::vector<IECSchemaLocatorP> * schemaLocators, 
-const std::vector<const wchar_t *> * schemaPaths,
+const bvector<IECSchemaLocatorP> * schemaLocators, 
+const bvector<const wchar_t *> * schemaPaths,
 const std::wstring & name,
 UInt32& versionMajor,
 UInt32& versionMinor,
@@ -759,7 +759,7 @@ void*   schemaContext
     ECSchemaPtr schemaPtr;
     if (NULL != schemaLocators)
         {
-        std::vector<IECSchemaLocatorP>::const_iterator locator;
+        bvector<IECSchemaLocatorP>::const_iterator locator;
         for (locator = schemaLocators->begin(); locator != schemaLocators->end(); locator++)
             {
             IECSchemaLocatorP schemaLocator = *locator;
@@ -779,7 +779,7 @@ void*   schemaContext
         
     // try in standard path locations for the schema
     
-    std::vector<const wchar_t *> standardPaths;
+    bvector<const wchar_t *> standardPaths;
     std::wstring dllPath = ECFileUtilities::GetDllPath();
     if (0 == dllPath.length())
         return NULL;
@@ -804,8 +804,8 @@ void*   schemaContext
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaPtr ECSchema::LocateSchemaByPath
 (
-const std::vector<IECSchemaLocatorP> * schemaLocators, 
-const std::vector<const wchar_t *> * schemaPaths,
+const bvector<IECSchemaLocatorP> * schemaLocators, 
+const bvector<const wchar_t *> * schemaPaths,
 const std::wstring & name,
 UInt32& versionMajor,
 UInt32& versionMinor,
@@ -813,7 +813,7 @@ SchemaMap * schemasUnderConstruction
 )
     {
     ECSchemaPtr schemaOut;
-    std::vector<const wchar_t *>::const_iterator path;
+    bvector<const wchar_t *>::const_iterator path;
     wchar_t versionString[24];
     swprintf(versionString, 24, L".%02d.*.ecschema.xml", versionMajor);
     std::wstring schemaName = name;
@@ -846,8 +846,8 @@ SchemaDeserializationStatus ECSchema::ReadXml
 (
 ECSchemaPtr&                        schemaOut, 
 MSXML2::IXMLDOMDocument2&           pXmlDoc, 
-const std::vector<IECSchemaLocatorP> * schemaLocators, 
-const std::vector<const wchar_t *> * schemaPaths,
+const bvector<IECSchemaLocatorP> * schemaLocators, 
+const bvector<const wchar_t *> * schemaPaths,
 void * schemaContext
 )
     {            
@@ -1161,8 +1161,8 @@ SchemaDeserializationStatus ECSchema::ReadXmlFromFile
 (
 ECSchemaPtr&          schemaOut, 
 const wchar_t *     ecSchemaXmlFile, 
-const std::vector<IECSchemaLocatorP> * schemaLocators, 
-const std::vector<const wchar_t *> * schemaPaths,
+const bvector<IECSchemaLocatorP> * schemaLocators, 
+const bvector<const wchar_t *> * schemaPaths,
 void * schemaContext
 )
     {                  
@@ -1196,8 +1196,8 @@ SchemaDeserializationStatus ECSchema::ReadXmlFromString
 (
 ECSchemaPtr&          schemaOut, 
 const wchar_t *     ecSchemaXml,
-const std::vector<IECSchemaLocatorP> * schemaLocators, 
-const std::vector<const wchar_t *> * schemaPaths,
+const bvector<IECSchemaLocatorP> * schemaLocators, 
+const bvector<const wchar_t *> * schemaPaths,
 void * schemaContext
 )
     {                  
