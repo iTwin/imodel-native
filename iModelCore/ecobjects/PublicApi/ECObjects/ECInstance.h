@@ -11,8 +11,6 @@
 #include "ECObjects.h"
 #include <Geom\GeomApi.h>
 
-typedef struct IStream* IStreamP;
-
 BEGIN_BENTLEY_EC_NAMESPACE
 
 typedef RefCountedPtr<IECInstance> IECInstancePtr;

@@ -84,6 +84,7 @@ EC_TYPEDEFS(SystemTime);
 
 #define WRITEONLY_PROPERTY(TYPE, NAME) __declspec(property(put=Set##NAME)) TYPE NAME
 
+typedef struct IStream* IStreamP;
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
