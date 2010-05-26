@@ -400,7 +400,7 @@ std::wstring const&     namespacePrefix
     for (schemaIterator = m_refSchemaList.begin(); schemaIterator != m_refSchemaList.end(); schemaIterator++)
         {
         if (0 == namespacePrefix.compare ((*schemaIterator)->m_namespacePrefix))
-            return (*schemaIterator);
+            return (*schemaIterator).get();
         }
 
     return NULL;
@@ -451,18 +451,18 @@ const ECSchemaReferenceList& ECSchema::GetReferencedSchemas
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::AddReferencedSchema
 (
-Bentley::EC::ECSchemaCR refSchema
+Bentley::EC::ECSchemaPtr refSchema
 )
     {
     ECSchemaReferenceList::const_iterator schemaIterator;
     for (schemaIterator = m_refSchemaList.begin(); schemaIterator != m_refSchemaList.end(); schemaIterator++)
         {
-        if (*schemaIterator == (ECSchemaP) &refSchema)
+        if (*schemaIterator == refSchema)
             return ECOBJECTS_STATUS_NamedItemAlreadyExists;
         }
             
-    m_refSchemaList.push_back((ECSchemaP) &refSchema);
-    
+    m_refSchemaList.push_back(refSchema);
+    m_referencedSchemaNamespaceMap.insert(std::pair<ECSchemaP, const std::wstring *> (refSchema.get(), &(refSchema->NamespacePrefix)));
     return ECOBJECTS_STATUS_Success;
     }
     
@@ -471,13 +471,13 @@ Bentley::EC::ECSchemaCR refSchema
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::RemoveReferencedSchema
 (
-Bentley::EC::ECSchemaCR refSchema
+Bentley::EC::ECSchemaPtr refSchema
 )
     {
     ECSchemaReferenceList::const_iterator schemaIterator;
     for (schemaIterator = m_refSchemaList.begin(); schemaIterator != m_refSchemaList.end(); schemaIterator++)
         {
-        if (*schemaIterator == (ECSchemaP) &refSchema)
+        if (*schemaIterator == refSchema)
             {
 //            m_refSchemaList.erase(schemaIterator);
 //            return ECOBJECTS_STATUS_Success;
@@ -489,12 +489,13 @@ Bentley::EC::ECSchemaCR refSchema
         
     // Can only remove the reference if nothing actually references it.
     
+    ECSchemaP foundSchemaP = (*schemaIterator).get();
     for each (ECClassP ecClass in Classes)
         {
         // First, check each base class to see if the base class uses that schema
         for each (ECClassP baseClass in ecClass->BaseClasses)
             {
-            if ((ECSchemaP) &(baseClass->Schema) == *schemaIterator)
+            if ((ECSchemaP) &(baseClass->Schema) == foundSchemaP)
                 {
                 return ECOBJECTS_STATUS_SchemaInUse;
                 }
@@ -506,14 +507,14 @@ Bentley::EC::ECSchemaCR refSchema
             {
             for each (ECClassP target in relClass->Target.Classes)
                 {
-                if ((ECSchemaP) &(target->Schema) == *schemaIterator)
+                if ((ECSchemaP) &(target->Schema) == foundSchemaP)
                     {
                     return ECOBJECTS_STATUS_SchemaInUse;
                     }
                 }
             for each (ECClassP source in relClass->Source.Classes)
                 {
-                if ((ECSchemaP) &(source->Schema) == *schemaIterator)
+                if ((ECSchemaP) &(source->Schema) == foundSchemaP)
                     {
                     return ECOBJECTS_STATUS_SchemaInUse;
                     }
@@ -721,7 +722,8 @@ void * schemaContext
                 delete underConstruction;
             return SCHEMA_DESERIALIZATION_STATUS_ReferencedSchemaNotFound;
             }
-        AddReferencedSchema(*(new ECSchema(*(referencedSchema.get()))));
+        ECSchemaPtr newPtr(referencedSchema);
+        AddReferencedSchema(newPtr);
         }
     if (needToDelete)
         delete underConstruction;
@@ -940,7 +942,7 @@ MSXML2::IXMLDOMElement &parentNode
     ECSchemaReferenceList::const_iterator schemaIterator;
     for (schemaIterator = m_refSchemaList.begin(); schemaIterator != m_refSchemaList.end(); schemaIterator++)
         {
-        ECSchemaP refSchema = *schemaIterator;
+        ECSchemaP refSchema = (*schemaIterator).get();
         std::wstring *prefix = new std::wstring(refSchema->NamespacePrefix);
         if (prefix->length() == 0)
             prefix = new std::wstring(L"s");
