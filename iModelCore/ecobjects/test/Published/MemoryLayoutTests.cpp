@@ -216,6 +216,8 @@ std::wstring    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versio
     {
     wchar_t fmt[] = L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                     L"<ECSchema schemaName=\"%s\" nameSpacePrefix=\"test\" version=\"%02d.%02d\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+                    L"    <ECClass typeName=\"EmptyClass\" isDomainClass=\"True\">"
+                    L"    </ECClass>"
                     L"    <ECClass typeName=\"Manufacturer\" isStruct=\"True\" isDomainClass=\"True\">"
                     L"        <ECProperty propertyName=\"Name\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"AccountNo\" typeName=\"int\" />"
@@ -659,25 +661,56 @@ TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
 
     ECSchemaPtr schema = CreateTestSchema();
     ASSERT_TRUE (schema != NULL);
+
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);
-    
+
     SchemaLayout schemaLayout (24);
 
     ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
     StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);        
-    
+
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     wstring instanceId = instance->GetInstanceId();
     instance->Dump();
     ExerciseInstance (*instance, L"Test");
-    
+
     delete classLayout;
 
     // instance.Compact()... then check values again
     CoUninitialize();
     };
-  
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
+    {
+    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+
+    ECSchemaPtr schema = CreateTestSchema();
+    ASSERT_TRUE (schema != NULL);
+
+    ECClassP ecClass = schema->GetClassP (L"EmptyClass");
+    ASSERT_TRUE (ecClass);
+
+    SchemaLayout schemaLayout (25);
+
+    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 52, schemaLayout.GetSchemaIndex());
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);        
+
+    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    wstring instanceId = instance->GetInstanceId();
+    UInt32 size = instance->GetBytesUsed ();
+    EXPECT_EQ (size, UInt32(sizeof(InstanceHeader)));
+
+    instance->Dump();
+    delete classLayout;
+
+    // instance.Compact()... then check values again
+    CoUninitialize();
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/

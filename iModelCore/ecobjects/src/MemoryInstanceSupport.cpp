@@ -187,6 +187,9 @@ void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 byt
     header.m_classIndex    = m_classIndex;
     header.m_instanceFlags = 0;
 
+    if (0 == GetPropertyCount())
+        return;
+        
     UInt32 nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks (GetPropertyCount());
     InitializeNullFlags ((NullflagsBitmask *)(data + sizeof (InstanceHeader)), nNullflagsBitmasks);
             
@@ -284,9 +287,11 @@ bool            ClassLayout::IsCompatible (ClassLayoutCR classLayout) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 UInt32          ClassLayout::CalculateBytesUsed(byte const * data) const
     {
-    DEBUG_EXPECT (0 != m_sizeOfFixedSection);
-    if (m_sizeOfFixedSection == 0)//GetSizeOfFixedSection
-        return 0;
+    DEBUG_EXPECT (0 != m_sizeOfFixedSection); 
+    
+    // handle case when no properties are defined
+    if (0 == m_propertyLayouts.size())
+        return m_sizeOfFixedSection;
         
     PropertyLayoutCR lastPropertyLayout = m_propertyLayouts[m_propertyLayouts.size() - 1];  // WIP_FUSION: if _GetBytesUsed shows up in profiler, we may want to add bool m_hasVariableSizedValues;
     if (lastPropertyLayout.IsFixedSized())
@@ -579,19 +584,19 @@ BentleyStatus   ClassLayout::SetClass (wchar_t const* className, UInt16 classInd
 +---------------+---------------+---------------+---------------+---------------+------*/  
 ECObjectsStatus       ClassLayout::FinishLayout ()
     {
+    // Calculate size of fixed section    
+    if (0 == m_propertyLayouts.size())
+        {
+        m_sizeOfFixedSection = sizeof (InstanceHeader);
+        return ECOBJECTS_STATUS_Success;
+        }
+
     for (UInt32 i = 0; i < m_propertyLayouts.size(); i++)
         {
         PropertyLayoutCP propertyLayout = &m_propertyLayouts[i];
         m_propertyLayoutMap[propertyLayout->GetAccessString()] = propertyLayout;
         }
         
-    // Calculate size of fixed section    
-    if (0 == m_propertyLayouts.size())
-        {
-        m_sizeOfFixedSection = 0;
-        return ECOBJECTS_STATUS_Success;
-        }
-
     PropertyLayoutCR lastPropertyLayout = m_propertyLayouts[m_propertyLayouts.size() - 1];
     UInt32    size = lastPropertyLayout.GetOffset() + lastPropertyLayout.GetSizeInFixedSection();
 
