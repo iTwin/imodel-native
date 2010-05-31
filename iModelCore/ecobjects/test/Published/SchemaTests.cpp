@@ -472,33 +472,33 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-//TEST(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingStream)
-//    {
-//    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-//    ECSchemaPtr schema;
-//    
-//    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml");
-//    wprintf(L"Verifying original schema from file.\n"); 
-//    VerifyWidgetsSchema(schema);
-//
-//    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);    
-//    LPSTREAM stream = NULL;
-//    HRESULT res = ::CreateStreamOnHGlobal(NULL,TRUE,&stream);
-//
-//    SchemaSerializationStatus status2 = schema->WriteXmlToStream(stream);
-//    EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status2);
-//    
-//    LARGE_INTEGER liPos = {0};
-//    stream->Seek(liPos, STREAM_SEEK_SET, NULL);
-//
-//    ECSchemaPtr deserializedSchema;
-//    status = ECSchema::ReadXmlFromStream(deserializedSchema, stream);
-//    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status); 
-//    wprintf(L"Verifying schema deserialized from stream.\n");
-//    VerifyWidgetsSchema(deserializedSchema);
-//
-//    CoUninitialize();
-//    }
+TEST(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingStream)
+    {
+    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+    ECSchemaPtr schema;
+    
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"Widgets.01.00.ecschema.xml").c_str(), NULL, NULL);
+    wprintf(L"Verifying original schema from file.\n"); 
+    VerifyWidgetsSchema(schema);
+
+    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);    
+    LPSTREAM stream = NULL;
+    HRESULT res = ::CreateStreamOnHGlobal(NULL,TRUE,&stream);
+
+    SchemaSerializationStatus status2 = schema->WriteXmlToStream(stream);
+    EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status2);
+    
+    LARGE_INTEGER liPos = {0};
+    stream->Seek(liPos, STREAM_SEEK_SET, NULL);
+
+    ECSchemaPtr deserializedSchema;
+    status = ECSchema::ReadXmlFromStream(deserializedSchema, stream, NULL, NULL);
+    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status); 
+    wprintf(L"Verifying schema deserialized from stream.\n");
+    VerifyWidgetsSchema(deserializedSchema);
+
+    CoUninitialize();
+    }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    

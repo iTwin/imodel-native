@@ -24,7 +24,7 @@ ECFileNameIterator::~ECFileNameIterator ()
         ::FindClose (m_findHandle);
     }
     
-StatusInt ECFileNameIterator::GetNextFileName (wchar_t * name)
+BentleyStatus ECFileNameIterator::GetNextFileName (wchar_t * name)
     {
     if (INVALID_HANDLE_VALUE == m_findHandle || !m_valid)
         return  ERROR;

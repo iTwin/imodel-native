@@ -22,7 +22,7 @@ struct ECFileNameIterator
 public:
     ECFileNameIterator (const wchar_t * path);
     ~ECFileNameIterator ();
-    StatusInt GetNextFileName (wchar_t * name);
+    BentleyStatus GetNextFileName (wchar_t * name);
      };
 
 struct ECFileUtilities
