@@ -963,7 +963,7 @@ public:
     //! @param[in]    schemaContext       Usually NULL, but when used it is usually a pointer to a SchemaMap used to locate referenced schemas
     //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
     //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
-    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromStream (ECSchemaPtr& schemaOut, IStreamP ecSchemaXmlStream, const std::vector<IECSchemaLocatorP> * schemaLocators, const std::vector<const wchar_t *> * schemaPaths, void * schemaContext = NULL);
+    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromStream (ECSchemaPtr& schemaOut, IStreamP ecSchemaXmlStream, const bvector<IECSchemaLocatorP> * schemaLocators, const bvector<const wchar_t *> * schemaPaths, void * schemaContext = NULL);
     
 }; // ECSchema
 

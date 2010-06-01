@@ -1244,8 +1244,8 @@ SchemaDeserializationStatus ECSchema::ReadXmlFromStream
 (
 ECSchemaPtr&          schemaOut, 
 IStreamP              ecSchemaXmlStream,
-const std::vector<IECSchemaLocatorP> * schemaLocators, 
-const std::vector<const wchar_t *> * schemaPaths,
+const bvector<IECSchemaLocatorP> * schemaLocators, 
+const bvector<const wchar_t *> * schemaPaths,
 void * schemaContext
 )
     {                  
