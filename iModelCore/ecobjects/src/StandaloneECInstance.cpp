@@ -40,6 +40,7 @@ MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 mi
 +---------------+---------------+---------------+---------------+---------------+------*/
 MemoryECInstanceBase::~MemoryECInstanceBase ()
     {
+    _FreeAllocation();
     }
 
 /*---------------------------------------------------------------------------------**//**

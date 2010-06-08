@@ -28,7 +28,7 @@ struct IECInstance : RefCountedBase
 private:
 protected:    
     ECOBJECTS_EXPORT IECInstance(); 
-    ECOBJECTS_EXPORT ~IECInstance();
+    ECOBJECTS_EXPORT virtual ~IECInstance();
     ECOBJECTS_EXPORT virtual std::wstring _GetInstanceId() const = 0; // Virtual and returning std::wstring because a subclass may want to calculate it on demand
     ECOBJECTS_EXPORT virtual StatusInt    _GetValue (ECValueR v, const wchar_t * propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const = 0;
     ECOBJECTS_EXPORT virtual StatusInt    _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const = 0;
