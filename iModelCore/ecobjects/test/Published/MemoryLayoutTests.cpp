@@ -671,7 +671,7 @@ TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
     StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);        
 
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
-    wstring instanceId = instance->GetInstanceId();
+    bwstring instanceId = instance->GetInstanceId();
     instance->Dump();
     ExerciseInstance (*instance, L"Test");
 
@@ -700,7 +700,7 @@ TEST(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
     StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);        
 
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
-    wstring instanceId = instance->GetInstanceId();
+    bwstring instanceId = instance->GetInstanceId();
     UInt32 size = instance->GetBytesUsed ();
     EXPECT_EQ (size, UInt32(sizeof(InstanceHeader)));
 

@@ -267,7 +267,7 @@ ECEnablerCR         StandaloneECInstance::_GetEnabler() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-std::wstring        StandaloneECInstance::_GetInstanceId() const
+bwstring        StandaloneECInstance::_GetInstanceId() const
     {
     if (m_instanceId.size() == 0)
         {
