@@ -711,8 +711,8 @@ TEST(SchemaCreationTest, CanFullyCreateASchema)
     ArrayECPropertyP nestedArrayProp;
     ArrayECPropertyP primitiveArrayProp;
     
-    class1->CreatePrimitiveProperty(stringProp, L"String Member");
-    class1->CreateStructProperty(structProp, L"Struct Member");
+    class1->CreatePrimitiveProperty(stringProp, L"StringMember");
+    class1->CreateStructProperty(structProp, L"StructMember");
     class1->CreateArrayProperty(nestedArrayProp, L"NestedArray");
     class1->CreateArrayProperty(primitiveArrayProp, L"PrimitiveArray");
     
@@ -968,6 +968,7 @@ TEST(ClassTest, CanOverrideBaseProperties)
     EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreatePrimitiveProperty(longProperty, L"StringProperty", PRIMITIVETYPE_Long));
     EXPECT_EQ(NULL, longProperty);
     EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreatePrimitiveProperty(stringProperty, L"StringProperty", PRIMITIVETYPE_String));
+    EXPECT_EQ(baseStringProp, stringProperty->BaseProperty);
     class1->RemoveProperty(L"StringProperty");
     
     // Primitives overriding structs
