@@ -25,7 +25,7 @@ wchar_t *filepath,
 DWORD bufferSize
 )
     {
-    std::wstring dllPath = ECFileUtilities::GetDllPath();
+    bwstring dllPath = ECFileUtilities::GetDllPath();
     if (0 == dllPath.length())
         return ERROR;
         
@@ -43,7 +43,7 @@ DWORD bufferSize
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Casey.Mullen                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring GetLogConfigurationFilename()
+bwstring GetLogConfigurationFilename()
     {
     wchar_t filepath[_MAX_PATH];
 
@@ -94,7 +94,7 @@ void
                 }
             else
                 {                    
-                std::wstring filepath = GetLogConfigurationFilename();
+                bwstring filepath = GetLogConfigurationFilename();
                 if (filepath.size() > 0)
                     {   
                     Provider::Log4cxxLogger* pLog = new Provider::Log4cxxLogger ();

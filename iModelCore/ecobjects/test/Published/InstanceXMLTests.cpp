@@ -338,7 +338,7 @@ TEST(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstanceFr
     testInstance->Dump();
     VerifyTestInstance (testInstance.get(), false);
 
-    std::wstring ecInstanceXml;
+    bwstring ecInstanceXml;
 
     InstanceSerializationStatus status2 = testInstance->WriteXmlToString(ecInstanceXml, true);
     EXPECT_EQ(INSTANCE_SERIALIZATION_STATUS_Success, status2);

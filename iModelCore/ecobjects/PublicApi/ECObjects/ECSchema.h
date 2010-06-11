@@ -39,7 +39,7 @@ bool operator()(const wchar_t * s1, const wchar_t * s2) const
 struct NameValidator abstract
 {
 public:
-    static bool Validate(const std::wstring& name);
+    static bool Validate(const bwstring& name);
 };
     
 typedef std::list<ECPropertyP> PropertyList;
@@ -181,12 +181,12 @@ public:
     ECOBJECTS_EXPORT ~IECCustomAttributeContainer();
 
     //! Returns true if the conainer has a custom attribute of a class of the specified name
-    ECOBJECTS_EXPORT bool               IsDefined(std::wstring const& className) ;
+    ECOBJECTS_EXPORT bool               IsDefined(bwstring const& className) ;
     //! Returns true if the conainer has a custom attribute of a class of the specified class definition
     ECOBJECTS_EXPORT bool               IsDefined(ECClassCR classDefinition) ;
 
     //! Retrieves the custom attribute matching the class name.  Includes looking on base containers
-    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttribute(std::wstring const& className) const;
+    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttribute(bwstring const& className) const;
     //! Retrieves the custom attribute matching the class definition.  Includes looking on base containers
     ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttribute(ECClassCR classDefinition) const;
     //! Retrieves all custom attributes from the container
@@ -194,7 +194,7 @@ public:
     ECOBJECTS_EXPORT ECCustomAttributeInstanceIterable GetCustomAttributes(bool includeBase) const; 
 
     ECOBJECTS_EXPORT ECObjectsStatus    SetCustomAttribute(IECInstancePtr customAttributeInstance);
-    ECOBJECTS_EXPORT bool               RemoveCustomAttribute(std::wstring const& className);
+    ECOBJECTS_EXPORT bool               RemoveCustomAttribute(bwstring const& className);
     ECOBJECTS_EXPORT bool               RemoveCustomAttribute(ECClassCR classDefinition);
 };
 
@@ -255,16 +255,16 @@ struct ECProperty abstract : public IECCustomAttributeContainer
 friend struct ECClass;
 
 private:
-    std::wstring    m_name;        
-    std::wstring    m_displayLabel;
-    std::wstring    m_description;
+    bwstring    m_name;        
+    bwstring    m_displayLabel;
+    bwstring    m_description;
     bool            m_readOnly;
     ECClassCR       m_class;
     ECPropertyCP     m_baseProperty;    
 
 protected:
     ECProperty (ECClassCR ecClass) : m_class(ecClass), m_readOnly(false), m_baseProperty(NULL) {};        
-    ECObjectsStatus                     SetName (std::wstring const& name);    
+    ECObjectsStatus                     SetName (bwstring const& name);    
 
     virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode);
     virtual SchemaSerializationStatus   _WriteXml(MSXML2_IXMLDOMElement& parentNode);
@@ -275,8 +275,8 @@ protected:
     virtual bool                        _IsArray () const { return false; }
     // This method returns a wstring by value because it may be a computed string.  For instance struct properties may return a qualified typename with a namespace
     // prefix relative to the containing schema.
-    virtual std::wstring                _GetTypeName () const abstract;
-    virtual ECObjectsStatus             _SetTypeName (std::wstring const& typeName) abstract;
+    virtual bwstring                _GetTypeName () const abstract;
+    virtual ECObjectsStatus             _SetTypeName (bwstring const& typeName) abstract;
 
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const abstract;
 
@@ -286,7 +286,7 @@ protected:
 public:    
     EXPORTED_READONLY_PROPERTY (ECClassCR,              Class);   
     // ECClass implementation will index property by name so publicly name can not be reset
-    EXPORTED_READONLY_PROPERTY (std::wstring const&,    Name);        
+    EXPORTED_READONLY_PROPERTY (bwstring const&,    Name);        
     EXPORTED_READONLY_PROPERTY (bool,                   IsDisplayLabelDefined);    
     EXPORTED_READONLY_PROPERTY (bool,                   IsStruct);    
     EXPORTED_READONLY_PROPERTY (bool,                   IsArray);    
@@ -298,9 +298,9 @@ public:
     //! The TypeName for array properties will be the type of the elements the array contains.
     //! This method returns a wstring by value because it may be a computed string.  For instance struct properties may return a qualified typename with a namespace
     //! prefix relative to the containing schema.
-    EXPORTED_PROPERTY  (std::wstring,           TypeName);        
-    EXPORTED_PROPERTY  (std::wstring const&,    Description);
-    EXPORTED_PROPERTY  (std::wstring const&,    DisplayLabel);    
+    EXPORTED_PROPERTY  (bwstring,           TypeName);        
+    EXPORTED_PROPERTY  (bwstring const&,    Description);
+    EXPORTED_PROPERTY  (bwstring const&,    DisplayLabel);    
     EXPORTED_PROPERTY  (bool,                   IsReadOnly);
     EXPORTED_PROPERTY  (ECPropertyCP,           BaseProperty);    
 
@@ -329,8 +329,8 @@ protected:
     virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode) override;
     virtual SchemaSerializationStatus   _WriteXml(MSXML2_IXMLDOMElement& parentNode) override;
     virtual bool                        _IsPrimitive () const override { return true;}
-    virtual std::wstring                _GetTypeName () const override;
-    virtual ECObjectsStatus             _SetTypeName (std::wstring const& typeName) override;
+    virtual bwstring                _GetTypeName () const override;
+    virtual ECObjectsStatus             _SetTypeName (bwstring const& typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
     
 
@@ -355,8 +355,8 @@ protected:
     virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode) override;
     virtual SchemaSerializationStatus   _WriteXml(MSXML2_IXMLDOMElement& parentNode) override;
     virtual bool                        _IsStruct () const override { return true;}
-    virtual std::wstring                _GetTypeName () const override;
-    virtual ECObjectsStatus             _SetTypeName (std::wstring const& typeName) override;
+    virtual bwstring                _GetTypeName () const override;
+    virtual ECObjectsStatus             _SetTypeName (bwstring const& typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
 
 /*__PUBLISH_SECTION_START__*/
@@ -388,15 +388,15 @@ private:
       
     ArrayECProperty (ECClassCR ecClass) : m_primitiveType(PRIMITIVETYPE_String), m_arrayKind (ARRAYKIND_Primitive),
         m_minOccurs (0), m_maxOccurs (UINT_MAX), ECProperty(ecClass) {};
-    ECObjectsStatus SetMinOccurs (std::wstring const& minOccurs);          
-    ECObjectsStatus SetMaxOccurs (std::wstring const& maxOccurs);          
+    ECObjectsStatus SetMinOccurs (bwstring const& minOccurs);          
+    ECObjectsStatus SetMaxOccurs (bwstring const& maxOccurs);          
 
 protected:
     virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode) override;
     virtual SchemaSerializationStatus   _WriteXml(MSXML2_IXMLDOMElement& parentNode) override;
     virtual bool                        _IsArray () const override { return true;}
-    virtual std::wstring                _GetTypeName () const override;
-    virtual ECObjectsStatus             _SetTypeName (std::wstring const& typeName) override;
+    virtual bwstring                _GetTypeName () const override;
+    virtual ECObjectsStatus             _SetTypeName (bwstring const& typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
 
 /*__PUBLISH_SECTION_START__*/
@@ -480,9 +480,9 @@ friend struct ECSchema;
 friend struct ECPropertyIterable::IteratorState;
 
 private:
-    std::wstring            m_name;
-    std::wstring            m_displayLabel;
-    std::wstring            m_description;
+    bwstring            m_name;
+    bwstring            m_displayLabel;
+    bwstring            m_description;
     bool                    m_isStruct;
     bool                    m_isCustomAttributeClass;
     bool                    m_isDomainClass;
@@ -493,7 +493,7 @@ private:
     PropertyList            m_propertyList;    
     
     ECObjectsStatus                     AddProperty (ECPropertyP& pProperty);
-    ECObjectsStatus                     AddProperty (ECPropertyP pProperty, std::wstring const& name);
+    ECObjectsStatus                     AddProperty (ECPropertyP pProperty, bwstring const& name);
     
     static bool CheckBaseClassCycles(ECClassCP currentBaseClass, const void * arg);
     static bool AddUniquePropertiesToList(ECClassCP crrentBaseClass, const void * arg);
@@ -511,7 +511,7 @@ protected:
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
 
     // schemas index class by name so publicly name can not be reset
-    ECObjectsStatus                     SetName (std::wstring const& name);    
+    ECObjectsStatus                     SetName (bwstring const& name);    
 
     virtual SchemaDeserializationStatus ReadXmlAttributes (MSXML2_IXMLDOMNode& classNode);
 
@@ -530,13 +530,13 @@ protected:
 public:    
     EXPORTED_READONLY_PROPERTY (ECSchemaCR,             Schema);                
     // schemas index class by name so publicly name can not be reset
-    EXPORTED_READONLY_PROPERTY (std::wstring const&,    Name);        
+    EXPORTED_READONLY_PROPERTY (bwstring const&,    Name);        
     EXPORTED_READONLY_PROPERTY (bool,                   IsDisplayLabelDefined);
     EXPORTED_READONLY_PROPERTY (ECPropertyIterableCR,  Properties); 
     EXPORTED_READONLY_PROPERTY (const ECBaseClassesList&,     BaseClasses);   
 
-    EXPORTED_PROPERTY  (std::wstring const&,            Description);
-    EXPORTED_PROPERTY  (std::wstring const&,            DisplayLabel);
+    EXPORTED_PROPERTY  (bwstring const&,            Description);
+    EXPORTED_PROPERTY  (bwstring const&,            DisplayLabel);
     EXPORTED_PROPERTY  (bool,                           IsStruct);    
     EXPORTED_PROPERTY  (bool,                           IsCustomAttributeClass);    
     EXPORTED_PROPERTY  (bool,                           IsDomainClass);    
@@ -577,31 +577,31 @@ public:
     //! Returns true if the class is the type specified or derived from it.
     ECOBJECTS_EXPORT bool            Is(ECClassCP targetClass) const;
 
-    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, std::wstring const& name);
-    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, std::wstring const& name, PrimitiveType primitiveType);
-    ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, std::wstring const& name);
-    ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, std::wstring const& name, ECClassCR structType);
-    ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, std::wstring const& name);
-    ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, std::wstring const& name, PrimitiveType primitiveType);
-    ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, std::wstring const& name, ECClassCP structType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, bwstring const& name);
+    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, bwstring const& name, PrimitiveType primitiveType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, bwstring const& name);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, bwstring const& name, ECClassCR structType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, bwstring const& name);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, bwstring const& name, PrimitiveType primitiveType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, bwstring const& name, ECClassCP structType);
     
     //! Remove the named property
     //! @param[in] name The name of the property to be removed
-    ECOBJECTS_EXPORT ECObjectsStatus RemoveProperty(std::wstring const& name);
+    ECOBJECTS_EXPORT ECObjectsStatus RemoveProperty(bwstring const& name);
      
     //! Get a property by name within the context of this class and its base classes.
     //! The pointer returned by this method is valid until the ECClass containing the property is destroyed or the property
     //! is removed from the class.
     //! @param[in]  name     The name of the property to lookup.
     //! @return   A pointer to an EC::ECProperty if the named property exists within the current class; otherwise, NULL
-    ECOBJECTS_EXPORT ECPropertyP     GetPropertyP (std::wstring const& name) const;
+    ECOBJECTS_EXPORT ECPropertyP     GetPropertyP (bwstring const& name) const;
 
     // ************************************************************************************************************************
     // ************************************  STATIC METHODS *******************************************************************
     // ************************************************************************************************************************
 
-    ECOBJECTS_EXPORT static ECObjectsStatus ParseClassName (std::wstring & prefix, std::wstring & className, std::wstring const& qualifiedClassName);
-    ECOBJECTS_EXPORT static std::wstring GetQualifiedClassName(ECSchemaCR primarySchema, ECClassCR ecClass);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseClassName (bwstring & prefix, bwstring & className, bwstring const& qualifiedClassName);
+    ECOBJECTS_EXPORT static bwstring GetQualifiedClassName(ECSchemaCR primarySchema, ECClassCR ecClass);
     ECOBJECTS_EXPORT static bool ClassesAreEqualByName(ECClassCP currentBaseClass, const void * arg);
 
    
@@ -669,7 +669,7 @@ public:
     ECOBJECTS_EXPORT bool IsUpperLimitUnbounded() const;
     
     //! Converts the cardinality to a string, for example "(0,n)", "(1,1)"
-    ECOBJECTS_EXPORT std::wstring ToString() const;
+    ECOBJECTS_EXPORT bwstring ToString() const;
 
     // ************************************************************************************************************************
     // ************************************  STATIC METHODS *******************************************************************
@@ -696,7 +696,7 @@ private:
 
     ECConstraintClassesList        m_constraintClasses;
     
-    std::wstring    m_roleLabel;
+    bwstring    m_roleLabel;
     bool            m_isPolymorphic;
     bool            m_isMultiple;
     RelationshipCardinality*   m_cardinality;
@@ -705,7 +705,7 @@ private:
     ECObjectsStatus SetCardinality(const wchar_t *cardinality);
     ECObjectsStatus SetCardinality(UInt32& lowerLimit, UInt32& upperLimit);
     
-    SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode, std::wstring const& elementName) const;
+    SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode, bwstring const& elementName) const;
     SchemaDeserializationStatus ReadXml(MSXML2_IXMLDOMNode& constraintNode);
     
     ~ECRelationshipConstraint();
@@ -724,7 +724,7 @@ public:
     
     //! Gets or sets the label of the constraint role in the relationship.
     //! If the role label is not defined, the display label of the relationship class is returned
-    EXPORTED_PROPERTY (std::wstring const, RoleLabel);
+    EXPORTED_PROPERTY (bwstring const, RoleLabel);
     
     ECOBJECTS_EXPORT bool IsRoleLabelDefined() const;
     
@@ -884,10 +884,10 @@ struct ECSchema /*__PUBLISH_ABSTRACT__*/ : RefCountedBase, public IECCustomAttri
 // They are freed when the schema is freed.
 
 private:
-    std::wstring        m_name;
-    std::wstring        m_namespacePrefix;
-    std::wstring        m_displayLabel;
-    std::wstring        m_description;
+    bwstring        m_name;
+    bwstring        m_namespacePrefix;
+    bwstring        m_displayLabel;
+    bwstring        m_description;
     UInt32              m_versionMajor;
     UInt32              m_versionMinor;    
     ECClassContainer    m_classContainer;
@@ -898,7 +898,7 @@ private:
     ECSchemaReferenceList m_refSchemaList;
     
     std::set<const wchar_t *> m_alreadySerializedClasses;
-    stdext::hash_map<ECSchemaP, const std::wstring *> m_referencedSchemaNamespaceMap;
+    stdext::hash_map<ECSchemaP, const bwstring *> m_referencedSchemaNamespaceMap;
 
     // Hide these as part of the RefCounted pattern    
     ECSchema () : m_versionMajor (DEFAULT_VERSION_MAJOR), m_versionMinor (DEFAULT_VERSION_MINOR), m_classContainer(ECClassContainer(m_classMap)) {};
@@ -908,13 +908,13 @@ private:
     SchemaSerializationStatus           WriteXml (MSXML2_IXMLDOMDocument2* pXmlDoc);
 
     ECObjectsStatus                     AddClass (ECClassP& pClass);
-    ECObjectsStatus                     SetVersionFromString (std::wstring const& versionString);
+    ECObjectsStatus                     SetVersionFromString (bwstring const& versionString);
 
     typedef bvector<std::pair<ECClassP, MSXML2_IXMLDOMNodePtr>>  ClassDeserializationVector;
     SchemaDeserializationStatus         ReadClassStubsFromXml(MSXML2_IXMLDOMNode& schemaNodePtr,ClassDeserializationVector& classes);
     SchemaDeserializationStatus         ReadClassContentsFromXml(ClassDeserializationVector&  classes);
     SchemaDeserializationStatus         ReadSchemaReferencesFromXml(MSXML2_IXMLDOMNode& schemaNodePtr, const bvector<IECSchemaLocatorP> * schemaLocators, const bvector<const wchar_t *> * schemaPaths, void * schemaContext);
-    static ECSchemaPtr                  LocateSchemaByPath(const bvector<IECSchemaLocatorP> * schemaLocators, const bvector<const wchar_t *> * schemaPaths, const std::wstring & name, UInt32& versionMajor, UInt32& versionMinor, SchemaMap * schemasUnderConstruction);
+    static ECSchemaPtr                  LocateSchemaByPath(const bvector<IECSchemaLocatorP> * schemaLocators, const bvector<const wchar_t *> * schemaPaths, const bwstring & name, UInt32& versionMajor, UInt32& versionMinor, SchemaMap * schemasUnderConstruction);
     
     SchemaSerializationStatus           WriteSchemaReferences(MSXML2_IXMLDOMElement& parentNode);
     SchemaSerializationStatus           WriteClass(MSXML2_IXMLDOMElement& parentNode, ECClassCR ecClass);
@@ -923,18 +923,18 @@ private:
 
 /*__PUBLISH_SECTION_START__*/
 public:    
-    EXPORTED_PROPERTY (std::wstring const&, Name);    
-    EXPORTED_PROPERTY (std::wstring const&, NamespacePrefix);
-    EXPORTED_PROPERTY (std::wstring const&, Description);
-    EXPORTED_PROPERTY (std::wstring const&, DisplayLabel);
+    EXPORTED_PROPERTY (bwstring const&, Name);    
+    EXPORTED_PROPERTY (bwstring const&, NamespacePrefix);
+    EXPORTED_PROPERTY (bwstring const&, Description);
+    EXPORTED_PROPERTY (bwstring const&, DisplayLabel);
     EXPORTED_PROPERTY (UInt32,              VersionMajor);
     EXPORTED_PROPERTY (UInt32,              VersionMinor);
 
     EXPORTED_READONLY_PROPERTY (ECClassContainerCR, Classes);
     EXPORTED_READONLY_PROPERTY (bool,               IsDisplayLabelDefined);
 
-    ECOBJECTS_EXPORT ECObjectsStatus    CreateClass (ECClassP& ecClass, std::wstring const& name);
-    ECOBJECTS_EXPORT ECObjectsStatus    CreateRelationshipClass (ECRelationshipClassP& relationshipClass, std::wstring const& name);
+    ECOBJECTS_EXPORT ECObjectsStatus    CreateClass (ECClassP& ecClass, bwstring const& name);
+    ECOBJECTS_EXPORT ECObjectsStatus    CreateRelationshipClass (ECRelationshipClassP& relationshipClass, bwstring const& name);
 
     //! Get a schema by namespace prefix within the context of this schema and its referenced schemas.
     //! It is important to note that this method does not return a RefCountedPtr.  If you want to hold a pointer to the returned schema that will exceed the
@@ -942,12 +942,12 @@ public:
     //! @param[in]  namespacePrefix     The prefix of the schema to lookup in the context of this schema and it's references.
     //!                                 Passing an empty namespacePrefix will return a pointer to the current schema.
     //! @return   A non-refcounted pointer to an EC::ECSchema if it can be successfully resolved from the specified namespacePrefix; otherwise, NULL
-    ECOBJECTS_EXPORT ECSchemaP          GetSchemaByNamespacePrefixP(std::wstring const& namespacePrefix) const;
+    ECOBJECTS_EXPORT ECSchemaP          GetSchemaByNamespacePrefixP(bwstring const& namespacePrefix) const;
 
     //! Resolve a namespace prefix for the specified schema within the context of this schema and its references.
     //! @param[in]  schema     The schema to lookup a namespace prefix in the context of this schema and its references.    
     //! @return   The namespace prefix if schema is a referenced schema; empty string if the schema is the current schema; otherwise, NULL
-    ECOBJECTS_EXPORT std::wstring const* ResolveNamespacePrefix(ECSchemaCR schema) const;
+    ECOBJECTS_EXPORT bwstring const* ResolveNamespacePrefix(ECSchemaCR schema) const;
 
     //! Get a class by name within the context of this schema.
     //! It is important to note that this method does not return a RefCountedPtr.  You must hold onto to the reference counted ECSchemaPtr on which you invoke
@@ -955,7 +955,7 @@ public:
     //! stale and result in a memory access violation when used.
     //! @param[in]  name     The name of the class to lookup.  This must be an unqualified (short) class name.    
     //! @return   A pointer to an EC::ECClass if the named class exists in within the current schema; otherwise, NULL
-    ECOBJECTS_EXPORT ECClassP           GetClassP (std::wstring const& name) const;
+    ECOBJECTS_EXPORT ECClassP           GetClassP (bwstring const& name) const;
 
     //! Gets the other schemas that are used by classes within this schema.
     //! Referenced schemas are the schemas that contain definitions of base classes,
@@ -978,7 +978,7 @@ public:
     //! @param[out] ecSchemaXml     The string containing the Xml of the serialized schema
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml
     //          will contain the serialized schema.  Otherwise, ecSchemaXml will be unmodified
-    ECOBJECTS_EXPORT SchemaSerializationStatus          WriteXmlToString (std::wstring & ecSchemaXml);
+    ECOBJECTS_EXPORT SchemaSerializationStatus          WriteXmlToString (bwstring & ecSchemaXml);
     
     //! Serializes an ECXML schema to a file
     //! Xml Serialization utilizes MSXML through COM. <b>Any thread calling this method must therefore be certain to initialize and
@@ -1002,8 +1002,8 @@ public:
     // ************************************  STATIC METHODS *******************************************************************
     // ************************************************************************************************************************
 
-    ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema (ECSchemaPtr& schemaOut, std::wstring const& schemaName);
-    ECOBJECTS_EXPORT static ECObjectsStatus ParseVersionString (UInt32& versionMajor, UInt32& versionMinor, std::wstring const& versionString);
+    ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema (ECSchemaPtr& schemaOut, bwstring const& schemaName);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseVersionString (UInt32& versionMajor, UInt32& versionMinor, bwstring const& versionString);
     ECOBJECTS_EXPORT static bool SchemasMatch (SchemaMatchType matchType,
                           const wchar_t * soughtName,    UInt32 soughtMajor,    UInt32 soughtMinor,
                           const wchar_t * candidateName, UInt32 candidateMajor, UInt32 candidateMinor);
@@ -1033,7 +1033,7 @@ public:
     //! @param[in]    versionMajor        The major version number of the schema to locate.
     //! @param[in]    versionMinor        The minor version number of the schema to locate.
     //! @param[in]    schemaContext       Usually NULL, but when used it is usually a pointer to a SchemaMap used to locate referenced schemas
-    ECOBJECTS_EXPORT static ECSchemaPtr                 LocateSchema(const bvector<IECSchemaLocatorP> * schemaLocators, const bvector<const wchar_t *> * schemaPaths, const std::wstring & name, UInt32& versionMajor, UInt32& versionMinor, void * schemaContext = NULL);
+    ECOBJECTS_EXPORT static ECSchemaPtr                 LocateSchema(const bvector<IECSchemaLocatorP> * schemaLocators, const bvector<const wchar_t *> * schemaPaths, const bwstring & name, UInt32& versionMajor, UInt32& versionMinor, void * schemaContext = NULL);
 
     //! Deserializes an ECXML schema from a string.
     //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and

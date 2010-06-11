@@ -15,7 +15,7 @@ namespace Bentley {
 class StopWatch 
     {
 private:
-    std::wstring       m_description;
+    bwstring       m_description;
     LARGE_INTEGER m_start;
     LARGE_INTEGER m_stop;
     LARGE_INTEGER m_frequency;
@@ -27,7 +27,7 @@ public:
     void         Start();
     void         Stop();
     double       GetElapsedSeconds();
-    std::wstring GetDescription();
+    bwstring GetDescription();
     };
     
 } // Bentley

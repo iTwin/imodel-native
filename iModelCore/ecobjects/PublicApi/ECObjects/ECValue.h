@@ -31,7 +31,7 @@ public:
     ECOBJECTS_EXPORT SystemTime(unsigned short year=1601, unsigned short month=1, unsigned short day=1, unsigned short hour=0, unsigned short minute=0, unsigned short second=0, unsigned short milliseconds=0);
     ECOBJECTS_EXPORT static SystemTime GetLocalTime();
     ECOBJECTS_EXPORT static SystemTime GetSystemTime();
-    ECOBJECTS_EXPORT std::wstring      ToString ();
+    ECOBJECTS_EXPORT bwstring      ToString ();
     };
 
 //! Information about an array in an EC::IECInstance. Does not contain the actual elements.
@@ -202,7 +202,7 @@ public:
     static UInt32                   GetFixedPrimitiveValueSize (PrimitiveType primitiveType);
 
     //! This is intended for debugging purposes, not for presentation purposes.
-    ECOBJECTS_EXPORT std::wstring   ToString () const;
+    ECOBJECTS_EXPORT bwstring   ToString () const;
     
     };
 

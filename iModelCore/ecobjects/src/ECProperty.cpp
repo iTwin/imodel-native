@@ -49,7 +49,7 @@ ECClassCR ECProperty::GetClass
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring const& ECProperty::GetName
+bwstring const& ECProperty::GetName
 (
 ) const
     {
@@ -61,7 +61,7 @@ std::wstring const& ECProperty::GetName
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECProperty::SetName
 (
-std::wstring const& name
+bwstring const& name
 )
     {        
     if (!NameValidator::Validate(name))
@@ -74,7 +74,7 @@ std::wstring const& name
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring const& ECProperty::GetDescription
+bwstring const& ECProperty::GetDescription
 (
 ) const
     {
@@ -86,7 +86,7 @@ std::wstring const& ECProperty::GetDescription
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECProperty::SetDescription
 (
-std::wstring const& description
+bwstring const& description
 )
     {        
     m_description = description;
@@ -96,7 +96,7 @@ std::wstring const& description
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring const& ECProperty::GetDisplayLabel
+bwstring const& ECProperty::GetDisplayLabel
 (
 ) const
     {
@@ -108,7 +108,7 @@ std::wstring const& ECProperty::GetDisplayLabel
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECProperty::SetDisplayLabel
 (
-std::wstring const& displayLabel
+bwstring const& displayLabel
 )
     {        
     m_displayLabel = displayLabel;
@@ -170,7 +170,7 @@ bool ECProperty::GetIsDisplayLabelDefined
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring ECProperty::GetTypeName
+bwstring ECProperty::GetTypeName
 (
 ) const
     {
@@ -182,7 +182,7 @@ std::wstring ECProperty::GetTypeName
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECProperty::SetTypeName
 (
-std::wstring typeName
+bwstring typeName
 )
     {
     return this->_SetTypeName (typeName);
@@ -394,7 +394,7 @@ ECPropertyCR baseProperty
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring PrimitiveECProperty::_GetTypeName
+bwstring PrimitiveECProperty::_GetTypeName
 (
 ) const
     {
@@ -406,7 +406,7 @@ std::wstring PrimitiveECProperty::_GetTypeName
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus PrimitiveECProperty::_SetTypeName 
 (
-std::wstring const& typeName
+bwstring const& typeName
 )
     {
     PrimitiveType primitiveType;
@@ -502,7 +502,7 @@ ECPropertyCR baseProperty
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring StructECProperty::_GetTypeName
+bwstring StructECProperty::_GetTypeName
 (
 ) const
     {
@@ -517,13 +517,13 @@ std::wstring StructECProperty::_GetTypeName
 ECObjectsStatus ResolveStructType
 (
 ECClassP & structClass,
-std::wstring const& typeName,
+bwstring const& typeName,
 ECPropertyCR ecProperty
 )
     {
     // typeName may potentially be qualified so we must parse into a namespace prefix and short class name
-    std::wstring namespacePrefix;
-    std::wstring className;
+    bwstring namespacePrefix;
+    bwstring className;
     ECObjectsStatus status = ECClass::ParseClassName (namespacePrefix, className, typeName);
     if (ECOBJECTS_STATUS_Success != status)
         {
@@ -555,7 +555,7 @@ ECPropertyCR ecProperty
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus StructECProperty::_SetTypeName 
 (
-std::wstring const& typeName
+bwstring const& typeName
 )
     {
     ECClassP structClass;
@@ -681,7 +681,7 @@ ECPropertyCR baseProperty
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring ArrayECProperty::_GetTypeName
+bwstring ArrayECProperty::_GetTypeName
 (
 ) const
     {    
@@ -701,7 +701,7 @@ std::wstring ArrayECProperty::_GetTypeName
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ArrayECProperty::_SetTypeName 
 (
-std::wstring const& typeName
+bwstring const& typeName
 )
     {
     PrimitiveType primitiveType;
@@ -806,7 +806,7 @@ UInt32 minOccurs
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ArrayECProperty::SetMinOccurs
 (
-std::wstring const& minOccurs
+bwstring const& minOccurs
 )
     {    
     UInt32 iMinOccurs;
@@ -850,7 +850,7 @@ UInt32 maxOccurs
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ArrayECProperty::SetMaxOccurs
 (
-std::wstring const& maxOccurs
+bwstring const& maxOccurs
 )
     {    
     UInt32 iMaxOccurs;

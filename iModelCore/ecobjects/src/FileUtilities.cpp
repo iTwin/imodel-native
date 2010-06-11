@@ -48,12 +48,12 @@ static void*    getDLLInstance ()
     return 0;
     }
  
-std::wstring ECFileUtilities::s_dllPath = L"";
+bwstring ECFileUtilities::s_dllPath = L"";
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Carole.MacDonald 02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring ECFileUtilities::GetDllPath()
+bwstring ECFileUtilities::GetDllPath()
     {
     if (!s_dllPath.empty())
         return s_dllPath;

@@ -437,7 +437,7 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);
 
-    std::wstring ecSchemaXmlString;
+    bwstring ecSchemaXmlString;
     
     SchemaSerializationStatus status2 = schema->WriteXmlToString(ecSchemaXmlString);
     EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status2);
@@ -515,7 +515,7 @@ TEST(SchemaSerializationTest, ExpectErrorWhenCOMNotInitialized)
     ECSchema::CreateSchema(schema, L"Widget");
     
     DISABLE_ASSERTS
-    std::wstring ecSchemaXmlString;
+    bwstring ecSchemaXmlString;
     
     SchemaSerializationStatus status = schema->WriteXmlToString(ecSchemaXmlString);
         
@@ -563,7 +563,7 @@ TEST(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     //ECSchemaPtr schema4;
     //SchemaDeserializationStatus status3 = ECSchema::ReadXmlFromFile (schema4, L"d:\\temp\\base.xml");
     
-    std::wstring ecSchemaXmlString;
+    bwstring ecSchemaXmlString;
     
     SchemaSerializationStatus status2 = schema->WriteXmlToString(ecSchemaXmlString);
     EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status2);
@@ -1049,7 +1049,7 @@ TEST(ClassTest, ExpectPropertiesInOrder)
     int i = 0;
     for each (ECPropertyP prop in class1->GetProperties(false))
         {
-        EXPECT_EQ(propertyNames[i], prop->Name);
+        EXPECT_EQ(0, prop->Name.compare(propertyNames[i]));
         i++;
         }
     }
@@ -1160,20 +1160,20 @@ TEST(ClassTest, ExpectPropertiesFromBaseClass)
         testVector.push_back(prop);
         
     EXPECT_EQ(14, testVector.size());
-    EXPECT_EQ(L"i", testVector[0]->Name);
-    EXPECT_EQ(L"j", testVector[1]->Name);
-    EXPECT_EQ(L"g", testVector[2]->Name);
-    EXPECT_EQ(L"h", testVector[3]->Name);
-    EXPECT_EQ(L"k", testVector[4]->Name);
-    EXPECT_EQ(L"l", testVector[5]->Name);
-    EXPECT_EQ(L"c", testVector[6]->Name);
-    EXPECT_EQ(L"d", testVector[7]->Name);
-    EXPECT_EQ(L"a", testVector[8]->Name);
-    EXPECT_EQ(L"b", testVector[9]->Name);
-    EXPECT_EQ(L"e", testVector[10]->Name);
-    EXPECT_EQ(L"f", testVector[11]->Name);
-    EXPECT_EQ(L"m", testVector[12]->Name);
-    EXPECT_EQ(L"n", testVector[13]->Name);
+    EXPECT_EQ(0, testVector[0]->Name.compare(L"i"));
+    EXPECT_EQ(0, testVector[1]->Name.compare(L"j"));
+    EXPECT_EQ(0, testVector[2]->Name.compare(L"g"));
+    EXPECT_EQ(0, testVector[3]->Name.compare(L"h"));
+    EXPECT_EQ(0, testVector[4]->Name.compare(L"k"));
+    EXPECT_EQ(0, testVector[5]->Name.compare(L"l"));
+    EXPECT_EQ(0, testVector[6]->Name.compare(L"c"));
+    EXPECT_EQ(0, testVector[7]->Name.compare(L"d"));
+    EXPECT_EQ(0, testVector[8]->Name.compare(L"a"));
+    EXPECT_EQ(0, testVector[9]->Name.compare(L"b"));
+    EXPECT_EQ(0, testVector[10]->Name.compare(L"e"));
+    EXPECT_EQ(0, testVector[11]->Name.compare(L"f"));
+    EXPECT_EQ(0, testVector[12]->Name.compare(L"m"));
+    EXPECT_EQ(0, testVector[13]->Name.compare(L"n"));
     
     // now we add some duplicate properties to mn which will "override" those from the base classes
     PrimitiveECPropertyP b2;
@@ -1195,20 +1195,20 @@ TEST(ClassTest, ExpectPropertiesFromBaseClass)
         testVector.push_back(prop);
         
     EXPECT_EQ(14, testVector.size());
-    EXPECT_EQ(L"i", testVector[0]->Name);
-    EXPECT_EQ(L"g", testVector[1]->Name);
-    EXPECT_EQ(L"l", testVector[2]->Name);
-    EXPECT_EQ(L"c", testVector[3]->Name);
-    EXPECT_EQ(L"a", testVector[4]->Name);
-    EXPECT_EQ(L"e", testVector[5]->Name);
-    EXPECT_EQ(L"m", testVector[6]->Name);
-    EXPECT_EQ(L"n", testVector[7]->Name);
-    EXPECT_EQ(L"b", testVector[8]->Name);
-    EXPECT_EQ(L"d", testVector[9]->Name);
-    EXPECT_EQ(L"f", testVector[10]->Name);
-    EXPECT_EQ(L"h", testVector[11]->Name);
-    EXPECT_EQ(L"j", testVector[12]->Name);
-    EXPECT_EQ(L"k", testVector[13]->Name);
+    EXPECT_EQ(0, testVector[0]->Name.compare(L"i"));
+    EXPECT_EQ(0, testVector[1]->Name.compare(L"g"));
+    EXPECT_EQ(0, testVector[2]->Name.compare(L"l"));
+    EXPECT_EQ(0, testVector[3]->Name.compare(L"c"));
+    EXPECT_EQ(0, testVector[4]->Name.compare(L"a"));
+    EXPECT_EQ(0, testVector[5]->Name.compare(L"e"));
+    EXPECT_EQ(0, testVector[6]->Name.compare(L"m"));
+    EXPECT_EQ(0, testVector[7]->Name.compare(L"n"));
+    EXPECT_EQ(0, testVector[8]->Name.compare(L"b"));
+    EXPECT_EQ(0, testVector[9]->Name.compare(L"d"));
+    EXPECT_EQ(0, testVector[10]->Name.compare(L"f"));
+    EXPECT_EQ(0, testVector[11]->Name.compare(L"h"));
+    EXPECT_EQ(0, testVector[12]->Name.compare(L"j"));
+    EXPECT_EQ(0, testVector[13]->Name.compare(L"k"));
 
     PrimitiveECPropertyP e2;
     PrimitiveECPropertyP a2;
@@ -1243,20 +1243,20 @@ TEST(ClassTest, ExpectPropertiesFromBaseClass)
         testVector.push_back(prop);
         
     EXPECT_EQ(14, testVector.size());
-    EXPECT_EQ(L"i", testVector[0]->Name);
-    EXPECT_EQ(L"c", testVector[1]->Name);
-    EXPECT_EQ(L"a", testVector[2]->Name);
-    EXPECT_EQ(L"g", testVector[3]->Name);
-    EXPECT_EQ(L"e", testVector[4]->Name);
-    EXPECT_EQ(L"l", testVector[5]->Name);
-    EXPECT_EQ(L"m", testVector[6]->Name);
-    EXPECT_EQ(L"n", testVector[7]->Name);
-    EXPECT_EQ(L"b", testVector[8]->Name);
-    EXPECT_EQ(L"d", testVector[9]->Name);
-    EXPECT_EQ(L"f", testVector[10]->Name);
-    EXPECT_EQ(L"h", testVector[11]->Name);
-    EXPECT_EQ(L"j", testVector[12]->Name);
-    EXPECT_EQ(L"k", testVector[13]->Name);
+    EXPECT_EQ(0, testVector[0]->Name.compare(L"i"));
+    EXPECT_EQ(0, testVector[1]->Name.compare(L"c"));
+    EXPECT_EQ(0, testVector[2]->Name.compare(L"a"));
+    EXPECT_EQ(0, testVector[3]->Name.compare(L"g"));
+    EXPECT_EQ(0, testVector[4]->Name.compare(L"e"));
+    EXPECT_EQ(0, testVector[5]->Name.compare(L"l"));
+    EXPECT_EQ(0, testVector[6]->Name.compare(L"m"));
+    EXPECT_EQ(0, testVector[7]->Name.compare(L"n"));
+    EXPECT_EQ(0, testVector[8]->Name.compare(L"b"));
+    EXPECT_EQ(0, testVector[9]->Name.compare(L"d"));
+    EXPECT_EQ(0, testVector[10]->Name.compare(L"f"));
+    EXPECT_EQ(0, testVector[11]->Name.compare(L"h"));
+    EXPECT_EQ(0, testVector[12]->Name.compare(L"j"));
+    EXPECT_EQ(0, testVector[13]->Name.compare(L"k"));
     }
 
 TEST(ClassTest, AddAndRemoveConstraintClasses)
