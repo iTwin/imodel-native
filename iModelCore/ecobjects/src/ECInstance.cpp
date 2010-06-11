@@ -5,6 +5,7 @@
 |   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
 #include "ECObjectsPch.h"
 
 BEGIN_BENTLEY_EC_NAMESPACE
@@ -670,7 +671,8 @@ InstanceDeserializationStatus       TranslateStatus (HRESULT status)
         { WC_E_DECLELEMENT,         INSTANCE_DESERIALIZATION_STATUS_BadElement              },
         { WC_E_NAME,                INSTANCE_DESERIALIZATION_STATUS_NoElementName           },  
         { WC_E_ELEMENTMATCH,        INSTANCE_DESERIALIZATION_STATUS_EndElementDoesntMatch   },
-        { WC_E_ENTITYCONTENT,       INSTANCE_DESERIALIZATION_STATUS_BadElement              },      
+        { WC_E_ENTITYCONTENT,       INSTANCE_DESERIALIZATION_STATUS_BadElement              },  
+        { WC_E_ROOTELEMENT,         INSTANCE_DESERIALIZATION_STATUS_BadElement              },    
         { S_FALSE,                  INSTANCE_DESERIALIZATION_STATUS_XmlFileIncomplete       },
         };
     
@@ -744,6 +746,16 @@ InstanceDeserializationStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr&
     // see if we can find the class from the schema we have.
     ECClassCP    foundClass;
     if (NULL == (foundClass = m_schema->GetClassP (className)))
+        {
+        ECSchemaReferenceList refList = m_schema->GetReferencedSchemas();
+        ECSchemaReferenceList::const_iterator schemaIterator;
+        for (schemaIterator = refList.begin(); schemaIterator != refList.end(); schemaIterator++)
+            {
+            if (NULL != (foundClass = (*schemaIterator)->GetClassP (className)))
+                break;
+            }
+        }
+    if (NULL == foundClass)
         return INSTANCE_DESERIALIZATION_STATUS_ECClassNotFound;
 
     *ecClass = foundClass;
@@ -832,7 +844,7 @@ InstanceDeserializationStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr&
             const wchar_t*  nameSpace;
             if (FAILED (status = m_xmlReader->GetValue (&nameSpace, NULL)))
                 return TranslateStatus (status);
-            const wchar_t*  schemaName = m_schema->Name.c_str();
+            const wchar_t*  schemaName = foundClass->Schema.Name.c_str();
             assert (0 == wcsncmp (schemaName, nameSpace, wcslen (schemaName)));
             }
 
@@ -844,6 +856,10 @@ InstanceDeserializationStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr&
 
         // the namespace should agree with the schema name.
         }
+    // IsEmptyElement returns false if the reader is positioned on an attribute node, even if attribute's parent element is empty. 
+    if (S_OK != (status = m_xmlReader->MoveToElement()))
+        return TranslateStatus (status);
+
     return INSTANCE_DESERIALIZATION_STATUS_Success;
     }
 
@@ -854,11 +870,12 @@ InstanceDeserializationStatus   ReadInstanceOrStructMembers (ECClassCR ecClass, 
     {
     // On entry, the reader is positioned in the content of an instance or struct.
 
+    HRESULT         status;
+
     // if it's an empty node, all members of the instance are NULL.
     if (m_xmlReader->IsEmptyElement())
         return INSTANCE_DESERIALIZATION_STATUS_Success;
 
-    HRESULT         status;
     XmlNodeType     nodeType;
     while (S_OK == (status = m_xmlReader->Read (&nodeType)))
         {
@@ -1454,7 +1471,6 @@ UInt32          GetLineNumber ()
 
 };
 
-
 // =====================================================================================
 // InstanceXMLWriter class
 // =====================================================================================
@@ -1464,6 +1480,7 @@ private:
     std::wstring                m_fileName;
     CComPtr <IStream>           m_stream;
     CComPtr <IXmlWriter>        m_xmlWriter;
+    CComPtr <IXmlWriterOutput>  m_xmlOutput;
     ECSchemaPtr                 m_schema;
     bool                        m_compacted;
 
@@ -1507,7 +1524,11 @@ InstanceSerializationStatus     Init ()
         if (FAILED (status = CreateXmlWriter (__uuidof(IXmlWriter), (void**) &m_xmlWriter, NULL)))
             return INSTANCE_SERIALIZATION_STATUS_CantCreateXmlWriter;
 
-        if (FAILED (status= m_xmlWriter->SetOutput (m_stream)))
+
+        if (FAILED (status = CreateXmlWriterOutputWithEncodingName(m_stream, 0, L"utf-16", &m_xmlOutput)))
+            return INSTANCE_SERIALIZATION_STATUS_CantCreateXmlWriter;
+
+        if (FAILED (status= m_xmlWriter->SetOutput (m_xmlOutput)))
             return INSTANCE_SERIALIZATION_STATUS_CantSetStream;
 
         if (!m_compacted)
@@ -1519,18 +1540,28 @@ InstanceSerializationStatus     Init ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceSerializationStatus     WriteInstance (IECInstanceCR instance)
+InstanceSerializationStatus     WriteInstance (IECInstanceCR instance, bool writeStart)
     {
     ECClassCR               ecClass     = instance.GetClass();
     ECSchemaCR              ecSchema    = ecClass.Schema;
 
     HRESULT status;
-    if (S_OK != (status = m_xmlWriter->WriteStartDocument (XmlStandalone_Omit)))
-        return TranslateStatus (status);
+    if (writeStart)
+        {
+        if (S_OK != (status = m_xmlWriter->WriteStartDocument (XmlStandalone_Omit)))
+            return TranslateStatus (status);
+        }
 
     // start by writing the name of the class as an element, with the schema name as the namespace.
-    if (S_OK != (status = m_xmlWriter->WriteStartElement (NULL, ecClass.Name.c_str(), ecSchema.Name.c_str())))
+    size_t size = wcslen(ecSchema.Name.c_str()) + 8;
+    wchar_t *fullSchemaName = (wchar_t*)malloc(size * sizeof(wchar_t));
+    swprintf(fullSchemaName, size, L"%s.%02d.%02d", ecSchema.Name.c_str(), ecSchema.VersionMajor, ecSchema.VersionMinor);
+    if (S_OK != (status = m_xmlWriter->WriteStartElement (NULL, ecClass.Name.c_str(), fullSchemaName)))
+        {
+        free(fullSchemaName);
         return TranslateStatus (status);
+        }
+    free(fullSchemaName);
 
     WritePropertiesOfClassOrStructArrayMember (ecClass, instance, NULL);
 
@@ -1904,18 +1935,125 @@ InstanceDeserializationStatus   IECInstance::ReadXmlFromFile (IECInstancePtr& ec
     return reader.ReadInstance (ecInstance);
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceDeserializationStatus   IECInstance::ReadXmlFromStream (IECInstancePtr& ecInstance, IStreamP stream, ECSchemaP schema)
+    {
+    InstanceXmlReader reader (schema, stream);
+
+    InstanceDeserializationStatus   status;
+    if (INSTANCE_DESERIALIZATION_STATUS_Success != (status = reader.Init ()))
+        return status;
+
+    return reader.ReadInstance (ecInstance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceDeserializationStatus   IECInstance::ReadXmlFromString (IECInstancePtr& ecInstance, const wchar_t* xmlString, ECSchemaP schema)
+    {
+    CComPtr <IStream> stream;
+    if (S_OK != ::CreateStreamOnHGlobal(NULL,TRUE,&stream))
+        return INSTANCE_DESERIALIZATION_STATUS_CantCreateStream;
+
+    LARGE_INTEGER liPos = {0};
+    if (S_OK != stream->Seek(liPos, STREAM_SEEK_SET, NULL))
+        return INSTANCE_DESERIALIZATION_STATUS_CantCreateStream;
+
+    ULARGE_INTEGER uliSize = { 0 };
+    stream->SetSize(uliSize);
+
+    ULONG bytesWritten;
+    ULONG ulSize = (ULONG) wcslen(xmlString) * sizeof(wchar_t);
+
+    if (S_OK != stream->Write(xmlString, ulSize, &bytesWritten))
+        return INSTANCE_DESERIALIZATION_STATUS_CantCreateStream;
+
+    if (ulSize != bytesWritten)
+        return INSTANCE_DESERIALIZATION_STATUS_CantCreateStream;
+
+    if (S_OK != stream->Seek(liPos, STREAM_SEEK_SET, NULL))
+        return INSTANCE_DESERIALIZATION_STATUS_CantCreateStream;
+
+    InstanceXmlReader reader (schema, stream);
+
+    InstanceDeserializationStatus   status;
+    if (INSTANCE_DESERIALIZATION_STATUS_Success != (status = reader.Init ()))
+        return status;
+
+    return reader.ReadInstance (ecInstance);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceSerializationStatus     IECInstance::WriteXmlToFile (const wchar_t* fileName)
+InstanceSerializationStatus     IECInstance::WriteXmlToFile (const wchar_t* fileName, bool isStandAlone)
     {
     InstanceXmlWriter writer (fileName);
 
     InstanceSerializationStatus   status;
-    if (INSTANCE_DESERIALIZATION_STATUS_Success != (status = writer.Init ()))
+    if (INSTANCE_SERIALIZATION_STATUS_Success != (status = writer.Init ()))
         return status;
 
-    return writer.WriteInstance (*this);
+    return writer.WriteInstance (*this, isStandAlone);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceSerializationStatus     IECInstance::WriteXmlToStream (IStreamP stream, bool isStandAlone)
+    {
+    InstanceXmlWriter writer (stream);
+
+    InstanceSerializationStatus   status;
+    if (INSTANCE_SERIALIZATION_STATUS_Success != (status = writer.Init ()))
+        return status;
+
+    return writer.WriteInstance (*this, isStandAlone);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceSerializationStatus IECInstance::WriteXmlToString (std::wstring & ecInstanceXml, bool isStandAlone )
+    {
+    InstanceSerializationStatus   status;
+
+    CComPtr <IStream> stream;
+    if (S_OK != ::CreateStreamOnHGlobal(NULL,TRUE,&stream))
+        return INSTANCE_SERIALIZATION_STATUS_CantCreateStream;
+
+    InstanceXmlWriter writer (stream);
+    if (INSTANCE_SERIALIZATION_STATUS_Success != (status = writer.Init ()))
+        return status;
+
+    if (INSTANCE_SERIALIZATION_STATUS_Success != (status = writer.WriteInstance(*this, isStandAlone)))
+        return status;
+
+    LARGE_INTEGER liPos = {0};
+    STATSTG statstg;
+    
+    ULARGE_INTEGER beginningPos;
+    if (S_OK != stream->Seek(liPos, STREAM_SEEK_SET, &beginningPos))
+        return INSTANCE_SERIALIZATION_STATUS_CantSetStream;
+
+    memset (&statstg, 0, sizeof(statstg));
+    if (S_OK != stream->Stat(&statstg, STATFLAG_NONAME))
+        return INSTANCE_SERIALIZATION_STATUS_CantReadFromStream;
+    
+    wchar_t *xml = (wchar_t *) malloc((statstg.cbSize.LowPart + 1) * sizeof(wchar_t) );
+    ULONG bytesRead;
+    stream->Read(xml, statstg.cbSize.LowPart * sizeof(wchar_t), &bytesRead);
+    xml[bytesRead / sizeof(wchar_t)] = L'\0';
+    ecInstanceXml = xml;
+
+    // There is an invisible UNICODE character in the beginning that messes things up
+    ecInstanceXml = ecInstanceXml.substr(1);
+    free(xml);
+    return INSTANCE_SERIALIZATION_STATUS_Success;
     }
 
 END_BENTLEY_EC_NAMESPACE
