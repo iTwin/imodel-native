@@ -157,10 +157,99 @@ public:
     #define MSXML2_IXMLDOMElement   MSXML2::IXMLDOMElement
 #endif
 
+typedef std::list<IECInstancePtr> ECCustomAttributeCollection;
+struct ECCustomAttributeInstanceIterable;
+
+struct IECCustomAttributeContainer
+{
+/*__PUBLISH_SECTION_END__*/
+private:
+    friend struct ECCustomAttributeInstanceIterable;
+    ECCustomAttributeCollection         m_customAttributes;
+    SchemaSerializationStatus           AddCustomAttributeProperties(MSXML2_IXMLDOMNode& oldNode, MSXML2_IXMLDOMNode& newNode) const;
+
+protected:
+    InstanceDeserializationStatus       ReadCustomAttributes(MSXML2_IXMLDOMNode& containerNode, ECSchemaP schema);
+    SchemaSerializationStatus           WriteCustomAttributes(MSXML2_IXMLDOMNode& parentNode) const;
+
+    void                                AddUniqueCustomAttributesToList(ECCustomAttributeCollection& returnList);
+    virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const;
+
+/*__PUBLISH_SECTION_START__*/
+public:
+
+    ECOBJECTS_EXPORT ~IECCustomAttributeContainer();
+
+    //! Returns true if the conainer has a custom attribute of a class of the specified name
+    ECOBJECTS_EXPORT bool               IsDefined(std::wstring const& className) ;
+    //! Returns true if the conainer has a custom attribute of a class of the specified class definition
+    ECOBJECTS_EXPORT bool               IsDefined(ECClassCR classDefinition) ;
+
+    //! Retrieves the custom attribute matching the class name.  Includes looking on base containers
+    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttribute(std::wstring const& className) const;
+    //! Retrieves the custom attribute matching the class definition.  Includes looking on base containers
+    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttribute(ECClassCR classDefinition) const;
+    //! Retrieves all custom attributes from the container
+    //! @param[in]  Whether to include custom attributes from the base containers 
+    ECOBJECTS_EXPORT ECCustomAttributeInstanceIterable GetCustomAttributes(bool includeBase) const; 
+
+    ECOBJECTS_EXPORT ECObjectsStatus    SetCustomAttribute(IECInstancePtr customAttributeInstance);
+    ECOBJECTS_EXPORT bool               RemoveCustomAttribute(std::wstring const& className);
+    ECOBJECTS_EXPORT bool               RemoveCustomAttribute(ECClassCR classDefinition);
+};
+
+struct ECCustomAttributeInstanceIterable
+{
+private:
+    friend struct IECCustomAttributeContainer;
+
+    IECCustomAttributeContainerCR m_container;
+    bool                        m_includeBaseContainers;
+ /*__PUBLISH_SECTION_END__*/
+   ECCustomAttributeInstanceIterable( IECCustomAttributeContainerCR container, bool includeBase) : m_container(container), m_includeBaseContainers(includeBase) {};
+/*__PUBLISH_SECTION_START__*/
+public:
+    struct IteratorState /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
+        {
+        friend struct const_iterator;
+/*__PUBLISH_SECTION_END__*/
+
+        ECCustomAttributeCollection* m_customAttributes;
+        ECCustomAttributeCollection::const_iterator m_customAttributesIterator;
+
+        IteratorState(IECCustomAttributeContainerCR container, bool includeBase);
+        ~IteratorState();
+
+        static RefCountedPtr<IteratorState> Create (IECCustomAttributeContainerCR container, bool includeBase)
+            { return new IteratorState(container, includeBase); } ;
+/*__PUBLISH_SECTION_START__*/                        
+        };
+
+    struct const_iterator
+        {
+        private:
+            friend ECCustomAttributeInstanceIterable;
+            RefCountedPtr<IteratorState> m_state;
+            bool m_isEnd;
+/*__PUBLISH_SECTION_END__*/
+            const_iterator (IECCustomAttributeContainerCR container, bool includeBase);
+            const_iterator () : m_isEnd(true) {};
+/*__PUBLISH_SECTION_START__*/                        
+           
+        public:
+            ECOBJECTS_EXPORT const_iterator&     operator++();
+            ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const;
+            ECOBJECTS_EXPORT IECInstancePtr      operator* () const;
+        };
+
+public:
+    ECOBJECTS_EXPORT const_iterator begin () const;
+    ECOBJECTS_EXPORT const_iterator end ()   const;    
+};
 
 //=======================================================================================
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
-struct ECProperty abstract
+struct ECProperty abstract : public IECCustomAttributeContainer
 {
 /*__PUBLISH_SECTION_END__*/
 friend struct ECClass;
@@ -171,7 +260,7 @@ private:
     std::wstring    m_description;
     bool            m_readOnly;
     ECClassCR       m_class;
-    ECPropertyP     m_baseProperty;    
+    ECPropertyCP     m_baseProperty;    
 
 protected:
     ECProperty (ECClassCR ecClass) : m_class(ecClass), m_readOnly(false), m_baseProperty(NULL) {};        
@@ -190,6 +279,8 @@ protected:
     virtual ECObjectsStatus             _SetTypeName (std::wstring const& typeName) abstract;
 
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const abstract;
+
+    virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
     
 /*__PUBLISH_SECTION_START__*/
 public:    
@@ -210,7 +301,8 @@ public:
     EXPORTED_PROPERTY  (std::wstring,           TypeName);        
     EXPORTED_PROPERTY  (std::wstring const&,    Description);
     EXPORTED_PROPERTY  (std::wstring const&,    DisplayLabel);    
-    EXPORTED_PROPERTY  (bool,                   IsReadOnly);    
+    EXPORTED_PROPERTY  (bool,                   IsReadOnly);
+    EXPORTED_PROPERTY  (ECPropertyCP,           BaseProperty);    
 
     ECOBJECTS_EXPORT ECObjectsStatus            SetIsReadOnly (const wchar_t * isReadOnly);
 
@@ -380,7 +472,7 @@ typedef bool (*TraversalDelegate) (ECClassCP, const void *);
 
 //=======================================================================================
 //! The in-memory representation of an ECClass as defined by ECSchemaXML
-struct ECClass /*__PUBLISH_ABSTRACT__*/
+struct ECClass /*__PUBLISH_ABSTRACT__*/ : IECCustomAttributeContainer
 {
 /*__PUBLISH_SECTION_END__*/
 
@@ -403,8 +495,6 @@ private:
     ECObjectsStatus                     AddProperty (ECPropertyP& pProperty);
     ECObjectsStatus                     AddProperty (ECPropertyP pProperty, std::wstring const& name);
     
-    static bool ClassesAreEqualByName(ECClassCP currentBaseClass, const void * arg);
-
     static bool CheckBaseClassCycles(ECClassCP currentBaseClass, const void * arg);
     static bool AddUniquePropertiesToList(ECClassCP crrentBaseClass, const void * arg);
     bool TraverseBaseClasses(TraversalDelegate traverseMethod, bool recursive, const void * arg) const;
@@ -417,6 +507,8 @@ protected:
     //  of a schema.
     ECClass (ECSchemaCR schema) : m_schema(schema), m_isStruct(false), m_isCustomAttributeClass(false), m_isDomainClass(true){ };
     ~ECClass();    
+
+    virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
 
     // schemas index class by name so publicly name can not be reset
     ECObjectsStatus                     SetName (std::wstring const& name);    
@@ -510,7 +602,8 @@ public:
 
     ECOBJECTS_EXPORT static ECObjectsStatus ParseClassName (std::wstring & prefix, std::wstring & className, std::wstring const& qualifiedClassName);
     ECOBJECTS_EXPORT static std::wstring GetQualifiedClassName(ECSchemaCR primarySchema, ECClassCR ecClass);
-    
+    ECOBJECTS_EXPORT static bool ClassesAreEqualByName(ECClassCP currentBaseClass, const void * arg);
+
    
 }; // ECClass
 
@@ -783,7 +876,7 @@ public:
 };
 
 //! The in-memory representation of a schema as defined by ECSchemaXML
-struct ECSchema /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
+struct ECSchema /*__PUBLISH_ABSTRACT__*/ : RefCountedBase, public IECCustomAttributeContainer
 {
 /*__PUBLISH_SECTION_END__*/
 
@@ -825,6 +918,7 @@ private:
     
     SchemaSerializationStatus           WriteSchemaReferences(MSXML2_IXMLDOMElement& parentNode);
     SchemaSerializationStatus           WriteClass(MSXML2_IXMLDOMElement& parentNode, ECClassCR ecClass);
+    SchemaSerializationStatus           WriteCustomAttributeDependencies(MSXML2_IXMLDOMElement& parentNode, IECCustomAttributeContainerCR container);
     SchemaSerializationStatus           WritePropertyDependencies(MSXML2_IXMLDOMElement& parentNode, ECClassCR ecClass);
 
 /*__PUBLISH_SECTION_START__*/

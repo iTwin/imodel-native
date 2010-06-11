@@ -273,6 +273,7 @@ ECPropertyP&                 pProperty
     if (ECOBJECTS_STATUS_Success != status)
         return status;
 
+    pProperty->BaseProperty = baseProperty;
     m_propertyMap.insert (std::pair<const wchar_t *, ECPropertyP> (pProperty->Name.c_str(), pProperty));
     m_propertyList.push_back(pProperty);
     return ECOBJECTS_STATUS_Success;
@@ -667,9 +668,9 @@ PropertyList* propertyList
     if (!includeBaseProperties)
         return ECOBJECTS_STATUS_Success;
         
-    propertyList->reverse();
     if (m_baseClasses.size() == 0)
         return ECOBJECTS_STATUS_Success;
+    propertyList->reverse();
         
     TraverseBaseClasses(&AddUniquePropertiesToList, true, propertyList);
     propertyList->reverse();
@@ -840,6 +841,9 @@ MSXML2::IXMLDOMNode& classNode
             }
         }
 
+    // Add Custom Attributes
+    ReadCustomAttributes(classNode, (ECSchemaP) &m_schema);
+
     return SCHEMA_DESERIALIZATION_STATUS_Success;
     }
 
@@ -877,9 +881,9 @@ const wchar_t *elementName
         
         APPEND_CHILD_TO_PARENT(basePtr, classPtr);
         }
-        
-    // NEEDSWORK: Serialize Custom Attributes
-    
+
+    WriteCustomAttributes(classPtr);
+            
     for each (ECPropertyP prop in GetProperties(false))
         {
         prop->_WriteXml(classPtr);
@@ -971,6 +975,18 @@ const ECBaseClassesList& ECClass::GetBaseClasses
     return m_baseClasses;
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECClass::_GetBaseContainers
+(
+bvector<IECCustomAttributeContainerP>& returnList
+) const
+    {
+    for each (ECClassP baseClass in m_baseClasses)
+        returnList.push_back(baseClass);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -890,7 +890,6 @@ void * schemaContext
         Logger::GetLogger()->warningv (L"Invalid version attribute has been ignored while deserializing ECSchema '%s'.  The default version number %d.%d has been applied.\n", 
             schemaOut->Name.c_str(), schemaOut->VersionMajor, schemaOut->VersionMinor);
 
-    // NEEDSWORK Find and deserialize referenced schemas
     if (SCHEMA_DESERIALIZATION_STATUS_Success != (status = schemaOut->ReadSchemaReferencesFromXml(schemaNodePtr, schemaLocators, schemaPaths, schemaContext)))
         return status;
 
@@ -902,7 +901,7 @@ void * schemaContext
     if (SCHEMA_DESERIALIZATION_STATUS_Success != (status = schemaOut->ReadClassContentsFromXml (classes)))
         return status;
 
-    // NEEDSWORK Custom attributes (schema, classes, properties, etc)
+    schemaOut->ReadCustomAttributes(schemaNodePtr, schemaOut.get());
 
     return SCHEMA_DESERIALIZATION_STATUS_Success;
     }
@@ -992,6 +991,27 @@ MSXML2::IXMLDOMElement &parentNode
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaSerializationStatus ECSchema::WriteCustomAttributeDependencies
+(
+MSXML2_IXMLDOMElement& parentNode,
+IECCustomAttributeContainerCR container
+)
+    {
+    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+
+    for each (IECInstancePtr instance in container.GetCustomAttributes(false))
+        {
+        ECClassCR currentClass = instance->GetClass();
+        status = WriteClass(parentNode, currentClass);
+        if (SCHEMA_SERIALIZATION_STATUS_Success != status)
+            return status;
+        }
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaSerializationStatus ECSchema::WriteClass
@@ -1033,7 +1053,7 @@ Bentley::EC::ECClassCR ecClass
             WriteClass(parentNode, *target);
         }
     WritePropertyDependencies(parentNode, ecClass); 
-    // NEEDSWORK: SerializeCustomAttributeDependencies
+    WriteCustomAttributeDependencies(parentNode, ecClass);
     
     ecClass.WriteXml(parentNode);
     
@@ -1066,6 +1086,7 @@ Bentley::EC::ECClassCR ecClass
                 WriteClass(parentNode, *(arrayProperty->GetStructElementType()));
                 }
             }
+        WriteCustomAttributeDependencies(parentNode, *prop);
         }
     return status;
     }
@@ -1105,7 +1126,8 @@ MSXML2::IXMLDOMDocument2* pXmlDoc
     
     WriteSchemaReferences(schemaElementPtr);
     
-    // NEEDSWORK Serialize custom attributes
+    WriteCustomAttributeDependencies(schemaElementPtr, *this);
+    WriteCustomAttributes(schemaElementPtr);
     
     std::list<ECClassP> sortedClasses;
     // sort the classes by name so the order in which they are serialized is predictable.

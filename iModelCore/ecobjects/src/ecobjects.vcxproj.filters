@@ -57,6 +57,9 @@
     <ClCompile Include="StandaloneECInstance.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ECCustomAttribute.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\PublicApi\ECObjects\DesignByContract.h">

@@ -15,6 +15,28 @@
 BEGIN_BENTLEY_EC_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyCP ECProperty::GetBaseProperty
+(
+) const
+    {
+    return m_baseProperty;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECProperty::SetBaseProperty
+(
+ECPropertyCP baseProperty
+)
+    {
+    m_baseProperty = baseProperty;
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCR ECProperty::GetClass
@@ -227,6 +249,18 @@ ArrayECPropertyP ECProperty::GetAsArrayProperty
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECProperty::_GetBaseContainers
+(
+bvector<IECCustomAttributeContainerP>& returnList
+) const
+    {
+    if (NULL != m_baseProperty)
+        returnList.push_back((const_cast<ECPropertyP>(m_baseProperty)));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaDeserializationStatus ECProperty::_ReadXml
@@ -248,6 +282,7 @@ MSXML2::IXMLDOMNode& propertyNode
     ECObjectsStatus setterStatus;
     READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (READONLY_ATTRIBUTE,            this, IsReadOnly)
 
+    ReadCustomAttributes(propertyNode, (ECSchemaP) (&(m_class.Schema)));
     return SCHEMA_DESERIALIZATION_STATUS_Success;
     }
 
@@ -285,6 +320,7 @@ const wchar_t *elementName
         WRITE_OPTIONAL_XML_ATTRIBUTE(DISPLAY_LABEL_ATTRIBUTE, DisplayLabel, propertyPtr);
     WRITE_OPTIONAL_BOOL_XML_ATTRIBUTE(READONLY_ATTRIBUTE, IsReadOnly, propertyPtr);
     
+    WriteCustomAttributes(propertyPtr);
     return status;    
     }
 

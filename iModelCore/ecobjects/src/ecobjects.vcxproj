@@ -62,6 +62,7 @@
   <ItemGroup>
     <ClCompile Include="DesignByContract.cpp" />
     <ClCompile Include="ECClass.cpp" />
+    <ClCompile Include="ECCustomAttribute.cpp" />
     <ClCompile Include="ECEnabler.cpp" />
     <ClCompile Include="ECInstance.cpp" />
     <ClCompile Include="ECObjectsPch.cpp" />

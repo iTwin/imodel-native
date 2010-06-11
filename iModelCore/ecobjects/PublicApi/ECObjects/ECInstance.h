@@ -78,9 +78,11 @@ public:
 
     ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadXmlFromFile   (IECInstancePtr& ecInstance, const wchar_t* fileName, ECSchemaP schema);
     ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadXmlFromStream (IECInstancePtr& ecInstance, IStreamP stream, ECSchemaP schema);
+    ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadXmlFromString (IECInstancePtr& ecInstance, const wchar_t* xmlString, ECSchemaP schema);
 
-    ECOBJECTS_EXPORT InstanceSerializationStatus            WriteXmlToFile   (const wchar_t* fileName);
-    ECOBJECTS_EXPORT InstanceSerializationStatus            WriteXmlToStream (IStreamP stream);
+    ECOBJECTS_EXPORT InstanceSerializationStatus            WriteXmlToFile   (const wchar_t* fileName, bool isStandAlone);
+    ECOBJECTS_EXPORT InstanceSerializationStatus            WriteXmlToStream (IStreamP stream, bool isStandAlone);
+    ECOBJECTS_EXPORT InstanceSerializationStatus            WriteXmlToString (std::wstring & ecInstanceXml, bool isStandAlone);
     };
     
 //! EC::IECRelationshipInstance is the native equivalent of a .NET IECRelationshipInstance.
