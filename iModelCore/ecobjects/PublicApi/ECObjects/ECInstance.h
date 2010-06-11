@@ -29,7 +29,7 @@ private:
 protected:    
     ECOBJECTS_EXPORT IECInstance(); 
     ECOBJECTS_EXPORT ~IECInstance();
-    ECOBJECTS_EXPORT virtual std::wstring _GetInstanceId() const = 0; // Virtual and returning std::wstring because a subclass may want to calculate it on demand
+    ECOBJECTS_EXPORT virtual bwstring     _GetInstanceId() const = 0; // Virtual and returning std::wstring because a subclass may want to calculate it on demand
     ECOBJECTS_EXPORT virtual StatusInt    _GetValue (ECValueR v, const wchar_t * propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const = 0;
     ECOBJECTS_EXPORT virtual StatusInt    _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const = 0;
     ECOBJECTS_EXPORT virtual StatusInt    _SetValue (const wchar_t * propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) = 0;
@@ -45,7 +45,7 @@ protected:
     
 public:
     ECOBJECTS_EXPORT ECEnablerCR        GetEnabler() const;
-    ECOBJECTS_EXPORT std::wstring       GetInstanceId() const;
+    ECOBJECTS_EXPORT bwstring           GetInstanceId() const;
     ECOBJECTS_EXPORT bool               IsReadOnly() const;
     
     ECOBJECTS_EXPORT ECClassCR          GetClass() const;

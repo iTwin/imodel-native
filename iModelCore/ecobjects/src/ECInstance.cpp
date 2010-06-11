@@ -131,7 +131,7 @@ void IECInstance::Debug_ResetAllocationStats()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring        IECInstance::GetInstanceId() const
+bwstring        IECInstance::GetInstanceId() const
     {
     return _GetInstanceId();
     }
