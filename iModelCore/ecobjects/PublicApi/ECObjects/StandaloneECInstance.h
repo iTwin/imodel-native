@@ -74,7 +74,7 @@ struct StandaloneECInstance : MemoryECInstanceBase, IECInstance
     {
 friend StandaloneECEnabler;
 private:
-    std::wstring         m_instanceId;
+    bwstring         m_instanceId;
     StandaloneECEnablerP m_sharedWipEnabler; 
 
 private:
@@ -85,7 +85,7 @@ private:
     
 protected:
     // IECInstance
-    virtual std::wstring    _GetInstanceId() const override;
+    virtual bwstring        _GetInstanceId() const override;
     virtual bool            _IsReadOnly() const override;        
     virtual StatusInt       _GetValue (ECValueR v, const wchar_t * propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const override;
     virtual StatusInt       _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;

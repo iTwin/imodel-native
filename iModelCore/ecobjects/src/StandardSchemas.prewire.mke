@@ -16,7 +16,7 @@
 $(ContextDeliveryDir)Schemas/EditorCustomAttributes.01.00.ecschema.xml: $(ecobjectsSrc)Standards/EditorCustomAttributes.01.00.ecschema.xml
     $(LinkFirstDepToFirstTarget)
     
-$(ContextDeliveryDir)Schemas/Bentley_Standard_CustomAttributes.01.02.ecschema.xml: $(ecobjectsSrc)Standards/Bentley_Standard_CustomAttributes.01.02.ecschema.xml
+$(ContextDeliveryDir)Schemas/Bentley_Standard_CustomAttributes.01.03.ecschema.xml: $(ecobjectsSrc)Standards/Bentley_Standard_CustomAttributes.01.03.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
 $(ContextDeliveryDir)Schemas/Bentley_Standard_Classes.01.00.ecschema.xml: $(ecobjectsSrc)Standards/Bentley_Standard_Classes.01.00.ecschema.xml
