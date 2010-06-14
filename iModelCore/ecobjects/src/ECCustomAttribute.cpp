@@ -289,7 +289,7 @@ ECSchemaP schema
             status = IECInstance::ReadXmlFromString(ptr, (const wchar_t*) instancePtr->Getxml(), schema);
             if (INSTANCE_DESERIALIZATION_STATUS_Success != status)
                 return status;
-            SetCustomAttribute(ptr);
+            //SetCustomAttribute(ptr);
             }
         }
     return status;
