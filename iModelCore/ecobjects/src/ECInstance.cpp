@@ -602,6 +602,7 @@ static const wchar_t SOURCEINSTANCEID_ATTRIBUTE[]   = L"sourceInstanceID";
 static const wchar_t TARGETCLASS_ATTRIBUTE[]        = L"targetClass";
 static const wchar_t TARGETINSTANCEID_ATTRIBUTE[]   = L"targetInstanceID";
 static const wchar_t XMLNS_ATTRIBUTE[]              = L"xmlns";
+static const wchar_t XSI_NIL_ATTRIBUTE[]            = L"nil";
 
 // =====================================================================================
 // InstanceXMLReader class
@@ -1170,14 +1171,37 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
     // The reader is positioned at the XmlNodeType_Element that holds the value. 
     // We expect to find a Text element with the value, advance until we do.
 
-    // we don't expect an empty element when reading a primitive.
-    if (m_xmlReader->IsEmptyElement())
+    HRESULT         status;
+    // First check to see if this is set to NULL
+    for (status = m_xmlReader->MoveToFirstAttribute(); S_OK == status; status = m_xmlReader->MoveToNextAttribute())
         {
-        assert (false);
-        return INSTANCE_DESERIALIZATION_STATUS_EmptyElement;
+        // we have an attribute.
+        const wchar_t*      attributeName;
+        if (FAILED (status = m_xmlReader->GetLocalName (&attributeName, NULL)))
+            return TranslateStatus (status);
+
+        // see if it's the instanceId attribute.
+        if (0 == wcscmp (XSI_NIL_ATTRIBUTE, attributeName))
+            {
+            // get the value.
+            const wchar_t *  isNil;
+            if (FAILED (status = m_xmlReader->GetValue (&isNil, NULL)))
+                return TranslateStatus (status);
+
+            if ((0 == wcscmp (isNil, L"True")) || (0 == wcscmp (isNil, L"true")) || 
+                (0 == wcscmp (isNil, L"TRUE")) || (0 == wcscmp (isNil, L"1")))
+                {
+                ecValue.SetToNull();
+                }
+            }
+            m_xmlReader->MoveToElement();
         }
 
-    HRESULT         status;
+    if (m_xmlReader->IsEmptyElement())
+        {
+        return INSTANCE_DESERIALIZATION_STATUS_Success;
+        }
+
     XmlNodeType     nodeType;
     while (S_OK == (status = m_xmlReader->Read (&nodeType)))
         {
