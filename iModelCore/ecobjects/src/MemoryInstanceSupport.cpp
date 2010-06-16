@@ -92,9 +92,9 @@ static inline UInt32    CalculateFixedArrayPropertySize (UInt32 fixedCount, Prim
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring    PropertyLayout::ToString ()
+bwstring    PropertyLayout::ToString ()
     {    
-    std::wstring typeName;
+    bwstring typeName;
     if ((m_typeDescriptor.IsPrimitive()) || (m_typeDescriptor.IsPrimitiveArray()))
         typeName = ECXml::GetPrimitiveTypeName (m_typeDescriptor.GetPrimitiveType());
     else
@@ -322,7 +322,7 @@ ClassIndex      ClassLayout::GetClassIndex() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-std::wstring const &  ClassLayout::GetECClassName() const
+bwstring const &  ClassLayout::GetECClassName() const
     {
     return m_className;
     }
@@ -374,7 +374,7 @@ void            ClassLayout::Factory::AddProperty (wchar_t const * accessString,
     // WIP_FUSION, for now all accessors of array property layouts are stored with the brackets appended.  This means all access to array values through an
     // IECInstance must include the brackets.  If you want to obtain an array element value then you specify an index.  If you want to obtain an array info value
     // then you do not specify an index.  I'd like to consider an update to this so if an access string does not include the [] then we always return the ArrayInfo value.
-    std::wstring tempAccessString = accessString;
+    bwstring tempAccessString = accessString;
     if (typeDescriptor.IsArray())
         tempAccessString += L"[]";
 
@@ -456,10 +456,10 @@ void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, wchar_t 
     {
     for each (ECPropertyP property in ecClass.GetProperties())
         {
-        std::wstring    propName = property->GetName();
+        bwstring    propName = property->GetName();
         
         if (NULL != nameRoot)
-            propName = std::wstring (nameRoot) + L"." + propName;
+            propName = bwstring (nameRoot) + L"." + propName;
 
         if (property->GetIsPrimitive())
             {
@@ -1743,7 +1743,7 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
             
         ECValue v;
         GetValueFromMemory (v, *propertyLayout);
-        std::wstring valueAsString = v.ToString();
+        bwstring valueAsString = v.ToString();
            
         if (propertyLayout->IsFixedSized())            
             logger->tracev (L"  [0x%x][%4.d] %s = %s\n", address, offset, propertyLayout->GetAccessString(), valueAsString.c_str());
@@ -1773,7 +1773,7 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
                         {
                         wchar_t temp[1024];
                         swprintf(temp, 1024, L"Error (%d) returned while obtaining array index value", status, i);
-                        valueAsString = std::wstring (temp);
+                        valueAsString = bwstring (temp);
                         }
 
                     if (IsArrayOfFixedSizeElements (*propertyLayout))

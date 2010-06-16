@@ -35,7 +35,7 @@ const wchar_t * booleanString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring const& ECXml::GetPrimitiveTypeName
+bwstring const& ECXml::GetPrimitiveTypeName
 (
 PrimitiveType primitiveType
 )
@@ -71,7 +71,7 @@ PrimitiveType primitiveType
 ECObjectsStatus ECXml::ParsePrimitiveType
 (
 PrimitiveType&          primitiveType,
-std::wstring const&     typeName
+bwstring const&     typeName
 )
     {
     if (0 == typeName.length())
@@ -104,7 +104,7 @@ std::wstring const&     typeName
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring const& ECXml::StrengthToString
+bwstring const& ECXml::StrengthToString
 (
 StrengthType strength
 )
@@ -129,7 +129,7 @@ StrengthType strength
 ECObjectsStatus ECXml::ParseStrengthType
 (
 StrengthType&          strength,
-std::wstring const&    strengthString
+bwstring const&    strengthString
 )
     {
     if (0 == strengthString.length())
@@ -149,7 +149,7 @@ std::wstring const&    strengthString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring const& ECXml::DirectionToString
+bwstring const& ECXml::DirectionToString
 (
 ECRelatedInstanceDirection direction
 )
@@ -171,7 +171,7 @@ ECRelatedInstanceDirection direction
 ECObjectsStatus ECXml::ParseDirectionString
 (
 ECRelatedInstanceDirection& direction,
-std::wstring const&         directionString
+bwstring const&         directionString
 )
     {
     if (0 == directionString.length())
@@ -193,7 +193,7 @@ ECObjectsStatus ECXml::ParseCardinalityString
 (
 UInt32 &lowerLimit, 
 UInt32 &upperLimit, 
-const std::wstring &cardinalityString
+const bwstring &cardinalityString
 )
     {
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
@@ -215,7 +215,7 @@ const std::wstring &cardinalityString
         return status;
         }
     
-    std::wstring cardinalityWithoutSpaces = cardinalityString;
+    bwstring cardinalityWithoutSpaces = cardinalityString;
     cardinalityWithoutSpaces.erase(remove_if(cardinalityWithoutSpaces.begin(), cardinalityWithoutSpaces.end(), ::isspace), cardinalityWithoutSpaces.end()); 
     size_t openParenIndex = cardinalityWithoutSpaces.find('(');
     if (openParenIndex == std::string::npos)

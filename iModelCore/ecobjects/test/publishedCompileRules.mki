@@ -19,4 +19,6 @@ $(o)MemoryLayoutTests$(oext)  : $(baseDir)Published/MemoryLayoutTests.cpp   $(PC
 
 $(o)InstanceXMLTests$(oext)   : $(baseDir)Published/InstanceXMLTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
 
+$(o)CustomAttributeTests$(oext) : $(baseDir)Published/CustomAttributeTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
+
 $(o)TestFixture$(oext)        : $(baseDir)Published/TestFixture.cpp $(PCHHeaderDependency) ${MultiCompileDepends}

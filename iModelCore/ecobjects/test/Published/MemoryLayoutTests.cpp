@@ -145,7 +145,7 @@ void VerifyOutOfBoundsError (IECInstanceR instance, ECValueR v, wchar_t const * 
 +---------------+---------------+---------------+---------------+---------------+------*/    
 void VerifyStringArray (IECInstanceR instance, ECValueR v, wchar_t const * accessString, wchar_t const * value, UInt32 start, UInt32 count)
     {
-    std::wstring incrementingString = value;
+    bwstring incrementingString = value;
    
     for (UInt32 i=start ; i < start + count ; i++)        
         {
@@ -160,7 +160,7 @@ void VerifyStringArray (IECInstanceR instance, ECValueR v, wchar_t const * acces
 +---------------+---------------+---------------+---------------+---------------+------*/    
 void SetAndVerifyStringArray (IECInstanceR instance, ECValueR v, wchar_t const * accessString, wchar_t const * value, UInt32 count)
     {
-    std::wstring incrementingString = value;
+    bwstring incrementingString = value;
     for (UInt32 i=0 ; i < count ; i++)        
         {
         incrementingString.append (L"X");
@@ -212,7 +212,7 @@ void VerifyIsNullArrayElements (IECInstanceR instance, ECValueR v, wchar_t const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor, const wchar_t* className)
+bwstring    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor, const wchar_t* className)
     {
     wchar_t fmt[] = L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                     L"<ECSchema schemaName=\"%s\" nameSpacePrefix=\"test\" version=\"%02d.%02d\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
@@ -311,7 +311,7 @@ std::wstring    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versio
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaPtr       CreateTestSchema ()
     {
-    std::wstring schemaXMLString = GetTestSchemaXMLString (L"TestSchema", 0, 0, L"TestClass");
+    bwstring schemaXMLString = GetTestSchemaXMLString (L"TestSchema", 0, 0, L"TestClass");
 
     ECSchemaPtr schema = NULL;
 
@@ -320,8 +320,8 @@ ECSchemaPtr       CreateTestSchema ()
     return schema;
     }
     
-typedef std::vector<std::wstring> NameVector;
-static std::vector<std::wstring> s_propertyNames;
+typedef std::vector<bwstring> NameVector;
+static std::vector<bwstring> s_propertyNames;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen    01/10
@@ -330,7 +330,7 @@ ECSchemaPtr       CreateProfilingSchema (int nStrings)
     {
     s_propertyNames.clear();
     
-    std::wstring schemaXml = 
+    bwstring schemaXml = 
                     L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                     L"<ECSchema schemaName=\"ProfilingSchema\" nameSpacePrefix=\"p\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                     L"    <ECClass typeName=\"Pidget\" isDomainClass=\"True\">";
@@ -412,7 +412,7 @@ void ExerciseVariableCountStringArray (IECInstanceR instance, ECValue& v, wchar_
     VerifyStringArray           (instance, v, arrayAccessor, stringSeed, 0, 3);
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 3, 3, true);
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 6, 2, false);
-    std::wstring stringSeedXXX(stringSeed);
+    bwstring stringSeedXXX(stringSeed);
     stringSeedXXX.append (L"XXX");
     VerifyStringArray           (instance, v, arrayAccessor, stringSeedXXX.c_str(), 6, 2);
     SetAndVerifyStringArray     (instance, v, arrayAccessor, stringSeed, 8);   
@@ -956,7 +956,7 @@ TEST (MemoryLayoutTests, Values) // move it!
     DPoint3d outPoint3 = pntVal3.GetPoint3D ();
     EXPECT_TRUE (pntVal3.IsPoint3D());
     EXPECT_TRUE (0 == memcmp(&inPoint3, &outPoint3, sizeof(outPoint3)));
-    std::wstring point3Str = pntVal3.ToString();
+    bwstring point3Str = pntVal3.ToString();
     EXPECT_TRUE (0 == point3Str.compare (L"{10,100,1000}"));
 
     //DPoint2d
@@ -965,7 +965,7 @@ TEST (MemoryLayoutTests, Values) // move it!
     EXPECT_TRUE (pntVal2.IsPoint2D());
     DPoint2d outPoint2 = pntVal2.GetPoint2D ();
     EXPECT_TRUE (0 == memcmp(&inPoint2, &outPoint2, sizeof(outPoint2)));
-    std::wstring point2Str = pntVal2.ToString();
+    bwstring point2Str = pntVal2.ToString();
     EXPECT_TRUE (0 == point2Str.compare (L"{10,100}"));
 
     // DateTime
@@ -978,7 +978,7 @@ TEST (MemoryLayoutTests, Values) // move it!
     EXPECT_TRUE (0 == memcmp(&nowtoo, &now, sizeof(nowtoo)));
     ECValue fixedDate;
     fixedDate.SetDateTimeTicks (634027121070910000);
-    std::wstring dateStr = fixedDate.ToString();
+    bwstring dateStr = fixedDate.ToString();
     EXPECT_TRUE (0 == dateStr.compare (L"#2010/2/25-16:28:27:91#"));
 
     // WIP_FUSION - test array values

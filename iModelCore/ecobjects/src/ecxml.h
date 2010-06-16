@@ -64,24 +64,24 @@
 // If you add any additional ECXML typenames you must update 
 //    - enum PrimitiveType
 //    - PrimitiveECProperty::_GetTypeName
-static const std::wstring ECXML_TYPENAME_BINARY             = L"binary";
-static const std::wstring ECXML_TYPENAME_BOOLEAN            = L"boolean";
-static const std::wstring ECXML_TYPENAME_DATETIME           = L"dateTime";
-static const std::wstring ECXML_TYPENAME_DOUBLE             = L"double";
-static const std::wstring ECXML_TYPENAME_INTEGER            = L"int";
-static const std::wstring ECXML_TYPENAME_LONG               = L"long";
-static const std::wstring ECXML_TYPENAME_POINT2D            = L"point2d";
-static const std::wstring ECXML_TYPENAME_POINT3D            = L"point3d";
-static const std::wstring ECXML_TYPENAME_STRING             = L"string";
+static const bwstring ECXML_TYPENAME_BINARY             = L"binary";
+static const bwstring ECXML_TYPENAME_BOOLEAN            = L"boolean";
+static const bwstring ECXML_TYPENAME_DATETIME           = L"dateTime";
+static const bwstring ECXML_TYPENAME_DOUBLE             = L"double";
+static const bwstring ECXML_TYPENAME_INTEGER            = L"int";
+static const bwstring ECXML_TYPENAME_LONG               = L"long";
+static const bwstring ECXML_TYPENAME_POINT2D            = L"point2d";
+static const bwstring ECXML_TYPENAME_POINT3D            = L"point3d";
+static const bwstring ECXML_TYPENAME_STRING             = L"string";
 
-static const std::wstring EMPTY_STRING = L"";
+static const bwstring EMPTY_STRING = L"";
 
-static const std::wstring ECXML_STRENGTH_REFERENCING        = L"referencing";
-static const std::wstring ECXML_STRENGTH_HOLDING            = L"holding";
-static const std::wstring ECXML_STRENGTH_EMBEDDING          = L"embedding";
+static const bwstring ECXML_STRENGTH_REFERENCING        = L"referencing";
+static const bwstring ECXML_STRENGTH_HOLDING            = L"holding";
+static const bwstring ECXML_STRENGTH_EMBEDDING          = L"embedding";
 
-static const std::wstring ECXML_DIRECTION_FORWARD           = L"forward";
-static const std::wstring ECXML_DIRECTION_BACKWARD          = L"backward";
+static const bwstring ECXML_DIRECTION_FORWARD           = L"forward";
+static const bwstring ECXML_DIRECTION_BACKWARD          = L"backward";
 
 #define READ_OPTIONAL_XML_ATTRIBUTE(_xmlAttributeName, _setInPointer, _setInPropertyName)   \
     if ((NULL != (attributePtr = nodeAttributesPtr->getNamedItem (_xmlAttributeName))) &&   \
@@ -143,13 +143,13 @@ struct ECXml abstract
 {
 public:
     static ECObjectsStatus ParseBooleanString(bool & booleanValue,const wchar_t * booleanString);
-    static std::wstring const& GetPrimitiveTypeName (PrimitiveType primitiveType);
-    static ECObjectsStatus ParsePrimitiveType (PrimitiveType& primitiveType,std::wstring const& typeName);
-    static std::wstring const& StrengthToString (StrengthType strength);
-    static ECObjectsStatus ParseStrengthType (StrengthType& strength, std::wstring const& strengthString);
-    static std::wstring const& DirectionToString (ECRelatedInstanceDirection direction);
-    static ECObjectsStatus ParseDirectionString (ECRelatedInstanceDirection& direction, std::wstring const& directionString);
-    static ECObjectsStatus ParseCardinalityString (UInt32& lowerLimit, UInt32& upperLimit, std::wstring const& cardinalityString);
+    static bwstring const& GetPrimitiveTypeName (PrimitiveType primitiveType);
+    static ECObjectsStatus ParsePrimitiveType (PrimitiveType& primitiveType,bwstring const& typeName);
+    static bwstring const& StrengthToString (StrengthType strength);
+    static ECObjectsStatus ParseStrengthType (StrengthType& strength, bwstring const& strengthString);
+    static bwstring const& DirectionToString (ECRelatedInstanceDirection direction);
+    static ECObjectsStatus ParseDirectionString (ECRelatedInstanceDirection& direction, bwstring const& directionString);
+    static ECObjectsStatus ParseCardinalityString (UInt32& lowerLimit, UInt32& upperLimit, bwstring const& cardinalityString);
     static void FormatXml(MSXML2::IXMLDOMDocument2* pXmlDoc);
 };
 

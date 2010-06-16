@@ -74,7 +74,7 @@
     <ECClass typeName="TestClass" isDomainClass="True">
         <BaseClass>BaseClass</BaseClass>
         <ECCustomAttributes>
-            <AccessCustomAttributes xmlns="SimpleTest_FirstSchema.01.00">
+            <AccessCustomAttributes xmlns="Widgets.09.06">
                 <AccessLevel>4</AccessLevel>
                 <Writeable>False</Writeable>
             </AccessCustomAttributes>
@@ -255,14 +255,14 @@
 
     <ECRelationshipClass typeName="ImplicitRelationshipClass" strength="referencing">
         <ECCustomAttributes>
-            <AccessCustomAttributes xmlns="SimpleTest_FirstSchema.01.00">
+            <AccessCustomAttributes xmlns="Widgets.09.06">
                 <AccessLevel>5</AccessLevel>
                 <Writeable>False</Writeable>
             </AccessCustomAttributes>
         </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="source constraint" polymorphic="True">
             <ECCustomAttributes>
-                <AccessCustomAttributes xmlns="SimpleTest_FirstSchema.01.00">
+                <AccessCustomAttributes xmlns="Widgets.09.06">
                     <AccessLevel>6</AccessLevel>
                     <Writeable>True</Writeable>
                 </AccessCustomAttributes>
@@ -275,7 +275,7 @@
         </Source>
         <Target cardinality="(0,n)" roleLabel="target constraint" polymorphic="True">
             <ECCustomAttributes>
-                <AccessCustomAttributes xmlns="SimpleTest_FirstSchema.01.00">
+                <AccessCustomAttributes xmlns="Widgets.09.06">
                     <AccessLevel>7</AccessLevel>
                     <Writeable>False</Writeable>
                 </AccessCustomAttributes>

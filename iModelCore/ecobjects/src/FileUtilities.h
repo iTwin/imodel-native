@@ -28,11 +28,11 @@ public:
 struct ECFileUtilities
     {
 private:
-    static std::wstring s_dllPath;
+    static bwstring s_dllPath;
     ECFileUtilities(void) {}
     
 public:
-    static std::wstring GetDllPath();
+    static bwstring GetDllPath();
     };
 
 END_BENTLEY_EC_NAMESPACE

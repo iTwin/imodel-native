@@ -48,7 +48,7 @@ struct PropertyLayout
     {
 friend ClassLayout;    
 private:
-    std::wstring            m_accessString;        
+    bwstring            m_accessString;        
     ECTypeDescriptor        m_typeDescriptor;
     
     // Using UInt32 instead of size_t below because we will persist this struct in an XAttribute. It will never be very big.
@@ -77,7 +77,7 @@ public:
     //! Variable-sized types will have 4 byte SecondaryOffset stored in the fixed Section.
     UInt32                  GetSizeInFixedSection() const;
     
-    std::wstring            ToString();
+    bwstring            ToString();
     };
 
 #define USE_HASHMAP_IN_CLASSLAYOUT    
@@ -105,7 +105,7 @@ private:
     
     // These members are expected to be persisted  
     ClassIndex              m_classIndex; // Unique per some context, e.g. per DgnFile
-    std::wstring            m_className;
+    bwstring            m_className;
     
     PropertyLayoutVector    m_propertyLayouts; // This is the primary collection, there is a secondary map for lookup by name, below.
     PropertyLayoutMap       m_propertyLayoutMap;
@@ -149,7 +149,7 @@ public:
     ECOBJECTS_EXPORT static ClassLayoutP BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex);
     ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (wchar_t const *  className, ClassIndex classIndex, SchemaIndex schemaIndex);
 
-    ECOBJECTS_EXPORT std::wstring const & GetECClassName() const;
+    ECOBJECTS_EXPORT bwstring const & GetECClassName() const;
     // These members are only meaningful in the context of a consumer like DgnHandlers.dll that actually handles persistence of ClassLayouts
     ECOBJECTS_EXPORT ClassIndex     GetClassIndex() const;
     ECOBJECTS_EXPORT SchemaIndex    GetSchemaIndex () const;

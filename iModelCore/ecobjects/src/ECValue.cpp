@@ -36,13 +36,13 @@ unsigned short milliseconds
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring SystemTime::ToString
+bwstring SystemTime::ToString
 (
 )
     {
     std::wostringstream valueAsString;
     valueAsString << "#" << wYear << "/" << wMonth << "/" << wDay << "-" << wHour << ":" << wMinute << ":" << wSecond << ":" << wMilliseconds << "#";
-    return valueAsString.str();
+    return valueAsString.str().c_str();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -828,7 +828,7 @@ BentleyStatus       ECValue::SetStruct (IECInstanceP structInstance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-std::wstring    ECValue::ToString () const
+bwstring    ECValue::ToString () const
     {
     if (IsNull())
         return L"<null>";
@@ -900,7 +900,7 @@ std::wstring    ECValue::ToString () const
             }
         }
         
-    return valueAsString.str();
+    return valueAsString.str().c_str();
     }
     
 /*---------------------------------------------------------------------------------**//**

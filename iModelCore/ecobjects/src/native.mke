@@ -59,6 +59,8 @@ $(o)ecproperty.obj      : $(baseDir)ecproperty.cpp $(ECObjectsHeaders) ${MultiCo
 
 $(o)ecinstance.obj      : $(baseDir)ecinstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
+$(o)eccustomattribute.obj         : $(baseDir)eccustomattribute.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+
 $(o)ecvalue.obj         : $(baseDir)ecvalue.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
 $(o)ecenabler.obj       : $(baseDir)ecenabler.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
