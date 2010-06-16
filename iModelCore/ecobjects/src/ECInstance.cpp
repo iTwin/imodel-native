@@ -9,9 +9,9 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
     
-UInt32 g_totalAllocs = 0;
-UInt32 g_totalFrees  = 0;
-UInt32 g_currentLive = 0;
+static UInt32 g_totalAllocs = 0;
+static UInt32 g_totalFrees  = 0;
+static UInt32 g_currentLive = 0;
 
 //#define DEBUG_INSTANCE_LEAKS
 #ifdef DEBUG_INSTANCE_LEAKS

@@ -807,8 +807,7 @@ private:
     std::set<const wchar_t *> m_alreadySerializedClasses;
     stdext::hash_map<ECSchemaP, const std::wstring *> m_referencedSchemaNamespaceMap;
 
-    // Hide these as part of the RefCounted pattern    
-    ECSchema () : m_versionMajor (DEFAULT_VERSION_MAJOR), m_versionMinor (DEFAULT_VERSION_MINOR), m_classContainer(ECClassContainer(m_classMap)) {};
+    ECSchema ();
     ~ECSchema();    
 
     static SchemaDeserializationStatus  ReadXml (ECSchemaPtr& schemaOut, MSXML2_IXMLDOMDocument2& pXmlDoc, const bvector<IECSchemaLocatorP> * schemaLocators, const bvector<const wchar_t *> * schemaPaths, void * schemaContext);
@@ -826,6 +825,15 @@ private:
     SchemaSerializationStatus           WriteSchemaReferences(MSXML2_IXMLDOMElement& parentNode);
     SchemaSerializationStatus           WriteClass(MSXML2_IXMLDOMElement& parentNode, ECClassCR ecClass);
     SchemaSerializationStatus           WritePropertyDependencies(MSXML2_IXMLDOMElement& parentNode, ECClassCR ecClass);
+
+public:    
+/*__PUBLISH_SECTION_START__*/
+// WIP_FUSION: temporarily published this.  We need an ecObjectsNativeTest version of the BackDoor.
+    ECOBJECTS_EXPORT static void        Debug_ResetAllocationStats ();
+    ECOBJECTS_EXPORT static void        Debug_DumpAllocationStats (const wchar_t* prefix);
+    ECOBJECTS_EXPORT static void        Debug_GetAllocationStats (int* currentLive, int* totalAllocs, int* totalFrees);
+    ECOBJECTS_EXPORT static void        Debug_ReportLeaks (std::vector<std::wstring> schemaNamesToExclude);
+/*__PUBLISH_SECTION_END__*/
 
 /*__PUBLISH_SECTION_START__*/
 public:    
