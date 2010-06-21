@@ -12,6 +12,10 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
+struct InstanceDeserializationTest      : ECTestFixture {};
+struct PolymorphismDeserializationTest  : ECTestFixture {};
+struct InstanceSerializationTest        : ECTestFixture {};
+
 struct  Struct1
     {
     bool    struct1BoolMember;
@@ -241,7 +245,7 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(InstanceDeserializationTest, ExpectSuccessWhenDeserializingSimpleInstance)
+TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingSimpleInstance)
     {
     // must call CoInitialize - schema deserialization requires it.
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
@@ -264,7 +268,7 @@ TEST(InstanceDeserializationTest, ExpectSuccessWhenDeserializingSimpleInstance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(InstanceDeserializationTest, ExpectSuccessWhenDeserializingEmptyInstance)
+TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingEmptyInstance)
     {
     // must call CoInitialize - schema deserialization requires it.
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
@@ -286,7 +290,7 @@ TEST(InstanceDeserializationTest, ExpectSuccessWhenDeserializingEmptyInstance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstanceFromStream)
+TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstanceFromStream)
     {
     // must call CoInitialize - schema deserialization requires it.
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
@@ -322,7 +326,7 @@ TEST(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstanceFr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstanceFromString)
+TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstanceFromString)
     {
     // must call CoInitialize - schema deserialization requires it.
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
@@ -404,7 +408,7 @@ void    VerifyPolymorphismInstance (IECInstanceCP testInstance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(PolymorphismDeserializationTest, ExpectSuccessWhenDeserializingPolymorphismInstance)
+TEST_F(PolymorphismDeserializationTest, ExpectSuccessWhenDeserializingPolymorphismInstance)
     {
     // must call CoInitialize - schema deserialization requires it.
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
@@ -427,7 +431,7 @@ TEST(PolymorphismDeserializationTest, ExpectSuccessWhenDeserializingPolymorphism
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(InstanceSerializationTest, ExpectSuccessWhenSerializingInstance)
+TEST_F(InstanceSerializationTest, ExpectSuccessWhenSerializingInstance)
     {
     // must call CoInitialize - schema deserialization requires it.
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));

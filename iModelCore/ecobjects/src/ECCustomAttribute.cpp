@@ -196,10 +196,10 @@ bool includeBase
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus IECCustomAttributeContainer::SetCustomAttribute
 (
-IECInstancePtr customAttributeInstance
+IECInstanceR customAttributeInstance
 )
     {
-    ECClassCR classDefinition = customAttributeInstance->GetClass();
+    ECClassCR classDefinition = customAttributeInstance.GetClass();
     if (!classDefinition.IsCustomAttributeClass)
         return ECOBJECTS_STATUS_NotCustomAttributeClass;
 
@@ -215,7 +215,7 @@ IECInstancePtr customAttributeInstance
             }
         }
 
-    m_customAttributes.push_back(customAttributeInstance);
+    m_customAttributes.push_back(&customAttributeInstance);
     return ECOBJECTS_STATUS_Success;
     }
 

@@ -74,7 +74,7 @@ public:
     ECOBJECTS_EXPORT static void        Debug_ResetAllocationStats ();
     ECOBJECTS_EXPORT static void        Debug_DumpAllocationStats (const wchar_t* prefix);
     ECOBJECTS_EXPORT static void        Debug_GetAllocationStats (int* currentLive, int* totalAllocs, int* totalFrees);
-    ECOBJECTS_EXPORT static void        Debug_ReportLeaks (std::vector<bwstring> classNamesToExclude);
+    ECOBJECTS_EXPORT static void        Debug_ReportLeaks (std::vector<bwstring>& classNamesToExclude);
 
     ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadXmlFromFile   (IECInstancePtr& ecInstance, const wchar_t* fileName, ECSchemaP schema);
     ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadXmlFromStream (IECInstancePtr& ecInstance, IStreamP stream, ECSchemaP schema);

@@ -193,7 +193,7 @@ public:
     //! @param[in]  Whether to include custom attributes from the base containers 
     ECOBJECTS_EXPORT ECCustomAttributeInstanceIterable GetCustomAttributes(bool includeBase) const; 
 
-    ECOBJECTS_EXPORT ECObjectsStatus    SetCustomAttribute(IECInstancePtr customAttributeInstance);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetCustomAttribute(IECInstanceR customAttributeInstance);
     ECOBJECTS_EXPORT bool               RemoveCustomAttribute(bwstring const& className);
     ECOBJECTS_EXPORT bool               RemoveCustomAttribute(ECClassCR classDefinition);
 };
@@ -926,7 +926,7 @@ public:
     ECOBJECTS_EXPORT static void        Debug_ResetAllocationStats ();
     ECOBJECTS_EXPORT static void        Debug_DumpAllocationStats (const wchar_t* prefix);
     ECOBJECTS_EXPORT static void        Debug_GetAllocationStats (int* currentLive, int* totalAllocs, int* totalFrees);
-    ECOBJECTS_EXPORT static void        Debug_ReportLeaks (std::vector<std::wstring> schemaNamesToExclude);
+    ECOBJECTS_EXPORT static void        Debug_ReportLeaks (std::vector<bwstring>& schemaNamesToExclude);
 /*__PUBLISH_SECTION_END__*/
 
 /*__PUBLISH_SECTION_START__*/

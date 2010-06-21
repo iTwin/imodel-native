@@ -9,7 +9,6 @@
 #include "ECObjectsTestPCH.h"
 #include <objbase.h>
 #include <comdef.h>
-
 #include "TestFixture.h"
 
 BEGIN_BENTLEY_EC_NAMESPACE
@@ -17,93 +16,11 @@ BEGIN_BENTLEY_EC_NAMESPACE
 // NEEDSWORK Improve strategy for seed data.  Should not be maintained in source.
 #define SCHEMAS_PATH  L"" 
 
-#define MAX_INTERNAL_INSTANCES  0
-#define MAX_INTERNAL_SCHEMAS    0
-
-
-#define DEBUG_ECSCHEMA_LEAKS
-#define DEBUG_IECINSTANCE_LEAKS
-
-/*---------------------------------------------------------------------------------**//**
-* @bsistruct
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct SchemaTest : public ::testing::Test
-{
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Josh.Schifter   06/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual void            SetUp () override
-    {
-    ECSchema::Debug_ResetAllocationStats();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Josh.Schifter   06/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual void            TearDown () override
-    {
-#if defined (DEBUG_ECSCHEMA_LEAKS)
-    ECSchema::Debug_DumpAllocationStats(L"PostTest");
-#endif
-
-#if defined (DEBUG_IECINSTANCE_LEAKS)
-    IECInstance::Debug_DumpAllocationStats(L"PostTest");
-#endif
-
-    TestForECSchemaLeaks(); 
-    TestForIECInstanceLeaks(); 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    06/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void    TestForECSchemaLeaks ()
-    {
-    int numLiveInstances = 0;
-
-    ECSchema::Debug_GetAllocationStats (&numLiveInstances, NULL, NULL);
-    
-    if (numLiveInstances > 0)
-        {
-        char message[1024];
-        sprintf (message, "TestForECSchemaLeaks found that there are %d Schemas still alive. Anything more than %d is flagged as an error!\n", 
-            numLiveInstances, MAX_INTERNAL_SCHEMAS);
-
-        std::vector<std::wstring> schemaNamesToExclude;
-        ECSchema::Debug_ReportLeaks (schemaNamesToExclude);
-
-        EXPECT_TRUE (numLiveInstances <= 0) << message;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void    TestForIECInstanceLeaks ()
-    {
-    int numLiveInstances = 0;
-
-    IECInstance::Debug_GetAllocationStats (&numLiveInstances, NULL, NULL);
-    
-    if (numLiveInstances > MAX_INTERNAL_INSTANCES)
-        {
-        char message[1024];
-        sprintf (message, "TestForIECInstanceLeaks found that there are %d IECInstances still alive. Anything more than %d is flagged as an error!\n", 
-            numLiveInstances, MAX_INTERNAL_INSTANCES);
-
-        std::vector<std::wstring> classNamesToExclude;
-        IECInstance::Debug_ReportLeaks (classNamesToExclude);
-
-        EXPECT_TRUE (numLiveInstances <= MAX_INTERNAL_INSTANCES) << message;
-        }
-    }
-};
-
-struct SchemaDeserializationTest : SchemaTest {};
-struct SchemaSerializationTest   : SchemaTest {};
-struct SchemaReferenceTest       : SchemaTest {};
-struct SchemaCreationTest        : SchemaTest {};
-struct ClassTest                 : SchemaTest {};
+struct SchemaDeserializationTest : ECTestFixture {};
+struct SchemaSerializationTest   : ECTestFixture {};
+struct SchemaReferenceTest       : ECTestFixture {};
+struct SchemaCreationTest        : ECTestFixture {};
+struct ClassTest                 : ECTestFixture {};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010

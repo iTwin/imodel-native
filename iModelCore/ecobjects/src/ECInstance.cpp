@@ -73,20 +73,21 @@ void IECInstance::Debug_DumpAllocationStats(const wchar_t* prefix)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen    02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IsExcluded(bwstring& className, std::vector<bwstring> classNamesToExclude)
+bool IsExcluded(bwstring& className, std::vector<bwstring>& classNamesToExclude)
     {
     for each (bwstring excludedClass in classNamesToExclude)
         {
         if (0 == className.compare (excludedClass))
             return true;
         }
+
     return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen    02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IECInstance::Debug_ReportLeaks(std::vector<bwstring> classNamesToExclude)
+void IECInstance::Debug_ReportLeaks(std::vector<bwstring>& classNamesToExclude)
     {
 #ifdef DEBUG_INSTANCE_LEAKS
     for each (DebugInstanceLeakMap::value_type leak in g_debugInstanceLeakMap)

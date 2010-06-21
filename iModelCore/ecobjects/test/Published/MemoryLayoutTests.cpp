@@ -8,10 +8,13 @@
 #include "ECObjectsTestPCH.h"
 #include <comdef.h>
 #include "StopWatch.h"
+#include "TestFixture.h"
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
 using namespace std;
+
+struct MemoryLayoutTests : ECTestFixture {};
 
 // WIP_FUSION: these verify methods are duplicated in DgnPlatformTest... how do we share that code?    
 // WIP_FUSION: where is the right place to share these methods even among ECObjects tests? 
@@ -655,7 +658,7 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
+TEST_F(MemoryLayoutTests, InstantiateStandaloneInstance)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
@@ -684,7 +687,7 @@ TEST(MemoryLayoutTests, InstantiateStandaloneInstance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
+TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
@@ -714,7 +717,7 @@ TEST(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(MemoryLayoutTests, DirectSetStandaloneInstance)
+TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
@@ -778,7 +781,7 @@ TEST(MemoryLayoutTests, DirectSetStandaloneInstance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(MemoryLayoutTests, GetSetValuesByIndex)
+TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
@@ -847,7 +850,7 @@ TEST(MemoryLayoutTests, GetSetValuesByIndex)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(MemoryLayoutTests, ExpectErrorsWhenViolatingArrayConstraints)
+TEST_F(MemoryLayoutTests, ExpectErrorsWhenViolatingArrayConstraints)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema = CreateTestSchema();
@@ -890,7 +893,7 @@ TEST(MemoryLayoutTests, ExpectErrorsWhenViolatingArrayConstraints)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (MemoryLayoutTests, Values) // move it!
+TEST_F (MemoryLayoutTests, Values) // move it!
     {
     ECValue i(3);
     EXPECT_TRUE (i.IsInteger());
@@ -987,7 +990,7 @@ TEST (MemoryLayoutTests, Values) // move it!
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (MemoryLayoutTests, TestSetGetNull)
+TEST_F (MemoryLayoutTests, TestSetGetNull)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
@@ -1054,7 +1057,7 @@ void SetValuesForProfiling (StandaloneECInstanceR instance)
         instance.SetValue (it->c_str(), ECValue (it->c_str()));
     }
     
-TEST (MemoryLayoutTests, ProfileSettingValues)
+TEST_F (MemoryLayoutTests, ProfileSettingValues)
     {
     int nStrings = 100;
     int nInstances = 1000;

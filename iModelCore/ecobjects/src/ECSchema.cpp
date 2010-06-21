@@ -18,7 +18,7 @@ static UInt32 g_totalAllocs = 0;
 static UInt32 g_totalFrees  = 0;
 static UInt32 g_currentLive = 0;
 
-//#define DEBUG_SCHEMA_LEAKS
+#define DEBUG_SCHEMA_LEAKS
 #ifdef DEBUG_SCHEMA_LEAKS
 typedef std::map<ECSchema*, UInt32> DebugSchemaLeakMap;
 DebugSchemaLeakMap      g_debugSchemaLeakMap;
@@ -99,20 +99,21 @@ void ECSchema::Debug_DumpAllocationStats(const wchar_t* prefix)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen    02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool isExcluded(std::wstring& className, std::vector<std::wstring> classNamesToExclude)
+bool isExcluded(bwstring& schemaName, std::vector<bwstring> schemaNamesToExclude)
     {
-    for each (std::wstring excludedClass in classNamesToExclude)
+    for each (bwstring excludedSchema in schemaNamesToExclude)
         {
-        if (0 == className.compare (excludedClass))
+        if (0 == schemaName.compare (excludedSchema))
             return true;
         }
+
     return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen    02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchema::Debug_ReportLeaks(std::vector<std::wstring> schemaNamesToExclude)
+void ECSchema::Debug_ReportLeaks(std::vector<bwstring>& schemaNamesToExclude)
     {
 #ifdef DEBUG_SCHEMA_LEAKS
     for each (DebugSchemaLeakMap::value_type leak in g_debugSchemaLeakMap)
@@ -120,8 +121,8 @@ void ECSchema::Debug_ReportLeaks(std::vector<std::wstring> schemaNamesToExclude)
         ECSchema* leakedObject = leak.first;
         UInt32    orderOfAllocation = leak.second;
         
-        std::wstring name = leakedObject->GetName();
-        if (isExcluded (name, classNamesToExclude))
+        bwstring name = leakedObject->GetName();
+        if (isExcluded (name, schemaNamesToExclude))
             continue;
         
         Logger::GetLogger()->errorv (L"Leaked the %dth IECSchema that was allocated: %s", orderOfAllocation, name.c_str());
