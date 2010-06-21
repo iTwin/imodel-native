@@ -22,6 +22,9 @@ public:
     virtual void            SetUp () override;
     virtual void            TearDown () override;
 
+    virtual bool            _WantSchemaLeakDetection() { return true; }
+    virtual bool            _WantInstanceLeakDetection() { return true; }
+
     void    TestForECSchemaLeaks ();
     void    TestForIECInstanceLeaks ();
 

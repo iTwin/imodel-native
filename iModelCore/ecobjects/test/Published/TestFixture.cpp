@@ -23,6 +23,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECTestFixture::SetUp ()
     {
+    IECInstance::Debug_ResetAllocationStats();
     ECSchema::Debug_ResetAllocationStats();
     }
 
@@ -39,8 +40,11 @@ void            ECTestFixture::TearDown ()
     IECInstance::Debug_DumpAllocationStats(L"PostTest");
 #endif
 
-    TestForECSchemaLeaks(); 
-    TestForIECInstanceLeaks(); 
+    if (_WantSchemaLeakDetection())
+        TestForECSchemaLeaks(); 
+
+    if (_WantInstanceLeakDetection())
+        TestForIECInstanceLeaks(); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -52,7 +56,7 @@ void    ECTestFixture::TestForECSchemaLeaks ()
 
     ECSchema::Debug_GetAllocationStats (&numLiveSchemas, NULL, NULL);
     
-    if (numLiveSchemas > 0)
+    if (numLiveSchemas > MAX_INTERNAL_SCHEMAS)
         {
         char message[1024];
         sprintf (message, "TestForECSchemaLeaks found that there are %d Schemas still alive. Anything more than %d is flagged as an error!\n", 
@@ -61,7 +65,7 @@ void    ECTestFixture::TestForECSchemaLeaks ()
         std::vector<bwstring> schemaNamesToExclude;
         ECSchema::Debug_ReportLeaks (schemaNamesToExclude);
 
-        EXPECT_TRUE (numLiveSchemas <= 0) << message;
+        EXPECT_TRUE (numLiveSchemas <= MAX_INTERNAL_SCHEMAS) << message;
         }
     }
 
