@@ -255,8 +255,6 @@ ECPropertyP&                 pProperty
     if (m_propertyMap.end() != propertyIterator)
         {
         Logger::GetLogger()->warningv  (L"Can not create property '%s' because it already exists in this ECClass", pProperty->Name.c_str());
-        delete pProperty;
-        pProperty = NULL;        
         return ECOBJECTS_STATUS_NamedItemAlreadyExists;
         }
 
@@ -373,7 +371,14 @@ const bwstring &name
 )
     {
     ecProperty = new PrimitiveECProperty(*this);
-    return AddProperty(ecProperty, name);
+    ECObjectsStatus status = AddProperty(ecProperty, name);
+    if (status != ECOBJECTS_STATUS_Success)
+        {
+        delete ecProperty;
+        ecProperty = NULL;
+        return status;
+        }
+    return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -407,7 +412,14 @@ const bwstring &name
 )
     {
     ecProperty = new StructECProperty(*this);
-    return AddProperty(ecProperty, name);
+    ECObjectsStatus status = AddProperty(ecProperty, name);
+    if (status != ECOBJECTS_STATUS_Success)
+        {
+        delete ecProperty;
+        ecProperty = NULL;
+        return status;
+        }
+    return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -442,7 +454,14 @@ const bwstring &name
 )
     {
     ecProperty = new ArrayECProperty(*this);
-    return AddProperty(ecProperty, name);
+    ECObjectsStatus status = AddProperty(ecProperty, name);
+    if (status != ECOBJECTS_STATUS_Success)
+        {
+        delete ecProperty;
+        ecProperty = NULL;
+        return status;
+        }
+    return ECOBJECTS_STATUS_Success;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -483,6 +502,7 @@ ECClassCP structType
     if (status != ECOBJECTS_STATUS_Success)
         {
         delete ecProperty;
+        ecProperty = NULL;
         return status;
         }
     return ECOBJECTS_STATUS_Success;
@@ -825,18 +845,25 @@ MSXML2::IXMLDOMNode& classNode
             pProperty = new ArrayECProperty (*this);
         else if (0 == wcscmp (xmlNodePtr->baseName, EC_STRUCTPROPERTY_ELEMENT))
             pProperty = new StructECProperty (*this);
+        else
+            {
+            Logger::GetLogger()->warningv (L"Invalid ECSchemaXML: Unknown property type '%s' of ECClass '%s' in the ECSchema '%s'\n", xmlNodePtr->baseName, this->Name.c_str(), this->Schema.Name.c_str());
+            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            }
 
         SchemaDeserializationStatus status = pProperty->_ReadXml(xmlNodePtr);
         if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
             {
             Logger::GetLogger()->warningv  (L"Invalid ECSchemaXML: Failed to deserialize properties of ECClass '%s' in the ECSchema '%s'\n", this->Name.c_str(), this->Schema.Name.c_str());                
+            delete pProperty;
             return status;
             }
         
         if (ECOBJECTS_STATUS_Success != this->AddProperty (pProperty))
             {
             Logger::GetLogger()->warningv  (L"Invalid ECSchemaXML: Failed to deserialize ECClass '%s' in the ECSchema '%s' because a problem occurred while adding ECProperty '%s'\n", 
-                this->Name.c_str(), this->Schema.Name.c_str(), pProperty->Name.c_str());                
+                this->Name.c_str(), this->Schema.Name.c_str(), pProperty->Name.c_str());
+            delete pProperty;
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
         }

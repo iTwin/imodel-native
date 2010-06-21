@@ -648,14 +648,14 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
     StructECPropertyP structProp;
     ArrayECPropertyP nestedArrayProp;
     
-    class1->CreateStructProperty(structProp, L"Struct Member");
+    class1->CreateStructProperty(structProp, L"StructMember");
     class1->CreateArrayProperty(nestedArrayProp, L"NestedArray");
     
     structProp->Type = *structClass;
     nestedArrayProp->StructElementType = structClass;
 
     EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(refSchema));
-    class1->RemoveProperty(L"Struct Member");
+    class1->RemoveProperty(L"StructMember");
     EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(refSchema));
     class1->RemoveProperty(L"NestedArray");
     EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(refSchema));
