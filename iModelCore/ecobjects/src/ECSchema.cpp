@@ -521,21 +521,24 @@ bwstring const&     namespacePrefix
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring const* ECSchema::ResolveNamespacePrefix
+ECObjectsStatus ECSchema::ResolveNamespacePrefix
 (
-ECSchemaCR    schema
+ECSchemaCR    schema,
+bwstring &    namespacePrefix
 ) const
     {
+    namespacePrefix = EMPTY_STRING;
     if (&schema == this)
-        return &EMPTY_STRING;
+        return ECOBJECTS_STATUS_Success;
 
-    stdext::hash_map<ECSchemaP, const bwstring *>::const_iterator schemaIterator = m_referencedSchemaNamespaceMap.find((ECSchemaP) &schema);
+    stdext::hash_map<ECSchemaP, bwstring const>::const_iterator schemaIterator = m_referencedSchemaNamespaceMap.find((ECSchemaP) &schema);
     if (schemaIterator != m_referencedSchemaNamespaceMap.end())
         {
-        return schemaIterator->second;
+        namespacePrefix = schemaIterator->second;
+        return ECOBJECTS_STATUS_Success;
         }
 
-    return NULL;
+    return ECOBJECTS_STATUS_SchemaNotFound;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -574,7 +577,7 @@ Bentley::EC::ECSchemaPtr refSchema
         }
             
     m_refSchemaList.push_back(refSchema);
-    m_referencedSchemaNamespaceMap.insert(std::pair<ECSchemaP, const bwstring *> (refSchema.get(), &(refSchema->NamespacePrefix)));
+    m_referencedSchemaNamespaceMap.insert(std::pair<ECSchemaP, const bwstring> (refSchema.get(), refSchema->NamespacePrefix));
     return ECOBJECTS_STATUS_Success;
     }
     
@@ -658,7 +661,13 @@ Bentley::EC::ECSchemaPtr refSchema
             }
         }
 
-    m_refSchemaList.erase(schemaIterator);        
+    m_refSchemaList.erase(schemaIterator); 
+    stdext::hash_map<ECSchemaP, const bwstring>::const_iterator iterator = m_referencedSchemaNamespaceMap.find((ECSchemaP) &refSchema);
+    if (iterator != m_referencedSchemaNamespaceMap.end())
+        {
+        m_referencedSchemaNamespaceMap.erase(iterator);
+        }
+
     return ECOBJECTS_STATUS_Success;
     }
     
@@ -771,8 +780,8 @@ void * schemaContext
         
     wchar_t version[10];
     swprintf(version, 10, L".%02d.%02d", m_versionMajor, m_versionMinor);
-    bwstring *versionString = new bwstring(m_name + version);
-    underConstruction->insert(std::pair<const wchar_t *, ECSchemaP>(versionString->c_str(), this));
+    bwstring schemaFullName(m_name + version);
+    underConstruction->insert(std::pair<const wchar_t *, ECSchemaP>(schemaFullName.c_str(), this));
     
     m_referencedSchemaNamespaceMap.clear();
 
@@ -788,7 +797,12 @@ void * schemaContext
             {
             Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_NAME_ATTRIBUTE L" attribute\n", (const wchar_t *)xmlNodePtr->baseName);
             if (needToDelete)
+                {
                 delete underConstruction;
+                underConstruction = NULL;
+                }
+            else
+                underConstruction->erase(schemaFullName.c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
             
@@ -798,7 +812,12 @@ void * schemaContext
             {
             Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_PREFIX_ATTRIBUTE L" attribute\n", (const wchar_t *)xmlNodePtr->baseName);
             if (needToDelete)
+                {
                 delete underConstruction;
+                underConstruction = NULL;
+                }
+            else
+                underConstruction->erase(schemaFullName.c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
         bwstring prefix = (const wchar_t*) attributePtr->text;
@@ -807,7 +826,12 @@ void * schemaContext
             {
             Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_VERSION_ATTRIBUTE L" attribute\n", (const wchar_t *)xmlNodePtr->baseName);
             if (needToDelete)
+                {
                 delete underConstruction;
+                underConstruction = NULL;
+                }
+            else
+                underConstruction->erase(schemaFullName.c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
         bwstring versionString = (const wchar_t*) attributePtr->text;
@@ -818,7 +842,12 @@ void * schemaContext
             {
             Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: unable to parse version string for referenced schema %s.", schemaName.c_str());
             if (needToDelete)
+                {
                 delete underConstruction;
+                underConstruction = NULL;
+                }
+            else
+                underConstruction->erase(schemaFullName.c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
             
@@ -831,16 +860,24 @@ void * schemaContext
             {
             Logger::GetLogger()->errorv(L"Unable to locate referenced schema %s.%02d.%02d", schemaName.c_str(), versionMajor, versionMinor);
             if (needToDelete)
+                {
                 delete underConstruction;
+                underConstruction = NULL;
+                }
+            else
+                underConstruction->erase(schemaFullName.c_str());
             return SCHEMA_DESERIALIZATION_STATUS_ReferencedSchemaNotFound;
             }
         ECSchemaPtr newPtr(referencedSchema);
         AddReferencedSchema(newPtr);
         }
     if (needToDelete)
+        {
         delete underConstruction;
+        underConstruction = NULL;
+        }
     else
-        underConstruction->erase(versionString->c_str());
+        underConstruction->erase(schemaFullName.c_str());
     return status;
     }
 
@@ -1054,39 +1091,39 @@ MSXML2::IXMLDOMElement &parentNode
     for (schemaIterator = m_refSchemaList.begin(); schemaIterator != m_refSchemaList.end(); schemaIterator++)
         {
         ECSchemaP refSchema = (*schemaIterator).get();
-        bwstring *prefix = new bwstring(refSchema->NamespacePrefix);
-        if (prefix->length() == 0)
-            prefix = new bwstring(L"s");
+        bwstring prefix(refSchema->NamespacePrefix);
+        if (prefix.length() == 0)
+            prefix = L"s";
             
-        setIterator = usedPrefixes.find(*prefix);
+        setIterator = usedPrefixes.find(prefix);
         if (setIterator != usedPrefixes.end())
             {
             int subScript;
             for (subScript = 1; subScript < 500; subScript++)
                 {
                 wchar_t temp[256];
-                swprintf(temp, 256, L"%s%d", prefix->c_str(), subScript);
+                swprintf(temp, 256, L"%s%d", prefix.c_str(), subScript);
                 bwstring tryPrefix(temp);
                 setIterator = usedPrefixes.find(tryPrefix);
                 if (setIterator == usedPrefixes.end())
                     {
-                    prefix = new bwstring(tryPrefix);
+                    prefix = tryPrefix;
                     break;
                     }
                 }
             }
-        usedPrefixes.insert(prefix->c_str());
-        m_referencedSchemaNamespaceMap.insert(std::pair<ECSchemaP, const bwstring *> (refSchema, prefix));
+        usedPrefixes.insert(prefix);
+        m_referencedSchemaNamespaceMap.insert(std::pair<ECSchemaP, const bwstring> (refSchema, prefix));
         }
 
     MSXML2::IXMLDOMTextPtr textPtr = NULL;
     MSXML2::IXMLDOMAttributePtr attributePtr;
     MSXML2::IXMLDOMElementPtr schemaPtr = NULL;
     
-    stdext::hash_map<ECSchemaP, const bwstring *>::const_iterator iterator;
+    stdext::hash_map<ECSchemaP, const bwstring>::const_iterator iterator;
     for (iterator = m_referencedSchemaNamespaceMap.begin(); iterator != m_referencedSchemaNamespaceMap.end(); iterator++)
         {
-        std::pair<ECSchemaP, const bwstring *> mapPair = *(iterator);
+        std::pair<ECSchemaP, const bwstring> mapPair = *(iterator);
         ECSchemaP refSchema = mapPair.first;
         schemaPtr = parentNode.ownerDocument->createNode(NODE_ELEMENT, EC_SCHEMAREFERENCE_ELEMENT, ECXML_URI_2_0);
         APPEND_CHILD_TO_PARENT(schemaPtr, (&parentNode));
@@ -1096,8 +1133,8 @@ MSXML2::IXMLDOMElement &parentNode
         wchar_t versionString[8];
         swprintf(versionString, 8, L"%02d.%02d", refSchema->VersionMajor, refSchema->VersionMinor);
         WRITE_XML_ATTRIBUTE(SCHEMAREF_VERSION_ATTRIBUTE, versionString, schemaPtr);
-        const bwstring *prefix = mapPair.second;
-        WRITE_XML_ATTRIBUTE(SCHEMAREF_PREFIX_ATTRIBUTE, prefix->c_str(), schemaPtr);
+        const bwstring prefix = mapPair.second;
+        WRITE_XML_ATTRIBUTE(SCHEMAREF_PREFIX_ATTRIBUTE, prefix.c_str(), schemaPtr);
         }
     return status;
     }
