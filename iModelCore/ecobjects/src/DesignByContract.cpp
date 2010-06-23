@@ -43,7 +43,7 @@ void LogFailureMessage (const wchar_t * message, ...)
     wchar_t *buffer;
     va_start (arguments, message);              
 
-       len = _vscwprintf( message, arguments ) // _vscprintf doesn't count
+    len = _vscwprintf( message, arguments ) // _vscprintf doesn't count
                                 + 1; // terminating '\0'
     
     buffer = (wchar_t*)malloc( len * sizeof(wchar_t) );

@@ -36,13 +36,13 @@ unsigned short milliseconds
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring SystemTime::ToString
+bwstring SystemTime::ToString
 (
 )
     {
     std::wostringstream valueAsString;
     valueAsString << "#" << wYear << "/" << wMonth << "/" << wDay << "-" << wHour << ":" << wMinute << ":" << wSecond << ":" << wMilliseconds << "#";
-    return valueAsString.str();
+    return valueAsString.str().c_str();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -411,7 +411,7 @@ ECValue::ECValue (double doubleVal)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (DPoint2dR point2d)
+ECValue::ECValue (DPoint2dCR point2d)
     {
     ConstructUninitialized();
     SetPoint2D (point2d);
@@ -420,7 +420,7 @@ ECValue::ECValue (DPoint2dR point2d)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (DPoint3dR point3d)
+ECValue::ECValue (DPoint3dCR point3d)
     {
     ConstructUninitialized();
     SetPoint3D (point3d);
@@ -478,7 +478,7 @@ PrimitiveType   ECValue::GetPrimitiveType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin    10/10
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StatusInt       ECValue::SetPrimitiveType (PrimitiveType primitiveType)
+BentleyStatus       ECValue::SetPrimitiveType (PrimitiveType primitiveType)
     {
     if (m_primitiveType != primitiveType)
         {
@@ -502,7 +502,7 @@ StatusInt       ECValue::SetPrimitiveType (PrimitiveType primitiveType)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ECValue::SetInteger (::Int32 integer)
+BentleyStatus       ECValue::SetInteger (::Int32 integer)
     {
     Clear();
     m_isNull    = false;
@@ -525,7 +525,7 @@ StatusInt       ECValue::SetInteger (::Int32 integer)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ECValue::SetLong (::Int64 long64)
+BentleyStatus       ECValue::SetLong (::Int64 long64)
     {
     Clear();
     m_isNull    = false;
@@ -548,7 +548,7 @@ double          ECValue::GetDouble() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ECValue::SetDouble (double value)
+BentleyStatus       ECValue::SetDouble (double value)
     {
     Clear();
     m_isNull    = false;
@@ -571,7 +571,7 @@ bool          ECValue::GetBoolean() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ECValue::SetBoolean (bool value)
+BentleyStatus       ECValue::SetBoolean (bool value)
     {
     Clear();
     m_isNull         = false;
@@ -594,7 +594,7 @@ Int64          ECValue::GetDateTimeTicks() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ECValue::SetDateTimeTicks (Int64 value)
+BentleyStatus       ECValue::SetDateTimeTicks (Int64 value)
     {
     Clear();
     m_isNull         = false;
@@ -645,7 +645,7 @@ SystemTime          ECValue::GetDateTime () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt          ECValue::SetDateTime (SystemTime& systemTime) 
+BentleyStatus          ECValue::SetDateTime (SystemTime& systemTime) 
     {
     Clear();
     FILETIME fileTime;
@@ -677,7 +677,7 @@ DPoint2d          ECValue::GetPoint2D() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ECValue::SetPoint2D (DPoint2dR value)
+BentleyStatus       ECValue::SetPoint2D (DPoint2dCR value)
     {
     Clear();
     m_isNull         = false;
@@ -702,7 +702,7 @@ DPoint3d          ECValue::GetPoint3D() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ECValue::SetPoint3D (DPoint3dR value)
+BentleyStatus       ECValue::SetPoint3D (DPoint3dCR value)
     {
     Clear();
     m_isNull         = false;
@@ -726,7 +726,7 @@ const wchar_t * ECValue::GetString() const
 *                               EC::ECValue holds the original pointer
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ECValue::SetString (const wchar_t * string, bool holdADuplicate)
+BentleyStatus ECValue::SetString (const wchar_t * string, bool holdADuplicate)
     {
     Clear();
         
@@ -762,7 +762,7 @@ const byte * ECValue::GetBinary(size_t& size) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ECValue::SetBinary (const byte * data, size_t size, bool holdADuplicate)
+BentleyStatus ECValue::SetBinary (const byte * data, size_t size, bool holdADuplicate)
     {
     Clear();
 
@@ -804,7 +804,7 @@ IECInstancePtr  ECValue::GetStruct() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ECValue::SetStruct (IECInstanceP structInstance)
+BentleyStatus       ECValue::SetStruct (IECInstanceP structInstance)
     {
     Clear();
 
@@ -828,7 +828,7 @@ StatusInt       ECValue::SetStruct (IECInstanceP structInstance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-std::wstring    ECValue::ToString () const
+bwstring    ECValue::ToString () const
     {
     if (IsNull())
         return L"<null>";
@@ -900,14 +900,14 @@ std::wstring    ECValue::ToString () const
             }
         }
         
-    return valueAsString.str();
+    return valueAsString.str().c_str();
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @param        capacity IN  Estimated size of the array.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ECValue::SetStructArrayInfo (UInt32 count, bool isFixedCount)
+ECObjectsStatus   ECValue::SetStructArrayInfo (UInt32 count, bool isFixedCount)
     {
     Clear();
         
@@ -917,14 +917,14 @@ StatusInt       ECValue::SetStructArrayInfo (UInt32 count, bool isFixedCount)
     
     m_isNull = false; // arrays are never null
     
-    return SUCCESS;
+    return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @param        capacity IN  Estimated size of the array.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ECValue::SetPrimitiveArrayInfo (PrimitiveType primitiveElementType, UInt32 count, bool isFixedSize)
+ECObjectsStatus       ECValue::SetPrimitiveArrayInfo (PrimitiveType primitiveElementType, UInt32 count, bool isFixedSize)
     {
     Clear();
         
@@ -934,7 +934,7 @@ StatusInt       ECValue::SetPrimitiveArrayInfo (PrimitiveType primitiveElementTy
     
     m_isNull = false; // arrays are never null
     
-    return SUCCESS;
+    return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -946,7 +946,34 @@ ArrayInfo       ECValue::GetArrayInfo() const
     
     return m_arrayInfo;
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/    
+UInt32          ECValue::GetFixedPrimitiveValueSize (PrimitiveType primitivetype)
+    {
+    switch (primitivetype)
+        {
+        case EC::PRIMITIVETYPE_Integer:
+            return sizeof(Int32);
+        case EC::PRIMITIVETYPE_Long:
+            return sizeof(Int64);
+        case EC::PRIMITIVETYPE_Double:
+            return sizeof(double);
+        case PRIMITIVETYPE_Boolean:
+            return sizeof(bool); 
+        case PRIMITIVETYPE_Point2D:
+            return 2*sizeof(double);
+        case PRIMITIVETYPE_Point3D:
+            return 3*sizeof(double);
+        case PRIMITIVETYPE_DateTime:
+            return sizeof(Int64); //ticks
+        default:
+            DEBUG_FAIL("Most datatypes have not yet been implemented... or perhaps you have passed in a variable-sized type.");
+            return 0;
+        }
+    }
+      
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/

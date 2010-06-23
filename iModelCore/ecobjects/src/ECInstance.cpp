@@ -5,6 +5,7 @@
 |   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
 #include "ECObjectsPch.h"
 
 BEGIN_BENTLEY_EC_NAMESPACE
@@ -72,9 +73,9 @@ void IECInstance::Debug_DumpAllocationStats(const wchar_t* prefix)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen    02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IsExcluded(std::wstring& className, std::vector<std::wstring> classNamesToExclude)
+bool IsExcluded(bwstring& className, std::vector<bwstring> classNamesToExclude)
     {
-    for each (std::wstring excludedClass in classNamesToExclude)
+    for each (bwstring excludedClass in classNamesToExclude)
         {
         if (0 == className.compare (excludedClass))
             return true;
@@ -85,7 +86,7 @@ bool IsExcluded(std::wstring& className, std::vector<std::wstring> classNamesToE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen    02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IECInstance::Debug_ReportLeaks(std::vector<std::wstring> classNamesToExclude)
+void IECInstance::Debug_ReportLeaks(std::vector<bwstring> classNamesToExclude)
     {
 #ifdef DEBUG_INSTANCE_LEAKS
     for each (DebugInstanceLeakMap::value_type leak in g_debugInstanceLeakMap)
@@ -93,7 +94,7 @@ void IECInstance::Debug_ReportLeaks(std::vector<std::wstring> classNamesToExclud
         IECInstance* leakedInstance = leak.first;
         UInt32    orderOfAllocation = leak.second;
         
-        std::wstring className = leakedInstance->GetClass().GetName();
+        bwstring className = leakedInstance->GetClass().GetName();
         if (IsExcluded (className, classNamesToExclude))
             continue;
         
@@ -130,7 +131,7 @@ void IECInstance::Debug_ResetAllocationStats()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring        IECInstance::GetInstanceId() const
+bwstring        IECInstance::GetInstanceId() const
     {
     return _GetInstanceId();
     }
@@ -165,63 +166,30 @@ int             IECInstance::ParseExpectedNIndices (const wchar_t * propertyAcce
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/   
-ECEnablerCR           IECInstance::GetEnabler() const
-    {
-    return _GetEnabler();
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/   
-bool                IECInstance::IsReadOnly() const
-    {
-    return _IsReadOnly();
-    }
+ECEnablerCR         IECInstance::GetEnabler() const { return _GetEnabler();  }
+bool                IECInstance::IsReadOnly() const { return _IsReadOnly();  }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/    
-StatusInt           IECInstance::GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 index) const
-    {
-    return _GetValue (v, propertyAccessString, index);
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Adam.Klatzkin                   02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           IECInstance::GetValue (ECValueR v, const wchar_t * propertyAccessString) const
-    {
-    return _GetValue (v, propertyAccessString);
-    }    
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/    
-StatusInt           IECInstance::SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 index)
-    {
-    return _SetValue (propertyAccessString, v, index);
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Adam.Klatzkin                   02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/    
-StatusInt           IECInstance::SetValue (const wchar_t * propertyAccessString, ECValueCR v)
-    {
-    return _SetValue (propertyAccessString, v);
-    }        
+StatusInt           IECInstance::GetValue (ECValueR v, const wchar_t * propertyAccessString) const { return _GetValue (v, propertyAccessString, false, 0); }
+StatusInt           IECInstance::GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 arrayIndex) const { return _GetValue (v, propertyAccessString, true, arrayIndex); }
+StatusInt           IECInstance::GetValue (ECValueR v, UInt32 propertyIndex) const { return _GetValue (v, propertyIndex, false, 0); }
+StatusInt           IECInstance::GetValue (ECValueR v, UInt32 propertyIndex, UInt32 arrayIndex) const { return _GetValue (v, propertyIndex, true, arrayIndex); }
+StatusInt           IECInstance::SetValue (const wchar_t * propertyAccessString, ECValueCR v) { return _SetValue (propertyAccessString, v, false, 0); }
+StatusInt           IECInstance::SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 arrayIndex) { return _SetValue (propertyAccessString, v, true, arrayIndex); }
+StatusInt           IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v) { return _SetValue (propertyIndex, v, false, 0); }
+StatusInt           IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) { return _SetValue (propertyIndex, v, true, arrayIndex); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           IECInstance::GetLong (Int64 & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+StatusInt ECInstanceInteropHelper::GetLong (IECInstanceCR instance, Int64 & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices)
     {
     PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
     ECValue v;
     StatusInt status;
     if (nIndices == 1)
-        status = _GetValue (v, propertyAccessString, *indices);
+        status = instance.GetValue (v, propertyAccessString, *indices);
     else
-        status = _GetValue (v, propertyAccessString);
+        status = instance.GetValue (v, propertyAccessString);
         
     if (status == SUCCESS)
         value = v.GetLong();
@@ -232,15 +200,15 @@ StatusInt           IECInstance::GetLong (Int64 & value, const wchar_t * propert
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
-StatusInt           IECInstance::GetInteger (int & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+StatusInt ECInstanceInteropHelper::GetInteger (IECInstanceCR instance, int & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices)
     {
     PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
     ECValue v;
     StatusInt status;
     if (nIndices == 1)
-        status = _GetValue (v, propertyAccessString, *indices);
+        status = instance.GetValue (v, propertyAccessString, *indices);
     else
-        status = _GetValue (v, propertyAccessString);
+        status = instance.GetValue (v, propertyAccessString);
         
     if (status == SUCCESS)
         value = v.GetInteger();
@@ -251,15 +219,15 @@ StatusInt           IECInstance::GetInteger (int & value, const wchar_t * proper
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/                
-StatusInt           IECInstance::GetDouble (double& value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+StatusInt ECInstanceInteropHelper::GetDouble (IECInstanceCR instance, double& value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices)
     {
     PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
     ECValue v;
     StatusInt status;
     if (nIndices == 1)
-        status = _GetValue (v, propertyAccessString, *indices);
+        status = instance.GetValue (v, propertyAccessString, *indices);
     else
-        status = _GetValue (v, propertyAccessString);
+        status = instance.GetValue (v, propertyAccessString);
         
     if (status == SUCCESS)        
         value = v.GetDouble();
@@ -270,15 +238,15 @@ StatusInt           IECInstance::GetDouble (double& value, const wchar_t * prope
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/       
-StatusInt           IECInstance::GetString (const wchar_t * & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+StatusInt ECInstanceInteropHelper::GetString (IECInstanceCR instance, const wchar_t * & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices)
     {
     PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
     ECValue v;
     StatusInt status;
     if (nIndices == 1)
-        status = _GetValue (v, propertyAccessString, *indices);
+        status = instance.GetValue (v, propertyAccessString, *indices);
     else
-        status = _GetValue (v, propertyAccessString);
+        status = instance.GetValue (v, propertyAccessString);
         
     if (status == SUCCESS)
         value = v.GetString();
@@ -289,15 +257,15 @@ StatusInt           IECInstance::GetString (const wchar_t * & value, const wchar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt IECInstance::GetBoolean (bool & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+StatusInt ECInstanceInteropHelper::GetBoolean (IECInstanceCR instance, bool & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices)
     {
     PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
     ECValue v;
     StatusInt status;
     if (nIndices == 1)
-        status = _GetValue (v, propertyAccessString, *indices);
+        status = instance.GetValue (v, propertyAccessString, *indices);
     else
-        status = _GetValue (v, propertyAccessString);
+        status = instance.GetValue (v, propertyAccessString);
         
     if (status == SUCCESS)
         value = v.GetBoolean();
@@ -308,15 +276,15 @@ StatusInt IECInstance::GetBoolean (bool & value, const wchar_t * propertyAccessS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt IECInstance::GetPoint2D (DPoint2d & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+StatusInt ECInstanceInteropHelper::GetPoint2D (IECInstanceCR instance, DPoint2d & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices)
     {
     PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
     ECValue v;
     StatusInt status;
     if (nIndices == 1)
-        status = _GetValue (v, propertyAccessString, *indices);
+        status = instance.GetValue (v, propertyAccessString, *indices);
     else
-        status = _GetValue (v, propertyAccessString);
+        status = instance.GetValue (v, propertyAccessString);
         
     if (status == SUCCESS)
         value = v.GetPoint2D();
@@ -327,15 +295,15 @@ StatusInt IECInstance::GetPoint2D (DPoint2d & value, const wchar_t * propertyAcc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt IECInstance::GetPoint3D (DPoint3d & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+StatusInt ECInstanceInteropHelper::GetPoint3D (IECInstanceCR instance, DPoint3d & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices)
     {
     PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
     ECValue v;
     StatusInt status;
     if (nIndices == 1)
-        status = _GetValue (v, propertyAccessString, *indices);
+        status = instance.GetValue (v, propertyAccessString, *indices);
     else
-        status = _GetValue (v, propertyAccessString);
+        status = instance.GetValue (v, propertyAccessString);
         
     if (status == SUCCESS)
         value = v.GetPoint3D();
@@ -346,15 +314,15 @@ StatusInt IECInstance::GetPoint3D (DPoint3d & value, const wchar_t * propertyAcc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt IECInstance::GetDateTime (SystemTime & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+StatusInt ECInstanceInteropHelper::GetDateTime (IECInstanceCR instance, SystemTime & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices)
     {
     PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
     ECValue v;
     StatusInt status;
     if (nIndices == 1)
-        status = _GetValue (v, propertyAccessString, *indices);
+        status = instance.GetValue (v, propertyAccessString, *indices);
     else
-        status = _GetValue (v, propertyAccessString);
+        status = instance.GetValue (v, propertyAccessString);
     
     if (status == SUCCESS)
         value = v.GetDateTime();
@@ -365,15 +333,15 @@ StatusInt IECInstance::GetDateTime (SystemTime & value, const wchar_t * property
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt IECInstance::GetDateTimeTicks (Int64 & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices) const
+StatusInt ECInstanceInteropHelper::GetDateTimeTicks (IECInstanceCR instance, Int64 & value, const wchar_t * propertyAccessString, UInt32 nIndices, UInt32 const * indices)
     {
     PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
     ECValue v;
     StatusInt status;
     if (nIndices == 1)
-        status = _GetValue (v, propertyAccessString, *indices);
+        status = instance.GetValue (v, propertyAccessString, *indices);
     else
-        status = _GetValue (v, propertyAccessString);
+        status = instance.GetValue (v, propertyAccessString);
     
     if (status == SUCCESS)
         value = v.GetDateTimeTicks();
@@ -384,15 +352,15 @@ StatusInt IECInstance::GetDateTimeTicks (Int64 & value, const wchar_t * property
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/       
-StatusInt           IECInstance::SetLongValue (const wchar_t * propertyAccessString, Int64 value, UInt32 nIndices, UInt32 const * indices)
+StatusInt ECInstanceInteropHelper::SetLongValue (IECInstanceR instance, const wchar_t * propertyAccessString, Int64 value, UInt32 nIndices, UInt32 const * indices)
     {
     PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
     ECValue v(value);
     StatusInt status;
     if (nIndices == 1)
-        status = _SetValue (propertyAccessString, v, *indices);
+        status = instance.SetValue (propertyAccessString, v, *indices);
     else
-        status = _SetValue (propertyAccessString, v);
+        status = instance.SetValue (propertyAccessString, v);
 
     return status;    
     }
@@ -400,15 +368,15 @@ StatusInt           IECInstance::SetLongValue (const wchar_t * propertyAccessStr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/       
-StatusInt           IECInstance::SetIntegerValue (const wchar_t * propertyAccessString, int value, UInt32 nIndices, UInt32 const * indices)
+StatusInt ECInstanceInteropHelper::SetIntegerValue (IECInstanceR instance, const wchar_t * propertyAccessString, int value, UInt32 nIndices, UInt32 const * indices)
     {
     PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
     ECValue v(value);
     StatusInt status;
     if (nIndices == 1)
-        status = _SetValue (propertyAccessString, v, *indices);
+        status = instance.SetValue (propertyAccessString, v, *indices);
     else
-        status = _SetValue (propertyAccessString, v);
+        status = instance.SetValue (propertyAccessString, v);
 
     return status;    
     }
@@ -416,15 +384,15 @@ StatusInt           IECInstance::SetIntegerValue (const wchar_t * propertyAccess
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/       
-StatusInt           IECInstance::SetDoubleValue (const wchar_t * propertyAccessString, double value, UInt32 nIndices, UInt32 const * indices)
+StatusInt ECInstanceInteropHelper::SetDoubleValue (IECInstanceR instance, const wchar_t * propertyAccessString, double value, UInt32 nIndices, UInt32 const * indices)
     {
     PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
     ECValue v(value);
     StatusInt status;
     if (nIndices == 1)
-        status = _SetValue (propertyAccessString, v, *indices);
+        status = instance.SetValue (propertyAccessString, v, *indices);
     else
-        status = _SetValue (propertyAccessString, v);
+        status = instance.SetValue (propertyAccessString, v);
 
     return status;    
     }
@@ -432,15 +400,15 @@ StatusInt           IECInstance::SetDoubleValue (const wchar_t * propertyAccessS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/       
-StatusInt           IECInstance::SetStringValue  (const wchar_t * propertyAccessString, const wchar_t * value, UInt32 nIndices, UInt32 const * indices)
+StatusInt ECInstanceInteropHelper::SetStringValue  (IECInstanceR instance, const wchar_t * propertyAccessString, const wchar_t * value, UInt32 nIndices, UInt32 const * indices)
     {
     PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
     ECValue v(value, false);
     StatusInt status;
     if (nIndices == 1)
-        status = _SetValue (propertyAccessString, v, *indices);
+        status = instance.SetValue (propertyAccessString, v, *indices);
     else
-        status = _SetValue (propertyAccessString, v);    
+        status = instance.SetValue (propertyAccessString, v);
 
     return status;    
     }
@@ -448,15 +416,15 @@ StatusInt           IECInstance::SetStringValue  (const wchar_t * propertyAccess
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt IECInstance::SetBooleanValue  (const wchar_t * propertyAccessString, bool value, UInt32 nIndices, UInt32 const * indices)
+StatusInt ECInstanceInteropHelper::SetBooleanValue  (IECInstanceR instance, const wchar_t * propertyAccessString, bool value, UInt32 nIndices, UInt32 const * indices)
     {
     PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
     ECValue v(value);
     StatusInt status;
     if (nIndices == 1)
-        status = _SetValue (propertyAccessString, v, *indices);
+        status = instance.SetValue (propertyAccessString, v, *indices);
     else
-        status = _SetValue (propertyAccessString, v);
+        status = instance.SetValue (propertyAccessString, v);
 
     return status;    
     }
@@ -464,15 +432,15 @@ StatusInt IECInstance::SetBooleanValue  (const wchar_t * propertyAccessString, b
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt IECInstance::SetPoint2DValue  (const wchar_t * propertyAccessString, DPoint2dR value, UInt32 nIndices, UInt32 const * indices)
+StatusInt ECInstanceInteropHelper::SetPoint2DValue  (IECInstanceR instance, const wchar_t * propertyAccessString, DPoint2dCR value, UInt32 nIndices, UInt32 const * indices)
     {
     PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
     ECValue v(value);
     StatusInt status;
     if (nIndices == 1)
-        status = _SetValue (propertyAccessString, v, *indices);
+        status = instance.SetValue (propertyAccessString, v, *indices);
     else
-        status = _SetValue (propertyAccessString, v);
+        status = instance.SetValue (propertyAccessString, v);
 
     return status;    
     }
@@ -480,15 +448,15 @@ StatusInt IECInstance::SetPoint2DValue  (const wchar_t * propertyAccessString, D
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt IECInstance::SetPoint3DValue  (const wchar_t * propertyAccessString, DPoint3dR value, UInt32 nIndices, UInt32 const * indices)
+StatusInt ECInstanceInteropHelper::SetPoint3DValue  (IECInstanceR instance, const wchar_t * propertyAccessString, DPoint3dCR value, UInt32 nIndices, UInt32 const * indices)
     {
     PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
     ECValue v(value);
     StatusInt status;
     if (nIndices == 1)
-        status = _SetValue (propertyAccessString, v, *indices);
+        status = instance.SetValue (propertyAccessString, v, *indices);
     else
-        status = _SetValue (propertyAccessString, v);
+        status = instance.SetValue (propertyAccessString, v);
 
     return status;    
     }
@@ -496,15 +464,15 @@ StatusInt IECInstance::SetPoint3DValue  (const wchar_t * propertyAccessString, D
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt IECInstance::SetDateTimeValue (const wchar_t * propertyAccessString, SystemTime& value, UInt32 nIndices, UInt32 const * indices)
+StatusInt ECInstanceInteropHelper::SetDateTimeValue (IECInstanceR instance, const wchar_t * propertyAccessString, SystemTime& value, UInt32 nIndices, UInt32 const * indices)
     {
     PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
     ECValue v(value);
     StatusInt status;
     if (nIndices == 1)
-        status = _SetValue (propertyAccessString, v, *indices);
+        status = instance.SetValue (propertyAccessString, v, *indices);
     else
-        status = _SetValue (propertyAccessString, v);
+        status = instance.SetValue (propertyAccessString, v);
 
     return status;    
     }
@@ -512,7 +480,7 @@ StatusInt IECInstance::SetDateTimeValue (const wchar_t * propertyAccessString, S
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt IECInstance::SetDateTimeTicks (const wchar_t * propertyAccessString, Int64 value, UInt32 nIndices, UInt32 const * indices)
+StatusInt ECInstanceInteropHelper::SetDateTimeTicks (IECInstanceR instance, const wchar_t * propertyAccessString, Int64 value, UInt32 nIndices, UInt32 const * indices)
     {
     PRECONDITION (nIndices <= 1 && "Access strings containing nested arrays are not yet implemented", ECOBJECTS_STATUS_OperationNotSupported);
     ECValue v;
@@ -520,9 +488,9 @@ StatusInt IECInstance::SetDateTimeTicks (const wchar_t * propertyAccessString, I
 
     StatusInt status;
     if (nIndices == 1)
-        status = _SetValue (propertyAccessString, v, *indices);
+        status = instance.SetValue (propertyAccessString, v, *indices);
     else
-        status = _SetValue (propertyAccessString, v);
+        status = instance.SetValue (propertyAccessString, v);
 
     return status;    
     }
@@ -530,7 +498,7 @@ StatusInt IECInstance::SetDateTimeTicks (const wchar_t * propertyAccessString, I
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           IECInstance::InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size)
+ECObjectsStatus           IECInstance::InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size)
     {
     return _InsertArrayElements (propertyAccessString, index, size);
     } 
@@ -538,7 +506,7 @@ StatusInt           IECInstance::InsertArrayElements (const wchar_t * propertyAc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           IECInstance::AddArrayElements (const wchar_t * propertyAccessString, UInt32 size)
+ECObjectsStatus           IECInstance::AddArrayElements (const wchar_t * propertyAccessString, UInt32 size)
     {
     return _AddArrayElements (propertyAccessString, size);
     }        
@@ -546,7 +514,7 @@ StatusInt           IECInstance::AddArrayElements (const wchar_t * propertyAcces
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           IECInstance::RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index)
+ECObjectsStatus           IECInstance::RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index)
     {
     return _RemoveArrayElement (propertyAccessString, index);
     } 
@@ -554,7 +522,7 @@ StatusInt           IECInstance::RemoveArrayElement (const wchar_t * propertyAcc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           IECInstance::ClearArray (const wchar_t * propertyAccessString)
+ECObjectsStatus           IECInstance::ClearArray (const wchar_t * propertyAccessString)
     {
     return _ClearArray (propertyAccessString);
     }           
@@ -580,7 +548,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void             AppendAccessString (std::wstring& compoundAccessString, std::wstring& baseAccessString, const std::wstring& propertyName)
+static void             AppendAccessString (bwstring& compoundAccessString, bwstring& baseAccessString, const bwstring& propertyName)
     {
     compoundAccessString = baseAccessString;
     compoundAccessString.append (propertyName);
@@ -634,6 +602,7 @@ static const wchar_t SOURCEINSTANCEID_ATTRIBUTE[]   = L"sourceInstanceID";
 static const wchar_t TARGETCLASS_ATTRIBUTE[]        = L"targetClass";
 static const wchar_t TARGETINSTANCEID_ATTRIBUTE[]   = L"targetInstanceID";
 static const wchar_t XMLNS_ATTRIBUTE[]              = L"xmlns";
+static const wchar_t XSI_NIL_ATTRIBUTE[]            = L"nil";
 
 // =====================================================================================
 // InstanceXMLReader class
@@ -641,7 +610,7 @@ static const wchar_t XMLNS_ATTRIBUTE[]              = L"xmlns";
 struct  InstanceXmlReader
 {
 private:
-    std::wstring                m_fileName;
+    bwstring                m_fileName;
     CComPtr <IStream>           m_stream;
     CComPtr <IXmlReader>        m_xmlReader;
     ECSchemaPtr                 m_schema;
@@ -660,7 +629,7 @@ InstanceXmlReader (ECSchemaP schema, CComPtr <IStream> stream)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceXmlReader (ECSchemaP schema, std::wstring fileName)
+InstanceXmlReader (ECSchemaP schema, bwstring fileName)
     {
     m_schema                = schema;
     m_fileName              = fileName;
@@ -703,7 +672,8 @@ InstanceDeserializationStatus       TranslateStatus (HRESULT status)
         { WC_E_DECLELEMENT,         INSTANCE_DESERIALIZATION_STATUS_BadElement              },
         { WC_E_NAME,                INSTANCE_DESERIALIZATION_STATUS_NoElementName           },  
         { WC_E_ELEMENTMATCH,        INSTANCE_DESERIALIZATION_STATUS_EndElementDoesntMatch   },
-        { WC_E_ENTITYCONTENT,       INSTANCE_DESERIALIZATION_STATUS_BadElement              },      
+        { WC_E_ENTITYCONTENT,       INSTANCE_DESERIALIZATION_STATUS_BadElement              },  
+        { WC_E_ROOTELEMENT,         INSTANCE_DESERIALIZATION_STATUS_BadElement              },    
         { S_FALSE,                  INSTANCE_DESERIALIZATION_STATUS_XmlFileIncomplete       },
         };
     
@@ -777,6 +747,16 @@ InstanceDeserializationStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr&
     // see if we can find the class from the schema we have.
     ECClassCP    foundClass;
     if (NULL == (foundClass = m_schema->GetClassP (className)))
+        {
+        ECSchemaReferenceList refList = m_schema->GetReferencedSchemas();
+        ECSchemaReferenceList::const_iterator schemaIterator;
+        for (schemaIterator = refList.begin(); schemaIterator != refList.end(); schemaIterator++)
+            {
+            if (NULL != (foundClass = (*schemaIterator)->GetClassP (className)))
+                break;
+            }
+        }
+    if (NULL == foundClass)
         return INSTANCE_DESERIALIZATION_STATUS_ECClassNotFound;
 
     *ecClass = foundClass;
@@ -865,7 +845,7 @@ InstanceDeserializationStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr&
             const wchar_t*  nameSpace;
             if (FAILED (status = m_xmlReader->GetValue (&nameSpace, NULL)))
                 return TranslateStatus (status);
-            const wchar_t*  schemaName = m_schema->Name.c_str();
+            const wchar_t*  schemaName = foundClass->Schema.Name.c_str();
             assert (0 == wcsncmp (schemaName, nameSpace, wcslen (schemaName)));
             }
 
@@ -877,21 +857,26 @@ InstanceDeserializationStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr&
 
         // the namespace should agree with the schema name.
         }
+    // IsEmptyElement returns false if the reader is positioned on an attribute node, even if attribute's parent element is empty. 
+    if (S_OK != (status = m_xmlReader->MoveToElement()))
+        return TranslateStatus (status);
+
     return INSTANCE_DESERIALIZATION_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   ReadInstanceOrStructMembers (ECClassCR ecClass, IECInstanceP ecInstance, std::wstring* baseAccessString)
+InstanceDeserializationStatus   ReadInstanceOrStructMembers (ECClassCR ecClass, IECInstanceP ecInstance, bwstring* baseAccessString)
     {
     // On entry, the reader is positioned in the content of an instance or struct.
+
+    HRESULT         status;
 
     // if it's an empty node, all members of the instance are NULL.
     if (m_xmlReader->IsEmptyElement())
         return INSTANCE_DESERIALIZATION_STATUS_Success;
 
-    HRESULT         status;
     XmlNodeType     nodeType;
     while (S_OK == (status = m_xmlReader->Read (&nodeType)))
         {
@@ -929,7 +914,7 @@ InstanceDeserializationStatus   ReadInstanceOrStructMembers (ECClassCR ecClass, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   ReadProperty (ECClassCR ecClass, IECInstanceP ecInstance, std::wstring* baseAccessString)
+InstanceDeserializationStatus   ReadProperty (ECClassCR ecClass, IECInstanceP ecInstance, bwstring* baseAccessString)
     {
     // on entry, the reader is positioned at the Element.
     // get the element name, which is the property name.
@@ -964,13 +949,13 @@ InstanceDeserializationStatus   ReadProperty (ECClassCR ecClass, IECInstanceP ec
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   ReadEmbeddedStructProperty (StructECPropertyP structProperty, IECInstanceP ecInstance, std::wstring* baseAccessString)
+InstanceDeserializationStatus   ReadEmbeddedStructProperty (StructECPropertyP structProperty, IECInstanceP ecInstance, bwstring* baseAccessString)
     {
     // empty element OK for struct - all members are null.
     if (m_xmlReader->IsEmptyElement())
         return INSTANCE_DESERIALIZATION_STATUS_Success;
 
-    std::wstring    thisAccessString;
+    bwstring    thisAccessString;
     if (NULL != baseAccessString)
         AppendAccessString (thisAccessString, *baseAccessString, structProperty->Name);
     else
@@ -983,7 +968,7 @@ InstanceDeserializationStatus   ReadEmbeddedStructProperty (StructECPropertyP st
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   ReadPrimitiveProperty (PrimitiveECPropertyP primitiveProperty, IECInstanceP ecInstance, std::wstring* baseAccessString)
+InstanceDeserializationStatus   ReadPrimitiveProperty (PrimitiveECPropertyP primitiveProperty, IECInstanceP ecInstance, bwstring* baseAccessString)
     {
     // on entry, we are positioned in the PrimitiveProperty element.
     PrimitiveType                   propertyType = primitiveProperty->Type;
@@ -999,7 +984,7 @@ InstanceDeserializationStatus   ReadPrimitiveProperty (PrimitiveECPropertyP prim
         }
     else
         {
-        std::wstring compoundAccessString;
+        bwstring compoundAccessString;
         AppendAccessString (compoundAccessString, *baseAccessString, primitiveProperty->Name);
         setStatus = ecInstance->SetValue (compoundAccessString.c_str(), ecValue);
         }
@@ -1011,14 +996,14 @@ InstanceDeserializationStatus   ReadPrimitiveProperty (PrimitiveECPropertyP prim
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayProperty, IECInstanceP ecInstance, std::wstring* baseAccessString)
+InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayProperty, IECInstanceP ecInstance, bwstring* baseAccessString)
     {
     // on entry, the reader is positioned at the element that indicates the start of the array.
     // empty element OK for array - no members.
     if (m_xmlReader->IsEmptyElement())
         return INSTANCE_DESERIALIZATION_STATUS_Success;
 
-    std::wstring    accessString;
+    bwstring    accessString;
     if (NULL == baseAccessString)
         accessString = arrayProperty->Name;    
     else
@@ -1150,7 +1135,7 @@ InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayPropert
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   ReadStructArrayMember (ECClassCR structClass, IECInstanceP owningInstance, std::wstring& accessString, UInt32 index)
+InstanceDeserializationStatus   ReadStructArrayMember (ECClassCR structClass, IECInstanceP owningInstance, bwstring& accessString, UInt32 index)
     {
     // On entry, the reader is positioned at the element that starts the struct.
     // we have to create an IECInstance for the array member.
@@ -1186,14 +1171,37 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
     // The reader is positioned at the XmlNodeType_Element that holds the value. 
     // We expect to find a Text element with the value, advance until we do.
 
-    // we don't expect an empty element when reading a primitive.
-    if (m_xmlReader->IsEmptyElement())
+    HRESULT         status;
+    // First check to see if this is set to NULL
+    for (status = m_xmlReader->MoveToFirstAttribute(); S_OK == status; status = m_xmlReader->MoveToNextAttribute())
         {
-        assert (false);
-        return INSTANCE_DESERIALIZATION_STATUS_EmptyElement;
+        // we have an attribute.
+        const wchar_t*      attributeName;
+        if (FAILED (status = m_xmlReader->GetLocalName (&attributeName, NULL)))
+            return TranslateStatus (status);
+
+        // see if it's the instanceId attribute.
+        if (0 == wcscmp (XSI_NIL_ATTRIBUTE, attributeName))
+            {
+            // get the value.
+            const wchar_t *  isNil;
+            if (FAILED (status = m_xmlReader->GetValue (&isNil, NULL)))
+                return TranslateStatus (status);
+
+            if ((0 == wcscmp (isNil, L"True")) || (0 == wcscmp (isNil, L"true")) || 
+                (0 == wcscmp (isNil, L"TRUE")) || (0 == wcscmp (isNil, L"1")))
+                {
+                ecValue.SetToNull();
+                }
+            }
+            m_xmlReader->MoveToElement();
         }
 
-    HRESULT         status;
+    if (m_xmlReader->IsEmptyElement())
+        {
+        return INSTANCE_DESERIALIZATION_STATUS_Success;
+        }
+
     XmlNodeType     nodeType;
     while (S_OK == (status = m_xmlReader->Read (&nodeType)))
         {
@@ -1487,16 +1495,16 @@ UInt32          GetLineNumber ()
 
 };
 
-
 // =====================================================================================
 // InstanceXMLWriter class
 // =====================================================================================
 struct  InstanceXmlWriter
 {
 private:
-    std::wstring                m_fileName;
+    bwstring                m_fileName;
     CComPtr <IStream>           m_stream;
     CComPtr <IXmlWriter>        m_xmlWriter;
+    CComPtr <IXmlWriterOutput>  m_xmlOutput;
     ECSchemaPtr                 m_schema;
     bool                        m_compacted;
 
@@ -1514,7 +1522,7 @@ InstanceXmlWriter (CComPtr <IStream> stream)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceXmlWriter (std::wstring fileName)
+InstanceXmlWriter (bwstring fileName)
     {
     m_fileName          = fileName;
     m_stream            = NULL;
@@ -1540,7 +1548,11 @@ InstanceSerializationStatus     Init ()
         if (FAILED (status = CreateXmlWriter (__uuidof(IXmlWriter), (void**) &m_xmlWriter, NULL)))
             return INSTANCE_SERIALIZATION_STATUS_CantCreateXmlWriter;
 
-        if (FAILED (status= m_xmlWriter->SetOutput (m_stream)))
+
+        if (FAILED (status = CreateXmlWriterOutputWithEncodingName(m_stream, 0, L"utf-16", &m_xmlOutput)))
+            return INSTANCE_SERIALIZATION_STATUS_CantCreateXmlWriter;
+
+        if (FAILED (status= m_xmlWriter->SetOutput (m_xmlOutput)))
             return INSTANCE_SERIALIZATION_STATUS_CantSetStream;
 
         if (!m_compacted)
@@ -1552,18 +1564,28 @@ InstanceSerializationStatus     Init ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceSerializationStatus     WriteInstance (IECInstanceCR instance)
+InstanceSerializationStatus     WriteInstance (IECInstanceCR instance, bool writeStart)
     {
     ECClassCR               ecClass     = instance.GetClass();
     ECSchemaCR              ecSchema    = ecClass.Schema;
 
     HRESULT status;
-    if (S_OK != (status = m_xmlWriter->WriteStartDocument (XmlStandalone_Omit)))
-        return TranslateStatus (status);
+    if (writeStart)
+        {
+        if (S_OK != (status = m_xmlWriter->WriteStartDocument (XmlStandalone_Omit)))
+            return TranslateStatus (status);
+        }
 
     // start by writing the name of the class as an element, with the schema name as the namespace.
-    if (S_OK != (status = m_xmlWriter->WriteStartElement (NULL, ecClass.Name.c_str(), ecSchema.Name.c_str())))
+    size_t size = wcslen(ecSchema.Name.c_str()) + 8;
+    wchar_t *fullSchemaName = (wchar_t*)malloc(size * sizeof(wchar_t));
+    swprintf(fullSchemaName, size, L"%s.%02d.%02d", ecSchema.Name.c_str(), ecSchema.VersionMajor, ecSchema.VersionMinor);
+    if (S_OK != (status = m_xmlWriter->WriteStartElement (NULL, ecClass.Name.c_str(), fullSchemaName)))
+        {
+        free(fullSchemaName);
         return TranslateStatus (status);
+        }
+    free(fullSchemaName);
 
     WritePropertiesOfClassOrStructArrayMember (ecClass, instance, NULL);
 
@@ -1580,7 +1602,7 @@ InstanceSerializationStatus     WriteInstance (IECInstanceCR instance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceSerializationStatus     WritePropertiesOfClassOrStructArrayMember (ECClassCR ecClass, IECInstanceCR ecInstance, std::wstring* baseAccessString)
+InstanceSerializationStatus     WritePropertiesOfClassOrStructArrayMember (ECClassCR ecClass, IECInstanceCR ecInstance, bwstring* baseAccessString)
     {
     ECPropertyIterableCR    collection  = ecClass.GetProperties (true);
     for each (ECPropertyP ecProperty in collection)
@@ -1610,11 +1632,11 @@ InstanceSerializationStatus     WritePropertiesOfClassOrStructArrayMember (ECCla
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceSerializationStatus     WritePrimitiveProperty (PrimitiveECPropertyR primitiveProperty, IECInstanceCR ecInstance, std::wstring* baseAccessString)
+InstanceSerializationStatus     WritePrimitiveProperty (PrimitiveECPropertyR primitiveProperty, IECInstanceCR ecInstance, bwstring* baseAccessString)
     {
     StatusInt           getStatus;
     ECValue             ecValue;
-    std::wstring const& propertyName = primitiveProperty.Name;
+    bwstring const& propertyName = primitiveProperty.Name;
 
     if (NULL == baseAccessString)
         {
@@ -1622,7 +1644,7 @@ InstanceSerializationStatus     WritePrimitiveProperty (PrimitiveECPropertyR pri
         }
     else
         {
-        std::wstring compoundAccessString;
+        bwstring compoundAccessString;
         AppendAccessString (compoundAccessString, *baseAccessString, propertyName);
         getStatus = ecInstance.GetValue (ecValue, compoundAccessString.c_str());
         }
@@ -1662,7 +1684,7 @@ InstanceSerializationStatus     WritePrimitiveValue (ECValueCR ecValue, Primitiv
             const byte* byteData; 
             if (NULL != (byteData = ecValue.GetBinary (numBytes)))
                 {
-                std::wstring    byteString = ConvertByteArrayToString (byteData, numBytes);
+                bwstring    byteString = ConvertByteArrayToString (byteData, numBytes);
                 HRESULT         status;
                 if (S_OK != (status = m_xmlWriter->WriteChars (byteString.c_str(), static_cast <UINT> (byteString.length()))))
                     return TranslateStatus (status);
@@ -1744,11 +1766,11 @@ InstanceSerializationStatus     WritePrimitiveValue (ECValueCR ecValue, Primitiv
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceSerializationStatus     WriteArrayProperty (ArrayECPropertyR arrayProperty, IECInstanceCR ecInstance, std::wstring* baseAccessString)
+InstanceSerializationStatus     WriteArrayProperty (ArrayECPropertyR arrayProperty, IECInstanceCR ecInstance, bwstring* baseAccessString)
     {
     ArrayKind       arrayKind = arrayProperty.Kind;
 
-    std::wstring    accessString;
+    bwstring    accessString;
     if (NULL == baseAccessString)
         accessString = arrayProperty.Name;    
     else
@@ -1838,14 +1860,14 @@ InstanceSerializationStatus     WriteArrayProperty (ArrayECPropertyR arrayProper
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceSerializationStatus     WriteEmbeddedStructProperty (StructECPropertyR structProperty, IECInstanceCR ecInstance, std::wstring* baseAccessString)
+InstanceSerializationStatus     WriteEmbeddedStructProperty (StructECPropertyR structProperty, IECInstanceCR ecInstance, bwstring* baseAccessString)
     {
     // the tag of the element for an embedded struct is the property name.
     HRESULT     status;
     if (S_OK != (status = m_xmlWriter->WriteStartElement (NULL, structProperty.Name.c_str(), NULL)))
         return TranslateStatus (status);
 
-    std::wstring    thisAccessString;
+    bwstring    thisAccessString;
     if (NULL != baseAccessString)
         AppendAccessString (thisAccessString, *baseAccessString, structProperty.Name);
     else
@@ -1865,7 +1887,7 @@ InstanceSerializationStatus     WriteEmbeddedStructProperty (StructECPropertyR s
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring    ConvertByteArrayToString (const byte *byteData, size_t numBytes)
+bwstring    ConvertByteArrayToString (const byte *byteData, size_t numBytes)
     {
     static const wchar_t    base64Chars[] = {L"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"};
 
@@ -1873,7 +1895,7 @@ std::wstring    ConvertByteArrayToString (const byte *byteData, size_t numBytes)
         return L"";
 
     // from each 3 bytes we get 4 output characters, rounded up.
-    std::wstring    outString;
+    bwstring    outString;
     for (size_t iByte=0; iByte < numBytes; iByte += 3)
         {
         UInt32      nextThreeBytes = byteData[iByte] | (byteData[iByte+1] << 8) | (byteData[iByte+2] << 16);
@@ -1937,18 +1959,125 @@ InstanceDeserializationStatus   IECInstance::ReadXmlFromFile (IECInstancePtr& ec
     return reader.ReadInstance (ecInstance);
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceDeserializationStatus   IECInstance::ReadXmlFromStream (IECInstancePtr& ecInstance, IStreamP stream, ECSchemaP schema)
+    {
+    InstanceXmlReader reader (schema, stream);
+
+    InstanceDeserializationStatus   status;
+    if (INSTANCE_DESERIALIZATION_STATUS_Success != (status = reader.Init ()))
+        return status;
+
+    return reader.ReadInstance (ecInstance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceDeserializationStatus   IECInstance::ReadXmlFromString (IECInstancePtr& ecInstance, const wchar_t* xmlString, ECSchemaP schema)
+    {
+    CComPtr <IStream> stream;
+    if (S_OK != ::CreateStreamOnHGlobal(NULL,TRUE,&stream))
+        return INSTANCE_DESERIALIZATION_STATUS_CantCreateStream;
+
+    LARGE_INTEGER liPos = {0};
+    if (S_OK != stream->Seek(liPos, STREAM_SEEK_SET, NULL))
+        return INSTANCE_DESERIALIZATION_STATUS_CantCreateStream;
+
+    ULARGE_INTEGER uliSize = { 0 };
+    stream->SetSize(uliSize);
+
+    ULONG bytesWritten;
+    ULONG ulSize = (ULONG) wcslen(xmlString) * sizeof(wchar_t);
+
+    if (S_OK != stream->Write(xmlString, ulSize, &bytesWritten))
+        return INSTANCE_DESERIALIZATION_STATUS_CantCreateStream;
+
+    if (ulSize != bytesWritten)
+        return INSTANCE_DESERIALIZATION_STATUS_CantCreateStream;
+
+    if (S_OK != stream->Seek(liPos, STREAM_SEEK_SET, NULL))
+        return INSTANCE_DESERIALIZATION_STATUS_CantCreateStream;
+
+    InstanceXmlReader reader (schema, stream);
+
+    InstanceDeserializationStatus   status;
+    if (INSTANCE_DESERIALIZATION_STATUS_Success != (status = reader.Init ()))
+        return status;
+
+    return reader.ReadInstance (ecInstance);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceSerializationStatus     IECInstance::WriteXmlToFile (const wchar_t* fileName)
+InstanceSerializationStatus     IECInstance::WriteXmlToFile (const wchar_t* fileName, bool isStandAlone)
     {
     InstanceXmlWriter writer (fileName);
 
     InstanceSerializationStatus   status;
-    if (INSTANCE_DESERIALIZATION_STATUS_Success != (status = writer.Init ()))
+    if (INSTANCE_SERIALIZATION_STATUS_Success != (status = writer.Init ()))
         return status;
 
-    return writer.WriteInstance (*this);
+    return writer.WriteInstance (*this, isStandAlone);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceSerializationStatus     IECInstance::WriteXmlToStream (IStreamP stream, bool isStandAlone)
+    {
+    InstanceXmlWriter writer (stream);
+
+    InstanceSerializationStatus   status;
+    if (INSTANCE_SERIALIZATION_STATUS_Success != (status = writer.Init ()))
+        return status;
+
+    return writer.WriteInstance (*this, isStandAlone);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceSerializationStatus IECInstance::WriteXmlToString (bwstring & ecInstanceXml, bool isStandAlone )
+    {
+    InstanceSerializationStatus   status;
+
+    CComPtr <IStream> stream;
+    if (S_OK != ::CreateStreamOnHGlobal(NULL,TRUE,&stream))
+        return INSTANCE_SERIALIZATION_STATUS_CantCreateStream;
+
+    InstanceXmlWriter writer (stream);
+    if (INSTANCE_SERIALIZATION_STATUS_Success != (status = writer.Init ()))
+        return status;
+
+    if (INSTANCE_SERIALIZATION_STATUS_Success != (status = writer.WriteInstance(*this, isStandAlone)))
+        return status;
+
+    LARGE_INTEGER liPos = {0};
+    STATSTG statstg;
+    
+    ULARGE_INTEGER beginningPos;
+    if (S_OK != stream->Seek(liPos, STREAM_SEEK_SET, &beginningPos))
+        return INSTANCE_SERIALIZATION_STATUS_CantSetStream;
+
+    memset (&statstg, 0, sizeof(statstg));
+    if (S_OK != stream->Stat(&statstg, STATFLAG_NONAME))
+        return INSTANCE_SERIALIZATION_STATUS_CantReadFromStream;
+    
+    wchar_t *xml = (wchar_t *) malloc((statstg.cbSize.LowPart + 1) * sizeof(wchar_t) );
+    ULONG bytesRead;
+    stream->Read(xml, statstg.cbSize.LowPart * sizeof(wchar_t), &bytesRead);
+    xml[bytesRead / sizeof(wchar_t)] = L'\0';
+    ecInstanceXml = xml;
+
+    // There is an invisible UNICODE character in the beginning that messes things up
+    ecInstanceXml = ecInstanceXml.substr(1);
+    free(xml);
+    return INSTANCE_SERIALIZATION_STATUS_Success;
     }
 
 END_BENTLEY_EC_NAMESPACE

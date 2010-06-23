@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "ECObjectsPch.h"
+#include <BsiLogging\log4cxx.h>
+#include <BsiLogging\bsiloginterop.h>
 
 USING_NAMESPACE_BENTLEY_LOGGING
 
@@ -23,7 +25,7 @@ wchar_t *filepath,
 DWORD bufferSize
 )
     {
-    std::wstring dllPath = ECFileUtilities::GetDllPath();
+    bwstring dllPath = ECFileUtilities::GetDllPath();
     if (0 == dllPath.length())
         return ERROR;
         
@@ -41,7 +43,7 @@ DWORD bufferSize
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Casey.Mullen                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring GetLogConfigurationFilename()
+bwstring GetLogConfigurationFilename()
     {
     wchar_t filepath[_MAX_PATH];
 
@@ -84,16 +86,25 @@ void
         // If the hosting application hasn't already established a logging context
         if ( !LoggerConfig::isInterfaceRegistered())
             {       
-            std::wstring filepath = GetLogConfigurationFilename();
-            if (filepath.size() > 0)
-                {   
-                Provider::Log4cxxLogger* pLog = new Provider::Log4cxxLogger ();
-                if (pLog != NULL)
-                    {                             
-                    pLog->LoadConfiguration (filepath.c_str());
-                    LoggerConfig::registerLogInterface(pLog);  
-                    }
-                }                      
+            wchar_t envValue[20];            
+            if (0 < GetEnvironmentVariableW(L"BENTLEY_LOGGING_MANAGED", envValue, 20))
+                {
+                Provider::ManagedInteropProvider* pLog = new Provider::ManagedInteropProvider();
+                LoggerConfig::registerLogInterface (pLog);
+                }
+            else
+                {                    
+                bwstring filepath = GetLogConfigurationFilename();
+                if (filepath.size() > 0)
+                    {   
+                    Provider::Log4cxxLogger* pLog = new Provider::Log4cxxLogger ();
+                    if (pLog != NULL)
+                        {                             
+                        pLog->LoadConfiguration (filepath.c_str());
+                        LoggerConfig::registerLogInterface(pLog);  
+                        }
+                    }                      
+                }
             }
 
         s_logger = LoggerRegistry::getLogger (L"ECObjectsNative");

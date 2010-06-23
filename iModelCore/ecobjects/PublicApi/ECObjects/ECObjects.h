@@ -58,6 +58,7 @@ EC_TYPEDEFS(RelationshipCardinality);
 EC_TYPEDEFS(IECInstance);
 EC_TYPEDEFS(IECRelationshipInstance);
 EC_TYPEDEFS(IECSchemaLocator);
+EC_TYPEDEFS(IECCustomAttributeContainer);
 
 EC_TYPEDEFS(ECEnabler);
 EC_TYPEDEFS(IArrayManipulator);
@@ -84,6 +85,7 @@ EC_TYPEDEFS(SystemTime);
 
 #define WRITEONLY_PROPERTY(TYPE, NAME) __declspec(property(put=Set##NAME)) TYPE NAME
 
+typedef struct IStream* IStreamP;
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -124,6 +126,12 @@ enum ECObjectsStatus
     ECOBJECTS_STATUS_BaseClassUnacceptable                              = ECOBJECTS_ERROR_BASE + 0x10,
     ECOBJECTS_STATUS_SchemaInUse                                        = ECOBJECTS_ERROR_BASE + 0x11,
     ECOBJECTS_STATUS_InvalidName                                        = ECOBJECTS_ERROR_BASE + 0x12,
+    ECOBJECTS_STATUS_DataTypeNotSupported                               = ECOBJECTS_ERROR_BASE + 0x13,
+    ECOBJECTS_STATUS_UnableToAllocateMemory                             = ECOBJECTS_ERROR_BASE + 0x14,
+    ECOBJECTS_STATUS_MemoryBoundsOverrun                                = ECOBJECTS_ERROR_BASE + 0x15,
+    ECOBJECTS_STATUS_NullPointerValue                                   = ECOBJECTS_ERROR_BASE + 0x16,
+    ECOBJECTS_STATUS_NotCustomAttributeClass                            = ECOBJECTS_ERROR_BASE + 0x17,
+    ECOBJECTS_STATUS_Error                                              = ECOBJECTS_ERROR_BASE + 0xFFF,
     }; 
 
 enum SchemaDeserializationStatus
@@ -179,6 +187,7 @@ enum InstanceSerializationStatus
     INSTANCE_SERIALIZATION_STATUS_CantCreateXmlWriter                   = INSTANCE_SERIALIZATION_STATUS_BASE + 3,
     INSTANCE_SERIALIZATION_STATUS_CantSetStream                         = INSTANCE_SERIALIZATION_STATUS_BASE + 4,
     INSTANCE_SERIALIZATION_STATUS_XmlWriteError                         = INSTANCE_SERIALIZATION_STATUS_BASE + 5,
+    INSTANCE_SERIALIZATION_STATUS_CantReadFromStream                    = INSTANCE_SERIALIZATION_STATUS_BASE + 6,
 
     INSTANCE_SERIALIZATION_STATUS_BadPrimitivePropertyType              = INSTANCE_SERIALIZATION_STATUS_BASE + 30,
     };

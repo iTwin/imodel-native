@@ -13,7 +13,6 @@
 #include "Logger.h"
 #include "FileUtilities.h"
 #include <BsiLogging\bsilog.h>
-#include <BsiLogging\log4cxx.h>
 
 
 

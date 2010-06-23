@@ -59,6 +59,8 @@ $(o)ecproperty.obj      : $(baseDir)ecproperty.cpp $(ECObjectsHeaders) ${MultiCo
 
 $(o)ecinstance.obj      : $(baseDir)ecinstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
+$(o)eccustomattribute.obj         : $(baseDir)eccustomattribute.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+
 $(o)ecvalue.obj         : $(baseDir)ecvalue.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
 $(o)ecenabler.obj       : $(baseDir)ecenabler.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
@@ -92,8 +94,8 @@ DLM_NOINITFUNC    = 1
 DLM_NOMSBUILTINS  = 1
 DLM_NOENTRY       = 1
 FORCE_DELAYLOAD   = 1
-DLM_LIBRARY_FILES = $(BuildContext)SubParts/Libs/bsilog4cxx-1.1.lib  # delay loaded
-DLM_NT_LIBS       = $(BuildContext)SubParts/Libs/bsilog-1.1.lib xmllite.lib
+DLM_LIBRARY_FILES = $(BuildContext)SubParts/Libs/bsilog4cxx-1.1.lib $(BuildContext)SubParts/Libs/Bentley.logging.interop-2.0.lib  # delay loaded
+DLM_NT_LIBS       = $(BuildContext)SubParts/Libs/bsilog-1.1.lib xmllite.lib $(BuildContext)SubParts/Libs/bentley.lib
 DLM_USE_LIBPREFIX = 1
 DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/

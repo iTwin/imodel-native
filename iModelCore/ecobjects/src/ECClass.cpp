@@ -37,7 +37,7 @@ ECClass::~ECClass
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring const& ECClass::GetName
+bwstring const& ECClass::GetName
 (
 ) const
     {        
@@ -49,7 +49,7 @@ std::wstring const& ECClass::GetName
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::SetName
 (
-std::wstring const& name
+bwstring const& name
 )
     {
     
@@ -63,7 +63,7 @@ std::wstring const& name
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring const& ECClass::GetDescription
+bwstring const& ECClass::GetDescription
 (
 ) const
     {
@@ -75,7 +75,7 @@ std::wstring const& ECClass::GetDescription
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::SetDescription
 (
-std::wstring const& description
+bwstring const& description
 )
     {        
     m_description = description;
@@ -85,7 +85,7 @@ std::wstring const& description
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring const& ECClass::GetDisplayLabel
+bwstring const& ECClass::GetDisplayLabel
 (
 ) const
     {
@@ -97,7 +97,7 @@ std::wstring const& ECClass::GetDisplayLabel
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::SetDisplayLabel
 (
-std::wstring const& displayLabel
+bwstring const& displayLabel
 )
     {        
     m_displayLabel = displayLabel;
@@ -249,45 +249,42 @@ ECObjectsStatus ECClass::AddProperty
 ECPropertyP&                 pProperty
 )
     {
-    // NEEDSWORK - need to account for property override behaviors if the property already exists in a base class
-    std::pair < stdext::hash_map<const wchar_t *, ECPropertyP>::iterator, bool > resultPair;
-    resultPair = m_propertyMap.insert (std::pair<const wchar_t *, ECPropertyP> (pProperty->Name.c_str(), pProperty));
-    if (resultPair.second == false)
+    stdext::hash_map<const wchar_t *, ECPropertyP>::const_iterator propertyIterator;
+    
+    propertyIterator = m_propertyMap.find(pProperty->Name.c_str());
+    if (m_propertyMap.end() != propertyIterator)
         {
-        Logger::GetLogger()->warningv  (L"Can not create property '%s' because it already exists in the schema", pProperty->Name.c_str());
+        Logger::GetLogger()->warningv  (L"Can not create property '%s' because it already exists in this ECClass", pProperty->Name.c_str());
         delete pProperty;
         pProperty = NULL;        
         return ECOBJECTS_STATUS_NamedItemAlreadyExists;
         }
 
+    // It isn't part of this schema, but does it exist as a property on a baseClass?
     ECPropertyP baseProperty = GetPropertyP(pProperty->Name);
     if (NULL == baseProperty)
         {
+        m_propertyMap.insert (std::pair<const wchar_t *, ECPropertyP> (pProperty->Name.c_str(), pProperty));
         m_propertyList.push_back(pProperty);
         return ECOBJECTS_STATUS_Success;
         }
 
-    // Make sure that the property to override can be overridden by the current property type
-    if (pProperty->IsPrimitive)
-        {
-        if (!baseProperty->IsPrimitive)
-            return ECOBJECTS_STATUS_DataTypeMismatch;
-        PrimitiveECPropertyP primitiveNew = pProperty->GetAsPrimitiveProperty();
-        PrimitiveECPropertyP primitiveBase = baseProperty->GetAsPrimitiveProperty();
-        if (primitiveNew->Type != primitiveBase->Type)
-            return ECOBJECTS_STATUS_DataTypeMismatch;
-        }           
+    ECObjectsStatus status = CanPropertyBeOverridden(*baseProperty, *pProperty);
+    if (ECOBJECTS_STATUS_Success != status)
+        return status;
+
+    pProperty->BaseProperty = baseProperty;
+    m_propertyMap.insert (std::pair<const wchar_t *, ECPropertyP> (pProperty->Name.c_str(), pProperty));
     m_propertyList.push_back(pProperty);
     return ECOBJECTS_STATUS_Success;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyP ECClass::GetPropertyP
 (
-std::wstring const& propertyName
+bwstring const& propertyName
 ) const
     {
     stdext::hash_map<const wchar_t *, ECPropertyP>::const_iterator  propertyIterator;
@@ -306,12 +303,36 @@ std::wstring const& propertyName
     return NULL;
     }
 
+ECObjectsStatus ECClass::CanPropertyBeOverridden
+(
+ECPropertyCR baseProperty,
+ECPropertyCR newProperty
+) const
+    {
+    
+    // WIP_FUSION: If we add support for arrays to contain arrays, then we will need to implement the check that the managed code does
+    // to ensure that the same deepness of embedded arrays is used
+        
+    // If the type of base property is an array and the type of the current property is not an array (or vice-versa),
+    // return an error immediately.  Unfortunately, there are a class of schemas that have been delivered with this type
+    // of override.  So need to check if this is one of those schemas before returning an error
+    if ((baseProperty.IsArray && !newProperty.IsArray) || (!baseProperty.IsArray && newProperty.IsArray))
+        {
+        //if (!EC::ECSchema::SchemaAllowsOverridingArrays(this->Schema))
+        //    return ECOBJECTS_STATUS_DataTypeMismatch;
+        }
+    
+    if (!newProperty._CanOverride(baseProperty))
+        return ECOBJECTS_STATUS_DataTypeMismatch;
+    return ECOBJECTS_STATUS_Success; 
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::RemoveProperty
 (
-const std::wstring &name
+const bwstring &name
 )
     {
     stdext::hash_map<const wchar_t *, ECPropertyP>::const_iterator  propertyIterator;
@@ -322,6 +343,8 @@ const std::wstring &name
         
     m_propertyList.remove(propertyIterator->second);
     m_propertyMap.erase(propertyIterator);
+    delete propertyIterator->second;
+
     return ECOBJECTS_STATUS_Success;
     }
     
@@ -331,7 +354,7 @@ const std::wstring &name
 ECObjectsStatus ECClass::AddProperty
 (
 ECPropertyP ecProperty,
-const std::wstring &name
+const bwstring &name
 )
     {
     ECObjectsStatus status = ecProperty->SetName (name);
@@ -346,7 +369,7 @@ const std::wstring &name
 ECObjectsStatus ECClass::CreatePrimitiveProperty
 (
 PrimitiveECPropertyP &ecProperty, 
-const std::wstring &name
+const bwstring &name
 )
     {
     ecProperty = new PrimitiveECProperty(*this);
@@ -359,15 +382,19 @@ const std::wstring &name
 ECObjectsStatus ECClass::CreatePrimitiveProperty
 (
 PrimitiveECPropertyP &ecProperty, 
-const std::wstring &name,
+const bwstring &name,
 PrimitiveType primitiveType
 )
     {
     ecProperty = new PrimitiveECProperty(*this);
+    ecProperty->Type = primitiveType;
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECOBJECTS_STATUS_Success)
+        {
+        delete ecProperty;
+        ecProperty = NULL;
         return status;
-    ecProperty->Type = primitiveType;
+        }
     return ECOBJECTS_STATUS_Success;
     }
 /*---------------------------------------------------------------------------------**//**
@@ -376,7 +403,7 @@ PrimitiveType primitiveType
 ECObjectsStatus ECClass::CreateStructProperty
 (
 StructECPropertyP &ecProperty, 
-const std::wstring &name
+const bwstring &name
 )
     {
     ecProperty = new StructECProperty(*this);
@@ -389,15 +416,19 @@ const std::wstring &name
 ECObjectsStatus ECClass::CreateStructProperty
 (
 StructECPropertyP &ecProperty, 
-const std::wstring &name,
+const bwstring &name,
 ECClassCR structType
 )
     {
     ecProperty = new StructECProperty(*this);
+    ecProperty->Type = structType;
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECOBJECTS_STATUS_Success)
+        {
+        delete ecProperty;
+        ecProperty = NULL;
         return status;
-    ecProperty->Type = structType;
+        }
     return ECOBJECTS_STATUS_Success;
     }
     
@@ -407,7 +438,7 @@ ECClassCR structType
 ECObjectsStatus ECClass::CreateArrayProperty
 (
 ArrayECPropertyP &ecProperty, 
-const std::wstring &name
+const bwstring &name
 )
     {
     ecProperty = new ArrayECProperty(*this);
@@ -420,15 +451,19 @@ const std::wstring &name
 ECObjectsStatus ECClass::CreateArrayProperty
 (
 ArrayECPropertyP &ecProperty, 
-const std::wstring &name,
+const bwstring &name,
 PrimitiveType primitiveType
 )
     {
     ecProperty = new ArrayECProperty(*this);
+    ecProperty->PrimitiveElementType = primitiveType;
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECOBJECTS_STATUS_Success)
+        {
+        delete ecProperty;
+        ecProperty = NULL;
         return status;
-    ecProperty->PrimitiveElementType = primitiveType;
+        }
     return ECOBJECTS_STATUS_Success;
     }
     
@@ -438,15 +473,18 @@ PrimitiveType primitiveType
 ECObjectsStatus ECClass::CreateArrayProperty
 (
 ArrayECPropertyP &ecProperty, 
-const std::wstring &name,
+const bwstring &name,
 ECClassCP structType
 )
     {
     ecProperty = new ArrayECProperty(*this);
+    ecProperty->StructElementType = structType;
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECOBJECTS_STATUS_Success)
+        {
+        delete ecProperty;
         return status;
-    ecProperty->StructElementType = structType;
+        }
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -483,7 +521,7 @@ ECClassCR baseClass
         ECSchemaReferenceList::const_iterator schemaIterator;
         for (schemaIterator = referencedSchemas.begin(); schemaIterator != referencedSchemas.end(); schemaIterator++)
             {
-            ECSchemaP refSchema = *schemaIterator;
+            ECSchemaP refSchema = (*schemaIterator).get();
             if (ECSchema::SchemasAreEqualByName (refSchema, &(baseClass.Schema)))
                 {
                 foundRefSchema = true;
@@ -630,9 +668,9 @@ PropertyList* propertyList
     if (!includeBaseProperties)
         return ECOBJECTS_STATUS_Success;
         
-    propertyList->reverse();
     if (m_baseClasses.size() == 0)
         return ECOBJECTS_STATUS_Success;
+    propertyList->reverse();
         
     TraverseBaseClasses(&AddUniquePropertiesToList, true, propertyList);
     propertyList->reverse();
@@ -744,11 +782,11 @@ MSXML2::IXMLDOMNode& classNode
     MSXML2::IXMLDOMNodePtr xmlNodePtr;
     while (NULL != (xmlNodePtr = xmlNodeListPtr->nextNode()))
         {        
-        std::wstring qualifiedClassName = xmlNodePtr->text;
+        bwstring qualifiedClassName = xmlNodePtr->text;
         
         // Parse the potentially qualified class name into a namespace prefix and short class name
-        std::wstring namespacePrefix;
-        std::wstring className;
+        bwstring namespacePrefix;
+        bwstring className;
         if (ECOBJECTS_STATUS_Success != ECClass::ParseClassName (namespacePrefix, className, qualifiedClassName))
             {
             Logger::GetLogger()->warningv (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the value '%s' that can not be parsed.", 
@@ -803,6 +841,9 @@ MSXML2::IXMLDOMNode& classNode
             }
         }
 
+    // Add Custom Attributes
+    ReadCustomAttributes(classNode, (ECSchemaP) &m_schema);
+
     return SCHEMA_DESERIALIZATION_STATUS_Success;
     }
 
@@ -840,9 +881,9 @@ const wchar_t *elementName
         
         APPEND_CHILD_TO_PARENT(basePtr, classPtr);
         }
-        
-    // NEEDSWORK: Serialize Custom Attributes
-    
+
+    WriteCustomAttributes(classPtr);
+            
     for each (ECPropertyP prop in GetProperties(false))
         {
         prop->_WriteXml(classPtr);
@@ -866,9 +907,9 @@ MSXML2::IXMLDOMElement& parentNode
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::ParseClassName 
 (
-std::wstring & prefix, 
-std::wstring & className, 
-std::wstring const& qualifiedClassName
+bwstring & prefix, 
+bwstring & className, 
+bwstring const& qualifiedClassName
 )
     {
     if (0 == qualifiedClassName.length())
@@ -877,8 +918,8 @@ std::wstring const& qualifiedClassName
         return ECOBJECTS_STATUS_ParseError;
         }
         
-    std::wstring::size_type colonIndex = qualifiedClassName.find (':');
-    if (std::wstring::npos == colonIndex)
+    bwstring::size_type colonIndex = qualifiedClassName.find (':');
+    if (bwstring::npos == colonIndex)
         {
         prefix.clear();
         className = qualifiedClassName;
@@ -905,13 +946,13 @@ std::wstring const& qualifiedClassName
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring ECClass::GetQualifiedClassName
+bwstring ECClass::GetQualifiedClassName
 (
 ECSchemaCR primarySchema,
 ECClassCR  ecClass
 )
     {
-    std::wstring const* namespacePrefix = primarySchema.ResolveNamespacePrefix (ecClass.Schema);
+    bwstring const* namespacePrefix = primarySchema.ResolveNamespacePrefix (ecClass.Schema);
     if (!EXPECTED_CONDITION (NULL != namespacePrefix))
         {
         Logger::GetLogger()->warningv (L"warning: Can not qualify an ECClass name with a namespace prefix unless the schema containing the ECClass is referenced by the primary schema.\n"
@@ -934,6 +975,18 @@ const ECBaseClassesList& ECClass::GetBaseClasses
     return m_baseClasses;
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECClass::_GetBaseContainers
+(
+bvector<IECCustomAttributeContainerP>& returnList
+) const
+    {
+    for each (ECClassP baseClass in m_baseClasses)
+        returnList.push_back(baseClass);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1083,7 +1136,7 @@ bool RelationshipCardinality::IsUpperLimitUnbounded
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring RelationshipCardinality::ToString
+bwstring RelationshipCardinality::ToString
 (
 ) const
     {
@@ -1207,11 +1260,11 @@ MSXML2::IXMLDOMNode &constraintNode
         MSXML2::IXMLDOMNamedNodeMapPtr constraintClassAttributesPtr = xmlNodePtr->attributes;
         if (NULL == (attributePtr = constraintClassAttributesPtr->getNamedItem(CONSTRAINTCLASSNAME_ATTRIBUTE)))
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
-        std::wstring constraintClassName = attributePtr->text;  
+        bwstring constraintClassName = attributePtr->text;  
         
         // Parse the potentially qualified class name into a namespace prefix and short class name
-        std::wstring namespacePrefix;
-        std::wstring className;
+        bwstring namespacePrefix;
+        bwstring className;
         if (ECOBJECTS_STATUS_Success != ECClass::ParseClassName (namespacePrefix, className, constraintClassName))
             {
             Logger::GetLogger()->warningv (L"Invalid ECSchemaXML: The ECRelationshipConstraint contains a " CONSTRAINTCLASSNAME_ATTRIBUTE L" attribute with the value '%s' that can not be parsed.", 
@@ -1245,7 +1298,7 @@ MSXML2::IXMLDOMNode &constraintNode
 SchemaSerializationStatus ECRelationshipConstraint::WriteXml
 (
 MSXML2::IXMLDOMElement &parentNode, 
-const std::wstring &elementName
+const bwstring &elementName
 ) const
     {
     SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
@@ -1291,7 +1344,7 @@ ECClassCR classConstraint
         ECSchemaReferenceList::const_iterator schemaIterator;
         for (schemaIterator = referencedSchemas.begin(); schemaIterator != referencedSchemas.end(); schemaIterator++)
             {
-            ECSchemaP refSchema = *schemaIterator;
+            ECSchemaP refSchema = (*schemaIterator).get();
             if (refSchema == &(classConstraint.Schema))
                 {
                 foundRefSchema = true;
@@ -1480,7 +1533,7 @@ bool ECRelationshipConstraint::IsRoleLabelDefined
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring const ECRelationshipConstraint::GetRoleLabel
+bwstring const ECRelationshipConstraint::GetRoleLabel
 (
 ) const
     {
@@ -1497,7 +1550,7 @@ std::wstring const ECRelationshipConstraint::GetRoleLabel
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipConstraint::SetRoleLabel
 (
-const std::wstring value
+const bwstring value
 )
     {
     m_roleLabel = value;

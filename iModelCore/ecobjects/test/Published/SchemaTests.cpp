@@ -10,6 +10,8 @@
 #include <objbase.h>
 #include <comdef.h>
 
+#include "TestFixture.h"
+
 BEGIN_BENTLEY_EC_NAMESPACE
 
 // NEEDSWORK Improve strategy for seed data.  Should not be maintained in source.
@@ -168,7 +170,7 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileDoesNotExist)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"ThisFileIsntReal.xml", NULL, NULL);
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"ThisFileIsntReal.xml").c_str(), NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml, status);
     
@@ -183,7 +185,7 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNodes)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingNodes.01.00.ecschema.xml", NULL, NULL);  
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"MissingNodes.01.00.ecschema.xml").c_str(), NULL, NULL);  
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml, status);
     
@@ -198,7 +200,7 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsIllFormed)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"IllFormedXml.01.00.ecschema.xml", NULL, NULL);
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"IllFormedXml.01.00.ecschema.xml").c_str(), NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml, status);
     
@@ -213,7 +215,7 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingECSchemaNode)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingECSchemaNode.01.00.ecschema.xml", NULL, NULL);
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"MissingECSchemaNode.01.00.ecschema.xml").c_str(), NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
     
@@ -229,7 +231,7 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNamespace)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingNamespace.01.00.ecschema.xml", NULL, NULL);
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"MissingNamespace.01.00.ecschema.xml").c_str(), NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
     
@@ -244,7 +246,7 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasUnsupportedNamespace)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"UnsupportedECXmlNamespace.01.00.ecschema.xml", NULL, NULL);
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"UnsupportedECXmlNamespace.01.00.ecschema.xml").c_str(), NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
     
@@ -259,7 +261,7 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingSchemaNameAttrib
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingSchemaName.01.00.ecschema.xml", NULL, NULL);
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"MissingSchemaName.01.00.ecschema.xml").c_str(), NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
     
@@ -274,7 +276,7 @@ TEST(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingClassNameAttribu
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"MissingClassName.01.00.ecschema.xml", NULL, NULL);
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"MissingClassName.01.00.ecschema.xml").c_str(), NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
     
@@ -289,7 +291,7 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenXmlFileHasInvalidVersionString)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"InvalidVersionString.01.00.ecschema.xml", NULL, NULL);
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"InvalidVersionString.01.00.ecschema.xml").c_str(), NULL, NULL);
     EXPECT_EQ (1, schema->VersionMajor);
     EXPECT_EQ (0, schema->VersionMinor);
 
@@ -298,6 +300,18 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenXmlFileHasInvalidVersionString)
     CoUninitialize();
     };
 
+TEST(SchemaDeserializationTest, ExpectSuccessWhenDeserializingSchemaWithBaseClassInReferencedFile)
+    {
+    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+    ECSchemaPtr schema;
+
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"SchemaThatReferences.01.00.ecschema.xml").c_str(), NULL, NULL);
+    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);    
+
+    ECClassP pClass = schema->GetClassP(L"circle");    
+    ASSERT_TRUE (pClass);
+    }    
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -306,7 +320,7 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenECSchemaContainsOnlyRequiredAtt
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
 
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"OnlyRequiredECSchemaAttributes.01.00.ecschema.xml", NULL, NULL);
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"OnlyRequiredECSchemaAttributes.01.00.ecschema.xml").c_str(), NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);    
     EXPECT_STREQ (L"OnlyRequiredECSchemaAttributes", schema->Name.c_str());
@@ -338,7 +352,7 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenDeserializingWidgetsECSchema)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml", NULL, NULL);
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"Widgets.01.00.ecschema.xml").c_str(), NULL, NULL);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);  
     VerifyWidgetsSchema(schema);  
@@ -417,13 +431,13 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml", NULL, NULL);
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"Widgets.01.00.ecschema.xml").c_str(), NULL, NULL);
     wprintf(L"Verifying original schema from file.\n"); 
     VerifyWidgetsSchema(schema);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);
 
-    std::wstring ecSchemaXmlString;
+    bwstring ecSchemaXmlString;
     
     SchemaSerializationStatus status2 = schema->WriteXmlToString(ecSchemaXmlString);
     EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status2);
@@ -458,33 +472,33 @@ TEST(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-//TEST(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingStream)
-//    {
-//    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-//    ECSchemaPtr schema;
-//    
-//    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml");
-//    wprintf(L"Verifying original schema from file.\n"); 
-//    VerifyWidgetsSchema(schema);
-//
-//    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);    
-//    LPSTREAM stream = NULL;
-//    HRESULT res = ::CreateStreamOnHGlobal(NULL,TRUE,&stream);
-//
-//    SchemaSerializationStatus status2 = schema->WriteXmlToStream(stream);
-//    EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status2);
-//    
-//    LARGE_INTEGER liPos = {0};
-//    stream->Seek(liPos, STREAM_SEEK_SET, NULL);
-//
-//    ECSchemaPtr deserializedSchema;
-//    status = ECSchema::ReadXmlFromStream(deserializedSchema, stream);
-//    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status); 
-//    wprintf(L"Verifying schema deserialized from stream.\n");
-//    VerifyWidgetsSchema(deserializedSchema);
-//
-//    CoUninitialize();
-//    }
+TEST(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingStream)
+    {
+    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+    ECSchemaPtr schema;
+    
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"Widgets.01.00.ecschema.xml").c_str(), NULL, NULL);
+    wprintf(L"Verifying original schema from file.\n"); 
+    VerifyWidgetsSchema(schema);
+
+    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);    
+    LPSTREAM stream = NULL;
+    HRESULT res = ::CreateStreamOnHGlobal(NULL,TRUE,&stream);
+
+    SchemaSerializationStatus status2 = schema->WriteXmlToStream(stream);
+    EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status2);
+    
+    LARGE_INTEGER liPos = {0};
+    stream->Seek(liPos, STREAM_SEEK_SET, NULL);
+
+    ECSchemaPtr deserializedSchema;
+    status = ECSchema::ReadXmlFromStream(deserializedSchema, stream, NULL, NULL);
+    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status); 
+    wprintf(L"Verifying schema deserialized from stream.\n");
+    VerifyWidgetsSchema(deserializedSchema);
+
+    CoUninitialize();
+    }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
@@ -501,7 +515,7 @@ TEST(SchemaSerializationTest, ExpectErrorWhenCOMNotInitialized)
     ECSchema::CreateSchema(schema, L"Widget");
     
     DISABLE_ASSERTS
-    std::wstring ecSchemaXmlString;
+    bwstring ecSchemaXmlString;
     
     SchemaSerializationStatus status = schema->WriteXmlToString(ecSchemaXmlString);
         
@@ -536,8 +550,8 @@ TEST(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     schema3->CreateClass(anotherBase, L"AnotherBase");
     
     EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, class1->AddBaseClass(*baseClass));
-    schema->AddReferencedSchema(*schema2);
-    schema->AddReferencedSchema(*schema3);
+    schema->AddReferencedSchema(schema2);
+    schema->AddReferencedSchema(schema3);
     EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->AddBaseClass(*baseClass));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->AddBaseClass(*anotherBase));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, gadget->AddBaseClass(*class1));
@@ -549,7 +563,7 @@ TEST(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     //ECSchemaPtr schema4;
     //SchemaDeserializationStatus status3 = ECSchema::ReadXmlFromFile (schema4, L"d:\\temp\\base.xml");
     
-    std::wstring ecSchemaXmlString;
+    bwstring ecSchemaXmlString;
     
     SchemaSerializationStatus status2 = schema->WriteXmlToString(ecSchemaXmlString);
     EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status2);
@@ -565,29 +579,29 @@ TEST(SchemaReferenceTest, AddAndRemoveReferencedSchemas)
     ECSchemaPtr refSchema;
     ECSchema::CreateSchema(refSchema, L"RefSchema");
     
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(*refSchema));
-    EXPECT_EQ(ECOBJECTS_STATUS_NamedItemAlreadyExists, schema->AddReferencedSchema(*refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_NamedItemAlreadyExists, schema->AddReferencedSchema(refSchema));
     
     ECSchemaReferenceList refList = schema->GetReferencedSchemas();
     ECSchemaReferenceList::const_iterator schemaIterator;
     for (schemaIterator = refList.begin(); schemaIterator != refList.end(); schemaIterator++)
         {
-        if (*schemaIterator == refSchema.get())
+        if (*schemaIterator == refSchema)
             break;
         }
         
     EXPECT_FALSE(schemaIterator == refList.end());
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(*refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(refSchema));
     
     refList = schema->GetReferencedSchemas();
     for (schemaIterator = refList.begin(); schemaIterator != refList.end(); schemaIterator++)
         {
-        if (*schemaIterator == refSchema.get())
+        if (*schemaIterator == refSchema)
             break;
         }
         
     EXPECT_TRUE(schemaIterator == refList.end());
-    EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, schema->RemoveReferencedSchema(*refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, schema->RemoveReferencedSchema(refSchema));
     }
 
 TEST(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
@@ -598,7 +612,7 @@ TEST(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
     ECSchemaPtr refSchema;
     ECSchema::CreateSchema(refSchema, L"RefSchema");
     
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(*refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(refSchema));
     ECClassP class1;
     ECClassP baseClass;
     ECClassP structClass;
@@ -609,12 +623,12 @@ TEST(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
     structClass->IsStruct = true;
     
     class1->AddBaseClass(*baseClass);
-    EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
+    EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(refSchema));
     
     class1->RemoveBaseClass(*baseClass);
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(*refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(refSchema));
 
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(*refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(refSchema));
     StructECPropertyP structProp;
     ArrayECPropertyP nestedArrayProp;
     
@@ -624,11 +638,11 @@ TEST(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
     structProp->Type = *structClass;
     nestedArrayProp->StructElementType = structClass;
 
-    EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
+    EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(refSchema));
     class1->RemoveProperty(L"Struct Member");
-    EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
+    EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(refSchema));
     class1->RemoveProperty(L"NestedArray");
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(*refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(refSchema));
     
     }
     
@@ -637,7 +651,7 @@ TEST(SchemaReferenceTest, ExpectSuccessWithCircularReferences)
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     ECSchemaPtr schema;
     
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"CircleSchema.01.00.ecschema.xml", NULL, NULL);
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"CircleSchema.01.00.ecschema.xml").c_str(), NULL, NULL);
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);
 
     CoUninitialize();
@@ -664,7 +678,7 @@ TEST(SchemaCreationTest, CanFullyCreateASchema)
     ECSchemaPtr schema2;
     ECSchema::CreateSchema(schema2, L"BaseSchema");
     
-    testSchema->AddReferencedSchema(*schema2);
+    testSchema->AddReferencedSchema(schema2);
     
     ECClassP class1;
     ECClassP baseClass;
@@ -697,8 +711,8 @@ TEST(SchemaCreationTest, CanFullyCreateASchema)
     ArrayECPropertyP nestedArrayProp;
     ArrayECPropertyP primitiveArrayProp;
     
-    class1->CreatePrimitiveProperty(stringProp, L"String Member");
-    class1->CreateStructProperty(structProp, L"Struct Member");
+    class1->CreatePrimitiveProperty(stringProp, L"StringMember");
+    class1->CreateStructProperty(structProp, L"StructMember");
     class1->CreateArrayProperty(nestedArrayProp, L"NestedArray");
     class1->CreateArrayProperty(primitiveArrayProp, L"PrimitiveArray");
     
@@ -916,6 +930,99 @@ TEST(ClassTest, IsTests)
     
     }
     
+TEST(ClassTest, CanOverrideBaseProperties)
+    {
+    ECSchemaPtr schema;
+    ECClassP class1;
+    ECClassP baseClass1;
+    ECClassP structClass;
+    ECClassP structClass2;
+    
+    ECSchema::CreateSchema(schema, L"TestSchema");
+    schema->CreateClass(class1, L"TestClass");
+    schema->CreateClass(baseClass1, L"BaseClass1");
+    schema->CreateClass(structClass, L"ClassForStructs");
+    structClass->IsStruct = true;
+    schema->CreateClass(structClass2, L"ClassForStructs2");
+    structClass2->IsStruct = true;
+    class1->AddBaseClass(*baseClass1);
+    
+    PrimitiveECPropertyP baseStringProp;
+    PrimitiveECPropertyP baseIntProp;
+    PrimitiveECPropertyP baseDoubleProp;
+    StructECPropertyP baseStructProp;
+    ArrayECPropertyP baseStringArrayProperty;
+    ArrayECPropertyP baseStructProperty;
+    
+    baseClass1->CreatePrimitiveProperty(baseStringProp, L"StringProperty", PRIMITIVETYPE_String);
+    baseClass1->CreatePrimitiveProperty(baseIntProp, L"IntegerProperty", PRIMITIVETYPE_Integer);
+    baseClass1->CreatePrimitiveProperty(baseDoubleProp, L"DoubleProperty", PRIMITIVETYPE_Double);
+    baseClass1->CreateStructProperty(baseStructProp, L"StructProperty", *structClass);
+    baseClass1->CreateArrayProperty(baseStringArrayProperty, L"StringArrayProperty", PRIMITIVETYPE_String);
+    baseClass1->CreateArrayProperty(baseStructProperty, L"StructArrayProperty", structClass);
+    
+    PrimitiveECPropertyP longProperty;
+    PrimitiveECPropertyP stringProperty;
+    
+    // Primitives overriding primitives
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreatePrimitiveProperty(longProperty, L"StringProperty", PRIMITIVETYPE_Long));
+    EXPECT_EQ(NULL, longProperty);
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreatePrimitiveProperty(stringProperty, L"StringProperty", PRIMITIVETYPE_String));
+    EXPECT_EQ(baseStringProp, stringProperty->BaseProperty);
+    class1->RemoveProperty(L"StringProperty");
+    
+    // Primitives overriding structs
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreatePrimitiveProperty(longProperty, L"StructProperty", PRIMITIVETYPE_Long));
+
+    // Primitives overriding arrays
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreatePrimitiveProperty(longProperty, L"StringArrayProperty", PRIMITIVETYPE_Long));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreatePrimitiveProperty(stringProperty, L"StringArrayProperty", PRIMITIVETYPE_String));
+    class1->RemoveProperty(L"StringArrayProperty");
+
+    StructECPropertyP structProperty;
+    // Structs overriding primitives
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateStructProperty(structProperty, L"IntegerProperty"));
+
+    // Structs overriding structs
+    // If we don't specify a struct type for the new property, then it should succeed
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateStructProperty(structProperty, L"StructProperty"));
+    class1->RemoveProperty(L"StructProperty");
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateStructProperty(structProperty, L"StructProperty", *structClass2));
+
+    // Structs overriding arrays
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateStructProperty(structProperty, L"StringArrayProperty"));
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateStructProperty(structProperty, L"StringArrayProperty", *structClass));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateStructProperty(structProperty, L"StructArrayProperty"));
+    class1->RemoveProperty(L"StructArrayProperty");
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateStructProperty(structProperty, L"StructArrayProperty", *structClass));
+    class1->RemoveProperty(L"StructArrayProperty");
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateStructProperty(structProperty, L"StructArrayProperty", *structClass2));
+
+    ArrayECPropertyP stringArrayProperty;
+    ArrayECPropertyP stringArrayProperty2;
+    ArrayECPropertyP structArrayProperty;
+    ArrayECPropertyP structArrayProperty2;
+    // Arrays overriding primitives
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateArrayProperty(stringArrayProperty, L"IntegerProperty", PRIMITIVETYPE_Long));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateArrayProperty(stringArrayProperty, L"StringProperty", PRIMITIVETYPE_String));
+    class1->RemoveProperty(L"StringProperty");
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateArrayProperty(stringArrayProperty2, L"StringProperty"));
+
+    // Arrays overriding structs
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateArrayProperty(structArrayProperty, L"StructProperty", structClass2));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateArrayProperty(structArrayProperty, L"StructProperty", structClass));
+    class1->RemoveProperty(L"StructProperty");
+
+    // the default array type is string if none is passed in
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateArrayProperty(structArrayProperty2, L"StructProperty"));
+    
+    ArrayECPropertyP intArrayProperty;
+    // Arrays overriding arrays
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateArrayProperty(intArrayProperty, L"StringArrayProperty", PRIMITIVETYPE_Long));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateArrayProperty(stringArrayProperty, L"StringArrayProperty", PRIMITIVETYPE_String));
+    class1->RemoveProperty(L"StringArrayProperty");
+
+    }
     
 TEST(ClassTest, ExpectPropertiesInOrder)
     {
@@ -942,7 +1049,7 @@ TEST(ClassTest, ExpectPropertiesInOrder)
     int i = 0;
     for each (ECPropertyP prop in class1->GetProperties(false))
         {
-        EXPECT_EQ(propertyNames[i], prop->Name);
+        EXPECT_EQ(0, prop->Name.compare(propertyNames[i]));
         i++;
         }
     }
@@ -1053,20 +1160,20 @@ TEST(ClassTest, ExpectPropertiesFromBaseClass)
         testVector.push_back(prop);
         
     EXPECT_EQ(14, testVector.size());
-    EXPECT_EQ(L"i", testVector[0]->Name);
-    EXPECT_EQ(L"j", testVector[1]->Name);
-    EXPECT_EQ(L"g", testVector[2]->Name);
-    EXPECT_EQ(L"h", testVector[3]->Name);
-    EXPECT_EQ(L"k", testVector[4]->Name);
-    EXPECT_EQ(L"l", testVector[5]->Name);
-    EXPECT_EQ(L"c", testVector[6]->Name);
-    EXPECT_EQ(L"d", testVector[7]->Name);
-    EXPECT_EQ(L"a", testVector[8]->Name);
-    EXPECT_EQ(L"b", testVector[9]->Name);
-    EXPECT_EQ(L"e", testVector[10]->Name);
-    EXPECT_EQ(L"f", testVector[11]->Name);
-    EXPECT_EQ(L"m", testVector[12]->Name);
-    EXPECT_EQ(L"n", testVector[13]->Name);
+    EXPECT_EQ(0, testVector[0]->Name.compare(L"i"));
+    EXPECT_EQ(0, testVector[1]->Name.compare(L"j"));
+    EXPECT_EQ(0, testVector[2]->Name.compare(L"g"));
+    EXPECT_EQ(0, testVector[3]->Name.compare(L"h"));
+    EXPECT_EQ(0, testVector[4]->Name.compare(L"k"));
+    EXPECT_EQ(0, testVector[5]->Name.compare(L"l"));
+    EXPECT_EQ(0, testVector[6]->Name.compare(L"c"));
+    EXPECT_EQ(0, testVector[7]->Name.compare(L"d"));
+    EXPECT_EQ(0, testVector[8]->Name.compare(L"a"));
+    EXPECT_EQ(0, testVector[9]->Name.compare(L"b"));
+    EXPECT_EQ(0, testVector[10]->Name.compare(L"e"));
+    EXPECT_EQ(0, testVector[11]->Name.compare(L"f"));
+    EXPECT_EQ(0, testVector[12]->Name.compare(L"m"));
+    EXPECT_EQ(0, testVector[13]->Name.compare(L"n"));
     
     // now we add some duplicate properties to mn which will "override" those from the base classes
     PrimitiveECPropertyP b2;
@@ -1088,20 +1195,20 @@ TEST(ClassTest, ExpectPropertiesFromBaseClass)
         testVector.push_back(prop);
         
     EXPECT_EQ(14, testVector.size());
-    EXPECT_EQ(L"i", testVector[0]->Name);
-    EXPECT_EQ(L"g", testVector[1]->Name);
-    EXPECT_EQ(L"l", testVector[2]->Name);
-    EXPECT_EQ(L"c", testVector[3]->Name);
-    EXPECT_EQ(L"a", testVector[4]->Name);
-    EXPECT_EQ(L"e", testVector[5]->Name);
-    EXPECT_EQ(L"m", testVector[6]->Name);
-    EXPECT_EQ(L"n", testVector[7]->Name);
-    EXPECT_EQ(L"b", testVector[8]->Name);
-    EXPECT_EQ(L"d", testVector[9]->Name);
-    EXPECT_EQ(L"f", testVector[10]->Name);
-    EXPECT_EQ(L"h", testVector[11]->Name);
-    EXPECT_EQ(L"j", testVector[12]->Name);
-    EXPECT_EQ(L"k", testVector[13]->Name);
+    EXPECT_EQ(0, testVector[0]->Name.compare(L"i"));
+    EXPECT_EQ(0, testVector[1]->Name.compare(L"g"));
+    EXPECT_EQ(0, testVector[2]->Name.compare(L"l"));
+    EXPECT_EQ(0, testVector[3]->Name.compare(L"c"));
+    EXPECT_EQ(0, testVector[4]->Name.compare(L"a"));
+    EXPECT_EQ(0, testVector[5]->Name.compare(L"e"));
+    EXPECT_EQ(0, testVector[6]->Name.compare(L"m"));
+    EXPECT_EQ(0, testVector[7]->Name.compare(L"n"));
+    EXPECT_EQ(0, testVector[8]->Name.compare(L"b"));
+    EXPECT_EQ(0, testVector[9]->Name.compare(L"d"));
+    EXPECT_EQ(0, testVector[10]->Name.compare(L"f"));
+    EXPECT_EQ(0, testVector[11]->Name.compare(L"h"));
+    EXPECT_EQ(0, testVector[12]->Name.compare(L"j"));
+    EXPECT_EQ(0, testVector[13]->Name.compare(L"k"));
 
     PrimitiveECPropertyP e2;
     PrimitiveECPropertyP a2;
@@ -1136,20 +1243,20 @@ TEST(ClassTest, ExpectPropertiesFromBaseClass)
         testVector.push_back(prop);
         
     EXPECT_EQ(14, testVector.size());
-    EXPECT_EQ(L"i", testVector[0]->Name);
-    EXPECT_EQ(L"c", testVector[1]->Name);
-    EXPECT_EQ(L"a", testVector[2]->Name);
-    EXPECT_EQ(L"g", testVector[3]->Name);
-    EXPECT_EQ(L"e", testVector[4]->Name);
-    EXPECT_EQ(L"l", testVector[5]->Name);
-    EXPECT_EQ(L"m", testVector[6]->Name);
-    EXPECT_EQ(L"n", testVector[7]->Name);
-    EXPECT_EQ(L"b", testVector[8]->Name);
-    EXPECT_EQ(L"d", testVector[9]->Name);
-    EXPECT_EQ(L"f", testVector[10]->Name);
-    EXPECT_EQ(L"h", testVector[11]->Name);
-    EXPECT_EQ(L"j", testVector[12]->Name);
-    EXPECT_EQ(L"k", testVector[13]->Name);
+    EXPECT_EQ(0, testVector[0]->Name.compare(L"i"));
+    EXPECT_EQ(0, testVector[1]->Name.compare(L"c"));
+    EXPECT_EQ(0, testVector[2]->Name.compare(L"a"));
+    EXPECT_EQ(0, testVector[3]->Name.compare(L"g"));
+    EXPECT_EQ(0, testVector[4]->Name.compare(L"e"));
+    EXPECT_EQ(0, testVector[5]->Name.compare(L"l"));
+    EXPECT_EQ(0, testVector[6]->Name.compare(L"m"));
+    EXPECT_EQ(0, testVector[7]->Name.compare(L"n"));
+    EXPECT_EQ(0, testVector[8]->Name.compare(L"b"));
+    EXPECT_EQ(0, testVector[9]->Name.compare(L"d"));
+    EXPECT_EQ(0, testVector[10]->Name.compare(L"f"));
+    EXPECT_EQ(0, testVector[11]->Name.compare(L"h"));
+    EXPECT_EQ(0, testVector[12]->Name.compare(L"j"));
+    EXPECT_EQ(0, testVector[13]->Name.compare(L"k"));
     }
 
 TEST(ClassTest, AddAndRemoveConstraintClasses)
@@ -1171,7 +1278,7 @@ TEST(ClassTest, AddAndRemoveConstraintClasses)
     EXPECT_EQ(ECOBJECTS_STATUS_Success, relClass->Target.AddClass(*targetClass));
     EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, relClass->Source.AddClass(*sourceClass));
     
-    schema->AddReferencedSchema(*refSchema);
+    schema->AddReferencedSchema(refSchema);
     EXPECT_EQ(ECOBJECTS_STATUS_Success, relClass->Source.AddClass(*sourceClass));
     
     EXPECT_EQ(ECOBJECTS_STATUS_Success, relClass->Target.RemoveClass(*targetClass));

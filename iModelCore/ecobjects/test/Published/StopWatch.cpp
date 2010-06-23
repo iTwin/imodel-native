@@ -43,7 +43,7 @@ double StopWatch::GetElapsedSeconds()
     return ConvertLongIntegerToSeconds (time) ;
     }
 
-std::wstring StopWatch::GetDescription()
+bwstring StopWatch::GetDescription()
     {
     return m_description;
     }    
