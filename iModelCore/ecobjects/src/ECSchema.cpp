@@ -825,7 +825,7 @@ ECSchemaConstructionContextR    schemaContext
         AddReferencedSchema(newPtr);
         }
 
-    underConstruction.erase(schemaFullName->c_str());
+    underConstruction.erase(schemaFullName.c_str());
     return status;
     }
 
