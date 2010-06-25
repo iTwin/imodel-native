@@ -45,6 +45,7 @@
 EC_TYPEDEFS(ECValue);
 EC_TYPEDEFS(ArrayInfo);
 EC_TYPEDEFS(ECSchema);
+EC_TYPEDEFS(ECSchemaConstructionContext);
 EC_TYPEDEFS(ECProperty);
 EC_TYPEDEFS(PrimitiveECProperty);
 EC_TYPEDEFS(StructECProperty);
