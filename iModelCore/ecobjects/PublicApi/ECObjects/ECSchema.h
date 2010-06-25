@@ -898,7 +898,7 @@ private:
     ECSchemaReferenceList m_refSchemaList;
     
     std::set<const wchar_t *> m_alreadySerializedClasses;
-    stdext::hash_map<ECSchemaP, const bwstring *> m_referencedSchemaNamespaceMap;
+    stdext::hash_map<ECSchemaP, const bwstring> m_referencedSchemaNamespaceMap;
 
     ECSchema ();
     ~ECSchema();    
@@ -953,9 +953,10 @@ public:
     ECOBJECTS_EXPORT ECSchemaP          GetSchemaByNamespacePrefixP(bwstring const& namespacePrefix) const;
 
     //! Resolve a namespace prefix for the specified schema within the context of this schema and its references.
-    //! @param[in]  schema     The schema to lookup a namespace prefix in the context of this schema and its references.    
-    //! @return   The namespace prefix if schema is a referenced schema; empty string if the schema is the current schema; otherwise, NULL
-    ECOBJECTS_EXPORT bwstring const* ResolveNamespacePrefix(ECSchemaCR schema) const;
+    //! @param[in]  schema     The schema to lookup a namespace prefix in the context of this schema and its references.
+    //! @param[out] namespacePrefix The namespace prefix if schema is a referenced schema; empty string if the sechema is the current schema;    
+    //! @return   Success if the schema is either the current schema or a referenced schema;  ECOBJECTS_STATUS_SchemaNotFound if the schema is not found in the list of referenced schemas
+    ECOBJECTS_EXPORT ECObjectsStatus ResolveNamespacePrefix(ECSchemaCR schema, bwstring & namespacePrefix) const;
 
     //! Get a class by name within the context of this schema.
     //! It is important to note that this method does not return a RefCountedPtr.  You must hold onto to the reference counted ECSchemaPtr on which you invoke

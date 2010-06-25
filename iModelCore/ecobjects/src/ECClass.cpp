@@ -979,17 +979,17 @@ ECSchemaCR primarySchema,
 ECClassCR  ecClass
 )
     {
-    bwstring const* namespacePrefix = primarySchema.ResolveNamespacePrefix (ecClass.Schema);
-    if (!EXPECTED_CONDITION (NULL != namespacePrefix))
+    bwstring namespacePrefix;
+    if (!EXPECTED_CONDITION (ECOBJECTS_STATUS_Success == primarySchema.ResolveNamespacePrefix (ecClass.Schema, namespacePrefix)))
         {
         Logger::GetLogger()->warningv (L"warning: Can not qualify an ECClass name with a namespace prefix unless the schema containing the ECClass is referenced by the primary schema.\n"
             L"The class name will remain unqualified.\n  Primary ECSchema: %s\n  ECClass: %s\n ECSchema containing ECClass: %s\n", primarySchema.Name.c_str(), ecClass.Name.c_str(), ecClass.Schema.Name.c_str());
         return ecClass.Name;
         }
-    if (namespacePrefix->empty())
+    if (namespacePrefix.empty())
         return ecClass.Name;
     else
-        return *namespacePrefix + L":" + ecClass.Name;
+        return namespacePrefix + L":" + ecClass.Name;
     }
     
 /*---------------------------------------------------------------------------------**//**
