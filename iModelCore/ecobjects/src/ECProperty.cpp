@@ -261,6 +261,16 @@ bvector<IECCustomAttributeContainerP>& returnList
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaCP ECProperty::_GetContainerSchema
+(
+) const
+    {
+    return &(m_class.Schema);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaDeserializationStatus ECProperty::_ReadXml

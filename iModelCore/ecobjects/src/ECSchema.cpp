@@ -159,6 +159,14 @@ void ECSchema::Debug_ResetAllocationStats()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaCP ECSchema::_GetContainerSchema() const
+	{
+	return this;
+	}
+
+/*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 bwstring const& ECSchema::GetName
@@ -1397,6 +1405,27 @@ void * schemaContext
     return status;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchema::IsSchemaReferenced
+(
+ECSchemaCR thisSchema, 
+ECSchemaCR thatSchema
+)
+    {
+    ECSchemaReferenceList referencedSchemas = thisSchema.GetReferencedSchemas();
+    ECSchemaReferenceList::const_iterator schemaIterator;
+    for (schemaIterator = referencedSchemas.begin(); schemaIterator != referencedSchemas.end(); schemaIterator++)
+        {
+        ECSchemaP refSchema = (*schemaIterator).get();
+        if (ECSchema::SchemasAreEqualByName (refSchema, &(thatSchema)))
+            {
+            return true;
+            }
+        }
+    return false;
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/

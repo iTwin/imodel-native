@@ -174,6 +174,7 @@ protected:
 
     void                                AddUniqueCustomAttributesToList(ECCustomAttributeCollection& returnList);
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const;
+	virtual ECSchemaCP					_GetContainerSchema() const {return NULL;};
 
 /*__PUBLISH_SECTION_START__*/
 public:
@@ -281,6 +282,7 @@ protected:
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const abstract;
 
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
+	virtual ECSchemaCP					_GetContainerSchema() const override;
     
 /*__PUBLISH_SECTION_START__*/
 public:    
@@ -509,6 +511,7 @@ protected:
     ~ECClass();    
 
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
+	virtual ECSchemaCP					_GetContainerSchema() const override;
 
     // schemas index class by name so publicly name can not be reset
     ECObjectsStatus                     SetName (bwstring const& name);    
@@ -920,6 +923,9 @@ private:
     SchemaSerializationStatus           WriteCustomAttributeDependencies(MSXML2_IXMLDOMElement& parentNode, IECCustomAttributeContainerCR container);
     SchemaSerializationStatus           WritePropertyDependencies(MSXML2_IXMLDOMElement& parentNode, ECClassCR ecClass);
 
+protected:
+	virtual ECSchemaCP					_GetContainerSchema() const override;
+
 public:    
 /*__PUBLISH_SECTION_START__*/
 // WIP_FUSION: temporarily published this.  We need an ecObjectsNativeTest version of the BackDoor.
@@ -1016,6 +1022,12 @@ public:
     ECOBJECTS_EXPORT static bool SchemasMatch (SchemaMatchType matchType,
                           const wchar_t * soughtName,    UInt32 soughtMajor,    UInt32 soughtMinor,
                           const wchar_t * candidateName, UInt32 candidateMajor, UInt32 candidateMinor);
+
+    //! Given two schemas, will check to see if the second schema is referenced by the first schema
+    //! @param[in]    thisSchema            The base schema to check the references of
+    //! @param[in]    thatSchema            The schema to search for
+    //! @return True if thatSchema is referenced by thisSchema, false otherwise
+    ECOBJECTS_EXPORT static bool IsSchemaReferenced (ECSchemaCR thisSchema, ECSchemaCR thatSchema);
 
     //! Compare two schemas and returns true if the schema pointers are equal or the names and version of the schemas are the same 
     //! @param[out]   thisSchema           Pointer to schema
