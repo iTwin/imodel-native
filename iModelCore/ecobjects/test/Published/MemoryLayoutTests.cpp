@@ -318,7 +318,8 @@ ECSchemaPtr       CreateTestSchema ()
 
     ECSchemaPtr schema = NULL;
 
-    EXPECT_EQ (SUCCESS, ECSchema::ReadXmlFromString (schema, schemaXMLString.c_str(), NULL, NULL));   
+    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+    EXPECT_EQ (SUCCESS, ECSchema::ReadXmlFromString (schema, schemaXMLString.c_str(), *schemaContext));   
 
     return schema;
     }
@@ -354,7 +355,8 @@ ECSchemaPtr       CreateProfilingSchema (int nStrings)
                     L"</ECSchema>";
 
     ECSchemaPtr schema = NULL;
-    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, ECSchema::ReadXmlFromString (schema, schemaXml.c_str(), NULL, NULL));
+    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, ECSchema::ReadXmlFromString (schema, schemaXml.c_str(), *schemaContext));
 
     return schema;
     }

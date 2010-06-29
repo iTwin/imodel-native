@@ -252,7 +252,8 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingSimpleInstance
 
     ECSchemaPtr schema;        
     
-    SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), NULL, NULL);
+    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+    SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
         
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, schemaStatus);
 
@@ -275,7 +276,8 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingEmptyInstance)
 
     ECSchemaPtr schema;        
     
-    SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), NULL, NULL);
+    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+    SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
         
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, schemaStatus);
 
@@ -296,7 +298,8 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
     ECSchemaPtr schema;        
-    SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), NULL, NULL);
+    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+    SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, schemaStatus);
 
     IECInstancePtr  testInstance;
@@ -332,7 +335,8 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
     ECSchemaPtr schema;        
-    SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), NULL, NULL);
+    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+    SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, schemaStatus);
 
     IECInstancePtr  testInstance;
@@ -415,7 +419,8 @@ TEST_F(PolymorphismDeserializationTest, ExpectSuccessWhenDeserializingPolymorphi
 
     ECSchemaPtr schema;        
     
-    SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"Polymorphism.01.00.ecschema.xml").c_str(), NULL, NULL);
+    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+    SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"Polymorphism.01.00.ecschema.xml").c_str(), *schemaContext);
         
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, schemaStatus);
 
@@ -439,7 +444,8 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWhenSerializingInstance)
     ECSchemaPtr schema;        
 
     // we get the instance we want to serialize by reading the instance from XML.
-    SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), NULL, NULL);
+    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+    SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
         
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, schemaStatus);
 
