@@ -191,7 +191,7 @@ public:
     //! Retrieves the custom attribute matching the class definition.  Includes looking on base containers
     ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttribute(ECClassCR classDefinition) const;
     //! Retrieves all custom attributes from the container
-    //! @param[in]  Whether to include custom attributes from the base containers 
+    //! @param[in]  includeBase  Whether to include custom attributes from the base containers 
     ECOBJECTS_EXPORT ECCustomAttributeInstanceIterable GetCustomAttributes(bool includeBase) const; 
 
     ECOBJECTS_EXPORT ECObjectsStatus    SetCustomAttribute(IECInstanceR customAttributeInstance);
