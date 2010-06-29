@@ -179,7 +179,7 @@ ECObjectsStatus           MemoryECInstanceBase::_GetStructArrayValueFromMemory (
 
     // WIP_FUSION - is there realy no better way to do this?  something like m_structValueMap[x];
     IECInstancePtr instancePtr = NULL;
-    std::map<StructValueIdentifier, IECInstancePtr>::const_iterator  instanceIterator;
+    bmap<StructValueIdentifier, IECInstancePtr>::const_iterator  instanceIterator;
     instanceIterator = m_structValueMap.find (structValueId);    
     if ( instanceIterator != m_structValueMap.end() )
         instancePtr = instanceIterator->second;
