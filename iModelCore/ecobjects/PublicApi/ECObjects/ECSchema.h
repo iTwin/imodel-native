@@ -47,14 +47,17 @@ typedef stdext::hash_map<const wchar_t * , ECPropertyP, stdext::hash_compare<con
 typedef stdext::hash_map<const wchar_t * , ECClassP, stdext::hash_compare<const wchar_t *, less_str>>    ClassMap;
 typedef stdext::hash_map<const wchar_t * , ECSchemaP, stdext::hash_compare<const wchar_t *, less_str>>   SchemaMap;
 
-
+//=======================================================================================    
 // ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 
 // ValueKind or ArrayKind is necessary, we can union PrimitiveType in the same 16-bit memory location and get some synergy between the two.
 // If you add more values to the ValueKind enum please be sure to note that these are bit flags and not incremental values.  Also be sure the value does not
 // exceed a single byte.
+//=======================================================================================    
 /*__PUBLISH_SECTION_START__*/
+//=======================================================================================    
 //! Represents the classification of the data type of an EC ECValue.  The classification is not the data type itself, but a category of type
 //! such as struct, array or primitive.
+//=======================================================================================    
 enum ValueKind : unsigned short
     {
     VALUEKIND_Uninitialized                  = 0x00,
@@ -64,13 +67,17 @@ enum ValueKind : unsigned short
     };
 
 /*__PUBLISH_SECTION_END__*/
+//=======================================================================================    
 // ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 
 // ValueKind or ArrayKind is necessary, we can union PrimitiveType in the same 16-bit memory location and get some synergy between the two.
 // If you add more values to the ArrayKind enum please be sure to note that these are bit flags and not incremental values.  Also be sure the value does not
 // exceed a single byte.
+//=======================================================================================    
 /*__PUBLISH_SECTION_START__*/
+//=======================================================================================    
 //! Represents the classification of the data type of an EC array element.  The classification is not the data type itself, but a category of type.
 //! Currently an ECArray can only contain primitive or struct data types.
+//=======================================================================================    
 enum ArrayKind : unsigned short
     {
     ARRAYKIND_Primitive       = 0x01,
@@ -78,6 +85,7 @@ enum ArrayKind : unsigned short
     };
 
 /*__PUBLISH_SECTION_END__*/
+//=======================================================================================    
 // ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 
 // ValueKind or ArrayKind is necessary, we can union PrimitiveType in the same 16-bit memory location and get some synergy between the two.
 // If you add more values to the PrimitiveType enum please be sure to note that the lower order byte must stay fixed as '1' and the upper order byte can be incremented.
@@ -85,9 +93,12 @@ enum ArrayKind : unsigned short
 //    - ECXML_TYPENAME_X constants
 //    - PrimitiveECProperty::_GetTypeName
 // NEEDSWORK types: common geometry, installed primitives
+//=======================================================================================    
 /*__PUBLISH_SECTION_START__*/
+//=======================================================================================    
 //! Enumeration of primitive datatypes supported by native "ECObjects" implementation.
 //! These should correspond to all of the datatypes supported in .NET ECObjects
+//=======================================================================================    
 enum PrimitiveType : unsigned short
     {
     PRIMITIVETYPE_Binary                    = 0x101,
@@ -103,6 +114,7 @@ enum PrimitiveType : unsigned short
 
 //=======================================================================================    
 //! Used to represent the type of an ECProperty
+//=======================================================================================
 struct ECTypeDescriptor
 {
 private:
@@ -160,6 +172,9 @@ public:
 typedef std::list<IECInstancePtr> ECCustomAttributeCollection;
 struct ECCustomAttributeInstanceIterable;
 
+//=======================================================================================
+//
+//=======================================================================================
 struct IECCustomAttributeContainer
 {
 /*__PUBLISH_SECTION_END__*/
@@ -198,6 +213,9 @@ public:
     ECOBJECTS_EXPORT bool               RemoveCustomAttribute(ECClassCR classDefinition);
 };
 
+//=======================================================================================
+//
+//=======================================================================================
 struct ECCustomAttributeInstanceIterable
 {
 private:
@@ -249,6 +267,7 @@ public:
 
 //=======================================================================================
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
+//=======================================================================================
 struct ECProperty abstract : public IECCustomAttributeContainer
 {
 /*__PUBLISH_SECTION_END__*/
@@ -316,6 +335,7 @@ public:
 
 //=======================================================================================
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
+//=======================================================================================
 struct PrimitiveECProperty /*__PUBLISH_ABSTRACT__*/ : public ECProperty
 {
 /*__PUBLISH_SECTION_END__*/
@@ -339,9 +359,9 @@ public:
     EXPORTED_PROPERTY  (PrimitiveType, Type);    
 };
 
-
 //=======================================================================================
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
+//=======================================================================================
 struct StructECProperty /*__PUBLISH_ABSTRACT__*/ : public ECProperty
 {
 /*__PUBLISH_SECTION_END__*/
@@ -366,9 +386,9 @@ public:
     EXPORTED_PROPERTY  (ECClassCR, Type);    
 };
 
-
 //=======================================================================================
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
+//=======================================================================================
 struct ArrayECProperty /*__PUBLISH_ABSTRACT__*/ : public ECProperty
 {
 /*__PUBLISH_SECTION_END__*/
@@ -411,6 +431,7 @@ public:
 
 //=======================================================================================
 //! Container holding ECProperties that supports STL like iteration
+//=======================================================================================
 struct ECPropertyIterable /*__PUBLISH_ABSTRACT__*/
 {
 /*__PUBLISH_SECTION_END__*/
@@ -472,6 +493,7 @@ typedef bool (*TraversalDelegate) (ECClassCP, const void *);
 
 //=======================================================================================
 //! The in-memory representation of an ECClass as defined by ECSchemaXML
+//=======================================================================================
 struct ECClass /*__PUBLISH_ABSTRACT__*/ : IECCustomAttributeContainer
 {
 /*__PUBLISH_SECTION_END__*/
@@ -639,10 +661,12 @@ enum StrengthType
     STRENGTHTYPE_Embedding
     } ;
     
+//=======================================================================================
 //! This class describes the cardinality of a relationship. It is based on the
 //!     Martin notation. Valid cardinalities are (x,y) where x is smaller or equal to y,
 //!     x >= 0 and y >= 1 or y = n (where n represents infinity).
 //!     For example, (0,1), (1,1), (1,n), (0,n), (1,10), (2,5), ...
+//=======================================================================================
 struct RelationshipCardinality 
 {
 /*__PUBLISH_SECTION_END__*/
@@ -684,6 +708,7 @@ public:
 
 //=======================================================================================
 //! The in-memory representation of the source and target constraints for an ECRelationshipClass as defined by ECSchemaXML
+//=======================================================================================
 struct ECRelationshipConstraint 
 {
 friend struct ECRelationshipClass;
@@ -757,6 +782,7 @@ public:
 
 //=======================================================================================
 //! The in-memory representation of a relationship class as defined by ECSchemaXML
+//=======================================================================================
 struct ECRelationshipClass /*__PUBLISH_ABSTRACT__*/ : public ECClass
 {
 /*__PUBLISH_SECTION_END__*/
@@ -801,6 +827,7 @@ typedef RefCountedPtr<ECSchema>                  ECSchemaPtr;
 typedef std::list<ECSchemaPtr> ECSchemaReferenceList;
 //=======================================================================================
 //! Supports STL like iterator of classes in a schema
+//=======================================================================================
 struct ECClassContainer /*__PUBLISH_ABSTRACT__*/
 {
 /*__PUBLISH_SECTION_END__*/
@@ -818,6 +845,7 @@ private:
 public:    
     //=======================================================================================
     // @bsistruct
+    //=======================================================================================
     struct IteratorState /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
         {        
         friend struct const_iterator;
@@ -832,6 +860,7 @@ public:
 
     //=======================================================================================
     // @bsistruct
+    //=======================================================================================
     struct const_iterator
     {    
     private:                
@@ -901,13 +930,16 @@ public:
 
 //=======================================================================================
 //! Interface implemented by class that provides schema location services.</summary>
+//=======================================================================================
 struct IECSchemaLocator
 {
 public:
     virtual ECOBJECTS_EXPORT ECSchemaPtr LocateSchema(const wchar_t *name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaConstructionContextR schemaContext) const = 0;
 };
 
+//=======================================================================================
 //! The in-memory representation of a schema as defined by ECSchemaXML
+//=======================================================================================
 struct ECSchema /*__PUBLISH_ABSTRACT__*/ : RefCountedBase, public IECCustomAttributeContainer
 {
 /*__PUBLISH_SECTION_END__*/

@@ -18,7 +18,9 @@ BEGIN_BENTLEY_EC_NAMESPACE
 
 typedef RefCountedPtr<ECEnabler>                  EnablerPtr;
 
+//=======================================================================================    
 //! base class ensuring that all enablers are refcounted
+//=======================================================================================    
 struct ECEnabler : RefCountedBase
     {
     //! Interface of functor that wants to process text-valued properties

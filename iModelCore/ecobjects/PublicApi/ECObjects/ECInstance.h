@@ -15,6 +15,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 
 typedef RefCountedPtr<IECInstance> IECInstancePtr;
 
+//=======================================================================================    
 //! EC::IECInstance is the native equivalent of a .NET IECInstance.
 //! Unlike IECInstance, it is not a pure interface, but is a concrete struct.
 //! Whereas in .NET, one might implement IECInstance, or use the "Lightweight" system
@@ -23,6 +24,7 @@ typedef RefCountedPtr<IECInstance> IECInstancePtr;
 //! to the EC::IECInstance.
 //! We could call these "enabled" instances as opposed to "lightweight".
 //! @see ECEnabler
+//=======================================================================================    
 struct IECInstance : RefCountedBase
     {
 private:
@@ -85,8 +87,10 @@ public:
     ECOBJECTS_EXPORT InstanceSerializationStatus            WriteXmlToString (bwstring & ecInstanceXml, bool isStandAlone);
     };
     
+//=======================================================================================    
 //! EC::IECRelationshipInstance is the native equivalent of a .NET IECRelationshipInstance.
 //! @see IECInstance, ECRelationshipClass
+//=======================================================================================    
 struct IECRelationshipInstance : public IECInstance
     {
 private:
