@@ -505,13 +505,13 @@ IECSchemaOwnerR     schemaOwner
 
     ECObjectsStatus status;
     
-    if (SUCCESS != (status = schemaOut->SetName (schemaName)))
+    if (SUCCESS != (status = schema->SetName (schemaName)))
         {
         delete schema;
         return status;
         }
 
-    if (SUCCESS != (status = schemaOwner.AddSchema (*schemaOut)))
+    if (SUCCESS != (status = schemaOwner.AddSchema (*schema)))
         {
         delete schema;
         return status;
@@ -519,6 +519,15 @@ IECSchemaOwnerR     schemaOwner
 
     schemaOut = schema;
     return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+void    ECSchema::DestroySchema (ECSchemaP& schema)
+    {
+    delete schema;
+    schema = NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1412,7 +1421,7 @@ ECSchemaCR thatSchema
     ECSchemaReferenceList::const_iterator schemaIterator;
     for (schemaIterator = referencedSchemas.begin(); schemaIterator != referencedSchemas.end(); schemaIterator++)
         {
-        ECSchemaP refSchema = (*schemaIterator).get();
+        ECSchemaP refSchema = *schemaIterator;
         if (ECSchema::SchemasAreEqualByName (refSchema, &(thatSchema)))
             {
             return true;

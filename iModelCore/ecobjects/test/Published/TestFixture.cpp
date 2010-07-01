@@ -137,18 +137,10 @@ std::wstring ECTestFixture::GetTestDataPath(const wchar_t *dataFile)
 TestSchemaOwner::~TestSchemaOwner ()
     {
     if (0 == m_schemas.size())
-        {
-        printf ("Destroying an empty SchemaOwner\n");
         return;
-        }
 
     for each (ECSchemaP ecSchema in m_schemas)
-        {
-        printf ("Owner freeing ecSchema <%S>\n", ecSchema->GetName().c_str());
-
-        // NEEDSWORK: need a static ECSchema::DestroySchema method
-
-        }
+        ECSchema::DestroySchema (ecSchema);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -169,6 +161,8 @@ ECObjectsStatus TestSchemaOwner::DropSchema (ECSchemaR ecSchema)
     bvector<ECSchemaP>::iterator iter = std::find(m_schemas.begin(), m_schemas.end(), &ecSchema);
     if (iter == m_schemas.end())
         return ECOBJECTS_STATUS_SchemaNotFound;
+
+    ECSchema::DestroySchema (*iter);
 
     m_schemas.erase(iter);
 

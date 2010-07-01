@@ -1091,6 +1091,7 @@ public:
     // ************************************************************************************************************************
 
     ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema (ECSchemaP& schemaOut, bwstring const& schemaName, IECSchemaOwnerR owner);
+    ECOBJECTS_EXPORT static void            DestroySchema (ECSchemaP& schema);
     ECOBJECTS_EXPORT static ECObjectsStatus ParseVersionString (UInt32& versionMajor, UInt32& versionMinor, bwstring const& versionString);
     ECOBJECTS_EXPORT static bool SchemasMatch (SchemaMatchType matchType,
                           const wchar_t * soughtName,    UInt32 soughtMajor,    UInt32 soughtMinor,
