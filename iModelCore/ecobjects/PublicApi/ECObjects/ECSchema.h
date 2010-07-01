@@ -12,6 +12,7 @@
 #include <ECObjects\ECObjects.h>
 #include <Bentley\RefCounted.h>
 #include <Bentley\bvector.h>
+#include <Bentley\bmap.h>
 
 #define DEFAULT_VERSION_MAJOR   1
 #define DEFAULT_VERSION_MINOR   0
@@ -43,7 +44,7 @@ public:
 };
     
 typedef std::list<ECPropertyP> PropertyList;
-typedef stdext::hash_map<const wchar_t * , ECPropertyP, stdext::hash_compare<const wchar_t *, less_str>> PropertyMap;
+typedef bmap<const wchar_t * , ECPropertyP, stdext::hash_compare<const wchar_t *, less_str>> PropertyMap;
 typedef stdext::hash_map<const wchar_t * , ECClassP, stdext::hash_compare<const wchar_t *, less_str>>    ClassMap;
 typedef stdext::hash_map<const wchar_t * , ECSchemaP, stdext::hash_compare<const wchar_t *, less_str>>   SchemaMap;
 
@@ -594,6 +595,8 @@ public:
     //! is removed from the class.
     //! @param[in]  name     The name of the property to lookup.
     //! @return   A pointer to an EC::ECProperty if the named property exists within the current class; otherwise, NULL
+    ECOBJECTS_EXPORT ECPropertyP     GetPropertyP (wchar_t const* name) const;
+
     ECOBJECTS_EXPORT ECPropertyP     GetPropertyP (bwstring const& name) const;
 
     // ************************************************************************************************************************

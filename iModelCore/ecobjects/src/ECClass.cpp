@@ -249,7 +249,7 @@ ECObjectsStatus ECClass::AddProperty
 ECPropertyP&                 pProperty
 )
     {
-    stdext::hash_map<const wchar_t *, ECPropertyP>::const_iterator propertyIterator;
+    PropertyMap::const_iterator propertyIterator;
     
     propertyIterator = m_propertyMap.find(pProperty->Name.c_str());
     if (m_propertyMap.end() != propertyIterator)
@@ -282,11 +282,11 @@ ECPropertyP&                 pProperty
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyP ECClass::GetPropertyP
 (
-bwstring const& propertyName
+wchar_t const* propertyName
 ) const
     {
-    stdext::hash_map<const wchar_t *, ECPropertyP>::const_iterator  propertyIterator;
-    propertyIterator = m_propertyMap.find (propertyName.c_str());
+    PropertyMap::const_iterator  propertyIterator;
+    propertyIterator = m_propertyMap.find (propertyName);
     
     if ( propertyIterator != m_propertyMap.end() )
         return propertyIterator->second;
@@ -299,6 +299,17 @@ bwstring const& propertyName
             return baseProperty;
         }
     return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyP ECClass::GetPropertyP
+(
+bwstring const& propertyName
+) const
+    {
+    return  GetPropertyP (propertyName.c_str());
     }
 
 ECObjectsStatus ECClass::CanPropertyBeOverridden
@@ -333,7 +344,7 @@ ECObjectsStatus ECClass::RemoveProperty
 const bwstring &name
 )
     {
-    stdext::hash_map<const wchar_t *, ECPropertyP>::const_iterator  propertyIterator;
+    PropertyMap::iterator  propertyIterator;
     propertyIterator = m_propertyMap.find (name.c_str());
     
     if ( propertyIterator == m_propertyMap.end() )

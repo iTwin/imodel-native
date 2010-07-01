@@ -32,7 +32,9 @@ protected:
     ECOBJECTS_EXPORT virtual bwstring     _GetInstanceId() const = 0; // Virtual and returning bwstring because a subclass may want to calculate it on demand
     ECOBJECTS_EXPORT virtual StatusInt    _GetValue (ECValueR v, const wchar_t * propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const = 0;
     ECOBJECTS_EXPORT virtual StatusInt    _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const = 0;
+public:
     ECOBJECTS_EXPORT virtual StatusInt    _SetValue (const wchar_t * propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) = 0;
+protected:
     ECOBJECTS_EXPORT virtual StatusInt    _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) = 0;
     ECOBJECTS_EXPORT virtual ECObjectsStatus _InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size) = 0;
     ECOBJECTS_EXPORT virtual ECObjectsStatus _AddArrayElements (const wchar_t * propertyAccessString, UInt32 size) = 0;

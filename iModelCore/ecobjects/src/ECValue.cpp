@@ -214,8 +214,9 @@ bool            ECValue::IsPrimitive () const
 void            ECValue::ConstructUninitialized()
     {
     int size = sizeof (ECValue); // currently 32 bytes
+#ifndef NDEBUG
     memset (this, 0xBAADF00D, size); // avoid accidental misinterpretation of uninitialized data
-    
+#endif
     m_valueKind    = VALUEKIND_Uninitialized;
     m_isNull            = true;
     m_isReadOnly        = false;
@@ -280,33 +281,45 @@ void            ECValue::DeepCopy (ECValueCR v)
     };
     
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECValue::FreeMemory ()
+    {
+    if (m_isNull)
+        return;
+
+    switch (m_primitiveType)
+        {
+        case PRIMITIVETYPE_String:
+            if ((m_stringInfo.m_freeWhenDone) && (m_stringInfo.m_string != NULL))
+                free (const_cast<wchar_t *>(m_stringInfo.m_string));
+            return;
+
+        case PRIMITIVETYPE_Binary:
+            if ((m_binaryInfo.m_data != NULL) && (m_binaryInfo.m_freeWhenDone))
+                free ((void*)m_binaryInfo.m_data);
+            return;
+
+        case (PrimitiveType)VALUEKIND_Struct:
+            if ((m_structInstance != NULL))
+                m_structInstance->Release();
+            return;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECValue::SetToNull()
     {        
-    if (IsString())
-		{
-        if ((!IsNull()) && (m_stringInfo.m_string != NULL) && (m_stringInfo.m_freeWhenDone))
-            free (const_cast<wchar_t *>(m_stringInfo.m_string));
-            
-        m_stringInfo.m_string = NULL;
-		}
-    else if (IsBinary())
-        {
-        if ((!IsNull()) && (m_binaryInfo.m_data != NULL) && (m_binaryInfo.m_freeWhenDone))
-            free ((void*)m_binaryInfo.m_data);
-        m_binaryInfo.m_data = NULL;
-        m_binaryInfo.m_size = 0;            
-        }		
-    else if (IsStruct())
-        {
-        if ((!IsNull()) && (m_structInstance != NULL)        )
-            m_structInstance->Release();
-        m_structInstance = NULL;        
-        }
-    
+    if (IsNull())
+        return;
+
+    FreeMemory ();
+    memset (&m_binaryInfo, 0, sizeof m_binaryInfo);
     m_isNull = true;
-    }    
+    }
+   
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -323,11 +336,9 @@ void            ECValue::Clear()
         m_isNull = true;
         return;
         }
-		
-	SetToNull();	
-    m_valueKind = VALUEKIND_Uninitialized;            
-	        
-        
+
+    SetToNull();
+    m_valueKind = VALUEKIND_Uninitialized;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -335,8 +346,10 @@ void            ECValue::Clear()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValue::~ECValue()
     {
-    Clear();
+    FreeMemory ();
+#ifndef NDEBUG
     memset (this, 0xBAADF00D, sizeof(ECValue)); // try to make use of destructed values more obvious
+#endif
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -720,7 +733,7 @@ const wchar_t * ECValue::GetString() const
     PRECONDITION (IsString() && "Tried to get string value from an EC::ECValue that is not a string.", L"<Programmer Error: Attempted to get string value from EC::ECValue that is not a string.>");
     return m_stringInfo.m_string;
     };
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @param holdADuplicate     IN  If true, EC::ECValue will make a duplicate, otherwise 
 *                               EC::ECValue holds the original pointer
