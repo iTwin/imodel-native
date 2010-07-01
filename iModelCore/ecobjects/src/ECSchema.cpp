@@ -789,7 +789,7 @@ ClassDeserializationVector&  classes
 SchemaDeserializationStatus ECSchema::ReadSchemaReferencesFromXml
 (
 MSXML2::IXMLDOMNode&            schemaNode, 
-ECSchemaConstructionContextR    schemaContext
+ECSchemaDeserializationContextR schemaContext
 )
     {
     SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
@@ -874,7 +874,7 @@ ECSchemaP       ECSchema::LocateSchema
 const bwstring &                name,
 UInt32&                         versionMajor,
 UInt32&                         versionMinor,
-ECSchemaConstructionContextR    schemaContext
+ECSchemaDeserializationContextR schemaContext
 )
     {
     SchemaMap& underConstruction = schemaContext.GetSchemasUnderConstruction();
@@ -920,7 +920,7 @@ ECSchemaP       ECSchema::LocateSchemaByPath
 const bwstring&                 name,
 UInt32&                         versionMajor,
 UInt32&                         versionMinor,
-ECSchemaConstructionContextR    schemaContext
+ECSchemaDeserializationContextR schemaContext
 )
     {
     ECSchemaP   schemaOut = NULL;
@@ -959,7 +959,7 @@ ECSchemaP       ECSchema::LocateSchemaByStandardPaths
 const bwstring &                name,
 UInt32&                         versionMajor,
 UInt32&                         versionMinor,
-ECSchemaConstructionContextR    schemaContext
+ECSchemaDeserializationContextR schemaContext
 )
     {
     // Make a copy of the paths stored in schemaContext
@@ -1001,7 +1001,7 @@ SchemaDeserializationStatus ECSchema::ReadXml
 (
 ECSchemaP&                          schemaOut, 
 MSXML2::IXMLDOMDocument2&           pXmlDoc, 
-ECSchemaConstructionContextR        schemaContext
+ECSchemaDeserializationContextR     schemaContext
 )
     {            
     SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
@@ -1349,7 +1349,7 @@ SchemaDeserializationStatus ECSchema::ReadXmlFromFile
 (
 ECSchemaP&                      schemaOut, 
 const wchar_t *                 ecSchemaXmlFile, 
-ECSchemaConstructionContextR    schemaContext
+ECSchemaDeserializationContextR schemaContext
 )
     {                  
     SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
@@ -1382,7 +1382,7 @@ SchemaDeserializationStatus     ECSchema::ReadXmlFromString
 (
 ECSchemaP&                      schemaOut, 
 const wchar_t *                 ecSchemaXml,
-ECSchemaConstructionContextR    schemaContext
+ECSchemaDeserializationContextR schemaContext
 )
     {                  
     SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
@@ -1447,7 +1447,7 @@ SchemaDeserializationStatus     ECSchema::ReadXmlFromStream
 (
 ECSchemaP&                      schemaOut, 
 IStreamP                        ecSchemaXmlStream,
-ECSchemaConstructionContextR    schemaContext
+ECSchemaDeserializationContextR schemaContext
 )
     {                  
     SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
@@ -1552,7 +1552,7 @@ IStreamP ecSchemaXmlStream
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaConstructionContext::ECSchemaConstructionContext(IECSchemaOwnerR owner)
+ECSchemaDeserializationContext::ECSchemaDeserializationContext(IECSchemaOwnerR owner)
     :
     m_schemaOwner (owner)
     {
@@ -1561,15 +1561,15 @@ ECSchemaConstructionContext::ECSchemaConstructionContext(IECSchemaOwnerR owner)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaConstructionContextPtr  ECSchemaConstructionContext::CreateContext (IECSchemaOwnerR owner)   { return new ECSchemaConstructionContext(owner); }
-void  ECSchemaConstructionContext::AddSchemaLocators (bvector<EC::IECSchemaLocatorP>& locators) { m_locators.insert (m_locators.begin(), locators.begin(), locators.end());  }
-void  ECSchemaConstructionContext::AddSchemaLocator (IECSchemaLocatorR locator) { m_locators.push_back (&locator);  }
-void  ECSchemaConstructionContext::AddSchemaPath (const wchar_t* path)          { m_searchPaths.push_back (path);   }
-bvector<IECSchemaLocatorP>& ECSchemaConstructionContext::GetSchemaLocators ()   { return m_locators;    }
-bvector<const wchar_t *>&   ECSchemaConstructionContext::GetSchemaPaths ()      { return m_searchPaths; }
-SchemaMap&      ECSchemaConstructionContext::GetSchemasUnderConstruction ()     { return m_schemasUnderConstruction;    }
-void            ECSchemaConstructionContext::ClearSchemaPaths ()                { m_searchPaths.clear();    }
-IECSchemaOwnerR ECSchemaConstructionContext::GetSchemaOwner()                   { return m_schemaOwner;  }
+ECSchemaDeserializationContextPtr  ECSchemaDeserializationContext::CreateContext (IECSchemaOwnerR owner)   { return new ECSchemaDeserializationContext(owner); }
+void  ECSchemaDeserializationContext::AddSchemaLocators (bvector<EC::IECSchemaLocatorP>& locators) { m_locators.insert (m_locators.begin(), locators.begin(), locators.end());  }
+void  ECSchemaDeserializationContext::AddSchemaLocator (IECSchemaLocatorR locator) { m_locators.push_back (&locator);  }
+void  ECSchemaDeserializationContext::AddSchemaPath (const wchar_t* path)          { m_searchPaths.push_back (path);   }
+bvector<IECSchemaLocatorP>& ECSchemaDeserializationContext::GetSchemaLocators ()   { return m_locators;    }
+bvector<const wchar_t *>&   ECSchemaDeserializationContext::GetSchemaPaths ()      { return m_searchPaths; }
+SchemaMap&      ECSchemaDeserializationContext::GetSchemasUnderConstruction ()     { return m_schemasUnderConstruction;    }
+void            ECSchemaDeserializationContext::ClearSchemaPaths ()                { m_searchPaths.clear();    }
+IECSchemaOwnerR ECSchemaDeserializationContext::GetSchemaOwner()                   { return m_schemaOwner;  }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   

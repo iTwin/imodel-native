@@ -1,4 +1,3 @@
-
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: ecobjects/nativeatp/Published/InstanceXMLTests.cpp $
@@ -250,8 +249,8 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingSimpleInstance
     // must call CoInitialize - schema deserialization requires it.
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
-    TestSchemaOwner                 schemaOwner;
-    ECSchemaConstructionContextPtr  schemaContext = ECSchemaConstructionContext::CreateContext(schemaOwner);
+    TestSchemaOwner                     schemaOwner;
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(schemaOwner);
 
     ECSchemaP   schema;
     SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
@@ -275,8 +274,8 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingEmptyInstance)
     // must call CoInitialize - schema deserialization requires it.
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
-    TestSchemaOwner                 schemaOwner;
-    ECSchemaConstructionContextPtr  schemaContext = ECSchemaConstructionContext::CreateContext(schemaOwner);
+    TestSchemaOwner                     schemaOwner;
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(schemaOwner);
 
     ECSchemaP   schema;
     SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
@@ -299,8 +298,8 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     // must call CoInitialize - schema deserialization requires it.
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
-    TestSchemaOwner                 schemaOwner;
-    ECSchemaConstructionContextPtr  schemaContext = ECSchemaConstructionContext::CreateContext(schemaOwner);
+    TestSchemaOwner                     schemaOwner;
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(schemaOwner);
 
     ECSchemaP   schema;
     SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
@@ -338,8 +337,8 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     // must call CoInitialize - schema deserialization requires it.
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
-    TestSchemaOwner                 schemaOwner;
-    ECSchemaConstructionContextPtr  schemaContext = ECSchemaConstructionContext::CreateContext(schemaOwner);
+    TestSchemaOwner                     schemaOwner;
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(schemaOwner);
 
     ECSchemaP   schema;
     SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
@@ -423,8 +422,8 @@ TEST_F(PolymorphismDeserializationTest, ExpectSuccessWhenDeserializingPolymorphi
     // must call CoInitialize - schema deserialization requires it.
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
-    TestSchemaOwner                 schemaOwner;
-    ECSchemaConstructionContextPtr  schemaContext = ECSchemaConstructionContext::CreateContext(schemaOwner);
+    TestSchemaOwner                     schemaOwner;
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(schemaOwner);
 
     ECSchemaP   schema;
     SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"Polymorphism.01.00.ecschema.xml").c_str(), *schemaContext);
@@ -448,8 +447,8 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWhenSerializingInstance)
     // must call CoInitialize - schema deserialization requires it.
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
-    TestSchemaOwner                 schemaOwner;
-    ECSchemaConstructionContextPtr  schemaContext = ECSchemaConstructionContext::CreateContext(schemaOwner);
+    TestSchemaOwner                     schemaOwner;
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(schemaOwner);
 
     // we get the instance we want to serialize by reading the instance from XML.
     ECSchemaP   schema;
