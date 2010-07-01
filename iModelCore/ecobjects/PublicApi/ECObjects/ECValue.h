@@ -84,8 +84,8 @@ private:
     bool                m_isReadOnly; // Really indicates that the property from which this came is readonly... not the value itself.
     
 protected:    
-    typedef std::vector<ECValue>  ValuesVector;
-    typedef std::vector<ECValue>* ValuesVectorP;
+    typedef bvector<ECValue>  ValuesVector;
+    typedef bvector<ECValue>* ValuesVectorP;
     
     struct StringInfo
         {

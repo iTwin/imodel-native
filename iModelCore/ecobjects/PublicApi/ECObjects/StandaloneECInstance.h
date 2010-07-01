@@ -34,7 +34,7 @@ private:
     // WIP_FUSION Is this a good enough implementation for StandaloneECInstace?
     typedef int StructValueIdentifier;
     StructValueIdentifier                             m_structValueId;
-    std::map<StructValueIdentifier, IECInstancePtr>   m_structValueMap;
+    bmap<StructValueIdentifier, IECInstancePtr>   m_structValueMap;
     
 protected:
     //! The MemoryECInstanceBase will take ownership of the memory

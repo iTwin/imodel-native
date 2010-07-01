@@ -287,4 +287,25 @@ TEST_F(CustomAttributeTest, ExpectCanRemoveCustomAttribute)
 
     }
 
+TEST_F(CustomAttributeTest, ExpectFailureWithUnreferencedCustomAttribute)
+    {
+    ECSchemaPtr schema = CreateCustomAttributeTestSchema();
+    ECSchemaPtr refSchema;
+    ECSchema::CreateSchema(refSchema, L"RefSchema");
+
+    ECClassP refClass;
+    refSchema->CreateClass(refClass, L"RefClass");
+    refClass->IsCustomAttributeClass = true;
+
+    ECClassP containerClass = schema->GetClassP (L"TestClass");
+    ASSERT_TRUE (containerClass);
+
+    IECInstancePtr instance = GetInstanceForClass(L"RefClass", *refSchema);
+
+    EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, containerClass->SetCustomAttribute(*instance));
+    schema->AddReferencedSchema(refSchema);
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
+
+    }
+
 END_BENTLEY_EC_NAMESPACE
