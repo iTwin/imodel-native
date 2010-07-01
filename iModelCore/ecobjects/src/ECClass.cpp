@@ -541,7 +541,7 @@ ECClassCR baseClass
         ECSchemaReferenceList::const_iterator schemaIterator;
         for (schemaIterator = referencedSchemas.begin(); schemaIterator != referencedSchemas.end(); schemaIterator++)
             {
-            ECSchemaP refSchema = (*schemaIterator).get();
+            ECSchemaP refSchema = *schemaIterator;
             if (ECSchema::SchemasAreEqualByName (refSchema, &(baseClass.Schema)))
                 {
                 foundRefSchema = true;
@@ -869,7 +869,7 @@ MSXML2::IXMLDOMNode& classNode
         }
 
     // Add Custom Attributes
-    ReadCustomAttributes(classNode, (ECSchemaP) &m_schema);
+    ReadCustomAttributes(classNode, m_schema);
 
     return SCHEMA_DESERIALIZATION_STATUS_Success;
     }
@@ -1371,7 +1371,7 @@ ECClassCR classConstraint
         ECSchemaReferenceList::const_iterator schemaIterator;
         for (schemaIterator = referencedSchemas.begin(); schemaIterator != referencedSchemas.end(); schemaIterator++)
             {
-            ECSchemaP refSchema = (*schemaIterator).get();
+            ECSchemaP refSchema = *schemaIterator;
             if (refSchema == &(classConstraint.Schema))
                 {
                 foundRefSchema = true;

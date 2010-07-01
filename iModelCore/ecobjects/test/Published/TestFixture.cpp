@@ -112,7 +112,6 @@ std::wstring ECTestFixture::GetTestDataPath(const wchar_t *dataFile)
     {
     if (s_dllPath.empty())
         {
-
         HINSTANCE ecobjectsHInstance = (HINSTANCE) getDLLInstance();
         wchar_t strExePath [MAX_PATH];
         if (0 == (GetModuleFileNameW (ecobjectsHInstance, strExePath, MAX_PATH)))
@@ -132,5 +131,49 @@ std::wstring ECTestFixture::GetTestDataPath(const wchar_t *dataFile)
     
     } 
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/10
++---------------+---------------+---------------+---------------+---------------+------*/
+TestSchemaOwner::~TestSchemaOwner ()
+    {
+    if (0 == m_schemas.size())
+        {
+        printf ("Destroying an empty SchemaOwner\n");
+        return;
+        }
+
+    for each (ECSchemaP ecSchema in m_schemas)
+        {
+        printf ("Owner freeing ecSchema <%S>\n", ecSchema->GetName().c_str());
+
+        // NEEDSWORK: need a static ECSchema::DestroySchema method
+
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus TestSchemaOwner::AddSchema (ECSchemaR ecSchema)
+    {
+    m_schemas.push_back (&ecSchema);
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus TestSchemaOwner::DropSchema (ECSchemaR ecSchema)
+    {
+    bvector<ECSchemaP>::iterator iter = std::find(m_schemas.begin(), m_schemas.end(), &ecSchema);
+    if (iter == m_schemas.end())
+        return ECOBJECTS_STATUS_SchemaNotFound;
+
+    m_schemas.erase(iter);
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
 END_BENTLEY_EC_NAMESPACE
 

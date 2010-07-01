@@ -14,8 +14,6 @@ BEGIN_BENTLEY_EC_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECEnabler::ECEnabler(ECClassCR ecClass) : m_privateRefCount(0), m_ecClass (ecClass) 
     {
-    ECSchemaR schema = const_cast<ECSchemaR>(ecClass.Schema);
-    schema.AddRef();
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -24,9 +22,6 @@ ECEnabler::ECEnabler(ECClassCR ecClass) : m_privateRefCount(0), m_ecClass (ecCla
 ECEnabler::~ECEnabler() 
     {
     Logger::GetLogger()->tracev (L"%S(%s) at 0x%x is being destructed.", typeid(*this).name(), m_ecClass.GetName().c_str(), this);
-
-    ECSchemaR schema = const_cast<ECSchemaR>(m_ecClass.Schema);
-    schema.Release();
     }
 
 /*---------------------------------------------------------------------------------**//**

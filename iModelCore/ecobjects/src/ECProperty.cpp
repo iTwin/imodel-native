@@ -282,7 +282,7 @@ MSXML2::IXMLDOMNode& propertyNode
     ECObjectsStatus setterStatus;
     READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (READONLY_ATTRIBUTE,            this, IsReadOnly)
 
-    ReadCustomAttributes(propertyNode, (ECSchemaP) (&(m_class.Schema)));
+    ReadCustomAttributes(propertyNode, m_class.GetSchema());
     return SCHEMA_DESERIALIZATION_STATUS_Success;
     }
 
