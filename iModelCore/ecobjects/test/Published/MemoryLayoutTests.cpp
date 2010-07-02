@@ -665,8 +665,8 @@ TEST_F(MemoryLayoutTests, InstantiateStandaloneInstance)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
-    TestSchemaOwner schemaOwner;
-    ECSchemaP       schema = CreateTestSchema(schemaOwner);
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();;
+    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
     ASSERT_TRUE (schema != NULL);
 
     ECClassP ecClass = schema->GetClassP (L"TestClass");
@@ -695,8 +695,8 @@ TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
-    TestSchemaOwner schemaOwner;
-    ECSchemaP       schema = CreateTestSchema(schemaOwner);
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();;
+    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
     ASSERT_TRUE (schema != NULL);
 
     ECClassP ecClass = schema->GetClassP (L"EmptyClass");
@@ -726,8 +726,8 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
-    TestSchemaOwner schemaOwner;
-    ECSchemaP       schema = CreateTestSchema(schemaOwner);
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();;
+    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
     ASSERT_TRUE (schema != NULL);
     ECClassP ecClass = schema->GetClassP (L"CadData");
     ASSERT_TRUE (ecClass);
@@ -791,8 +791,8 @@ TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
-    TestSchemaOwner schemaOwner;
-    ECSchemaP       schema = CreateTestSchema(schemaOwner);
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();;
+    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
     ASSERT_TRUE (schema != NULL);
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);
@@ -860,8 +860,8 @@ TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
 TEST_F(MemoryLayoutTests, ExpectErrorsWhenViolatingArrayConstraints)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    TestSchemaOwner schemaOwner;
-    ECSchemaP       schema = CreateTestSchema(schemaOwner);
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();;
+    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
     ASSERT_TRUE (schema != NULL);
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);    
@@ -1002,8 +1002,8 @@ TEST_F (MemoryLayoutTests, TestSetGetNull)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
-    TestSchemaOwner schemaOwner;
-    ECSchemaP       schema = CreateTestSchema(schemaOwner);
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();;
+    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
     ASSERT_TRUE (schema != NULL);
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);
@@ -1073,8 +1073,8 @@ TEST_F (MemoryLayoutTests, ProfileSettingValues)
     
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
-    TestSchemaOwner schemaOwner;
-    ECSchemaP       schema = CreateProfilingSchema(nStrings, schemaOwner);
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();;
+    ECSchemaP       schema = CreateProfilingSchema(nStrings, *schemaOwner);
     ECClassP        ecClass = schema->GetClassP (L"Pidget");
     ASSERT_TRUE (ecClass);
         

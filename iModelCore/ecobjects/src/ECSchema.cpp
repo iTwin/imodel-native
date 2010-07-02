@@ -1572,6 +1572,52 @@ void            ECSchemaDeserializationContext::ClearSchemaPaths ()             
 IECSchemaOwnerR ECSchemaDeserializationContext::GetSchemaOwner()                   { return m_schemaOwner;  }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaOwnerPtr    ECSchemaOwner::CreateOwner ()
+    {
+    return new ECSchemaOwner;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaOwner::~ECSchemaOwner ()
+    {
+    if (0 == m_schemas.size())
+        return;
+
+    for each (ECSchemaP ecSchema in m_schemas)
+        ECSchema::DestroySchema (ecSchema);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchemaOwner::AddSchema (ECSchemaR ecSchema)
+    {
+    m_schemas.push_back (&ecSchema);
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchemaOwner::DropSchema (ECSchemaR ecSchema)
+    {
+    bvector<ECSchemaP>::iterator iter = std::find(m_schemas.begin(), m_schemas.end(), &ecSchema);
+    if (iter == m_schemas.end())
+        return ECOBJECTS_STATUS_SchemaNotFound;
+
+    ECSchema::DestroySchema (*iter);
+
+    m_schemas.erase(iter);
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassContainer::const_iterator  ECClassContainer::begin () const

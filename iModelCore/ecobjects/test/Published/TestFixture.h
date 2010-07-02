@@ -31,19 +31,4 @@ public:
     static std::wstring GetTestDataPath(const wchar_t *fileName);
     };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsistruct
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct          TestSchemaOwner : IECSchemaOwner
-{
-private:
-    bvector<ECSchemaP> m_schemas;
-
-public:
-    ~TestSchemaOwner ();
-
-    virtual ECObjectsStatus AddSchema  (ECSchemaR ecSchema) override;
-    virtual ECObjectsStatus DropSchema (ECSchemaR ecSchema) override;
-};
-
 END_BENTLEY_EC_NAMESPACE

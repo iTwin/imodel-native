@@ -899,13 +899,36 @@ enum SchemaMatchType
     };
    
 //=======================================================================================
-//! Interface implemented by class the provides schema ownership services.</summary>
+//! Interface implemented by class that provides schema ownership services.</summary>
 //=======================================================================================
 struct IECSchemaOwner
 {
-public:
+/*__PUBLISH_CLASS_VIRTUAL__*/
+/*__PUBLISH_SECTION_END__*/
     virtual ECObjectsStatus AddSchema   (ECSchemaR) = 0;
     virtual ECObjectsStatus DropSchema  (ECSchemaR) = 0;
+/*__PUBLISH_SECTION_START__*/
+};
+
+typedef RefCountedPtr<ECSchemaOwner>        ECSchemaOwnerPtr;
+//=======================================================================================
+//! An object that controls the lifetime of a set of ECSchemas.  When the schema
+//! owner is destroyed, so are the schemas that it owns.</summary>
+//=======================================================================================
+struct ECSchemaOwner /*__PUBLISH_ABSTRACT__*/ : RefCountedBase, IECSchemaOwner
+{
+/*__PUBLISH_SECTION_END__*/
+private:
+    bvector<ECSchemaP> m_schemas;
+
+    ~ECSchemaOwner();
+
+public:
+    virtual ECObjectsStatus AddSchema   (ECSchemaR) override;
+    virtual ECObjectsStatus DropSchema  (ECSchemaR) override;
+
+/*__PUBLISH_SECTION_START__*/
+    ECOBJECTS_EXPORT static  ECSchemaOwnerPtr    CreateOwner();
 };
 
 typedef RefCountedPtr<ECSchemaDeserializationContext>      ECSchemaDeserializationContextPtr;
@@ -1091,7 +1114,10 @@ public:
     // ************************************************************************************************************************
 
     ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema (ECSchemaP& schemaOut, bwstring const& schemaName, IECSchemaOwnerR owner);
+/*__PUBLISH_SECTION_END__*/
+    // Should only be called by SchemaOwners.  Since IECSchemaOwner is not published, neither should this method be published
     ECOBJECTS_EXPORT static void            DestroySchema (ECSchemaP& schema);
+/*__PUBLISH_SECTION_START__*/
     ECOBJECTS_EXPORT static ECObjectsStatus ParseVersionString (UInt32& versionMajor, UInt32& versionMinor, bwstring const& versionString);
     ECOBJECTS_EXPORT static bool SchemasMatch (SchemaMatchType matchType,
                           const wchar_t * soughtName,    UInt32 soughtMajor,    UInt32 soughtMinor,
