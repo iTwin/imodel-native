@@ -57,6 +57,7 @@ ECClassCR           ECEnabler::GetClass() const  { return m_ecClass; }
 wchar_t const *     ECEnabler::GetName() const { return _GetName(); }
 StatusInt           ECEnabler::GetPropertyIndex (UInt32& propertyIndex, const wchar_t * accessString) const { return _GetPropertyIndex (propertyIndex, accessString); }
 
+#if defined (EXPERIMENTAL_TEXT_FILTER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -154,6 +155,7 @@ ECEnabler::PropertyProcessingResult ECEnabler::_ProcessPrimitiveProperties (bset
 * @bsimethod                                    sam.wilson                      06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECEnabler::PropertyProcessingResult ECEnabler::ProcessPrimitiveProperties (bset<ECClassCP>& a, IECInstanceCR b, PrimitiveType c, IPropertyProcessor const& d, PropertyProcessingOptions e) const {return _ProcessPrimitiveProperties(a,b,c,d,e);}
+#endif // defined (EXPERIMENTAL_TEXT_FILTER)
 
 END_BENTLEY_EC_NAMESPACE
     
