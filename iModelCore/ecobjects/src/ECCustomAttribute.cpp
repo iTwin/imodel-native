@@ -203,6 +203,14 @@ IECInstanceR customAttributeInstance
     if (!classDefinition.IsCustomAttributeClass)
         return ECOBJECTS_STATUS_NotCustomAttributeClass;
 
+    // first need to verify that this custom attribute instance is from either the current schema or a referenced schema
+    ECSchemaCP containerSchema = _GetContainerSchema();
+    if (containerSchema != &(classDefinition.Schema))
+        {
+        if (!ECSchema::IsSchemaReferenced(*containerSchema, classDefinition.Schema))
+            return ECOBJECTS_STATUS_SchemaNotFound;
+        }
+
     // remove existing custom attributes with matching class
     ECCustomAttributeCollection::const_iterator iter;
     for (iter = m_customAttributes.begin(); iter != m_customAttributes.end(); iter++)

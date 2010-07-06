@@ -547,23 +547,8 @@ ECClassCR baseClass
     {
     if (&(baseClass.Schema) != &(this->Schema))
         {
-        bool foundRefSchema = false;
-        ECSchemaReferenceList referencedSchemas = m_schema.GetReferencedSchemas();
-        ECSchemaReferenceList::const_iterator schemaIterator;
-        for (schemaIterator = referencedSchemas.begin(); schemaIterator != referencedSchemas.end(); schemaIterator++)
-            {
-            ECSchemaP refSchema = (*schemaIterator).get();
-            if (ECSchema::SchemasAreEqualByName (refSchema, &(baseClass.Schema)))
-                {
-                foundRefSchema = true;
-                break;
-                }
-            }
-
-        if (foundRefSchema == false)
-            {
+        if (!ECSchema::IsSchemaReferenced(this->Schema, baseClass.Schema))
             return ECOBJECTS_STATUS_SchemaNotFound;
-            }
         }
 
     if (this == &baseClass || ClassesAreEqualByName(this, &baseClass) || baseClass.TraverseBaseClasses(&CheckBaseClassCycles, true, this))
@@ -1023,6 +1008,16 @@ bvector<IECCustomAttributeContainerP>& returnList
     {
     for each (ECClassP baseClass in m_baseClasses)
         returnList.push_back(baseClass);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaCP ECClass::_GetContainerSchema
+(
+) const
+    {
+    return &m_schema;
     }
 
 /*---------------------------------------------------------------------------------**//**

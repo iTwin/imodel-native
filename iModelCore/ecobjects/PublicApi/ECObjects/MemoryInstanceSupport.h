@@ -92,9 +92,9 @@ private:
 #ifdef USE_HASHMAP_IN_CLASSLAYOUT    
     typedef stdext::hash_map<wchar_t const *, PropertyLayoutCP, stdext::hash_compare<const wchar_t *, StringComparer>>   PropertyLayoutMap;
 #else
-    typedef std::map<wchar_t const *, PropertyLayoutCP, StringComparer> PropertyLayoutMap;
+    typedef bmap<wchar_t const *, PropertyLayoutCP, StringComparer> PropertyLayoutMap;
 #endif    
-    typedef std::vector<PropertyLayout>                                 PropertyLayoutVector; // WIP_FUSION: needs to be vector of PropertyLayoutP
+    typedef bvector<PropertyLayout>                                 PropertyLayoutVector; // WIP_FUSION: needs to be vector of PropertyLayoutP
     
     enum State
         {
@@ -178,7 +178,7 @@ public:
     ECOBJECTS_EXPORT bool           IsCompatible(ClassLayoutCR layout) const;
     };
 
-typedef std::vector<ClassLayoutCP>  ClassLayoutVector;
+typedef bvector<ClassLayoutCP>  ClassLayoutVector;
 
 /*=================================================================================**//**
 * @bsistruct
