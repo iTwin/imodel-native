@@ -205,7 +205,7 @@ PrimitiveECPropertyP ECProperty::GetAsPrimitiveProperty
 (
 ) const
     {
-    return static_cast<PrimitiveECPropertyP>(const_cast<ECPropertyP>(this));
+    return dynamic_cast<PrimitiveECPropertyP>(const_cast<ECPropertyP>(this));
     }
 
 /*---------------------------------------------------------------------------------**//**
