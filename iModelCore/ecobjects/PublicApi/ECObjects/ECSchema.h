@@ -249,6 +249,8 @@ public:
     ECOBJECTS_EXPORT const_iterator end ()   const;    
 };
 
+struct PrimitiveECProperty;
+
 //=======================================================================================
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
 struct ECProperty abstract : public IECCustomAttributeContainer
@@ -277,13 +279,15 @@ protected:
     virtual bool                        _IsArray () const { return false; }
     // This method returns a wstring by value because it may be a computed string.  For instance struct properties may return a qualified typename with a namespace
     // prefix relative to the containing schema.
-    virtual bwstring                _GetTypeName () const abstract;
+    virtual bwstring                    _GetTypeName () const abstract;
     virtual ECObjectsStatus             _SetTypeName (bwstring const& typeName) abstract;
 
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const abstract;
 
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
-	virtual ECSchemaCP					_GetContainerSchema() const override;
+    virtual ECSchemaCP			_GetContainerSchema() const override;
+
+    virtual PrimitiveECProperty*        _GetAsPrimitiveECProperty() {return NULL;}
     
 /*__PUBLISH_SECTION_START__*/
 public:    
@@ -311,9 +315,9 @@ public:
 
     // NEEDSWORK, don't necessarily like this pattern but it will suffice for now.  Necessary since you can't dynamic_cast when using the published headers.  How
     // do other similiar classes deal with this.
-    ECOBJECTS_EXPORT PrimitiveECPropertyP       GetAsPrimitiveProperty () const;
-    ECOBJECTS_EXPORT ArrayECPropertyP           GetAsArrayProperty () const;
-    ECOBJECTS_EXPORT StructECPropertyP          GetAsStructProperty () const;
+    ECOBJECTS_EXPORT PrimitiveECPropertyP       GetAsPrimitiveProperty () const;    // FUSION_WIP: this removes const!
+    ECOBJECTS_EXPORT ArrayECPropertyP           GetAsArrayProperty () const;        //  "
+    ECOBJECTS_EXPORT StructECPropertyP          GetAsStructProperty () const;       //  "
 };
 
 
@@ -332,10 +336,10 @@ protected:
     virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode) override;
     virtual SchemaSerializationStatus   _WriteXml(MSXML2_IXMLDOMElement& parentNode) override;
     virtual bool                        _IsPrimitive () const override { return true;}
-    virtual bwstring                _GetTypeName () const override;
+    virtual bwstring                    _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (bwstring const& typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
-    
+    virtual PrimitiveECProperty*        _GetAsPrimitiveECProperty() {return this;}
 
 /*__PUBLISH_SECTION_START__*/
 public:    
