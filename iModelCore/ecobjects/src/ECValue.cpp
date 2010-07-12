@@ -312,8 +312,8 @@ void            ECValue::FreeMemory ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECValue::SetToNull()
     {        
-    if (IsNull())
-        return;
+    //if (IsNull())
+    //    return;
 
     FreeMemory ();
     memset (&m_binaryInfo, 0, sizeof m_binaryInfo);
