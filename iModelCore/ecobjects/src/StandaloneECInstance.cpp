@@ -300,7 +300,7 @@ bool                StandaloneECInstance::_IsReadOnly() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           StandaloneECInstance::_GetValue (ECValueR v, const wchar_t * propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const
+ECObjectsStatus           StandaloneECInstance::_GetValue (ECValueR v, const wchar_t * propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const
     {
     ClassLayoutCR classLayout = GetClassLayout();
 
@@ -310,7 +310,7 @@ StatusInt           StandaloneECInstance::_GetValue (ECValueR v, const wchar_t *
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           StandaloneECInstance::_GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const
+ECObjectsStatus           StandaloneECInstance::_GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const
     {
     ClassLayoutCR classLayout = GetClassLayout();
 
@@ -320,23 +320,19 @@ StatusInt           StandaloneECInstance::_GetValue (ECValueR v, UInt32 property
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           StandaloneECInstance::_SetValue (const wchar_t * propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
+ECObjectsStatus           StandaloneECInstance::_SetValue (const wchar_t * propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
     {
     ClassLayoutCR classLayout = GetClassLayout();
-    StatusInt status = SetValueToMemory (classLayout, propertyAccessString, v, useArrayIndex, arrayIndex);
-
-    return status;
+    return SetValueToMemory (classLayout, propertyAccessString, v, useArrayIndex, arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           StandaloneECInstance::_SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
+ECObjectsStatus           StandaloneECInstance::_SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
     {
     ClassLayoutCR classLayout = GetClassLayout();
-    StatusInt status = SetValueToMemory (classLayout, propertyIndex, v, useArrayIndex, arrayIndex);
-
-    return status;
+    return SetValueToMemory (classLayout, propertyIndex, v, useArrayIndex, arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -416,7 +412,7 @@ wchar_t const *           StandaloneECEnabler::_GetName() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt           StandaloneECEnabler::_GetPropertyIndex(UInt32& propertyIndex, const wchar_t * propertyAccessString) const
+ECObjectsStatus           StandaloneECEnabler::_GetPropertyIndex(UInt32& propertyIndex, const wchar_t * propertyAccessString) const
     {
     ClassLayoutCR       classLayout = GetClassLayout();
 

@@ -55,7 +55,7 @@ UInt32      ECEnabler::Release()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCR           ECEnabler::GetClass() const  { return m_ecClass; }
 wchar_t const *     ECEnabler::GetName() const { return _GetName(); }
-StatusInt           ECEnabler::GetPropertyIndex (UInt32& propertyIndex, const wchar_t * accessString) const { return _GetPropertyIndex (propertyIndex, accessString); }
+ECObjectsStatus           ECEnabler::GetPropertyIndex (UInt32& propertyIndex, const wchar_t * accessString) const { return _GetPropertyIndex (propertyIndex, accessString); }
 
 #if defined (EXPERIMENTAL_TEXT_FILTER)
 /*---------------------------------------------------------------------------------**//**
