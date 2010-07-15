@@ -905,8 +905,16 @@ struct IECSchemaOwner
 {
 /*__PUBLISH_CLASS_VIRTUAL__*/
 /*__PUBLISH_SECTION_END__*/
-    virtual ECObjectsStatus AddSchema   (ECSchemaR) = 0;
-    virtual ECObjectsStatus DropSchema  (ECSchemaR) = 0;
+protected:
+    virtual ECObjectsStatus _AddSchema   (ECSchemaR) = 0;
+    virtual ECObjectsStatus _DropSchema  (ECSchemaR) = 0;
+    virtual ECSchemaP       _GetSchema   (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor) = 0;
+
+public:
+    ECObjectsStatus         AddSchema   (ECSchemaR);
+    ECObjectsStatus         DropSchema  (ECSchemaR);
+    ECSchemaP               GetSchema   (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor);
+
 /*__PUBLISH_SECTION_START__*/
 };
 
@@ -923,11 +931,13 @@ private:
 
     ~ECSchemaOwner();
 
-public:
-    virtual ECObjectsStatus AddSchema   (ECSchemaR) override;
-    virtual ECObjectsStatus DropSchema  (ECSchemaR) override;
+protected:
+    virtual ECObjectsStatus _AddSchema   (ECSchemaR) override;
+    virtual ECObjectsStatus _DropSchema  (ECSchemaR) override;
+    virtual ECSchemaP       _GetSchema   (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor);
 
 /*__PUBLISH_SECTION_START__*/
+public:
     ECOBJECTS_EXPORT static  ECSchemaOwnerPtr    CreateOwner();
 };
 
@@ -945,17 +955,14 @@ private:
 
     bvector<IECSchemaLocatorP>      m_locators;
     bvector<const wchar_t *>        m_searchPaths;
-    SchemaMap                       m_schemasUnderConstruction;
 
     ECSchemaDeserializationContext(IECSchemaOwnerR);
 
     bvector<IECSchemaLocatorP>& GetSchemaLocators ();
     bvector<const wchar_t *>&   GetSchemaPaths ();
-    SchemaMap&                  GetSchemasUnderConstruction ();
+    IECSchemaOwnerR             GetSchemaOwner();
 
     void                        ClearSchemaPaths();
-
-    IECSchemaOwnerR             GetSchemaOwner();
 
 public:
 /*__PUBLISH_SECTION_START__*/
@@ -1113,7 +1120,8 @@ public:
     // ************************************  STATIC METHODS *******************************************************************
     // ************************************************************************************************************************
 
-    ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema (ECSchemaP& schemaOut, bwstring const& schemaName, IECSchemaOwnerR owner);
+    ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema (ECSchemaP& schemaOut, bwstring const& schemaName, 
+                                                          UInt32 versionMajor, UInt32 versionMinor, IECSchemaOwnerR owner);
 /*__PUBLISH_SECTION_END__*/
     // Should only be called by SchemaOwners.  Since IECSchemaOwner is not published, neither should this method be published
     ECOBJECTS_EXPORT static void            DestroySchema (ECSchemaP& schema);

@@ -32,7 +32,7 @@ ECSchemaP   CreateCustomAttributeTestSchema(IECSchemaOwnerR schemaOwner)
     ECClassP baseClass;
     ECClassP classWithProperties;
     
-    ECSchema::CreateSchema(schema, L"TestSchema", schemaOwner);
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, schemaOwner);
     schema->CreateClass(customAttributeClass, L"CustomAttribClass");
     customAttributeClass->IsCustomAttributeClass = true;
 
@@ -293,7 +293,7 @@ TEST_F(CustomAttributeTest, ExpectFailureWithUnreferencedCustomAttribute)
     ECSchemaP           schema = CreateCustomAttributeTestSchema(*schemaOwner);
 
     ECSchemaP refSchema;
-    ECSchema::CreateSchema(refSchema, L"RefSchema", *schemaOwner);
+    ECSchema::CreateSchema(refSchema, L"RefSchema", 5, 5, *schemaOwner);
 
     ECClassP refClass;
     refSchema->CreateClass(refClass, L"RefClass");

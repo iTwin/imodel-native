@@ -572,7 +572,7 @@ TEST_F(SchemaSerializationTest, ExpectErrorWhenCOMNotInitialized)
     ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
 
     ECSchemaP schema;
-    ECSchema::CreateSchema(schema, L"Widget", *schemaOwner);
+    ECSchema::CreateSchema(schema, L"Widget", 5, 5, *schemaOwner);
     
     DISABLE_ASSERTS
     bwstring ecSchemaXmlString;
@@ -595,9 +595,9 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     ECSchemaP schema2;
     ECSchemaP schema3;
     
-    ECSchema::CreateSchema(schema, L"Widget", *schemaOwner);
-    ECSchema::CreateSchema(schema2, L"BaseSchema", *schemaOwner);
-    ECSchema::CreateSchema(schema3, L"BaseSchema2", *schemaOwner);
+    ECSchema::CreateSchema(schema, L"Widget", 5, 5, *schemaOwner);
+    ECSchema::CreateSchema(schema2, L"BaseSchema", 5, 5, *schemaOwner);
+    ECSchema::CreateSchema(schema3, L"BaseSchema2", 5, 5, *schemaOwner);
     
     schema->NamespacePrefix = L"ecw";
     schema2->NamespacePrefix = L"base";
@@ -645,10 +645,10 @@ TEST_F(SchemaReferenceTest, AddAndRemoveReferencedSchemas)
     ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
 
     ECSchemaP schema;
-    ECSchema::CreateSchema(schema, L"TestSchema", *schemaOwner);
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
     
     ECSchemaP refSchema;
-    ECSchema::CreateSchema(refSchema, L"RefSchema", *schemaOwner);
+    ECSchema::CreateSchema(refSchema, L"RefSchema", 5, 5, *schemaOwner);
     
     EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(*refSchema));
     EXPECT_EQ(ECOBJECTS_STATUS_NamedItemAlreadyExists, schema->AddReferencedSchema(*refSchema));
@@ -683,10 +683,10 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
     ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
 
     ECSchemaP schema;
-    ECSchema::CreateSchema(schema, L"TestSchema", *schemaOwner);
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
     
     ECSchemaP refSchema;
-    ECSchema::CreateSchema(refSchema, L"RefSchema", *schemaOwner);
+    ECSchema::CreateSchema(refSchema, L"RefSchema", 5, 5, *schemaOwner);
     
     EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(*refSchema));
     ECClassP class1;
@@ -747,12 +747,10 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
 
     ECSchemaP testSchema;
-    ECSchema::CreateSchema(testSchema, L"TestSchema", *schemaOwner);
+    ECSchema::CreateSchema(testSchema, L"TestSchema", 1, 2, *schemaOwner);
     testSchema->NamespacePrefix = L"ts";
     testSchema->Description = L"Schema for testing programmatic construction";
     testSchema->DisplayLabel = L"Test Schema";
-    testSchema->VersionMajor = 1;
-    testSchema->VersionMinor = 2;
     
     EXPECT_TRUE(testSchema->IsDisplayLabelDefined);
     EXPECT_EQ(1, testSchema->VersionMajor);
@@ -763,7 +761,7 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     EXPECT_EQ(0, wcscmp(testSchema->DisplayLabel.c_str(), L"Test Schema"));
     
     ECSchemaP schema2;
-    ECSchema::CreateSchema(schema2, L"BaseSchema", *schemaOwner);
+    ECSchema::CreateSchema(schema2, L"BaseSchema", 5, 5, *schemaOwner);
     
     testSchema->AddReferencedSchema(*schema2);
     
@@ -961,7 +959,7 @@ TEST_F(ClassTest, ExpectErrorWithCircularBaseClasses)
     ECClassP baseClass1;
     ECClassP baseClass2;
     
-    ECSchema::CreateSchema(schema, L"TestSchema", *schemaOwner);
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
     schema->CreateClass(class1, L"TestClass");
     schema->CreateClass(baseClass1, L"BaseClass1");
     schema->CreateClass(baseClass2, L"BaseClass2");
@@ -982,7 +980,7 @@ TEST_F(ClassTest, AddAndRemoveBaseClass)
     ECClassP class1;
     ECClassP baseClass1;
     
-    ECSchema::CreateSchema(schema, L"TestSchema", *schemaOwner);
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
     schema->CreateClass(class1, L"TestClass");
     schema->CreateClass(baseClass1, L"BaseClass");
     EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->AddBaseClass(*baseClass1));
@@ -1021,7 +1019,7 @@ TEST_F(ClassTest, IsTests)
     ECClassP baseClass1;
     ECClassP baseClass2;
     
-    ECSchema::CreateSchema(schema, L"TestSchema", *schemaOwner);
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
     schema->CreateClass(class1, L"TestClass");
     schema->CreateClass(baseClass1, L"BaseClass1");
     schema->CreateClass(baseClass2, L"BaseClass2");
@@ -1045,7 +1043,7 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     ECClassP structClass;
     ECClassP structClass2;
     
-    ECSchema::CreateSchema(schema, L"TestSchema", *schemaOwner);
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
     schema->CreateClass(class1, L"TestClass");
     schema->CreateClass(baseClass1, L"BaseClass1");
     schema->CreateClass(structClass, L"ClassForStructs");
@@ -1151,7 +1149,7 @@ TEST_F(ClassTest, ExpectPropertiesInOrder)
     PrimitiveECPropertyP property3;
     PrimitiveECPropertyP property4;
     
-    ECSchema::CreateSchema(schema, L"TestSchema", *schemaOwner);
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
     schema->CreateClass(class1, L"TestClass");
     class1->CreatePrimitiveProperty(property1, L"beta");
     class1->CreatePrimitiveProperty(property2, L"gamma");
@@ -1185,7 +1183,7 @@ TEST_F(ClassTest, ExpectProperties)
     PrimitiveECPropertyP e;
     PrimitiveECPropertyP f;
     
-    ECSchema::CreateSchema(schema, L"TestSchema", *schemaOwner);
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
     schema->CreateClass(ab, L"ab");
     schema->CreateClass(cd, L"cd");
     schema->CreateClass(ef, L"ef");
@@ -1238,7 +1236,7 @@ TEST_F(ClassTest, ExpectPropertiesFromBaseClass)
     PrimitiveECPropertyP m;
     PrimitiveECPropertyP n;
     
-    ECSchema::CreateSchema(schema, L"TestSchema", *schemaOwner);
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
     schema->CreateClass(ab, L"ab");
     schema->CreateClass(cd, L"cd");
     schema->CreateClass(ef, L"ef");
@@ -1391,8 +1389,8 @@ TEST_F(ClassTest, AddAndRemoveConstraintClasses)
     ECSchemaP schema;
     ECSchemaP refSchema;
     
-    ECSchema::CreateSchema(schema, L"TestSchema", *schemaOwner);
-    ECSchema::CreateSchema(refSchema, L"RefSchema", *schemaOwner);
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
+    ECSchema::CreateSchema(refSchema, L"RefSchema", 5, 5, *schemaOwner);
     
     ECRelationshipClassP relClass;
     ECClassP targetClass;
@@ -1423,9 +1421,9 @@ TEST_F(ClassTest, ExpectErrorWithBadClassName)
     ECClassP class1;
     
     // . is an invalid character
-    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, ECSchema::CreateSchema(schema, L"TestSchema.1.0", *schemaOwner));
+    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, ECSchema::CreateSchema(schema, L"TestSchema.1.0", 1, 0, *schemaOwner));
 
-    ECSchema::CreateSchema(schema, L"TestSchema", *schemaOwner);
+    ECSchema::CreateSchema(schema, L"TestSchema", 1, 0, *schemaOwner);
     
     EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L""));
     

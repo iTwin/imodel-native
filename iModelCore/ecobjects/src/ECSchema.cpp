@@ -397,8 +397,8 @@ bwstring const&     name
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::ParseVersionString 
 (
-UInt32&                 versionMajor, 
-UInt32&                 versionMinor, 
+UInt32&             versionMajor, 
+UInt32&             versionMinor, 
 bwstring const&     versionString
 )
     {
@@ -430,18 +430,26 @@ bwstring const&     versionString
         }
 
     wchar_t * end = NULL;    
-    versionMajor = wcstoul (version, &end, 10);
+    UInt32    localMajor = wcstoul (version, &end, 10);
     if (version == end)
         {
         Logger::GetLogger()->errorv (L"Invalid ECSchema Version String: '%s' The characters before the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
         return ECOBJECTS_STATUS_ParseError;
         }
+    else
+        {
+        versionMajor = localMajor;
+        }
 
-    versionMinor = wcstoul (&theDot[1], &end, 10);
+    UInt32 localMinor = wcstoul (&theDot[1], &end, 10);
     if (&theDot[1] == end)
         {
         Logger::GetLogger()->errorv (L"Invalid ECSchema Version String: '%s' The characters after the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
         return ECOBJECTS_STATUS_ParseError;
+        }
+    else
+        {
+        versionMinor = localMinor;
         }
 
     return ECOBJECTS_STATUS_Success;
@@ -495,6 +503,8 @@ ECObjectsStatus ECSchema::CreateSchema
 (
 ECSchemaP&          schemaOut, 
 bwstring const&     schemaName,
+UInt32              versionMajor,
+UInt32              versionMinor,
 IECSchemaOwnerR     schemaOwner
 )
     {    
@@ -505,7 +515,9 @@ IECSchemaOwnerR     schemaOwner
 
     ECObjectsStatus status;
     
-    if (SUCCESS != (status = schema->SetName (schemaName)))
+    if (SUCCESS != (status = schema->SetName (schemaName)) ||
+        SUCCESS != (status = schema->SetVersionMajor (versionMajor)) ||
+        SUCCESS != (status = schema->SetVersionMinor (versionMinor)))
         {
         delete schema;
         return status;
@@ -793,13 +805,7 @@ ECSchemaDeserializationContextR schemaContext
 )
     {
     SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
-    SchemaMap&                  underConstruction = schemaContext.GetSchemasUnderConstruction();
         
-    wchar_t version[10];
-    swprintf(version, 10, L".%02d.%02d", m_versionMajor, m_versionMinor);
-    bwstring schemaFullName(m_name + version);
-    underConstruction.insert(std::pair<const wchar_t *, ECSchemaP>(schemaFullName.c_str(), this));
-    
     m_referencedSchemaNamespaceMap.clear();
 
     MSXML2::IXMLDOMNodeListPtr xmlNodeListPtr = schemaNode.selectNodes (EC_NAMESPACE_PREFIX L":" EC_SCHEMAREFERENCE_ELEMENT);
@@ -813,7 +819,6 @@ ECSchemaDeserializationContextR schemaContext
         if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMAREF_NAME_ATTRIBUTE)))
             {
             Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_NAME_ATTRIBUTE L" attribute\n", (const wchar_t *)xmlNodePtr->baseName);
-            underConstruction.erase(schemaFullName.c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
             
@@ -822,7 +827,6 @@ ECSchemaDeserializationContextR schemaContext
         if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMAREF_PREFIX_ATTRIBUTE)))
             {
             Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_PREFIX_ATTRIBUTE L" attribute\n", (const wchar_t *)xmlNodePtr->baseName);
-            underConstruction.erase(schemaFullName.c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
         bwstring prefix = (const wchar_t*) attributePtr->text;
@@ -830,7 +834,6 @@ ECSchemaDeserializationContextR schemaContext
         if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMAREF_VERSION_ATTRIBUTE)))
             {
             Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_VERSION_ATTRIBUTE L" attribute\n", (const wchar_t *)xmlNodePtr->baseName);
-            underConstruction.erase(schemaFullName.c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
         bwstring versionString = (const wchar_t*) attributePtr->text;
@@ -840,7 +843,6 @@ ECSchemaDeserializationContextR schemaContext
         if (ECOBJECTS_STATUS_Success != ParseVersionString (versionMajor, versionMinor, versionString.c_str()))
             {
             Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: unable to parse version string for referenced schema %s.", schemaName.c_str());
-            underConstruction.erase(schemaFullName.c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
             
@@ -857,12 +859,10 @@ ECSchemaDeserializationContextR schemaContext
         else
             {
             Logger::GetLogger()->errorv(L"Unable to locate referenced schema %s.%02d.%02d", schemaName.c_str(), versionMajor, versionMinor);
-            underConstruction.erase(schemaFullName.c_str());
             return SCHEMA_DESERIALIZATION_STATUS_ReferencedSchemaNotFound;
             }
         }
 
-    underConstruction.erase(schemaFullName.c_str());
     return status;
     }
 
@@ -877,21 +877,15 @@ UInt32&                         versionMinor,
 ECSchemaDeserializationContextR schemaContext
 )
     {
-    SchemaMap& underConstruction = schemaContext.GetSchemasUnderConstruction();
+    // Step 1: First check if the owner already owns a copy of the schema.
+    //         This will catch schema referencing cycles since the schemas are
+    //         added to the owner as they are constructed. 
+    ECSchemaP schema = schemaContext.GetSchemaOwner().GetSchema(name.c_str(), versionMajor, versionMinor);
 
-    // First check if there is a circular reference and this reference has already started to be de-serialized farther upstream
-    bwstring fullName(name);
-    wchar_t version[10];
-    swprintf(version, L".%02d.%02d", versionMajor, versionMinor);
-    fullName += version;
-    SchemaMap::const_iterator finder = underConstruction.find(fullName.c_str());
-    if (finder != underConstruction.end())
-        {
-        return finder->second;
-        }
-    
+    if (NULL != schema)
+        return schema;
+
     // Step 2: ask the schemaLocators
-    ECSchemaP   schema = NULL;
     for each (IECSchemaLocatorP schemaLocator in schemaContext.GetSchemaLocators())
         {
         if ( ! EXPECTED_CONDITION (NULL != schemaLocator))
@@ -1025,22 +1019,27 @@ ECSchemaDeserializationContextR     schemaContext
         return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
         }
 
+    UInt32  versionMajor = DEFAULT_VERSION_MAJOR;
+    UInt32  versionMinor = DEFAULT_VERSION_MINOR;
+    MSXML2::IXMLDOMNodePtr versionAttributePtr;
+
+    // OPTIONAL attributes - If these attributes exist they do not need to be valid.  We will ignore any errors setting them and use default values.
+    // NEEDSWORK This is due to the current implementation in managed ECObjects.  We should reconsider whether it is the correct behavior.
+    if ((NULL == (versionAttributePtr = nodeAttributesPtr->getNamedItem (SCHEMA_VERSION_ATTRIBUTE))) ||
+        SUCCESS != ParseVersionString (versionMajor, versionMinor, (const wchar_t *) versionAttributePtr->text))
+        {
+        Logger::GetLogger()->warningv (L"Invalid version attribute has been ignored while deserializing ECSchema '%s'.  The default version number %d.%d has been applied.\n", 
+            (const wchar_t *)attributePtr->text, versionMajor, versionMinor);
+        }
+
     IECSchemaOwnerR schemaOwner = schemaContext.GetSchemaOwner();
-    if (ECOBJECTS_STATUS_Success != CreateSchema (schemaOut, (const wchar_t *)attributePtr->text, schemaOwner))
+    if (ECOBJECTS_STATUS_Success != CreateSchema (schemaOut, (const wchar_t *)attributePtr->text, versionMajor, versionMinor, schemaOwner))
         return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
 
     // OPTIONAL attributes - If these attributes exist they MUST be valid        
     READ_OPTIONAL_XML_ATTRIBUTE (SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE,         schemaOut, NamespacePrefix)
     READ_OPTIONAL_XML_ATTRIBUTE (DESCRIPTION_ATTRIBUTE,                     schemaOut, Description)
     READ_OPTIONAL_XML_ATTRIBUTE (DISPLAY_LABEL_ATTRIBUTE,                   schemaOut, DisplayLabel)
-
-    // OPTIONAL attributes - If these attributes exist they do not need to be valid.  We will ignore any errors setting them and use default values.
-    // NEEDSWORK This is due to the current implementation in managed ECObjects.  We should reconsider whether it is the correct behavior.
-    ECObjectsStatus setterStatus;
-    READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (SCHEMA_VERSION_ATTRIBUTE,                  schemaOut, VersionFromString)
-    if (ECOBJECTS_STATUS_Success != setterStatus)
-        Logger::GetLogger()->warningv (L"Invalid version attribute has been ignored while deserializing ECSchema '%s'.  The default version number %d.%d has been applied.\n", 
-            schemaOut->Name.c_str(), schemaOut->VersionMajor, schemaOut->VersionMinor);
 
     if (SCHEMA_DESERIALIZATION_STATUS_Success != (status = schemaOut->ReadSchemaReferencesFromXml(schemaNodePtr, schemaContext)))
         {
@@ -1567,9 +1566,15 @@ void  ECSchemaDeserializationContext::AddSchemaLocator (IECSchemaLocatorR locato
 void  ECSchemaDeserializationContext::AddSchemaPath (const wchar_t* path)          { m_searchPaths.push_back (path);   }
 bvector<IECSchemaLocatorP>& ECSchemaDeserializationContext::GetSchemaLocators ()   { return m_locators;    }
 bvector<const wchar_t *>&   ECSchemaDeserializationContext::GetSchemaPaths ()      { return m_searchPaths; }
-SchemaMap&      ECSchemaDeserializationContext::GetSchemasUnderConstruction ()     { return m_schemasUnderConstruction;    }
 void            ECSchemaDeserializationContext::ClearSchemaPaths ()                { m_searchPaths.clear();    }
 IECSchemaOwnerR ECSchemaDeserializationContext::GetSchemaOwner()                   { return m_schemaOwner;  }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    07/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus IECSchemaOwner::AddSchema  (ECSchemaR schema) { return _AddSchema (schema); }
+ECObjectsStatus IECSchemaOwner::DropSchema (ECSchemaR schema) { return _DropSchema (schema); }
+ECSchemaP       IECSchemaOwner::GetSchema  (const wchar_t* name, UInt32 major, UInt32 minor) { return _GetSchema (name, major, minor); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
@@ -1594,7 +1599,7 @@ ECSchemaOwner::~ECSchemaOwner ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchemaOwner::AddSchema (ECSchemaR ecSchema)
+ECObjectsStatus ECSchemaOwner::_AddSchema (ECSchemaR ecSchema)
     {
     m_schemas.push_back (&ecSchema);
 
@@ -1604,7 +1609,7 @@ ECObjectsStatus ECSchemaOwner::AddSchema (ECSchemaR ecSchema)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchemaOwner::DropSchema (ECSchemaR ecSchema)
+ECObjectsStatus ECSchemaOwner::_DropSchema (ECSchemaR ecSchema)
     {
     bvector<ECSchemaP>::iterator iter = std::find(m_schemas.begin(), m_schemas.end(), &ecSchema);
     if (iter == m_schemas.end())
@@ -1615,6 +1620,28 @@ ECObjectsStatus ECSchemaOwner::DropSchema (ECSchemaR ecSchema)
     m_schemas.erase(iter);
 
     return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    07/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaP       ECSchemaOwner::_GetSchema (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor)
+    {
+    for each (ECSchemaP ecSchema in m_schemas)
+        {
+        if (0 != wcscmp (ecSchema->GetName().c_str(), schemaName))
+            continue;
+
+        if (ecSchema->GetVersionMajor() != versionMajor)
+            continue;
+
+        if (ecSchema->GetVersionMinor() != versionMinor)
+            continue;
+
+        return ecSchema;
+        }
+
+    return NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
