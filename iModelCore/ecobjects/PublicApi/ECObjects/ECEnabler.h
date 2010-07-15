@@ -56,8 +56,10 @@ protected:
     ECOBJECTS_EXPORT ECEnabler(ECClassCR ecClass);
 
     ECOBJECTS_EXPORT virtual wchar_t const *            _GetName() const = 0;
-    ECOBJECTS_EXPORT virtual StatusInt                  _GetPropertyIndex (UInt32& propertyIndex, const wchar_t * propertyAccessString) const = 0;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus            _GetPropertyIndex (UInt32& propertyIndex, const wchar_t * propertyAccessString) const = 0;
+#if defined (EXPERIMENTAL_TEXT_FILTER)
     ECOBJECTS_EXPORT virtual PropertyProcessingResult   _ProcessPrimitiveProperties (bset<ECClassCP>& failedClasses, IECInstanceCR, EC::PrimitiveType, IPropertyProcessor const&, PropertyProcessingOptions) const;
+#endif
 
     ECOBJECTS_EXPORT         bool                       ProcessStructProperty (bset<ECClassCP>& failedClasses, bool& allStructsFailed, ECValueCR propValue, EC::PrimitiveType primitiveType, IPropertyProcessor const& proc, PropertyProcessingOptions opts) const;
 
@@ -70,8 +72,9 @@ public:
     ECOBJECTS_EXPORT wchar_t const * GetName() const;
     
     ECOBJECTS_EXPORT ECClassCR       GetClass() const;
-    ECOBJECTS_EXPORT StatusInt       GetPropertyIndex (UInt32& propertyIndex, const wchar_t * propertyAccessString) const;
+    ECOBJECTS_EXPORT ECObjectsStatus       GetPropertyIndex (UInt32& propertyIndex, const wchar_t * propertyAccessString) const;
 
+#if defined (EXPERIMENTAL_TEXT_FILTER)
     //! Call processor on all primitive-valued properties of specified type(s) on this instance. 
     //! Processing is terminated if the processor returns a non-zero value.
     //! @remarks This function returns immediately with PROPERTY_PROCESSING_RESULT_Miss if the class of \a instance is in \a failedClasses.
@@ -84,6 +87,7 @@ public:
     //! @param[in] opts             Processing options.
     //! @return The result of processing.
     ECOBJECTS_EXPORT PropertyProcessingResult ProcessPrimitiveProperties (bset<ECClassCP>& failedClasses, IECInstanceCR instance, EC::PrimitiveType primitiveType, IPropertyProcessor const& proc, PropertyProcessingOptions opts = PROPERTY_PROCESSING_OPTIONS_SingleType) const;
+#endif
     };
 
 END_BENTLEY_EC_NAMESPACE

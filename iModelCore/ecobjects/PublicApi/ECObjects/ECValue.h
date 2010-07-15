@@ -118,7 +118,8 @@ protected:
 
     void DeepCopy (ECValueCR v);
     void ConstructUninitialized();
-                
+    inline void FreeMemory ();
+         
 public:
     ECOBJECTS_EXPORT void            Clear();
     ECOBJECTS_EXPORT ECValueR        operator= (ECValueCR rhs);
@@ -185,6 +186,7 @@ public:
     ECOBJECTS_EXPORT BentleyStatus  SetDouble (double value);  
         
     ECOBJECTS_EXPORT const wchar_t *GetString () const;
+                     const wchar_t *GetString0 () const {return m_stringInfo.m_string;}
     ECOBJECTS_EXPORT BentleyStatus  SetString (const wchar_t * string, bool holdADuplicate = true);
 
     ECOBJECTS_EXPORT const byte *   GetBinary (size_t& size) const;

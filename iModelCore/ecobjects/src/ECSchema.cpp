@@ -359,7 +359,11 @@ bwstring const&     name
     pClass = new ECClass(*this);
     ECObjectsStatus status = pClass->SetName (name);
     if (ECOBJECTS_STATUS_Success != status)
+        {
+        delete pClass;
+        pClass = NULL;
         return status;
+        }
 
     return AddClass (pClass);
     }
@@ -376,7 +380,11 @@ bwstring const&     name
     pClass = new ECRelationshipClass(*this);
     ECObjectsStatus status = pClass->SetName (name);
     if (ECOBJECTS_STATUS_Success != status)
+        {
+        delete pClass;
+        pClass = NULL;
         return status;
+        }
 
     std::pair < stdext::hash_map<const wchar_t *, ECClassP>::iterator, bool > resultPair;
     resultPair = m_classMap.insert (std::pair<const wchar_t *, ECClassP> (pClass->Name.c_str(), pClass));

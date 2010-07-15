@@ -12,6 +12,7 @@
 #include <ECObjects\ECObjects.h>
 #include <Bentley\RefCounted.h>
 #include <Bentley\bvector.h>
+#include <Bentley\bmap.h>
 
 #define DEFAULT_VERSION_MAJOR   1
 #define DEFAULT_VERSION_MINOR   0
@@ -43,7 +44,7 @@ public:
 };
     
 typedef std::list<ECPropertyP> PropertyList;
-typedef stdext::hash_map<const wchar_t * , ECPropertyP, stdext::hash_compare<const wchar_t *, less_str>> PropertyMap;
+typedef bmap<const wchar_t * , ECPropertyP, stdext::hash_compare<const wchar_t *, less_str>> PropertyMap;
 typedef stdext::hash_map<const wchar_t * , ECClassP, stdext::hash_compare<const wchar_t *, less_str>>    ClassMap;
 typedef stdext::hash_map<const wchar_t * , ECSchemaP, stdext::hash_compare<const wchar_t *, less_str>>   SchemaMap;
 
@@ -266,6 +267,8 @@ public:
     ECOBJECTS_EXPORT const_iterator end ()   const;    
 };
 
+struct PrimitiveECProperty;
+
 //=======================================================================================
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
 //=======================================================================================
@@ -295,13 +298,15 @@ protected:
     virtual bool                        _IsArray () const { return false; }
     // This method returns a wstring by value because it may be a computed string.  For instance struct properties may return a qualified typename with a namespace
     // prefix relative to the containing schema.
-    virtual bwstring                _GetTypeName () const abstract;
+    virtual bwstring                    _GetTypeName () const abstract;
     virtual ECObjectsStatus             _SetTypeName (bwstring const& typeName) abstract;
 
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const abstract;
 
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
-	virtual ECSchemaCP					_GetContainerSchema() const override;
+    virtual ECSchemaCP			_GetContainerSchema() const override;
+
+    virtual PrimitiveECProperty*        _GetAsPrimitiveECProperty() {return NULL;}
     
 /*__PUBLISH_SECTION_START__*/
 public:    
@@ -329,9 +334,9 @@ public:
 
     // NEEDSWORK, don't necessarily like this pattern but it will suffice for now.  Necessary since you can't dynamic_cast when using the published headers.  How
     // do other similiar classes deal with this.
-    ECOBJECTS_EXPORT PrimitiveECPropertyP       GetAsPrimitiveProperty () const;
-    ECOBJECTS_EXPORT ArrayECPropertyP           GetAsArrayProperty () const;
-    ECOBJECTS_EXPORT StructECPropertyP          GetAsStructProperty () const;
+    ECOBJECTS_EXPORT PrimitiveECPropertyP       GetAsPrimitiveProperty () const;    // FUSION_WIP: this removes const!
+    ECOBJECTS_EXPORT ArrayECPropertyP           GetAsArrayProperty () const;        //  "
+    ECOBJECTS_EXPORT StructECPropertyP          GetAsStructProperty () const;       //  "
 };
 
 
@@ -351,10 +356,10 @@ protected:
     virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode) override;
     virtual SchemaSerializationStatus   _WriteXml(MSXML2_IXMLDOMElement& parentNode) override;
     virtual bool                        _IsPrimitive () const override { return true;}
-    virtual bwstring                _GetTypeName () const override;
+    virtual bwstring                    _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (bwstring const& typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
-    
+    virtual PrimitiveECProperty*        _GetAsPrimitiveECProperty() {return this;}
 
 /*__PUBLISH_SECTION_START__*/
 public:    
@@ -602,12 +607,25 @@ public:
     //! Returns true if the class is the type specified or derived from it.
     ECOBJECTS_EXPORT bool            Is(ECClassCP targetClass) const;
 
+    //! If the given name is valid, creates a primitive property object with the default type of STRING
     ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, bwstring const& name);
+
+    //! If the given name is valid, creates a primitive property object with the given primitive type
     ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, bwstring const& name, PrimitiveType primitiveType);
+
+    //! If the given name is valid, creates a struct property object using the current class as the struct type
     ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, bwstring const& name);
+
+    //! If the given name is valid, creates a struct property object using the specified class as the struct type
     ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, bwstring const& name, ECClassCR structType);
+
+    //! If the given name is valid, creates an array property object using the current class as the array type
     ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, bwstring const& name);
+
+    //! If the given name is valid, creates an array property object using the specified primitive type as the array type
     ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, bwstring const& name, PrimitiveType primitiveType);
+
+    //! If the given name is valid, creates an array property object using the specified class as the array type
     ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, bwstring const& name, ECClassCP structType);
     
     //! Remove the named property
@@ -619,14 +637,31 @@ public:
     //! is removed from the class.
     //! @param[in]  name     The name of the property to lookup.
     //! @return   A pointer to an EC::ECProperty if the named property exists within the current class; otherwise, NULL
+    ECOBJECTS_EXPORT ECPropertyP     GetPropertyP (wchar_t const* name) const;
+
     ECOBJECTS_EXPORT ECPropertyP     GetPropertyP (bwstring const& name) const;
 
     // ************************************************************************************************************************
     // ************************************  STATIC METHODS *******************************************************************
     // ************************************************************************************************************************
 
+    //! Given a qualified class name, will parse out the schema's namespace prefix and the class name.
+    //! @param[out] prefix  The namespace prefix of the schema
+    //! @param[out] className   The name of the class
+    //! @param[in]  qualifiedClassName  The qualified name of the class, in the format of ns:className
+    //! @return A status code indicating whether the qualified name was successfully parsed or not
     ECOBJECTS_EXPORT static ECObjectsStatus ParseClassName (bwstring & prefix, bwstring & className, bwstring const& qualifiedClassName);
+
+    //! Given a schema and a class, will return the fully qualified class name.  If the class is part of the passed in schema, there
+    //! is no namespace prefix.  Otherwise, the class's schema must be a referenced schema in the passed in schema
+    //! @param[in]  primarySchema   The schema used to lookup the namespace prefix of the class's schema
+    //! @param[in]  ecClass         The class whose schema should be searched for
+    //! @return bwstring    The namespace prefix if the class's schema is not the primarySchema
     ECOBJECTS_EXPORT static bwstring GetQualifiedClassName(ECSchemaCR primarySchema, ECClassCR ecClass);
+
+    //! Given two ECClass's, checks to see if they are equal by name
+    //! @param[in]  currentBaseClass    The source class to check against
+    //! @param[in]  arg                 The target to compare to (this parameter must be an ECClassP)
     ECOBJECTS_EXPORT static bool ClassesAreEqualByName(ECClassCP currentBaseClass, const void * arg);
 
    
@@ -1055,7 +1090,16 @@ public:
     EXPORTED_READONLY_PROPERTY (ECClassContainerCR, Classes);
     EXPORTED_READONLY_PROPERTY (bool,               IsDisplayLabelDefined);
 
+    //! If the class name is valid, will create an ECClass object and add the new class to the schema
+    //! @param[out] ecClass If successful, will contain a new ECClass object
+    //! @param[in]  name    Name of the class to create
+    //! @return A status code indicating whether or not the class was successfully created and added to the schema
     ECOBJECTS_EXPORT ECObjectsStatus    CreateClass (ECClassP& ecClass, bwstring const& name);
+
+    //! If the class name is valid, will create an ECRelationshipClass object and add the new class to the schema
+    //! @param[out] ecClass If successful, will contain a new ECRelationshipClass object
+    //! @param[in]  name    Name of the class to create
+    //! @return A status code indicating whether or not the class was successfully created and added to the schema
     ECOBJECTS_EXPORT ECObjectsStatus    CreateRelationshipClass (ECRelationshipClassP& relationshipClass, bwstring const& name);
 
     //! Get a schema by namespace prefix within the context of this schema and its referenced schemas.
@@ -1120,13 +1164,38 @@ public:
     // ************************************  STATIC METHODS *******************************************************************
     // ************************************************************************************************************************
 
+    //! If the given schemaName is valid, this will create a new schema object
+    //! @param[out] schemaOut   if successful, will contain a new schema object
+    //! @param[in]  schemaName  Name of the schema to be created.
+    //! @param[in]  versionMajor The major version number.
+    //! @param[in]  versionMajor The minor version number.
+    //! @param[in]  owner        An object that will control the lifecycle of the newly created schema object.
+    //! @return A status code indicating whether the call was succesfull or not
     ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema (ECSchemaP& schemaOut, bwstring const& schemaName, 
                                                           UInt32 versionMajor, UInt32 versionMinor, IECSchemaOwnerR owner);
+
 /*__PUBLISH_SECTION_END__*/
     // Should only be called by SchemaOwners.  Since IECSchemaOwner is not published, neither should this method be published
     ECOBJECTS_EXPORT static void            DestroySchema (ECSchemaP& schema);
 /*__PUBLISH_SECTION_START__*/
+
+    //! Given a version string MM.NN, this will parse other major and minor versions
+    //! @param[out]  versionMajor    The major version number
+    //! @param[out] versionMinor    The minor version number
+    //! @param[in]  versionString   A string containing the major and minor versions (MM.NN)
+    //! @return A status code indicating whether the string was successfully parsed
+
     ECOBJECTS_EXPORT static ECObjectsStatus ParseVersionString (UInt32& versionMajor, UInt32& versionMinor, bwstring const& versionString);
+    
+    //! Given a match type, will determine whether the two schemas match based on name, major version and minor version.  This does not compare actual schemas
+    //! @param[in]  matchType   An enum indicating what type of match should be done (exact, latest, latestCompatible)
+    //! @param[in]  soughtName  The name of one of the schemas to test
+    //! @param[in]  soughtMajor The major version number of one of the schemas to test
+    //! @param[in]  soughtMinor The minor version nubmer of one of the schemas to test
+    //! @param[in]  candidateName   The name of the schema to compare against
+    //! @param[in]  candidateMajor  The major version of the schema to compare against
+    //! @param[in]  candidateMinor  The minor version of the schema to compare against
+    //! @return True if the schemas do match, false otherwise
     ECOBJECTS_EXPORT static bool SchemasMatch (SchemaMatchType matchType,
                           const wchar_t * soughtName,    UInt32 soughtMajor,    UInt32 soughtMinor,
                           const wchar_t * candidateName, UInt32 candidateMajor, UInt32 candidateMinor);

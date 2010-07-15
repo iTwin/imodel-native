@@ -87,10 +87,10 @@ protected:
     // IECInstance
     virtual bwstring        _GetInstanceId() const override;
     virtual bool            _IsReadOnly() const override;        
-    virtual StatusInt       _GetValue (ECValueR v, const wchar_t * propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const override;
-    virtual StatusInt       _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
-    virtual StatusInt       _SetValue (const wchar_t * propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
-    virtual StatusInt       _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
+    virtual ECObjectsStatus       _GetValue (ECValueR v, const wchar_t * propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const override;
+    virtual ECObjectsStatus       _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
+    virtual ECObjectsStatus       _SetValue (const wchar_t * propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
+    virtual ECObjectsStatus       _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
 
     virtual ECObjectsStatus   _InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size) override;
     virtual ECObjectsStatus   _AddArrayElements (const wchar_t * propertyAccessString, UInt32 size) override;
@@ -108,7 +108,7 @@ private:
 
 protected:
     virtual wchar_t const * _GetName() const override;
-    virtual StatusInt       _GetPropertyIndex (UInt32& propertyIndex, const wchar_t * propertyAccessString) const override;
+    virtual ECObjectsStatus       _GetPropertyIndex (UInt32& propertyIndex, const wchar_t * propertyAccessString) const override;
  
 public: 
     ECOBJECTS_EXPORT static StandaloneECEnablerPtr CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout);

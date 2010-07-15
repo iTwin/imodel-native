@@ -205,7 +205,9 @@ PrimitiveECPropertyP ECProperty::GetAsPrimitiveProperty
 (
 ) const
     {
-    return dynamic_cast<PrimitiveECPropertyP>((ECPropertyP)this);
+    // virtual get method is significantly faster than dynamic_cast
+    assert (dynamic_cast<PrimitiveECPropertyP>(const_cast<ECPropertyP>(this)) == const_cast<ECPropertyP>(this)->_GetAsPrimitiveECProperty());
+    return const_cast<ECPropertyP>(this)->_GetAsPrimitiveECProperty();
     }
 
 /*---------------------------------------------------------------------------------**//**
