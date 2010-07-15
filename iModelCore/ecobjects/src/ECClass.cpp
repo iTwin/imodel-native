@@ -350,9 +350,11 @@ const bwstring &name
     if ( propertyIterator == m_propertyMap.end() )
         return ECOBJECTS_STATUS_ClassNotFound;
         
-    m_propertyList.remove(propertyIterator->second);
+    ECPropertyP ecProperty = propertyIterator->second;
+ 
     m_propertyMap.erase(propertyIterator);
-    delete propertyIterator->second;
+    m_propertyList.remove(ecProperty);
+    delete ecProperty;
 
     return ECOBJECTS_STATUS_Success;
     }
