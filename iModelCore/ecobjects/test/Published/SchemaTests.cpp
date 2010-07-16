@@ -906,6 +906,44 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     EXPECT_EQ(2, relationshipClass->Target.Cardinality.LowerLimit);
     EXPECT_EQ(5, relationshipClass->Target.Cardinality.UpperLimit);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaCreationTest, ExpectErrorWithBadSchemaName)
+    {
+    ECSchemaPtr schema;
+    
+    // . is an invalid character
+    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, ECSchema::CreateSchema(schema, L"TestSchema.1.0"));
+
+    ECSchema::CreateSchema(schema, L"TestSchema");
+    
+    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->SetName(L""));
+    
+    // name cannot be an empty string
+    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->SetName(L"    "));
+    
+    // name cannot contain special characters
+    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->SetName(L"&&&&"));
+    
+    // name cannot start with a digit
+    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->SetName(L"0InvalidName"));
+    
+    // name may include underscores
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->SetName(L"_____"));
+    
+    // % is an invalid character
+    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->SetName(L"%"));
+    
+    // a is a valid character
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->SetName(L"a"));
+    
+    // Names can only include characters from the intersection of 7bit ascii and alphanumeric
+    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->SetName(L"abc123!@#"));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->SetName(L"abc123"));
+
+    }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    

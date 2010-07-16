@@ -184,7 +184,9 @@ ECObjectsStatus ECSchema::SetName
 bwstring const& name
 )
     {        
-    //NEEDSWORK name needs to be validated
+    if (!NameValidator::Validate(name))
+        return ECOBJECTS_STATUS_InvalidName;
+
     m_name = name;        
     return ECOBJECTS_STATUS_Success;
     }
@@ -1163,9 +1165,6 @@ Bentley::EC::ECClassCR ecClass
     else
         m_alreadySerializedClasses.insert(ecClass.Name.c_str());
         
-    // NEEDSWORK name validation?
-    // don't serialize a class with an invalid name
-    
     // serialize the base classes first.
     for each (ECClassP baseClass in ecClass.BaseClasses)
         {
