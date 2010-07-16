@@ -602,7 +602,11 @@ ECClassCR structType
     {            
     PRECONDITION (structType.IsStruct, ECOBJECTS_STATUS_PreconditionViolated);
 
-    // NEEDSWORK ensure the type is in a referenced schema of the class containing the property
+    if (&(structType.Schema) != &(this->Class.Schema))
+        {
+        if (!ECSchema::IsSchemaReferenced(this->Class.Schema, structType.Schema))
+            return ECOBJECTS_STATUS_SchemaNotFound;
+        }
     
     m_structType = &structType;
     return ECOBJECTS_STATUS_Success;
@@ -784,7 +788,12 @@ ECClassCP structType
     PRECONDITION (NULL != structType, ECOBJECTS_STATUS_PreconditionViolated);
     PRECONDITION (structType->IsStruct, ECOBJECTS_STATUS_PreconditionViolated);
 
-    // NEEDSWORK ensure the type is in a referenced schema of the class containing the property
+    if (&(structType->Schema) != &(this->Class.Schema))
+        {
+        if (!ECSchema::IsSchemaReferenced(this->Class.Schema, structType->Schema))
+            return ECOBJECTS_STATUS_SchemaNotFound;
+        }
+
     m_arrayKind = ARRAYKIND_Struct;
     m_structType = structType;
     return ECOBJECTS_STATUS_Success;

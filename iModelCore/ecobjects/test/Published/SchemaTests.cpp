@@ -1111,6 +1111,36 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
 
     }
     
+TEST_F(ClassTest, ExpectFailureWhenStructTypeIsNotReferenced)
+    {
+    ECSchemaPtr schema;
+    ECSchemaPtr schema2;
+    ECClassP class1;
+    ECClassP structClass;
+    ECClassP structClass2;
+
+    ECSchema::CreateSchema(schema, L"TestSchema");
+    ECSchema::CreateSchema(schema2, L"TestSchema2");
+    schema->CreateClass(class1, L"TestClass");
+    schema2->CreateClass(structClass, L"ClassForStructs");
+    structClass->IsStruct = true;
+    schema->CreateClass(structClass2, L"ClassForStructs2");
+    structClass2->IsStruct = true;
+
+    StructECPropertyP baseStructProp;
+    ArrayECPropertyP structArrayProperty;
+    StructECPropertyP baseStructProp2;
+    ArrayECPropertyP structArrayProperty2;
+
+    EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, class1->CreateStructProperty(baseStructProp, L"StructProperty", *structClass));
+    EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, class1->CreateArrayProperty(structArrayProperty, L"StructArrayProperty", structClass));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateStructProperty(baseStructProp2, L"StructProperty2", *structClass2));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateArrayProperty(structArrayProperty2, L"StructArrayProperty2", structClass2));
+    schema->AddReferencedSchema(schema2);
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateStructProperty(baseStructProp, L"StructProperty", *structClass));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateArrayProperty(structArrayProperty, L"StructArrayProperty", structClass));
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/

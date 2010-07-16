@@ -444,9 +444,10 @@ ECClassCR structType
 )
     {
     ecProperty = new StructECProperty(*this);
-    ecProperty->Type = structType;
-    ECObjectsStatus status = AddProperty(ecProperty, name);
-    if (status != ECOBJECTS_STATUS_Success)
+    ECObjectsStatus status = ecProperty->SetType(structType);
+    if (ECOBJECTS_STATUS_Success == status)
+        status = AddProperty(ecProperty, name);
+    if (ECOBJECTS_STATUS_Success != status)
         {
         delete ecProperty;
         ecProperty = NULL;
@@ -508,9 +509,10 @@ ECClassCP structType
 )
     {
     ecProperty = new ArrayECProperty(*this);
-    ecProperty->StructElementType = structType;
-    ECObjectsStatus status = AddProperty(ecProperty, name);
-    if (status != ECOBJECTS_STATUS_Success)
+    ECObjectsStatus status = ecProperty->SetStructElementType(structType);
+    if (ECOBJECTS_STATUS_Success == status)
+        status = AddProperty(ecProperty, name);
+    if (ECOBJECTS_STATUS_Success != status)
         {
         delete ecProperty;
         ecProperty = NULL;
