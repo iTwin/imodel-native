@@ -563,12 +563,26 @@ ECClassCR baseClass
             return ECOBJECTS_STATUS_NamedItemAlreadyExists;
             }
         }
-    m_baseClasses.push_back((ECClassP)&baseClass);
 
-    // NEEDSWORK - validate property overrides are correct
+    PropertyList baseClassProperties;
+    ECObjectsStatus status = baseClass.GetProperties(true, &baseClassProperties);
+    if (ECOBJECTS_STATUS_Success != status)
+        return status;
+
+    for each (ECPropertyP prop in baseClassProperties)
+        {
+        ECPropertyP thisProperty;
+        if (NULL != (thisProperty = this->GetPropertyP(prop->Name)))
+            {
+            if (ECOBJECTS_STATUS_Success != (status = ECClass::CanPropertyBeOverridden(*prop, *thisProperty)))
+                return status;
+            }
+        }
 
     // NEEDSWORK - what if the base class being set is just a stub and does not contain 
     // any properties.  How do we handle property overrides?
+    m_baseClasses.push_back((ECClassP)&baseClass);
+
     return ECOBJECTS_STATUS_Success;
     }
 

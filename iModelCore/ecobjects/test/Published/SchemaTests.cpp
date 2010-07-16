@@ -966,6 +966,36 @@ TEST_F(ClassTest, AddAndRemoveBaseClass)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassTest, AddBaseClassWithProperties)
+    {
+    ECSchemaPtr schema;
+    ECClassP class1;
+    ECClassP baseClass1;
+    ECClassP baseClass2;
+
+    ECSchema::CreateSchema(schema, L"TestSchema");
+    schema->CreateClass(class1, L"TestClass");
+    schema->CreateClass(baseClass1, L"BaseClass");
+    schema->CreateClass(baseClass2, L"BaseClass2");
+
+    PrimitiveECPropertyP stringProp;
+    PrimitiveECPropertyP baseStringProp;
+    PrimitiveECPropertyP intProp;
+    PrimitiveECPropertyP base2NonIntProp;
+
+    class1->CreatePrimitiveProperty(stringProp, L"StringProperty", PRIMITIVETYPE_String);
+    baseClass1->CreatePrimitiveProperty(baseStringProp, L"StringProperty", PRIMITIVETYPE_String);
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->AddBaseClass(*baseClass1));
+
+    class1->CreatePrimitiveProperty(intProp, L"IntProperty", PRIMITIVETYPE_Integer);
+    baseClass2->CreatePrimitiveProperty(base2NonIntProp, L"IntProperty", PRIMITIVETYPE_String);
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->AddBaseClass(*baseClass2));
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, IsTests)
     {
     ECSchemaPtr schema;
