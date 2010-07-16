@@ -722,7 +722,7 @@ public:
 
 //=======================================================================================
 //! The in-memory representation of the source and target constraints for an ECRelationshipClass as defined by ECSchemaXML
-struct ECRelationshipConstraint 
+struct ECRelationshipConstraint : IECCustomAttributeContainer
 {
 friend struct ECRelationshipClass;
 
@@ -748,6 +748,9 @@ private:
     
     ~ECRelationshipConstraint();
     
+protected:
+    virtual ECSchemaCP					_GetContainerSchema() const override;
+  
 /*__PUBLISH_SECTION_START__*/    
 public:
     //! Initializes a new instance of the ECRelationshipConstraint class.

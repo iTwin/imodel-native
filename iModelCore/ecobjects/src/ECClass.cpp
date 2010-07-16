@@ -1280,7 +1280,15 @@ ECRelationshipConstraint::~ECRelationshipConstraint
         (m_cardinality != &s_oneOneCardinality) && (m_cardinality != &s_oneManyCardinality))
         delete m_cardinality;
     } 
-    
+   
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaCP ECRelationshipConstraint::_GetContainerSchema() const
+    {
+    return &(m_relClass->Schema);
+    }
+ 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1334,8 +1342,12 @@ MSXML2::IXMLDOMNode &constraintNode
                 constraintClassName.c_str(), className.c_str(), resolvedSchema->Name.c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
-            AddClass(*constraintClass);
+        AddClass(*constraintClass);
         }
+
+    // Add Custom Attributes
+    ReadCustomAttributes(constraintNode, (ECSchemaP) &(m_relClass->Schema));
+
     return status;
     }
     
@@ -1365,6 +1377,8 @@ const bwstring &elementName
         }
     WRITE_BOOL_XML_ATTRIBUTE(POLYMORPHIC_ATTRIBUTE, IsPolymorphic, constraintPtr);
         
+    WriteCustomAttributes(constraintPtr);
+
     for each (ECClassP constraint in m_constraintClasses)
         {
         MSXML2::IXMLDOMElementPtr constraintClassPtr = NULL;
@@ -1754,7 +1768,6 @@ MSXML2::IXMLDOMElement& parentNode
     if (wcscmp(propertyPtr->nodeName, EC_RELATIONSHIP_CLASS_ELEMENT) != 0)
         return SCHEMA_SERIALIZATION_STATUS_FailedToCreateXml;
         
-    // NEEDSWORK: Full implementation
     WRITE_XML_ATTRIBUTE(STRENGTH_ATTRIBUTE, ECXml::StrengthToString(m_strength).c_str(), propertyPtr);
     WRITE_XML_ATTRIBUTE(STRENGTHDIRECTION_ATTRIBUTE, ECXml::DirectionToString(m_strengthDirection).c_str(), propertyPtr);
     
