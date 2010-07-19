@@ -952,12 +952,14 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaCreationTest, ExpectErrorWithBadSchemaName)
     {
-    ECSchemaPtr schema;
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
+
+    ECSchemaP schema;
     
     // . is an invalid character
-    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, ECSchema::CreateSchema(schema, L"TestSchema.1.0"));
+    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, ECSchema::CreateSchema(schema, L"TestSchema.1.0", 5, 5, *schemaOwner));
 
-    ECSchema::CreateSchema(schema, L"TestSchema");
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
     
     EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->SetName(L""));
     
@@ -1050,12 +1052,14 @@ TEST_F(ClassTest, AddAndRemoveBaseClass)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, AddBaseClassWithProperties)
     {
-    ECSchemaPtr schema;
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
+
+    ECSchemaP schema;
     ECClassP class1;
     ECClassP baseClass1;
     ECClassP baseClass2;
 
-    ECSchema::CreateSchema(schema, L"TestSchema");
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
     schema->CreateClass(class1, L"TestClass");
     schema->CreateClass(baseClass1, L"BaseClass");
     schema->CreateClass(baseClass2, L"BaseClass2");
@@ -1199,14 +1203,16 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     
 TEST_F(ClassTest, ExpectFailureWhenStructTypeIsNotReferenced)
     {
-    ECSchemaPtr schema;
-    ECSchemaPtr schema2;
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
+
+    ECSchemaP schema;
+    ECSchemaP schema2;
     ECClassP class1;
     ECClassP structClass;
     ECClassP structClass2;
 
-    ECSchema::CreateSchema(schema, L"TestSchema");
-    ECSchema::CreateSchema(schema2, L"TestSchema2");
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
+    ECSchema::CreateSchema(schema2, L"TestSchema2", 5, 5, *schemaOwner);
     schema->CreateClass(class1, L"TestClass");
     schema2->CreateClass(structClass, L"ClassForStructs");
     structClass->IsStruct = true;
@@ -1222,7 +1228,7 @@ TEST_F(ClassTest, ExpectFailureWhenStructTypeIsNotReferenced)
     EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, class1->CreateArrayProperty(structArrayProperty, L"StructArrayProperty", structClass));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateStructProperty(baseStructProp2, L"StructProperty2", *structClass2));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateArrayProperty(structArrayProperty2, L"StructArrayProperty2", structClass2));
-    schema->AddReferencedSchema(schema2);
+    schema->AddReferencedSchema(*schema2);
     EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateStructProperty(baseStructProp, L"StructProperty", *structClass));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateArrayProperty(structArrayProperty, L"StructArrayProperty", structClass));
     }

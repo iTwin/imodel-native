@@ -1350,7 +1350,7 @@ MSXML2::IXMLDOMNode &constraintNode
         }
 
     // Add Custom Attributes
-    ReadCustomAttributes(constraintNode, (ECSchemaP) &(m_relClass->Schema));
+    ReadCustomAttributes(constraintNode, m_relClass->Schema);
 
     return status;
     }
