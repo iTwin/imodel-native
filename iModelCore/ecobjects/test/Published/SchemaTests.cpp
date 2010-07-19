@@ -26,7 +26,7 @@ struct ClassTest                 : ECTestFixture {};
 +---------------+---------------+---------------+---------------+---------------+------*/
 void VerifyWidgetsSchema
 (
-ECSchemaPtr schema
+ECSchemaP   schema
 )
     {
     EXPECT_STREQ (L"Widgets", schema->Name.c_str());
@@ -158,10 +158,11 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenCOMNotInitialized)
     for (int i=0;i<20;i++)
         CoUninitialize();
         
-    ECSchemaPtr schema;        
-    
+    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+
     DISABLE_ASSERTS
-    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+    ECSchemaP schema;
     SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, L"t", *schemaContext);
         
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_FailedToInitializeMsmxl, status);
@@ -173,9 +174,11 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenCOMNotInitialized)
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileDoesNotExist)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    ECSchemaPtr schema;
-    
-    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+
+    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+
+    ECSchemaP schema;
     SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"ThisFileIsntReal.xml").c_str(), *schemaContext);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml, status);
@@ -189,9 +192,11 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileDoesNotExist)
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNodes)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    ECSchemaPtr schema;
-    
-    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+
+    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+
+    ECSchemaP schema;
     SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"MissingNodes.01.00.ecschema.xml").c_str(), *schemaContext);  
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml, status);
@@ -205,9 +210,11 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNodes)
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsIllFormed)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    ECSchemaPtr schema;
-    
-    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+
+    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+
+    ECSchemaP schema;
     SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"IllFormedXml.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml, status);
@@ -221,9 +228,11 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsIllFormed)
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingECSchemaNode)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    ECSchemaPtr schema;
-    
-    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+
+    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+
+    ECSchemaP schema;
     SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"MissingECSchemaNode.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
@@ -237,9 +246,11 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingECSchemaNode)
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNamespace)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    ECSchemaPtr schema;
-    
-    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+
+    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+
+    ECSchemaP schema;
     SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"MissingNamespace.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
@@ -253,9 +264,11 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNamespace)
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasUnsupportedNamespace)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    ECSchemaPtr schema;
-    
-    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+
+    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+
+    ECSchemaP schema;
     SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"UnsupportedECXmlNamespace.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
@@ -269,9 +282,11 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasUnsupportedNamespace)
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingSchemaNameAttribute)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    ECSchemaPtr schema;
-    
-    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+
+    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+
+    ECSchemaP schema;
     SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"MissingSchemaName.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
@@ -285,9 +300,11 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingSchemaNameAttr
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingClassNameAttribute)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    ECSchemaPtr schema;
-    
-    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+
+    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+
+    ECSchemaP schema;
     SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"MissingClassName.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
@@ -301,9 +318,11 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingClassNameAttri
 TEST_F(SchemaDeserializationTest, ExpectSuccessWhenXmlFileHasInvalidVersionString)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    ECSchemaPtr schema;
-    
-    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+
+    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+
+    ECSchemaP schema;
     SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"InvalidVersionString.01.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_EQ (1, schema->VersionMajor);
     EXPECT_EQ (0, schema->VersionMinor);
@@ -319,9 +338,11 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenXmlFileHasInvalidVersionStrin
 TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingSchemaWithBaseClassInReferencedFile)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    ECSchemaPtr schema;
 
-    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+
+    ECSchemaP schema;
     SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"SchemaThatReferences.01.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);    
 
@@ -335,9 +356,11 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingSchemaWithBaseCl
 TEST_F(SchemaDeserializationTest, ExpectSuccessWhenECSchemaContainsOnlyRequiredAttributes)
     {                
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    ECSchemaPtr schema;
 
-    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+
+    ECSchemaP schema;
     SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"OnlyRequiredECSchemaAttributes.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);    
@@ -368,9 +391,11 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenECSchemaContainsOnlyRequiredA
 TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingWidgetsECSchema)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    ECSchemaPtr schema;
-    
-    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+
+    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+
+    ECSchemaP schema;
     SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"Widgets.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);  
@@ -384,9 +409,11 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingWidgetsECSchema)
 TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromString)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    ECSchemaPtr schema;
-    
-    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+
+    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+
+    ECSchemaP schema;
     SchemaDeserializationStatus status = ECSchema::ReadXmlFromString (schema, 
         L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         L"<ECSchema schemaName=\"Widgets\" version=\"09.06\" displayLabel=\"Widgets Display Label\" description=\"Widgets Description\" nameSpacePrefix=\"wid\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
@@ -449,9 +476,11 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromStri
 TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    ECSchemaPtr schema;
-    
-    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+
+    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+
+    ECSchemaP schema;
     SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"Widgets.01.00.ecschema.xml").c_str(), *schemaContext);
     wprintf(L"Verifying original schema from file.\n"); 
     VerifyWidgetsSchema(schema);
@@ -463,8 +492,8 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
     SchemaSerializationStatus status2 = schema->WriteXmlToString(ecSchemaXmlString);
     EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status2);
     
-    ECSchemaPtr deserializedSchema;
-    schemaContext = ECSchemaConstructionContext::CreateContext();
+    ECSchemaP deserializedSchema;
+    schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
     status = ECSchema::ReadXmlFromString(deserializedSchema, ecSchemaXmlString.c_str(), *schemaContext);
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status); 
     wprintf(L"Verifying schema deserialized from string.\n");
@@ -479,9 +508,11 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
 //TEST_F(SchemaDeserializationTest, ExpectSuccessWhenSerializingToFile)
 //    {
 //    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-//    ECSchemaPtr schema;
+//    ECSchemaP schema;
 //    
-//    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+//    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
+//    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+//
 //    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml", *schemaContext);
 //    wprintf(L"Verifying original schema from file.\n"); 
 //    VerifyWidgetsSchema(schema);
@@ -498,9 +529,11 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
 TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingStream)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    ECSchemaPtr schema;
-    
-    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+
+    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+
+    ECSchemaP schema;
     SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"Widgets.01.00.ecschema.xml").c_str(), *schemaContext);
     wprintf(L"Verifying original schema from file.\n"); 
     VerifyWidgetsSchema(schema);
@@ -515,8 +548,8 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingStream)
     LARGE_INTEGER liPos = {0};
     stream->Seek(liPos, STREAM_SEEK_SET, NULL);
 
-    ECSchemaPtr deserializedSchema;
-    schemaContext = ECSchemaConstructionContext::CreateContext();
+    ECSchemaP deserializedSchema;
+    schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
     status = ECSchema::ReadXmlFromStream(deserializedSchema, stream, *schemaContext);
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status); 
     wprintf(L"Verifying schema deserialized from stream.\n");
@@ -536,8 +569,10 @@ TEST_F(SchemaSerializationTest, ExpectErrorWhenCOMNotInitialized)
     for (int i=0;i<20;i++)
         CoUninitialize();    
         
-    ECSchemaPtr schema;        
-    ECSchema::CreateSchema(schema, L"Widget");
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
+
+    ECSchemaP schema;
+    ECSchema::CreateSchema(schema, L"Widget", 5, 5, *schemaOwner);
     
     DISABLE_ASSERTS
     bwstring ecSchemaXmlString;
@@ -554,13 +589,15 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
-    ECSchemaPtr schema;
-    ECSchemaPtr schema2;
-    ECSchemaPtr schema3;
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
+
+    ECSchemaP schema;
+    ECSchemaP schema2;
+    ECSchemaP schema3;
     
-    ECSchema::CreateSchema(schema, L"Widget");
-    ECSchema::CreateSchema(schema2, L"BaseSchema");
-    ECSchema::CreateSchema(schema3, L"BaseSchema2");
+    ECSchema::CreateSchema(schema, L"Widget", 5, 5, *schemaOwner);
+    ECSchema::CreateSchema(schema2, L"BaseSchema", 5, 5, *schemaOwner);
+    ECSchema::CreateSchema(schema3, L"BaseSchema2", 5, 5, *schemaOwner);
     
     schema->NamespacePrefix = L"ecw";
     schema2->NamespacePrefix = L"base";
@@ -578,8 +615,8 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     schema3->CreateClass(anotherBase, L"AnotherBase");
     
     EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, class1->AddBaseClass(*baseClass));
-    schema->AddReferencedSchema(schema2);
-    schema->AddReferencedSchema(schema3);
+    schema->AddReferencedSchema(*schema2);
+    schema->AddReferencedSchema(*schema3);
     EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->AddBaseClass(*baseClass));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->AddBaseClass(*anotherBase));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, gadget->AddBaseClass(*class1));
@@ -588,8 +625,8 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     
     //SchemaSerializationStatus status2 = schema->WriteXmlToFile(L"d:\\temp\\base.xml");
     //
-    //ECSchemaPtr schema4;
-    //ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+    //ECSchemaP schema4;
+    //ECSchemaDeserializationContextPtr schemaContext = ECSchemaDeserializationContext::CreateContext();
     //SchemaDeserializationStatus status3 = ECSchema::ReadXmlFromFile (schema4, L"d:\\temp\\base.xml", *schemaContext);
     
     bwstring ecSchemaXmlString;
@@ -605,14 +642,16 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaReferenceTest, AddAndRemoveReferencedSchemas)
     {
-    ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, L"TestSchema");
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
+
+    ECSchemaP schema;
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
     
-    ECSchemaPtr refSchema;
-    ECSchema::CreateSchema(refSchema, L"RefSchema");
+    ECSchemaP refSchema;
+    ECSchema::CreateSchema(refSchema, L"RefSchema", 5, 5, *schemaOwner);
     
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(refSchema));
-    EXPECT_EQ(ECOBJECTS_STATUS_NamedItemAlreadyExists, schema->AddReferencedSchema(refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(*refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_NamedItemAlreadyExists, schema->AddReferencedSchema(*refSchema));
     
     ECSchemaReferenceList refList = schema->GetReferencedSchemas();
     ECSchemaReferenceList::const_iterator schemaIterator;
@@ -623,7 +662,7 @@ TEST_F(SchemaReferenceTest, AddAndRemoveReferencedSchemas)
         }
         
     EXPECT_FALSE(schemaIterator == refList.end());
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(*refSchema));
     
     refList = schema->GetReferencedSchemas();
     for (schemaIterator = refList.begin(); schemaIterator != refList.end(); schemaIterator++)
@@ -633,7 +672,7 @@ TEST_F(SchemaReferenceTest, AddAndRemoveReferencedSchemas)
         }
         
     EXPECT_TRUE(schemaIterator == refList.end());
-    EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, schema->RemoveReferencedSchema(refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, schema->RemoveReferencedSchema(*refSchema));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -641,13 +680,15 @@ TEST_F(SchemaReferenceTest, AddAndRemoveReferencedSchemas)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
     {
-    ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, L"TestSchema");
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
+
+    ECSchemaP schema;
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
     
-    ECSchemaPtr refSchema;
-    ECSchema::CreateSchema(refSchema, L"RefSchema");
+    ECSchemaP refSchema;
+    ECSchema::CreateSchema(refSchema, L"RefSchema", 5, 5, *schemaOwner);
     
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(*refSchema));
     ECClassP class1;
     ECClassP baseClass;
     ECClassP structClass;
@@ -658,12 +699,12 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
     structClass->IsStruct = true;
     
     class1->AddBaseClass(*baseClass);
-    EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(refSchema));
+    EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
     
     class1->RemoveBaseClass(*baseClass);
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(*refSchema));
 
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(*refSchema));
     StructECPropertyP structProp;
     ArrayECPropertyP nestedArrayProp;
     
@@ -673,11 +714,11 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
     structProp->Type = *structClass;
     nestedArrayProp->StructElementType = structClass;
 
-    EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(refSchema));
+    EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
     class1->RemoveProperty(L"StructMember");
-    EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(refSchema));
+    EXPECT_EQ (ECOBJECTS_STATUS_SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
     class1->RemoveProperty(L"NestedArray");
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(refSchema));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(*refSchema));
     
     }
     
@@ -686,17 +727,16 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaReferenceTest, ExpectSuccessWithCircularReferences)
     {
-#if defined (WIP_FUSION)
-// Temporarily disabled this test.  It fails because it leaks schemas
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    ECSchemaPtr schema;
-    
-    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+
+    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+
+    ECSchemaP schema;
     SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"CircleSchema.01.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);
 
     CoUninitialize();
-#endif
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -704,13 +744,13 @@ TEST_F(SchemaReferenceTest, ExpectSuccessWithCircularReferences)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     {
-    ECSchemaPtr testSchema;
-    ECSchema::CreateSchema(testSchema, L"TestSchema");
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
+
+    ECSchemaP testSchema;
+    ECSchema::CreateSchema(testSchema, L"TestSchema", 1, 2, *schemaOwner);
     testSchema->NamespacePrefix = L"ts";
     testSchema->Description = L"Schema for testing programmatic construction";
     testSchema->DisplayLabel = L"Test Schema";
-    testSchema->VersionMajor = 1;
-    testSchema->VersionMinor = 2;
     
     EXPECT_TRUE(testSchema->IsDisplayLabelDefined);
     EXPECT_EQ(1, testSchema->VersionMajor);
@@ -720,10 +760,10 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     EXPECT_EQ(0, wcscmp(testSchema->Description.c_str(), L"Schema for testing programmatic construction"));
     EXPECT_EQ(0, wcscmp(testSchema->DisplayLabel.c_str(), L"Test Schema"));
     
-    ECSchemaPtr schema2;
-    ECSchema::CreateSchema(schema2, L"BaseSchema");
+    ECSchemaP schema2;
+    ECSchema::CreateSchema(schema2, L"BaseSchema", 5, 5, *schemaOwner);
     
-    testSchema->AddReferencedSchema(schema2);
+    testSchema->AddReferencedSchema(*schema2);
     
     ECClassP class1;
     ECClassP baseClass;
@@ -912,12 +952,14 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaCreationTest, ExpectErrorWithBadSchemaName)
     {
-    ECSchemaPtr schema;
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
+
+    ECSchemaP schema;
     
     // . is an invalid character
-    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, ECSchema::CreateSchema(schema, L"TestSchema.1.0"));
+    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, ECSchema::CreateSchema(schema, L"TestSchema.1.0", 5, 5, *schemaOwner));
 
-    ECSchema::CreateSchema(schema, L"TestSchema");
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
     
     EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->SetName(L""));
     
@@ -950,12 +992,14 @@ TEST_F(SchemaCreationTest, ExpectErrorWithBadSchemaName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, ExpectErrorWithCircularBaseClasses)
     {
-    ECSchemaPtr schema;
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
+
+    ECSchemaP schema;
     ECClassP class1;
     ECClassP baseClass1;
     ECClassP baseClass2;
     
-    ECSchema::CreateSchema(schema, L"TestSchema");
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
     schema->CreateClass(class1, L"TestClass");
     schema->CreateClass(baseClass1, L"BaseClass1");
     schema->CreateClass(baseClass2, L"BaseClass2");
@@ -970,11 +1014,13 @@ TEST_F(ClassTest, ExpectErrorWithCircularBaseClasses)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, AddAndRemoveBaseClass)
     {
-    ECSchemaPtr schema;
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
+
+    ECSchemaP schema;
     ECClassP class1;
     ECClassP baseClass1;
     
-    ECSchema::CreateSchema(schema, L"TestSchema");
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
     schema->CreateClass(class1, L"TestClass");
     schema->CreateClass(baseClass1, L"BaseClass");
     EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->AddBaseClass(*baseClass1));
@@ -1006,12 +1052,14 @@ TEST_F(ClassTest, AddAndRemoveBaseClass)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, AddBaseClassWithProperties)
     {
-    ECSchemaPtr schema;
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
+
+    ECSchemaP schema;
     ECClassP class1;
     ECClassP baseClass1;
     ECClassP baseClass2;
 
-    ECSchema::CreateSchema(schema, L"TestSchema");
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
     schema->CreateClass(class1, L"TestClass");
     schema->CreateClass(baseClass1, L"BaseClass");
     schema->CreateClass(baseClass2, L"BaseClass2");
@@ -1036,12 +1084,14 @@ TEST_F(ClassTest, AddBaseClassWithProperties)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, IsTests)
     {
-    ECSchemaPtr schema;
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
+
+    ECSchemaP schema;
     ECClassP class1;
     ECClassP baseClass1;
     ECClassP baseClass2;
     
-    ECSchema::CreateSchema(schema, L"TestSchema");
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
     schema->CreateClass(class1, L"TestClass");
     schema->CreateClass(baseClass1, L"BaseClass1");
     schema->CreateClass(baseClass2, L"BaseClass2");
@@ -1057,13 +1107,15 @@ TEST_F(ClassTest, IsTests)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, CanOverrideBaseProperties)
     {
-    ECSchemaPtr schema;
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
+
+    ECSchemaP schema;
     ECClassP class1;
     ECClassP baseClass1;
     ECClassP structClass;
     ECClassP structClass2;
     
-    ECSchema::CreateSchema(schema, L"TestSchema");
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
     schema->CreateClass(class1, L"TestClass");
     schema->CreateClass(baseClass1, L"BaseClass1");
     schema->CreateClass(structClass, L"ClassForStructs");
@@ -1151,14 +1203,16 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     
 TEST_F(ClassTest, ExpectFailureWhenStructTypeIsNotReferenced)
     {
-    ECSchemaPtr schema;
-    ECSchemaPtr schema2;
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
+
+    ECSchemaP schema;
+    ECSchemaP schema2;
     ECClassP class1;
     ECClassP structClass;
     ECClassP structClass2;
 
-    ECSchema::CreateSchema(schema, L"TestSchema");
-    ECSchema::CreateSchema(schema2, L"TestSchema2");
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
+    ECSchema::CreateSchema(schema2, L"TestSchema2", 5, 5, *schemaOwner);
     schema->CreateClass(class1, L"TestClass");
     schema2->CreateClass(structClass, L"ClassForStructs");
     structClass->IsStruct = true;
@@ -1174,7 +1228,7 @@ TEST_F(ClassTest, ExpectFailureWhenStructTypeIsNotReferenced)
     EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, class1->CreateArrayProperty(structArrayProperty, L"StructArrayProperty", structClass));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateStructProperty(baseStructProp2, L"StructProperty2", *structClass2));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateArrayProperty(structArrayProperty2, L"StructArrayProperty2", structClass2));
-    schema->AddReferencedSchema(schema2);
+    schema->AddReferencedSchema(*schema2);
     EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateStructProperty(baseStructProp, L"StructProperty", *structClass));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateArrayProperty(structArrayProperty, L"StructArrayProperty", structClass));
     }
@@ -1190,14 +1244,16 @@ TEST_F(ClassTest, ExpectPropertiesInOrder)
     propertyNames.push_back(L"delta");
     propertyNames.push_back(L"alpha");
     
-    ECSchemaPtr schema;
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
+
+    ECSchemaP schema;
     ECClassP class1;
     PrimitiveECPropertyP property1;
     PrimitiveECPropertyP property2;
     PrimitiveECPropertyP property3;
     PrimitiveECPropertyP property4;
     
-    ECSchema::CreateSchema(schema, L"TestSchema");
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
     schema->CreateClass(class1, L"TestClass");
     class1->CreatePrimitiveProperty(property1, L"beta");
     class1->CreatePrimitiveProperty(property2, L"gamma");
@@ -1217,7 +1273,9 @@ TEST_F(ClassTest, ExpectPropertiesInOrder)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, ExpectProperties)
     {
-    ECSchemaPtr schema;
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
+
+    ECSchemaP schema;
     ECClassP ab;
     ECClassP cd;
     ECClassP ef;
@@ -1229,7 +1287,7 @@ TEST_F(ClassTest, ExpectProperties)
     PrimitiveECPropertyP e;
     PrimitiveECPropertyP f;
     
-    ECSchema::CreateSchema(schema, L"TestSchema");
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
     schema->CreateClass(ab, L"ab");
     schema->CreateClass(cd, L"cd");
     schema->CreateClass(ef, L"ef");
@@ -1256,7 +1314,9 @@ TEST_F(ClassTest, ExpectProperties)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, ExpectPropertiesFromBaseClass)
     {
-    ECSchemaPtr schema;
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
+
+    ECSchemaP schema;
     ECClassP ab;
     ECClassP cd;
     ECClassP ef;
@@ -1280,7 +1340,7 @@ TEST_F(ClassTest, ExpectPropertiesFromBaseClass)
     PrimitiveECPropertyP m;
     PrimitiveECPropertyP n;
     
-    ECSchema::CreateSchema(schema, L"TestSchema");
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
     schema->CreateClass(ab, L"ab");
     schema->CreateClass(cd, L"cd");
     schema->CreateClass(ef, L"ef");
@@ -1428,11 +1488,13 @@ TEST_F(ClassTest, ExpectPropertiesFromBaseClass)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, AddAndRemoveConstraintClasses)
     {
-    ECSchemaPtr schema;
-    ECSchemaPtr refSchema;
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
+
+    ECSchemaP schema;
+    ECSchemaP refSchema;
     
-    ECSchema::CreateSchema(schema, L"TestSchema");
-    ECSchema::CreateSchema(refSchema, L"RefSchema");
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
+    ECSchema::CreateSchema(refSchema, L"RefSchema", 5, 5, *schemaOwner);
     
     ECRelationshipClassP relClass;
     ECClassP targetClass;
@@ -1445,7 +1507,7 @@ TEST_F(ClassTest, AddAndRemoveConstraintClasses)
     EXPECT_EQ(ECOBJECTS_STATUS_Success, relClass->Target.AddClass(*targetClass));
     EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, relClass->Source.AddClass(*sourceClass));
     
-    schema->AddReferencedSchema(refSchema);
+    schema->AddReferencedSchema(*refSchema);
     EXPECT_EQ(ECOBJECTS_STATUS_Success, relClass->Source.AddClass(*sourceClass));
     
     EXPECT_EQ(ECOBJECTS_STATUS_Success, relClass->Target.RemoveClass(*targetClass));
@@ -1457,13 +1519,15 @@ TEST_F(ClassTest, AddAndRemoveConstraintClasses)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, ExpectErrorWithBadClassName)
     {
-    ECSchemaPtr schema;
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
+
+    ECSchemaP schema;
     ECClassP class1;
     
     // . is an invalid character
-    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, ECSchema::CreateSchema(schema, L"TestSchema.1.0"));
+    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, ECSchema::CreateSchema(schema, L"TestSchema.1.0", 1, 0, *schemaOwner));
 
-    ECSchema::CreateSchema(schema, L"TestSchema");
+    ECSchema::CreateSchema(schema, L"TestSchema", 1, 0, *schemaOwner);
     
     EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L""));
     

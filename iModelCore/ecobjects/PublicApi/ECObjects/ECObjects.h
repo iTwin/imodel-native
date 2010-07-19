@@ -45,7 +45,7 @@
 EC_TYPEDEFS(ECValue);
 EC_TYPEDEFS(ArrayInfo);
 EC_TYPEDEFS(ECSchema);
-EC_TYPEDEFS(ECSchemaConstructionContext);
+EC_TYPEDEFS(ECSchemaDeserializationContext);
 EC_TYPEDEFS(ECProperty);
 EC_TYPEDEFS(PrimitiveECProperty);
 EC_TYPEDEFS(StructECProperty);
@@ -58,6 +58,8 @@ EC_TYPEDEFS(ECRelationshipConstraint);
 EC_TYPEDEFS(RelationshipCardinality);
 EC_TYPEDEFS(IECInstance);
 EC_TYPEDEFS(IECRelationshipInstance);
+EC_TYPEDEFS(ECSchemaOwner);
+EC_TYPEDEFS(IECSchemaOwner);
 EC_TYPEDEFS(IECSchemaLocator);
 EC_TYPEDEFS(IECCustomAttributeContainer);
 
@@ -135,6 +137,9 @@ enum ECObjectsStatus
     ECOBJECTS_STATUS_Error                                              = ECOBJECTS_ERROR_BASE + 0xFFF,
     }; 
 
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
 enum SchemaDeserializationStatus
     {
     SCHEMA_DESERIALIZATION_STATUS_Success                               = SUCCESS,
@@ -144,6 +149,9 @@ enum SchemaDeserializationStatus
     SCHEMA_DESERIALIZATION_STATUS_ReferencedSchemaNotFound              = SCHEMA_DESERIALIZATION_STATUS_BASE + 0x04,
     };
 
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
 enum SchemaSerializationStatus
     {
     SCHEMA_SERIALIZATION_STATUS_Success                                 = SUCCESS,
@@ -152,6 +160,9 @@ enum SchemaSerializationStatus
     SCHEMA_SERIALIZATION_STATUS_FailedToCreateXml                       = SCHEMA_SERIALIZATION_STATUS_BASE + 0x03
     };
 
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
 enum InstanceDeserializationStatus
     {
     INSTANCE_DESERIALIZATION_STATUS_Success                             = 0,
@@ -181,6 +192,9 @@ enum InstanceDeserializationStatus
     INSTANCE_DESERIALIZATION_STATUS_CantSetValue                        = INSTANCE_DESERIALIZATION_STATUS_BASE + 41,
     };
     
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
 enum InstanceSerializationStatus
     {
     INSTANCE_SERIALIZATION_STATUS_Success                               = 0,

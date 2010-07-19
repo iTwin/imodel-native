@@ -13,9 +13,11 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
+//=======================================================================================    
 //! SystemTime structure is used to set and get time data from ECValue objects.
 //! @group "ECInstance"
 //! @see ECValue
+//=======================================================================================    
 struct SystemTime
 {
 public:
@@ -34,9 +36,11 @@ public:
     ECOBJECTS_EXPORT bwstring      ToString ();
     };
 
+//=======================================================================================    
 //! Information about an array in an EC::IECInstance. Does not contain the actual elements.
 //! @group "ECInstance"
 //! @see ECValue
+//=======================================================================================    
 struct ArrayInfo  // FUSION_WIP: this could also fit into 8 bytes if packed properly
     {
 private:
@@ -60,12 +64,14 @@ public:
     ECOBJECTS_EXPORT PrimitiveType   GetElementPrimitiveType() const;
     };
 
+//=======================================================================================    
 //! Variant-like object representing the value of a conceptual ECPropertyValue. 
 //! It does not represent a "live" reference into the underlying EC::IECInstance 
 //! (or the object that the EC::IECInstance represents). Changing the EC::ECValue will not affect
 //! the EC::IECInstance unless you subsequently call SetValue() with it.
 //! 
 //! @group "ECInstance"
+//=======================================================================================    
 struct ECValue
     {
 private:        

@@ -347,9 +347,11 @@ const bwstring &name
     if ( propertyIterator == m_propertyMap.end() )
         return ECOBJECTS_STATUS_ClassNotFound;
         
-    m_propertyList.remove(propertyIterator->second);
+    ECPropertyP ecProperty = propertyIterator->second;
+ 
     m_propertyMap.erase(propertyIterator);
-    delete propertyIterator->second;
+    m_propertyList.remove(ecProperty);
+    delete ecProperty;
 
     return ECOBJECTS_STATUS_Success;
     }
@@ -878,7 +880,7 @@ MSXML2::IXMLDOMNode& classNode
         }
 
     // Add Custom Attributes
-    ReadCustomAttributes(classNode, (ECSchemaP) &m_schema);
+    ReadCustomAttributes(classNode, m_schema);
 
     return SCHEMA_DESERIALIZATION_STATUS_Success;
     }
@@ -1345,7 +1347,7 @@ MSXML2::IXMLDOMNode &constraintNode
         }
 
     // Add Custom Attributes
-    ReadCustomAttributes(constraintNode, (ECSchemaP) &(m_relClass->Schema));
+    ReadCustomAttributes(constraintNode, m_relClass->Schema);
 
     return status;
     }
@@ -1404,7 +1406,7 @@ ECClassCR classConstraint
         ECSchemaReferenceList::const_iterator schemaIterator;
         for (schemaIterator = referencedSchemas.begin(); schemaIterator != referencedSchemas.end(); schemaIterator++)
             {
-            ECSchemaP refSchema = (*schemaIterator).get();
+            ECSchemaP refSchema = *schemaIterator;
             if (refSchema == &(classConstraint.Schema))
                 {
                 foundRefSchema = true;

@@ -112,7 +112,6 @@ std::wstring ECTestFixture::GetTestDataPath(const wchar_t *dataFile)
     {
     if (s_dllPath.empty())
         {
-
         HINSTANCE ecobjectsHInstance = (HINSTANCE) getDLLInstance();
         wchar_t strExePath [MAX_PATH];
         if (0 == (GetModuleFileNameW (ecobjectsHInstance, strExePath, MAX_PATH)))

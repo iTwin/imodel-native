@@ -1,4 +1,3 @@
-
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: ecobjects/nativeatp/Published/InstanceXMLTests.cpp $
@@ -250,18 +249,19 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingSimpleInstance
     // must call CoInitialize - schema deserialization requires it.
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
-    ECSchemaPtr schema;        
-    
-    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+
+    ECSchemaP   schema;
     SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
-        
+
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, schemaStatus);
 
     IECInstancePtr  testInstance;
-    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), schema.get());
+    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), *schema);
 
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
-    
+
     testInstance->Dump();
     VerifyTestInstance (testInstance.get(), false);
     };
@@ -274,15 +274,16 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingEmptyInstance)
     // must call CoInitialize - schema deserialization requires it.
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
-    ECSchemaPtr schema;        
-    
-    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+
+    ECSchemaP   schema;
     SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
         
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, schemaStatus);
 
     IECInstancePtr  testInstance;
-    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_EmptyInstance.xml").c_str(), schema.get());
+    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_EmptyInstance.xml").c_str(), *schema);
 
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
     
@@ -297,13 +298,15 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     // must call CoInitialize - schema deserialization requires it.
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
-    ECSchemaPtr schema;        
-    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+
+    ECSchemaP   schema;
     SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, schemaStatus);
 
     IECInstancePtr  testInstance;
-    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), schema.get());
+    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), *schema);
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
     
     testInstance->Dump();
@@ -319,7 +322,7 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     stream->Seek(liPos, STREAM_SEEK_SET, NULL);
 
     IECInstancePtr deserializedInstance;
-    InstanceDeserializationStatus status3 = IECInstance::ReadXmlFromStream(deserializedInstance, stream, schema.get());
+    InstanceDeserializationStatus status3 = IECInstance::ReadXmlFromStream(deserializedInstance, stream, *schema);
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, status3); 
     wprintf(L"Verifying schema deserialized from stream.\n");
     VerifyTestInstance (deserializedInstance.get(), false);
@@ -334,13 +337,15 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     // must call CoInitialize - schema deserialization requires it.
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
-    ECSchemaPtr schema;        
-    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+
+    ECSchemaP   schema;
     SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, schemaStatus);
 
     IECInstancePtr  testInstance;
-    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), schema.get());
+    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), *schema);
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
     
     testInstance->Dump();
@@ -352,7 +357,7 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     EXPECT_EQ(INSTANCE_SERIALIZATION_STATUS_Success, status2);
     
     IECInstancePtr deserializedInstance;
-    InstanceDeserializationStatus status3 = IECInstance::ReadXmlFromString(deserializedInstance, ecInstanceXml.c_str(), schema.get());
+    InstanceDeserializationStatus status3 = IECInstance::ReadXmlFromString(deserializedInstance, ecInstanceXml.c_str(), *schema);
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, status3); 
     wprintf(L"Verifying schema deserialized from string.\n");
     VerifyTestInstance (deserializedInstance.get(), false);
@@ -417,15 +422,16 @@ TEST_F(PolymorphismDeserializationTest, ExpectSuccessWhenDeserializingPolymorphi
     // must call CoInitialize - schema deserialization requires it.
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
-    ECSchemaPtr schema;        
-    
-    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+
+    ECSchemaP   schema;
     SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"Polymorphism.01.00.ecschema.xml").c_str(), *schemaContext);
         
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, schemaStatus);
 
     IECInstancePtr  testInstance;
-    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"PolymorphismInstance.xml").c_str(), schema.get());
+    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"PolymorphismInstance.xml").c_str(), *schema);
 
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
     
@@ -441,10 +447,11 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWhenSerializingInstance)
     // must call CoInitialize - schema deserialization requires it.
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
-    ECSchemaPtr schema;        
+    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
 
     // we get the instance we want to serialize by reading the instance from XML.
-    ECSchemaConstructionContextPtr schemaContext = ECSchemaConstructionContext::CreateContext();
+    ECSchemaP   schema;
     SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
         
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, schemaStatus);
@@ -458,7 +465,7 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWhenSerializingInstance)
         }
     
     IECInstancePtr  testInstance;
-    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), schema.get());
+    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), *schema);
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
 
     ECValue     binaryValue;
@@ -474,7 +481,7 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWhenSerializingInstance)
     //
     //// then read it back.
     //IECInstancePtr  readbackInstance;
-    //InstanceDeserializationStatus readbackStatus = IECInstance::ReadXmlFromFile (readbackInstance, L"c:\\temp\\OutputInstance.xml", schema.get());
+    //InstanceDeserializationStatus readbackStatus = IECInstance::ReadXmlFromFile (readbackInstance, L"c:\\temp\\OutputInstance.xml", *schema);
     //
     //EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
     //VerifyTestInstance (readbackInstance.get(), true);

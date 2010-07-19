@@ -48,14 +48,17 @@ typedef bmap<const wchar_t * , ECPropertyP, stdext::hash_compare<const wchar_t *
 typedef stdext::hash_map<const wchar_t * , ECClassP, stdext::hash_compare<const wchar_t *, less_str>>    ClassMap;
 typedef stdext::hash_map<const wchar_t * , ECSchemaP, stdext::hash_compare<const wchar_t *, less_str>>   SchemaMap;
 
-
+//=======================================================================================    
 // ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 
 // ValueKind or ArrayKind is necessary, we can union PrimitiveType in the same 16-bit memory location and get some synergy between the two.
 // If you add more values to the ValueKind enum please be sure to note that these are bit flags and not incremental values.  Also be sure the value does not
 // exceed a single byte.
+//=======================================================================================    
 /*__PUBLISH_SECTION_START__*/
+//=======================================================================================    
 //! Represents the classification of the data type of an EC ECValue.  The classification is not the data type itself, but a category of type
 //! such as struct, array or primitive.
+//=======================================================================================    
 enum ValueKind : unsigned short
     {
     VALUEKIND_Uninitialized                  = 0x00,
@@ -65,13 +68,17 @@ enum ValueKind : unsigned short
     };
 
 /*__PUBLISH_SECTION_END__*/
+//=======================================================================================    
 // ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 
 // ValueKind or ArrayKind is necessary, we can union PrimitiveType in the same 16-bit memory location and get some synergy between the two.
 // If you add more values to the ArrayKind enum please be sure to note that these are bit flags and not incremental values.  Also be sure the value does not
 // exceed a single byte.
+//=======================================================================================    
 /*__PUBLISH_SECTION_START__*/
+//=======================================================================================    
 //! Represents the classification of the data type of an EC array element.  The classification is not the data type itself, but a category of type.
 //! Currently an ECArray can only contain primitive or struct data types.
+//=======================================================================================    
 enum ArrayKind : unsigned short
     {
     ARRAYKIND_Primitive       = 0x01,
@@ -79,6 +86,7 @@ enum ArrayKind : unsigned short
     };
 
 /*__PUBLISH_SECTION_END__*/
+//=======================================================================================    
 // ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 
 // ValueKind or ArrayKind is necessary, we can union PrimitiveType in the same 16-bit memory location and get some synergy between the two.
 // If you add more values to the PrimitiveType enum please be sure to note that the lower order byte must stay fixed as '1' and the upper order byte can be incremented.
@@ -86,9 +94,12 @@ enum ArrayKind : unsigned short
 //    - ECXML_TYPENAME_X constants
 //    - PrimitiveECProperty::_GetTypeName
 // NEEDSWORK types: common geometry, installed primitives
+//=======================================================================================    
 /*__PUBLISH_SECTION_START__*/
+//=======================================================================================    
 //! Enumeration of primitive datatypes supported by native "ECObjects" implementation.
 //! These should correspond to all of the datatypes supported in .NET ECObjects
+//=======================================================================================    
 enum PrimitiveType : unsigned short
     {
     PRIMITIVETYPE_Binary                    = 0x101,
@@ -104,6 +115,7 @@ enum PrimitiveType : unsigned short
 
 //=======================================================================================    
 //! Used to represent the type of an ECProperty
+//=======================================================================================
 struct ECTypeDescriptor
 {
 private:
@@ -161,6 +173,9 @@ public:
 typedef std::list<IECInstancePtr> ECCustomAttributeCollection;
 struct ECCustomAttributeInstanceIterable;
 
+//=======================================================================================
+//
+//=======================================================================================
 struct IECCustomAttributeContainer
 {
 /*__PUBLISH_SECTION_END__*/
@@ -170,7 +185,7 @@ private:
     SchemaSerializationStatus           AddCustomAttributeProperties(MSXML2_IXMLDOMNode& oldNode, MSXML2_IXMLDOMNode& newNode) const;
 
 protected:
-    InstanceDeserializationStatus       ReadCustomAttributes(MSXML2_IXMLDOMNode& containerNode, ECSchemaP schema);
+    InstanceDeserializationStatus       ReadCustomAttributes(MSXML2_IXMLDOMNode& containerNode, ECSchemaCR schema);
     SchemaSerializationStatus           WriteCustomAttributes(MSXML2_IXMLDOMNode& parentNode) const;
 
     void                                AddUniqueCustomAttributesToList(ECCustomAttributeCollection& returnList);
@@ -200,6 +215,9 @@ public:
     ECOBJECTS_EXPORT bool               RemoveCustomAttribute(ECClassCR classDefinition);
 };
 
+//=======================================================================================
+//
+//=======================================================================================
 struct ECCustomAttributeInstanceIterable
 {
 private:
@@ -253,6 +271,7 @@ struct PrimitiveECProperty;
 
 //=======================================================================================
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
+//=======================================================================================
 struct ECProperty abstract : public IECCustomAttributeContainer
 {
 /*__PUBLISH_SECTION_END__*/
@@ -323,6 +342,7 @@ public:
 
 //=======================================================================================
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
+//=======================================================================================
 struct PrimitiveECProperty /*__PUBLISH_ABSTRACT__*/ : public ECProperty
 {
 /*__PUBLISH_SECTION_END__*/
@@ -346,9 +366,9 @@ public:
     EXPORTED_PROPERTY  (PrimitiveType, Type);    
 };
 
-
 //=======================================================================================
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
+//=======================================================================================
 struct StructECProperty /*__PUBLISH_ABSTRACT__*/ : public ECProperty
 {
 /*__PUBLISH_SECTION_END__*/
@@ -373,9 +393,9 @@ public:
     EXPORTED_PROPERTY  (ECClassCR, Type);    
 };
 
-
 //=======================================================================================
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
+//=======================================================================================
 struct ArrayECProperty /*__PUBLISH_ABSTRACT__*/ : public ECProperty
 {
 /*__PUBLISH_SECTION_END__*/
@@ -418,6 +438,7 @@ public:
 
 //=======================================================================================
 //! Container holding ECProperties that supports STL like iteration
+//=======================================================================================
 struct ECPropertyIterable /*__PUBLISH_ABSTRACT__*/
 {
 /*__PUBLISH_SECTION_END__*/
@@ -479,6 +500,7 @@ typedef bool (*TraversalDelegate) (ECClassCP, const void *);
 
 //=======================================================================================
 //! The in-memory representation of an ECClass as defined by ECSchemaXML
+//=======================================================================================
 struct ECClass /*__PUBLISH_ABSTRACT__*/ : IECCustomAttributeContainer
 {
 /*__PUBLISH_SECTION_END__*/
@@ -677,10 +699,12 @@ enum StrengthType
     STRENGTHTYPE_Embedding
     } ;
     
+//=======================================================================================
 //! This class describes the cardinality of a relationship. It is based on the
 //!     Martin notation. Valid cardinalities are (x,y) where x is smaller or equal to y,
 //!     x >= 0 and y >= 1 or y = n (where n represents infinity).
 //!     For example, (0,1), (1,1), (1,n), (0,n), (1,10), (2,5), ...
+//=======================================================================================
 struct RelationshipCardinality 
 {
 /*__PUBLISH_SECTION_END__*/
@@ -722,6 +746,7 @@ public:
 
 //=======================================================================================
 //! The in-memory representation of the source and target constraints for an ECRelationshipClass as defined by ECSchemaXML
+//=======================================================================================
 struct ECRelationshipConstraint : IECCustomAttributeContainer
 {
 friend struct ECRelationshipClass;
@@ -798,6 +823,7 @@ public:
 
 //=======================================================================================
 //! The in-memory representation of a relationship class as defined by ECSchemaXML
+//=======================================================================================
 struct ECRelationshipClass /*__PUBLISH_ABSTRACT__*/ : public ECClass
 {
 /*__PUBLISH_SECTION_END__*/
@@ -838,10 +864,10 @@ public:
 
 typedef RefCountedPtr<ECRelationshipClass>      ECRelationshipClassPtr;
 
-typedef RefCountedPtr<ECSchema>                  ECSchemaPtr;
-typedef std::list<ECSchemaPtr> ECSchemaReferenceList;
+typedef std::list<ECSchemaP> ECSchemaReferenceList;
 //=======================================================================================
 //! Supports STL like iterator of classes in a schema
+//=======================================================================================
 struct ECClassContainer /*__PUBLISH_ABSTRACT__*/
 {
 /*__PUBLISH_SECTION_END__*/
@@ -859,6 +885,7 @@ private:
 public:    
     //=======================================================================================
     // @bsistruct
+    //=======================================================================================
     struct IteratorState /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
         {        
         friend struct const_iterator;
@@ -873,6 +900,7 @@ public:
 
     //=======================================================================================
     // @bsistruct
+    //=======================================================================================
     struct const_iterator
     {    
     private:                
@@ -908,31 +936,75 @@ enum SchemaMatchType
     SCHEMAMATCHTYPE_Latest              =   2,
     };
    
-typedef RefCountedPtr<ECSchemaConstructionContext>      ECSchemaConstructionContextPtr;
+//=======================================================================================
+//! Interface implemented by class that provides schema ownership services.</summary>
+//=======================================================================================
+struct IECSchemaOwner
+{
+/*__PUBLISH_CLASS_VIRTUAL__*/
+/*__PUBLISH_SECTION_END__*/
+protected:
+    virtual ECObjectsStatus _AddSchema   (ECSchemaR) = 0;
+    virtual ECObjectsStatus _DropSchema  (ECSchemaR) = 0;
+    virtual ECSchemaP       _GetSchema   (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor) = 0;
+
+public:
+    ECObjectsStatus         AddSchema   (ECSchemaR);
+    ECObjectsStatus         DropSchema  (ECSchemaR);
+    ECSchemaP               GetSchema   (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor);
+
+/*__PUBLISH_SECTION_START__*/
+};
+
+typedef RefCountedPtr<ECSchemaOwner>        ECSchemaOwnerPtr;
+//=======================================================================================
+//! An object that controls the lifetime of a set of ECSchemas.  When the schema
+//! owner is destroyed, so are the schemas that it owns.</summary>
+//=======================================================================================
+struct ECSchemaOwner /*__PUBLISH_ABSTRACT__*/ : RefCountedBase, IECSchemaOwner
+{
+/*__PUBLISH_SECTION_END__*/
+private:
+    bvector<ECSchemaP> m_schemas;
+
+    ~ECSchemaOwner();
+
+protected:
+    virtual ECObjectsStatus _AddSchema   (ECSchemaR) override;
+    virtual ECObjectsStatus _DropSchema  (ECSchemaR) override;
+    virtual ECSchemaP       _GetSchema   (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor);
+
+/*__PUBLISH_SECTION_START__*/
+public:
+    ECOBJECTS_EXPORT static  ECSchemaOwnerPtr    CreateOwner();
+};
+
+typedef RefCountedPtr<ECSchemaDeserializationContext>      ECSchemaDeserializationContextPtr;
 //=======================================================================================
 //! Context object used for schema creation and deserialization.</summary>
 //=======================================================================================
-struct ECSchemaConstructionContext /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
+struct ECSchemaDeserializationContext /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
 {
 /*__PUBLISH_SECTION_END__*/
 friend  ECSchema;
 
 private:
+    IECSchemaOwnerR                 m_schemaOwner;
+
     bvector<IECSchemaLocatorP>      m_locators;
     bvector<const wchar_t *>        m_searchPaths;
-    SchemaMap                       m_schemasUnderConstruction;
 
-    ECSchemaConstructionContext();
+    ECSchemaDeserializationContext(IECSchemaOwnerR);
 
     bvector<IECSchemaLocatorP>& GetSchemaLocators ();
     bvector<const wchar_t *>&   GetSchemaPaths ();
-    SchemaMap&                  GetSchemasUnderConstruction ();
+    IECSchemaOwnerR             GetSchemaOwner();
 
     void                        ClearSchemaPaths();
 
 public:
 /*__PUBLISH_SECTION_START__*/
-    ECOBJECTS_EXPORT static ECSchemaConstructionContextPtr CreateContext ();
+    ECOBJECTS_EXPORT static ECSchemaDeserializationContextPtr CreateContext (IECSchemaOwnerR);
 
     ECOBJECTS_EXPORT void AddSchemaLocators (bvector<EC::IECSchemaLocatorP>&);
 
@@ -942,14 +1014,17 @@ public:
 
 //=======================================================================================
 //! Interface implemented by class that provides schema location services.</summary>
+//=======================================================================================
 struct IECSchemaLocator
 {
 public:
-    virtual ECOBJECTS_EXPORT ECSchemaPtr LocateSchema(const wchar_t *name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaConstructionContextR schemaContext) const = 0;
+    virtual ECOBJECTS_EXPORT ECSchemaP LocateSchema(const wchar_t *name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaDeserializationContextR schemaContext) const = 0;
 };
 
+//=======================================================================================
 //! The in-memory representation of a schema as defined by ECSchemaXML
-struct ECSchema /*__PUBLISH_ABSTRACT__*/ : RefCountedBase, public IECCustomAttributeContainer
+//=======================================================================================
+struct ECSchema /*__PUBLISH_ABSTRACT__*/ : public IECCustomAttributeContainer
 {
 /*__PUBLISH_SECTION_END__*/
 
@@ -976,7 +1051,7 @@ private:
     ECSchema ();
     ~ECSchema();    
 
-    static SchemaDeserializationStatus  ReadXml (ECSchemaPtr& schemaOut, MSXML2_IXMLDOMDocument2& pXmlDoc, ECSchemaConstructionContextR context);
+    static SchemaDeserializationStatus  ReadXml (ECSchemaP& schemaOut, MSXML2_IXMLDOMDocument2& pXmlDoc, ECSchemaDeserializationContextR context);
     SchemaSerializationStatus           WriteXml (MSXML2_IXMLDOMDocument2* pXmlDoc);
 
     ECObjectsStatus                     AddClass (ECClassP& pClass);
@@ -985,9 +1060,9 @@ private:
     typedef bvector<std::pair<ECClassP, MSXML2_IXMLDOMNodePtr>>  ClassDeserializationVector;
     SchemaDeserializationStatus         ReadClassStubsFromXml(MSXML2_IXMLDOMNode& schemaNodePtr,ClassDeserializationVector& classes);
     SchemaDeserializationStatus         ReadClassContentsFromXml(ClassDeserializationVector&  classes);
-    SchemaDeserializationStatus         ReadSchemaReferencesFromXml(MSXML2_IXMLDOMNode& schemaNodePtr, ECSchemaConstructionContextR context);
-    static ECSchemaPtr                  LocateSchemaByPath(const bwstring & name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaConstructionContextR context);
-    static ECSchemaPtr                  LocateSchemaByStandardPaths(const bwstring & name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaConstructionContextR context);
+    SchemaDeserializationStatus         ReadSchemaReferencesFromXml(MSXML2_IXMLDOMNode& schemaNodePtr, ECSchemaDeserializationContextR context);
+    static ECSchemaP                    LocateSchemaByPath(const bwstring & name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR context);
+    static ECSchemaP                    LocateSchemaByStandardPaths(const bwstring & name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR context);
     
     SchemaSerializationStatus           WriteSchemaReferences(MSXML2_IXMLDOMElement& parentNode);
     SchemaSerializationStatus           WriteClass(MSXML2_IXMLDOMElement& parentNode, ECClassCR ecClass);
@@ -1031,8 +1106,6 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    CreateRelationshipClass (ECRelationshipClassP& relationshipClass, bwstring const& name);
 
     //! Get a schema by namespace prefix within the context of this schema and its referenced schemas.
-    //! It is important to note that this method does not return a RefCountedPtr.  If you want to hold a pointer to the returned schema that will exceed the
-    //! lifetime of the RefCountedPtr on which you invoked this method then it is critical you assign the return value to a ECSchemaPtr.   
     //! @param[in]  namespacePrefix     The prefix of the schema to lookup in the context of this schema and it's references.
     //!                                 Passing an empty namespacePrefix will return a pointer to the current schema.
     //! @return   A non-refcounted pointer to an EC::ECSchema if it can be successfully resolved from the specified namespacePrefix; otherwise, NULL
@@ -1045,9 +1118,6 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus ResolveNamespacePrefix(ECSchemaCR schema, bwstring & namespacePrefix) const;
 
     //! Get a class by name within the context of this schema.
-    //! It is important to note that this method does not return a RefCountedPtr.  You must hold onto to the reference counted ECSchemaPtr on which you invoke
-    //! this method for the lifetime that you which to keep the returned class alive.  If you do not, there is a chance that the returned class pointer will go
-    //! stale and result in a memory access violation when used.
     //! @param[in]  name     The name of the class to lookup.  This must be an unqualified (short) class name.    
     //! @return   A pointer to an EC::ECClass if the named class exists in within the current schema; otherwise, NULL
     ECOBJECTS_EXPORT ECClassP           GetClassP (bwstring const& name) const;
@@ -1061,11 +1131,11 @@ public:
     //! It is necessary to add any ECSchema as a referenced schema that will be used when adding a base
     //! class from a different schema, or custom attributes from a different schema.
     //! @param[in]  refSchema   The schema to add as a referenced schema
-    ECOBJECTS_EXPORT ECObjectsStatus AddReferencedSchema(ECSchemaPtr refSchema);
+    ECOBJECTS_EXPORT ECObjectsStatus AddReferencedSchema(ECSchemaR refSchema);
     
     //! Removes an ECSchema from the list of referenced schemas
     //! @param[in]  refSchema   The schema that should be removed from the list of referenced schemas
-    ECOBJECTS_EXPORT ECObjectsStatus RemoveReferencedSchema(ECSchemaPtr refSchema);
+    ECOBJECTS_EXPORT ECObjectsStatus RemoveReferencedSchema(ECSchemaR refSchema);
 
     //! Serializes an ECXML schema to a string
     //! Xml Serialization utilizes MSXML through COM. <b>Any thread calling this method must therefore be certain to initialize and
@@ -1100,13 +1170,24 @@ public:
     //! If the given schemaName is valid, this will create a new schema object
     //! @param[out] schemaOut   if successful, will contain a new schema object
     //! @param[in]  schemaName  Name of the schema to be created.
+    //! @param[in]  versionMajor The major version number.
+    //! @param[in]  versionMajor The minor version number.
+    //! @param[in]  owner        An object that will control the lifecycle of the newly created schema object.
     //! @return A status code indicating whether the call was succesfull or not
-    ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema (ECSchemaPtr& schemaOut, bwstring const& schemaName);
+    ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema (ECSchemaP& schemaOut, bwstring const& schemaName, 
+                                                          UInt32 versionMajor, UInt32 versionMinor, IECSchemaOwnerR owner);
+
+/*__PUBLISH_SECTION_END__*/
+    // Should only be called by SchemaOwners.  Since IECSchemaOwner is not published, neither should this method be published
+    ECOBJECTS_EXPORT static void            DestroySchema (ECSchemaP& schema);
+/*__PUBLISH_SECTION_START__*/
+
     //! Given a version string MM.NN, this will parse other major and minor versions
     //! @param[out]  versionMajor    The major version number
     //! @param[out] versionMinor    The minor version number
     //! @param[in]  versionString   A string containing the major and minor versions (MM.NN)
     //! @return A status code indicating whether the string was successfully parsed
+
     ECOBJECTS_EXPORT static ECObjectsStatus ParseVersionString (UInt32& versionMajor, UInt32& versionMinor, bwstring const& versionString);
     
     //! Given a match type, will determine whether the two schemas match based on name, major version and minor version.  This does not compare actual schemas
@@ -1141,7 +1222,7 @@ public:
     //! @param[in]    schemaContext       Required to create schemas
     //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
     //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
-    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromFile (ECSchemaPtr& schemaOut, const wchar_t * ecSchemaXmlFile, ECSchemaConstructionContextR schemaContext);
+    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromFile (ECSchemaP& schemaOut, const wchar_t * ecSchemaXmlFile, ECSchemaDeserializationContextR schemaContext);
 
     //! Locate a schema using the provided schema locators and paths. If not found in those by either of those parameters standard schema pathes 
     //! relative to the executing dll will be searched.
@@ -1149,7 +1230,7 @@ public:
     //! @param[in]    versionMajor        The major version number of the schema to locate.
     //! @param[in]    versionMinor        The minor version number of the schema to locate.
     //! @param[in]    schemaContext       Required to create schemas
-    ECOBJECTS_EXPORT static ECSchemaPtr                 LocateSchema(const bwstring & name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaConstructionContextR schemaContext);
+    ECOBJECTS_EXPORT static ECSchemaP                   LocateSchema(const bwstring & name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR schemaContext);
 
     //! Deserializes an ECXML schema from a string.
     //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and
@@ -1159,7 +1240,7 @@ public:
     //! @param[in]    schemaContext       Required to create schemas
     //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
     //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
-    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromString (ECSchemaPtr& schemaOut, const wchar_t * ecSchemaXml, ECSchemaConstructionContextR schemaContext);
+    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromString (ECSchemaP& schemaOut, const wchar_t * ecSchemaXml, ECSchemaDeserializationContextR schemaContext);
 
     //! Deserializes an ECXML schema from an IStream.
     //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and
@@ -1169,7 +1250,7 @@ public:
     //! @param[in]    schemaContext       Required to create schemas
     //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
     //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
-    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromStream (ECSchemaPtr& schemaOut, IStreamP ecSchemaXmlStream, ECSchemaConstructionContextR schemaContext);
+    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromStream (ECSchemaP& schemaOut, IStreamP ecSchemaXmlStream, ECSchemaDeserializationContextR schemaContext);
     
 }; // ECSchema
 

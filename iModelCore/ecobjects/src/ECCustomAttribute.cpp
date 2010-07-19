@@ -275,8 +275,8 @@ ECClassCR classDefinition
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceDeserializationStatus IECCustomAttributeContainer::ReadCustomAttributes
 (
-MSXML2::IXMLDOMNode& containerNode,
-ECSchemaP schema
+MSXML2::IXMLDOMNode&    containerNode,
+ECSchemaCR              schema
 )
     {
     InstanceDeserializationStatus status = INSTANCE_DESERIALIZATION_STATUS_Success;
