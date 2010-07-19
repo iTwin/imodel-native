@@ -715,7 +715,7 @@ ECObjectsStatus       ClassLayout::GetPropertyLayoutByIndex (PropertyLayoutCP & 
     {
     assert (propertyIndex < m_propertyLayouts.size());
     if (propertyIndex >= m_propertyLayouts.size())
-        return ECOBJECTS_STATUS_IndexOutOfRange; // WIP_FUSION PropertyIndexOutOfBounds
+        return ECOBJECTS_STATUS_IndexOutOfRange; 
         
     propertyLayout = &m_propertyLayouts[propertyIndex];
     return ECOBJECTS_STATUS_Success;
@@ -727,8 +727,7 @@ ECObjectsStatus       ClassLayout::GetPropertyLayoutByIndex (PropertyLayoutCP & 
 BentleyStatus   SchemaLayout::AddClassLayout (ClassLayoutCR classLayout, ClassIndex classIndex, bool isPersistent)
     {
     if (m_classLayouts.size() <= classIndex)
-        m_classLayouts.resize (1 + classIndex, NULL); // WIP_FUSION: Increase the increment to 20, later. 
-                                                      // Keep the increment low for now, to ensure that resizing has not ill side effects.
+        m_classLayouts.resize (20 + classIndex, NULL); 
 
     assert (NULL == m_classLayouts[classIndex] && "ClassIndex is already in use");
 
@@ -1651,7 +1650,7 @@ ECObjectsStatus       MemoryInstanceSupport::SetValueToMemory (ECValueCR v, Clas
         ECOBJECTS_STATUS_PreconditionViolated);  
                         
     if (index >= GetReservedArrayCount (propertyLayout))
-        return ECOBJECTS_STATUS_IndexOutOfRange; // WIP_FUSION ERROR_InvalidIndex
+        return ECOBJECTS_STATUS_IndexOutOfRange;
 
     if (typeDescriptor.IsPrimitiveArray())
         return SetPrimitiveValueToMemory (v, classLayout, propertyLayout, true, index);

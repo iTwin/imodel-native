@@ -319,9 +319,6 @@ ECPropertyCR newProperty
 ) const
     {
     
-    // WIP_FUSION: If we add support for arrays to contain arrays, then we will need to implement the check that the managed code does
-    // to ensure that the same deepness of embedded arrays is used
-        
     // If the type of base property is an array and the type of the current property is not an array (or vice-versa),
     // return an error immediately.  Unfortunately, there are a class of schemas that have been delivered with this type
     // of override.  So need to check if this is one of those schemas before returning an error
@@ -793,8 +790,8 @@ MSXML2::IXMLDOMNode& classNode
     READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (IS_STRUCT_ATTRIBUTE,           this, IsStruct)
     READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (IS_CUSTOMATTRIBUTE_ATTRIBUTE,  this, IsCustomAttributeClass)
     READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (IS_DOMAINCLASS_ATTRIBUTE,      this, IsDomainClass)
+
     // when isDomainClass is not specified in the ECSchemaXML and isCustomAttributeClass is specified and set to true, we will default to a non-domain class
-    // NEEDSWORK This behavior comes from managed ECObjects but is not specified in the ECXML specification.  Consider updating the specification.
     if ((NULL == attributePtr) && (this->IsCustomAttributeClass))
         this->SetIsDomainClass (false);
 
