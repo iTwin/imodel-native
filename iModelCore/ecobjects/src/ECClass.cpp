@@ -446,9 +446,10 @@ ECClassCR structType
 )
     {
     ecProperty = new StructECProperty(*this);
-    ecProperty->Type = structType;
-    ECObjectsStatus status = AddProperty(ecProperty, name);
-    if (status != ECOBJECTS_STATUS_Success)
+    ECObjectsStatus status = ecProperty->SetType(structType);
+    if (ECOBJECTS_STATUS_Success == status)
+        status = AddProperty(ecProperty, name);
+    if (ECOBJECTS_STATUS_Success != status)
         {
         delete ecProperty;
         ecProperty = NULL;
@@ -510,9 +511,10 @@ ECClassCP structType
 )
     {
     ecProperty = new ArrayECProperty(*this);
-    ecProperty->StructElementType = structType;
-    ECObjectsStatus status = AddProperty(ecProperty, name);
-    if (status != ECOBJECTS_STATUS_Success)
+    ECObjectsStatus status = ecProperty->SetStructElementType(structType);
+    if (ECOBJECTS_STATUS_Success == status)
+        status = AddProperty(ecProperty, name);
+    if (ECOBJECTS_STATUS_Success != status)
         {
         delete ecProperty;
         ecProperty = NULL;
@@ -565,12 +567,26 @@ ECClassCR baseClass
             return ECOBJECTS_STATUS_NamedItemAlreadyExists;
             }
         }
-    m_baseClasses.push_back((ECClassP)&baseClass);
 
-    // NEEDSWORK - validate property overrides are correct
+    PropertyList baseClassProperties;
+    ECObjectsStatus status = baseClass.GetProperties(true, &baseClassProperties);
+    if (ECOBJECTS_STATUS_Success != status)
+        return status;
+
+    for each (ECPropertyP prop in baseClassProperties)
+        {
+        ECPropertyP thisProperty;
+        if (NULL != (thisProperty = this->GetPropertyP(prop->Name)))
+            {
+            if (ECOBJECTS_STATUS_Success != (status = ECClass::CanPropertyBeOverridden(*prop, *thisProperty)))
+                return status;
+            }
+        }
 
     // NEEDSWORK - what if the base class being set is just a stub and does not contain 
     // any properties.  How do we handle property overrides?
+    m_baseClasses.push_back((ECClassP)&baseClass);
+
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -1268,7 +1284,15 @@ ECRelationshipConstraint::~ECRelationshipConstraint
         (m_cardinality != &s_oneOneCardinality) && (m_cardinality != &s_oneManyCardinality))
         delete m_cardinality;
     } 
-    
+   
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaCP ECRelationshipConstraint::_GetContainerSchema() const
+    {
+    return &(m_relClass->Schema);
+    }
+ 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1322,8 +1346,12 @@ MSXML2::IXMLDOMNode &constraintNode
                 constraintClassName.c_str(), className.c_str(), resolvedSchema->Name.c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
-            AddClass(*constraintClass);
+        AddClass(*constraintClass);
         }
+
+    // Add Custom Attributes
+    ReadCustomAttributes(constraintNode, (ECSchemaP) &(m_relClass->Schema));
+
     return status;
     }
     
@@ -1353,6 +1381,8 @@ const bwstring &elementName
         }
     WRITE_BOOL_XML_ATTRIBUTE(POLYMORPHIC_ATTRIBUTE, IsPolymorphic, constraintPtr);
         
+    WriteCustomAttributes(constraintPtr);
+
     for each (ECClassP constraint in m_constraintClasses)
         {
         MSXML2::IXMLDOMElementPtr constraintClassPtr = NULL;
@@ -1742,7 +1772,6 @@ MSXML2::IXMLDOMElement& parentNode
     if (wcscmp(propertyPtr->nodeName, EC_RELATIONSHIP_CLASS_ELEMENT) != 0)
         return SCHEMA_SERIALIZATION_STATUS_FailedToCreateXml;
         
-    // NEEDSWORK: Full implementation
     WRITE_XML_ATTRIBUTE(STRENGTH_ATTRIBUTE, ECXml::StrengthToString(m_strength).c_str(), propertyPtr);
     WRITE_XML_ATTRIBUTE(STRENGTHDIRECTION_ATTRIBUTE, ECXml::DirectionToString(m_strengthDirection).c_str(), propertyPtr);
     

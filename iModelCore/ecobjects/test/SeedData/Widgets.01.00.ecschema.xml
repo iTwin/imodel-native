@@ -53,6 +53,12 @@
 
     <ECRelationshipClass typeName="BaseClassAsSourceRelationship" strength="referencing">
         <Source cardinality="(1,1)" roleLabel="" polymorphic="True">
+            <ECCustomAttributes>
+                <AccessCustomAttributes xmlns="Widgets.09.06">
+                    <AccessLevel>4</AccessLevel>
+                    <Writeable>False</Writeable>
+                </AccessCustomAttributes>
+            </ECCustomAttributes>
             <Class class="BaseClass" />
         </Source>
         <Target cardinality="(1,1)" roleLabel="" polymorphic="True">

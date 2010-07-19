@@ -946,6 +946,44 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     EXPECT_EQ(2, relationshipClass->Target.Cardinality.LowerLimit);
     EXPECT_EQ(5, relationshipClass->Target.Cardinality.UpperLimit);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaCreationTest, ExpectErrorWithBadSchemaName)
+    {
+    ECSchemaPtr schema;
+    
+    // . is an invalid character
+    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, ECSchema::CreateSchema(schema, L"TestSchema.1.0"));
+
+    ECSchema::CreateSchema(schema, L"TestSchema");
+    
+    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->SetName(L""));
+    
+    // name cannot be an empty string
+    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->SetName(L"    "));
+    
+    // name cannot contain special characters
+    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->SetName(L"&&&&"));
+    
+    // name cannot start with a digit
+    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->SetName(L"0InvalidName"));
+    
+    // name may include underscores
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->SetName(L"_____"));
+    
+    // % is an invalid character
+    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->SetName(L"%"));
+    
+    // a is a valid character
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->SetName(L"a"));
+    
+    // Names can only include characters from the intersection of 7bit ascii and alphanumeric
+    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->SetName(L"abc123!@#"));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->SetName(L"abc123"));
+
+    }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
@@ -1007,6 +1045,36 @@ TEST_F(ClassTest, AddAndRemoveBaseClass)
     EXPECT_EQ(ECOBJECTS_STATUS_ClassNotFound, class1->RemoveBaseClass(*baseClass1));
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassTest, AddBaseClassWithProperties)
+    {
+    ECSchemaPtr schema;
+    ECClassP class1;
+    ECClassP baseClass1;
+    ECClassP baseClass2;
+
+    ECSchema::CreateSchema(schema, L"TestSchema");
+    schema->CreateClass(class1, L"TestClass");
+    schema->CreateClass(baseClass1, L"BaseClass");
+    schema->CreateClass(baseClass2, L"BaseClass2");
+
+    PrimitiveECPropertyP stringProp;
+    PrimitiveECPropertyP baseStringProp;
+    PrimitiveECPropertyP intProp;
+    PrimitiveECPropertyP base2NonIntProp;
+
+    class1->CreatePrimitiveProperty(stringProp, L"StringProperty", PRIMITIVETYPE_String);
+    baseClass1->CreatePrimitiveProperty(baseStringProp, L"StringProperty", PRIMITIVETYPE_String);
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->AddBaseClass(*baseClass1));
+
+    class1->CreatePrimitiveProperty(intProp, L"IntProperty", PRIMITIVETYPE_Integer);
+    baseClass2->CreatePrimitiveProperty(base2NonIntProp, L"IntProperty", PRIMITIVETYPE_String);
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->AddBaseClass(*baseClass2));
+
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1129,6 +1197,36 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
 
     }
     
+TEST_F(ClassTest, ExpectFailureWhenStructTypeIsNotReferenced)
+    {
+    ECSchemaPtr schema;
+    ECSchemaPtr schema2;
+    ECClassP class1;
+    ECClassP structClass;
+    ECClassP structClass2;
+
+    ECSchema::CreateSchema(schema, L"TestSchema");
+    ECSchema::CreateSchema(schema2, L"TestSchema2");
+    schema->CreateClass(class1, L"TestClass");
+    schema2->CreateClass(structClass, L"ClassForStructs");
+    structClass->IsStruct = true;
+    schema->CreateClass(structClass2, L"ClassForStructs2");
+    structClass2->IsStruct = true;
+
+    StructECPropertyP baseStructProp;
+    ArrayECPropertyP structArrayProperty;
+    StructECPropertyP baseStructProp2;
+    ArrayECPropertyP structArrayProperty2;
+
+    EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, class1->CreateStructProperty(baseStructProp, L"StructProperty", *structClass));
+    EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, class1->CreateArrayProperty(structArrayProperty, L"StructArrayProperty", structClass));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateStructProperty(baseStructProp2, L"StructProperty2", *structClass2));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateArrayProperty(structArrayProperty2, L"StructArrayProperty2", structClass2));
+    schema->AddReferencedSchema(schema2);
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateStructProperty(baseStructProp, L"StructProperty", *structClass));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateArrayProperty(structArrayProperty, L"StructArrayProperty", structClass));
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
