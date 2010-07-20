@@ -51,9 +51,13 @@ ECSchema::~ECSchema ()
     Logger::GetLogger()->debugv(L"     Freeing memory for %d classes\n", m_classMap.size());
     while (classIterator != classEnd)
         {
-        ECClassP ecClass = classIterator->second;        
-        classIterator = m_classMap.erase(classIterator);        
-        delete ecClass;
+        ECClassP ecClass = classIterator->second;
+        ECRelationshipClassP relClass = dynamic_cast<ECRelationshipClassP>(ecClass);
+        classIterator = m_classMap.erase(classIterator);
+        if (NULL != relClass)
+            delete relClass;
+        else
+            delete ecClass;
         }
 
     assert (m_classMap.empty());

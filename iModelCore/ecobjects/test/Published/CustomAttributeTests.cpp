@@ -14,11 +14,8 @@ BEGIN_BENTLEY_EC_NAMESPACE
 
 struct CustomAttributeTest : ECTestFixture
     {
-#if defined (WIP_FUSION)
-// Temporarily disabled leak detection.  All these tests leak.
-#endif
-    virtual bool _WantSchemaLeakDetection () override { return false; }
-    virtual bool _WantInstanceLeakDetection () override { return false; }
+    virtual bool _WantSchemaLeakDetection () override { return true; }
+    virtual bool _WantInstanceLeakDetection () override { return true; }
     };
 
 ECSchemaP   CreateCustomAttributeTestSchema(IECSchemaOwnerR schemaOwner)
