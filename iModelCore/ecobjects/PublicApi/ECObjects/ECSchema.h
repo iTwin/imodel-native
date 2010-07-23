@@ -707,12 +707,10 @@ enum StrengthType
 //=======================================================================================
 struct RelationshipCardinality 
 {
-/*__PUBLISH_SECTION_END__*/
 private:
     UInt32     m_lowerLimit;
     UInt32     m_upperLimit;
 
-/*__PUBLISH_SECTION_START__*/    
 public:
     //! Default constructor.  Creates a cardinality of (0, 1)
     ECOBJECTS_EXPORT RelationshipCardinality();
@@ -751,7 +749,6 @@ struct ECRelationshipConstraint : IECCustomAttributeContainer
 {
 friend struct ECRelationshipClass;
 
-/*__PUBLISH_SECTION_END__*/
 private:
     // NEEDSWORK: To be completely compatible, we need to store an ECRelationshipConstraintClass with properties in order
     // to support implicit relationships.  For now, just support explicit relationships
@@ -776,7 +773,6 @@ private:
 protected:
     virtual ECSchemaCP					_GetContainerSchema() const override;
   
-/*__PUBLISH_SECTION_START__*/    
 public:
     //! Initializes a new instance of the ECRelationshipConstraint class.
     //! IsPolymorphic defaults to true and IsMultiple defaults to false 
