@@ -36,12 +36,18 @@
     <ClCompile Include="Published\CustomAttributeTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Published\TestFixture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Published\StopWatch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\TestFixture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

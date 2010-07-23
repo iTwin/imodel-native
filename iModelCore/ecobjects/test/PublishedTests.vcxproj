@@ -68,10 +68,12 @@
     <ClCompile Include="Published\MemoryLayoutTests.cpp" />
     <ClCompile Include="Published\SchemaTests.cpp" />
     <ClCompile Include="Published\StopWatch.cpp" />
+    <ClCompile Include="Published\TestFixture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h" />
     <ClInclude Include="Published\StopWatch.h" />
+    <ClInclude Include="Published\TestFixture.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="logging.config.xml" />
