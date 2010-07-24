@@ -157,18 +157,22 @@ public:
 // this is overkill for the native implementation.  Alternatively we could have a single ECProperty class that could act as primitive/struct/array or we can take the
 // appoach I've implemented below.
 
+/*__PUBLISH_SECTION_END__*/
 // These BENTLEY_EXCLUDE_WINDOWS_HEADERS shenanigans are necessary to allow ECObjects headers to be included without sucking in conflicting windows headers
 #ifdef BENTLEY_EXCLUDE_WINDOWS_HEADERS
+/*__PUBLISH_SECTION_START__*/        
     #define MSXML2_IXMLDOMNode      void *
     #define MSXML2_IXMLDOMNodePtr   void *
     #define MSXML2_IXMLDOMDocument2 void *
-    #define MSXML2_IXMLDOMElement void *
+    #define MSXML2_IXMLDOMElement   void *
+/*__PUBLISH_SECTION_END__*/
 #else
     #define MSXML2_IXMLDOMNode      MSXML2::IXMLDOMNode
     #define MSXML2_IXMLDOMNodePtr   MSXML2::IXMLDOMNodePtr
     #define MSXML2_IXMLDOMDocument2 MSXML2::IXMLDOMDocument2
     #define MSXML2_IXMLDOMElement   MSXML2::IXMLDOMElement
 #endif
+/*__PUBLISH_SECTION_START__*/        
 
 typedef std::list<IECInstancePtr> ECCustomAttributeCollection;
 struct ECCustomAttributeInstanceIterable;
@@ -189,12 +193,12 @@ protected:
     SchemaSerializationStatus           WriteCustomAttributes(MSXML2_IXMLDOMNode& parentNode) const;
 
     void                                AddUniqueCustomAttributesToList(ECCustomAttributeCollection& returnList);
-    virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const;
-	virtual ECSchemaCP					_GetContainerSchema() const {return NULL;};
-
 /*__PUBLISH_SECTION_START__*/
-public:
+protected:
+    virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const;
+    virtual ECSchemaCP			_GetContainerSchema() const {return NULL;};
 
+public:
     ECOBJECTS_EXPORT ~IECCustomAttributeContainer();
 
     //! Returns true if the conainer has a custom attribute of a class of the specified name
@@ -756,15 +760,15 @@ private:
 
     ECConstraintClassesList        m_constraintClasses;
     
-    bwstring    m_roleLabel;
-    bool            m_isPolymorphic;
-    bool            m_isMultiple;
-    RelationshipCardinality*   m_cardinality;
+    bwstring                    m_roleLabel;
+    bool                        m_isPolymorphic;
+    bool                        m_isMultiple;
+    RelationshipCardinality*    m_cardinality;
     ECRelationshipClassP        m_relClass;
     
     ECObjectsStatus SetCardinality(const wchar_t *cardinality);
     ECObjectsStatus SetCardinality(UInt32& lowerLimit, UInt32& upperLimit);
-    
+   
     SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode, bwstring const& elementName) const;
     SchemaDeserializationStatus ReadXml(MSXML2_IXMLDOMNode& constraintNode);
     
