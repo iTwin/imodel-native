@@ -15,3 +15,5 @@
 
 #include <ECObjects\ECObjectsAPI.h>
 #include <gtest\gtest.h>
+
+#include "ScenarioTests\TestClasses\VerifierClassesPCH.h"
