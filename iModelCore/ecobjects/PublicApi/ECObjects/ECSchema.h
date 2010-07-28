@@ -947,11 +947,13 @@ protected:
     virtual ECObjectsStatus _AddSchema   (ECSchemaR) = 0;
     virtual ECObjectsStatus _DropSchema  (ECSchemaR) = 0;
     virtual ECSchemaP       _GetSchema   (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor) = 0;
+    virtual ECSchemaP       _LocateSchema (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType) = 0;
 
 public:
     ECObjectsStatus         AddSchema   (ECSchemaR);
     ECObjectsStatus         DropSchema  (ECSchemaR);
     ECSchemaP               GetSchema   (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor);
+    ECSchemaP               LocateSchema (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType);
 
 /*__PUBLISH_SECTION_START__*/
 };
@@ -973,6 +975,7 @@ protected:
     virtual ECObjectsStatus _AddSchema   (ECSchemaR) override;
     virtual ECObjectsStatus _DropSchema  (ECSchemaR) override;
     virtual ECSchemaP       _GetSchema   (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor);
+    virtual ECSchemaP       _LocateSchema (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType);
 
 /*__PUBLISH_SECTION_START__*/
 public:

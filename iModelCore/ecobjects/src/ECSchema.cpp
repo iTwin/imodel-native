@@ -894,7 +894,8 @@ ECSchemaDeserializationContextR schemaContext
     // Step 1: First check if the owner already owns a copy of the schema.
     //         This will catch schema referencing cycles since the schemas are
     //         added to the owner as they are constructed. 
-    ECSchemaP schema = schemaContext.GetSchemaOwner().GetSchema(name.c_str(), versionMajor, versionMinor);
+//    ECSchemaP schema = schemaContext.GetSchemaOwner().GetSchema(name.c_str(), versionMajor, versionMinor);
+    ECSchemaP schema = schemaContext.GetSchemaOwner().LocateSchema(name.c_str(), versionMajor, versionMinor, SCHEMAMATCHTYPE_LatestCompatible);
 
     if (NULL != schema)
         return schema;
@@ -1586,6 +1587,7 @@ IECSchemaOwnerR ECSchemaDeserializationContext::GetSchemaOwner()                
 ECObjectsStatus IECSchemaOwner::AddSchema  (ECSchemaR schema) { return _AddSchema (schema); }
 ECObjectsStatus IECSchemaOwner::DropSchema (ECSchemaR schema) { return _DropSchema (schema); }
 ECSchemaP       IECSchemaOwner::GetSchema  (const wchar_t* name, UInt32 major, UInt32 minor) { return _GetSchema (name, major, minor); }
+ECSchemaP       IECSchemaOwner::LocateSchema (const wchar_t* name, UInt32 major, UInt32 minor, SchemaMatchType matchType) { return _LocateSchema (name, major, minor, matchType); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
@@ -1634,25 +1636,25 @@ ECObjectsStatus ECSchemaOwner::_DropSchema (ECSchemaR ecSchema)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  07/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaP       ECSchemaOwner::_LocateSchema (const wchar_t* name, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType)
+    { 
+    for each (ECSchemaP ecSchema in m_schemas)
+        {
+        if (ECSchema::SchemasMatch (matchType, name, versionMajor, versionMinor, ecSchema->GetName().c_str(), ecSchema->GetVersionMajor(), ecSchema->GetVersionMinor() != versionMinor))
+            return ecSchema;
+        }
+
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    07/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP       ECSchemaOwner::_GetSchema (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor)
     {
-    for each (ECSchemaP ecSchema in m_schemas)
-        {
-        if (0 != wcscmp (ecSchema->GetName().c_str(), schemaName))
-            continue;
-
-        if (ecSchema->GetVersionMajor() != versionMajor)
-            continue;
-
-        if (ecSchema->GetVersionMinor() != versionMinor)
-            continue;
-
-        return ecSchema;
-        }
-
-    return NULL;
+    return _LocateSchema (schemaName, versionMajor, versionMinor, SCHEMAMATCHTYPE_Exact);
     }
 
 /*---------------------------------------------------------------------------------**//**
