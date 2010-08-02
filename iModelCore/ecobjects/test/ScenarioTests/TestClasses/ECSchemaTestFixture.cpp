@@ -26,16 +26,9 @@ void ECSchemaTestFixture::SetUp()
     //TestDataManager tdm(L"Widgets.09.06.ecschema.xml", __FILE__, OPENMODE_READWRITE);
     std::wstring schemaPath = ECTestFixture::GetTestDataPath(L"Widgets.09.06.ecschema.xml");
     wcout<<" Schema Path: "<<schemaPath<<endl;
-    ECSchemaVerifier ecSchVer;
-    SchemaDeserializationStatus status = ecSchVer.ReadXmlFromFile (m_schema, schemaPath.c_str(), NULL, NULL);
+    schemaOwner = ECSchemaOwner::CreateOwner();
+    SchemaDeserializationStatus status = ECSchemaVerifier::ReadXmlFromFile (schemaOwner, m_schema, schemaPath.c_str(), NULL, NULL);
+
     ASSERT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status)<< schemaPath.c_str();
     ASSERT_TRUE(m_schema != NULL);
-
-    int count = 0;
-    ECClassContainerCR classes = m_schema->Classes;
-    for(ECClassContainer::const_iterator iter=classes.begin(); iter != classes.end(); ++iter)
-        {
-        wcout << "Class Name: " << (*iter)->Name << endl;
-        count++;    
-        }
     }

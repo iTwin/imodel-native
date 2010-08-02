@@ -27,6 +27,7 @@ namespace TestHelpers
 +===============+===============+===============+===============+===============+======*/
 class ECSchemaTestFixture : public ::testing::Test
     {
+    ECSchemaOwnerPtr schemaOwner;
     public: ECSchemaP m_schema;
     public: ECClassContainer::const_iterator iter;
 /*---------------------------------------------------------------------------------**//**
