@@ -7,8 +7,6 @@
     <ECClass typeName="BaseClass" isDomainClass="True">
         <ECProperty propertyName="BaseClassMember" typeName="int"/>
     </ECClass>
-    <ECClass typeName="BaseClass1" isDomainClass="True"/>
-    <ECClass typeName="BaseClass2" isDomainClass="True"/>
     <ECClass typeName="Struct1" displayLabel="StructOne" isStruct="True" isDomainClass="False">
         <ECProperty propertyName="Struct1BoolMember" typeName="boolean"/>
         <ECProperty propertyName="Struct1IntMember" typeName="int"/>
@@ -32,10 +30,6 @@
         <Source cardinality="(0,1)" polymorphic="True"/>
         <Target cardinality="(0,1)" polymorphic="True"/>
     </ECRelationshipClass>
-    <ECClass typeName="ChildClass" isDomainClass="True">
-        <BaseClass>BaseClass1</BaseClass>
-        <BaseClass>BaseClass2</BaseClass>
-    </ECClass>
     <ECClass typeName="Struct3" isStruct="True" isDomainClass="True">
         <ECProperty propertyName="Struct3DoubleMember" typeName="double"/>
         <ECProperty propertyName="Struct3IntMember" typeName="int"/>
@@ -101,7 +95,6 @@
         </Target>
     </ECRelationshipClass>
     <ECClass typeName="HelloClass" isDomainClass="True"/>
-    <ECClass typeName="HelloClass2" isDomainClass="True"/>
     <ECRelationshipClass typeName="ImplicitRelationshipClass" isDomainClass="True" strength="referencing" strengthDirection="forward">
         <Source cardinality="(1,1)" roleLabel="source constraint" polymorphic="True">
             <Class class="TestClass"/>
@@ -110,11 +103,9 @@
             <Class class="Test2Class"/>
         </Target>
     </ECRelationshipClass>
-    <ECClass typeName="MyTestClass2" isDomainClass="True"/>
     <ECClass typeName="RelatedClass" isDomainClass="True">
         <BaseClass>TestClass</BaseClass>
     </ECClass>
-    <ECClass typeName="TestClassB" isDomainClass="True"/>
     <ECRelationshipClass typeName="TestClassToBaseClass" isDomainClass="True" strength="referencing" strengthDirection="forward">
         <BaseClass>BaseRelationshipClass</BaseClass>
         <Source cardinality="(1,1)" roleLabel="source constraint2" polymorphic="True">
@@ -127,7 +118,6 @@
     <ECClass typeName="TestClassa" isDomainClass="True"/>
     <ECClass typeName="ecProject" description="Project Class" displayLabel="Project" isDomainClass="True">
         <ECProperty propertyName="Name" typeName="string" displayLabel="Project Name"/>
-        <ECProperty propertyName="NewProp" typeName="double" displayLabel="New Label"/>
     </ECClass>
     <ECClass typeName="ecWidget" description="Widget" displayLabel="Widget" isDomainClass="True">
         <ECProperty propertyName="EC_InstanceID" typeName="int" description="Unique identifier for instances of your business class"/>
