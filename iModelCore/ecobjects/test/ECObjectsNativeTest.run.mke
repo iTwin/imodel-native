@@ -10,6 +10,7 @@
 always:
      $(OutputRootDir)Product/ECFrameworkNativeTest/Tests/ECObjectsTest_Published.exe
      $(OutputRootDir)Product/ECFrameworkNativeTest/Tests/ECObjectsTest_NonPublished.exe
-     $(OutputRootDir)Product/ECFrameworkNativeTest/Tests/ECObjectsTest_Scenario.exe
+     
+	 #$(OutputRootDir)Product/ECFrameworkNativeTest/Tests/ECObjectsTest_Scenario.exe
 
 
