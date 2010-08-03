@@ -126,6 +126,7 @@ std::wstring ECTestFixture::GetTestDataPath(const wchar_t *dataFile)
         }
         
     std::wstring testData(s_dllPath);
+    testData.append(L"SeedData\\");
     testData.append(dataFile);
     return testData;
     
