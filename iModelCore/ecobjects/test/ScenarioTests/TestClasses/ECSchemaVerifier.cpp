@@ -86,9 +86,8 @@ BentleyStatus ECSchemaVerifier::CreateRelationshipClass_Failure (ECObjectsStatus
 Read XML file from a given location and deserialize as an ECXML schema
 * @bsimethod                                                    Farrukh Latif  06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus ECSchemaVerifier::ReadXmlFromFile (ECSchemaP & schemaOut, const wchar_t * ecSchemaXmlFile, const bvector< IECSchemaLocatorP > * schemaLocators, const bvector< const wchar_t * > * schemaPaths)
+SchemaDeserializationStatus ECSchemaVerifier::ReadXmlFromFile (ECSchemaOwnerPtr &schemaOwner, ECSchemaP & schemaOut, const wchar_t * ecSchemaXmlFile, const bvector< IECSchemaLocatorP > * schemaLocators, const bvector< const wchar_t * > * schemaPaths)
     {
-    schemaOwner = ECSchemaOwner::CreateOwner();
     ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
     SchemaDeserializationStatus schemaDesrializationStatus = ECSchema::ReadXmlFromFile(schemaOut, ecSchemaXmlFile, *schemaContext);
     if (schemaDesrializationStatus != SCHEMA_DESERIALIZATION_STATUS_Success)
