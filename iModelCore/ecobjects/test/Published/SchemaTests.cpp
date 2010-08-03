@@ -341,6 +341,8 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingSchemaWithBaseCl
 
     ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
     ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+    bwstring seedPath(ECTestFixture::GetTestDataPath(L"").c_str());
+    schemaContext->AddSchemaPath(seedPath.c_str());
 
     ECSchemaP schema;
     SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"SchemaThatReferences.01.00.ecschema.xml").c_str(), *schemaContext);
@@ -731,6 +733,8 @@ TEST_F(SchemaReferenceTest, ExpectSuccessWithCircularReferences)
 
     ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
     ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+    bwstring seedPath(ECTestFixture::GetTestDataPath(L"").c_str());
+    schemaContext->AddSchemaPath(seedPath.c_str());
 
     ECSchemaP schema;
     SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"CircleSchema.01.00.ecschema.xml").c_str(), *schemaContext);
