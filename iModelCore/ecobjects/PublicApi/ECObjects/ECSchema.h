@@ -1103,7 +1103,7 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    CreateClass (ECClassP& ecClass, bwstring const& name);
 
     //! If the class name is valid, will create an ECRelationshipClass object and add the new class to the schema
-    //! @param[out] ecClass If successful, will contain a new ECRelationshipClass object
+    //! @param[out] relationshipClass If successful, will contain a new ECRelationshipClass object
     //! @param[in]  name    Name of the class to create
     //! @return A status code indicating whether or not the class was successfully created and added to the schema
     ECOBJECTS_EXPORT ECObjectsStatus    CreateRelationshipClass (ECRelationshipClassP& relationshipClass, bwstring const& name);
@@ -1174,7 +1174,7 @@ public:
     //! @param[out] schemaOut   if successful, will contain a new schema object
     //! @param[in]  schemaName  Name of the schema to be created.
     //! @param[in]  versionMajor The major version number.
-    //! @param[in]  versionMajor The minor version number.
+    //! @param[in]  versionMinor The minor version number.
     //! @param[in]  owner        An object that will control the lifecycle of the newly created schema object.
     //! @return A status code indicating whether the call was succesfull or not
     ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema (ECSchemaP& schemaOut, bwstring const& schemaName, 
