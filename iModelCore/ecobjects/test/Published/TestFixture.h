@@ -29,6 +29,7 @@ public:
     void    TestForIECInstanceLeaks ();
 
     static std::wstring GetTestDataPath(const wchar_t *fileName);
+    static std::wstring GetWorkingDirectoryPath(const wchar_t *testFixture, const wchar_t *fileName);
     };
 
 END_BENTLEY_EC_NAMESPACE

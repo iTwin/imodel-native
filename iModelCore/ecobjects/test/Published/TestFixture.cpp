@@ -129,8 +129,33 @@ std::wstring ECTestFixture::GetTestDataPath(const wchar_t *dataFile)
     testData.append(L"SeedData\\");
     testData.append(dataFile);
     return testData;
-    
     } 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                08/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+std::wstring ECTestFixture::GetWorkingDirectoryPath(const wchar_t *testFixture, const wchar_t *dataFile)
+    {
+    wchar_t path[_MAX_PATH];
+
+    if (0 == GetEnvironmentVariableW(L"OutRoot", path, _MAX_PATH))
+        {
+        GetEnvironmentVariableW(L"tmp", path, _MAX_PATH);
+        }
+
+    std::wstring filePath(path);
+    if (filePath.size() == 0)
+        return filePath;
+
+    if (*filePath.rbegin() != '\\')
+        filePath.append (L"\\");
+
+    filePath.append(L"ECFramework\\build\\AtpWorkingRoot\\");
+    filePath.append(testFixture);
+    filePath.append(L"\\");
+    filePath.append(dataFile);
+    return filePath;
+    }
     
 END_BENTLEY_EC_NAMESPACE
 
