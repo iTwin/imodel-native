@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
+
 using namespace Bentley::EC;
 using namespace TestHelpers;
 using namespace std;
