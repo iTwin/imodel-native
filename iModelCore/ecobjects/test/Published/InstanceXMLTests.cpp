@@ -262,7 +262,8 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingSimpleInstance
 
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
 
-    testInstance->Dump();
+    // WIP_FUSION: should pass the string to the logger via a backdoor
+    testInstance->ToString(L"").c_str();
     VerifyTestInstance (testInstance.get(), false);
     };
 
@@ -309,7 +310,8 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), *schema);
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
     
-    testInstance->Dump();
+    // WIP_FUSION: should pass the string to the logger via a backdoor
+    testInstance->ToString(L"").c_str();
     VerifyTestInstance (testInstance.get(), false);
 
     LPSTREAM stream = NULL;
@@ -348,7 +350,8 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), *schema);
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
     
-    testInstance->Dump();
+    // WIP_FUSION: should pass the string to the logger via a backdoor
+    testInstance->ToString(L"").c_str();
     VerifyTestInstance (testInstance.get(), false);
 
     bwstring ecInstanceXml;
@@ -435,7 +438,8 @@ TEST_F(PolymorphismDeserializationTest, ExpectSuccessWhenDeserializingPolymorphi
 
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
     
-    testInstance->Dump();
+    // WIP_FUSION: should pass the string to the logger via a backdoor
+    testInstance->ToString(L"").c_str();
     VerifyPolymorphismInstance (testInstance.get());
     };
 

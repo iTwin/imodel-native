@@ -376,9 +376,9 @@ ECObjectsStatus           StandaloneECInstance::_ClearArray (const wchar_t * pro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void                StandaloneECInstance::_Dump() const
+bwstring        StandaloneECInstance::_ToString (const wchar_t* indent) const
     {
-    return DumpInstanceData (GetClassLayout());
+    return InstanceDataToString (indent, GetClassLayout());
     }
 
 ///////////////////////////////////////////////////////////////////////////////////////////

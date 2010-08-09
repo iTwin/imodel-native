@@ -653,7 +653,8 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     VerifyStringArray   (instance, v, L"EndingArray[]", L"EArray", 0, 14);                
     VerifyVariableCountManufacturerArray (instance, v, L"ManufacturerArray[]");     
     
-    instance.Dump();
+    // WIP_FUSION: should pass the string to the logger via a backdoor
+    instance.ToString(L"").c_str();
     
     delete manufClassLayout;             
     }
@@ -679,7 +680,8 @@ TEST_F(MemoryLayoutTests, InstantiateStandaloneInstance)
 
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     bwstring instanceId = instance->GetInstanceId();
-    instance->Dump();
+    // WIP_FUSION: should pass the string to the logger via a backdoor
+    instance->ToString(L"").c_str();
     ExerciseInstance (*instance, L"Test");
 
     delete classLayout;
@@ -712,7 +714,8 @@ TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
     UInt32 size = instance->GetBytesUsed ();
     EXPECT_EQ (size, UInt32(sizeof(InstanceHeader)));
 
-    instance->Dump();
+    // WIP_FUSION: should pass the string to the logger via a backdoor
+    instance->ToString(L"").c_str();
     delete classLayout;
 
     // instance.Compact()... then check values again

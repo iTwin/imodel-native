@@ -8,8 +8,11 @@
 /*__PUBLISH_SECTION_START__*/
 #pragma once
 
-#include <ECObjects\ECObjects.h>
+#include "ECObjects.h"
 #include <hash_map>
+/*__PUBLISH_SECTION_END__*/
+#include <BsiLogging\bsilog.h>
+/*__PUBLISH_SECTION_START__*/
 
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
 #define PROPERTYLAYOUT_Source_ECPointer L"Source ECPointer"
@@ -48,7 +51,7 @@ struct PropertyLayout
     {
 friend ClassLayout;    
 private:
-    bwstring            m_accessString;        
+    bwstring                m_accessString;        
     ECTypeDescriptor        m_typeDescriptor;
     
     // Using UInt32 instead of size_t below because we will persist this struct in an XAttribute. It will never be very big.
@@ -77,7 +80,7 @@ public:
     //! Variable-sized types will have 4 byte SecondaryOffset stored in the fixed Section.
     UInt32                  GetSizeInFixedSection() const;
     
-    bwstring            ToString();
+    bwstring                ToString();
     };
 
 #define USE_HASHMAP_IN_CLASSLAYOUT    
@@ -105,7 +108,7 @@ private:
     
     // These members are expected to be persisted  
     ClassIndex              m_classIndex; // Unique per some context, e.g. per DgnFile
-    bwstring            m_className;
+    bwstring                m_className;
     
     PropertyLayoutVector    m_propertyLayouts; // This is the primary collection, there is a secondary map for lookup by name, below.
     PropertyLayoutMap       m_propertyLayoutMap;
@@ -157,17 +160,15 @@ public:
     ECOBJECTS_EXPORT void           SetIsPersisted (bool isPersisted) const;
     ECOBJECTS_EXPORT int            GetECPointerIndex (ECRelationshipEnd end) const;
     
-    ECOBJECTS_EXPORT UInt32         GetPropertyCount () const;
+    ECOBJECTS_EXPORT UInt32          GetPropertyCount () const;
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyLayout (PropertyLayoutCP & propertyLayout, wchar_t const * accessString) const;
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const;
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyIndex (UInt32& propertyIndex, wchar_t const * accessString) const;
     
 /*__PUBLISH_SECTION_END__*/
-    ECOBJECTS_EXPORT void           AddPropertyDirect (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask);
-    ECOBJECTS_EXPORT ECObjectsStatus  FinishLayout ();
+    ECOBJECTS_EXPORT void            AddPropertyDirect (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask);
+    ECOBJECTS_EXPORT ECObjectsStatus FinishLayout ();
 /*__PUBLISH_SECTION_START__*/
-
-    void                            Dump() const;
     
     void                            InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const;
     
@@ -176,6 +177,8 @@ public:
     //! Determines the number of bytes used, so far
     ECOBJECTS_EXPORT UInt32         CalculateBytesUsed(byte const * data) const;
     ECOBJECTS_EXPORT bool           IsCompatible(ClassLayoutCR layout) const;
+
+    bwstring                        ToString() const;
     };
 
 typedef bvector<ClassLayoutCP>  ClassLayoutVector;
@@ -373,7 +376,7 @@ protected:
     ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ClassLayoutCR classLayout, UInt32 propertyIndex, ECValueCR v, bool useArrayIndex = false, UInt32 arrayIndex = 0);      
     ECOBJECTS_EXPORT ECObjectsStatus  InsertNullArrayElementsAt (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, UInt32 insertIndex, UInt32 insertCount);
     ECOBJECTS_EXPORT ECObjectsStatus  AddNullArrayElementsAt (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, UInt32 insertCount);
-    ECOBJECTS_EXPORT void       DumpInstanceData (ClassLayoutCR classLayout) const;
+    ECOBJECTS_EXPORT bwstring         InstanceDataToString (const wchar_t* indent, ClassLayoutCR classLayout) const;
     
     //! Sets the in-memory value of the array index of the specified property to be the struct value as held by v
     //! Since struct arrays support polymorphic values, we do not support storing the full struct value in the data section of the instance.  It must be externalized, therefore
