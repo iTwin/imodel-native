@@ -102,7 +102,51 @@ static void*    getDLLInstance ()
 
     return 0;
     }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    KevinNyman      03/10
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DirExists (wchar_t const* dir)
+    {
+    DWORD attributes = GetFileAttributesW(dir);
+    return attributes != INVALID_FILE_ATTRIBUTES;
+    }
  
+ /*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    KevinNyman      07/10
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CreateDirectoryRecursive (wchar_t const * path, bool failIfExists)
+    {
+    if (DirExists (path))
+        return true;
+    std::wstring tempPath = path;
+    std::wstring incPath = L"";
+    size_t i, sz = tempPath.size();
+    for (i = 0; i < sz; ++i)
+        {
+        if (tempPath[i] == L'/')
+            tempPath[i] = L'\\';
+        }
+    // Some shells like TCC won't allow you to mkdir with a full path so do it piecewise.
+    while (tempPath.size() > 0)
+        {
+        std::size_t pos = tempPath.find (L"\\");
+        std::wstring part = tempPath.substr (0, pos);
+        tempPath = tempPath.substr (pos+1, tempPath.size());
+        incPath += part;
+        incPath += L"\\";
+        if (!DirExists (incPath.c_str()))
+            {
+            if (!CreateDirectoryW (incPath.c_str(), NULL))
+                return false;
+            }
+        else
+            if (failIfExists)
+                return false;
+        }
+    return (DirExists (path));
+    }
+
 std::wstring ECTestFixture::s_dllPath = L"";
     
 /*---------------------------------------------------------------------------------**//**
@@ -126,10 +170,42 @@ std::wstring ECTestFixture::GetTestDataPath(const wchar_t *dataFile)
         }
         
     std::wstring testData(s_dllPath);
+    testData.append(L"SeedData\\");
     testData.append(dataFile);
     return testData;
-    
     } 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                08/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+std::wstring ECTestFixture::GetWorkingDirectoryPath(const wchar_t *testFixture, const wchar_t *dataFile)
+    {
+    wchar_t path[_MAX_PATH];
+
+    if (0 == GetEnvironmentVariableW(L"OutRoot", path, _MAX_PATH))
+        {
+        GetEnvironmentVariableW(L"tmp", path, _MAX_PATH);
+        }
+
+    std::wstring filePath(path);
+    if (filePath.size() == 0)
+        return filePath;
+
+    if (*filePath.rbegin() != '\\')
+        filePath.append (L"\\");
+
+    wchar_t * processorArchitecture = (8 == sizeof(void*)) ? L"Winx64" : L"Winx86";
+    filePath.append(processorArchitecture);
+    filePath.append(L"\\");
+    filePath.append(L"ECFramework\\build\\AtpWorkingRoot\\");
+    filePath.append(testFixture);
+    filePath.append(L"\\");
+
+    CreateDirectoryRecursive(filePath.c_str(), false);
+
+    filePath.append(dataFile);
+    return filePath;
+    }
     
 END_BENTLEY_EC_NAMESPACE
 

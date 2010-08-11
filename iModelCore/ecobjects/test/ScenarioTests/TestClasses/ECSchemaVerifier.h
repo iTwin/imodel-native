@@ -50,7 +50,7 @@ public: BentleyStatus CreateRelationshipClass_Failure (ECObjectsStatus expectedS
 /*---------------------------------------------------------------------------------**\\**
 * @bsimethod                                                    Farrukh Latif  06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-public: SchemaDeserializationStatus ReadXmlFromFile (ECSchemaP & schemaOut, const wchar_t * ecSchemaXmlFile, const bvector< IECSchemaLocatorP > * schemaLocators, const bvector< const wchar_t * > * schemaPaths);
+public: static SchemaDeserializationStatus ReadXmlFromFile (ECSchemaOwnerPtr &schemaOwner, ECSchemaP & schemaOut, const wchar_t * ecSchemaXmlFile, const bvector< IECSchemaLocatorP > * schemaLocators, const bvector< const wchar_t * > * schemaPaths);
 
 /*---------------------------------------------------------------------------------**\\**
 * @bsimethod                                                    Farrukh Latif  06/10

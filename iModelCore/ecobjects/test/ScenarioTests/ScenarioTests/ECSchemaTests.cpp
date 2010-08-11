@@ -23,11 +23,9 @@ class ECSchemaTests : public ECSchemaTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus serializeSchema(ECSchemaP m_schema)
     {
-    std::wstring xmlFile;
-    xmlFile = L"Widgets.09.06.ecschema.xml";
-    const wchar_t * writeFile = xmlFile.c_str();
+    std::wstring xmlFile = ECTestFixture::GetWorkingDirectoryPath(L"ECObjectsScenarioTests", L"Widgets.09.06.ecschema.xml");
     ECSchemaVerifier ecSchVer;
-    SchemaSerializationStatus status = ecSchVer.WriteXmlToFile(writeFile, m_schema);
+    SchemaSerializationStatus status = ecSchVer.WriteXmlToFile(xmlFile.c_str(), m_schema);
     EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status);
     return SUCCESS;
     }
@@ -37,11 +35,9 @@ BentleyStatus serializeSchema(ECSchemaP m_schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus serializeSchema_New(ECSchemaP m_schema)
     {
-    std::wstring xmlFile;
-    xmlFile = L"NewSchema.01.00.ecschema.xml";
-    const wchar_t * writeFile = xmlFile.c_str();
+    std::wstring xmlFile = ECTestFixture::GetWorkingDirectoryPath(L"ECObjectsScenarioTests", L"NewSchema.01.00.ecschema.xml");
     ECSchemaVerifier ecSchVer;
-    SchemaSerializationStatus status = ecSchVer.WriteXmlToFile(writeFile, m_schema);
+    SchemaSerializationStatus status = ecSchVer.WriteXmlToFile(xmlFile.c_str(), m_schema);
     EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status);
     return SUCCESS;
     }
@@ -51,11 +47,9 @@ BentleyStatus serializeSchema_New(ECSchemaP m_schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus serializeSchema_WithStructProperty(ECSchemaP m_schema)
     {
-    std::wstring xmlFile;
-    xmlFile = L"WidgetsWithStructProperty.09.06.ecschema.xml";
-    const wchar_t * writeFile = xmlFile.c_str();
+    std::wstring xmlFile = ECTestFixture::GetWorkingDirectoryPath(L"ECObjectsScenarioTests", L"WidgetsWithStructProperty.01.00.ecschema.xml");
     ECSchemaVerifier ecSchVer;
-    SchemaSerializationStatus status = ecSchVer.WriteXmlToFile(writeFile, m_schema);
+    SchemaSerializationStatus status = ecSchVer.WriteXmlToFile(xmlFile.c_str(), m_schema);
     EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status);
     return SUCCESS;
     }
@@ -65,11 +59,9 @@ BentleyStatus serializeSchema_WithStructProperty(ECSchemaP m_schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus serializeSchema_WithClassModification(ECSchemaP m_schema)
     {
-    std::wstring xmlFile;
-    xmlFile = L"WidgetsWithClassModification.09.06.ecschema.xml";
-    const wchar_t * writeFile = xmlFile.c_str();
+    std::wstring xmlFile = ECTestFixture::GetWorkingDirectoryPath(L"ECObjectsScenarioTests", L"WidgetsWithClassModification.01.00.ecschema.xml");
     ECSchemaVerifier ecSchVer;
-    SchemaSerializationStatus status = ecSchVer.WriteXmlToFile(writeFile, m_schema);
+    SchemaSerializationStatus status = ecSchVer.WriteXmlToFile(xmlFile.c_str(), m_schema);
     EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status);
     return SUCCESS;
     }
@@ -265,13 +257,6 @@ TEST_F(ECSchemaTests, InvalidClassName)
     //to do --- incoporate all special characters
     ecClsVer.CreateClass_Success(testClass2, L"MyTestClass2");
     serializeSchema(m_schema);
-    int count = 0;
-    ECClassContainerCR classes = m_schema->Classes;
-    for(ECClassContainer::const_iterator iter=classes.begin(); iter != classes.end(); ++iter)
-        {
-        wcout << "Class Name: " << (*iter)->Name << endl;
-        count++;    
-        }
     CoUninitialize();
     }
 
@@ -401,19 +386,19 @@ TEST_F(ECSchemaTests, AddClass)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                        Farrukh Latif  06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECSchemaTests, maximumClassesInASchema)
-    {
-    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    ECClassP class1;
-    ECClassVerifier ecClsVer(m_schema);
-    for(int i =1; i <= 8192; i++)
-        {
-        WString className(L"C");
-        char charInt[10];
-        _itoa(i, charInt, 10);
-        className.Append(charInt);
-        ecClsVer.CreateClass_Success(class1, className);
-        }
-    serializeSchema(m_schema);
-    CoUninitialize();
-    }
+//TEST_F(ECSchemaTests, maximumClassesInASchema)
+//    {
+//    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+//    ECClassP class1;
+//    ECClassVerifier ecClsVer(m_schema);
+//    for(int i =1; i <= 8192; i++)
+//        {
+//        WString className(L"C");
+//        char charInt[10];
+//        _itoa(i, charInt, 10);
+//        className.Append(charInt);
+//        ecClsVer.CreateClass_Success(class1, className);
+//        }
+//    serializeSchema(m_schema);
+//    CoUninitialize();
+//    }
