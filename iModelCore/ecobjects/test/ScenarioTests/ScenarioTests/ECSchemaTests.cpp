@@ -23,11 +23,9 @@ class ECSchemaTests : public ECSchemaTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus serializeSchema(ECSchemaP m_schema)
     {
-    std::wstring xmlFile;
-    xmlFile = L"Widgets.09.06.ecschema.xml";
-    const wchar_t * writeFile = xmlFile.c_str();
+    std::wstring xmlFile = ECTestFixture::GetWorkingDirectoryPath(L"ECObjectsScenarioTests", L"Widgets.09.06.ecschema.xml");
     ECSchemaVerifier ecSchVer;
-    SchemaSerializationStatus status = ecSchVer.WriteXmlToFile(writeFile, m_schema);
+    SchemaSerializationStatus status = ecSchVer.WriteXmlToFile(xmlFile.c_str(), m_schema);
     EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status);
     return SUCCESS;
     }
@@ -37,11 +35,9 @@ BentleyStatus serializeSchema(ECSchemaP m_schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus serializeSchema_New(ECSchemaP m_schema)
     {
-    std::wstring xmlFile;
-    xmlFile = L"NewSchema.01.00.ecschema.xml";
-    const wchar_t * writeFile = xmlFile.c_str();
+    std::wstring xmlFile = ECTestFixture::GetWorkingDirectoryPath(L"ECObjectsScenarioTests", L"NewSchema.01.00.ecschema.xml");
     ECSchemaVerifier ecSchVer;
-    SchemaSerializationStatus status = ecSchVer.WriteXmlToFile(writeFile, m_schema);
+    SchemaSerializationStatus status = ecSchVer.WriteXmlToFile(xmlFile.c_str(), m_schema);
     EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status);
     return SUCCESS;
     }
@@ -51,11 +47,9 @@ BentleyStatus serializeSchema_New(ECSchemaP m_schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus serializeSchema_WithStructProperty(ECSchemaP m_schema)
     {
-    std::wstring xmlFile;
-    xmlFile = L"WidgetsWithStructProperty.09.06.ecschema.xml";
-    const wchar_t * writeFile = xmlFile.c_str();
+    std::wstring xmlFile = ECTestFixture::GetWorkingDirectoryPath(L"ECObjectsScenarioTests", L"WidgetsWithStructProperty.01.00.ecschema.xml");
     ECSchemaVerifier ecSchVer;
-    SchemaSerializationStatus status = ecSchVer.WriteXmlToFile(writeFile, m_schema);
+    SchemaSerializationStatus status = ecSchVer.WriteXmlToFile(xmlFile.c_str(), m_schema);
     EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status);
     return SUCCESS;
     }
@@ -65,11 +59,9 @@ BentleyStatus serializeSchema_WithStructProperty(ECSchemaP m_schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus serializeSchema_WithClassModification(ECSchemaP m_schema)
     {
-    std::wstring xmlFile;
-    xmlFile = L"WidgetsWithClassModification.09.06.ecschema.xml";
-    const wchar_t * writeFile = xmlFile.c_str();
+    std::wstring xmlFile = ECTestFixture::GetWorkingDirectoryPath(L"ECObjectsScenarioTests", L"WidgetsWithClassModification.01.00.ecschema.xml");
     ECSchemaVerifier ecSchVer;
-    SchemaSerializationStatus status = ecSchVer.WriteXmlToFile(writeFile, m_schema);
+    SchemaSerializationStatus status = ecSchVer.WriteXmlToFile(xmlFile.c_str(), m_schema);
     EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status);
     return SUCCESS;
     }

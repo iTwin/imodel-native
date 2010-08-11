@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
+
 using namespace Bentley::EC;
 using namespace TestHelpers;
 using namespace std;
@@ -89,6 +90,9 @@ Read XML file from a given location and deserialize as an ECXML schema
 SchemaDeserializationStatus ECSchemaVerifier::ReadXmlFromFile (ECSchemaOwnerPtr &schemaOwner, ECSchemaP & schemaOut, const wchar_t * ecSchemaXmlFile, const bvector< IECSchemaLocatorP > * schemaLocators, const bvector< const wchar_t * > * schemaPaths)
     {
     ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+    bwstring seedPath(ECTestFixture::GetTestDataPath(L"").c_str());
+    schemaContext->AddSchemaPath(seedPath.c_str());
+
     SchemaDeserializationStatus schemaDesrializationStatus = ECSchema::ReadXmlFromFile(schemaOut, ecSchemaXmlFile, *schemaContext);
     if (schemaDesrializationStatus != SCHEMA_DESERIALIZATION_STATUS_Success)
         {
