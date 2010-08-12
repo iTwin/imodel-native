@@ -10,9 +10,6 @@
 
 #include "ECObjects.h"
 #include <Geom\GeomApi.h>
-/*__PUBLISH_SECTION_END__*/
-#include <BsiLogging\bsilog.h>
-/*__PUBLISH_SECTION_START__*/
 
 BEGIN_BENTLEY_EC_NAMESPACE
 

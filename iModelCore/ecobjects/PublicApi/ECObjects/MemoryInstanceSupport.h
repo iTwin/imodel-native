@@ -10,9 +10,6 @@
 
 #include "ECObjects.h"
 #include <hash_map>
-/*__PUBLISH_SECTION_END__*/
-#include <BsiLogging\bsilog.h>
-/*__PUBLISH_SECTION_START__*/
 
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
 #define PROPERTYLAYOUT_Source_ECPointer L"Source ECPointer"
