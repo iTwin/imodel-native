@@ -833,7 +833,7 @@ MSXML2::IXMLDOMNode& classNode
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
 
-        ECClassP baseClass = resolvedSchema->GetClassP (className);
+        ECClassP baseClass = resolvedSchema->GetClassP (className.c_str());
         if (NULL == baseClass)
             {
             Logger::GetLogger()->warningv  (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'", 
@@ -1336,7 +1336,7 @@ MSXML2::IXMLDOMNode &constraintNode
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
 
-        ECClassP constraintClass = resolvedSchema->GetClassP (className);
+        ECClassP constraintClass = resolvedSchema->GetClassP (className.c_str());
         if (NULL == constraintClass)
             {
             Logger::GetLogger()->warningv  (L"Invalid ECSchemaXML: The ECRelationshipConstraint contains a " CONSTRAINTCLASSNAME_ATTRIBUTE L" attribute with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'", 

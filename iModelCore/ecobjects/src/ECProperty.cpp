@@ -551,7 +551,7 @@ ECPropertyCR ecProperty
         return ECOBJECTS_STATUS_SchemaNotFound;
         }
 
-    structClass = resolvedSchema->GetClassP (className);
+    structClass = resolvedSchema->GetClassP (className.c_str());
     if (NULL == structClass)
         {
         Logger::GetLogger()->warningv (L"Can not resolve the type name '%s' as a struct type because ECClass '%s' does not exist in the schema '%s'.\n", 

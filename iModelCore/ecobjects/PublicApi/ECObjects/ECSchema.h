@@ -1123,7 +1123,7 @@ public:
     //! Get a class by name within the context of this schema.
     //! @param[in]  name     The name of the class to lookup.  This must be an unqualified (short) class name.    
     //! @return   A pointer to an EC::ECClass if the named class exists in within the current schema; otherwise, NULL
-    ECOBJECTS_EXPORT ECClassP           GetClassP (bwstring const& name) const;
+    ECOBJECTS_EXPORT ECClassP           GetClassP (const wchar_t * name) const;
 
     //! Gets the other schemas that are used by classes within this schema.
     //! Referenced schemas are the schemas that contain definitions of base classes,

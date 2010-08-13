@@ -320,11 +320,11 @@ const UInt32 versionMinor
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassP ECSchema::GetClassP
 (
-bwstring const& name
+const wchar_t * name
 ) const
     {
     ClassMap::const_iterator  classIterator;
-    classIterator = m_classMap.find (name.c_str());
+    classIterator = m_classMap.find (name);
     
     if ( classIterator != m_classMap.end() )
         return classIterator->second;
