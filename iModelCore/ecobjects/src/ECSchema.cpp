@@ -27,10 +27,14 @@ DebugSchemaLeakMap      g_debugSchemaLeakMap;
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchema::ECSchema ()
+ECSchema::ECSchema (bool hideFromLeakDetection)
     :
-    m_versionMajor (DEFAULT_VERSION_MAJOR), m_versionMinor (DEFAULT_VERSION_MINOR), m_classContainer(ECClassContainer(m_classMap))
+    m_versionMajor (DEFAULT_VERSION_MAJOR), m_versionMinor (DEFAULT_VERSION_MINOR), m_classContainer(ECClassContainer(m_classMap)),
+    m_hideFromLeakDetection(hideFromLeakDetection)
     {
+    if (m_hideFromLeakDetection)
+        return;
+
     g_totalAllocs++;
     g_currentLive++;
 
@@ -72,6 +76,9 @@ ECSchema::~ECSchema ()
         }
     m_referencedSchemas.clear();*/
 
+    if (m_hideFromLeakDetection)
+        return;
+
 #ifdef DEBUG_SCHEMA_LEAKS
     g_debugSchemaLeakMap.erase(this);
 #endif
@@ -103,21 +110,7 @@ void ECSchema::Debug_DumpAllocationStats(const wchar_t* prefix)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen    02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool isExcluded(bwstring& schemaName, std::vector<bwstring> schemaNamesToExclude)
-    {
-    for each (bwstring excludedSchema in schemaNamesToExclude)
-        {
-        if (0 == schemaName.compare (excludedSchema))
-            return true;
-        }
-
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen    02/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchema::Debug_ReportLeaks(std::vector<bwstring>& schemaNamesToExclude)
+void ECSchema::Debug_ReportLeaks()
     {
 #ifdef DEBUG_SCHEMA_LEAKS
     for each (DebugSchemaLeakMap::value_type leak in g_debugSchemaLeakMap)
@@ -126,8 +119,6 @@ void ECSchema::Debug_ReportLeaks(std::vector<bwstring>& schemaNamesToExclude)
         UInt32    orderOfAllocation = leak.second;
         
         bwstring name = leakedObject->GetName();
-        if (isExcluded (name, schemaNamesToExclude))
-            continue;
         
         Logger::GetLogger()->errorv (L"Leaked the %dth IECSchema that was allocated: %s", orderOfAllocation, name.c_str());
         //leakedObject->Dump();
@@ -519,13 +510,14 @@ ECSchemaP&          schemaOut,
 bwstring const&     schemaName,
 UInt32              versionMajor,
 UInt32              versionMinor,
-IECSchemaOwnerR     schemaOwner
+IECSchemaOwnerR     schemaOwner,
+bool                hideFromLeakDetection
 )
     {    
     if (!NameValidator::Validate(schemaName))
         return ECOBJECTS_STATUS_InvalidName;
 
-    ECSchemaP   schema = new ECSchema();
+    ECSchemaP   schema = new ECSchema(hideFromLeakDetection);
 
     ECObjectsStatus status;
     
@@ -545,6 +537,21 @@ IECSchemaOwnerR     schemaOwner
 
     schemaOut = schema;
     return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::CreateSchema
+(
+ECSchemaP&          schemaOut, 
+bwstring const&     schemaName,
+UInt32              versionMajor,
+UInt32              versionMinor,
+IECSchemaOwnerR     schemaOwner
+)
+    {
+    return CreateSchema (schemaOut, schemaName, versionMajor, versionMinor, schemaOwner, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1048,7 +1055,8 @@ ECSchemaDeserializationContextR     schemaContext
         }
 
     IECSchemaOwnerR schemaOwner = schemaContext.GetSchemaOwner();
-    if (ECOBJECTS_STATUS_Success != CreateSchema (schemaOut, (const wchar_t *)attributePtr->text, versionMajor, versionMinor, schemaOwner))
+    bool            hideFromLeakDetection = schemaContext.GetHideSchemasFromLeakDetection();
+    if (ECOBJECTS_STATUS_Success != CreateSchema (schemaOut, (const wchar_t *)attributePtr->text, versionMajor, versionMinor, schemaOwner, hideFromLeakDetection))
         return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
 
     // OPTIONAL attributes - If these attributes exist they MUST be valid        
@@ -1565,7 +1573,7 @@ IStreamP ecSchemaXmlStream
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaDeserializationContext::ECSchemaDeserializationContext(IECSchemaOwnerR owner)
     :
-    m_schemaOwner (owner)
+    m_schemaOwner (owner), m_hideSchemasFromLeakDetection (false)
     {
     }
 
@@ -1576,10 +1584,12 @@ ECSchemaDeserializationContextPtr  ECSchemaDeserializationContext::CreateContext
 void  ECSchemaDeserializationContext::AddSchemaLocators (bvector<EC::IECSchemaLocatorP>& locators) { m_locators.insert (m_locators.begin(), locators.begin(), locators.end());  }
 void  ECSchemaDeserializationContext::AddSchemaLocator (IECSchemaLocatorR locator) { m_locators.push_back (&locator);  }
 void  ECSchemaDeserializationContext::AddSchemaPath (const wchar_t* path)          { m_searchPaths.push_back (path);   }
+void  ECSchemaDeserializationContext::HideSchemasFromLeakDetection ()              { m_hideSchemasFromLeakDetection = true; }
 bvector<IECSchemaLocatorP>& ECSchemaDeserializationContext::GetSchemaLocators ()   { return m_locators;    }
 bvector<const wchar_t *>&   ECSchemaDeserializationContext::GetSchemaPaths ()      { return m_searchPaths; }
 void            ECSchemaDeserializationContext::ClearSchemaPaths ()                { m_searchPaths.clear();    }
 IECSchemaOwnerR ECSchemaDeserializationContext::GetSchemaOwner()                   { return m_schemaOwner;  }
+bool            ECSchemaDeserializationContext::GetHideSchemasFromLeakDetection()  { return m_hideSchemasFromLeakDetection;  }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    07/10

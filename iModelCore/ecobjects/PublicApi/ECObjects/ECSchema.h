@@ -996,16 +996,20 @@ private:
 
     bvector<IECSchemaLocatorP>      m_locators;
     bvector<const wchar_t *>        m_searchPaths;
+    bool                            m_hideSchemasFromLeakDetection;
 
     ECSchemaDeserializationContext(IECSchemaOwnerR);
 
     bvector<IECSchemaLocatorP>& GetSchemaLocators ();
     bvector<const wchar_t *>&   GetSchemaPaths ();
     IECSchemaOwnerR             GetSchemaOwner();
+    bool                        GetHideSchemasFromLeakDetection();
 
     void                        ClearSchemaPaths();
 
 public:
+    ECOBJECTS_EXPORT void HideSchemasFromLeakDetection();
+
 /*__PUBLISH_SECTION_START__*/
     ECOBJECTS_EXPORT static ECSchemaDeserializationContextPtr CreateContext (IECSchemaOwnerR);
 
@@ -1035,13 +1039,14 @@ struct ECSchema /*__PUBLISH_ABSTRACT__*/ : public IECCustomAttributeContainer
 // They are freed when the schema is freed.
 
 private:
-    bwstring        m_name;
-    bwstring        m_namespacePrefix;
-    bwstring        m_displayLabel;
-    bwstring        m_description;
+    bwstring            m_name;
+    bwstring            m_namespacePrefix;
+    bwstring            m_displayLabel;
+    bwstring            m_description;
     UInt32              m_versionMajor;
     UInt32              m_versionMinor;    
     ECClassContainer    m_classContainer;
+    bool                m_hideFromLeakDetection;
 
     // maps class name -> class pointer    
     ClassMap m_classMap;
@@ -1051,7 +1056,7 @@ private:
     std::set<const wchar_t *> m_alreadySerializedClasses;
     stdext::hash_map<ECSchemaP, const bwstring> m_referencedSchemaNamespaceMap;
 
-    ECSchema ();
+    ECSchema (bool hideFromLeakDetection);
     ~ECSchema();    
 
     static SchemaDeserializationStatus  ReadXml (ECSchemaP& schemaOut, MSXML2_IXMLDOMDocument2& pXmlDoc, ECSchemaDeserializationContextR context);
@@ -1081,7 +1086,7 @@ public:
     ECOBJECTS_EXPORT static void        Debug_ResetAllocationStats ();
     ECOBJECTS_EXPORT static void        Debug_DumpAllocationStats (const wchar_t* prefix);
     ECOBJECTS_EXPORT static void        Debug_GetAllocationStats (int* currentLive, int* totalAllocs, int* totalFrees);
-    ECOBJECTS_EXPORT static void        Debug_ReportLeaks (std::vector<bwstring>& schemaNamesToExclude);
+    ECOBJECTS_EXPORT static void        Debug_ReportLeaks ();
 /*__PUBLISH_SECTION_END__*/
 
 /*__PUBLISH_SECTION_START__*/
@@ -1183,6 +1188,13 @@ public:
 /*__PUBLISH_SECTION_END__*/
     // Should only be called by SchemaOwners.  Since IECSchemaOwner is not published, neither should this method be published
     ECOBJECTS_EXPORT static void            DestroySchema (ECSchemaP& schema);
+
+    // This method is intended for use by internal code that needs to manage the schema's lifespan internally.
+    // For example one ECXLayout schema is created for each session and never freed.  Obviously care should be
+    // taken that Schema's allocated this way are not actually leaked.       
+    ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema (ECSchemaP& schemaOut, bwstring const& schemaName, 
+                                                          UInt32 versionMajor, UInt32 versionMinor, IECSchemaOwnerR owner,
+                                                          bool hideFromLeakDetection);
 /*__PUBLISH_SECTION_START__*/
 
     //! Given a version string MM.NN, this will parse other major and minor versions

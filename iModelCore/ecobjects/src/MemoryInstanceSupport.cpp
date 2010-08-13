@@ -12,9 +12,29 @@
 // SHRINK_TO_FIT is not recommended and is mainly for testing. It it better to "compact" everything at once
 #define SHRINK_TO_FIT 1 
 
+using namespace std;
+
 BEGIN_BENTLEY_EC_NAMESPACE
 
 const UInt32 BITS_PER_NULLFLAGSBITMASK = (sizeof(NullflagsBitmask) * 8);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void            appendFormattedString (wostringstream& outStream, const wchar_t* fmtStr, ...)
+    {
+    wchar_t line[1024];
+
+    va_list argList;
+    va_start(argList, fmtStr /* the last fixed argument */);
+    vswprintf(line, _countof(line), fmtStr, argList);
+    va_end(argList);
+
+    // in case we use up the local buffer, truncate with a newline
+    swprintf (&line[_countof(line) - 2], 2, L"\n");;
+
+    outStream << line;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/09
@@ -104,7 +124,7 @@ bwstring    PropertyLayout::ToString ()
         typeName += L"[]";
     
     wchar_t line[1024];
-    swprintf (line, sizeof(line)/sizeof(wchar_t), L"%32s %16s offset=%3i nullflagsOffset=%3i, nullflagsBitmask=0x%08.X", m_accessString.c_str(), typeName.c_str(), m_offset, m_nullflagsOffset, m_nullflagsBitmask);
+    swprintf (line, _countof(line), L"%32s %16s offset=%3i nullflagsOffset=%3i, nullflagsBitmask=0x%08.X", m_accessString.c_str(), typeName.c_str(), m_offset, m_nullflagsOffset, m_nullflagsBitmask);
         
     return line;
     }
@@ -155,15 +175,21 @@ ClassLayout::ClassLayout(SchemaIndex schemaIndex) :
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ClassLayout::Dump () const
+bwstring        ClassLayout::ToString () const
     {
-    ILogger *logger = Logger::GetLogger();
-    logger->tracev (L"ECClassIndex=%i, ECClass.Name=%s\n", m_classIndex, m_className.c_str());
+    bwstring    outString;
+
+    wchar_t line[1024];
+    swprintf (line, _countof(line), L"ECClassIndex=%i, ECClass.Name=%s\n", m_classIndex, m_className.c_str());
+    outString.append (line);
+
     for each (PropertyLayout layout in m_propertyLayouts)
         {
-        logger->tracev (layout.ToString().c_str());
-        logger->tracev (L"\n");
+        outString.append (layout.ToString().c_str());
+        outString.append (L"\n");
         }
+
+    return outString;
     }
         
 /*---------------------------------------------------------------------------------**//**
@@ -1697,25 +1723,26 @@ ECObjectsStatus       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR cla
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayout) const
+bwstring        MemoryInstanceSupport::InstanceDataToString (const wchar_t* indent, ClassLayoutCR classLayout) const
     {
     static bool s_skipDump = false;
     static int s_dumpCount = 0;
     s_dumpCount++;
     
-    byte const * data = _GetData();
-    Bentley::NativeLogging::ILogger *logger = Logger::GetLogger();
-    
-    logger->tracev (L"======================= Dump #%d ===================================\n", s_dumpCount);
+    wostringstream oss;
+
+    appendFormattedString (oss, L"%s================== ECInstance Dump #%d =============================\n", indent, s_dumpCount);
     if (s_skipDump)
-        return;
+        return oss.str().c_str();
   
-    logger->tracev (L"ECClass=%s at address = 0x%0x\n", classLayout.GetECClassName().c_str(), data);
+    byte const * data = _GetData();
+
+    appendFormattedString (oss, L"%sECClass=%s at address = 0x%0x\n", indent, classLayout.GetECClassName().c_str(), data);
     InstanceHeader& header = *(InstanceHeader*)data;
 
-    logger->tracev (L"  [0x%0x][%4.d] SchemaIndex = %d\n",        &header.m_schemaIndex,  (byte*)&header.m_schemaIndex   - data, header.m_schemaIndex);
-    logger->tracev (L"  [0x%0x][%4.d] ClassIndex  = %d\n",        &header.m_classIndex,   (byte*)&header.m_classIndex    - data, header.m_classIndex);
-    logger->tracev (L"  [0x%0x][%4.d] InstanceFlags = 0x%08.x\n", &header.m_instanceFlags,(byte*)&header.m_instanceFlags - data, header.m_instanceFlags);
+    appendFormattedString (oss, L"%s  [0x%0x][%4.d] SchemaIndex = %d\n", indent,        &header.m_schemaIndex,  (byte*)&header.m_schemaIndex   - data, header.m_schemaIndex);
+    appendFormattedString (oss, L"%s  [0x%0x][%4.d] ClassIndex  = %d\n", indent,        &header.m_classIndex,   (byte*)&header.m_classIndex    - data, header.m_classIndex);
+    appendFormattedString (oss, L"%s  [0x%0x][%4.d] InstanceFlags = 0x%08.x\n", indent, &header.m_instanceFlags,(byte*)&header.m_instanceFlags - data, header.m_instanceFlags);
     
     UInt32 nProperties = classLayout.GetPropertyCount ();
     UInt32 nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks (nProperties);
@@ -1724,7 +1751,7 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
         {
         UInt32 offset = sizeof(InstanceHeader) + i * sizeof(NullflagsBitmask);
         byte const * address = offset + data;
-        logger->tracev (L"  [0x%x][%4.d] Nullflags[%d] = 0x%x\n", address, offset, i, *(NullflagsBitmask*)(data + offset));
+        appendFormattedString (oss, L"%s  [0x%x][%4.d] Nullflags[%d] = 0x%x\n", indent, address, offset, i, *(NullflagsBitmask*)(data + offset));
         }
     
     for (UInt32 i = 0; i < nProperties; i++)
@@ -1733,8 +1760,8 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
         ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (propertyLayout, i);
         if (ECOBJECTS_STATUS_Success != status)
             {
-            logger->tracev (L"Error (%d) returned while getting PropertyLayout #%d", status, i);
-            return;
+            appendFormattedString (oss, L"%sError (%d) returned while getting PropertyLayout #%d", indent, status, i);
+            return oss.str().c_str();
             }
 
         UInt32 offset = propertyLayout->GetOffset();
@@ -1745,20 +1772,20 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
         bwstring valueAsString = v.ToString();
            
         if (propertyLayout->IsFixedSized())            
-            logger->tracev (L"  [0x%x][%4.d] %s = %s\n", address, offset, propertyLayout->GetAccessString(), valueAsString.c_str());
+            appendFormattedString (oss, L"%s  [0x%x][%4.d] %s = %s\n", indent, address, offset, propertyLayout->GetAccessString(), valueAsString.c_str());
         else
             {
             SecondaryOffset secondaryOffset = *(SecondaryOffset*)address;
             byte const * realAddress = data + secondaryOffset;
             
-            logger->tracev (L"  [0x%x][%4.d] -> [0x%x][%4.d] %s = %s\n", address, offset, realAddress, secondaryOffset, propertyLayout->GetAccessString(), valueAsString.c_str());
+            appendFormattedString (oss, L"%s  [0x%x][%4.d] -> [0x%x][%4.d] %s = %s\n", indent, address, offset, realAddress, secondaryOffset, propertyLayout->GetAccessString(), valueAsString.c_str());
             }
             
         if (propertyLayout->GetTypeDescriptor().IsArray())
             {
             UInt32 count = GetAllocatedArrayCount (*propertyLayout);
             if (count != GetReservedArrayCount (*propertyLayout))
-                logger->tracev (L"      array has not yet been initialized\n");
+                appendFormattedString (oss, L"      array has not yet been initialized\n");
             else
                 {            
                 for (UInt32 i = 0; i < count; i++)
@@ -1776,18 +1803,23 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
                         }
 
                     if (IsArrayOfFixedSizeElements (*propertyLayout))
-                        logger->tracev (L"      [0x%x][%4.d] %d = %s\n", address, offset, i, valueAsString.c_str());
+                        appendFormattedString (oss, L"%s      [0x%x][%4.d] %d = %s\n", indent, address, offset, i, valueAsString.c_str());
                     else
                         {
                         SecondaryOffset secondaryOffset = GetOffsetOfArrayIndexValue (GetOffsetOfPropertyValue (*propertyLayout), *propertyLayout, i);
                         byte const * realAddress = data + secondaryOffset;
                         
-                        logger->tracev (L"      [0x%x][%4.d] -> [0x%x][%4.d] %d = %s\n", address, offset, realAddress, secondaryOffset, i, valueAsString.c_str());                    
+                        appendFormattedString (oss, L"%s      [0x%x][%4.d] -> [0x%x][%4.d] %d = %s\n", indent, address, offset, realAddress, secondaryOffset, i, valueAsString.c_str());                    
                         }     
                     if ((ECOBJECTS_STATUS_Success == status) && (!v.IsNull()) && (v.IsStruct()))
                         {
-                        v.GetStruct()->Dump();
-                        logger->tracev (L"=================== END Struct Instance ===========================\n");
+                        bwstring structIndent(indent);
+                        structIndent.append (L"      ");
+
+                        bwstring structString = v.GetStruct()->ToString(structIndent.c_str());
+                        oss << structString;
+
+                        appendFormattedString (oss, L"%s=================== END Struct Instance ===========================\n", structIndent);
                         }         
                     }
                 }
@@ -1796,7 +1828,9 @@ void            MemoryInstanceSupport::DumpInstanceData (ClassLayoutCR classLayo
         
     UInt32 offsetOfLast = classLayout.GetSizeOfFixedSection() - sizeof(SecondaryOffset);
     SecondaryOffset * pLast = (SecondaryOffset*)(data + offsetOfLast);
-    logger->tracev (L"  [0x%x][%4.d] Offset of TheEnd = %d\n", pLast, offsetOfLast, *pLast);
+    appendFormattedString (oss, L"%s  [0x%x][%4.d] Offset of TheEnd = %d\n", indent, pLast, offsetOfLast, *pLast);
+
+    return oss.str().c_str();
     }
     
 /*---------------------------------------------------------------------------------**//**

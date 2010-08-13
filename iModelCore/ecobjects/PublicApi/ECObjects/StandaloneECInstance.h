@@ -85,20 +85,20 @@ private:
     
 protected:
     // IECInstance
-    virtual bwstring        _GetInstanceId() const override;
-    virtual bool            _IsReadOnly() const override;        
-    virtual ECObjectsStatus       _GetValue (ECValueR v, const wchar_t * propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const override;
-    virtual ECObjectsStatus       _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
-    virtual ECObjectsStatus       _SetValue (const wchar_t * propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
-    virtual ECObjectsStatus       _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
+    virtual bwstring            _GetInstanceId() const override;
+    virtual bool                _IsReadOnly() const override;        
+    virtual ECObjectsStatus     _GetValue (ECValueR v, const wchar_t * propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const override;
+    virtual ECObjectsStatus     _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
+    virtual ECObjectsStatus     _SetValue (const wchar_t * propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
+    virtual ECObjectsStatus     _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
 
-    virtual ECObjectsStatus   _InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size) override;
-    virtual ECObjectsStatus   _AddArrayElements (const wchar_t * propertyAccessString, UInt32 size) override;
-    virtual ECObjectsStatus   _RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index) override;
-    virtual ECObjectsStatus   _ClearArray (const wchar_t * propertyAccessString) override;    
-    virtual void            _Dump () const override;
-    virtual ClassLayoutCR   _GetClassLayout () const;
-    virtual ECEnablerCR     _GetEnabler() const override;
+    virtual ECObjectsStatus     _InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size) override;
+    virtual ECObjectsStatus     _AddArrayElements (const wchar_t * propertyAccessString, UInt32 size) override;
+    virtual ECObjectsStatus     _RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index) override;
+    virtual ECObjectsStatus     _ClearArray (const wchar_t * propertyAccessString) override;    
+    virtual bwstring            _ToString (const wchar_t* indent) const override;
+    virtual ClassLayoutCR       _GetClassLayout () const;
+    virtual ECEnablerCR         _GetEnabler() const override;
     };
 
 struct StandaloneECEnabler : public ClassLayoutHolder, public ECEnabler
@@ -107,8 +107,8 @@ private:
     StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR classLayout);
 
 protected:
-    virtual wchar_t const * _GetName() const override;
-    virtual ECObjectsStatus       _GetPropertyIndex (UInt32& propertyIndex, const wchar_t * propertyAccessString) const override;
+    virtual wchar_t const *     _GetName() const override;
+    virtual ECObjectsStatus     _GetPropertyIndex (UInt32& propertyIndex, const wchar_t * propertyAccessString) const override;
  
 public: 
     ECOBJECTS_EXPORT static StandaloneECEnablerPtr CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout);
@@ -117,5 +117,6 @@ public:
     //! Used to construct from another memory source like ECXData. The caller is claiming that the memory
     //! has been properly initialized with the classLayout that was passed in
     //ECOBJECTS_EXPORT StandaloneECInstanceP         CreateInstanceFromInitializedMemory (ClassLayoutCR classLayout, byte * data, UInt32 size);
-    };    
+    };
 END_BENTLEY_EC_NAMESPACE
+

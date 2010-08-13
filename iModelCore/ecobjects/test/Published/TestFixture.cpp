@@ -62,8 +62,7 @@ void    ECTestFixture::TestForECSchemaLeaks ()
         sprintf (message, "TestForECSchemaLeaks found that there are %d Schemas still alive. Anything more than %d is flagged as an error!\n", 
             numLiveSchemas, MAX_INTERNAL_SCHEMAS);
 
-        std::vector<bwstring> schemaNamesToExclude;
-        ECSchema::Debug_ReportLeaks (schemaNamesToExclude);
+        ECSchema::Debug_ReportLeaks();
 
         EXPECT_TRUE (numLiveSchemas <= MAX_INTERNAL_SCHEMAS) << message;
         }

@@ -530,9 +530,9 @@ ECObjectsStatus           IECInstance::ClearArray (const wchar_t * propertyAcces
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void                IECInstance::Dump () const
+bwstring        IECInstance::ToString (const wchar_t* indent) const
     {
-    _Dump();
+    return _ToString (indent);
     }
 
 END_BENTLEY_EC_NAMESPACE
