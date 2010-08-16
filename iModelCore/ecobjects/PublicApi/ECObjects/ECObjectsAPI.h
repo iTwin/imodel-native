@@ -29,7 +29,7 @@
 * By far the most convenient and efficient way of accessing the classes in the ECObjects API is to use:
 
 \code
-    #include <ECObjectsAPI.h>
+    #include <ECObjects\ECObjectsAPI.h>
 \endcode
 
 * in each of your source files. This will include \e all of the individual header files in the API.
