@@ -774,7 +774,10 @@ ECClassCP ArrayECProperty::GetStructElementType
 (
 ) const
     {
-    return m_structType;
+    if (ARRAYKIND_Struct == m_arrayKind)
+        return m_structType;
+    else
+        return NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**

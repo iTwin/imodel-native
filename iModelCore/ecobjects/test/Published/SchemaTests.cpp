@@ -709,10 +709,17 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
     EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(*refSchema));
     StructECPropertyP structProp;
     ArrayECPropertyP nestedArrayProp;
+
+    ArrayECPropertyP primitiveArrayProp;
     
     class1->CreateStructProperty(structProp, L"StructMember");
     class1->CreateArrayProperty(nestedArrayProp, L"NestedArray");
     
+    class1->CreateArrayProperty(primitiveArrayProp, L"PrimitiveArrayProp");
+    primitiveArrayProp->PrimitiveElementType = PRIMITIVETYPE_Long;
+    primitiveArrayProp->MinOccurs = 1;
+    primitiveArrayProp->MaxOccurs = 10;
+
     structProp->Type = *structClass;
     nestedArrayProp->StructElementType = structClass;
 
@@ -1556,6 +1563,30 @@ TEST_F(ClassTest, ExpectErrorWithBadClassName)
     // Names can only include characters from the intersection of 7bit ascii and alphanumeric
     EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L"abc123!@#"));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->CreateClass(class1, L"abc123"));
+
+    }
+    
+TEST_F(ClassTest, ExpectReadOnlyFromBaseClass)
+    {
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
+
+    ECSchemaP schema;
+    ECClassP child;
+    ECClassP base;
+    
+    PrimitiveECPropertyP readOnlyProp;
+    
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
+    schema->CreateClass(base, L"BaseClass");
+    schema->CreateClass(child, L"ChildClass");
+
+    base->CreatePrimitiveProperty(readOnlyProp, L"readOnlyProp");
+    readOnlyProp->IsReadOnly = true;
+
+    ASSERT_EQ(ECOBJECTS_STATUS_Success, child->AddBaseClass(*base));
+
+    ECPropertyP ecProp = child->GetPropertyP(L"readOnlyProp");
+    ASSERT_EQ(true, ecProp->IsReadOnly);
 
     }
           
