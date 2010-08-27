@@ -2077,5 +2077,37 @@ InstanceSerializationStatus IECInstance::WriteXmlToString (bwstring & ecInstance
     return INSTANCE_SERIALIZATION_STATUS_Success;
     }
 
+///////////////////////////////////////////////////////////////////////////////////////////////
+//   IECRelationshipInstance
+///////////////////////////////////////////////////////////////////////////////////////////////
+void          IECRelationshipInstance::SetSource (IECInstanceP instance)
+    {
+    _SetSource (instance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  08/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstanceP  IECRelationshipInstance::GetSource () const
+    {
+    return _GetSource ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  08/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+void          IECRelationshipInstance::SetTarget (IECInstanceP instance)
+    {
+    _SetTarget (instance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  08/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstanceP  IECRelationshipInstance::GetTarget () const
+    {
+    return _GetTarget ();
+    }
+
 END_BENTLEY_EC_NAMESPACE
 

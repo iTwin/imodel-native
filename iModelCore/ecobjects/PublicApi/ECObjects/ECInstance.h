@@ -92,10 +92,19 @@ public:
 //! EC::IECRelationshipInstance is the native equivalent of a .NET IECRelationshipInstance.
 //! @see IECInstance, ECRelationshipClass
 //=======================================================================================    
-struct IECRelationshipInstance : public IECInstance
+struct IECRelationshipInstance
     {
-private:
-    //needswork: needs EC::IECInstance Source/Target
+    private:
+        ECOBJECTS_EXPORT virtual void          _SetSource (IECInstanceP instance) = 0;
+        ECOBJECTS_EXPORT virtual IECInstanceP  _GetSource () const = 0;
+        ECOBJECTS_EXPORT virtual void          _SetTarget (IECInstanceP instance)= 0;
+        ECOBJECTS_EXPORT virtual IECInstanceP  _GetTarget () const = 0;
+
+    public:
+        ECOBJECTS_EXPORT void          SetSource (IECInstanceP instance);
+        ECOBJECTS_EXPORT IECInstanceP  GetSource () const;
+        ECOBJECTS_EXPORT void          SetTarget (IECInstanceP instance);
+        ECOBJECTS_EXPORT IECInstanceP  GetTarget () const;
     };
         
 /*__PUBLISH_SECTION_END__*/
