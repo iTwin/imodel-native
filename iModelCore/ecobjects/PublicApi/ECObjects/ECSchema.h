@@ -443,17 +443,16 @@ public:
 //=======================================================================================
 //! Container holding ECProperties that supports STL like iteration
 //=======================================================================================
-struct ECPropertyIterable /*__PUBLISH_ABSTRACT__*/
+struct ECPropertyIterable
 {
-/*__PUBLISH_SECTION_END__*/
 private:
     friend struct ECClass;
     
     ECClassCR       m_ecClass;
     bool            m_includeBaseProperties;
     
+/*__PUBLISH_SECTION_END__*/
     ECPropertyIterable(ECClassCR ecClass, bool includeBaseProperties) : m_ecClass(ecClass), m_includeBaseProperties(includeBaseProperties) {};
-    
 /*__PUBLISH_SECTION_START__*/
 public:
 
@@ -566,7 +565,7 @@ public:
     // schemas index class by name so publicly name can not be reset
     EXPORTED_READONLY_PROPERTY (bwstring const&,    Name);        
     EXPORTED_READONLY_PROPERTY (bool,                   IsDisplayLabelDefined);
-    EXPORTED_READONLY_PROPERTY (ECPropertyIterableCR,  Properties); 
+    EXPORTED_READONLY_PROPERTY (ECPropertyIterable,  Properties); 
     EXPORTED_READONLY_PROPERTY (const ECBaseClassesList&,     BaseClasses);   
 
     EXPORTED_PROPERTY  (bwstring const&,            Description);
@@ -578,7 +577,7 @@ public:
     //! Returns a list of properties for this class.
     //! @param[in]  includeBaseProperties If true, then will return properties that are contained in this class's base class(es)
     //! @return     An iterable container of ECProperties
-    ECOBJECTS_EXPORT ECPropertyIterableCR GetProperties(bool includeBaseProperties) const;
+    ECOBJECTS_EXPORT ECPropertyIterable GetProperties(bool includeBaseProperties) const;
 
     //! Sets the bool value of whether this class can be used as a struct
     //! @param[in] isStruct String representation of true/false

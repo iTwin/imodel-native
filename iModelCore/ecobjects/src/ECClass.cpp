@@ -664,24 +664,22 @@ const void * arg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyIterableCR ECClass::GetProperties
+ECPropertyIterable ECClass::GetProperties
 (
 ) const
     {
-    ECPropertyIterable *iterable = new ECPropertyIterable(*this, true);
-    return *iterable;
+    return ECPropertyIterable(*this, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-const ECPropertyIterable& ECClass::GetProperties
+ECPropertyIterable ECClass::GetProperties
 (
 bool includeBaseProperties
 ) const
     {
-    ECPropertyIterable *iterable = new ECPropertyIterable(*this, includeBaseProperties);
-    return *iterable;
+    return ECPropertyIterable(*this, includeBaseProperties);
     }
 
 /*---------------------------------------------------------------------------------**//**
