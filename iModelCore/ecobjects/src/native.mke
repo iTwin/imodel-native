@@ -83,7 +83,7 @@ CPchOpts =
 #----------------------------------------------------------------------
 DLM_NO_DLS        = 1
 DLM_NO_DEF        = 1
-DLM_NAME          = ECObjects
+DLM_NAME          = $(ECNativeObjectsDllBase)
 DLM_DEST          = $(o)
 DLM_OBJECT_DEST   = $(o)
 DLM_OBJECT_FILES  = $(cppObjects) $(o)ECObjectsPch.obj
@@ -95,7 +95,7 @@ DLM_NOMSBUILTINS  = 1
 DLM_NOENTRY       = 1
 FORCE_DELAYLOAD   = 1
 DLM_LIBRARY_FILES = $(BuildContext)SubParts/Libs/bsilog4cxx-1.1.lib $(BuildContext)SubParts/Libs/Bentley.logging.interop-2.0.lib  # delay loaded
-DLM_NT_LIBS       = $(BuildContext)SubParts/Libs/bsilog-1.1.lib xmllite.lib $(BuildContext)SubParts/Libs/bentley.lib
+DLM_NT_LIBS       = $(BuildContext)SubParts/Libs/bsilog-1.1.lib xmllite.lib 
 DLM_USE_LIBPREFIX = 1
 DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
