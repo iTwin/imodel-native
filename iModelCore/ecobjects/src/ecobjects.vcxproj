@@ -92,7 +92,9 @@
     <ClInclude Include="..\..\PublicApi\ECObjects\StandaloneECInstance.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\ecf.PartFile.xml" />
+    <None Include="..\..\ecf.PartFile.xml">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="native.mke" />
     <None Include="native.mki" />
   </ItemGroup>
