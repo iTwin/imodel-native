@@ -96,8 +96,13 @@ bwstring const&     typeName
     else if (0 == typeName.compare (ECXML_TYPENAME_BINARY))
         primitiveType = PRIMITIVETYPE_Binary;
     else
-        return ECOBJECTS_STATUS_ParseError;
-        
+        {
+        if (NULL == ECInstalledTypeHandlerMgr::GetManager().GetIECInstalledTypeValue (typeName.c_str()))
+            return ECOBJECTS_STATUS_ParseError;
+
+        primitiveType = PRIMITIVETYPE_Installed;
+        }
+
     return ECOBJECTS_STATUS_Success;
     }
 

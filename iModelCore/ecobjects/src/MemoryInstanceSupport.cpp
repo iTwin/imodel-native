@@ -53,6 +53,7 @@ static bool     PrimitiveTypeIsFixedSize (PrimitiveType primitiveType)
             return true;
         case PRIMITIVETYPE_String:
         case PRIMITIVETYPE_Binary:
+        case PRIMITIVETYPE_Installed:
             return false;
         default:
             DEBUG_FAIL("Unsupported data type");
@@ -497,7 +498,12 @@ void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, wchar_t 
             if (addingFixedSizeProps && isFixedSize)
                 AddFixedSizeProperty (propName.c_str(), primitiveType);
             else if ( ! addingFixedSizeProps && ! isFixedSize)
-                AddVariableSizeProperty (propName.c_str(), primitiveType);
+                {
+                if (PRIMITIVETYPE_Installed == primitiveType)
+                    AddVariableSizeProperty (propName.c_str(), ECTypeDescriptor::CreateInstalledPrimitiveTypeDescriptor (primitiveProp->GetTypeName().c_str()));
+                else
+                    AddVariableSizeProperty (propName.c_str(), primitiveType);
+                }
             }
         else if (property->GetIsStruct())
             {
@@ -522,7 +528,14 @@ void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, wchar_t 
                     if (isFixedArrayCount)
                         AddVariableSizeArrayPropertyWithFixedCount (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()), arrayProp->GetMinOccurs());
                     else
-                        AddVariableSizeProperty (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()));
+                        {
+                        PrimitiveType  primitiveType = arrayProp->GetPrimitiveElementType();
+
+                        if (PRIMITIVETYPE_Installed == primitiveType)
+                            AddVariableSizeProperty (propName.c_str(), ECTypeDescriptor::CreateInstalledPrimitiveArrayTypeDescriptor (arrayProp->GetTypeName().c_str()));
+                        else
+                            AddVariableSizeProperty (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (primitiveType));
+                        }
                     }
                 }
             else if ((arrayKind == ARRAYKIND_Struct) && (!addingFixedSizeProps))
@@ -1445,7 +1458,15 @@ ECObjectsStatus       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValu
             memcpy (&value, pValue, sizeof(value));
             v.SetDateTimeTicks (value);
             return ECOBJECTS_STATUS_Success;
+            } 
+        case PRIMITIVETYPE_Installed:
+            {
+            IECInstalledTypeValueP installedTypeValueP = typeDescriptor.GetInstalledPrimitiveTypeValue ();
+            installedTypeValueP->LoadFromByteData (pValue);
+            v.SetInstalledTypeValue (installedTypeValueP, true);
+            return ECOBJECTS_STATUS_Success;
             }            
+
         case PRIMITIVETYPE_String:
             {
             wchar_t * pString = (wchar_t *)pValue;
@@ -1648,6 +1669,30 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             Int64 value = v.GetDateTimeTicks();
             return _ModifyData (offset, &value, sizeof(value));
             }
+        case PRIMITIVETYPE_Installed:
+            {
+            IECInstalledTypeValueP typeValueP  = v.GetInstalledTypeValue ();
+            UInt32                 bytesNeeded = 0;
+            byte const *           data        = typeValueP->GetBytePointer(bytesNeeded);
+
+            ECObjectsStatus status;
+            if (useIndex)
+                status = EnsureSpaceIsAvailableForArrayIndexValue (classLayout, propertyLayout, index, bytesNeeded);
+            else
+                status = EnsureSpaceIsAvailable (offset, classLayout, propertyLayout, bytesNeeded);
+            if (ECOBJECTS_STATUS_Success != status)
+                return status;
+                
+            // WIP_FUSION We need to figure out the story for value size.  It is legitamate to have a non-null binary value that is
+            // 0 bytes in length.  Currently, we do not track that length anywhere.  How do we capture this in the case that the binary value was previously set to some
+            // value > 0 in length and we are not auto compressing property values.
+            if (bytesNeeded == 0)
+                return ECOBJECTS_STATUS_Success;
+            
+            // WIP_FUSION: would it speed things up to poke directly when m_allowWritingDirectlyToInstanceMemory is true?    
+            return _ModifyData (offset, data, bytesNeeded);
+            }
+
         }
 
     POSTCONDITION (false && "datatype not implemented", ECOBJECTS_STATUS_DataTypeNotSupported);
