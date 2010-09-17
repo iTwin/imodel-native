@@ -64,7 +64,7 @@ enum ValueKind : unsigned short
     VALUEKIND_Uninitialized                  = 0x00,
     VALUEKIND_Primitive                      = 0x01,
     VALUEKIND_Struct                         = 0x02,
-    VALUEKIND_Array                          = 0x04
+    VALUEKIND_Array                          = 0x04,
     };
 
 /*__PUBLISH_SECTION_END__*/
@@ -97,89 +97,6 @@ enum ArrayKind : unsigned short
 //=======================================================================================    
 /*__PUBLISH_SECTION_START__*/
 
-typedef bmap<WString, IECInstalledTypeValueP> NameECInstalledTypeHandlerMap;
-
-struct ECInstalledTypeHandlerMgr
-{
-NameECInstalledTypeHandlerMap   m_installTypeHandlers;
-
-ECInstalledTypeHandlerMgr();
-
-static ECInstalledTypeHandlerMgrR GetManager();
-IECInstalledTypeValueP          GetIECInstalledTypeValue (wchar_t const* typeName) const;
-ECObjectsStatus                   AddIECInstalledTypeValue (wchar_t const* typeName, IECInstalledTypeValueP typeHandler);
-};
-
-struct IECInstalledTypeValue
-{
-virtual byte const *               GetBytePointer(UInt32& numBytes)=0;
-virtual ECObjectsStatus            LoadFromByteData (byte const * byteBuffer)=0;
-virtual WString                    GetStringValue () const=0;
-virtual ECObjectsStatus            LoadFromStringValue (wchar_t const* stringValue)=0;
-virtual IECInstalledTypeValueP     Clone ()=0;
-virtual wchar_t const*             GetInstalledTypeName () const=0;
-};
-
-struct DgnColorValue : IECInstalledTypeValue
-{
-UInt8*      m_data;
-
-UInt8       m_colorSource;  // color source. If m_colorSource is ColorByLevel, color is the level color.
-UInt8       m_colorType;    // color type. Valid only if ColorSource is Element.
-UInt8       m_colorIndex;   // 0-255, only valid if m_colorType == Indexed
-Int8        m_red;
-Int8        m_green;
-Int8        m_blue;
-WString     m_colorBook;    // valid only if m_colorType == ColorBook.
-WString     m_colorName;    // valid only if m_colorType == ColorBook.
-WString     m_typeName;
-
-ECOBJECTS_EXPORT DgnColorValue ();
-ECOBJECTS_EXPORT ~DgnColorValue ();
-virtual byte const*                GetBytePointer(UInt32& numBytes);
-virtual ECObjectsStatus            LoadFromByteData (byte const * byteBuffer);
-virtual WString                    GetStringValue () const;
-virtual ECObjectsStatus            LoadFromStringValue (wchar_t const* stringValue);
-virtual IECInstalledTypeValueP     Clone ();
-virtual wchar_t const*             GetInstalledTypeName ()const;
-ECOBJECTS_EXPORT static  wchar_t const*             GetTypeName() {return L"ColorType";}
-void                               ClearData ();
-};
-
-struct GradientKeyColor
-{
-double location; 
-Int8   red;
-Int8   green;
-Int8   blue;
-};
-
-struct DgnFillColorValue : public DgnColorValue
-{
-UInt8*              m_data;
-
-double              m_gradientAngle;    // Set by angle control.
-double              m_tint;             // used only when there is just one color.
-double              m_shift;            // I think this is adjusted using the "Center" toggle.
-UInt32              m_gradientFlags;    // see flags above.
-UInt32              m_gradientMode;     // one of the GradientMode enumeration (but should never be GradientModeNone).
-int                 m_activeColorKeys;  // the number of color keys in the gradient.
-GradientKeyColor*   m_keys;
-
-ECOBJECTS_EXPORT DgnFillColorValue ();
-ECOBJECTS_EXPORT ~DgnFillColorValue ();
-
-virtual byte const*                GetBytePointer(UInt32& numBytes);
-virtual ECObjectsStatus            LoadFromByteData (byte const * byteBuffer);
-virtual WString                    GetStringValue () const;
-virtual ECObjectsStatus            LoadFromStringValue (wchar_t const* stringValue);
-virtual IECInstalledTypeValueP     Clone ();
-virtual wchar_t const*             GetInstalledTypeName ()const;
-ECOBJECTS_EXPORT static  wchar_t const*             GetTypeName () {return L"FillColorType";}
-void                               ClearData ();
-};
-
-
 //=======================================================================================    
 //! Enumeration of primitive datatypes supported by native "ECObjects" implementation.
 //! These should correspond to all of the datatypes supported in .NET ECObjects
@@ -194,8 +111,7 @@ enum PrimitiveType : unsigned short
     PRIMITIVETYPE_Long                      = 0x601,
     PRIMITIVETYPE_Point2D                   = 0x701,
     PRIMITIVETYPE_Point3D                   = 0x801,
-    PRIMITIVETYPE_String                    = 0x901,
-    PRIMITIVETYPE_Installed                 = 0xA01
+    PRIMITIVETYPE_String                    = 0x901
     };
 
 //=======================================================================================    
@@ -205,7 +121,6 @@ struct ECTypeDescriptor
 {
 private:
     ValueKind       m_typeKind;
-    WString         m_installedTypeName;
 
     union
         {
@@ -214,22 +129,16 @@ private:
         };      
 
 public:
-    ECOBJECTS_EXPORT ECTypeDescriptor& operator= (ECTypeDescriptor const & rhs);
-
     ECOBJECTS_EXPORT static ECTypeDescriptor   CreatePrimitiveTypeDescriptor (PrimitiveType primitiveType);
     ECOBJECTS_EXPORT static ECTypeDescriptor   CreatePrimitiveArrayTypeDescriptor (PrimitiveType primitiveType);
-/*__PUBLISH_SECTION_END__*/
-    ECOBJECTS_EXPORT static ECTypeDescriptor   CreateInstalledPrimitiveTypeDescriptor (wchar_t const* installedTypeName);
-    ECOBJECTS_EXPORT static ECTypeDescriptor   CreateInstalledPrimitiveArrayTypeDescriptor (wchar_t const* installedTypeName); 
-/*__PUBLISH_SECTION_START__*/
     ECOBJECTS_EXPORT static ECTypeDescriptor   CreateStructArrayTypeDescriptor ();
     ECOBJECTS_EXPORT static ECTypeDescriptor   CreateStructTypeDescriptor ();
 
-    ECTypeDescriptor (PrimitiveType primitiveType) : m_typeKind (VALUEKIND_Primitive), m_primitiveType (primitiveType), m_installedTypeName (WString()) { };
+    ECTypeDescriptor (PrimitiveType primitiveType) : m_typeKind (VALUEKIND_Primitive), m_primitiveType (primitiveType) { };
 
 /*__PUBLISH_SECTION_END__*/
-    ECTypeDescriptor () : m_typeKind ((ValueKind) 0), m_primitiveType ((PrimitiveType) 0), m_installedTypeName (WString()) { };
-    ECTypeDescriptor (ValueKind valueKind, short valueKindQualifier) : m_typeKind (valueKind), m_primitiveType ((PrimitiveType)valueKindQualifier), m_installedTypeName (WString()) { };
+    ECTypeDescriptor () : m_typeKind ((ValueKind) 0), m_primitiveType ((PrimitiveType) 0) { };
+    ECTypeDescriptor (ValueKind valueKind, short valueKindQualifier) : m_typeKind (valueKind), m_primitiveType ((PrimitiveType)valueKindQualifier) { };
 /*__PUBLISH_SECTION_START__*/    
 
     inline ValueKind            GetTypeKind() const         { return m_typeKind; }
@@ -237,13 +146,10 @@ public:
     inline bool                 IsPrimitive() const         { return (GetTypeKind() == VALUEKIND_Primitive ); }
     inline bool                 IsStruct() const            { return (GetTypeKind() == VALUEKIND_Struct ); }
     inline bool                 IsArray() const             { return (GetTypeKind() == VALUEKIND_Array ); }
-    inline bool                 IsInstalledPrimitive() const { return (GetTypeKind() == VALUEKIND_Primitive && GetPrimitiveType() == PRIMITIVETYPE_Installed ); }
     inline bool                 IsPrimitiveArray() const    { return (GetTypeKind() == VALUEKIND_Array ) && (GetArrayKind() == ARRAYKIND_Primitive); }
     inline bool                 IsStructArray() const       { return (GetTypeKind() == VALUEKIND_Array ) && (GetArrayKind() == ARRAYKIND_Struct); }
     inline PrimitiveType        GetPrimitiveType() const    { return m_primitiveType; }
 /*__PUBLISH_SECTION_END__*/
-    wchar_t const  *            GetInstalledPrimitiveTypeName () {return m_installedTypeName.c_str();}
-    IECInstalledTypeValueP      GetInstalledPrimitiveTypeValue () const;
     inline short                GetTypeKindQualifier() const   { return m_primitiveType; }
 /*__PUBLISH_SECTION_START__*/        
 };    
@@ -448,7 +354,6 @@ struct PrimitiveECProperty /*__PUBLISH_ABSTRACT__*/ : public ECProperty
 friend struct ECClass;
 private:
     PrimitiveType   m_primitiveType;   
-    WString         m_installedTypeName;      // convert to pointer, allocate, and add destructor to free ?
 
     PrimitiveECProperty (ECClassCR ecClass) : m_primitiveType(PRIMITIVETYPE_String), ECProperty(ecClass) {};
 
@@ -504,7 +409,6 @@ friend struct ECClass;
 private:
     UInt32              m_minOccurs;
     UInt32              m_maxOccurs;
-    WString             m_installedTypeName;      // only used if m_primitiveType = PRIMITIVETYPE_Installed
 
     union
         {
