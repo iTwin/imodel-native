@@ -521,6 +521,30 @@ ECClassCP structType
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    09/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void    ECClass::AddDerivedClass (ECClassCR derivedClass) const
+    {
+    m_derivedClasses.push_back((ECClassP) &derivedClass);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    09/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void    ECClass::RemoveDerivedClass (ECClassCR derivedClass) const
+    {
+    m_derivedClasses.remove((ECClassP) &derivedClass);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    09/10
++---------------+---------------+---------------+---------------+---------------+------*/
+const ECDerivedClassesList& ECClass::GetDerivedClasses () const
+    {
+    return m_derivedClasses;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECClass::CheckBaseClassCycles
@@ -584,6 +608,8 @@ ECClassCR baseClass
     // any properties.  How do we handle property overrides?
     m_baseClasses.push_back((ECClassP)&baseClass);
 
+    baseClass.AddDerivedClass (*this);
+
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -621,6 +647,8 @@ ECClassCR baseClass
         }
         
     m_baseClasses.remove((ECClassP)&baseClass);
+    baseClass.RemoveDerivedClass(*this);
+
     return ECOBJECTS_STATUS_Success;
     }
 
