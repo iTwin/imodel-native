@@ -522,7 +522,7 @@ void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, wchar_t 
                     if (isFixedArrayCount)
                         AddVariableSizeArrayPropertyWithFixedCount (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()), arrayProp->GetMinOccurs());
                     else
-                        AddVariableSizeProperty (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (primitiveType));
+                        AddVariableSizeProperty (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()));
                     }
                 }
             else if ((arrayKind == ARRAYKIND_Struct) && (!addingFixedSizeProps))
