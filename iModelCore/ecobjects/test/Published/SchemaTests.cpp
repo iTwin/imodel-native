@@ -1023,6 +1023,22 @@ TEST_F(ClassTest, ExpectErrorWithCircularBaseClasses)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool            IsClassInList (std::list<ECClassP> const& classList, ECClassR searchClass)
+    {
+    std::list<ECClassP>::const_iterator classIterator;
+
+    for (classIterator = classList.begin(); classIterator != classList.end(); classIterator++)
+        {
+        if (*classIterator == &searchClass)
+            return true;
+        }
+        
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, AddAndRemoveBaseClass)
     {
     ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
@@ -1034,27 +1050,17 @@ TEST_F(ClassTest, AddAndRemoveBaseClass)
     ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
     schema->CreateClass(class1, L"TestClass");
     schema->CreateClass(baseClass1, L"BaseClass");
+
     EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->AddBaseClass(*baseClass1));
 
-    ECBaseClassesList classList = class1->GetBaseClasses();
-    ECBaseClassesList::const_iterator baseClassIterator;
-    for (baseClassIterator = classList.begin(); baseClassIterator != classList.end(); baseClassIterator++)
-        {
-        if (*baseClassIterator == baseClass1)
-            break;
-        }
-        
-    EXPECT_FALSE(baseClassIterator == classList.end());
-    
+    EXPECT_TRUE (IsClassInList (class1->GetBaseClasses(), *baseClass1));
+    EXPECT_TRUE (IsClassInList (baseClass1->GetDerivedClasses(), *class1));
+
     EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->RemoveBaseClass(*baseClass1));
-    classList = class1->GetBaseClasses();
-    for (baseClassIterator = classList.begin(); baseClassIterator != classList.end(); baseClassIterator++)
-        {
-        if (*baseClassIterator == baseClass1)
-            break;
-        }
-        
-    EXPECT_TRUE(baseClassIterator == classList.end());
+
+    EXPECT_FALSE (IsClassInList (class1->GetBaseClasses(), *baseClass1));
+    EXPECT_FALSE (IsClassInList (baseClass1->GetDerivedClasses(), *class1));
+
     EXPECT_EQ(ECOBJECTS_STATUS_ClassNotFound, class1->RemoveBaseClass(*baseClass1));
     }
     
@@ -1087,7 +1093,6 @@ TEST_F(ClassTest, AddBaseClassWithProperties)
     class1->CreatePrimitiveProperty(intProp, L"IntProperty", PRIMITIVETYPE_Integer);
     baseClass2->CreatePrimitiveProperty(base2NonIntProp, L"IntProperty", PRIMITIVETYPE_String);
     EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->AddBaseClass(*baseClass2));
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1110,7 +1115,6 @@ TEST_F(ClassTest, IsTests)
     EXPECT_FALSE(class1->Is(baseClass1));
     class1->AddBaseClass(*baseClass1);
     EXPECT_TRUE(class1->Is(baseClass1));
-    
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -1212,6 +1216,9 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
 
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, ExpectFailureWhenStructTypeIsNotReferenced)
     {
     ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
