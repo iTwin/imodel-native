@@ -221,7 +221,7 @@ const bwstring &cardinalityString
         }
     
     bwstring cardinalityWithoutSpaces = cardinalityString;
-    cardinalityWithoutSpaces.erase(remove_if(cardinalityWithoutSpaces.begin(), cardinalityWithoutSpaces.end(), ::isspace), cardinalityWithoutSpaces.end()); 
+    cardinalityWithoutSpaces.erase(std::remove_if(cardinalityWithoutSpaces.begin(), cardinalityWithoutSpaces.end(), ::isspace), cardinalityWithoutSpaces.end()); 
     size_t openParenIndex = cardinalityWithoutSpaces.find('(');
     if (openParenIndex == std::string::npos)
         {

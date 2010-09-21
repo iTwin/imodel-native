@@ -28,7 +28,7 @@ ECClass::~ECClass
     
     m_propertyList.clear();
     
-    for each (std::pair<const wchar_t * , ECPropertyP> entry in m_propertyMap)
+    for each (bpair<wchar_t const*, ECPropertyP> entry in m_propertyMap)
         delete entry.second;
     
     m_propertyMap.clear();
@@ -262,7 +262,7 @@ ECPropertyP&                 pProperty
     ECPropertyP baseProperty = GetPropertyP(pProperty->Name);
     if (NULL == baseProperty)
         {
-        m_propertyMap.insert (std::pair<const wchar_t *, ECPropertyP> (pProperty->Name.c_str(), pProperty));
+        m_propertyMap.insert (bpair<const wchar_t *, ECPropertyP> (pProperty->Name.c_str(), pProperty));
         m_propertyList.push_back(pProperty);
         return ECOBJECTS_STATUS_Success;
         }
@@ -272,7 +272,7 @@ ECPropertyP&                 pProperty
         return status;
 
     pProperty->BaseProperty = baseProperty;
-    m_propertyMap.insert (std::pair<const wchar_t *, ECPropertyP> (pProperty->Name.c_str(), pProperty));
+    m_propertyMap.insert (bpair<const wchar_t *, ECPropertyP> (pProperty->Name.c_str(), pProperty));
     m_propertyList.push_back(pProperty);
     return ECOBJECTS_STATUS_Success;
     }
