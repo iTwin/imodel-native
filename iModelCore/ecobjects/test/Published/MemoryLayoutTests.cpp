@@ -225,10 +225,6 @@ bwstring    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versionMaj
                     L"        <ECProperty propertyName=\"Name\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"AccountNo\" typeName=\"int\" />"
                     L"    </ECClass>"
-                    L"    <ECClass typeName=\"ColorStruct\" isStruct=\"True\" isDomainClass=\"False\">"
-                    L"        <ECProperty propertyName=\"Name\" typeName=\"string\" />"
-                    L"        <ECProperty propertyName=\"Color\" typeName=\"ColorType\"  />"
-                    L"    </ECClass>"
                     L"    <ECClass typeName=\"CadData\" isStruct=\"True\" isDomainClass=\"True\">"
                     L"        <ECProperty propertyName=\"Name\"         typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"Count\"        typeName=\"int\" />"
@@ -239,9 +235,6 @@ bwstring    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versionMaj
                     L"        <ECProperty propertyName=\"Install_Date\" typeName=\"dateTime\"  />"
                     L"        <ECProperty propertyName=\"Service_Date\" typeName=\"dateTime\"  />"
                     L"        <ECProperty propertyName=\"Field_Tested\" typeName=\"boolean\"  />"
-                    L"        <ECProperty propertyName=\"Color\" typeName=\"ColorType\"  />"
-                    L"        <ECStructProperty propertyName=\"TestStruct\" typeName=\"ColorStruct\" />"
-                    L"        <ECArrayProperty propertyName=\"ColorArray\" typeName=\"ColorType\" />"
                     L"    </ECClass>"
                     L"    <ECClass typeName=\"%s\" isDomainClass=\"True\">"
                     L"        <ECArrayProperty propertyName=\"BeginningArray\" typeName=\"string\" />"
@@ -730,26 +723,6 @@ TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/    
-static void VerifyColorValue (IECInstanceR instance, ECValueR v, wchar_t const * accessString, bool useIndex, UInt32 index, EC::DgnColorValue& inColor)
-    {
-    v.Clear();
-    if (useIndex)
-        EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString, index));
-    else
-        EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
-
-    EXPECT_TRUE (v.IsInstalledPrimitive());
-
-    EC::DgnColorValue* outColorValP = dynamic_cast<EC::DgnColorValue*>(v.GetInstalledTypeValue ());
-
-    EXPECT_TRUE (outColorValP->m_red   == inColor.m_red);
-    EXPECT_TRUE (outColorValP->m_green == inColor.m_green);
-    EXPECT_TRUE (outColorValP->m_blue  == inColor.m_blue);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
@@ -775,31 +748,6 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     double     inLength = 432.178;
     bool       inTest = true;
     Int64      inTicks = 634027121070910000;
-
-    EC::DgnColorValue inColor;
-    inColor.m_red = (Int8)175;
-    inColor.m_green = (Int8)180;
-    inColor.m_blue = (Int8)185;
-
-    EC::DgnColorValue inColor2;
-    inColor2.m_red = (Int8)75;
-    inColor2.m_green = (Int8)80;
-    inColor2.m_blue = (Int8)85;
-
-    ECValue ecColorValue((EC::IECInstalledTypeValue*)&inColor);
-    ECValue ecColorValue2((EC::IECInstalledTypeValue*)&inColor2);
-
-    instance->SetValue (L"Color", ecColorValue);
-
-    instance->InsertArrayElements (L"ColorArray[]", 0, 5);
-    instance->SetValue (L"ColorArray[]", ecColorValue,  0);
-    instance->SetValue (L"ColorArray[]", ecColorValue2, 1);
-    instance->SetValue (L"ColorArray[]", ecColorValue,  2);
-    instance->SetValue (L"ColorArray[]", ecColorValue2, 3);
-    instance->SetValue (L"ColorArray[]", ecColorValue,  4);
-
-    instance->SetValue (L"TestStruct.Name", ECValue (L"Dummy"));
-    instance->SetValue (L"TestStruct.Color", ecColorValue);
 
     instance->SetValue (L"Count",        ECValue (inCount));
     instance->SetValue (L"Name",         ECValue (L"Test"));
@@ -832,18 +780,6 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     EXPECT_TRUE (SUCCESS == memcmp (&inTime, &ecValue.GetDateTime(), sizeof(inTime)));
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"Install_Date"));
     EXPECT_TRUE (ecValue.GetDateTimeTicks() == inTicks);
-
-    VerifyColorValue (*instance, ecValue, L"Color", false, 0, inColor);
-
-    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"TestStruct.Name"));
-    EXPECT_STREQ (ecValue.GetString(), L"Dummy");
-    VerifyColorValue (*instance, ecValue, L"TestStruct.Color", false, 0, inColor);
-
-    VerifyColorValue (*instance, ecValue, L"ColorArray[]", true, 0, inColor);
-    VerifyColorValue (*instance, ecValue, L"ColorArray[]", true, 1, inColor2);
-    VerifyColorValue (*instance, ecValue, L"ColorArray[]", true, 2, inColor);
-    VerifyColorValue (*instance, ecValue, L"ColorArray[]", true, 3, inColor2);
-    VerifyColorValue (*instance, ecValue, L"ColorArray[]", true, 4, inColor);
 
     delete classLayout;
 

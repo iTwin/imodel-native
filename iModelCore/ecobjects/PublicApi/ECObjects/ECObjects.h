@@ -74,10 +74,6 @@ EC_TYPEDEFS(MemoryECInstanceBase);
 EC_TYPEDEFS(ClassLayoutHolder);
 EC_TYPEDEFS(SystemTime);
 
-EC_TYPEDEFS(IECInstalledTypeValue);
-EC_TYPEDEFS(ECInstalledTypeHandlerMgr);
-
-///
 #define EXPORTED_PROPERTY(TYPE, NAME) \
     ECOBJECTS_EXPORT TYPE Get##NAME() const; \
     ECOBJECTS_EXPORT ECObjectsStatus Set##NAME (TYPE value); \
@@ -138,7 +134,6 @@ enum ECObjectsStatus
     ECOBJECTS_STATUS_MemoryBoundsOverrun                                = ECOBJECTS_ERROR_BASE + 0x15,
     ECOBJECTS_STATUS_NullPointerValue                                   = ECOBJECTS_ERROR_BASE + 0x16,
     ECOBJECTS_STATUS_NotCustomAttributeClass                            = ECOBJECTS_ERROR_BASE + 0x17,
-    ECOBJECTS_STATUS_InstalledTypeHandlerAlreadyDefined                 = ECOBJECTS_ERROR_BASE + 0x18,
     ECOBJECTS_STATUS_Error                                              = ECOBJECTS_ERROR_BASE + 0xFFF,
     }; 
 

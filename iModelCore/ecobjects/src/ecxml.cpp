@@ -96,12 +96,7 @@ bwstring const&     typeName
     else if (0 == typeName.compare (ECXML_TYPENAME_BINARY))
         primitiveType = PRIMITIVETYPE_Binary;
     else
-        {
-        if (NULL == ECInstalledTypeHandlerMgr::GetManager().GetIECInstalledTypeValue (typeName.c_str()))
-            return ECOBJECTS_STATUS_ParseError;
-
-        primitiveType = PRIMITIVETYPE_Installed;
-        }
+        return ECOBJECTS_STATUS_ParseError;
 
     return ECOBJECTS_STATUS_Success;
     }
@@ -221,7 +216,7 @@ const bwstring &cardinalityString
         }
     
     bwstring cardinalityWithoutSpaces = cardinalityString;
-    cardinalityWithoutSpaces.erase(remove_if(cardinalityWithoutSpaces.begin(), cardinalityWithoutSpaces.end(), ::isspace), cardinalityWithoutSpaces.end()); 
+    cardinalityWithoutSpaces.erase(std::remove_if(cardinalityWithoutSpaces.begin(), cardinalityWithoutSpaces.end(), ::isspace), cardinalityWithoutSpaces.end()); 
     size_t openParenIndex = cardinalityWithoutSpaces.find('(');
     if (openParenIndex == std::string::npos)
         {

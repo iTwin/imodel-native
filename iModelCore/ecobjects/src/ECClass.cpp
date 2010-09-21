@@ -28,7 +28,7 @@ ECClass::~ECClass
     
     m_propertyList.clear();
     
-    for each (std::pair<const wchar_t * , ECPropertyP> entry in m_propertyMap)
+    for each (bpair<wchar_t const*, ECPropertyP> entry in m_propertyMap)
         delete entry.second;
     
     m_propertyMap.clear();
@@ -262,7 +262,7 @@ ECPropertyP&                 pProperty
     ECPropertyP baseProperty = GetPropertyP(pProperty->Name);
     if (NULL == baseProperty)
         {
-        m_propertyMap.insert (std::pair<const wchar_t *, ECPropertyP> (pProperty->Name.c_str(), pProperty));
+        m_propertyMap.insert (bpair<const wchar_t *, ECPropertyP> (pProperty->Name.c_str(), pProperty));
         m_propertyList.push_back(pProperty);
         return ECOBJECTS_STATUS_Success;
         }
@@ -272,7 +272,7 @@ ECPropertyP&                 pProperty
         return status;
 
     pProperty->BaseProperty = baseProperty;
-    m_propertyMap.insert (std::pair<const wchar_t *, ECPropertyP> (pProperty->Name.c_str(), pProperty));
+    m_propertyMap.insert (bpair<const wchar_t *, ECPropertyP> (pProperty->Name.c_str(), pProperty));
     m_propertyList.push_back(pProperty);
     return ECOBJECTS_STATUS_Success;
     }
@@ -521,6 +521,30 @@ ECClassCP structType
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    09/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void    ECClass::AddDerivedClass (ECClassCR derivedClass) const
+    {
+    m_derivedClasses.push_back((ECClassP) &derivedClass);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    09/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void    ECClass::RemoveDerivedClass (ECClassCR derivedClass) const
+    {
+    m_derivedClasses.remove((ECClassP) &derivedClass);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    09/10
++---------------+---------------+---------------+---------------+---------------+------*/
+const ECDerivedClassesList& ECClass::GetDerivedClasses () const
+    {
+    return m_derivedClasses;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECClass::CheckBaseClassCycles
@@ -584,6 +608,8 @@ ECClassCR baseClass
     // any properties.  How do we handle property overrides?
     m_baseClasses.push_back((ECClassP)&baseClass);
 
+    baseClass.AddDerivedClass (*this);
+
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -621,6 +647,8 @@ ECClassCR baseClass
         }
         
     m_baseClasses.remove((ECClassP)&baseClass);
+    baseClass.RemoveDerivedClass(*this);
+
     return ECOBJECTS_STATUS_Success;
     }
 

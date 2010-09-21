@@ -934,6 +934,7 @@ InstanceDeserializationStatus   ReadProperty (ECClassCR ecClass, IECInstanceP ec
     StructECPropertyP       structProperty;
     if (NULL != (primitiveProperty = ecProperty->GetAsPrimitiveProperty()))
         return ReadPrimitiveProperty (primitiveProperty, ecInstance, baseAccessString);
+		//Above is good, if SkipToElementEnd() is returned from ReadPrimitiveValue.
     else if (NULL != (arrayProperty = ecProperty->GetAsArrayProperty()))
         return ReadArrayProperty (arrayProperty, ecInstance, baseAccessString);
     else if (NULL != (structProperty = ecProperty->GetAsStructProperty()))
@@ -974,6 +975,12 @@ InstanceDeserializationStatus   ReadPrimitiveProperty (PrimitiveECPropertyP prim
     ECValue         ecValue;
     if (INSTANCE_DESERIALIZATION_STATUS_Success != (ixrStatus = ReadPrimitiveValue (ecValue, propertyType)))
         return ixrStatus;
+
+	if(ecValue.IsUninitialized())
+		{
+		//A malformed value was found.  A warning was shown; just move on.
+		return INSTANCE_DESERIALIZATION_STATUS_Success;
+		}
 
     ECObjectsStatus setStatus;
     if (NULL == baseAccessString)
@@ -1033,7 +1040,14 @@ InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayPropert
                         return INSTANCE_DESERIALIZATION_STATUS_NoElementName;
 
                     if (!ValidateArrayPrimitiveType (primitiveTypeName, memberType))
-                        return INSTANCE_DESERIALIZATION_STATUS_BadArrayElement;
+					{
+						Logger::GetLogger()->warningv(L"Incorrectly formatted array element found in array %ls.  Expected: %ls  Found: %ls",
+							accessString, GetPrimitiveTypeString (memberType), primitiveTypeName);
+						//Skip this element to start looking for elements with the correct primitive type.
+						SkipToElementEnd();
+						continue;
+						//By continuing here, we make sure that the bad value is not set.
+					}
 
                     // now we know the type and we are positioned at the element containing the value.
                     // read it, populating the ECInstance using accessString and arrayIndex.
@@ -1041,7 +1055,11 @@ InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayPropert
                     ECValue                         ecValue;
                     if (INSTANCE_DESERIALIZATION_STATUS_Success != (ixrStatus = ReadPrimitiveValue (ecValue, memberType)))
                         return ixrStatus;
-
+					if(ecValue.IsUninitialized())
+						{
+						//A malformed value was found.  A warning was shown; just move on.
+						continue;
+						}
                     ecInstance->AddArrayElements (accessString.c_str(), 1);
                     ECObjectsStatus   setStatus;
                     if (ECOBJECTS_STATUS_Success != (setStatus = ecInstance->SetValue (accessString.c_str(), ecValue, index)))
@@ -1197,6 +1215,7 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
 
     if (m_xmlReader->IsEmptyElement())
         {
+		Logger::GetLogger()->warningv(L"Empty element encountered in serialization.  Setting ECValue to NULL...");
         return INSTANCE_DESERIALIZATION_STATUS_Success;
         }
 
@@ -1212,8 +1231,9 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
 
             case XmlNodeType_EndElement:
                 // we have encountered the end of the class or struct without getting a value from the element.
-                assert (false);
-                return INSTANCE_DESERIALIZATION_STATUS_EmptyElement;
+                // we will break here to keep the ECValue null.
+				Logger::GetLogger()->warningv(L"Element encountered in serialization with no value.  Setting ECValue to NULL...");
+				return INSTANCE_DESERIALIZATION_STATUS_Success;
 
             case XmlNodeType_Text:
                 {
@@ -1242,10 +1262,12 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
         case PRIMITIVETYPE_Binary:
             {
             T_ByteArray                     byteArray;
-            InstanceDeserializationStatus   ixrStatus;
-            if (INSTANCE_DESERIALIZATION_STATUS_Success != (ixrStatus = ConvertStringToByteArray (byteArray, propertyValueString)))
-                return ixrStatus;
 
+            if (INSTANCE_DESERIALIZATION_STATUS_Success != ConvertStringToByteArray (byteArray, propertyValueString))
+                {
+				Logger::GetLogger()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Binary", propertyValueString);
+				return SkipToElementEnd();
+                }
             ecValue.SetBinary (&byteArray.front(), byteArray.size(), true);
             break;
             }
@@ -1263,8 +1285,8 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
             Int64   ticks;
             if (1 != swscanf (propertyValueString, L"%I64d", &ticks))
                 {
-                assert (false);
-                return INSTANCE_DESERIALIZATION_STATUS_BadTimeValue;
+				Logger::GetLogger()->warningv(L"Type mismatch in deserialization: \"%ls\" is not DateTime", propertyValueString);
+				return SkipToElementEnd();
                 }
 
             ecValue.SetDateTimeTicks (ticks);
@@ -1276,8 +1298,8 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
             double  doubleValue;
             if (1 != swscanf (propertyValueString, L"%lg", &doubleValue))
                 {
-                assert (false);
-                return INSTANCE_DESERIALIZATION_STATUS_BadDoubleValue;
+				Logger::GetLogger()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Double", propertyValueString);
+				return SkipToElementEnd();
                 }
             ecValue.SetDouble (doubleValue);
             break;
@@ -1288,8 +1310,8 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
             Int32   intValue;
             if (1 != swscanf (propertyValueString, L"%d", &intValue))
                 {
-                assert (false);
-                return INSTANCE_DESERIALIZATION_STATUS_BadIntegerValue;
+				Logger::GetLogger()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Integer", propertyValueString);
+				return SkipToElementEnd();
                 }
             ecValue.SetInteger (intValue);
             break;
@@ -1300,8 +1322,8 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
             Int64   longValue;
             if (1 != swscanf (propertyValueString, L"%I64d", &longValue))
                 {
-                assert (false);
-                return INSTANCE_DESERIALIZATION_STATUS_BadLongValue;
+				Logger::GetLogger()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Long", propertyValueString);
+				return SkipToElementEnd();
                 }
             ecValue.SetLong (longValue);
             break;
@@ -1312,8 +1334,8 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
             DPoint2d point2d;
             if (2 != swscanf (propertyValueString, L"%lg,%lg", &point2d.x, &point2d.y))
                 {
-                assert (false);
-                return INSTANCE_DESERIALIZATION_STATUS_BadPoint2dValue;
+				Logger::GetLogger()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Point2D", propertyValueString);
+				return SkipToElementEnd();
                 }
             ecValue.SetPoint2D (point2d);
             break;
@@ -1324,8 +1346,8 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
             DPoint3d point3d;
             if (3 != swscanf (propertyValueString, L"%lg,%lg,%lg", &point3d.x, &point3d.y, &point3d.z))
                 {
-                assert (false);
-                return INSTANCE_DESERIALIZATION_STATUS_BadPoint3dValue;
+				Logger::GetLogger()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Point3D", propertyValueString);
+				return SkipToElementEnd();
                 }
             ecValue.SetPoint3D (point3d);
             break;
@@ -1333,7 +1355,7 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
 
         case PRIMITIVETYPE_String:
             {
-            ecValue.SetString (propertyValueString);
+			ecValue.SetString (propertyValueString);
             break;
             }
 
@@ -1377,10 +1399,7 @@ InstanceDeserializationStatus   ConvertStringToByteArray (T_ByteArray& byteData,
     // the length of stringData should be a muttiple of four.
     size_t  stringLen = wcslen (stringData);
     if (0 != (stringLen % 4))
-        {
-        assert (false);
         return INSTANCE_DESERIALIZATION_STATUS_BadBinaryData;
-        }
 
     // from each 4 characters we get 3 byte values.
     for (size_t iPos=0; iPos < stringLen; iPos+= 4)
@@ -1405,13 +1424,13 @@ InstanceDeserializationStatus   ConvertStringToByteArray (T_ByteArray& byteData,
             else if (charValue == L'=')
                 {
                 // = should only appear in the last two characters of the string.
-                assert ( stringLen - (iPos + jPos) <= 2);
+                if (stringLen - (iPos + jPos) > 2)
+					return INSTANCE_DESERIALIZATION_STATUS_BadBinaryData;
                 numBytesToPush = jPos-1;
                 break;
                 }
             else
                 {
-                assert (false);
                 return INSTANCE_DESERIALIZATION_STATUS_BadBinaryData;
                 }
 

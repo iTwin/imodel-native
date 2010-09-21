@@ -128,14 +128,6 @@ bool            ECValue::IsBinary () const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  09/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            ECValue::IsInstalledPrimitive () const 
-    { 
-    return m_primitiveType == PRIMITIVETYPE_Installed; 
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ECValue::IsInteger () const 
@@ -273,10 +265,6 @@ void            ECValue::DeepCopy (ECValueCR v)
             SetString (v.m_stringInfo.m_string);
             break;
 
-        case PRIMITIVETYPE_Installed:
-            SetInstalledTypeValue (v.GetInstalledTypeValue(), true);
-            break;
-
         // the memcpy takes care of these...            
         case PRIMITIVETYPE_Boolean:
         case PRIMITIVETYPE_Integer:
@@ -315,14 +303,6 @@ void            ECValue::FreeMemory ()
         case (PrimitiveType)VALUEKIND_Struct:
             if ((m_structInstance != NULL))
                 m_structInstance->Release();
-            return;
-
-        case PRIMITIVETYPE_Installed:
-            if ((m_installedTypeInfo.m_installedTypeValue != NULL) && (m_installedTypeInfo.m_freeWhenDone))
-                {
-                delete (m_installedTypeInfo.m_installedTypeValue);
-                m_installedTypeInfo.m_installedTypeValue = NULL;
-                }
             return;
         }
     }
@@ -497,15 +477,6 @@ ECValue::ECValue (const byte * data, size_t size)
     {
     ConstructUninitialized();
     SetBinary (data, size);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  09/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (IECInstalledTypeValueP valueP)
-    {
-    ConstructUninitialized();
-    SetInstalledTypeValue (valueP);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -867,42 +838,6 @@ BentleyStatus       ECValue::SetStruct (IECInstanceP structInstance)
     }    
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  09/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-IECInstalledTypeValueP   ECValue::GetInstalledTypeValue () const
-    {
-    PRECONDITION (IsInstalledPrimitive() && "Tried to get installed type value from an EC::ECValue that is not an installed type.", NULL);
-    return m_installedTypeInfo.m_installedTypeValue;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  09/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus            ECValue::SetInstalledTypeValue (IECInstalledTypeValueP installedTypeValue, bool holdADuplicate)
-    {
-    Clear();
-        
-    m_primitiveType = PRIMITIVETYPE_Installed;
-    m_installedTypeInfo.m_freeWhenDone = holdADuplicate; // if we hold a duplicate, we are responsible for freeing it
-    
-    if (NULL == installedTypeValue)
-        {
-        m_installedTypeInfo.m_installedTypeValue = NULL;
-        return SUCCESS;
-        }
-
-    m_isNull = false;
-
-    if (holdADuplicate)    
-        m_installedTypeInfo.m_installedTypeValue = installedTypeValue->Clone();
-    else
-        m_installedTypeInfo.m_installedTypeValue = installedTypeValue;
-            
-    return SUCCESS;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
 bwstring    ECValue::ToString () const
@@ -968,12 +903,6 @@ bwstring    ECValue::ToString () const
                 valueAsString << timeDate.ToString();
                 break;          
                 }
-            case PRIMITIVETYPE_Installed:
-                {
-                valueAsString << GetInstalledTypeValue()->GetStringValue();
-                break;          
-                }
-
             default:
                 {
                 valueAsString << L"EC::ECValue::ToString needs work... unsupported data type";
