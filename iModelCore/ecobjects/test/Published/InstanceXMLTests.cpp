@@ -384,6 +384,23 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingSimpleInstance
     };
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingMustBeFromList)
+    {
+    // must call CoInitialize - schema deserialization requires it.
+    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+
+    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+
+    ECSchemaP   schema;
+    SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"Simple.01.00.ecschema.xml").c_str(), *schemaContext);
+
+    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, schemaStatus);
+	};
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingEmptyInstance)
