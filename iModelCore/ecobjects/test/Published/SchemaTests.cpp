@@ -390,24 +390,6 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenECSchemaContainsOnlyRequiredA
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingElementParamsECSchema)
-    {
-    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-
-    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
-    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
-
-    ECSchemaP schema;
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"Ustn_ElementParams-schema.xml").c_str(), *schemaContext);
-
-    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);  
-    //VerifyWidgetsSchema(schema);  
-    CoUninitialize();
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingWidgetsECSchema)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
