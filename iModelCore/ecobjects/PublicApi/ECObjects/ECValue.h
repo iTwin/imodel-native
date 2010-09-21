@@ -100,26 +100,19 @@ protected:
         bool                m_freeWhenDone;
         };
 
-    struct InstalledTypeInfo
-        {
-        IECInstalledTypeValueP  m_installedTypeValue;
-        bool                    m_freeWhenDone;
-        };
-    
     union
         {
-        bool                    m_boolean;
-        ::Int32                 m_integer32;
-        ::Int64                 m_long64;
-        double                  m_double;
-        StringInfo              m_stringInfo;
-        ::Int64                 m_dateTime;
-        DPoint2d                m_dPoint2d;   
-        DPoint3d                m_dPoint3d; 
-        ArrayInfo               m_arrayInfo;
-        BinaryInfo              m_binaryInfo;
-        InstalledTypeInfo       m_installedTypeInfo;
-        IECInstanceP            m_structInstance;
+        bool                m_boolean;
+        ::Int32             m_integer32;
+        ::Int64             m_long64;
+        double              m_double;
+        StringInfo          m_stringInfo;
+        ::Int64             m_dateTime;
+        DPoint2d            m_dPoint2d;   
+        DPoint3d            m_dPoint3d; 
+        ArrayInfo           m_arrayInfo;
+        BinaryInfo          m_binaryInfo;
+        IECInstanceP        m_structInstance;
         };
 
     void DeepCopy (ECValueCR v);
@@ -146,7 +139,6 @@ public:
     ECOBJECTS_EXPORT explicit ECValue (DPoint3dCR point3d);
     ECOBJECTS_EXPORT explicit ECValue (bool value);
     ECOBJECTS_EXPORT explicit ECValue (SystemTime& time);
-    ECOBJECTS_EXPORT explicit ECValue (IECInstalledTypeValueP installedTypeValue);
 
     ECOBJECTS_EXPORT void           SetReadOnly(bool isReadOnly);
 
@@ -171,7 +163,6 @@ public:
     ECOBJECTS_EXPORT bool           IsArray () const;
     ECOBJECTS_EXPORT bool           IsStruct () const;
     ECOBJECTS_EXPORT bool           IsPrimitive () const;
-    ECOBJECTS_EXPORT bool           IsInstalledPrimitive () const;
         
     ECOBJECTS_EXPORT PrimitiveType  GetPrimitiveType() const;
     ECOBJECTS_EXPORT BentleyStatus  SetPrimitiveType(PrimitiveType primitiveElementType);
@@ -199,9 +190,6 @@ public:
 
     ECOBJECTS_EXPORT const byte *   GetBinary (size_t& size) const;
     ECOBJECTS_EXPORT BentleyStatus  SetBinary (const byte * data, size_t size, bool holdADuplicate = false);
-
-    ECOBJECTS_EXPORT IECInstalledTypeValueP   GetInstalledTypeValue () const;
-    ECOBJECTS_EXPORT BentleyStatus            SetInstalledTypeValue (IECInstalledTypeValueP installedTypeValue, bool holdADuplicate = true);
     
     ECOBJECTS_EXPORT IECInstancePtr  GetStruct() const;
     ECOBJECTS_EXPORT BentleyStatus   SetStruct (IECInstanceP structInstance);

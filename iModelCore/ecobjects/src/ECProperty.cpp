@@ -410,9 +410,6 @@ bwstring PrimitiveECProperty::_GetTypeName
 (
 ) const
     {
-    if (PRIMITIVETYPE_Installed == m_primitiveType)
-        return m_installedTypeName;
-
     return ECXml::GetPrimitiveTypeName (m_primitiveType);
     }
 
@@ -431,9 +428,6 @@ bwstring const& typeName
         Logger::GetLogger()->errorv (L"Failed to set the type name of ECProperty '%s' to '%s' because the typeName could not be parsed into a primitive type.\n", this->Name.c_str(), typeName.c_str());        
         return status;
         }
-
-    if (PRIMITIVETYPE_Installed == primitiveType)
-        m_installedTypeName = typeName;
 
     return SetType (primitiveType);
     }
@@ -710,12 +704,7 @@ bwstring ArrayECProperty::_GetTypeName
     switch (Kind)
         {
         case ARRAYKIND_Primitive:
-            {
-            if (PRIMITIVETYPE_Installed == m_primitiveType)
-                return m_installedTypeName;
-
             return ECXml::GetPrimitiveTypeName (m_primitiveType);
-            }
         case ARRAYKIND_Struct:
             return ECClass::GetQualifiedClassName (this->Class.Schema, *m_structType);
         default:
@@ -734,12 +723,7 @@ bwstring const& typeName
     PrimitiveType primitiveType;
     ECObjectsStatus status = ECXml::ParsePrimitiveType (primitiveType, typeName);
     if (ECOBJECTS_STATUS_Success == status)
-        {
-        if (PRIMITIVETYPE_Installed == primitiveType)
-            m_installedTypeName = typeName;
-
         return SetPrimitiveElementType (primitiveType);
-        }
     
     ECClassP structClass;
     status = ResolveStructType (structClass, typeName, *this);
