@@ -855,9 +855,10 @@ InstanceDeserializationStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr&
 
         // the namespace should agree with the schema name.
         }
+
     // IsEmptyElement returns false if the reader is positioned on an attribute node, even if attribute's parent element is empty. 
-    if (S_OK != (status = m_xmlReader->MoveToElement()))
-        return TranslateStatus (status);
+    // Pay no attention to the return code - if there are no attributes MoveToElement returns S_FALSE.
+    m_xmlReader->MoveToElement();
 
     return INSTANCE_DESERIALIZATION_STATUS_Success;
     }
