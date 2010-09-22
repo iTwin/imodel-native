@@ -23,8 +23,8 @@ ECClass::~ECClass
 )
     {
     // NEEDSWORK make sure everything is destroyed
-    Logger::GetLogger()->tracev (L"~~~~ Destroying ECClass %s\n", this->Name.c_str());
-    Logger::GetLogger()->tracev  (L"     Freeing memory for %d properties\n", m_propertyMap.size());
+    ECObjectsLogger::Log()->tracev (L"~~~~ Destroying ECClass %s\n", this->Name.c_str());
+    ECObjectsLogger::Log()->tracev  (L"     Freeing memory for %d properties\n", m_propertyMap.size());
     
     m_propertyList.clear();
     
@@ -148,7 +148,7 @@ const wchar_t * isStruct
 
     ECObjectsStatus status = ECXml::ParseBooleanString (m_isStruct, isStruct);
     if (ECOBJECTS_STATUS_Success != status)
-        Logger::GetLogger()->warningv  (L"Failed to parse the isStruct string '%s' for ECClass '%s'.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE L"\n", isStruct, this->Name.c_str());
+        ECObjectsLogger::Log()->warningv  (L"Failed to parse the isStruct string '%s' for ECClass '%s'.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE L"\n", isStruct, this->Name.c_str());
         
     return status;
     }
@@ -187,7 +187,7 @@ const wchar_t * isCustomAttributeClass
 
     ECObjectsStatus status = ECXml::ParseBooleanString (m_isCustomAttributeClass, isCustomAttributeClass);
     if (ECOBJECTS_STATUS_Success != status)
-        Logger::GetLogger()->warningv  (L"Failed to parse the isCustomAttributeClass string '%s' for ECClass '%s'.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE L"\n", isCustomAttributeClass, this->Name.c_str());
+        ECObjectsLogger::Log()->warningv  (L"Failed to parse the isCustomAttributeClass string '%s' for ECClass '%s'.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE L"\n", isCustomAttributeClass, this->Name.c_str());
         
     return status;
     }
@@ -226,7 +226,7 @@ const wchar_t * isDomainClass
 
     ECObjectsStatus status = ECXml::ParseBooleanString (m_isDomainClass, isDomainClass);
     if (ECOBJECTS_STATUS_Success != status)
-        Logger::GetLogger()->warningv  (L"Failed to parse the isDomainClass string '%s' for ECClass '%s'.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE L"\n", isDomainClass, this->Name.c_str());
+        ECObjectsLogger::Log()->warningv  (L"Failed to parse the isDomainClass string '%s' for ECClass '%s'.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE L"\n", isDomainClass, this->Name.c_str());
         
     return status;
     }
@@ -254,7 +254,7 @@ ECPropertyP&                 pProperty
     propertyIterator = m_propertyMap.find(pProperty->Name.c_str());
     if (m_propertyMap.end() != propertyIterator)
         {
-        Logger::GetLogger()->warningv  (L"Can not create property '%s' because it already exists in this ECClass", pProperty->Name.c_str());
+        ECObjectsLogger::Log()->warningv  (L"Can not create property '%s' because it already exists in this ECClass", pProperty->Name.c_str());
         return ECOBJECTS_STATUS_NamedItemAlreadyExists;
         }
 
@@ -560,7 +560,7 @@ ECClassCR baseClass
         {
         if (*baseClassIterator == (ECClassP)&baseClass)
             {
-            Logger::GetLogger()->warningv (L"Can not add class '%s' as a base class to '%s' because it already exists as a base class", baseClass.Name.c_str(), m_name.c_str());
+            ECObjectsLogger::Log()->warningv (L"Can not add class '%s' as a base class to '%s' because it already exists as a base class", baseClass.Name.c_str(), m_name.c_str());
             return ECOBJECTS_STATUS_NamedItemAlreadyExists;
             }
         }
@@ -616,7 +616,7 @@ ECClassCR baseClass
         
     if (m_baseClasses.end() == baseClassIterator)
         {
-        Logger::GetLogger()->warningv(L"Class '%s' is not a base class of class '%s'", baseClass.Name, m_name);
+        ECObjectsLogger::Log()->warningv(L"Class '%s' is not a base class of class '%s'", baseClass.Name, m_name);
         return ECOBJECTS_STATUS_ClassNotFound;
         }
         
@@ -818,7 +818,7 @@ MSXML2::IXMLDOMNode& classNode
         bwstring className;
         if (ECOBJECTS_STATUS_Success != ECClass::ParseClassName (namespacePrefix, className, qualifiedClassName))
             {
-            Logger::GetLogger()->warningv (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the value '%s' that can not be parsed.", 
+            ECObjectsLogger::Log()->warningv (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the value '%s' that can not be parsed.", 
                 this->Name.c_str(), qualifiedClassName.c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
@@ -826,7 +826,7 @@ MSXML2::IXMLDOMNode& classNode
         ECSchemaP resolvedSchema = Schema.GetSchemaByNamespacePrefixP (namespacePrefix);
         if (NULL == resolvedSchema)
             {
-            Logger::GetLogger()->warningv  (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the namespace prefix '%s' that can not be resolved to a referenced schema.", 
+            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the namespace prefix '%s' that can not be resolved to a referenced schema.", 
                 this->Name.c_str(), namespacePrefix.c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
@@ -834,7 +834,7 @@ MSXML2::IXMLDOMNode& classNode
         ECClassP baseClass = resolvedSchema->GetClassP (className.c_str());
         if (NULL == baseClass)
             {
-            Logger::GetLogger()->warningv  (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'", 
+            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'", 
                 this->Name.c_str(), qualifiedClassName.c_str(), className.c_str(), resolvedSchema->Name.c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
@@ -856,21 +856,21 @@ MSXML2::IXMLDOMNode& classNode
             pProperty = new StructECProperty (*this);
         else
             {
-            Logger::GetLogger()->warningv (L"Invalid ECSchemaXML: Unknown property type '%s' of ECClass '%s' in the ECSchema '%s'\n", xmlNodePtr->baseName, this->Name.c_str(), this->Schema.Name.c_str());
+            ECObjectsLogger::Log()->warningv (L"Invalid ECSchemaXML: Unknown property type '%s' of ECClass '%s' in the ECSchema '%s'\n", xmlNodePtr->baseName, this->Name.c_str(), this->Schema.Name.c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
 
         SchemaDeserializationStatus status = pProperty->_ReadXml(xmlNodePtr);
         if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
             {
-            Logger::GetLogger()->warningv  (L"Invalid ECSchemaXML: Failed to deserialize properties of ECClass '%s' in the ECSchema '%s'\n", this->Name.c_str(), this->Schema.Name.c_str());                
+            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to deserialize properties of ECClass '%s' in the ECSchema '%s'\n", this->Name.c_str(), this->Schema.Name.c_str());                
             delete pProperty;
             return status;
             }
         
         if (ECOBJECTS_STATUS_Success != this->AddProperty (pProperty))
             {
-            Logger::GetLogger()->warningv  (L"Invalid ECSchemaXML: Failed to deserialize ECClass '%s' in the ECSchema '%s' because a problem occurred while adding ECProperty '%s'\n", 
+            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to deserialize ECClass '%s' in the ECSchema '%s' because a problem occurred while adding ECProperty '%s'\n", 
                 this->Name.c_str(), this->Schema.Name.c_str(), pProperty->Name.c_str());
             delete pProperty;
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
@@ -950,7 +950,7 @@ bwstring const& qualifiedClassName
     {
     if (0 == qualifiedClassName.length())
         {
-        Logger::GetLogger()->warningv  (L"Failed to parse a prefix and class name from a qualified class name because the string is empty.");
+        ECObjectsLogger::Log()->warningv  (L"Failed to parse a prefix and class name from a qualified class name because the string is empty.");
         return ECOBJECTS_STATUS_ParseError;
         }
         
@@ -964,7 +964,7 @@ bwstring const& qualifiedClassName
 
     if (qualifiedClassName.length() == colonIndex + 1)
         {
-        Logger::GetLogger()->warningv  (L"Failed to parse a prefix and class name from the qualified class name '%s' because the string ends with a colon.  There must be characters after the colon.", 
+        ECObjectsLogger::Log()->warningv  (L"Failed to parse a prefix and class name from the qualified class name '%s' because the string ends with a colon.  There must be characters after the colon.", 
             qualifiedClassName.c_str());
         return ECOBJECTS_STATUS_ParseError;
         }
@@ -991,7 +991,7 @@ ECClassCR  ecClass
     bwstring namespacePrefix;
     if (!EXPECTED_CONDITION (ECOBJECTS_STATUS_Success == primarySchema.ResolveNamespacePrefix (ecClass.Schema, namespacePrefix)))
         {
-        Logger::GetLogger()->warningv (L"warning: Can not qualify an ECClass name with a namespace prefix unless the schema containing the ECClass is referenced by the primary schema.\n"
+        ECObjectsLogger::Log()->warningv (L"warning: Can not qualify an ECClass name with a namespace prefix unless the schema containing the ECClass is referenced by the primary schema.\n"
             L"The class name will remain unqualified.\n  Primary ECSchema: %s\n  ECClass: %s\n ECSchema containing ECClass: %s\n", primarySchema.Name.c_str(), ecClass.Name.c_str(), ecClass.Schema.Name.c_str());
         return ecClass.Name;
         }
@@ -1321,7 +1321,7 @@ MSXML2::IXMLDOMNode &constraintNode
         bwstring className;
         if (ECOBJECTS_STATUS_Success != ECClass::ParseClassName (namespacePrefix, className, constraintClassName))
             {
-            Logger::GetLogger()->warningv (L"Invalid ECSchemaXML: The ECRelationshipConstraint contains a " CONSTRAINTCLASSNAME_ATTRIBUTE L" attribute with the value '%s' that can not be parsed.", 
+            ECObjectsLogger::Log()->warningv (L"Invalid ECSchemaXML: The ECRelationshipConstraint contains a " CONSTRAINTCLASSNAME_ATTRIBUTE L" attribute with the value '%s' that can not be parsed.", 
                 constraintClassName.c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
@@ -1329,7 +1329,7 @@ MSXML2::IXMLDOMNode &constraintNode
         ECSchemaP resolvedSchema = m_relClass->Schema.GetSchemaByNamespacePrefixP (namespacePrefix);
         if (NULL == resolvedSchema)
             {
-            Logger::GetLogger()->warningv  (L"Invalid ECSchemaXML: ECRelationshipConstraint contains a " CONSTRAINTCLASSNAME_ATTRIBUTE L" attribute with the namespace prefix '%s' that can not be resolved to a referenced schema.", 
+            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: ECRelationshipConstraint contains a " CONSTRAINTCLASSNAME_ATTRIBUTE L" attribute with the namespace prefix '%s' that can not be resolved to a referenced schema.", 
                 namespacePrefix.c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
@@ -1337,7 +1337,7 @@ MSXML2::IXMLDOMNode &constraintNode
         ECClassP constraintClass = resolvedSchema->GetClassP (className.c_str());
         if (NULL == constraintClass)
             {
-            Logger::GetLogger()->warningv  (L"Invalid ECSchemaXML: The ECRelationshipConstraint contains a " CONSTRAINTCLASSNAME_ATTRIBUTE L" attribute with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'", 
+            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: The ECRelationshipConstraint contains a " CONSTRAINTCLASSNAME_ATTRIBUTE L" attribute with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'", 
                 constraintClassName.c_str(), className.c_str(), resolvedSchema->Name.c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
@@ -1508,7 +1508,7 @@ const wchar_t *isPolymorphic
 
     ECObjectsStatus status = ECXml::ParseBooleanString (m_isPolymorphic, isPolymorphic);
     if (ECOBJECTS_STATUS_Success != status)
-        Logger::GetLogger()->warningv  (L"Failed to parse the isPolymorphic string '%s' for ECRelationshipConstraint.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE L"\n", isPolymorphic);
+        ECObjectsLogger::Log()->warningv  (L"Failed to parse the isPolymorphic string '%s' for ECRelationshipConstraint.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE L"\n", isPolymorphic);
         
     return status;
     }
@@ -1571,7 +1571,7 @@ const wchar_t *cardinality
     ECObjectsStatus status = ECXml::ParseCardinalityString(lowerLimit, upperLimit, cardinality);
     if (ECOBJECTS_STATUS_Success != status)
         {
-        Logger::GetLogger()->errorv (L"Failed to parse the RelationshipCardinality string '%s'.\n", cardinality);
+        ECObjectsLogger::Log()->errorv (L"Failed to parse the RelationshipCardinality string '%s'.\n", cardinality);
         return ECOBJECTS_STATUS_ParseError;
         }
     else
@@ -1674,7 +1674,7 @@ const wchar_t *strength
     StrengthType strengthType;
     ECObjectsStatus status = ECXml::ParseStrengthType(strengthType, strength);
     if (ECOBJECTS_STATUS_Success != status)
-        Logger::GetLogger()->errorv (L"Failed to parse the Strength string '%s' for ECRelationshipClass '%s'.\n", strength, this->Name.c_str());
+        ECObjectsLogger::Log()->errorv (L"Failed to parse the Strength string '%s' for ECRelationshipClass '%s'.\n", strength, this->Name.c_str());
     else
         SetStrength (strengthType);
         
@@ -1716,7 +1716,7 @@ const wchar_t *directionString
     ECRelatedInstanceDirection direction;
     ECObjectsStatus status = ECXml::ParseDirectionString(direction, directionString);
     if (ECOBJECTS_STATUS_Success != status)
-        Logger::GetLogger()->errorv (L"Failed to parse the ECRelatedInstanceDirection string '%s' for ECRelationshipClass '%s'.\n", directionString, this->Name.c_str());
+        ECObjectsLogger::Log()->errorv (L"Failed to parse the ECRelatedInstanceDirection string '%s' for ECRelationshipClass '%s'.\n", directionString, this->Name.c_str());
     else
         SetStrengthDirection (direction);
         

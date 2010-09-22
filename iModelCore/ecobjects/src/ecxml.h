@@ -97,7 +97,7 @@ static const bwstring ECXML_DIRECTION_BACKWARD          = L"backward";
 #define READ_REQUIRED_XML_ATTRIBUTE(_xmlAttributeName, _setInPointer, _setInPropertyName, _elementName)   \
     if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (_xmlAttributeName)))     \
         {   \
-        Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: %s element must contain a " _xmlAttributeName L" attribute\n", (const wchar_t *)_elementName);     \
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " _xmlAttributeName L" attribute\n", (const wchar_t *)_elementName);     \
         return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;        \
         }       \
     if (ECOBJECTS_STATUS_Success != _setInPointer->Set##_setInPropertyName ((const wchar_t *)attributePtr->text))       \
