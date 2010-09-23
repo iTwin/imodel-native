@@ -13,10 +13,13 @@ BEGIN_BENTLEY_EC_NAMESPACE
 struct ECTestFixture : public ::testing::Test
     {
 private:
-    static std::wstring s_dllPath;
+    static bwstring s_dllPath;
+    static bwstring GetDllPath();
+    bwstring GetLogConfigurationFilename();
+    BentleyStatus CheckProcessDirectory(wchar_t *filepath, DWORD bufferSize);
 
 protected:
-    ECTestFixture(void) {}
+    ECTestFixture(void);
     
 public:
     virtual void            SetUp () override;
@@ -28,8 +31,8 @@ public:
     void    TestForECSchemaLeaks ();
     void    TestForIECInstanceLeaks ();
 
-    static std::wstring GetTestDataPath(const wchar_t *fileName);
-    static std::wstring GetWorkingDirectoryPath(const wchar_t *testFixture, const wchar_t *fileName);
+    static bwstring GetTestDataPath(const wchar_t *fileName);
+    static bwstring GetWorkingDirectoryPath(const wchar_t *testFixture, const wchar_t *fileName);
     };
 
 END_BENTLEY_EC_NAMESPACE

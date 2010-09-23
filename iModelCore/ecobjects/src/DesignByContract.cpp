@@ -49,7 +49,7 @@ void LogFailureMessage (const wchar_t * message, ...)
     buffer = (wchar_t*)malloc( len * sizeof(wchar_t) );
 
     vswprintf( buffer, message, arguments ); // C4996
-    Bentley::EC::Logger::GetLogger()->warning(buffer );
+    Bentley::EC::ECObjectsLogger::Log()->warning(buffer );
     free( buffer );
     }
 
