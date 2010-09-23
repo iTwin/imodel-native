@@ -58,13 +58,13 @@ void IECInstance::Debug_DumpAllocationStats(const wchar_t* prefix)
     if (!prefix)
         prefix = L"";
 
-    Logger::GetLogger()->debugv (L"%s Live IECInstances: %d, Total Allocs: %d, TotalFrees: %d", prefix, g_currentLive, g_totalAllocs, g_totalFrees);
+    ECObjectsLogger::Log()->debugv (L"%s Live IECInstances: %d, Total Allocs: %d, TotalFrees: %d", prefix, g_currentLive, g_totalAllocs, g_totalFrees);
 #ifdef DEBUG_INSTANCE_LEAKS
     for each (DebugInstanceLeakMap::value_type leak in g_debugInstanceLeakMap)
         {
         IECInstance* leakedInstance = leak.first;
         UInt32    orderOfAllocation = leak.second;
-        Logger::GetLogger()->debugv (L"Leaked the %dth IECInstance that was allocated.", orderOfAllocation);
+        ECObjectsLogger::Log()->debugv (L"Leaked the %dth IECInstance that was allocated.", orderOfAllocation);
         leakedInstance->Dump();
         }
 #endif
@@ -99,7 +99,7 @@ void IECInstance::Debug_ReportLeaks(std::vector<bwstring>& classNamesToExclude)
         if (IsExcluded (className, classNamesToExclude))
             continue;
         
-        Logger::GetLogger()->errorv (L"Leaked the %dth IECInstance that was allocated: ECClass=%s, InstanceId=%s", 
+        ECObjectsLogger::Log()->errorv (L"Leaked the %dth IECInstance that was allocated: ECClass=%s, InstanceId=%s", 
             orderOfAllocation, className.c_str(), leakedInstance->GetInstanceId().c_str());
         leakedInstance->Dump();
         }
