@@ -24,7 +24,7 @@ void ECSchemaTestFixture::SetUp()
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
     //Load Schema
     //TestDataManager tdm(L"Widgets.09.06.ecschema.xml", __FILE__, OPENMODE_READWRITE);
-    std::wstring schemaPath = ECTestFixture::GetTestDataPath(L"Widgets.09.06.ecschema.xml");
+    bwstring schemaPath = ECTestFixture::GetTestDataPath(L"Widgets.09.06.ecschema.xml");
     wcout<<" Schema Path: "<<schemaPath<<endl;
     schemaOwner = ECSchemaOwner::CreateOwner();
     SchemaDeserializationStatus status = ECSchemaVerifier::ReadXmlFromFile (schemaOwner, m_schema, schemaPath.c_str(), NULL, NULL);
