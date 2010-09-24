@@ -58,13 +58,13 @@ void IECInstance::Debug_DumpAllocationStats(const wchar_t* prefix)
     if (!prefix)
         prefix = L"";
 
-    Logger::GetLogger()->debugv (L"%s Live IECInstances: %d, Total Allocs: %d, TotalFrees: %d", prefix, g_currentLive, g_totalAllocs, g_totalFrees);
+    ECObjectsLogger::Log()->debugv (L"%s Live IECInstances: %d, Total Allocs: %d, TotalFrees: %d", prefix, g_currentLive, g_totalAllocs, g_totalFrees);
 #ifdef DEBUG_INSTANCE_LEAKS
     for each (DebugInstanceLeakMap::value_type leak in g_debugInstanceLeakMap)
         {
         IECInstance* leakedInstance = leak.first;
         UInt32    orderOfAllocation = leak.second;
-        Logger::GetLogger()->debugv (L"Leaked the %dth IECInstance that was allocated.", orderOfAllocation);
+        ECObjectsLogger::Log()->debugv (L"Leaked the %dth IECInstance that was allocated.", orderOfAllocation);
         leakedInstance->Dump();
         }
 #endif
@@ -99,7 +99,7 @@ void IECInstance::Debug_ReportLeaks(std::vector<bwstring>& classNamesToExclude)
         if (IsExcluded (className, classNamesToExclude))
             continue;
         
-        Logger::GetLogger()->errorv (L"Leaked the %dth IECInstance that was allocated: ECClass=%s, InstanceId=%s", 
+        ECObjectsLogger::Log()->errorv (L"Leaked the %dth IECInstance that was allocated: ECClass=%s, InstanceId=%s", 
             orderOfAllocation, className.c_str(), leakedInstance->GetInstanceId().c_str());
         leakedInstance->Dump();
         }
@@ -1040,14 +1040,14 @@ InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayPropert
                         return INSTANCE_DESERIALIZATION_STATUS_NoElementName;
 
                     if (!ValidateArrayPrimitiveType (primitiveTypeName, memberType))
-                        {
-                        Logger::GetLogger()->warningv(L"Incorrectly formatted array element found in array %ls.  Expected: %ls  Found: %ls",
-                        accessString, GetPrimitiveTypeString (memberType), primitiveTypeName);
-                        //Skip this element to start looking for elements with the correct primitive type.
-                        SkipToElementEnd();
-                        continue;
-                        //By continuing here, we make sure that the bad value is not set.
-                        }
+					{
+						ECObjectsLogger::Log()->warningv(L"Incorrectly formatted array element found in array %ls.  Expected: %ls  Found: %ls",
+							accessString, GetPrimitiveTypeString (memberType), primitiveTypeName);
+						//Skip this element to start looking for elements with the correct primitive type.
+						SkipToElementEnd();
+						continue;
+						//By continuing here, we make sure that the bad value is not set.
+					}
 
                     // now we know the type and we are positioned at the element containing the value.
                     // read it, populating the ECInstance using accessString and arrayIndex.
@@ -1215,7 +1215,7 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
 
     if (m_xmlReader->IsEmptyElement())
         {
-        Logger::GetLogger()->warningv(L"Empty element encountered in deserialization.  Setting ECValue to NULL...");
+		ECObjectsLogger::Log()->warningv(L"Empty element encountered in deserialization.  Setting ECValue to NULL...");
         return INSTANCE_DESERIALIZATION_STATUS_Success;
         }
 
@@ -1232,8 +1232,8 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
             case XmlNodeType_EndElement:
                 // we have encountered the end of the class or struct without getting a value from the element.
                 // we will break here to keep the ECValue null.
-                Logger::GetLogger()->warningv(L"Element encountered in deserialization with no value.  Setting ECValue to NULL...");
-                return INSTANCE_DESERIALIZATION_STATUS_Success;
+				ECObjectsLogger::Log()->warningv(L"Element encountered in deserialization with no value.  Setting ECValue to NULL...");
+				return INSTANCE_DESERIALIZATION_STATUS_Success;
 
             case XmlNodeType_Text:
                 {
@@ -1265,8 +1265,8 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
 
             if (INSTANCE_DESERIALIZATION_STATUS_Success != ConvertStringToByteArray (byteArray, propertyValueString))
                 {
-                Logger::GetLogger()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Binary", propertyValueString);
-                return SkipToElementEnd();
+				ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Binary", propertyValueString);
+				return SkipToElementEnd();
                 }
             ecValue.SetBinary (&byteArray.front(), byteArray.size(), true);
             break;
@@ -1285,8 +1285,8 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
             Int64   ticks;
             if (1 != swscanf (propertyValueString, L"%I64d", &ticks))
                 {
-                Logger::GetLogger()->warningv(L"Type mismatch in deserialization: \"%ls\" is not DateTime", propertyValueString);
-                return SkipToElementEnd();
+				ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not DateTime", propertyValueString);
+				return SkipToElementEnd();
                 }
 
             ecValue.SetDateTimeTicks (ticks);
@@ -1298,8 +1298,8 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
             double  doubleValue;
             if (1 != swscanf (propertyValueString, L"%lg", &doubleValue))
                 {
-                Logger::GetLogger()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Double", propertyValueString);
-                return SkipToElementEnd();
+				ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Double", propertyValueString);
+				return SkipToElementEnd();
                 }
             ecValue.SetDouble (doubleValue);
             break;
@@ -1310,8 +1310,8 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
             Int32   intValue;
             if (1 != swscanf (propertyValueString, L"%d", &intValue))
                 {
-                Logger::GetLogger()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Integer", propertyValueString);
-                return SkipToElementEnd();
+				ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Integer", propertyValueString);
+				return SkipToElementEnd();
                 }
             ecValue.SetInteger (intValue);
             break;
@@ -1322,8 +1322,8 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
             Int64   longValue;
             if (1 != swscanf (propertyValueString, L"%I64d", &longValue))
                 {
-                Logger::GetLogger()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Long", propertyValueString);
-                return SkipToElementEnd();
+				ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Long", propertyValueString);
+				return SkipToElementEnd();
                 }
             ecValue.SetLong (longValue);
             break;
@@ -1334,7 +1334,7 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
             DPoint2d point2d;
             if (2 != swscanf (propertyValueString, L"%lg,%lg", &point2d.x, &point2d.y))
                 {
-                Logger::GetLogger()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Point2D", propertyValueString);
+				ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Point2D", propertyValueString);
                 return SkipToElementEnd();
                 }
             ecValue.SetPoint2D (point2d);
@@ -1346,7 +1346,7 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
             DPoint3d point3d;
             if (3 != swscanf (propertyValueString, L"%lg,%lg,%lg", &point3d.x, &point3d.y, &point3d.z))
                 {
-                Logger::GetLogger()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Point3D", propertyValueString);
+				ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Point3D", propertyValueString);
                 return SkipToElementEnd();
                 }
             ecValue.SetPoint3D (point3d);

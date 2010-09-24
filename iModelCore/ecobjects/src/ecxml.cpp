@@ -199,7 +199,7 @@ const bwstring &cardinalityString
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
     if (0 == cardinalityString.compare(L"1"))
         {
-        Logger::GetLogger()->warningv(L"Legacy cardinality of '1' interpreted as '(1,1)'");
+        ECObjectsLogger::Log()->warningv(L"Legacy cardinality of '1' interpreted as '(1,1)'");
         lowerLimit = 1;
         upperLimit = 1;
         return status;
@@ -209,7 +209,7 @@ const bwstring &cardinalityString
              (0 == cardinalityString.compare(L"unbounded")) || (0 == cardinalityString.compare(L"n")) ||
              (0 == cardinalityString.compare(L"N")))
         {
-        Logger::GetLogger()->warningv(L"Legacy cardinality of '%s' interpreted as '(0,n)'", cardinalityString);
+        ECObjectsLogger::Log()->warningv(L"Legacy cardinality of '%s' interpreted as '(0,n)'", cardinalityString);
         lowerLimit = 0;
         upperLimit = UINT_MAX;
         return status;
@@ -222,14 +222,14 @@ const bwstring &cardinalityString
         {
         if (0 == swscanf(cardinalityWithoutSpaces.c_str(), L"%d", &upperLimit))
             return ECOBJECTS_STATUS_ParseError;
-        Logger::GetLogger()->warningv(L"Legacy cardinality of '%d' interpreted as '(0,%d)'", upperLimit, upperLimit);
+        ECObjectsLogger::Log()->warningv(L"Legacy cardinality of '%d' interpreted as '(0,%d)'", upperLimit, upperLimit);
         lowerLimit = 0;
         return status;
         }
         
     if (openParenIndex != 0 && cardinalityWithoutSpaces.find(')') != cardinalityWithoutSpaces.length() - 1)
         {
-        Logger::GetLogger()->warningv(L"Cardinality string '%s' is invalid.", cardinalityString.c_str());
+        ECObjectsLogger::Log()->warningv(L"Cardinality string '%s' is invalid.", cardinalityString.c_str());
         return ECOBJECTS_STATUS_ParseError;
         }
      
@@ -239,7 +239,7 @@ const bwstring &cardinalityString
         
     if (0 == scanned)
         {
-        Logger::GetLogger()->warningv(L"Cardinality string '%s' is invalid.", cardinalityString.c_str());
+        ECObjectsLogger::Log()->warningv(L"Cardinality string '%s' is invalid.", cardinalityString.c_str());
         return ECOBJECTS_STATUS_ParseError;
         }
     

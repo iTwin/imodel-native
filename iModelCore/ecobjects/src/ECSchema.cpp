@@ -49,10 +49,10 @@ ECSchema::ECSchema (bool hideFromLeakDetection)
 ECSchema::~ECSchema ()
     {
     // NEEDSWORK make sure everything is destroyed
-    Logger::GetLogger()->debugv (L"~~~~ Destroying ECSchema: %s\n", GetName().c_str());
+    ECObjectsLogger::Log()->debugv (L"~~~~ Destroying ECSchema: %s\n", GetName().c_str());
     ClassMap::iterator          classIterator = m_classMap.begin();
     ClassMap::const_iterator    classEnd = m_classMap.end();        
-    Logger::GetLogger()->debugv(L"     Freeing memory for %d classes\n", m_classMap.size());
+    ECObjectsLogger::Log()->debugv(L"     Freeing memory for %d classes\n", m_classMap.size());
     while (classIterator != classEnd)
         {
         ECClassP ecClass = classIterator->second;
@@ -95,13 +95,13 @@ void ECSchema::Debug_DumpAllocationStats(const wchar_t* prefix)
     if (!prefix)
         prefix = L"";
 
-    Logger::GetLogger()->debugv (L"%s Live ECSchemas: %d, Total Allocs: %d, TotalFrees: %d", prefix, g_currentLive, g_totalAllocs, g_totalFrees);
+    ECObjectsLogger::Log()->debugv (L"%s Live ECSchemas: %d, Total Allocs: %d, TotalFrees: %d", prefix, g_currentLive, g_totalAllocs, g_totalFrees);
 #ifdef DEBUG_SCHEMA_LEAKS
     for each (DebugSchemaLeakMap::value_type leak in g_debugSchemaLeakMap)
         {
         ECSchema* leakedObject = leak.first;
         UInt32    orderOfAllocation = leak.second;
-        Logger::GetLogger()->debugv (L"Leaked the %dth ECSchema that was allocated: %s.", orderOfAllocation, leakedObject->GetName().c_str());
+        ECObjectsLogger::Log()->debugv (L"Leaked the %dth ECSchema that was allocated: %s.", orderOfAllocation, leakedObject->GetName().c_str());
         //leakedObject->Dump();
         }
 #endif
@@ -120,7 +120,7 @@ void ECSchema::Debug_ReportLeaks()
         
         bwstring name = leakedObject->GetName();
         
-        Logger::GetLogger()->errorv (L"Leaked the %dth IECSchema that was allocated: %s", orderOfAllocation, name.c_str());
+        ECObjectsLogger::Log()->errorv (L"Leaked the %dth IECSchema that was allocated: %s", orderOfAllocation, name.c_str());
         //leakedObject->Dump();
         }
 #endif
@@ -335,7 +335,7 @@ ECClassP&                 pClass
     resultPair = m_classMap.insert (std::pair<const wchar_t *, ECClassP> (pClass->Name.c_str(), pClass));
     if (resultPair.second == false)
         {
-        Logger::GetLogger()->warningv (L"Can not create class '%s' because it already exists in the schema", pClass->Name.c_str());
+        ECObjectsLogger::Log()->warningv (L"Can not create class '%s' because it already exists in the schema", pClass->Name.c_str());
         delete pClass;
         pClass = NULL;        
         return ECOBJECTS_STATUS_NamedItemAlreadyExists;
@@ -389,7 +389,7 @@ bwstring const&     name
         {
         delete pClass;
         pClass = NULL;
-        Logger::GetLogger()->warningv (L"Can not create relationship class '%s' because it already exists in the schema", name.c_str());
+        ECObjectsLogger::Log()->warningv (L"Can not create relationship class '%s' because it already exists in the schema", name.c_str());
         return ECOBJECTS_STATUS_NamedItemAlreadyExists;
         }
 
@@ -416,21 +416,21 @@ bwstring const&     versionString
     const wchar_t * theDot = wcschr (version, L'.');
     if (NULL == theDot)
         {
-        Logger::GetLogger()->errorv (L"Invalid ECSchema Version String: '%s' does not contain a '.'!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%s' does not contain a '.'!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
         return ECOBJECTS_STATUS_ParseError;
         }
 
     size_t majorLen = theDot - version;
     if (majorLen < 1 || majorLen > 3)
         {
-        Logger::GetLogger()->errorv (L"Invalid ECSchema Version String: '%s' does not have 1-3 numbers before the '.'!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%s' does not have 1-3 numbers before the '.'!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
         return ECOBJECTS_STATUS_ParseError;
         }
 
     size_t minorLen = wcslen (theDot) - 1;
     if (minorLen < 1 || minorLen > 3)
         {
-        Logger::GetLogger()->errorv (L"Invalid ECSchema Version String: '%s' does not have 1-3 numbers after the '.'!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%s' does not have 1-3 numbers after the '.'!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
         return ECOBJECTS_STATUS_ParseError;
         }
 
@@ -438,7 +438,7 @@ bwstring const&     versionString
     UInt32    localMajor = wcstoul (version, &end, 10);
     if (version == end)
         {
-        Logger::GetLogger()->errorv (L"Invalid ECSchema Version String: '%s' The characters before the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%s' The characters before the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
         return ECOBJECTS_STATUS_ParseError;
         }
     else
@@ -449,7 +449,7 @@ bwstring const&     versionString
     UInt32 localMinor = wcstoul (&theDot[1], &end, 10);
     if (&theDot[1] == end)
         {
-        Logger::GetLogger()->errorv (L"Invalid ECSchema Version String: '%s' The characters after the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%s' The characters after the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
         return ECOBJECTS_STATUS_ParseError;
         }
     else
@@ -778,9 +778,9 @@ ClassDeserializationVector&  classes
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
 
         if (NULL == pRelationshipClass)
-            Logger::GetLogger()->tracev (L"    Created ECClass Stub: %s\n", pClass->Name.c_str());
+            ECObjectsLogger::Log()->tracev (L"    Created ECClass Stub: %s\n", pClass->Name.c_str());
         else
-            Logger::GetLogger()->tracev (L"    Created Relationship ECClass Stub: %s\n", pClass->Name.c_str());
+            ECObjectsLogger::Log()->tracev (L"    Created Relationship ECClass Stub: %s\n", pClass->Name.c_str());
 
         classes.push_back (std::make_pair (pClass, xmlNodePtr));
         }
@@ -839,7 +839,7 @@ ECSchemaDeserializationContextR schemaContext
 
         if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMAREF_NAME_ATTRIBUTE)))
             {
-            Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_NAME_ATTRIBUTE L" attribute\n", (const wchar_t *)xmlNodePtr->baseName);
+            ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_NAME_ATTRIBUTE L" attribute\n", (const wchar_t *)xmlNodePtr->baseName);
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
             
@@ -847,14 +847,14 @@ ECSchemaDeserializationContextR schemaContext
 
         if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMAREF_PREFIX_ATTRIBUTE)))
             {
-            Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_PREFIX_ATTRIBUTE L" attribute\n", (const wchar_t *)xmlNodePtr->baseName);
+            ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_PREFIX_ATTRIBUTE L" attribute\n", (const wchar_t *)xmlNodePtr->baseName);
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
         bwstring prefix = (const wchar_t*) attributePtr->text;
 
         if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMAREF_VERSION_ATTRIBUTE)))
             {
-            Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_VERSION_ATTRIBUTE L" attribute\n", (const wchar_t *)xmlNodePtr->baseName);
+            ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_VERSION_ATTRIBUTE L" attribute\n", (const wchar_t *)xmlNodePtr->baseName);
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
         bwstring versionString = (const wchar_t*) attributePtr->text;
@@ -863,7 +863,7 @@ ECSchemaDeserializationContextR schemaContext
         UInt32 versionMinor;
         if (ECOBJECTS_STATUS_Success != ParseVersionString (versionMajor, versionMinor, versionString.c_str()))
             {
-            Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: unable to parse version string for referenced schema %s.", schemaName.c_str());
+            ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: unable to parse version string for referenced schema %s.", schemaName.c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
             
@@ -879,7 +879,7 @@ ECSchemaDeserializationContextR schemaContext
             }
         else
             {
-            Logger::GetLogger()->errorv(L"Unable to locate referenced schema %s.%02d.%02d", schemaName.c_str(), versionMajor, versionMinor);
+            ECObjectsLogger::Log()->errorv(L"Unable to locate referenced schema %s.%02d.%02d", schemaName.c_str(), versionMajor, versionMinor);
             return SCHEMA_DESERIALIZATION_STATUS_ReferencedSchemaNotFound;
             }
         }
@@ -1026,7 +1026,7 @@ ECSchemaDeserializationContextR     schemaContext
     MSXML2::IXMLDOMNodePtr xmlNodePtr = pXmlDoc.selectSingleNode (L"/" EC_NAMESPACE_PREFIX L":" EC_SCHEMA_ELEMENT);
     if (NULL == xmlNodePtr)
         {
-        Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: Missing a top-level " EC_SCHEMA_ELEMENT L" node in the " ECXML_URI_2_0 L" namespace\n");
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: Missing a top-level " EC_SCHEMA_ELEMENT L" node in the " ECXML_URI_2_0 L" namespace\n");
         return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
         }
     
@@ -1037,7 +1037,7 @@ ECSchemaDeserializationContextR     schemaContext
     // schemaName is a REQUIRED attribute in order to create the schema
     if ((NULL == nodeAttributesPtr) || (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMA_NAME_ATTRIBUTE))))
         {
-        Logger::GetLogger()->errorv (L"Invalid ECSchemaXML: " EC_SCHEMA_ELEMENT L" element must contain a schemaName attribute\n");
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: " EC_SCHEMA_ELEMENT L" element must contain a schemaName attribute\n");
         return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
         }
 
@@ -1050,7 +1050,7 @@ ECSchemaDeserializationContextR     schemaContext
     if ((NULL == (versionAttributePtr = nodeAttributesPtr->getNamedItem (SCHEMA_VERSION_ATTRIBUTE))) ||
         SUCCESS != ParseVersionString (versionMajor, versionMinor, (const wchar_t *) versionAttributePtr->text))
         {
-        Logger::GetLogger()->warningv (L"Invalid version attribute has been ignored while deserializing ECSchema '%s'.  The default version number %d.%d has been applied.\n", 
+        ECObjectsLogger::Log()->warningv (L"Invalid version attribute has been ignored while deserializing ECSchema '%s'.  The default version number %d.%d has been applied.\n", 
             (const wchar_t *)attributePtr->text, versionMajor, versionMinor);
         }
 
@@ -1353,7 +1353,7 @@ MSXML2::IXMLDOMDocument2& pXmlDoc
                 
             bwstring reason = pBReason;
                         
-            Logger::GetLogger()->errorv (L"line %d, position %d parsing ECSchema file %s. %s\n", line, linePos, file.c_str(), reason.c_str());            
+            ECObjectsLogger::Log()->errorv (L"line %d, position %d parsing ECSchema file %s. %s\n", line, linePos, file.c_str(), reason.c_str());            
             return ERROR;
             }
         }
@@ -1387,9 +1387,9 @@ ECSchemaDeserializationContextR schemaContext
 
     status = ReadXml (schemaOut, xmlDocPtr, schemaContext);
     if (ECOBJECTS_STATUS_Success != status)
-        Logger::GetLogger()->errorv (L"Failed to deserialize XML file: %s\n", ecSchemaXmlFile);
+        ECObjectsLogger::Log()->errorv (L"Failed to deserialize XML file: %s\n", ecSchemaXmlFile);
     else
-        Logger::GetLogger()->infov (L"Native ECSchema Deserialized from file: fileName='%s', schemaName='%s.%d.%d' classCount='%d' address='0x%x'\n", 
+        ECObjectsLogger::Log()->infov (L"Native ECSchema Deserialized from file: fileName='%s', schemaName='%s.%d.%d' classCount='%d' address='0x%x'\n", 
             ecSchemaXmlFile, schemaOut->Name.c_str(), schemaOut->VersionMajor, schemaOut->VersionMinor, schemaOut->m_classMap.size(), schemaOut);        
     return status;
     }
@@ -1420,9 +1420,9 @@ ECSchemaDeserializationContextR schemaContext
 
     status = ReadXml (schemaOut, xmlDocPtr, schemaContext);
     if (ECOBJECTS_STATUS_Success != status)
-        Logger::GetLogger()->errorv (L"Failed to deserialize XML from string: %s\n", ecSchemaXml);
+        ECObjectsLogger::Log()->errorv (L"Failed to deserialize XML from string: %s\n", ecSchemaXml);
     else
-        Logger::GetLogger()->infov (L"Native ECSchema Deserialized from string: schemaName='%s.%d.%d' classCount='%d' schemaAddress='0x%x'\n stringAddress='0x%x'", 
+        ECObjectsLogger::Log()->infov (L"Native ECSchema Deserialized from string: schemaName='%s.%d.%d' classCount='%d' schemaAddress='0x%x'\n stringAddress='0x%x'", 
             schemaOut->Name.c_str(), schemaOut->VersionMajor, schemaOut->VersionMinor, schemaOut->m_classMap.size(), schemaOut, ecSchemaXml);
     return status;
     }
@@ -1485,7 +1485,7 @@ ECSchemaDeserializationContextR schemaContext
 
     status = ReadXml (schemaOut, xmlDocPtr, schemaContext);
     if (ECOBJECTS_STATUS_Success != status)
-        Logger::GetLogger()->errorv (L"Failed to deserialize XML from stream\n");
+        ECObjectsLogger::Log()->errorv (L"Failed to deserialize XML from stream\n");
     return status;
     }
 

@@ -10,6 +10,14 @@
 #include "ECObjectsTestPCH.h"
 #include "TestFixture.h"
 
+#if defined (COMPILING_PUBLISHED_TESTS) || defined (COMPILING_SCENARIO_TESTS)
+   // Need to reach in and grab this header since it won't be part of the published API yet we still
+   // need to utilize it in the published API tests
+   #include <..\PublicApi\Logging\bentleylogging.h>
+#endif
+
+USING_NAMESPACE_BENTLEY_LOGGING
+
 BEGIN_BENTLEY_EC_NAMESPACE
   
 #define MAX_INTERNAL_INSTANCES  0
@@ -17,6 +25,77 @@ BEGIN_BENTLEY_EC_NAMESPACE
 
 #define DEBUG_ECSCHEMA_LEAKS
 #define DEBUG_IECINSTANCE_LEAKS
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/03
++---------------+---------------+---------------+---------------+---------------+------*/
+static void*    getDLLInstance ()
+    {
+    MEMORY_BASIC_INFORMATION    mbi;
+    if (VirtualQuery ((void*)&getDLLInstance, &mbi, sizeof mbi))
+        return mbi.AllocationBase;
+
+    return 0;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    KevinNyman      03/10
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DirExists (wchar_t const* dir)
+    {
+    DWORD attributes = GetFileAttributesW(dir);
+    return attributes != INVALID_FILE_ATTRIBUTES;
+    }
+ 
+ /*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    KevinNyman      07/10
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CreateDirectoryRecursive (wchar_t const * path, bool failIfExists)
+    {
+    if (DirExists (path))
+        return true;
+    std::wstring tempPath = path;
+    std::wstring incPath = L"";
+    size_t i, sz = tempPath.size();
+    for (i = 0; i < sz; ++i)
+        {
+        if (tempPath[i] == L'/')
+            tempPath[i] = L'\\';
+        }
+    // Some shells like TCC won't allow you to mkdir with a full path so do it piecewise.
+    while (tempPath.size() > 0)
+        {
+        std::size_t pos = tempPath.find (L"\\");
+        std::wstring part = tempPath.substr (0, pos);
+        tempPath = tempPath.substr (pos+1, tempPath.size());
+        incPath += part;
+        incPath += L"\\";
+        if (!DirExists (incPath.c_str()))
+            {
+            if (!CreateDirectoryW (incPath.c_str(), NULL))
+                return false;
+            }
+        else
+            if (failIfExists)
+                return false;
+        }
+    return (DirExists (path));
+    }
+
+ 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                08/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECTestFixture::ECTestFixture()
+    {
+    LoggingConfig::ActivateProvider(CONSOLE_LOGGING_PROVIDER);
+
+    // Eventually this will switch to the Log4cxx Provider
+    // LoggingConfig::ActivateProvider(LOG4CXX_LOGGING_PROVIDER);
+     //LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, GetLogConfigurationFilename().c_str());
+
+    //LoggingConfig::SetSeverity(L"ECObjectsNative", LOG_TRACE);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Josh.Schifter   06/10
@@ -90,68 +169,12 @@ void    ECTestFixture::TestForIECInstanceLeaks ()
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void*    getDLLInstance ()
-    {
-    MEMORY_BASIC_INFORMATION    mbi;
-    if (VirtualQuery ((void*)&getDLLInstance, &mbi, sizeof mbi))
-        return mbi.AllocationBase;
-
-    return 0;
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KevinNyman      03/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DirExists (wchar_t const* dir)
-    {
-    DWORD attributes = GetFileAttributesW(dir);
-    return attributes != INVALID_FILE_ATTRIBUTES;
-    }
- 
- /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KevinNyman      07/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool CreateDirectoryRecursive (wchar_t const * path, bool failIfExists)
-    {
-    if (DirExists (path))
-        return true;
-    std::wstring tempPath = path;
-    std::wstring incPath = L"";
-    size_t i, sz = tempPath.size();
-    for (i = 0; i < sz; ++i)
-        {
-        if (tempPath[i] == L'/')
-            tempPath[i] = L'\\';
-        }
-    // Some shells like TCC won't allow you to mkdir with a full path so do it piecewise.
-    while (tempPath.size() > 0)
-        {
-        std::size_t pos = tempPath.find (L"\\");
-        std::wstring part = tempPath.substr (0, pos);
-        tempPath = tempPath.substr (pos+1, tempPath.size());
-        incPath += part;
-        incPath += L"\\";
-        if (!DirExists (incPath.c_str()))
-            {
-            if (!CreateDirectoryW (incPath.c_str(), NULL))
-                return false;
-            }
-        else
-            if (failIfExists)
-                return false;
-        }
-    return (DirExists (path));
-    }
-
-std::wstring ECTestFixture::s_dllPath = L"";
+bwstring ECTestFixture::s_dllPath = L"";
     
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Carole.MacDonald 02/10
+* @bsimethod                                    Carole.MacDonald                08/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring ECTestFixture::GetTestDataPath(const wchar_t *dataFile)
+bwstring ECTestFixture::GetDllPath()
     {
     if (s_dllPath.empty())
         {
@@ -167,8 +190,14 @@ std::wstring ECTestFixture::GetTestDataPath(const wchar_t *dataFile)
         _wmakepath(filepath, executingDrive, executingDirectory, NULL, NULL);
         s_dllPath = filepath;
         }
-        
-    std::wstring testData(s_dllPath);
+    return s_dllPath;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Carole.MacDonald 02/10
++---------------+---------------+---------------+---------------+---------------+------*/
+bwstring ECTestFixture::GetTestDataPath(const wchar_t *dataFile)
+    {
+    bwstring testData(GetDllPath());
     testData.append(L"SeedData\\");
     testData.append(dataFile);
     return testData;
@@ -177,7 +206,7 @@ std::wstring ECTestFixture::GetTestDataPath(const wchar_t *dataFile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                08/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring ECTestFixture::GetWorkingDirectoryPath(const wchar_t *testFixture, const wchar_t *dataFile)
+bwstring ECTestFixture::GetWorkingDirectoryPath(const wchar_t *testFixture, const wchar_t *dataFile)
     {
     wchar_t path[_MAX_PATH];
 
@@ -186,7 +215,7 @@ std::wstring ECTestFixture::GetWorkingDirectoryPath(const wchar_t *testFixture, 
         GetEnvironmentVariableW(L"tmp", path, _MAX_PATH);
         }
 
-    std::wstring filePath(path);
+    bwstring filePath(path);
     if (filePath.size() == 0)
         return filePath;
 
@@ -206,5 +235,62 @@ std::wstring ECTestFixture::GetWorkingDirectoryPath(const wchar_t *testFixture, 
     return filePath;
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECTestFixture::CheckProcessDirectory
+(
+wchar_t *filepath, 
+DWORD bufferSize
+)
+    {
+    bwstring dllPath = GetDllPath();
+    if (0 == dllPath.length())
+        return ERROR;
+        
+    wchar_t executingDirectory[_MAX_DIR];
+    wchar_t executingDrive[_MAX_DRIVE];
+    _wsplitpath(dllPath.c_str(), executingDrive, executingDirectory, NULL, NULL);
+
+    // Look for a file called "logging.config.xml" in the executing process's directory
+    _wmakepath(filepath, executingDrive, executingDirectory, L"logging.config.xml", L"xml");
+    if (0 == _waccess(filepath, 0))
+        return SUCCESS;
+    return ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Casey.Mullen                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bwstring ECTestFixture::GetLogConfigurationFilename()
+    {
+    wchar_t filepath[_MAX_PATH];
+
+    if ((0 != GetEnvironmentVariableW(L"BENTLEY_LOGGING_CONFIG", filepath, _MAX_PATH)) && (0 ==_waccess(filepath, 0)))
+        {
+        wprintf (L"ECObjects.dll configuring logging with %s (Set by BENTLEY_LOGGING_CONFIG environment variable.)\n", filepath);
+        return filepath;
+        }
+    else if (SUCCESS == CheckProcessDirectory(filepath, sizeof(filepath)))
+        {
+        wprintf (L"ECObjects.dll configuring logging using %s. Override by setting BENTLEY_LOGGING_CONFIG in environment.\n", filepath);
+        return filepath;
+        }
+    else if (0 != GetEnvironmentVariableW(L"OutRoot", filepath, _MAX_PATH))
+        {
+        wchar_t * processorArchitecture = (8 == sizeof(void*)) ? L"Winx64" : L"Winx86";
+        wcscat (filepath, processorArchitecture);
+        wcscat (filepath, L"\\Product\\ECFrameworkNativeTest\\Tests\\logging.config.xml");
+        
+        if (0 ==_waccess(filepath, 0))
+            {
+            wprintf (L"ECObjects.dll configuring logging with %s. Override by setting BENTLEY_LOGGING_CONFIG in environment.\n", filepath);
+            return filepath;
+            }
+        }
+
+    return L"";
+    }       
+
 END_BENTLEY_EC_NAMESPACE
 

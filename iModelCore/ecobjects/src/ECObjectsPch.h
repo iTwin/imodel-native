@@ -12,7 +12,7 @@
 #include "ecxml.h"
 #include "Logger.h"
 #include "FileUtilities.h"
-#include <BsiLogging\bsilog.h>
+#include <Logging\bentleylogging.h>
 
 
 
