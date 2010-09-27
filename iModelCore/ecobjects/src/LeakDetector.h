@@ -8,7 +8,7 @@
 #pragma once
 
 #include <ECObjects\ECObjects.h>
-#include <BsiLogging\bsilog.h>
+#include <Logging\bentleylogging.h>
 
 USING_NAMESPACE_BENTLEY_LOGGING
 BEGIN_BENTLEY_EC_NAMESPACE
@@ -93,7 +93,7 @@ virtual void    ReportStats (const wchar_t* prefix) const override
     if (!prefix)
         prefix = L"";
 
-    Logger::GetLogger()->debugv (L"%s Live %s: %d, Total Allocs: %d, TotalFrees: %d", prefix, m_pluralTypeName.c_str(), m_currentLive, m_totalAllocs, m_totalFrees);
+    ECObjectsLogger::Log()->debugv (L"%s Live %s: %d, Total Allocs: %d, TotalFrees: %d", prefix, m_pluralTypeName.c_str(), m_currentLive, m_totalAllocs, m_totalFrees);
 
     CheckForLeaks();
     }
@@ -113,7 +113,7 @@ virtual Int32   CheckForLeaks () const override
         
         bwstring name = leakedObject->GetName();
         
-        Logger::GetLogger()->errorv (L"Leaked the %dth %s that was allocated: %s", orderOfAllocation, m_singularTypeName.c_str(), name.c_str());
+        ECObjectsLogger::Log()->errorv (L"Leaked the %dth %s that was allocated: %s", orderOfAllocation, m_singularTypeName.c_str(), name.c_str());
         }
 
     return m_currentLive;

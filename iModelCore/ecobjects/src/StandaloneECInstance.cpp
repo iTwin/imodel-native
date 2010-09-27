@@ -254,7 +254,7 @@ StandaloneECInstance::~StandaloneECInstance ()
     {
     m_sharedWipEnabler->Release ();
 
-    //Logger::GetLogger()->tracev (L"StandaloneECInstance at 0x%x is being destructed. It references enabler 0x%x", this, m_sharedWipEnabler);
+    //ECObjectsLogger::Log()->tracev (L"StandaloneECInstance at 0x%x is being destructed. It references enabler 0x%x", this, m_sharedWipEnabler);
     }
     
 /*---------------------------------------------------------------------------------**//**
