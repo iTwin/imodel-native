@@ -20,6 +20,8 @@ typedef std::map<IECInstance*, UInt32> DebugInstanceLeakMap;
 DebugInstanceLeakMap    g_debugInstanceLeakMap;
 #endif
 
+//WIP_FUSION:  This should use EC::LeakDetector  (see ecschema.cpp)
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/

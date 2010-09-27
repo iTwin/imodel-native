@@ -14,16 +14,12 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-static UInt32 g_totalAllocs = 0;
-static UInt32 g_totalFrees  = 0;
-static UInt32 g_currentLive = 0;
-
 #define DEBUG_SCHEMA_LEAKS
 #ifdef DEBUG_SCHEMA_LEAKS
-typedef std::map<ECSchema*, UInt32> DebugSchemaLeakMap;
-DebugSchemaLeakMap      g_debugSchemaLeakMap;
+LeakDetector<ECSchema> g_leakDetector (L"ECSchema", L"ECSchemas", true);
+#else
+LeakDetector<ECSchema> g_leakDetector (L"ECSchema", L"ECSchemas", false);
 #endif
-
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -32,15 +28,8 @@ ECSchema::ECSchema (bool hideFromLeakDetection)
     m_versionMajor (DEFAULT_VERSION_MAJOR), m_versionMinor (DEFAULT_VERSION_MINOR), m_classContainer(ECClassContainer(m_classMap)),
     m_hideFromLeakDetection(hideFromLeakDetection)
     {
-    if (m_hideFromLeakDetection)
-        return;
-
-    g_totalAllocs++;
-    g_currentLive++;
-
-#ifdef DEBUG_SCHEMA_LEAKS
-    g_debugSchemaLeakMap[this] = g_totalAllocs; // record this so we know if it was the 1st, 2nd allocation
-#endif
+    if ( ! m_hideFromLeakDetection)
+        g_leakDetector.ObjectCreated(*this);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -76,82 +65,14 @@ ECSchema::~ECSchema ()
         }
     m_referencedSchemas.clear();*/
 
-    if (m_hideFromLeakDetection)
-        return;
-
-#ifdef DEBUG_SCHEMA_LEAKS
-    g_debugSchemaLeakMap.erase(this);
-#endif
-
-    g_totalFrees++;
-    g_currentLive--;
+    if ( ! m_hideFromLeakDetection)
+        g_leakDetector.ObjectDestroyed(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/10
+* @bsimethod                                                    JoshSchifter    09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchema::Debug_DumpAllocationStats(const wchar_t* prefix)
-    {
-    if (!prefix)
-        prefix = L"";
-
-    Logger::GetLogger()->debugv (L"%s Live ECSchemas: %d, Total Allocs: %d, TotalFrees: %d", prefix, g_currentLive, g_totalAllocs, g_totalFrees);
-#ifdef DEBUG_SCHEMA_LEAKS
-    for each (DebugSchemaLeakMap::value_type leak in g_debugSchemaLeakMap)
-        {
-        ECSchema* leakedObject = leak.first;
-        UInt32    orderOfAllocation = leak.second;
-        Logger::GetLogger()->debugv (L"Leaked the %dth ECSchema that was allocated: %s.", orderOfAllocation, leakedObject->GetName().c_str());
-        //leakedObject->Dump();
-        }
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen    02/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchema::Debug_ReportLeaks()
-    {
-#ifdef DEBUG_SCHEMA_LEAKS
-    for each (DebugSchemaLeakMap::value_type leak in g_debugSchemaLeakMap)
-        {
-        ECSchema* leakedObject = leak.first;
-        UInt32    orderOfAllocation = leak.second;
-        
-        bwstring name = leakedObject->GetName();
-        
-        Logger::GetLogger()->errorv (L"Leaked the %dth IECSchema that was allocated: %s", orderOfAllocation, name.c_str());
-        //leakedObject->Dump();
-        }
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchema::Debug_GetAllocationStats(int* currentLive, int* totalAllocs, int* totalFrees)
-    {
-    if (currentLive)
-        *currentLive = g_currentLive;
-
-    if (totalAllocs)
-        *totalAllocs = g_totalAllocs;
-
-    if (totalFrees)
-        *totalFrees  = g_totalFrees;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchema::Debug_ResetAllocationStats()
-    {
-    g_totalAllocs = g_totalFrees = g_currentLive = 0;
-
-#ifdef DEBUG_SCHEMA_LEAKS
-    g_debugSchemaLeakMap.clear();
-#endif
-    }
+ILeakDetector&  ECSchema::Debug_GetLeakDetector() { return g_leakDetector; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
@@ -353,7 +274,7 @@ ECClassP&                 pClass,
 bwstring const&     name
 )
     {
-    pClass = new ECClass(*this);
+    pClass = new ECClass(*this, m_hideFromLeakDetection);
     ECObjectsStatus status = pClass->SetName (name);
     if (ECOBJECTS_STATUS_Success != status)
         {
@@ -762,7 +683,7 @@ ClassDeserializationVector&  classes
         
         if (baseName.length() == classElementLength)
             {            
-            pClass = new ECClass (*this);
+            pClass = new ECClass (*this, m_hideFromLeakDetection);
             pRelationshipClass = NULL;
             }
         else
@@ -772,7 +693,10 @@ ClassDeserializationVector&  classes
             }
 
         if (SCHEMA_DESERIALIZATION_STATUS_Success != (status = pClass->ReadXmlAttributes(xmlNodePtr)))
+            {
+            delete pClass;
             return status;           
+            }
 
         if (ECOBJECTS_STATUS_Success != this->AddClass (pClass))
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;

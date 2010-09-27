@@ -2,13 +2,16 @@
 #
 #  $Source: ecobjects/nativeatp/publishedTestSolutionPolicy.mki $
 #
-#  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
 compileRulesPath=$(baseDir)publishedCompileRules.mki
 
 nameToDefine = COMPILING_PUBLISHED_TESTS
+%include cdefapnd.mki
+
+nameToDefine = USE_PUBLISHED_HEADERS
 %include cdefapnd.mki
 
 ActiveBuildContextName = $(EcfTestBuildContextName)

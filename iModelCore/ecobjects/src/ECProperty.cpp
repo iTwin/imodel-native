@@ -14,6 +14,37 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
+#define DEBUG_PROPERTY_LEAKS
+#ifdef DEBUG_PROPERTY_LEAKS
+LeakDetector<ECProperty> g_leakDetector (L"ECProperty", L"ECProperties", true);
+#else
+LeakDetector<ECProperty> g_leakDetector (L"ECProperty", L"ECProperties", false);
+#endif
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                 
++---------------+---------------+---------------+---------------+---------------+------*/
+ECProperty::ECProperty (ECClassCR ecClass, bool hideFromLeakDetection)
+    :
+    m_class(ecClass), m_readOnly(false), m_baseProperty(NULL), m_hideFromLeakDetection (hideFromLeakDetection)
+    {
+    if ( ! m_hideFromLeakDetection)
+        g_leakDetector.ObjectCreated(*this);
+    };
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                 
++---------------+---------------+---------------+---------------+---------------+------*/
+ECProperty::~ECProperty ()
+    {
+    if ( ! m_hideFromLeakDetection)
+        g_leakDetector.ObjectDestroyed(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    09/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ILeakDetector&  ECProperty::Debug_GetLeakDetector() { return g_leakDetector; }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/

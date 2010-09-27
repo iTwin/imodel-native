@@ -27,6 +27,7 @@ GUNIT_TEST_VERSION = 1.3
 #   Libs
 #----------------------------------------------------------------------------------------
 libsUsed = \
+        $(BuildContext)SubParts/Libs/ECObjectsTestBackDoor.lib \
         $(BuildContext)SubParts/Libs/$(ECNativeObjectsDllBase).lib \
         $(BuildContext)SubParts/Libs/$(BentleyDllBase).lib
 

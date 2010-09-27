@@ -20,7 +20,6 @@
 BEGIN_BENTLEY_EC_NAMESPACE
 
 /*__PUBLISH_SECTION_END__*/
-
 /*=================================================================================**//**
 * Comparison function that is used within various schema related data structures
 * for string comparison in STL collections.
@@ -200,7 +199,7 @@ protected:
     virtual ECSchemaCP			_GetContainerSchema() const {return NULL;};
 
 public:
-    ECOBJECTS_EXPORT ~IECCustomAttributeContainer();
+    ECOBJECTS_EXPORT virtual ~IECCustomAttributeContainer();
 
     //! Returns true if the conainer has a custom attribute of a class of the specified name
     ECOBJECTS_EXPORT bool               IsDefined(bwstring const& className) ;
@@ -283,16 +282,19 @@ struct ECProperty abstract : public IECCustomAttributeContainer
 friend struct ECClass;
 
 private:
-    bwstring    m_name;        
-    bwstring    m_displayLabel;
-    bwstring    m_description;
+    bwstring        m_name;        
+    bwstring        m_displayLabel;
+    bwstring        m_description;
     bool            m_readOnly;
     ECClassCR       m_class;
-    ECPropertyCP     m_baseProperty;    
+    ECPropertyCP    m_baseProperty;    
+    bool            m_hideFromLeakDetection;
 
 protected:
-    ECProperty (ECClassCR ecClass) : m_class(ecClass), m_readOnly(false), m_baseProperty(NULL) {};        
-    ECObjectsStatus                     SetName (bwstring const& name);    
+    ECProperty (ECClassCR ecClass, bool hideFromLeakDetection);
+    virtual ~ECProperty();
+
+    ECObjectsStatus                     SetName (bwstring const& name);
 
     virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode);
     virtual SchemaSerializationStatus   _WriteXml(MSXML2_IXMLDOMElement& parentNode);
@@ -313,6 +315,9 @@ protected:
 
     virtual PrimitiveECProperty*        _GetAsPrimitiveECProperty() {return NULL;}
     
+public:    
+    ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();
+
 /*__PUBLISH_SECTION_START__*/
 public:    
     EXPORTED_READONLY_PROPERTY (ECClassCR,              Class);   
@@ -355,7 +360,7 @@ friend struct ECClass;
 private:
     PrimitiveType   m_primitiveType;   
 
-    PrimitiveECProperty (ECClassCR ecClass) : m_primitiveType(PRIMITIVETYPE_String), ECProperty(ecClass) {};
+    PrimitiveECProperty (ECClassCR ecClass, bool hideFromLeakDetection) : m_primitiveType(PRIMITIVETYPE_String), ECProperty(ecClass, hideFromLeakDetection) {};
 
 protected:
     virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode) override;
@@ -381,13 +386,13 @@ friend struct ECClass;
 private:
     ECClassCP   m_structType;   
 
-    StructECProperty (ECClassCR ecClass) : m_structType(NULL), ECProperty(ecClass) {};
+    StructECProperty (ECClassCR ecClass, bool hideFromLeakDetection) : m_structType(NULL), ECProperty(ecClass, hideFromLeakDetection) {};
 
 protected:
     virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode) override;
     virtual SchemaSerializationStatus   _WriteXml(MSXML2_IXMLDOMElement& parentNode) override;
     virtual bool                        _IsStruct () const override { return true;}
-    virtual bwstring                _GetTypeName () const override;
+    virtual bwstring                    _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (bwstring const& typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
 
@@ -418,8 +423,9 @@ private:
 
     ArrayKind           m_arrayKind;
       
-    ArrayECProperty (ECClassCR ecClass) : m_primitiveType(PRIMITIVETYPE_String), m_arrayKind (ARRAYKIND_Primitive),
-        m_minOccurs (0), m_maxOccurs (UINT_MAX), ECProperty(ecClass) {};
+    ArrayECProperty (ECClassCR ecClass, bool hideFromLeakDetection)
+        : m_primitiveType(PRIMITIVETYPE_String), m_arrayKind (ARRAYKIND_Primitive),
+          m_minOccurs (0), m_maxOccurs (UINT_MAX), ECProperty(ecClass, hideFromLeakDetection) {};
     ECObjectsStatus SetMinOccurs (bwstring const& minOccurs);          
     ECObjectsStatus SetMaxOccurs (bwstring const& maxOccurs);          
 
@@ -523,6 +529,7 @@ private:
     ECSchemaCR                      m_schema;
     ECBaseClassesList               m_baseClasses;
     mutable ECDerivedClassesList    m_derivedClasses;
+    bool                            m_hideFromLeakDetection;
 
     PropertyMap                     m_propertyMap;
     PropertyList                    m_propertyList;    
@@ -543,8 +550,8 @@ protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
     //  of a schema.
-    ECClass (ECSchemaCR schema) : m_schema(schema), m_isStruct(false), m_isCustomAttributeClass(false), m_isDomainClass(true){ };
-    ~ECClass();    
+    ECClass (ECSchemaCR schema, bool hideFromLeakDetection);
+    virtual ~ECClass();    
 
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
 	virtual ECSchemaCP					_GetContainerSchema() const override;
@@ -564,8 +571,10 @@ protected:
     virtual SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode) const;
     SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode, const wchar_t * elementName) const;
 
-/*__PUBLISH_SECTION_START__*/
+public:    
+    ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();
 
+/*__PUBLISH_SECTION_START__*/
 public:    
     EXPORTED_READONLY_PROPERTY (ECSchemaCR,             Schema);                
     // schemas index class by name so publicly name can not be reset
@@ -778,7 +787,7 @@ private:
     SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode, bwstring const& elementName) const;
     SchemaDeserializationStatus ReadXml(MSXML2_IXMLDOMNode& constraintNode);
     
-    ~ECRelationshipConstraint();
+    virtual ~ECRelationshipConstraint();
     
 protected:
     virtual ECSchemaCP					_GetContainerSchema() const override;
@@ -845,7 +854,7 @@ private:
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
     //  of a schema.
     ECRelationshipClass (ECSchemaCR schema);
-    ~ECRelationshipClass ();
+    virtual ~ECRelationshipClass ();
     
     ECObjectsStatus SetStrength(const wchar_t * strength);
     ECObjectsStatus SetStrengthDirection(const wchar_t *direction);
@@ -975,7 +984,7 @@ struct ECSchemaOwner /*__PUBLISH_ABSTRACT__*/ : RefCountedBase, IECSchemaOwner
 private:
     bvector<ECSchemaP> m_schemas;
 
-    ~ECSchemaOwner();
+    virtual ~ECSchemaOwner();
 
 protected:
     virtual ECObjectsStatus _AddSchema   (ECSchemaR) override;
@@ -1063,7 +1072,7 @@ private:
     stdext::hash_map<ECSchemaP, const bwstring> m_referencedSchemaNamespaceMap;
 
     ECSchema (bool hideFromLeakDetection);
-    ~ECSchema();    
+    virtual ~ECSchema();
 
     static SchemaDeserializationStatus  ReadXml (ECSchemaP& schemaOut, MSXML2_IXMLDOMDocument2& pXmlDoc, ECSchemaDeserializationContextR context);
     SchemaSerializationStatus           WriteXml (MSXML2_IXMLDOMDocument2* pXmlDoc);
@@ -1087,13 +1096,7 @@ protected:
 	virtual ECSchemaCP					_GetContainerSchema() const override;
 
 public:    
-/*__PUBLISH_SECTION_START__*/
-// WIP_FUSION: temporarily published this.  We need an ecObjectsNativeTest version of the BackDoor.
-    ECOBJECTS_EXPORT static void        Debug_ResetAllocationStats ();
-    ECOBJECTS_EXPORT static void        Debug_DumpAllocationStats (const wchar_t* prefix);
-    ECOBJECTS_EXPORT static void        Debug_GetAllocationStats (int* currentLive, int* totalAllocs, int* totalFrees);
-    ECOBJECTS_EXPORT static void        Debug_ReportLeaks ();
-/*__PUBLISH_SECTION_END__*/
+    ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();
 
 /*__PUBLISH_SECTION_START__*/
 public:    
