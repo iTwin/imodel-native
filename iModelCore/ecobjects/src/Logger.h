@@ -8,21 +8,19 @@
 #pragma once
 
 #include <ECObjects\ECObjects.h>
-#include <BsiLogging\bsilog.h>
+#include <Logging\bentleylogging.h>
 
 USING_NAMESPACE_BENTLEY_LOGGING
 BEGIN_BENTLEY_EC_NAMESPACE
 
-struct Logger
+struct ECObjectsLogger
 {
 private:
-    static Bentley::NativeLogging::ILogger *        s_logger;
+    static ILogger* s_log;
+    ECObjectsLogger(void) {};
 
 public:
-    static Bentley::NativeLogging::ILogger * GetLogger(void);
-    
-private:
-    Logger(void) {};
+    static ILogger* Log();
 };
 
 END_BENTLEY_EC_NAMESPACE

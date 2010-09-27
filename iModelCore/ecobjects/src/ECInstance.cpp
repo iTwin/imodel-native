@@ -20,6 +20,8 @@ typedef std::map<IECInstance*, UInt32> DebugInstanceLeakMap;
 DebugInstanceLeakMap    g_debugInstanceLeakMap;
 #endif
 
+//WIP_FUSION:  This should use EC::LeakDetector  (see ecschema.cpp)
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -58,13 +60,13 @@ void IECInstance::Debug_DumpAllocationStats(const wchar_t* prefix)
     if (!prefix)
         prefix = L"";
 
-    Logger::GetLogger()->debugv (L"%s Live IECInstances: %d, Total Allocs: %d, TotalFrees: %d", prefix, g_currentLive, g_totalAllocs, g_totalFrees);
+    ECObjectsLogger::Log()->debugv (L"%s Live IECInstances: %d, Total Allocs: %d, TotalFrees: %d", prefix, g_currentLive, g_totalAllocs, g_totalFrees);
 #ifdef DEBUG_INSTANCE_LEAKS
     for each (DebugInstanceLeakMap::value_type leak in g_debugInstanceLeakMap)
         {
         IECInstance* leakedInstance = leak.first;
         UInt32    orderOfAllocation = leak.second;
-        Logger::GetLogger()->debugv (L"Leaked the %dth IECInstance that was allocated.", orderOfAllocation);
+        ECObjectsLogger::Log()->debugv (L"Leaked the %dth IECInstance that was allocated.", orderOfAllocation);
         leakedInstance->Dump();
         }
 #endif
@@ -99,7 +101,7 @@ void IECInstance::Debug_ReportLeaks(std::vector<bwstring>& classNamesToExclude)
         if (IsExcluded (className, classNamesToExclude))
             continue;
         
-        Logger::GetLogger()->errorv (L"Leaked the %dth IECInstance that was allocated: ECClass=%s, InstanceId=%s", 
+        ECObjectsLogger::Log()->errorv (L"Leaked the %dth IECInstance that was allocated: ECClass=%s, InstanceId=%s", 
             orderOfAllocation, className.c_str(), leakedInstance->GetInstanceId().c_str());
         leakedInstance->Dump();
         }
@@ -140,7 +142,7 @@ bwstring        IECInstance::GetInstanceId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCR             IECInstance::GetClass() const 
+ECClassCR       IECInstance::GetClass() const 
     {
     ECEnablerCR enabler = GetEnabler();
         
@@ -150,7 +152,7 @@ ECClassCR             IECInstance::GetClass() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-int             IECInstance::ParseExpectedNIndices (const wchar_t * propertyAccessString)
+int IECInstance::ParseExpectedNIndices (const wchar_t * propertyAccessString)
     {
     const wchar_t * pointerToBrackets = pointerToBrackets = wcsstr (propertyAccessString, L"[]"); ;
     int nBrackets = 0;
@@ -499,7 +501,7 @@ ECObjectsStatus ECInstanceInteropHelper::SetDateTimeTicks (IECInstanceR instance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           IECInstance::InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size)
+ECObjectsStatus                 IECInstance::InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size)
     {
     return _InsertArrayElements (propertyAccessString, index, size);
     } 
@@ -507,7 +509,7 @@ ECObjectsStatus           IECInstance::InsertArrayElements (const wchar_t * prop
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           IECInstance::AddArrayElements (const wchar_t * propertyAccessString, UInt32 size)
+ECObjectsStatus                 IECInstance::AddArrayElements (const wchar_t * propertyAccessString, UInt32 size)
     {
     return _AddArrayElements (propertyAccessString, size);
     }        
@@ -515,7 +517,7 @@ ECObjectsStatus           IECInstance::AddArrayElements (const wchar_t * propert
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           IECInstance::RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index)
+ECObjectsStatus                 IECInstance::RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index)
     {
     return _RemoveArrayElement (propertyAccessString, index);
     } 
@@ -523,14 +525,14 @@ ECObjectsStatus           IECInstance::RemoveArrayElement (const wchar_t * prope
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           IECInstance::ClearArray (const wchar_t * propertyAccessString)
+ECObjectsStatus                 IECInstance::ClearArray (const wchar_t * propertyAccessString)
     {
     return _ClearArray (propertyAccessString);
     }           
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring        IECInstance::ToString (const wchar_t* indent) const
+bwstring                        IECInstance::ToString (const wchar_t* indent) const
     {
     return _ToString (indent);
     }
@@ -549,7 +551,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void             AppendAccessString (bwstring& compoundAccessString, bwstring& baseAccessString, const bwstring& propertyName)
+static void                     AppendAccessString (bwstring& compoundAccessString, bwstring& baseAccessString, const bwstring& propertyName)
     {
     compoundAccessString = baseAccessString;
     compoundAccessString.append (propertyName);
@@ -558,7 +560,7 @@ static void             AppendAccessString (bwstring& compoundAccessString, bwst
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-static const wchar_t*   GetPrimitiveTypeString (PrimitiveType primitiveType)
+static const wchar_t*           GetPrimitiveTypeString (PrimitiveType primitiveType)
     {
     switch (primitiveType)
         {
@@ -638,7 +640,7 @@ InstanceXmlReader (ECSchemaCR schema, const wchar_t* fileName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus       Init ()
+InstanceDeserializationStatus   Init ()
     {
     // different constructors set different members, according to the source of the stream and the reader.
     HRESULT     status;
@@ -662,7 +664,7 @@ InstanceDeserializationStatus       Init ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus       TranslateStatus (HRESULT status)
+InstanceDeserializationStatus   TranslateStatus (HRESULT status)
     {
     struct ErrorMap { HRESULT m_hResult; InstanceDeserializationStatus m_ixrStatus; };
     static ErrorMap s_errorMap[] = 
@@ -686,7 +688,7 @@ InstanceDeserializationStatus       TranslateStatus (HRESULT status)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus       ReadInstance (IECInstancePtr& ecInstance)
+InstanceDeserializationStatus   ReadInstance (IECInstancePtr& ecInstance)
     {
     // The Instance XML element starts with a node that has the name of the class of the instance.
     HRESULT         status;
@@ -941,7 +943,7 @@ InstanceDeserializationStatus   ReadProperty (ECClassCR ecClass, IECInstanceP ec
     StructECPropertyP       structProperty;
     if (NULL != (primitiveProperty = ecProperty->GetAsPrimitiveProperty()))
         return ReadPrimitiveProperty (primitiveProperty, ecInstance, baseAccessString);
-		//Above is good, if SkipToElementEnd() is returned from ReadPrimitiveValue.
+                //Above is good, if SkipToElementEnd() is returned from ReadPrimitiveValue.
     else if (NULL != (arrayProperty = ecProperty->GetAsArrayProperty()))
         return ReadArrayProperty (arrayProperty, ecInstance, baseAccessString);
     else if (NULL != (structProperty = ecProperty->GetAsStructProperty()))
@@ -983,11 +985,11 @@ InstanceDeserializationStatus   ReadPrimitiveProperty (PrimitiveECPropertyP prim
     if (INSTANCE_DESERIALIZATION_STATUS_Success != (ixrStatus = ReadPrimitiveValue (ecValue, propertyType)))
         return ixrStatus;
 
-	if(ecValue.IsUninitialized())
-		{
-		//A malformed value was found.  A warning was shown; just move on.
-		return INSTANCE_DESERIALIZATION_STATUS_Success;
-		}
+        if(ecValue.IsUninitialized())
+                {
+                //A malformed value was found.  A warning was shown; just move on.
+                return INSTANCE_DESERIALIZATION_STATUS_Success;
+                }
 
     ECObjectsStatus setStatus;
     if (NULL == baseAccessString)
@@ -1048,7 +1050,7 @@ InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayPropert
 
                     if (!ValidateArrayPrimitiveType (primitiveTypeName, memberType))
 					{
-						Logger::GetLogger()->warningv(L"Incorrectly formatted array element found in array %ls.  Expected: %ls  Found: %ls",
+						ECObjectsLogger::Log()->warningv(L"Incorrectly formatted array element found in array %ls.  Expected: %ls  Found: %ls",
 							accessString, GetPrimitiveTypeString (memberType), primitiveTypeName);
 						//Skip this element to start looking for elements with the correct primitive type.
 						SkipToElementEnd();
@@ -1062,11 +1064,11 @@ InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayPropert
                     ECValue                         ecValue;
                     if (INSTANCE_DESERIALIZATION_STATUS_Success != (ixrStatus = ReadPrimitiveValue (ecValue, memberType)))
                         return ixrStatus;
-					if(ecValue.IsUninitialized())
-						{
-						//A malformed value was found.  A warning was shown; just move on.
-						continue;
-						}
+                    if(ecValue.IsUninitialized())
+                        {
+                        //A malformed value was found.  A warning was shown; just move on.
+                        continue;
+                        }
                     ecInstance->AddArrayElements (accessString.c_str(), 1);
                     ECObjectsStatus   setStatus;
                     if (ECOBJECTS_STATUS_Success != (setStatus = ecInstance->SetValue (accessString.c_str(), ecValue, index)))
@@ -1222,7 +1224,7 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
 
     if (m_xmlReader->IsEmptyElement())
         {
-		Logger::GetLogger()->warningv(L"Empty element encountered in deserialization.  Setting ECValue to NULL...");
+		ECObjectsLogger::Log()->warningv(L"Empty element encountered in deserialization.  Setting ECValue to NULL...");
         return INSTANCE_DESERIALIZATION_STATUS_Success;
         }
 
@@ -1239,7 +1241,7 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
             case XmlNodeType_EndElement:
                 // we have encountered the end of the class or struct without getting a value from the element.
                 // we will break here to keep the ECValue null.
-				Logger::GetLogger()->warningv(L"Element encountered in deserialization with no value.  Setting ECValue to NULL...");
+				ECObjectsLogger::Log()->warningv(L"Element encountered in deserialization with no value.  Setting ECValue to NULL...");
 				return INSTANCE_DESERIALIZATION_STATUS_Success;
 
             case XmlNodeType_Text:
@@ -1272,7 +1274,7 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
 
             if (INSTANCE_DESERIALIZATION_STATUS_Success != ConvertStringToByteArray (byteArray, propertyValueString))
                 {
-				Logger::GetLogger()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Binary", propertyValueString);
+				ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Binary", propertyValueString);
 				return SkipToElementEnd();
                 }
             ecValue.SetBinary (&byteArray.front(), byteArray.size(), true);
@@ -1281,8 +1283,8 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
 
         case PRIMITIVETYPE_Boolean:
             {
-            bool    boolValue = ((0 == wcscmp (propertyValueString, L"True")) || (0 == wcscmp (propertyValueString, L"true")) || 
-                                 (0 == wcscmp (propertyValueString, L"TRUE")) || (0 == wcscmp (propertyValueString, L"1")));
+            bool boolValue = ((0 == wcscmp (propertyValueString, L"True")) || (0 == wcscmp (propertyValueString, L"true")) || 
+                             (0 == wcscmp (propertyValueString, L"TRUE")) || (0 == wcscmp (propertyValueString, L"1")));
             ecValue.SetBoolean (boolValue);
             break;
             }
@@ -1292,7 +1294,7 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
             Int64   ticks;
             if (1 != swscanf (propertyValueString, L"%I64d", &ticks))
                 {
-				Logger::GetLogger()->warningv(L"Type mismatch in deserialization: \"%ls\" is not DateTime", propertyValueString);
+				ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not DateTime", propertyValueString);
 				return SkipToElementEnd();
                 }
 
@@ -1305,7 +1307,7 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
             double  doubleValue;
             if (1 != swscanf (propertyValueString, L"%lg", &doubleValue))
                 {
-				Logger::GetLogger()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Double", propertyValueString);
+				ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Double", propertyValueString);
 				return SkipToElementEnd();
                 }
             ecValue.SetDouble (doubleValue);
@@ -1317,7 +1319,7 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
             Int32   intValue;
             if (1 != swscanf (propertyValueString, L"%d", &intValue))
                 {
-				Logger::GetLogger()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Integer", propertyValueString);
+				ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Integer", propertyValueString);
 				return SkipToElementEnd();
                 }
             ecValue.SetInteger (intValue);
@@ -1329,7 +1331,7 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
             Int64   longValue;
             if (1 != swscanf (propertyValueString, L"%I64d", &longValue))
                 {
-				Logger::GetLogger()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Long", propertyValueString);
+				ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Long", propertyValueString);
 				return SkipToElementEnd();
                 }
             ecValue.SetLong (longValue);
@@ -1341,8 +1343,8 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
             DPoint2d point2d;
             if (2 != swscanf (propertyValueString, L"%lg,%lg", &point2d.x, &point2d.y))
                 {
-				Logger::GetLogger()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Point2D", propertyValueString);
-				return SkipToElementEnd();
+				ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Point2D", propertyValueString);
+                return SkipToElementEnd();
                 }
             ecValue.SetPoint2D (point2d);
             break;
@@ -1353,8 +1355,8 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
             DPoint3d point3d;
             if (3 != swscanf (propertyValueString, L"%lg,%lg,%lg", &point3d.x, &point3d.y, &point3d.z))
                 {
-				Logger::GetLogger()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Point3D", propertyValueString);
-				return SkipToElementEnd();
+				ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Point3D", propertyValueString);
+                return SkipToElementEnd();
                 }
             ecValue.SetPoint3D (point3d);
             break;
@@ -1362,7 +1364,7 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
 
         case PRIMITIVETYPE_String:
             {
-			ecValue.SetString (propertyValueString);
+            ecValue.SetString (propertyValueString);
             break;
             }
 
@@ -1432,7 +1434,7 @@ InstanceDeserializationStatus   ConvertStringToByteArray (T_ByteArray& byteData,
                 {
                 // = should only appear in the last two characters of the string.
                 if (stringLen - (iPos + jPos) > 2)
-					return INSTANCE_DESERIALIZATION_STATUS_BadBinaryData;
+                    return INSTANCE_DESERIALIZATION_STATUS_BadBinaryData;
                 numBytesToPush = jPos-1;
                 break;
                 }
@@ -1457,7 +1459,7 @@ InstanceDeserializationStatus   ConvertStringToByteArray (T_ByteArray& byteData,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            ValidateArrayPrimitiveType (const wchar_t* typeFound, PrimitiveType expectedType)
+bool                            ValidateArrayPrimitiveType (const wchar_t* typeFound, PrimitiveType expectedType)
     {
     return (0 == wcscmp (typeFound, GetPrimitiveTypeString (expectedType)));
     }
@@ -1465,7 +1467,7 @@ bool            ValidateArrayPrimitiveType (const wchar_t* typeFound, PrimitiveT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP       ValidateArrayStructType (const wchar_t* typeFound, ECClassCP expectedType)
+ECClassCP                       ValidateArrayStructType (const wchar_t* typeFound, ECClassCP expectedType)
     {
     // the common case is that they're all of the expected ECClass.
     if (0 == wcscmp (typeFound, expectedType->Name.c_str()))
@@ -1510,7 +1512,7 @@ InstanceDeserializationStatus   SkipToElementEnd ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          GetLineNumber ()
+UInt32 GetLineNumber ()
     {
     UInt32  lineNumber = 0;
     m_xmlReader->GetLineNumber (&lineNumber);
@@ -1910,7 +1912,7 @@ InstanceSerializationStatus     WriteEmbeddedStructProperty (StructECPropertyR s
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring    ConvertByteArrayToString (const byte *byteData, size_t numBytes)
+bwstring                        ConvertByteArrayToString (const byte *byteData, size_t numBytes)
     {
     static const wchar_t    base64Chars[] = {L"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"};
 
@@ -2065,7 +2067,7 @@ InstanceSerializationStatus     IECInstance::WriteXmlToStream (IStreamP stream, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceSerializationStatus IECInstance::WriteXmlToString (bwstring & ecInstanceXml, bool isStandAlone )
+InstanceSerializationStatus     IECInstance::WriteXmlToString (bwstring & ecInstanceXml, bool isStandAlone )
     {
     InstanceSerializationStatus   status;
 
@@ -2114,7 +2116,7 @@ void          IECRelationshipInstance::SetSource (IECInstanceP instance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  08/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstanceP  IECRelationshipInstance::GetSource () const
+IECInstanceP                    IECRelationshipInstance::GetSource () const
     {
     return _GetSource ();
     }
@@ -2122,7 +2124,7 @@ IECInstanceP  IECRelationshipInstance::GetSource () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  08/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-void          IECRelationshipInstance::SetTarget (IECInstanceP instance)
+void                            IECRelationshipInstance::SetTarget (IECInstanceP instance)
     {
     _SetTarget (instance);
     }
@@ -2130,7 +2132,7 @@ void          IECRelationshipInstance::SetTarget (IECInstanceP instance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  08/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstanceP  IECRelationshipInstance::GetTarget () const
+IECInstanceP                    IECRelationshipInstance::GetTarget () const
     {
     return _GetTarget ();
     }

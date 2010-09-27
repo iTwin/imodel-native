@@ -10,6 +10,14 @@
 #include "ECObjectsTestPCH.h"
 #include "TestFixture.h"
 
+#if defined (COMPILING_PUBLISHED_TESTS) || defined (COMPILING_SCENARIO_TESTS)
+   // Need to reach in and grab this header since it won't be part of the published API yet we still
+   // need to utilize it in the published API tests
+   #include <..\PublicApi\Logging\bentleylogging.h>
+#endif
+
+USING_NAMESPACE_BENTLEY_LOGGING
+
 BEGIN_BENTLEY_EC_NAMESPACE
   
 #define MAX_INTERNAL_INSTANCES  0
@@ -17,78 +25,6 @@ BEGIN_BENTLEY_EC_NAMESPACE
 
 #define DEBUG_ECSCHEMA_LEAKS
 #define DEBUG_IECINSTANCE_LEAKS
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Josh.Schifter   06/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            ECTestFixture::SetUp ()
-    {
-    IECInstance::Debug_ResetAllocationStats();
-    ECSchema::Debug_ResetAllocationStats();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Josh.Schifter   06/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            ECTestFixture::TearDown ()
-    {
-#if defined (DEBUG_ECSCHEMA_LEAKS)
-    ECSchema::Debug_DumpAllocationStats(L"PostTest");
-#endif
-
-#if defined (DEBUG_IECINSTANCE_LEAKS)
-    IECInstance::Debug_DumpAllocationStats(L"PostTest");
-#endif
-
-    if (_WantSchemaLeakDetection())
-        TestForECSchemaLeaks(); 
-
-    if (_WantInstanceLeakDetection())
-        TestForIECInstanceLeaks(); 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    06/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void    ECTestFixture::TestForECSchemaLeaks ()
-    {
-    int numLiveSchemas = 0;
-
-    ECSchema::Debug_GetAllocationStats (&numLiveSchemas, NULL, NULL);
-    
-    if (numLiveSchemas > MAX_INTERNAL_SCHEMAS)
-        {
-        char message[1024];
-        sprintf (message, "TestForECSchemaLeaks found that there are %d Schemas still alive. Anything more than %d is flagged as an error!\n", 
-            numLiveSchemas, MAX_INTERNAL_SCHEMAS);
-
-        ECSchema::Debug_ReportLeaks();
-
-        EXPECT_TRUE (numLiveSchemas <= MAX_INTERNAL_SCHEMAS) << message;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void    ECTestFixture::TestForIECInstanceLeaks ()
-    {
-    int numLiveInstances = 0;
-
-    IECInstance::Debug_GetAllocationStats (&numLiveInstances, NULL, NULL);
-    
-    if (numLiveInstances > MAX_INTERNAL_INSTANCES)
-        {
-        char message[1024];
-        sprintf (message, "TestForIECInstanceLeaks found that there are %d IECInstances still alive. Anything more than %d is flagged as an error!\n", 
-            numLiveInstances, MAX_INTERNAL_INSTANCES);
-
-        std::vector<bwstring> classNamesToExclude;
-        IECInstance::Debug_ReportLeaks (classNamesToExclude);
-
-        EXPECT_TRUE (numLiveInstances <= MAX_INTERNAL_INSTANCES) << message;
-        }
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/03
@@ -146,12 +82,100 @@ bool CreateDirectoryRecursive (wchar_t const * path, bool failIfExists)
     return (DirExists (path));
     }
 
-std::wstring ECTestFixture::s_dllPath = L"";
+ 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                08/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECTestFixture::ECTestFixture()
+    {
+    LoggingConfig::ActivateProvider(CONSOLE_LOGGING_PROVIDER);
+
+    // Eventually this will switch to the Log4cxx Provider
+    // LoggingConfig::ActivateProvider(LOG4CXX_LOGGING_PROVIDER);
+     //LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, GetLogConfigurationFilename().c_str());
+
+    //LoggingConfig::SetSeverity(L"ECObjectsNative", LOG_TRACE);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Josh.Schifter   06/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECTestFixture::SetUp ()
+    {
+    IECInstance::Debug_ResetAllocationStats();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Josh.Schifter   06/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECTestFixture::TearDown ()
+    {
+#if defined (DEBUG_ECSCHEMA_LEAKS)
+    BackDoor::ECSchema::Debug_GetLeakDetector().ReportStats(L"PostTest");
+#endif
+
+#if defined (DEBUG_IECINSTANCE_LEAKS)
+    IECInstance::Debug_DumpAllocationStats(L"PostTest");
+#endif
+
+    if (_WantSchemaLeakDetection())
+        TestForECSchemaLeaks(); 
+
+    if (_WantInstanceLeakDetection())
+        TestForIECInstanceLeaks(); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void    testForLeaks (ILeakDetector& detector, wchar_t const * leakName)
+    {
+    Int32           numLeaks = detector.CheckForLeaks();
+
+    EXPECT_TRUE (0 == numLeaks)  << "Found " << numLeaks << " leaks of " << leakName;
+
+    if (0 != numLeaks)
+        detector.ResetStats();  // So that this leak doesn't make the next test fail.
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void    ECTestFixture::TestForECSchemaLeaks ()
+    {
+    testForLeaks (BackDoor::ECSchema::Debug_GetLeakDetector(), L"ECSchemaLeakDetector");
+    testForLeaks (BackDoor::ECClass::Debug_GetLeakDetector(), L"ECClassLeakDetector");
+    testForLeaks (BackDoor::ECProperty::Debug_GetLeakDetector(), L"ECPropertyLeakDetector");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void    ECTestFixture::TestForIECInstanceLeaks ()
+    {
+    int numLiveInstances = 0;
+
+    IECInstance::Debug_GetAllocationStats (&numLiveInstances, NULL, NULL);
+    
+    if (numLiveInstances > MAX_INTERNAL_INSTANCES)
+        {
+        char message[1024];
+        sprintf (message, "TestForIECInstanceLeaks found that there are %d IECInstances still alive. Anything more than %d is flagged as an error!\n", 
+            numLiveInstances, MAX_INTERNAL_INSTANCES);
+
+        std::vector<bwstring> classNamesToExclude;
+        IECInstance::Debug_ReportLeaks (classNamesToExclude);
+
+        EXPECT_TRUE (numLiveInstances <= MAX_INTERNAL_INSTANCES) << message;
+        }
+    }
+
+bwstring ECTestFixture::s_dllPath = L"";
     
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Carole.MacDonald 02/10
+* @bsimethod                                    Carole.MacDonald                08/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring ECTestFixture::GetTestDataPath(const wchar_t *dataFile)
+bwstring ECTestFixture::GetDllPath()
     {
     if (s_dllPath.empty())
         {
@@ -167,8 +191,14 @@ std::wstring ECTestFixture::GetTestDataPath(const wchar_t *dataFile)
         _wmakepath(filepath, executingDrive, executingDirectory, NULL, NULL);
         s_dllPath = filepath;
         }
-        
-    std::wstring testData(s_dllPath);
+    return s_dllPath;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Carole.MacDonald 02/10
++---------------+---------------+---------------+---------------+---------------+------*/
+bwstring ECTestFixture::GetTestDataPath(const wchar_t *dataFile)
+    {
+    bwstring testData(GetDllPath());
     testData.append(L"SeedData\\");
     testData.append(dataFile);
     return testData;
@@ -177,7 +207,7 @@ std::wstring ECTestFixture::GetTestDataPath(const wchar_t *dataFile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                08/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::wstring ECTestFixture::GetWorkingDirectoryPath(const wchar_t *testFixture, const wchar_t *dataFile)
+bwstring ECTestFixture::GetWorkingDirectoryPath(const wchar_t *testFixture, const wchar_t *dataFile)
     {
     wchar_t path[_MAX_PATH];
 
@@ -186,7 +216,7 @@ std::wstring ECTestFixture::GetWorkingDirectoryPath(const wchar_t *testFixture, 
         GetEnvironmentVariableW(L"tmp", path, _MAX_PATH);
         }
 
-    std::wstring filePath(path);
+    bwstring filePath(path);
     if (filePath.size() == 0)
         return filePath;
 
@@ -206,5 +236,62 @@ std::wstring ECTestFixture::GetWorkingDirectoryPath(const wchar_t *testFixture, 
     return filePath;
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECTestFixture::CheckProcessDirectory
+(
+wchar_t *filepath, 
+DWORD bufferSize
+)
+    {
+    bwstring dllPath = GetDllPath();
+    if (0 == dllPath.length())
+        return ERROR;
+        
+    wchar_t executingDirectory[_MAX_DIR];
+    wchar_t executingDrive[_MAX_DRIVE];
+    _wsplitpath(dllPath.c_str(), executingDrive, executingDirectory, NULL, NULL);
+
+    // Look for a file called "logging.config.xml" in the executing process's directory
+    _wmakepath(filepath, executingDrive, executingDirectory, L"logging.config.xml", L"xml");
+    if (0 == _waccess(filepath, 0))
+        return SUCCESS;
+    return ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Casey.Mullen                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bwstring ECTestFixture::GetLogConfigurationFilename()
+    {
+    wchar_t filepath[_MAX_PATH];
+
+    if ((0 != GetEnvironmentVariableW(L"BENTLEY_LOGGING_CONFIG", filepath, _MAX_PATH)) && (0 ==_waccess(filepath, 0)))
+        {
+        wprintf (L"ECObjects.dll configuring logging with %s (Set by BENTLEY_LOGGING_CONFIG environment variable.)\n", filepath);
+        return filepath;
+        }
+    else if (SUCCESS == CheckProcessDirectory(filepath, sizeof(filepath)))
+        {
+        wprintf (L"ECObjects.dll configuring logging using %s. Override by setting BENTLEY_LOGGING_CONFIG in environment.\n", filepath);
+        return filepath;
+        }
+    else if (0 != GetEnvironmentVariableW(L"OutRoot", filepath, _MAX_PATH))
+        {
+        wchar_t * processorArchitecture = (8 == sizeof(void*)) ? L"Winx64" : L"Winx86";
+        wcscat (filepath, processorArchitecture);
+        wcscat (filepath, L"\\Product\\ECFrameworkNativeTest\\Tests\\logging.config.xml");
+        
+        if (0 ==_waccess(filepath, 0))
+            {
+            wprintf (L"ECObjects.dll configuring logging with %s. Override by setting BENTLEY_LOGGING_CONFIG in environment.\n", filepath);
+            return filepath;
+            }
+        }
+
+    return L"";
+    }       
+
 END_BENTLEY_EC_NAMESPACE
 

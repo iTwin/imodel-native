@@ -14,11 +14,9 @@
 
 #include <Bentley\Bentley.h>
 
-/*__PUBLISH_SECTION_END__*/
 // In many of the DgnPlatform libraries we redefine the below macros based on __cplusplus.  This is because there
 // are existing C callers that we can not get rid of.  I've spoken to Sam and he recommends that for any new libraries we
 // ONLY support cpp callers and therefore do not repeat this pattern.
-/*__PUBLISH_SECTION_START__*/
 
 #ifdef __ECOBJECTS_BUILD__
 #define ECOBJECTS_EXPORT __declspec(dllexport)
@@ -207,6 +205,19 @@ enum InstanceSerializationStatus
     INSTANCE_SERIALIZATION_STATUS_BadPrimitivePropertyType              = INSTANCE_SERIALIZATION_STATUS_BASE + 30,
     };
     
+/*__PUBLISH_SECTION_END__*/
+/*---------------------------------------------------------------------------------**//**
+ @bsiclass
++---------------+---------------+---------------+---------------+---------------+------*/
+struct          ILeakDetector
+{
+virtual void    GetStats(Int32& currentLive, Int32& totalAllocs, Int32& totalFrees) const = 0;
+virtual void    ResetStats() = 0;
+virtual void    ReportStats (const wchar_t* prefix) const = 0;
+virtual Int32   CheckForLeaks () const = 0;
+};
+/*__PUBLISH_SECTION_START__*/
+
 END_BENTLEY_EC_NAMESPACE
 
 USING_NAMESPACE_BENTLEY

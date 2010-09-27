@@ -11,6 +11,9 @@ compileRulesPath=$(baseDir)scenarioCompileRules.mki
 nameToDefine = COMPILING_SCENARIO_TESTS
 %include cdefapnd.mki
 
+nameToDefine = USE_PUBLISHED_HEADERS
+%include cdefapnd.mki
+
 ActiveBuildContextName = $(EcfTestBuildContextName)
 
 # When the scenario tests build they will set USE_PUBLIC_SCENARIO_HEADERS which should make sure they
