@@ -96,6 +96,7 @@ enum ArrayKind : unsigned short
 // NEEDSWORK types: common geometry, installed primitives
 //=======================================================================================    
 /*__PUBLISH_SECTION_START__*/
+
 //=======================================================================================    
 //! Enumeration of primitive datatypes supported by native "ECObjects" implementation.
 //! These should correspond to all of the datatypes supported in .NET ECObjects
@@ -140,16 +141,16 @@ public:
     ECTypeDescriptor (ValueKind valueKind, short valueKindQualifier) : m_typeKind (valueKind), m_primitiveType ((PrimitiveType)valueKindQualifier) { };
 /*__PUBLISH_SECTION_START__*/    
 
-    inline ValueKind        GetTypeKind() const         { return m_typeKind; }
-    inline ArrayKind        GetArrayKind() const        { return (ArrayKind)(m_arrayKind & 0xFF); }    
-    inline bool             IsPrimitive() const         { return (GetTypeKind() == VALUEKIND_Primitive ); }
-    inline bool             IsStruct() const            { return (GetTypeKind() == VALUEKIND_Struct ); }
-    inline bool             IsArray() const             { return (GetTypeKind() == VALUEKIND_Array ); }
-    inline bool             IsPrimitiveArray() const    { return (GetTypeKind() == VALUEKIND_Array ) && (GetArrayKind() == ARRAYKIND_Primitive); }
-    inline bool             IsStructArray() const       { return (GetTypeKind() == VALUEKIND_Array ) && (GetArrayKind() == ARRAYKIND_Struct); }
-    inline PrimitiveType    GetPrimitiveType() const    { return m_primitiveType; }
+    inline ValueKind            GetTypeKind() const         { return m_typeKind; }
+    inline ArrayKind            GetArrayKind() const        { return (ArrayKind)(m_arrayKind & 0xFF); }    
+    inline bool                 IsPrimitive() const         { return (GetTypeKind() == VALUEKIND_Primitive ); }
+    inline bool                 IsStruct() const            { return (GetTypeKind() == VALUEKIND_Struct ); }
+    inline bool                 IsArray() const             { return (GetTypeKind() == VALUEKIND_Array ); }
+    inline bool                 IsPrimitiveArray() const    { return (GetTypeKind() == VALUEKIND_Array ) && (GetArrayKind() == ARRAYKIND_Primitive); }
+    inline bool                 IsStructArray() const       { return (GetTypeKind() == VALUEKIND_Array ) && (GetArrayKind() == ARRAYKIND_Struct); }
+    inline PrimitiveType        GetPrimitiveType() const    { return m_primitiveType; }
 /*__PUBLISH_SECTION_END__*/
-    inline short            GetTypeKindQualifier() const   { return m_primitiveType; }
+    inline short                GetTypeKindQualifier() const   { return m_primitiveType; }
 /*__PUBLISH_SECTION_START__*/        
 };    
 
@@ -495,6 +496,7 @@ public:
     };
 
 typedef std::list<ECClassP> ECBaseClassesList;
+typedef std::list<ECClassP> ECDerivedClassesList;
 typedef std::list<ECClassP> ECConstraintClassesList;
 
 /*__PUBLISH_SECTION_END__*/
@@ -512,20 +514,21 @@ friend struct ECSchema;
 friend struct ECPropertyIterable::IteratorState;
 
 private:
-    bwstring                m_name;
-    bwstring                m_displayLabel;
-    bwstring                m_description;
-    bool                    m_isStruct;
-    bool                    m_isCustomAttributeClass;
-    bool                    m_isDomainClass;
-    ECSchemaCR              m_schema;
-    ECBaseClassesList       m_baseClasses;
+    bwstring                        m_name;
+    bwstring                        m_displayLabel;
+    bwstring                        m_description;
+    bool                            m_isStruct;
+    bool                            m_isCustomAttributeClass;
+    bool                            m_isDomainClass;
+    ECSchemaCR                      m_schema;
+    ECBaseClassesList               m_baseClasses;
+    mutable ECDerivedClassesList    m_derivedClasses;
 
-    PropertyMap             m_propertyMap;
-    PropertyList            m_propertyList;    
+    PropertyMap                     m_propertyMap;
+    PropertyList                    m_propertyList;    
     
-    ECObjectsStatus                     AddProperty (ECPropertyP& pProperty);
-    ECObjectsStatus                     AddProperty (ECPropertyP pProperty, bwstring const& name);
+    ECObjectsStatus                 AddProperty (ECPropertyP& pProperty);
+    ECObjectsStatus                 AddProperty (ECPropertyP pProperty, bwstring const& name);
     
     static bool CheckBaseClassCycles(ECClassCP currentBaseClass, const void * arg);
     static bool AddUniquePropertiesToList(ECClassCP crrentBaseClass, const void * arg);
@@ -533,6 +536,9 @@ private:
     ECOBJECTS_EXPORT ECObjectsStatus GetProperties(bool includeBaseProperties, PropertyList* propertyList) const;
 
     ECObjectsStatus CanPropertyBeOverridden(ECPropertyCR baseProperty, ECPropertyCR newProperty) const;
+    void            AddDerivedClass(ECClassCR baseClass) const;
+    void            RemoveDerivedClass(ECClassCR baseClass) const;
+
 protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
@@ -567,6 +573,7 @@ public:
     EXPORTED_READONLY_PROPERTY (bool,                   IsDisplayLabelDefined);
     EXPORTED_READONLY_PROPERTY (ECPropertyIterable,     Properties); 
     EXPORTED_READONLY_PROPERTY (const ECBaseClassesList&,     BaseClasses);   
+    EXPORTED_READONLY_PROPERTY (const ECDerivedClassesList&,  DerivedClasses);   
 
     EXPORTED_PROPERTY  (bwstring const&,                Description);
     EXPORTED_PROPERTY  (bwstring const&,                DisplayLabel);

@@ -99,21 +99,20 @@ protected:
         size_t              m_size;
         bool                m_freeWhenDone;
         };
-        
+
     union
         {
-        bool            m_boolean;
-        ::Int32         m_integer32;
-        ::Int64         m_long64;
-        double          m_double;
-        StringInfo      m_stringInfo;
-        ::Int64         m_dateTime;
-        DPoint2d        m_dPoint2d;   
-        DPoint3d        m_dPoint3d;   
-        ArrayInfo       m_arrayInfo;
-        BinaryInfo      m_binaryInfo;
-        
-        IECInstanceP  m_structInstance;
+        bool                m_boolean;
+        ::Int32             m_integer32;
+        ::Int64             m_long64;
+        double              m_double;
+        StringInfo          m_stringInfo;
+        ::Int64             m_dateTime;
+        DPoint2d            m_dPoint2d;   
+        DPoint3d            m_dPoint3d; 
+        ArrayInfo           m_arrayInfo;
+        BinaryInfo          m_binaryInfo;
+        IECInstanceP        m_structInstance;
         };
 
     void DeepCopy (ECValueCR v);

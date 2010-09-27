@@ -1282,7 +1282,7 @@ ECObjectsStatus       MemoryInstanceSupport::ShiftValueData(ClassLayoutCR classL
         if (destination + bytesToMove > data + bytesAllocated)
             return ECOBJECTS_STATUS_IndexOutOfRange;
             
-        memmove (destination, source, bytesToMove); // WIP_FUSION: Use Modify data, instead. Need method from Keith.
+        memmove (destination, source, bytesToMove); // WIP_FUSION: Use Modify data, instead. Need method from Keith. (D-60516)
         }
 
     // Shift all secondaryOffsets for variable-sized property values that follow the one that just got larger
@@ -1334,7 +1334,7 @@ ECObjectsStatus       MemoryInstanceSupport::ShiftArrayIndexValueData(PropertyLa
         if (destination + bytesToMove > data + *pNextProperty)
             return ECOBJECTS_STATUS_IndexOutOfRange;
             
-        memmove (destination, source, bytesToMove); // WIP_FUSION: Use Modify data, instead
+        memmove (destination, source, bytesToMove); // WIP_FUSION: Use Modify data, instead  (D-60516)
         }
 
     // Shift all secondaryOffsets for indices following the one that just got larger
@@ -1445,7 +1445,7 @@ ECObjectsStatus       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValu
             memcpy (&value, pValue, sizeof(value));
             v.SetDateTimeTicks (value);
             return ECOBJECTS_STATUS_Success;
-            }            
+            } 
         case PRIMITIVETYPE_String:
             {
             wchar_t * pString = (wchar_t *)pValue;
@@ -1884,7 +1884,7 @@ ECObjectsStatus            ArrayResizer::ShiftDataFollowingResizeIndex ()
         {        
         UInt32 byteCountToShift = m_preArrayByteCount - offsetOfResizePoint;        
         DEBUG_EXPECT (m_pResizeIndexPostShift + byteCountToShift <= pNextProperty); 
-        memmove ((byte*)m_pResizeIndexPostShift, m_pResizeIndexPreShift, byteCountToShift); // WIP_FUSION .. use _MoveData, waiting on Keith
+        memmove ((byte*)m_pResizeIndexPostShift, m_pResizeIndexPreShift, byteCountToShift); // WIP_FUSION .. use _MoveData, waiting on Keith (D-60516)
         }
         
     return SetSecondaryOffsetsFollowingResizeIndex();        
@@ -1966,7 +1966,7 @@ ECObjectsStatus            ArrayResizer::ShiftDataPreceedingResizeIndex ()
     // shift all the elements in the fixed section preceding the insert point if we needed to grow the nullflags bitmask            
     if ((pShiftTo != pShiftFrom))
         {
-        memmove (pShiftTo, pShiftFrom, byteCountToShift); // WIP_FUSION .. use _MoveData, waiting on Keith
+        memmove (pShiftTo, pShiftFrom, byteCountToShift); // WIP_FUSION .. use _MoveData, waiting on Keith (D-60516)
         DEBUG_EXPECT (pShiftTo + byteCountToShift <= m_pResizeIndexPostShift); 
         }
         

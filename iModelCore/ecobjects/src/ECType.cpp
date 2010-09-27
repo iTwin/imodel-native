@@ -57,7 +57,8 @@ ECTypeDescriptor                ECTypeDescriptor::CreateStructTypeDescriptor ()
     { 
     ECTypeDescriptor type; 
     type.m_typeKind = VALUEKIND_Struct; 
-    type.m_arrayKind = (ArrayKind)0; return type; 
+    type.m_arrayKind = (ArrayKind)0; 
+    return type; 
     }
-        
+     
 END_BENTLEY_EC_NAMESPACE
