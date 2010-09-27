@@ -936,12 +936,17 @@ ECSchemaP       ECSchema::LocateSchemaByPath
 const bwstring&                 name,
 UInt32&                         versionMajor,
 UInt32&                         versionMinor,
-ECSchemaDeserializationContextR schemaContext
+ECSchemaDeserializationContextR schemaContext,
+bool                            useLatestCompatibleMatch
 )
     {
     ECSchemaP   schemaOut = NULL;
     wchar_t versionString[24];
-    swprintf(versionString, 24, L".%02d.*.ecschema.xml", versionMajor);
+    if (useLatestCompatibleMatch)
+        swprintf(versionString, 24, L".%02d.*.ecschema.xml", versionMajor);
+    else
+        swprintf(versionString, 24, L".%02d.%02d.ecschema.xml", versionMajor, versionMinor);
+
     bwstring schemaName = name;
     schemaName += versionString;
 
@@ -965,6 +970,25 @@ ECSchemaDeserializationContextR schemaContext
         }
 
     return schemaOut;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaP       ECSchema::LocateSchemaByPath
+(
+const bwstring&                 name,
+UInt32&                         versionMajor,
+UInt32&                         versionMinor,
+ECSchemaDeserializationContextR schemaContext
+)
+    {
+    ECSchemaP   schemaOut = LocateSchemaByPath (name, versionMajor, versionMinor, schemaContext, false);
+
+    if (NULL != schemaOut)
+        return  schemaOut;
+
+    return LocateSchemaByPath (name, versionMajor, versionMinor, schemaContext, true);
     }
 
 /*---------------------------------------------------------------------------------**//**

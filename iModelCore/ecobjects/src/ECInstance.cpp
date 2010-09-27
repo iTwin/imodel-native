@@ -786,6 +786,13 @@ InstanceDeserializationStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr&
         if (FAILED (status = m_xmlReader->GetLocalName (&attributeName, NULL)))
             return TranslateStatus (status);
 
+        const wchar_t*      pQName;
+        if (S_OK == m_xmlReader->GetQualifiedName(&pQName, NULL))
+            {
+            if ((L':' == pQName[5]) && (0 == wcsncmp (XMLNS_ATTRIBUTE, pQName, 5)))
+                continue;  // skip xmlns:xxxxx attributes
+            }
+
         // see if it's the instanceId attribute.
         if (0 == wcscmp (INSTANCEID_ATTRIBUTE, attributeName))
             {
