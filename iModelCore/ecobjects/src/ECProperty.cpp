@@ -14,7 +14,7 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-#define DEBUG_PROPERTY_LEAKS
+//#define DEBUG_PROPERTY_LEAKS
 #ifdef DEBUG_PROPERTY_LEAKS
 LeakDetector<ECProperty> g_leakDetector (L"ECProperty", L"ECProperties", true);
 #else

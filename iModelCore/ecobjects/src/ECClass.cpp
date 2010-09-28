@@ -14,7 +14,7 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-#define DEBUG_CLASS_LEAKS
+//#define DEBUG_CLASS_LEAKS
 #ifdef DEBUG_CLASS_LEAKS
 LeakDetector<ECClass> g_leakDetector (L"ECClass", L"ECClasss", true);
 #else

@@ -14,7 +14,7 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-#define DEBUG_SCHEMA_LEAKS
+//#define DEBUG_SCHEMA_LEAKS
 #ifdef DEBUG_SCHEMA_LEAKS
 LeakDetector<ECSchema> g_leakDetector (L"ECSchema", L"ECSchemas", true);
 #else
