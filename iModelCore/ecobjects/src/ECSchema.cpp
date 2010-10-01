@@ -1645,12 +1645,15 @@ const bwstring &name
     {
     if (name.empty())
         return false;
-    if (isdigit(name[0]))
-        return false;
-    
+    if (   L'0' <= name[0]
+        && L'9' >= name[0])
+        return false; 
     for (bwstring::size_type index = 0; index != name.length(); ++index)
         {
-        if (!isalnum(name[index]) && '_' != name[index])
+        if(    (L'a' > name[index] || L'z' < name[index]) 
+            && (L'A' > name[index] || L'Z' < name[index])
+            && (L'0' > name[index] || L'9' < name[index])
+            && '_'  != name[index])
             return false;
         } 
     return true;
