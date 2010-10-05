@@ -1068,14 +1068,13 @@ private:
     
     ECSchemaReferenceList m_refSchemaList;
     
-    std::set<const wchar_t *> m_alreadySerializedClasses;
     stdext::hash_map<ECSchemaP, const bwstring> m_referencedSchemaNamespaceMap;
 
     ECSchema (bool hideFromLeakDetection);
     virtual ~ECSchema();
 
     static SchemaDeserializationStatus  ReadXml (ECSchemaP& schemaOut, MSXML2_IXMLDOMDocument2& pXmlDoc, ECSchemaDeserializationContextR context);
-    SchemaSerializationStatus           WriteXml (MSXML2_IXMLDOMDocument2* pXmlDoc);
+    SchemaSerializationStatus           WriteXml (MSXML2_IXMLDOMDocument2* pXmlDoc) const;
 
     ECObjectsStatus                     AddClass (ECClassP& pClass);
     ECObjectsStatus                     SetVersionFromString (bwstring const& versionString);
@@ -1087,13 +1086,18 @@ private:
     static ECSchemaP                    LocateSchemaByPath(const bwstring & name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR context);
     static ECSchemaP                    LocateSchemaByStandardPaths(const bwstring & name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR context);
     
-    SchemaSerializationStatus           WriteSchemaReferences(MSXML2_IXMLDOMElement& parentNode);
-    SchemaSerializationStatus           WriteClass(MSXML2_IXMLDOMElement& parentNode, ECClassCR ecClass);
-    SchemaSerializationStatus           WriteCustomAttributeDependencies(MSXML2_IXMLDOMElement& parentNode, IECCustomAttributeContainerCR container);
-    SchemaSerializationStatus           WritePropertyDependencies(MSXML2_IXMLDOMElement& parentNode, ECClassCR ecClass);
+    struct  ECSchemaSerializationContext
+        {
+        std::set<const wchar_t *> m_alreadySerializedClasses;
+        };
+
+    SchemaSerializationStatus           WriteSchemaReferences(MSXML2_IXMLDOMElement& parentNode) const;
+    SchemaSerializationStatus           WriteClass(MSXML2_IXMLDOMElement& parentNode, ECClassCR ecClass, ECSchemaSerializationContext&) const;
+    SchemaSerializationStatus           WriteCustomAttributeDependencies(MSXML2_IXMLDOMElement& parentNode, IECCustomAttributeContainerCR container, ECSchemaSerializationContext&) const;
+    SchemaSerializationStatus           WritePropertyDependencies(MSXML2_IXMLDOMElement& parentNode, ECClassCR ecClass, ECSchemaSerializationContext&) const;
 
 protected:
-	virtual ECSchemaCP					_GetContainerSchema() const override;
+    virtual ECSchemaCP                  _GetContainerSchema() const override;
 
 public:    
     ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();
@@ -1104,8 +1108,8 @@ public:
     EXPORTED_PROPERTY (bwstring const&, NamespacePrefix);
     EXPORTED_PROPERTY (bwstring const&, Description);
     EXPORTED_PROPERTY (bwstring const&, DisplayLabel);
-    EXPORTED_PROPERTY (UInt32,              VersionMajor);
-    EXPORTED_PROPERTY (UInt32,              VersionMinor);
+    EXPORTED_PROPERTY (UInt32,          VersionMajor);
+    EXPORTED_PROPERTY (UInt32,          VersionMinor);
 
     EXPORTED_READONLY_PROPERTY (ECClassContainerCR, Classes);
     EXPORTED_READONLY_PROPERTY (bool,               IsDisplayLabelDefined);
@@ -1160,7 +1164,7 @@ public:
     //! @param[out] ecSchemaXml     The string containing the Xml of the serialized schema
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml
     //          will contain the serialized schema.  Otherwise, ecSchemaXml will be unmodified
-    ECOBJECTS_EXPORT SchemaSerializationStatus          WriteXmlToString (bwstring & ecSchemaXml);
+    ECOBJECTS_EXPORT SchemaSerializationStatus          WriteXmlToString (bwstring & ecSchemaXml) const;
     
     //! Serializes an ECXML schema to a file
     //! Xml Serialization utilizes MSXML through COM. <b>Any thread calling this method must therefore be certain to initialize and
