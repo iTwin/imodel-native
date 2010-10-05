@@ -287,6 +287,11 @@ ECSchemaCR              schema
 
     xmlNodeListPtr = containerNode.selectNodes (EC_NAMESPACE_PREFIX L":" EC_CUSTOM_ATTRIBUTES_ELEMENT);
     int count = xmlNodeListPtr->length;
+    if (schema.Name.Equals (L"Bentley_Common_Classes"))
+        {
+           printf ("\n %d custom attibute found", count);
+        }
+
     while (NULL != (xmlNodePtr = xmlNodeListPtr->nextNode()))
         {
         MSXML2::IXMLDOMNodeListPtr attributeInstances = xmlNodePtr->childNodes;

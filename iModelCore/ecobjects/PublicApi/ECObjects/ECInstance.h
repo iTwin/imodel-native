@@ -15,6 +15,37 @@ BEGIN_BENTLEY_EC_NAMESPACE
 
 typedef RefCountedPtr<IECInstance> IECInstancePtr;
 
+//////////////////////////////////////////////////////////////////////////////////
+//  The following definitions are used to allow a struct property to generate a
+//  custom XML representation of itself. This was required to support 8.11 
+//  installedTypes as Vancouver ECStructs  
+//////////////////////////////////////////////////////////////////////////////////
+typedef bmap<bwstring, ICustomECStructSerializerP> NameSerializerMap;
+
+struct ICustomECStructSerializer
+    {
+    virtual bool            UsesCustomStructXmlString  (StructECPropertyP structProperty, IECInstanceCR ecInstance) const = 0;
+    virtual ECObjectsStatus GenerateXmlString  (bwstring& xmlString, StructECPropertyP structProperty, IECInstanceCR ecInstance, const wchar_t * baseAccessString) const = 0;
+    virtual void            LoadStructureFromString (StructECPropertyP structProperty, IECInstanceR ecInstance, const wchar_t * baseAccessString, const wchar_t * valueString) = 0;
+    };
+
+struct CustomStructSerializerManager
+{
+private:
+    NameSerializerMap   m_serializers;
+
+    CustomStructSerializerManager();
+    ~CustomStructSerializerManager();
+
+    ICustomECStructSerializerP GetCustomSerializer (const wchar_t* serializerName) const;
+
+public:
+    ECOBJECTS_EXPORT  ICustomECStructSerializerP            GetCustomSerializer (StructECPropertyP structProperty, IECInstanceCR ecInstance) const;
+    ECOBJECTS_EXPORT  static CustomStructSerializerManagerR GetManager();
+    ECOBJECTS_EXPORT  BentleyStatus                         AddCustomSerializer (const wchar_t* serializerName, ICustomECStructSerializerP serializer);
+};
+
+
 //=======================================================================================    
 //! EC::IECInstance is the native equivalent of a .NET IECInstance.
 //! Unlike IECInstance, it is not a pure interface, but is a concrete struct.
@@ -45,7 +76,7 @@ protected:
     ECOBJECTS_EXPORT virtual ECEnablerCR  _GetEnabler() const = 0;
     ECOBJECTS_EXPORT virtual bool         _IsReadOnly() const = 0;
     ECOBJECTS_EXPORT virtual bwstring     _ToString (const wchar_t* indent) const = 0;
-    
+
 public:
     ECOBJECTS_EXPORT ECEnablerCR        GetEnabler() const;
     ECOBJECTS_EXPORT bwstring           GetInstanceId() const;

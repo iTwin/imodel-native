@@ -23,6 +23,90 @@ DebugInstanceLeakMap    g_debugInstanceLeakMap;
 //WIP_FUSION:  This should use EC::LeakDetector  (see ecschema.cpp)
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+CustomStructSerializerManager::CustomStructSerializerManager ()
+    {
+    // we could add needed serializers here.
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+CustomStructSerializerManager::~CustomStructSerializerManager ()
+    {
+    m_serializers.clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus            CustomStructSerializerManager::AddCustomSerializer (const wchar_t* serializerName, ICustomECStructSerializerP serializer)
+    {
+    if (GetCustomSerializer (serializerName))
+        return ERROR;
+
+    m_serializers[WString(serializerName)] = serializer;
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+CustomStructSerializerManagerR                   CustomStructSerializerManager::GetManager()
+    {
+    static CustomStructSerializerManagerP   s_serializerManager = NULL;
+
+    if (NULL == s_serializerManager)
+        s_serializerManager = new CustomStructSerializerManager();
+        
+    return *s_serializerManager;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ICustomECStructSerializerP                      CustomStructSerializerManager::GetCustomSerializer (const wchar_t* serializerName) const
+    {
+    if (m_serializers.empty())
+        return NULL;
+
+    NameSerializerMap::const_iterator it = m_serializers.find (serializerName);
+    if (it == m_serializers.end())
+        return NULL;
+
+    return it->second;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ICustomECStructSerializerP                      CustomStructSerializerManager::GetCustomSerializer (StructECPropertyP structProperty, IECInstanceCR ecInstance) const
+    {
+    if (m_serializers.empty())
+        return NULL;
+
+    // see if the struct has a custom attribute to custom serialize itself
+    IECInstancePtr caInstance = structProperty->Type.GetCustomAttribute(L"CustomStructSerializer");
+    if (caInstance.IsValid())
+        {
+        ECValue value;
+        if (SUCCESS == caInstance->GetValue (value, L"SerializerName"))
+            {
+            ICustomECStructSerializerP serializerP = GetCustomSerializer (value.GetString());
+            if (serializerP)
+                {
+                // let the serializer decide if it wants to process the struct from this type of IECInstance
+                if (serializerP->UsesCustomStructXmlString  (structProperty, ecInstance))
+                    return serializerP;
+                }
+            }
+        }
+
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstance::IECInstance()
@@ -955,6 +1039,67 @@ InstanceDeserializationStatus   ReadProperty (ECClassCR ecClass, IECInstanceP ec
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  10/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceDeserializationStatus   ReadCustomSerializedStruct (StructECPropertyP structProperty, IECInstanceP ecInstance, bwstring* baseAccessString, ICustomECStructSerializerP customECStructSerializerP)
+    {
+    // On entry, the reader is positioned in the content of an instance or struct.
+    HRESULT         status;
+
+    // if it's an empty node, all members of the instance are NULL.
+    if (m_xmlReader->IsEmptyElement())
+        return INSTANCE_DESERIALIZATION_STATUS_Success;
+
+
+    XmlNodeType     nodeType;
+    while (S_OK == (status = m_xmlReader->Read (&nodeType)))
+        {
+        bool positionedAtText = false;
+        switch (nodeType) 
+            {
+            case XmlNodeType_Element:
+                // a custom serializer should only allow a single text value.
+                assert (false);
+                break;
+
+            case XmlNodeType_EndElement:
+                // we have encountered the end of the class or struct.
+                return INSTANCE_DESERIALIZATION_STATUS_Success;
+
+            case XmlNodeType_Text:
+                {
+                positionedAtText = true;
+                break;
+                }
+
+            default:
+                {
+                // simply ignore white space, comments, etc.
+                break;
+                }
+            }
+
+        if (positionedAtText)
+            break;
+        }
+
+    const wchar_t*  propertyValueString;
+    if (FAILED (status = m_xmlReader->GetValue (&propertyValueString, NULL)))
+        return TranslateStatus (status);
+
+    bwstring    thisAccessString;
+    if (NULL != baseAccessString)
+        AppendAccessString (thisAccessString, *baseAccessString, structProperty->Name);
+    else
+        thisAccessString = structProperty->Name.c_str();
+    thisAccessString.append (L".");
+
+    customECStructSerializerP->LoadStructureFromString (structProperty, *ecInstance, thisAccessString.c_str(), propertyValueString);
+
+    return INSTANCE_DESERIALIZATION_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceDeserializationStatus   ReadEmbeddedStructProperty (StructECPropertyP structProperty, IECInstanceP ecInstance, bwstring* baseAccessString)
@@ -969,6 +1114,10 @@ InstanceDeserializationStatus   ReadEmbeddedStructProperty (StructECPropertyP st
     else
         thisAccessString = structProperty->Name.c_str();
     thisAccessString.append (L".");
+
+    ICustomECStructSerializerP customECStructSerializerP = CustomStructSerializerManager::GetManager().GetCustomSerializer (structProperty, *ecInstance);
+    if (customECStructSerializerP)
+        return ReadCustomSerializedStruct (structProperty, ecInstance, baseAccessString, customECStructSerializerP);
 
     return ReadInstanceOrStructMembers (structProperty->Type, ecInstance, &thisAccessString);
     }
@@ -1629,6 +1778,8 @@ InstanceSerializationStatus     WriteInstance (IECInstanceCR instance, bool writ
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceSerializationStatus     WritePropertiesOfClassOrStructArrayMember (ECClassCR ecClass, IECInstanceCR ecInstance, bwstring* baseAccessString)
     {
+    CustomStructSerializerManagerR customStructSerializerMgr = CustomStructSerializerManager::GetManager();
+
     ECPropertyIterableCR    collection  = ecClass.GetProperties (true);
     for each (ECPropertyP ecProperty in collection)
         {
@@ -1642,7 +1793,35 @@ InstanceSerializationStatus     WritePropertiesOfClassOrStructArrayMember (ECCla
         else if (NULL != (arrayProperty = ecProperty->GetAsArrayProperty()))
             ixwStatus = WriteArrayProperty (*arrayProperty, ecInstance, baseAccessString);
         else if (NULL != (structProperty = ecProperty->GetAsStructProperty()))
-            ixwStatus = WriteEmbeddedStructProperty (*structProperty, ecInstance, baseAccessString);
+            {
+            ICustomECStructSerializerP customECStructSerializerP = customStructSerializerMgr.GetCustomSerializer (structProperty, ecInstance);
+
+            if (customECStructSerializerP)
+                {
+                ixwStatus = INSTANCE_SERIALIZATION_STATUS_BadPrimitivePropertyType;
+
+                HRESULT     status;
+                bwstring xmlString; 
+
+                if (ECOBJECTS_STATUS_Success == customECStructSerializerP->GenerateXmlString (xmlString, structProperty, ecInstance, baseAccessString?baseAccessString->c_str():NULL))
+                    {
+                    if (S_OK != (status = m_xmlWriter->WriteStartElement (NULL, structProperty->Name.c_str(), NULL)))
+                        return TranslateStatus (status);
+
+                    if (S_OK != (status = m_xmlWriter->WriteChars (xmlString.c_str(), static_cast <UINT> (xmlString.length()))))
+                        return TranslateStatus (status);
+                    
+                    if (S_OK != (status = m_xmlWriter->WriteEndElement ()))
+                        return TranslateStatus (status);
+
+                    ixwStatus = INSTANCE_SERIALIZATION_STATUS_Success;
+                    }
+                }
+            else
+                {
+                ixwStatus = WriteEmbeddedStructProperty (*structProperty, ecInstance, baseAccessString);
+                }
+            }
 
         if (INSTANCE_SERIALIZATION_STATUS_Success != ixwStatus)
             {
