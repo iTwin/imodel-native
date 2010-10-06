@@ -55,7 +55,6 @@ ECSchema::~ECSchema ()
 
     assert (m_classMap.empty());
 
-    memset (this, 0xececdead, sizeof(this));
     /*
     for (ECSchemaReferenceVector::iterator sit = m_referencedSchemas.begin(); sit != m_referencedSchemas.end(); sit++)
         {
@@ -67,6 +66,8 @@ ECSchema::~ECSchema ()
 
     if ( ! m_hideFromLeakDetection)
         g_leakDetector.ObjectDestroyed(*this);
+
+    memset (this, 0xececdead, sizeof(this));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -825,9 +826,14 @@ ECSchemaDeserializationContextR schemaContext
     // Step 1: First check if the owner already owns a copy of the schema.
     //         This will catch schema referencing cycles since the schemas are
     //         added to the owner as they are constructed. 
-//    ECSchemaP schema = schemaContext.GetSchemaOwner().GetSchema(name.c_str(), versionMajor, versionMinor);
-    ECSchemaP schema = schemaContext.GetSchemaOwner().LocateSchema(name.c_str(), versionMajor, versionMinor, SCHEMAMATCHTYPE_LatestCompatible);
 
+    // try exact match first
+    ECSchemaP schema = schemaContext.GetSchemaOwner().GetSchema(name.c_str(), versionMajor, versionMinor);
+    if (NULL != schema)
+        return schema;
+
+    // allow latest compatible
+    schema = schemaContext.GetSchemaOwner().LocateSchema(name.c_str(), versionMajor, versionMinor, SCHEMAMATCHTYPE_LatestCompatible);
     if (NULL != schema)
         return schema;
 
@@ -860,12 +866,17 @@ ECSchemaP       ECSchema::LocateSchemaByPath
 const bwstring&                 name,
 UInt32&                         versionMajor,
 UInt32&                         versionMinor,
-ECSchemaDeserializationContextR schemaContext
+ECSchemaDeserializationContextR schemaContext,
+bool                            useLatestCompatibleMatch
 )
     {
     ECSchemaP   schemaOut = NULL;
     wchar_t versionString[24];
-    swprintf(versionString, 24, L".%02d.*.ecschema.xml", versionMajor);
+    if (useLatestCompatibleMatch)
+        swprintf(versionString, 24, L".%02d.*.ecschema.xml", versionMajor);
+    else
+        swprintf(versionString, 24, L".%02d.%02d.ecschema.xml", versionMajor, versionMinor);
+
     bwstring schemaName = name;
     schemaName += versionString;
 
@@ -887,6 +898,27 @@ ECSchemaDeserializationContextR schemaContext
         }
 
     return schemaOut;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaP       ECSchema::LocateSchemaByPath
+(
+const bwstring&                 name,
+UInt32&                         versionMajor,
+UInt32&                         versionMinor,
+ECSchemaDeserializationContextR schemaContext
+)
+    {
+    // try to locate an exact matching schema file
+    ECSchemaP   schemaOut = LocateSchemaByPath (name, versionMajor, versionMinor, schemaContext, false);
+
+    if (NULL != schemaOut)
+        return  schemaOut;
+
+    // else fall back to latest compatible
+    return LocateSchemaByPath (name, versionMajor, versionMinor, schemaContext, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
