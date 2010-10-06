@@ -322,7 +322,7 @@ public:
 public:    
     EXPORTED_READONLY_PROPERTY (ECClassCR,              Class);   
     // ECClass implementation will index property by name so publicly name can not be reset
-    EXPORTED_READONLY_PROPERTY (bwstring const&,    Name);        
+    EXPORTED_READONLY_PROPERTY (bwstring const&,        Name);        
     EXPORTED_READONLY_PROPERTY (bool,                   IsDisplayLabelDefined);    
     EXPORTED_READONLY_PROPERTY (bool,                   IsStruct);    
     EXPORTED_READONLY_PROPERTY (bool,                   IsArray);    
@@ -334,9 +334,9 @@ public:
     //! The TypeName for array properties will be the type of the elements the array contains.
     //! This method returns a wstring by value because it may be a computed string.  For instance struct properties may return a qualified typename with a namespace
     //! prefix relative to the containing schema.
-    EXPORTED_PROPERTY  (bwstring,           TypeName);        
-    EXPORTED_PROPERTY  (bwstring const&,    Description);
-    EXPORTED_PROPERTY  (bwstring const&,    DisplayLabel);    
+    EXPORTED_PROPERTY  (bwstring,               TypeName);        
+    EXPORTED_PROPERTY  (bwstring const&,        Description);
+    EXPORTED_PROPERTY  (bwstring const&,        DisplayLabel);    
     EXPORTED_PROPERTY  (bool,                   IsReadOnly);
     EXPORTED_PROPERTY  (ECPropertyCP,           BaseProperty);    
 
@@ -554,7 +554,7 @@ protected:
     virtual ~ECClass();    
 
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
-	virtual ECSchemaCP					_GetContainerSchema() const override;
+    virtual ECSchemaCP                  _GetContainerSchema() const override;
 
     // schemas index class by name so publicly name can not be reset
     ECObjectsStatus                     SetName (bwstring const& name);    
@@ -569,7 +569,7 @@ protected:
     virtual SchemaDeserializationStatus ReadXmlContents (MSXML2_IXMLDOMNode& classNode);    
     
     virtual SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode) const;
-    SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode, const wchar_t * elementName) const;
+    SchemaSerializationStatus           WriteXml(MSXML2_IXMLDOMElement& parentNode, const wchar_t * elementName) const;
 
 public:    
     ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();
@@ -578,14 +578,14 @@ public:
 public:    
     EXPORTED_READONLY_PROPERTY (ECSchemaCR,             Schema);                
     // schemas index class by name so publicly name can not be reset
-    EXPORTED_READONLY_PROPERTY (bwstring const&,    Name);        
+    EXPORTED_READONLY_PROPERTY (bwstring const&,        Name);        
     EXPORTED_READONLY_PROPERTY (bool,                   IsDisplayLabelDefined);
-    EXPORTED_READONLY_PROPERTY (ECPropertyIterable,  Properties); 
+    EXPORTED_READONLY_PROPERTY (ECPropertyIterable,     Properties); 
     EXPORTED_READONLY_PROPERTY (const ECBaseClassesList&,     BaseClasses);   
     EXPORTED_READONLY_PROPERTY (const ECDerivedClassesList&,  DerivedClasses);   
 
-    EXPORTED_PROPERTY  (bwstring const&,            Description);
-    EXPORTED_PROPERTY  (bwstring const&,            DisplayLabel);
+    EXPORTED_PROPERTY  (bwstring const&,                Description);
+    EXPORTED_PROPERTY  (bwstring const&,                DisplayLabel);
     EXPORTED_PROPERTY  (bool,                           IsStruct);    
     EXPORTED_PROPERTY  (bool,                           IsCustomAttributeClass);    
     EXPORTED_PROPERTY  (bool,                           IsDomainClass);    
@@ -1010,13 +1010,13 @@ private:
     IECSchemaOwnerR                 m_schemaOwner;
 
     bvector<IECSchemaLocatorP>      m_locators;
-    bvector<const wchar_t *>        m_searchPaths;
+    T_WStringVector                 m_searchPaths;
     bool                            m_hideSchemasFromLeakDetection;
 
     ECSchemaDeserializationContext(IECSchemaOwnerR);
 
     bvector<IECSchemaLocatorP>& GetSchemaLocators ();
-    bvector<const wchar_t *>&   GetSchemaPaths ();
+    T_WStringVector&            GetSchemaPaths ();
     IECSchemaOwnerR             GetSchemaOwner();
     bool                        GetHideSchemasFromLeakDetection();
 
@@ -1093,7 +1093,7 @@ private:
     SchemaSerializationStatus           WritePropertyDependencies(MSXML2_IXMLDOMElement& parentNode, ECClassCR ecClass);
 
 protected:
-	virtual ECSchemaCP					_GetContainerSchema() const override;
+        virtual ECSchemaCP              _GetContainerSchema() const override;
 
 public:    
     ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();

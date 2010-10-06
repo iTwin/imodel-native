@@ -869,10 +869,8 @@ ECSchemaDeserializationContextR schemaContext
     bwstring schemaName = name;
     schemaName += versionString;
 
-    for each (const wchar_t* path in schemaContext.GetSchemaPaths())
+    for each (WString schemaPath in schemaContext.GetSchemaPaths())
         {
-        bwstring schemaPath (path);
-
         if (schemaPath[schemaPath.length() - 1] != '\\')
             schemaPath += '\\';
         schemaPath += schemaName;
@@ -903,7 +901,7 @@ ECSchemaDeserializationContextR schemaContext
 )
     {
     // Make a copy of the paths stored in schemaContext
-    bvector<const wchar_t *> originalPaths = schemaContext.GetSchemaPaths();
+    T_WStringVector originalPaths = schemaContext.GetSchemaPaths();
 
     // Clear out the stored paths and replace with the standard ones
     schemaContext.ClearSchemaPaths();
@@ -918,9 +916,9 @@ ECSchemaDeserializationContextR schemaContext
     wchar_t generalPath[_MAX_PATH];
     wchar_t libraryPath[_MAX_PATH];
     
-    swprintf(schemaPath, _MAX_PATH, L"%s\\Schemas", dllPath.c_str());
-    swprintf(generalPath, _MAX_PATH, L"%s\\Schemas\\General", dllPath.c_str());
-    swprintf(libraryPath, _MAX_PATH, L"%s\\Schemas\\LibraryUnits", dllPath.c_str());
+    swprintf(schemaPath, _MAX_PATH, L"%sSchemas", dllPath.c_str());
+    swprintf(generalPath, _MAX_PATH, L"%sSchemas\\General", dllPath.c_str());
+    swprintf(libraryPath, _MAX_PATH, L"%sSchemas\\LibraryUnits", dllPath.c_str());
     schemaContext.AddSchemaPath(schemaPath);
     schemaContext.AddSchemaPath(generalPath);
     schemaContext.AddSchemaPath(libraryPath);
@@ -1506,14 +1504,14 @@ ECSchemaDeserializationContext::ECSchemaDeserializationContext(IECSchemaOwnerR o
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaDeserializationContextPtr  ECSchemaDeserializationContext::CreateContext (IECSchemaOwnerR owner)   { return new ECSchemaDeserializationContext(owner); }
 void  ECSchemaDeserializationContext::AddSchemaLocators (bvector<EC::IECSchemaLocatorP>& locators) { m_locators.insert (m_locators.begin(), locators.begin(), locators.end());  }
-void  ECSchemaDeserializationContext::AddSchemaLocator (IECSchemaLocatorR locator) { m_locators.push_back (&locator);  }
-void  ECSchemaDeserializationContext::AddSchemaPath (const wchar_t* path)          { m_searchPaths.push_back (path);   }
-void  ECSchemaDeserializationContext::HideSchemasFromLeakDetection ()              { m_hideSchemasFromLeakDetection = true; }
-bvector<IECSchemaLocatorP>& ECSchemaDeserializationContext::GetSchemaLocators ()   { return m_locators;    }
-bvector<const wchar_t *>&   ECSchemaDeserializationContext::GetSchemaPaths ()      { return m_searchPaths; }
-void            ECSchemaDeserializationContext::ClearSchemaPaths ()                { m_searchPaths.clear();    }
-IECSchemaOwnerR ECSchemaDeserializationContext::GetSchemaOwner()                   { return m_schemaOwner;  }
-bool            ECSchemaDeserializationContext::GetHideSchemasFromLeakDetection()  { return m_hideSchemasFromLeakDetection;  }
+void  ECSchemaDeserializationContext::AddSchemaLocator (IECSchemaLocatorR locator)      { m_locators.push_back (&locator);  }
+void  ECSchemaDeserializationContext::AddSchemaPath (const wchar_t* path)               { m_searchPaths.push_back (WString(path));   }
+void  ECSchemaDeserializationContext::HideSchemasFromLeakDetection ()                   { m_hideSchemasFromLeakDetection = true; }
+bvector<IECSchemaLocatorP>& ECSchemaDeserializationContext::GetSchemaLocators ()        { return m_locators;    }
+T_WStringVectorR    ECSchemaDeserializationContext::GetSchemaPaths ()                   { return m_searchPaths; }
+void                ECSchemaDeserializationContext::ClearSchemaPaths ()                 { m_searchPaths.clear();    }
+IECSchemaOwnerR     ECSchemaDeserializationContext::GetSchemaOwner()                    { return m_schemaOwner;  }
+bool                ECSchemaDeserializationContext::GetHideSchemasFromLeakDetection()   { return m_hideSchemasFromLeakDetection;  }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    07/10
