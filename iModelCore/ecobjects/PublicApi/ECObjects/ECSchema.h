@@ -1039,8 +1039,11 @@ public:
 //=======================================================================================
 struct IECSchemaLocator
 {
+protected:
+    virtual ECSchemaP _LocateSchema(const wchar_t *name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaDeserializationContextR schemaContext) const = 0;
+
 public:
-    virtual ECOBJECTS_EXPORT ECSchemaP LocateSchema(const wchar_t *name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaDeserializationContextR schemaContext) const = 0;
+    ECOBJECTS_EXPORT ECSchemaP LocateSchema(const wchar_t *name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaDeserializationContextR schemaContext);
 };
 
 //=======================================================================================
@@ -1215,7 +1218,6 @@ public:
     //! @param[out] versionMinor    The minor version number
     //! @param[in]  versionString   A string containing the major and minor versions (MM.NN)
     //! @return A status code indicating whether the string was successfully parsed
-
     ECOBJECTS_EXPORT static ECObjectsStatus ParseVersionString (UInt32& versionMajor, UInt32& versionMinor, bwstring const& versionString);
     
     //! Given a match type, will determine whether the two schemas match based on name, major version and minor version.  This does not compare actual schemas

@@ -20,6 +20,7 @@ LeakDetector<ECSchema> g_leakDetector (L"ECSchema", L"ECSchemas", true);
 #else
 LeakDetector<ECSchema> g_leakDetector (L"ECSchema", L"ECSchemas", false);
 #endif
+
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -809,6 +810,14 @@ ECSchemaDeserializationContextR schemaContext
         }
 
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                 
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaP IECSchemaLocator::LocateSchema(const wchar_t *name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaDeserializationContextR schemaContext)
+    {
+    return _LocateSchema (name, versionMajor, versionMinor, matchType, schemaContext);
     }
 
 /*---------------------------------------------------------------------------------**//**

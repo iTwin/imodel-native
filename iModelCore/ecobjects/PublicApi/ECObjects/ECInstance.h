@@ -13,8 +13,39 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-typedef RefCountedPtr<IECInstance> IECInstancePtr;
+typedef RefCountedPtr<ECInstanceDeserializationContext>      ECInstanceDeserializationContextPtr;
+//=======================================================================================
+//! Context object used for instance creation and deserialization.</summary>
+//=======================================================================================
+struct ECInstanceDeserializationContext /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
+{
+/*__PUBLISH_SECTION_END__*/
+private:
+    ECSchemaCP                      m_schema;
+    ECSchemaDeserializationContextP m_schemaContext;
 
+    /* ctor */ ECInstanceDeserializationContext(ECSchemaCP schema, ECSchemaDeserializationContextP context)
+        {
+        assert (NULL == schema || NULL == context && L"Either schema or context should be NULL");
+
+        m_schema = schema;
+        m_schemaContext = context;
+        }
+
+public:
+    ECSchemaCP                      GetSchemaCP()  { return m_schema; }
+    ECSchemaDeserializationContextP GetSchemaContextCP()  { return m_schemaContext; }
+
+/*__PUBLISH_SECTION_START__*/
+
+    //! - For use when the caller knows the schema of the instance he is deserializing.
+    ECOBJECTS_EXPORT static ECInstanceDeserializationContextPtr CreateContext (ECSchemaCR);
+
+    //! - For use when the caller does not know the schema of the instance he is deserializing.
+    ECOBJECTS_EXPORT static ECInstanceDeserializationContextPtr CreateContext (ECSchemaDeserializationContextR);
+};
+
+typedef RefCountedPtr<IECInstance> IECInstancePtr;
 //=======================================================================================    
 //! EC::IECInstance is the native equivalent of a .NET IECInstance.
 //! Unlike IECInstance, it is not a pure interface, but is a concrete struct.
@@ -79,9 +110,9 @@ public:
     ECOBJECTS_EXPORT static void        Debug_GetAllocationStats (int* currentLive, int* totalAllocs, int* totalFrees);
     ECOBJECTS_EXPORT static void        Debug_ReportLeaks (std::vector<bwstring>& classNamesToExclude);
 
-    ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadXmlFromFile   (IECInstancePtr& ecInstance, const wchar_t* fileName, ECSchemaCR schema);
-    ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadXmlFromStream (IECInstancePtr& ecInstance, IStreamP stream, ECSchemaCR schema);
-    ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadXmlFromString (IECInstancePtr& ecInstance, const wchar_t* xmlString, ECSchemaCR schema);
+    ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadXmlFromFile   (IECInstancePtr& ecInstance, const wchar_t* fileName, ECInstanceDeserializationContextR context);
+    ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadXmlFromStream (IECInstancePtr& ecInstance, IStreamP stream, ECInstanceDeserializationContextR context);
+    ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadXmlFromString (IECInstancePtr& ecInstance, const wchar_t* xmlString, ECInstanceDeserializationContextR context);
 
     ECOBJECTS_EXPORT InstanceSerializationStatus            WriteXmlToFile   (const wchar_t* fileName, bool isStandAlone);
     ECOBJECTS_EXPORT InstanceSerializationStatus            WriteXmlToStream (IStreamP stream, bool isStandAlone);

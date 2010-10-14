@@ -537,12 +537,28 @@ bwstring                        IECInstance::ToString (const wchar_t* indent) co
     return _ToString (indent);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    10/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECInstanceDeserializationContextPtr ECInstanceDeserializationContext::CreateContext (ECSchemaCR schema)
+    {
+    return new ECInstanceDeserializationContext (&schema, NULL);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    10/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECInstanceDeserializationContextPtr ECInstanceDeserializationContext::CreateContext (ECSchemaDeserializationContextR context)
+    {
+    return new ECInstanceDeserializationContext (NULL, &context);
+    }
+
 END_BENTLEY_EC_NAMESPACE
 
 
 
 
- 
+
 #include <xmllite.h>
 #include <atlbase.h>
 
@@ -613,27 +629,27 @@ static const wchar_t XSI_NIL_ATTRIBUTE[]            = L"nil";
 struct  InstanceXmlReader
 {
 private:
-    bwstring                    m_fileName;
-    CComPtr <IStream>           m_stream;
-    CComPtr <IXmlReader>        m_xmlReader;
-    ECSchemaCR                  m_schema;
+    bwstring                            m_fileName;
+    CComPtr <IStream>                   m_stream;
+    CComPtr <IXmlReader>                m_xmlReader;
+    ECInstanceDeserializationContextR   m_context;
 
 public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceXmlReader (ECSchemaCR schema, CComPtr <IStream> stream)
+InstanceXmlReader (ECInstanceDeserializationContextR context, CComPtr <IStream> stream)
     :
-    m_schema (schema), m_stream (stream), m_xmlReader (NULL)
+    m_context (context), m_stream (stream), m_xmlReader (NULL)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceXmlReader (ECSchemaCR schema, const wchar_t* fileName)
+InstanceXmlReader (ECInstanceDeserializationContextR context, const wchar_t* fileName)
     :
-    m_schema (schema), m_fileName (fileName), m_stream (NULL), m_xmlReader (NULL)
+    m_context (context), m_fileName (fileName), m_stream (NULL), m_xmlReader (NULL)
     {
     }
 
@@ -683,6 +699,14 @@ InstanceDeserializationStatus   TranslateStatus (HRESULT status)
             return s_errorMap[iError].m_ixrStatus;
         }
     return INSTANCE_DESERIALIZATION_STATUS_XmlParseError;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    10/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaCP      GetSchema (const wchar_t* schemaName)
+    {
+    return NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -740,15 +764,37 @@ InstanceDeserializationStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr&
     if (FAILED (status = m_xmlReader->MoveToElement()))
         return INSTANCE_DESERIALIZATION_STATUS_BadElement;
 
-    const wchar_t*        className;
+    const wchar_t*      className;
+    const wchar_t*      schemaName;
     if (FAILED (status = m_xmlReader->GetLocalName (&className, NULL)))
         return INSTANCE_DESERIALIZATION_STATUS_NoElementName;
 
-    // see if we can find the class from the schema we have.
-    ECClassCP    foundClass;
-    if (NULL == (foundClass = m_schema.GetClassP (className)))
+    // read the className attributes.
+    for (status = m_xmlReader->MoveToFirstAttribute(); S_OK == status; status = m_xmlReader->MoveToNextAttribute())
         {
-        ECSchemaReferenceList refList = m_schema.GetReferencedSchemas();
+        // we have an attribute.
+        const wchar_t*      attributeName;
+        if (FAILED (status = m_xmlReader->GetLocalName (&attributeName, NULL)))
+            return TranslateStatus (status);
+
+        // see if it's the xmlns attribute... that's the schema name.
+        if (0 == wcscmp (XMLNS_ATTRIBUTE, attributeName))
+            {
+            // get the value.
+            if (FAILED (status = m_xmlReader->GetValue (&schemaName, NULL)))
+                return TranslateStatus (status);
+            }
+        }
+
+    ECSchemaCP  schema = GetSchema(schemaName);
+    if (NULL == schema)
+        return INSTANCE_DESERIALIZATION_STATUS_ECSchemaNotFound;
+
+    // see if we can find the class from the schema.
+    ECClassCP    foundClass;
+    if (NULL == (foundClass = schema->GetClassP (className)))
+        {
+        ECSchemaReferenceList refList = schema->GetReferencedSchemas();
         ECSchemaReferenceList::const_iterator schemaIterator;
         for (schemaIterator = refList.begin(); schemaIterator != refList.end(); schemaIterator++)
             {
@@ -1466,11 +1512,13 @@ ECClassCP                       ValidateArrayStructType (const wchar_t* typeFoun
     if (0 == wcscmp (typeFound, expectedType->Name.c_str()))
         return expectedType;
 
-    // Probably need some namespace / schema find stuff here.
+    ECSchemaCP  schema = GetSchema(NULL);
+    if (NULL == schema)
+        return NULL;
 
     // typeFound must resolve to an ECClass that is either expectedType or a class that has expectedType as a Base Class.
     ECClassCP    classFound;
-    if (NULL == (classFound = m_schema.GetClassP (typeFound)))
+    if (NULL == (classFound = schema->GetClassP (typeFound)))
         {
         assert (false);
         return NULL;
@@ -1962,28 +2010,12 @@ InstanceSerializationStatus     TranslateStatus (HRESULT status)
 
 };
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   IECInstance::ReadXmlFromFile (IECInstancePtr& ecInstance, const wchar_t* fileName, ECSchemaCR schema)
+InstanceDeserializationStatus   IECInstance::ReadXmlFromFile (IECInstancePtr& ecInstance, const wchar_t* fileName, ECInstanceDeserializationContextR context)
     {
-    InstanceXmlReader reader (schema, fileName);
-
-    InstanceDeserializationStatus   status;
-    if (INSTANCE_DESERIALIZATION_STATUS_Success != (status = reader.Init ()))
-        return status;
-
-    return reader.ReadInstance (ecInstance);
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                05/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   IECInstance::ReadXmlFromStream (IECInstancePtr& ecInstance, IStreamP stream, ECSchemaCR schema)
-    {
-    InstanceXmlReader reader (schema, stream);
+    InstanceXmlReader reader (context, fileName);
 
     InstanceDeserializationStatus   status;
     if (INSTANCE_DESERIALIZATION_STATUS_Success != (status = reader.Init ()))
@@ -1995,7 +2027,21 @@ InstanceDeserializationStatus   IECInstance::ReadXmlFromStream (IECInstancePtr& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   IECInstance::ReadXmlFromString (IECInstancePtr& ecInstance, const wchar_t* xmlString, ECSchemaCR schema)
+InstanceDeserializationStatus   IECInstance::ReadXmlFromStream (IECInstancePtr& ecInstance, IStreamP stream, ECInstanceDeserializationContextR context)
+    {
+    InstanceXmlReader reader (context, stream);
+
+    InstanceDeserializationStatus   status;
+    if (INSTANCE_DESERIALIZATION_STATUS_Success != (status = reader.Init ()))
+        return status;
+
+    return reader.ReadInstance (ecInstance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceDeserializationStatus   IECInstance::ReadXmlFromString (IECInstancePtr& ecInstance, const wchar_t* xmlString, ECInstanceDeserializationContextR context)
     {
     CComPtr <IStream> stream;
     if (S_OK != ::CreateStreamOnHGlobal(NULL,TRUE,&stream))
@@ -2020,7 +2066,7 @@ InstanceDeserializationStatus   IECInstance::ReadXmlFromString (IECInstancePtr& 
     if (S_OK != stream->Seek(liPos, STREAM_SEEK_SET, NULL))
         return INSTANCE_DESERIALIZATION_STATUS_CantCreateStream;
 
-    InstanceXmlReader reader (schema, stream);
+    InstanceXmlReader reader (context, stream);
 
     InstanceDeserializationStatus   status;
     if (INSTANCE_DESERIALIZATION_STATUS_Success != (status = reader.Init ()))
