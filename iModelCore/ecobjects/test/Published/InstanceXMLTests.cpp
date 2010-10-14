@@ -258,8 +258,10 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingFaultyInstance
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, schemaStatus);
 
+    ECInstanceDeserializationContextPtr instanceContext = ECInstanceDeserializationContext::CreateContext (*schemaContext);
+
     IECInstancePtr  testInstance;
-    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"MismatchedInstance.xml").c_str(), *schema);
+    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"MismatchedInstance.xml").c_str(), *instanceContext);
 
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
     //Testing a struct with type errors in its values
@@ -373,8 +375,10 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingSimpleInstance
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, schemaStatus);
 
+    ECInstanceDeserializationContextPtr instanceContext = ECInstanceDeserializationContext::CreateContext (*schemaContext);
+
     IECInstancePtr  testInstance;
-    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), *schema);
+    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), *instanceContext);
 
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
 
@@ -399,8 +403,10 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingEmptyInstance)
         
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, schemaStatus);
 
+    ECInstanceDeserializationContextPtr instanceContext = ECInstanceDeserializationContext::CreateContext (*schemaContext);
+
     IECInstancePtr  testInstance;
-    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_EmptyInstance.xml").c_str(), *schema);
+    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_EmptyInstance.xml").c_str(), *instanceContext);
 
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
     
@@ -422,8 +428,10 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, schemaStatus);
 
+    ECInstanceDeserializationContextPtr instanceContext = ECInstanceDeserializationContext::CreateContext (*schemaContext);
+
     IECInstancePtr  testInstance;
-    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), *schema);
+    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), *instanceContext);
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
     
     // WIP_FUSION: should pass the string to the logger via a backdoor
@@ -440,7 +448,7 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     stream->Seek(liPos, STREAM_SEEK_SET, NULL);
 
     IECInstancePtr deserializedInstance;
-    InstanceDeserializationStatus status3 = IECInstance::ReadXmlFromStream(deserializedInstance, stream, *schema);
+    InstanceDeserializationStatus status3 = IECInstance::ReadXmlFromStream(deserializedInstance, stream, *instanceContext);
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, status3); 
     wprintf(L"Verifying schema deserialized from stream.\n");
     VerifyTestInstance (deserializedInstance.get(), false);
@@ -462,8 +470,10 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     SchemaDeserializationStatus schemaStatus = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, schemaStatus);
 
+    ECInstanceDeserializationContextPtr instanceContext = ECInstanceDeserializationContext::CreateContext (*schemaContext);
+
     IECInstancePtr  testInstance;
-    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), *schema);
+    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), *instanceContext);
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
     
     // WIP_FUSION: should pass the string to the logger via a backdoor
@@ -476,7 +486,7 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     EXPECT_EQ(INSTANCE_SERIALIZATION_STATUS_Success, status2);
     
     IECInstancePtr deserializedInstance;
-    InstanceDeserializationStatus status3 = IECInstance::ReadXmlFromString(deserializedInstance, ecInstanceXml.c_str(), *schema);
+    InstanceDeserializationStatus status3 = IECInstance::ReadXmlFromString(deserializedInstance, ecInstanceXml.c_str(), *instanceContext);
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, status3); 
     wprintf(L"Verifying schema deserialized from string.\n");
     VerifyTestInstance (deserializedInstance.get(), false);
@@ -549,8 +559,10 @@ TEST_F(PolymorphismDeserializationTest, ExpectSuccessWhenDeserializingPolymorphi
         
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, schemaStatus);
 
+    ECInstanceDeserializationContextPtr instanceContext = ECInstanceDeserializationContext::CreateContext (*schemaContext);
+
     IECInstancePtr  testInstance;
-    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"PolymorphismInstance.xml").c_str(), *schema);
+    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"PolymorphismInstance.xml").c_str(), *instanceContext);
 
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
     
@@ -584,8 +596,10 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWhenSerializingInstance)
         testClass->CreatePrimitiveProperty (binaryProperty, L"TestBinary", PRIMITIVETYPE_Binary);
         }
     
+    ECInstanceDeserializationContextPtr instanceContext = ECInstanceDeserializationContext::CreateContext (*schemaContext);
+
     IECInstancePtr  testInstance;
-    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), *schema);
+    InstanceDeserializationStatus instanceStatus = IECInstance::ReadXmlFromFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), *instanceContext);
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
 
     ECValue     binaryValue;

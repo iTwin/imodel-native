@@ -73,6 +73,9 @@ EC_TYPEDEFS(MemoryECInstanceBase);
 EC_TYPEDEFS(ClassLayoutHolder);
 EC_TYPEDEFS(SystemTime);
 
+EC_TYPEDEFS(ICustomECStructSerializer);
+EC_TYPEDEFS(CustomStructSerializerManager);
+
 #define EXPORTED_PROPERTY(TYPE, NAME) \
     ECOBJECTS_EXPORT TYPE Get##NAME() const; \
     ECOBJECTS_EXPORT ECObjectsStatus Set##NAME (TYPE value); \
@@ -218,6 +221,7 @@ virtual void    ResetStats() = 0;
 virtual void    ReportStats (const wchar_t* prefix) const = 0;
 virtual Int32   CheckForLeaks () const = 0;
 };
+
 /*__PUBLISH_SECTION_START__*/
 
 END_BENTLEY_EC_NAMESPACE

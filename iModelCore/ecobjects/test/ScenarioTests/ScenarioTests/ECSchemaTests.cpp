@@ -23,7 +23,7 @@ class ECSchemaTests : public ECSchemaTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus serializeSchema(ECSchemaP m_schema)
     {
-    WString xmlFile = ECTestFixture::GetWorkingDirectoryPath(L"ECObjectsScenarioTests", L"Widgets.09.06.ecschema.xml");
+    bwstring xmlFile = ECTestFixture::GetWorkingDirectoryPath(L"ECObjectsScenarioTests", L"Widgets.09.06.ecschema.xml");
     ECSchemaVerifier ecSchVer;
     SchemaSerializationStatus status = ecSchVer.WriteXmlToFile(xmlFile.c_str(), m_schema);
     EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status);
@@ -35,7 +35,7 @@ BentleyStatus serializeSchema(ECSchemaP m_schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus serializeSchema_New(ECSchemaP m_schema)
     {
-    WString xmlFile = ECTestFixture::GetWorkingDirectoryPath(L"ECObjectsScenarioTests", L"NewSchema.01.00.ecschema.xml");
+    bwstring xmlFile = ECTestFixture::GetWorkingDirectoryPath(L"ECObjectsScenarioTests", L"NewSchema.01.00.ecschema.xml");
     ECSchemaVerifier ecSchVer;
     SchemaSerializationStatus status = ecSchVer.WriteXmlToFile(xmlFile.c_str(), m_schema);
     EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status);
@@ -47,7 +47,7 @@ BentleyStatus serializeSchema_New(ECSchemaP m_schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus serializeSchema_WithStructProperty(ECSchemaP m_schema)
     {
-    WString xmlFile = ECTestFixture::GetWorkingDirectoryPath(L"ECObjectsScenarioTests", L"WidgetsWithStructProperty.01.00.ecschema.xml");
+    bwstring xmlFile = ECTestFixture::GetWorkingDirectoryPath(L"ECObjectsScenarioTests", L"WidgetsWithStructProperty.01.00.ecschema.xml");
     ECSchemaVerifier ecSchVer;
     SchemaSerializationStatus status = ecSchVer.WriteXmlToFile(xmlFile.c_str(), m_schema);
     EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status);
@@ -59,7 +59,7 @@ BentleyStatus serializeSchema_WithStructProperty(ECSchemaP m_schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus serializeSchema_WithClassModification(ECSchemaP m_schema)
     {
-    WString xmlFile = ECTestFixture::GetWorkingDirectoryPath(L"ECObjectsScenarioTests", L"WidgetsWithClassModification.01.00.ecschema.xml");
+    bwstring xmlFile = ECTestFixture::GetWorkingDirectoryPath(L"ECObjectsScenarioTests", L"WidgetsWithClassModification.01.00.ecschema.xml");
     ECSchemaVerifier ecSchVer;
     SchemaSerializationStatus status = ecSchVer.WriteXmlToFile(xmlFile.c_str(), m_schema);
     EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status);
@@ -71,7 +71,7 @@ BentleyStatus serializeSchema_WithClassModification(ECSchemaP m_schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 //BentleyStatus serializeSchema_WithNonEnglishCharacters(ECSchemaP m_schema, bwstring fileName)
 //    {
-    //WString dirPath, xmlFile;
+    //bwstring dirPath, xmlFile;
     //dirPath = GetOutRoot().c_str();
     //xmlFile = L".09.06.ecschema.xml";
     //fileName += xmlFile;

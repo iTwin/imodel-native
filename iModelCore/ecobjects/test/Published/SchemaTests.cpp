@@ -1547,6 +1547,14 @@ TEST_F(ClassTest, ExpectErrorWithBadClassName)
 
     ECSchema::CreateSchema(schema, L"TestSchema", 1, 0, *schemaOwner);
     
+    //We should not be able to create a class with a non-ASCII name, but non-ASCII Display
+    //Labels are okay; they are usually what is displayed on the frontend.
+    //See: http://bsw-wiki.bentley.com/default.aspx/Development/ECNamingConventions.html
+    //The following are illegal
+    const wchar_t foreignString[] = {0xF9C2, 0xF9C3, 0xF9C4, 0x0000};
+    
+    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, foreignString));
+    
     EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L""));
     
     // name cannot be an empty string
@@ -1571,8 +1579,10 @@ TEST_F(ClassTest, ExpectErrorWithBadClassName)
     EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L"abc123!@#"));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->CreateClass(class1, L"abc123"));
 
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->SetDisplayLabel(foreignString));
     }
     
+
 TEST_F(ClassTest, ExpectReadOnlyFromBaseClass)
     {
     ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();

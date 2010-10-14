@@ -56,7 +56,6 @@ ECSchema::~ECSchema ()
 
     assert (m_classMap.empty());
 
-    memset (this, 0xececdead, sizeof(this));
     /*
     for (ECSchemaReferenceVector::iterator sit = m_referencedSchemas.begin(); sit != m_referencedSchemas.end(); sit++)
         {
@@ -68,6 +67,8 @@ ECSchema::~ECSchema ()
 
     if ( ! m_hideFromLeakDetection)
         g_leakDetector.ObjectDestroyed(*this);
+
+    memset (this, 0xececdead, sizeof(this));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -834,9 +835,14 @@ ECSchemaDeserializationContextR schemaContext
     // Step 1: First check if the owner already owns a copy of the schema.
     //         This will catch schema referencing cycles since the schemas are
     //         added to the owner as they are constructed. 
-//    ECSchemaP schema = schemaContext.GetSchemaOwner().GetSchema(name.c_str(), versionMajor, versionMinor);
-    ECSchemaP schema = schemaContext.GetSchemaOwner().LocateSchema(name.c_str(), versionMajor, versionMinor, SCHEMAMATCHTYPE_LatestCompatible);
 
+    // try exact match first
+    ECSchemaP schema = schemaContext.GetSchemaOwner().GetSchema(name.c_str(), versionMajor, versionMinor);
+    if (NULL != schema)
+        return schema;
+
+    // allow latest compatible
+    schema = schemaContext.GetSchemaOwner().LocateSchema(name.c_str(), versionMajor, versionMinor, SCHEMAMATCHTYPE_LatestCompatible);
     if (NULL != schema)
         return schema;
 
@@ -869,19 +875,22 @@ ECSchemaP       ECSchema::LocateSchemaByPath
 const bwstring&                 name,
 UInt32&                         versionMajor,
 UInt32&                         versionMinor,
-ECSchemaDeserializationContextR schemaContext
+ECSchemaDeserializationContextR schemaContext,
+bool                            useLatestCompatibleMatch
 )
     {
     ECSchemaP   schemaOut = NULL;
     wchar_t versionString[24];
-    swprintf(versionString, 24, L".%02d.*.ecschema.xml", versionMajor);
+    if (useLatestCompatibleMatch)
+        swprintf(versionString, 24, L".%02d.*.ecschema.xml", versionMajor);
+    else
+        swprintf(versionString, 24, L".%02d.%02d.ecschema.xml", versionMajor, versionMinor);
+
     bwstring schemaName = name;
     schemaName += versionString;
 
-    for each (const wchar_t* path in schemaContext.GetSchemaPaths())
+    for each (WString schemaPath in schemaContext.GetSchemaPaths())
         {
-        bwstring schemaPath (path);
-
         if (schemaPath[schemaPath.length() - 1] != '\\')
             schemaPath += '\\';
         schemaPath += schemaName;
@@ -901,6 +910,27 @@ ECSchemaDeserializationContextR schemaContext
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaP       ECSchema::LocateSchemaByPath
+(
+const bwstring&                 name,
+UInt32&                         versionMajor,
+UInt32&                         versionMinor,
+ECSchemaDeserializationContextR schemaContext
+)
+    {
+    // try to locate an exact matching schema file
+    ECSchemaP   schemaOut = LocateSchemaByPath (name, versionMajor, versionMinor, schemaContext, false);
+
+    if (NULL != schemaOut)
+        return  schemaOut;
+
+    // else fall back to latest compatible
+    return LocateSchemaByPath (name, versionMajor, versionMinor, schemaContext, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP       ECSchema::LocateSchemaByStandardPaths
@@ -912,7 +942,7 @@ ECSchemaDeserializationContextR schemaContext
 )
     {
     // Make a copy of the paths stored in schemaContext
-    bvector<const wchar_t *> originalPaths = schemaContext.GetSchemaPaths();
+    T_WStringVector originalPaths = schemaContext.GetSchemaPaths();
 
     // Clear out the stored paths and replace with the standard ones
     schemaContext.ClearSchemaPaths();
@@ -927,9 +957,9 @@ ECSchemaDeserializationContextR schemaContext
     wchar_t generalPath[_MAX_PATH];
     wchar_t libraryPath[_MAX_PATH];
     
-    swprintf(schemaPath, _MAX_PATH, L"%s\\Schemas", dllPath.c_str());
-    swprintf(generalPath, _MAX_PATH, L"%s\\Schemas\\General", dllPath.c_str());
-    swprintf(libraryPath, _MAX_PATH, L"%s\\Schemas\\LibraryUnits", dllPath.c_str());
+    swprintf(schemaPath, _MAX_PATH, L"%sSchemas", dllPath.c_str());
+    swprintf(generalPath, _MAX_PATH, L"%sSchemas\\General", dllPath.c_str());
+    swprintf(libraryPath, _MAX_PATH, L"%sSchemas\\LibraryUnits", dllPath.c_str());
     schemaContext.AddSchemaPath(schemaPath);
     schemaContext.AddSchemaPath(generalPath);
     schemaContext.AddSchemaPath(libraryPath);
@@ -1508,14 +1538,14 @@ ECSchemaDeserializationContext::ECSchemaDeserializationContext(IECSchemaOwnerR o
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaDeserializationContextPtr  ECSchemaDeserializationContext::CreateContext (IECSchemaOwnerR owner)   { return new ECSchemaDeserializationContext(owner); }
 void  ECSchemaDeserializationContext::AddSchemaLocators (bvector<EC::IECSchemaLocatorP>& locators) { m_locators.insert (m_locators.begin(), locators.begin(), locators.end());  }
-void  ECSchemaDeserializationContext::AddSchemaLocator (IECSchemaLocatorR locator) { m_locators.push_back (&locator);  }
-void  ECSchemaDeserializationContext::AddSchemaPath (const wchar_t* path)          { m_searchPaths.push_back (path);   }
-void  ECSchemaDeserializationContext::HideSchemasFromLeakDetection ()              { m_hideSchemasFromLeakDetection = true; }
-bvector<IECSchemaLocatorP>& ECSchemaDeserializationContext::GetSchemaLocators ()   { return m_locators;    }
-bvector<const wchar_t *>&   ECSchemaDeserializationContext::GetSchemaPaths ()      { return m_searchPaths; }
-void            ECSchemaDeserializationContext::ClearSchemaPaths ()                { m_searchPaths.clear();    }
-IECSchemaOwnerR ECSchemaDeserializationContext::GetSchemaOwner()                   { return m_schemaOwner;  }
-bool            ECSchemaDeserializationContext::GetHideSchemasFromLeakDetection()  { return m_hideSchemasFromLeakDetection;  }
+void  ECSchemaDeserializationContext::AddSchemaLocator (IECSchemaLocatorR locator)      { m_locators.push_back (&locator);  }
+void  ECSchemaDeserializationContext::AddSchemaPath (const wchar_t* path)               { m_searchPaths.push_back (WString(path));   }
+void  ECSchemaDeserializationContext::HideSchemasFromLeakDetection ()                   { m_hideSchemasFromLeakDetection = true; }
+bvector<IECSchemaLocatorP>& ECSchemaDeserializationContext::GetSchemaLocators ()        { return m_locators;    }
+T_WStringVectorR    ECSchemaDeserializationContext::GetSchemaPaths ()                   { return m_searchPaths; }
+void                ECSchemaDeserializationContext::ClearSchemaPaths ()                 { m_searchPaths.clear();    }
+IECSchemaOwnerR     ECSchemaDeserializationContext::GetSchemaOwner()                    { return m_schemaOwner;  }
+bool                ECSchemaDeserializationContext::GetHideSchemasFromLeakDetection()   { return m_hideSchemasFromLeakDetection;  }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    07/10
@@ -1647,12 +1677,15 @@ const bwstring &name
     {
     if (name.empty())
         return false;
-    if (isdigit(name[0]))
-        return false;
-    
+    if (   L'0' <= name[0]
+        && L'9' >= name[0])
+        return false; 
     for (bwstring::size_type index = 0; index != name.length(); ++index)
         {
-        if (!isalnum(name[index]) && '_' != name[index])
+        if(    (L'a' > name[index] || L'z' < name[index]) 
+            && (L'A' > name[index] || L'Z' < name[index])
+            && (L'0' > name[index] || L'9' < name[index])
+            && '_'  != name[index])
             return false;
         } 
     return true;
