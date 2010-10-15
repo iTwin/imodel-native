@@ -506,6 +506,14 @@ static ECObjectsStatus setECValueInInstance (ECValue& v, IECInstanceR instance, 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  10/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECInstanceInteropHelper::SetValue  (IECInstanceR instance, const wchar_t * propertyAccessString, ECValue value)
+    {
+    return setECValueInInstance (value, instance, propertyAccessString);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/       
 ECObjectsStatus ECInstanceInteropHelper::SetLongValue (IECInstanceR instance, const wchar_t * propertyAccessString, Int64 value)
