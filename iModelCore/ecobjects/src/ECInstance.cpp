@@ -185,7 +185,7 @@ ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v, UI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECObjectsStatus getECValueUsingFullAccessString (wchar_t* asBuffer, wchar_t* indexBuffer, ECValue& v, IECInstanceCR instance, const wchar_t * propertyAccessString)
+static ECObjectsStatus getECValueUsingFullAccessString (wchar_t* asBuffer, wchar_t* indexBuffer, ECValueR v, IECInstanceCR instance, const wchar_t * propertyAccessString)
     {
     // see if access string specifies an array
     const wchar_t* pos1 = wcschr (propertyAccessString, L'[');
@@ -240,7 +240,7 @@ static ECObjectsStatus getECValueUsingFullAccessString (wchar_t* asBuffer, wchar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECObjectsStatus getECValueFromInstance (ECValue& v, IECInstanceCR instance, const wchar_t * propertyAccessString)
+static ECObjectsStatus getECValueFromInstance (ECValueR v, IECInstanceCR instance, const wchar_t * propertyAccessString)
     {
     WString asBufferStr;
 
@@ -249,6 +249,14 @@ static ECObjectsStatus getECValueFromInstance (ECValue& v, IECInstanceCR instanc
     wchar_t indexBuffer[NUM_INDEX_BUFFER_CHARS+1];
 
     return getECValueUsingFullAccessString (asBuffer, indexBuffer, v, instance, propertyAccessString);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  10/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus                 ECInstanceInteropHelper::GetValue (IECInstanceCR instance, ECValueR value, const wchar_t * propertyAccessString)
+    {
+    return getECValueFromInstance (value, instance, propertyAccessString);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -405,7 +413,7 @@ static ECClassP GetClassFromReferencedSchemas (ECSchemaCR rootSchema, const wcha
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar_t* indexBuffer, ECValue& v, IECInstanceR instance, const wchar_t * propertyAccessString)
+static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar_t* indexBuffer, ECValueCR v, IECInstanceR instance, const wchar_t * propertyAccessString)
     {
     // see if access string specifies an array
     const wchar_t* pos1 = wcschr (propertyAccessString, L'[');
@@ -495,7 +503,7 @@ static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECObjectsStatus setECValueInInstance (ECValue& v, IECInstanceR instance, const wchar_t * propertyAccessString)
+static ECObjectsStatus setECValueInInstance (ECValueCR v, IECInstanceR instance, const wchar_t * propertyAccessString)
     {
     WString asBufferStr;
 
@@ -508,7 +516,7 @@ static ECObjectsStatus setECValueInInstance (ECValue& v, IECInstanceR instance, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::SetValue  (IECInstanceR instance, const wchar_t * propertyAccessString, ECValue value)
+ECObjectsStatus ECInstanceInteropHelper::SetValue  (IECInstanceR instance, const wchar_t * propertyAccessString, ECValueCR value)
     {
     return setECValueInInstance (value, instance, propertyAccessString);
     }
