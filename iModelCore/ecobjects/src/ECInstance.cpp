@@ -716,6 +716,8 @@ private:
     bwstring                            m_fileName;
     CComPtr <IStream>                   m_stream;
     CComPtr <IXmlReader>                m_xmlReader;
+    bwstring                            m_fullSchemaName;
+    ECSchemaCP                          m_schema;
     ECInstanceDeserializationContextR   m_context;
 
 public:
@@ -724,7 +726,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceXmlReader (ECInstanceDeserializationContextR context, CComPtr <IStream> stream)
     :
-    m_context (context), m_stream (stream), m_xmlReader (NULL)
+    m_context (context), m_stream (stream), m_xmlReader (NULL), m_schema (NULL)
     {
     }
 
@@ -733,7 +735,7 @@ InstanceXmlReader (ECInstanceDeserializationContextR context, CComPtr <IStream> 
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceXmlReader (ECInstanceDeserializationContextR context, const wchar_t* fileName)
     :
-    m_context (context), m_fileName (fileName), m_stream (NULL), m_xmlReader (NULL)
+    m_context (context), m_fileName (fileName), m_stream (NULL), m_xmlReader (NULL), m_schema (NULL)
     {
     }
 
@@ -786,15 +788,6 @@ InstanceDeserializationStatus   TranslateStatus (HRESULT status)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    10/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP      GetSchema (const wchar_t* schemaName)
-    {
-//WIP_FUSION: use the SchemaDeserializationContext to find or create the schema
-    return NULL;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceDeserializationStatus   ReadInstance (IECInstancePtr& ecInstance)
@@ -838,6 +831,36 @@ InstanceDeserializationStatus   ReadInstance (IECInstancePtr& ecInstance)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    10/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaCP       GetSchema()
+    {
+    if (NULL != m_schema)
+        return m_schema;
+
+    m_schema = m_context.GetSchemaCP();
+
+//WIP_FUSION: Do we want to check for mismatches between the supplied schema name/version and m_fullSchemaName from the instance
+
+    if (NULL != m_schema)
+        return m_schema;
+
+    ECSchemaDeserializationContextPtr schemaContext = m_context.GetSchemaContextPtr();
+
+    if (schemaContext.IsValid())
+        {
+        bwstring    schemaName;
+        UInt32      versionMajor;
+        UInt32      versionMinor;
+
+        if (SUCCESS == ECSchema::ParseSchemaFullName (schemaName, versionMajor, versionMinor, m_fullSchemaName))
+            m_schema = ECSchema::LocateSchema (schemaName, versionMajor, versionMinor, *schemaContext);
+        }
+
+    return m_schema;    
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceDeserializationStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr& ecInstance)
@@ -850,7 +873,6 @@ InstanceDeserializationStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr&
         return INSTANCE_DESERIALIZATION_STATUS_BadElement;
 
     const wchar_t*      className;
-    const wchar_t*      schemaName;
     if (FAILED (status = m_xmlReader->GetLocalName (&className, NULL)))
         return INSTANCE_DESERIALIZATION_STATUS_NoElementName;
 
@@ -866,12 +888,16 @@ InstanceDeserializationStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr&
         if (0 == wcscmp (XMLNS_ATTRIBUTE, attributeName))
             {
             // get the value.
+            const wchar_t*      schemaName;
+
             if (FAILED (status = m_xmlReader->GetValue (&schemaName, NULL)))
                 return TranslateStatus (status);
+
+            m_fullSchemaName.assign (schemaName);
             }
         }
 
-    ECSchemaCP  schema = GetSchema(schemaName);
+    ECSchemaCP  schema = GetSchema();
     if (NULL == schema)
         return INSTANCE_DESERIALIZATION_STATUS_ECSchemaNotFound;
 
@@ -1670,7 +1696,7 @@ ECClassCP                       ValidateArrayStructType (const wchar_t* typeFoun
     if (0 == wcscmp (typeFound, expectedType->Name.c_str()))
         return expectedType;
 
-    ECSchemaCP  schema = GetSchema(NULL);
+    ECSchemaCP  schema = GetSchema();
     if (NULL == schema)
         return NULL;
 

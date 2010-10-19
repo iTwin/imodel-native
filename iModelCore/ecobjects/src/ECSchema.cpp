@@ -319,6 +319,41 @@ bwstring const&     name
     return ECOBJECTS_STATUS_Success;
     }
 
+#define     ECSCHEMA_FULLNAME_FORMAT_EXPLANATION L" Format must be Name.MM.mm where Name is the schema name, MM is major version and mm is minor version.\n"
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::ParseSchemaFullName
+(
+bwstring&           schemaName,
+UInt32&             versionMajor, 
+UInt32&             versionMinor, 
+bwstring const&     fullName
+)
+    {
+    if (fullName.empty())
+        return ECOBJECTS_STATUS_ParseError;
+
+    const wchar_t * fullNameCP = fullName.c_str();
+    const wchar_t * firstDot = wcschr (fullNameCP, L'.');
+    if (NULL == firstDot)
+        {
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema FullName String: '%s' does not contain a '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName.c_str());
+        return ECOBJECTS_STATUS_ParseError;
+        }
+
+    size_t nameLen = firstDot - fullNameCP;
+    if (nameLen < 1)
+        {
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema FullName String: '%s' does not have any characters before the '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName.c_str());
+        return ECOBJECTS_STATUS_ParseError;
+        }
+
+    schemaName.assign (fullNameCP, nameLen);
+
+    return ParseVersionString (versionMajor, versionMinor, firstDot+1);
+    }
+
 #define     ECSCHEMA_VERSION_FORMAT_EXPLAINATION L" Format must be MM.mm where MM is major version and mm is minor version.\n"
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
@@ -1608,7 +1643,7 @@ ECSchemaP       ECSchemaOwner::_LocateSchema (const wchar_t* name, UInt32 versio
     { 
     for each (ECSchemaP ecSchema in m_schemas)
         {
-        if (ECSchema::SchemasMatch (matchType, name, versionMajor, versionMinor, ecSchema->GetName().c_str(), ecSchema->GetVersionMajor(), ecSchema->GetVersionMinor() != versionMinor))
+        if (ECSchema::SchemasMatch (matchType, name, versionMajor, versionMinor, ecSchema->GetName().c_str(), ecSchema->GetVersionMajor(), ecSchema->GetVersionMinor()))
             return ecSchema;
         }
 

@@ -13,38 +13,6 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-typedef RefCountedPtr<ECInstanceDeserializationContext>      ECInstanceDeserializationContextPtr;
-//=======================================================================================
-//! Context object used for instance creation and deserialization.</summary>
-//=======================================================================================
-struct ECInstanceDeserializationContext /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
-{
-/*__PUBLISH_SECTION_END__*/
-private:
-    ECSchemaCP                      m_schema;
-    ECSchemaDeserializationContextP m_schemaContext;
-
-    /* ctor */ ECInstanceDeserializationContext(ECSchemaCP schema, ECSchemaDeserializationContextP context)
-        {
-        assert (NULL == schema || NULL == context && L"Either schema or context should be NULL");
-
-        m_schema = schema;
-        m_schemaContext = context;
-        }
-
-public:
-    ECSchemaCP                      GetSchemaCP()  { return m_schema; }
-    ECSchemaDeserializationContextP GetSchemaContextCP()  { return m_schemaContext; }
-
-/*__PUBLISH_SECTION_START__*/
-
-    //! - For use when the caller knows the schema of the instance he is deserializing.
-    ECOBJECTS_EXPORT static ECInstanceDeserializationContextPtr CreateContext (ECSchemaCR);
-
-    //! - For use when the caller does not know the schema of the instance he is deserializing.
-    ECOBJECTS_EXPORT static ECInstanceDeserializationContextPtr CreateContext (ECSchemaDeserializationContextR);
-};
-
 //////////////////////////////////////////////////////////////////////////////////
 //  The following definitions are used to allow a struct property to generate a
 //  custom XML representation of itself. This was required to support 8.11 

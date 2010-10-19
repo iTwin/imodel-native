@@ -997,43 +997,6 @@ public:
     ECOBJECTS_EXPORT static  ECSchemaOwnerPtr    CreateOwner();
 };
 
-typedef RefCountedPtr<ECSchemaDeserializationContext>      ECSchemaDeserializationContextPtr;
-//=======================================================================================
-//! Context object used for schema creation and deserialization.</summary>
-//=======================================================================================
-struct ECSchemaDeserializationContext /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
-{
-/*__PUBLISH_SECTION_END__*/
-friend  ECSchema;
-
-private:
-    IECSchemaOwnerR                 m_schemaOwner;
-
-    bvector<IECSchemaLocatorP>      m_locators;
-    T_WStringVector                 m_searchPaths;
-    bool                            m_hideSchemasFromLeakDetection;
-
-    ECSchemaDeserializationContext(IECSchemaOwnerR);
-
-    bvector<IECSchemaLocatorP>& GetSchemaLocators ();
-    T_WStringVector&            GetSchemaPaths ();
-    IECSchemaOwnerR             GetSchemaOwner();
-    bool                        GetHideSchemasFromLeakDetection();
-
-    void                        ClearSchemaPaths();
-
-public:
-    ECOBJECTS_EXPORT void HideSchemasFromLeakDetection();
-
-/*__PUBLISH_SECTION_START__*/
-    ECOBJECTS_EXPORT static ECSchemaDeserializationContextPtr CreateContext (IECSchemaOwnerR);
-
-    ECOBJECTS_EXPORT void AddSchemaLocators (bvector<EC::IECSchemaLocatorP>&);
-
-    ECOBJECTS_EXPORT void AddSchemaLocator (IECSchemaLocatorR);
-    ECOBJECTS_EXPORT void AddSchemaPath (const wchar_t *);
-};
-
 //=======================================================================================
 //! Interface implemented by class that provides schema location services.</summary>
 //=======================================================================================
@@ -1215,7 +1178,15 @@ public:
 /*__PUBLISH_SECTION_START__*/
 
     //! Given a version string MM.NN, this will parse other major and minor versions
-    //! @param[out]  versionMajor    The major version number
+    //! @param[out] schemaName      The schema name without version number qualifiers
+    //! @param[out] versionMajor    The major version number
+    //! @param[out] versionMinor    The minor version number
+    //! @param[in]  fullName        A string containing the schema name and major and minor versions (Name.MM.NN)
+    //! @return A status code indicating whether the string was successfully parsed
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseSchemaFullName (bwstring& schemaName, UInt32& versionMajor, UInt32& versionMinor, bwstring const& fullName);
+
+    //! Given a version string MM.NN, this will parse other major and minor versions
+    //! @param[out] versionMajor    The major version number
     //! @param[out] versionMinor    The minor version number
     //! @param[in]  versionString   A string containing the major and minor versions (MM.NN)
     //! @return A status code indicating whether the string was successfully parsed
