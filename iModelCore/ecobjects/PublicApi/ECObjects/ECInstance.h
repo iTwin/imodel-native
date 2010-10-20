@@ -142,25 +142,26 @@ struct ECInstanceInteropHelper
     {
     // These are not convenience methods.  They are intended for managed callers.  They enable
     // an access pattern that can get a value with only one managed to native transition    
-    ECOBJECTS_EXPORT static ECObjectsStatus GetInteger       (IECInstanceCR, int & value,             const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetLong          (IECInstanceCR, Int64 & value,           const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetDouble        (IECInstanceCR, double & value,          const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetString        (IECInstanceCR, const wchar_t * & value, const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetBoolean       (IECInstanceCR, bool & value,            const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetPoint2D       (IECInstanceCR, DPoint2dR value,         const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetPoint3D       (IECInstanceCR, DPoint3dR value,         const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTime      (IECInstanceCR, SystemTimeR value,       const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTimeTicks (IECInstanceCR, Int64 & value,           const wchar_t * propertyAccessString, UInt32 nIndices = 0, UInt32 const * indices = NULL);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetInteger       (IECInstanceCR, int & value,             const wchar_t * propertyAccessString);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetLong          (IECInstanceCR, Int64 & value,           const wchar_t * propertyAccessString);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetDouble        (IECInstanceCR, double & value,          const wchar_t * propertyAccessString);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetString        (IECInstanceCR, const wchar_t * & value, const wchar_t * propertyAccessString);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetBoolean       (IECInstanceCR, bool & value,            const wchar_t * propertyAccessString);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetPoint2D       (IECInstanceCR, DPoint2dR value,         const wchar_t * propertyAccessString);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetPoint3D       (IECInstanceCR, DPoint3dR value,         const wchar_t * propertyAccessString);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTime      (IECInstanceCR, SystemTimeR value,       const wchar_t * propertyAccessString);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTimeTicks (IECInstanceCR, Int64 & value,           const wchar_t * propertyAccessString);
 
-    ECOBJECTS_EXPORT static ECObjectsStatus SetLongValue     (IECInstanceR, const wchar_t * propertyAccessString, Int64 value,           UInt32 nIndices = 0, UInt32 const * indices = NULL);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetIntegerValue  (IECInstanceR, const wchar_t * propertyAccessString, int value,             UInt32 nIndices = 0, UInt32 const * indices = NULL);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetStringValue   (IECInstanceR, const wchar_t * propertyAccessString, const wchar_t * value, UInt32 nIndices = 0, UInt32 const * indices = NULL);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetDoubleValue   (IECInstanceR, const wchar_t * propertyAccessString, double value,          UInt32 nIndices = 0, UInt32 const * indices = NULL);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetBooleanValue  (IECInstanceR, const wchar_t * propertyAccessString, bool value,            UInt32 nIndices = 0, UInt32 const * indices = NULL);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetPoint2DValue  (IECInstanceR, const wchar_t * propertyAccessString, DPoint2dCR value,      UInt32 nIndices = 0, UInt32 const * indices = NULL);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetPoint3DValue  (IECInstanceR, const wchar_t * propertyAccessString, DPoint3dCR value,      UInt32 nIndices = 0, UInt32 const * indices = NULL);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeValue (IECInstanceR, const wchar_t * propertyAccessString, SystemTimeR value,     UInt32 nIndices = 0, UInt32 const * indices = NULL);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeTicks (IECInstanceR, const wchar_t * propertyAccessString, Int64 value,           UInt32 nIndices = 0, UInt32 const * indices = NULL);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetValue         (IECInstanceR, const wchar_t * propertyAccessString, ECValue value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetLongValue     (IECInstanceR, const wchar_t * propertyAccessString, Int64 value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetIntegerValue  (IECInstanceR, const wchar_t * propertyAccessString, int value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetStringValue   (IECInstanceR, const wchar_t * propertyAccessString, const wchar_t * value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetDoubleValue   (IECInstanceR, const wchar_t * propertyAccessString, double value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetBooleanValue  (IECInstanceR, const wchar_t * propertyAccessString, bool value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetPoint2DValue  (IECInstanceR, const wchar_t * propertyAccessString, DPoint2dCR value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetPoint3DValue  (IECInstanceR, const wchar_t * propertyAccessString, DPoint3dCR value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeValue (IECInstanceR, const wchar_t * propertyAccessString, SystemTimeR value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeTicks (IECInstanceR, const wchar_t * propertyAccessString, Int64 value);
     };
 
 /*__PUBLISH_SECTION_START__*/
