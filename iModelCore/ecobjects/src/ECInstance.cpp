@@ -1124,6 +1124,11 @@ InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayPropert
         {
         PrimitiveType   memberType = arrayProperty->PrimitiveElementType;
 
+        bool            isFixedSizeArray = false;
+
+        if (arrayProperty->GetMinOccurs() == arrayProperty->GetMaxOccurs())
+            isFixedSizeArray = true; //PrimitiveTypeIsFixedSize (memberType);
+
         // read nodes - we expect to find an Element with LocalName matching the primitive type.
         XmlNodeType     nodeType;
         HRESULT         status;
@@ -1148,7 +1153,9 @@ InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayPropert
                     if (INSTANCE_DESERIALIZATION_STATUS_Success != (ixrStatus = ReadPrimitiveValue (ecValue, memberType)))
                         return ixrStatus;
 
-                    ecInstance->AddArrayElements (accessString.c_str(), 1);
+                    if ( ! isFixedSizeArray)
+                        ecInstance->AddArrayElements (accessString.c_str(), 1);
+
                     ECObjectsStatus   setStatus;
                     if (ECOBJECTS_STATUS_Success != (setStatus = ecInstance->SetValue (accessString.c_str(), ecValue, index)))
                         {
