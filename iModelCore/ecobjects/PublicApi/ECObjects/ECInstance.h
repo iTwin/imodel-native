@@ -32,16 +32,16 @@ protected:
     ECOBJECTS_EXPORT IECInstance(); 
     ECOBJECTS_EXPORT virtual ~IECInstance();
     ECOBJECTS_EXPORT virtual bwstring     _GetInstanceId() const = 0; // Virtual and returning bwstring because a subclass may want to calculate it on demand
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _GetValue (ECValueR v, const wchar_t * propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const = 0;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _GetValue (ECValueR v, const wchar_t * managedPropertyAccessor, bool useArrayIndex, UInt32 arrayIndex) const = 0;
     ECOBJECTS_EXPORT virtual ECObjectsStatus    _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const = 0;
 public:
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _SetValue (const wchar_t * propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) = 0;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _SetValue (const wchar_t * managedPropertyAccessor, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) = 0;
 protected:
     ECOBJECTS_EXPORT virtual ECObjectsStatus    _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) = 0;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus _InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size) = 0;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus _AddArrayElements (const wchar_t * propertyAccessString, UInt32 size) = 0;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus _RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index) = 0;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus _ClearArray (const wchar_t * propertyAccessString) = 0;    
+    ECOBJECTS_EXPORT virtual ECObjectsStatus _InsertArrayElements (const wchar_t * managedPropertyAccessor, UInt32 index, UInt32 size) = 0;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus _AddArrayElements (const wchar_t * managedPropertyAccessor, UInt32 size) = 0;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus _RemoveArrayElement (const wchar_t * managedPropertyAccessor, UInt32 index) = 0;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus _ClearArray (const wchar_t * managedPropertyAccessor) = 0;    
     ECOBJECTS_EXPORT virtual ECEnablerCR  _GetEnabler() const = 0;
     ECOBJECTS_EXPORT virtual bool         _IsReadOnly() const = 0;
     ECOBJECTS_EXPORT virtual bwstring     _ToString (const wchar_t* indent) const = 0;
@@ -52,25 +52,25 @@ public:
     ECOBJECTS_EXPORT bool               IsReadOnly() const;
     
     ECOBJECTS_EXPORT ECClassCR          GetClass() const;
-    ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, const wchar_t * propertyAccessString) const;    
-    ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, const wchar_t * managedPropertyAccessor) const;    
+    ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, const wchar_t * managedPropertyAccessor, UInt32 index) const;
     ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, UInt32 propertyIndex) const;
     ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, UInt32 propertyIndex, UInt32 arrayIndex) const;
-    ECOBJECTS_EXPORT ECObjectsStatus    SetValue (const wchar_t * propertyAccessString, ECValueCR v);    
-    ECOBJECTS_EXPORT ECObjectsStatus    SetValue (const wchar_t * propertyAccessString, ECValueCR v, UInt32 index);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetValue (const wchar_t * managedPropertyAccessor, ECValueCR v);    
+    ECOBJECTS_EXPORT ECObjectsStatus    SetValue (const wchar_t * managedPropertyAccessor, ECValueCR v, UInt32 index);
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (UInt32 propertyIndex, ECValueCR v);
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex);
         
     //! Contract:
-    //! - For all of the methods, the propertyAccessString should be in the "array element" form, 
+    //! - For all of the methods, the managedPropertyAccessor should be in the "array element" form, 
     //!   e.g. "Aliases[]" instead of "Aliases"         
-    ECOBJECTS_EXPORT ECObjectsStatus      InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size); //WIP_FUSION Return the new count?   
-    ECOBJECTS_EXPORT ECObjectsStatus      AddArrayElements (const wchar_t * propertyAccessString, UInt32 size); //WIP_FUSION Return the new count?
-    ECOBJECTS_EXPORT ECObjectsStatus      RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index); //WIP_FUSION return the removed one? YAGNI? Return the new count?
-    ECOBJECTS_EXPORT ECObjectsStatus      ClearArray (const wchar_t * propertyAccessString);    
+    ECOBJECTS_EXPORT ECObjectsStatus      InsertArrayElements (const wchar_t * managedPropertyAccessor, UInt32 index, UInt32 size); //WIP_FUSION Return the new count?   
+    ECOBJECTS_EXPORT ECObjectsStatus      AddArrayElements (const wchar_t * managedPropertyAccessor, UInt32 size); //WIP_FUSION Return the new count?
+    ECOBJECTS_EXPORT ECObjectsStatus      RemoveArrayElement (const wchar_t * managedPropertyAccessor, UInt32 index); //WIP_FUSION return the removed one? YAGNI? Return the new count?
+    ECOBJECTS_EXPORT ECObjectsStatus      ClearArray (const wchar_t * managedPropertyAccessor);    
     
     //WIP_FUSION ParseExpectedNIndices should move to AccessStringHelper struct... along with method to convert to/from .NET ECObjects style accessString
-    ECOBJECTS_EXPORT static int         ParseExpectedNIndices (const wchar_t * propertyAccessString);
+    ECOBJECTS_EXPORT static int         ParseExpectedNIndices (const wchar_t * managedPropertyAccessor);
     
     ECOBJECTS_EXPORT bwstring           ToString (const wchar_t* indent) const;
 
@@ -113,27 +113,27 @@ struct ECInstanceInteropHelper
     {
     // These are not convenience methods.  They are intended for managed callers.  They enable
     // an access pattern that can get a value with only one managed to native transition    
-    ECOBJECTS_EXPORT static ECObjectsStatus GetValue         (IECInstanceCR, ECValueR value,          const wchar_t * propertyAccessString);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetInteger       (IECInstanceCR, int & value,             const wchar_t * propertyAccessString);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetLong          (IECInstanceCR, Int64 & value,           const wchar_t * propertyAccessString);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetDouble        (IECInstanceCR, double & value,          const wchar_t * propertyAccessString);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetString        (IECInstanceCR, const wchar_t * & value, const wchar_t * propertyAccessString);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetBoolean       (IECInstanceCR, bool & value,            const wchar_t * propertyAccessString);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetPoint2D       (IECInstanceCR, DPoint2dR value,         const wchar_t * propertyAccessString);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetPoint3D       (IECInstanceCR, DPoint3dR value,         const wchar_t * propertyAccessString);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTime      (IECInstanceCR, SystemTimeR value,       const wchar_t * propertyAccessString);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTimeTicks (IECInstanceCR, Int64 & value,           const wchar_t * propertyAccessString);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetValue         (IECInstanceCR, ECValueR value,          const wchar_t * managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetInteger       (IECInstanceCR, int & value,             const wchar_t * managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetLong          (IECInstanceCR, Int64 & value,           const wchar_t * managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetDouble        (IECInstanceCR, double & value,          const wchar_t * managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetString        (IECInstanceCR, const wchar_t * & value, const wchar_t * managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetBoolean       (IECInstanceCR, bool & value,            const wchar_t * managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetPoint2D       (IECInstanceCR, DPoint2dR value,         const wchar_t * managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetPoint3D       (IECInstanceCR, DPoint3dR value,         const wchar_t * managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTime      (IECInstanceCR, SystemTimeR value,       const wchar_t * managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTimeTicks (IECInstanceCR, Int64 & value,           const wchar_t * managedPropertyAccessor);
 
-    ECOBJECTS_EXPORT static ECObjectsStatus SetValue         (IECInstanceR, const wchar_t * propertyAccessString, ECValueCR value);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetLongValue     (IECInstanceR, const wchar_t * propertyAccessString, Int64 value);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetIntegerValue  (IECInstanceR, const wchar_t * propertyAccessString, int value);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetStringValue   (IECInstanceR, const wchar_t * propertyAccessString, const wchar_t * value);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetDoubleValue   (IECInstanceR, const wchar_t * propertyAccessString, double value);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetBooleanValue  (IECInstanceR, const wchar_t * propertyAccessString, bool value);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetPoint2DValue  (IECInstanceR, const wchar_t * propertyAccessString, DPoint2dCR value);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetPoint3DValue  (IECInstanceR, const wchar_t * propertyAccessString, DPoint3dCR value);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeValue (IECInstanceR, const wchar_t * propertyAccessString, SystemTimeR value);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeTicks (IECInstanceR, const wchar_t * propertyAccessString, Int64 value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetValue         (IECInstanceR, const wchar_t * managedPropertyAccessor, ECValueCR value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetLongValue     (IECInstanceR, const wchar_t * managedPropertyAccessor, Int64 value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetIntegerValue  (IECInstanceR, const wchar_t * managedPropertyAccessor, int value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetStringValue   (IECInstanceR, const wchar_t * managedPropertyAccessor, const wchar_t * value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetDoubleValue   (IECInstanceR, const wchar_t * managedPropertyAccessor, double value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetBooleanValue  (IECInstanceR, const wchar_t * managedPropertyAccessor, bool value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetPoint2DValue  (IECInstanceR, const wchar_t * managedPropertyAccessor, DPoint2dCR value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetPoint3DValue  (IECInstanceR, const wchar_t * managedPropertyAccessor, DPoint3dCR value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeValue (IECInstanceR, const wchar_t * managedPropertyAccessor, SystemTimeR value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeTicks (IECInstanceR, const wchar_t * managedPropertyAccessor, Int64 value);
     };
 
 /*__PUBLISH_SECTION_START__*/
