@@ -590,6 +590,10 @@ public:
     EXPORTED_PROPERTY  (bool,                           IsCustomAttributeClass);    
     EXPORTED_PROPERTY  (bool,                           IsDomainClass);    
     
+    //! Returns pointer to ECRelationshipClassP,  used to avoid dynamic_cast.
+    //! @return     Returns NULL if not an ECRelationshipClass
+    ECOBJECTS_EXPORT     virtual ECRelationshipClassCP         GetRelationshipClassCP () const {return NULL;}  // used to avoid dynamic_cast
+
     //! Returns a list of properties for this class.
     //! @param[in]  includeBaseProperties If true, then will return properties that are contained in this class's base class(es)
     //! @return     An iterable container of ECProperties
@@ -867,6 +871,10 @@ protected:
 
 /*__PUBLISH_SECTION_START__*/
 public:
+    //! Returns pointer to ECRelationshipClassP,  used to avoid dynamic_cast.
+    //! @return     Returns NULL if not an ECRelationshipClass
+    ECOBJECTS_EXPORT virtual ECRelationshipClassCP        GetRelationshipClassCP () const override {return this;};
+
     EXPORTED_PROPERTY (StrengthType, Strength);                
     EXPORTED_PROPERTY (ECRelatedInstanceDirection, StrengthDirection);
     //! Gets the constraint at the target end of the relationship

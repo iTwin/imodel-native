@@ -271,18 +271,18 @@ ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v, UI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECObjectsStatus getECValueUsingFullAccessString (wchar_t* asBuffer, wchar_t* indexBuffer, ECValue& v, IECInstanceCR instance, const wchar_t * propertyAccessString)
+static ECObjectsStatus getECValueUsingFullAccessString (wchar_t* asBuffer, wchar_t* indexBuffer, ECValueR v, IECInstanceCR instance, const wchar_t * managedPropertyAccessor)
     {
     // see if access string specifies an array
-    const wchar_t* pos1 = wcschr (propertyAccessString, L'[');
+    const wchar_t* pos1 = wcschr (managedPropertyAccessor, L'[');
 
     // if not an array then 
     if (NULL == pos1)
-        return instance.GetValue (v, propertyAccessString);
+        return instance.GetValue (v, managedPropertyAccessor);
 
     size_t numChars = 0;
-    numChars = pos1 - propertyAccessString;
-    wcsncpy(asBuffer, propertyAccessString, numChars>NUM_ACCESSSTRING_BUFFER_CHARS?NUM_ACCESSSTRING_BUFFER_CHARS:numChars);
+    numChars = pos1 - managedPropertyAccessor;
+    wcsncpy(asBuffer, managedPropertyAccessor, numChars>NUM_ACCESSSTRING_BUFFER_CHARS?NUM_ACCESSSTRING_BUFFER_CHARS:numChars);
     asBuffer[numChars]=0;
 
     const wchar_t* pos2 = wcschr (pos1+1, L']');
@@ -326,7 +326,7 @@ static ECObjectsStatus getECValueUsingFullAccessString (wchar_t* asBuffer, wchar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECObjectsStatus getECValueFromInstance (ECValue& v, IECInstanceCR instance, const wchar_t * propertyAccessString)
+static ECObjectsStatus getECValueFromInstance (ECValueR v, IECInstanceCR instance, const wchar_t * managedPropertyAccessor)
     {
     WString asBufferStr;
 
@@ -334,17 +334,25 @@ static ECObjectsStatus getECValueFromInstance (ECValue& v, IECInstanceCR instanc
     wchar_t asBuffer[NUM_ACCESSSTRING_BUFFER_CHARS+1];
     wchar_t indexBuffer[NUM_INDEX_BUFFER_CHARS+1];
 
-    return getECValueUsingFullAccessString (asBuffer, indexBuffer, v, instance, propertyAccessString);
+    return getECValueUsingFullAccessString (asBuffer, indexBuffer, v, instance, managedPropertyAccessor);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  10/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus                 ECInstanceInteropHelper::GetValue (IECInstanceCR instance, ECValueR value, const wchar_t * managedPropertyAccessor)
+    {
+    return getECValueFromInstance (value, instance, managedPropertyAccessor);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::GetLong (IECInstanceCR instance, Int64 & value, const wchar_t * propertyAccessString)
+ECObjectsStatus ECInstanceInteropHelper::GetLong (IECInstanceCR instance, Int64 & value, const wchar_t * managedPropertyAccessor)
     {
     ECValue v;
 
-    ECObjectsStatus status = getECValueFromInstance (v, instance, propertyAccessString);
+    ECObjectsStatus status = getECValueFromInstance (v, instance, managedPropertyAccessor);
     if (status == ECOBJECTS_STATUS_Success)
         value = v.GetLong();
     
@@ -354,11 +362,11 @@ ECObjectsStatus ECInstanceInteropHelper::GetLong (IECInstanceCR instance, Int64 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
-ECObjectsStatus ECInstanceInteropHelper::GetInteger (IECInstanceCR instance, int & value, const wchar_t * propertyAccessString)
+ECObjectsStatus ECInstanceInteropHelper::GetInteger (IECInstanceCR instance, int & value, const wchar_t * managedPropertyAccessor)
     {
     ECValue v;
 
-    ECObjectsStatus status = getECValueFromInstance (v, instance, propertyAccessString);
+    ECObjectsStatus status = getECValueFromInstance (v, instance, managedPropertyAccessor);
     if (status == ECOBJECTS_STATUS_Success)
         value = v.GetInteger();
     
@@ -368,11 +376,11 @@ ECObjectsStatus ECInstanceInteropHelper::GetInteger (IECInstanceCR instance, int
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/                
-ECObjectsStatus ECInstanceInteropHelper::GetDouble (IECInstanceCR instance, double& value, const wchar_t * propertyAccessString)
+ECObjectsStatus ECInstanceInteropHelper::GetDouble (IECInstanceCR instance, double& value, const wchar_t * managedPropertyAccessor)
     {
     ECValue v;
 
-    ECObjectsStatus status = getECValueFromInstance (v, instance, propertyAccessString);
+    ECObjectsStatus status = getECValueFromInstance (v, instance, managedPropertyAccessor);
     if (status == ECOBJECTS_STATUS_Success)        
         value = v.GetDouble();
         
@@ -382,11 +390,11 @@ ECObjectsStatus ECInstanceInteropHelper::GetDouble (IECInstanceCR instance, doub
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/       
-ECObjectsStatus ECInstanceInteropHelper::GetString (IECInstanceCR instance, const wchar_t * & value, const wchar_t * propertyAccessString)
+ECObjectsStatus ECInstanceInteropHelper::GetString (IECInstanceCR instance, const wchar_t * & value, const wchar_t * managedPropertyAccessor)
     {
     ECValue v;
 
-    ECObjectsStatus status = getECValueFromInstance (v, instance, propertyAccessString);
+    ECObjectsStatus status = getECValueFromInstance (v, instance, managedPropertyAccessor);
     if (status == ECOBJECTS_STATUS_Success)
         value = v.GetString();
 
@@ -396,11 +404,11 @@ ECObjectsStatus ECInstanceInteropHelper::GetString (IECInstanceCR instance, cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::GetBoolean (IECInstanceCR instance, bool & value, const wchar_t * propertyAccessString)
+ECObjectsStatus ECInstanceInteropHelper::GetBoolean (IECInstanceCR instance, bool & value, const wchar_t * managedPropertyAccessor)
     {
     ECValue v;
 
-    ECObjectsStatus status = getECValueFromInstance (v, instance, propertyAccessString);
+    ECObjectsStatus status = getECValueFromInstance (v, instance, managedPropertyAccessor);
     if (status == ECOBJECTS_STATUS_Success)
         value = v.GetBoolean();
 
@@ -410,11 +418,11 @@ ECObjectsStatus ECInstanceInteropHelper::GetBoolean (IECInstanceCR instance, boo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::GetPoint2D (IECInstanceCR instance, DPoint2d & value, const wchar_t * propertyAccessString)
+ECObjectsStatus ECInstanceInteropHelper::GetPoint2D (IECInstanceCR instance, DPoint2d & value, const wchar_t * managedPropertyAccessor)
     {
     ECValue v;
 
-    ECObjectsStatus status = getECValueFromInstance (v, instance, propertyAccessString);
+    ECObjectsStatus status = getECValueFromInstance (v, instance, managedPropertyAccessor);
     if (status == ECOBJECTS_STATUS_Success)
         value = v.GetPoint2D();
         
@@ -424,11 +432,11 @@ ECObjectsStatus ECInstanceInteropHelper::GetPoint2D (IECInstanceCR instance, DPo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::GetPoint3D (IECInstanceCR instance, DPoint3d & value, const wchar_t * propertyAccessString)
+ECObjectsStatus ECInstanceInteropHelper::GetPoint3D (IECInstanceCR instance, DPoint3d & value, const wchar_t * managedPropertyAccessor)
     {
     ECValue v;
 
-    ECObjectsStatus status = getECValueFromInstance (v, instance, propertyAccessString);
+    ECObjectsStatus status = getECValueFromInstance (v, instance, managedPropertyAccessor);
     if (status == ECOBJECTS_STATUS_Success)
         value = v.GetPoint3D();
         
@@ -438,11 +446,11 @@ ECObjectsStatus ECInstanceInteropHelper::GetPoint3D (IECInstanceCR instance, DPo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::GetDateTime (IECInstanceCR instance, SystemTime & value, const wchar_t * propertyAccessString)
+ECObjectsStatus ECInstanceInteropHelper::GetDateTime (IECInstanceCR instance, SystemTime & value, const wchar_t * managedPropertyAccessor)
     {
     ECValue v;
 
-    ECObjectsStatus status = getECValueFromInstance (v, instance, propertyAccessString);
+    ECObjectsStatus status = getECValueFromInstance (v, instance, managedPropertyAccessor);
     if (status == ECOBJECTS_STATUS_Success)
         value = v.GetDateTime();
         
@@ -452,11 +460,11 @@ ECObjectsStatus ECInstanceInteropHelper::GetDateTime (IECInstanceCR instance, Sy
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::GetDateTimeTicks (IECInstanceCR instance, Int64 & value, const wchar_t * propertyAccessString)
+ECObjectsStatus ECInstanceInteropHelper::GetDateTimeTicks (IECInstanceCR instance, Int64 & value, const wchar_t * managedPropertyAccessor)
     {
     ECValue v;
 
-    ECObjectsStatus status = getECValueFromInstance (v, instance, propertyAccessString);
+    ECObjectsStatus status = getECValueFromInstance (v, instance, managedPropertyAccessor);
     if (status == ECOBJECTS_STATUS_Success)
         value = v.GetDateTimeTicks();
         
@@ -491,18 +499,18 @@ static ECClassP GetClassFromReferencedSchemas (ECSchemaCR rootSchema, const wcha
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar_t* indexBuffer, ECValue& v, IECInstanceR instance, const wchar_t * propertyAccessString)
+static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar_t* indexBuffer, ECValueCR v, IECInstanceR instance, const wchar_t * managedPropertyAccessor)
     {
     // see if access string specifies an array
-    const wchar_t* pos1 = wcschr (propertyAccessString, L'[');
+    const wchar_t* pos1 = wcschr (managedPropertyAccessor, L'[');
 
     // if not an array then 
     if (NULL == pos1)
-        return instance.SetValue (propertyAccessString, v);
+        return instance.SetValue (managedPropertyAccessor, v);
 
     size_t numChars = 0;
-    numChars = pos1 - propertyAccessString;
-    wcsncpy(asBuffer, propertyAccessString, numChars>NUM_ACCESSSTRING_BUFFER_CHARS?NUM_ACCESSSTRING_BUFFER_CHARS:numChars);
+    numChars = pos1 - managedPropertyAccessor;
+    wcsncpy(asBuffer, managedPropertyAccessor, numChars>NUM_ACCESSSTRING_BUFFER_CHARS?NUM_ACCESSSTRING_BUFFER_CHARS:numChars);
     asBuffer[numChars]=0;
 
     const wchar_t* pos2 = wcschr (pos1+1, L']');
@@ -581,103 +589,103 @@ static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECObjectsStatus setECValueInInstance (ECValue& v, IECInstanceR instance, const wchar_t * propertyAccessString)
+static ECObjectsStatus setECValueInInstance (ECValueCR v, IECInstanceR instance, const wchar_t * managedPropertyAccessor)
     {
     WString asBufferStr;
 
     wchar_t asBuffer[NUM_ACCESSSTRING_BUFFER_CHARS+1];
     wchar_t indexBuffer[NUM_INDEX_BUFFER_CHARS+1];
 
-    return setECValueUsingFullAccessString (asBuffer, indexBuffer, v, instance, propertyAccessString);
+    return setECValueUsingFullAccessString (asBuffer, indexBuffer, v, instance, managedPropertyAccessor);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::SetValue  (IECInstanceR instance, const wchar_t * propertyAccessString, ECValue value)
+ECObjectsStatus ECInstanceInteropHelper::SetValue  (IECInstanceR instance, const wchar_t * managedPropertyAccessor, ECValueCR value)
     {
-    return setECValueInInstance (value, instance, propertyAccessString);
+    return setECValueInInstance (value, instance, managedPropertyAccessor);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/       
-ECObjectsStatus ECInstanceInteropHelper::SetLongValue (IECInstanceR instance, const wchar_t * propertyAccessString, Int64 value)
+ECObjectsStatus ECInstanceInteropHelper::SetLongValue (IECInstanceR instance, const wchar_t * managedPropertyAccessor, Int64 value)
     {
     ECValue v(value);
-    return setECValueInInstance (v, instance, propertyAccessString);
+    return setECValueInInstance (v, instance, managedPropertyAccessor);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/       
-ECObjectsStatus ECInstanceInteropHelper::SetIntegerValue (IECInstanceR instance, const wchar_t * propertyAccessString, int value)
+ECObjectsStatus ECInstanceInteropHelper::SetIntegerValue (IECInstanceR instance, const wchar_t * managedPropertyAccessor, int value)
     {
     ECValue v(value);
-    return setECValueInInstance (v, instance, propertyAccessString);
+    return setECValueInInstance (v, instance, managedPropertyAccessor);
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/       
-ECObjectsStatus ECInstanceInteropHelper::SetDoubleValue (IECInstanceR instance, const wchar_t * propertyAccessString, double value)
+ECObjectsStatus ECInstanceInteropHelper::SetDoubleValue (IECInstanceR instance, const wchar_t * managedPropertyAccessor, double value)
     {
     ECValue v(value);
-    return setECValueInInstance (v, instance, propertyAccessString);
+    return setECValueInInstance (v, instance, managedPropertyAccessor);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/       
-ECObjectsStatus ECInstanceInteropHelper::SetStringValue  (IECInstanceR instance, const wchar_t * propertyAccessString, const wchar_t * value)
+ECObjectsStatus ECInstanceInteropHelper::SetStringValue  (IECInstanceR instance, const wchar_t * managedPropertyAccessor, const wchar_t * value)
     {
     ECValue v(value, false);
-    return setECValueInInstance (v, instance, propertyAccessString);
+    return setECValueInInstance (v, instance, managedPropertyAccessor);
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::SetBooleanValue  (IECInstanceR instance, const wchar_t * propertyAccessString, bool value)
+ECObjectsStatus ECInstanceInteropHelper::SetBooleanValue  (IECInstanceR instance, const wchar_t * managedPropertyAccessor, bool value)
     {
     ECValue v(value);
-    return setECValueInInstance (v, instance, propertyAccessString);
+    return setECValueInInstance (v, instance, managedPropertyAccessor);
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::SetPoint2DValue  (IECInstanceR instance, const wchar_t * propertyAccessString, DPoint2dCR value)
+ECObjectsStatus ECInstanceInteropHelper::SetPoint2DValue  (IECInstanceR instance, const wchar_t * managedPropertyAccessor, DPoint2dCR value)
     {
     ECValue v(value);
-    return setECValueInInstance (v, instance, propertyAccessString);
+    return setECValueInInstance (v, instance, managedPropertyAccessor);
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::SetPoint3DValue  (IECInstanceR instance, const wchar_t * propertyAccessString, DPoint3dCR value)
+ECObjectsStatus ECInstanceInteropHelper::SetPoint3DValue  (IECInstanceR instance, const wchar_t * managedPropertyAccessor, DPoint3dCR value)
     {
     ECValue v(value);
-    return setECValueInInstance (v, instance, propertyAccessString);
+    return setECValueInInstance (v, instance, managedPropertyAccessor);
     }
    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::SetDateTimeValue (IECInstanceR instance, const wchar_t * propertyAccessString, SystemTime& value)
+ECObjectsStatus ECInstanceInteropHelper::SetDateTimeValue (IECInstanceR instance, const wchar_t * managedPropertyAccessor, SystemTime& value)
     {
     ECValue v(value);
-    return setECValueInInstance (v, instance, propertyAccessString);
+    return setECValueInInstance (v, instance, managedPropertyAccessor);
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::SetDateTimeTicks (IECInstanceR instance, const wchar_t * propertyAccessString, Int64 value)
+ECObjectsStatus ECInstanceInteropHelper::SetDateTimeTicks (IECInstanceR instance, const wchar_t * managedPropertyAccessor, Int64 value)
     {
     ECValue v(value);
-    return setECValueInInstance (v, instance, propertyAccessString);
+    return setECValueInInstance (v, instance, managedPropertyAccessor);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1355,6 +1363,11 @@ InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayPropert
         {
         PrimitiveType   memberType = arrayProperty->PrimitiveElementType;
 
+        bool            isFixedSizeArray = false;
+
+        if (arrayProperty->GetMinOccurs() == arrayProperty->GetMaxOccurs())
+            isFixedSizeArray = true; //PrimitiveTypeIsFixedSize (memberType);
+
         // read nodes - we expect to find an Element with LocalName matching the primitive type.
         XmlNodeType     nodeType;
         HRESULT         status;
@@ -1390,7 +1403,10 @@ InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayPropert
                         //A malformed value was found.  A warning was shown; just move on.
                         continue;
                         }
-                    ecInstance->AddArrayElements (accessString.c_str(), 1);
+
+                    if ( ! isFixedSizeArray)
+                        ecInstance->AddArrayElements (accessString.c_str(), 1);
+
                     ECObjectsStatus   setStatus;
                     if (ECOBJECTS_STATUS_Success != (setStatus = ecInstance->SetValue (accessString.c_str(), ecValue, index)))
                         {

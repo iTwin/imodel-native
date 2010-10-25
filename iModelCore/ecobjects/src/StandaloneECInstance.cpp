@@ -177,7 +177,6 @@ ECObjectsStatus           MemoryECInstanceBase::_GetStructArrayValueFromMemory (
     size_t size;
     StructValueIdentifier structValueId = *(StructValueIdentifier*)binaryValue.GetBinary (size);    
 
-    // WIP_FUSION - is there realy no better way to do this?  something like m_structValueMap[x];
     IECInstancePtr instancePtr = NULL;
     bmap<StructValueIdentifier, IECInstancePtr>::const_iterator  instanceIterator;
     instanceIterator = m_structValueMap.find (structValueId);    
