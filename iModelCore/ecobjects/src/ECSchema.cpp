@@ -14,16 +14,12 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-static UInt32 g_totalAllocs = 0;
-static UInt32 g_totalFrees  = 0;
-static UInt32 g_currentLive = 0;
-
 #define DEBUG_SCHEMA_LEAKS
 #ifdef DEBUG_SCHEMA_LEAKS
-typedef std::map<ECSchema*, UInt32> DebugSchemaLeakMap;
-DebugSchemaLeakMap      g_debugSchemaLeakMap;
+LeakDetector<ECSchema> g_leakDetector (L"ECSchema", L"ECSchemas", true);
+#else
+LeakDetector<ECSchema> g_leakDetector (L"ECSchema", L"ECSchemas", false);
 #endif
-
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -32,15 +28,8 @@ ECSchema::ECSchema (bool hideFromLeakDetection)
     m_versionMajor (DEFAULT_VERSION_MAJOR), m_versionMinor (DEFAULT_VERSION_MINOR), m_classContainer(ECClassContainer(m_classMap)),
     m_hideFromLeakDetection(hideFromLeakDetection)
     {
-    if (m_hideFromLeakDetection)
-        return;
-
-    g_totalAllocs++;
-    g_currentLive++;
-
-#ifdef DEBUG_SCHEMA_LEAKS
-    g_debugSchemaLeakMap[this] = g_totalAllocs; // record this so we know if it was the 1st, 2nd allocation
-#endif
+    if ( ! m_hideFromLeakDetection)
+        g_leakDetector.ObjectCreated(*this);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -66,7 +55,6 @@ ECSchema::~ECSchema ()
 
     assert (m_classMap.empty());
 
-    memset (this, 0xececdead, sizeof(this));
     /*
     for (ECSchemaReferenceVector::iterator sit = m_referencedSchemas.begin(); sit != m_referencedSchemas.end(); sit++)
         {
@@ -76,82 +64,16 @@ ECSchema::~ECSchema ()
         }
     m_referencedSchemas.clear();*/
 
-    if (m_hideFromLeakDetection)
-        return;
+    if ( ! m_hideFromLeakDetection)
+        g_leakDetector.ObjectDestroyed(*this);
 
-#ifdef DEBUG_SCHEMA_LEAKS
-    g_debugSchemaLeakMap.erase(this);
-#endif
-
-    g_totalFrees++;
-    g_currentLive--;
+    memset (this, 0xececdead, sizeof(this));
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/10
+* @bsimethod                                                    JoshSchifter    09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchema::Debug_DumpAllocationStats(const wchar_t* prefix)
-    {
-    if (!prefix)
-        prefix = L"";
-
-    ECObjectsLogger::Log()->debugv (L"%s Live ECSchemas: %d, Total Allocs: %d, TotalFrees: %d", prefix, g_currentLive, g_totalAllocs, g_totalFrees);
-#ifdef DEBUG_SCHEMA_LEAKS
-    for each (DebugSchemaLeakMap::value_type leak in g_debugSchemaLeakMap)
-        {
-        ECSchema* leakedObject = leak.first;
-        UInt32    orderOfAllocation = leak.second;
-        ECObjectsLogger::Log()->debugv (L"Leaked the %dth ECSchema that was allocated: %s.", orderOfAllocation, leakedObject->GetName().c_str());
-        //leakedObject->Dump();
-        }
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen    02/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchema::Debug_ReportLeaks()
-    {
-#ifdef DEBUG_SCHEMA_LEAKS
-    for each (DebugSchemaLeakMap::value_type leak in g_debugSchemaLeakMap)
-        {
-        ECSchema* leakedObject = leak.first;
-        UInt32    orderOfAllocation = leak.second;
-        
-        bwstring name = leakedObject->GetName();
-        
-        ECObjectsLogger::Log()->errorv (L"Leaked the %dth IECSchema that was allocated: %s", orderOfAllocation, name.c_str());
-        //leakedObject->Dump();
-        }
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchema::Debug_GetAllocationStats(int* currentLive, int* totalAllocs, int* totalFrees)
-    {
-    if (currentLive)
-        *currentLive = g_currentLive;
-
-    if (totalAllocs)
-        *totalAllocs = g_totalAllocs;
-
-    if (totalFrees)
-        *totalFrees  = g_totalFrees;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchema::Debug_ResetAllocationStats()
-    {
-    g_totalAllocs = g_totalFrees = g_currentLive = 0;
-
-#ifdef DEBUG_SCHEMA_LEAKS
-    g_debugSchemaLeakMap.clear();
-#endif
-    }
+ILeakDetector&  ECSchema::Debug_GetLeakDetector() { return g_leakDetector; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
@@ -353,7 +275,7 @@ ECClassP&                 pClass,
 bwstring const&     name
 )
     {
-    pClass = new ECClass(*this);
+    pClass = new ECClass(*this, m_hideFromLeakDetection);
     ECObjectsStatus status = pClass->SetName (name);
     if (ECOBJECTS_STATUS_Success != status)
         {
@@ -762,7 +684,7 @@ ClassDeserializationVector&  classes
         
         if (baseName.length() == classElementLength)
             {            
-            pClass = new ECClass (*this);
+            pClass = new ECClass (*this, m_hideFromLeakDetection);
             pRelationshipClass = NULL;
             }
         else
@@ -772,7 +694,10 @@ ClassDeserializationVector&  classes
             }
 
         if (SCHEMA_DESERIALIZATION_STATUS_Success != (status = pClass->ReadXmlAttributes(xmlNodePtr)))
+            {
+            delete pClass;
             return status;           
+            }
 
         if (ECOBJECTS_STATUS_Success != this->AddClass (pClass))
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
@@ -901,9 +826,14 @@ ECSchemaDeserializationContextR schemaContext
     // Step 1: First check if the owner already owns a copy of the schema.
     //         This will catch schema referencing cycles since the schemas are
     //         added to the owner as they are constructed. 
-//    ECSchemaP schema = schemaContext.GetSchemaOwner().GetSchema(name.c_str(), versionMajor, versionMinor);
-    ECSchemaP schema = schemaContext.GetSchemaOwner().LocateSchema(name.c_str(), versionMajor, versionMinor, SCHEMAMATCHTYPE_LatestCompatible);
 
+    // try exact match first
+    ECSchemaP schema = schemaContext.GetSchemaOwner().GetSchema(name.c_str(), versionMajor, versionMinor);
+    if (NULL != schema)
+        return schema;
+
+    // allow latest compatible
+    schema = schemaContext.GetSchemaOwner().LocateSchema(name.c_str(), versionMajor, versionMinor, SCHEMAMATCHTYPE_LatestCompatible);
     if (NULL != schema)
         return schema;
 
@@ -936,19 +866,22 @@ ECSchemaP       ECSchema::LocateSchemaByPath
 const bwstring&                 name,
 UInt32&                         versionMajor,
 UInt32&                         versionMinor,
-ECSchemaDeserializationContextR schemaContext
+ECSchemaDeserializationContextR schemaContext,
+bool                            useLatestCompatibleMatch
 )
     {
     ECSchemaP   schemaOut = NULL;
     wchar_t versionString[24];
-    swprintf(versionString, 24, L".%02d.*.ecschema.xml", versionMajor);
+    if (useLatestCompatibleMatch)
+        swprintf(versionString, 24, L".%02d.*.ecschema.xml", versionMajor);
+    else
+        swprintf(versionString, 24, L".%02d.%02d.ecschema.xml", versionMajor, versionMinor);
+
     bwstring schemaName = name;
     schemaName += versionString;
 
-    for each (const wchar_t* path in schemaContext.GetSchemaPaths())
+    for each (WString schemaPath in schemaContext.GetSchemaPaths())
         {
-        bwstring schemaPath (path);
-
         if (schemaPath[schemaPath.length() - 1] != '\\')
             schemaPath += '\\';
         schemaPath += schemaName;
@@ -968,6 +901,27 @@ ECSchemaDeserializationContextR schemaContext
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaP       ECSchema::LocateSchemaByPath
+(
+const bwstring&                 name,
+UInt32&                         versionMajor,
+UInt32&                         versionMinor,
+ECSchemaDeserializationContextR schemaContext
+)
+    {
+    // try to locate an exact matching schema file
+    ECSchemaP   schemaOut = LocateSchemaByPath (name, versionMajor, versionMinor, schemaContext, false);
+
+    if (NULL != schemaOut)
+        return  schemaOut;
+
+    // else fall back to latest compatible
+    return LocateSchemaByPath (name, versionMajor, versionMinor, schemaContext, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP       ECSchema::LocateSchemaByStandardPaths
@@ -979,7 +933,7 @@ ECSchemaDeserializationContextR schemaContext
 )
     {
     // Make a copy of the paths stored in schemaContext
-    bvector<const wchar_t *> originalPaths = schemaContext.GetSchemaPaths();
+    T_WStringVector originalPaths = schemaContext.GetSchemaPaths();
 
     // Clear out the stored paths and replace with the standard ones
     schemaContext.ClearSchemaPaths();
@@ -994,9 +948,9 @@ ECSchemaDeserializationContextR schemaContext
     wchar_t generalPath[_MAX_PATH];
     wchar_t libraryPath[_MAX_PATH];
     
-    swprintf(schemaPath, _MAX_PATH, L"%s\\Schemas", dllPath.c_str());
-    swprintf(generalPath, _MAX_PATH, L"%s\\Schemas\\General", dllPath.c_str());
-    swprintf(libraryPath, _MAX_PATH, L"%s\\Schemas\\LibraryUnits", dllPath.c_str());
+    swprintf(schemaPath, _MAX_PATH, L"%sSchemas", dllPath.c_str());
+    swprintf(generalPath, _MAX_PATH, L"%sSchemas\\General", dllPath.c_str());
+    swprintf(libraryPath, _MAX_PATH, L"%sSchemas\\LibraryUnits", dllPath.c_str());
     schemaContext.AddSchemaPath(schemaPath);
     schemaContext.AddSchemaPath(generalPath);
     schemaContext.AddSchemaPath(libraryPath);
@@ -1582,14 +1536,14 @@ ECSchemaDeserializationContext::ECSchemaDeserializationContext(IECSchemaOwnerR o
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaDeserializationContextPtr  ECSchemaDeserializationContext::CreateContext (IECSchemaOwnerR owner)   { return new ECSchemaDeserializationContext(owner); }
 void  ECSchemaDeserializationContext::AddSchemaLocators (bvector<EC::IECSchemaLocatorP>& locators) { m_locators.insert (m_locators.begin(), locators.begin(), locators.end());  }
-void  ECSchemaDeserializationContext::AddSchemaLocator (IECSchemaLocatorR locator) { m_locators.push_back (&locator);  }
-void  ECSchemaDeserializationContext::AddSchemaPath (const wchar_t* path)          { m_searchPaths.push_back (path);   }
-void  ECSchemaDeserializationContext::HideSchemasFromLeakDetection ()              { m_hideSchemasFromLeakDetection = true; }
-bvector<IECSchemaLocatorP>& ECSchemaDeserializationContext::GetSchemaLocators ()   { return m_locators;    }
-bvector<const wchar_t *>&   ECSchemaDeserializationContext::GetSchemaPaths ()      { return m_searchPaths; }
-void            ECSchemaDeserializationContext::ClearSchemaPaths ()                { m_searchPaths.clear();    }
-IECSchemaOwnerR ECSchemaDeserializationContext::GetSchemaOwner()                   { return m_schemaOwner;  }
-bool            ECSchemaDeserializationContext::GetHideSchemasFromLeakDetection()  { return m_hideSchemasFromLeakDetection;  }
+void  ECSchemaDeserializationContext::AddSchemaLocator (IECSchemaLocatorR locator)      { m_locators.push_back (&locator);  }
+void  ECSchemaDeserializationContext::AddSchemaPath (const wchar_t* path)               { m_searchPaths.push_back (WString(path));   }
+void  ECSchemaDeserializationContext::HideSchemasFromLeakDetection ()                   { m_hideSchemasFromLeakDetection = true; }
+bvector<IECSchemaLocatorP>& ECSchemaDeserializationContext::GetSchemaLocators ()        { return m_locators;    }
+T_WStringVectorR    ECSchemaDeserializationContext::GetSchemaPaths ()                   { return m_searchPaths; }
+void                ECSchemaDeserializationContext::ClearSchemaPaths ()                 { m_searchPaths.clear();    }
+IECSchemaOwnerR     ECSchemaDeserializationContext::GetSchemaOwner()                    { return m_schemaOwner;  }
+bool                ECSchemaDeserializationContext::GetHideSchemasFromLeakDetection()   { return m_hideSchemasFromLeakDetection;  }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    07/10
@@ -1721,12 +1675,15 @@ const bwstring &name
     {
     if (name.empty())
         return false;
-    if (isdigit(name[0]))
-        return false;
-    
+    if (   L'0' <= name[0]
+        && L'9' >= name[0])
+        return false; 
     for (bwstring::size_type index = 0; index != name.length(); ++index)
         {
-        if (!isalnum(name[index]) && '_' != name[index])
+        if(    (L'a' > name[index] || L'z' < name[index]) 
+            && (L'A' > name[index] || L'Z' < name[index])
+            && (L'0' > name[index] || L'9' < name[index])
+            && '_'  != name[index])
             return false;
         } 
     return true;

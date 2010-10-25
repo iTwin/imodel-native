@@ -836,7 +836,6 @@ BentleyStatus       ECValue::SetStruct (IECInstanceP structInstance)
     
     return SUCCESS;
     }    
-      
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
@@ -904,7 +903,6 @@ bwstring    ECValue::ToString () const
                 valueAsString << timeDate.ToString();
                 break;          
                 }
-
             default:
                 {
                 valueAsString << L"EC::ECValue::ToString needs work... unsupported data type";

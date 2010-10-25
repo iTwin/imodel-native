@@ -14,13 +14,28 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
+#define DEBUG_CLASS_LEAKS
+#ifdef DEBUG_CLASS_LEAKS
+LeakDetector<ECClass> g_leakDetector (L"ECClass", L"ECClasss", true);
+#else
+LeakDetector<ECClass> g_leakDetector (L"ECClass", L"ECClasss", false);
+#endif
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClass::~ECClass
-(
-)
+ECClass::ECClass (ECSchemaCR schema, bool hideFromLeakDetection)
+    :
+    m_schema(schema), m_isStruct(false), m_isCustomAttributeClass(false), m_isDomainClass(true), m_hideFromLeakDetection (hideFromLeakDetection)
+    {
+    if ( ! m_hideFromLeakDetection)
+        g_leakDetector.ObjectCreated(*this);
+    };
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                 
++---------------+---------------+---------------+---------------+---------------+------*/
+ECClass::~ECClass ()
     {
     // NEEDSWORK make sure everything is destroyed
     ECObjectsLogger::Log()->tracev (L"~~~~ Destroying ECClass %s\n", this->Name.c_str());
@@ -32,7 +47,15 @@ ECClass::~ECClass
         delete entry.second;
     
     m_propertyMap.clear();
+
+    if ( ! m_hideFromLeakDetection)
+        g_leakDetector.ObjectDestroyed(*this);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    09/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ILeakDetector&  ECClass::Debug_GetLeakDetector() { return g_leakDetector; }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
@@ -380,7 +403,7 @@ PrimitiveECPropertyP &ecProperty,
 const bwstring &name
 )
     {
-    ecProperty = new PrimitiveECProperty(*this);
+    ecProperty = new PrimitiveECProperty(*this, m_hideFromLeakDetection);
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECOBJECTS_STATUS_Success)
         {
@@ -401,7 +424,7 @@ const bwstring &name,
 PrimitiveType primitiveType
 )
     {
-    ecProperty = new PrimitiveECProperty(*this);
+    ecProperty = new PrimitiveECProperty(*this, m_hideFromLeakDetection);
     ecProperty->Type = primitiveType;
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECOBJECTS_STATUS_Success)
@@ -421,7 +444,7 @@ StructECPropertyP &ecProperty,
 const bwstring &name
 )
     {
-    ecProperty = new StructECProperty(*this);
+    ecProperty = new StructECProperty(*this, m_hideFromLeakDetection);
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECOBJECTS_STATUS_Success)
         {
@@ -442,7 +465,7 @@ const bwstring &name,
 ECClassCR structType
 )
     {
-    ecProperty = new StructECProperty(*this);
+    ecProperty = new StructECProperty(*this, m_hideFromLeakDetection);
     ECObjectsStatus status = ecProperty->SetType(structType);
     if (ECOBJECTS_STATUS_Success == status)
         status = AddProperty(ecProperty, name);
@@ -464,7 +487,7 @@ ArrayECPropertyP &ecProperty,
 const bwstring &name
 )
     {
-    ecProperty = new ArrayECProperty(*this);
+    ecProperty = new ArrayECProperty(*this, m_hideFromLeakDetection);
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECOBJECTS_STATUS_Success)
         {
@@ -485,7 +508,7 @@ const bwstring &name,
 PrimitiveType primitiveType
 )
     {
-    ecProperty = new ArrayECProperty(*this);
+    ecProperty = new ArrayECProperty(*this, m_hideFromLeakDetection);
     ecProperty->PrimitiveElementType = primitiveType;
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECOBJECTS_STATUS_Success)
@@ -507,7 +530,7 @@ const bwstring &name,
 ECClassCP structType
 )
     {
-    ecProperty = new ArrayECProperty(*this);
+    ecProperty = new ArrayECProperty(*this, m_hideFromLeakDetection);
     ECObjectsStatus status = ecProperty->SetStructElementType(structType);
     if (ECOBJECTS_STATUS_Success == status)
         status = AddProperty(ecProperty, name);
@@ -877,11 +900,11 @@ MSXML2::IXMLDOMNode& classNode
         {   
         ECPropertyP pProperty = NULL;
         if (0 == wcscmp (xmlNodePtr->baseName, EC_PROPERTY_ELEMENT))
-            pProperty = new PrimitiveECProperty (*this);
+            pProperty = new PrimitiveECProperty (*this, m_hideFromLeakDetection);
         else if (0 == wcscmp (xmlNodePtr->baseName, EC_ARRAYPROPERTY_ELEMENT))
-            pProperty = new ArrayECProperty (*this);
+            pProperty = new ArrayECProperty (*this, m_hideFromLeakDetection);
         else if (0 == wcscmp (xmlNodePtr->baseName, EC_STRUCTPROPERTY_ELEMENT))
-            pProperty = new StructECProperty (*this);
+            pProperty = new StructECProperty (*this, m_hideFromLeakDetection);
         else
             {
             ECObjectsLogger::Log()->warningv (L"Invalid ECSchemaXML: Unknown property type '%s' of ECClass '%s' in the ECSchema '%s'\n", xmlNodePtr->baseName, this->Name.c_str(), this->Schema.Name.c_str());
@@ -1652,7 +1675,7 @@ const bwstring value
 ECRelationshipClass::ECRelationshipClass
 (
 EC::ECSchemaCR schema
-): ECClass (schema), m_strength( STRENGTHTYPE_Referencing), m_strengthDirection(STRENGTHDIRECTION_Forward) 
+): ECClass (schema, false), m_strength( STRENGTHTYPE_Referencing), m_strengthDirection(STRENGTHDIRECTION_Forward) 
     {
     m_source = new ECRelationshipConstraint(this, false);
     m_target = new ECRelationshipConstraint(this, true);

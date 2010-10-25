@@ -103,7 +103,6 @@ ECTestFixture::ECTestFixture()
 void            ECTestFixture::SetUp ()
     {
     IECInstance::Debug_ResetAllocationStats();
-    ECSchema::Debug_ResetAllocationStats();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -112,7 +111,7 @@ void            ECTestFixture::SetUp ()
 void            ECTestFixture::TearDown ()
     {
 #if defined (DEBUG_ECSCHEMA_LEAKS)
-    ECSchema::Debug_DumpAllocationStats(L"PostTest");
+    BackDoor::ECSchema::Debug_GetLeakDetector().ReportStats(L"PostTest");
 #endif
 
 #if defined (DEBUG_IECINSTANCE_LEAKS)
@@ -129,22 +128,24 @@ void            ECTestFixture::TearDown ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
+void    testForLeaks (ILeakDetector& detector, wchar_t const * leakName)
+    {
+    Int32           numLeaks = detector.CheckForLeaks();
+
+    EXPECT_TRUE (0 == numLeaks)  << "Found " << numLeaks << " leaks of " << leakName;
+
+    if (0 != numLeaks)
+        detector.ResetStats();  // So that this leak doesn't make the next test fail.
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/10
++---------------+---------------+---------------+---------------+---------------+------*/
 void    ECTestFixture::TestForECSchemaLeaks ()
     {
-    int numLiveSchemas = 0;
-
-    ECSchema::Debug_GetAllocationStats (&numLiveSchemas, NULL, NULL);
-    
-    if (numLiveSchemas > MAX_INTERNAL_SCHEMAS)
-        {
-        char message[1024];
-        sprintf (message, "TestForECSchemaLeaks found that there are %d Schemas still alive. Anything more than %d is flagged as an error!\n", 
-            numLiveSchemas, MAX_INTERNAL_SCHEMAS);
-
-        ECSchema::Debug_ReportLeaks();
-
-        EXPECT_TRUE (numLiveSchemas <= MAX_INTERNAL_SCHEMAS) << message;
-        }
+    testForLeaks (BackDoor::ECSchema::Debug_GetLeakDetector(), L"ECSchemaLeakDetector");
+    testForLeaks (BackDoor::ECClass::Debug_GetLeakDetector(), L"ECClassLeakDetector");
+    testForLeaks (BackDoor::ECProperty::Debug_GetLeakDetector(), L"ECPropertyLeakDetector");
     }
 
 /*---------------------------------------------------------------------------------**//**

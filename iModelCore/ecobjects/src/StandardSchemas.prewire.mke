@@ -19,10 +19,16 @@ $(ContextDeliveryDir)Schemas/EditorCustomAttributes.01.00.ecschema.xml: $(ecobje
 $(ContextDeliveryDir)Schemas/Bentley_Standard_CustomAttributes.01.03.ecschema.xml: $(ecobjectsSrc)Standards/Bentley_Standard_CustomAttributes.01.03.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
+$(ContextDeliveryDir)Schemas/Bentley_Standard_CustomAttributes.01.04.ecschema.xml: $(ecobjectsSrc)Standards/Bentley_Standard_CustomAttributes.01.04.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
+
 $(ContextDeliveryDir)Schemas/Bentley_Standard_Classes.01.00.ecschema.xml: $(ecobjectsSrc)Standards/Bentley_Standard_Classes.01.00.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
 $(ContextDeliveryDir)Schemas/General/Bentley_Common_Classes.01.00.ecschema.xml: $(ecobjectsSrc)Standards/General/Bentley_Common_Classes.01.00.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
+
+$(ContextDeliveryDir)Schemas/General/Bentley_Common_Classes.01.01.ecschema.xml: $(ecobjectsSrc)Standards/General/Bentley_Common_Classes.01.01.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
 $(ContextDeliveryDir)Schemas/LibraryUnits/Dimension_Schema.01.00.ecschema.xml: $(ecobjectsSrc)Standards/LibraryUnits/Dimension_Schema.01.00.ecschema.xml
