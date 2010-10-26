@@ -1211,12 +1211,17 @@ public:
                                                           bool hideFromLeakDetection);
 /*__PUBLISH_SECTION_START__*/
 
+    //! Generate a schema version string given the major and minor version values.
+    //! @param[in]  versionMajor    The major version number
+    //! @param[in] versionMinor    The minor version number
+    //! @return The version string
+    ECOBJECTS_EXPORT static bwstring FormatSchemaVersion (UInt32& versionMajor, UInt32& versionMinor);
+
     //! Given a version string MM.NN, this will parse other major and minor versions
     //! @param[out]  versionMajor    The major version number
     //! @param[out] versionMinor    The minor version number
     //! @param[in]  versionString   A string containing the major and minor versions (MM.NN)
     //! @return A status code indicating whether the string was successfully parsed
-
     ECOBJECTS_EXPORT static ECObjectsStatus ParseVersionString (UInt32& versionMajor, UInt32& versionMinor, bwstring const& versionString);
     
     //! Given a match type, will determine whether the two schemas match based on name, major version and minor version.  This does not compare actual schemas

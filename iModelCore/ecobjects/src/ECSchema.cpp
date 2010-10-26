@@ -396,6 +396,16 @@ bwstring const&     name
     return ECOBJECTS_STATUS_Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  10/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bwstring ECSchema::FormatSchemaVersion (UInt32& versionMajor, UInt32& versionMinor)
+    {
+    wchar_t versionString[80];
+    swprintf (versionString, L"%02d.%02d", versionMajor, versionMinor);
+    return bwstring (versionString);
+    }
+
 #define     ECSCHEMA_VERSION_FORMAT_EXPLAINATION L" Format must be MM.mm where MM is major version and mm is minor version.\n"
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     

@@ -14,7 +14,7 @@ EC_TYPEDEFS(StandaloneECEnabler);
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-#define STANDALONEENABLER_EnablerID     0x00EC3E30 // WIP_FUSION: get a real id
+#define STANDALONEENABLER_EnablerID         0xEC5E
 typedef RefCountedPtr<StandaloneECEnabler>  StandaloneECEnablerPtr;
 typedef RefCountedPtr<StandaloneECInstance> StandaloneECInstancePtr;
     
@@ -31,7 +31,6 @@ private:
     byte *               m_data;
     UInt32               m_bytesAllocated;
     
-    // WIP_FUSION Is this a good enough implementation for StandaloneECInstace?
     typedef int StructValueIdentifier;
     StructValueIdentifier                             m_structValueId;
     bmap<StructValueIdentifier, IECInstancePtr>   m_structValueMap;
