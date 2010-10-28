@@ -14,12 +14,13 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-#define DEBUG_SCHEMA_LEAKS
+//#define DEBUG_SCHEMA_LEAKS
 #ifdef DEBUG_SCHEMA_LEAKS
 LeakDetector<ECSchema> g_leakDetector (L"ECSchema", L"ECSchemas", true);
 #else
 LeakDetector<ECSchema> g_leakDetector (L"ECSchema", L"ECSchemas", false);
 #endif
+
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -316,6 +317,41 @@ bwstring const&     name
         }
 
     return ECOBJECTS_STATUS_Success;
+    }
+
+#define     ECSCHEMA_FULLNAME_FORMAT_EXPLANATION L" Format must be Name.MM.mm where Name is the schema name, MM is major version and mm is minor version.\n"
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::ParseSchemaFullName
+(
+bwstring&           schemaName,
+UInt32&             versionMajor, 
+UInt32&             versionMinor, 
+bwstring const&     fullName
+)
+    {
+    if (fullName.empty())
+        return ECOBJECTS_STATUS_ParseError;
+
+    const wchar_t * fullNameCP = fullName.c_str();
+    const wchar_t * firstDot = wcschr (fullNameCP, L'.');
+    if (NULL == firstDot)
+        {
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema FullName String: '%s' does not contain a '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName.c_str());
+        return ECOBJECTS_STATUS_ParseError;
+        }
+
+    size_t nameLen = firstDot - fullNameCP;
+    if (nameLen < 1)
+        {
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema FullName String: '%s' does not have any characters before the '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName.c_str());
+        return ECOBJECTS_STATUS_ParseError;
+        }
+
+    schemaName.assign (fullNameCP, nameLen);
+
+    return ParseVersionString (versionMajor, versionMinor, firstDot+1);
     }
 
 #define     ECSCHEMA_VERSION_FORMAT_EXPLAINATION L" Format must be MM.mm where MM is major version and mm is minor version.\n"
@@ -813,6 +849,14 @@ ECSchemaDeserializationContextR schemaContext
     }
 
 /*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                 
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaP IECSchemaLocator::LocateSchema(const wchar_t *name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaDeserializationContextR schemaContext)
+    {
+    return _LocateSchema (name, versionMajor, versionMinor, matchType, schemaContext);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP       ECSchema::LocateSchema
@@ -1067,17 +1111,16 @@ ECClassP class2
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus ECSchema::WriteSchemaReferences
-(
-MSXML2::IXMLDOMElement &parentNode
-)
+SchemaSerializationStatus ECSchema::WriteSchemaReferences (MSXML2::IXMLDOMElement &parentNode) const
     {
     SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
     ECSchemaReferenceList referencedSchemas = GetReferencedSchemas();
     
     std::set<const bwstring> usedPrefixes;
     std::set<const bwstring>::const_iterator setIterator;
-    m_referencedSchemaNamespaceMap.clear();
+
+    stdext::hash_map<ECSchemaP, const bwstring> localReferencedSchemaNamespaceMap;
+
     ECSchemaReferenceList::const_iterator schemaIterator;
     for (schemaIterator = m_refSchemaList.begin(); schemaIterator != m_refSchemaList.end(); schemaIterator++)
         {
@@ -1104,7 +1147,7 @@ MSXML2::IXMLDOMElement &parentNode
                 }
             }
         usedPrefixes.insert(prefix);
-        m_referencedSchemaNamespaceMap.insert(std::pair<ECSchemaP, const bwstring> (refSchema, prefix));
+        localReferencedSchemaNamespaceMap.insert(std::pair<ECSchemaP, const bwstring> (refSchema, prefix));
         }
 
     MSXML2::IXMLDOMTextPtr textPtr = NULL;
@@ -1112,7 +1155,7 @@ MSXML2::IXMLDOMElement &parentNode
     MSXML2::IXMLDOMElementPtr schemaPtr = NULL;
     
     stdext::hash_map<ECSchemaP, const bwstring>::const_iterator iterator;
-    for (iterator = m_referencedSchemaNamespaceMap.begin(); iterator != m_referencedSchemaNamespaceMap.end(); iterator++)
+    for (iterator = localReferencedSchemaNamespaceMap.begin(); iterator != localReferencedSchemaNamespaceMap.end(); iterator++)
         {
         std::pair<ECSchemaP, const bwstring> mapPair = *(iterator);
         ECSchemaP refSchema = mapPair.first;
@@ -1135,16 +1178,17 @@ MSXML2::IXMLDOMElement &parentNode
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaSerializationStatus ECSchema::WriteCustomAttributeDependencies
 (
-MSXML2_IXMLDOMElement& parentNode,
-IECCustomAttributeContainerCR container
-)
+MSXML2_IXMLDOMElement&          parentNode,
+IECCustomAttributeContainerCR   container,
+ECSchemaSerializationContext&   context
+) const
     {
     SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
 
     for each (IECInstancePtr instance in container.GetCustomAttributes(false))
         {
         ECClassCR currentClass = instance->GetClass();
-        status = WriteClass(parentNode, currentClass);
+        status = WriteClass(parentNode, currentClass, context);
         if (SCHEMA_SERIALIZATION_STATUS_Success != status)
             return status;
         }
@@ -1154,11 +1198,7 @@ IECCustomAttributeContainerCR container
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus ECSchema::WriteClass
-(
-MSXML2::IXMLDOMElement &parentNode, 
-Bentley::EC::ECClassCR ecClass
-)
+SchemaSerializationStatus ECSchema::WriteClass (MSXML2::IXMLDOMElement &parentNode, ECClassCR ecClass, ECSchemaSerializationContext& context) const
     {
     SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
     // don't serialize any classes that aren't in the schema we're serializing.
@@ -1166,17 +1206,17 @@ Bentley::EC::ECClassCR ecClass
         return status;
     
     std::set<const wchar_t *>::const_iterator setIterator;
-    setIterator = m_alreadySerializedClasses.find(ecClass.Name.c_str());
+    setIterator = context.m_alreadySerializedClasses.find(ecClass.Name.c_str());
     // Make sure we don't serialize any class twice
-    if (setIterator != m_alreadySerializedClasses.end())
+    if (setIterator != context.m_alreadySerializedClasses.end())
         return status;
     else
-        m_alreadySerializedClasses.insert(ecClass.Name.c_str());
+        context.m_alreadySerializedClasses.insert(ecClass.Name.c_str());
         
     // serialize the base classes first.
     for each (ECClassP baseClass in ecClass.BaseClasses)
         {
-        WriteClass(parentNode, *baseClass);
+        WriteClass(parentNode, *baseClass, context);
         }
        
     // Serialize relationship constraint dependencies
@@ -1184,13 +1224,13 @@ Bentley::EC::ECClassCR ecClass
     if (NULL != relClass)
         {
         for each (ECClassP source in relClass->Source.Classes)
-            WriteClass(parentNode, *source);
+            WriteClass(parentNode, *source, context);
             
         for each (ECClassP target in relClass->Target.Classes)
-            WriteClass(parentNode, *target);
+            WriteClass(parentNode, *target, context);
         }
-    WritePropertyDependencies(parentNode, ecClass); 
-    WriteCustomAttributeDependencies(parentNode, ecClass);
+    WritePropertyDependencies(parentNode, ecClass, context); 
+    WriteCustomAttributeDependencies(parentNode, ecClass, context);
     
     ecClass.WriteXml(parentNode);
     
@@ -1202,9 +1242,10 @@ Bentley::EC::ECClassCR ecClass
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaSerializationStatus ECSchema::WritePropertyDependencies
 (
-MSXML2::IXMLDOMElement &parentNode, 
-Bentley::EC::ECClassCR ecClass
-)  
+MSXML2::IXMLDOMElement&         parentNode,
+ECClassCR                       ecClass,
+ECSchemaSerializationContext&   context
+) const
     {
     SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
     
@@ -1213,17 +1254,17 @@ Bentley::EC::ECClassCR ecClass
         if (prop->IsStruct)
             {
             StructECPropertyP structProperty = prop->GetAsStructProperty();
-            WriteClass(parentNode, structProperty->Type);
+            WriteClass(parentNode, structProperty->Type, context);
             }
         else if (prop->IsArray)
             {
             ArrayECPropertyP arrayProperty = prop->GetAsArrayProperty();
             if (arrayProperty->GetKind() == ARRAYKIND_Struct)
                 {
-                WriteClass(parentNode, *(arrayProperty->GetStructElementType()));
+                WriteClass(parentNode, *(arrayProperty->GetStructElementType()), context);
                 }
             }
-        WriteCustomAttributeDependencies(parentNode, *prop);
+        WriteCustomAttributeDependencies(parentNode, *prop, context);
         }
     return status;
     }
@@ -1231,12 +1272,11 @@ Bentley::EC::ECClassCR ecClass
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                               
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus ECSchema::WriteXml
-(
-MSXML2::IXMLDOMDocument2* pXmlDoc
-)
+SchemaSerializationStatus ECSchema::WriteXml (MSXML2::IXMLDOMDocument2* pXmlDoc) const
     {
     SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+
+    ECSchemaSerializationContext context;
 
     MSXML2::IXMLDOMProcessingInstructionPtr piPtr = NULL;
     MSXML2::IXMLDOMTextPtr textPtr = NULL;
@@ -1263,7 +1303,7 @@ MSXML2::IXMLDOMDocument2* pXmlDoc
     
     WriteSchemaReferences(schemaElementPtr);
     
-    WriteCustomAttributeDependencies(schemaElementPtr, *this);
+    WriteCustomAttributeDependencies(schemaElementPtr, *this, context);
     WriteCustomAttributes(schemaElementPtr);
     
     std::list<ECClassP> sortedClasses;
@@ -1275,13 +1315,13 @@ MSXML2::IXMLDOMDocument2* pXmlDoc
     
     for each (ECClassP pClass in sortedClasses)
         {
-        WriteClass(schemaElementPtr, *pClass);
+        WriteClass(schemaElementPtr, *pClass, context);
         }
         
-    m_alreadySerializedClasses.clear();
     ECXml::FormatXml(pXmlDoc);
     return status;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                               
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1446,10 +1486,7 @@ ECSchemaDeserializationContextR schemaContext
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus ECSchema::WriteXmlToString
-(
-bwstring  &ecSchemaXml
-)
+SchemaSerializationStatus ECSchema::WriteXmlToString (bwstring& ecSchemaXml) const
     {
     SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
 
@@ -1606,7 +1643,7 @@ ECSchemaP       ECSchemaOwner::_LocateSchema (const wchar_t* name, UInt32 versio
     { 
     for each (ECSchemaP ecSchema in m_schemas)
         {
-        if (ECSchema::SchemasMatch (matchType, name, versionMajor, versionMinor, ecSchema->GetName().c_str(), ecSchema->GetVersionMajor(), ecSchema->GetVersionMinor() != versionMinor))
+        if (ECSchema::SchemasMatch (matchType, name, versionMajor, versionMinor, ecSchema->GetName().c_str(), ecSchema->GetVersionMajor(), ecSchema->GetVersionMinor()))
             return ecSchema;
         }
 

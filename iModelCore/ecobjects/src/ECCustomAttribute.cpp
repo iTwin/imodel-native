@@ -291,8 +291,10 @@ ECSchemaCR              schema
         MSXML2::IXMLDOMNodeListPtr attributeInstances = xmlNodePtr->childNodes;
         while (NULL != (instancePtr = attributeInstances->nextNode()))
             {
+            ECInstanceDeserializationContextPtr context = ECInstanceDeserializationContext::CreateContext (schema);
+
             IECInstancePtr ptr;
-            status = IECInstance::ReadXmlFromString(ptr, (const wchar_t*) instancePtr->Getxml(), schema);
+            status = IECInstance::ReadXmlFromString(ptr, (const wchar_t*) instancePtr->Getxml(), *context);
             if (INSTANCE_DESERIALIZATION_STATUS_Success != status)
                 return status;
             SetCustomAttribute(*ptr);

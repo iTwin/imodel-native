@@ -1005,50 +1005,16 @@ public:
     ECOBJECTS_EXPORT static  ECSchemaOwnerPtr    CreateOwner();
 };
 
-typedef RefCountedPtr<ECSchemaDeserializationContext>      ECSchemaDeserializationContextPtr;
-//=======================================================================================
-//! Context object used for schema creation and deserialization.</summary>
-//=======================================================================================
-struct ECSchemaDeserializationContext /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
-{
-/*__PUBLISH_SECTION_END__*/
-friend  ECSchema;
-
-private:
-    IECSchemaOwnerR                 m_schemaOwner;
-
-    bvector<IECSchemaLocatorP>      m_locators;
-    T_WStringVector                 m_searchPaths;
-    bool                            m_hideSchemasFromLeakDetection;
-
-    ECSchemaDeserializationContext(IECSchemaOwnerR);
-
-    bvector<IECSchemaLocatorP>& GetSchemaLocators ();
-    T_WStringVector&            GetSchemaPaths ();
-    IECSchemaOwnerR             GetSchemaOwner();
-    bool                        GetHideSchemasFromLeakDetection();
-
-    void                        ClearSchemaPaths();
-
-public:
-    ECOBJECTS_EXPORT void HideSchemasFromLeakDetection();
-
-/*__PUBLISH_SECTION_START__*/
-    ECOBJECTS_EXPORT static ECSchemaDeserializationContextPtr CreateContext (IECSchemaOwnerR);
-
-    ECOBJECTS_EXPORT void AddSchemaLocators (bvector<EC::IECSchemaLocatorP>&);
-
-    ECOBJECTS_EXPORT void AddSchemaLocator (IECSchemaLocatorR);
-    ECOBJECTS_EXPORT void AddSchemaPath (const wchar_t *);
-};
-
 //=======================================================================================
 //! Interface implemented by class that provides schema location services.</summary>
 //=======================================================================================
 struct IECSchemaLocator
 {
+protected:
+    virtual ECSchemaP _LocateSchema(const wchar_t *name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaDeserializationContextR schemaContext) const = 0;
+
 public:
-    virtual ECOBJECTS_EXPORT ECSchemaP LocateSchema(const wchar_t *name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaDeserializationContextR schemaContext) const = 0;
+    ECOBJECTS_EXPORT ECSchemaP LocateSchema(const wchar_t *name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaDeserializationContextR schemaContext);
 };
 
 //=======================================================================================
@@ -1076,14 +1042,13 @@ private:
     
     ECSchemaReferenceList m_refSchemaList;
     
-    std::set<const wchar_t *> m_alreadySerializedClasses;
     stdext::hash_map<ECSchemaP, const bwstring> m_referencedSchemaNamespaceMap;
 
     ECSchema (bool hideFromLeakDetection);
     virtual ~ECSchema();
 
     static SchemaDeserializationStatus  ReadXml (ECSchemaP& schemaOut, MSXML2_IXMLDOMDocument2& pXmlDoc, ECSchemaDeserializationContextR context);
-    SchemaSerializationStatus           WriteXml (MSXML2_IXMLDOMDocument2* pXmlDoc);
+    SchemaSerializationStatus           WriteXml (MSXML2_IXMLDOMDocument2* pXmlDoc) const;
 
     ECObjectsStatus                     AddClass (ECClassP& pClass);
     ECObjectsStatus                     SetVersionFromString (bwstring const& versionString);
@@ -1096,13 +1061,18 @@ private:
     static ECSchemaP                    LocateSchemaByPath(const bwstring & name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR context);
     static ECSchemaP                    LocateSchemaByStandardPaths(const bwstring & name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR context);
     
-    SchemaSerializationStatus           WriteSchemaReferences(MSXML2_IXMLDOMElement& parentNode);
-    SchemaSerializationStatus           WriteClass(MSXML2_IXMLDOMElement& parentNode, ECClassCR ecClass);
-    SchemaSerializationStatus           WriteCustomAttributeDependencies(MSXML2_IXMLDOMElement& parentNode, IECCustomAttributeContainerCR container);
-    SchemaSerializationStatus           WritePropertyDependencies(MSXML2_IXMLDOMElement& parentNode, ECClassCR ecClass);
+    struct  ECSchemaSerializationContext
+        {
+        std::set<const wchar_t *> m_alreadySerializedClasses;
+        };
+
+    SchemaSerializationStatus           WriteSchemaReferences(MSXML2_IXMLDOMElement& parentNode) const;
+    SchemaSerializationStatus           WriteClass(MSXML2_IXMLDOMElement& parentNode, ECClassCR ecClass, ECSchemaSerializationContext&) const;
+    SchemaSerializationStatus           WriteCustomAttributeDependencies(MSXML2_IXMLDOMElement& parentNode, IECCustomAttributeContainerCR container, ECSchemaSerializationContext&) const;
+    SchemaSerializationStatus           WritePropertyDependencies(MSXML2_IXMLDOMElement& parentNode, ECClassCR ecClass, ECSchemaSerializationContext&) const;
 
 protected:
-        virtual ECSchemaCP              _GetContainerSchema() const override;
+    virtual ECSchemaCP                  _GetContainerSchema() const override;
 
 public:    
     ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();
@@ -1113,8 +1083,8 @@ public:
     EXPORTED_PROPERTY (bwstring const&, NamespacePrefix);
     EXPORTED_PROPERTY (bwstring const&, Description);
     EXPORTED_PROPERTY (bwstring const&, DisplayLabel);
-    EXPORTED_PROPERTY (UInt32,              VersionMajor);
-    EXPORTED_PROPERTY (UInt32,              VersionMinor);
+    EXPORTED_PROPERTY (UInt32,          VersionMajor);
+    EXPORTED_PROPERTY (UInt32,          VersionMinor);
 
     EXPORTED_READONLY_PROPERTY (ECClassContainerCR, Classes);
     EXPORTED_READONLY_PROPERTY (bool,               IsDisplayLabelDefined);
@@ -1169,7 +1139,7 @@ public:
     //! @param[out] ecSchemaXml     The string containing the Xml of the serialized schema
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml
     //          will contain the serialized schema.  Otherwise, ecSchemaXml will be unmodified
-    ECOBJECTS_EXPORT SchemaSerializationStatus          WriteXmlToString (bwstring & ecSchemaXml);
+    ECOBJECTS_EXPORT SchemaSerializationStatus          WriteXmlToString (bwstring & ecSchemaXml) const;
     
     //! Serializes an ECXML schema to a file
     //! Xml Serialization utilizes MSXML through COM. <b>Any thread calling this method must therefore be certain to initialize and
@@ -1216,11 +1186,18 @@ public:
 /*__PUBLISH_SECTION_START__*/
 
     //! Given a version string MM.NN, this will parse other major and minor versions
-    //! @param[out]  versionMajor    The major version number
+    //! @param[out] schemaName      The schema name without version number qualifiers
+    //! @param[out] versionMajor    The major version number
+    //! @param[out] versionMinor    The minor version number
+    //! @param[in]  fullName        A string containing the schema name and major and minor versions (Name.MM.NN)
+    //! @return A status code indicating whether the string was successfully parsed
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseSchemaFullName (bwstring& schemaName, UInt32& versionMajor, UInt32& versionMinor, bwstring const& fullName);
+
+    //! Given a version string MM.NN, this will parse other major and minor versions
+    //! @param[out] versionMajor    The major version number
     //! @param[out] versionMinor    The minor version number
     //! @param[in]  versionString   A string containing the major and minor versions (MM.NN)
     //! @return A status code indicating whether the string was successfully parsed
-
     ECOBJECTS_EXPORT static ECObjectsStatus ParseVersionString (UInt32& versionMajor, UInt32& versionMinor, bwstring const& versionString);
     
     //! Given a match type, will determine whether the two schemas match based on name, major version and minor version.  This does not compare actual schemas

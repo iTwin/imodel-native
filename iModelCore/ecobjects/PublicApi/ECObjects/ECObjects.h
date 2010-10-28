@@ -60,6 +60,7 @@ EC_TYPEDEFS(ECSchemaOwner);
 EC_TYPEDEFS(IECSchemaOwner);
 EC_TYPEDEFS(IECSchemaLocator);
 EC_TYPEDEFS(IECCustomAttributeContainer);
+EC_TYPEDEFS(ECInstanceDeserializationContext);
 
 EC_TYPEDEFS(ECEnabler);
 EC_TYPEDEFS(IArrayManipulator);
@@ -191,6 +192,7 @@ enum InstanceDeserializationStatus
     INSTANCE_DESERIALIZATION_STATUS_BadPoint3dValue                     = INSTANCE_DESERIALIZATION_STATUS_BASE + 39,
     INSTANCE_DESERIALIZATION_STATUS_BadArrayElement                     = INSTANCE_DESERIALIZATION_STATUS_BASE + 40,
     INSTANCE_DESERIALIZATION_STATUS_CantSetValue                        = INSTANCE_DESERIALIZATION_STATUS_BASE + 41,
+    INSTANCE_DESERIALIZATION_STATUS_ECSchemaNotFound                    = INSTANCE_DESERIALIZATION_STATUS_BASE + 42,
     };
     
 /*=================================================================================**//**

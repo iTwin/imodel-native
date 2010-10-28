@@ -15,6 +15,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 // NEEDSWORK Improve strategy for seed data.  Should not be maintained in source.
 #define SCHEMAS_PATH  L"" 
 
+struct SchemaNameParsingTest     : ECTestFixture {};
 struct SchemaDeserializationTest : ECTestFixture {};
 struct SchemaSerializationTest   : ECTestFixture {};
 struct SchemaReferenceTest       : ECTestFixture {};
@@ -147,6 +148,43 @@ ECSchemaP   schema
     
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+static  void    ValidateSchemaNameParsing (wchar_t const* fullName, bool expectFailure, wchar_t const* expectName, UInt32 expectMajor, UInt32 expectMinor)
+    {
+    bwstring    shortName;
+    UInt32      versionMajor;
+    UInt32      versionMinor;
+
+    ECObjectsStatus status = ECSchema::ParseSchemaFullName (shortName, versionMajor, versionMinor, fullName);
+
+    if (expectFailure)
+        {
+        EXPECT_TRUE (ECOBJECTS_STATUS_Success != status);
+        return;
+        }
+
+    EXPECT_STREQ (shortName.c_str(), expectName);
+    EXPECT_EQ    (versionMajor,      expectMajor);
+    EXPECT_EQ    (versionMinor,      expectMinor);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaNameParsingTest, ParseFullSchemaName)
+    {
+    ValidateSchemaNameParsing (L"TestName.6.8",      false, L"TestName", 6, 8);
+    ValidateSchemaNameParsing (L"TestName.16.18",    false, L"TestName", 16, 18);
+    ValidateSchemaNameParsing (L"TestName.126.128",  false, L"TestName", 126, 128);
+    ValidateSchemaNameParsing (L"TestName.1267.128", true,  NULL, 0, 0);
+    ValidateSchemaNameParsing (L"TestName.1267",     true,  NULL, 0, 0);
+    ValidateSchemaNameParsing (L"TestName",          true,  NULL, 0, 0);
+    ValidateSchemaNameParsing (L"",                  true,  NULL, 0, 0);
+    ValidateSchemaNameParsing (L"12.18",             true,  NULL, 0, 0);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
