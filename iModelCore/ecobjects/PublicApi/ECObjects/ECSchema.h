@@ -1185,6 +1185,12 @@ public:
                                                           bool hideFromLeakDetection);
 /*__PUBLISH_SECTION_START__*/
 
+    //! Generate a schema version string given the major and minor version values.
+    //! @param[in]  versionMajor    The major version number
+    //! @param[in] versionMinor    The minor version number
+    //! @return The version string
+    ECOBJECTS_EXPORT static bwstring FormatSchemaVersion (UInt32& versionMajor, UInt32& versionMinor);
+
     //! Given a version string MM.NN, this will parse other major and minor versions
     //! @param[out] schemaName      The schema name without version number qualifiers
     //! @param[out] versionMajor    The major version number
