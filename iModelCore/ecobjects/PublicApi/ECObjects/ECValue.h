@@ -34,6 +34,7 @@ public:
     ECOBJECTS_EXPORT static SystemTime GetLocalTime();
     ECOBJECTS_EXPORT static SystemTime GetSystemTime();
     ECOBJECTS_EXPORT bwstring      ToString ();
+    ECOBJECTS_EXPORT bool          operator== (const SystemTime&) const;
     };
 
 //=======================================================================================    
