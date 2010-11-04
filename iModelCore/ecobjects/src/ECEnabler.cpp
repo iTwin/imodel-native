@@ -21,7 +21,7 @@ ECEnabler::ECEnabler(ECClassCR ecClass) : m_privateRefCount(0), m_ecClass (ecCla
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECEnabler::~ECEnabler() 
     {
-    ECObjectsLogger::Log()->tracev (L"%S(%s) at 0x%x is being destructed.", typeid(*this).name(), m_ecClass.GetName().c_str(), this);
+    ECObjectsLogger::Log()->tracev (L"%S at 0x%x is being destructed.", typeid(*this).name(), this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -30,7 +30,7 @@ ECEnabler::~ECEnabler()
 UInt32      ECEnabler::AddRef()
     {
     m_privateRefCount++;
-    ECObjectsLogger::Log()->tracev (L"++(%d)%S(%s) Refcount increased to %d.", m_privateRefCount, typeid(*this).name(), m_ecClass.GetName().c_str(), m_privateRefCount);
+    ECObjectsLogger::Log()->tracev (L"++(%d)%S at 0x%x Refcount increased to %d.", m_privateRefCount, typeid(*this).name(), this, m_privateRefCount);
     
     return RefCountedBase::AddRef();
     }
@@ -41,7 +41,7 @@ UInt32      ECEnabler::AddRef()
 UInt32      ECEnabler::Release()
     { 
     --m_privateRefCount;
-    ECObjectsLogger::Log()->tracev (L"--(%d)%S(%s) Refcount decreased to %d.", m_privateRefCount, typeid(*this).name(), m_ecClass.GetName().c_str(), m_privateRefCount);
+    ECObjectsLogger::Log()->tracev (L"--(%d)%S at 0x%x Refcount decreased to %d.", m_privateRefCount, typeid(*this).name(), this, m_privateRefCount);
     return RefCountedBase::Release();
     }
 
