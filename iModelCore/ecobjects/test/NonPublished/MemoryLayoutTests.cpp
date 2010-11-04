@@ -238,6 +238,26 @@ bwstring    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versionMaj
                     L"        <ECProperty propertyName=\"Service_Date\" typeName=\"dateTime\"  />"
                     L"        <ECProperty propertyName=\"Field_Tested\" typeName=\"boolean\"  />"
                     L"    </ECClass>"
+                    L"    <ECClass typeName=\"AllPrimitives\" isStruct=\"True\" isDomainClass=\"True\">"
+                    L"        <ECProperty propertyName=\"AString\"         typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"AnInt\"        typeName=\"int\" />"
+                    L"        <ECProperty propertyName=\"APoint3d\"   typeName=\"point3d\" />"
+                    L"        <ECProperty propertyName=\"APoint2d\"         typeName=\"point2d\" />"
+                    L"        <ECProperty propertyName=\"ADouble\"       typeName=\"double\"  />"
+                    L"        <ECProperty propertyName=\"ADateTime\" typeName=\"dateTime\"  />"
+                    L"        <ECProperty propertyName=\"ABoolean\" typeName=\"boolean\"  />"
+                    L"        <ECProperty propertyName=\"ALong\" typeName=\"long\"  />"
+                    L"        <ECProperty propertyName=\"ABinary\" typeName=\"binary\"  />"
+                    L"        <ECArrayProperty propertyName=\"SomeStrings\"         typeName=\"string\" />"
+                    L"        <ECArrayProperty propertyName=\"SomeInts\"        typeName=\"int\" />"
+                    L"        <ECArrayProperty propertyName=\"SomePoint3ds\"   typeName=\"point3d\" />"
+                    L"        <ECArrayProperty propertyName=\"SomePoint2ds\"         typeName=\"point2d\" />"
+                    L"        <ECArrayProperty propertyName=\"SomeDoubles\"       typeName=\"double\"  />"
+                    L"        <ECArrayProperty propertyName=\"SomeDateTimes\" typeName=\"dateTime\"  />"
+                    L"        <ECArrayProperty propertyName=\"SomeBooleans\" typeName=\"boolean\"  />"
+                    L"        <ECArrayProperty propertyName=\"SomeLongs\" typeName=\"long\"  />"
+                    L"        <ECArrayProperty propertyName=\"SomeBinaries\" typeName=\"binary\"  />"
+                    L"    </ECClass>"
                     L"    <ECClass typeName=\"%s\" isDomainClass=\"True\">"
                     L"        <ECArrayProperty propertyName=\"BeginningArray\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"A\" typeName=\"int\" />"
@@ -661,7 +681,6 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     delete manufClassLayout;             
     }
 
-#ifdef NO_ALLPRIMITIVES_CLASS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -692,7 +711,7 @@ TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetInteger      (*instance, intVal, L"AnInt"));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetIntegerValue (*instance, L"SomeInts[0]", (int)(50)));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetInteger      (*instance, intVal, L"SomeInts[0]"));
-    EXPECT_TRUE ((int)(50) == doubleVal);
+    EXPECT_TRUE ((int)(50) == intVal);
 
     const wchar_t*   stringVal;
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, L"AString", L"TEST123"));
@@ -772,7 +791,6 @@ TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
 
     CoUninitialize();
     };
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
