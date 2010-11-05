@@ -34,6 +34,14 @@ unsigned short milliseconds
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  11/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ bool SystemTime::operator== (const SystemTime& rhs) const
+     {
+     return 0 == memcmp (this, &rhs, sizeof(SystemTime));
+     }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 bwstring SystemTime::ToString
@@ -836,7 +844,6 @@ BentleyStatus       ECValue::SetStruct (IECInstanceP structInstance)
     
     return SUCCESS;
     }    
-      
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
@@ -904,7 +911,6 @@ bwstring    ECValue::ToString () const
                 valueAsString << timeDate.ToString();
                 break;          
                 }
-
             default:
                 {
                 valueAsString << L"EC::ECValue::ToString needs work... unsupported data type";
