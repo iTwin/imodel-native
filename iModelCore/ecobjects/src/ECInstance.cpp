@@ -685,7 +685,7 @@ ECObjectsStatus ECInstanceInteropHelper::SetDateTimeValue (IECInstanceR instance
 ECObjectsStatus ECInstanceInteropHelper::SetDateTimeTicks (IECInstanceR instance, const wchar_t * managedPropertyAccessor, Int64 value)
     {
     ECValue v;
-    v.SetDateTimeTicks(value);
+    v.SetDateTimeTicks (value);
     return setECValueInInstance (v, instance, managedPropertyAccessor);
     }
 

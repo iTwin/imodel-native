@@ -7,10 +7,16 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#if defined (COMPILING_PUBLISHED_TESTS)
+#if defined (COMPILING_PUBLISHED_TESTS) || defined (COMPILING_SCENARIO_TESTS)
    // Need to reach in and grab this header since it won't be part of the published API yet we still
    // need to utilize it in the published API tests
    #include "..\..\PublicAPI\ECObjects\DesignByContract.h"
+#else
+   #include <ECObjects\DesignByContract.h>
+#endif
+
+#if defined (USE_PUBLISHED_HEADERS)
+   #include "BackDoor\BackDoor.h"
 #endif
 
 #if defined (USE_PUBLISHED_HEADERS)
@@ -20,4 +26,6 @@
 #include <ECObjects\ECObjectsAPI.h>
 #include <gtest\gtest.h>
 
+#if defined (COMPILING_PUBLISHED_TESTS) || defined (COMPILING_SCENARIO_TESTS)
 #include "ScenarioTests\TestClasses\VerifierClassesPCH.h"
+#endif
