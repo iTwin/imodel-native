@@ -223,7 +223,12 @@ static ECObjectsStatus getECValueUsingFullAccessString (wchar_t* asBuffer, wchar
     if (-1 == indexValue)
         {
         //Caller asked for the array itself, not any particular element.
-        v = arrayVal;
+        //Returns a dummy ECValue with only the array info copied.
+        ArrayInfo info = arrayVal.GetArrayInfo();
+        if(info.IsStructArray())
+            v.SetStructArrayInfo(info.GetCount(), info.IsFixedCount());
+        else
+            v.SetPrimitiveArrayInfo (info.GetElementPrimitiveType(), info.GetCount(), info.IsFixedCount());
         return ECOBJECTS_STATUS_Success;
         }
 
