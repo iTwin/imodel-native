@@ -37,9 +37,9 @@
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">bmake $(SrcEcf)ecobjects\nativeatp\NonPublishedTests.mke</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">bmake +a $(SrcEcf)ecobjects\nativeatp\NonPublishedTests.mke</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">bmake +aD $(SrcEcf)ecobjects\nativeatp\NonPublishedTests.mke</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py re ECObjectsNonPublishedTests -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ecf -p ecftest:ECFrameWorkNativeTests -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -f</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py re ECObjectsNonPublishedTests -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -c</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ECObjectsTest_NonPublished.exe</NMakeOutput>
     <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutRoot)Win$(PROCESSOR_ARCHITECTURE)\BuildContexts\ecf\VendorAPI\;$(VCInstallDir)INCLUDE\;$(OutRoot)Win$(PROCESSOR_ARCHITECTURE)\BuildContexts\ecf\PublicAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
@@ -61,7 +61,7 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\src_fusion\ecf\ecobjects\nativeatp\NonPublished\MemoryLayoutTests.cpp" />
+    <ClCompile Include="$(SrcRoot)ecf\ecobjects\nativeatp\NonPublished\MemoryLayoutTests.cpp" />
     <ClCompile Include="ECObjectsTestPCH.cpp" />
   </ItemGroup>
   <ItemGroup>

@@ -19,10 +19,6 @@
    #include "BackDoor\BackDoor.h"
 #endif
 
-#if defined (USE_PUBLISHED_HEADERS)
-   #include "BackDoor\BackDoor.h"
-#endif
-
 #include <ECObjects\ECObjectsAPI.h>
 #include <gtest\gtest.h>
 

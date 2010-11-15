@@ -911,7 +911,80 @@ ECSchemaDeserializationContextR schemaContext
     // Step 4: look in a set of standard paths
     return LocateSchemaByStandardPaths (name, versionMajor, versionMinor, schemaContext);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  11/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+static ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, wchar_t const* filePath)
+    {
+    const wchar_t * firstDot = wcschr (filePath, L'.');
+    if (NULL == firstDot)
+        {
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema FullName String: '%s' does not contain a '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, filePath);
+        return ECOBJECTS_STATUS_ParseError;
+        }
+
+    const wchar_t * suffix = wcsstr (filePath, L".ecschema.xml");
+    if (NULL == suffix)
+        {
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema FileName String: '%s' does not contain the suffix '.ecschema.xml'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, filePath);
+        return ECOBJECTS_STATUS_ParseError;
+        }
+
+    size_t versionLen = suffix - firstDot;
     
+    wchar_t* buffer = (wchar_t*)_alloca (versionLen*sizeof(wchar_t));
+    wcsncpy (buffer, firstDot+1, versionLen-1);
+    buffer[versionLen-1] = 0;
+
+    UInt32 versionMajor;
+    return ECSchema::ParseVersionString (versionMajor, versionMinor, buffer);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  11/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+static ECObjectsStatus GetSchemaFileName (bwstring& fullFileName, wchar_t const* schemaPath, bool useLatestCompatibleMatch)
+    {
+    ECFileNameIterator *fileList = new ECFileNameIterator(schemaPath);
+    wchar_t filePath[MAX_PATH];
+    UInt32 minorVersion=0;
+    UInt32 currentMinorVersion=0;
+
+    while (true)
+        {
+        if (SUCCESS != fileList->GetNextFileName(filePath))
+            break;
+
+        if (!useLatestCompatibleMatch)
+            {
+            fullFileName = filePath;
+            return ECOBJECTS_STATUS_Success;
+            }
+
+        if (fullFileName.empty())
+            {
+            fullFileName = filePath;
+            GetMinorVersionFromSchemaFileName (minorVersion, filePath);
+            continue;
+            }
+
+        if (ECOBJECTS_STATUS_Success != GetMinorVersionFromSchemaFileName (currentMinorVersion, filePath))
+            continue;
+
+        if (currentMinorVersion > minorVersion)
+            {
+            minorVersion = currentMinorVersion;
+            fullFileName = filePath;
+            }
+        }
+
+    if (fullFileName.empty())
+        return ECOBJECTS_STATUS_Error;
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -933,6 +1006,7 @@ bool                            useLatestCompatibleMatch
 
     bwstring schemaName = name;
     schemaName += versionString;
+    bwstring fullFileName;
 
     for each (WString schemaPath in schemaContext.GetSchemaPaths())
         {
@@ -940,12 +1014,10 @@ bool                            useLatestCompatibleMatch
             schemaPath += '\\';
         schemaPath += schemaName;
 
-        ECFileNameIterator *fileList = new ECFileNameIterator(schemaPath.c_str());
-        wchar_t filePath[MAX_PATH];
-        if (SUCCESS != fileList->GetNextFileName(filePath))
+        if (SUCCESS != GetSchemaFileName (fullFileName, schemaPath.c_str(), useLatestCompatibleMatch))
             continue;
 
-        if (SCHEMA_DESERIALIZATION_STATUS_Success != ECSchema::ReadXmlFromFile (schemaOut, filePath, schemaContext))
+        if (SCHEMA_DESERIALIZATION_STATUS_Success != ECSchema::ReadXmlFromFile (schemaOut, fullFileName.c_str(), schemaContext))
             continue;
         
         return schemaOut;
@@ -965,13 +1037,6 @@ UInt32&                         versionMinor,
 ECSchemaDeserializationContextR schemaContext
 )
     {
-    // try to locate an exact matching schema file
-    ECSchemaP   schemaOut = LocateSchemaByPath (name, versionMajor, versionMinor, schemaContext, false);
-
-    if (NULL != schemaOut)
-        return  schemaOut;
-
-    // else fall back to latest compatible
     return LocateSchemaByPath (name, versionMajor, versionMinor, schemaContext, true);
     }
 
