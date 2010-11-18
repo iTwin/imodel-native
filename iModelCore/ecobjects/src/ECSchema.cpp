@@ -917,14 +917,19 @@ ECSchemaDeserializationContextR schemaContext
 +---------------+---------------+---------------+---------------+---------------+------*/
 static ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, wchar_t const* filePath)
     {
-    const wchar_t * firstDot = wcschr (filePath, L'.');
+    wchar_t  name[256];
+
+    // only process the filename 
+    ::_wsplitpath (filePath, NULL, NULL, name, NULL);
+
+    const wchar_t * firstDot = wcschr (name, L'.');
     if (NULL == firstDot)
         {
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchema FullName String: '%s' does not contain a '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, filePath);
         return ECOBJECTS_STATUS_ParseError;
         }
 
-    const wchar_t * suffix = wcsstr (filePath, L".ecschema.xml");
+    const wchar_t * suffix = wcsstr (name, L".ecschema");
     if (NULL == suffix)
         {
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchema FileName String: '%s' does not contain the suffix '.ecschema.xml'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, filePath);
