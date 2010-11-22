@@ -42,15 +42,15 @@ protected:
     ECOBJECTS_EXPORT ~MemoryECInstanceBase ();
 
     ECOBJECTS_EXPORT virtual bool             _IsMemoryInitialized () const;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength);    
+    ECOBJECTS_EXPORT virtual ECObjectsStatus  _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength);    
     ECOBJECTS_EXPORT virtual void             _ShrinkAllocation (UInt32 newAllocation);
     ECOBJECTS_EXPORT virtual void             _FreeAllocation ();
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _GrowAllocation (UInt32 bytesNeeded);        
+    ECOBJECTS_EXPORT virtual ECObjectsStatus  _GrowAllocation (UInt32 bytesNeeded);        
 
     ECOBJECTS_EXPORT virtual byte const *     _GetData () const override;
     ECOBJECTS_EXPORT virtual UInt32           _GetBytesAllocated () const override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index) override;    
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const override;  
+    ECOBJECTS_EXPORT virtual ECObjectsStatus  _SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index) override;    
+    ECOBJECTS_EXPORT virtual ECObjectsStatus  _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const override;  
 
     ECOBJECTS_EXPORT virtual ClassLayoutCR    _GetClassLayout () const = 0;
     

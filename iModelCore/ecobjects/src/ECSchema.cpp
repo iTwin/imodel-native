@@ -354,6 +354,40 @@ bwstring const&     fullName
     return ParseVersionString (versionMajor, versionMinor, firstDot+1);
     }
 
+#define     ECSCHEMA_FULLNAME_FORMAT_EXPLANATION L" Format must be Name.MM.mm where Name is the schema name, MM is major version and mm is minor version.\n"
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::ParseSchemaFullName
+(
+bwstring&           schemaName,
+UInt32&             versionMajor, 
+UInt32&             versionMinor, 
+const wchar_t*      fullName
+)
+    {
+    if (NULL == fullName || '\0' == *fullName)
+        return ECOBJECTS_STATUS_ParseError;
+
+    const wchar_t * firstDot = wcschr (fullName, L'.');
+    if (NULL == firstDot)
+        {
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema FullName String: '%s' does not contain a '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName);
+        return ECOBJECTS_STATUS_ParseError;
+        }
+
+    size_t nameLen = firstDot - fullName;
+    if (nameLen < 1)
+        {
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema FullName String: '%s' does not have any characters before the '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName);
+        return ECOBJECTS_STATUS_ParseError;
+        }
+
+    schemaName.assign (fullName, nameLen);
+
+    return ParseVersionString (versionMajor, versionMinor, firstDot+1);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -372,41 +406,40 @@ ECObjectsStatus ECSchema::ParseVersionString
 (
 UInt32&             versionMajor, 
 UInt32&             versionMinor, 
-bwstring const&     versionString
+const wchar_t*      versionString
 )
     {
     versionMajor = DEFAULT_VERSION_MAJOR;
     versionMinor = DEFAULT_VERSION_MINOR;
-    if (versionString.empty())
+    if (NULL == versionString || '\0' == *versionString)
         return ECOBJECTS_STATUS_Success;
 
-    const wchar_t * version = versionString.c_str();
-    const wchar_t * theDot = wcschr (version, L'.');
+    const wchar_t * theDot = wcschr (versionString, L'.');
     if (NULL == theDot)
         {
-        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%s' does not contain a '.'!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%s' does not contain a '.'!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString);
         return ECOBJECTS_STATUS_ParseError;
         }
 
-    size_t majorLen = theDot - version;
+    size_t majorLen = theDot - versionString;
     if (majorLen < 1 || majorLen > 3)
         {
-        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%s' does not have 1-3 numbers before the '.'!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%s' does not have 1-3 numbers before the '.'!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString);
         return ECOBJECTS_STATUS_ParseError;
         }
 
     size_t minorLen = wcslen (theDot) - 1;
     if (minorLen < 1 || minorLen > 3)
         {
-        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%s' does not have 1-3 numbers after the '.'!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%s' does not have 1-3 numbers after the '.'!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString);
         return ECOBJECTS_STATUS_ParseError;
         }
 
     wchar_t * end = NULL;    
-    UInt32    localMajor = wcstoul (version, &end, 10);
-    if (version == end)
+    UInt32    localMajor = wcstoul (versionString, &end, 10);
+    if (versionString == end)
         {
-        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%s' The characters before the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%s' The characters before the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString);
         return ECOBJECTS_STATUS_ParseError;
         }
     else
@@ -417,7 +450,7 @@ bwstring const&     versionString
     UInt32 localMinor = wcstoul (&theDot[1], &end, 10);
     if (&theDot[1] == end)
         {
-        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%s' The characters after the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString.c_str());
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%s' The characters after the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString);
         return ECOBJECTS_STATUS_ParseError;
         }
     else
@@ -433,7 +466,7 @@ bwstring const&     versionString
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetVersionFromString 
 (
-bwstring const& versionString
+const wchar_t*  versionString
 )
     {
     UInt32 versionMajor;
