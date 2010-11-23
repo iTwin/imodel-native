@@ -102,7 +102,16 @@ static const bwstring ECXML_DIRECTION_BACKWARD          = L"backward";
         }       \
     if (ECOBJECTS_STATUS_Success != _setInPointer->Set##_setInPropertyName ((const wchar_t *)attributePtr->text))       \
         return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
-        
+
+#define READ_REQUIRED_XML_ATTRIBUTE_IGNORING_SET_ERRORS(_xmlAttributeName, _setInPointer, _setInPropertyName, _elementName)   \
+    if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (_xmlAttributeName)))     \
+        {   \
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " _xmlAttributeName L" attribute\n", (const wchar_t *)_elementName);     \
+        status = SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;        \
+        }       \
+    else if (ECOBJECTS_STATUS_ParseError == _setInPointer->Set##_setInPropertyName ((const wchar_t *)attributePtr->text)) \
+        status = SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml;
+            
 #define APPEND_CHILD_TO_PARENT(_child, _parent) \
     if (NULL == _child)\
         return SCHEMA_SERIALIZATION_STATUS_FailedToCreateXml;\
