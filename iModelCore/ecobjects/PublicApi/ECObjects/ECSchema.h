@@ -1185,6 +1185,9 @@ public:
     ECOBJECTS_EXPORT SchemaSerializationStatus WriteXmlToStream (IStreamP ecSchemaXmlStream);
     
     
+    //! Return full schema name in format Name.MM.mm where Name is the schema name, MM is major version and mm is minor version.
+    ECOBJECTS_EXPORT bwstring GetFullSchemaName () const;
+
     // ************************************************************************************************************************
     // ************************************  STATIC METHODS *******************************************************************
     // ************************************************************************************************************************
