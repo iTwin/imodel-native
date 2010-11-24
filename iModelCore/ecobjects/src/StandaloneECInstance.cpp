@@ -43,6 +43,22 @@ MemoryECInstanceBase::~MemoryECInstanceBase ()
     _FreeAllocation();
     }
 
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Bill.Steinbock   11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+StructInstanceValueMap const& MemoryECInstanceBase::GetStructInstanceMap () const
+    {
+    return m_structValueMap;
+    }
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Bill.Steinbock   11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+StructValueIdentifier MemoryECInstanceBase::GetStructValueId () const
+    {
+    return m_structValueId;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -222,6 +238,14 @@ ClassLayoutCR       MemoryECInstanceBase::GetClassLayout () const
     {
     return _GetClassLayout();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  11/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+void             MemoryECInstanceBase::AddStructInstance (StructValueIdentifier structInstanceId, IECInstancePtr structInstance)
+     {
+     m_structValueMap[structInstanceId] = structInstance.get();
+     }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //  StandaloneECInstance
