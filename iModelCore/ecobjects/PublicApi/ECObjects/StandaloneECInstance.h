@@ -60,6 +60,7 @@ public:
     ECOBJECTS_EXPORT  StructInstanceValueMap const& GetStructInstanceMap () const;
     ECOBJECTS_EXPORT  StructValueIdentifier         GetStructValueId () const;
     ECOBJECTS_EXPORT  void                          AddStructInstance (StructValueIdentifier structInstanceId, IECInstancePtr structInstance);
+    ECOBJECTS_EXPORT  void                          ClearStructValueMap ();
 
 //__PUBLISH_SECTION_START__
 

@@ -20,6 +20,21 @@ typedef std::map<IECInstance*, UInt32> DebugInstanceLeakMap;
 DebugInstanceLeakMap    g_debugInstanceLeakMap;
 #endif
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  11/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IECInstance::IsFixedArrayProperty (EC::IECInstanceR instance, const wchar_t* accessString)
+    {
+    ECValue         arrayVal;
+
+    if (ECOBJECTS_STATUS_Success != instance.GetValue (arrayVal, accessString))
+        return false;
+
+    ArrayInfo info = arrayVal.GetArrayInfo();
+    return info.IsFixedCount();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1283,8 +1298,12 @@ InstanceDeserializationStatus   ReadStructArrayMember (ECClassCR structClass, IE
     ECValue structValue;
     structValue.SetStruct (structInstance.get());
 
-    // add the value to the array.
-    owningInstance->AddArrayElements (accessString.c_str(), 1);
+    if (!IECInstance::IsFixedArrayProperty (*owningInstance, accessString.c_str()))
+        {
+        // add the value to the array.
+        owningInstance->AddArrayElements (accessString.c_str(), 1);
+        }
+
     ECObjectsStatus setStatus = owningInstance->SetValue (accessString.c_str(), structValue, index);
     assert (ECOBJECTS_STATUS_Success == setStatus);
 

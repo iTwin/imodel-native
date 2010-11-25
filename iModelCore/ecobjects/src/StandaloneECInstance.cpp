@@ -51,6 +51,14 @@ StructInstanceValueMap const& MemoryECInstanceBase::GetStructInstanceMap () cons
     return m_structValueMap;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  11/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+void MemoryECInstanceBase::ClearStructValueMap ()
+    {
+    m_structValueMap.clear ();
+    }
+
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Bill.Steinbock   11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -64,10 +72,29 @@ StructValueIdentifier MemoryECInstanceBase::GetStructValueId () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MemoryECInstanceBase::SetData (byte * data, UInt32 size, bool freeExisitingData) //The MemoryECInstanceBase will take ownership of the memory
     {
-    if (freeExisitingData && m_data)
-        free (m_data);
+    if (freeExisitingData)
+        {
+        if (m_data)
+            {
+            free (m_data);
+            m_data = NULL;
+            }
 
-    m_data = data;
+        // allocate memory that the MemoryECInstanceBase will take ownership of 
+        m_data = (byte*)malloc (size);
+        if (NULL == m_data)
+            {
+            DEBUG_EXPECT (false && "unable to allocate memory for instance data");
+            return;
+            }
+
+        memcpy (m_data, data, size);
+        }
+    else
+        {
+        m_data = data;
+        }
+
     m_bytesAllocated = size;
     }
 
