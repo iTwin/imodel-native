@@ -104,6 +104,7 @@ ICustomECStructSerializerP                      CustomStructSerializerManager::G
         }
 
     return NULL;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  11/2010
