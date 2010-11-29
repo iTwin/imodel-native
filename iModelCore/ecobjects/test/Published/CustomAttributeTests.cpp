@@ -63,7 +63,7 @@ IECInstancePtr GetInstanceForClass(const wchar_t *className, ECSchemaR schema)
     {
     ECClassP ecClass = schema.GetClassP (className);
     ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 0, 0);
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);        
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
     
     IECInstancePtr instance = enabler->CreateInstance().get();
     return instance;
