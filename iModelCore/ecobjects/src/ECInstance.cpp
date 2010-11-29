@@ -294,9 +294,8 @@ static ECObjectsStatus getECValueUsingFullAccessString (wchar_t* asBuffer, wchar
     wcsncpy(indexBuffer, pos1+1, numChars>NUM_INDEX_BUFFER_CHARS?NUM_INDEX_BUFFER_CHARS:numChars);
     indexBuffer[numChars]=0;
 
-    UInt32 indexValue = 0;
-    if (1 != swscanf (indexBuffer, L"%ud", &indexValue))
-        return ECOBJECTS_STATUS_Error;
+    UInt32 indexValue = -1;
+    swscanf (indexBuffer, L"%ud", &indexValue);
 
     ECValue         arrayVal;
     ECObjectsStatus status;
@@ -306,6 +305,18 @@ static ECObjectsStatus getECValueUsingFullAccessString (wchar_t* asBuffer, wchar
 
     if (ECOBJECTS_STATUS_Success != (status = instance.GetValue (arrayVal, asBufferStr.c_str())))
         return status;
+
+    if (-1 == indexValue)
+        {
+        //Caller asked for the array itself, not any particular element.
+        //Returns a dummy ECValue with only the array info copied.
+        ArrayInfo info = arrayVal.GetArrayInfo();
+        if(info.IsStructArray())
+            v.SetStructArrayInfo(info.GetCount(), info.IsFixedCount());
+        else
+            v.SetPrimitiveArrayInfo (info.GetElementPrimitiveType(), info.GetCount(), info.IsFixedCount());
+        return ECOBJECTS_STATUS_Success;
+        }
 
     ArrayInfo arrayInfo = arrayVal.GetArrayInfo();
     UInt32    size      = arrayInfo.GetCount();
@@ -580,6 +591,11 @@ static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar
         return instance.SetValue (asBufferStr.c_str(), v, indexValue);
 
     // must be a struct array
+    if (NULL == wcschr (pos2, L'.'))
+        {
+        //Caller is attempting to set the value of this struct array element directly.
+        return instance.SetValue (asBufferStr.c_str(), v, indexValue);
+        }
     instance.GetValue (arrayVal, asBufferStr.c_str(), indexValue);
     IECInstancePtr arrayEntryInstance = arrayVal.GetStruct();
 

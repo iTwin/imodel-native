@@ -322,6 +322,9 @@ bwstring    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versionMaj
                     L"        <ECProperty propertyName=\"Property47\" typeName=\"string\" />"
                     L"        <ECArrayProperty propertyName=\"EndingArray\" typeName=\"string\" />"
                     L"    </ECClass>"
+                    L"    <ECClass typeName=\"ClassWithStructArray\" isStruct=\"True\" isDomainClass=\"True\">"
+                    L"        <ECArrayProperty propertyName=\"StructArray\" typeName=\"AllPrimitives\"  minOccurs=\"0\" maxOccurs=\"unbounded\" />"
+                    L"    </ECClass>"
                     L"</ECSchema>";
 
     wchar_t* buff = (wchar_t*) _alloca (2 * (50 + wcslen (fmt) + wcslen (schemaName) + wcslen (className)));
@@ -788,7 +791,118 @@ TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
         EXPECT_TRUE (binaryInput[i] == binaryOutput[i]);
 
     CoUninitialize();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
+    {
+    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();;
+    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    ASSERT_TRUE (schema != NULL);
+
+    ECClassP ecClass = schema->GetClassP (L"ClassWithStructArray");
+    ASSERT_TRUE (ecClass);
+    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 0, 0);
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);        
+
+    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    //Testing array of structs
+    ECValue structArrayValueInput(42);
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetValue (*instance, L"StructArray[1].AnInt", structArrayValueInput));
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetValue (*instance, L"StructArray[0].AnInt", structArrayValueInput));
+
+
+    ECValue structArrayValueOutput;
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetValue (*instance, structArrayValueOutput, L"StructArray[0].AnInt"));
+
+    EXPECT_TRUE (structArrayValueInput.GetInteger() == structArrayValueOutput.GetInteger());
+
+    //Just seeing if it's possible to set a struct array element directly using the interop helper.
+
+
+    ECClassP structClass = schema->GetClassP (L"AllPrimitives");
+    ASSERT_TRUE (structClass);
+    ClassLayoutP structClassLayout = ClassLayout::BuildFromClass (*structClass, 0, 0);
+    StandaloneECEnablerPtr structEnabler = StandaloneECEnabler::CreateEnabler (*structClass, *structClassLayout);        
+
+    EC::StandaloneECInstancePtr newStructInstance = structEnabler->CreateInstance();
+
+    ECValue manualIntEntry(64);
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetValue (*newStructInstance, L"AnInt", manualIntEntry));
+
+    ECValue newStructValue;
+    newStructValue.SetStruct(newStructInstance.get());
+
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetValue (*instance, L"StructArray[2]", newStructValue));
+
+    ECValue manualIntEntryOutput;
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetValue (*instance, manualIntEntryOutput, L"StructArray[2].AnInt"));
+
+    EXPECT_TRUE (manualIntEntryOutput.GetInteger() == manualIntEntry.GetInteger());
+    CoUninitialize();
     };
+
+ #ifdef  WIP_INSTANCE_BUG
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
+    {
+    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();;
+    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    ASSERT_TRUE (schema != NULL);
+
+    ECClassP ecClass = schema->GetClassP (L"ClassWithStructArray");
+    ASSERT_TRUE (ecClass);
+    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 0, 0);
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);        
+
+    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    // WIP_FUSION
+    // Cannot modify the value of a binary primitive after it has been set.
+    // Revision: It appears that you cannot change the size of a primitive binary value after it has been set.
+    // This is because of the way it's stored in native ECObjects: as a stream of bits, rather that each
+    // element as a separate entity.
+    const byte bugTestBinary1[8] = { 0x21, 0xa9, 0x84, 0x9d, 0xca, 0x1d, 0x8a, 0x78 };
+    const byte bugTestBinary2[4] = { 0x12, 0x79, 0xca, 0xde };
+
+    ECValue bugTestValue0(bugTestBinary2, 4);           
+
+
+    EC::ECInstanceInteropHelper::SetValue (wipInstance, L"SmallBinaryArray[0]", bugTestValue0);
+       
+    ECValue bugTestValue1(bugTestBinary1, 8);     
+
+    EC::ECInstanceInteropHelper::SetValue (wipInstance, L"SmallBinaryArray[0]", bugTestValue1);
+  
+    EC::ECValue bugTestValue2;
+
+    EC::ECInstanceInteropHelper::GetValue (wipInstance, bugTestValue2, L"SmallBinaryArray[0]");
+    size_t size1=-1;
+    size_t size2=-2;
+    const byte* data1 = bugTestValue1.GetBinary(size1);
+    const byte* data2 = bugTestValue2.GetBinary(size2);
+    Console::WriteLine("Binary 1 : ");
+    for(int i=0; i<(int)size1; i++)
+        Console::Write("{0}", data1[i]);
+    Console::WriteLine("");
+    Console::WriteLine("Binary 2 : ");
+    for(int i=0; i<(int)size2; i++)
+        Console::Write("{0}", data2[i]);
+    Console::WriteLine("");
+    Console::WriteLine("Size 1: {0}", size1);
+    Console::WriteLine("Size 2: {0}", size2);
+    DEBUG_EXPECT (size1 == size2);
+    for(int i=0; i<(int)size1; i++)
+        DEBUG_EXPECT(data1[i] == data2[i]);
+    }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    

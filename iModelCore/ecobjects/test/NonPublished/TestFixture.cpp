@@ -19,8 +19,8 @@ BEGIN_BENTLEY_EC_NAMESPACE
 #define MAX_INTERNAL_INSTANCES  0
 #define MAX_INTERNAL_SCHEMAS    0
 
-#define DEBUG_ECSCHEMA_LEAKS
-#define DEBUG_IECINSTANCE_LEAKS
+//#define DEBUG_ECSCHEMA_LEAKS
+//#define DEBUG_IECINSTANCE_LEAKS
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/03
@@ -98,7 +98,9 @@ ECTestFixture::ECTestFixture()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECTestFixture::SetUp ()
     {
+#if defined (DEBUG_IECINSTANCE_LEAKS)
     IECInstance::Debug_ResetAllocationStats();
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -108,19 +110,20 @@ void            ECTestFixture::TearDown ()
     {
 #if defined (DEBUG_ECSCHEMA_LEAKS)
     ECSchema::Debug_GetLeakDetector().ReportStats(L"PostTest");
+
+    if (_WantSchemaLeakDetection())
+        TestForECSchemaLeaks(); 
 #endif
 
 #if defined (DEBUG_IECINSTANCE_LEAKS)
     IECInstance::Debug_DumpAllocationStats(L"PostTest");
-#endif
-
-    if (_WantSchemaLeakDetection())
-        TestForECSchemaLeaks(); 
 
     if (_WantInstanceLeakDetection())
         TestForIECInstanceLeaks(); 
+#endif
     }
 
+#if defined (DEBUG_ECSCHEMA_LEAKS)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -133,15 +136,18 @@ void    testForLeaks (ILeakDetector& detector, wchar_t const * leakName)
     if (0 != numLeaks)
         detector.ResetStats();  // So that this leak doesn't make the next test fail.
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    ECTestFixture::TestForECSchemaLeaks ()
     {
+#if defined (DEBUG_ECSCHEMA_LEAKS)
     testForLeaks (ECSchema::Debug_GetLeakDetector(), L"ECSchemaLeakDetector");
     testForLeaks (ECClass::Debug_GetLeakDetector(), L"ECClassLeakDetector");
     testForLeaks (ECProperty::Debug_GetLeakDetector(), L"ECPropertyLeakDetector");
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -149,6 +155,7 @@ void    ECTestFixture::TestForECSchemaLeaks ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    ECTestFixture::TestForIECInstanceLeaks ()
     {
+#if defined (DEBUG_IECINSTANCE_LEAKS)
     int numLiveInstances = 0;
 
     IECInstance::Debug_GetAllocationStats (&numLiveInstances, NULL, NULL);
@@ -164,6 +171,7 @@ void    ECTestFixture::TestForIECInstanceLeaks ()
 
         EXPECT_TRUE (numLiveInstances <= MAX_INTERNAL_INSTANCES) << message;
         }
+#endif
     }
 
 bwstring ECTestFixture::s_dllPath = L"";
