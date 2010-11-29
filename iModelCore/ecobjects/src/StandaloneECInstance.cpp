@@ -256,6 +256,7 @@ UInt32              MemoryECInstanceBase::GetBytesUsed () const
 void                MemoryECInstanceBase::ClearValues ()
     {
     InitializeMemory (GetClassLayout(), m_data, m_bytesAllocated);
+    ClearStructValueMap ();
     }
    
 /*---------------------------------------------------------------------------------**//**
