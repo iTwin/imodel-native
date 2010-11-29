@@ -11,6 +11,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "ECObjectsPch.h"
+#include <iomanip>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -394,6 +395,17 @@ bwstring const&     name
         }
 
     return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  11/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECOBJECTS_EXPORT bwstring ECSchema::GetFullSchemaName () const
+    {
+    std::wostringstream fullName;
+    fullName << Name.c_str() << L"." << std::setfill(L'0') << std::setw(2) << VersionMajor << L"." << std::setw(2) << VersionMinor;
+    
+    return fullName.str().c_str();
     }
 
 #define     ECSCHEMA_FULLNAME_FORMAT_EXPLANATION L" Format must be Name.MM.mm where Name is the schema name, MM is major version and mm is minor version.\n"
