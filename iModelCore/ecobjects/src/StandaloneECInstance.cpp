@@ -437,18 +437,31 @@ bwstring        StandaloneECInstance::_ToString (const wchar_t* indent) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StandaloneECEnabler::StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR classLayout) :
+StandaloneECEnabler::StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, bool ownsClassLayout) :
     ECEnabler (ecClass),
-    ClassLayoutHolder (classLayout)
+    ClassLayoutHolder (classLayout),
+    m_ownsClassLayout (ownsClassLayout)
     {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/10
++---------------+---------------+---------------+---------------+---------------+------*/    
+StandaloneECEnabler::~StandaloneECEnabler ()
+    {
+    if (m_ownsClassLayout)
+        {
+        ClassLayoutP classLayoutP = (ClassLayoutP)&GetClassLayout();
+        delete classLayoutP;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StandaloneECEnablerPtr    StandaloneECEnabler::CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout)
+StandaloneECEnablerPtr    StandaloneECEnabler::CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, bool ownsClassLayout)
     {
-    return new StandaloneECEnabler (ecClass, classLayout);
+    return new StandaloneECEnabler (ecClass, classLayout, ownsClassLayout);
     }
     
 /*---------------------------------------------------------------------------------**//**

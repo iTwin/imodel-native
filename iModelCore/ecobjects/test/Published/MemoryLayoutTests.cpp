@@ -610,10 +610,10 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     ExerciseVariableCountStringArray (instance, v, L"EndingArray[]", L"EArray");        
     
     ECClassP manufacturerClass = instance.GetClass().GetSchema().GetClassP (L"Manufacturer");
-    ASSERT_TRUE (manufacturerClass);   
+    ASSERT_TRUE (manufacturerClass);
     ClassLayoutP manufClassLayout = ClassLayout::BuildFromClass (*manufacturerClass, 43, 24);
-    StandaloneECEnablerPtr manufEnabler = StandaloneECEnabler::CreateEnabler (*manufacturerClass, *manufClassLayout);        
-    ExerciseVariableCountManufacturerArray (instance, *manufEnabler, v, L"ManufacturerArray[]");    
+    StandaloneECEnablerPtr manufEnabler = StandaloneECEnabler::CreateEnabler (*manufacturerClass, *manufClassLayout, true);
+    ExerciseVariableCountManufacturerArray (instance, *manufEnabler, v, L"ManufacturerArray[]");
     
     // WIP_FUSION verify I can set array elements to NULL        
             
@@ -655,8 +655,6 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     
     // WIP_FUSION: should pass the string to the logger via a backdoor
     instance.ToString(L"").c_str();
-    
-    delete manufClassLayout;             
     }
 
 #ifdef  MUST_PUBLISH_ECInstanceInteropHelper
@@ -729,18 +727,16 @@ TEST_F(MemoryLayoutTests, InstantiateStandaloneInstance)
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);
 
-    SchemaLayout schemaLayout (24);
+//    SchemaLayout schemaLayout (24);
 
-    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);        
+    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, 24 /*schemaLayout.GetSchemaIndex()*/);
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
 
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     bwstring instanceId = instance->GetInstanceId();
     // WIP_FUSION: should pass the string to the logger via a backdoor
     instance->ToString(L"").c_str();
     ExerciseInstance (*instance, L"Test");
-
-    delete classLayout;
 
     // instance.Compact()... then check values again
     CoUninitialize();
@@ -763,7 +759,7 @@ TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
     SchemaLayout schemaLayout (25);
 
     ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 52, schemaLayout.GetSchemaIndex());
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);        
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
 
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     bwstring instanceId = instance->GetInstanceId();
@@ -772,7 +768,6 @@ TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
 
     // WIP_FUSION: should pass the string to the logger via a backdoor
     instance->ToString(L"").c_str();
-    delete classLayout;
 
     // instance.Compact()... then check values again
     CoUninitialize();
@@ -792,7 +787,7 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     ASSERT_TRUE (ecClass);
     
     ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 0, 0);
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);        
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
     
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
@@ -837,8 +832,6 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"Install_Date"));
     EXPECT_TRUE (ecValue.GetDateTimeTicks() == inTicks);
 
-    delete classLayout;
-
     // instance.Compact()... then check values again
     CoUninitialize();
     };
@@ -857,7 +850,7 @@ TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
     ASSERT_TRUE (ecClass);
     
     ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 0, 0);
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);        
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
     
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
@@ -907,8 +900,6 @@ TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
     wprintf (L"Time to set %d values by: accessString = %.4f, index = %.4f\n", numAccesses, elapsedTime1, elapsedTime2);
 #endif
 
-    delete classLayout;
-
     // instance.Compact()... then check values again
     CoUninitialize();
     };
@@ -925,7 +916,7 @@ TEST_F(MemoryLayoutTests, ExpectErrorsWhenViolatingArrayConstraints)
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);    
     ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, 24);
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);            
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     {
@@ -953,7 +944,6 @@ TEST_F(MemoryLayoutTests, ExpectErrorsWhenViolatingArrayConstraints)
     VerifyOutOfBoundsError (*instance, v, L"VariableArrayVariableElement[]", 0);
     VerifyOutOfBoundsError (*instance, v, L"EndingArray[]", 0);                     
     
-    delete classLayout;
     CoUninitialize();
     };    
 
@@ -1070,7 +1060,7 @@ TEST_F (MemoryLayoutTests, TestSetGetNull)
     SchemaLayout schemaLayout (24);
 
     ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
     
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     ECValue v;
@@ -1097,8 +1087,6 @@ TEST_F (MemoryLayoutTests, TestSetGetNull)
     EXPECT_FALSE (v.IsNull());     
     
     // WIP_FUSION test arrays
-
-    delete classLayout;
 
     CoUninitialize();
     }
@@ -1140,7 +1128,7 @@ TEST_F (MemoryLayoutTests, ProfileSettingValues)
     SchemaLayout schemaLayout(24);
 
     ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
 
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     
