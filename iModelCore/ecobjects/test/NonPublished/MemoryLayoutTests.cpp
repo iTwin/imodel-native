@@ -807,7 +807,7 @@ TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
     ECClassP ecClass = schema->GetClassP (L"ClassWithStructArray");
     ASSERT_TRUE (ecClass);
     ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 0, 0);
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);        
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
 
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     //Testing array of structs
@@ -827,7 +827,7 @@ TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
     ECClassP structClass = schema->GetClassP (L"AllPrimitives");
     ASSERT_TRUE (structClass);
     ClassLayoutP structClassLayout = ClassLayout::BuildFromClass (*structClass, 0, 0);
-    StandaloneECEnablerPtr structEnabler = StandaloneECEnabler::CreateEnabler (*structClass, *structClassLayout);        
+    StandaloneECEnablerPtr structEnabler = StandaloneECEnabler::CreateEnabler (*structClass, *structClassLayout, true);
 
     EC::StandaloneECInstancePtr newStructInstance = structEnabler->CreateInstance();
 
@@ -861,7 +861,7 @@ TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
     ECClassP ecClass = schema->GetClassP (L"ClassWithStructArray");
     ASSERT_TRUE (ecClass);
     ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 0, 0);
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);        
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
 
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     // WIP_FUSION
