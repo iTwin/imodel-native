@@ -89,7 +89,9 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (const wchar_t * managedPropertyAccessor, ECValueCR v, UInt32 index);
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (UInt32 propertyIndex, ECValueCR v);
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex);
-        
+    
+    ECOBJECTS_EXPORT static bool        IsFixedArrayProperty (EC::IECInstanceR instance, const wchar_t* accessString);
+
     //! Contract:
     //! - For all of the methods, the managedPropertyAccessor should be in the "array element" form, 
     //!   e.g. "Aliases[]" instead of "Aliases"         
