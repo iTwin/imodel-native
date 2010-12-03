@@ -180,10 +180,27 @@ int             IECInstance::ParseExpectedNIndices (const wchar_t * propertyAcce
     }
         
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  12/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+MemoryECInstanceBase* IECInstance::_GetAsMemoryECInstance () const
+    {
+    return NULL;    // default to NULL and let real MemoryECInstanceBased class override this method.
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  12/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t IECInstance::GetOffsetToIECInstance () const
+    {
+    return _GetOffsetToIECInstance();  
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/   
-ECEnablerCR         IECInstance::GetEnabler() const { return _GetEnabler();  }
-bool                IECInstance::IsReadOnly() const { return _IsReadOnly();  }
+ECEnablerCR           IECInstance::GetEnabler() const { return _GetEnabler();  }
+bool                  IECInstance::IsReadOnly() const { return _IsReadOnly();  }
+MemoryECInstanceBase* IECInstance::GetAsMemoryECInstance () const {return _GetAsMemoryECInstance();}
 
 ECObjectsStatus     IECInstance::GetValue (ECValueR v, const wchar_t * propertyAccessString) const { return _GetValue (v, propertyAccessString, false, 0); }
 ECObjectsStatus     IECInstance::GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 arrayIndex) const { return _GetValue (v, propertyAccessString, true, arrayIndex); }

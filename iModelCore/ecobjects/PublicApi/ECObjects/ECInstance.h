@@ -45,8 +45,11 @@ protected:
     ECOBJECTS_EXPORT virtual ECEnablerCR  _GetEnabler() const = 0;
     ECOBJECTS_EXPORT virtual bool         _IsReadOnly() const = 0;
     ECOBJECTS_EXPORT virtual bwstring     _ToString (const wchar_t* indent) const = 0;
-    
+    ECOBJECTS_EXPORT virtual MemoryECInstanceBase* _GetAsMemoryECInstance () const;
+    ECOBJECTS_EXPORT virtual size_t                _GetOffsetToIECInstance () const = 0;
+
 public:
+    ECOBJECTS_EXPORT void const*  GetBaseAddress () {return this;}
     ECOBJECTS_EXPORT ECEnablerCR        GetEnabler() const;
     ECOBJECTS_EXPORT bwstring           GetInstanceId() const;
     ECOBJECTS_EXPORT bool               IsReadOnly() const;
@@ -71,6 +74,9 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus      RemoveArrayElement (const wchar_t * managedPropertyAccessor, UInt32 index); //WIP_FUSION return the removed one? YAGNI? Return the new count?
     ECOBJECTS_EXPORT ECObjectsStatus      ClearArray (const wchar_t * managedPropertyAccessor);    
     
+    ECOBJECTS_EXPORT MemoryECInstanceBase* GetAsMemoryECInstance () const;
+    ECOBJECTS_EXPORT size_t                GetOffsetToIECInstance () const;
+
     //WIP_FUSION ParseExpectedNIndices should move to AccessStringHelper struct... along with method to convert to/from .NET ECObjects style accessString
     ECOBJECTS_EXPORT static int         ParseExpectedNIndices (const wchar_t * managedPropertyAccessor);
     
