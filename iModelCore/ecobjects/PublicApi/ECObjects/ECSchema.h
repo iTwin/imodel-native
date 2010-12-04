@@ -1039,7 +1039,7 @@ public:
 struct IECSchemaLocator
 {
 public:
-    virtual ECOBJECTS_EXPORT ECSchemaP LocateSchema(const wchar_t *name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaDeserializationContextR schemaContext) const = 0;
+    virtual ECSchemaP LocateSchema(const wchar_t *name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaDeserializationContextR schemaContext) const = 0;
 };
 
 //=======================================================================================
