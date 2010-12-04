@@ -155,47 +155,44 @@ size_t          MemoryECInstanceBase::LoadDataIntoManagedInstance (byte* managed
     if (!m_structInstances)
         return offset;
 
-    size_t offsetToFirstStructArrayEntry = offset;   // save the offset se we can easily update the instance offsets
+    // the current offset is set to the location to store the first StructArrayEntry. Store this offset in location of m_structInstances within managedBuffer
+    size_t offsetToFirstStructArrayEntry = (size_t)((byte const* )&m_structInstances - (byte const* )this); 
+    memcpy (managedBuffer+offsetToFirstStructArrayEntry, &offset, sizeof(offset));
     
-    // store the offset to the StructArrayEntries in location of m_structInstances
-    size_t offsetToFirstStructArrayEntryEntries = (size_t)((byte const* )&m_structInstances - (byte const* )this); 
-    memcpy (managedBuffer+offsetToFirstStructArrayEntryEntries, &offsetToFirstStructArrayEntry, sizeof(offsetToFirstStructArrayEntry));
+    // all the following pointer to offset "hocus pocus" assumes that sizeof(IECInstancePtr) >= sizeof(offset) so that it is 
+    // safe to stuff the offset into the pointer.
+    DEBUG_EXPECT (sizeof(IECInstancePtr) >= sizeof(offset));
 
-    // first step through the array and store the StructValueIdentifier 
-    // we will go back through and store offset to the actual instances
-    for (size_t i = 0; i<numArrayInstances; i++)
-        {
-        StructArrayEntry const& entry = (*m_structInstances)[i];
-        memcpy (managedBuffer+offset, &entry.structValueIdentifier, sizeof(entry.structValueIdentifier));
-        offset += sizeof (StructArrayEntry);
-        }
+    // find the offset to the location in managed memory for the first struct instance
+    size_t offsetToStructInstance = offset + (numArrayInstances * sizeof(StructArrayEntry));
 
-    size_t offsetToStructInstance = offset;
-    size_t sizeOfInstance = 0;
-    offset = offsetToFirstStructArrayEntry+sizeof(StructValueIdentifier);  // adjust to get to location of IECInstancePtr
     size_t iecInstanceOffset;
-    // temporary test... remove after verifing 
-    DEBUG_EXPECT (sizeof(offset) == sizeof(IECInstancePtr));
+    size_t sizeOfStructInstance;
 
-    // Now step through copy the instance data and set its offset 
+    // step through the array and store the StructValueIdentifier and the offset to the 
+    // concrete struct array instance which is typically a StandaloneECInstance
     for (size_t i = 0; i<numArrayInstances; i++)
         {
         StructArrayEntry const& entry = (*m_structInstances)[i];
+
+        // store the StructValueIdentifier
+        memcpy (managedBuffer+offset, &entry.structValueIdentifier, sizeof(entry.structValueIdentifier));
 
         // At this point the offsetToStructInstance is the offset to the concrete object (most likely a StandAloneECInstance). We need to adjust this to
         // point to the vtable of a IECInstance 
         iecInstanceOffset = offsetToStructInstance + entry.structInstance->GetOffsetToIECInstance();
 
-        memcpy (managedBuffer+offset, &iecInstanceOffset, sizeof(iecInstanceOffset)); 
+        // store the offset to the instance
+        memcpy (managedBuffer+(offset+sizeof(entry.structValueIdentifier)), &iecInstanceOffset, sizeof(iecInstanceOffset)); 
         offset += sizeof (StructArrayEntry);
 
+        // store the struct instance
         MemoryECInstanceBase* mbInstance = entry.structInstance->GetAsMemoryECInstance();
         DEBUG_EXPECT (NULL != mbInstance);
         if (!mbInstance)
             continue;
-
-        sizeOfInstance = mbInstance->LoadDataIntoManagedInstance (managedBuffer+offsetToStructInstance, sizeOfManagedBuffer-offsetToStructInstance);
-        offsetToStructInstance += sizeOfInstance; 
+        sizeOfStructInstance = mbInstance->LoadDataIntoManagedInstance (managedBuffer+offsetToStructInstance, sizeOfManagedBuffer-offsetToStructInstance);
+        offsetToStructInstance += sizeOfStructInstance; 
         }
 
     return  offsetToStructInstance;
@@ -378,12 +375,10 @@ IECInstancePtr  MemoryECInstanceBase::GetStructArrayInstance (StructValueIdentif
     size_t offset = (size_t)(entry->structInstance.get());
     byte const* arrayAddress =  baseAddress + offset;
 
-//#ifdef CAUSES_CRASH_WHEN_DLL_IS_UNLOADING
+    // since the offset we put us at the vtable of the IECInstance and not to the start of the concrete object 
+    // we can cast is directly to an IECInstanceP. See comments in method LoadDataIntoManagedInstance
     IECInstanceP iecInstanceP = (IECInstanceP) const_cast<byte*>(arrayAddress);
     return iecInstanceP;
-//#endif
-//    StandaloneECInstanceP instanceP = (StandaloneECInstanceP) const_cast<byte*>(arrayAddress);
-//    return instanceP;
     }
 
 /*---------------------------------------------------------------------------------**//**
