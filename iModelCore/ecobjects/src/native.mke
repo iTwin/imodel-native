@@ -81,18 +81,18 @@ CPchOpts =
 #----------------------------------------------------------------------
 #   dependencies of the subsystem.
 #----------------------------------------------------------------------
-DLM_NO_DLS        = 1
-DLM_NO_DEF        = 1
-DLM_NAME          = $(ECNativeObjectsDllBase)
-DLM_DEST          = $(o)
-DLM_OBJECT_DEST   = $(o)
-DLM_OBJECT_FILES  = $(cppObjects) $(o)ECObjectsPch.obj
-DLM_EXPORT_OBJS   = $(cppObjects)
-DLM_EXPORT_DEST   = $(o)
-DLM_NOINITFUNC    = 1
-DLM_NOMSBUILTINS  = 1
-DLM_NOENTRY       = 1
-LINKER__LIBRARIES = $(BuildContext)SubParts/Libs/bentleylogging-2.0.lib xmllite.lib $(BuildContext)SubParts/Libs/bentley2.lib
+DLM_NO_DLS                  = 1
+DLM_NO_DEF                  = 1
+DLM_NAME                    = $(ECNativeObjectsDllBase)
+DLM_DEST                    = $(o)
+DLM_OBJECT_DEST             = $(o)
+DLM_OBJECT_FILES            = $(cppObjects) $(o)ECObjectsPch.obj
+DLM_EXPORT_OBJS             = $(cppObjects)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOINITFUNC              = 1
+DLM_NOMSBUILTINS            = 1
+DLM_NOENTRY                 = 1
+LINKER__LIBRARIES           = xmllite.lib $(BuildContext)SubParts/Libs/bentley2.lib $(BuildContext)SubParts/Libs/bentleylogging-2.0.lib
 DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
