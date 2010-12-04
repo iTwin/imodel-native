@@ -69,10 +69,10 @@ protected:
     ECOBJECTS_EXPORT virtual ECObjectsStatus  _SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index) override;    
     ECOBJECTS_EXPORT virtual ECObjectsStatus  _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const override;  
 
-    ECOBJECTS_EXPORT virtual ClassLayoutCR       _GetClassLayout () const = 0;
-    ECOBJECTS_EXPORT virtual IECInstancePtr      _GetAsIECInstance () const = 0;
-    ECOBJECTS_EXPORT virtual size_t              _GetObjectSize () const = 0;
-    ECOBJECTS_EXPORT virtual size_t              _LoadObjectDataIntoManagedInstance (byte* managedBuffer) const = 0;
+    virtual ClassLayoutCR       _GetClassLayout () const = 0;
+    virtual IECInstancePtr      _GetAsIECInstance () const = 0;
+    virtual size_t              _GetObjectSize () const = 0;
+    virtual size_t              _LoadObjectDataIntoManagedInstance (byte* managedBuffer) const = 0;
 
 public: // These must be public so that ECXInstanceEnabler can get at the guts of StandaloneECInstance to copy it into an XAttribute
     ECOBJECTS_EXPORT void                     SetData (byte * data, UInt32 size, bool freeExisitingData); //The MemoryECInstanceBase will take ownership of the memory

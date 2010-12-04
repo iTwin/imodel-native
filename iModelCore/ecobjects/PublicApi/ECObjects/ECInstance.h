@@ -31,25 +31,27 @@ private:
 protected:    
     ECOBJECTS_EXPORT IECInstance(); 
     ECOBJECTS_EXPORT virtual ~IECInstance();
-    ECOBJECTS_EXPORT virtual bwstring     _GetInstanceId() const = 0; // Virtual and returning bwstring because a subclass may want to calculate it on demand
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _GetValue (ECValueR v, const wchar_t * managedPropertyAccessor, bool useArrayIndex, UInt32 arrayIndex) const = 0;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const = 0;
+
+    virtual bwstring            _GetInstanceId() const = 0; // Virtual and returning bwstring because a subclass may want to calculate it on demand
+    virtual ECObjectsStatus     _GetValue (ECValueR v, const wchar_t * managedPropertyAccessor, bool useArrayIndex, UInt32 arrayIndex) const = 0;
+    virtual ECObjectsStatus     _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const = 0;
 public:
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _SetValue (const wchar_t * managedPropertyAccessor, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) = 0;
+    virtual ECObjectsStatus     _SetValue (const wchar_t * managedPropertyAccessor, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) = 0;
 protected:
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) = 0;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus _InsertArrayElements (const wchar_t * managedPropertyAccessor, UInt32 index, UInt32 size) = 0;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus _AddArrayElements (const wchar_t * managedPropertyAccessor, UInt32 size) = 0;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus _RemoveArrayElement (const wchar_t * managedPropertyAccessor, UInt32 index) = 0;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus _ClearArray (const wchar_t * managedPropertyAccessor) = 0;    
-    ECOBJECTS_EXPORT virtual ECEnablerCR  _GetEnabler() const = 0;
-    ECOBJECTS_EXPORT virtual bool         _IsReadOnly() const = 0;
-    ECOBJECTS_EXPORT virtual bwstring     _ToString (const wchar_t* indent) const = 0;
+    virtual ECObjectsStatus     _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) = 0;
+    virtual ECObjectsStatus     _InsertArrayElements (const wchar_t * managedPropertyAccessor, UInt32 index, UInt32 size) = 0;
+    virtual ECObjectsStatus     _AddArrayElements (const wchar_t * managedPropertyAccessor, UInt32 size) = 0;
+    virtual ECObjectsStatus     _RemoveArrayElement (const wchar_t * managedPropertyAccessor, UInt32 index) = 0;
+    virtual ECObjectsStatus     _ClearArray (const wchar_t * managedPropertyAccessor) = 0;    
+    virtual ECEnablerCR         _GetEnabler() const = 0;
+    virtual bool                _IsReadOnly() const = 0;
+    virtual bwstring            _ToString (const wchar_t* indent) const = 0;
+    virtual size_t              _GetOffsetToIECInstance () const = 0;
+
     ECOBJECTS_EXPORT virtual MemoryECInstanceBase* _GetAsMemoryECInstance () const;
-    ECOBJECTS_EXPORT virtual size_t                _GetOffsetToIECInstance () const = 0;
 
 public:
-    ECOBJECTS_EXPORT void const*  GetBaseAddress () {return this;}
+    ECOBJECTS_EXPORT void const*        GetBaseAddress () {return this;}
     ECOBJECTS_EXPORT ECEnablerCR        GetEnabler() const;
     ECOBJECTS_EXPORT bwstring           GetInstanceId() const;
     ECOBJECTS_EXPORT bool               IsReadOnly() const;
@@ -103,10 +105,10 @@ public:
 struct IECRelationshipInstance
     {
     private:
-        ECOBJECTS_EXPORT virtual void          _SetSource (IECInstanceP instance) = 0;
-        ECOBJECTS_EXPORT virtual IECInstanceP  _GetSource () const = 0;
-        ECOBJECTS_EXPORT virtual void          _SetTarget (IECInstanceP instance)= 0;
-        ECOBJECTS_EXPORT virtual IECInstanceP  _GetTarget () const = 0;
+        virtual void          _SetSource (IECInstanceP instance) = 0;
+        virtual IECInstanceP  _GetSource () const = 0;
+        virtual void          _SetTarget (IECInstanceP instance)= 0;
+        virtual IECInstanceP  _GetTarget () const = 0;
 
     public:
         ECOBJECTS_EXPORT void          SetSource (IECInstanceP instance);
