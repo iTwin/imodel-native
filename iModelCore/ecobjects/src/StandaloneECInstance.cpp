@@ -139,7 +139,7 @@ size_t          MemoryECInstanceBase::LoadDataIntoManagedInstance (byte* managed
 
     // store the number of supporting struct instances in m_structValueId within managedBuffer   - this will need to change if we allow property changes in managed code
     size_t offsetToStructValueId = (size_t)((byte const* )&m_structValueId - (byte const* )this); 
-    UInt32 numArrayInstances     = m_structInstances ? m_structInstances->size() : 0;
+    UInt32 numArrayInstances     = m_structInstances ? (UInt32)m_structInstances->size() : 0;
     memcpy (managedBuffer+offsetToStructValueId, &numArrayInstances, sizeof(numArrayInstances));
 
     // store the offset to the property data in m_data within managedBuffer
