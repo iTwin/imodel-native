@@ -164,7 +164,12 @@ size_t          MemoryECInstanceBase::LoadDataIntoManagedInstance (byte* managed
     DEBUG_EXPECT (sizeof(IECInstancePtr) >= sizeof(offset));
 
     // find the offset to the location in managed memory for the first struct instance
+    // Note: on 64 bit  sizeof (structValueIdentifier) + sizeof (IECInstancePtr) is not equal to sizeof(StructArrayEntry)
     size_t offsetToStructInstance = offset + (numArrayInstances * sizeof(StructArrayEntry));
+
+    // calculate offset to instance pointer in array entry - on 64 bit we can not just use sizeof(entry.structValueIdentifier)
+    StructArrayEntry const& firstEntry = (*m_structInstances)[0];
+    size_t offsetToInstancePtr = (byte const* )&firstEntry.structInstance - (byte const* )&firstEntry.structValueIdentifier;
 
     size_t iecInstanceOffset;
     size_t sizeOfStructInstance;
@@ -183,7 +188,7 @@ size_t          MemoryECInstanceBase::LoadDataIntoManagedInstance (byte* managed
         iecInstanceOffset = offsetToStructInstance + entry.structInstance->GetOffsetToIECInstance();
 
         // store the offset to the instance
-        memcpy (managedBuffer+(offset+sizeof(entry.structValueIdentifier)), &iecInstanceOffset, sizeof(iecInstanceOffset)); 
+        memcpy (managedBuffer+(offset+offsetToInstancePtr), &iecInstanceOffset, sizeof(iecInstanceOffset)); 
         offset += sizeof (StructArrayEntry);
 
         // store the struct instance
