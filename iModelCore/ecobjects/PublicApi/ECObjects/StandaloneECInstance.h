@@ -129,6 +129,12 @@ protected:
     // MemoryECInstanceBase
     virtual IECInstancePtr      _GetAsIECInstance () const;
     virtual size_t              _LoadObjectDataIntoManagedInstance (byte* managedBuffer) const;
+
+public:
+    //! Creates an in-memory duplicate of an instance, making deep copies of its ECValues.
+    //! @param[in]  instance    The instance to be duplicated.
+    //! @return     The in-memory duplicated instance.
+    ECOBJECTS_EXPORT static StandaloneECInstancePtr Duplicate(IECInstanceCR instance);
     };
 
 struct StandaloneECEnabler : public ClassLayoutHolder, public ECEnabler

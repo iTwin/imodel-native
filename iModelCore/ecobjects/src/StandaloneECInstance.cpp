@@ -505,6 +505,24 @@ StandaloneECInstance::~StandaloneECInstance ()
 
     //ECObjectsLogger::Log()->tracev (L"StandaloneECInstance at 0x%x is being destructed. It references enabler 0x%x", this, m_sharedWipEnabler);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan.Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/ 
+StandaloneECInstancePtr         StandaloneECInstance::Duplicate(IECInstanceCR instance)
+    {
+    ClassLayoutCP           layout      = ECValueAccessor::TryGetClassLayout(&instance);
+    if(NULL == layout)
+        return NULL;
+    StandaloneECEnablerPtr  enabler     = StandaloneECEnabler::CreateEnabler(instance.GetClass(), *layout);
+    StandaloneECInstancePtr newInstance = enabler->CreateInstance();
+    ECValueAccessorPairCollection collection(&instance);
+    for each (ECValueAccessorPair pair in collection)
+        {
+        newInstance->SetValueUsingAccessor(pair.GetAccessor(), pair.GetValue());
+        }
+    return newInstance;
+    }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  12/2010
