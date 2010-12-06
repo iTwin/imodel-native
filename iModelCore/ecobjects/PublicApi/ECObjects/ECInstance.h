@@ -65,6 +65,8 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (const wchar_t * managedPropertyAccessor, ECValueCR v, UInt32 index);
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (UInt32 propertyIndex, ECValueCR v);
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex);
+    ECOBJECTS_EXPORT ECObjectsStatus    GetValueUsingAccessor (ECValueR v, ECValueAccessorCR accessor) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetValueUsingAccessor (ECValueAccessorCR accessor, ECValueCR v);
     
     ECOBJECTS_EXPORT static bool        IsFixedArrayProperty (EC::IECInstanceR instance, const wchar_t* accessString);
 

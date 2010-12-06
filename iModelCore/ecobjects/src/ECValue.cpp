@@ -921,7 +921,43 @@ bwstring    ECValue::ToString () const
         
     return valueAsString.str().c_str();
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @description  Performs a binary comparison against another ECValue.
+* @bsimethod                                                    Dylan.Rush      12/10
++---------------+---------------+---------------+---------------+---------------+------*/ 
+bool              ECValue::Equals (ECValueCR v) const
+    {
+    if (IsNull() != v.IsNull())
+        return false;
+    if (IsNull())
+        return true;
+    if (GetKind() != v.GetKind())
+        return false;
+    if (IsArray())
+        {
+        assert(false && "Comparison of two arrays not implemented in Equals(); there's no way to check the elements");
+        return false;
+        }
+    if (IsStruct())
+        return m_structInstance == v.m_structInstance;
+    if (GetPrimitiveType() != v.GetPrimitiveType())
+        return false;
+    if (IsString())
+        return 0 == wcscmp (GetString0(), v.GetString0());
+    if (IsBinary())
+        {
+        if (m_binaryInfo.m_size != v.m_binaryInfo.m_size)
+            return false;
+        if (m_binaryInfo.m_data == v.m_binaryInfo.m_data)
+            return true;
+        return 0 == memcmp (m_binaryInfo.m_data, v.m_binaryInfo.m_data, m_binaryInfo.m_size);
+        }
+    size_t primitiveValueSize = (size_t) GetFixedPrimitiveValueSize (GetPrimitiveType());
+    //&m_boolean points to the first memory address of the union (as does every other union member)
+    return 0 == memcmp (&m_boolean, &v.m_boolean, primitiveValueSize);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @param        capacity IN  Estimated size of the array.
 * @bsimethod                                                    CaseyMullen     09/09
@@ -1062,5 +1098,490 @@ bool            ArrayInfo::IsStructArray() const
     return GetKind() == ARRAYKIND_Struct; 
     }  
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValueAccessor::ECValueAccessor (IECInstanceCP instance, int newPropertyIndex, int newArrayIndex)
+    {
+    PushLocation (instance, newPropertyIndex, newArrayIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValueAccessor::ECValueAccessor (ClassLayoutCP layout, int newPropertyIndex, int newArrayIndex)
+    {
+    PushLocation (layout, newPropertyIndex, newArrayIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValueAccessor::ECValueAccessor (ECValueAccessorCR accessor)
+    : m_locationVector (accessor.GetLocationVector())
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+const ECValueAccessor::LocationVector&          ECValueAccessor::GetLocationVector() const
+    {
+    return m_locationVector;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassLayoutCP                                   ECValueAccessor::GetClassLayout (UInt32 depth) const
+    {
+    return m_locationVector[depth].classLayout;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValueAccessor::Location&                      ECValueAccessor::operator[] (UInt32 depth)
+    {
+    return m_locationVector[depth];
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+const ECValueAccessor::Location&                ECValueAccessor::operator[] (UInt32 depth) const
+    {
+    return m_locationVector[depth];
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassLayoutCP                                   ECValueAccessor::TryGetClassLayout (IECInstanceCP instance)
+    {
+    ECEnablerP         enabler = (ECEnablerP) &instance->GetEnabler();
+    ClassLayoutHolderP holder  = dynamic_cast<ClassLayoutHolderP>(enabler);
+    if (NULL == holder)
+        return NULL;
+    return &holder->GetClassLayout();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void                                            ECValueAccessor::PushLocation (ClassLayoutCP newClassLayout, int newPropertyIndex, int newArrayIndex)
+    {
+    m_locationVector.push_back (Location (newClassLayout, newPropertyIndex, newArrayIndex));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void                                            ECValueAccessor::PushLocation (IECInstanceCP instance, int newPropertyIndex, int newArrayIndex)
+    {
+    PushLocation (TryGetClassLayout (instance), newPropertyIndex, newArrayIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void                                            ECValueAccessor::PushLocation (ClassLayoutCP newClassLayout, const wchar_t* accessString, int newArrayIndex)
+    {
+    if (NULL == newClassLayout)
+        {
+        assert (false && "Attemped to push an invalid ClassLayout to this ECValueAccessor");
+        return;
+        }
+    UInt32 propertyIndex;
+    ECObjectsStatus status = newClassLayout->GetPropertyIndex(propertyIndex, accessString);
+    if (ECOBJECTS_STATUS_Success != status)
+        {
+        assert (false && "Could not resolve property index for this access string");
+        return;
+        }
+    PushLocation (newClassLayout, (int)propertyIndex, newArrayIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void                                            ECValueAccessor::PushLocation (IECInstanceCP instance, const wchar_t* accessString, int newArrayIndex)
+    {
+    PushLocation (TryGetClassLayout (instance), accessString, newArrayIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void                                            ECValueAccessor::PopLocation()
+    {
+    m_locationVector.pop_back();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValueAccessor::Location&                      ECValueAccessor::DeepestLocation()
+    {
+    return m_locationVector.back();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32                                          ECValueAccessor::GetDepth() const
+    {
+    return (UInt32)m_locationVector.size();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+const wchar_t *                                 ECValueAccessor::GetAccessString (UInt32 depth) const
+    {
+    int propertyIndex         = m_locationVector[depth].propertyIndex;
+    ClassLayoutCP classLayout = m_locationVector[depth].classLayout;
+    PropertyLayoutCP propertyLayout;
+    if(ECOBJECTS_STATUS_Success != classLayout->GetPropertyLayoutByIndex (propertyLayout, propertyIndex))
+        return NULL;
+    return propertyLayout->GetAccessString();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+bwstring                                        ECValueAccessor::GetDebugAccessString() const
+    {
+    std::wstringstream temp;
+    for(UInt32 depth = 0; depth < GetDepth(); depth++)
+        {
+        if(depth > (UInt32)0)
+            temp << " -> ";
+        temp << "{" << m_locationVector[depth].propertyIndex;
+        if(m_locationVector[depth].arrayIndex > -1)
+            temp << "," << m_locationVector[depth].arrayIndex;
+        temp << "}" << GetAccessString (depth);
+        }
+    return temp.str().c_str();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+bwstring                                        ECValueAccessor::GetManagedAccessString() const
+    {
+    std::wstringstream temp;
+    for(UInt32 depth = 0; depth < GetDepth(); depth++)
+        {
+        if(depth > (UInt32)0)
+            temp << ".";
+        temp << GetAccessString (depth);
+        //If the current index is an array element,
+        if(m_locationVector[depth].arrayIndex > -1)
+            {
+            //Delete the last ']' from the access string and write a number.
+            std::streamoff position = temp.tellp();
+            temp.seekp(position - 1);
+            temp << m_locationVector[depth].arrayIndex;
+            temp << "]";
+            }
+        }
+    return temp.str().c_str();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+bool                                            ECValueAccessor::MatchesClassLayout(UInt32 depth, ClassLayoutCP other) const
+    {
+    ClassLayoutCP layout = GetClassLayout (depth);
+    if (depth >= GetDepth() || NULL == layout)
+        return false;
+    if (other == layout)
+        return true;
+    if (layout->IsCompatible (*other))
+        return true;
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+bool                                            ECValueAccessor::CompatibleClassLayout(IECInstanceCP instance) const
+    {
+    //If you want to force use of access strings:
+    //return false;
+    return MatchesClassLayout((UInt32)0, TryGetClassLayout(instance));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+bool                                            operator!=(ECValueAccessorCR accessor0, ECValueAccessorCR accessor1)
+    {
+    if(accessor0.GetDepth() != accessor1.GetDepth())
+        return true;
+    for(UInt32 depth = 0; depth < accessor0.GetDepth(); depth ++)
+        {
+        if(accessor0[depth].classLayout != accessor1[depth].classLayout
+            || accessor0[depth].propertyIndex != accessor1[depth].propertyIndex
+            || accessor0[depth].arrayIndex    != accessor1[depth].arrayIndex)
+            return true;
+        }
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+bool                                            operator==(ECValueAccessorCR accessor0, ECValueAccessorCR accessor1)
+    {
+    return !(accessor0 != accessor1);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValueAccessorPair::ECValueAccessorPair (ECValueAccessorPairCR pair)
+    : m_valueAccessor (pair.GetAccessor())
+    {
+    SetValue (pair.GetValue());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValueAccessorPair::ECValueAccessorPair (ECValueCR value, ECValueAccessorCR accessor)
+    : m_valueAccessor (accessor)
+    {
+    SetValue (value);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void                                            ECValueAccessorPair::SetValue (ECValueCR value)
+    {
+    if(value.IsNull())
+        return;
+    if(value.IsArray())
+        {
+        ArrayInfo info = value.GetArrayInfo();
+        if(info.IsStructArray())
+            m_value.SetStructArrayInfo (info.GetCount(), info.IsFixedCount());
+        else 
+            m_value.SetPrimitiveArrayInfo (info.GetElementPrimitiveType(), info.GetCount(), info.IsFixedCount());
+        }
+    else if(value.IsStruct())
+        m_value.SetStruct (value.GetStruct().get());
+    else
+        m_value = value;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void                                            ECValueAccessorPair::SetAccessor (ECValueAccessorCR accessor)
+    {
+    m_valueAccessor = accessor;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValueCR                                       ECValueAccessorPair::GetValue() const
+    {
+    return m_value;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+const                                           ECValueAccessor& ECValueAccessorPair::GetAccessor() const
+    {
+    return m_valueAccessor;
+    }
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//  ECValueAccessorPairCollection
+///////////////////////////////////////////////////////////////////////////////////////////
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValueAccessorPairCollection::ECValueAccessorPairCollection (IECInstanceCP instance)
+        : m_instance (instance), m_includeNullValues (false)
+        {
+        }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValueAccessorPairCollection::ECValueAccessorPairCollection (IECInstanceCP instance, bool includeNullValues)
+        : m_instance (instance), m_includeNullValues (includeNullValues) 
+        {
+        }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECValueAccessorPairCollection::GetIncludesNullValues () const
+    {
+    return m_includeNullValues;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECValueAccessorPairCollection::SetIncludesNullValues (bool includeNullValues)
+    {
+    m_includeNullValues = includeNullValues;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValueAccessorPairCollection::const_iterator ECValueAccessorPairCollection::begin () const
+    {
+    //Josh: Had I not been directly working from your example, this is the only place that
+    //would have been a little confusing to me.
+ 
+    RefCountedPtr<ECValueAccessorPairCollectionIterator> iter = new ECValueAccessorPairCollectionIterator (m_instance, m_includeNullValues);
+    return const_iterator (*iter);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValueAccessorPairCollection::const_iterator ECValueAccessorPairCollection::end () const
+    {
+    return ECValueAccessorPairCollection::const_iterator ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValueAccessorPairCollectionIterator::ECValueAccessorPairCollectionIterator (IECInstanceCP instance, bool includeNullValues)
+    : m_currentAccessor (instance, 
+                         ECValueAccessor::INDEX_ROOT, 
+                         ECValueAccessor::INDEX_ROOT), 
+      m_instance (instance), 
+      m_includeNullValues (includeNullValues)
+    {
+    m_status = ECOBJECTS_STATUS_Success;
+    MoveToNext();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValueAccessorPairCollectionIterator::ECValueAccessorPairCollectionIterator ()
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            ECValueAccessorPairCollectionIterator::IsAtEnd() const
+    {
+    return (UInt32)0 == m_currentAccessor.GetDepth();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            ECValueAccessorPairCollectionIterator::IsDifferent(ECValueAccessorPairCollectionIterator const& otherIter) const
+    {
+    return m_currentAccessor != otherIter.m_currentAccessor;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECValueAccessorPairCollectionIterator::MoveToNext()
+    {
+    do
+        {
+        if(0 == m_currentAccessor.GetDepth())
+            break;
+        if(!m_currentValue.IsNull() && m_currentValue.IsArray() || 0 <= m_currentAccessor.DeepestLocation().arrayIndex)
+            NextArrayElement();
+        else    
+            NextProperty();
+        } while((m_currentValue.IsNull() && !m_includeNullValues) 
+                || m_currentValue.IsArray()
+                || m_currentValue.IsStruct());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECValueAccessorPairCollectionIterator::NextProperty()
+    {
+    m_currentAccessor.DeepestLocation().propertyIndex++;
+    m_currentAccessor.DeepestLocation().arrayIndex = ECValueAccessor::INDEX_ROOT;
+    if(m_currentAccessor.DeepestLocation().propertyIndex >= (int)CurrentMaxPropertyCount())
+        {
+        //Current property index is out of range for this class or struct.
+        m_currentAccessor.PopLocation();
+        if(0 < m_currentAccessor.GetDepth())
+            NextArrayElement();
+        }
+    m_status = m_instance->GetValueUsingAccessor (m_currentValue, m_currentAccessor);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECValueAccessorPairCollectionIterator::NextArrayElement()
+    {
+    //There are still values left in the array, increase the index and continue grabbing values.
+    m_currentAccessor.DeepestLocation().arrayIndex++;
+    if(m_currentAccessor.DeepestLocation().arrayIndex >= (int)CurrentMaxArrayLength())
+        return NextProperty();
+    m_status = m_instance->GetValueUsingAccessor (m_currentValue, m_currentAccessor);
+    if(!m_currentValue.IsNull() && m_currentValue.IsStruct())
+        {
+        //We're currently in a struct array, so we have to push an index pair to start stepping through the struct.
+        m_currentAccessor.PushLocation (m_currentValue.GetStruct().get(),
+                                        ECValueAccessor::INDEX_ROOT,
+                                        ECValueAccessor::INDEX_ROOT);
+        NextProperty();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32          ECValueAccessorPairCollectionIterator::CurrentMaxArrayLength()
+    {
+    int currentArrayIndex = m_currentAccessor.DeepestLocation().arrayIndex;
+    m_currentAccessor.DeepestLocation().arrayIndex = ECValueAccessor::INDEX_ROOT;
+    ECValue tempValue;
+    m_status = m_instance->GetValueUsingAccessor (tempValue, m_currentAccessor);
+    ArrayInfo info = tempValue.GetArrayInfo();
+    m_currentAccessor.DeepestLocation().arrayIndex = currentArrayIndex;
+    return info.GetCount();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32          ECValueAccessorPairCollectionIterator::CurrentMaxPropertyCount()
+    {
+    if(NULL != m_currentAccessor.DeepestLocation().classLayout)
+        return m_currentAccessor.DeepestLocation().classLayout->GetPropertyCount();
+    return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValueAccessorPair   ECValueAccessorPairCollectionIterator::GetCurrent () const
+    {
+    assert (ECOBJECTS_STATUS_Success == m_status && "Error while attempting to retrieve a value in ECValueAccessor enumeration."); 
+    ECValueAccessorPair v(m_currentValue, m_currentAccessor);
+    return v;
+    }
 
 END_BENTLEY_EC_NAMESPACE
