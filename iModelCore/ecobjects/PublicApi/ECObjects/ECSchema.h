@@ -887,7 +887,7 @@ public:
 
 typedef RefCountedPtr<ECRelationshipClass>      ECRelationshipClassPtr;
 
-typedef std::list<ECSchemaP> ECSchemaReferenceList;
+typedef bvector<ECSchemaP> ECSchemaReferenceList;
 //=======================================================================================
 //! Supports STL like iterator of classes in a schema
 //=======================================================================================
@@ -1051,7 +1051,7 @@ private:
     SchemaSerializationStatus           WriteXml (MSXML2_IXMLDOMDocument2* pXmlDoc) const;
 
     ECObjectsStatus                     AddClass (ECClassP& pClass);
-    ECObjectsStatus                     SetVersionFromString (bwstring const& versionString);
+    ECObjectsStatus                     SetVersionFromString (const wchar_t* versionString);
 
     typedef bvector<std::pair<ECClassP, MSXML2_IXMLDOMNodePtr>>  ClassDeserializationVector;
     SchemaDeserializationStatus         ReadClassStubsFromXml(MSXML2_IXMLDOMNode& schemaNodePtr,ClassDeserializationVector& classes);
@@ -1159,6 +1159,9 @@ public:
     ECOBJECTS_EXPORT SchemaSerializationStatus WriteXmlToStream (IStreamP ecSchemaXmlStream);
     
     
+    //! Return full schema name in format Name.MM.mm where Name is the schema name, MM is major version and mm is minor version.
+    ECOBJECTS_EXPORT bwstring GetFullSchemaName () const;
+
     // ************************************************************************************************************************
     // ************************************  STATIC METHODS *******************************************************************
     // ************************************************************************************************************************
@@ -1197,6 +1200,13 @@ public:
     //! @param[out] versionMinor    The minor version number
     //! @param[in]  fullName        A string containing the schema name and major and minor versions (Name.MM.NN)
     //! @return A status code indicating whether the string was successfully parsed
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseSchemaFullName (bwstring& schemaName, UInt32& versionMajor, UInt32& versionMinor, const wchar_t* fullName);
+
+    //! Given a version string MM.NN, this will parse other major and minor versions
+    //! @param[out] versionMajor    The major version number
+    //! @param[out] versionMinor    The minor version number
+    //! @param[in]  fullName        A string containing the schema name and major and minor versions (Name.MM.NN)
+    //! @return A status code indicating whether the string was successfully parsed
     ECOBJECTS_EXPORT static ECObjectsStatus ParseSchemaFullName (bwstring& schemaName, UInt32& versionMajor, UInt32& versionMinor, bwstring const& fullName);
 
     //! Given a version string MM.NN, this will parse other major and minor versions
@@ -1204,7 +1214,7 @@ public:
     //! @param[out] versionMinor    The minor version number
     //! @param[in]  versionString   A string containing the major and minor versions (MM.NN)
     //! @return A status code indicating whether the string was successfully parsed
-    ECOBJECTS_EXPORT static ECObjectsStatus ParseVersionString (UInt32& versionMajor, UInt32& versionMinor, bwstring const& versionString);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseVersionString (UInt32& versionMajor, UInt32& versionMinor, const wchar_t* versionString);
     
     //! Given a match type, will determine whether the two schemas match based on name, major version and minor version.  This does not compare actual schemas
     //! @param[in]  matchType   An enum indicating what type of match should be done (exact, latest, latestCompatible)

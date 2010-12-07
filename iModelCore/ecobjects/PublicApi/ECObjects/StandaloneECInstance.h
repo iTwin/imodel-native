@@ -17,6 +17,8 @@ BEGIN_BENTLEY_EC_NAMESPACE
 #define STANDALONEENABLER_EnablerID         0xEC5E
 typedef RefCountedPtr<StandaloneECEnabler>  StandaloneECEnablerPtr;
 typedef RefCountedPtr<StandaloneECInstance> StandaloneECInstancePtr;
+typedef int StructValueIdentifier;
+typedef bmap<StructValueIdentifier, IECInstancePtr> StructInstanceValueMap;
     
 /*=================================================================================**//**
 * EC::MemoryECInstanceBase is base class for ECInstances that holds its values in memory that it allocates. 
@@ -31,9 +33,8 @@ private:
     byte *               m_data;
     UInt32               m_bytesAllocated;
     
-    typedef int StructValueIdentifier;
-    StructValueIdentifier                             m_structValueId;
-    bmap<StructValueIdentifier, IECInstancePtr>   m_structValueMap;
+    StructValueIdentifier    m_structValueId;
+    StructInstanceValueMap   m_structValueMap;
     
 protected:
     //! The MemoryECInstanceBase will take ownership of the memory
@@ -42,18 +43,27 @@ protected:
     ECOBJECTS_EXPORT ~MemoryECInstanceBase ();
 
     ECOBJECTS_EXPORT virtual bool             _IsMemoryInitialized () const;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength);    
+    ECOBJECTS_EXPORT virtual ECObjectsStatus  _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength);    
     ECOBJECTS_EXPORT virtual void             _ShrinkAllocation (UInt32 newAllocation);
     ECOBJECTS_EXPORT virtual void             _FreeAllocation ();
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _GrowAllocation (UInt32 bytesNeeded);        
+    ECOBJECTS_EXPORT virtual ECObjectsStatus  _GrowAllocation (UInt32 bytesNeeded);        
 
     ECOBJECTS_EXPORT virtual byte const *     _GetData () const override;
     ECOBJECTS_EXPORT virtual UInt32           _GetBytesAllocated () const override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index) override;    
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const override;  
+    ECOBJECTS_EXPORT virtual ECObjectsStatus  _SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index) override;    
+    ECOBJECTS_EXPORT virtual ECObjectsStatus  _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const override;  
 
     ECOBJECTS_EXPORT virtual ClassLayoutCR    _GetClassLayout () const = 0;
-    
+ 
+//__PUBLISH_SECTION_END__
+public:   
+    ECOBJECTS_EXPORT  StructInstanceValueMap const& GetStructInstanceMap () const;
+    ECOBJECTS_EXPORT  StructValueIdentifier         GetStructValueId () const;
+    ECOBJECTS_EXPORT  void                          AddStructInstance (StructValueIdentifier structInstanceId, IECInstancePtr structInstance);
+    ECOBJECTS_EXPORT  void                          ClearStructValueMap ();
+
+//__PUBLISH_SECTION_START__
+
 public: // These must be public so that ECXInstanceEnabler can get at the guts of StandaloneECInstance to copy it into an XAttribute
     ECOBJECTS_EXPORT void                     SetData (byte * data, UInt32 size, bool freeExisitingData); //The MemoryECInstanceBase will take ownership of the memory
 
@@ -102,15 +112,18 @@ protected:
 
 struct StandaloneECEnabler : public ClassLayoutHolder, public ECEnabler
     {
-private: 
-    StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR classLayout);
+private:
+    bool    m_ownsClassLayout;
+
+    StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, bool ownsClassLayout);
+    virtual ~StandaloneECEnabler();
 
 protected:
     virtual wchar_t const *     _GetName() const override;
     virtual ECObjectsStatus     _GetPropertyIndex (UInt32& propertyIndex, const wchar_t * propertyAccessString) const override;
  
 public: 
-    ECOBJECTS_EXPORT static StandaloneECEnablerPtr CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout);
+    ECOBJECTS_EXPORT static StandaloneECEnablerPtr CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, bool ownsClassLayout);
     ECOBJECTS_EXPORT StandaloneECInstancePtr       CreateInstance (UInt32 minimumInitialSize = 0);
     //ECOBJECTS_EXPORT StandaloneECInstanceP         CreateInstanceFromUninitializedMemory (byte * data, UInt32 size);
     //! Used to construct from another memory source like ECXData. The caller is claiming that the memory
