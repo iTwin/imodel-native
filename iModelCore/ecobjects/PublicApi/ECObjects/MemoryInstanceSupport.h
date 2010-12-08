@@ -111,6 +111,7 @@ private:
     PropertyLayoutMap       m_propertyLayoutMap;
     
     // These members are transient
+    bool                    m_hideFromLeakDetection;
     SchemaIndex             m_schemaIndex;
     bool                    m_isPersisted;
     UInt32                  m_sizeOfFixedSection;
@@ -137,17 +138,27 @@ private:
         void        AddVariableSizeArrayPropertyWithFixedCount (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount);        
         void        AddProperties (ECClassCR ecClass, wchar_t const * nameRoot, bool addFixedSize);
 
-        Factory (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex);
+        Factory (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex, bool hideFromLeakDetection);
         ClassLayoutP DoBuildClassLayout ();
     };
 
     BentleyStatus           SetClass (wchar_t const *  className, UInt16 classIndex);
 
-    ClassLayout(SchemaIndex schemaIndex);
+    ClassLayout(SchemaIndex schemaIndex, bool hideFromLeakDetection);
 
+    bwstring                GetShortDescription() const;
+
+/*__PUBLISH_SECTION_END__*/
+public:    
+    bwstring                GetName() const;
+    ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();
+
+/*__PUBLISH_SECTION_START__*/
 public:
-    ECOBJECTS_EXPORT static ClassLayoutP BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex);
-    ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (wchar_t const *  className, ClassIndex classIndex, SchemaIndex schemaIndex);
+    ECOBJECTS_EXPORT ~ClassLayout();
+
+    ECOBJECTS_EXPORT static ClassLayoutP BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex, bool hideFromLeakDetection=false);
+    ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (wchar_t const *  className, ClassIndex classIndex, SchemaIndex schemaIndex, bool hideFromLeakDetection=false);
 
     ECOBJECTS_EXPORT bwstring const & GetECClassName() const;
     // These members are only meaningful in the context of a consumer like DgnHandlers.dll that actually handles persistence of ClassLayouts

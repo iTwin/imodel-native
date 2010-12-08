@@ -774,7 +774,7 @@ static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar
             ECClassCP structClass = arrayProp->StructElementType;
 
             ClassLayoutP                classLayout         = ClassLayout::BuildFromClass (*structClass, 0, 0);
-            StandaloneECEnablerPtr      standaloneEnabler   = StandaloneECEnabler::CreateEnabler (*structClass, *classLayout);
+            StandaloneECEnablerPtr      standaloneEnabler   = StandaloneECEnabler::CreateEnabler (*structClass, *classLayout, true);
             ECValue                     arrayEntryVal;
 
             for (UInt32 i=0; i<numToInsert; i++)
@@ -1243,7 +1243,7 @@ InstanceDeserializationStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr&
     // create a StandAloneECInstance instance of the class
     SchemaLayout                schemaLayout (24);
     ClassLayoutP                classLayout         = ClassLayout::BuildFromClass (*foundClass, 42, schemaLayout.GetSchemaIndex());
-    StandaloneECEnablerPtr      standaloneEnabler   = StandaloneECEnabler::CreateEnabler (*foundClass, *classLayout);
+    StandaloneECEnablerPtr      standaloneEnabler   = StandaloneECEnabler::CreateEnabler (*foundClass, *classLayout, true);
 
     // create the instance.
     ecInstance                                      = standaloneEnabler->CreateInstance().get();
@@ -1719,7 +1719,7 @@ InstanceDeserializationStatus   ReadStructArrayMember (ECClassCR structClass, IE
     // we have to create an IECInstance for the array member.
     SchemaLayout                    schemaLayout (24);
     ClassLayoutP                    classLayout         = ClassLayout::BuildFromClass (structClass, 42, schemaLayout.GetSchemaIndex());
-    StandaloneECEnablerPtr          standaloneEnabler   = StandaloneECEnabler::CreateEnabler (structClass, *classLayout);
+    StandaloneECEnablerPtr          standaloneEnabler   = StandaloneECEnabler::CreateEnabler (structClass, *classLayout, true);
 
     // create the instance.
     IECInstancePtr                  structInstance      = standaloneEnabler->CreateInstance().get();
