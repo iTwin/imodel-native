@@ -514,7 +514,7 @@ StandaloneECInstancePtr         StandaloneECInstance::Duplicate(IECInstanceCR in
     ClassLayoutCP           layout      = ECValueAccessor::TryGetClassLayout(&instance);
     if(NULL == layout)
         return NULL;
-    StandaloneECEnablerPtr  enabler     = StandaloneECEnabler::CreateEnabler(instance.GetClass(), *layout);
+    StandaloneECEnablerPtr  enabler     = StandaloneECEnabler::CreateEnabler(instance.GetClass(), *layout, false);
     StandaloneECInstancePtr newInstance = enabler->CreateInstance();
     ECValueAccessorPairCollection collection(&instance);
     for each (ECValueAccessorPair pair in collection)

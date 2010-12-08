@@ -532,7 +532,7 @@ ECObjectsStatus           IECInstance::SetValueUsingAccessor (ECValueAccessorCR 
                 return ECOBJECTS_STATUS_Error;
             ECClassCP structClass = arrayProp->StructElementType;
 
-            StandaloneECEnablerPtr standaloneEnabler   = StandaloneECEnabler::CreateEnabler (*structClass, *accessor.GetClassLayout (depth + 1));
+            StandaloneECEnablerPtr standaloneEnabler   = StandaloneECEnabler::CreateEnabler (*structClass, *accessor.GetClassLayout (depth + 1), false);
             IECInstancePtr newInstancePtr = standaloneEnabler->CreateInstance();
             newInstance = newInstancePtr.get();
             ECValue valueForSettingStructClass;
