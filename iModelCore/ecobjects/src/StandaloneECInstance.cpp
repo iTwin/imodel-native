@@ -19,6 +19,8 @@ MemoryECInstanceBase::MemoryECInstanceBase (byte * data, UInt32 size, bool allow
         MemoryInstanceSupport (allowWritingDirectlyToInstanceMemory),
         m_bytesAllocated(size), m_data(data), m_structValueId (0)
     {
+    m_isInManagedInstance = false;
+    m_structInstances = NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -28,6 +30,9 @@ MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 mi
         MemoryInstanceSupport (allowWritingDirectlyToInstanceMemory),
         m_bytesAllocated(0), m_data(NULL), m_structValueId (0)
     {
+    m_isInManagedInstance = false;
+    m_structInstances = NULL;
+
     UInt32 size = max (minimumBufferSize, classLayout.GetSizeOfFixedSection());
     m_data = (byte*)malloc (size);
     m_bytesAllocated = size;
@@ -41,30 +46,6 @@ MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 mi
 MemoryECInstanceBase::~MemoryECInstanceBase ()
     {
     _FreeAllocation();
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Bill.Steinbock   11/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-StructInstanceValueMap const& MemoryECInstanceBase::GetStructInstanceMap () const
-    {
-    return m_structValueMap;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  11/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-void MemoryECInstanceBase::ClearStructValueMap ()
-    {
-    m_structValueMap.clear ();
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Bill.Steinbock   11/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-StructValueIdentifier MemoryECInstanceBase::GetStructValueId () const
-    {
-    return m_structValueId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -105,7 +86,123 @@ bool                MemoryECInstanceBase::_IsMemoryInitialized () const
     {
     return m_data != NULL;
     }
+     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  12/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t                MemoryECInstanceBase::GetObjectSize () const
+    {
+    return _GetObjectSize();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t          MemoryECInstanceBase::CalculateSupportingInstanceDataSize () const
+    {
+    if (!m_structInstances)
+        return 0;
+
+    size_t size = (m_structInstances->size() * sizeof (StructArrayEntry));
+    for (size_t i = 0; i<m_structInstances->size(); i++)
+        {
+        StructArrayEntry const& entry = (*m_structInstances)[i];
         
+        MemoryECInstanceBase* mbInstance = entry.structInstance->GetAsMemoryECInstance();
+        DEBUG_EXPECT (NULL != mbInstance);
+        if (!mbInstance)
+            continue;
+
+        size += mbInstance->GetObjectSize ();
+        }
+
+    return size;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  12/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t          MemoryECInstanceBase::LoadDataIntoManagedInstance (byte* managedBuffer, size_t sizeOfManagedBuffer) const
+    {
+    // let each native instance load its own object data
+    size_t offset = _LoadObjectDataIntoManagedInstance (managedBuffer);
+
+    // set the m_isInManagedInstance value to true  in managedBuffer
+    bool   isInManagedInstance         = true;
+    size_t offsetToIsInManagedInstance = (size_t)((byte const* )&m_isInManagedInstance - (byte const* )this); 
+    memcpy (managedBuffer+offsetToIsInManagedInstance, &isInManagedInstance, sizeof(isInManagedInstance));
+
+    // store the allocated size of the managed buffer in m_bytesAllocated in managedBuffer
+    size_t offsetToAllocatedSize = (size_t)((byte const* )&m_bytesAllocated - (byte const* )this); 
+    UInt32 managedBufferSize = (UInt32)sizeOfManagedBuffer;
+    memcpy (managedBuffer+offsetToAllocatedSize, &managedBufferSize, sizeof(managedBufferSize));
+
+    // store the number of supporting struct instances in m_structValueId within managedBuffer   - this will need to change if we allow property changes in managed code
+    size_t offsetToStructValueId = (size_t)((byte const* )&m_structValueId - (byte const* )this); 
+    UInt32 numArrayInstances     = m_structInstances ? (UInt32)m_structInstances->size() : 0;
+    memcpy (managedBuffer+offsetToStructValueId, &numArrayInstances, sizeof(numArrayInstances));
+
+    // store the offset to the property data in m_data within managedBuffer
+    size_t offsetToPropertyData = (size_t)((byte const* )&m_data - (byte const* )this); 
+    memcpy (managedBuffer+offsetToPropertyData, &offset, sizeof(offset));
+
+    // now copy the property data
+    size_t currentBytesUsed = (size_t)GetBytesUsed ();
+    memcpy (managedBuffer+offset, m_data, currentBytesUsed);
+
+    offset += currentBytesUsed;
+
+    if (!m_structInstances)
+        return offset;
+
+    // the current offset is set to the location to store the first StructArrayEntry. Store this offset in location of m_structInstances within managedBuffer
+    size_t offsetToFirstStructArrayEntry = (size_t)((byte const* )&m_structInstances - (byte const* )this); 
+    memcpy (managedBuffer+offsetToFirstStructArrayEntry, &offset, sizeof(offset));
+    
+    // all the following pointer to offset "hocus pocus" assumes that sizeof(IECInstancePtr) >= sizeof(offset) so that it is 
+    // safe to stuff the offset into the pointer.
+    DEBUG_EXPECT (sizeof(IECInstancePtr) >= sizeof(offset));
+
+    // find the offset to the location in managed memory for the first struct instance
+    // Note: on 64 bit  sizeof (structValueIdentifier) + sizeof (IECInstancePtr) is not equal to sizeof(StructArrayEntry)
+    size_t offsetToStructInstance = offset + (numArrayInstances * sizeof(StructArrayEntry));
+
+    // calculate offset to instance pointer in array entry - on 64 bit we can not just use sizeof(entry.structValueIdentifier)
+    StructArrayEntry const& firstEntry = (*m_structInstances)[0];
+    size_t offsetToInstancePtr = (byte const* )&firstEntry.structInstance - (byte const* )&firstEntry.structValueIdentifier;
+
+    size_t iecInstanceOffset;
+    size_t sizeOfStructInstance;
+
+    // step through the array and store the StructValueIdentifier and the offset to the 
+    // concrete struct array instance which is typically a StandaloneECInstance
+    for (size_t i = 0; i<numArrayInstances; i++)
+        {
+        StructArrayEntry const& entry = (*m_structInstances)[i];
+
+        // store the StructValueIdentifier
+        memcpy (managedBuffer+offset, &entry.structValueIdentifier, sizeof(entry.structValueIdentifier));
+
+        // At this point the offsetToStructInstance is the offset to the concrete object (most likely a StandAloneECInstance). We need to adjust this to
+        // point to the vtable of a IECInstance 
+        iecInstanceOffset = offsetToStructInstance + entry.structInstance->GetOffsetToIECInstance();
+
+        // store the offset to the instance
+        memcpy (managedBuffer+(offset+offsetToInstancePtr), &iecInstanceOffset, sizeof(iecInstanceOffset)); 
+        offset += sizeof (StructArrayEntry);
+
+        // store the struct instance
+        MemoryECInstanceBase* mbInstance = entry.structInstance->GetAsMemoryECInstance();
+        DEBUG_EXPECT (NULL != mbInstance);
+        if (!mbInstance)
+            continue;
+        sizeOfStructInstance = mbInstance->LoadDataIntoManagedInstance (managedBuffer+offsetToStructInstance, sizeOfManagedBuffer-offsetToStructInstance);
+        offsetToStructInstance += sizeOfStructInstance; 
+        }
+
+    return  offsetToStructInstance;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -132,8 +229,18 @@ void                MemoryECInstanceBase::_ShrinkAllocation (UInt32 newAllocatio
 +---------------+---------------+---------------+---------------+---------------+------*/
 void                MemoryECInstanceBase::_FreeAllocation ()
     {
+    if (m_isInManagedInstance)
+        return;
+
     free (m_data); 
     m_data = NULL;
+
+    if (m_structInstances)
+        {
+        m_structInstances->clear ();
+        delete m_structInstances;
+        m_structInstances = NULL;
+        }
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -141,6 +248,10 @@ void                MemoryECInstanceBase::_FreeAllocation ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           MemoryECInstanceBase::_GrowAllocation (UInt32 bytesNeeded)
     {
+    DEBUG_EXPECT (!m_isInManagedInstance);
+    if (m_isInManagedInstance)
+        return ECOBJECTS_STATUS_Error;
+
     DEBUG_EXPECT (m_bytesAllocated > 0);
     DEBUG_EXPECT (NULL != m_data);
     // WIP_FUSION: add performance counter
@@ -162,6 +273,13 @@ ECObjectsStatus           MemoryECInstanceBase::_GrowAllocation (UInt32 bytesNee
 +---------------+---------------+---------------+---------------+---------------+------*/
 byte const *        MemoryECInstanceBase::_GetData () const
     {
+    if (m_isInManagedInstance)
+        {
+        byte const* baseAddress = (byte const*)this;
+        byte const* dataAddress =  baseAddress + (size_t)m_data;
+        return dataAddress;
+        }
+
     return m_data;
     }
 
@@ -178,6 +296,10 @@ UInt32              MemoryECInstanceBase::_GetBytesAllocated () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index)
     {
+    DEBUG_EXPECT (!m_isInManagedInstance);
+    if (m_isInManagedInstance)
+        return ECOBJECTS_STATUS_Error;
+
     IECInstancePtr p;
     ECValue binaryValue (PRIMITIVETYPE_Binary);
     m_structValueId++;
@@ -195,12 +317,75 @@ ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueC
     ECObjectsStatus status = SetPrimitiveValueToMemory (binaryValue, classLayout, propertyLayout, true, index);      
     if (status != ECOBJECTS_STATUS_Success)
         return status;
-                    
-    m_structValueMap[m_structValueId] = p;
+                 
+    if (NULL == m_structInstances)
+        m_structInstances = new StructInstanceVector ();
+
+    m_structInstances->push_back (StructArrayEntry (m_structValueId, p));
     
     return ECOBJECTS_STATUS_Success; 
     }    
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  12/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+StructArrayEntry const* MemoryECInstanceBase::GetAddressOfStructArrayEntry (StructValueIdentifier key) const
+    {
+    if (!m_structInstances)
+        return NULL;
+
+    StructArrayEntry const* instanceArray = NULL;
+    size_t numEntries = 0;
+
+    if (!m_isInManagedInstance)
+        {
+        numEntries = m_structInstances->size();
+        instanceArray = &(*m_structInstances)[0];
+        }
+    else
+        {
+        numEntries = m_structValueId;
+
+        byte const* baseAddress = (byte const*)this;
+        byte const* arrayAddress =  baseAddress + (size_t)m_structInstances;
+
+        instanceArray = (StructArrayEntry const*)arrayAddress;
+        }
+
+    for (size_t i = 0; i<numEntries; i++)
+        {
+        StructArrayEntry const& entry = instanceArray[i];
+        if (entry.structValueIdentifier != key)
+            continue;
+        return &entry;
+        }
+
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  12/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr  MemoryECInstanceBase::GetStructArrayInstance (StructValueIdentifier structValueId) const
+    {
+    StructArrayEntry const* entry = GetAddressOfStructArrayEntry (structValueId);
+
+    if (!entry)
+        return NULL;
+
+    if (!m_isInManagedInstance)
+        return entry->structInstance;
+
+    byte const* baseAddress = (byte const*)this;
+    size_t offset = (size_t)(entry->structInstance.get());
+    byte const* arrayAddress =  baseAddress + offset;
+
+    // since the offset we put us at the vtable of the IECInstance and not to the start of the concrete object 
+    // we can cast is directly to an IECInstanceP. See comments in method LoadDataIntoManagedInstance
+    IECInstanceP iecInstanceP = (IECInstanceP) const_cast<byte*>(arrayAddress);
+    return iecInstanceP;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/    
@@ -220,12 +405,7 @@ ECObjectsStatus           MemoryECInstanceBase::_GetStructArrayValueFromMemory (
     size_t size;
     StructValueIdentifier structValueId = *(StructValueIdentifier*)binaryValue.GetBinary (size);    
 
-    IECInstancePtr instancePtr = NULL;
-    bmap<StructValueIdentifier, IECInstancePtr>::const_iterator  instanceIterator;
-    instanceIterator = m_structValueMap.find (structValueId);    
-    if ( instanceIterator != m_structValueMap.end() )
-        instancePtr = instanceIterator->second;
-       
+    IECInstancePtr instancePtr = GetStructArrayInstance (structValueId);
     v.SetStruct (instancePtr.get());
     
     return ECOBJECTS_STATUS_Success;
@@ -255,6 +435,13 @@ UInt32              MemoryECInstanceBase::GetBytesUsed () const
 +---------------+---------------+---------------+---------------+---------------+------*/        
 void                MemoryECInstanceBase::ClearValues ()
     {
+    DEBUG_EXPECT (!m_isInManagedInstance);
+    if (m_isInManagedInstance)
+        return;
+
+    if (m_structInstances)
+        m_structInstances->clear ();
+
     InitializeMemory (GetClassLayout(), m_data, m_bytesAllocated);
     }
    
@@ -267,16 +454,28 @@ ClassLayoutCR       MemoryECInstanceBase::GetClassLayout () const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  11/2010
+* @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-void             MemoryECInstanceBase::AddStructInstance (StructValueIdentifier structInstanceId, IECInstancePtr structInstance)
-     {
-     m_structValueMap[structInstanceId] = structInstance.get();
-     }
+IECInstancePtr       MemoryECInstanceBase::GetAsIECInstance () const
+    {
+    return _GetAsIECInstance();
+    }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //  StandaloneECInstance
 ///////////////////////////////////////////////////////////////////////////////////////////
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  12/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t                StandaloneECInstance::_GetOffsetToIECInstance () const
+    {
+    EC::IECInstanceP iecInstanceP   = (EC::IECInstanceP)this;
+    byte const* baseAddressOfIECInstance = (byte const *)iecInstanceP;
+    byte const* baseAddressOfConcrete = (byte const *)this;
+
+    return (size_t)(baseAddressOfIECInstance - baseAddressOfConcrete);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
@@ -306,7 +505,63 @@ StandaloneECInstance::~StandaloneECInstance ()
 
     //ECObjectsLogger::Log()->tracev (L"StandaloneECInstance at 0x%x is being destructed. It references enabler 0x%x", this, m_sharedWipEnabler);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan.Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/ 
+StandaloneECInstancePtr         StandaloneECInstance::Duplicate(IECInstanceCR instance)
+    {
+    ClassLayoutCP           layout      = ECValueAccessor::TryGetClassLayout(&instance);
+    if(NULL == layout)
+        return NULL;
+    StandaloneECEnablerPtr  enabler     = StandaloneECEnabler::CreateEnabler(instance.GetClass(), *layout);
+    StandaloneECInstancePtr newInstance = enabler->CreateInstance();
+    ECValueAccessorPairCollection collection(&instance);
+    for each (ECValueAccessorPair pair in collection)
+        {
+        newInstance->SetValueUsingAccessor(pair.GetAccessor(), pair.GetValue());
+        }
+    return newInstance;
+    }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  12/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t                StandaloneECInstance::_GetObjectSize () const
+    {
+    size_t objectSize = sizeof(*this);
+    size_t primaryInstanceDataSize = (size_t)GetBytesUsed();
+    size_t supportingInstanceDataSize = CalculateSupportingInstanceDataSize ();
+
+    return objectSize+primaryInstanceDataSize+supportingInstanceDataSize;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  12/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t                StandaloneECInstance::_LoadObjectDataIntoManagedInstance (byte* managedBuffer) const
+    {
+    size_t size = sizeof(*this);
+    memcpy (managedBuffer, this, size);
+    return size;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  12/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr      StandaloneECInstance::_GetAsIECInstance () const
+    {
+    return const_cast<StandaloneECInstance*>(this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  12/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+MemoryECInstanceBase* StandaloneECInstance::_GetAsMemoryECInstance () const
+    {
+    return const_cast<StandaloneECInstance*>(this);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
