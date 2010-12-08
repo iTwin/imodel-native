@@ -752,7 +752,7 @@ TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper)
     ASSERT_TRUE (ecClass);
 
     ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 0, 0);
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);        
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
 
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
@@ -804,8 +804,7 @@ TEST_F(MemoryLayoutTests, ECValueEqualsMethod)
     SchemaLayout schemaLayout (24);
 
     ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
-
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);        
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
 
     ECValue v1, v2;
     EXPECT_TRUE   (v1.Equals(v2));
@@ -891,10 +890,6 @@ TEST_F(MemoryLayoutTests, ECValueEqualsMethod)
     EXPECT_TRUE   (v1.Equals(v2));
     v2.SetStruct  (testInstance1.get());
     EXPECT_FALSE  (v1.Equals (v2));
-
-    delete classLayout;
-
-    
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -912,8 +907,7 @@ TEST_F(MemoryLayoutTests, TestECValueEnumeration)
     SchemaLayout schemaLayout (24);
 
     ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
-
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);        
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
 
     EC::StandaloneECInstancePtr sourceInstance = enabler->CreateInstance();
     EC::StandaloneECInstancePtr targetInstance = enabler->CreateInstance();
@@ -971,10 +965,7 @@ TEST_F(MemoryLayoutTests, TestECValueEnumeration)
         EXPECT_TRUE (VerifyPair (sourceInstance, pair));
         }
 
-    delete classLayout;
-
     // instance.Compact()... then check values again
-    
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -998,10 +989,9 @@ TEST_F(MemoryLayoutTests, TestECValueEnumerationStructArray)
 
     ClassLayoutP primitiveClassLayout = ClassLayout::BuildFromClass (*primitiveClass, 0, schemaLayout.GetSchemaIndex());
 
-    StandaloneECEnablerPtr enabler          = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout0);
-    StandaloneECEnablerPtr alternateEnabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout1);
-
-    StandaloneECEnablerPtr primitiveEnabler = StandaloneECEnabler::CreateEnabler (*primitiveClass, *primitiveClassLayout);
+    StandaloneECEnablerPtr enabler          = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout0, true);
+    StandaloneECEnablerPtr alternateEnabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout1, true);
+    StandaloneECEnablerPtr primitiveEnabler = StandaloneECEnabler::CreateEnabler (*primitiveClass, *primitiveClassLayout, true);
 
     EC::StandaloneECInstancePtr sourceInstance  = enabler->CreateInstance();
     EC::StandaloneECInstancePtr targetInstance0 = enabler->CreateInstance();
@@ -1123,9 +1113,6 @@ TEST_F(MemoryLayoutTests, TestECValueEnumerationStructArray)
         }
     EXPECT_EQ (18, valuesFound); 
     
-    delete classLayout0;
-    delete classLayout1;
-
     // instance.Compact()... then check values again
     
     };
@@ -1150,8 +1137,8 @@ TEST_F(MemoryLayoutTests, ECValueEnumerationOverFixedSizeArrays)
     ClassLayoutP classLayout0 = ClassLayout::BuildFromClass (*ecClass0, 42,  schemaLayout.GetSchemaIndex());
     ClassLayoutP classLayout1 = ClassLayout::BuildFromClass (*ecClass1, 42,  schemaLayout.GetSchemaIndex());
 
-    StandaloneECEnablerPtr enabler          = StandaloneECEnabler::CreateEnabler (*ecClass0, *classLayout0);
-    StandaloneECEnablerPtr primitiveEnabler = StandaloneECEnabler::CreateEnabler (*ecClass1, *classLayout1);
+    StandaloneECEnablerPtr enabler          = StandaloneECEnabler::CreateEnabler (*ecClass0, *classLayout0, true);
+    StandaloneECEnablerPtr primitiveEnabler = StandaloneECEnabler::CreateEnabler (*ecClass1, *classLayout1, true);
 
     StandaloneECInstancePtr sourceInstance  = enabler->CreateInstance();
     StandaloneECInstancePtr targetInstance0 = enabler->CreateInstance();
@@ -1272,9 +1259,6 @@ TEST_F(MemoryLayoutTests, ECValueEnumerationOverFixedSizeArrays)
         }
     EXPECT_EQ (33, valuesFound);
 
-    delete classLayout0;
-    delete classLayout1;
-    
     };
 //#endif
 
@@ -1301,8 +1285,8 @@ TEST_F(MemoryLayoutTests, ECValueEnumerationPerformance)
     ClassLayoutP classLayout0 = ClassLayout::BuildFromClass (*ecClass0, 42,  schemaLayout.GetSchemaIndex());
     ClassLayoutP classLayout1 = ClassLayout::BuildFromClass (*ecClass1, 106, schemaLayout.GetSchemaIndex());
 
-    StandaloneECEnablerPtr enabler          = StandaloneECEnabler::CreateEnabler (*ecClass0, *classLayout0);
-    StandaloneECEnablerPtr alternateEnabler = StandaloneECEnabler::CreateEnabler (*ecClass1, *classLayout1);
+    StandaloneECEnablerPtr enabler          = StandaloneECEnabler::CreateEnabler (*ecClass0, *classLayout0, true);
+    StandaloneECEnablerPtr alternateEnabler = StandaloneECEnabler::CreateEnabler (*ecClass1, *classLayout1, true);
 
     EC::StandaloneECInstancePtr sourceInstance  = enabler->CreateInstance();
     EC::StandaloneECInstancePtr targetInstance0 = enabler->CreateInstance();
@@ -1388,9 +1372,6 @@ TEST_F(MemoryLayoutTests, ECValueEnumerationPerformance)
 
 #endif
 
-    delete classLayout0;
-    delete classLayout1;
-
     // instance.Compact()... then check values again
     
     };
@@ -1417,9 +1398,9 @@ TEST_F(MemoryLayoutTests, PolymorphicStructArrayEnumeration)
     ClassLayoutP dClassLayout0 = ClassLayout::BuildFromClass (*derivedClass0, 0,  schemaLayout.GetSchemaIndex());
     ClassLayoutP dClassLayout1 = ClassLayout::BuildFromClass (*derivedClass1, 1,  schemaLayout.GetSchemaIndex());
 
-    StandaloneECEnablerPtr enabler          = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);
-    StandaloneECEnablerPtr dEnabler0        = StandaloneECEnabler::CreateEnabler (*derivedClass0, *dClassLayout0);
-    StandaloneECEnablerPtr dEnabler1        = StandaloneECEnabler::CreateEnabler (*derivedClass1, *dClassLayout1);
+    StandaloneECEnablerPtr enabler          = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
+    StandaloneECEnablerPtr dEnabler0        = StandaloneECEnabler::CreateEnabler (*derivedClass0, *dClassLayout0, true);
+    StandaloneECEnablerPtr dEnabler1        = StandaloneECEnabler::CreateEnabler (*derivedClass1, *dClassLayout1, true);
 
     EC::StandaloneECInstancePtr dInstance0 = dEnabler0->CreateInstance();
 
@@ -1489,12 +1470,6 @@ TEST_F(MemoryLayoutTests, PolymorphicStructArrayEnumeration)
         EXPECT_TRUE (VerifyPair (sourceInstance0, pair));
         }
     EXPECT_EQ (4, valuesFound); 
-
-    delete classLayout;
-    delete dClassLayout0;
-    delete dClassLayout1;
-
-    
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1516,7 +1491,7 @@ TEST_F(MemoryLayoutTests, ManualUseOfAccessors)
     ClassLayoutP classLayout0 =         ClassLayout::BuildFromClass (*ecClass, 42,  schemaLayout.GetSchemaIndex());
     ClassLayoutP primitiveClassLayout = ClassLayout::BuildFromClass (*primitiveClass, 0, schemaLayout.GetSchemaIndex());
 
-    StandaloneECEnablerPtr enabler              = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout0);
+    StandaloneECEnablerPtr enabler              = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout0, true);
 
     EC::StandaloneECInstancePtr sourceInstance  = enabler->CreateInstance();
     EC::StandaloneECInstancePtr targetInstance0 = enabler->CreateInstance();
@@ -1605,7 +1580,6 @@ TEST_F(MemoryLayoutTests, ManualUseOfAccessors)
         }
     EXPECT_EQ (6, valuesFound); 
     
-    delete classLayout0;
     delete primitiveClassLayout;
 
     // instance.Compact()... then check values again
@@ -1626,8 +1600,7 @@ TEST_F(MemoryLayoutTests, SimpleMergeTwoInstances)
     SchemaLayout schemaLayout (24);
 
     ClassLayoutP primitiveLayout = ClassLayout::BuildFromClass (*primitiveClass, 42,  schemaLayout.GetSchemaIndex());
-    
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*primitiveClass, *primitiveLayout);
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*primitiveClass, *primitiveLayout, true);
     
     EC::StandaloneECInstancePtr sourceInstance0 = enabler->CreateInstance();
     EC::StandaloneECInstancePtr sourceInstance1 = enabler->CreateInstance();
@@ -1691,9 +1664,6 @@ TEST_F(MemoryLayoutTests, SimpleMergeTwoInstances)
     EXPECT_EQ (234, v.GetInteger());
     targetInstance->GetValue (v, L"ADouble");  //Came from sourceInstance1
     EXPECT_EQ (10.0/3.0, v.GetDouble());
-
-    delete primitiveLayout;
-    
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1917,8 +1887,6 @@ TEST_F(MemoryLayoutTests, ExpectErrorsWhenViolatingArrayConstraints)
     VerifyOutOfBoundsError (*instance, v, L"FixedArrayVariableElement[]", 12);
     VerifyOutOfBoundsError (*instance, v, L"VariableArrayVariableElement[]", 0);
     VerifyOutOfBoundsError (*instance, v, L"EndingArray[]", 0);                     
-    
-    
     };    
 
 /*---------------------------------------------------------------------------------**//**
