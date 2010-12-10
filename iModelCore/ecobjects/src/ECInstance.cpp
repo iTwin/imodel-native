@@ -265,10 +265,27 @@ int IECInstance::ParseExpectedNIndices (const wchar_t * propertyAccessString)
     }
         
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  12/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+MemoryECInstanceBase* IECInstance::_GetAsMemoryECInstance () const
+    {
+    return NULL;    // default to NULL and let real MemoryECInstanceBased class override this method.
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  12/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t IECInstance::GetOffsetToIECInstance () const
+    {
+    return _GetOffsetToIECInstance();  
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/   
-ECEnablerCR         IECInstance::GetEnabler() const { return _GetEnabler();  }
-bool                IECInstance::IsReadOnly() const { return _IsReadOnly();  }
+ECEnablerCR           IECInstance::GetEnabler() const { return _GetEnabler();  }
+bool                  IECInstance::IsReadOnly() const { return _IsReadOnly();  }
+MemoryECInstanceBase* IECInstance::GetAsMemoryECInstance () const {return _GetAsMemoryECInstance();}
 
 ECObjectsStatus     IECInstance::GetValue (ECValueR v, const wchar_t * propertyAccessString) const { return _GetValue (v, propertyAccessString, false, 0); }
 ECObjectsStatus     IECInstance::GetValue (ECValueR v, const wchar_t * propertyAccessString, UInt32 arrayIndex) const { return _GetValue (v, propertyAccessString, true, arrayIndex); }
@@ -342,7 +359,18 @@ static ECObjectsStatus getECValueUsingFullAccessString (wchar_t* asBuffer, wchar
         return instance.GetValue (v, asBufferStr.c_str(), indexValue);
 
     // must be a struct array
-    instance.GetValue (arrayVal, asBufferStr.c_str(), indexValue);
+    
+    if (ECOBJECTS_STATUS_Success != (status = instance.GetValue (arrayVal, asBufferStr.c_str(), indexValue)))
+        return status;
+
+    // If there is no '.' in the rest of the access string, the caller was requesting the value representing the struct
+    // array element itself, not the value of any of its members.
+    if ('\0' == pos2[1])
+        {
+        v.SetStruct(arrayVal.GetStruct().get());
+        return ECOBJECTS_STATUS_Success;
+        }
+
     IECInstancePtr arrayEntryInstance = arrayVal.GetStruct();
 
     return getECValueUsingFullAccessString (asBuffer, indexBuffer, v, *arrayEntryInstance, pos2+2); // move to character after "]." in access string.
@@ -360,6 +388,163 @@ static ECObjectsStatus getECValueFromInstance (ECValueR v, IECInstanceCR instanc
     wchar_t indexBuffer[NUM_INDEX_BUFFER_CHARS+1];
 
     return getECValueUsingFullAccessString (asBuffer, indexBuffer, v, instance, managedPropertyAccessor);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan.Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/ 
+static ECObjectsStatus          getValueHelper (ECValueR value, IECInstanceCP instance, ECValueAccessorCR accessor, UInt32 depth, bool compatible)
+    {
+    int arrayIndex = accessor[depth].arrayIndex;
+    if (compatible)
+        {
+        UInt32 propertyIndex = (UInt32)accessor[depth].propertyIndex;
+        if (0 > arrayIndex)
+            return instance->GetValue (value, propertyIndex);
+        return instance->GetValue (value, propertyIndex,  (UInt32)arrayIndex);
+        }
+    wchar_t const * accessString = accessor.GetAccessString (depth);
+    if (NULL == accessString)
+        return ECOBJECTS_STATUS_Error;
+    if (0 > arrayIndex)
+        return instance->GetValue (value, accessString);
+    return instance->GetValue (value, accessString, (UInt32)arrayIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan.Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/ 
+static ECObjectsStatus          setValueHelper (IECInstanceP instance, ECValueAccessorCR accessor, UInt32 depth, bool compatible, ECValueCR value)
+    {
+    int arrayIndex = accessor[depth].arrayIndex;
+    if (compatible)
+        {
+        UInt32 propertyIndex = (UInt32)accessor[depth].propertyIndex;
+        if(0 > arrayIndex)
+            return instance->SetValue(propertyIndex, value);
+        return instance->SetValue (propertyIndex, value, (UInt32)arrayIndex);
+        }
+    wchar_t const * accessString = accessor.GetAccessString(depth);
+    if (NULL == accessString)
+        return ECOBJECTS_STATUS_Error;
+    if (0 > arrayIndex)
+        return instance->SetValue (accessString, value);
+    return instance->SetValue (accessString, value, (UInt32)arrayIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan.Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/ 
+ECObjectsStatus           IECInstance::GetValueUsingAccessor (ECValueR v, ECValueAccessorCR accessor) const
+    {
+    ECObjectsStatus status            = ECOBJECTS_STATUS_Success;
+    IECInstanceCP  currentInstance    = this;
+    IECInstancePtr structInstancePtr;
+    for (UInt32 depth = 0; depth < accessor.GetDepth(); depth ++)
+        {
+        bool compatible = accessor.MatchesClassLayout(depth, ECValueAccessor::TryGetClassLayout (currentInstance));
+        status = getValueHelper (v, currentInstance, accessor, depth, compatible);
+        if (ECOBJECTS_STATUS_Success != status)
+            return status;
+        if (v.IsStruct() && 0 <= accessor[depth].arrayIndex) //if(v.IsStructArray())
+            {
+            structInstancePtr = v.GetStruct();
+            currentInstance   = structInstancePtr.get();
+            }
+        }
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan.Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/ 
+ECObjectsStatus           IECInstance::SetValueUsingAccessor (ECValueAccessorCR accessor, ECValueCR valueToSet)
+    {
+    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+    IECInstanceP   currentInstance = this;
+    IECInstancePtr structInstancePtr;
+    ECValue        structPlaceholder;
+    UInt32 depth;
+
+    int propertyIndex;
+    int arrayIndex;
+    for (depth = 0; depth < accessor.GetDepth(); depth ++)
+        {
+        ClassLayoutCP layout = ECValueAccessor::TryGetClassLayout (currentInstance);
+        if (NULL == layout)
+            return ECOBJECTS_STATUS_Error;
+        bool compatible = accessor.MatchesClassLayout(depth, layout);
+        propertyIndex   = accessor[depth].propertyIndex;
+        arrayIndex      = accessor[depth].arrayIndex;
+        if (arrayIndex > -1)
+            {
+            //Expand array if necessary.
+            ECValue arrayInfoPlaceholder;
+            if (compatible)
+                currentInstance->GetValue(arrayInfoPlaceholder, (UInt32)propertyIndex);
+            else
+                currentInstance->GetValue(arrayInfoPlaceholder, accessor.GetAccessString (depth));
+            if (ECOBJECTS_STATUS_Success != status)
+                return status;
+            UInt32 arraySize = arrayInfoPlaceholder.GetArrayInfo().GetCount();
+            if ((UInt32)arrayIndex >= arraySize)
+                {
+                if (arrayInfoPlaceholder.GetArrayInfo().IsFixedCount())
+                    return ECOBJECTS_STATUS_IndexOutOfRange;
+                UInt32 numToInsert = 1 + (UInt32)arrayIndex - arraySize;
+                const wchar_t* accessorWithBrackets = accessor.GetAccessString (depth);
+                if (NULL == accessorWithBrackets)
+                    return ECOBJECTS_STATUS_Error;
+                status      =  currentInstance->AddArrayElements (accessorWithBrackets, numToInsert);    
+                if (ECOBJECTS_STATUS_Success != status)
+                    return status;
+                }
+            }
+        if (depth + 1 >= accessor.GetDepth())
+            return setValueHelper (currentInstance, accessor, depth, compatible, valueToSet);
+        status = getValueHelper (structPlaceholder, currentInstance, accessor, depth, compatible);
+        if (ECOBJECTS_STATUS_Success != status)
+            return status;
+        assert (structPlaceholder.IsStruct() && "Accessor depth is deeper than expected.");
+        structInstancePtr = structPlaceholder.GetStruct();
+        IECInstanceP newInstance = structInstancePtr.get();
+        if (NULL == newInstance)
+            {
+            //We have progressed into a struct array and found that this instance has not yet been created.
+            //(Orgininally, this code was up with AddArrayElements(), but it belongs down here in case it is
+            //part of a fixed-size array or if a value is being set to the array out of order.)
+            const wchar_t* accessorWithBrackets = accessor.GetAccessString (depth);
+            if (NULL == accessorWithBrackets)
+                    return ECOBJECTS_STATUS_Error;
+            wchar_t accessorWithoutBrackets[NUM_ACCESSSTRING_BUFFER_CHARS+1];
+            const wchar_t* pos1 = wcschr (accessorWithBrackets, L'[');
+            size_t numChars = pos1 - accessorWithBrackets;
+            wcsncpy (accessorWithoutBrackets, accessorWithBrackets, numChars>NUM_ACCESSSTRING_BUFFER_CHARS?NUM_ACCESSSTRING_BUFFER_CHARS:numChars);
+            accessorWithoutBrackets[numChars]=0;
+
+            ECClassCR    ecClass       = currentInstance->GetClass();
+            ECSchemaCR   ecSchema      = ecClass.Schema;
+            ECPropertyP  prop = ecClass.GetPropertyP (accessorWithoutBrackets);
+            if (!prop->IsArray)
+                return ECOBJECTS_STATUS_Error;
+            ArrayECPropertyP arrayProp = dynamic_cast<ArrayECPropertyP>(prop);
+            if (!arrayProp)
+                return ECOBJECTS_STATUS_Error;
+            ECClassCP structClass = arrayProp->StructElementType;
+
+            StandaloneECEnablerPtr standaloneEnabler   = StandaloneECEnabler::CreateEnabler (*structClass, *accessor.GetClassLayout (depth + 1), false);
+            IECInstancePtr newInstancePtr = standaloneEnabler->CreateInstance();
+            newInstance = newInstancePtr.get();
+            ECValue valueForSettingStructClass;
+            valueForSettingStructClass.SetStruct (newInstance);
+            //newInstancePtr.addRef();
+            status = setValueHelper (currentInstance, accessor, depth, compatible, valueForSettingStructClass);
+            if (ECOBJECTS_STATUS_Success != status)
+                return status;
+            }
+        currentInstance = newInstance;
+        } 
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -18,7 +18,20 @@ BEGIN_BENTLEY_EC_NAMESPACE
 typedef RefCountedPtr<StandaloneECEnabler>  StandaloneECEnablerPtr;
 typedef RefCountedPtr<StandaloneECInstance> StandaloneECInstancePtr;
 typedef int StructValueIdentifier;
-typedef bmap<StructValueIdentifier, IECInstancePtr> StructInstanceValueMap;
+
+struct StructArrayEntry
+    {
+    StructArrayEntry (StructValueIdentifier structValueId, IECInstancePtr& instancePtr)
+        {
+        structValueIdentifier = structValueId;
+        structInstance        = instancePtr;
+        }
+
+    StructValueIdentifier  structValueIdentifier;
+    IECInstancePtr         structInstance;
+    };
+
+typedef bvector<StructArrayEntry> StructInstanceVector;
     
 /*=================================================================================**//**
 * EC::MemoryECInstanceBase is base class for ECInstances that holds its values in memory that it allocates. 
@@ -30,12 +43,15 @@ typedef bmap<StructValueIdentifier, IECInstancePtr> StructInstanceValueMap;
 struct MemoryECInstanceBase : MemoryInstanceSupport
     {
 private:
-    byte *               m_data;
-    UInt32               m_bytesAllocated;
+    byte *                  m_data;
+    UInt32                  m_bytesAllocated;
+    bool                    m_isInManagedInstance;
+    StructValueIdentifier   m_structValueId;
+    StructInstanceVector*   m_structInstances;
     
-    StructValueIdentifier    m_structValueId;
-    StructInstanceValueMap   m_structValueMap;
-    
+    IECInstancePtr          GetStructArrayInstance (StructValueIdentifier structValueId) const;
+    StructArrayEntry const* GetAddressOfStructArrayEntry (StructValueIdentifier key) const;
+
 protected:
     //! The MemoryECInstanceBase will take ownership of the memory
     ECOBJECTS_EXPORT MemoryECInstanceBase (byte * data, UInt32 size, bool allowWritingDirectlyToInstanceMemory);
@@ -53,16 +69,10 @@ protected:
     ECOBJECTS_EXPORT virtual ECObjectsStatus  _SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index) override;    
     ECOBJECTS_EXPORT virtual ECObjectsStatus  _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const override;  
 
-    ECOBJECTS_EXPORT virtual ClassLayoutCR    _GetClassLayout () const = 0;
- 
-//__PUBLISH_SECTION_END__
-public:   
-    ECOBJECTS_EXPORT  StructInstanceValueMap const& GetStructInstanceMap () const;
-    ECOBJECTS_EXPORT  StructValueIdentifier         GetStructValueId () const;
-    ECOBJECTS_EXPORT  void                          AddStructInstance (StructValueIdentifier structInstanceId, IECInstancePtr structInstance);
-    ECOBJECTS_EXPORT  void                          ClearStructValueMap ();
-
-//__PUBLISH_SECTION_START__
+    virtual ClassLayoutCR       _GetClassLayout () const = 0;
+    virtual IECInstancePtr      _GetAsIECInstance () const = 0;
+    virtual size_t              _GetObjectSize () const = 0;
+    virtual size_t              _LoadObjectDataIntoManagedInstance (byte* managedBuffer) const = 0;
 
 public: // These must be public so that ECXInstanceEnabler can get at the guts of StandaloneECInstance to copy it into an XAttribute
     ECOBJECTS_EXPORT void                     SetData (byte * data, UInt32 size, bool freeExisitingData); //The MemoryECInstanceBase will take ownership of the memory
@@ -71,6 +81,10 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT UInt32                   GetBytesUsed () const;
     ECOBJECTS_EXPORT void                     ClearValues ();
     ECOBJECTS_EXPORT ClassLayoutCR            GetClassLayout() const;
+    ECOBJECTS_EXPORT IECInstancePtr           GetAsIECInstance () const;
+    ECOBJECTS_EXPORT size_t                   GetObjectSize () const;
+    ECOBJECTS_EXPORT size_t                   CalculateSupportingInstanceDataSize () const;
+    ECOBJECTS_EXPORT size_t                   LoadDataIntoManagedInstance (byte* managedBuffer, size_t sizeOfManagedBuffer) const;
     };
 
 /*=================================================================================**//**
@@ -108,6 +122,19 @@ protected:
     virtual bwstring            _ToString (const wchar_t* indent) const override;
     virtual ClassLayoutCR       _GetClassLayout () const;
     virtual ECEnablerCR         _GetEnabler() const override;
+    virtual MemoryECInstanceBase* _GetAsMemoryECInstance () const override;
+    virtual size_t                _GetObjectSize () const;
+    virtual size_t                _GetOffsetToIECInstance () const;
+
+    // MemoryECInstanceBase
+    virtual IECInstancePtr      _GetAsIECInstance () const;
+    virtual size_t              _LoadObjectDataIntoManagedInstance (byte* managedBuffer) const;
+
+public:
+    //! Creates an in-memory duplicate of an instance, making deep copies of its ECValues.
+    //! @param[in]  instance    The instance to be duplicated.
+    //! @return     The in-memory duplicated instance.
+    ECOBJECTS_EXPORT static StandaloneECInstancePtr Duplicate(IECInstanceCR instance);
     };
 
 struct StandaloneECEnabler : public ClassLayoutHolder, public ECEnabler

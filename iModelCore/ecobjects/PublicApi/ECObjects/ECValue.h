@@ -192,8 +192,8 @@ public:
     ECOBJECTS_EXPORT const byte *   GetBinary (size_t& size) const;
     ECOBJECTS_EXPORT BentleyStatus  SetBinary (const byte * data, size_t size, bool holdADuplicate = false);
     
-    ECOBJECTS_EXPORT IECInstancePtr  GetStruct() const;
-    ECOBJECTS_EXPORT BentleyStatus   SetStruct (IECInstanceP structInstance);
+    ECOBJECTS_EXPORT IECInstancePtr GetStruct() const;
+    ECOBJECTS_EXPORT BentleyStatus  SetStruct (IECInstanceP structInstance);
         
     ECOBJECTS_EXPORT SystemTime     GetDateTime() const;
     ECOBJECTS_EXPORT BentleyStatus  SetDateTime (SystemTime& systemTime); 
@@ -210,9 +210,293 @@ public:
     static UInt32                   GetFixedPrimitiveValueSize (PrimitiveType primitiveType);
 
     //! This is intended for debugging purposes, not for presentation purposes.
-    ECOBJECTS_EXPORT bwstring   ToString () const;
+    ECOBJECTS_EXPORT bwstring       ToString () const;
     
+    ECOBJECTS_EXPORT bool           Equals (ECValueCR v) const;
     };
+
+//=======================================================================================    
+//! A structure used for describing the complete location of an ECValue within an ECInstance.
+//! They can be thought of as the equivalent to access strings, but generally do not require
+//! any string manipulation to create or use them.
+//! As long as all of its ClassLayouts remain, they can remain valid after an ECInstance 
+//! has been disposed.
+//! ECValueAccessors consist of a stack of locations, each of which consist of a triplet of 
+//! a ClassLayout, property index, and array index.  In cases where the array index is not 
+//! applicable (primitive members or the roots of arrays), the INDEX_ROOT constant 
+//! is used.  
+//! Because of the way ECInstances are laid out in memory, the stack only increases in 
+//! size when the accessor describes a value within an element within an array of structs.
+//! (A struct that is not part of an array will become part of its parent's ClassLayout.)
+//! @group "ECInstance"
+//! @see ECValue, ClassLayout, ECValueAccessorPair, ECValueAccessorPairCollection
+//! @bsiclass 
+//======================================================================================= 
+struct ECValueAccessor
+    {
+public:
+    const static int INDEX_ROOT = -1;
+    struct Location
+        {
+        Location (ClassLayoutCP newClassLayout, int newPropertyIndex, int newArrayIndex)
+            : classLayout (newClassLayout), propertyIndex (newPropertyIndex), arrayIndex (newArrayIndex)
+            {
+            }
+        Location ()
+            {
+            }
+        Location (const Location& loc)
+            : classLayout (loc.classLayout), propertyIndex (loc.propertyIndex), arrayIndex (loc.arrayIndex)
+            {
+            }
+
+        ClassLayoutCP classLayout;
+        int           propertyIndex;
+        int           arrayIndex;
+        };
+
+    typedef bvector<Location> LocationVector;
+
+private:
+    //"BACK" OF VECTOR IS DEEPEST ELEMENT
+    LocationVector          m_locationVector;
+
+    Location&               operator[] (UInt32 depth);
+    const LocationVector&   GetLocationVector () const;
+
+
+public:
+    friend ECValueAccessorPairCollection;
+
+    //! Constructs an ECValueAccessor for a given instance.  As long as the ClassLayout of 
+    //! this instance is not disposed of, this Accessor will remain valid.
+    //! @param[in]      instance         The instance that the accessor is representative of.
+    //! @param[in]      newPropertyIndex The property index of the ECProperty.  Represents 
+    //!                                  a position in the instance's ClassLayout.
+    //! @param[in]      newArrayIndex    The array index of the ECProperty, or INDEX_ROOT
+    ECOBJECTS_EXPORT ECValueAccessor (IECInstanceCP instance, 
+                                      int newPropertyIndex, 
+                                      int newArrayIndex);
+
+    //! Constructs an ECValueAccessor for a given ClassLayout.
+    //! @param[in]      layout           The ClassLayout that the accessor is representative of.
+    //! @param[in]      newPropertyIndex The property index of the ECProperty.  Represents 
+    //!                                  a position in the given ClassLayout.
+    //! @param[in]      newArrayIndex    The array index of the ECProperty, or INDEX_ROOT
+    ECOBJECTS_EXPORT ECValueAccessor (ClassLayoutCP layout, 
+                                      int newPropertyIndex, 
+                                      int newArrayIndex);
+
+    //! Constructs an empty ECValueAccessor.
+    ECOBJECTS_EXPORT ECValueAccessor () 
+        {
+        }
+
+    //! Constructs a copy of a ECValueAccessor.
+    //! @param[in]      accessor         The accessor to be copied.
+    ECOBJECTS_EXPORT ECValueAccessor (ECValueAccessorCR accessor);
+
+    //! For use by the iterator.  Does not make valid accessors.
+    ECOBJECTS_EXPORT ECValueAccessor (IECInstanceCP instance);
+    ECOBJECTS_EXPORT ECValueAccessor (ClassLayoutCP layout);
+
+    ECOBJECTS_EXPORT const Location&        operator[] (UInt32 depth) const;
+    ECOBJECTS_EXPORT UInt32                 GetDepth() const;
+
+    ECOBJECTS_EXPORT ClassLayoutCP          GetClassLayout (UInt32 depth) const;
+
+    //! Determines whether or the Accessor's ClassLayouts are equal or equivalent to those 
+    //! of the given Instance.  If they are not, strings must be used in place of property 
+    //! indicies when using the Instance's Get and Set methods.
+    //! @param[in]      instance         The instance to compare ClassLayouts with.
+    //! @return         true if the ClassLayouts are equivalent, otherwise false.
+    ECOBJECTS_EXPORT bool                   CompatibleClassLayout (IECInstanceCP instance) const;
+ 
+    //! Determines whether or the Accessor's ClassLayout at the given stack depth is 
+    //! equivalent to another ClassLayout.
+    //! @param[in]      depth           The stack depth of the Accessor's ClassLayout.
+    //! @param[in]      other           The ClassLayout to compare to.
+    //! @return         true if the ClassLayouts are equivalent, otherwise false.
+    ECOBJECTS_EXPORT bool                   MatchesClassLayout (UInt32 depth, ClassLayoutCP other) const;
+ 
+    //! Attempts to resolve the ClassLayout of an instance using its Enabler.
+    //! @param[in]      instance        The instance that contains the ClassLayout.
+    //! @return         a ClassLayout if one could be retrieved from the instance's enabler,
+    //!                 or NULL if the enabler or ClassLayout could not be found.
+    ECOBJECTS_EXPORT static ClassLayoutCP   TryGetClassLayout (IECInstanceCP instance);
+
+    //! Gets the native-style access string for a given stack depth.  This access string does 
+    //! not contain an array index, and is compatible with the Get/Set methods in IECInstance.
+    //! @param[in]      depth           The stack depth of the native access string.
+    //! @return         The access string.
+    //! @see            IECInstance
+    ECOBJECTS_EXPORT const wchar_t *        GetAccessString (UInt32 depth) const;
+
+    //! Gets the managed-style access string for this Accessor.  Includes the array indicies,
+    //! and traverses structs when necessary.  This full access string can be used with 
+    //! managed code or the InteropHelper.
+    //! @param[in]      depth           The stack depth of the native access string.
+    //! @return         The access string.
+    //! @see            ECInstanceInteropHelper
+    ECOBJECTS_EXPORT bwstring               GetManagedAccessString () const;
+    ECOBJECTS_EXPORT bwstring               GetDebugAccessString () const;
+    
+    ECOBJECTS_EXPORT friend bool            operator!=(ECValueAccessorCR accessor0, ECValueAccessorCR accessor1);
+    ECOBJECTS_EXPORT friend bool            operator==(ECValueAccessorCR accessor0, ECValueAccessorCR accessor1);
+
+    ECOBJECTS_EXPORT void                   PushLocation (ClassLayoutCP, int, int);
+    ECOBJECTS_EXPORT void                   PushLocation (ClassLayoutCP, const wchar_t *, int);
+
+    ECOBJECTS_EXPORT void                   PushLocation (IECInstanceCP, int, int);
+    ECOBJECTS_EXPORT void                   PushLocation (IECInstanceCP, const wchar_t *, int);
+
+    ECOBJECTS_EXPORT void                   PopLocation ();
+    ECOBJECTS_EXPORT Location&              DeepestLocation ();
+    };
+
+//=======================================================================================    
+//! A structure that pairs ECValues along with their accessors.
+//! @group "ECInstance"
+//! @see ECValue, ECValueAccessor
+//! @bsiclass 
+//======================================================================================= 
+struct ECValueAccessorPair
+    {
+private:
+    ECValue           m_value;
+    ECValueAccessor   m_valueAccessor;
+public:
+    ECOBJECTS_EXPORT ECValueAccessorPair ();
+    ECOBJECTS_EXPORT ECValueAccessorPair (ECValueAccessorPairCR pair);
+    ECOBJECTS_EXPORT ECValueAccessorPair (ECValueCR value, ECValueAccessorCR accessor);
+    ECOBJECTS_EXPORT void                     SetValue (ECValueCR value);
+    ECOBJECTS_EXPORT void                     SetAccessor (ECValueAccessorCR accessor);
+    ECOBJECTS_EXPORT ECValueCR                GetValue () const;
+    ECOBJECTS_EXPORT ECValueAccessorCR        GetAccessor () const;
+    };
+
+// The template below is part of the Bentley API on the trunk, but does not yet exist on the branch.
+// Currently, ECValueAccessorPairCollection is the only consumer of this template on the branch,
+// so the template is copied here temporarily.  This should be removed during a merge.
+
+/*=================================================================================**//**
+* This template is used by iterators that hide their implementation from the
+* published API.  Hiding the implementation allows it to be improved, for example
+* by adding new data members, without requiring callers to recompile.
+*
+* To use the template, an iterator class must:
+*   1) Satisfy the requirements of RefCountedPtr usually by deriving from RefCountedBase.
+*   2) Provide a typedef for its return type, ex:
+*       typedef DgnModelRefP ReturnType;
+*   3) Provide the following methods:        
+*       bool             IsDifferent(MyIterator const& rhs) const;
+*       void             MoveToNext ();
+*       ReturnType       GetCurrent () const;
+*       bool             IsAtEnd () const;
+*
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+template <typename IteratorImplementation>
+struct VirtualCollectionIterator : std::iterator<std::forward_iterator_tag, typename IteratorImplementation::ReturnType>
+{
+private:
+    RefCountedPtr<IteratorImplementation> m_implementation;
+
+public:
+    VirtualCollectionIterator () { }
+    VirtualCollectionIterator (IteratorImplementation& state) : m_implementation (&state)
+        {
+        if (m_implementation->IsAtEnd())
+            m_implementation = NULL;
+        }
+
+    typename IteratorImplementation::ReturnType  operator*() const
+        {
+        return m_implementation->GetCurrent();
+        }
+
+    bool        operator!=(VirtualCollectionIterator const& rhs) const
+        {
+        if (m_implementation.IsNull() && rhs.m_implementation.IsNull())
+            return false;
+
+        if (m_implementation.IsNull() != rhs.m_implementation.IsNull())
+            return true;
+
+        return m_implementation->IsDifferent (*rhs.m_implementation.get());
+        }
+        
+    VirtualCollectionIterator&   operator++()
+        {
+        m_implementation->MoveToNext();
+
+        if (m_implementation->IsAtEnd())
+            m_implementation = NULL;
+
+        return *this;
+        }
+};
+
+//=======================================================================================  
+//! @see ECValue, ECValueAccessor, ECValueAccessorPairCollection
+//! @bsiclass 
+//======================================================================================= 
+struct ECValueAccessorPairCollectionIterator : RefCountedBase
+    {
+private:
+/*__PUBLISH_SECTION_END__*/
+    friend ECValueAccessorPairCollection;
+
+    ECObjectsStatus m_status;
+    ECValueAccessor m_currentAccessor;
+    ECValue         m_currentValue;
+    bool            m_includeNullValues;
+    IECInstanceCP   m_instance;
+
+    void            NextArrayElement();
+    void            NextProperty();
+    UInt32          CurrentMaxArrayLength();
+    UInt32          CurrentMaxPropertyCount();
+
+    ECValueAccessorPairCollectionIterator ();
+    ECValueAccessorPairCollectionIterator (IECInstanceCP instance, bool m_includeNullValues);
+/*__PUBLISH_SECTION_START__*/
+public:
+    typedef ECValueAccessorPair ReturnType;
+
+    ECOBJECTS_EXPORT bool                   IsDifferent(ECValueAccessorPairCollectionIterator const& iter) const;
+    ECOBJECTS_EXPORT void                   MoveToNext ();
+    ECOBJECTS_EXPORT ECValueAccessorPair    GetCurrent () const;
+    ECOBJECTS_EXPORT bool                   IsAtEnd () const;
+    };
+
+//=======================================================================================  
+//! ECValueAccessorPairCollection describes a set of ECValues and accessors that make up
+//! an ECInstance.  These values are found as needed.  It supports STL-like iteration, 
+//! and will recursively return values that are part of inner structs and struct array 
+//! members.  It will never return an ECValue representing a struct or an array.
+//! @see ECValue, ECValueAccessor, ECValueAccessorPair
+//! @bsiclass 
+//======================================================================================= 
+struct ECValueAccessorPairCollection : RefCountedBase
+    {
+private:
+    bool            m_includeNullValues;
+    IECInstanceCP   m_instance;
+public:
+    ECOBJECTS_EXPORT ECValueAccessorPairCollection (IECInstanceCP instance);
+
+    ECOBJECTS_EXPORT ECValueAccessorPairCollection (IECInstanceCP instance, bool includeNullValues);
+
+    typedef VirtualCollectionIterator<ECValueAccessorPairCollectionIterator> const_iterator;
+
+    ECOBJECTS_EXPORT const_iterator begin () const;
+    ECOBJECTS_EXPORT const_iterator end ()   const;
+
+    ECOBJECTS_EXPORT bool           GetIncludesNullValues () const;
+    ECOBJECTS_EXPORT void           SetIncludesNullValues (bool includeNullValues);
+    };
+typedef RefCountedPtr<ECValueAccessorPairCollection> ECValueAccessorPairCollectionPtr;
 
 END_BENTLEY_EC_NAMESPACE
 

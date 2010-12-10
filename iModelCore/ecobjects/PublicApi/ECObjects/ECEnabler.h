@@ -55,8 +55,8 @@ protected:
     //! where the ____ is a name specific to your subclass, and the parameters may vary per enabler.
     ECOBJECTS_EXPORT ECEnabler(ECClassCR ecClass);
 
-    ECOBJECTS_EXPORT virtual wchar_t const *            _GetName() const = 0;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus            _GetPropertyIndex (UInt32& propertyIndex, const wchar_t * propertyAccessString) const = 0;
+    virtual wchar_t const *            _GetName() const = 0;
+    virtual ECObjectsStatus            _GetPropertyIndex (UInt32& propertyIndex, const wchar_t * propertyAccessString) const = 0;
 #if defined (EXPERIMENTAL_TEXT_FILTER)
     ECOBJECTS_EXPORT virtual PropertyProcessingResult   _ProcessPrimitiveProperties (bset<ECClassCP>& failedClasses, IECInstanceCR, EC::PrimitiveType, IPropertyProcessor const&, PropertyProcessingOptions) const;
 #endif
