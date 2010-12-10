@@ -113,7 +113,6 @@ private:
     // These members are transient
     bool                    m_hideFromLeakDetection;
     SchemaIndex             m_schemaIndex;
-    bool                    m_isPersisted;
     UInt32                  m_sizeOfFixedSection;
     bool                    m_isRelationshipClass;
     int                     m_propertyIndexOfSourceECPointer;
@@ -164,8 +163,6 @@ public:
     // These members are only meaningful in the context of a consumer like DgnHandlers.dll that actually handles persistence of ClassLayouts
     ECOBJECTS_EXPORT ClassIndex     GetClassIndex() const;
     ECOBJECTS_EXPORT SchemaIndex    GetSchemaIndex () const;
-    ECOBJECTS_EXPORT bool           IsPersisted () const;
-    ECOBJECTS_EXPORT void           SetIsPersisted (bool isPersisted) const;
     ECOBJECTS_EXPORT int            GetECPointerIndex (ECRelationshipEnd end) const;
     
     ECOBJECTS_EXPORT UInt32          GetPropertyCount () const;
