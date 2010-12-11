@@ -887,7 +887,7 @@ public:
 
 typedef RefCountedPtr<ECRelationshipClass>      ECRelationshipClassPtr;
 
-typedef std::list<ECSchemaP> ECSchemaReferenceList;
+typedef bvector<ECSchemaP> ECSchemaReferenceList;
 //=======================================================================================
 //! Supports STL like iterator of classes in a schema
 //=======================================================================================

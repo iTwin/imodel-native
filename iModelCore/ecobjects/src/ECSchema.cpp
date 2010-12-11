@@ -669,7 +669,7 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema
 ECSchemaR       refSchema
 )
     {
-    ECSchemaReferenceList::const_iterator schemaIterator;
+    ECSchemaReferenceList::iterator schemaIterator;
     for (schemaIterator = m_refSchemaList.begin(); schemaIterator != m_refSchemaList.end(); schemaIterator++)
         {
         if (*schemaIterator == &refSchema)

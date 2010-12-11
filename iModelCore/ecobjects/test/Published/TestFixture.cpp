@@ -146,6 +146,8 @@ void    ECTestFixture::TestForECSchemaLeaks ()
     testForLeaks (BackDoor::ECSchema::Debug_GetLeakDetector(), L"ECSchemaLeakDetector");
     testForLeaks (BackDoor::ECClass::Debug_GetLeakDetector(), L"ECClassLeakDetector");
     testForLeaks (BackDoor::ECProperty::Debug_GetLeakDetector(), L"ECPropertyLeakDetector");
+
+    testForLeaks (BackDoor::ClassLayout::Debug_GetLeakDetector(), L"ClassLayoutLeakDetector");
     }
 
 /*---------------------------------------------------------------------------------**//**
