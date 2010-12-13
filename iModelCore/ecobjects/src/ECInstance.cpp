@@ -269,7 +269,7 @@ int IECInstance::ParseExpectedNIndices (const wchar_t * propertyAccessString)
 +---------------+---------------+---------------+---------------+---------------+------*/
 MemoryECInstanceBase* IECInstance::_GetAsMemoryECInstance () const
     {
-    return NULL;    // default to NULL and let real MemoryECInstanceBased class override this method.
+    return NULL;    // default to NULL and let real MemoryECInstanceBased classes override this method.
     }
 
 /*---------------------------------------------------------------------------------**//**
