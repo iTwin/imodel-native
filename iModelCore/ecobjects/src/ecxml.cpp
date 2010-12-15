@@ -85,6 +85,8 @@ bwstring const&     typeName
         primitiveType = PRIMITIVETYPE_Long;
     else if (0 == typeName.compare (ECXML_TYPENAME_BOOLEAN))
         primitiveType = PRIMITIVETYPE_Boolean;
+    else if (0 == typeName.compare (ECXML_TYPENAME_BOOL))
+        primitiveType = PRIMITIVETYPE_Boolean;
     else if (0 == typeName.compare (ECXML_TYPENAME_DOUBLE))
         primitiveType = PRIMITIVETYPE_Double;
     else if (0 == typeName.compare (ECXML_TYPENAME_POINT2D))

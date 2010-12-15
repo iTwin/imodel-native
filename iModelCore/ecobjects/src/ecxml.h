@@ -66,6 +66,7 @@
 //    - PrimitiveECProperty::_GetTypeName
 static const bwstring ECXML_TYPENAME_BINARY             = L"binary";
 static const bwstring ECXML_TYPENAME_BOOLEAN            = L"boolean";
+static const bwstring ECXML_TYPENAME_BOOL               = L"bool";
 static const bwstring ECXML_TYPENAME_DATETIME           = L"dateTime";
 static const bwstring ECXML_TYPENAME_DOUBLE             = L"double";
 static const bwstring ECXML_TYPENAME_INTEGER            = L"int";

@@ -171,6 +171,35 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenCOMNotInitialized)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ReadWoutersFile)
+    {
+    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+
+    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+    bwstring seedPath(ECTestFixture::GetTestDataPath(L"").c_str());
+    schemaContext->AddSchemaPath(seedPath.c_str());
+
+    ECSchemaP schema;
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"IFC2x3.01.00.ecschema.xml").c_str(), *schemaContext);
+    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);    
+
+    ECClassP relationshipClass = schema->GetClassP (L"IfcProduct_ObjectPlacement");
+    ECRelationshipClassP    relClass  = dynamic_cast<ECRelationshipClassP> (relationshipClass);
+    ASSERT_TRUE (relClass);
+
+    ECConstraintClassesList const& targetClasses = relClass->Target.Classes;
+    for each (ECClassP allowableTargetClassP in relClass->Target.Classes)
+        {
+        wprintf (L"Allowable Target Class : %s \n", allowableTargetClassP->Name.c_str());
+        }
+
+    CoUninitialize();
+    }    
+   
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileDoesNotExist)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
@@ -1023,9 +1052,9 @@ TEST_F(ClassTest, ExpectErrorWithCircularBaseClasses)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            IsClassInList (std::list<ECClassP> const& classList, ECClassR searchClass)
+bool            IsClassInList (bvector<ECClassP> const& classList, ECClassR searchClass)
     {
-    std::list<ECClassP>::const_iterator classIterator;
+    bvector<ECClassP>::const_iterator classIterator;
 
     for (classIterator = classList.begin(); classIterator != classList.end(); classIterator++)
         {

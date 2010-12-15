@@ -350,7 +350,18 @@ const bwstring &name
     ECPropertyP ecProperty = propertyIterator->second;
  
     m_propertyMap.erase(propertyIterator);
-    m_propertyList.remove(ecProperty);
+
+    // remove property from vector m_propertyList
+    PropertyList::iterator propertyListIterator;
+    for (propertyListIterator = m_propertyList.begin(); propertyListIterator != m_propertyList.end(); propertyListIterator++)
+        {
+        if (*propertyListIterator == ecProperty)
+            {
+            m_propertyList.erase(propertyListIterator);
+            break;
+            }
+        }
+
     delete ecProperty;
 
     return ECOBJECTS_STATUS_Success;
@@ -533,7 +544,16 @@ void    ECClass::AddDerivedClass (ECClassCR derivedClass) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    ECClass::RemoveDerivedClass (ECClassCR derivedClass) const
     {
-    m_derivedClasses.remove((ECClassP) &derivedClass);
+    ECDerivedClassesList::iterator derivedClassIterator;
+
+    for (derivedClassIterator = m_derivedClasses.begin(); derivedClassIterator != m_derivedClasses.end(); derivedClassIterator++)
+        {
+        if (*derivedClassIterator == (ECClassP)&derivedClass)
+            {
+            m_derivedClasses.erase(derivedClassIterator);
+            return;
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -631,22 +651,25 @@ ECObjectsStatus ECClass::RemoveBaseClass
 ECClassCR baseClass
 )
     {
-    ECBaseClassesList::const_iterator baseClassIterator;
+    bool baseClassRemoved = false;
+
+    ECBaseClassesList::iterator baseClassIterator;
     for (baseClassIterator = m_baseClasses.begin(); baseClassIterator != m_baseClasses.end(); baseClassIterator++)
         {
         if (*baseClassIterator == (ECClassP)&baseClass)
             {
+            m_baseClasses.erase(baseClassIterator);
+            baseClassRemoved = true;
             break;
             }
         }
         
-    if (m_baseClasses.end() == baseClassIterator)
+    if (!baseClassRemoved)
         {
         ECObjectsLogger::Log()->warningv(L"Class '%s' is not a base class of class '%s'", baseClass.Name, m_name);
         return ECOBJECTS_STATUS_ClassNotFound;
         }
         
-    m_baseClasses.remove((ECClassP)&baseClass);
     baseClass.RemoveDerivedClass(*this);
 
     return ECOBJECTS_STATUS_Success;
@@ -727,10 +750,9 @@ PropertyList* propertyList
         
     if (m_baseClasses.size() == 0)
         return ECOBJECTS_STATUS_Success;
-    propertyList->reverse();
         
     TraverseBaseClasses(&AddUniquePropertiesToList, true, propertyList);
-    propertyList->reverse();
+
     return ECOBJECTS_STATUS_Success;
     }
     
@@ -762,19 +784,21 @@ const void *arg
             newProperties.push_back(prop);
         }
         
-    newProperties.reverse();
-    for (PropertyList::iterator newIter = newProperties.begin(); newIter != newProperties.end(); newIter++)
-        propertyList->push_back(*newIter);
+    // add properties in reverse order to front of list, so base class properties come first
+    for (size_t i = newProperties.size(); i>0; i--)
+        propertyList->insert(propertyList->begin(), newProperties[i-1]);
+
     return false;
-    }    
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECClass::TraverseBaseClasses
 (
 TraversalDelegate traverseMethod, 
-bool recursive,
-const void * arg
+bool              recursive,
+const void*       arg
 ) const
     {
     if (m_baseClasses.size() == 0)
@@ -1469,12 +1493,13 @@ ECObjectsStatus ECRelationshipConstraint::RemoveClass
 ECClassCR classConstraint
 )
     {
-    ECConstraintClassesList::const_iterator constraintClassIterator;
+    ECConstraintClassesList::iterator constraintClassIterator;
+
     for (constraintClassIterator = m_constraintClasses.begin(); constraintClassIterator != m_constraintClasses.end(); constraintClassIterator++)
         {
         if (*constraintClassIterator == (ECClassP)&classConstraint)
             {
-            m_constraintClasses.remove(*constraintClassIterator);
+            m_constraintClasses.erase(constraintClassIterator);
             return ECOBJECTS_STATUS_Success;
             }
         }

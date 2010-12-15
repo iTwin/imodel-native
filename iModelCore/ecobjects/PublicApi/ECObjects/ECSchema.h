@@ -43,7 +43,7 @@ public:
     static bool Validate(const bwstring& name);
 };
     
-typedef std::list<ECPropertyP> PropertyList;
+typedef bvector<ECPropertyP> PropertyList;
 typedef bmap<const wchar_t * , ECPropertyP, stdext::hash_compare<const wchar_t *, less_str>> PropertyMap;
 typedef stdext::hash_map<const wchar_t * , ECClassP, stdext::hash_compare<const wchar_t *, less_str>>    ClassMap;
 typedef stdext::hash_map<const wchar_t * , ECSchemaP, stdext::hash_compare<const wchar_t *, less_str>>   SchemaMap;
@@ -174,13 +174,13 @@ public:
 #endif
 /*__PUBLISH_SECTION_START__*/        
 
-typedef std::list<IECInstancePtr> ECCustomAttributeCollection;
+typedef bvector<IECInstancePtr> ECCustomAttributeCollection;
 struct ECCustomAttributeInstanceIterable;
 
 //=======================================================================================
 //
 //=======================================================================================
-struct IECCustomAttributeContainer
+struct IECCustomAttributeContainer /*__PUBLISH_ABSTRACT__*/  
 {
 /*__PUBLISH_SECTION_END__*/
 private:
@@ -494,9 +494,9 @@ public:
     ECOBJECTS_EXPORT const_iterator end ()   const;    
     };
 
-typedef std::list<ECClassP> ECBaseClassesList;
-typedef std::list<ECClassP> ECDerivedClassesList;
-typedef std::list<ECClassP> ECConstraintClassesList;
+typedef bvector<ECClassP> ECBaseClassesList;
+typedef bvector<ECClassP> ECDerivedClassesList;
+typedef bvector<ECClassP> ECConstraintClassesList;
 
 /*__PUBLISH_SECTION_END__*/
 typedef bool (*TraversalDelegate) (ECClassCP, const void *);
@@ -878,7 +878,7 @@ public:
 
 typedef RefCountedPtr<ECRelationshipClass>      ECRelationshipClassPtr;
 
-typedef std::list<ECSchemaP> ECSchemaReferenceList;
+typedef bvector<ECSchemaP> ECSchemaReferenceList;
 //=======================================================================================
 //! Supports STL like iterator of classes in a schema
 //=======================================================================================

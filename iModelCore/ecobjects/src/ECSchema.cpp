@@ -711,13 +711,12 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema
 ECSchemaR       refSchema
 )
     {
-    ECSchemaReferenceList::const_iterator schemaIterator;
+    ECSchemaReferenceList::iterator schemaIterator;
     for (schemaIterator = m_refSchemaList.begin(); schemaIterator != m_refSchemaList.end(); schemaIterator++)
         {
         if (*schemaIterator == &refSchema)
             {
-//            m_refSchemaList.erase(schemaIterator);
-//            return ECOBJECTS_STATUS_Success;
+            // We need to verify that nothing references the schema before we can remove it.
             break;
             }
         }
