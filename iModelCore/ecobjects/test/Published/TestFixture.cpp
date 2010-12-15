@@ -162,7 +162,7 @@ void    ECTestFixture::TestForIECInstanceLeaks ()
         sprintf (message, "TestForIECInstanceLeaks found that there are %d IECInstances still alive. Anything more than %d is flagged as an error!\n", 
             numLiveInstances, MAX_INTERNAL_INSTANCES);
 
-        std::vector<bwstring> classNamesToExclude;
+        bvector<bwstring> classNamesToExclude;
         IECInstance::Debug_ReportLeaks (classNamesToExclude);
 
         EXPECT_TRUE (numLiveInstances <= MAX_INTERNAL_INSTANCES) << message;
