@@ -1076,9 +1076,9 @@ TEST_F(ClassTest, ExpectErrorWithCircularBaseClasses)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            IsClassInList (std::list<ECClassP> const& classList, ECClassR searchClass)
+bool            IsClassInList (bvector<ECClassP> const& classList, ECClassR searchClass)
     {
-    std::list<ECClassP>::const_iterator classIterator;
+    bvector<ECClassP>::const_iterator classIterator;
 
     for (classIterator = classList.begin(); classIterator != classList.end(); classIterator++)
         {
