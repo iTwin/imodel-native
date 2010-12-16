@@ -352,17 +352,16 @@ MSXML2::IXMLDOMNode& propertyNode
     MSXML2::IXMLDOMNodePtr attributePtr;        
     
     // typeName is a required attribute.  If it is missing, an error will be returned.
-    SchemaDeserializationStatus setterStatus = SCHEMA_DESERIALIZATION_STATUS_Success;
     // For Primitive & Array properties we ignore parse errors and default to string.  Struct properties will require a resolvable typename.
     READ_REQUIRED_XML_ATTRIBUTE_IGNORING_SET_ERRORS (TYPE_NAME_ATTRIBUTE,           this, TypeName, propertyNode.baseName)  
 
-    if (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml == setterStatus)
+    if (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml == status)
         {
         ECObjectsLogger::Log()->warningv (L"Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.\n", this->Name.c_str(), this->TypeName.c_str());
         return SCHEMA_DESERIALIZATION_STATUS_Success;
         }
 
-    return setterStatus;
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
