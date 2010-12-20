@@ -174,7 +174,6 @@ ClassLayout::ClassLayout(SchemaIndex schemaIndex, bool hideFromLeakDetection)
     :
     m_hideFromLeakDetection(hideFromLeakDetection),
     m_schemaIndex (schemaIndex),
-    m_isPersisted(false),
     m_classIndex(0),
     m_sizeOfFixedSection(0), 
     m_isRelationshipClass(false), m_propertyIndexOfSourceECPointer(-1), m_propertyIndexOfTargetECPointer(-1)
@@ -392,22 +391,6 @@ ClassIndex      ClassLayout::GetClassIndex() const
 bwstring const &  ClassLayout::GetECClassName() const
     {
     return m_className;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen    01/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            ClassLayout::IsPersisted() const
-    {
-    return m_isPersisted;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen    01/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            ClassLayout::SetIsPersisted (bool isPersisted) const
-    {
-    const_cast<ClassLayoutP>(this)->m_isPersisted = isPersisted;
     }
 
 /*---------------------------------------------------------------------------------**//**
