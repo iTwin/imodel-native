@@ -187,7 +187,7 @@ bool IsExcluded(bwstring& className, std::vector<bwstring>& classNamesToExclude)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen    02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IECInstance::Debug_ReportLeaks(std::vector<bwstring>& classNamesToExclude)
+void IECInstance::Debug_ReportLeaks(bvector<bwstring>& classNamesToExclude)
     {
 #ifdef DEBUG_INSTANCE_LEAKS
     for each (DebugInstanceLeakMap::value_type leak in g_debugInstanceLeakMap)

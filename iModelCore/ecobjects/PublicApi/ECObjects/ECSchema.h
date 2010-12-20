@@ -13,6 +13,7 @@
 #include <Bentley\RefCounted.h>
 #include <Bentley\bvector.h>
 #include <Bentley\bmap.h>
+#include <Bentley\bset.h>
 
 #define DEFAULT_VERSION_MAJOR   1
 #define DEFAULT_VERSION_MINOR   0
@@ -42,10 +43,10 @@ public:
     static bool Validate(const bwstring& name);
 };
     
-typedef std::list<ECPropertyP> PropertyList;
+typedef bvector<ECPropertyP> PropertyList;
 typedef bmap<const wchar_t * , ECPropertyP, stdext::hash_compare<const wchar_t *, less_str>> PropertyMap;
-typedef stdext::hash_map<const wchar_t * , ECClassP, stdext::hash_compare<const wchar_t *, less_str>>    ClassMap;
-typedef stdext::hash_map<const wchar_t * , ECSchemaP, stdext::hash_compare<const wchar_t *, less_str>>   SchemaMap;
+typedef bmap<const wchar_t * , ECClassP,    stdext::hash_compare<const wchar_t *, less_str>> ClassMap;
+typedef bmap<const wchar_t * , ECSchemaP,   stdext::hash_compare<const wchar_t *, less_str>> SchemaMap;
 
 //=======================================================================================    
 // ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 
@@ -174,13 +175,13 @@ public:
 #endif
 /*__PUBLISH_SECTION_START__*/        
 
-typedef std::list<IECInstancePtr> ECCustomAttributeCollection;
+typedef bvector<IECInstancePtr> ECCustomAttributeCollection;
 struct ECCustomAttributeInstanceIterable;
 
 //=======================================================================================
 //
 //=======================================================================================
-struct IECCustomAttributeContainer
+struct IECCustomAttributeContainer /*__PUBLISH_ABSTRACT__*/  
 {
 /*__PUBLISH_SECTION_END__*/
 private:
@@ -501,9 +502,9 @@ public:
     ECOBJECTS_EXPORT const_iterator end ()   const;    
     };
 
-typedef std::list<ECClassP> ECBaseClassesList;
-typedef std::list<ECClassP> ECDerivedClassesList;
-typedef std::list<ECClassP> ECConstraintClassesList;
+typedef bvector<ECClassP> ECBaseClassesList;
+typedef bvector<ECClassP> ECDerivedClassesList;
+typedef bvector<ECClassP> ECConstraintClassesList;
 
 /*__PUBLISH_SECTION_END__*/
 typedef bool (*TraversalDelegate) (ECClassCP, const void *);
@@ -1042,7 +1043,7 @@ private:
     
     ECSchemaReferenceList m_refSchemaList;
     
-    stdext::hash_map<ECSchemaP, const bwstring> m_referencedSchemaNamespaceMap;
+    bmap<ECSchemaP, const bwstring> m_referencedSchemaNamespaceMap;
 
     ECSchema (bool hideFromLeakDetection);
     virtual ~ECSchema();
@@ -1053,7 +1054,7 @@ private:
     ECObjectsStatus                     AddClass (ECClassP& pClass);
     ECObjectsStatus                     SetVersionFromString (const wchar_t* versionString);
 
-    typedef bvector<std::pair<ECClassP, MSXML2_IXMLDOMNodePtr>>  ClassDeserializationVector;
+    typedef bvector<bpair<ECClassP, MSXML2_IXMLDOMNodePtr>>  ClassDeserializationVector;
     SchemaDeserializationStatus         ReadClassStubsFromXml(MSXML2_IXMLDOMNode& schemaNodePtr,ClassDeserializationVector& classes);
     SchemaDeserializationStatus         ReadClassContentsFromXml(ClassDeserializationVector&  classes);
     SchemaDeserializationStatus         ReadSchemaReferencesFromXml(MSXML2_IXMLDOMNode& schemaNodePtr, ECSchemaDeserializationContextR context);

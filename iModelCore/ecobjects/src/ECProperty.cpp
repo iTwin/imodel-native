@@ -382,15 +382,17 @@ MSXML2::IXMLDOMNode& propertyNode
     MSXML2::IXMLDOMNamedNodeMapPtr nodeAttributesPtr = propertyNode.attributes;
     MSXML2::IXMLDOMNodePtr attributePtr;        
     
-    // OPTIONAL attributes - If these attributes exist they do not need to be valid.  We will ignore any errors setting them and use default values.
-    // NEEDSWORK This is due to the current implementation in managed ECObjects.  We should reconsider whether it is the correct behavior.
-    ECObjectsStatus setterStatus;
+    // typeName is a required attribute.  If it is missing, an error will be returned.
     // For Primitive & Array properties we ignore parse errors and default to string.  Struct properties will require a resolvable typename.
-    READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (TYPE_NAME_ATTRIBUTE,           this, TypeName)  
-    if (ECOBJECTS_STATUS_Success != setterStatus)
-        ECObjectsLogger::Log()->warningv (L"Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.\n", this->Name.c_str(), this->TypeName.c_str());        
+    READ_REQUIRED_XML_ATTRIBUTE_IGNORING_SET_ERRORS (TYPE_NAME_ATTRIBUTE,           this, TypeName, propertyNode.baseName)  
 
-    return SCHEMA_DESERIALIZATION_STATUS_Success;
+    if (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml == status)
+        {
+        ECObjectsLogger::Log()->warningv (L"Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.\n", this->Name.c_str(), this->TypeName.c_str());
+        return SCHEMA_DESERIALIZATION_STATUS_Success;
+        }
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -663,10 +665,15 @@ MSXML2::IXMLDOMNode& propertyNode
     ECObjectsStatus setterStatus;
     READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (MIN_OCCURS_ATTRIBUTE,          this, MinOccurs)    
     READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (MAX_OCCURS_ATTRIBUTE,          this, MaxOccurs)
+
     // For Primitive & Array properties we ignore parse errors and default to string.  Struct properties will require a resolvable typename.
-    READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (TYPE_NAME_ATTRIBUTE,           this, TypeName)  
-    if (ECOBJECTS_STATUS_Success != setterStatus)
-        ECObjectsLogger::Log()->warningv (L"Defaulting the type of ECArrayProperty '%s' to '%s' in reaction to non-fatal parse error.\n", this->Name.c_str(), this->TypeName.c_str());        
+    READ_REQUIRED_XML_ATTRIBUTE_IGNORING_SET_ERRORS (TYPE_NAME_ATTRIBUTE,           this, TypeName, propertyNode.baseName)  
+
+    if (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml == setterStatus)
+        {
+        ECObjectsLogger::Log()->warningv (L"Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.\n", this->Name.c_str(), this->TypeName.c_str());
+        return SCHEMA_DESERIALIZATION_STATUS_Success;
+        }
 
     return SCHEMA_DESERIALIZATION_STATUS_Success;
     }
