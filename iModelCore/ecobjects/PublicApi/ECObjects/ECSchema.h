@@ -45,9 +45,9 @@ public:
 };
     
 typedef bvector<ECPropertyP> PropertyList;
-typedef bmap<const wchar_t * , ECPropertyP, stdext::hash_compare<const wchar_t *, less_str>> PropertyMap;
-typedef bmap<const wchar_t * , ECClassP,    stdext::hash_compare<const wchar_t *, less_str>> ClassMap;
-typedef bmap<const wchar_t * , ECSchemaP,   stdext::hash_compare<const wchar_t *, less_str>> SchemaMap;
+typedef bmap<const wchar_t * , ECPropertyP, less_str> PropertyMap;
+typedef bmap<const wchar_t * , ECClassP,    less_str> ClassMap;
+typedef bmap<const wchar_t * , ECSchemaP,   less_str> SchemaMap;
 
 //=======================================================================================    
 // ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 
