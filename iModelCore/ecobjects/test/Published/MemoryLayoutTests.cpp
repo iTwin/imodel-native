@@ -2,7 +2,7 @@
 |
 |     $Source: ecobjects/nativeatp/Published/MemoryLayoutTests.cpp $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -895,6 +895,68 @@ TEST_F(MemoryLayoutTests, ECValueEqualsMethod)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan.Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MemoryLayoutTests, GetEnablerPropertyInformation)
+    {
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    ASSERT_TRUE (schema != NULL);
+
+    ECClassP ecClass = schema->GetClassP (L"AllPrimitives");
+    ASSERT_TRUE (ecClass);
+
+    SchemaLayout schemaLayout (24);
+
+    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
+
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);        
+
+    const int expectedPropertyCount = 18;
+
+    UInt32 propertyCount = enabler->GetPropertyCount();
+
+    EXPECT_EQ (expectedPropertyCount, propertyCount);
+
+    wchar_t* expectedProperties [expectedPropertyCount] = 
+        {
+        L"AString",
+        L"AnInt",
+        L"APoint3d",
+        L"APoint2d",
+        L"ADouble",
+        L"ADateTime",
+        L"ABoolean",
+        L"ALong",
+        L"ABinary",
+        L"SomeStrings[]",
+        L"SomeInts[]",
+        L"SomePoint3ds[]",
+        L"SomePoint2ds[]",
+        L"SomeDoubles[]",
+        L"SomeDateTimes[]",
+        L"SomeBooleans[]",
+        L"SomeLongs[]",
+        L"SomeBinaries[]"
+        };
+
+    for (UInt32 i=0; i < expectedPropertyCount; i++)
+        {
+        const wchar_t* expectedPropertyName = expectedProperties [i];
+        const wchar_t* propertyName         = NULL;
+        UInt32 propertyIndex          = 0;
+
+        EXPECT_TRUE (ECOBJECTS_STATUS_Success == enabler->GetPropertyIndex (propertyIndex, expectedPropertyName));
+        EXPECT_TRUE (ECOBJECTS_STATUS_Success == enabler->GetAccessString  (propertyName,  propertyIndex));
+
+        EXPECT_STREQ (expectedPropertyName, propertyName);
+        }
+
+    delete classLayout;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan.Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, TestECValueEnumeration)
     {
     ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
@@ -947,16 +1009,20 @@ TEST_F(MemoryLayoutTests, TestECValueEnumeration)
     sourceInstance->SetValue(L"ADateTime", v);
     sourceInstance->SetValue(L"SomeDateTimes[0]", v);
 
-    ECValueAccessorPairCollection sourceCollection(sourceInstance.get());
+
+    ECValueAccessorPairCollectionOptionsPtr sourceOptions = ECValueAccessorPairCollectionOptions::Create (*sourceInstance, false);
+    ECValueAccessorPairCollection sourceCollection(*sourceOptions);
     for each (ECValueAccessorPair pair in sourceCollection)
         {
-        ECValueAccessor accessor   = pair.GetAccessor();
         ECValue         value      = pair.GetValue();
+        ECValueAccessor accessor   = pair.GetAccessor();
+
         //wprintf(L"%ls: %ls\n", accessor.GetManagedAccessString(), value.ToString());
         EXPECT_TRUE (ECOBJECTS_STATUS_Success == targetInstance->SetValueUsingAccessor(accessor, value));
         }
 
-    ECValueAccessorPairCollection targetCollection(targetInstance.get());
+    ECValueAccessorPairCollectionOptionsPtr targetOptions = ECValueAccessorPairCollectionOptions::Create (*targetInstance, false);
+    ECValueAccessorPairCollection targetCollection(*targetOptions);
     for each (ECValueAccessorPair pair in targetCollection)
         {
         ECValueAccessor accessor   = pair.GetAccessor();
@@ -1056,11 +1122,12 @@ TEST_F(MemoryLayoutTests, TestECValueEnumerationStructArray)
 
 
     int valuesFound;
-    ECValueAccessorPairCollection sourceCollection(sourceInstance.get());
+    //Below, true indicates that null values will be included.
+    ECValueAccessorPairCollectionOptionsPtr sourceOptions = ECValueAccessorPairCollectionOptions::Create (*sourceInstance, true);
+    ECValueAccessorPairCollection sourceCollection(*sourceOptions);
 
     //Enumerate all values (including nulls.)  Does not output.
     valuesFound = 0;
-    sourceCollection.SetIncludesNullValues(true);
     for each (ECValueAccessorPair pair in sourceCollection)
         {
         valuesFound ++;
@@ -1068,7 +1135,7 @@ TEST_F(MemoryLayoutTests, TestECValueEnumerationStructArray)
     EXPECT_TRUE (18 < valuesFound);
 
     valuesFound = 0;
-    sourceCollection.SetIncludesNullValues(false);
+    sourceOptions->SetIncludesNullValues(false);
     for each (ECValueAccessorPair pair in sourceCollection)
         {
         valuesFound ++;
@@ -1081,7 +1148,8 @@ TEST_F(MemoryLayoutTests, TestECValueEnumerationStructArray)
     EXPECT_EQ (18, valuesFound);
 
     valuesFound = 0;   
-    ECValueAccessorPairCollection targetCollection0 (targetInstance0.get());
+    ECValueAccessorPairCollectionOptionsPtr targetOptions0 = ECValueAccessorPairCollectionOptions::Create (*targetInstance0, false);
+    ECValueAccessorPairCollection targetCollection0(*targetOptions0);
     for each (ECValueAccessorPair pair in targetCollection0)
         {
         valuesFound ++;
@@ -1095,7 +1163,8 @@ TEST_F(MemoryLayoutTests, TestECValueEnumerationStructArray)
     EXPECT_EQ (18, valuesFound);
 
     valuesFound = 0;   
-    ECValueAccessorPairCollection targetCollection1 (targetInstance1.get());
+    ECValueAccessorPairCollectionOptionsPtr targetOptions1 = ECValueAccessorPairCollectionOptions::Create (*targetInstance1, false);
+    ECValueAccessorPairCollection targetCollection1(*targetOptions1);
     for each (ECValueAccessorPair pair in targetCollection1)
         {
         valuesFound ++;
@@ -1104,7 +1173,8 @@ TEST_F(MemoryLayoutTests, TestECValueEnumerationStructArray)
     EXPECT_EQ (18, valuesFound);
 
     StandaloneECInstancePtr duplicatedTarget = StandaloneECInstance::Duplicate (*targetInstance0);
-    ECValueAccessorPairCollection duplicatedTargetCollection (duplicatedTarget.get());
+    ECValueAccessorPairCollectionOptionsPtr duplicatedOptions = ECValueAccessorPairCollectionOptions::Create (*duplicatedTarget, false);
+    ECValueAccessorPairCollection duplicatedTargetCollection(*duplicatedOptions);
     valuesFound = 0;
     for each (ECValueAccessorPair pair in duplicatedTargetCollection)
         {
@@ -1141,7 +1211,7 @@ TEST_F(MemoryLayoutTests, ECValueEnumerationOverFixedSizeArrays)
     StandaloneECEnablerPtr primitiveEnabler = StandaloneECEnabler::CreateEnabler (*ecClass1, *classLayout1, true);
 
     StandaloneECInstancePtr sourceInstance  = enabler->CreateInstance();
-    StandaloneECInstancePtr targetInstance0 = enabler->CreateInstance();
+    StandaloneECInstancePtr targetInstance  = enabler->CreateInstance();
 
     ECValue v;
     v.SetString (L"a fixed string");
@@ -1234,22 +1304,24 @@ TEST_F(MemoryLayoutTests, ECValueEnumerationOverFixedSizeArrays)
 
     int valuesFound;
     valuesFound = 0;
-    ECValueAccessorPairCollection sourceCollection (sourceInstance.get());
+    ECValueAccessorPairCollectionOptionsPtr sourceOptions = ECValueAccessorPairCollectionOptions::Create (*sourceInstance, false);
+    ECValueAccessorPairCollection sourceCollection(*sourceOptions);
     for each (ECValueAccessorPair pair in sourceCollection)
         {
         valuesFound ++;
         ECValueAccessor accessor = pair.GetAccessor();
-        ECValue value = pair.GetValue();
+        ECValue         value = pair.GetValue();
         //wprintf(L"%ls: %ls\n", accessor.GetManagedAccessString(), value.ToString());
-        EXPECT_TRUE (ECOBJECTS_STATUS_Success == targetInstance0->SetValueUsingAccessor (accessor, value));
+        EXPECT_TRUE (ECOBJECTS_STATUS_Success == targetInstance->SetValueUsingAccessor (accessor, value));
         }
     EXPECT_EQ (33, valuesFound);
 
     //Copy to target instance
     //wprintf(L"\nEnumerating values in target instance...\n");
     valuesFound = 0;   
-    ECValueAccessorPairCollection targetCollection0 (targetInstance0.get());
-    for each (ECValueAccessorPair pair in targetCollection0)
+    ECValueAccessorPairCollectionOptionsPtr targetOptions = ECValueAccessorPairCollectionOptions::Create (*targetInstance, false);
+    ECValueAccessorPairCollection targetCollection(*targetOptions);
+    for each (ECValueAccessorPair pair in targetCollection)
         {
         valuesFound ++;
         //ECValueAccessor accessor = pair.GetAccessor();
@@ -1267,6 +1339,9 @@ TEST_F(MemoryLayoutTests, ECValueEnumerationOverFixedSizeArrays)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, ECValueEnumerationPerformance)
     {
+    //The purpose of this test is to see the performance loss from using two different class
+    //layouts.
+#ifdef IGNORE____
     // CGM - this CoInitialize is only needed to de-serialize the schema.  Ideally, CreateTestSchema should handle this since the test shouldn't need to know
     // that implementation detail
     // DHR - I stuck this in CreateTestSchema(), but I don't see an easy way around having to CoUninitialize()
@@ -1297,9 +1372,10 @@ TEST_F(MemoryLayoutTests, ECValueEnumerationPerformance)
     SetAndVerifyInteger (*sourceInstance, v, L"AnInt", 8851);
     SetAndVerifyString (*sourceInstance, v, L"AString", L"Do or do not, there is no try.");
 
-    ECValueAccessorPairCollection sourceCollection(sourceInstance.get());
+    ECValueAccessorPairCollectionOptionsPtr sourceOptions = ECValueAccessorPairCollectionOptions::Create (*sourceInstance, false);
+    ECValueAccessorPairCollection sourceCollection(*sourceOptions);
 
-#if defined (TIMING_ACCESS_BYINDEX)
+
 
     UInt32      numAccesses = 300000;
 
@@ -1417,17 +1493,18 @@ TEST_F(MemoryLayoutTests, PolymorphicStructArrayEnumeration)
     v.SetDouble(3.1415);
     dInstance1->SetValue(L"DerivedDoubleProperty", v);
 
-    EC::StandaloneECInstancePtr sourceInstance0 = enabler->CreateInstance();
+    EC::StandaloneECInstancePtr sourceInstance = enabler->CreateInstance();
 
-    sourceInstance0->AddArrayElements(L"PolymorphicStructArray[]", 2);
+    sourceInstance->AddArrayElements(L"PolymorphicStructArray[]", 2);
     v.SetStruct(dInstance0.get());
-    sourceInstance0->SetValue(L"PolymorphicStructArray[]", v, 0);
+    sourceInstance->SetValue(L"PolymorphicStructArray[]", v, 0);
     v.SetStruct(dInstance1.get());
-    sourceInstance0->SetValue(L"PolymorphicStructArray[]", v, 1);
+    sourceInstance->SetValue(L"PolymorphicStructArray[]", v, 1);
 
-    EC::StandaloneECInstancePtr targetInstance0 = enabler->CreateInstance();
+    EC::StandaloneECInstancePtr targetInstance = enabler->CreateInstance();
 
-    ECValueAccessorPairCollection sourceCollection (sourceInstance0.get());
+    ECValueAccessorPairCollectionOptionsPtr sourceOptions = ECValueAccessorPairCollectionOptions::Create (*sourceInstance, false);
+    ECValueAccessorPairCollection sourceCollection(*sourceOptions);
 
     int valuesFound;
 
@@ -1447,27 +1524,28 @@ TEST_F(MemoryLayoutTests, PolymorphicStructArrayEnumeration)
         valuesFound++;
         ECValue value = pair.GetValue();
         ECValueAccessor accessor = pair.GetAccessor();
-        targetInstance0->SetValueUsingAccessor (accessor, value);
+        targetInstance->SetValueUsingAccessor (accessor, value);
         }
     EXPECT_EQ (4, valuesFound); 
 
-    wprintf(L"Enumerating target instance...\n");
-    ECValueAccessorPairCollection targetCollection (targetInstance0.get());
+    ECValueAccessorPairCollectionOptionsPtr targetOptions = ECValueAccessorPairCollectionOptions::Create (*targetInstance, false);
+    ECValueAccessorPairCollection targetCollection(*targetOptions);
     valuesFound = 0;
     for each (ECValueAccessorPair pair in targetCollection)
         {
         valuesFound++;
-        EXPECT_TRUE (VerifyPair (sourceInstance0, pair));
+        EXPECT_TRUE (VerifyPair (sourceInstance, pair));
         }
     EXPECT_EQ (4, valuesFound); 
 
-    StandaloneECInstancePtr duplicatedTarget = StandaloneECInstance::Duplicate (*targetInstance0);
-    ECValueAccessorPairCollection duplicatedTargetCollection (duplicatedTarget.get());
+    StandaloneECInstancePtr duplicatedTarget = StandaloneECInstance::Duplicate (*targetInstance);
+    ECValueAccessorPairCollectionOptionsPtr duplicatedTargetOptions = ECValueAccessorPairCollectionOptions::Create (*duplicatedTarget, false);
+    ECValueAccessorPairCollection duplicatedTargetCollection(*duplicatedTargetOptions);
     valuesFound = 0;
     for each (ECValueAccessorPair pair in duplicatedTargetCollection)
         {
         valuesFound++;
-        EXPECT_TRUE (VerifyPair (sourceInstance0, pair));
+        EXPECT_TRUE (VerifyPair (sourceInstance, pair));
         }
     EXPECT_EQ (4, valuesFound); 
     };
@@ -1492,6 +1570,7 @@ TEST_F(MemoryLayoutTests, ManualUseOfAccessors)
     ClassLayoutP primitiveClassLayout = ClassLayout::BuildFromClass (*primitiveClass, 0, schemaLayout.GetSchemaIndex());
 
     StandaloneECEnablerPtr enabler              = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout0, true);
+    StandaloneECEnablerPtr structEnabler        = StandaloneECEnabler::CreateEnabler (*primitiveClass, *primitiveClassLayout);
 
     EC::StandaloneECInstancePtr sourceInstance  = enabler->CreateInstance();
     EC::StandaloneECInstancePtr targetInstance0 = enabler->CreateInstance();
@@ -1500,42 +1579,44 @@ TEST_F(MemoryLayoutTests, ManualUseOfAccessors)
     ECValueAccessor accessor;
     ECValue         v;
 
-    accessor.PushLocation(sourceInstance.get(), L"StructMember.ADouble", -1);
+    accessor.PushLocation(*sourceInstance, L"StructMember.ADouble", -1);
     v.SetDouble(3.1415);
     sourceInstance->SetValueUsingAccessor(accessor, v);
     accessor.PopLocation();
 
-    accessor.PushLocation(sourceInstance.get(), L"StructMember.AnInt", -1);
+    accessor.PushLocation(*sourceInstance, L"StructMember.AnInt", -1);
     v.SetInteger(234);
     sourceInstance->SetValueUsingAccessor(accessor, v);
     accessor.PopLocation();
 
-    accessor.PushLocation(sourceInstance.get(), L"StructMember.SomeInts[]", 0);
+    accessor.PushLocation(*sourceInstance, L"StructMember.SomeInts[]", 0);
     v.SetInteger(432);
     sourceInstance->SetValueUsingAccessor(accessor, v);
     accessor.PopLocation();
-    accessor.PushLocation(sourceInstance.get(), L"StructMember.SomeInts[]", 1);
+    accessor.PushLocation(*sourceInstance, L"StructMember.SomeInts[]", 1);
     v.SetInteger(555);
     sourceInstance->SetValueUsingAccessor(accessor, v);
     accessor.PopLocation();
 
     //Step into struct array
-    accessor.PushLocation(sourceInstance.get(), L"StructArray[]", 0);
+    accessor.PushLocation(*sourceInstance, L"StructArray[]", 0);
 
-    accessor.PushLocation(primitiveClassLayout, L"AString", -1);
+    accessor.PushLocation(*structEnabler, L"AString", -1);
     v.SetString(L"It is possible to use accessors manually.");
     sourceInstance->SetValueUsingAccessor(accessor, v);
     accessor.PopLocation();
-    accessor.PushLocation(primitiveClassLayout, L"ALong", -1);
+    accessor.PushLocation(*structEnabler, L"ALong", -1);
     v.SetLong(5846543);
     sourceInstance->SetValueUsingAccessor(accessor, v);
     accessor.PopLocation();
 
     int valuesFound;
-    ECValueAccessorPairCollection sourceCollection(sourceInstance.get());
+
+    ECValueAccessorPairCollectionOptionsPtr sourceOptions = ECValueAccessorPairCollectionOptions::Create (*sourceInstance, false);
+    ECValueAccessorPairCollection sourceCollection(*sourceOptions);
 
     valuesFound = 0;
-    sourceCollection.SetIncludesNullValues(true);
+    sourceOptions->SetIncludesNullValues(true);
     for each (ECValueAccessorPair pair in sourceCollection)
         {
         valuesFound ++;
@@ -1543,13 +1624,13 @@ TEST_F(MemoryLayoutTests, ManualUseOfAccessors)
     EXPECT_TRUE (6 < valuesFound);
 
     valuesFound = 0;
-    sourceCollection.SetIncludesNullValues(false);
+    sourceOptions->SetIncludesNullValues(false);
     for each (ECValueAccessorPair pair in sourceCollection)
         {
         valuesFound ++;
         ECValueAccessor accessor   = pair.GetAccessor();
         ECValue         value      = pair.GetValue();
-        //wprintf(L"%ls: %ls\n", accessor.GetManagedAccessString(), value.ToString());
+        //wprintf(L"%ls: %ls\n", accessor->GetManagedAccessString(), value.ToString());
         EXPECT_TRUE (ECOBJECTS_STATUS_Success == targetInstance0->SetValueUsingAccessor (accessor, value));
         EXPECT_TRUE (ECOBJECTS_STATUS_Success == targetInstance1->SetValueUsingAccessor (accessor, value));
         }
@@ -1557,12 +1638,13 @@ TEST_F(MemoryLayoutTests, ManualUseOfAccessors)
 
     //Copy to target instance
     valuesFound = 0;   
-    ECValueAccessorPairCollection targetCollection0 (targetInstance0.get());
+    ECValueAccessorPairCollectionOptionsPtr targetOptions0 = ECValueAccessorPairCollectionOptions::Create (*targetInstance0, false);
+    ECValueAccessorPairCollection targetCollection0(*targetOptions0);
     for each (ECValueAccessorPair pair in targetCollection0)
         {
         valuesFound ++;
-        ECValueAccessor accessor = pair.GetAccessor();
-        ECValue value = pair.GetValue();
+        ECValueAccessorCR accessor = pair.GetAccessor();
+        ECValueCR value = pair.GetValue();
         ECValue temp;
         EXPECT_TRUE (ECOBJECTS_STATUS_Success == targetInstance1->GetValueUsingAccessor (temp, accessor));
         EXPECT_TRUE (value.Equals (temp));
@@ -1570,9 +1652,9 @@ TEST_F(MemoryLayoutTests, ManualUseOfAccessors)
         }
     EXPECT_EQ (6, valuesFound); 
 
-    wprintf(L"\nEnumerating values in target instance...\n");
     valuesFound = 0;   
-    ECValueAccessorPairCollection targetCollection1 (targetInstance1.get());
+    ECValueAccessorPairCollectionOptionsPtr targetOptions1 = ECValueAccessorPairCollectionOptions::Create (*targetInstance1, false);
+    ECValueAccessorPairCollection targetCollection1(*targetOptions1);
     for each (ECValueAccessorPair pair in targetCollection1)
         {
         valuesFound ++;
@@ -1638,21 +1720,26 @@ TEST_F(MemoryLayoutTests, SimpleMergeTwoInstances)
     Merging two instances into a third instance:
     In this example, values from sourceInstance 1 will take precedence over 
     values in sourceInstance0 in the even that neither are null.
+    Note that in Options::Create (), the second flag is set to true: in this
+    case, it is wise to include accessors that have null values.
     */
-    ECValueAccessorPairCollection sourceCollection (sourceInstance1.get());
-    sourceCollection.SetIncludesNullValues(true);
+    ECValueAccessorPairCollectionOptionsPtr sourceOptions = ECValueAccessorPairCollectionOptions::Create (*sourceInstance1, true);
+    ECValueAccessorPairCollection sourceCollection(*sourceOptions);
     for each (ECValueAccessorPair pair in sourceCollection)
         {
+        //value came from sourceInstance1
         ECValue value = pair.GetValue();
-        //TODO make another example where collisions are NULL, etc.
+        //if the value is null, get it from sourceInstance0
         if(value.IsNull())
             sourceInstance0->GetValueUsingAccessor (value, pair.GetAccessor());
+        //set the value to target instance
         if(!value.IsNull())
             targetInstance->SetValueUsingAccessor (pair.GetAccessor(), value);
         }
 
     int valuesCounted = 0;
-    ECValueAccessorPairCollection targetCollection (targetInstance.get());
+    ECValueAccessorPairCollectionOptionsPtr targetOptions = ECValueAccessorPairCollectionOptions::Create (*targetInstance, false);
+    ECValueAccessorPairCollection targetCollection(*targetOptions);
     for each (ECValueAccessorPair pair in targetCollection)
         {
         valuesCounted++;
