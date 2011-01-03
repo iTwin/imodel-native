@@ -511,12 +511,14 @@ StandaloneECInstance::~StandaloneECInstance ()
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 StandaloneECInstancePtr         StandaloneECInstance::Duplicate(IECInstanceCR instance)
     {
-    ClassLayoutCP           layout      = ECValueAccessor::TryGetClassLayout(&instance);
-    if(NULL == layout)
-        return NULL;
-    StandaloneECEnablerPtr  enabler     = StandaloneECEnabler::CreateEnabler(instance.GetClass(), *layout);
-    StandaloneECInstancePtr newInstance = enabler->CreateInstance();
-    ECValueAccessorPairCollection collection(&instance);
+
+    ECClassCR    ecClass     = instance.GetClass();
+    ClassLayoutP classLayout = ClassLayout::BuildFromClass (ecClass, 0, 0);
+    StandaloneECEnablerPtr standaloneEnabler   = StandaloneECEnabler::CreateEnabler (ecClass, *classLayout);
+
+    StandaloneECInstancePtr newInstance = standaloneEnabler->CreateInstance();
+    ECValueAccessorPairCollectionOptionsPtr options = ECValueAccessorPairCollectionOptions::Create (instance, false);
+    ECValueAccessorPairCollection collection (*options);
     for each (ECValueAccessorPair pair in collection)
         {
         newInstance->SetValueUsingAccessor(pair.GetAccessor(), pair.GetValue());
@@ -725,6 +727,31 @@ ECObjectsStatus           StandaloneECEnabler::_GetPropertyIndex(UInt32& propert
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan.Rush      12/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus           StandaloneECEnabler::_GetAccessString(wchar_t const *& accessString, UInt32 propertyIndex) const
+    {
+    ClassLayoutCR       classLayout = GetClassLayout();
+    PropertyLayoutCP    propertyLayout;
+    ECObjectsStatus     status = classLayout.GetPropertyLayoutByIndex (propertyLayout, propertyIndex);
+    if (ECOBJECTS_STATUS_Success != status)
+        return status;
+    accessString = propertyLayout->GetAccessString();
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan.Rush      12/10
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32                    StandaloneECEnabler::_GetPropertyCount() const
+    {
+    ClassLayoutCR       classLayout = GetClassLayout();
+
+    return classLayout.GetPropertyCount ();
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
 /*StandaloneECInstanceP   StandaloneECEnabler::CreateInstanceFromUninitializedMemory (byte * data, UInt32 size)
@@ -738,7 +765,7 @@ ECObjectsStatus           StandaloneECEnabler::_GetPropertyIndex(UInt32& propert
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
-StandaloneECInstancePtr   StandaloneECEnabler::CreateInstance (UInt32 minimumBufferSize)
+StandaloneECInstancePtr   StandaloneECEnabler::CreateInstance (UInt32 minimumBufferSize) const
     {
     return new StandaloneECInstance (*this, minimumBufferSize);
     }    

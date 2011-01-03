@@ -52,6 +52,8 @@ ECClassCR           ECEnabler::GetClass() const  { return m_ecClass; }
 wchar_t const *     ECEnabler::GetName() const { return _GetName(); }
 ECObjectsStatus           ECEnabler::GetPropertyIndex (UInt32& propertyIndex, const wchar_t * accessString) const { return _GetPropertyIndex (propertyIndex, accessString); }
 
+ECObjectsStatus     ECEnabler::GetAccessString  (const wchar_t *& accessString, UInt32 propertyIndex) const { return _GetAccessString  (accessString, propertyIndex); }
+UInt32              ECEnabler::GetPropertyCount () const { return _GetPropertyCount (); }
 #if defined (EXPERIMENTAL_TEXT_FILTER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      06/2010

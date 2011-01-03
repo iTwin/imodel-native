@@ -357,11 +357,11 @@ ECObjectsStatus           IECInstance::GetValueUsingAccessor (ECValueR v, ECValu
     IECInstancePtr structInstancePtr;
     for (UInt32 depth = 0; depth < accessor.GetDepth(); depth ++)
         {
-        bool compatible = accessor.MatchesClassLayout(depth, ECValueAccessor::TryGetClassLayout (currentInstance));
+        bool compatible = accessor.MatchesEnabler(depth, currentInstance->GetEnabler());
         status = getValueHelper (v, currentInstance, accessor, depth, compatible);
         if (ECOBJECTS_STATUS_Success != status)
             return status;
-        if (v.IsStruct() && 0 <= accessor[depth].arrayIndex) //if(v.IsStructArray())
+        if (v.IsStruct() && 0 <= accessor[depth].arrayIndex)
             {
             structInstancePtr = v.GetStruct();
             currentInstance   = structInstancePtr.get();
@@ -385,10 +385,7 @@ ECObjectsStatus           IECInstance::SetValueUsingAccessor (ECValueAccessorCR 
     int arrayIndex;
     for (depth = 0; depth < accessor.GetDepth(); depth ++)
         {
-        ClassLayoutCP layout = ECValueAccessor::TryGetClassLayout (currentInstance);
-        if (NULL == layout)
-            return ECOBJECTS_STATUS_Error;
-        bool compatible = accessor.MatchesClassLayout(depth, layout);
+        bool compatible = accessor.MatchesEnabler(depth, currentInstance->GetEnabler());
         propertyIndex   = accessor[depth].propertyIndex;
         arrayIndex      = accessor[depth].arrayIndex;
         if (arrayIndex > -1)
@@ -420,39 +417,23 @@ ECObjectsStatus           IECInstance::SetValueUsingAccessor (ECValueAccessorCR 
         status = getValueHelper (structPlaceholder, currentInstance, accessor, depth, compatible);
         if (ECOBJECTS_STATUS_Success != status)
             return status;
-        assert (structPlaceholder.IsStruct() && "Accessor depth is deeper than expected.");
+        assert (structPlaceholder.IsStruct() && "Accessor depth is greater than expected.");
         structInstancePtr = structPlaceholder.GetStruct();
         IECInstanceP newInstance = structInstancePtr.get();
         if (NULL == newInstance)
             {
-            //We have progressed into a struct array and found that this instance has not yet been created.
-            //(Orgininally, this code was up with AddArrayElements(), but it belongs down here in case it is
-            //part of a fixed-size array or if a value is being set to the array out of order.)
-            const wchar_t* accessorWithBrackets = accessor.GetAccessString (depth);
-            if (NULL == accessorWithBrackets)
-                    return ECOBJECTS_STATUS_Error;
-            wchar_t accessorWithoutBrackets[NUM_ACCESSSTRING_BUFFER_CHARS+1];
-            const wchar_t* pos1 = wcschr (accessorWithBrackets, L'[');
-            size_t numChars = pos1 - accessorWithBrackets;
-            wcsncpy (accessorWithoutBrackets, accessorWithBrackets, numChars>NUM_ACCESSSTRING_BUFFER_CHARS?NUM_ACCESSSTRING_BUFFER_CHARS:numChars);
-            accessorWithoutBrackets[numChars]=0;
+            //WIP_FUSION
+            //This part of the method could benefit from calling GetPrivateWipInstance when the incoming accessor has a DgnECEnabler,
+            //or from calling CreateInstance if the incoming accessor is a StandaloneECEnabler.
+            ECClassCR structClass = accessor.GetEnabler (depth + 1).GetClass();
 
-            ECClassCR    ecClass       = currentInstance->GetClass();
-            ECSchemaCR   ecSchema      = ecClass.Schema;
-            ECPropertyP  prop = ecClass.GetPropertyP (accessorWithoutBrackets);
-            if (!prop->IsArray)
-                return ECOBJECTS_STATUS_Error;
-            ArrayECPropertyP arrayProp = dynamic_cast<ArrayECPropertyP>(prop);
-            if (!arrayProp)
-                return ECOBJECTS_STATUS_Error;
-            ECClassCP structClass = arrayProp->StructElementType;
-
-            StandaloneECEnablerPtr standaloneEnabler   = StandaloneECEnabler::CreateEnabler (*structClass, *accessor.GetClassLayout (depth + 1));
+            ClassLayoutP classLayout = ClassLayout::BuildFromClass (structClass, 0, 0);
+            StandaloneECEnablerPtr standaloneEnabler   = StandaloneECEnabler::CreateEnabler (structClass, *classLayout);
             IECInstancePtr newInstancePtr = standaloneEnabler->CreateInstance();
             newInstance = newInstancePtr.get();
             ECValue valueForSettingStructClass;
             valueForSettingStructClass.SetStruct (newInstance);
-            //newInstancePtr.addRef();
+
             status = setValueHelper (currentInstance, accessor, depth, compatible, valueForSettingStructClass);
             if (ECOBJECTS_STATUS_Success != status)
                 return status;
