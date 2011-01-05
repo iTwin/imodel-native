@@ -513,7 +513,7 @@ ECObjectsStatus           IECInstance::SetValueUsingAccessor (ECValueAccessorCR 
             ECClassCR structClass = accessor.GetEnabler (depth + 1).GetClass();
 
             ClassLayoutP classLayout = ClassLayout::BuildFromClass (structClass, 0, 0);
-            StandaloneECEnablerPtr standaloneEnabler   = StandaloneECEnabler::CreateEnabler (structClass, *classLayout);
+            StandaloneECEnablerPtr standaloneEnabler   = StandaloneECEnabler::CreateEnabler (structClass, *classLayout, true);
             IECInstancePtr newInstancePtr = standaloneEnabler->CreateInstance();
             newInstance = newInstancePtr.get();
             ECValue valueForSettingStructClass;
