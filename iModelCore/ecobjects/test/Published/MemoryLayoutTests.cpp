@@ -908,7 +908,7 @@ TEST_F(MemoryLayoutTests, GetEnablerPropertyInformation)
 
     ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
 
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout);        
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
 
     const int expectedPropertyCount = 18;
 
@@ -950,7 +950,6 @@ TEST_F(MemoryLayoutTests, GetEnablerPropertyInformation)
         EXPECT_STREQ (expectedPropertyName, propertyName);
         }
 
-    delete classLayout;
     }
 
 
@@ -1570,7 +1569,7 @@ TEST_F(MemoryLayoutTests, ManualUseOfAccessors)
     ClassLayoutP primitiveClassLayout = ClassLayout::BuildFromClass (*primitiveClass, 0, schemaLayout.GetSchemaIndex());
 
     StandaloneECEnablerPtr enabler              = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout0, true);
-    StandaloneECEnablerPtr structEnabler        = StandaloneECEnabler::CreateEnabler (*primitiveClass, *primitiveClassLayout);
+    StandaloneECEnablerPtr structEnabler        = StandaloneECEnabler::CreateEnabler (*primitiveClass, *primitiveClassLayout, true);
 
     EC::StandaloneECInstancePtr sourceInstance  = enabler->CreateInstance();
     EC::StandaloneECInstancePtr targetInstance0 = enabler->CreateInstance();
@@ -1662,8 +1661,6 @@ TEST_F(MemoryLayoutTests, ManualUseOfAccessors)
         }
     EXPECT_EQ (6, valuesFound); 
     
-    delete primitiveClassLayout;
-
     // instance.Compact()... then check values again
     
     };
