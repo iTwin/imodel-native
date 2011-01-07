@@ -514,7 +514,7 @@ StandaloneECInstancePtr         StandaloneECInstance::Duplicate(IECInstanceCR in
 
     ECClassCR    ecClass     = instance.GetClass();
     ClassLayoutP classLayout = ClassLayout::BuildFromClass (ecClass, 0, 0);
-    StandaloneECEnablerPtr standaloneEnabler   = StandaloneECEnabler::CreateEnabler (ecClass, *classLayout, false);
+    StandaloneECEnablerPtr standaloneEnabler   = StandaloneECEnabler::CreateEnabler (ecClass, *classLayout, true);
 
     StandaloneECInstancePtr newInstance = standaloneEnabler->CreateInstance();
     ECValueAccessorPairCollectionOptionsPtr options = ECValueAccessorPairCollectionOptions::Create (instance, false);
