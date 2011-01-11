@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/StandaloneECInstance.h $
 |
-|   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -148,10 +148,12 @@ private:
 protected:
     virtual wchar_t const *     _GetName() const override;
     virtual ECObjectsStatus     _GetPropertyIndex (UInt32& propertyIndex, const wchar_t * propertyAccessString) const override;
+    virtual ECObjectsStatus     _GetAccessString  (const wchar_t *& propertyAccessString, UInt32 propertyIndex) const override;
+    virtual UInt32              _GetPropertyCount () const override;
  
 public: 
     ECOBJECTS_EXPORT static StandaloneECEnablerPtr CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, bool ownsClassLayout);
-    ECOBJECTS_EXPORT StandaloneECInstancePtr       CreateInstance (UInt32 minimumInitialSize = 0);
+    ECOBJECTS_EXPORT StandaloneECInstancePtr       CreateInstance (UInt32 minimumInitialSize = 0) const;
     //ECOBJECTS_EXPORT StandaloneECInstanceP         CreateInstanceFromUninitializedMemory (byte * data, UInt32 size);
     //! Used to construct from another memory source like ECXData. The caller is claiming that the memory
     //! has been properly initialized with the classLayout that was passed in

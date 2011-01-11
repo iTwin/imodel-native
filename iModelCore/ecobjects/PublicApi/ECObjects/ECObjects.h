@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECObjects.h $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -44,6 +44,7 @@ EC_TYPEDEFS(ECValue);
 EC_TYPEDEFS(ECValueAccessor);
 EC_TYPEDEFS(ECValueAccessorPair);
 EC_TYPEDEFS(ECValueAccessorPairCollection);
+EC_TYPEDEFS(ECValueAccessorPairCollectionOptions);
 EC_TYPEDEFS(ArrayInfo);
 EC_TYPEDEFS(ECSchema);
 EC_TYPEDEFS(ECSchemaDeserializationContext);

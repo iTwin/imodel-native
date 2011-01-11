@@ -1272,9 +1272,6 @@ SchemaSerializationStatus ECSchema::WriteSchemaReferences (MSXML2::IXMLDOMElemen
             }
         usedPrefixes.insert(prefix);
         localReferencedSchemaNamespaceMap.insert(std::pair<ECSchemaP, const bwstring> (refSchema, prefix));
-#if defined (MERGEWIP_BILL_CHECK_THIS)
-        m_referencedSchemaNamespaceMap.insert(bpair<ECSchemaP, const bwstring> (refSchema, prefix));
-#endif
         }
 
     MSXML2::IXMLDOMTextPtr textPtr = NULL;
@@ -1283,15 +1280,8 @@ SchemaSerializationStatus ECSchema::WriteSchemaReferences (MSXML2::IXMLDOMElemen
     
     stdext::hash_map<ECSchemaP, const bwstring>::const_iterator iterator;
     for (iterator = localReferencedSchemaNamespaceMap.begin(); iterator != localReferencedSchemaNamespaceMap.end(); iterator++)
-#if defined (MERGEWIP_BILL_CHECK_THIS)
-    bmap<ECSchemaP, const bwstring>::const_iterator iterator;
-    for (iterator = m_referencedSchemaNamespaceMap.begin(); iterator != m_referencedSchemaNamespaceMap.end(); iterator++)
-#endif
         {
         std::pair<ECSchemaP, const bwstring> mapPair = *(iterator);
-#if defined (MERGEWIP_BILL_CHECK_THIS)
-        bpair<ECSchemaP, const bwstring> mapPair = *(iterator);
-#endif
         ECSchemaP refSchema = mapPair.first;
         schemaPtr = parentNode.ownerDocument->createNode(NODE_ELEMENT, EC_SCHEMAREFERENCE_ELEMENT, ECXML_URI_2_0);
         APPEND_CHILD_TO_PARENT(schemaPtr, (&parentNode));
@@ -1339,10 +1329,7 @@ SchemaSerializationStatus ECSchema::WriteClass (MSXML2::IXMLDOMElement &parentNo
     if (&(ecClass.Schema) != this)
         return status;
     
-#if defined (MERGEWIP_BILL_CHECK_THIS)
     bset<const wchar_t *>::const_iterator setIterator;
-#endif
-    std::set<const wchar_t *>::const_iterator setIterator;
     setIterator = context.m_alreadySerializedClasses.find(ecClass.Name.c_str());
     // Make sure we don't serialize any class twice
     if (setIterator != context.m_alreadySerializedClasses.end())

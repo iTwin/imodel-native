@@ -55,8 +55,10 @@ protected:
     //! where the ____ is a name specific to your subclass, and the parameters may vary per enabler.
     ECOBJECTS_EXPORT ECEnabler(ECClassCR ecClass);
 
-    virtual wchar_t const *            _GetName() const = 0;
-    virtual ECObjectsStatus            _GetPropertyIndex (UInt32& propertyIndex, const wchar_t * propertyAccessString) const = 0;
+    virtual wchar_t const *         _GetName() const = 0;
+    virtual ECObjectsStatus         _GetPropertyIndex (UInt32& propertyIndex, const wchar_t * propertyAccessString) const = 0;
+    virtual ECObjectsStatus         _GetAccessString  (const wchar_t *& propertyAccessString, UInt32 propertyIndex) const = 0;
+    virtual UInt32                  _GetPropertyCount () const = 0;
 #if defined (EXPERIMENTAL_TEXT_FILTER)
     ECOBJECTS_EXPORT virtual PropertyProcessingResult   _ProcessPrimitiveProperties (bset<ECClassCP>& failedClasses, IECInstanceCR, EC::PrimitiveType, IPropertyProcessor const&, PropertyProcessingOptions) const;
 #endif
@@ -72,7 +74,9 @@ public:
     ECOBJECTS_EXPORT wchar_t const * GetName() const;
     
     ECOBJECTS_EXPORT ECClassCR       GetClass() const;
-    ECOBJECTS_EXPORT ECObjectsStatus       GetPropertyIndex (UInt32& propertyIndex, const wchar_t * propertyAccessString) const;
+    ECOBJECTS_EXPORT ECObjectsStatus GetPropertyIndex     (UInt32& propertyIndex, const wchar_t * propertyAccessString) const;
+    ECOBJECTS_EXPORT ECObjectsStatus GetAccessString      (const wchar_t *& propertyAccessString, UInt32 propertyIndex) const;
+    ECOBJECTS_EXPORT UInt32          GetPropertyCount () const;
 
 #if defined (EXPERIMENTAL_TEXT_FILTER)
     //! Call processor on all primitive-valued properties of specified type(s) on this instance. 

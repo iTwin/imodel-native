@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECSchema.h $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -44,9 +44,9 @@ public:
 };
     
 typedef bvector<ECPropertyP> PropertyList;
-typedef bmap<const wchar_t * , ECPropertyP, stdext::hash_compare<const wchar_t *, less_str>> PropertyMap;
-typedef bmap<const wchar_t * , ECClassP,    stdext::hash_compare<const wchar_t *, less_str>> ClassMap;
-typedef bmap<const wchar_t * , ECSchemaP,   stdext::hash_compare<const wchar_t *, less_str>> SchemaMap;
+typedef bmap<const wchar_t * , ECPropertyP, less_str> PropertyMap;
+typedef bmap<const wchar_t * , ECClassP,    less_str> ClassMap;
+typedef bmap<const wchar_t * , ECSchemaP,   less_str> SchemaMap;
 
 //=======================================================================================    
 // ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 
@@ -1064,7 +1064,7 @@ private:
     
     struct  ECSchemaSerializationContext
         {
-        std::set<const wchar_t *> m_alreadySerializedClasses;
+        bset<const wchar_t *> m_alreadySerializedClasses;
         };
 
     SchemaSerializationStatus           WriteSchemaReferences(MSXML2_IXMLDOMElement& parentNode) const;
@@ -1204,6 +1204,7 @@ public:
     ECOBJECTS_EXPORT static ECObjectsStatus ParseSchemaFullName (bwstring& schemaName, UInt32& versionMajor, UInt32& versionMinor, const wchar_t* fullName);
 
     //! Given a version string MM.NN, this will parse other major and minor versions
+    //! @param[out] schemaName      The schema name without version number qualifiers
     //! @param[out] versionMajor    The major version number
     //! @param[out] versionMinor    The minor version number
     //! @param[in]  fullName        A string containing the schema name and major and minor versions (Name.MM.NN)
