@@ -255,8 +255,8 @@ ECObjectsStatus ECSchema::AddClass
 ECClassP&                 pClass
 )
     {
-    std::pair < stdext::hash_map<const wchar_t *, ECClassP>::iterator, bool > resultPair;
-    resultPair = m_classMap.insert (std::pair<const wchar_t *, ECClassP> (pClass->Name.c_str(), pClass));
+    bpair < bmap<const wchar_t *, ECClassP>::iterator, bool > resultPair;
+    resultPair = m_classMap.insert (bpair<const wchar_t *, ECClassP> (pClass->Name.c_str(), pClass));
     if (resultPair.second == false)
         {
         ECObjectsLogger::Log()->warningv (L"Can not create class '%s' because it already exists in the schema", pClass->Name.c_str());
@@ -307,8 +307,8 @@ bwstring const&     name
         return status;
         }
 
-    std::pair < stdext::hash_map<const wchar_t *, ECClassP>::iterator, bool > resultPair;
-    resultPair = m_classMap.insert (std::pair<const wchar_t *, ECClassP> (pClass->Name.c_str(), pClass));
+    bpair < bmap<const wchar_t *, ECClassP>::iterator, bool > resultPair;
+    resultPair = m_classMap.insert (bpair<const wchar_t *, ECClassP> (pClass->Name.c_str(), pClass));
     if (resultPair.second == false)
         {
         delete pClass;
@@ -611,7 +611,7 @@ bwstring &    namespacePrefix
     if (&schema == this)
         return ECOBJECTS_STATUS_Success;
 
-    stdext::hash_map<ECSchemaP, bwstring const>::const_iterator schemaIterator = m_referencedSchemaNamespaceMap.find((ECSchemaP) &schema);
+    bmap<ECSchemaP, bwstring const>::const_iterator schemaIterator = m_referencedSchemaNamespaceMap.find((ECSchemaP) &schema);
     if (schemaIterator != m_referencedSchemaNamespaceMap.end())
         {
         namespacePrefix = schemaIterator->second;
@@ -657,7 +657,7 @@ ECSchemaR       refSchema
         }
             
     m_refSchemaList.push_back(&refSchema);
-    m_referencedSchemaNamespaceMap.insert(std::pair<ECSchemaP, const bwstring> (&refSchema, refSchema.NamespacePrefix));
+    m_referencedSchemaNamespaceMap.insert(bpair<ECSchemaP, const bwstring> (&refSchema, refSchema.NamespacePrefix));
     return ECOBJECTS_STATUS_Success;
     }
     
@@ -674,8 +674,7 @@ ECSchemaR       refSchema
         {
         if (*schemaIterator == &refSchema)
             {
-//            m_refSchemaList.erase(schemaIterator);
-//            return ECOBJECTS_STATUS_Success;
+            // We need to verify that nothing references the schema before we can remove it.
             break;
             }
         }
@@ -742,7 +741,7 @@ ECSchemaR       refSchema
         }
 
     m_refSchemaList.erase(schemaIterator); 
-    stdext::hash_map<ECSchemaP, const bwstring>::const_iterator iterator = m_referencedSchemaNamespaceMap.find((ECSchemaP) &refSchema);
+    bmap<ECSchemaP, const bwstring>::iterator iterator = m_referencedSchemaNamespaceMap.find((ECSchemaP) &refSchema);
     if (iterator != m_referencedSchemaNamespaceMap.end())
         {
         m_referencedSchemaNamespaceMap.erase(iterator);
@@ -798,7 +797,7 @@ ClassDeserializationVector&  classes
         else
             ECObjectsLogger::Log()->tracev (L"    Created Relationship ECClass Stub: %s\n", pClass->Name.c_str());
 
-        classes.push_back (std::make_pair (pClass, xmlNodePtr));
+        classes.push_back (make_bpair (pClass, xmlNodePtr));
         }
     return status;
     }
@@ -1273,6 +1272,9 @@ SchemaSerializationStatus ECSchema::WriteSchemaReferences (MSXML2::IXMLDOMElemen
             }
         usedPrefixes.insert(prefix);
         localReferencedSchemaNamespaceMap.insert(std::pair<ECSchemaP, const bwstring> (refSchema, prefix));
+#if defined (MERGEWIP_BILL_CHECK_THIS)
+        m_referencedSchemaNamespaceMap.insert(bpair<ECSchemaP, const bwstring> (refSchema, prefix));
+#endif
         }
 
     MSXML2::IXMLDOMTextPtr textPtr = NULL;
@@ -1281,8 +1283,15 @@ SchemaSerializationStatus ECSchema::WriteSchemaReferences (MSXML2::IXMLDOMElemen
     
     stdext::hash_map<ECSchemaP, const bwstring>::const_iterator iterator;
     for (iterator = localReferencedSchemaNamespaceMap.begin(); iterator != localReferencedSchemaNamespaceMap.end(); iterator++)
+#if defined (MERGEWIP_BILL_CHECK_THIS)
+    bmap<ECSchemaP, const bwstring>::const_iterator iterator;
+    for (iterator = m_referencedSchemaNamespaceMap.begin(); iterator != m_referencedSchemaNamespaceMap.end(); iterator++)
+#endif
         {
         std::pair<ECSchemaP, const bwstring> mapPair = *(iterator);
+#if defined (MERGEWIP_BILL_CHECK_THIS)
+        bpair<ECSchemaP, const bwstring> mapPair = *(iterator);
+#endif
         ECSchemaP refSchema = mapPair.first;
         schemaPtr = parentNode.ownerDocument->createNode(NODE_ELEMENT, EC_SCHEMAREFERENCE_ELEMENT, ECXML_URI_2_0);
         APPEND_CHILD_TO_PARENT(schemaPtr, (&parentNode));
@@ -1330,6 +1339,9 @@ SchemaSerializationStatus ECSchema::WriteClass (MSXML2::IXMLDOMElement &parentNo
     if (&(ecClass.Schema) != this)
         return status;
     
+#if defined (MERGEWIP_BILL_CHECK_THIS)
+    bset<const wchar_t *>::const_iterator setIterator;
+#endif
     std::set<const wchar_t *>::const_iterator setIterator;
     setIterator = context.m_alreadySerializedClasses.find(ecClass.Name.c_str());
     // Make sure we don't serialize any class twice
@@ -1821,7 +1833,7 @@ bool    ECClassContainer::const_iterator::operator!= (const_iterator const& rhs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassP   ECClassContainer::const_iterator::operator*() const
     {
-    std::pair<const wchar_t * , ECClassP> mapPair = *(m_state->m_mapIterator);
+    bpair<const wchar_t * , ECClassP> mapPair = *(m_state->m_mapIterator);
     return mapPair.second;
     };
 

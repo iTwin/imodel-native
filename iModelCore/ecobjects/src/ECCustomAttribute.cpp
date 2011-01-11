@@ -212,7 +212,7 @@ IECInstanceR customAttributeInstance
         }
 
     // remove existing custom attributes with matching class
-    ECCustomAttributeCollection::const_iterator iter;
+    ECCustomAttributeCollection::iterator iter;
     for (iter = m_customAttributes.begin(); iter != m_customAttributes.end(); iter++)
         {
         ECClassCR currentClass = (*iter)->GetClass();
@@ -235,7 +235,7 @@ bool IECCustomAttributeContainer::RemoveCustomAttribute
 bwstring const& className
 )
     {
-    ECCustomAttributeCollection::const_iterator iter;
+    ECCustomAttributeCollection::iterator iter;
     for (iter = m_customAttributes.begin(); iter != m_customAttributes.end(); iter++)
         {
         ECClassCR currentClass = (*iter)->GetClass();
@@ -257,7 +257,7 @@ bool IECCustomAttributeContainer::RemoveCustomAttribute
 ECClassCR classDefinition
 )
     {
-    ECCustomAttributeCollection::const_iterator iter;
+    ECCustomAttributeCollection::iterator iter;
     for (iter = m_customAttributes.begin(); iter != m_customAttributes.end(); iter++)
         {
         ECClassCR currentClass = (*iter)->GetClass();
