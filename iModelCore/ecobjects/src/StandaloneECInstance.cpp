@@ -511,7 +511,6 @@ StandaloneECInstance::~StandaloneECInstance ()
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 StandaloneECInstancePtr         StandaloneECInstance::Duplicate(IECInstanceCR instance)
     {
-
     ECClassCR    ecClass     = instance.GetClass();
     ClassLayoutP classLayout = ClassLayout::BuildFromClass (ecClass, 0, 0);
     StandaloneECEnablerPtr standaloneEnabler   = StandaloneECEnabler::CreateEnabler (ecClass, *classLayout, true);

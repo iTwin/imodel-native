@@ -949,7 +949,6 @@ TEST_F(MemoryLayoutTests, GetEnablerPropertyInformation)
 
         EXPECT_STREQ (expectedPropertyName, propertyName);
         }
-
     }
 
 
@@ -1662,7 +1661,6 @@ TEST_F(MemoryLayoutTests, ManualUseOfAccessors)
     EXPECT_EQ (6, valuesFound); 
     
     // instance.Compact()... then check values again
-    
     };
 
 /*---------------------------------------------------------------------------------**//**
