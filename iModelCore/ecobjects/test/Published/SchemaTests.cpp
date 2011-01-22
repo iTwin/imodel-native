@@ -2,7 +2,7 @@
 |
 |     $Source: ecobjects/nativeatp/Published/SchemaTests.cpp $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -557,6 +557,84 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
     CoUninitialize();
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateClassesInXml)
+    {
+    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+
+    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+
+    ECSchemaP schema;
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromString (schema, 
+        L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        L"<ECSchema schemaName=\"Widgets\" version=\"09.06\" displayLabel=\"Widgets Display Label\" description=\"Widgets Description\" nameSpacePrefix=\"wid\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
+        L"    <ECClass typeName=\"DifferentClass\" isDomainClass=\"True\">"
+        L"    </ECClass>"
+        L"    <ECClass typeName=\"ecProject\" description=\"Project ECClass\" displayLabel=\"Project\" isDomainClass=\"True\">"
+        L"       <ECProperty propertyName=\"Name\" typeName=\"string\" displayLabel=\"Project Name\" />"
+        L"    </ECClass>"
+        L"    <ECClass typeName=\"ecProject\" isDomainClass=\"True\">"
+        L"    </ECClass>"
+        L"</ECSchema>", *schemaContext);
+
+    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status); 
+
+    // Nothing should have been overwritten
+    ECClassP projectClass = schema->GetClassP(L"ecProject");
+    ASSERT_TRUE (projectClass);
+    EXPECT_STREQ(L"Project ECClass", projectClass->Description.c_str());
+    EXPECT_STREQ(L"Project", projectClass->DisplayLabel.c_str());
+    ECPropertyP pProperty = projectClass->GetPropertyP (L"Name");
+    EXPECT_TRUE (pProperty);
+    EXPECT_STREQ (L"Name", pProperty->Name.c_str());
+    EXPECT_TRUE (pProperty->IsPrimitive);
+    EXPECT_FALSE (pProperty->IsStruct);
+    EXPECT_FALSE (pProperty->IsArray);
+    EXPECT_STREQ (L"string", pProperty->TypeName.c_str());
+
+
+    ECSchemaP schema2;
+    ECSchemaOwnerPtr                    schemaOwner2 = ECSchemaOwner::CreateOwner();
+    ECSchemaDeserializationContextPtr   schemaContext2 = ECSchemaDeserializationContext::CreateContext(*schemaOwner2);
+
+
+    status = ECSchema::ReadXmlFromString (schema2, 
+        L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        L"<ECSchema schemaName=\"Widgets2\" version=\"09.06\" displayLabel=\"Widgets Display Label\" description=\"Widgets Description\" nameSpacePrefix=\"wid\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
+        L"    <ECClass typeName=\"ecProject\" description=\"Project ECClass\" displayLabel=\"Project\" isDomainClass=\"True\">"
+        L"       <ECProperty propertyName=\"Name\" typeName=\"string\" displayLabel=\"Project Name\" />"
+        L"    </ECClass>"
+        L"    <ECClass typeName=\"ecProject\" description=\"New Project ECClass\" isDomainClass=\"True\">"
+        L"       <ECProperty propertyName=\"Author\" typeName=\"string\" displayLabel=\"Project Name\" />"
+        L"    </ECClass>"
+        L"</ECSchema>", *schemaContext2);
+
+    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status); 
+    projectClass = schema2->GetClassP(L"ecProject");
+    ASSERT_TRUE (projectClass);
+    EXPECT_STREQ(L"New Project ECClass", projectClass->Description.c_str());
+    EXPECT_STREQ(L"Project", projectClass->DisplayLabel.c_str());
+    pProperty = projectClass->GetPropertyP (L"Name");
+    EXPECT_TRUE (pProperty);
+    EXPECT_STREQ (L"Name", pProperty->Name.c_str());
+    EXPECT_TRUE (pProperty->IsPrimitive);
+    EXPECT_FALSE (pProperty->IsStruct);
+    EXPECT_FALSE (pProperty->IsArray);
+    EXPECT_STREQ (L"string", pProperty->TypeName.c_str());
+
+    pProperty = projectClass->GetPropertyP (L"Author");
+    EXPECT_TRUE (pProperty);
+    EXPECT_STREQ (L"Author", pProperty->Name.c_str());
+    EXPECT_TRUE (pProperty->IsPrimitive);
+    EXPECT_FALSE (pProperty->IsStruct);
+    EXPECT_FALSE (pProperty->IsArray);
+    EXPECT_STREQ (L"string", pProperty->TypeName.c_str());
+    CoUninitialize();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
