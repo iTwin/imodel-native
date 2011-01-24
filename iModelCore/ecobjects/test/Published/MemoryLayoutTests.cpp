@@ -910,7 +910,7 @@ TEST_F(MemoryLayoutTests, GetEnablerPropertyInformation)
 
     StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
 
-    const int expectedPropertyCount = 18;
+    const int expectedPropertyCount = 19;
 
     UInt32 propertyCount = enabler->GetPropertyCount();
 
@@ -918,6 +918,7 @@ TEST_F(MemoryLayoutTests, GetEnablerPropertyInformation)
 
     wchar_t* expectedProperties [expectedPropertyCount] = 
         {
+        L"",
         L"AString",
         L"AnInt",
         L"APoint3d",

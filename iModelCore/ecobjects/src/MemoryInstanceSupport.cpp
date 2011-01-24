@@ -5,8 +5,9 @@
 |   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsPch.h"
+#include    "ECObjectsPch.h"
 #include    <algorithm>
+#include    <iomanip>
 
 // SHRINK_TO_FIT will cause space reserved for variable-sized values to be reduced to the minimum upon every set operation.
 // SHRINK_TO_FIT is not recommended and is mainly for testing. It it better to "compact" everything at once
@@ -124,7 +125,7 @@ bwstring    PropertyLayout::ToString ()
         typeName += L"[]";
     
     wchar_t line[1024];
-    swprintf (line, _countof(line), L"%32s %16s offset=%3i nullflagsOffset=%3i, nullflagsBitmask=0x%08.X", m_accessString.c_str(), typeName.c_str(), m_offset, m_nullflagsOffset, m_nullflagsBitmask);
+    swprintf (line, _countof(line), L"%-32s %-16s offset=%3i nullflagsOffset=%3i, nullflagsBitmask=0x%08.X", m_accessString.c_str(), typeName.c_str(), m_offset, m_nullflagsOffset, m_nullflagsBitmask);
         
     return line;
     }
@@ -135,6 +136,9 @@ bwstring    PropertyLayout::ToString ()
 bool            PropertyLayout::IsFixedSized () const
     {
     // WIP_FUSION: when we have m_modifiers, they will determine if it is fixed size... could have fixed size string or variable int (added at end)
+    if (m_typeDescriptor.IsStruct())
+        return true;
+
     return ( ( m_typeDescriptor.IsPrimitive() || 
                (m_typeDescriptor.IsPrimitiveArray() && (m_modifierFlags & ARRAYMODIFIERFLAGS_IsFixedCount))
              ) && PrimitiveTypeIsFixedSize (m_typeDescriptor.GetPrimitiveType()));
@@ -187,6 +191,9 @@ ClassLayout::ClassLayout(SchemaIndex schemaIndex, bool hideFromLeakDetection)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassLayout::~ClassLayout()
     {
+    for each (PropertyLayoutP layout in m_propertyLayouts)
+        delete layout;
+
     if ( ! m_hideFromLeakDetection)
         g_classLayoutLeakDetector.ObjectDestroyed(*this);
     }
@@ -202,7 +209,7 @@ ILeakDetector&  ClassLayout::Debug_GetLeakDetector() { return g_classLayoutLeakD
 bwstring        ClassLayout::GetShortDescription () const
     {
     wchar_t line[1024];
-    swprintf (line, _countof(line), L"ECClassIndex=%i, ECClass.Name=%s", m_classIndex, m_className.c_str());
+    swprintf (line, _countof(line), L"ClassLayout for ECClassIndex=%i, ECClass.Name=%s", m_classIndex, m_className.c_str());
 
     return line;
     }
@@ -216,20 +223,69 @@ bwstring        ClassLayout::GetName () const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/11
++---------------+---------------+---------------+---------------+---------------+------*/
+bwstring        ClassLayout::LogicalStructureToString (UInt32 parentStuctIndex, UInt32 indentLevel) const
+    {
+    LogicalStructureMap::const_iterator it = m_logicalStructureMap.find(parentStuctIndex);
+
+    if ( ! EXPECTED_CONDITION (it != m_logicalStructureMap.end()))
+        return L"";
+
+    wchar_t const* indentStr = L"|--";
+    wostringstream oss;
+    oss << setiosflags (ios::left);
+
+    for each (UInt32 propIndex in it->second)
+        {
+        for (UInt32 i = 0; i < indentLevel; i++)
+            oss << indentStr;
+
+        oss << setw(12 - 3 * indentLevel) << propIndex;
+
+        PropertyLayoutCP    propertyLayout = NULL;
+        ECObjectsStatus     status = GetPropertyLayoutByIndex (propertyLayout, propIndex);
+
+        if (SUCCESS != status || NULL == propertyLayout)
+            {
+            oss << L"  *** ERROR finding PropertyLayout ***" << endl;
+            continue;
+            }
+
+        wchar_t const *  accessString = propertyLayout->GetAccessString();
+        oss << setw(40) << accessString << setw(10) << L"  Parent: " << propertyLayout->GetParentStructIndex() << endl;
+
+        if (propertyLayout->GetTypeDescriptor().IsStruct())
+            oss << LogicalStructureToString (propIndex, indentLevel+1); 
+        }
+    
+    return oss.str().c_str();
+    }    
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 bwstring        ClassLayout::ToString () const
     {
-    bwstring    outString = GetShortDescription();
-    outString.append (L"\n");
+    wostringstream oss;
 
-    for each (PropertyLayout layout in m_propertyLayouts)
+    oss << GetShortDescription() << endl;
+
+    UInt32 propIndex = 0;
+
+    for each (PropertyLayoutP layout in m_propertyLayouts)
         {
-        outString.append (layout.ToString().c_str());
-        outString.append (L"\n");
+        oss << setiosflags( ios::left ) << setw(4) << propIndex;
+        oss << layout->ToString();
+        oss << endl;
+
+        propIndex++;
         }
 
-    return outString;
+    oss << L"Logical Structure:" << endl;
+    oss << LogicalStructureToString ();
+
+    return oss.str().c_str();
     }
         
 /*---------------------------------------------------------------------------------**//**
@@ -253,22 +309,24 @@ void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 byt
     header.m_classIndex    = m_classIndex;
     header.m_instanceFlags = 0;
 
-    if (0 == GetPropertyCount())
+    UInt32  nonStructPropCount = GetPropertyCountExcludingEmbeddedStructs();
+
+    if (0 == nonStructPropCount)
         return;
         
-    UInt32 nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks (GetPropertyCount());
+    UInt32 nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks (nonStructPropCount);
     InitializeNullFlags ((NullflagsBitmask *)(data + sizeof (InstanceHeader)), nNullflagsBitmasks);
             
     bool isFirstVariableSizedProperty = true;
     for (UInt32 i = 0; i < m_propertyLayouts.size(); ++i)
         {
-        PropertyLayoutCR layout = m_propertyLayouts[i];
-        if (layout.IsFixedSized())
+        PropertyLayoutCP layout = m_propertyLayouts[i];
+        if (layout->IsFixedSized())
             {
-            if (layout.GetTypeDescriptor().IsArray())
+            if (layout->GetTypeDescriptor().IsArray())
                 {
-                nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks (layout.GetModifierData());
-                InitializeNullFlags ((NullflagsBitmask *)(data + layout.GetOffset()), nNullflagsBitmasks);
+                nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks (layout->GetModifierData());
+                InitializeNullFlags ((NullflagsBitmask *)(data + layout->GetOffset()), nNullflagsBitmasks);
                 }            
             continue;
             }
@@ -277,7 +335,7 @@ void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 byt
         DEBUG_EXPECT (layout.GetOffset() % 4 == 0 && "We expect secondaryOffsets to be aligned on a 4 byte boundary");
 #endif
             
-        SecondaryOffset* secondaryOffset = (SecondaryOffset*)(data + layout.GetOffset());
+        SecondaryOffset* secondaryOffset = (SecondaryOffset*)(data + layout->GetOffset());
 
         if (isFirstVariableSizedProperty)
             {
@@ -359,8 +417,8 @@ UInt32          ClassLayout::CalculateBytesUsed(byte const * data) const
     if (0 == m_propertyLayouts.size())
         return m_sizeOfFixedSection;
         
-    PropertyLayoutCR lastPropertyLayout = m_propertyLayouts[m_propertyLayouts.size() - 1];  // WIP_FUSION: if _GetBytesUsed shows up in profiler, we may want to add bool m_hasVariableSizedValues;
-    if (lastPropertyLayout.IsFixedSized())
+    PropertyLayoutCP lastPropertyLayout = m_propertyLayouts[m_propertyLayouts.size() - 1];  // WIP_FUSION: if _GetBytesUsed shows up in profiler, we may want to add bool m_hasVariableSizedValues;
+    if (lastPropertyLayout->IsFixedSized())
         return m_sizeOfFixedSection;
 
     SecondaryOffset * pLast = (SecondaryOffset*)(data + m_sizeOfFixedSection - sizeof(SecondaryOffset));
@@ -405,20 +463,61 @@ int   ClassLayout::GetECPointerIndex (ECRelationshipEnd end) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/11
++---------------+---------------+---------------+---------------+---------------+------*/    
+UInt32          ClassLayout::Factory::GetParentStructIndex (wchar_t const * accessString) const
+    {
+    // The access string will contain a '.' only if the property is inside an embedded struct.
+    UInt32          parentStructIndex = 0;
+    wchar_t const*  pLastDot = wcsrchr (accessString, L'.');
+
+    if (NULL != pLastDot)
+        {
+        WString         parentAccessString (accessString, pLastDot - accessString);
+        ECObjectsStatus status = m_underConstruction.GetPropertyIndex (parentStructIndex, parentAccessString.c_str());
+
+        assert (SUCCESS == status);
+        }
+    
+    return parentStructIndex;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/    
+void            ClassLayout::Factory::AddStructProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor)
+    {
+    if (!EXPECTED_CONDITION (m_state == AcceptingFixedSizeProperties)) // ClassLayoutNotAcceptingFixedSizeProperties    
+        return;
+    
+    if (!EXPECTED_CONDITION (typeDescriptor.IsStruct()))
+        return;
+
+    UInt32  parentStructIndex = GetParentStructIndex (accessString);
+
+    // A struct PropertyLayout is just a placeholder.  Don't call AddProperty.
+    PropertyLayoutP propertyLayout = new PropertyLayout(accessString, parentStructIndex, typeDescriptor, 0, 0, 0, 0, 0);
+    m_underConstruction.AddPropertyLayout (accessString, *propertyLayout);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
 void            ClassLayout::Factory::AddProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 size, UInt32 modifierFlags, UInt32 modifierData)
     {
-    UInt32  positionInCurrentNullFlags = m_underConstruction.GetPropertyCount() % 32;
+    UInt32  positionInCurrentNullFlags = m_nonStructPropertyCount % 32;
     NullflagsBitmask  nullflagsBitmask = 0x01 << positionInCurrentNullFlags;
     
-    if (0 == positionInCurrentNullFlags && 0 != m_underConstruction.GetPropertyCount())
+    if (0 == positionInCurrentNullFlags && 0 != m_nonStructPropertyCount)
         {
         // It is time to add a new set of Nullflags
         m_nullflagsOffset += sizeof(NullflagsBitmask);
         m_offset          += sizeof(NullflagsBitmask);
         for (UInt32 i = 0; i < m_underConstruction.GetPropertyCount(); i++)
-            m_underConstruction.m_propertyLayouts[i].m_offset += sizeof(NullflagsBitmask); // Offsets of already-added property layouts need to get bumped up
+            {
+            if ( ! m_underConstruction.m_propertyLayouts[i]->m_typeDescriptor.IsStruct())
+                m_underConstruction.m_propertyLayouts[i]->m_offset += sizeof(NullflagsBitmask); // Offsets of already-added property layouts need to get bumped up
+            }
         } 
 
     // WIP_FUSION, for now all accessors of array property layouts are stored with the brackets appended.  This means all access to array values through an
@@ -428,11 +527,12 @@ void            ClassLayout::Factory::AddProperty (wchar_t const * accessString,
     if (typeDescriptor.IsArray())
         tempAccessString += L"[]";
 
-    PropertyLayout propertyLayout (tempAccessString.c_str(), typeDescriptor, m_offset, m_nullflagsOffset, nullflagsBitmask, modifierFlags, modifierData);
-    m_underConstruction.m_propertyLayouts.push_back(propertyLayout);
-    m_underConstruction.CheckForECPointers (accessString);
+    UInt32          parentStructIndex = GetParentStructIndex(accessString);
+    PropertyLayoutP propertyLayout = new PropertyLayout (tempAccessString.c_str(), parentStructIndex, typeDescriptor, m_offset, m_nullflagsOffset, nullflagsBitmask, modifierFlags, modifierData);
+    m_underConstruction.AddPropertyLayout (accessString, *propertyLayout); 
 
     m_offset += (UInt32)size;
+    m_nonStructPropertyCount++;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -504,6 +604,9 @@ void            ClassLayout::Factory::AddVariableSizeArrayPropertyWithFixedCount
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, wchar_t const * nameRoot, bool addingFixedSizeProps)
     {
+    if (addingFixedSizeProps)
+        AddStructProperty (NULL == nameRoot ? L"" : nameRoot, ECTypeDescriptor::CreateStructTypeDescriptor());
+
     for each (ECPropertyP property in ecClass.GetProperties())
         {
         bwstring    propName = property->GetName();
@@ -592,6 +695,7 @@ ClassLayout::Factory::Factory (ECClassCR ecClass, ClassIndex classIndex, SchemaI
     m_state   (AcceptingFixedSizeProperties),
     m_offset  (sizeof(InstanceHeader) + sizeof(NullflagsBitmask)),
     m_nullflagsOffset (sizeof(InstanceHeader)),
+    m_nonStructPropertyCount (0),
     m_underConstruction (*ClassLayout::CreateEmpty (m_ecClass.GetName().c_str(), classIndex, schemaIndex, hideFromLeakDetection))
     {
     }
@@ -635,34 +739,73 @@ BentleyStatus   ClassLayout::SetClass (wchar_t const* className, UInt16 classInd
 ECObjectsStatus       ClassLayout::FinishLayout ()
     {
     // Calculate size of fixed section    
-    if (0 == m_propertyLayouts.size())
+    PropertyLayoutCP lastPropertyLayout = NULL;
+
+    for (PropertyLayoutVector::const_reverse_iterator it = m_propertyLayouts.rbegin(); it != m_propertyLayouts.rend( ); it++)
         {
+        PropertyLayoutCP candidate = *it;
+
+        // Find the last property layout that uses space in the fixed section.
+        // For now, that is anything that is not a struct since variable size
+        // properties store their secondary offsets in the fixed section.
+        if ( ! candidate->GetTypeDescriptor().IsStruct())
+            {
+            lastPropertyLayout = candidate;
+            break;
+            }
+        }
+
+    if (NULL == lastPropertyLayout)
+        {
+        // Either there are no properties or all the properties are structs.
         m_sizeOfFixedSection = sizeof (InstanceHeader);
-        return ECOBJECTS_STATUS_Success;
         }
-
-    for (UInt32 i = 0; i < m_propertyLayouts.size(); i++)
+    else
         {
-        PropertyLayoutCP propertyLayout = &m_propertyLayouts[i];
-        m_propertyLayoutMap[propertyLayout->GetAccessString()] = propertyLayout;
+        UInt32    size = lastPropertyLayout->GetOffset() + lastPropertyLayout->GetSizeInFixedSection();
+
+        if ( ! lastPropertyLayout->IsFixedSized())
+            size += sizeof(SecondaryOffset); // There is one additional SecondaryOffset tracking the end of the last variable-sized value
+
+        m_sizeOfFixedSection = size;
         }
-        
-    PropertyLayoutCR lastPropertyLayout = m_propertyLayouts[m_propertyLayouts.size() - 1];
-    UInt32    size = lastPropertyLayout.GetOffset() + lastPropertyLayout.GetSizeInFixedSection();
-
-    if ( ! lastPropertyLayout.IsFixedSized())
-        size += sizeof(SecondaryOffset); // There is one additional SecondaryOffset tracking the end of the last variable-sized value
-
-    m_sizeOfFixedSection = size;
 
 #ifndef NDEBUG
-    UInt32 nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks ((UInt32)m_propertyLayouts.size());
-    DEBUG_EXPECT (m_propertyLayouts[0].m_offset == sizeof(InstanceHeader) + nNullflagsBitmasks * sizeof(NullflagsBitmask));
+    DEBUG_EXPECT (m_propertyLayoutMap.size() == m_propertyLayouts.size());
 
+    UInt32  nNullflagsBitmasks  = CalculateNumberNullFlagsBitmasks (GetPropertyCountExcludingEmbeddedStructs());
+    UInt32  nonStructPropIndex  = 0;
+    UInt32  prevNonStructOffset = 0;
     for (UInt32 i = 0; i < m_propertyLayouts.size(); i++)
         {
-        UInt32 expectedNullflagsOffset = (i / BITS_PER_NULLFLAGSBITMASK * sizeof(NullflagsBitmask)) + sizeof(InstanceHeader);
-        DEBUG_EXPECT (m_propertyLayouts[i].m_nullflagsOffset == expectedNullflagsOffset);
+        bool isStruct = m_propertyLayouts[i]->m_typeDescriptor.IsStruct();
+
+        // Check the offsets
+        if (isStruct)
+            {
+            DEBUG_EXPECT (m_propertyLayouts[i]->m_offset == 0);
+            }
+        else
+            {
+            if (0 == prevNonStructOffset)
+                DEBUG_EXPECT (m_propertyLayouts[i]->m_offset == sizeof(InstanceHeader) + nNullflagsBitmasks * sizeof(NullflagsBitmask));
+            else
+                DEBUG_EXPECT (m_propertyLayouts[i]->m_offset > prevNonStructOffset);
+            }
+
+        // Check the NullFlagsOffsets
+        UInt32 expectedNullflagsOffset = 0;
+
+        if ( ! isStruct)
+            expectedNullflagsOffset = (nonStructPropIndex / BITS_PER_NULLFLAGSBITMASK * sizeof(NullflagsBitmask)) + sizeof(InstanceHeader);
+
+        DEBUG_EXPECT (m_propertyLayouts[i]->m_nullflagsOffset == expectedNullflagsOffset);
+
+        if ( ! isStruct)
+            {
+            nonStructPropIndex++;
+            prevNonStructOffset = m_propertyLayouts[i]->m_offset;
+            }
         }     
 #endif
     return ECOBJECTS_STATUS_Success;
@@ -688,22 +831,54 @@ void            ClassLayout::CheckForECPointers (wchar_t const * accessString)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/11
++---------------+---------------+---------------+---------------+---------------+------*/    
+void            ClassLayout::AddToLogicalStructureMap (PropertyLayoutR propertyLayout, UInt32 propertyIndex)
+    {
+    if (propertyIndex != 0)
+        {
+        UInt32  parentStuctIndex = propertyLayout.GetParentStructIndex();
+        LogicalStructureMap::iterator it = m_logicalStructureMap.find(parentStuctIndex);
+
+        if ( ! EXPECTED_CONDITION (it != m_logicalStructureMap.end()))
+            return;
+
+        it->second.push_back (propertyIndex);
+        }
+
+    if (propertyLayout.GetTypeDescriptor().IsStruct())
+        m_logicalStructureMap[propertyIndex] = bvector<UInt32>();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/    
+void            ClassLayout::AddPropertyLayout (wchar_t const * accessString, PropertyLayoutR propertyLayout)
+    {
+    m_propertyLayouts.push_back(&propertyLayout);
+    m_propertyLayoutMap[propertyLayout.GetAccessString()] = m_propertyLayouts.back();
+
+    AddToLogicalStructureMap (propertyLayout, (UInt32) m_propertyLayouts.size() - 1);
+    CheckForECPointers (accessString);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Called by SchemaLayoutElementHandler's BuildClassLayout() when deserializing ClassLayouts
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/     
 void            ClassLayout::AddPropertyDirect
 (
 wchar_t const *  accessString,
+UInt32           parentStructIndex,
 ECTypeDescriptor typeDescriptor,
 UInt32           offset,
 UInt32           nullflagsOffset,
 UInt32           nullflagsBitmask
 )
     {
-    PropertyLayout propertyLayout (accessString, typeDescriptor, offset, nullflagsOffset, nullflagsBitmask);
+    PropertyLayoutP propertyLayout = new PropertyLayout (accessString, parentStructIndex, typeDescriptor, offset, nullflagsOffset, nullflagsBitmask);
 
-    m_propertyLayouts.push_back(propertyLayout);
-    CheckForECPointers (accessString);
+    AddPropertyLayout (accessString, *propertyLayout); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -712,6 +887,22 @@ UInt32           nullflagsBitmask
 UInt32          ClassLayout::GetPropertyCount () const
     {
     return (UInt32) m_propertyLayouts.size();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/11
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32          ClassLayout::GetPropertyCountExcludingEmbeddedStructs () const
+    {
+    UInt32      nonStructPropertyCount = 0;
+
+    for (UInt32 i = 0; i < m_propertyLayouts.size(); i++)
+        {
+        if ( ! m_propertyLayouts[i]->m_typeDescriptor.IsStruct())
+            nonStructPropertyCount++;
+        }
+
+    return nonStructPropertyCount;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -745,7 +936,7 @@ ECObjectsStatus     ClassLayout::GetPropertyIndex (UInt32& propertyIndex, wchar_
 
     for (UInt32 i = 0; i < m_propertyLayouts.size(); i++)
         {
-        PropertyLayoutCP candidate = &m_propertyLayouts[i];
+        PropertyLayoutCP candidate = m_propertyLayouts[i];
 
         if (propertyLayout == candidate)
             {
@@ -767,7 +958,7 @@ ECObjectsStatus       ClassLayout::GetPropertyLayoutByIndex (PropertyLayoutCP & 
     if (propertyIndex >= m_propertyLayouts.size())
         return ECOBJECTS_STATUS_IndexOutOfRange; 
         
-    propertyLayout = &m_propertyLayouts[propertyIndex];
+    propertyLayout = m_propertyLayouts[propertyIndex];
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -865,7 +1056,9 @@ ClassLayoutCR   ClassLayoutHolder::GetClassLayout() const
 UInt32          MemoryInstanceSupport::GetPropertyValueSize (PropertyLayoutCR propertyLayout) const
     {
     if (propertyLayout.IsFixedSized())
+        {
         return propertyLayout.GetSizeInFixedSection();
+        }
     else
         {    
         UInt32 offset = propertyLayout.GetOffset();
@@ -890,7 +1083,9 @@ UInt32          MemoryInstanceSupport::GetPropertyValueSize (PropertyLayoutCR pr
 UInt32          MemoryInstanceSupport::GetPropertyValueSize (PropertyLayoutCR propertyLayout, UInt32 index) const
     {
     if (IsArrayOfFixedSizeElements (propertyLayout))
+        {
         return ECValue::GetFixedPrimitiveValueSize (propertyLayout.GetTypeDescriptor().GetPrimitiveType());
+        }
     else
         {                            
         UInt32 arrayOffset = GetOffsetOfPropertyValue (propertyLayout);   
@@ -939,7 +1134,9 @@ ArrayCount      MemoryInstanceSupport::GetReservedArrayCount (PropertyLayoutCR p
 ArrayCount      MemoryInstanceSupport::GetAllocatedArrayCount (PropertyLayoutCR propertyLayout) const
     {
     if (propertyLayout.IsFixedSized())
+        {
         return propertyLayout.GetModifierData();
+        }
     else
         {
         SecondaryOffset* pSecondaryOffset = (SecondaryOffset*)(_GetData() + propertyLayout.GetOffset());
@@ -1493,7 +1690,15 @@ ECObjectsStatus       MemoryInstanceSupport::GetValueFromMemory (ECValueR v, Pro
     {
     ECTypeDescriptor typeDescriptor = propertyLayout.GetTypeDescriptor();
     if (typeDescriptor.IsPrimitive())
+        {
         return GetPrimitiveValueFromMemory (v, propertyLayout, false, 0);
+        }
+    if (typeDescriptor.IsStruct())
+        {
+        // WIP_FUSION: Currently this value just serves as a placeholder, but its basically useless.
+        v.SetStruct (NULL);
+        return ECOBJECTS_STATUS_Success;
+        }
     else if (typeDescriptor.IsArray())
         {                
         UInt32 arrayCount = GetReservedArrayCount (propertyLayout);  
@@ -1786,6 +1991,12 @@ bwstring        MemoryInstanceSupport::InstanceDataToString (const wchar_t* inde
             {
             appendFormattedString (oss, L"%sError (%d) returned while getting PropertyLayout #%d", indent, status, i);
             return oss.str().c_str();
+            }
+
+        if (propertyLayout->GetTypeDescriptor().IsStruct())
+            {
+            appendFormattedString (oss, L"%s  Struct %s\n", indent, propertyLayout->GetAccessString());
+            continue;
             }
 
         UInt32 offset = propertyLayout->GetOffset();

@@ -2,7 +2,7 @@
 |
 |     $Source: ecobjects/nativeatp/Published/InstanceXMLTests.cpp $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -383,7 +383,7 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingSimpleInstance
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
 
     // WIP_FUSION: should pass the string to the logger via a backdoor
-    testInstance->ToString(L"").c_str();
+    bwstring str = testInstance->ToString(L"").c_str();
     VerifyTestInstance (testInstance.get(), false);
     };
 

@@ -49,10 +49,11 @@ struct PropertyLayout
 friend ClassLayout;    
 private:
     bwstring                m_accessString;        
+    UInt32                  m_parentStructIndex;
     ECTypeDescriptor        m_typeDescriptor;
     
     // Using UInt32 instead of size_t below because we will persist this struct in an XAttribute. It will never be very big.
-    UInt32                  m_offset; //! An offset to either the data holding that property’s value (for fixed-size values) or to the offset at which the properties value can be found.
+    UInt32                  m_offset; //! An offset to either the data holding that property's value (for fixed-size values) or to the offset at which the properties value can be found.
     UInt32                  m_modifierFlags; //! Can be used to indicate that a string should be treated as fixed size, with a max length, or that a longer fixed size type should be treated as an optional variable-sized type, or that for a string that only an entry to a StringTable is Stored, or that a default value should be used.
     UInt32                  m_modifierData;  //! Data used with the modifier flag, like the length of a fixed-sized string.
     UInt32                  m_nullflagsOffset;
@@ -60,15 +61,16 @@ private:
   //ECPropertyCP            m_property; // WIP_FUSION: optional? YAGNI?
     
 public:
-    PropertyLayout (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask, UInt32 modifierFlags = 0, UInt32 modifierData = 0) : //, ECPropertyCP property) :
-        m_accessString(accessString), m_typeDescriptor(typeDescriptor), m_offset(offset), m_nullflagsOffset(nullflagsOffset), 
+    PropertyLayout (wchar_t const * accessString, UInt32 psi, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask, UInt32 modifierFlags = 0, UInt32 modifierData = 0) : //, ECPropertyCP property) :
+        m_accessString(accessString), m_parentStructIndex (psi), m_typeDescriptor(typeDescriptor), m_offset(offset), m_nullflagsOffset(nullflagsOffset), 
         m_nullflagsBitmask (nullflagsBitmask), m_modifierFlags (modifierFlags), m_modifierData (modifierData) { }; //, m_property(property) {};
 
-    inline UInt32           GetOffset() const           { return m_offset; }
-    inline UInt32           GetNullflagsOffset() const  { return m_nullflagsOffset; }
-    inline NullflagsBitmask GetNullflagsBitmask() const { return m_nullflagsBitmask; }
-    inline ECTypeDescriptor GetTypeDescriptor() const   { return m_typeDescriptor; }
     inline wchar_t const *  GetAccessString() const     { return m_accessString.c_str(); }
+    inline UInt32           GetParentStructIndex() const{ return m_parentStructIndex; }
+    inline UInt32           GetOffset() const           { assert ( ! m_typeDescriptor.IsStruct()); return m_offset; }
+    inline UInt32           GetNullflagsOffset() const  { assert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsOffset; }
+    inline NullflagsBitmask GetNullflagsBitmask() const { assert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsBitmask; }
+    inline ECTypeDescriptor GetTypeDescriptor() const   { return m_typeDescriptor; }
     inline UInt32           GetModifierFlags() const    { return m_modifierFlags; }
     inline UInt32           GetModifierData() const     { return m_modifierData; }    
     
@@ -94,7 +96,8 @@ private:
 #else
     typedef bmap<wchar_t const *, PropertyLayoutCP, StringComparer> PropertyLayoutMap;
 #endif    
-    typedef bvector<PropertyLayout>                                 PropertyLayoutVector; // WIP_FUSION: needs to be vector of PropertyLayoutP
+    typedef bvector<PropertyLayoutP>                                PropertyLayoutVector;
+    typedef bmap<UInt32, bvector<UInt32>>                           LogicalStructureMap;
     
     enum State
         {
@@ -109,6 +112,7 @@ private:
     
     PropertyLayoutVector    m_propertyLayouts; // This is the primary collection, there is a secondary map for lookup by name, below.
     PropertyLayoutMap       m_propertyLayoutMap;
+    LogicalStructureMap     m_logicalStructureMap;
     
     // These members are transient
     bool                    m_hideFromLeakDetection;
@@ -128,9 +132,13 @@ private:
         ECClassCR       m_ecClass;
         UInt32          m_offset;
         UInt32          m_nullflagsOffset;
+        UInt32          m_nonStructPropertyCount;
         ClassLayoutR    m_underConstruction;
 
+        UInt32      GetParentStructIndex (wchar_t const * accessString) const;
+
         void        AddProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor, UInt32 size, UInt32 modifierFlags = 0, UInt32 modifierData = 0);
+        void        AddStructProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor);
         void        AddFixedSizeProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor);
         void        AddFixedSizeArrayProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor, UInt32 arrayCount);
         void        AddVariableSizeProperty (wchar_t const * accessString, ECTypeDescriptor propertyDescriptor);
@@ -146,10 +154,13 @@ private:
     ClassLayout(SchemaIndex schemaIndex, bool hideFromLeakDetection);
 
     bwstring                GetShortDescription() const;
+    bwstring                LogicalStructureToString (UInt32 parentStructIndex = 0, UInt32 indentLevel = 0) const;
 
 /*__PUBLISH_SECTION_END__*/
 public:    
     bwstring                GetName() const;
+    void                    AddPropertyLayout (wchar_t const * accessString, PropertyLayoutR);
+    void                    AddToLogicalStructureMap (PropertyLayoutR propertyLayout, UInt32 propertyIndex);
     ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();
 
 /*__PUBLISH_SECTION_START__*/
@@ -166,12 +177,13 @@ public:
     ECOBJECTS_EXPORT int            GetECPointerIndex (ECRelationshipEnd end) const;
     
     ECOBJECTS_EXPORT UInt32          GetPropertyCount () const;
+    ECOBJECTS_EXPORT UInt32          GetPropertyCountExcludingEmbeddedStructs () const;
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyLayout (PropertyLayoutCP & propertyLayout, wchar_t const * accessString) const;
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const;
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyIndex (UInt32& propertyIndex, wchar_t const * accessString) const;
     
 /*__PUBLISH_SECTION_END__*/
-    ECOBJECTS_EXPORT void            AddPropertyDirect (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask);
+    ECOBJECTS_EXPORT void            AddPropertyDirect (wchar_t const * accessString, UInt32 parentStructIndex, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask);
     ECOBJECTS_EXPORT ECObjectsStatus FinishLayout ();
 /*__PUBLISH_SECTION_START__*/
     
@@ -183,7 +195,7 @@ public:
     ECOBJECTS_EXPORT UInt32         CalculateBytesUsed(byte const * data) const;
     ECOBJECTS_EXPORT bool           IsCompatible(ClassLayoutCR layout) const;
 
-    bwstring                        ToString() const;
+    ECOBJECTS_EXPORT bwstring       ToString() const;
     };
 
 typedef bvector<ClassLayoutCP>  ClassLayoutVector;
