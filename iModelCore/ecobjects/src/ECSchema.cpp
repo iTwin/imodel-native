@@ -6,7 +6,7 @@
 |       $Date: 2005/11/07 15:38:45 $
 |     $Author: EarlinLutz $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -789,7 +789,15 @@ ClassDeserializationVector&  classes
             return status;           
             }
 
-        if (ECOBJECTS_STATUS_Success != this->AddClass (pClass))
+        ECClassP existingClass = this->GetClassP(pClass->Name.c_str());
+
+        if (NULL != existingClass)
+            {
+            existingClass->ReadXmlAttributes(xmlNodePtr);
+            delete pClass;
+            pClass = existingClass;
+            }
+        else if (ECOBJECTS_STATUS_Success != this->AddClass (pClass))
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
 
         if (NULL == pRelationshipClass)
