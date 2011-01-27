@@ -2,12 +2,13 @@
 |
 |     $Source: PublicApi/ECObjects/ECValue.h $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
+#include <Bentley\VirtualCollectionIterator.h>
 #include <ECObjects\ECObjects.h>
 #include <Geom\GeomApi.h>
 
@@ -264,6 +265,7 @@ private:
     Location&               operator[] (UInt32 depth);
     const LocationVector&   GetLocationVector() const;
 
+
 public:
     //friend ECValueAccessorPairCollectionIterator;
     friend ECValueAccessorPairCollection;
@@ -277,7 +279,7 @@ public:
     //! @param[in]      newArrayIndex    The array index of the ECProperty, or INDEX_ROOT
     ECOBJECTS_EXPORT ECValueAccessor (IECInstanceCR instance, 
                                       int newPropertyIndex, 
-                                      int newArrayIndex);
+                                      int newArrayIndex=INDEX_ROOT);
 
     //! Constructs an ECValueAccessor for a given Enabler.
     //! @param[in]      enabler          The ECEnabler that the accessor is representative of.
@@ -285,7 +287,7 @@ public:
     //! @param[in]      newArrayIndex    The array index of the ECProperty, or INDEX_ROOT
     ECOBJECTS_EXPORT ECValueAccessor (ECEnablerCR enabler, 
                                       int newPropertyIndex, 
-                                      int newArrayIndex);
+                                      int newArrayIndex=INDEX_ROOT);
 
     //! For use by the iterator.  Does not make valid accessors.
     ECOBJECTS_EXPORT ECValueAccessor (IECInstanceCR instance);
@@ -311,14 +313,14 @@ public:
     //! @see            IECInstance
     ECOBJECTS_EXPORT const wchar_t *        GetAccessString (UInt32 depth) const;
 
-    ECOBJECTS_EXPORT void  PushLocation (ECEnablerCR, int, int);
-    ECOBJECTS_EXPORT void  PushLocation (ECEnablerCR, const wchar_t *, int);
+    ECOBJECTS_EXPORT void  PushLocation (ECEnablerCR, int, int arayIndex=INDEX_ROOT);
+    ECOBJECTS_EXPORT void  PushLocation (ECEnablerCR, const wchar_t *, int arrayIndex=INDEX_ROOT);
 
-    ECOBJECTS_EXPORT void  PushLocation (IECInstanceCR, int, int);
-    ECOBJECTS_EXPORT void  PushLocation (IECInstanceCR, const wchar_t *, int);
+    ECOBJECTS_EXPORT void  PushLocation (IECInstanceCR, int, int arrayIndex=INDEX_ROOT);
+    ECOBJECTS_EXPORT void  PushLocation (IECInstanceCR, const wchar_t *, int arrayIndex=INDEX_ROOT);
 
-    ECOBJECTS_EXPORT void  PopLocation ();
-    Location&              DeepestLocation ();
+    ECOBJECTS_EXPORT void       PopLocation ();
+    ECOBJECTS_EXPORT Location&  DeepestLocation ();
 
     ECOBJECTS_EXPORT bwstring               GetDebugAccessString () const;
 
@@ -337,6 +339,9 @@ public:
 
     ECOBJECTS_EXPORT bool                   operator!=(ECValueAccessorCR accessor) const;
     ECOBJECTS_EXPORT bool                   operator==(ECValueAccessorCR accessor) const;
+
+    ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, const wchar_t * managedPropertyAccessor);
+    ECOBJECTS_EXPORT void   Clear ();
     };
 
 //=======================================================================================    
@@ -387,68 +392,6 @@ public:
     ECOBJECTS_EXPORT void          SetIncludesNullValues (bool includesNullValues);
     };
 typedef RefCountedPtr<ECValueAccessorPairCollectionOptions> ECValueAccessorPairCollectionOptionsPtr;
-
-// The template below is part of the Bentley API on the trunk, but does not yet exist on the branch.
-// Currently, ECValueAccessorPairCollection is the only consumer of this template on the branch,
-// so the template is copied here temporarily.  This should be removed during a merge.
-
-/*=================================================================================**//**
-* This template is used by iterators that hide their implementation from the
-* published API.  Hiding the implementation allows it to be improved, for example
-* by adding new data members, without requiring callers to recompile.
-*
-* To use the template, an iterator class must:
-*   1) Satisfy the requirements of RefCountedPtr usually by deriving from RefCountedBase.
-*   2) Provide a typedef for its return type, ex:
-*       typedef DgnModelRefP ReturnType;
-*   3) Provide the following methods:        
-*       bool             IsDifferent(MyIterator const& rhs) const;
-*       void             MoveToNext ();
-*       ReturnType       GetCurrent () const;
-*       bool             IsAtEnd () const;
-*
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-template <typename IteratorImplementation>
-struct VirtualCollectionIterator : std::iterator<std::forward_iterator_tag, typename IteratorImplementation::ReturnType>
-{
-private:
-    RefCountedPtr<IteratorImplementation> m_implementation;
-
-public:
-    VirtualCollectionIterator () { }
-    VirtualCollectionIterator (IteratorImplementation& state) : m_implementation (&state)
-        {
-        if (m_implementation->IsAtEnd())
-            m_implementation = NULL;
-        }
-
-    typename IteratorImplementation::ReturnType  operator*() const
-        {
-        return m_implementation->GetCurrent();
-        }
-
-    bool        operator!=(VirtualCollectionIterator const& rhs) const
-        {
-        if (m_implementation.IsNull() && rhs.m_implementation.IsNull())
-            return false;
-
-        if (m_implementation.IsNull() != rhs.m_implementation.IsNull())
-            return true;
-
-        return m_implementation->IsDifferent (*rhs.m_implementation.get());
-        }
-        
-    VirtualCollectionIterator&   operator++()
-        {
-        m_implementation->MoveToNext();
-
-        if (m_implementation->IsAtEnd())
-            m_implementation = NULL;
-
-        return *this;
-        }
-};
 
 //=======================================================================================  
 //! @see ECValue, ECValueAccessor, ECValueAccessorPairCollection

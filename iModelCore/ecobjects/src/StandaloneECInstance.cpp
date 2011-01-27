@@ -511,9 +511,10 @@ StandaloneECInstance::~StandaloneECInstance ()
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 StandaloneECInstancePtr         StandaloneECInstance::Duplicate(IECInstanceCR instance)
     {
-    ECClassCR    ecClass     = instance.GetClass();
-    ClassLayoutP classLayout = ClassLayout::BuildFromClass (ecClass, 0, 0);
-    StandaloneECEnablerPtr standaloneEnabler   = StandaloneECEnabler::CreateEnabler (ecClass, *classLayout, true);
+    ECClassCR              ecClass           = instance.GetClass();
+    StandaloneECEnablerPtr standaloneEnabler = instance.GetEnablerR().ObtainStandaloneInstanceEnabler (ecClass.Schema.Name.c_str(), ecClass.Name.c_str());
+    if (standaloneEnabler.IsNull())
+        return NULL;
 
     StandaloneECInstancePtr newInstance = standaloneEnabler->CreateInstance();
     ECValueAccessorPairCollectionOptionsPtr options = ECValueAccessorPairCollectionOptions::Create (instance, false);
@@ -522,6 +523,7 @@ StandaloneECInstancePtr         StandaloneECInstance::Duplicate(IECInstanceCR in
         {
         newInstance->SetValueUsingAccessor(pair.GetAccessor(), pair.GetValue());
         }
+
     return newInstance;
     }
     
@@ -693,8 +695,8 @@ bwstring        StandaloneECInstance::_ToString (const wchar_t* indent) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StandaloneECEnabler::StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, bool ownsClassLayout) :
-    ECEnabler (ecClass),
+StandaloneECEnabler::StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocatorR childECEnablerLocator, bool ownsClassLayout) :
+    ECEnabler (ecClass, childECEnablerLocator),
     ClassLayoutHolder (classLayout),
     m_ownsClassLayout (ownsClassLayout)
     {
@@ -715,9 +717,9 @@ StandaloneECEnabler::~StandaloneECEnabler ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StandaloneECEnablerPtr    StandaloneECEnabler::CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, bool ownsClassLayout)
+StandaloneECEnablerPtr    StandaloneECEnabler::CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocatorR childECEnablerLocator, bool ownsClassLayout)
     {
-    return new StandaloneECEnabler (ecClass, classLayout, ownsClassLayout);
+    return new StandaloneECEnabler (ecClass, classLayout, childECEnablerLocator, ownsClassLayout);
     }
     
 /*---------------------------------------------------------------------------------**//**

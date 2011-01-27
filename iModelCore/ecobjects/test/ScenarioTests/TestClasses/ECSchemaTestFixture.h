@@ -2,7 +2,7 @@
 |
 |  $Source: ecobjects/nativeatp/ScenarioTests/TestClasses/ECSchemaTestFixture.h $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -27,9 +27,10 @@ namespace TestHelpers
 +===============+===============+===============+===============+===============+======*/
 class ECSchemaTestFixture : public ::testing::Test
     {
-    ECSchemaOwnerPtr schemaOwner;
+    ECSchemaCachePtr schemaOwner;
     public: ECSchemaP m_schema;
     public: ECClassContainer::const_iterator iter;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Farrukh Latif 7/10
 +---------------+---------------+---------------+---------------+---------------+------*/

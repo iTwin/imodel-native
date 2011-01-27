@@ -6,7 +6,7 @@
 |       $Date: 2005/11/07 15:38:45 $
 |     $Author: EarlinLutz $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -847,7 +847,8 @@ const void*       arg
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaDeserializationStatus ECClass::ReadXmlAttributes
 (
-MSXML2::IXMLDOMNode& classNode
+MSXML2::IXMLDOMNode& classNode,
+IStandaloneEnablerLocatorR  standaloneEnablerLocator
 )
     {                
     MSXML2::IXMLDOMNamedNodeMapPtr nodeAttributesPtr = classNode.attributes;
@@ -878,7 +879,8 @@ MSXML2::IXMLDOMNode& classNode
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaDeserializationStatus ECClass::ReadXmlContents
 (
-MSXML2::IXMLDOMNode& classNode
+MSXML2::IXMLDOMNode&        classNode,
+IStandaloneEnablerLocatorR  standaloneEnablerLocator
 )
     {            
     // Build inheritance hierarchy 
@@ -935,7 +937,7 @@ MSXML2::IXMLDOMNode& classNode
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
 
-        SchemaDeserializationStatus status = pProperty->_ReadXml(xmlNodePtr);
+        SchemaDeserializationStatus status = pProperty->_ReadXml(xmlNodePtr, standaloneEnablerLocator);
         if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
             {
             ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to deserialize properties of ECClass '%s' in the ECSchema '%s'\n", this->Name.c_str(), this->Schema.Name.c_str());                
@@ -953,7 +955,7 @@ MSXML2::IXMLDOMNode& classNode
         }
 
     // Add Custom Attributes
-    ReadCustomAttributes(classNode, m_schema);
+    ReadCustomAttributes(classNode, m_schema, standaloneEnablerLocator);
 
     return SCHEMA_DESERIALIZATION_STATUS_Success;
     }
@@ -1368,7 +1370,8 @@ ECSchemaCP ECRelationshipConstraint::_GetContainerSchema() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaDeserializationStatus ECRelationshipConstraint::ReadXml
 (
-MSXML2::IXMLDOMNode &constraintNode
+MSXML2::IXMLDOMNode         &constraintNode,
+IStandaloneEnablerLocatorR  standaloneEnablerLocator
 )
     {
     SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
@@ -1420,7 +1423,7 @@ MSXML2::IXMLDOMNode &constraintNode
         }
 
     // Add Custom Attributes
-    ReadCustomAttributes(constraintNode, m_relClass->Schema);
+    ReadCustomAttributes(constraintNode, m_relClass->Schema, standaloneEnablerLocator);
 
     return status;
     }
@@ -1857,10 +1860,11 @@ MSXML2::IXMLDOMElement& parentNode
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaDeserializationStatus ECRelationshipClass::ReadXmlAttributes
 (
-MSXML2::IXMLDOMNode &classNode
+MSXML2::IXMLDOMNode &classNode, 
+IStandaloneEnablerLocatorR  standaloneEnablerLocator
 )
     {
-    SchemaDeserializationStatus status = __super::ReadXmlAttributes(classNode);
+    SchemaDeserializationStatus status = __super::ReadXmlAttributes(classNode, standaloneEnablerLocator);
     if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
         return status;
         
@@ -1878,20 +1882,21 @@ MSXML2::IXMLDOMNode &classNode
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaDeserializationStatus ECRelationshipClass::ReadXmlContents
 (
-MSXML2::IXMLDOMNode &classNode
+MSXML2::IXMLDOMNode &classNode, 
+IStandaloneEnablerLocatorR  standaloneEnablerLocator
 )
     {
-    SchemaDeserializationStatus status = __super::ReadXmlContents(classNode);
+    SchemaDeserializationStatus status = __super::ReadXmlContents(classNode, standaloneEnablerLocator);
     if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
         return status;
         
     MSXML2::IXMLDOMNodePtr xmlNodePtr = classNode.selectSingleNode (EC_NAMESPACE_PREFIX L":" EC_SOURCECONSTRAINT_ELEMENT);
     if (NULL != xmlNodePtr)
-        m_source->ReadXml(xmlNodePtr);
+        m_source->ReadXml(xmlNodePtr, standaloneEnablerLocator);
     
     xmlNodePtr = classNode.selectSingleNode (EC_NAMESPACE_PREFIX L":" EC_TARGETCONSTRAINT_ELEMENT);
     if (NULL != xmlNodePtr)
-        m_target->ReadXml(xmlNodePtr);
+        m_target->ReadXml(xmlNodePtr, standaloneEnablerLocator);
         
     return SCHEMA_DESERIALIZATION_STATUS_Success;
     }

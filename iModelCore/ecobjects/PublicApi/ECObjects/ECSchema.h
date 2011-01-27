@@ -10,6 +10,7 @@
 /*__PUBLISH_SECTION_START__*/
 
 #include <ECObjects\ECObjects.h>
+#include <ECObjects\ECEnabler.h>
 #include <Bentley\RefCounted.h>
 #include <Bentley\bvector.h>
 #include <Bentley\bmap.h>
@@ -48,71 +49,7 @@ typedef bmap<const wchar_t * , ECPropertyP, less_str> PropertyMap;
 typedef bmap<const wchar_t * , ECClassP,    less_str> ClassMap;
 typedef bmap<const wchar_t * , ECSchemaP,   less_str> SchemaMap;
 
-//=======================================================================================    
-// ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 
-// ValueKind or ArrayKind is necessary, we can union PrimitiveType in the same 16-bit memory location and get some synergy between the two.
-// If you add more values to the ValueKind enum please be sure to note that these are bit flags and not incremental values.  Also be sure the value does not
-// exceed a single byte.
-//=======================================================================================    
 /*__PUBLISH_SECTION_START__*/
-//=======================================================================================    
-//! Represents the classification of the data type of an EC ECValue.  The classification is not the data type itself, but a category of type
-//! such as struct, array or primitive.
-//=======================================================================================    
-enum ValueKind : unsigned short
-    {
-    VALUEKIND_Uninitialized                  = 0x00,
-    VALUEKIND_Primitive                      = 0x01,
-    VALUEKIND_Struct                         = 0x02,
-    VALUEKIND_Array                          = 0x04,
-    };
-
-/*__PUBLISH_SECTION_END__*/
-//=======================================================================================    
-// ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 
-// ValueKind or ArrayKind is necessary, we can union PrimitiveType in the same 16-bit memory location and get some synergy between the two.
-// If you add more values to the ArrayKind enum please be sure to note that these are bit flags and not incremental values.  Also be sure the value does not
-// exceed a single byte.
-//=======================================================================================    
-/*__PUBLISH_SECTION_START__*/
-//=======================================================================================    
-//! Represents the classification of the data type of an EC array element.  The classification is not the data type itself, but a category of type.
-//! Currently an ECArray can only contain primitive or struct data types.
-//=======================================================================================    
-enum ArrayKind : unsigned short
-    {
-    ARRAYKIND_Primitive       = 0x01,
-    ARRAYKIND_Struct          = 0x02
-    };
-
-/*__PUBLISH_SECTION_END__*/
-//=======================================================================================    
-// ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 
-// ValueKind or ArrayKind is necessary, we can union PrimitiveType in the same 16-bit memory location and get some synergy between the two.
-// If you add more values to the PrimitiveType enum please be sure to note that the lower order byte must stay fixed as '1' and the upper order byte can be incremented.
-// If you add any additional types you must update 
-//    - ECXML_TYPENAME_X constants
-//    - PrimitiveECProperty::_GetTypeName
-// NEEDSWORK types: common geometry, installed primitives
-//=======================================================================================    
-/*__PUBLISH_SECTION_START__*/
-
-//=======================================================================================    
-//! Enumeration of primitive datatypes supported by native "ECObjects" implementation.
-//! These should correspond to all of the datatypes supported in .NET ECObjects
-//=======================================================================================    
-enum PrimitiveType : unsigned short
-    {
-    PRIMITIVETYPE_Binary                    = 0x101,
-    PRIMITIVETYPE_Boolean                   = 0x201,
-    PRIMITIVETYPE_DateTime                  = 0x301,
-    PRIMITIVETYPE_Double                    = 0x401,
-    PRIMITIVETYPE_Integer                   = 0x501,
-    PRIMITIVETYPE_Long                      = 0x601,
-    PRIMITIVETYPE_Point2D                   = 0x701,
-    PRIMITIVETYPE_Point3D                   = 0x801,
-    PRIMITIVETYPE_String                    = 0x901
-    };
 
 //=======================================================================================    
 //! Used to represent the type of an ECProperty
@@ -190,7 +127,7 @@ private:
     SchemaSerializationStatus           AddCustomAttributeProperties(MSXML2_IXMLDOMNode& oldNode, MSXML2_IXMLDOMNode& newNode) const;
 
 protected:
-    InstanceDeserializationStatus       ReadCustomAttributes(MSXML2_IXMLDOMNode& containerNode, ECSchemaCR schema);
+    InstanceDeserializationStatus       ReadCustomAttributes(MSXML2_IXMLDOMNode& containerNode, ECSchemaCR schema, IStandaloneEnablerLocatorR standaloneEnablerLocator);
     SchemaSerializationStatus           WriteCustomAttributes(MSXML2_IXMLDOMNode& parentNode) const;
 
     void                                AddUniqueCustomAttributesToList(ECCustomAttributeCollection& returnList);
@@ -297,7 +234,7 @@ protected:
 
     ECObjectsStatus                     SetName (bwstring const& name);
 
-    virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode);
+    virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode, IStandaloneEnablerLocatorR  standaloneEnablerLocator);
     virtual SchemaSerializationStatus   _WriteXml(MSXML2_IXMLDOMElement& parentNode);
     SchemaSerializationStatus           _WriteXml(MSXML2_IXMLDOMElement& parentNode, const wchar_t *elementName);
 
@@ -364,7 +301,7 @@ private:
     PrimitiveECProperty (ECClassCR ecClass, bool hideFromLeakDetection) : m_primitiveType(PRIMITIVETYPE_String), ECProperty(ecClass, hideFromLeakDetection) {};
 
 protected:
-    virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode) override;
+    virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode, IStandaloneEnablerLocatorR  standaloneEnablerLocator) override;
     virtual SchemaSerializationStatus   _WriteXml(MSXML2_IXMLDOMElement& parentNode) override;
     virtual bool                        _IsPrimitive () const override { return true;}
     virtual bwstring                    _GetTypeName () const override;
@@ -390,7 +327,7 @@ private:
     StructECProperty (ECClassCR ecClass, bool hideFromLeakDetection) : m_structType(NULL), ECProperty(ecClass, hideFromLeakDetection) {};
 
 protected:
-    virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode) override;
+    virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode, IStandaloneEnablerLocatorR  standaloneEnablerLocator) override;
     virtual SchemaSerializationStatus   _WriteXml(MSXML2_IXMLDOMElement& parentNode) override;
     virtual bool                        _IsStruct () const override { return true;}
     virtual bwstring                    _GetTypeName () const override;
@@ -431,7 +368,7 @@ private:
     ECObjectsStatus SetMaxOccurs (bwstring const& maxOccurs);          
 
 protected:
-    virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode) override;
+    virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode, IStandaloneEnablerLocatorR  standaloneEnablerLocator) override;
     virtual SchemaSerializationStatus   _WriteXml(MSXML2_IXMLDOMElement& parentNode) override;
     virtual bool                        _IsArray () const override { return true;}
     virtual bwstring                    _GetTypeName () const override;
@@ -560,14 +497,14 @@ protected:
     // schemas index class by name so publicly name can not be reset
     ECObjectsStatus                     SetName (bwstring const& name);    
 
-    virtual SchemaDeserializationStatus ReadXmlAttributes (MSXML2_IXMLDOMNode& classNode);
+    virtual SchemaDeserializationStatus ReadXmlAttributes (MSXML2_IXMLDOMNode& classNode, IStandaloneEnablerLocatorR  standaloneEnablerLocator);
 
     //! Uses the specified xml node (which must conform to an ECClass as defined in ECSchemaXML) to populate the base classes and properties of this class.
     //! Before this method is invoked the schema containing the class must have loaded all schema references and stubs for all classes within
     //! the schema itself otherwise the method may fail because such dependencies can not be located.
     //! @param[in]  classNode       The XML DOM node to read
     //! @return   Status code
-    virtual SchemaDeserializationStatus ReadXmlContents (MSXML2_IXMLDOMNode& classNode);    
+    virtual SchemaDeserializationStatus ReadXmlContents (MSXML2_IXMLDOMNode& classNode, IStandaloneEnablerLocatorR  standaloneEnablerLocator);    
     
     virtual SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode) const;
     SchemaSerializationStatus           WriteXml(MSXML2_IXMLDOMElement& parentNode, const wchar_t * elementName) const;
@@ -790,7 +727,7 @@ private:
     ECObjectsStatus SetCardinality(UInt32& lowerLimit, UInt32& upperLimit);
    
     SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode, bwstring const& elementName) const;
-    SchemaDeserializationStatus ReadXml(MSXML2_IXMLDOMNode& constraintNode);
+    SchemaDeserializationStatus ReadXml(MSXML2_IXMLDOMNode& constraintNode, IStandaloneEnablerLocatorR  standaloneEnablerLocator);
     
     virtual ~ECRelationshipConstraint();
     
@@ -867,8 +804,8 @@ private:
 protected:
     virtual SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode) const override;
 
-    virtual SchemaDeserializationStatus ReadXmlAttributes (MSXML2_IXMLDOMNode& classNode) override;
-    virtual SchemaDeserializationStatus ReadXmlContents (MSXML2_IXMLDOMNode& classNode) override;
+    virtual SchemaDeserializationStatus ReadXmlAttributes (MSXML2_IXMLDOMNode& classNode, IStandaloneEnablerLocatorR  standaloneEnablerLocator) override;
+    virtual SchemaDeserializationStatus ReadXmlContents (MSXML2_IXMLDOMNode& classNode, IStandaloneEnablerLocatorR  standaloneEnablerLocator) override;
 
 /*__PUBLISH_SECTION_START__*/
 public:
@@ -982,28 +919,77 @@ public:
 /*__PUBLISH_SECTION_START__*/
 };
 
-typedef RefCountedPtr<ECSchemaOwner>        ECSchemaOwnerPtr;
+struct StandaloneECEnabler;
+typedef RefCountedPtr<StandaloneECEnabler>    StandaloneECEnablerPtr;
+typedef RefCountedPtr<ECSchemaCache>        ECSchemaCachePtr;
+
+//=======================================================================================
+//! Interface to find a standalone enabler for a child class of an ECInstance.</summary>
+//=======================================================================================
+struct IStandaloneEnablerLocator
+{
+/*__PUBLISH_CLASS_VIRTUAL__*/
+/*__PUBLISH_SECTION_END__*/
+protected:
+    virtual    StandaloneECEnablerPtr  _ObtainStandaloneInstanceEnabler (const wchar_t* schemaName, const wchar_t* className) = 0;
+
+/*__PUBLISH_SECTION_START__*/
+
+public:
+    ECOBJECTS_EXPORT StandaloneECEnablerPtr  ObtainStandaloneInstanceEnabler (const wchar_t* schemaName, const wchar_t* className);
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct
++---------------+---------------+---------------+---------------+---------------+------*/
+struct SchemaNameClassNamePair
+{
+public:
+    WString m_schemaName;
+    WString m_className;
+
+    SchemaNameClassNamePair (WStringCR schemaName, WStringCR className) : m_schemaName (schemaName), m_className  (className) {}
+    SchemaNameClassNamePair (const wchar_t* schemaName, const wchar_t* className) : m_schemaName (schemaName), m_className  (className) {}
+    SchemaNameClassNamePair () {};
+    
+    bool operator<(SchemaNameClassNamePair other) const
+        {
+        if (m_schemaName < other.m_schemaName)
+            return true;
+
+        if (m_schemaName > other.m_schemaName)
+            return false;
+
+        return m_className < other.m_className;
+        };
+};
+
+
 //=======================================================================================
 //! An object that controls the lifetime of a set of ECSchemas.  When the schema
 //! owner is destroyed, so are the schemas that it owns.</summary>
 //=======================================================================================
-struct ECSchemaOwner /*__PUBLISH_ABSTRACT__*/ : RefCountedBase, IECSchemaOwner
+struct ECSchemaCache /*__PUBLISH_ABSTRACT__*/ :  RefCountedBase, IECSchemaOwner, IStandaloneEnablerLocator
 {
 /*__PUBLISH_SECTION_END__*/
-private:
-    bvector<ECSchemaP> m_schemas;
-
-    virtual ~ECSchemaOwner();
-
 protected:
-    virtual ECObjectsStatus _AddSchema   (ECSchemaR) override;
-    virtual ECObjectsStatus _DropSchema  (ECSchemaR) override;
-    virtual ECSchemaP       _GetSchema   (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor);
-    virtual ECSchemaP       _LocateSchema (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType);
+    bvector<ECSchemaP>                                     m_schemas;
+    bmap<SchemaNameClassNamePair, StandaloneECEnablerPtr>  m_ecEnablerMap;
+    
+    ECOBJECTS_EXPORT virtual ~ECSchemaCache ();
+
+    // IECSchemaOwner
+    ECOBJECTS_EXPORT virtual ECObjectsStatus _AddSchema   (ECSchemaR) override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus _DropSchema  (ECSchemaR) override;
+    ECOBJECTS_EXPORT virtual ECSchemaP       _GetSchema   (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor);
+    ECOBJECTS_EXPORT virtual ECSchemaP       _LocateSchema (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType);
+    
+    // IStandaloneEnablerLocator
+    ECOBJECTS_EXPORT virtual    StandaloneECEnablerPtr  _ObtainStandaloneInstanceEnabler (const wchar_t* schemaName, const wchar_t* className);
 
 /*__PUBLISH_SECTION_START__*/
 public:
-    ECOBJECTS_EXPORT static  ECSchemaOwnerPtr    CreateOwner();
+    ECOBJECTS_EXPORT static  ECSchemaCachePtr    Create ();
 };
 
 //=======================================================================================
@@ -1055,8 +1041,8 @@ private:
     ECObjectsStatus                     SetVersionFromString (const wchar_t* versionString);
 
     typedef bvector<bpair<ECClassP, MSXML2_IXMLDOMNodePtr>>  ClassDeserializationVector;
-    SchemaDeserializationStatus         ReadClassStubsFromXml(MSXML2_IXMLDOMNode& schemaNodePtr,ClassDeserializationVector& classes);
-    SchemaDeserializationStatus         ReadClassContentsFromXml(ClassDeserializationVector&  classes);
+    SchemaDeserializationStatus         ReadClassStubsFromXml(MSXML2_IXMLDOMNode& schemaNodePtr,ClassDeserializationVector& classes, ECSchemaDeserializationContextR context);
+    SchemaDeserializationStatus         ReadClassContentsFromXml(ClassDeserializationVector&  classes, ECSchemaDeserializationContextR context);
     SchemaDeserializationStatus         ReadSchemaReferencesFromXml(MSXML2_IXMLDOMNode& schemaNodePtr, ECSchemaDeserializationContextR context);
     static ECSchemaP                    LocateSchemaByPath(const bwstring & name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR context, bool useLatestCompatibleMatch);
     static ECSchemaP                    LocateSchemaByPath(const bwstring & name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR context);

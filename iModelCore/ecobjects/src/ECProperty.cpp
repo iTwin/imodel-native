@@ -6,7 +6,7 @@
 |       $Date: 2005/11/07 15:38:45 $
 |     $Author: EarlinLutz $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -308,7 +308,8 @@ ECSchemaCP ECProperty::_GetContainerSchema
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaDeserializationStatus ECProperty::_ReadXml
 (
-MSXML2::IXMLDOMNode& propertyNode
+MSXML2::IXMLDOMNode&        propertyNode,
+IStandaloneEnablerLocatorR  standaloneEnablerLocator
 )
     {  
     MSXML2::IXMLDOMNamedNodeMapPtr nodeAttributesPtr = propertyNode.attributes;
@@ -325,7 +326,7 @@ MSXML2::IXMLDOMNode& propertyNode
     ECObjectsStatus setterStatus;
     READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (READONLY_ATTRIBUTE,            this, IsReadOnly)
 
-    ReadCustomAttributes(propertyNode, m_class.GetSchema());
+    ReadCustomAttributes(propertyNode, m_class.GetSchema(), standaloneEnablerLocator);
     return SCHEMA_DESERIALIZATION_STATUS_Success;
     }
 
@@ -372,10 +373,11 @@ const wchar_t *elementName
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaDeserializationStatus PrimitiveECProperty::_ReadXml
 (
-MSXML2::IXMLDOMNode& propertyNode
+MSXML2::IXMLDOMNode& propertyNode, 
+IStandaloneEnablerLocatorR  standaloneEnablerLocator
 )
     {  
-    SchemaDeserializationStatus status = __super::_ReadXml(propertyNode);
+    SchemaDeserializationStatus status = __super::_ReadXml(propertyNode, standaloneEnablerLocator);
     if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
         return status;
 
@@ -492,10 +494,11 @@ PrimitiveType primitiveType
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaDeserializationStatus StructECProperty::_ReadXml
 (
-MSXML2::IXMLDOMNode& propertyNode
+MSXML2::IXMLDOMNode& propertyNode, 
+IStandaloneEnablerLocatorR  standaloneEnablerLocator
 )
     {  
-    SchemaDeserializationStatus status = __super::_ReadXml(propertyNode);
+    SchemaDeserializationStatus status = __super::_ReadXml(propertyNode, standaloneEnablerLocator);
     if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
         return status;
 
@@ -650,10 +653,11 @@ ECClassCR structType
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaDeserializationStatus ArrayECProperty::_ReadXml
 (
-MSXML2::IXMLDOMNode& propertyNode
+MSXML2::IXMLDOMNode& propertyNode, 
+IStandaloneEnablerLocatorR  standaloneEnablerLocator
 )
     {  
-    SchemaDeserializationStatus status = __super::_ReadXml(propertyNode);
+    SchemaDeserializationStatus status = __super::_ReadXml(propertyNode, standaloneEnablerLocator);
     if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
         return status;
 

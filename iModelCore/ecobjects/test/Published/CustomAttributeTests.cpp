@@ -3,7 +3,7 @@
 |
 |     $Source: ecobjects/nativeatp/Published/CustomAttributeTests.cpp $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -57,54 +57,51 @@ ECSchemaP   CreateCustomAttributeTestSchema(IECSchemaOwnerR schemaOwner)
     EXPECT_EQ(baseStringProp, stringProp->BaseProperty);
 
     return schema;
-    }
+    }                                    
 
-IECInstancePtr GetInstanceForClass(const wchar_t *className, ECSchemaR schema)
+IECInstancePtr GetInstanceForClass(const wchar_t *className, ECSchemaR schema, ECSchemaCacheR schemaSession)
     {
-    ECClassP ecClass = schema.GetClassP (className);
-    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 0, 0);
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
-    
+    StandaloneECEnablerPtr enabler = schemaSession.ObtainStandaloneInstanceEnabler (schema.Name.c_str(), className);
     IECInstancePtr instance = enabler->CreateInstance().get();
     return instance;
     }
 
 TEST_F(CustomAttributeTest, ExpectFailureWhenSetNonCustomAttributeClass)
     {
-    ECSchemaOwnerPtr    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaCachePtr  schemaOwner = ECSchemaCache::Create();
     ECSchemaP           schema = CreateCustomAttributeTestSchema(*schemaOwner);
 
     ECClassP containerClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (containerClass);
 
-    IECInstancePtr instance = GetInstanceForClass(L"BaseClass", *schema);
+    IECInstancePtr instance = GetInstanceForClass(L"BaseClass", *schema, *schemaOwner);
     EXPECT_EQ(ECOBJECTS_STATUS_NotCustomAttributeClass, containerClass->SetCustomAttribute(*instance));
     }
 
 TEST_F(CustomAttributeTest, CanAddSingleCustomAttribute)
     {
-    ECSchemaOwnerPtr    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaCachePtr  schemaOwner = ECSchemaCache::Create();
     ECSchemaP           schema = CreateCustomAttributeTestSchema(*schemaOwner);
 
     ECClassP containerClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (containerClass);
 
-    IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema);
+    IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema, *schemaOwner);
     EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
     }
 
 TEST_F(CustomAttributeTest, CanAddMultipleCustomAttributes)
     {
-    ECSchemaOwnerPtr    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaCachePtr  schemaOwner = ECSchemaCache::Create();
     ECSchemaP           schema = CreateCustomAttributeTestSchema(*schemaOwner);
 
     ECClassP containerClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (containerClass);
 
-    IECInstancePtr instance  = GetInstanceForClass(L"CustomAttribClass",  *schema);
-    IECInstancePtr instance2 = GetInstanceForClass(L"CustomAttribClass2", *schema);
-    IECInstancePtr instance3 = GetInstanceForClass(L"CustomAttribClass3", *schema);
-    IECInstancePtr instance4 = GetInstanceForClass(L"CustomAttribClass4", *schema);
+    IECInstancePtr instance  = GetInstanceForClass(L"CustomAttribClass",  *schema, *schemaOwner);
+    IECInstancePtr instance2 = GetInstanceForClass(L"CustomAttribClass2", *schema, *schemaOwner);
+    IECInstancePtr instance3 = GetInstanceForClass(L"CustomAttribClass3", *schema, *schemaOwner);
+    IECInstancePtr instance4 = GetInstanceForClass(L"CustomAttribClass4", *schema, *schemaOwner);
 
     EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance2));
@@ -114,20 +111,20 @@ TEST_F(CustomAttributeTest, CanAddMultipleCustomAttributes)
 
 TEST_F(CustomAttributeTest, ExpectSuccessWhenAddDuplicateCustomAttribute)
     {
-    ECSchemaOwnerPtr    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaCachePtr  schemaOwner = ECSchemaCache::Create();
     ECSchemaP           schema = CreateCustomAttributeTestSchema(*schemaOwner);
 
     ECClassP containerClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (containerClass);
 
-    IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema);
+    IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema, *schemaOwner);
     EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
     }
 
 TEST_F(CustomAttributeTest, ExpectSuccessWhenAddCustomAttributeToProperty)
     {
-    ECSchemaOwnerPtr    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaCachePtr  schemaOwner = ECSchemaCache::Create();
     ECSchemaP           schema = CreateCustomAttributeTestSchema(*schemaOwner);
 
     ECClassP classWithProperties = schema->GetClassP (L"ClassWithProperties");
@@ -135,20 +132,20 @@ TEST_F(CustomAttributeTest, ExpectSuccessWhenAddCustomAttributeToProperty)
     ECPropertyP stringProperty = classWithProperties->GetPropertyP(L"StringMember");
     ASSERT_TRUE(stringProperty);
 
-    IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema);
+    IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema, *schemaOwner);
     EXPECT_EQ(ECOBJECTS_STATUS_Success, stringProperty->SetCustomAttribute(*instance));
     }
 
 TEST_F(CustomAttributeTest, ExpectIsDefined)
     {
-    ECSchemaOwnerPtr    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaCachePtr  schemaOwner = ECSchemaCache::Create();
     ECSchemaP           schema = CreateCustomAttributeTestSchema(*schemaOwner);
 
     ECClassP containerClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (containerClass);
     ECClassP customAttributeClass = schema->GetClassP (L"CustomAttribClass");
 
-    IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema);
+    IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema, *schemaOwner);
     EXPECT_FALSE(containerClass->IsDefined(L"CustomAttribClass"));
     EXPECT_FALSE(containerClass->IsDefined(*customAttributeClass));
 
@@ -159,7 +156,7 @@ TEST_F(CustomAttributeTest, ExpectIsDefined)
 
 TEST_F(CustomAttributeTest, ExpectIsDefinedOnBaseClass)
     {
-    ECSchemaOwnerPtr    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaCachePtr  schemaOwner = ECSchemaCache::Create();
     ECSchemaP           schema = CreateCustomAttributeTestSchema(*schemaOwner);
 
     ECClassP containerClass = schema->GetClassP (L"TestClass");
@@ -169,7 +166,7 @@ TEST_F(CustomAttributeTest, ExpectIsDefinedOnBaseClass)
     ECClassP baseClass = schema->GetClassP (L"BaseClass");
     ASSERT_TRUE (baseClass);
 
-    IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema);
+    IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema, *schemaOwner);
     EXPECT_FALSE(containerClass->IsDefined(L"CustomAttribClass"));
     EXPECT_FALSE(containerClass->IsDefined(*customAttributeClass));
 
@@ -182,13 +179,13 @@ TEST_F(CustomAttributeTest, ExpectIsDefinedOnBaseClass)
 
 TEST_F(CustomAttributeTest, ExpectCanGetCustomAttribute)
     {
-    ECSchemaOwnerPtr    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaCachePtr  schemaOwner = ECSchemaCache::Create();
     ECSchemaP           schema = CreateCustomAttributeTestSchema(*schemaOwner);
 
     ECClassP containerClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (containerClass);
 
-    IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema);
+    IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema, *schemaOwner);
     EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
 
     IECInstancePtr gotInstance = containerClass->GetCustomAttribute(L"CustomAttribClass");
@@ -204,7 +201,7 @@ TEST_F(CustomAttributeTest, ExpectCanGetCustomAttribute)
 
 TEST_F(CustomAttributeTest, ExpectCanGetAllCustomAttributes)
     {
-    ECSchemaOwnerPtr    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaCachePtr  schemaOwner = ECSchemaCache::Create();
     ECSchemaP           schema = CreateCustomAttributeTestSchema(*schemaOwner);
 
     ECClassP containerClass = schema->GetClassP (L"TestClass");
@@ -213,13 +210,13 @@ TEST_F(CustomAttributeTest, ExpectCanGetAllCustomAttributes)
     ECClassP baseClass = schema->GetClassP (L"BaseClass");
     ASSERT_TRUE (baseClass);
 
-    IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema);
+    IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema, *schemaOwner);
     EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
 
-    IECInstancePtr instance2 = GetInstanceForClass(L"CustomAttribClass2", *schema);
+    IECInstancePtr instance2 = GetInstanceForClass(L"CustomAttribClass2", *schema, *schemaOwner);
     EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance2));
 
-    IECInstancePtr instance3 = GetInstanceForClass(L"CustomAttribClass3", *schema);
+    IECInstancePtr instance3 = GetInstanceForClass(L"CustomAttribClass3", *schema, *schemaOwner);
     EXPECT_EQ(ECOBJECTS_STATUS_Success, baseClass->SetCustomAttribute(*instance3));
 
     bool foundCustomAttrib = false;
@@ -257,13 +254,13 @@ TEST_F(CustomAttributeTest, ExpectCanGetAllCustomAttributes)
 
 TEST_F(CustomAttributeTest, ExpectCanRemoveCustomAttribute)
     {
-    ECSchemaOwnerPtr    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaCachePtr  schemaOwner = ECSchemaCache::Create();
     ECSchemaP           schema = CreateCustomAttributeTestSchema(*schemaOwner);
 
     ECClassP containerClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (containerClass);
 
-    IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema);
+    IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema, *schemaOwner);
     EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
 
     IECInstancePtr gotInstance = containerClass->GetCustomAttribute(L"CustomAttribClass");
@@ -286,7 +283,7 @@ TEST_F(CustomAttributeTest, ExpectCanRemoveCustomAttribute)
 
 TEST_F(CustomAttributeTest, ExpectFailureWithUnreferencedCustomAttribute)
     {
-    ECSchemaOwnerPtr    schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaCachePtr  schemaOwner = ECSchemaCache::Create();
     ECSchemaP           schema = CreateCustomAttributeTestSchema(*schemaOwner);
 
     ECSchemaP refSchema;
@@ -299,7 +296,7 @@ TEST_F(CustomAttributeTest, ExpectFailureWithUnreferencedCustomAttribute)
     ECClassP containerClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (containerClass);
 
-    IECInstancePtr instance = GetInstanceForClass(L"RefClass", *refSchema);
+    IECInstancePtr instance = GetInstanceForClass(L"RefClass", *refSchema, *schemaOwner);
 
     EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, containerClass->SetCustomAttribute(*instance));
     schema->AddReferencedSchema(*refSchema);
