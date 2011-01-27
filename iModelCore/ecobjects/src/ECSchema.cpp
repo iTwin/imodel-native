@@ -792,7 +792,15 @@ ECSchemaDeserializationContextR     schemaContext
             return status;           
             }
 
-        if (ECOBJECTS_STATUS_Success != this->AddClass (pClass))
+        ECClassP existingClass = this->GetClassP(pClass->Name.c_str());
+
+        if (NULL != existingClass)
+            {
+            existingClass->ReadXmlAttributes(xmlNodePtr);
+            delete pClass;
+            pClass = existingClass;
+            }
+        else if (ECOBJECTS_STATUS_Success != this->AddClass (pClass))
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
 
         if (NULL == pRelationshipClass)

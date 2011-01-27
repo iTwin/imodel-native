@@ -854,7 +854,10 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
     MSXML2::IXMLDOMNamedNodeMapPtr nodeAttributesPtr = classNode.attributes;
     MSXML2::IXMLDOMNodePtr attributePtr;        
 
-    READ_REQUIRED_XML_ATTRIBUTE (TYPE_NAME_ATTRIBUTE,           this, Name,     classNode.baseName)    
+    if (m_name.length() == 0)
+        {
+        READ_REQUIRED_XML_ATTRIBUTE (TYPE_NAME_ATTRIBUTE,           this, Name,     classNode.baseName)    
+        }
     
     // OPTIONAL attributes - If these attributes exist they MUST be valid    
     READ_OPTIONAL_XML_ATTRIBUTE (DESCRIPTION_ATTRIBUTE,         this, Description)
