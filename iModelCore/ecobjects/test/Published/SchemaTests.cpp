@@ -604,8 +604,8 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateClassesInXml)
     {
     ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
-    ECSchemaOwnerPtr                    schemaOwner = ECSchemaOwner::CreateOwner();
-    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
 
     ECSchemaP schema;
     SchemaDeserializationStatus status = ECSchema::ReadXmlFromString (schema, 
@@ -637,8 +637,8 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateClassesInXml)
 
 
     ECSchemaP schema2;
-    ECSchemaOwnerPtr                    schemaOwner2 = ECSchemaOwner::CreateOwner();
-    ECSchemaDeserializationContextPtr   schemaContext2 = ECSchemaDeserializationContext::CreateContext(*schemaOwner2);
+    ECSchemaCachePtr                    schemaOwner2 = ECSchemaCache::Create();
+    ECSchemaDeserializationContextPtr   schemaContext2 = ECSchemaDeserializationContext::CreateContext(*schemaOwner2, *schemaOwner2);
 
 
     status = ECSchema::ReadXmlFromString (schema2, 

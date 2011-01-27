@@ -22,8 +22,6 @@ LeakDetector<ECSchema> g_leakDetector (L"ECSchema", L"ECSchemas", true);
 LeakDetector<ECSchema> g_leakDetector (L"ECSchema", L"ECSchemas", false);
 #endif
 
-static const bwstring s_schemaClassSeparator (L"_:_");
-
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -796,7 +794,7 @@ ECSchemaDeserializationContextR     schemaContext
 
         if (NULL != existingClass)
             {
-            existingClass->ReadXmlAttributes(xmlNodePtr);
+            existingClass->ReadXmlAttributes(xmlNodePtr, schemaContext.GetStandaloneEnablerLocator());
             delete pClass;
             pClass = existingClass;
             }
