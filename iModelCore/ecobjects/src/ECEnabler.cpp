@@ -2,7 +2,7 @@
 |
 |     $Source: ecobjects/native/ECEnabler.cpp $
 |
-|   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -12,7 +12,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECEnabler::ECEnabler(ECClassCR ecClass) : m_privateRefCount(0), m_ecClass (ecClass) 
+ECEnabler::ECEnabler(ECClassCR ecClass) : m_ecClass (ecClass) 
     {
     };
 
@@ -22,27 +22,6 @@ ECEnabler::ECEnabler(ECClassCR ecClass) : m_privateRefCount(0), m_ecClass (ecCla
 ECEnabler::~ECEnabler() 
     {
     ECObjectsLogger::Log()->tracev (L"%S at 0x%x is being destructed.", typeid(*this).name(), this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     02/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-UInt32      ECEnabler::AddRef()
-    {
-    m_privateRefCount++;
-    ECObjectsLogger::Log()->tracev (L"++(%d)%S at 0x%x Refcount increased to %d.", m_privateRefCount, typeid(*this).name(), this, m_privateRefCount);
-    
-    return RefCountedBase::AddRef();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     02/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-UInt32      ECEnabler::Release()
-    { 
-    --m_privateRefCount;
-    ECObjectsLogger::Log()->tracev (L"--(%d)%S at 0x%x Refcount decreased to %d.", m_privateRefCount, typeid(*this).name(), this, m_privateRefCount);
-    return RefCountedBase::Release();
     }
 
 /*---------------------------------------------------------------------------------**//**
