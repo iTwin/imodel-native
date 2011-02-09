@@ -16,12 +16,13 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
+typedef RefCountedPtr<StandaloneECEnabler>        StandaloneECEnablerPtr;
 typedef RefCountedPtr<ECEnabler>                  EnablerPtr;
 
 //=======================================================================================    
 //! base class ensuring that all enablers are refcounted
 //=======================================================================================    
-struct ECEnabler : RefCountedBase
+struct ECEnabler : RefCountedBase, IStandaloneEnablerLocator
     {
     //! Interface of functor that wants to process text-valued properties
     struct IPropertyProcessor 
@@ -35,7 +36,8 @@ struct ECEnabler : RefCountedBase
     enum PropertyProcessingOptions {PROPERTY_PROCESSING_OPTIONS_SingleType=0, PROPERTY_PROCESSING_OPTIONS_AllTypes=1};
 
 private:
-    ECClassCR                 m_ecClass;
+    ECClassCR                    m_ecClass;
+    IStandaloneEnablerLocatorR   m_standaloneInstanceEnablerLocator;    // can't be const because the m_standaloneInstanceEnablerLocator may grow if a new enabler is added to its cache
 
     ECEnabler(); // Hidden as part of the RefCounted pattern
 
@@ -53,12 +55,16 @@ protected:
     //!       };
     //! /endcode
     //! where the ____ is a name specific to your subclass, and the parameters may vary per enabler.
-    ECOBJECTS_EXPORT ECEnabler(ECClassCR ecClass);
+    ECOBJECTS_EXPORT ECEnabler(ECClassCR ecClass, IStandaloneEnablerLocatorR childECEnablerLocator);
 
     virtual wchar_t const *         _GetName() const = 0;
     virtual ECObjectsStatus         _GetPropertyIndex (UInt32& propertyIndex, const wchar_t * propertyAccessString) const = 0;
     virtual ECObjectsStatus         _GetAccessString  (const wchar_t *& propertyAccessString, UInt32 propertyIndex) const = 0;
     virtual UInt32                  _GetPropertyCount () const = 0;
+
+    // IStandaloneEnablerLocator
+    ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr  _ObtainStandaloneInstanceEnabler (const wchar_t* schemaName, const wchar_t* className); 
+
 #if defined (EXPERIMENTAL_TEXT_FILTER)
     ECOBJECTS_EXPORT virtual PropertyProcessingResult   _ProcessPrimitiveProperties (bset<ECClassCP>& failedClasses, IECInstanceCR, EC::PrimitiveType, IPropertyProcessor const&, PropertyProcessingOptions) const;
 #endif
@@ -67,12 +73,13 @@ protected:
 
 public:
     //! Primarily for debugging/logging purposes. Should match your fully-qualified class name
-    ECOBJECTS_EXPORT wchar_t const * GetName() const;
+    ECOBJECTS_EXPORT wchar_t const *            GetName() const;
     
-    ECOBJECTS_EXPORT ECClassCR       GetClass() const;
-    ECOBJECTS_EXPORT ECObjectsStatus GetPropertyIndex     (UInt32& propertyIndex, const wchar_t * propertyAccessString) const;
-    ECOBJECTS_EXPORT ECObjectsStatus GetAccessString      (const wchar_t *& propertyAccessString, UInt32 propertyIndex) const;
-    ECOBJECTS_EXPORT UInt32          GetPropertyCount () const;
+    ECOBJECTS_EXPORT ECClassCR                  GetClass() const;
+    ECOBJECTS_EXPORT ECObjectsStatus            GetPropertyIndex     (UInt32& propertyIndex, const wchar_t * propertyAccessString) const;
+    ECOBJECTS_EXPORT ECObjectsStatus            GetAccessString      (const wchar_t *& propertyAccessString, UInt32 propertyIndex) const;
+    ECOBJECTS_EXPORT UInt32                     GetPropertyCount () const;
+    ECOBJECTS_EXPORT StandaloneECEnablerPtr     ObtainStandaloneInstanceEnabler (const wchar_t* schemaName, const wchar_t* className); 
 
 #if defined (EXPERIMENTAL_TEXT_FILTER)
     //! Call processor on all primitive-valued properties of specified type(s) on this instance. 

@@ -109,7 +109,7 @@ BentleyStatus serializeSchema_WithClassModification(ECSchemaP m_schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSchemaTests, circularBaseClass)
 {
-    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
 
     ECClassP m_ClassA;
     ECClassP m_ClassB;
@@ -171,7 +171,7 @@ TEST_F(ECSchemaTests, AddAndRemoveRelationshipBaseClass)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSchemaTests, modifyECClass)
 {
-    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
     m_classP = m_schema->GetClassP(L"ecWidget");
     ECClassVerifier ecClsVer(m_schema);
     ecClsVer.ModifyECClass(m_classP, L"TestWidget Label", 0); // 0 indicates DisplayLabel
@@ -187,7 +187,7 @@ TEST_F(ECSchemaTests, modifyECClass)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSchemaTests, multipleBaseClasses)
     {
-    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
     //ECSchemaP     schema;
     ECClassP        class1;
     ECClassP        baseClass1;
@@ -216,10 +216,10 @@ TEST_F(ECSchemaTests, multipleBaseClasses)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSchemaTests, InvalidSchemaName)
     {
-    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
     ECSchemaP ecSchPtr;
     ECSchemaVerifier ecSchVer;
-    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
     
     ecSchVer.CreateSchema_Success (ecSchPtr, L"test", 1, 0, *schemaOwner);
     serializeSchema_New(ecSchPtr);
@@ -237,7 +237,7 @@ TEST_F(ECSchemaTests, InvalidSchemaName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSchemaTests, InvalidClassName)
     {
-    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
 
     ECClassP testClass2;
     ECClassVerifier ecClsVer(m_schema);
@@ -267,7 +267,7 @@ TEST_F(ECSchemaTests, InvalidRelationshipName)
     {
     ECSchemaP schema;
     ECRelationshipClassP relBaseClass;
-    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
     
     ECSchema::CreateSchema(schema, L"TestSchema", 1, 0, *schemaOwner);
     EXPECT_EQ (ECOBJECTS_STATUS_InvalidName, schema->CreateRelationshipClass(relBaseClass, L"Rel.BaseClass"));
@@ -306,7 +306,7 @@ TEST_F(ECSchemaTests, ExpectSuccessWhenDeserializingWidgetsECSchema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSchemaTests, PropertiesValidation)
     {
-    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
     m_classP = m_schema->GetClassP(L"ecWidget");
     ECPropertyP pProperty = m_classP->GetPropertyP(L"eclongattr");
     EXPECT_STREQ (L"eclongattr", pProperty->Name.c_str());
@@ -324,7 +324,7 @@ TEST_F(ECSchemaTests, PropertiesValidation)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSchemaTests, createStructProperty)
 {
-    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
     m_classP = m_schema->GetClassP(L"ecProject");
     m_classP->SetIsStruct(L"True");
     StructECPropertyP m_StructProperty;
@@ -353,7 +353,7 @@ TEST_F(ECSchemaTests, StructTypePropertiesValidation)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSchemaTests, AddProperty)
     {
-    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
     m_classP = m_schema->GetClassP(L"ecProject");
     PrimitiveECPropertyP pProperty;
     ECPropertyVerifier ecPropVer;
@@ -368,7 +368,7 @@ TEST_F(ECSchemaTests, AddProperty)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSchemaTests, AddClass)
     {
-    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
     int count = 0;
     ECClassContainerCR classes = m_schema->Classes;
     for(ECClassContainer::const_iterator iter=classes.begin(); iter != classes.end(); ++iter)
@@ -388,7 +388,7 @@ TEST_F(ECSchemaTests, AddClass)
 +---------------+---------------+---------------+---------------+---------------+------*/
 //TEST_F(ECSchemaTests, maximumClassesInASchema)
 //    {
-//    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
+//    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
 //    ECClassP class1;
 //    ECClassVerifier ecClsVer(m_schema);
 //    for(int i =1; i <= 8192; i++)

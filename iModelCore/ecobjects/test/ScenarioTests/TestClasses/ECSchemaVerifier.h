@@ -2,7 +2,7 @@
 |
 |  $Source: ecobjects/nativeatp/ScenarioTests/TestClasses/ECSchemaVerifier.h $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -16,9 +16,9 @@ namespace TestHelpers
 class ECSchemaVerifier
     {
     public: 
-        ECSchemaP m_ECSchemaP;
-        ECSchemaOwnerPtr                    schemaOwner;
-        ECClassP m_ECClassP;
+        ECSchemaP               m_ECSchemaP;
+        ECSchemaCachePtr      schemaOwner;
+        ECClassP                m_ECClassP;
         ECSchemaVerifier(): m_ECSchemaP (NULL)
             {}
 
@@ -50,7 +50,7 @@ public: BentleyStatus CreateRelationshipClass_Failure (ECObjectsStatus expectedS
 /*---------------------------------------------------------------------------------**\\**
 * @bsimethod                                                    Farrukh Latif  06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-public: static SchemaDeserializationStatus ReadXmlFromFile (ECSchemaOwnerPtr &schemaOwner, ECSchemaP & schemaOut, const wchar_t * ecSchemaXmlFile, const bvector< IECSchemaLocatorP > * schemaLocators, const bvector< const wchar_t * > * schemaPaths);
+public: static SchemaDeserializationStatus ReadXmlFromFile (ECSchemaCachePtr &schemaOwner, ECSchemaP & schemaOut, const wchar_t * ecSchemaXmlFile, const bvector< IECSchemaLocatorP > * schemaLocators, const bvector< const wchar_t * > * schemaPaths);
 
 /*---------------------------------------------------------------------------------**\\**
 * @bsimethod                                                    Farrukh Latif  06/10

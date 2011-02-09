@@ -6,7 +6,7 @@
 |       $Date: 2005/11/07 15:38:45 $
 |     $Author: EarlinLutz $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -275,8 +275,9 @@ ECClassCR classDefinition
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceDeserializationStatus IECCustomAttributeContainer::ReadCustomAttributes
 (
-MSXML2::IXMLDOMNode&    containerNode,
-ECSchemaCR              schema
+MSXML2::IXMLDOMNode&       containerNode,
+ECSchemaCR                 schema,
+IStandaloneEnablerLocatorR standaloneEnablerLocator
 )
     {
     InstanceDeserializationStatus status = INSTANCE_DESERIALIZATION_STATUS_Success;
@@ -291,7 +292,7 @@ ECSchemaCR              schema
         MSXML2::IXMLDOMNodeListPtr attributeInstances = xmlNodePtr->childNodes;
         while (NULL != (instancePtr = attributeInstances->nextNode()))
             {
-            ECInstanceDeserializationContextPtr context = ECInstanceDeserializationContext::CreateContext (schema);
+            ECInstanceDeserializationContextPtr context = ECInstanceDeserializationContext::CreateContext (schema, standaloneEnablerLocator);
 
             IECInstancePtr ptr;
             status = IECInstance::ReadXmlFromString(ptr, (const wchar_t*) instancePtr->Getxml(), *context);

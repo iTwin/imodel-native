@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECInstance.h $
 |
-|   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -82,6 +82,8 @@ protected:
 public:
     ECOBJECTS_EXPORT void const*        GetBaseAddress () {return this;}
     ECOBJECTS_EXPORT ECEnablerCR        GetEnabler() const;
+    ECOBJECTS_EXPORT ECEnablerR         GetEnablerR() const;      // use when enabler.ObtainStandaloneEnabler is called since a new enabler may be created.
+
     ECOBJECTS_EXPORT bwstring           GetInstanceId() const;
     ECOBJECTS_EXPORT bool               IsReadOnly() const;
     
@@ -175,6 +177,32 @@ struct ECInstanceInteropHelper
     ECOBJECTS_EXPORT static ECObjectsStatus SetPoint3DValue  (IECInstanceR, const wchar_t * managedPropertyAccessor, DPoint3dCR value);
     ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeValue (IECInstanceR, const wchar_t * managedPropertyAccessor, SystemTimeR value);
     ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeTicks (IECInstanceR, const wchar_t * managedPropertyAccessor, Int64 value);
+
+    ECOBJECTS_EXPORT static PrimitiveType   GetPrimitiveType       (IECInstanceCR instance, int propertyIndex);
+#ifdef NOT_USED
+    ECOBJECTS_EXPORT static ValueKind       GetValueKind           (IECInstanceCR instance, int propertyIndex);
+    ECOBJECTS_EXPORT static ArrayKind       GetArrayKind           (IECInstanceCR instance, int propertyIndex);
+#endif
+    ECOBJECTS_EXPORT static bool            IsStructArray          (IECInstanceCR instance, int propertyIndex);
+    ECOBJECTS_EXPORT static bool            IsArray                (IECInstanceCR instance, int propertyIndex);
+    ECOBJECTS_EXPORT static bool            IsCalculatedECProperty (IECInstanceCR instance, int propertyIndex);
+
+    //! Gets the next property index in the instance or struct that is being enumerated.
+    //! @param [I/O] propertyIndex    - the next property index of a property belonging to the struct or instance that is being enumerated.
+    //!                                 Should start as -1 for instance enumeration, or the first index of a struct for struct enumeration.
+    //! @param [Out] structNameLength - if an embedded struct has been found, the length of the name of that embedded struct.
+    //! @param [Out] accessor         - a pointer to the access string of the next property
+    //! @param       instance         - the incoming instance
+    //! @param       prefix           - the length of the name of the struct or embedded struct that is being enumerated
+    //! @param       includeNulls     - whether or not the enumerator should skip null values (per ECObjects, structs are never null)
+    //! @param       firstRunInStruct - whether or not this is the first time this method has been called in a struct enumerator.
+    //!                                 This parameter will cause GetNextInteropProperty to avoid incrementing propertyIndex, as 
+    //!                                 propertyIndex starts is the first property of that struct.
+    ECOBJECTS_EXPORT static bool            GetNextInteropProperty (int& propertyIndex, int& structNameLength, const wchar_t*& accessor, IECInstanceCR instance, int prefix, bool includeNulls, bool firstRunInStruct);
+    ECOBJECTS_EXPORT static int             FirstIndexOfStruct     (IECInstanceCR instance, const wchar_t* structName);
+
+    ECOBJECTS_EXPORT static ECObjectsStatus SetValueByIndex         (IECInstanceR instance, int propertyIndex, int arrayIndex, ECValueCR value);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetValueByIndex         (ECValueR value, IECInstanceCR instance, int propertyIndex, int arrayIndex);
     };
 
 /*__PUBLISH_SECTION_START__*/

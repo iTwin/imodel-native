@@ -2,7 +2,7 @@
 |
 |  $Source: ecobjects/nativeatp/ScenarioTests/TestClasses/ECSchemaVerifier.cpp $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -87,9 +87,9 @@ BentleyStatus ECSchemaVerifier::CreateRelationshipClass_Failure (ECObjectsStatus
 Read XML file from a given location and deserialize as an ECXML schema
 * @bsimethod                                                    Farrukh Latif  06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus ECSchemaVerifier::ReadXmlFromFile (ECSchemaOwnerPtr &schemaOwner, ECSchemaP & schemaOut, const wchar_t * ecSchemaXmlFile, const bvector< IECSchemaLocatorP > * schemaLocators, const bvector< const wchar_t * > * schemaPaths)
+SchemaDeserializationStatus ECSchemaVerifier::ReadXmlFromFile (ECSchemaCachePtr &schemaOwner, ECSchemaP & schemaOut, const wchar_t * ecSchemaXmlFile, const bvector< IECSchemaLocatorP > * schemaLocators, const bvector< const wchar_t * > * schemaPaths)
     {
-    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
     bwstring seedPath(ECTestFixture::GetTestDataPath(L"").c_str());
     schemaContext->AddSchemaPath(seedPath.c_str());
 
