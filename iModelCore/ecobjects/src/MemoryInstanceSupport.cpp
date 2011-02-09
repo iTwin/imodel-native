@@ -965,6 +965,48 @@ ECObjectsStatus       ClassLayout::GetPropertyLayoutByIndex (PropertyLayoutCP & 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
+UInt32  ClassLayout::GetFirstChildPropertyIndex (UInt32 parentIndex) const
+    {
+    // Find the parent in the map
+    bmap<UInt32, bvector<UInt32>>::const_iterator mapIterator = m_logicalStructureMap.find (parentIndex);
+
+    if ( ! EXPECTED_CONDITION (m_logicalStructureMap.end() != mapIterator))
+        return 0;
+
+    // Return the first member of the parent's childList
+    bvector<UInt32> const& childIndexList = mapIterator->second;
+
+    return *childIndexList.begin();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32  ClassLayout::GetNextChildPropertyIndex (UInt32 parentIndex, UInt32 childIndex) const
+    {
+    // Find the parent in the map
+    bmap<UInt32, bvector<UInt32>>::const_iterator mapIterator = m_logicalStructureMap.find (parentIndex);
+
+    if ( ! EXPECTED_CONDITION (m_logicalStructureMap.end() != mapIterator))
+        return 0;
+
+    // Find the child in the parent's childList
+    bvector<UInt32> const& childIndexList = mapIterator->second;
+
+    bvector<UInt32>::const_iterator it = std::find (childIndexList.begin(), childIndexList.end(), childIndex);
+    if ( ! EXPECTED_CONDITION (childIndexList.end() != it))
+        return 0;
+
+    // Get the next entry in the childList.
+    if (childIndexList.end() != ++it)
+        return *it;
+
+    return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/10
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   SchemaLayout::AddClassLayout (ClassLayoutCR classLayout, ClassIndex classIndex)
     {
     if (m_classLayouts.size() <= classIndex)

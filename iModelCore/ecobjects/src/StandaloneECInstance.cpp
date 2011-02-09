@@ -762,6 +762,21 @@ UInt32                    StandaloneECEnabler::_GetPropertyCount() const
     return classLayout.GetPropertyCount ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/11
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32          StandaloneECEnabler::_GetFirstPropertyIndex (UInt32 parentIndex) const
+    {
+    return GetClassLayout().GetFirstChildPropertyIndex (parentIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/11
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32          StandaloneECEnabler::_GetNextPropertyIndex (UInt32 parentIndex, UInt32 inputIndex) const
+    {
+    return GetClassLayout().GetNextChildPropertyIndex (parentIndex, inputIndex);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09

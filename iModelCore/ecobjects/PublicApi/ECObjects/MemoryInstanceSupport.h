@@ -161,6 +161,9 @@ public:
     bwstring                GetName() const;
     void                    AddPropertyLayout (wchar_t const * accessString, PropertyLayoutR);
     void                    AddToLogicalStructureMap (PropertyLayoutR propertyLayout, UInt32 propertyIndex);
+    UInt32                  GetFirstChildPropertyIndex (UInt32 parentIndex) const;
+    UInt32                  GetNextChildPropertyIndex (UInt32 parentIndex, UInt32 childIndex) const;
+
     ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();
 
 /*__PUBLISH_SECTION_START__*/

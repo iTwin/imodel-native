@@ -2,12 +2,13 @@
 |
 |     $Source: PublicApi/ECObjects/ECValue.h $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
+#include <Bentley\VirtualCollectionIterator.h>
 #include <ECObjects\ECObjects.h>
 #include <Geom\GeomApi.h>
 
@@ -260,8 +261,6 @@ public:
 private:
     //"BACK" OF VECTOR IS DEEPEST ELEMENT
     LocationVector          m_locationVector;
-
-    Location&               operator[] (UInt32 depth);
     const LocationVector&   GetLocationVector() const;
 
 public:
@@ -270,6 +269,8 @@ public:
     friend ECValueAccessorPair;
 
 /*__PUBLISH_SECTION_END__*/
+
+    Location&               operator[] (UInt32 depth);
 
     //! Constructs an ECValueAccessor for a given instance.
     //! @param[in]      instance         The instance that the accessor is representative of.
@@ -292,8 +293,6 @@ public:
     ECOBJECTS_EXPORT ECValueAccessor (ECEnablerCR layout);
 
     ECOBJECTS_EXPORT const Location&        operator[] (UInt32 depth) const;
-    ECOBJECTS_EXPORT UInt32                 GetDepth() const;
-
     ECOBJECTS_EXPORT ECEnablerCR            GetEnabler (UInt32 depth) const;
  
     //! Determines whether or not the ECEnabler matches that of the accessor at the given depth.
@@ -304,6 +303,8 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
 
+    ECOBJECTS_EXPORT UInt32                 GetDepth() const;
+
     //! Gets the native-style access string for a given stack depth.  This access string does 
     //! not contain an array index, and is compatible with the Get/Set methods in IECInstance.
     //! @param[in]      depth           The stack depth of the native access string.
@@ -311,14 +312,16 @@ public:
     //! @see            IECInstance
     ECOBJECTS_EXPORT const wchar_t *        GetAccessString (UInt32 depth) const;
 
-    ECOBJECTS_EXPORT void  PushLocation (ECEnablerCR, int, int);
-    ECOBJECTS_EXPORT void  PushLocation (ECEnablerCR, const wchar_t *, int);
+    ECOBJECTS_EXPORT void  PushLocation (ECEnablerCR, int propertyIndex, int arrayIndex);
+    ECOBJECTS_EXPORT void  PushLocation (ECEnablerCR, const wchar_t *,   int arrayIndex);
 
-    ECOBJECTS_EXPORT void  PushLocation (IECInstanceCR, int, int);
-    ECOBJECTS_EXPORT void  PushLocation (IECInstanceCR, const wchar_t *, int);
+    ECOBJECTS_EXPORT void  PushLocation (IECInstanceCR, int propertyIndex, int arrayIndex);
+    ECOBJECTS_EXPORT void  PushLocation (IECInstanceCR, const wchar_t *,   int arrayIndex);
 
     ECOBJECTS_EXPORT void  PopLocation ();
     Location&              DeepestLocation ();
+
+    ECOBJECTS_EXPORT void  Clear ();
 
     ECOBJECTS_EXPORT bwstring               GetDebugAccessString () const;
 
@@ -337,6 +340,80 @@ public:
 
     ECOBJECTS_EXPORT bool                   operator!=(ECValueAccessorCR accessor) const;
     ECOBJECTS_EXPORT bool                   operator==(ECValueAccessorCR accessor) const;
+    };
+
+//=======================================================================================  
+//! @bsiclass 
+//======================================================================================= 
+struct ECPropertyValue : RefCountedBase
+    {
+/*__PUBLISH_SECTION_END__*/
+private:
+    IECInstancePtr      m_instance;
+    ECValueAccessor     m_accessor;
+
+public:
+    ECPropertyValue (IECInstanceR, ECValueAccessorCR);
+/*__PUBLISH_SECTION_START__*/
+
+public:
+    ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v) const;
+    ECOBJECTS_EXPORT IECInstancePtr     GetInstance ();
+    ECOBJECTS_EXPORT ECValueAccessorCR  GetValueAccessor () const;
+    ECOBJECTS_EXPORT bool               HasChildValues () const;
+    ECOBJECTS_EXPORT ECValuesCollection GetChildValues () const;
+    };
+
+typedef RefCountedPtr<ECPropertyValue> ECPropertyValuePtr;
+
+//=======================================================================================  
+//! @see ECValue, ECValueAccessor, ECValuesCollection
+//! @bsiclass 
+//======================================================================================= 
+struct ECValuesCollectionIterator : RefCountedBase
+    {
+/*__PUBLISH_SECTION_END__*/
+private:
+    friend ECValuesCollection;
+
+    IECInstancePtr      m_instance;
+    ECValueAccessor     m_currentAccessor;
+
+    ECValuesCollectionIterator (IECInstanceP);
+    ECValuesCollectionIterator (IECInstanceR, ECValueAccessorCR);
+    ECValuesCollectionIterator ();
+/*__PUBLISH_SECTION_START__*/
+
+public:
+    typedef ECPropertyValuePtr          ReturnType;
+    ECOBJECTS_EXPORT bool               IsDifferent(ECValuesCollectionIterator const& iter) const;
+    ECOBJECTS_EXPORT void               MoveToNext ();
+    ECOBJECTS_EXPORT ECPropertyValuePtr GetCurrent () const;
+    ECOBJECTS_EXPORT bool               IsAtEnd () const;
+    };
+
+//=======================================================================================    
+//! @bsiclass 
+//======================================================================================= 
+struct ECValuesCollection
+    {
+    friend ECPropertyValue;
+
+private:
+// WIP_FUSION: hide this implementation
+    ECValueAccessor     m_baseAccessor;
+    IECInstancePtr      m_instance;
+
+    ECValuesCollection ();
+
+public:
+    ECOBJECTS_EXPORT ECValuesCollection (IECInstanceR, ECValueAccessorCR baseAccessor);
+    ECOBJECTS_EXPORT ECValuesCollection (IECInstanceR);
+
+    typedef VirtualCollectionIterator<ECValuesCollectionIterator> const_iterator;
+
+    ECOBJECTS_EXPORT const_iterator begin () const;
+    ECOBJECTS_EXPORT const_iterator end ()   const;
     };
 
 //=======================================================================================    
@@ -386,69 +463,8 @@ public:
 
     ECOBJECTS_EXPORT void          SetIncludesNullValues (bool includesNullValues);
     };
+
 typedef RefCountedPtr<ECValueAccessorPairCollectionOptions> ECValueAccessorPairCollectionOptionsPtr;
-
-// The template below is part of the Bentley API on the trunk, but does not yet exist on the branch.
-// Currently, ECValueAccessorPairCollection is the only consumer of this template on the branch,
-// so the template is copied here temporarily.  This should be removed during a merge.
-
-/*=================================================================================**//**
-* This template is used by iterators that hide their implementation from the
-* published API.  Hiding the implementation allows it to be improved, for example
-* by adding new data members, without requiring callers to recompile.
-*
-* To use the template, an iterator class must:
-*   1) Satisfy the requirements of RefCountedPtr usually by deriving from RefCountedBase.
-*   2) Provide a typedef for its return type, ex:
-*       typedef DgnModelRefP ReturnType;
-*   3) Provide the following methods:        
-*       bool             IsDifferent(MyIterator const& rhs) const;
-*       void             MoveToNext ();
-*       ReturnType       GetCurrent () const;
-*       bool             IsAtEnd () const;
-*
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-template <typename IteratorImplementation>
-struct VirtualCollectionIterator : std::iterator<std::forward_iterator_tag, typename IteratorImplementation::ReturnType>
-{
-private:
-    RefCountedPtr<IteratorImplementation> m_implementation;
-
-public:
-    VirtualCollectionIterator () { }
-    VirtualCollectionIterator (IteratorImplementation& state) : m_implementation (&state)
-        {
-        if (m_implementation->IsAtEnd())
-            m_implementation = NULL;
-        }
-
-    typename IteratorImplementation::ReturnType  operator*() const
-        {
-        return m_implementation->GetCurrent();
-        }
-
-    bool        operator!=(VirtualCollectionIterator const& rhs) const
-        {
-        if (m_implementation.IsNull() && rhs.m_implementation.IsNull())
-            return false;
-
-        if (m_implementation.IsNull() != rhs.m_implementation.IsNull())
-            return true;
-
-        return m_implementation->IsDifferent (*rhs.m_implementation.get());
-        }
-        
-    VirtualCollectionIterator&   operator++()
-        {
-        m_implementation->MoveToNext();
-
-        if (m_implementation->IsAtEnd())
-            m_implementation = NULL;
-
-        return *this;
-        }
-};
 
 //=======================================================================================  
 //! @see ECValue, ECValueAccessor, ECValueAccessorPairCollection

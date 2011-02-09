@@ -372,6 +372,31 @@ bwstring    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versionMaj
                     L"        <BaseClass>BaseClass0</BaseClass>"
                     L"        <ECProperty propertyName=\"DerivedDoubleProperty\" typeName=\"double\" />"
                     L"    </ECClass>"
+                    L"    <ECClass typeName=\"Address\" isStruct=\"True\" isDomainClass=\"True\">"
+                    L"        <ECProperty propertyName=\"HouseNumber\"  typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Street\"       typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Town\"         typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"State\"        typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"Zip\"          typeName=\"int\" />"
+                    L"    </ECClass>"
+                    L"    <ECClass typeName=\"PhoneNumber\" isStruct=\"True\" isDomainClass=\"True\">"
+                    L"        <ECProperty propertyName=\"AreaCode\"     typeName=\"int\" />"
+                    L"        <ECProperty propertyName=\"Number\"       typeName=\"int\" />"
+                    L"    </ECClass>"
+                    L"    <ECClass typeName=\"ContactInfo\" isStruct=\"True\" isDomainClass=\"True\">"
+                    L"        <ECStructProperty propertyName=\"PhoneNumber\" typeName=\"PhoneNumber\" />"
+                    L"        <ECStructProperty propertyName=\"Address\"     typeName=\"Address\" />"
+                    L"        <ECProperty       propertyName=\"Email\"       typeName=\"string\" />"
+                    L"    </ECClass>"
+                    L"    <ECClass typeName=\"Employee\" isStruct=\"True\" isDomainClass=\"True\">"
+                    L"        <ECProperty       propertyName=\"Name\"       typeName=\"string\" />"
+                    L"        <ECStructProperty propertyName=\"Home\"       typeName=\"ContactInfo\" />"
+                    L"        <ECStructProperty propertyName=\"Work\"       typeName=\"ContactInfo\" />"
+                    L"        <ECStructProperty propertyName=\"Alternate\"  typeName=\"ContactInfo\" />"
+                    L"    </ECClass>"
+                    L"    <ECClass typeName=\"EmployeeDirectory\" isDomainClass=\"True\">"
+                    L"        <ECArrayProperty propertyName=\"Employees\" typeName=\"Employee\"  minOccurs=\"0\" maxOccurs=\"unbounded\" />"
+                    L"    </ECClass>"
                     L"</ECSchema>";
 
     wchar_t* buff = (wchar_t*) _alloca (2 * (50 + wcslen (fmt) + wcslen (schemaName) + wcslen (className)));
@@ -952,6 +977,157 @@ TEST_F(MemoryLayoutTests, GetEnablerPropertyInformation)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/11
++---------------+---------------+---------------+---------------+---------------+------*/
+static void dumpPropertyValues (ECValuesCollectionR collection)
+    {
+    for each (ECPropertyValuePtr propertyValue in collection)
+        {
+        ECValueAccessorCR   accessor = propertyValue->GetValueAccessor();
+        const wchar_t *     accessString = accessor.GetAccessString (accessor.GetDepth() - 1);
+        
+        ECValue v;
+        propertyValue->GetValue(v);
+
+        printf ("%S = %S\n", accessString, v.ToString().c_str());
+
+        if (propertyValue->HasChildValues ())
+            {
+            ECValuesCollection children = propertyValue->GetChildValues();
+            dumpPropertyValues (children);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/11
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_PrimitiveArray)
+    {
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    ASSERT_TRUE (schema != NULL);
+
+    ECClassP ecClass = schema->GetClassP (L"AllPrimitives");
+    ASSERT_TRUE (ecClass);
+
+    SchemaLayout schemaLayout (24);
+
+    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
+
+    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+
+    ECValue v;
+    v.SetString(L"Happy String");
+    instance->SetValue(L"AString", v);
+
+    v.SetInteger(6);
+    instance->SetValue(L"AnInt", v);
+
+    instance->AddArrayElements(L"SomeStrings[]", 3);
+
+    v.SetString(L"ArrayMember 1");
+    instance->SetValue(L"SomeStrings[]", v, 0);
+
+    v.SetString(L"ArrayMember 2");
+    instance->SetValue(L"SomeStrings[]", v, 1);
+
+    v.SetString(L"ArrayMember 3");
+    instance->SetValue(L"SomeStrings[]", v, 2);
+
+    dumpPropertyValues (ECValuesCollection (*instance));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/11
++---------------+---------------+---------------+---------------+---------------+------*/
+static void setContactInfo
+(
+wchar_t const * houseNumber,
+wchar_t const * street,
+wchar_t const * town,
+wchar_t const * state,
+int             zip,
+int             areaCode,
+int             phoneNumber,
+wchar_t const * email,
+IECInstanceR    instance
+)
+    {
+    instance.SetValue(L"Address.HouseNumber",   ECValue (houseNumber));
+    instance.SetValue(L"Address.Street",        ECValue (street));
+    instance.SetValue(L"Address.Town",          ECValue (town));
+    instance.SetValue(L"Address.State",         ECValue (state));
+    instance.SetValue(L"Address.Zip",           ECValue (zip));
+    instance.SetValue(L"PhoneNumber.AreaCode",  ECValue (areaCode));
+    instance.SetValue(L"PhoneNumber.Number",    ECValue (phoneNumber));
+    instance.SetValue(L"Email",                 ECValue (email));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/11
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmbeddedStructs)
+    {
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    ASSERT_TRUE (schema != NULL);
+
+    ECClassP ecClass = schema->GetClassP (L"ContactInfo");
+    ASSERT_TRUE (ecClass);
+
+    SchemaLayout schemaLayout (24);
+
+    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
+
+    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    setContactInfo (L"123-4", L"Main Street", L"Exton", L"PA", 12345, 610, 1234567, L"nobody@nowhere.com", *instance);
+
+    dumpPropertyValues (ECValuesCollection (*instance));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/11
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_StructArray)
+    {
+    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
+    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    ASSERT_TRUE (schema != NULL);
+
+    ECClassP ecClass = schema->GetClassP (L"EmployeeDirectory");
+    ASSERT_TRUE (ecClass);
+
+    SchemaLayout schemaLayout (24);
+
+    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
+
+    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    instance->AddArrayElements(L"Employees[]", 2);
+
+    ECClassP arrayMemberClass = schema->GetClassP (L"Employee");
+    ASSERT_TRUE (arrayMemberClass);
+
+    ECValue v;
+    ClassLayoutP arrayMemberLayout = ClassLayout::BuildFromClass (*arrayMemberClass, 43, schemaLayout.GetSchemaIndex());
+    StandaloneECEnablerPtr arrayMemberEnabler = StandaloneECEnabler::CreateEnabler (*arrayMemberClass, *arrayMemberLayout, true);
+
+    EC::StandaloneECInstancePtr arrayMemberInstance1 = enabler->CreateInstance();
+    setContactInfo (L"123-4", L"Main Street", L"Exton", L"PA", 12345, 610, 1234567, L"nobody@nowhere.com", *arrayMemberInstance1);
+    v.SetStruct(arrayMemberInstance1.get());
+    instance->SetValue (L"Employees[]", v, 0);
+
+    EC::StandaloneECInstancePtr arrayMemberInstance2 = enabler->CreateInstance();
+    setContactInfo (L"1600", L"Pennsylvania Ave", L"Washington", L"DC", 10001, 555, 1234567, L"president@whitehouse.gov", *arrayMemberInstance2);
+    v.SetStruct(arrayMemberInstance2.get());
+    instance->SetValue (L"Employees[]", v, 1);
+
+    dumpPropertyValues (ECValuesCollection (*instance));
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan.Rush      11/10
@@ -1007,7 +1183,6 @@ TEST_F(MemoryLayoutTests, TestECValueEnumeration)
     v.SetDateTime(timeInput);
     sourceInstance->SetValue(L"ADateTime", v);
     sourceInstance->SetValue(L"SomeDateTimes[0]", v);
-
 
     ECValueAccessorPairCollectionOptionsPtr sourceOptions = ECValueAccessorPairCollectionOptions::Create (*sourceInstance, false);
     ECValueAccessorPairCollection sourceCollection(*sourceOptions);

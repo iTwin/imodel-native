@@ -150,6 +150,8 @@ protected:
     virtual ECObjectsStatus     _GetPropertyIndex (UInt32& propertyIndex, const wchar_t * propertyAccessString) const override;
     virtual ECObjectsStatus     _GetAccessString  (const wchar_t *& propertyAccessString, UInt32 propertyIndex) const override;
     virtual UInt32              _GetPropertyCount () const override;
+    virtual UInt32              _GetFirstPropertyIndex (UInt32 parentIndex) const override;
+    virtual UInt32              _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const override;
  
 public: 
     ECOBJECTS_EXPORT static StandaloneECEnablerPtr CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, bool ownsClassLayout);

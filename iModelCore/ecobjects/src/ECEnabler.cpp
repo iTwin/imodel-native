@@ -2,7 +2,7 @@
 |
 |     $Source: ecobjects/native/ECEnabler.cpp $
 |
-|   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -50,10 +50,13 @@ UInt32      ECEnabler::Release()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCR           ECEnabler::GetClass() const  { return m_ecClass; }
 wchar_t const *     ECEnabler::GetName() const { return _GetName(); }
-ECObjectsStatus           ECEnabler::GetPropertyIndex (UInt32& propertyIndex, const wchar_t * accessString) const { return _GetPropertyIndex (propertyIndex, accessString); }
+ECObjectsStatus     ECEnabler::GetPropertyIndex (UInt32& propertyIndex, const wchar_t * accessString) const { return _GetPropertyIndex (propertyIndex, accessString); }
 
 ECObjectsStatus     ECEnabler::GetAccessString  (const wchar_t *& accessString, UInt32 propertyIndex) const { return _GetAccessString  (accessString, propertyIndex); }
 UInt32              ECEnabler::GetPropertyCount () const { return _GetPropertyCount (); }
+UInt32              ECEnabler::GetFirstPropertyIndex (UInt32 parentIndex) const { return _GetFirstPropertyIndex (parentIndex); }
+UInt32              ECEnabler::GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const { return _GetNextPropertyIndex (parentIndex, inputIndex); }
+
 #if defined (EXPERIMENTAL_TEXT_FILTER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      06/2010
