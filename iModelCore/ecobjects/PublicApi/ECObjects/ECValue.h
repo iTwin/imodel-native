@@ -263,6 +263,7 @@ private:
     LocationVector          m_locationVector;
     const LocationVector&   GetLocationVector() const;
 
+
 public:
     //friend ECValueAccessorPairCollectionIterator;
     friend ECValueAccessorPairCollection;
@@ -278,7 +279,7 @@ public:
     //! @param[in]      newArrayIndex    The array index of the ECProperty, or INDEX_ROOT
     ECOBJECTS_EXPORT ECValueAccessor (IECInstanceCR instance, 
                                       int newPropertyIndex, 
-                                      int newArrayIndex);
+                                      int newArrayIndex=INDEX_ROOT);
 
     //! Constructs an ECValueAccessor for a given Enabler.
     //! @param[in]      enabler          The ECEnabler that the accessor is representative of.
@@ -286,7 +287,7 @@ public:
     //! @param[in]      newArrayIndex    The array index of the ECProperty, or INDEX_ROOT
     ECOBJECTS_EXPORT ECValueAccessor (ECEnablerCR enabler, 
                                       int newPropertyIndex, 
-                                      int newArrayIndex);
+                                      int newArrayIndex=INDEX_ROOT);
 
     //! For use by the iterator.  Does not make valid accessors.
     ECOBJECTS_EXPORT ECValueAccessor (IECInstanceCR instance);
@@ -312,14 +313,14 @@ public:
     //! @see            IECInstance
     ECOBJECTS_EXPORT const wchar_t *        GetAccessString (UInt32 depth) const;
 
-    ECOBJECTS_EXPORT void  PushLocation (ECEnablerCR, int propertyIndex, int arrayIndex);
-    ECOBJECTS_EXPORT void  PushLocation (ECEnablerCR, const wchar_t *,   int arrayIndex);
+    ECOBJECTS_EXPORT void  PushLocation (ECEnablerCR, int propertyIndex, int arrayIndex=INDEX_ROOT);
+    ECOBJECTS_EXPORT void  PushLocation (ECEnablerCR, const wchar_t *,   int arrayIndex=INDEX_ROOT);
 
-    ECOBJECTS_EXPORT void  PushLocation (IECInstanceCR, int propertyIndex, int arrayIndex);
-    ECOBJECTS_EXPORT void  PushLocation (IECInstanceCR, const wchar_t *,   int arrayIndex);
+    ECOBJECTS_EXPORT void  PushLocation (IECInstanceCR, int propertyIndex, int arrayIndex=INDEX_ROOT);
+    ECOBJECTS_EXPORT void  PushLocation (IECInstanceCR, const wchar_t *,   int arrayIndex=INDEX_ROOT);
 
-    ECOBJECTS_EXPORT void  PopLocation ();
-    Location&              DeepestLocation ();
+    ECOBJECTS_EXPORT void       PopLocation ();
+    ECOBJECTS_EXPORT Location&  DeepestLocation ();
 
     ECOBJECTS_EXPORT void  Clear ();
 
@@ -340,6 +341,8 @@ public:
 
     ECOBJECTS_EXPORT bool                   operator!=(ECValueAccessorCR accessor) const;
     ECOBJECTS_EXPORT bool                   operator==(ECValueAccessorCR accessor) const;
+
+    ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, const wchar_t * managedPropertyAccessor);
     };
 
 //=======================================================================================  

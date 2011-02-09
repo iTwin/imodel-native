@@ -12,7 +12,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECEnabler::ECEnabler(ECClassCR ecClass) : m_privateRefCount(0), m_ecClass (ecClass) 
+ECEnabler::ECEnabler(ECClassCR ecClass, IStandaloneEnablerLocatorR childECEnablerLocator) : m_privateRefCount(0), m_ecClass (ecClass), m_standaloneInstanceEnablerLocator (childECEnablerLocator)
     {
     };
 
@@ -43,6 +43,22 @@ UInt32      ECEnabler::Release()
     --m_privateRefCount;
     ECObjectsLogger::Log()->tracev (L"--(%d)%S at 0x%x Refcount decreased to %d.", m_privateRefCount, typeid(*this).name(), this, m_privateRefCount);
     return RefCountedBase::Release();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  01/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+StandaloneECEnablerPtr          ECEnabler::_ObtainStandaloneInstanceEnabler (const wchar_t* schemaName, const wchar_t* className)  
+    {
+    return m_standaloneInstanceEnablerLocator.ObtainStandaloneInstanceEnabler (schemaName, className); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  01/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+StandaloneECEnablerPtr          ECEnabler::ObtainStandaloneInstanceEnabler (const wchar_t* schemaName, const wchar_t* className)  
+    {
+    return _ObtainStandaloneInstanceEnabler (schemaName, className); 
     }
 
 /*---------------------------------------------------------------------------------**//**

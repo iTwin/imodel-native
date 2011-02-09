@@ -1315,6 +1315,209 @@ bool ECValueAccessor::operator==(ECValueAccessorCR accessor) const
     return !(*this != accessor);
     }
 
+#define NUM_INDEX_BUFFER_CHARS 63
+#define NUM_ACCESSSTRING_BUFFER_CHARS 1023
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  01/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+static void tokenize(const bwstring& str, bvector<bwstring>& tokens, const bwstring& delimiters)
+    {
+    // Skip delimiters at beginning.
+    bwstring::size_type lastPos = str.find_first_not_of(delimiters, 0);
+
+    // Find first "non-delimiter".
+    bwstring::size_type pos = str.find_first_of(delimiters, lastPos);
+
+    while (bwstring::npos != pos || bwstring::npos != lastPos)
+        {
+        // Found a token, add it to the vector.
+        tokens.push_back(str.substr(lastPos, pos - lastPos));
+
+        // Skip delimiters.  Note the "not_of"
+        lastPos = str.find_first_not_of(delimiters, pos);
+
+        // Find next "non-delimiter"
+        pos = str.find_first_of(delimiters, lastPos);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  10/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+static ECClassP getClassFromSchema (ECSchemaCR rootSchema, const wchar_t * className)
+    {
+    ECClassP classP = rootSchema.GetClassP (className);
+    if (classP)
+        return classP;
+
+    for each (ECSchemaCP refSchema in rootSchema.GetReferencedSchemas())
+        {
+        classP = getClassFromSchema (*refSchema, className);
+        if (classP)
+            return classP;
+        }
+
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  10/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+static ECClassP getPropertyFromClass (ECClassCR enablerClass, const wchar_t * propertyName)
+    {
+    ECPropertyP propertyP = enablerClass.GetPropertyP (propertyName);
+    if (!propertyP)
+        return NULL;
+
+    bwstring typeName = propertyP->GetTypeName();
+    return getClassFromSchema (enablerClass.Schema, typeName.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  01/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBuffer, wchar_t* indexBuffer, ECValueAccessor& va, ECEnablerCR  enabler, const wchar_t * managedPropertyAccessor)
+    {
+    ECObjectsStatus status;
+    UInt32          propertyIndex;
+    bwstring        asBufferStr;
+
+    // see if access string specifies an array
+    const wchar_t* pos1 = wcschr (managedPropertyAccessor, L'[');
+
+    // if not an array then we have a primitive that we can access directly 
+    if (NULL == pos1)
+        {
+        status = enabler.GetPropertyIndex (propertyIndex, managedPropertyAccessor);
+        if (ECOBJECTS_STATUS_Success == status)
+            {
+            va.PushLocation (enabler, propertyIndex, -1);
+            return ECOBJECTS_STATUS_Success;
+            }
+
+        // see if the accessstring is to an array
+        asBufferStr = managedPropertyAccessor;
+        asBufferStr.append (L"[]");
+        status = enabler.GetPropertyIndex (propertyIndex, asBufferStr.c_str());
+
+        if (ECOBJECTS_STATUS_Success != status)
+            return status;
+
+        va.PushLocation (enabler, propertyIndex, -1);
+        return ECOBJECTS_STATUS_Success;
+        }
+
+    size_t numChars = 0;
+    numChars = pos1 - managedPropertyAccessor;
+    wcsncpy(asBuffer, managedPropertyAccessor, numChars>NUM_ACCESSSTRING_BUFFER_CHARS?NUM_ACCESSSTRING_BUFFER_CHARS:numChars);
+    asBuffer[numChars]=0;
+
+    const wchar_t* pos2 = wcschr (pos1+1, L']');
+    if (!pos2)
+        return ECOBJECTS_STATUS_Error;
+
+    numChars = pos2 - pos1 - 1;
+    wcsncpy(indexBuffer, pos1+1, numChars>NUM_INDEX_BUFFER_CHARS?NUM_INDEX_BUFFER_CHARS:numChars);
+    indexBuffer[numChars]=0;
+
+    UInt32 indexValue = -1;
+    swscanf (indexBuffer, L"%ud", &indexValue);
+
+    ECValue  arrayVal;
+
+    asBufferStr = asBuffer;
+    asBufferStr.append (L"[]");
+
+    status = enabler.GetPropertyIndex (propertyIndex, asBufferStr.c_str());
+    if (ECOBJECTS_STATUS_Success != status)
+        return status;
+
+    // if no character after closing bracket then we just want the array, else we are dealing with a member of a struct array
+    if (0 == *(pos2+1))
+        {
+        va.PushLocation (enabler, propertyIndex, -1);
+        return ECOBJECTS_STATUS_Success;
+        }
+
+    bwstring str = asBuffer; 
+
+    ECClassP structClass = getPropertyFromClass (enabler.GetClass(), asBuffer);
+    if (!structClass)
+        return ECOBJECTS_STATUS_Error;
+
+    EC::ECEnablerP enablerP = const_cast<EC::ECEnablerP>(&enabler);
+    StandaloneECEnablerPtr structEnabler = dynamic_cast<StandaloneECEnablerP>(enablerP->ObtainStandaloneInstanceEnabler (structClass->Schema.Name.c_str(), structClass->Name.c_str()).get());
+    if (structEnabler.IsNull())
+        return ECOBJECTS_STATUS_Error;
+
+    va.PushLocation (enabler, propertyIndex, indexValue);
+
+    return getECValueAccessorUsingManagedAccessString (asBuffer, indexBuffer, va, *structEnabler, pos2+2); // move to character after "]." in access string.
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  01/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void    ECValueAccessor::Clear ()
+    {
+    m_locationVector.clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  01/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECValueAccessor::PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, const wchar_t * managedPropertyAccessor)
+    {
+    wchar_t         asBuffer[NUM_ACCESSSTRING_BUFFER_CHARS+1];
+    wchar_t         indexBuffer[NUM_INDEX_BUFFER_CHARS+1];
+    va.Clear ();
+    return getECValueAccessorUsingManagedAccessString (asBuffer, indexBuffer, va, instance.GetEnabler(), managedPropertyAccessor);
+    }
+
+#ifdef NO_MORE
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  01/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECValueAccessor::GetECValue (ECValue& v, IECInstanceCR instance)
+    {
+    ECObjectsStatus status            = ECOBJECTS_STATUS_Success;
+    IECInstanceCP  currentInstance    = &instance;
+    IECInstancePtr structInstancePtr;
+    for (UInt32 depth = 0; depth < GetDepth(); depth ++)
+        {
+        Location loc = m_locationVector[depth];
+
+        if (!(loc.enabler == &currentInstance->GetEnabler()))
+            return ECOBJECTS_STATUS_Error;
+
+        if (-1 != loc.arrayIndex)
+            status = instance.GetValue (v, loc.propertyIndex, loc.arrayIndex);
+        else
+            status = instance.GetValue (v, loc.propertyIndex);
+
+        if (ECOBJECTS_STATUS_Success != status)
+            return status;
+
+        if (v.IsStruct() && 0 <= loc.arrayIndex)
+            {
+            structInstancePtr = v.GetStruct();
+            if (structInstancePtr.IsNull())
+                return ECOBJECTS_STATUS_Error;
+
+            // get property and next location
+            currentInstance = structInstancePtr.get();
+            }
+        }
+
+    return status;
+    }
+#endif
+
+/////////////////////////////////////////////////////////////////////////////////////////
+//   ECValueAccessorPair
+/////////////////////////////////////////////////////////////////////////////////////////
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1377,6 +1580,7 @@ const                                           ECValueAccessor& ECValueAccessor
     {
     return m_valueAccessor;
     }
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //  ECPropertyValue

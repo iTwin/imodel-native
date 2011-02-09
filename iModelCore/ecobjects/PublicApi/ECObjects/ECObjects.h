@@ -66,8 +66,10 @@ EC_TYPEDEFS(IECSchemaOwner);
 EC_TYPEDEFS(IECSchemaLocator);
 EC_TYPEDEFS(IECCustomAttributeContainer);
 EC_TYPEDEFS(ECInstanceDeserializationContext);
+EC_TYPEDEFS(ECSchemaCache);
 
 EC_TYPEDEFS(ECEnabler);
+EC_TYPEDEFS(IStandaloneEnablerLocator);
 EC_TYPEDEFS(IArrayManipulator);
 
 EC_TYPEDEFS(SchemaLayout);
@@ -198,6 +200,7 @@ enum InstanceDeserializationStatus
     INSTANCE_DESERIALIZATION_STATUS_BadArrayElement                     = INSTANCE_DESERIALIZATION_STATUS_BASE + 40,
     INSTANCE_DESERIALIZATION_STATUS_CantSetValue                        = INSTANCE_DESERIALIZATION_STATUS_BASE + 41,
     INSTANCE_DESERIALIZATION_STATUS_ECSchemaNotFound                    = INSTANCE_DESERIALIZATION_STATUS_BASE + 42,
+    INSTANCE_DESERIALIZATION_STATUS_UnableToGetStandaloneEnabler        = INSTANCE_DESERIALIZATION_STATUS_BASE + 43,
     };
     
 /*=================================================================================**//**
@@ -227,7 +230,71 @@ virtual void    ReportStats (const wchar_t* prefix) const = 0;
 virtual Int32   CheckForLeaks () const = 0;
 };
 
+//=======================================================================================    
+// ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 
+// ValueKind or ArrayKind is necessary, we can union PrimitiveType in the same 16-bit memory location and get some synergy between the two.
+// If you add more values to the ValueKind enum please be sure to note that these are bit flags and not incremental values.  Also be sure the value does not
+// exceed a single byte.
+//=======================================================================================    
 /*__PUBLISH_SECTION_START__*/
+//=======================================================================================    
+//! Represents the classification of the data type of an EC ECValue.  The classification is not the data type itself, but a category of type
+//! such as struct, array or primitive.
+//=======================================================================================    
+enum ValueKind : unsigned short
+    {
+    VALUEKIND_Uninitialized                  = 0x00,
+    VALUEKIND_Primitive                      = 0x01,
+    VALUEKIND_Struct                         = 0x02,
+    VALUEKIND_Array                          = 0x04,
+    };
+
+/*__PUBLISH_SECTION_END__*/
+//=======================================================================================    
+// ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 
+// ValueKind or ArrayKind is necessary, we can union PrimitiveType in the same 16-bit memory location and get some synergy between the two.
+// If you add more values to the ArrayKind enum please be sure to note that these are bit flags and not incremental values.  Also be sure the value does not
+// exceed a single byte.
+//=======================================================================================    
+/*__PUBLISH_SECTION_START__*/
+//=======================================================================================    
+//! Represents the classification of the data type of an EC array element.  The classification is not the data type itself, but a category of type.
+//! Currently an ECArray can only contain primitive or struct data types.
+//=======================================================================================    
+enum ArrayKind : unsigned short
+    {
+    ARRAYKIND_Primitive       = 0x01,
+    ARRAYKIND_Struct          = 0x02
+    };
+
+/*__PUBLISH_SECTION_END__*/
+//=======================================================================================    
+// ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 
+// ValueKind or ArrayKind is necessary, we can union PrimitiveType in the same 16-bit memory location and get some synergy between the two.
+// If you add more values to the PrimitiveType enum please be sure to note that the lower order byte must stay fixed as '1' and the upper order byte can be incremented.
+// If you add any additional types you must update 
+//    - ECXML_TYPENAME_X constants
+//    - PrimitiveECProperty::_GetTypeName
+// NEEDSWORK types: common geometry, installed primitives
+//=======================================================================================    
+/*__PUBLISH_SECTION_START__*/
+
+//=======================================================================================    
+//! Enumeration of primitive datatypes supported by native "ECObjects" implementation.
+//! These should correspond to all of the datatypes supported in .NET ECObjects
+//=======================================================================================    
+enum PrimitiveType : unsigned short
+    {
+    PRIMITIVETYPE_Binary                    = 0x101,
+    PRIMITIVETYPE_Boolean                   = 0x201,
+    PRIMITIVETYPE_DateTime                  = 0x301,
+    PRIMITIVETYPE_Double                    = 0x401,
+    PRIMITIVETYPE_Integer                   = 0x501,
+    PRIMITIVETYPE_Long                      = 0x601,
+    PRIMITIVETYPE_Point2D                   = 0x701,
+    PRIMITIVETYPE_Point3D                   = 0x801,
+    PRIMITIVETYPE_String                    = 0x901
+    };
 
 END_BENTLEY_EC_NAMESPACE
 

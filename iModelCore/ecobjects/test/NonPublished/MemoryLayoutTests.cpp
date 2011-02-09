@@ -2,15 +2,17 @@
 |
 |     $Source: ecobjects/nativeatp/NonPublished/MemoryLayoutTests.cpp $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
-#include <ECObjects\ECInstance.h>
 #include <comdef.h>
 #include "StopWatch.h"
 #include "TestFixture.h"
-//#include "..\..\PublicAPI\ECObjects\ECInstance.h"
+
+#include <ECObjects\ECInstance.h>
+#include <ECObjects\StandaloneECInstance.h>
+#include <ECObjects\ECValue.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -239,24 +241,43 @@ bwstring    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versionMaj
                     L"        <ECProperty propertyName=\"Field_Tested\" typeName=\"boolean\"  />"
                     L"    </ECClass>"
                     L"    <ECClass typeName=\"AllPrimitives\" isStruct=\"True\" isDomainClass=\"True\">"
-                    L"        <ECProperty propertyName=\"AString\"         typeName=\"string\" />"
-                    L"        <ECProperty propertyName=\"AnInt\"        typeName=\"int\" />"
-                    L"        <ECProperty propertyName=\"APoint3d\"   typeName=\"point3d\" />"
+                    L"        <ECProperty propertyName=\"AString\"          typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"AnInt\"            typeName=\"int\" />"
+                    L"        <ECProperty propertyName=\"APoint3d\"         typeName=\"point3d\" />"
                     L"        <ECProperty propertyName=\"APoint2d\"         typeName=\"point2d\" />"
-                    L"        <ECProperty propertyName=\"ADouble\"       typeName=\"double\"  />"
-                    L"        <ECProperty propertyName=\"ADateTime\" typeName=\"dateTime\"  />"
-                    L"        <ECProperty propertyName=\"ABoolean\" typeName=\"boolean\"  />"
-                    L"        <ECProperty propertyName=\"ALong\" typeName=\"long\"  />"
-                    L"        <ECProperty propertyName=\"ABinary\" typeName=\"binary\"  />"
-                    L"        <ECArrayProperty propertyName=\"SomeStrings\"         typeName=\"string\" />"
-                    L"        <ECArrayProperty propertyName=\"SomeInts\"        typeName=\"int\" />"
-                    L"        <ECArrayProperty propertyName=\"SomePoint3ds\"   typeName=\"point3d\" />"
-                    L"        <ECArrayProperty propertyName=\"SomePoint2ds\"         typeName=\"point2d\" />"
-                    L"        <ECArrayProperty propertyName=\"SomeDoubles\"       typeName=\"double\"  />"
-                    L"        <ECArrayProperty propertyName=\"SomeDateTimes\" typeName=\"dateTime\"  />"
-                    L"        <ECArrayProperty propertyName=\"SomeBooleans\" typeName=\"boolean\"  />"
-                    L"        <ECArrayProperty propertyName=\"SomeLongs\" typeName=\"long\"  />"
-                    L"        <ECArrayProperty propertyName=\"SomeBinaries\" typeName=\"binary\"  />"
+                    L"        <ECProperty propertyName=\"ADouble\"          typeName=\"double\"  />"
+                    L"        <ECProperty propertyName=\"ADateTime\"        typeName=\"dateTime\"  />"
+                    L"        <ECProperty propertyName=\"ABoolean\"         typeName=\"boolean\"  />"
+                    L"        <ECProperty propertyName=\"ALong\"            typeName=\"long\"  />"
+                    L"        <ECProperty propertyName=\"ABinary\"          typeName=\"binary\"  />"
+                    L"        <ECArrayProperty propertyName=\"SomeStrings\" typeName=\"string\" />"
+                    L"        <ECArrayProperty propertyName=\"SomeInts\"    typeName=\"int\" />"
+                    L"        <ECArrayProperty propertyName=\"SomePoint3ds\"    typeName=\"point3d\" />"
+                    L"        <ECArrayProperty propertyName=\"SomePoint2ds\"    typeName=\"point2d\" />"
+                    L"        <ECArrayProperty propertyName=\"SomeDoubles\"     typeName=\"double\"  />"
+                    L"        <ECArrayProperty propertyName=\"SomeDateTimes\"   typeName=\"dateTime\"  />"
+                    L"        <ECArrayProperty propertyName=\"SomeBooleans\"    typeName=\"boolean\"  />"
+                    L"        <ECArrayProperty propertyName=\"SomeLongs\"       typeName=\"long\"  />"
+                    L"        <ECArrayProperty propertyName=\"SomeBinaries\"    typeName=\"binary\"  />"
+                    L"    </ECClass>"
+                    L"    <ECClass typeName=\"FixedSizeArrayTester\" isStruct=\"True\" isDomainClass=\"True\">"
+                    L"        <ECArrayProperty propertyName=\"FixedString1\"  typeName=\"string\"     minOccurs=\"1\"  maxOccurs=\"1\" />"
+                    L"        <ECArrayProperty propertyName=\"FixedInt1\"     typeName=\"int\"        minOccurs=\"1\"  maxOccurs=\"1\" />"
+                    L"        <ECArrayProperty propertyName=\"FixedString10\" typeName=\"string\"     minOccurs=\"10\" maxOccurs=\"10\" />"
+                    L"        <ECArrayProperty propertyName=\"FixedInt10\"    typeName=\"int\"        minOccurs=\"10\" maxOccurs=\"10\" />"
+                    L"        <ECArrayProperty propertyName=\"Struct1\"       typeName=\"BaseClass0\" minOccurs=\"1\"  maxOccurs=\"1\" />"
+                    L"        <ECArrayProperty propertyName=\"Struct10\"      typeName=\"BaseClass0\" minOccurs=\"10\" maxOccurs=\"10\" />"
+                    L"    </ECClass>"
+                    L"    <ECClass typeName=\"ClassLayoutPerformanceTest0\" isStruct=\"True\" isDomainClass=\"True\">"
+                    L"        <ECProperty propertyName=\"AString\"  typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"AnInt\"    typeName=\"int\" />"
+                    L"        <ECProperty propertyName=\"ADouble\"  typeName=\"double\"  />"
+                    L"    </ECClass>"
+                    L"    <ECClass typeName=\"ClassLayoutPerformanceTest1\" isStruct=\"True\" isDomainClass=\"True\">"
+                    L"        <ECProperty propertyName=\"AMonkeywrench\"    typeName=\"int\" />"
+                    L"        <ECProperty propertyName=\"ADouble\"          typeName=\"double\"  />"
+                    L"        <ECProperty propertyName=\"AString\"          typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"AnInt\"            typeName=\"int\" />"
                     L"    </ECClass>"
                     L"    <ECClass typeName=\"%s\" isDomainClass=\"True\">"
                     L"        <ECArrayProperty propertyName=\"BeginningArray\" typeName=\"string\" />"
@@ -322,8 +343,28 @@ bwstring    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versionMaj
                     L"        <ECProperty propertyName=\"Property47\" typeName=\"string\" />"
                     L"        <ECArrayProperty propertyName=\"EndingArray\" typeName=\"string\" />"
                     L"    </ECClass>"
+                    L"    <ECClass typeName=\"NestedStructArray\" isStruct=\"True\" isDomainClass=\"True\">"
+                    L"        <ECProperty propertyName=\"NestPropString\" typeName=\"string\" />"
+                    L"        <ECArrayProperty propertyName=\"ManufacturerArray\" typeName=\"Manufacturer\"  minOccurs=\"0\" maxOccurs=\"unbounded\" />"
+                    L"    </ECClass>"
                     L"    <ECClass typeName=\"ClassWithStructArray\" isStruct=\"True\" isDomainClass=\"True\">"
                     L"        <ECArrayProperty propertyName=\"StructArray\" typeName=\"AllPrimitives\"  minOccurs=\"0\" maxOccurs=\"unbounded\" />"
+                    L"        <ECStructProperty propertyName=\"StructMember\" typeName=\"AllPrimitives\" />"
+                    L"        <ECArrayProperty propertyName=\"ComplicatedStructArray\" typeName=\"NestedStructArray\"  minOccurs=\"0\" maxOccurs=\"unbounded\" />"
+                    L"    </ECClass>"
+                    L"    <ECClass typeName=\"ClassWithPolymorphicStructArray\" isStruct=\"True\" isDomainClass=\"True\">"
+                    L"        <ECArrayProperty propertyName=\"PolymorphicStructArray\" typeName=\"BaseClass0\"  minOccurs=\"0\" maxOccurs=\"unbounded\" />"
+                    L"    </ECClass>"
+                    L"    <ECClass typeName=\"BaseClass0\" isStruct=\"True\" isDomainClass=\"True\">"
+                    L"        <ECProperty propertyName=\"BaseIntProperty\" typeName=\"int\" />"
+                    L"    </ECClass>"
+                    L"    <ECClass typeName=\"DerivedClass0\" isStruct=\"True\" isDomainClass=\"True\">"
+                    L"        <BaseClass>BaseClass0</BaseClass>"
+                    L"        <ECProperty propertyName=\"DerivedStringProperty\" typeName=\"string\" />"
+                    L"    </ECClass>"
+                    L"    <ECClass typeName=\"DerivedClass1\" isStruct=\"True\" isDomainClass=\"True\">"
+                    L"        <BaseClass>BaseClass0</BaseClass>"
+                    L"        <ECProperty propertyName=\"DerivedDoubleProperty\" typeName=\"double\" />"
                     L"    </ECClass>"
                     L"</ECSchema>";
 
@@ -337,15 +378,18 @@ bwstring    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versionMaj
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP       CreateTestSchema (IECSchemaOwnerR schemaOwner)
+ECSchemaP       CreateTestSchema (ECSchemaCacheR schemaOwner)
     {
     bwstring schemaXMLString = GetTestSchemaXMLString (L"TestSchema", 0, 0, L"TestClass");
 
-    ECSchemaDeserializationContextPtr  schemaContext = ECSchemaDeserializationContext::CreateContext(schemaOwner);
+    EXPECT_EQ (S_OK, CoInitialize(NULL));  
+
+    ECSchemaDeserializationContextPtr  schemaContext = ECSchemaDeserializationContext::CreateContext(schemaOwner, schemaOwner);
 
     ECSchemaP schema;        
-    EXPECT_EQ (SUCCESS, ECSchema::ReadXmlFromString (schema, schemaXMLString.c_str(), *schemaContext));   
+    EXPECT_EQ (SUCCESS, ECSchema::ReadXmlFromString (schema, schemaXMLString.c_str(), *schemaContext));  
 
+    CoUninitialize();
     return schema;
     }
     
@@ -355,8 +399,9 @@ static std::vector<bwstring> s_propertyNames;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP       CreateProfilingSchema (int nStrings, IECSchemaOwnerR schemaOwner)
+ECSchemaP       CreateProfilingSchema (int nStrings, ECSchemaCacheR schemaOwner)
     {
+    EXPECT_EQ (S_OK, CoInitialize(NULL));  
     s_propertyNames.clear();
     
     bwstring schemaXml = 
@@ -379,11 +424,12 @@ ECSchemaP       CreateProfilingSchema (int nStrings, IECSchemaOwnerR schemaOwner
     schemaXml +=    L"    </ECClass>"
                     L"</ECSchema>";
 
-    ECSchemaDeserializationContextPtr  schemaContext = ECSchemaDeserializationContext::CreateContext(schemaOwner);
+    ECSchemaDeserializationContextPtr  schemaContext = ECSchemaDeserializationContext::CreateContext(schemaOwner, schemaOwner);
 
     ECSchemaP schema;        
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, ECSchema::ReadXmlFromString (schema, schemaXml.c_str(), *schemaContext));
 
+    CoUninitialize();
     return schema;
     }
     
@@ -635,10 +681,14 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     ExerciseVariableCountStringArray (instance, v, L"EndingArray[]", L"EArray");        
     
     ECClassP manufacturerClass = instance.GetClass().GetSchema().GetClassP (L"Manufacturer");
-    ASSERT_TRUE (manufacturerClass);   
+    ASSERT_TRUE (manufacturerClass);
+
+#ifdef OLD_WAY    
     ClassLayoutP manufClassLayout = ClassLayout::BuildFromClass (*manufacturerClass, 43, 24);
     StandaloneECEnablerPtr manufEnabler = StandaloneECEnabler::CreateEnabler (*manufacturerClass, *manufClassLayout, true);
-    ExerciseVariableCountManufacturerArray (instance, *manufEnabler, v, L"ManufacturerArray[]");    
+#endif
+    StandaloneECEnablerPtr manufEnabler =  instance.GetEnablerR().ObtainStandaloneInstanceEnabler (manufacturerClass->Schema.Name.c_str(), manufacturerClass->Name.c_str()); 
+    ExerciseVariableCountManufacturerArray (instance, *manufEnabler, v, L"ManufacturerArray[]");
     
     // WIP_FUSION verify I can set array elements to NULL        
             
@@ -687,17 +737,14 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
     {
-    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-
-    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();;
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
     ECSchemaP        schema = CreateTestSchema(*schemaOwner);
     ASSERT_TRUE (schema != NULL);
 
     ECClassP ecClass = schema->GetClassP (L"AllPrimitives");
     ASSERT_TRUE (ecClass);
-    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 0, 0);
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
 
+    StandaloneECEnablerPtr enabler =  schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str()); 
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     
     double    doubleVal;
@@ -789,8 +836,6 @@ TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
     EXPECT_TRUE (sizeInput == sizeOutput);
     for(int i=0; i<(int)sizeInput; i++)
         EXPECT_TRUE (binaryInput[i] == binaryOutput[i]);
-
-    CoUninitialize();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -798,17 +843,14 @@ TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
     {
-    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-
-    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();;
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
     ECSchemaP        schema = CreateTestSchema(*schemaOwner);
     ASSERT_TRUE (schema != NULL);
 
     ECClassP ecClass = schema->GetClassP (L"ClassWithStructArray");
     ASSERT_TRUE (ecClass);
-    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 0, 0);
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
 
+    StandaloneECEnablerPtr enabler =  schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str()); 
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     //Testing array of structs
     ECValue structArrayValueInput(42);
@@ -823,12 +865,10 @@ TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
 
     //Just seeing if it's possible to set a struct array element directly using the interop helper.
 
-
     ECClassP structClass = schema->GetClassP (L"AllPrimitives");
     ASSERT_TRUE (structClass);
-    ClassLayoutP structClassLayout = ClassLayout::BuildFromClass (*structClass, 0, 0);
-    StandaloneECEnablerPtr structEnabler = StandaloneECEnabler::CreateEnabler (*structClass, *structClassLayout, true);
 
+    StandaloneECEnablerPtr structEnabler = schemaOwner->ObtainStandaloneInstanceEnabler (structClass->Schema.Name.c_str(), structClass->Name.c_str()); 
     EC::StandaloneECInstancePtr newStructInstance = structEnabler->CreateInstance();
 
     ECValue manualIntEntry(64);
@@ -843,7 +883,6 @@ TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetValue (*instance, manualIntEntryOutput, L"StructArray[2].AnInt"));
 
     EXPECT_TRUE (manualIntEntryOutput.GetInteger() == manualIntEntry.GetInteger());
-    CoUninitialize();
     };
 
  #ifdef  WIP_INSTANCE_BUG
@@ -852,9 +891,7 @@ TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
     {
-    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-
-    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();;
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();;
     ECSchemaP        schema = CreateTestSchema(*schemaOwner);
     ASSERT_TRUE (schema != NULL);
 
@@ -909,18 +946,14 @@ TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper)
     {
-    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-
-    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();;
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();;
     ECSchemaP        schema = CreateTestSchema(*schemaOwner);
     ASSERT_TRUE (schema != NULL);
 
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);
 
-    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 0, 0);
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
-
+    StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str()); 
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     double    doubleVal;
@@ -953,8 +986,6 @@ TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper)
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, L"ManufacturerArray[0].Name", testString2.c_str()));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetString (*instance, stringValueP, L"ManufacturerArray[0].Name"));
     EXPECT_STREQ (testString2.c_str(), stringValueP);
-
-    CoUninitialize();
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -962,19 +993,14 @@ TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, InstantiateStandaloneInstance)
     {
-    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-
-    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();;
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();;
     ECSchemaP        schema = CreateTestSchema(*schemaOwner);
     ASSERT_TRUE (schema != NULL);
 
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);
 
-    SchemaLayout schemaLayout (24);
-
-    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
+    StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str());
 
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     bwstring instanceId = instance->GetInstanceId();
@@ -983,7 +1009,7 @@ TEST_F(MemoryLayoutTests, InstantiateStandaloneInstance)
     ExerciseInstance (*instance, L"Test");
 
     // instance.Compact()... then check values again
-    CoUninitialize();
+    
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -991,19 +1017,14 @@ TEST_F(MemoryLayoutTests, InstantiateStandaloneInstance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
     {
-    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-
-    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();;
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();;
     ECSchemaP        schema = CreateTestSchema(*schemaOwner);
     ASSERT_TRUE (schema != NULL);
 
     ECClassP ecClass = schema->GetClassP (L"EmptyClass");
     ASSERT_TRUE (ecClass);
 
-    SchemaLayout schemaLayout (25);
-
-    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 52, schemaLayout.GetSchemaIndex());
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
+    StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str());
 
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     bwstring instanceId = instance->GetInstanceId();
@@ -1014,7 +1035,7 @@ TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
     instance->ToString(L"").c_str();
 
     // instance.Compact()... then check values again
-    CoUninitialize();
+    
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1022,17 +1043,13 @@ TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     {
-    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-
-    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();;
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
     ECSchemaP        schema = CreateTestSchema(*schemaOwner);
     ASSERT_TRUE (schema != NULL);
     ECClassP ecClass = schema->GetClassP (L"CadData");
     ASSERT_TRUE (ecClass);
     
-    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 0, 0);
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
-    
+    StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str());
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     DPoint2d   inSize = {10.5, 22.3};
@@ -1077,7 +1094,7 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     EXPECT_TRUE (ecValue.GetDateTimeTicks() == inTicks);
 
     // instance.Compact()... then check values again
-    CoUninitialize();
+    
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1085,17 +1102,13 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
     {
-    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-
-    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();;
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();;
     ECSchemaP        schema = CreateTestSchema(*schemaOwner);
     ASSERT_TRUE (schema != NULL);
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);
     
-    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 0, 0);
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
-    
+    StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str());
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     const wchar_t * accessString = L"Property34";
@@ -1145,7 +1158,7 @@ TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
 #endif
 
     // instance.Compact()... then check values again
-    CoUninitialize();
+    
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1153,14 +1166,12 @@ TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, ExpectErrorsWhenViolatingArrayConstraints)
     {
-    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();;
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
     ECSchemaP        schema = CreateTestSchema(*schemaOwner);
     ASSERT_TRUE (schema != NULL);
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);    
-    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, 24);
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
+    StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str());
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     {
@@ -1187,8 +1198,6 @@ TEST_F(MemoryLayoutTests, ExpectErrorsWhenViolatingArrayConstraints)
     VerifyOutOfBoundsError (*instance, v, L"FixedArrayVariableElement[]", 12);
     VerifyOutOfBoundsError (*instance, v, L"VariableArrayVariableElement[]", 0);
     VerifyOutOfBoundsError (*instance, v, L"EndingArray[]", 0);                     
-    
-    CoUninitialize();
     };    
 
 /*---------------------------------------------------------------------------------**//**
@@ -1286,26 +1295,20 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     EXPECT_TRUE (0 == dateStr.compare (L"#2010/2/25-16:28:27:91#"));
 
     // WIP_FUSION - test array values
-    }
+    };
   
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (MemoryLayoutTests, TestSetGetNull)
     {
-    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
-
-    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();;
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();;
     ECSchemaP        schema = CreateTestSchema(*schemaOwner);
     ASSERT_TRUE (schema != NULL);
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);
         
-    SchemaLayout schemaLayout (24);
-
-    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
-    
+    StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str());
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     ECValue v;
     
@@ -1332,8 +1335,8 @@ TEST_F (MemoryLayoutTests, TestSetGetNull)
     
     // WIP_FUSION test arrays
 
-    CoUninitialize();
-    }
+    
+    };
     
 void SetStringToSpecifiedNumberOfCharacters (IECInstanceR instance, int nChars)
     {
@@ -1361,19 +1364,13 @@ TEST_F (MemoryLayoutTests, ProfileSettingValues)
     {
     int nStrings = 100;
     int nInstances = 1000;
-    
-    ASSERT_HRESULT_SUCCEEDED (CoInitialize(NULL));
 
-    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();;
-    ECSchemaP       schema = CreateProfilingSchema(nStrings, *schemaOwner);
-    ECClassP        ecClass = schema->GetClassP (L"Pidget");
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();;
+    ECSchemaP          schema      = CreateProfilingSchema(nStrings, *schemaOwner);
+    ECClassP           ecClass     = schema->GetClassP (L"Pidget");
     ASSERT_TRUE (ecClass);
         
-    SchemaLayout schemaLayout(24);
-
-    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
-
+    StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str());
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     
     UInt32 slack = 0;
