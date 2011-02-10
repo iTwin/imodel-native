@@ -1008,17 +1008,12 @@ static void dumpPropertyValues (ECValuesCollectionR collection)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_PrimitiveArray)
     {
-    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
-    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
+    ECSchemaP        schema = CreateTestSchema(*schemaCache);
     ASSERT_TRUE (schema != NULL);
 
-    ECClassP ecClass = schema->GetClassP (L"AllPrimitives");
-    ASSERT_TRUE (ecClass);
-
-    SchemaLayout schemaLayout (24);
-
-    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
+    StandaloneECEnablerPtr enabler = schemaCache->ObtainStandaloneInstanceEnabler (schema->GetName().c_str(), L"AllPrimitives");
+    ASSERT_TRUE (enabler.IsValid());
 
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
@@ -1074,17 +1069,12 @@ IECInstanceR    instance
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmbeddedStructs)
     {
-    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
-    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
+    ECSchemaP        schema = CreateTestSchema(*schemaCache);
     ASSERT_TRUE (schema != NULL);
 
-    ECClassP ecClass = schema->GetClassP (L"ContactInfo");
-    ASSERT_TRUE (ecClass);
-
-    SchemaLayout schemaLayout (24);
-
-    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
+    StandaloneECEnablerPtr enabler = schemaCache->ObtainStandaloneInstanceEnabler (schema->GetName().c_str(), L"ContactInfo");
+    ASSERT_TRUE (enabler.IsValid());
 
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     setContactInfo (L"123-4", L"Main Street", L"Exton", L"PA", 12345, 610, 1234567, L"nobody@nowhere.com", *instance);
@@ -1097,34 +1087,26 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmbeddedStructs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_StructArray)
     {
-    ECSchemaOwnerPtr schemaOwner = ECSchemaOwner::CreateOwner();
-    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
+    ECSchemaP        schema = CreateTestSchema(*schemaCache);
     ASSERT_TRUE (schema != NULL);
 
-    ECClassP ecClass = schema->GetClassP (L"EmployeeDirectory");
-    ASSERT_TRUE (ecClass);
-
-    SchemaLayout schemaLayout (24);
-
-    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 42, schemaLayout.GetSchemaIndex());
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
+    StandaloneECEnablerPtr enabler = schemaCache->ObtainStandaloneInstanceEnabler (schema->GetName().c_str(), L"EmployeeDirectory");
+    ASSERT_TRUE (enabler.IsValid());
 
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     instance->AddArrayElements(L"Employees[]", 2);
 
-    ECClassP arrayMemberClass = schema->GetClassP (L"Employee");
-    ASSERT_TRUE (arrayMemberClass);
+    StandaloneECEnablerPtr arrayMemberEnabler = schemaCache->ObtainStandaloneInstanceEnabler (schema->GetName().c_str(), L"Employee");
+    ASSERT_TRUE (enabler.IsValid());
 
     ECValue v;
-    ClassLayoutP arrayMemberLayout = ClassLayout::BuildFromClass (*arrayMemberClass, 43, schemaLayout.GetSchemaIndex());
-    StandaloneECEnablerPtr arrayMemberEnabler = StandaloneECEnabler::CreateEnabler (*arrayMemberClass, *arrayMemberLayout, true);
-
-    EC::StandaloneECInstancePtr arrayMemberInstance1 = enabler->CreateInstance();
+    EC::StandaloneECInstancePtr arrayMemberInstance1 = arrayMemberEnabler->CreateInstance();
     setContactInfo (L"123-4", L"Main Street", L"Exton", L"PA", 12345, 610, 1234567, L"nobody@nowhere.com", *arrayMemberInstance1);
     v.SetStruct(arrayMemberInstance1.get());
     instance->SetValue (L"Employees[]", v, 0);
 
-    EC::StandaloneECInstancePtr arrayMemberInstance2 = enabler->CreateInstance();
+    EC::StandaloneECInstancePtr arrayMemberInstance2 = arrayMemberEnabler->CreateInstance();
     setContactInfo (L"1600", L"Pennsylvania Ave", L"Washington", L"DC", 10001, 555, 1234567, L"president@whitehouse.gov", *arrayMemberInstance2);
     v.SetStruct(arrayMemberInstance2.get());
     instance->SetValue (L"Employees[]", v, 1);
