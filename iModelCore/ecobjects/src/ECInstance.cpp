@@ -2998,7 +2998,7 @@ void          IECRelationshipInstance::SetSource (IECInstanceP instance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  08/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstanceP                    IECRelationshipInstance::GetSource () const
+IECInstancePtr                    IECRelationshipInstance::GetSource () const
     {
     return _GetSource ();
     }
@@ -3014,7 +3014,7 @@ void                            IECRelationshipInstance::SetTarget (IECInstanceP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  08/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstanceP                    IECRelationshipInstance::GetTarget () const
+IECInstancePtr                    IECRelationshipInstance::GetTarget () const
     {
     return _GetTarget ();
     }

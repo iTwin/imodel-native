@@ -133,21 +133,23 @@ public:
     
 //=======================================================================================    
 //! EC::IECRelationshipInstance is the native equivalent of a .NET IECRelationshipInstance.
+//! Note: This class is not RefCounted because the Legacy and ECX Relationships that 
+//! are derived from this class are also derived from IECInstance which is refcounted.
 //! @see IECInstance, ECRelationshipClass
 //=======================================================================================    
-struct IECRelationshipInstance
+struct IECRelationshipInstance 
     {
     private:
-        virtual void          _SetSource (IECInstanceP instance) = 0;
-        virtual IECInstanceP  _GetSource () const = 0;
-        virtual void          _SetTarget (IECInstanceP instance)= 0;
-        virtual IECInstanceP  _GetTarget () const = 0;
+        virtual void            _SetSource (IECInstanceP instance) = 0;
+        virtual IECInstancePtr  _GetSource () const = 0;
+        virtual void            _SetTarget (IECInstanceP instance)= 0;
+        virtual IECInstancePtr  _GetTarget () const = 0;
 
     public:
-        ECOBJECTS_EXPORT void          SetSource (IECInstanceP instance);
-        ECOBJECTS_EXPORT IECInstanceP  GetSource () const;
-        ECOBJECTS_EXPORT void          SetTarget (IECInstanceP instance);
-        ECOBJECTS_EXPORT IECInstanceP  GetTarget () const;
+        ECOBJECTS_EXPORT void            SetSource (IECInstanceP instance);
+        ECOBJECTS_EXPORT IECInstancePtr  GetSource () const;
+        ECOBJECTS_EXPORT void            SetTarget (IECInstanceP instance);
+        ECOBJECTS_EXPORT IECInstancePtr  GetTarget () const;
     };
         
 /*__PUBLISH_SECTION_END__*/
