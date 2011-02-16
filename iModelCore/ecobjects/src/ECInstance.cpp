@@ -165,7 +165,7 @@ void IECInstance::Debug_DumpAllocationStats(const wchar_t* prefix)
         IECInstance* leakedInstance = leak.first;
         UInt32    orderOfAllocation = leak.second;
         ECObjectsLogger::Log()->debugv (L"Leaked the %dth IECInstance that was allocated.", orderOfAllocation);
-        leakedInstance->Dump();
+        //leakedInstance->Dump();
         }
 #endif
     }
@@ -173,7 +173,7 @@ void IECInstance::Debug_DumpAllocationStats(const wchar_t* prefix)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen    02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IsExcluded(bwstring& className, std::vector<bwstring>& classNamesToExclude)
+bool IsExcluded(bwstring& className, bvector<bwstring>& classNamesToExclude)
     {
     for each (bwstring excludedClass in classNamesToExclude)
         {
@@ -201,7 +201,7 @@ void IECInstance::Debug_ReportLeaks(bvector<bwstring>& classNamesToExclude)
         
         ECObjectsLogger::Log()->errorv (L"Leaked the %dth IECInstance that was allocated: ECClass=%s, InstanceId=%s", 
             orderOfAllocation, className.c_str(), leakedInstance->GetInstanceId().c_str());
-        leakedInstance->Dump();
+        //leakedInstance->Dump();
         }
 #endif
     }
@@ -2998,7 +2998,7 @@ void          IECRelationshipInstance::SetSource (IECInstanceP instance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  08/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstanceP                    IECRelationshipInstance::GetSource () const
+IECInstancePtr                    IECRelationshipInstance::GetSource () const
     {
     return _GetSource ();
     }
@@ -3014,7 +3014,7 @@ void                            IECRelationshipInstance::SetTarget (IECInstanceP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  08/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstanceP                    IECRelationshipInstance::GetTarget () const
+IECInstancePtr                    IECRelationshipInstance::GetTarget () const
     {
     return _GetTarget ();
     }

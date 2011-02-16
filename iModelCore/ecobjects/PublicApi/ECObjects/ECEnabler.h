@@ -74,10 +74,6 @@ protected:
     ECOBJECTS_EXPORT         bool                       ProcessStructProperty (bset<ECClassCP>& failedClasses, bool& allStructsFailed, ECValueCR propValue, EC::PrimitiveType primitiveType, IPropertyProcessor const& proc, PropertyProcessingOptions opts) const;
 
 public:
-    UInt32                           m_privateRefCount;
-    ECOBJECTS_EXPORT UInt32          AddRef();
-    ECOBJECTS_EXPORT UInt32          Release();
-
     //! Primarily for debugging/logging purposes. Should match your fully-qualified class name
     ECOBJECTS_EXPORT wchar_t const *            GetName() const;
     

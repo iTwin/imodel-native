@@ -12,7 +12,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECEnabler::ECEnabler(ECClassCR ecClass, IStandaloneEnablerLocatorR childECEnablerLocator) : m_privateRefCount(0), m_ecClass (ecClass), m_standaloneInstanceEnablerLocator (childECEnablerLocator)
+ECEnabler::ECEnabler(ECClassCR ecClass, IStandaloneEnablerLocatorR childECEnablerLocator) : m_ecClass (ecClass), m_standaloneInstanceEnablerLocator (childECEnablerLocator)
     {
     };
 
@@ -22,27 +22,6 @@ ECEnabler::ECEnabler(ECClassCR ecClass, IStandaloneEnablerLocatorR childECEnable
 ECEnabler::~ECEnabler() 
     {
     ECObjectsLogger::Log()->tracev (L"%S at 0x%x is being destructed.", typeid(*this).name(), this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     02/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-UInt32      ECEnabler::AddRef()
-    {
-    m_privateRefCount++;
-    ECObjectsLogger::Log()->tracev (L"++(%d)%S at 0x%x Refcount increased to %d.", m_privateRefCount, typeid(*this).name(), this, m_privateRefCount);
-    
-    return RefCountedBase::AddRef();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     02/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-UInt32      ECEnabler::Release()
-    { 
-    --m_privateRefCount;
-    ECObjectsLogger::Log()->tracev (L"--(%d)%S at 0x%x Refcount decreased to %d.", m_privateRefCount, typeid(*this).name(), this, m_privateRefCount);
-    return RefCountedBase::Release();
     }
 
 /*---------------------------------------------------------------------------------**//**
