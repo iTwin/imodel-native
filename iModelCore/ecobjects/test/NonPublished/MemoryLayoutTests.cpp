@@ -1230,7 +1230,7 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     EXPECT_TRUE (v.IsDouble());
     EXPECT_EQ (doubleValue, v.GetDouble());
     
-    ECValue nullInt = ECValue(EC::PRIMITIVETYPE_Integer);
+    ECValue nullInt (EC::PRIMITIVETYPE_Integer);
     EXPECT_TRUE (nullInt.IsNull());
     EXPECT_TRUE (nullInt.IsInteger());
 

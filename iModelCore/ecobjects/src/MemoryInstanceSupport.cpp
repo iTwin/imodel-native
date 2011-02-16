@@ -963,6 +963,22 @@ ECObjectsStatus       ClassLayout::GetPropertyLayoutByIndex (PropertyLayoutCP & 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan.Rush      12/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus         ClassLayout::GetAccessStringByIndex(wchar_t const *& accessString, UInt32 propertyIndex) const
+    {
+    PropertyLayoutCP    propertyLayout;
+    ECObjectsStatus     status = GetPropertyLayoutByIndex (propertyLayout, propertyIndex);
+
+    if (ECOBJECTS_STATUS_Success != status)
+        return status;
+
+    accessString = propertyLayout->GetAccessString();
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 UInt32  ClassLayout::GetFirstChildPropertyIndex (UInt32 parentIndex) const

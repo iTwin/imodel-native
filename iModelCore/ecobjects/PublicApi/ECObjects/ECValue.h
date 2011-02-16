@@ -14,6 +14,9 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
+typedef RefCountedPtr<ECPropertyValue> ECPropertyValuePtr;
+typedef RefCountedPtr<ECValuesCollection> ECValuesCollectionPtr;
+
 //=======================================================================================    
 //! SystemTime structure is used to set and get time data from ECValue objects.
 //! @group "ECInstance"
@@ -114,10 +117,11 @@ protected:
         DPoint3d            m_dPoint3d; 
         ArrayInfo           m_arrayInfo;
         BinaryInfo          m_binaryInfo;
-        IECInstanceP        m_structInstance;
+        IECInstanceP        m_structInstance;   // The ECValue class calls AddRef and Release for the member as needed
         };
 
     void DeepCopy (ECValueCR v);
+    void ShallowCopy (ECValueCR v);
     void ConstructUninitialized();
     inline void FreeMemory ();
          
@@ -128,7 +132,7 @@ public:
     ECOBJECTS_EXPORT ~ECValue();
     
     ECOBJECTS_EXPORT ECValue ();
-    ECOBJECTS_EXPORT ECValue (ECValueCR v);
+    ECOBJECTS_EXPORT ECValue (ECValueCR v, bool doDeepCopy = true);
     ECOBJECTS_EXPORT explicit ECValue (ValueKind classification);
     ECOBJECTS_EXPORT explicit ECValue (PrimitiveType primitiveType);
 
@@ -147,6 +151,7 @@ public:
     ECOBJECTS_EXPORT bool           IsReadOnly() const;
     ECOBJECTS_EXPORT bool           IsNull() const;
     ECOBJECTS_EXPORT void           SetToNull();
+    ECOBJECTS_EXPORT void           From(ECValueCR v, bool doDeepCopy);
 
     ECOBJECTS_EXPORT ValueKind      GetKind() const;
     ECOBJECTS_EXPORT bool           IsUninitialized () const;
@@ -354,20 +359,25 @@ struct ECPropertyValue : RefCountedBase
 private:
     IECInstancePtr      m_instance;
     ECValueAccessor     m_accessor;
+    ECValue             m_ecValue;
 
 public:
+    ECPropertyValue ();
+    ECPropertyValue (ECPropertyValueCR);
+    ECPropertyValue (IECInstanceR);
     ECPropertyValue (IECInstanceR, ECValueAccessorCR);
+
+    ECValueAccessorR    GetValueAccessorR ();
+    ECObjectsStatus     EvaluateValue ();
 /*__PUBLISH_SECTION_START__*/
 
 public:
-    ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v) const;
-    ECOBJECTS_EXPORT IECInstancePtr     GetInstance ();
-    ECOBJECTS_EXPORT ECValueAccessorCR  GetValueAccessor () const;
-    ECOBJECTS_EXPORT bool               HasChildValues () const;
-    ECOBJECTS_EXPORT ECValuesCollection GetChildValues () const;
+    ECOBJECTS_EXPORT ECValueCR              GetValue () const;
+    ECOBJECTS_EXPORT IECInstancePtr         GetInstance () const;
+    ECOBJECTS_EXPORT ECValueAccessorCR      GetValueAccessor () const;
+    ECOBJECTS_EXPORT bool                   HasChildValues () const;
+    ECOBJECTS_EXPORT ECValuesCollectionPtr  GetChildValues () const;
     };
-
-typedef RefCountedPtr<ECPropertyValue> ECPropertyValuePtr;
 
 //=======================================================================================  
 //! @see ECValue, ECValueAccessor, ECValuesCollection
@@ -379,12 +389,15 @@ struct ECValuesCollectionIterator : RefCountedBase
 private:
     friend ECValuesCollection;
 
-    IECInstancePtr      m_instance;
-    ECValueAccessor     m_currentAccessor;
+    ECPropertyValue     m_propertyValue;
 
-    ECValuesCollectionIterator (IECInstanceP);
-    ECValuesCollectionIterator (IECInstanceR, ECValueAccessorCR);
+    ECValuesCollectionIterator (IECInstanceR);
+    ECValuesCollectionIterator (ECPropertyValueCR parentPropertyValue);
     ECValuesCollectionIterator ();
+
+    ECPropertyValue     GetFirstPropertyValue (IECInstanceR);
+    ECPropertyValue     GetChildPropertyValue (ECPropertyValueCR parentPropertyValue);
+
 /*__PUBLISH_SECTION_START__*/
 
 public:
@@ -398,25 +411,27 @@ public:
 //=======================================================================================    
 //! @bsiclass 
 //======================================================================================= 
-struct ECValuesCollection
+struct ECValuesCollection : RefCountedBase
     {
+/*__PUBLISH_SECTION_END__*/
     friend ECPropertyValue;
 
 private:
-// WIP_FUSION: hide this implementation
-    ECValueAccessor     m_baseAccessor;
-    IECInstancePtr      m_instance;
+    ECPropertyValue     m_parentPropertyValue;
 
     ECValuesCollection ();
+    ECValuesCollection (ECPropertyValueCR parentPropValue);
+    ECValuesCollection (IECInstanceR);
+/*__PUBLISH_SECTION_START__*/
 
 public:
-    ECOBJECTS_EXPORT ECValuesCollection (IECInstanceR, ECValueAccessorCR baseAccessor);
-    ECOBJECTS_EXPORT ECValuesCollection (IECInstanceR);
 
     typedef VirtualCollectionIterator<ECValuesCollectionIterator> const_iterator;
 
     ECOBJECTS_EXPORT const_iterator begin () const;
     ECOBJECTS_EXPORT const_iterator end ()   const;
+
+    ECOBJECTS_EXPORT static ECValuesCollectionPtr Create (IECInstanceR);
     };
 
 //=======================================================================================    

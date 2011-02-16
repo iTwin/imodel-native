@@ -289,6 +289,64 @@ void            ECValue::DeepCopy (ECValueCR v)
     };
     
 /*---------------------------------------------------------------------------------**//**
+* Copies this value object without allocating any additional memory.  The copy will
+* hold copies on any external pointers held by the original.
+* @bsimethod                                                    JoshSchifter    02/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECValue::ShallowCopy (ECValueCR v)
+    {     
+    if (this == &v)
+        return;
+
+    memcpy (this, &v, sizeof(ECValue));
+
+    if (IsNull())
+        return;
+
+    switch (m_valueKind)
+        {            
+        case VALUEKIND_Struct:
+            {
+            m_structInstance->AddRef();
+            break;
+            }
+
+        case PRIMITIVETYPE_Binary:
+            {
+            //WIP_FUSION 
+            assert (false && "Needs work: can we copy a binary value? BinaryInfo::m_data is a pointer into somebody's storage container?!");
+            break;
+            }
+
+        case PRIMITIVETYPE_String:
+            {
+            // Only make a copy of the string if the original object had a copy.
+            if (m_stringInfo.m_freeWhenDone)
+                {
+                m_stringInfo.m_freeWhenDone = false; // prevent SetString from attempting to free the string that was temporarily copied by memset
+                SetString (v.m_stringInfo.m_string);
+                }
+
+            break;
+            }
+
+        // the memcpy takes care of these...            
+        case VALUEKIND_Array:
+        case PRIMITIVETYPE_Boolean:
+        case PRIMITIVETYPE_Integer:
+        case PRIMITIVETYPE_Long:
+        case PRIMITIVETYPE_Double:
+        case PRIMITIVETYPE_Point2D:
+        case PRIMITIVETYPE_Point3D:
+        case PRIMITIVETYPE_DateTime:
+            break;
+                        
+        default:
+            assert (false); // type not handled
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECValue::FreeMemory ()
@@ -365,7 +423,7 @@ ECValue::~ECValue()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValueR ECValue::operator= (ECValueCR rhs)
     {
-    DeepCopy(rhs);
+    From (rhs, true);
     return *this;
     }        
     
@@ -381,9 +439,10 @@ ECValue::ECValue ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (ECValueCR v)
+ECValue::ECValue (ECValueCR v, bool doDeepCopy)
     {
-    DeepCopy (v);
+    ConstructUninitialized();
+    From (v, doDeepCopy);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -485,6 +544,17 @@ ECValue::ECValue (const byte * data, size_t size)
     {
     ConstructUninitialized();
     SetBinary (data, size);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/11
++---------------+---------------+---------------+---------------+---------------+------*/
+void    ECValue::From (ECValueCR v, bool doDeepCopy)
+    {
+    if (doDeepCopy)
+        DeepCopy (v);
+    else
+        ShallowCopy (v);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1459,14 +1529,6 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    ECValueAccessor::Clear ()
-    {
-    m_locationVector.clear();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  01/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECValueAccessor::PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, const wchar_t * managedPropertyAccessor)
     {
     wchar_t         asBuffer[NUM_ACCESSSTRING_BUFFER_CHARS+1];
@@ -1554,7 +1616,7 @@ void                                            ECValueAccessorPair::SetValue (E
     else if(value.IsStruct())
         m_value.SetStruct (value.GetStruct().get());
     else
-        m_value = value;
+        m_value.From(value, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1588,108 +1650,150 @@ const                                           ECValueAccessor& ECValueAccessor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyValue::ECPropertyValue (IECInstanceR instance, ECValueAccessorCR accessor) : m_instance (&instance), m_accessor (accessor) {}
-ECObjectsStatus     ECPropertyValue::GetValue (ECValueR value) const { return m_instance->GetValueUsingAccessor (value, m_accessor); }
-IECInstancePtr      ECPropertyValue::GetInstance ()                  { return m_instance; }
-ECValueAccessorCR   ECPropertyValue::GetValueAccessor () const       { return m_accessor; }
+ECPropertyValue::ECPropertyValue () {}
+ECPropertyValue::ECPropertyValue (IECInstanceR instance) : m_instance (&instance) {}
+ECValueCR           ECPropertyValue::GetValue ()            const    { return m_ecValue; }
+IECInstancePtr      ECPropertyValue::GetInstance ()         const    { return m_instance; }
+ECValueAccessorCR   ECPropertyValue::GetValueAccessor ()    const    { return m_accessor; }
+ECValueAccessorR    ECPropertyValue::GetValueAccessorR ()            { return m_accessor; }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/11
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECPropertyValue::EvaluateValue ()
+    {
+    return m_instance->GetValueUsingAccessor (m_ecValue, m_accessor);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/11
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyValue::ECPropertyValue (ECPropertyValueCR from)
+    {
+    m_instance = from.m_instance;
+    m_accessor = from.m_accessor;
+    m_ecValue.From (from.m_ecValue, false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/11
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyValue::ECPropertyValue (IECInstanceR instance, ECValueAccessorCR accessor)
+    :
+    m_instance (&instance), m_accessor (accessor)
+    {
+    EvaluateValue();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool                ECPropertyValue::HasChildValues () const
     {
-    ECValue         ecValue;
-    ECObjectsStatus status = m_instance->GetValueUsingAccessor (ecValue, m_accessor);
-
-    if ( ! EXPECTED_CONDITION (ECOBJECTS_STATUS_Success == status))
-        return false;
-
-    if (ecValue.IsStruct() || ecValue.IsArray())
-        return true;
-
-    return false;
+    return m_ecValue.IsStruct() || m_ecValue.IsArray();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValuesCollection  ECPropertyValue::GetChildValues () const
+ECValuesCollectionPtr  ECPropertyValue::GetChildValues () const
     {
-    ECValue         ecValue;
-    ECObjectsStatus status = m_instance->GetValueUsingAccessor (ecValue, m_accessor);
+    if (m_ecValue.IsStruct() || m_ecValue.IsArray())
+        return new ECValuesCollection (*this);
 
-    if ( ! EXPECTED_CONDITION (ECOBJECTS_STATUS_Success == status))
-        return ECValuesCollection ();
-
-    if (ecValue.IsStruct() || ecValue.IsArray())
-        return ECValuesCollection (*m_instance, m_accessor);
-
-    return ECValuesCollection ();
+    return new ECValuesCollection ();
     }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //  ECValuesCollectionIterator
 ///////////////////////////////////////////////////////////////////////////////////////////
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/11
+* @bsimethod                                                    JoshSchifter    02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValuesCollectionIterator::ECValuesCollectionIterator (IECInstanceP instance) : m_instance (instance)
+ECPropertyValue ECValuesCollectionIterator::GetFirstPropertyValue (IECInstanceR instance)
     {
-    if (m_instance.IsNull())
-        return;
+    ECValueAccessor firstPropertyAccessor;
 
-    ECEnablerCR enabler = m_instance->GetEnabler();
+    ECEnablerCR enabler = instance.GetEnabler();
 
     UInt32  firstIndex = enabler.GetFirstPropertyIndex (0);
 
     if (0 != firstIndex)
-        m_currentAccessor.PushLocation (enabler, firstIndex, -1);    
+        firstPropertyAccessor.PushLocation (enabler, firstIndex, -1);    
+
+    return ECPropertyValue (instance, firstPropertyAccessor);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValuesCollectionIterator::ECValuesCollectionIterator (IECInstanceR instance, ECValueAccessorCR accessor)
-    : 
-    m_instance (&instance),
-    m_currentAccessor (accessor)
+ECValuesCollectionIterator::ECValuesCollectionIterator (IECInstanceR instance)
+    :
+    m_propertyValue (GetFirstPropertyValue (instance))
     {
-    ECValue         ecValue;
-    ECObjectsStatus status = m_instance->GetValueUsingAccessor (ecValue, m_currentAccessor);
+    }
 
-    if ( ! EXPECTED_CONDITION (ECOBJECTS_STATUS_Success == status))
-        return;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/11
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyValue ECValuesCollectionIterator::GetChildPropertyValue (ECPropertyValueCR parentPropertyValue)
+    {
+    ECValueCR       parentValue = parentPropertyValue.GetValue();
+    ECValueAccessor childAccessor (parentPropertyValue.GetValueAccessor());
 
-    if (ecValue.IsArray())
+    if (parentValue.IsArray())
         {
-        ArrayInfo   arrayInfo  = ecValue.GetArrayInfo();
+        ArrayInfo   arrayInfo  = parentValue.GetArrayInfo();
         UInt32      arrayCount = arrayInfo.GetCount();
 
         if (0 < arrayCount)
-            m_currentAccessor.DeepestLocation().arrayIndex = 0;
+            childAccessor.DeepestLocation().arrayIndex = 0;
         else
-            m_currentAccessor.PopLocation();  // WIP_FUSION: better to Clear the accessor?
-                                              //             test this with an array with no members
+            childAccessor.PopLocation();  // WIP_FUSION: better to Clear the accessor?
+                                          //             test this with an array with no members
         }
     else
-    if (ecValue.IsStruct())
+    if (parentValue.IsStruct())
         {
-        UInt32          pathLength  = m_currentAccessor.GetDepth();
+        UInt32          pathLength  = childAccessor.GetDepth();
 
-        if (0 == pathLength)
-            return;
+        if ( ! EXPECTED_CONDITION (0 < pathLength))
+            return ECPropertyValue();
 
-        UInt32          parentIndex =  m_currentAccessor[pathLength - 1].propertyIndex;
-        ECEnablerCR     enabler     = *m_currentAccessor[pathLength - 1].enabler;
-        UInt32          firstIndex  =  enabler.GetFirstPropertyIndex (parentIndex);
+        if (ECValueAccessor::INDEX_ROOT != childAccessor[pathLength - 1].arrayIndex)
+            {
+            // WIP_FUSION: need to check for NULL array member? ecValue.IsNull()
 
-        if (0 != firstIndex)
-            m_currentAccessor.PushLocation (enabler, firstIndex, -1);
+            IECInstancePtr  structInstance  = parentValue.GetStruct();
+            ECEnablerCR     enabler         = structInstance->GetEnabler();
+            UInt32          firstIndex      = enabler.GetFirstPropertyIndex (0);
+
+            childAccessor.PushLocation (enabler, firstIndex, -1);
+            }
         else
-            m_currentAccessor.PopLocation();  // WIP_FUSION: better to Clear the accessor?
+            {
+            UInt32          parentIndex =  childAccessor[pathLength - 1].propertyIndex;
+            ECEnablerCR     enabler     = *childAccessor[pathLength - 1].enabler;
+            UInt32          firstIndex  =  enabler.GetFirstPropertyIndex (parentIndex);
+
+            if (0 != firstIndex)
+                childAccessor.PushLocation (enabler, firstIndex, -1);
+            else
+                childAccessor.PopLocation();  // WIP_FUSION: better to Clear the accessor?
                                               //             test this with a struct with no members
+            }
         }
+
+    return ECPropertyValue (*parentPropertyValue.GetInstance(), childAccessor);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/11
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValuesCollectionIterator::ECValuesCollectionIterator (ECPropertyValueCR parentPropertyValue)
+    :
+    m_propertyValue (GetChildPropertyValue (parentPropertyValue))
+    {
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1697,7 +1801,7 @@ ECValuesCollectionIterator::ECValuesCollectionIterator (IECInstanceR instance, E
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ECValuesCollectionIterator::IsAtEnd() const
     {
-    return (UInt32)0 == m_currentAccessor.GetDepth();
+    return 0 == m_propertyValue.GetValueAccessor().GetDepth();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1705,7 +1809,7 @@ bool            ECValuesCollectionIterator::IsAtEnd() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ECValuesCollectionIterator::IsDifferent(ECValuesCollectionIterator const& otherIter) const
     {
-    return m_currentAccessor != otherIter.m_currentAccessor;
+    return m_propertyValue.GetValueAccessor() != otherIter.m_propertyValue.GetValueAccessor();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1713,7 +1817,7 @@ bool            ECValuesCollectionIterator::IsDifferent(ECValuesCollectionIterat
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyValuePtr  ECValuesCollectionIterator::GetCurrent () const
     {
-    return new ECPropertyValue (*m_instance, m_currentAccessor);
+    return new ECPropertyValue (m_propertyValue);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1721,19 +1825,22 @@ ECPropertyValuePtr  ECValuesCollectionIterator::GetCurrent () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECValuesCollectionIterator::MoveToNext()
     {
-    if ( ! EXPECTED_CONDITION (m_instance.IsValid()))
+    if ( ! EXPECTED_CONDITION (m_propertyValue.GetInstance().IsValid()))
         return;
 
-    if (ECValueAccessor::INDEX_ROOT != m_currentAccessor.DeepestLocation().arrayIndex)
+    ECValueAccessorR    currentAccessor = m_propertyValue.GetValueAccessorR();    
+
+    if (ECValueAccessor::INDEX_ROOT != currentAccessor.DeepestLocation().arrayIndex)
         {
         /*--------------------------------------------------------------------------
           If we are on an array member get the next member
         --------------------------------------------------------------------------*/
-        ECValueAccessor arrayAccessor (m_currentAccessor);
+        ECValueAccessor arrayAccessor (currentAccessor);
         arrayAccessor.DeepestLocation().arrayIndex = ECValueAccessor::INDEX_ROOT;
 
+//WIP_FUSION: wouldn't it be better to get the arrayCount once when the iterator is created?
         ECValue         ecValue;
-        ECObjectsStatus status = m_instance->GetValueUsingAccessor (ecValue, arrayAccessor);
+        ECObjectsStatus status = m_propertyValue.GetInstance()->GetValueUsingAccessor (ecValue, arrayAccessor);
 
         if ( ! EXPECTED_CONDITION (ECOBJECTS_STATUS_Success == status))
             return;
@@ -1744,34 +1851,36 @@ void            ECValuesCollectionIterator::MoveToNext()
         ArrayInfo   arrayInfo  = ecValue.GetArrayInfo();
         UInt32      arrayCount = arrayInfo.GetCount();
 
-        m_currentAccessor.DeepestLocation().arrayIndex++;
+        currentAccessor.DeepestLocation().arrayIndex++;
 
         // If that was the last member of the array, we are done
-        if (m_currentAccessor.DeepestLocation().arrayIndex >= (Int32) arrayCount)
-            m_currentAccessor.Clear();
+        if (currentAccessor.DeepestLocation().arrayIndex >= (Int32) arrayCount)
+            currentAccessor.Clear();
         }
     else
         {
         /*--------------------------------------------------------------------------
           Ask the enabler for the next sibling property.
         --------------------------------------------------------------------------*/
-        UInt32      pathLength   = m_currentAccessor.GetDepth();
-        UInt32      currentIndex = m_currentAccessor[pathLength - 1].propertyIndex;
+        UInt32      pathLength   = currentAccessor.GetDepth();
+        UInt32      currentIndex = currentAccessor[pathLength - 1].propertyIndex;
         UInt32      parentIndex = 0;
 
         // If we are inside an embedded struct get the struct index from the accessor's path
-        if (pathLength > 1)
-            parentIndex = m_currentAccessor[pathLength - 2].propertyIndex;
+        if (pathLength > 1 && ECValueAccessor::INDEX_ROOT == currentAccessor[pathLength - 2].arrayIndex)
+            parentIndex = currentAccessor[pathLength - 2].propertyIndex;
 
-        ECEnablerCR enabler   = m_instance->GetEnabler();
-        UInt32      nextIndex = enabler.GetNextPropertyIndex (parentIndex, currentIndex);
+        ECEnablerCP enabler   = currentAccessor[pathLength - 1].enabler;
+        UInt32      nextIndex = enabler->GetNextPropertyIndex (parentIndex, currentIndex);
 
-        m_currentAccessor.DeepestLocation().propertyIndex = nextIndex;
+        currentAccessor.DeepestLocation().propertyIndex = nextIndex;
 
         // If that was the last index in the current struct, we are done
         if (0 == nextIndex)
-            m_currentAccessor.Clear();
+            currentAccessor.Clear();
         }
+
+    m_propertyValue.EvaluateValue ();
     }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -1787,8 +1896,8 @@ ECValuesCollection::ECValuesCollection ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValuesCollection::ECValuesCollection (IECInstanceR instance, ECValueAccessorCR baseAccessor)
-    : m_instance (&instance), m_baseAccessor (baseAccessor)
+ECValuesCollection::ECValuesCollection (ECPropertyValueCR parentPropValue)
+    : m_parentPropertyValue (parentPropValue)
     {
     }
 
@@ -1796,8 +1905,16 @@ ECValuesCollection::ECValuesCollection (IECInstanceR instance, ECValueAccessorCR
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValuesCollection::ECValuesCollection (IECInstanceR instance)
-    : m_instance (&instance)
+    : m_parentPropertyValue (instance)
     {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/11
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValuesCollectionPtr ECValuesCollection::Create (IECInstanceR instance)
+    {
+    return new ECValuesCollection (instance);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1807,10 +1924,10 @@ ECValuesCollection::const_iterator ECValuesCollection::begin () const
     {
     RefCountedPtr<ECValuesCollectionIterator> iter;
     
-    if (0 == m_baseAccessor.GetDepth())
-        iter = new ECValuesCollectionIterator (m_instance.get());
+    if (0 == m_parentPropertyValue.GetValueAccessor().GetDepth())
+        iter = new ECValuesCollectionIterator (*m_parentPropertyValue.GetInstance());
     else
-        iter = new ECValuesCollectionIterator (*m_instance, m_baseAccessor);
+        iter = new ECValuesCollectionIterator (m_parentPropertyValue);
 
     return const_iterator (*iter);
     }

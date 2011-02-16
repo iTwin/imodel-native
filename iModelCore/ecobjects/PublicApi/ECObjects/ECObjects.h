@@ -67,6 +67,7 @@ EC_TYPEDEFS(IECSchemaLocator);
 EC_TYPEDEFS(IECCustomAttributeContainer);
 EC_TYPEDEFS(ECInstanceDeserializationContext);
 EC_TYPEDEFS(ECSchemaCache);
+EC_TYPEDEFS(ECPropertyValue);
 
 EC_TYPEDEFS(ECEnabler);
 EC_TYPEDEFS(IStandaloneEnablerLocator);

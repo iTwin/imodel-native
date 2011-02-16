@@ -733,52 +733,11 @@ wchar_t const *           StandaloneECEnabler::_GetName() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECEnabler::_GetPropertyIndex(UInt32& propertyIndex, const wchar_t * propertyAccessString) const
-    {
-    ClassLayoutCR       classLayout = GetClassLayout();
-
-    return classLayout.GetPropertyIndex (propertyIndex, propertyAccessString);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Dylan.Rush      12/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECEnabler::_GetAccessString(wchar_t const *& accessString, UInt32 propertyIndex) const
-    {
-    ClassLayoutCR       classLayout = GetClassLayout();
-    PropertyLayoutCP    propertyLayout;
-    ECObjectsStatus     status = classLayout.GetPropertyLayoutByIndex (propertyLayout, propertyIndex);
-    if (ECOBJECTS_STATUS_Success != status)
-        return status;
-    accessString = propertyLayout->GetAccessString();
-    return ECOBJECTS_STATUS_Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Dylan.Rush      12/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-UInt32                    StandaloneECEnabler::_GetPropertyCount() const
-    {
-    ClassLayoutCR       classLayout = GetClassLayout();
-
-    return classLayout.GetPropertyCount ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          StandaloneECEnabler::_GetFirstPropertyIndex (UInt32 parentIndex) const
-    {
-    return GetClassLayout().GetFirstChildPropertyIndex (parentIndex);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          StandaloneECEnabler::_GetNextPropertyIndex (UInt32 parentIndex, UInt32 inputIndex) const
-    {
-    return GetClassLayout().GetNextChildPropertyIndex (parentIndex, inputIndex);
-    }
+ECObjectsStatus StandaloneECEnabler::_GetPropertyIndex(UInt32& propertyIndex, const wchar_t * propertyAccessString) const { return GetClassLayout().GetPropertyIndex (propertyIndex, propertyAccessString); }
+ECObjectsStatus StandaloneECEnabler::_GetAccessString(wchar_t const *& accessString, UInt32 propertyIndex) const { return GetClassLayout().GetAccessStringByIndex (accessString, propertyIndex); }
+UInt32          StandaloneECEnabler::_GetPropertyCount() const    { return GetClassLayout().GetPropertyCount (); }
+UInt32          StandaloneECEnabler::_GetFirstPropertyIndex (UInt32 parentIndex) const {  return GetClassLayout().GetFirstChildPropertyIndex (parentIndex); }
+UInt32          StandaloneECEnabler::_GetNextPropertyIndex (UInt32 parentIndex, UInt32 inputIndex) const { return GetClassLayout().GetNextChildPropertyIndex (parentIndex, inputIndex);  }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09

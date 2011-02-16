@@ -983,24 +983,70 @@ TEST_F(MemoryLayoutTests, GetEnablerPropertyInformation)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void dumpPropertyValues (ECValuesCollectionR collection)
+static void     printfIndent (UInt32 indentDepth)
     {
+    for (UInt32 i = 0; i < indentDepth; i++)
+        printf ("  ");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/11
++---------------+---------------+---------------+---------------+---------------+------*/
+static void     dumpPropertyValues (ECValuesCollectionR collection, bool isArray, UInt32 indentDepth)
+    {
+    UInt32  arrayIndex = 0;
+
     for each (ECPropertyValuePtr propertyValue in collection)
         {
-        ECValueAccessorCR   accessor = propertyValue->GetValueAccessor();
-        const wchar_t *     accessString = accessor.GetAccessString (accessor.GetDepth() - 1);
-        
-        ECValue v;
-        propertyValue->GetValue(v);
+        ECValueCR v = propertyValue->GetValue();
 
-        printf ("%S = %S\n", accessString, v.ToString().c_str());
+        printfIndent (indentDepth);
+
+        if (isArray)
+            {
+            printf ("Array Member [%d] = %S\n", arrayIndex++, v.ToString());
+            }
+        else
+            {
+            ECValueAccessorCR   accessor     = propertyValue->GetValueAccessor();
+            const wchar_t *     accessString = accessor.GetAccessString (accessor.GetDepth() - 1);
+
+            printf ("%S", accessString);
+
+            if ( ! v.IsStruct())
+                printf (" = %S", v.ToString().c_str());
+
+            printf ("\n");
+            }
 
         if (propertyValue->HasChildValues ())
             {
-            ECValuesCollection children = propertyValue->GetChildValues();
-            dumpPropertyValues (children);
+            ECValuesCollectionPtr children = propertyValue->GetChildValues();
+            dumpPropertyValues (*children, v.IsArray(), indentDepth+1);
             }
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/11
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_PrimitiveProperties)
+    {
+    ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
+    ECSchemaP        schema = CreateTestSchema(*schemaCache);
+    ASSERT_TRUE (schema != NULL);
+
+    StandaloneECEnablerPtr enabler = schemaCache->ObtainStandaloneInstanceEnabler (schema->GetName().c_str(), L"CadData");
+    ASSERT_TRUE (enabler.IsValid());
+
+    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+
+    instance->SetValue(L"Name",         ECValue (L"This is the name"));
+    instance->SetValue(L"Count",        ECValue (14));
+    instance->SetValue(L"Length",       ECValue (142.5));
+    instance->SetValue(L"Field_Tested", ECValue (true));
+
+    dumpPropertyValues (*ECValuesCollection::Create (*instance), false, 0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1017,32 +1063,48 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_PrimitiveArray)
 
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
-    ECValue v;
-    v.SetString(L"Happy String");
-    instance->SetValue(L"AString", v);
+    instance->SetValue(L"AString",  ECValue (L"Happy String"));
+    instance->SetValue(L"AnInt",    ECValue (6));
 
-    v.SetInteger(6);
-    instance->SetValue(L"AnInt", v);
+    instance->AddArrayElements(L"SomeStrings[]", 5);
 
-    instance->AddArrayElements(L"SomeStrings[]", 3);
+    instance->SetValue(L"SomeStrings[]", ECValue (L"ArrayMember 1"), 0);
+    instance->SetValue(L"SomeStrings[]", ECValue (L"ArrayMember 2"), 2);
+    instance->SetValue(L"SomeStrings[]", ECValue (L"ArrayMember 3"), 4);
 
-    v.SetString(L"ArrayMember 1");
-    instance->SetValue(L"SomeStrings[]", v, 0);
-
-    v.SetString(L"ArrayMember 2");
-    instance->SetValue(L"SomeStrings[]", v, 1);
-
-    v.SetString(L"ArrayMember 3");
-    instance->SetValue(L"SomeStrings[]", v, 2);
-
-    dumpPropertyValues (ECValuesCollection (*instance));
+    dumpPropertyValues (*ECValuesCollection::Create (*instance), false, 0);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void setContactInfo
+static void     setValue
 (
+wchar_t const*  accessPrefix,
+wchar_t const*  propertyString,
+ECValueCR       ecValue,
+IECInstanceR    instance
+)
+    {
+    WString accessString;
+
+    if (accessPrefix && 0 < wcslen (accessPrefix))
+        {
+        accessString.append (accessPrefix);
+        accessString.append (L".");
+        }
+
+    accessString.append (propertyString);
+
+    instance.SetValue (accessString.c_str(), ecValue);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/11
++---------------+---------------+---------------+---------------+---------------+------*/
+static void     setContactInfo
+(
+wchar_t const * prefix,
 wchar_t const * houseNumber,
 wchar_t const * street,
 wchar_t const * town,
@@ -1054,14 +1116,14 @@ wchar_t const * email,
 IECInstanceR    instance
 )
     {
-    instance.SetValue(L"Address.HouseNumber",   ECValue (houseNumber));
-    instance.SetValue(L"Address.Street",        ECValue (street));
-    instance.SetValue(L"Address.Town",          ECValue (town));
-    instance.SetValue(L"Address.State",         ECValue (state));
-    instance.SetValue(L"Address.Zip",           ECValue (zip));
-    instance.SetValue(L"PhoneNumber.AreaCode",  ECValue (areaCode));
-    instance.SetValue(L"PhoneNumber.Number",    ECValue (phoneNumber));
-    instance.SetValue(L"Email",                 ECValue (email));
+    setValue (prefix, L"Address.HouseNumber",   ECValue (houseNumber),  instance);
+    setValue (prefix, L"Address.Street",        ECValue (street),       instance);
+    setValue (prefix, L"Address.Town",          ECValue (town),         instance);
+    setValue (prefix, L"Address.State",         ECValue (state),        instance);
+    setValue (prefix, L"Address.Zip",           ECValue (zip),          instance);
+    setValue (prefix, L"PhoneNumber.AreaCode",  ECValue (areaCode),     instance);
+    setValue (prefix, L"PhoneNumber.Number",    ECValue (phoneNumber),  instance);
+    setValue (prefix, L"Email",                 ECValue (email),        instance);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1077,9 +1139,9 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmbeddedStructs)
     ASSERT_TRUE (enabler.IsValid());
 
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
-    setContactInfo (L"123-4", L"Main Street", L"Exton", L"PA", 12345, 610, 1234567, L"nobody@nowhere.com", *instance);
+    setContactInfo (L"", L"123-4", L"Main Street", L"Exton", L"PA", 12345, 610, 1234567, L"nobody@nowhere.com", *instance);
 
-    dumpPropertyValues (ECValuesCollection (*instance));
+    dumpPropertyValues (*ECValuesCollection::Create (*instance), false, 0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1102,16 +1164,20 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_StructArray)
 
     ECValue v;
     EC::StandaloneECInstancePtr arrayMemberInstance1 = arrayMemberEnabler->CreateInstance();
-    setContactInfo (L"123-4", L"Main Street", L"Exton", L"PA", 12345, 610, 1234567, L"nobody@nowhere.com", *arrayMemberInstance1);
+    arrayMemberInstance1->SetValue(L"Name", ECValue (L"John Smith"));
+
+    setContactInfo (L"Work",      L"123-4", L"Main Street", L"Exton", L"PA", 12345, 610, 1234567, L"jsmith@work.com", *arrayMemberInstance1);
+    setContactInfo (L"Home",      L"175",   L"Oak Lane",    L"Wayne", L"PA", 12348, 610, 7654321, L"jsmith@home.com", *arrayMemberInstance1);
     v.SetStruct(arrayMemberInstance1.get());
     instance->SetValue (L"Employees[]", v, 0);
 
     EC::StandaloneECInstancePtr arrayMemberInstance2 = arrayMemberEnabler->CreateInstance();
-    setContactInfo (L"1600", L"Pennsylvania Ave", L"Washington", L"DC", 10001, 555, 1234567, L"president@whitehouse.gov", *arrayMemberInstance2);
+    arrayMemberInstance2->SetValue(L"Name", ECValue (L"Jane Doe"));
+    setContactInfo (L"Home",      L"1600", L"Pennsylvania Ave", L"Washington", L"DC", 10001, 555, 1234567, L"president@whitehouse.gov", *arrayMemberInstance2);
     v.SetStruct(arrayMemberInstance2.get());
     instance->SetValue (L"Employees[]", v, 1);
 
-    dumpPropertyValues (ECValuesCollection (*instance));
+    dumpPropertyValues (*ECValuesCollection::Create (*instance), false, 0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1170,8 +1236,8 @@ TEST_F(MemoryLayoutTests, TestECValueEnumeration)
     ECValueAccessorPairCollection sourceCollection(*sourceOptions);
     for each (ECValueAccessorPair pair in sourceCollection)
         {
-        ECValue         value      = pair.GetValue();
-        ECValueAccessor accessor   = pair.GetAccessor();
+        ECValueCR         value      = pair.GetValue();
+        ECValueAccessorCR accessor   = pair.GetAccessor();
 
         //wprintf(L"%ls: %ls\n", accessor.GetManagedAccessString(), value.ToString());
         EXPECT_TRUE (ECOBJECTS_STATUS_Success == targetInstance->SetValueUsingAccessor(accessor, value));
@@ -1181,8 +1247,9 @@ TEST_F(MemoryLayoutTests, TestECValueEnumeration)
     ECValueAccessorPairCollection targetCollection(*targetOptions);
     for each (ECValueAccessorPair pair in targetCollection)
         {
-        ECValueAccessor accessor   = pair.GetAccessor();
-        ECValue         value      = pair.GetValue();
+        ECValueAccessorCR accessor   = pair.GetAccessor();
+        ECValueCR         value      = pair.GetValue();
+
         //wprintf(L"%ls: %ls\n", accessor.GetManagedAccessString(), value.ToString());
         EXPECT_TRUE (VerifyPair (sourceInstance, pair));
         }
@@ -1286,8 +1353,8 @@ TEST_F(MemoryLayoutTests, TestECValueEnumerationStructArray)
     for each (ECValueAccessorPair pair in sourceCollection)
         {
         valuesFound ++;
-        ECValueAccessor accessor   = pair.GetAccessor();
-        ECValue         value      = pair.GetValue();
+        ECValueAccessorCR accessor   = pair.GetAccessor();
+        ECValueCR         value      = pair.GetValue();
         //wprintf(L"%ls: %ls\n", accessor.GetManagedAccessString(), value.ToString());
         EXPECT_TRUE (ECOBJECTS_STATUS_Success == targetInstance0->SetValueUsingAccessor (accessor, value));
         }
@@ -1299,8 +1366,8 @@ TEST_F(MemoryLayoutTests, TestECValueEnumerationStructArray)
     for each (ECValueAccessorPair pair in targetCollection0)
         {
         valuesFound ++;
-        ECValueAccessor accessor = pair.GetAccessor();
-        ECValue value = pair.GetValue();
+        ECValueAccessorCR accessor = pair.GetAccessor();
+        ECValueCR value = pair.GetValue();
         ECValue temp;
         EXPECT_TRUE (ECOBJECTS_STATUS_Success == targetInstance0->GetValueUsingAccessor (temp, accessor));
         EXPECT_TRUE (value.Equals (temp));
@@ -1449,8 +1516,8 @@ TEST_F(MemoryLayoutTests, ECValueEnumerationOverFixedSizeArrays)
     for each (ECValueAccessorPair pair in sourceCollection)
         {
         valuesFound ++;
-        ECValueAccessor accessor = pair.GetAccessor();
-        ECValue         value = pair.GetValue();
+        ECValueAccessorCR accessor = pair.GetAccessor();
+        ECValueCR         value = pair.GetValue();
         //wprintf(L"%ls: %ls\n", accessor.GetManagedAccessString(), value.ToString());
         EXPECT_TRUE (ECOBJECTS_STATUS_Success == targetInstance->SetValueUsingAccessor (accessor, value));
         }
@@ -1639,8 +1706,6 @@ TEST_F(MemoryLayoutTests, PolymorphicStructArrayEnumeration)
     for each (ECValueAccessorPair pair in sourceCollection)
         {
         valuesFound++;
-        ECValue value = pair.GetValue();
-        ECValueAccessor accessor = pair.GetAccessor();
         }
     EXPECT_EQ (4, valuesFound); 
 
@@ -1649,8 +1714,8 @@ TEST_F(MemoryLayoutTests, PolymorphicStructArrayEnumeration)
     for each (ECValueAccessorPair pair in sourceCollection)
         {
         valuesFound++;
-        ECValue value = pair.GetValue();
-        ECValueAccessor accessor = pair.GetAccessor();
+        ECValueCR value = pair.GetValue();
+        ECValueAccessorCR accessor = pair.GetAccessor();
         targetInstance->SetValueUsingAccessor (accessor, value);
         }
     ASSERT_TRUE (4 == valuesFound); 
@@ -1811,8 +1876,8 @@ TEST_F(MemoryLayoutTests, ManualUseOfAccessors)
     for each (ECValueAccessorPair pair in sourceCollection)
         {
         valuesFound ++;
-        ECValueAccessor accessor   = pair.GetAccessor();
-        ECValue         value      = pair.GetValue();
+        ECValueAccessorCR accessor   = pair.GetAccessor();
+        ECValueCR         value      = pair.GetValue();
         EXPECT_TRUE (ECOBJECTS_STATUS_Success == targetInstance0->SetValueUsingAccessor (accessor, value));
         EXPECT_TRUE (ECOBJECTS_STATUS_Success == targetInstance1->SetValueUsingAccessor (accessor, value));
         }
@@ -1902,14 +1967,19 @@ TEST_F(MemoryLayoutTests, SimpleMergeTwoInstances)
     ECValueAccessorPairCollection sourceCollection(*sourceOptions);
     for each (ECValueAccessorPair pair in sourceCollection)
         {
+        ECValue localValue;
+
         //value came from sourceInstance1
-        ECValue value = pair.GetValue();
+        ECValueCP value = &pair.GetValue();
         //if the value is null, get it from sourceInstance0
-        if(value.IsNull())
-            sourceInstance0->GetValueUsingAccessor (value, pair.GetAccessor());
+        if(value->IsNull())
+            {
+            sourceInstance0->GetValueUsingAccessor (localValue, pair.GetAccessor());
+            value = &localValue;
+            }
         //set the value to target instance
-        if(!value.IsNull())
-            targetInstance->SetValueUsingAccessor (pair.GetAccessor(), value);
+        if(!value->IsNull())
+            targetInstance->SetValueUsingAccessor (pair.GetAccessor(), *value);
         }
 
     int valuesCounted = 0;
@@ -2170,7 +2240,7 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     EXPECT_TRUE (v.IsDouble());
     EXPECT_EQ (doubleValue, v.GetDouble());
     
-    ECValue nullInt = ECValue(EC::PRIMITIVETYPE_Integer);
+    ECValue nullInt (EC::PRIMITIVETYPE_Integer);
     EXPECT_TRUE (nullInt.IsNull());
     EXPECT_TRUE (nullInt.IsInteger());
 
