@@ -132,7 +132,7 @@ public:
     ECOBJECTS_EXPORT ~ECValue();
     
     ECOBJECTS_EXPORT ECValue ();
-    ECOBJECTS_EXPORT ECValue (ECValueCR v, bool doDeepCopy = true);
+    ECOBJECTS_EXPORT ECValue (ECValueCR v, bool doDeepCopy = false);
     ECOBJECTS_EXPORT explicit ECValue (ValueKind classification);
     ECOBJECTS_EXPORT explicit ECValue (PrimitiveType primitiveType);
 

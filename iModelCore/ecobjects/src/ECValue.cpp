@@ -423,7 +423,7 @@ ECValue::~ECValue()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValueR ECValue::operator= (ECValueCR rhs)
     {
-    From (rhs, true);
+    From (rhs, false);
     return *this;
     }        
     
@@ -1006,8 +1006,19 @@ bool              ECValue::Equals (ECValueCR v) const
         return false;
     if (IsArray())
         {
-        assert(false && "Comparison of two arrays not implemented in Equals(); there's no way to check the elements");
-        return false;
+        if (m_arrayInfo.GetCount() != v.m_arrayInfo.GetCount())
+            return false;
+
+        if (m_arrayInfo.IsFixedCount() != v.m_arrayInfo.IsFixedCount())
+            return false;
+
+        if (m_arrayInfo.GetKind() != v.m_arrayInfo.GetKind())
+            return false;
+
+        if (m_arrayInfo.IsPrimitiveArray() && m_arrayInfo.GetElementPrimitiveType() != v.m_arrayInfo.GetElementPrimitiveType())
+            return false;
+
+        return true;
         }
     if (IsStruct())
         return m_structInstance == v.m_structInstance;
@@ -1316,7 +1327,7 @@ bwstring                                        ECValueAccessor::GetDebugAccessS
     std::wstringstream temp;
     for(UInt32 depth = 0; depth < GetDepth(); depth++)
         {
-        if(depth > (UInt32)0)
+        if(depth > 0)
             temp << " -> ";
         temp << "{" << m_locationVector[depth].propertyIndex;
         if(m_locationVector[depth].arrayIndex > -1)
@@ -1334,9 +1345,16 @@ bwstring                                        ECValueAccessor::GetManagedAcces
     std::wstringstream temp;
     for(UInt32 depth = 0; depth < GetDepth(); depth++)
         {
-        if(depth > (UInt32)0)
+        if(depth > 0)
             temp << ".";
-        temp << GetAccessString (depth);
+
+        const wchar_t * str = GetAccessString (depth);
+        const wchar_t * lastDot = wcsrchr (str, L'.');
+
+        if (NULL != lastDot)
+            str = lastDot+1;
+
+        temp << str;
         //If the current index is an array element,
         if(m_locationVector[depth].arrayIndex > -1)
             {

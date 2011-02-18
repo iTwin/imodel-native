@@ -397,7 +397,6 @@ bwstring    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versionMaj
                     L"        <ECProperty       propertyName=\"Name\"       typeName=\"string\" />"
                     L"        <ECStructProperty propertyName=\"Home\"       typeName=\"ContactInfo\" />"
                     L"        <ECStructProperty propertyName=\"Work\"       typeName=\"ContactInfo\" />"
-                    L"        <ECStructProperty propertyName=\"Alternate\"  typeName=\"ContactInfo\" />"
                     L"    </ECClass>"
                     L"    <ECClass typeName=\"EmployeeDirectory\" isDomainClass=\"True\">"
                     L"        <ECArrayProperty propertyName=\"Employees\" typeName=\"Employee\"  minOccurs=\"0\" maxOccurs=\"unbounded\" />"
@@ -1027,6 +1026,35 @@ static void     dumpPropertyValues (ECValuesCollectionR collection, bool isArray
         }
     }
 
+typedef bpair<WString, ECValue>  AccessStringValuePair;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/11
++---------------+---------------+---------------+---------------+---------------+------*/
+static void     verifyECValueEnumeration (ECValuesCollectionR collection, bvector <AccessStringValuePair>& expectedValues, UInt32& iValue)
+    {
+    for each (ECPropertyValuePtr propertyValue in collection)
+        {
+        WString   foundAccessString    = propertyValue->GetValueAccessor().GetManagedAccessString(); 
+        WString   expectedAccessString = expectedValues[iValue].first;
+
+        EXPECT_STREQ (expectedAccessString.c_str(), foundAccessString.c_str());
+
+        ECValueCR foundValue    = propertyValue->GetValue();
+        ECValueCR expectedValue = expectedValues[iValue].second;
+
+        EXPECT_TRUE (foundValue.Equals (expectedValue));
+
+        iValue++;;
+
+        if (propertyValue->HasChildValues ())
+            {
+            ECValuesCollectionPtr children = propertyValue->GetChildValues();
+            verifyECValueEnumeration (*children, expectedValues, iValue);
+            }
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1039,14 +1067,42 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_PrimitiveProperties)
     StandaloneECEnablerPtr enabler = schemaCache->ObtainStandaloneInstanceEnabler (schema->GetName().c_str(), L"CadData");
     ASSERT_TRUE (enabler.IsValid());
 
+    /*--------------------------------------------------------------------------
+        Build the instance
+    --------------------------------------------------------------------------*/
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
-    instance->SetValue(L"Name",         ECValue (L"This is the name"));
+    instance->SetValue(L"Name",         ECValue (L"My Name"));
     instance->SetValue(L"Count",        ECValue (14));
     instance->SetValue(L"Length",       ECValue (142.5));
     instance->SetValue(L"Field_Tested", ECValue (true));
 
-    dumpPropertyValues (*ECValuesCollection::Create (*instance), false, 0);
+    /*--------------------------------------------------------------------------
+        Build the vector of expected values.
+        Note: The order does not match the class it matches the classLayout
+    --------------------------------------------------------------------------*/
+    bvector <AccessStringValuePair> expectedValues;
+
+    expectedValues.push_back (AccessStringValuePair (L"Count",          ECValue(14)));
+    expectedValues.push_back (AccessStringValuePair (L"StartPoint",     ECValue ()));
+    expectedValues.push_back (AccessStringValuePair (L"EndPoint",       ECValue ()));
+    expectedValues.push_back (AccessStringValuePair (L"Size",           ECValue ()));
+    expectedValues.push_back (AccessStringValuePair (L"Length",         ECValue (142.5)));
+    expectedValues.push_back (AccessStringValuePair (L"Install_Date",   ECValue ()));
+    expectedValues.push_back (AccessStringValuePair (L"Service_Date",   ECValue ()));
+    expectedValues.push_back (AccessStringValuePair (L"Field_Tested",   ECValue (true)));
+    expectedValues.push_back (AccessStringValuePair (L"Name",           ECValue (L"My Name")));
+
+    /*--------------------------------------------------------------------------
+        Verify that the values returned from the instance match the expected ones.
+    --------------------------------------------------------------------------*/
+    ECValuesCollectionPtr   collection = ECValuesCollection::Create (*instance);
+    UInt32                  iValue = 0;
+
+    verifyECValueEnumeration (*collection, expectedValues, iValue);
+    //dumpPropertyValues (*collection, false, 0);
+
+    EXPECT_TRUE (expectedValues.size() == iValue);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1061,6 +1117,9 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_PrimitiveArray)
     StandaloneECEnablerPtr enabler = schemaCache->ObtainStandaloneInstanceEnabler (schema->GetName().c_str(), L"AllPrimitives");
     ASSERT_TRUE (enabler.IsValid());
 
+    /*--------------------------------------------------------------------------
+        Build the instance
+    --------------------------------------------------------------------------*/
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     instance->SetValue(L"AString",  ECValue (L"Happy String"));
@@ -1072,7 +1131,89 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_PrimitiveArray)
     instance->SetValue(L"SomeStrings[]", ECValue (L"ArrayMember 2"), 2);
     instance->SetValue(L"SomeStrings[]", ECValue (L"ArrayMember 3"), 4);
 
-    dumpPropertyValues (*ECValuesCollection::Create (*instance), false, 0);
+    /*--------------------------------------------------------------------------
+        Build the vector of expected values.
+        Note: The order does not match the class it matches the classLayout
+    --------------------------------------------------------------------------*/
+    ECValue arrayValue;
+    bvector <AccessStringValuePair> expectedValues;
+
+    expectedValues.push_back (AccessStringValuePair (L"AnInt", ECValue (6)));
+    expectedValues.push_back (AccessStringValuePair (L"APoint3d", ECValue ()));
+    expectedValues.push_back (AccessStringValuePair (L"APoint2d", ECValue ()));
+    expectedValues.push_back (AccessStringValuePair (L"ADouble", ECValue ()));
+    expectedValues.push_back (AccessStringValuePair (L"ADateTime", ECValue ()));
+    expectedValues.push_back (AccessStringValuePair (L"ABoolean", ECValue ()));
+    expectedValues.push_back (AccessStringValuePair (L"ALong", ECValue ()));
+    expectedValues.push_back (AccessStringValuePair (L"AString", ECValue (L"Happy String")));
+    expectedValues.push_back (AccessStringValuePair (L"ABinary", ECValue ()));
+
+    arrayValue.Clear();
+    arrayValue.SetPrimitiveArrayInfo (PRIMITIVETYPE_String, 5, false);
+    expectedValues.push_back (AccessStringValuePair (L"SomeStrings[]", arrayValue));
+
+    expectedValues.push_back (AccessStringValuePair (L"SomeStrings[0]", ECValue (L"ArrayMember 1")));
+    expectedValues.push_back (AccessStringValuePair (L"SomeStrings[1]", ECValue ()));
+    expectedValues.push_back (AccessStringValuePair (L"SomeStrings[2]", ECValue (L"ArrayMember 2")));
+    expectedValues.push_back (AccessStringValuePair (L"SomeStrings[3]", ECValue ()));
+    expectedValues.push_back (AccessStringValuePair (L"SomeStrings[4]", ECValue (L"ArrayMember 3")));
+
+    arrayValue.SetPrimitiveArrayInfo (PRIMITIVETYPE_Integer, 0, false);
+    expectedValues.push_back (AccessStringValuePair (L"SomeInts[]",     arrayValue));
+
+    arrayValue.SetPrimitiveArrayInfo (PRIMITIVETYPE_Point3D, 0, false);
+    expectedValues.push_back (AccessStringValuePair (L"SomePoint3ds[]", arrayValue));
+
+    arrayValue.SetPrimitiveArrayInfo (PRIMITIVETYPE_Point2D, 0, false);
+    expectedValues.push_back (AccessStringValuePair (L"SomePoint2ds[]", arrayValue));
+
+    arrayValue.SetPrimitiveArrayInfo (PRIMITIVETYPE_Double, 0, false);
+    expectedValues.push_back (AccessStringValuePair (L"SomeDoubles[]",  arrayValue));
+
+    arrayValue.SetPrimitiveArrayInfo (PRIMITIVETYPE_DateTime, 0, false);
+    expectedValues.push_back (AccessStringValuePair (L"SomeDateTimes[]",arrayValue));
+
+    arrayValue.SetPrimitiveArrayInfo (PRIMITIVETYPE_Boolean, 0, false);
+    expectedValues.push_back (AccessStringValuePair (L"SomeBooleans[]", arrayValue));
+
+    arrayValue.SetPrimitiveArrayInfo (PRIMITIVETYPE_Long, 0, false);
+    expectedValues.push_back (AccessStringValuePair (L"SomeLongs[]",    arrayValue));
+
+    arrayValue.SetPrimitiveArrayInfo (PRIMITIVETYPE_Binary, 0, false);
+    expectedValues.push_back (AccessStringValuePair (L"SomeBinaries[]", arrayValue));
+
+    /*--------------------------------------------------------------------------
+        Verify that the values returned from the instance match the expected ones.
+    --------------------------------------------------------------------------*/
+    ECValuesCollectionPtr   collection = ECValuesCollection::Create (*instance);
+    UInt32                  iValue = 0;
+
+    verifyECValueEnumeration (*collection, expectedValues, iValue);
+    //dumpPropertyValues (*collection, false, 0);
+
+    EXPECT_TRUE (expectedValues.size() == iValue);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/11
++---------------+---------------+---------------+---------------+---------------+------*/
+static WString  buildAccessString
+(
+wchar_t const*  accessPrefix,
+wchar_t const*  propertyString
+)
+    {
+    WString accessString;
+
+    if (accessPrefix && 0 < wcslen (accessPrefix))
+        {
+        accessString.append (accessPrefix);
+        accessString.append (L".");
+        }
+
+    accessString.append (propertyString);
+    
+    return accessString;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1086,15 +1227,7 @@ ECValueCR       ecValue,
 IECInstanceR    instance
 )
     {
-    WString accessString;
-
-    if (accessPrefix && 0 < wcslen (accessPrefix))
-        {
-        accessString.append (accessPrefix);
-        accessString.append (L".");
-        }
-
-    accessString.append (propertyString);
+    WString accessString = buildAccessString (accessPrefix, propertyString);
 
     instance.SetValue (accessString.c_str(), ecValue);
     }
@@ -1105,25 +1238,75 @@ IECInstanceR    instance
 static void     setContactInfo
 (
 wchar_t const * prefix,
+int             areaCode,
+int             phoneNumber,
 wchar_t const * houseNumber,
 wchar_t const * street,
 wchar_t const * town,
 wchar_t const * state,
 int             zip,
-int             areaCode,
-int             phoneNumber,
 wchar_t const * email,
 IECInstanceR    instance
 )
     {
+    setValue (prefix, L"PhoneNumber.AreaCode",  ECValue (areaCode),     instance);
+    setValue (prefix, L"PhoneNumber.AreaCode",  ECValue (areaCode),     instance);
+    setValue (prefix, L"PhoneNumber.Number",    ECValue (phoneNumber),  instance);
     setValue (prefix, L"Address.HouseNumber",   ECValue (houseNumber),  instance);
     setValue (prefix, L"Address.Street",        ECValue (street),       instance);
     setValue (prefix, L"Address.Town",          ECValue (town),         instance);
     setValue (prefix, L"Address.State",         ECValue (state),        instance);
     setValue (prefix, L"Address.Zip",           ECValue (zip),          instance);
-    setValue (prefix, L"PhoneNumber.AreaCode",  ECValue (areaCode),     instance);
-    setValue (prefix, L"PhoneNumber.Number",    ECValue (phoneNumber),  instance);
     setValue (prefix, L"Email",                 ECValue (email),        instance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/11
++---------------+---------------+---------------+---------------+---------------+------*/
+static void     addValue
+(
+wchar_t const*  accessPrefix,
+wchar_t const*  propertyString,
+ECValueCR       ecValue,
+bvector <AccessStringValuePair>& expectedValues
+)
+    {
+    WString accessString = buildAccessString (accessPrefix, propertyString);
+
+    expectedValues.push_back (AccessStringValuePair (accessString.c_str(), ecValue));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/11
++---------------+---------------+---------------+---------------+---------------+------*/
+static void     addExpectedContactInfo
+(
+wchar_t const * prefix,
+int             areaCode,
+int             phoneNumber,
+wchar_t const * houseNumber,
+wchar_t const * street,
+wchar_t const * town,
+wchar_t const * state,
+int             zip,
+wchar_t const * email,
+bvector <AccessStringValuePair>& expectedValues
+)
+    {
+    if (NULL != prefix  && 0 < wcslen (prefix))
+        expectedValues.push_back (AccessStringValuePair (prefix, ECValue (VALUEKIND_Struct)));
+
+    addValue (prefix, L"PhoneNumber",           ECValue (VALUEKIND_Struct), expectedValues);
+    addValue (prefix, L"PhoneNumber.AreaCode",  ECValue (areaCode),         expectedValues);
+    addValue (prefix, L"PhoneNumber.Number",    ECValue (phoneNumber),      expectedValues);
+    addValue (prefix, L"Address",               ECValue (VALUEKIND_Struct), expectedValues);
+    addValue (prefix, L"Address.Zip",           ECValue (zip),              expectedValues);
+
+    addValue (prefix, L"Address.HouseNumber",   ECValue (houseNumber),     expectedValues);
+    addValue (prefix, L"Address.Street",        ECValue (street),          expectedValues);
+    addValue (prefix, L"Address.Town",          ECValue (town),            expectedValues);
+    addValue (prefix, L"Address.State",         ECValue (state),           expectedValues);
+    addValue (prefix, L"Email",                 ECValue (email),           expectedValues);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1138,10 +1321,30 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmbeddedStructs)
     StandaloneECEnablerPtr enabler = schemaCache->ObtainStandaloneInstanceEnabler (schema->GetName().c_str(), L"ContactInfo");
     ASSERT_TRUE (enabler.IsValid());
 
+    /*--------------------------------------------------------------------------
+        Build the instance
+    --------------------------------------------------------------------------*/
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
-    setContactInfo (L"", L"123-4", L"Main Street", L"Exton", L"PA", 12345, 610, 1234567, L"nobody@nowhere.com", *instance);
+    setContactInfo (L"", 610, 1234567, L"123-4", L"Main Street", L"Exton", L"PA", 12345, L"nobody@nowhere.com", *instance);
 
-    dumpPropertyValues (*ECValuesCollection::Create (*instance), false, 0);
+    /*--------------------------------------------------------------------------
+        Build the vector of expected values.
+        Note: The order does not match the class it matches the classLayout
+    --------------------------------------------------------------------------*/
+    bvector <AccessStringValuePair> expectedValues;
+
+    addExpectedContactInfo (L"", 610, 1234567, L"123-4", L"Main Street", L"Exton", L"PA", 12345, L"nobody@nowhere.com", expectedValues);
+
+    /*--------------------------------------------------------------------------
+        Verify that the values returned from the instance match the expected ones.
+    --------------------------------------------------------------------------*/
+    ECValuesCollectionPtr   collection = ECValuesCollection::Create (*instance);
+    UInt32                  iValue = 0;
+
+    verifyECValueEnumeration (*collection, expectedValues, iValue);
+    //dumpPropertyValues (*collection, false, 0);
+
+    EXPECT_TRUE (expectedValues.size() == iValue);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1156,6 +1359,9 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_StructArray)
     StandaloneECEnablerPtr enabler = schemaCache->ObtainStandaloneInstanceEnabler (schema->GetName().c_str(), L"EmployeeDirectory");
     ASSERT_TRUE (enabler.IsValid());
 
+    /*--------------------------------------------------------------------------
+        Build the instance
+    --------------------------------------------------------------------------*/
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     instance->AddArrayElements(L"Employees[]", 2);
 
@@ -1166,18 +1372,55 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_StructArray)
     EC::StandaloneECInstancePtr arrayMemberInstance1 = arrayMemberEnabler->CreateInstance();
     arrayMemberInstance1->SetValue(L"Name", ECValue (L"John Smith"));
 
-    setContactInfo (L"Work",      L"123-4", L"Main Street", L"Exton", L"PA", 12345, 610, 1234567, L"jsmith@work.com", *arrayMemberInstance1);
-    setContactInfo (L"Home",      L"175",   L"Oak Lane",    L"Wayne", L"PA", 12348, 610, 7654321, L"jsmith@home.com", *arrayMemberInstance1);
+    setContactInfo (L"Home",   610, 7654321, L"175",   L"Oak Lane",    L"Wayne", L"PA", 12348, L"jsmith@home.com", *arrayMemberInstance1);
+    setContactInfo (L"Work",   610, 1234567, L"123-4", L"Main Street", L"Exton", L"PA", 12345, L"jsmith@work.com", *arrayMemberInstance1);
     v.SetStruct(arrayMemberInstance1.get());
     instance->SetValue (L"Employees[]", v, 0);
 
     EC::StandaloneECInstancePtr arrayMemberInstance2 = arrayMemberEnabler->CreateInstance();
     arrayMemberInstance2->SetValue(L"Name", ECValue (L"Jane Doe"));
-    setContactInfo (L"Home",      L"1600", L"Pennsylvania Ave", L"Washington", L"DC", 10001, 555, 1234567, L"president@whitehouse.gov", *arrayMemberInstance2);
+    setContactInfo (L"Home",   555, 1122334, L"1600", L"Pennsylvania Ave", L"Washington", L"DC", 10001, L"prez@gmail.com", *arrayMemberInstance2);
+    setContactInfo (L"Work",   555, 1000000, L"1600", L"Pennsylvania Ave", L"Washington", L"DC", 10001, L"president@whitehouse.gov", *arrayMemberInstance2);
     v.SetStruct(arrayMemberInstance2.get());
     instance->SetValue (L"Employees[]", v, 1);
 
-    dumpPropertyValues (*ECValuesCollection::Create (*instance), false, 0);
+    /*--------------------------------------------------------------------------
+        Build the vector of expected values.
+        Note: The order does not match the class it matches the classLayout
+    --------------------------------------------------------------------------*/
+    bvector <AccessStringValuePair> expectedValues;
+
+    ECValue arrayValue;
+    arrayValue.SetStructArrayInfo (2, false);
+    expectedValues.push_back (AccessStringValuePair (L"Employees[]", arrayValue));
+
+    ECValue structValue;
+    structValue.SetStruct (arrayMemberInstance1.get());
+    expectedValues.push_back (AccessStringValuePair (L"Employees[0]", structValue));
+
+    addExpectedContactInfo (L"Employees[0].Home", 610, 7654321, L"175",   L"Oak Lane",    L"Wayne", L"PA", 12348, L"jsmith@home.com", expectedValues);
+    addExpectedContactInfo (L"Employees[0].Work", 610, 1234567, L"123-4", L"Main Street", L"Exton", L"PA", 12345, L"jsmith@work.com", expectedValues);
+
+    expectedValues.push_back (AccessStringValuePair (L"Employees[0].Name", ECValue (L"John Smith")));
+
+    structValue.SetStruct (arrayMemberInstance2.get());
+    expectedValues.push_back (AccessStringValuePair (L"Employees[1]", structValue));
+
+    addExpectedContactInfo (L"Employees[1].Home", 555, 1122334, L"1600", L"Pennsylvania Ave", L"Washington", L"DC", 10001, L"prez@gmail.com", expectedValues);
+    addExpectedContactInfo (L"Employees[1].Work", 555, 1000000, L"1600", L"Pennsylvania Ave", L"Washington", L"DC", 10001, L"president@whitehouse.gov", expectedValues);
+
+    expectedValues.push_back (AccessStringValuePair (L"Employees[1].Name", ECValue (L"Jane Doe")));
+
+    /*--------------------------------------------------------------------------
+        Verify that the values returned from the instance match the expected ones.
+    --------------------------------------------------------------------------*/
+    ECValuesCollectionPtr   collection = ECValuesCollection::Create (*instance);
+    UInt32                  iValue = 0;
+
+    verifyECValueEnumeration (*collection, expectedValues, iValue);
+    //dumpPropertyValues (*collection, false, 0);
+
+    EXPECT_TRUE (expectedValues.size() == iValue);
     }
 
 /*---------------------------------------------------------------------------------**//**
