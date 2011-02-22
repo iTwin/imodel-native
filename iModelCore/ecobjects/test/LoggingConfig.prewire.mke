@@ -1,11 +1,11 @@
 #*--------------------------------------------------------------------------------------+
 #
-#     $Source: ecobjects/nativeatp/LoggingConfig.prewire.mke $
+#     $Source: test/LoggingConfig.prewire.mke $
 #
-#  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
    
-$(OutputRootDir)BuildContexts/ecfTest/Delivery/logging.config.xml: $(ecobjectsSrc)nativeatp/logging.config.xml
+$(ContextDeliveryDir)logging.config.xml: $(ecobjectsSrc)test/logging.config.xml
     $(LinkFirstDepToFirstTarget)

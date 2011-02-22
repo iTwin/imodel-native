@@ -1,13 +1,13 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: ecobjects/native/native.mke $
+#     $Source: src/ecobjects.mke $
 #
-#  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 baseDir         = $(_MakeFilePath)
 
-SolutionPolicyMki=$(baseDir)native.mki
+SolutionPolicyMki=$(baseDir)ecobjects.mki
 
 programName = ECObjects
 

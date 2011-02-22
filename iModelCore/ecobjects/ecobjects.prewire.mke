@@ -1,14 +1,12 @@
 #*--------------------------------------------------------------------------------------+
 #
-#     $Source: test/SeedData.prewire.mke $
+#     $Source: ecobjects.prewire.mke $
 #
 #  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
 
-# Wire in seed data
+# Wire in my own public header files.
 always:
-   @CreateSymLinks.py -d"$(ContextDeliveryDir)SeedData=$(ecobjectsSrc)test/SeedData"
-   
-
+   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)ECObjects=$(ecPublicAPISrc)ECObjects"

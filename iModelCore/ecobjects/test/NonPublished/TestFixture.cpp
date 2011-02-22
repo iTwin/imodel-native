@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/nativeatp/NonPublished/TestFixture.cpp $
+|     $Source: test/NonPublished/TestFixture.cpp $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 | Based on http://cplus.about.com/od/howtodothingsi2/a/timing.htm
 |
 +--------------------------------------------------------------------------------------*/
@@ -230,7 +230,7 @@ bwstring ECTestFixture::GetWorkingDirectoryPath(const wchar_t *testFixture, cons
     wchar_t * processorArchitecture = (8 == sizeof(void*)) ? L"Winx64" : L"Winx86";
     filePath.append(processorArchitecture);
     filePath.append(L"\\");
-    filePath.append(L"ECFramework\\build\\AtpWorkingRoot\\");
+    filePath.append(L"build\\ECObjectsTests\\AtpWorkingRoot\\");
     filePath.append(testFixture);
     filePath.append(L"\\");
 
@@ -285,7 +285,7 @@ bwstring ECTestFixture::GetLogConfigurationFilename()
         {
         wchar_t * processorArchitecture = (8 == sizeof(void*)) ? L"Winx64" : L"Winx86";
         wcscat (filepath, processorArchitecture);
-        wcscat (filepath, L"\\Product\\ECFrameworkNativeTest\\Tests\\logging.config.xml");
+        wcscat (filepath, L"\\Product\\ECObjectsTests\\logging.config.xml");
         
         if (0 ==_waccess(filepath, 0))
             {

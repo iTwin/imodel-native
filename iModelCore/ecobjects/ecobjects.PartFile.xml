@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\bsicommon\build\PartFile.xsd" >
+
+    <Part Name="ExportList" BMakeFile="mki\ecobjects.DeliveredDlls.mke">
+        <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley" />
+        <Bindings>
+            <Files Required="false" SubPartDirectory="mki" >ECObjectsDlls.mki</Files>
+        </Bindings>
+    </Part>
+
+<!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+<!-- ///////////////////// Runtime Parts ///////////////////////////////////////////////// -->
+<!-- / This section contains parts that make the ECF Runtime ///////////////////////////// -->
+<!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+
+    <Part Name="ECObjectsNative" BMakeFile="src\ecobjects.mke">
+        <RequiredRepository>Libsrc-Msxml6</RequiredRepository>
+        <SubPart PartName="ExportList" />
+        <SubPart PartName="msxml6"          PartFile="msxml6"       Repository="Libsrc-Msxml6"/>
+        <SubPart PartName="HeaderFiles" />
+        <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="Logging8.11"  PartFile="${SrcBsiCommon}CvsPartFiles\bsibin"               Repository="bsibin-loggingsdk" />
+        <SubPart PartName="GeomDlls"        PartFile="geomlibs" Repository="GeomLibs" />
+        <SubPart PartName="StandardSchemas" PartFile="ECStandards" Repository="ECStandards"/>
+        <Bindings>
+            <Libs ProductDirectoryName="ECObjectsLibs" Required="false">Delivery\ECObjects3.lib</Libs>
+            <Assemblies ProductDirectoryName="ECObjectsNativeAssemblies">Delivery\ECObjects3.dll</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="PublishedApi" BMakeFile="PublicApi\PublishApi.mke">
+        <SubPart PartName="HeaderFiles" />
+        <Bindings>
+            <Directory SubPartDirectory="PublishedAPI" SourceName="Delivery\PublishedAPI" ProductDirectoryName="PublishedAPI" Required="false"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="PublishedApi_Doc" BMakeFile="PublicApi\BuildPublishedDoc.mke">
+        <RequiredRepository>bsitools-doxygen</RequiredRepository>
+        <SubPart PartName="PublishedApi" />
+        <Bindings>
+            <Files ProductDirectoryName="PublishedApi_Doc" IfNotPresent="Warn" Required="false">Delivery/ECObjectsAPI.chm</Files>
+        </Bindings>
+    </Part>   
+
+    <Part Name="HeaderFiles" BMakeFile="ecobjects.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="ECObjects" />
+        </Bindings>
+    </Part>
+
+    <Part Name="ECObjectsTestsSeedData" BMakeFile="test\SeedData.prewire.mke">
+        <Bindings>
+            <Files SubPartDirectory="SeedData" ProductDirectoryName="ECObjectsTestSeedData">Delivery/SeedData/*</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="ECObjectsTestLoggingConfig" BMakeFile="test\LoggingConfig.prewire.mke">
+        <Bindings>
+            <Files ProductDirectoryName="ECObjectsTestExe">Delivery\logging.config.xml</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="ECObjectsTestBackDoor" BMakeFile="test\BackDoor\BackDoor.mke">
+        <Bindings>
+            <Libs>Delivery\ECObjectsTestBackDoor.lib</Libs>
+        </Bindings>
+    </Part>
+
+    <Part Name="ECObjectsTestsDependencies">
+        <SubPart PartName="google_gtest"         PartFile="lib"                     Repository="util-lib" />
+        <SubPart PartName="StandardSchemas"      PartFile="ecstandards"             Repository="ecstandards"/>
+        <SubPart PartName="Logging8.11"  PartFile="${SrcBsiCommon}CvsPartFiles\bsibin"               Repository="bsibin-loggingsdk" />
+        <SubPart PartName="ECObjectsNative" />
+        <SubPart PartName="ECObjectsTestsSeedData"/>
+        <SubPart PartName="ECObjectsTestLoggingConfig"/>
+        <SubPart PartName="ECObjectsTestBackDoor"/>
+    </Part>
+
+    <Part Name="ECObjectsPublishedTests" BMakeFile="test\PublishedTests.mke">
+        <SubPart PartName="ECObjectsTestsDependencies"/>
+        <SubPart PartName="PublishedApi"/>
+        <Bindings>
+            <Files ProductDirectoryName="ECObjectsTestExe">Delivery\ECObjectsTest_Published.exe</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="ECObjectsScenarioTests" BMakeFile="test\ScenarioTests.mke">
+        <SubPart PartName="ECObjectsTestsDependencies"/>
+        <SubPart PartName="PublishedApi"/>
+        <Bindings>
+            <Files ProductDirectoryName="ECObjectsTestExe">Delivery\ECObjectsTest_Scenario.exe</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="ECObjectsNonPublishedTests" BMakeFile="test\NonPublishedTests.mke">
+        <SubPart PartName="ECObjectsTestsDependencies"/>
+        <Bindings>
+            <Files ProductDirectoryName="ECObjectsTestExe">Delivery\ECObjectsTest_NonPublished.exe</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="Tests">
+        <SubPart PartName="ECObjectsPublishedTests" />
+        <SubPart PartName="ECObjectsNonPublishedTests" />
+        <SubPart PartName="ECObjectsScenarioTests" />
+    </Part>
+
+    <Part Name="RunECObjectsTests" BMakeFile="test\ECObjectsNativeTest.run.mke">
+
+    </Part>
+
+<!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+<!-- ////////////////////////////////// Products ///////////////////////////////////////// -->
+<!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+
+    <ProductDirectoryList ListName="ECObjects">
+        <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
+        <ProductDirectory Name="VendorAPI"                          Deliver="false" />
+        <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false"/>
+        <ProductDirectory Name="LoggingManagedAssemblies"           Deliver="false"/>
+        <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
+        <ProductDirectory Name="mergemodules"                       Deliver="false"/>
+        <ProductDirectory Name="libs"                               Deliver="false"/>
+
+        <ProductDirectory Name="loggingnativeassemblies"            Path="Runtime"/>
+        <ProductDirectory Name="LoggingOptionalNativeAssemblies"    Path="Runtime"/>
+        <ProductDirectory Name="BentleyNativeAssemblies"            Path="Runtime"/>
+        <ProductDirectory Name="GeomNativeAssemblies"               Path="Runtime"/>
+        <ProductDirectory Name="ecobjectsnativeassemblies"          Path="Runtime"/>
+        <ProductDirectory Name="PublishedApi"                       Path="Include"/>        
+        <ProductDirectory Name="PublishedApi_Doc"                   Path="Docs"/>
+        <ProductDirectory Name="ecschemas"                          Path="Runtime"/>
+    </ProductDirectoryList>
+
+    <Product Name="ECObjects">
+        <SubPart PartName="ECObjectsNative"/>
+
+        <Directories DirectoryListName="ECObjects"/>
+    </Product>
+
+    <ProductDirectoryList ListName="ECObjectsTest">
+        <ProductDirectory Name="VendorAPI"                          Deliver="false" />
+        <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
+        <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false"/>
+        <ProductDirectory Name="LoggingManagedAssemblies"           Deliver="false"/>
+        <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
+        <ProductDirectory Name="mergemodules"                       Deliver="false"/>
+        <ProductDirectory Name="libs"                               Deliver="false"/>
+        <ProductDirectory Name="geomnativeassemblies"               Deliver="false"/>
+
+        <ProductDirectory Name="ECObjectsTestSeedData"              Path="SeedData"/>
+        <ProductDirectory Name="ECObjectsTestLoggingConfig"         Path=""/>
+
+        <ProductDirectory Name="loggingnativeassemblies"            Path=""/>
+        <ProductDirectory Name="LoggingOptionalNativeAssemblies"    Path="" />
+        <ProductDirectory Name="BentleyNativeAssemblies"            Path=""/>
+        <ProductDirectory Name="ECObjectsNativeAssemblies"          Path=""/>
+        <ProductDirectory Name="ECObjectsTestExe"                   Path=""/>
+        <ProductDirectory Name="ecschemas"                          Path=""/>
+    </ProductDirectoryList>
+
+    <Product Name="ECObjectsTests">
+        <SubPart PartName="Tests"/>
+        <Directories DirectoryListName="ECObjectsTest"/>
+    </Product>
+
+    <ProductDirectoryList ListName="ECObjectsTested">
+    </ProductDirectoryList>
+    <Product Name="ECObjectsTested">
+        <SubProduct ProductName="ECObjects" />
+        <SubProduct ProductName="ECObjectsTests" />
+        <SubPart PartName="RunECObjectsTests" />
+
+        <Directories DirectoryListName="ECObjectsTested"/>
+    </Product>
+
+</BuildContext>

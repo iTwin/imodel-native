@@ -1,14 +1,12 @@
 #----------------------------------------------------------------------------------------
 #
-#  $Source: ecobjects/nativeatp/nonpublishedTestSolutionPolicy.mki $
+#  $Source: test/nonpublishedTestSolutionPolicy.mki $
 #
-#  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
 compileRulesPath=$(baseDir)nonpublishedCompileRules.mki
-
-ActiveBuildContextName = $(EcfTestBuildContextName)
 
 nameToDefine = COMPILING_NONPUBLISHED_TESTS
 %include cdefapnd.mki

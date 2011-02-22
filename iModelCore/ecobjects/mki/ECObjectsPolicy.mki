@@ -1,0 +1,69 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: mki/ECObjectsPolicy.mki $
+#
+#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%if defined (__ECObjectsPolicy_mki__)
+    %return
+%endif
+
+__ECObjectsPolicy_mki__  = 1
+
+
+%include $(SharedMki)bsioutputdirs.mki
+
+buildDir            = $(OutECObjects)
+
+#-----------------------------------------------------------
+# BuildContext
+#-----------------------------------------------------------
+BuildContext   = $(OutBuildContexts)ECObjects/
+ContextDeliveryDir         = $(BuildContext)Delivery/
+
+# Give a name to some common locations in the BuildContext
+BuildContextPublicApiDir = $(BuildContext)PublicAPI/
+BuildContextPublishedApiDir            = $(BuildContext)Delivery/PublishedAPI/
+
+%if !defined (programName)
+    programName     = $(ASSEMBLY_NAME)
+%endif
+
+o = $(OutECObjects)$(programName)/
+
+always:
+    !~@mkdir $(o)
+
+# Including DefaultToolSet.mki is a noop if a toolset is already selected but, if not, it provides a default.
+#
+%include DefaultToolSet.mki
+
+%if exists ($(BuildContext)SubParts/mki/BentleyDlls.mki)
+    %include $(BuildContext)SubParts/mki/BentleyDlls.mki
+%endif
+
+ECNativeObjectsDllBase = ECObjects3
+ECNativeObjectsDllName = $(ECNativeObjectsDllBase).dll
+
+#-----------------------------------------------------------------------
+#       Source directories
+#-----------------------------------------------------------------------
+ecPublicAPISrc      = $(SrcRoot)ecobjects/PublicAPI/
+ecobjectsPublicAPISrc = $(ecPublicAPISrc)ECObjects/
+
+
+#-----------------------------------------------------------------------
+# Configure Google Test macros
+#-----------------------------------------------------------------------
+#The gtest mk* files (which we harvest as a subpart for our gtest builds) rely on this macro being defined
+GUnitTestDir        = $(BuildContext)SubParts/google_gtest/
+
+#-----------------------------------------------------------------------
+# Configure includes
+#-----------------------------------------------------------------------
+%include $(SharedMki)DefinePublicApiIncludes.mki
+#_PublicApiIncludes =% $(PublicApiIncludes)
+PublicApiIncludes = -I$(ecPublicAPISrc) -I${BuildContext}/PublicAPI/ -I${BuildContext}/VendorAPI/
+
+certDir = $(bsiCerts)

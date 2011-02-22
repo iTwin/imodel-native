@@ -1,13 +1,11 @@
 #----------------------------------------------------------------------------------------
 #
-#  $Source: ecobjects/nativeatp/buildTestFixture.mki $
+#  $Source: test/buildTestFixture.mki $
 #
-#  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 baseDir =   $(_MakeFilePath)
-
-ActiveBuildContextName = $(EcfTestBuildContextName)
 
 %include mdl.mki
 

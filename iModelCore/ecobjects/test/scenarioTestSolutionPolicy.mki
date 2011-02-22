@@ -1,8 +1,8 @@
 #----------------------------------------------------------------------------------------
 #
-#  $Source: ecobjects/nativeatp/scenarioTestSolutionPolicy.mki $
+#  $Source: test/scenarioTestSolutionPolicy.mki $
 #
-#  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -13,8 +13,6 @@ nameToDefine = COMPILING_SCENARIO_TESTS
 
 nameToDefine = USE_PUBLISHED_HEADERS
 %include cdefapnd.mki
-
-ActiveBuildContextName = $(EcfTestBuildContextName)
 
 # When the scenario tests build they will set USE_PUBLIC_SCENARIO_HEADERS which should make sure they
 # compile with the published headers and not the internal headers.  All other portions of the build will use

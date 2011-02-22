@@ -1,12 +1,10 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: ecobjects/nativeatp/BackDoor/BackDoor.mke $
+#     $Source: test/BackDoor/BackDoor.mke $
 #
-#  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-ActiveBuildContextName = $(EcfTestBuildContextName)
-
 %include mdl.mki
 %include $(SharedMki)bsioutputdirs.mki
 
@@ -15,7 +13,7 @@ name = ECObjectsTestBackDoor
 #--------------------------------------------------------------------------------------
 # Create out dir
 #--------------------------------------------------------------------------------------
-o = $(OutputRootDir)ECFramework/build/ECObjectsTest_BackDoor/
+o = $(OutECObjects)build/ECObjectsTest_BackDoor/
 always: 
     ~mkdir $(o)
 

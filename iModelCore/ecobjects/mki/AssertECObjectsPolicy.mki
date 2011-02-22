@@ -1,0 +1,16 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: mki/AssertECObjectsPolicy.mki $
+#
+#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+SrcECObjects=$(SrcRoot)ecobjects/
+
+##
+## Specify a policy layer for things built via bmake
+##
+SystemPolicyMki         = $(srcBsiCommon)sharedmki/InternalSystemPolicy.mki
+FoundationPolicyMki     = $(SrcRoot)ecobjects/mki/ECObjectsPolicy.mki
+
