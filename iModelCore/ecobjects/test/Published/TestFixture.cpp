@@ -10,7 +10,7 @@
 #include "ECObjectsTestPCH.h"
 #include "TestFixture.h"
 
-#if defined (COMPILING_PUBLISHED_TESTS) || defined (COMPILING_SCENARIO_TESTS)
+#if defined (COMPILING_PUBLISHED_TESTS)
    // Need to reach in and grab this header since it won't be part of the published API yet we still
    // need to utilize it in the published API tests
    #include <..\PublicApi\Logging\bentleylogging.h>

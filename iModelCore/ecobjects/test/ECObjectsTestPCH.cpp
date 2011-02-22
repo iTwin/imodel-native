@@ -1,13 +1,13 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/nativeatp/ECObjectsTestPCH.cpp $
+|     $Source: test/ECObjectsTestPCH.cpp $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
 
-#if !defined (COMPILING_PUBLISHED_TESTS) && !defined(COMPILING_NONPUBLISHED_TESTS) && !defined(COMPILING_SCENARIO_TESTS)
+#if !defined (COMPILING_PUBLISHED_TESTS) && !defined(COMPILING_NONPUBLISHED_TESTS)
     #error One of COMPILING_PUBLISHED_TESTS or COMPILING_NONPUBLISHED_TESTS must be defined when building ECObjects native tests.
 #endif
 
