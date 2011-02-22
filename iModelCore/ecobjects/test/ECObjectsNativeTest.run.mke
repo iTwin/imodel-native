@@ -10,6 +10,5 @@
 always:
      $(OutputRootDir)Product/ECObjectsTests/ECObjectsTest_Published.exe
      $(OutputRootDir)Product/ECObjectsTests/ECObjectsTest_NonPublished.exe
-	 $(OutputRootDir)Product/ECObjectsTests/ECObjectsTest_Scenario.exe
 
 

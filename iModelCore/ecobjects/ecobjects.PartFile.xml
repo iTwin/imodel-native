@@ -86,14 +86,6 @@
         </Bindings>
     </Part>
 
-    <Part Name="ECObjectsScenarioTests" BMakeFile="test\ScenarioTests.mke">
-        <SubPart PartName="ECObjectsTestsDependencies"/>
-        <SubPart PartName="PublishedApi"/>
-        <Bindings>
-            <Files ProductDirectoryName="ECObjectsTestExe">Delivery\ECObjectsTest_Scenario.exe</Files>
-        </Bindings>
-    </Part>
-
     <Part Name="ECObjectsNonPublishedTests" BMakeFile="test\NonPublishedTests.mke">
         <SubPart PartName="ECObjectsTestsDependencies"/>
         <Bindings>
@@ -104,7 +96,6 @@
     <Part Name="Tests">
         <SubPart PartName="ECObjectsPublishedTests" />
         <SubPart PartName="ECObjectsNonPublishedTests" />
-        <SubPart PartName="ECObjectsScenarioTests" />
     </Part>
 
     <Part Name="RunECObjectsTests" BMakeFile="test\ECObjectsNativeTest.run.mke">
