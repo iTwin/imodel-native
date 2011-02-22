@@ -159,7 +159,7 @@
 
     <ProductDirectoryList ListName="ECObjectsTested">
     </ProductDirectoryList>
-    <Product Name="ECObjectsTested">
+    <Product Name="ECObjectsTested" PrgOutputDir="ECObjects">
         <SubProduct ProductName="ECObjects" />
         <SubProduct ProductName="ECObjectsTests" />
         <SubPart PartName="RunECObjectsTests" />
