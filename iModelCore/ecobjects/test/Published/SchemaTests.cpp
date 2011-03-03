@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/nativeatp/Published/SchemaTests.cpp $
+|     $Source: test/Published/SchemaTests.cpp $
 |
 |  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -73,16 +73,16 @@ ECSchemaP   schema
     pProperty = pClass->GetPropertyP (L"PropertyDoesNotExistInClass");
     EXPECT_FALSE (pProperty);
 
-    pClass = schema->GetClassP(L"AccessCustomAttributes");
-    ASSERT_TRUE (pClass);
-    EXPECT_STREQ (L"AccessCustomAttributes", pClass->Name.c_str());    
-    EXPECT_STREQ (L"AccessCustomAttributes", pClass->DisplayLabel.c_str());
-    EXPECT_FALSE (pClass->IsDisplayLabelDefined);
-    EXPECT_STREQ (L"", pClass->Description.c_str());
-    EXPECT_FALSE (pClass->IsStruct);
-    EXPECT_TRUE (pClass->IsCustomAttributeClass);
-    EXPECT_FALSE (pClass->IsDomainClass);
-    EXPECT_FALSE (pClass->HasBaseClasses());
+    ECClassP customAttribClass = schema->GetClassP(L"AccessCustomAttributes");
+    ASSERT_TRUE (customAttribClass);
+    EXPECT_STREQ (L"AccessCustomAttributes", customAttribClass->Name.c_str());    
+    EXPECT_STREQ (L"AccessCustomAttributes", customAttribClass->DisplayLabel.c_str());
+    EXPECT_FALSE (customAttribClass->IsDisplayLabelDefined);
+    EXPECT_STREQ (L"", customAttribClass->Description.c_str());
+    EXPECT_FALSE (customAttribClass->IsStruct);
+    EXPECT_TRUE (customAttribClass->IsCustomAttributeClass);
+    EXPECT_FALSE (customAttribClass->IsDomainClass);
+    EXPECT_FALSE (customAttribClass->HasBaseClasses());
 
     pClass = schema->GetClassP(L"Struct1");
     ASSERT_TRUE (pClass);
@@ -140,6 +140,16 @@ ECSchemaP   schema
     EXPECT_STREQ (L"", pProperty->Description.c_str());
     EXPECT_EQ (pClass, &pProperty->Class);
     EXPECT_FALSE (pProperty->IsReadOnly);
+    
+    IECInstancePtr instance = pClass->GetCustomAttribute(*customAttribClass);
+    EXPECT_TRUE(instance.IsValid());
+
+    ECValue ecValue;
+    EXPECT_EQ (SUCCESS, instance->GetValue (ecValue, L"AccessLevel"));
+    EXPECT_EQ (4, ecValue.GetInteger());
+
+    EXPECT_EQ (SUCCESS, instance->GetValue (ecValue, L"Writeable"));
+    EXPECT_FALSE (ecValue.GetBoolean());
    
     for each (ECPropertyP pProperty in pClass->Properties)
         {
