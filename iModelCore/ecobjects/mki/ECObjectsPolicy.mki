@@ -51,7 +51,7 @@ ECNativeObjectsDllName = $(ECNativeObjectsDllBase).dll
 #-----------------------------------------------------------------------
 ecPublicAPISrc      = $(SrcRoot)ecobjects/PublicAPI/
 ecobjectsPublicAPISrc = $(ecPublicAPISrc)ECObjects/
-
+ecobjectsSrc        = $(SrcRoot)ecobjects/
 
 #-----------------------------------------------------------------------
 # Configure Google Test macros
