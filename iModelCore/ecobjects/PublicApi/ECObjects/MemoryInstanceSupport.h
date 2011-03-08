@@ -400,6 +400,8 @@ protected:
     ECOBJECTS_EXPORT ECObjectsStatus  AddNullArrayElementsAt (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, UInt32 insertCount);
     ECOBJECTS_EXPORT bwstring         InstanceDataToString (const wchar_t* indent, ClassLayoutCR classLayout) const;
     
+    virtual ~MemoryInstanceSupport () {}
+
     //! Sets the in-memory value of the array index of the specified property to be the struct value as held by v
     //! Since struct arrays support polymorphic values, we do not support storing the full struct value in the data section of the instance.  It must be externalized, therefore
     //! it is implementation specific and left to the implementation of the instance to store the value.  Before returning, the implementation should call into SetPrimitiveValueToMemory
