@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/native/ECSchema.cpp $
+|     $Source: src/ECSchema.cpp $
 |    $RCSfile: file.tpl,v $
 |   $Revision: 1.10 $
 |       $Date: 2005/11/07 15:38:45 $
@@ -40,10 +40,10 @@ ECSchema::ECSchema (bool hideFromLeakDetection)
 ECSchema::~ECSchema ()
     {
     // NEEDSWORK make sure everything is destroyed
-    ECObjectsLogger::Log()->debugv (L"~~~~ Destroying ECSchema: %s\n", GetName().c_str());
+    ECObjectsLogger::Log()->debugv (L"~~~~ Destroying ECSchema: %s", GetName().c_str());
     ClassMap::iterator          classIterator = m_classMap.begin();
     ClassMap::const_iterator    classEnd = m_classMap.end();        
-    ECObjectsLogger::Log()->debugv(L"     Freeing memory for %d classes\n", m_classMap.size());
+    ECObjectsLogger::Log()->debugv(L"     Freeing memory for %d classes", m_classMap.size());
     while (classIterator != classEnd)
         {
         ECClassP ecClass = classIterator->second;
@@ -81,9 +81,9 @@ ILeakDetector&  ECSchema::Debug_GetLeakDetector() { return g_leakDetector; }
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCP ECSchema::_GetContainerSchema() const
-	{
-	return this;
-	}
+        {
+        return this;
+        }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
@@ -331,7 +331,7 @@ ECOBJECTS_EXPORT bwstring ECSchema::GetFullSchemaName () const
     return fullName.str().c_str();
     }
 
-#define     ECSCHEMA_FULLNAME_FORMAT_EXPLANATION L" Format must be Name.MM.mm where Name is the schema name, MM is major version and mm is minor version.\n"
+#define     ECSCHEMA_FULLNAME_FORMAT_EXPLANATION L" Format must be Name.MM.mm where Name is the schema name, MM is major version and mm is minor version."
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -366,7 +366,7 @@ bwstring const&     fullName
     return ParseVersionString (versionMajor, versionMinor, firstDot+1);
     }
 
-#define     ECSCHEMA_FULLNAME_FORMAT_EXPLANATION L" Format must be Name.MM.mm where Name is the schema name, MM is major version and mm is minor version.\n"
+#define     ECSCHEMA_FULLNAME_FORMAT_EXPLANATION L" Format must be Name.MM.mm where Name is the schema name, MM is major version and mm is minor version."
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -410,7 +410,7 @@ bwstring ECSchema::FormatSchemaVersion (UInt32& versionMajor, UInt32& versionMin
     return bwstring (versionString);
     }
 
-#define     ECSCHEMA_VERSION_FORMAT_EXPLAINATION L" Format must be MM.mm where MM is major version and mm is minor version.\n"
+#define     ECSCHEMA_VERSION_FORMAT_EXPLAINATION L" Format must be MM.mm where MM is major version and mm is minor version."
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -802,9 +802,9 @@ ECSchemaDeserializationContextR     schemaContext
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
 
         if (NULL == pRelationshipClass)
-            ECObjectsLogger::Log()->tracev (L"    Created ECClass Stub: %s\n", pClass->Name.c_str());
+            ECObjectsLogger::Log()->tracev (L"    Created ECClass Stub: %s", pClass->Name.c_str());
         else
-            ECObjectsLogger::Log()->tracev (L"    Created Relationship ECClass Stub: %s\n", pClass->Name.c_str());
+            ECObjectsLogger::Log()->tracev (L"    Created Relationship ECClass Stub: %s", pClass->Name.c_str());
 
         classes.push_back (make_bpair (pClass, xmlNodePtr));
         }
@@ -864,7 +864,7 @@ ECSchemaDeserializationContextR schemaContext
 
         if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMAREF_NAME_ATTRIBUTE)))
             {
-            ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_NAME_ATTRIBUTE L" attribute\n", (const wchar_t *)xmlNodePtr->baseName);
+            ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_NAME_ATTRIBUTE L" attribute", (const wchar_t *)xmlNodePtr->baseName);
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
             
@@ -872,14 +872,14 @@ ECSchemaDeserializationContextR schemaContext
 
         if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMAREF_PREFIX_ATTRIBUTE)))
             {
-            ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_PREFIX_ATTRIBUTE L" attribute\n", (const wchar_t *)xmlNodePtr->baseName);
+            ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_PREFIX_ATTRIBUTE L" attribute", (const wchar_t *)xmlNodePtr->baseName);
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
         bwstring prefix = (const wchar_t*) attributePtr->text;
 
         if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMAREF_VERSION_ATTRIBUTE)))
             {
-            ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_VERSION_ATTRIBUTE L" attribute\n", (const wchar_t *)xmlNodePtr->baseName);
+            ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_VERSION_ATTRIBUTE L" attribute", (const wchar_t *)xmlNodePtr->baseName);
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
         bwstring versionString = (const wchar_t*) attributePtr->text;
@@ -1158,7 +1158,7 @@ ECSchemaDeserializationContextR     schemaContext
     MSXML2::IXMLDOMNodePtr xmlNodePtr = pXmlDoc.selectSingleNode (L"/" EC_NAMESPACE_PREFIX L":" EC_SCHEMA_ELEMENT);
     if (NULL == xmlNodePtr)
         {
-        ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: Missing a top-level " EC_SCHEMA_ELEMENT L" node in the " ECXML_URI_2_0 L" namespace\n");
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: Missing a top-level " EC_SCHEMA_ELEMENT L" node in the " ECXML_URI_2_0 L" namespace");
         return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
         }
     
@@ -1169,7 +1169,7 @@ ECSchemaDeserializationContextR     schemaContext
     // schemaName is a REQUIRED attribute in order to create the schema
     if ((NULL == nodeAttributesPtr) || (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMA_NAME_ATTRIBUTE))))
         {
-        ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: " EC_SCHEMA_ELEMENT L" element must contain a schemaName attribute\n");
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: " EC_SCHEMA_ELEMENT L" element must contain a schemaName attribute");
         return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
         }
 
@@ -1182,7 +1182,7 @@ ECSchemaDeserializationContextR     schemaContext
     if ((NULL == (versionAttributePtr = nodeAttributesPtr->getNamedItem (SCHEMA_VERSION_ATTRIBUTE))) ||
         SUCCESS != ParseVersionString (versionMajor, versionMinor, (const wchar_t *) versionAttributePtr->text))
         {
-        ECObjectsLogger::Log()->warningv (L"Invalid version attribute has been ignored while deserializing ECSchema '%s'.  The default version number %d.%d has been applied.\n", 
+        ECObjectsLogger::Log()->warningv (L"Invalid version attribute has been ignored while deserializing ECSchema '%s'.  The default version number %d.%d has been applied.", 
             (const wchar_t *)attributePtr->text, versionMajor, versionMinor);
         }
 
@@ -1481,7 +1481,7 @@ MSXML2::IXMLDOMDocument2& pXmlDoc
                 
             bwstring reason = pBReason;
                         
-            ECObjectsLogger::Log()->errorv (L"line %d, position %d parsing ECSchema file %s. %s\n", line, linePos, file.c_str(), reason.c_str());            
+            ECObjectsLogger::Log()->errorv (L"line %d, position %d parsing ECSchema file %s. %s", line, linePos, file.c_str(), reason.c_str());            
             return ERROR;
             }
         }
@@ -1515,9 +1515,9 @@ ECSchemaDeserializationContextR schemaContext
 
     status = ReadXml (schemaOut, xmlDocPtr, schemaContext);
     if (ECOBJECTS_STATUS_Success != status)
-        ECObjectsLogger::Log()->errorv (L"Failed to deserialize XML file: %s\n", ecSchemaXmlFile);
+        ECObjectsLogger::Log()->errorv (L"Failed to deserialize XML file: %s", ecSchemaXmlFile);
     else
-        ECObjectsLogger::Log()->infov (L"Native ECSchema Deserialized from file: fileName='%s', schemaName='%s.%d.%d' classCount='%d' address='0x%x'\n", 
+        ECObjectsLogger::Log()->infov (L"Native ECSchema Deserialized from file: fileName='%s', schemaName='%s.%d.%d' classCount='%d' address='0x%x'", 
             ecSchemaXmlFile, schemaOut->Name.c_str(), schemaOut->VersionMajor, schemaOut->VersionMinor, schemaOut->m_classMap.size(), schemaOut);        
     return status;
     }
@@ -1548,9 +1548,9 @@ ECSchemaDeserializationContextR schemaContext
 
     status = ReadXml (schemaOut, xmlDocPtr, schemaContext);
     if (ECOBJECTS_STATUS_Success != status)
-        ECObjectsLogger::Log()->errorv (L"Failed to deserialize XML from string: %s\n", ecSchemaXml);
+        ECObjectsLogger::Log()->errorv (L"Failed to deserialize XML from string: %s", ecSchemaXml);
     else
-        ECObjectsLogger::Log()->infov (L"Native ECSchema Deserialized from string: schemaName='%s.%d.%d' classCount='%d' schemaAddress='0x%x'\n stringAddress='0x%x'", 
+        ECObjectsLogger::Log()->infov (L"Native ECSchema Deserialized from string: schemaName='%s.%d.%d' classCount='%d' schemaAddress='0x%x' stringAddress='0x%x'", 
             schemaOut->Name.c_str(), schemaOut->VersionMajor, schemaOut->VersionMinor, schemaOut->m_classMap.size(), schemaOut, ecSchemaXml);
     return status;
     }
@@ -1613,7 +1613,7 @@ ECSchemaDeserializationContextR schemaContext
 
     status = ReadXml (schemaOut, xmlDocPtr, schemaContext);
     if (ECOBJECTS_STATUS_Success != status)
-        ECObjectsLogger::Log()->errorv (L"Failed to deserialize XML from stream\n");
+        ECObjectsLogger::Log()->errorv (L"Failed to deserialize XML from stream");
     return status;
     }
 
