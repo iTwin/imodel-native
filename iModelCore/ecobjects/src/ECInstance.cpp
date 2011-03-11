@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/native/ECInstance.cpp $
+|     $Source: src/ECInstance.cpp $
 |
 |   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -1396,6 +1396,8 @@ InstanceDeserializationStatus   ReadInstance (IECInstancePtr& ecInstance)
     // The Instance XML element starts with a node that has the name of the class of the instance.
     HRESULT         status;
     XmlNodeType     nodeType;
+    bool            nonComment = false;
+    bool            gotComment = false;
 
     while (S_OK == (status = m_xmlReader->Read (&nodeType)))
         {
@@ -1412,6 +1414,7 @@ InstanceDeserializationStatus   ReadInstance (IECInstancePtr& ecInstance)
                 {
                 ECClassCP       ecClass;
 
+                nonComment = true;
                 // the first Element tells us ECClass of the instance.
                 InstanceDeserializationStatus       ixrStatus;
                 if (INSTANCE_DESERIALIZATION_STATUS_Success != (ixrStatus = GetInstance (&ecClass, ecInstance)))
@@ -1421,11 +1424,21 @@ InstanceDeserializationStatus   ReadInstance (IECInstancePtr& ecInstance)
                 return ReadInstanceOrStructMembers (*ecClass, ecInstance.get(), NULL);
                 }
 
-            default:
-                // we can ignore the other types.
+            case XmlNodeType_Comment:
+                {
+                gotComment = true;
                 break;
+                }
+            default:
+                {
+                // we can ignore the other types.
+                nonComment = true;
+                break;
+                }
             }
         }
+    if (gotComment && !nonComment)
+        return INSTANCE_DESERIALIZATION_STATUS_CommentOnly;
 
     // should not get here.
     return TranslateStatus (status);
@@ -2882,17 +2895,29 @@ InstanceDeserializationStatus   IECInstance::ReadXmlFromStream (IECInstancePtr& 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   03/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+static InstanceDeserializationStatus   ReportStatus (InstanceDeserializationStatus status, const wchar_t* xmlString, IECInstancePtr& ecInstance)
+    {
+    if (INSTANCE_DESERIALIZATION_STATUS_Success != status)
+        ECObjectsLogger::Log()->errorv (L"Failed to deserialize instance from XML string. Status %d, string %s\n", status, xmlString);
+    else
+        ECObjectsLogger::Log()->infov (L"Native ECInstance of type %s deserialized from string", ecInstance.IsValid() ? ecInstance->GetClass().GetName() : L"Null");
+    return status;
+    }
+	
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceDeserializationStatus   IECInstance::ReadXmlFromString (IECInstancePtr& ecInstance, const wchar_t* xmlString, ECInstanceDeserializationContextR context)
     {
     CComPtr <IStream> stream;
     if (S_OK != ::CreateStreamOnHGlobal(NULL,TRUE,&stream))
-        return INSTANCE_DESERIALIZATION_STATUS_CantCreateStream;
+        return ReportStatus (INSTANCE_DESERIALIZATION_STATUS_CantCreateStream, xmlString, ecInstance);
 
     LARGE_INTEGER liPos = {0};
     if (S_OK != stream->Seek(liPos, STREAM_SEEK_SET, NULL))
-        return INSTANCE_DESERIALIZATION_STATUS_CantCreateStream;
+        return ReportStatus (INSTANCE_DESERIALIZATION_STATUS_CantCreateStream, xmlString, ecInstance);
 
     ULARGE_INTEGER uliSize = { 0 };
     stream->SetSize(uliSize);
@@ -2901,21 +2926,21 @@ InstanceDeserializationStatus   IECInstance::ReadXmlFromString (IECInstancePtr& 
     ULONG ulSize = (ULONG) wcslen(xmlString) * sizeof(wchar_t);
 
     if (S_OK != stream->Write(xmlString, ulSize, &bytesWritten))
-        return INSTANCE_DESERIALIZATION_STATUS_CantCreateStream;
+        return ReportStatus (INSTANCE_DESERIALIZATION_STATUS_CantCreateStream, xmlString, ecInstance);
 
     if (ulSize != bytesWritten)
-        return INSTANCE_DESERIALIZATION_STATUS_CantCreateStream;
+        return ReportStatus (INSTANCE_DESERIALIZATION_STATUS_CantCreateStream, xmlString, ecInstance);
 
     if (S_OK != stream->Seek(liPos, STREAM_SEEK_SET, NULL))
-        return INSTANCE_DESERIALIZATION_STATUS_CantCreateStream;
+        return ReportStatus (INSTANCE_DESERIALIZATION_STATUS_CantCreateStream, xmlString, ecInstance);
 
     InstanceXmlReader reader (context, stream);
 
     InstanceDeserializationStatus   status;
     if (INSTANCE_DESERIALIZATION_STATUS_Success != (status = reader.Init ()))
-        return status;
+        return ReportStatus (status, xmlString, ecInstance);
 
-    return reader.ReadInstance (ecInstance);
+    return ReportStatus (reader.ReadInstance (ecInstance), xmlString, ecInstance);
     }
 
 /*---------------------------------------------------------------------------------**//**
