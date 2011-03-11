@@ -56,7 +56,7 @@ protected:
     //! The MemoryECInstanceBase will take ownership of the memory
     ECOBJECTS_EXPORT MemoryECInstanceBase (byte * data, UInt32 size, bool allowWritingDirectlyToInstanceMemory);
     ECOBJECTS_EXPORT MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory);
-    ECOBJECTS_EXPORT ~MemoryECInstanceBase ();
+    ECOBJECTS_EXPORT virtual ~MemoryECInstanceBase ();
 
     ECOBJECTS_EXPORT virtual bool             _IsMemoryInitialized () const;
     ECOBJECTS_EXPORT virtual ECObjectsStatus  _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength);    
