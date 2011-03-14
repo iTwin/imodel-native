@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/native/ECCustomAttribute.cpp $
+|     $Source: src/ECCustomAttribute.cpp $
 |    $RCSfile: file.tpl,v $
 |   $Revision: 1.10 $
 |       $Date: 2005/11/07 15:38:45 $
@@ -201,14 +201,20 @@ IECInstanceR customAttributeInstance
     {
     ECClassCR classDefinition = customAttributeInstance.GetClass();
     if (!classDefinition.IsCustomAttributeClass)
+        {
+        assert (false);
         return ECOBJECTS_STATUS_NotCustomAttributeClass;
+        }
 
     // first need to verify that this custom attribute instance is from either the current schema or a referenced schema
     ECSchemaCP containerSchema = _GetContainerSchema();
     if (containerSchema != &(classDefinition.Schema))
         {
         if (!ECSchema::IsSchemaReferenced(*containerSchema, classDefinition.Schema))
+            {
+            assert (false);
             return ECOBJECTS_STATUS_SchemaNotFound;
+            }
         }
 
     // remove existing custom attributes with matching class
@@ -296,9 +302,10 @@ IStandaloneEnablerLocatorR standaloneEnablerLocator
 
             IECInstancePtr ptr;
             status = IECInstance::ReadXmlFromString(ptr, (const wchar_t*) instancePtr->Getxml(), *context);
-            if (INSTANCE_DESERIALIZATION_STATUS_Success != status)
+            if ( (INSTANCE_DESERIALIZATION_STATUS_Success != status) && (INSTANCE_DESERIALIZATION_STATUS_CommentOnly != status) )
                 return status;
-            SetCustomAttribute(*ptr);
+            if (ptr.IsValid())
+                SetCustomAttribute(*ptr);
             }
         }
     return status;

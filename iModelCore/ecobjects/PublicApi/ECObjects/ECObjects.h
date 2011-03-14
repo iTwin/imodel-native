@@ -202,6 +202,7 @@ enum InstanceDeserializationStatus
     INSTANCE_DESERIALIZATION_STATUS_CantSetValue                        = INSTANCE_DESERIALIZATION_STATUS_BASE + 41,
     INSTANCE_DESERIALIZATION_STATUS_ECSchemaNotFound                    = INSTANCE_DESERIALIZATION_STATUS_BASE + 42,
     INSTANCE_DESERIALIZATION_STATUS_UnableToGetStandaloneEnabler        = INSTANCE_DESERIALIZATION_STATUS_BASE + 43,
+    INSTANCE_DESERIALIZATION_STATUS_CommentOnly                         = INSTANCE_DESERIALIZATION_STATUS_BASE + 44,
     };
     
 /*=================================================================================**//**
