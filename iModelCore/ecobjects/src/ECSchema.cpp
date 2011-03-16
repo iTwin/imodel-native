@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/native/ECSchema.cpp $
+|     $Source: src/ECSchema.cpp $
 |    $RCSfile: file.tpl,v $
 |   $Revision: 1.10 $
 |       $Date: 2005/11/07 15:38:45 $
@@ -88,7 +88,7 @@ ECSchemaCP ECSchema::_GetContainerSchema() const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring const& ECSchema::GetName
+WString const& ECSchema::GetName
 (
 ) const
     {
@@ -100,7 +100,7 @@ bwstring const& ECSchema::GetName
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetName
 (
-bwstring const& name
+WString const& name
 )
     {        
     if (!NameValidator::Validate(name))
@@ -113,7 +113,7 @@ bwstring const& name
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring const& ECSchema::GetNamespacePrefix
+WString const& ECSchema::GetNamespacePrefix
 (
 ) const
     {        
@@ -125,7 +125,7 @@ bwstring const& ECSchema::GetNamespacePrefix
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetNamespacePrefix
 (
-bwstring const& namespacePrefix
+WString const& namespacePrefix
 )
     {        
     m_namespacePrefix = namespacePrefix;  
@@ -135,7 +135,7 @@ bwstring const& namespacePrefix
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring const& ECSchema::GetDescription
+WString const& ECSchema::GetDescription
 (
 ) const
     {
@@ -147,7 +147,7 @@ bwstring const& ECSchema::GetDescription
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetDescription
 (
-bwstring const& description
+WString const& description
 )
     {        
     m_description = description;
@@ -157,7 +157,7 @@ bwstring const& description
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring const& ECSchema::GetDisplayLabel
+WString const& ECSchema::GetDisplayLabel
 (
 ) const
     {
@@ -169,7 +169,7 @@ bwstring const& ECSchema::GetDisplayLabel
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetDisplayLabel
 (
-bwstring const& displayLabel
+WString const& displayLabel
 )
     {        
     m_displayLabel = displayLabel;
@@ -274,7 +274,7 @@ ECClassP&                 pClass
 ECObjectsStatus ECSchema::CreateClass 
 (
 ECClassP&                 pClass, 
-bwstring const&     name
+WString const&     name
 )
     {
     pClass = new ECClass(*this, m_hideFromLeakDetection);
@@ -295,7 +295,7 @@ bwstring const&     name
 ECObjectsStatus ECSchema::CreateRelationshipClass 
 (
 ECRelationshipClassP&     pClass, 
-bwstring const&     name
+WString const&     name
 )
     {
     pClass = new ECRelationshipClass(*this);
@@ -323,7 +323,7 @@ bwstring const&     name
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  11/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECOBJECTS_EXPORT bwstring ECSchema::GetFullSchemaName () const
+ECOBJECTS_EXPORT WString ECSchema::GetFullSchemaName () const
     {
     std::wostringstream fullName;
     fullName << Name.c_str() << L"." << std::setfill(L'0') << std::setw(2) << VersionMajor << L"." << std::setw(2) << VersionMinor;
@@ -337,10 +337,10 @@ ECOBJECTS_EXPORT bwstring ECSchema::GetFullSchemaName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::ParseSchemaFullName
 (
-bwstring&           schemaName,
+WString&           schemaName,
 UInt32&             versionMajor, 
 UInt32&             versionMinor, 
-bwstring const&     fullName
+WString const&     fullName
 )
     {
     if (fullName.empty())
@@ -372,7 +372,7 @@ bwstring const&     fullName
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::ParseSchemaFullName
 (
-bwstring&           schemaName,
+WString&           schemaName,
 UInt32&             versionMajor, 
 UInt32&             versionMinor, 
 const wchar_t*      fullName
@@ -403,11 +403,11 @@ const wchar_t*      fullName
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring ECSchema::FormatSchemaVersion (UInt32& versionMajor, UInt32& versionMinor)
+WString ECSchema::FormatSchemaVersion (UInt32& versionMajor, UInt32& versionMinor)
     {
     wchar_t versionString[80];
     swprintf (versionString, L"%02d.%02d", versionMajor, versionMinor);
-    return bwstring (versionString);
+    return WString (versionString);
     }
 
 #define     ECSCHEMA_VERSION_FORMAT_EXPLAINATION L" Format must be MM.mm where MM is major version and mm is minor version.\n"
@@ -520,7 +520,7 @@ UInt32          candidateMinor
 ECObjectsStatus ECSchema::CreateSchema
 (
 ECSchemaP&          schemaOut, 
-bwstring const&     schemaName,
+WString const&     schemaName,
 UInt32              versionMajor,
 UInt32              versionMinor,
 IECSchemaOwnerR     schemaOwner,
@@ -558,7 +558,7 @@ bool                hideFromLeakDetection
 ECObjectsStatus ECSchema::CreateSchema
 (
 ECSchemaP&          schemaOut, 
-bwstring const&     schemaName,
+WString const&     schemaName,
 UInt32              versionMajor,
 UInt32              versionMinor,
 IECSchemaOwnerR     schemaOwner
@@ -581,7 +581,7 @@ void    ECSchema::DestroySchema (ECSchemaP& schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP ECSchema::GetSchemaByNamespacePrefixP
 (
-bwstring const&     namespacePrefix
+WString const&     namespacePrefix
 ) const
     {
     if ((namespacePrefix.length() == 0) || (namespacePrefix == m_namespacePrefix))
@@ -604,14 +604,14 @@ bwstring const&     namespacePrefix
 ECObjectsStatus ECSchema::ResolveNamespacePrefix
 (
 ECSchemaCR    schema,
-bwstring &    namespacePrefix
+WString &    namespacePrefix
 ) const
     {
     namespacePrefix = EMPTY_STRING;
     if (&schema == this)
         return ECOBJECTS_STATUS_Success;
 
-    bmap<ECSchemaP, bwstring const>::const_iterator schemaIterator = m_referencedSchemaNamespaceMap.find((ECSchemaP) &schema);
+    bmap<ECSchemaP, WString const>::const_iterator schemaIterator = m_referencedSchemaNamespaceMap.find((ECSchemaP) &schema);
     if (schemaIterator != m_referencedSchemaNamespaceMap.end())
         {
         namespacePrefix = schemaIterator->second;
@@ -657,7 +657,7 @@ ECSchemaR       refSchema
         }
             
     m_refSchemaList.push_back(&refSchema);
-    m_referencedSchemaNamespaceMap.insert(bpair<ECSchemaP, const bwstring> (&refSchema, refSchema.NamespacePrefix));
+    m_referencedSchemaNamespaceMap.insert(bpair<ECSchemaP, const WString> (&refSchema, refSchema.NamespacePrefix));
     return ECOBJECTS_STATUS_Success;
     }
     
@@ -741,7 +741,7 @@ ECSchemaR       refSchema
         }
 
     m_refSchemaList.erase(schemaIterator); 
-    bmap<ECSchemaP, const bwstring>::iterator iterator = m_referencedSchemaNamespaceMap.find((ECSchemaP) &refSchema);
+    bmap<ECSchemaP, const WString>::iterator iterator = m_referencedSchemaNamespaceMap.find((ECSchemaP) &refSchema);
     if (iterator != m_referencedSchemaNamespaceMap.end())
         {
         m_referencedSchemaNamespaceMap.erase(iterator);
@@ -868,21 +868,21 @@ ECSchemaDeserializationContextR schemaContext
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
             
-        bwstring schemaName = (const wchar_t*) attributePtr->text;
+        WString schemaName = (const wchar_t*) attributePtr->text;
 
         if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMAREF_PREFIX_ATTRIBUTE)))
             {
             ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_PREFIX_ATTRIBUTE L" attribute\n", (const wchar_t *)xmlNodePtr->baseName);
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
-        bwstring prefix = (const wchar_t*) attributePtr->text;
+        WString prefix = (const wchar_t*) attributePtr->text;
 
         if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMAREF_VERSION_ATTRIBUTE)))
             {
             ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_VERSION_ATTRIBUTE L" attribute\n", (const wchar_t *)xmlNodePtr->baseName);
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
-        bwstring versionString = (const wchar_t*) attributePtr->text;
+        WString versionString = (const wchar_t*) attributePtr->text;
 
         UInt32 versionMajor;
         UInt32 versionMinor;
@@ -925,7 +925,7 @@ ECSchemaP IECSchemaLocator::LocateSchema(const wchar_t *name, UInt32& versionMaj
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP       ECSchema::LocateSchema
 (    
-const bwstring &                name,
+const WString &                name,
 UInt32&                         versionMajor,
 UInt32&                         versionMinor,
 ECSchemaDeserializationContextR schemaContext
@@ -1003,7 +1003,7 @@ static ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  11/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECObjectsStatus GetSchemaFileName (bwstring& fullFileName, wchar_t const* schemaPath, bool useLatestCompatibleMatch)
+static ECObjectsStatus GetSchemaFileName (WString& fullFileName, wchar_t const* schemaPath, bool useLatestCompatibleMatch)
     {
     ECFileNameIterator *fileList = new ECFileNameIterator(schemaPath);
     wchar_t filePath[MAX_PATH];
@@ -1049,7 +1049,7 @@ static ECObjectsStatus GetSchemaFileName (bwstring& fullFileName, wchar_t const*
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP       ECSchema::LocateSchemaByPath
 (
-const bwstring&                 name,
+const WString&                 name,
 UInt32&                         versionMajor,
 UInt32&                         versionMinor,
 ECSchemaDeserializationContextR schemaContext,
@@ -1063,9 +1063,9 @@ bool                            useLatestCompatibleMatch
     else
         swprintf(versionString, 24, L".%02d.%02d.ecschema.xml", versionMajor, versionMinor);
 
-    bwstring schemaName = name;
+    WString schemaName = name;
     schemaName += versionString;
-    bwstring fullFileName;
+    WString fullFileName;
 
     for each (WString schemaPath in schemaContext.GetSchemaPaths())
         {
@@ -1090,7 +1090,7 @@ bool                            useLatestCompatibleMatch
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP       ECSchema::LocateSchemaByPath
 (
-const bwstring&                 name,
+const WString&                 name,
 UInt32&                         versionMajor,
 UInt32&                         versionMinor,
 ECSchemaDeserializationContextR schemaContext
@@ -1104,7 +1104,7 @@ ECSchemaDeserializationContextR schemaContext
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP       ECSchema::LocateSchemaByStandardPaths
 (
-const bwstring &                name,
+const WString &                name,
 UInt32&                         versionMajor,
 UInt32&                         versionMinor,
 ECSchemaDeserializationContextR schemaContext
@@ -1116,7 +1116,7 @@ ECSchemaDeserializationContextR schemaContext
     // Clear out the stored paths and replace with the standard ones
     schemaContext.ClearSchemaPaths();
 
-    bwstring dllPath = ECFileUtilities::GetDllPath();
+    WString dllPath = ECFileUtilities::GetDllPath();
     if (0 == dllPath.length())
         return NULL;
         
@@ -1250,16 +1250,16 @@ SchemaSerializationStatus ECSchema::WriteSchemaReferences (MSXML2::IXMLDOMElemen
     SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
     ECSchemaReferenceList referencedSchemas = GetReferencedSchemas();
     
-    std::set<const bwstring> usedPrefixes;
-    std::set<const bwstring>::const_iterator setIterator;
+    std::set<const WString> usedPrefixes;
+    std::set<const WString>::const_iterator setIterator;
 
-    stdext::hash_map<ECSchemaP, const bwstring> localReferencedSchemaNamespaceMap;
+    stdext::hash_map<ECSchemaP, const WString> localReferencedSchemaNamespaceMap;
 
     ECSchemaReferenceList::const_iterator schemaIterator;
     for (schemaIterator = m_refSchemaList.begin(); schemaIterator != m_refSchemaList.end(); schemaIterator++)
         {
         ECSchemaP refSchema = *schemaIterator;
-        bwstring prefix(refSchema->NamespacePrefix);
+        WString prefix(refSchema->NamespacePrefix);
         if (prefix.length() == 0)
             prefix = L"s";
             
@@ -1271,7 +1271,7 @@ SchemaSerializationStatus ECSchema::WriteSchemaReferences (MSXML2::IXMLDOMElemen
                 {
                 wchar_t temp[256];
                 swprintf(temp, 256, L"%s%d", prefix.c_str(), subScript);
-                bwstring tryPrefix(temp);
+                WString tryPrefix(temp);
                 setIterator = usedPrefixes.find(tryPrefix);
                 if (setIterator == usedPrefixes.end())
                     {
@@ -1281,17 +1281,17 @@ SchemaSerializationStatus ECSchema::WriteSchemaReferences (MSXML2::IXMLDOMElemen
                 }
             }
         usedPrefixes.insert(prefix);
-        localReferencedSchemaNamespaceMap.insert(std::pair<ECSchemaP, const bwstring> (refSchema, prefix));
+        localReferencedSchemaNamespaceMap.insert(std::pair<ECSchemaP, const WString> (refSchema, prefix));
         }
 
     MSXML2::IXMLDOMTextPtr textPtr = NULL;
     MSXML2::IXMLDOMAttributePtr attributePtr;
     MSXML2::IXMLDOMElementPtr schemaPtr = NULL;
     
-    stdext::hash_map<ECSchemaP, const bwstring>::const_iterator iterator;
+    stdext::hash_map<ECSchemaP, const WString>::const_iterator iterator;
     for (iterator = localReferencedSchemaNamespaceMap.begin(); iterator != localReferencedSchemaNamespaceMap.end(); iterator++)
         {
-        std::pair<ECSchemaP, const bwstring> mapPair = *(iterator);
+        std::pair<ECSchemaP, const WString> mapPair = *(iterator);
         ECSchemaP refSchema = mapPair.first;
         schemaPtr = parentNode.ownerDocument->createNode(NODE_ELEMENT, EC_SCHEMAREFERENCE_ELEMENT, ECXML_URI_2_0);
         APPEND_CHILD_TO_PARENT(schemaPtr, (&parentNode));
@@ -1301,7 +1301,7 @@ SchemaSerializationStatus ECSchema::WriteSchemaReferences (MSXML2::IXMLDOMElemen
         wchar_t versionString[8];
         swprintf(versionString, 8, L"%02d.%02d", refSchema->VersionMajor, refSchema->VersionMinor);
         WRITE_XML_ATTRIBUTE(SCHEMAREF_VERSION_ATTRIBUTE, versionString, schemaPtr);
-        const bwstring prefix = mapPair.second;
+        const WString prefix = mapPair.second;
         WRITE_XML_ATTRIBUTE(SCHEMAREF_PREFIX_ATTRIBUTE, prefix.c_str(), schemaPtr);
         }
     return status;
@@ -1475,11 +1475,11 @@ MSXML2::IXMLDOMDocument2& pXmlDoc
             _bstr_t pBURL = pXMLError->Geturl();
             _bstr_t pBReason = pXMLError->Getreason();
 
-            bwstring file;
+            WString file;
             if (NULL != pBURL.GetBSTR())
                 file = pBURL;
                 
-            bwstring reason = pBReason;
+            WString reason = pBReason;
                         
             ECObjectsLogger::Log()->errorv (L"line %d, position %d parsing ECSchema file %s. %s\n", line, linePos, file.c_str(), reason.c_str());            
             return ERROR;
@@ -1620,7 +1620,7 @@ ECSchemaDeserializationContextR schemaContext
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus ECSchema::WriteXmlToString (bwstring& ecSchemaXml) const
+SchemaSerializationStatus ECSchema::WriteXmlToString (WString& ecSchemaXml) const
     {
     SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
 
@@ -1978,7 +1978,7 @@ ECClassP   ECClassContainer::const_iterator::operator*() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool NameValidator::Validate
 (
-const bwstring &name
+const WString &name
 ) 
     {
     if (name.empty())
@@ -1986,7 +1986,7 @@ const bwstring &name
     if (   L'0' <= name[0]
         && L'9' >= name[0])
         return false; 
-    for (bwstring::size_type index = 0; index != name.length(); ++index)
+    for (WString::size_type index = 0; index != name.length(); ++index)
         {
         if(    (L'a' > name[index] || L'z' < name[index]) 
             && (L'A' > name[index] || L'Z' < name[index])

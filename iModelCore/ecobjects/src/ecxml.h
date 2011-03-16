@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/native/ecxml.h $
+|     $Source: src/ecxml.h $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -64,25 +64,25 @@
 // If you add any additional ECXML typenames you must update 
 //    - enum PrimitiveType
 //    - PrimitiveECProperty::_GetTypeName
-static const bwstring ECXML_TYPENAME_BINARY             = L"binary";
-static const bwstring ECXML_TYPENAME_BOOLEAN            = L"boolean";
-static const bwstring ECXML_TYPENAME_BOOL               = L"bool";
-static const bwstring ECXML_TYPENAME_DATETIME           = L"dateTime";
-static const bwstring ECXML_TYPENAME_DOUBLE             = L"double";
-static const bwstring ECXML_TYPENAME_INTEGER            = L"int";
-static const bwstring ECXML_TYPENAME_LONG               = L"long";
-static const bwstring ECXML_TYPENAME_POINT2D            = L"point2d";
-static const bwstring ECXML_TYPENAME_POINT3D            = L"point3d";
-static const bwstring ECXML_TYPENAME_STRING             = L"string";
+static const WString ECXML_TYPENAME_BINARY             = L"binary";
+static const WString ECXML_TYPENAME_BOOLEAN            = L"boolean";
+static const WString ECXML_TYPENAME_BOOL               = L"bool";
+static const WString ECXML_TYPENAME_DATETIME           = L"dateTime";
+static const WString ECXML_TYPENAME_DOUBLE             = L"double";
+static const WString ECXML_TYPENAME_INTEGER            = L"int";
+static const WString ECXML_TYPENAME_LONG               = L"long";
+static const WString ECXML_TYPENAME_POINT2D            = L"point2d";
+static const WString ECXML_TYPENAME_POINT3D            = L"point3d";
+static const WString ECXML_TYPENAME_STRING             = L"string";
 
-static const bwstring EMPTY_STRING = L"";
+static const WString EMPTY_STRING = L"";
 
-static const bwstring ECXML_STRENGTH_REFERENCING        = L"referencing";
-static const bwstring ECXML_STRENGTH_HOLDING            = L"holding";
-static const bwstring ECXML_STRENGTH_EMBEDDING          = L"embedding";
+static const WString ECXML_STRENGTH_REFERENCING        = L"referencing";
+static const WString ECXML_STRENGTH_HOLDING            = L"holding";
+static const WString ECXML_STRENGTH_EMBEDDING          = L"embedding";
 
-static const bwstring ECXML_DIRECTION_FORWARD           = L"forward";
-static const bwstring ECXML_DIRECTION_BACKWARD          = L"backward";
+static const WString ECXML_DIRECTION_FORWARD           = L"forward";
+static const WString ECXML_DIRECTION_BACKWARD          = L"backward";
 
 #define READ_OPTIONAL_XML_ATTRIBUTE(_xmlAttributeName, _setInPointer, _setInPropertyName)   \
     if ((NULL != (attributePtr = nodeAttributesPtr->getNamedItem (_xmlAttributeName))) &&   \
@@ -153,13 +153,13 @@ struct ECXml abstract
 {
 public:
     static ECObjectsStatus ParseBooleanString(bool & booleanValue,const wchar_t * booleanString);
-    static bwstring const& GetPrimitiveTypeName (PrimitiveType primitiveType);
-    static ECObjectsStatus ParsePrimitiveType (PrimitiveType& primitiveType,bwstring const& typeName);
-    static bwstring const& StrengthToString (StrengthType strength);
-    static ECObjectsStatus ParseStrengthType (StrengthType& strength, bwstring const& strengthString);
-    static bwstring const& DirectionToString (ECRelatedInstanceDirection direction);
-    static ECObjectsStatus ParseDirectionString (ECRelatedInstanceDirection& direction, bwstring const& directionString);
-    static ECObjectsStatus ParseCardinalityString (UInt32& lowerLimit, UInt32& upperLimit, bwstring const& cardinalityString);
+    static WString const& GetPrimitiveTypeName (PrimitiveType primitiveType);
+    static ECObjectsStatus ParsePrimitiveType (PrimitiveType& primitiveType,WString const& typeName);
+    static WString const& StrengthToString (StrengthType strength);
+    static ECObjectsStatus ParseStrengthType (StrengthType& strength, WString const& strengthString);
+    static WString const& DirectionToString (ECRelatedInstanceDirection direction);
+    static ECObjectsStatus ParseDirectionString (ECRelatedInstanceDirection& direction, WString const& directionString);
+    static ECObjectsStatus ParseCardinalityString (UInt32& lowerLimit, UInt32& upperLimit, WString const& cardinalityString);
     static void FormatXml(MSXML2::IXMLDOMDocument2* pXmlDoc);
 };
 

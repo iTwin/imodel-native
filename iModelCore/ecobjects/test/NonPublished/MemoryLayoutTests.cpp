@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/nativeatp/NonPublished/MemoryLayoutTests.cpp $
+|     $Source: test/NonPublished/MemoryLayoutTests.cpp $
 |
 |  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -152,7 +152,7 @@ void VerifyOutOfBoundsError (IECInstanceR instance, ECValueR v, wchar_t const * 
 +---------------+---------------+---------------+---------------+---------------+------*/    
 void VerifyStringArray (IECInstanceR instance, ECValueR v, wchar_t const * accessString, wchar_t const * value, UInt32 start, UInt32 count)
     {
-    bwstring incrementingString = value;
+    WString incrementingString = value;
    
     for (UInt32 i=start ; i < start + count ; i++)        
         {
@@ -167,7 +167,7 @@ void VerifyStringArray (IECInstanceR instance, ECValueR v, wchar_t const * acces
 +---------------+---------------+---------------+---------------+---------------+------*/    
 void SetAndVerifyStringArray (IECInstanceR instance, ECValueR v, wchar_t const * accessString, wchar_t const * value, UInt32 count)
     {
-    bwstring incrementingString = value;
+    WString incrementingString = value;
     for (UInt32 i=0 ; i < count ; i++)        
         {
         incrementingString.append (L"X");
@@ -219,7 +219,7 @@ void VerifyIsNullArrayElements (IECInstanceR instance, ECValueR v, wchar_t const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor, const wchar_t* className)
+WString    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor, const wchar_t* className)
     {
     wchar_t fmt[] = L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                     L"<ECSchema schemaName=\"%s\" nameSpacePrefix=\"test\" version=\"%02d.%02d\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
@@ -380,7 +380,7 @@ bwstring    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versionMaj
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP       CreateTestSchema (ECSchemaCacheR schemaOwner)
     {
-    bwstring schemaXMLString = GetTestSchemaXMLString (L"TestSchema", 0, 0, L"TestClass");
+    WString schemaXMLString = GetTestSchemaXMLString (L"TestSchema", 0, 0, L"TestClass");
 
     EXPECT_EQ (S_OK, CoInitialize(NULL));  
 
@@ -393,8 +393,8 @@ ECSchemaP       CreateTestSchema (ECSchemaCacheR schemaOwner)
     return schema;
     }
     
-typedef std::vector<bwstring> NameVector;
-static std::vector<bwstring> s_propertyNames;
+typedef std::vector<WString> NameVector;
+static std::vector<WString> s_propertyNames;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen    01/10
@@ -404,7 +404,7 @@ ECSchemaP       CreateProfilingSchema (int nStrings, ECSchemaCacheR schemaOwner)
     EXPECT_EQ (S_OK, CoInitialize(NULL));  
     s_propertyNames.clear();
     
-    bwstring schemaXml = 
+    WString schemaXml = 
                     L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                     L"<ECSchema schemaName=\"ProfilingSchema\" nameSpacePrefix=\"p\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                     L"    <ECClass typeName=\"Pidget\" isDomainClass=\"True\">";
@@ -489,7 +489,7 @@ void ExerciseVariableCountStringArray (IECInstanceR instance, ECValue& v, wchar_
     VerifyStringArray           (instance, v, arrayAccessor, stringSeed, 0, 3);
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 3, 3, true);
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 6, 2, false);
-    bwstring stringSeedXXX(stringSeed);
+    WString stringSeedXXX(stringSeed);
     stringSeedXXX.append (L"XXX");
     VerifyStringArray           (instance, v, arrayAccessor, stringSeedXXX.c_str(), 6, 2);
     SetAndVerifyStringArray     (instance, v, arrayAccessor, stringSeed, 8);   
@@ -1003,7 +1003,7 @@ TEST_F(MemoryLayoutTests, InstantiateStandaloneInstance)
     StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str());
 
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
-    bwstring instanceId = instance->GetInstanceId();
+    WString instanceId = instance->GetInstanceId();
     // WIP_FUSION: should pass the string to the logger via a backdoor
     instance->ToString(L"").c_str();
     ExerciseInstance (*instance, L"Test");
@@ -1027,7 +1027,7 @@ TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
     StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str());
 
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
-    bwstring instanceId = instance->GetInstanceId();
+    WString instanceId = instance->GetInstanceId();
     UInt32 size = instance->GetBytesUsed ();
     EXPECT_EQ (size, UInt32(sizeof(InstanceHeader)));
 
@@ -1269,7 +1269,7 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     DPoint3d outPoint3 = pntVal3.GetPoint3D ();
     EXPECT_TRUE (pntVal3.IsPoint3D());
     EXPECT_TRUE (0 == memcmp(&inPoint3, &outPoint3, sizeof(outPoint3)));
-    bwstring point3Str = pntVal3.ToString();
+    WString point3Str = pntVal3.ToString();
     EXPECT_TRUE (0 == point3Str.compare (L"{10,100,1000}"));
 
     //DPoint2d
@@ -1278,7 +1278,7 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     EXPECT_TRUE (pntVal2.IsPoint2D());
     DPoint2d outPoint2 = pntVal2.GetPoint2D ();
     EXPECT_TRUE (0 == memcmp(&inPoint2, &outPoint2, sizeof(outPoint2)));
-    bwstring point2Str = pntVal2.ToString();
+    WString point2Str = pntVal2.ToString();
     EXPECT_TRUE (0 == point2Str.compare (L"{10,100}"));
 
     // DateTime
@@ -1291,7 +1291,7 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     EXPECT_TRUE (0 == memcmp(&nowtoo, &now, sizeof(nowtoo)));
     ECValue fixedDate;
     fixedDate.SetDateTimeTicks (634027121070910000);
-    bwstring dateStr = fixedDate.ToString();
+    WString dateStr = fixedDate.ToString();
     EXPECT_TRUE (0 == dateStr.compare (L"#2010/2/25-16:28:27:91#"));
 
     // WIP_FUSION - test array values

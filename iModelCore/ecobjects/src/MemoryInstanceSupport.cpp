@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/native/MemoryInstanceSupport.cpp $
+|     $Source: src/MemoryInstanceSupport.cpp $
 |
 |   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -113,9 +113,9 @@ static inline UInt32    CalculateFixedArrayPropertySize (UInt32 fixedCount, Prim
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring    PropertyLayout::ToString ()
+WString    PropertyLayout::ToString ()
     {    
-    bwstring typeName;
+    WString typeName;
     if ((m_typeDescriptor.IsPrimitive()) || (m_typeDescriptor.IsPrimitiveArray()))
         typeName = ECXml::GetPrimitiveTypeName (m_typeDescriptor.GetPrimitiveType());
     else
@@ -206,7 +206,7 @@ ILeakDetector&  ClassLayout::Debug_GetLeakDetector() { return g_classLayoutLeakD
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring        ClassLayout::GetShortDescription () const
+WString        ClassLayout::GetShortDescription () const
     {
     wchar_t line[1024];
     swprintf (line, _countof(line), L"ClassLayout for ECClassIndex=%i, ECClass.Name=%s", m_classIndex, m_className.c_str());
@@ -217,7 +217,7 @@ bwstring        ClassLayout::GetShortDescription () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring        ClassLayout::GetName () const
+WString        ClassLayout::GetName () const
     {
     return GetShortDescription();
     }
@@ -225,7 +225,7 @@ bwstring        ClassLayout::GetName () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring        ClassLayout::LogicalStructureToString (UInt32 parentStuctIndex, UInt32 indentLevel) const
+WString        ClassLayout::LogicalStructureToString (UInt32 parentStuctIndex, UInt32 indentLevel) const
     {
     LogicalStructureMap::const_iterator it = m_logicalStructureMap.find(parentStuctIndex);
 
@@ -265,7 +265,7 @@ bwstring        ClassLayout::LogicalStructureToString (UInt32 parentStuctIndex, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring        ClassLayout::ToString () const
+WString        ClassLayout::ToString () const
     {
     wostringstream oss;
 
@@ -446,7 +446,7 @@ ClassIndex      ClassLayout::GetClassIndex() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-bwstring const &  ClassLayout::GetECClassName() const
+WString const &  ClassLayout::GetECClassName() const
     {
     return m_className;
     }
@@ -523,7 +523,7 @@ void            ClassLayout::Factory::AddProperty (wchar_t const * accessString,
     // WIP_FUSION, for now all accessors of array property layouts are stored with the brackets appended.  This means all access to array values through an
     // IECInstance must include the brackets.  If you want to obtain an array element value then you specify an index.  If you want to obtain an array info value
     // then you do not specify an index.  I'd like to consider an update to this so if an access string does not include the [] then we always return the ArrayInfo value.
-    bwstring tempAccessString = accessString;
+    WString tempAccessString = accessString;
     if (typeDescriptor.IsArray())
         tempAccessString += L"[]";
 
@@ -609,10 +609,10 @@ void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, wchar_t 
 
     for each (ECPropertyP property in ecClass.GetProperties())
         {
-        bwstring    propName = property->GetName();
+        WString    propName = property->GetName();
         
         if (NULL != nameRoot)
-            propName = bwstring (nameRoot) + L"." + propName;
+            propName = WString (nameRoot) + L"." + propName;
 
         if (property->GetIsPrimitive())
             {
@@ -2010,7 +2010,7 @@ ECObjectsStatus       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR cla
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring        MemoryInstanceSupport::InstanceDataToString (const wchar_t* indent, ClassLayoutCR classLayout) const
+WString        MemoryInstanceSupport::InstanceDataToString (const wchar_t* indent, ClassLayoutCR classLayout) const
     {
     static bool s_skipDump = false;
     static int s_dumpCount = 0;
@@ -2062,7 +2062,7 @@ bwstring        MemoryInstanceSupport::InstanceDataToString (const wchar_t* inde
             
         ECValue v;
         GetValueFromMemory (v, *propertyLayout);
-        bwstring valueAsString = v.ToString();
+        WString valueAsString = v.ToString();
            
         if (propertyLayout->IsFixedSized())            
             appendFormattedString (oss, L"%s  [0x%x][%4.d] %s = %s\n", indent, address, offset, propertyLayout->GetAccessString(), valueAsString.c_str());
@@ -2092,7 +2092,7 @@ bwstring        MemoryInstanceSupport::InstanceDataToString (const wchar_t* inde
                         {
                         wchar_t temp[1024];
                         swprintf(temp, 1024, L"Error (%d) returned while obtaining array index value", status, i);
-                        valueAsString = bwstring (temp);
+                        valueAsString = WString (temp);
                         }
 
                     if (IsArrayOfFixedSizeElements (*propertyLayout))
@@ -2106,10 +2106,10 @@ bwstring        MemoryInstanceSupport::InstanceDataToString (const wchar_t* inde
                         }     
                     if ((ECOBJECTS_STATUS_Success == status) && (!v.IsNull()) && (v.IsStruct()))
                         {
-                        bwstring structIndent(indent);
+                        WString structIndent(indent);
                         structIndent.append (L"      ");
 
-                        bwstring structString = v.GetStruct()->ToString(structIndent.c_str());
+                        WString structString = v.GetStruct()->ToString(structIndent.c_str());
                         oss << structString;
 
                         appendFormattedString (oss, L"%s=================== END Struct Instance ===========================\n", structIndent);

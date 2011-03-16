@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/nativeatp/Published/StopWatch.h $
+|     $Source: test/Published/StopWatch.h $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 | Based on http://cplus.about.com/od/howtodothingsi2/a/timing.htm
 |
 +--------------------------------------------------------------------------------------*/
@@ -15,7 +15,7 @@ namespace Bentley {
 class StopWatch 
     {
 private:
-    bwstring       m_description;
+    WString       m_description;
     LARGE_INTEGER m_start;
     LARGE_INTEGER m_stop;
     LARGE_INTEGER m_frequency;
@@ -27,7 +27,7 @@ public:
     void         Start();
     void         Stop();
     double       GetElapsedSeconds();
-    bwstring GetDescription();
+    WString GetDescription();
     };
     
 } // Bentley

@@ -97,7 +97,7 @@ struct StandaloneECInstance : MemoryECInstanceBase, IECInstance
     {
 friend StandaloneECEnabler;
 private:
-    bwstring         m_instanceId;
+    WString         m_instanceId;
     StandaloneECEnablerP m_sharedWipEnabler; 
 
 private:
@@ -108,7 +108,7 @@ private:
     
 protected:
     // IECInstance
-    virtual bwstring            _GetInstanceId() const override;
+    virtual WString            _GetInstanceId() const override;
     virtual bool                _IsReadOnly() const override;        
     virtual ECObjectsStatus     _GetValue (ECValueR v, const wchar_t * propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const override;
     virtual ECObjectsStatus     _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
@@ -119,7 +119,7 @@ protected:
     virtual ECObjectsStatus     _AddArrayElements (const wchar_t * propertyAccessString, UInt32 size) override;
     virtual ECObjectsStatus     _RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index) override;
     virtual ECObjectsStatus     _ClearArray (const wchar_t * propertyAccessString) override;    
-    virtual bwstring            _ToString (const wchar_t* indent) const override;
+    virtual WString            _ToString (const wchar_t* indent) const override;
     virtual ClassLayoutCR       _GetClassLayout () const;
     virtual ECEnablerCR         _GetEnabler() const override;
     virtual MemoryECInstanceBase* _GetAsMemoryECInstance () const override;

@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/native/LeakDetector.h $
+|     $Source: src/LeakDetector.h $
 |
-|   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -111,7 +111,7 @@ virtual Int32   CheckForLeaks () const override
         OTYPE const*    leakedObject = leak.first;
         UInt32          orderOfAllocation = leak.second;
         
-        bwstring name = leakedObject->GetName();
+        WString name = leakedObject->GetName();
         
         ECObjectsLogger::Log()->errorv (L"Leaked the %dth %s that was allocated: %s", orderOfAllocation, m_singularTypeName.c_str(), name.c_str());
         }

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/native/ECClass.cpp $
+|     $Source: src/ECClass.cpp $
 |    $RCSfile: file.tpl,v $
 |   $Revision: 1.10 $
 |       $Date: 2005/11/07 15:38:45 $
@@ -60,7 +60,7 @@ ILeakDetector&  ECClass::Debug_GetLeakDetector() { return g_leakDetector; }
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring const& ECClass::GetName
+WString const& ECClass::GetName
 (
 ) const
     {        
@@ -72,7 +72,7 @@ bwstring const& ECClass::GetName
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::SetName
 (
-bwstring const& name
+WString const& name
 )
     {
     
@@ -86,7 +86,7 @@ bwstring const& name
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring const& ECClass::GetDescription
+WString const& ECClass::GetDescription
 (
 ) const
     {
@@ -98,7 +98,7 @@ bwstring const& ECClass::GetDescription
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::SetDescription
 (
-bwstring const& description
+WString const& description
 )
     {        
     m_description = description;
@@ -108,7 +108,7 @@ bwstring const& description
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring const& ECClass::GetDisplayLabel
+WString const& ECClass::GetDisplayLabel
 (
 ) const
     {
@@ -120,7 +120,7 @@ bwstring const& ECClass::GetDisplayLabel
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::SetDisplayLabel
 (
-bwstring const& displayLabel
+WString const& displayLabel
 )
     {        
     m_displayLabel = displayLabel;
@@ -329,7 +329,7 @@ wchar_t const* propertyName
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyP ECClass::GetPropertyP
 (
-bwstring const& propertyName
+WString const& propertyName
 ) const
     {
     return  GetPropertyP (propertyName.c_str());
@@ -361,7 +361,7 @@ ECPropertyCR newProperty
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::RemoveProperty
 (
-const bwstring &name
+const WString &name
 )
     {
     PropertyMap::iterator  propertyIterator;
@@ -396,7 +396,7 @@ const bwstring &name
 ECObjectsStatus ECClass::AddProperty
 (
 ECPropertyP ecProperty,
-const bwstring &name
+const WString &name
 )
     {
     ECObjectsStatus status = ecProperty->SetName (name);
@@ -411,7 +411,7 @@ const bwstring &name
 ECObjectsStatus ECClass::CreatePrimitiveProperty
 (
 PrimitiveECPropertyP &ecProperty, 
-const bwstring &name
+const WString &name
 )
     {
     ecProperty = new PrimitiveECProperty(*this, m_hideFromLeakDetection);
@@ -431,7 +431,7 @@ const bwstring &name
 ECObjectsStatus ECClass::CreatePrimitiveProperty
 (
 PrimitiveECPropertyP &ecProperty, 
-const bwstring &name,
+const WString &name,
 PrimitiveType primitiveType
 )
     {
@@ -452,7 +452,7 @@ PrimitiveType primitiveType
 ECObjectsStatus ECClass::CreateStructProperty
 (
 StructECPropertyP &ecProperty, 
-const bwstring &name
+const WString &name
 )
     {
     ecProperty = new StructECProperty(*this, m_hideFromLeakDetection);
@@ -472,7 +472,7 @@ const bwstring &name
 ECObjectsStatus ECClass::CreateStructProperty
 (
 StructECPropertyP &ecProperty, 
-const bwstring &name,
+const WString &name,
 ECClassCR structType
 )
     {
@@ -495,7 +495,7 @@ ECClassCR structType
 ECObjectsStatus ECClass::CreateArrayProperty
 (
 ArrayECPropertyP &ecProperty, 
-const bwstring &name
+const WString &name
 )
     {
     ecProperty = new ArrayECProperty(*this, m_hideFromLeakDetection);
@@ -515,7 +515,7 @@ const bwstring &name
 ECObjectsStatus ECClass::CreateArrayProperty
 (
 ArrayECPropertyP &ecProperty, 
-const bwstring &name,
+const WString &name,
 PrimitiveType primitiveType
 )
     {
@@ -537,7 +537,7 @@ PrimitiveType primitiveType
 ECObjectsStatus ECClass::CreateArrayProperty
 (
 ArrayECPropertyP &ecProperty, 
-const bwstring &name,
+const WString &name,
 ECClassCP structType
 )
     {
@@ -891,11 +891,11 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
     MSXML2::IXMLDOMNodePtr xmlNodePtr;
     while (NULL != (xmlNodePtr = xmlNodeListPtr->nextNode()))
         {        
-        bwstring qualifiedClassName = xmlNodePtr->text;
+        WString qualifiedClassName = xmlNodePtr->text;
         
         // Parse the potentially qualified class name into a namespace prefix and short class name
-        bwstring namespacePrefix;
-        bwstring className;
+        WString namespacePrefix;
+        WString className;
         if (ECOBJECTS_STATUS_Success != ECClass::ParseClassName (namespacePrefix, className, qualifiedClassName))
             {
             ECObjectsLogger::Log()->warningv (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the value '%s' that can not be parsed.", 
@@ -1023,9 +1023,9 @@ MSXML2::IXMLDOMElement& parentNode
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::ParseClassName 
 (
-bwstring & prefix, 
-bwstring & className, 
-bwstring const& qualifiedClassName
+WString & prefix, 
+WString & className, 
+WString const& qualifiedClassName
 )
     {
     if (0 == qualifiedClassName.length())
@@ -1034,8 +1034,8 @@ bwstring const& qualifiedClassName
         return ECOBJECTS_STATUS_ParseError;
         }
         
-    bwstring::size_type colonIndex = qualifiedClassName.find (':');
-    if (bwstring::npos == colonIndex)
+    WString::size_type colonIndex = qualifiedClassName.find (':');
+    if (WString::npos == colonIndex)
         {
         prefix.clear();
         className = qualifiedClassName;
@@ -1062,13 +1062,13 @@ bwstring const& qualifiedClassName
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring ECClass::GetQualifiedClassName
+WString ECClass::GetQualifiedClassName
 (
 ECSchemaCR primarySchema,
 ECClassCR  ecClass
 )
     {
-    bwstring namespacePrefix;
+    WString namespacePrefix;
     if (!EXPECTED_CONDITION (ECOBJECTS_STATUS_Success == primarySchema.ResolveNamespacePrefix (ecClass.Schema, namespacePrefix)))
         {
         ECObjectsLogger::Log()->warningv (L"warning: Can not qualify an ECClass name with a namespace prefix unless the schema containing the ECClass is referenced by the primary schema.\n"
@@ -1262,7 +1262,7 @@ bool RelationshipCardinality::IsUpperLimitUnbounded
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring RelationshipCardinality::ToString
+WString RelationshipCardinality::ToString
 (
 ) const
     {
@@ -1395,11 +1395,11 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
         MSXML2::IXMLDOMNamedNodeMapPtr constraintClassAttributesPtr = xmlNodePtr->attributes;
         if (NULL == (attributePtr = constraintClassAttributesPtr->getNamedItem(CONSTRAINTCLASSNAME_ATTRIBUTE)))
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
-        bwstring constraintClassName = attributePtr->text;  
+        WString constraintClassName = attributePtr->text;  
         
         // Parse the potentially qualified class name into a namespace prefix and short class name
-        bwstring namespacePrefix;
-        bwstring className;
+        WString namespacePrefix;
+        WString className;
         if (ECOBJECTS_STATUS_Success != ECClass::ParseClassName (namespacePrefix, className, constraintClassName))
             {
             ECObjectsLogger::Log()->warningv (L"Invalid ECSchemaXML: The ECRelationshipConstraint contains a " CONSTRAINTCLASSNAME_ATTRIBUTE L" attribute with the value '%s' that can not be parsed.", 
@@ -1437,7 +1437,7 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
 SchemaSerializationStatus ECRelationshipConstraint::WriteXml
 (
 MSXML2::IXMLDOMElement &parentNode, 
-const bwstring &elementName
+const WString &elementName
 ) const
     {
     SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
@@ -1675,7 +1675,7 @@ bool ECRelationshipConstraint::IsRoleLabelDefined
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring const ECRelationshipConstraint::GetRoleLabel
+WString const ECRelationshipConstraint::GetRoleLabel
 (
 ) const
     {
@@ -1692,7 +1692,7 @@ bwstring const ECRelationshipConstraint::GetRoleLabel
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipConstraint::SetRoleLabel
 (
-const bwstring value
+const WString value
 )
     {
     m_roleLabel = value;

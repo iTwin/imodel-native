@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/nativeatp/Published/StopWatch.cpp $
+|     $Source: test/Published/StopWatch.cpp $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 | Based on http://cplus.about.com/od/howtodothingsi2/a/timing.htm
 |
 +--------------------------------------------------------------------------------------*/
@@ -43,7 +43,7 @@ double StopWatch::GetElapsedSeconds()
     return ConvertLongIntegerToSeconds (time) ;
     }
 
-bwstring StopWatch::GetDescription()
+WString StopWatch::GetDescription()
     {
     return m_description;
     }    

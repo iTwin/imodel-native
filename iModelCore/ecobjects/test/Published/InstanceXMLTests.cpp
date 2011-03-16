@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/nativeatp/Published/InstanceXMLTests.cpp $
+|     $Source: test/Published/InstanceXMLTests.cpp $
 |
 |  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -391,7 +391,7 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingSimpleInstance
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
 
     // WIP_FUSION: should pass the string to the logger via a backdoor
-    bwstring str = testInstance->ToString(L"").c_str();
+    WString str = testInstance->ToString(L"").c_str();
     VerifyTestInstance (testInstance.get(), false);
     };
 
@@ -489,7 +489,7 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     testInstance->ToString(L"").c_str();
     VerifyTestInstance (testInstance.get(), false);
 
-    bwstring ecInstanceXml;
+    WString ecInstanceXml;
 
     InstanceSerializationStatus status2 = testInstance->WriteXmlToString(ecInstanceXml, true);
     EXPECT_EQ(INSTANCE_SERIALIZATION_STATUS_Success, status2);

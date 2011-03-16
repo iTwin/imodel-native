@@ -166,7 +166,7 @@ void    ECTestFixture::TestForIECInstanceLeaks ()
         sprintf (message, "TestForIECInstanceLeaks found that there are %d IECInstances still alive. Anything more than %d is flagged as an error!\n", 
             numLiveInstances, MAX_INTERNAL_INSTANCES);
 
-        std::vector<bwstring> classNamesToExclude;
+        std::vector<WString> classNamesToExclude;
         IECInstance::Debug_ReportLeaks (classNamesToExclude);
 
         EXPECT_TRUE (numLiveInstances <= MAX_INTERNAL_INSTANCES) << message;
@@ -174,12 +174,12 @@ void    ECTestFixture::TestForIECInstanceLeaks ()
 #endif
     }
 
-bwstring ECTestFixture::s_dllPath = L"";
+WString ECTestFixture::s_dllPath = L"";
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                08/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring ECTestFixture::GetDllPath()
+WString ECTestFixture::GetDllPath()
     {
     if (s_dllPath.empty())
         {
@@ -200,9 +200,9 @@ bwstring ECTestFixture::GetDllPath()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Carole.MacDonald 02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring ECTestFixture::GetTestDataPath(const wchar_t *dataFile)
+WString ECTestFixture::GetTestDataPath(const wchar_t *dataFile)
     {
-    bwstring testData(GetDllPath());
+    WString testData(GetDllPath());
     testData.append(L"SeedData\\");
     testData.append(dataFile);
     return testData;
@@ -211,7 +211,7 @@ bwstring ECTestFixture::GetTestDataPath(const wchar_t *dataFile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                08/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring ECTestFixture::GetWorkingDirectoryPath(const wchar_t *testFixture, const wchar_t *dataFile)
+WString ECTestFixture::GetWorkingDirectoryPath(const wchar_t *testFixture, const wchar_t *dataFile)
     {
     wchar_t path[_MAX_PATH];
 
@@ -220,7 +220,7 @@ bwstring ECTestFixture::GetWorkingDirectoryPath(const wchar_t *testFixture, cons
         GetEnvironmentVariableW(L"tmp", path, _MAX_PATH);
         }
 
-    bwstring filePath(path);
+    WString filePath(path);
     if (filePath.size() == 0)
         return filePath;
 
@@ -249,7 +249,7 @@ wchar_t *filepath,
 DWORD bufferSize
 )
     {
-    bwstring dllPath = GetDllPath();
+    WString dllPath = GetDllPath();
     if (0 == dllPath.length())
         return ERROR;
         
@@ -267,7 +267,7 @@ DWORD bufferSize
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Casey.Mullen                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring ECTestFixture::GetLogConfigurationFilename()
+WString ECTestFixture::GetLogConfigurationFilename()
     {
     wchar_t filepath[_MAX_PATH];
 

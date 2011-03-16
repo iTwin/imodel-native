@@ -48,7 +48,7 @@ struct PropertyLayout
     {
 friend ClassLayout;    
 private:
-    bwstring                m_accessString;        
+    WString                m_accessString;        
     UInt32                  m_parentStructIndex;
     ECTypeDescriptor        m_typeDescriptor;
     
@@ -79,7 +79,7 @@ public:
     //! Variable-sized types will have 4 byte SecondaryOffset stored in the fixed Section.
     UInt32                  GetSizeInFixedSection() const;
     
-    bwstring                ToString();
+    WString                ToString();
     };
 
 //#define USE_HASHMAP_IN_CLASSLAYOUT    
@@ -108,7 +108,7 @@ private:
     
     // These members are expected to be persisted  
     ClassIndex              m_classIndex; // Unique per some context, e.g. per DgnFile
-    bwstring                m_className;
+    WString                m_className;
     
     PropertyLayoutVector    m_propertyLayouts; // This is the primary collection, there is a secondary map for lookup by name, below.
     PropertyLayoutMap       m_propertyLayoutMap;
@@ -153,12 +153,12 @@ private:
 
     ClassLayout(SchemaIndex schemaIndex, bool hideFromLeakDetection);
 
-    bwstring                GetShortDescription() const;
-    bwstring                LogicalStructureToString (UInt32 parentStructIndex = 0, UInt32 indentLevel = 0) const;
+    WString                GetShortDescription() const;
+    WString                LogicalStructureToString (UInt32 parentStructIndex = 0, UInt32 indentLevel = 0) const;
 
 /*__PUBLISH_SECTION_END__*/
 public:    
-    bwstring                GetName() const;
+    WString                GetName() const;
     void                    AddPropertyLayout (wchar_t const * accessString, PropertyLayoutR);
     void                    AddToLogicalStructureMap (PropertyLayoutR propertyLayout, UInt32 propertyIndex);
 
@@ -175,7 +175,7 @@ public:
     ECOBJECTS_EXPORT static ClassLayoutP BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex, bool hideFromLeakDetection=false);
     ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (wchar_t const *  className, ClassIndex classIndex, SchemaIndex schemaIndex, bool hideFromLeakDetection=false);
 
-    ECOBJECTS_EXPORT bwstring const & GetECClassName() const;
+    ECOBJECTS_EXPORT WString const & GetECClassName() const;
     // These members are only meaningful in the context of a consumer like DgnHandlers.dll that actually handles persistence of ClassLayouts
     ECOBJECTS_EXPORT ClassIndex     GetClassIndex() const;
     ECOBJECTS_EXPORT SchemaIndex    GetSchemaIndex () const;
@@ -200,7 +200,7 @@ public:
     ECOBJECTS_EXPORT UInt32         CalculateBytesUsed(byte const * data) const;
     ECOBJECTS_EXPORT bool           IsCompatible(ClassLayoutCR layout) const;
 
-    ECOBJECTS_EXPORT bwstring       ToString() const;
+    ECOBJECTS_EXPORT WString       ToString() const;
     };
 
 typedef bvector<ClassLayoutCP>  ClassLayoutVector;
@@ -398,7 +398,7 @@ protected:
     ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ClassLayoutCR classLayout, UInt32 propertyIndex, ECValueCR v, bool useArrayIndex = false, UInt32 arrayIndex = 0);      
     ECOBJECTS_EXPORT ECObjectsStatus  InsertNullArrayElementsAt (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, UInt32 insertIndex, UInt32 insertCount);
     ECOBJECTS_EXPORT ECObjectsStatus  AddNullArrayElementsAt (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, UInt32 insertCount);
-    ECOBJECTS_EXPORT bwstring         InstanceDataToString (const wchar_t* indent, ClassLayoutCR classLayout) const;
+    ECOBJECTS_EXPORT WString         InstanceDataToString (const wchar_t* indent, ClassLayoutCR classLayout) const;
     
     virtual ~MemoryInstanceSupport () {}
 

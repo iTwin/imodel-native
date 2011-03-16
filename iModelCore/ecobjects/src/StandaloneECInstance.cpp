@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/native/StandaloneECInstance.cpp $
+|     $Source: src/StandaloneECInstance.cpp $
 |
 |   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -576,7 +576,7 @@ ECEnablerCR         StandaloneECInstance::_GetEnabler() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-bwstring        StandaloneECInstance::_GetInstanceId() const
+WString        StandaloneECInstance::_GetInstanceId() const
     {
     if (m_instanceId.size() == 0)
         {
@@ -684,7 +684,7 @@ ECObjectsStatus           StandaloneECInstance::_ClearArray (const wchar_t * pro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-bwstring        StandaloneECInstance::_ToString (const wchar_t* indent) const
+WString        StandaloneECInstance::_ToString (const wchar_t* indent) const
     {
     return InstanceDataToString (indent, GetClassLayout());
     }
