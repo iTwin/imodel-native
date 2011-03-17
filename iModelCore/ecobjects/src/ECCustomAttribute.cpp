@@ -381,7 +381,7 @@ MSXML2::IXMLDOMNode& newNode
         MSXML2::IXMLDOMNodePtr propertyPtr = newNode.ownerDocument->createNode(NODE_ELEMENT, xmlNodePtr->baseName, xmlNodePtr->namespaceURI);
         APPEND_CHILD_TO_PARENT(propertyPtr, (&newNode));
         MSXML2::IXMLDOMNodePtr childTextNodePtr = xmlNodePtr->firstChild;
-        bwstring nodeType = childTextNodePtr->nodeTypeString;
+        bwstring nodeType = childTextNodePtr->nodeTypeString.GetBSTR();
         if (0 == nodeType.compare(L"text"))
             propertyPtr->text = childTextNodePtr->text;
         AddCustomAttributeProperties(xmlNodePtr, propertyPtr);

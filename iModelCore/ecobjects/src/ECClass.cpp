@@ -891,7 +891,7 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
     MSXML2::IXMLDOMNodePtr xmlNodePtr;
     while (NULL != (xmlNodePtr = xmlNodeListPtr->nextNode()))
         {        
-        bwstring qualifiedClassName = xmlNodePtr->text;
+        bwstring qualifiedClassName = xmlNodePtr->text.GetBSTR();
         
         // Parse the potentially qualified class name into a namespace prefix and short class name
         bwstring namespacePrefix;
@@ -1395,7 +1395,7 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
         MSXML2::IXMLDOMNamedNodeMapPtr constraintClassAttributesPtr = xmlNodePtr->attributes;
         if (NULL == (attributePtr = constraintClassAttributesPtr->getNamedItem(CONSTRAINTCLASSNAME_ATTRIBUTE)))
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
-        bwstring constraintClassName = attributePtr->text;  
+        bwstring constraintClassName = attributePtr->text.GetBSTR();;  
         
         // Parse the potentially qualified class name into a namespace prefix and short class name
         bwstring namespacePrefix;

@@ -1479,7 +1479,7 @@ MSXML2::IXMLDOMDocument2& pXmlDoc
             if (NULL != pBURL.GetBSTR())
                 file = pBURL;
                 
-            bwstring reason = pBReason;
+            bwstring reason = pBReason.GetBSTR();
                         
             ECObjectsLogger::Log()->errorv (L"line %d, position %d parsing ECSchema file %s. %s", line, linePos, file.c_str(), reason.c_str());            
             return ERROR;

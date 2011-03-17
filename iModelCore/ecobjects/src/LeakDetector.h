@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/native/LeakDetector.h $
+|     $Source: src/LeakDetector.h $
 |
-|   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -55,6 +55,13 @@ LeakDetector (const wchar_t* singular, const wchar_t* plural, bool buildMap)
     :
     m_singularTypeName (singular), m_pluralTypeName (plural), m_buildMap (buildMap),
     m_totalAllocs(0), m_totalFrees(0), m_currentLive(0)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     CaroleMacDonald  03/11
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual ~LeakDetector()
     {
     }
 
