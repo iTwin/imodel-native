@@ -39,6 +39,9 @@ always:
 #
 %include DefaultToolSet.mki
 
+# All warnings on
+WARNINGS_UP=1
+
 %if exists ($(BuildContext)SubParts/mki/BentleyDlls.mki)
     %include $(BuildContext)SubParts/mki/BentleyDlls.mki
 %endif
