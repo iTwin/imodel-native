@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/nativeatp/Published/InstanceXMLTests.cpp $
+|     $Source: test/Published/InstanceXMLTests.cpp $
 |
 |  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -447,7 +447,8 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     VerifyTestInstance (testInstance.get(), false);
 
     LPSTREAM stream = NULL;
-    HRESULT res = ::CreateStreamOnHGlobal(NULL,TRUE,&stream);
+    //HRESULT res = ::CreateStreamOnHGlobal(NULL,TRUE,&stream);
+    ::CreateStreamOnHGlobal(NULL,TRUE,&stream);
 
     InstanceSerializationStatus status2 = testInstance->WriteXmlToStream(stream, true);
     EXPECT_EQ(INSTANCE_SERIALIZATION_STATUS_Success, status2);

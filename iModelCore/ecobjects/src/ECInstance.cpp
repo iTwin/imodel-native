@@ -131,8 +131,8 @@ IECInstance::IECInstance()
     g_debugInstanceLeakMap[this] = g_totalAllocs; // record this so we know if it was the 1st, 2nd allocation
 #endif
 
-    size_t sizeofInstance = sizeof(IECInstance);
-    size_t sizeofVoid = sizeof (void*);
+    //size_t sizeofInstance = sizeof(IECInstance);
+    //size_t sizeofVoid = sizeof (void*);
     
     assert (sizeof(IECInstance) == sizeof (RefCountedBase) && L"Increasing the size or memory layout of the base EC::IECInstance will adversely affect subclasses. Think of this as a pure interface... to which you would never be able to add (additional) data, either");
     };    
@@ -774,7 +774,6 @@ static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar
         if (arrayInfo.IsStructArray())
             {
             ECClassCR    ecClass     = instance.GetClass();
-            ECSchemaCR   ecSchema    = ecClass.Schema;
 
             ECPropertyP  prop = ecClass.GetPropertyP (asBuffer);
             if (!prop->IsArray)

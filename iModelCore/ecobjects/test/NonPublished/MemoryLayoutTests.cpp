@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/nativeatp/NonPublished/MemoryLayoutTests.cpp $
+|     $Source: test/NonPublished/MemoryLayoutTests.cpp $
 |
 |  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -621,7 +621,7 @@ void ExerciseVariableCountManufacturerArray (IECInstanceR instance, StandaloneEC
 void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     {   
     ECValue v;    
-    StatusInt status = instance.GetValue (v, L"D");
+    instance.GetValue (v, L"D");
     
     double doubleValue = 1.0/3.0;
     SetAndVerifyDouble (instance, v, L"D", doubleValue);
@@ -644,7 +644,7 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     for (int i = 0; i < 20; i++)
         wcscat (largeString, L"S2345678901234567890123456789012");
     
-    size_t len = wcslen(largeString);
+    //size_t len = wcslen(largeString);
     SetAndVerifyString (instance, v, L"S", largeString);
     
     for (int i = 0; i < N_FINAL_STRING_PROPS_IN_FAKE_CLASS; i++)
@@ -1255,7 +1255,6 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     ECValue snull((wchar_t*)NULL);
     EXPECT_TRUE (snull.IsString());
     EXPECT_TRUE (snull.IsNull());
-    wchar_t const * wcnull = snull.GetString();
     EXPECT_EQ (NULL, s.GetString());
     
     //bool
@@ -1285,7 +1284,7 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     SystemTime now = SystemTime::GetLocalTime();
     ECValue dateValue (now);
     SystemTime nowUTC = SystemTime::GetSystemTime();
-    Int64 ticks = dateValue.GetDateTimeTicks ();
+    dateValue.GetDateTimeTicks ();
     EXPECT_TRUE (dateValue.IsDateTime());
     SystemTime nowtoo = dateValue.GetDateTime ();
     EXPECT_TRUE (0 == memcmp(&nowtoo, &now, sizeof(nowtoo)));
@@ -1373,7 +1372,6 @@ TEST_F (MemoryLayoutTests, ProfileSettingValues)
     StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str());
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     
-    UInt32 slack = 0;
     double elapsedSeconds = 0.0;
     StopWatch timer (L"Time setting of values in a new StandaloneECInstance", true);
     for (int i = 0; i < nInstances; i++)

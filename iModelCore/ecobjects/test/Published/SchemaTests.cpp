@@ -723,7 +723,8 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingStream)
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);    
     LPSTREAM stream = NULL;
-    HRESULT res = ::CreateStreamOnHGlobal(NULL,TRUE,&stream);
+    //HRESULT res = ::CreateStreamOnHGlobal(NULL,TRUE,&stream);
+    ::CreateStreamOnHGlobal(NULL,TRUE,&stream);
 
     SchemaSerializationStatus status2 = schema->WriteXmlToStream(stream);
     EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status2);
