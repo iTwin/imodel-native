@@ -134,7 +134,7 @@ protected:
 /*__PUBLISH_SECTION_START__*/
 protected:
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const;
-    virtual ECSchemaCP			_GetContainerSchema() const {return NULL;};
+    virtual ECSchemaCP                  _GetContainerSchema() const {return NULL;};
 
 public:
     ECOBJECTS_EXPORT virtual ~IECCustomAttributeContainer();
@@ -249,7 +249,7 @@ protected:
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const abstract;
 
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
-    virtual ECSchemaCP			_GetContainerSchema() const override;
+    virtual ECSchemaCP                  _GetContainerSchema() const override;
 
     virtual PrimitiveECProperty*        _GetAsPrimitiveECProperty() {return NULL;}
     
@@ -364,8 +364,8 @@ private:
     ArrayECProperty (ECClassCR ecClass, bool hideFromLeakDetection)
         : m_primitiveType(PRIMITIVETYPE_String), m_arrayKind (ARRAYKIND_Primitive),
           m_minOccurs (0), m_maxOccurs (UINT_MAX), ECProperty(ecClass, hideFromLeakDetection) {};
-    ECObjectsStatus SetMinOccurs (WString const& minOccurs);          
-    ECObjectsStatus SetMaxOccurs (WString const& maxOccurs);          
+    ECObjectsStatus                     SetMinOccurs (WString const& minOccurs);          
+    ECObjectsStatus                     SetMaxOccurs (WString const& maxOccurs);          
 
 protected:
     virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode, IStandaloneEnablerLocatorR  standaloneEnablerLocator) override;
@@ -472,12 +472,12 @@ private:
     PropertyMap                     m_propertyMap;
     PropertyList                    m_propertyList;    
     
-    ECObjectsStatus                 AddProperty (ECPropertyP& pProperty);
-    ECObjectsStatus                 AddProperty (ECPropertyP pProperty, WString const& name);
+    ECObjectsStatus AddProperty (ECPropertyP& pProperty);
+    ECObjectsStatus AddProperty (ECPropertyP pProperty, WString const& name);
     
-    static bool CheckBaseClassCycles(ECClassCP currentBaseClass, const void * arg);
-    static bool AddUniquePropertiesToList(ECClassCP crrentBaseClass, const void * arg);
-    bool TraverseBaseClasses(TraversalDelegate traverseMethod, bool recursive, const void * arg) const;
+    static bool     CheckBaseClassCycles(ECClassCP currentBaseClass, const void * arg);
+    static bool     AddUniquePropertiesToList(ECClassCP crrentBaseClass, const void * arg);
+    bool            TraverseBaseClasses(TraversalDelegate traverseMethod, bool recursive, const void * arg) const;
     ECOBJECTS_EXPORT ECObjectsStatus GetProperties(bool includeBaseProperties, PropertyList* propertyList) const;
 
     ECObjectsStatus CanPropertyBeOverridden(ECPropertyCR baseProperty, ECPropertyCR newProperty) const;
@@ -530,7 +530,7 @@ public:
     
     //! Returns pointer to ECRelationshipClassP,  used to avoid dynamic_cast.
     //! @return     Returns NULL if not an ECRelationshipClass
-    ECOBJECTS_EXPORT     virtual ECRelationshipClassCP         GetRelationshipClassCP () const {return NULL;}  // used to avoid dynamic_cast
+    ECOBJECTS_EXPORT virtual ECRelationshipClassCP GetRelationshipClassCP () const {return NULL;}  // used to avoid dynamic_cast
 
     //! Returns a list of properties for this class.
     //! @param[in]  includeBaseProperties If true, then will return properties that are contained in this class's base class(es)
@@ -623,7 +623,7 @@ public:
     //! Given two ECClass's, checks to see if they are equal by name
     //! @param[in]  currentBaseClass    The source class to check against
     //! @param[in]  arg                 The target to compare to (this parameter must be an ECClassP)
-    ECOBJECTS_EXPORT static bool ClassesAreEqualByName(ECClassCP currentBaseClass, const void * arg);
+    ECOBJECTS_EXPORT static bool    ClassesAreEqualByName(ECClassCP currentBaseClass, const void * arg);
 
    
 }; // ECClass
@@ -687,7 +687,7 @@ public:
     EXPORTED_READONLY_PROPERTY  (UInt32, UpperLimit);
     
     //! Indicates if the cardinality is unbound (ie, upper limit is equal to "n")
-    ECOBJECTS_EXPORT bool IsUpperLimitUnbounded() const;
+    ECOBJECTS_EXPORT bool     IsUpperLimitUnbounded() const;
     
     //! Converts the cardinality to a string, for example "(0,n)", "(1,1)"
     ECOBJECTS_EXPORT WString ToString() const;
@@ -715,16 +715,16 @@ private:
     // to support implicit relationships.  For now, just support explicit relationships
 //    stdext::hash_map<ECClassCP, ECRelationshipConstrainClassCP> m_constraintClasses;
 
-    ECConstraintClassesList        m_constraintClasses;
+    ECConstraintClassesList     m_constraintClasses;
     
-    WString                    m_roleLabel;
+    WString                     m_roleLabel;
     bool                        m_isPolymorphic;
     bool                        m_isMultiple;
     RelationshipCardinality*    m_cardinality;
     ECRelationshipClassP        m_relClass;
     
-    ECObjectsStatus SetCardinality(const wchar_t *cardinality);
-    ECObjectsStatus SetCardinality(UInt32& lowerLimit, UInt32& upperLimit);
+    ECObjectsStatus             SetCardinality(const wchar_t *cardinality);
+    ECObjectsStatus             SetCardinality(UInt32& lowerLimit, UInt32& upperLimit);
    
     SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode, WString const& elementName) const;
     SchemaDeserializationStatus ReadXml(MSXML2_IXMLDOMNode& constraintNode, IStandaloneEnablerLocatorR  standaloneEnablerLocator);
@@ -732,7 +732,7 @@ private:
     virtual ~ECRelationshipConstraint();
     
 protected:
-    virtual ECSchemaCP					_GetContainerSchema() const override;
+    virtual ECSchemaCP          _GetContainerSchema() const override;
   
 public:
     //! Initializes a new instance of the ECRelationshipConstraint class.
@@ -985,11 +985,11 @@ protected:
     ECOBJECTS_EXPORT virtual ECSchemaP       _LocateSchema (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType);
     
     // IStandaloneEnablerLocator
-    ECOBJECTS_EXPORT virtual    StandaloneECEnablerPtr  _ObtainStandaloneInstanceEnabler (const wchar_t* schemaName, const wchar_t* className);
+    ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr _ObtainStandaloneInstanceEnabler (const wchar_t* schemaName, const wchar_t* className);
 
 /*__PUBLISH_SECTION_START__*/
 public:
-    ECOBJECTS_EXPORT static  ECSchemaCachePtr    Create ();
+    ECOBJECTS_EXPORT static  ECSchemaCachePtr Create ();
 };
 
 //=======================================================================================
@@ -1098,7 +1098,7 @@ public:
     //! @param[in]  schema     The schema to lookup a namespace prefix in the context of this schema and its references.
     //! @param[out] namespacePrefix The namespace prefix if schema is a referenced schema; empty string if the sechema is the current schema;    
     //! @return   Success if the schema is either the current schema or a referenced schema;  ECOBJECTS_STATUS_SchemaNotFound if the schema is not found in the list of referenced schemas
-    ECOBJECTS_EXPORT ECObjectsStatus ResolveNamespacePrefix(ECSchemaCR schema, WString & namespacePrefix) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    ResolveNamespacePrefix(ECSchemaCR schema, WString & namespacePrefix) const;
 
     //! Get a class by name within the context of this schema.
     //! @param[in]  name     The name of the class to lookup.  This must be an unqualified (short) class name.    
@@ -1114,11 +1114,11 @@ public:
     //! It is necessary to add any ECSchema as a referenced schema that will be used when adding a base
     //! class from a different schema, or custom attributes from a different schema.
     //! @param[in]  refSchema   The schema to add as a referenced schema
-    ECOBJECTS_EXPORT ECObjectsStatus AddReferencedSchema(ECSchemaR refSchema);
+    ECOBJECTS_EXPORT ECObjectsStatus            AddReferencedSchema(ECSchemaR refSchema);
     
     //! Removes an ECSchema from the list of referenced schemas
     //! @param[in]  refSchema   The schema that should be removed from the list of referenced schemas
-    ECOBJECTS_EXPORT ECObjectsStatus RemoveReferencedSchema(ECSchemaR refSchema);
+    ECOBJECTS_EXPORT ECObjectsStatus            RemoveReferencedSchema(ECSchemaR refSchema);
 
     //! Serializes an ECXML schema to a string
     //! Xml Serialization utilizes MSXML through COM. <b>Any thread calling this method must therefore be certain to initialize and
@@ -1126,7 +1126,7 @@ public:
     //! @param[out] ecSchemaXml     The string containing the Xml of the serialized schema
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml
     //          will contain the serialized schema.  Otherwise, ecSchemaXml will be unmodified
-    ECOBJECTS_EXPORT SchemaSerializationStatus          WriteXmlToString (WString & ecSchemaXml) const;
+    ECOBJECTS_EXPORT SchemaSerializationStatus  WriteXmlToString (WString & ecSchemaXml) const;
     
     //! Serializes an ECXML schema to a file
     //! Xml Serialization utilizes MSXML through COM. <b>Any thread calling this method must therefore be certain to initialize and
@@ -1134,7 +1134,7 @@ public:
     //! @param[in]  ecSchemaXmlFile  The absolute path of the file to serialize the schema to
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the file pointed
     //          to by ecSchemaXmlFile will contain the serialized schema.  Otherwise, the file will be unmodified
-    ECOBJECTS_EXPORT SchemaSerializationStatus          WriteXmlToFile (const wchar_t * ecSchemaXmlFile);
+    ECOBJECTS_EXPORT SchemaSerializationStatus  WriteXmlToFile (const wchar_t * ecSchemaXmlFile);
     
     
     //! Serializes an ECXML schema to an IStream
@@ -1143,11 +1143,11 @@ public:
     //! @param[in]  ecSchemaXmlStream   The IStream to write the serialized XML to
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the IStream
     //! will contain the serialized schema.
-    ECOBJECTS_EXPORT SchemaSerializationStatus WriteXmlToStream (IStreamP ecSchemaXmlStream);
+    ECOBJECTS_EXPORT SchemaSerializationStatus  WriteXmlToStream (IStreamP ecSchemaXmlStream);
     
     
     //! Return full schema name in format Name.MM.mm where Name is the schema name, MM is major version and mm is minor version.
-    ECOBJECTS_EXPORT WString GetFullSchemaName () const;
+    ECOBJECTS_EXPORT WString               GetFullSchemaName () const;
 
     // ************************************************************************************************************************
     // ************************************  STATIC METHODS *******************************************************************
@@ -1179,7 +1179,7 @@ public:
     //! @param[in]  versionMajor    The major version number
     //! @param[in] versionMinor    The minor version number
     //! @return The version string
-    ECOBJECTS_EXPORT static WString FormatSchemaVersion (UInt32& versionMajor, UInt32& versionMinor);
+    ECOBJECTS_EXPORT static WString        FormatSchemaVersion (UInt32& versionMajor, UInt32& versionMinor);
 
     //! Given a version string MM.NN, this will parse other major and minor versions
     //! @param[out] schemaName      The schema name without version number qualifiers
@@ -1221,12 +1221,12 @@ public:
     //! @param[in]    thisSchema            The base schema to check the references of
     //! @param[in]    thatSchema            The schema to search for
     //! @return True if thatSchema is referenced by thisSchema, false otherwise
-    ECOBJECTS_EXPORT static bool IsSchemaReferenced (ECSchemaCR thisSchema, ECSchemaCR thatSchema);
+    ECOBJECTS_EXPORT static bool                        IsSchemaReferenced (ECSchemaCR thisSchema, ECSchemaCR thatSchema);
 
     //! Compare two schemas and returns true if the schema pointers are equal or the names and version of the schemas are the same 
     //! @param[out]   thisSchema           Pointer to schema
     //! @param[out]   thatSchema           Pointer to schema
-    ECOBJECTS_EXPORT static bool SchemasAreEqualByName (ECSchemaCP thisSchema, ECSchemaCP thatSchema);
+    ECOBJECTS_EXPORT static bool                        SchemasAreEqualByName (ECSchemaCP thisSchema, ECSchemaCP thatSchema);
 
     //! Deserializes an ECXML schema from a file.
     //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and

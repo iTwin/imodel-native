@@ -38,8 +38,8 @@ ECClass::ECClass (ECSchemaCR schema, bool hideFromLeakDetection)
 ECClass::~ECClass ()
     {
     // NEEDSWORK make sure everything is destroyed
-    ECObjectsLogger::Log()->tracev (L"~~~~ Destroying ECClass %s\n", this->Name.c_str());
-    ECObjectsLogger::Log()->tracev  (L"     Freeing memory for %d properties\n", m_propertyMap.size());
+    ECObjectsLogger::Log()->tracev (L"~~~~ Destroying ECClass %s", this->Name.c_str());
+    ECObjectsLogger::Log()->tracev  (L"     Freeing memory for %d properties", m_propertyMap.size());
     
     m_propertyList.clear();
     
@@ -171,7 +171,7 @@ const wchar_t * isStruct
 
     ECObjectsStatus status = ECXml::ParseBooleanString (m_isStruct, isStruct);
     if (ECOBJECTS_STATUS_Success != status)
-        ECObjectsLogger::Log()->warningv  (L"Failed to parse the isStruct string '%s' for ECClass '%s'.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE L"\n", isStruct, this->Name.c_str());
+        ECObjectsLogger::Log()->warningv  (L"Failed to parse the isStruct string '%s' for ECClass '%s'.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE , isStruct, this->Name.c_str());
         
     return status;
     }
@@ -210,7 +210,7 @@ const wchar_t * isCustomAttributeClass
 
     ECObjectsStatus status = ECXml::ParseBooleanString (m_isCustomAttributeClass, isCustomAttributeClass);
     if (ECOBJECTS_STATUS_Success != status)
-        ECObjectsLogger::Log()->warningv  (L"Failed to parse the isCustomAttributeClass string '%s' for ECClass '%s'.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE L"\n", isCustomAttributeClass, this->Name.c_str());
+        ECObjectsLogger::Log()->warningv  (L"Failed to parse the isCustomAttributeClass string '%s' for ECClass '%s'.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE , isCustomAttributeClass, this->Name.c_str());
         
     return status;
     }
@@ -249,7 +249,7 @@ const wchar_t * isDomainClass
 
     ECObjectsStatus status = ECXml::ParseBooleanString (m_isDomainClass, isDomainClass);
     if (ECOBJECTS_STATUS_Success != status)
-        ECObjectsLogger::Log()->warningv  (L"Failed to parse the isDomainClass string '%s' for ECClass '%s'.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE L"\n", isDomainClass, this->Name.c_str());
+        ECObjectsLogger::Log()->warningv  (L"Failed to parse the isDomainClass string '%s' for ECClass '%s'.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE, isDomainClass, this->Name.c_str());
         
     return status;
     }
@@ -936,21 +936,21 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
             pProperty = new StructECProperty (*this, m_hideFromLeakDetection);
         else
             {
-            ECObjectsLogger::Log()->warningv (L"Invalid ECSchemaXML: Unknown property type '%s' of ECClass '%s' in the ECSchema '%s'\n", xmlNodePtr->baseName, this->Name.c_str(), this->Schema.Name.c_str());
+            ECObjectsLogger::Log()->warningv (L"Invalid ECSchemaXML: Unknown property type '%s' of ECClass '%s' in the ECSchema '%s'", xmlNodePtr->baseName, this->Name.c_str(), this->Schema.Name.c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
 
         SchemaDeserializationStatus status = pProperty->_ReadXml(xmlNodePtr, standaloneEnablerLocator);
         if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
             {
-            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to deserialize properties of ECClass '%s' in the ECSchema '%s'\n", this->Name.c_str(), this->Schema.Name.c_str());                
+            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to deserialize properties of ECClass '%s' in the ECSchema '%s'", this->Name.c_str(), this->Schema.Name.c_str());                
             delete pProperty;
             return status;
             }
         
         if (ECOBJECTS_STATUS_Success != this->AddProperty (pProperty))
             {
-            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to deserialize ECClass '%s' in the ECSchema '%s' because a problem occurred while adding ECProperty '%s'\n", 
+            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to deserialize ECClass '%s' in the ECSchema '%s' because a problem occurred while adding ECProperty '%s'", 
                 this->Name.c_str(), this->Schema.Name.c_str(), pProperty->Name.c_str());
             delete pProperty;
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
@@ -1071,8 +1071,8 @@ ECClassCR  ecClass
     WString namespacePrefix;
     if (!EXPECTED_CONDITION (ECOBJECTS_STATUS_Success == primarySchema.ResolveNamespacePrefix (ecClass.Schema, namespacePrefix)))
         {
-        ECObjectsLogger::Log()->warningv (L"warning: Can not qualify an ECClass name with a namespace prefix unless the schema containing the ECClass is referenced by the primary schema.\n"
-            L"The class name will remain unqualified.\n  Primary ECSchema: %s\n  ECClass: %s\n ECSchema containing ECClass: %s\n", primarySchema.Name.c_str(), ecClass.Name.c_str(), ecClass.Schema.Name.c_str());
+        ECObjectsLogger::Log()->warningv (L"warning: Can not qualify an ECClass name with a namespace prefix unless the schema containing the ECClass is referenced by the primary schema."
+            L"The class name will remain unqualified.\n  Primary ECSchema: %s\n  ECClass: %s\n ECSchema containing ECClass: %s", primarySchema.Name.c_str(), ecClass.Name.c_str(), ecClass.Schema.Name.c_str());
         return ecClass.Name;
         }
     if (namespacePrefix.empty())
@@ -1590,7 +1590,7 @@ const wchar_t *isPolymorphic
 
     ECObjectsStatus status = ECXml::ParseBooleanString (m_isPolymorphic, isPolymorphic);
     if (ECOBJECTS_STATUS_Success != status)
-        ECObjectsLogger::Log()->warningv  (L"Failed to parse the isPolymorphic string '%s' for ECRelationshipConstraint.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE L"\n", isPolymorphic);
+        ECObjectsLogger::Log()->warningv  (L"Failed to parse the isPolymorphic string '%s' for ECRelationshipConstraint.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE , isPolymorphic);
         
     return status;
     }
@@ -1653,7 +1653,7 @@ const wchar_t *cardinality
     ECObjectsStatus status = ECXml::ParseCardinalityString(lowerLimit, upperLimit, cardinality);
     if (ECOBJECTS_STATUS_Success != status)
         {
-        ECObjectsLogger::Log()->errorv (L"Failed to parse the RelationshipCardinality string '%s'.\n", cardinality);
+        ECObjectsLogger::Log()->errorv (L"Failed to parse the RelationshipCardinality string '%s'.", cardinality);
         return ECOBJECTS_STATUS_ParseError;
         }
     else
@@ -1756,7 +1756,7 @@ const wchar_t *strength
     StrengthType strengthType;
     ECObjectsStatus status = ECXml::ParseStrengthType(strengthType, strength);
     if (ECOBJECTS_STATUS_Success != status)
-        ECObjectsLogger::Log()->errorv (L"Failed to parse the Strength string '%s' for ECRelationshipClass '%s'.\n", strength, this->Name.c_str());
+        ECObjectsLogger::Log()->errorv (L"Failed to parse the Strength string '%s' for ECRelationshipClass '%s'.", strength, this->Name.c_str());
     else
         SetStrength (strengthType);
         
@@ -1798,7 +1798,7 @@ const wchar_t *directionString
     ECRelatedInstanceDirection direction;
     ECObjectsStatus status = ECXml::ParseDirectionString(direction, directionString);
     if (ECOBJECTS_STATUS_Success != status)
-        ECObjectsLogger::Log()->errorv (L"Failed to parse the ECRelatedInstanceDirection string '%s' for ECRelationshipClass '%s'.\n", directionString, this->Name.c_str());
+        ECObjectsLogger::Log()->errorv (L"Failed to parse the ECRelatedInstanceDirection string '%s' for ECRelationshipClass '%s'.", directionString, this->Name.c_str());
     else
         SetStrengthDirection (direction);
         
