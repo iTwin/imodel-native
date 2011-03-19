@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/nativeatp/Published/CustomAttributeTests.cpp $
+|     $Source: test/Published/CustomAttributeTests.cpp $
 |
 |  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -66,6 +66,7 @@ IECInstancePtr GetInstanceForClass(const wchar_t *className, ECSchemaR schema, E
     return instance;
     }
 
+#ifdef NDEBUG // avoid assert eccustomattribute.cpp line 205 stopping build
 TEST_F(CustomAttributeTest, ExpectFailureWhenSetNonCustomAttributeClass)
     {
     ECSchemaCachePtr  schemaOwner = ECSchemaCache::Create();
@@ -77,6 +78,7 @@ TEST_F(CustomAttributeTest, ExpectFailureWhenSetNonCustomAttributeClass)
     IECInstancePtr instance = GetInstanceForClass(L"BaseClass", *schema, *schemaOwner);
     EXPECT_EQ(ECOBJECTS_STATUS_NotCustomAttributeClass, containerClass->SetCustomAttribute(*instance));
     }
+#endif
 
 TEST_F(CustomAttributeTest, CanAddSingleCustomAttribute)
     {
@@ -281,6 +283,7 @@ TEST_F(CustomAttributeTest, ExpectCanRemoveCustomAttribute)
 
     }
 
+#ifdef NDEBUG // avoid assert eccustomattribute.cpp line 205 stopping build
 TEST_F(CustomAttributeTest, ExpectFailureWithUnreferencedCustomAttribute)
     {
     ECSchemaCachePtr  schemaOwner = ECSchemaCache::Create();
@@ -301,7 +304,7 @@ TEST_F(CustomAttributeTest, ExpectFailureWithUnreferencedCustomAttribute)
     EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, containerClass->SetCustomAttribute(*instance));
     schema->AddReferencedSchema(*refSchema);
     EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
-
     }
+#endif
 
 END_BENTLEY_EC_NAMESPACE
