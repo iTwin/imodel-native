@@ -16,7 +16,7 @@ double StopWatch::ConvertLongIntegerToSeconds(LARGE_INTEGER & L)
     return ((double)L.QuadPart / (double)m_frequency.QuadPart) ;
     }
 
-StopWatch::StopWatch(wchar_t * description, bool startImmediately) : m_description (description)
+StopWatch::StopWatch(WCharP description, bool startImmediately) : m_description (description)
     {
     m_start.QuadPart=0;
     m_stop.QuadPart=0; 

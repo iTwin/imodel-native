@@ -24,7 +24,7 @@ struct  Struct1
 struct  Struct2
     {
     bool            struct2StringMemberNull;
-    const wchar_t*  struct2StringMember;
+    WCharCP  struct2StringMember;
     bool            struct2DoubleMemberNull;
     double          struct2DoubleMember;
     Struct1*        nestedArray;

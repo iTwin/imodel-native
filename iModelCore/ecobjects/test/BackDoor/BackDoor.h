@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/nativeatp/BackDoor/BackDoor.h $
+|     $Source: test/BackDoor/BackDoor.h $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -19,7 +19,7 @@ struct          ILeakDetector
 {
 virtual void    GetStats(Int32& currentLive, Int32& totalAllocs, Int32& totalFrees) const = 0;
 virtual void    ResetStats() = 0;
-virtual void    ReportStats (const wchar_t* prefix) const = 0;
+virtual void    ReportStats (WCharCP prefix) const = 0;
 virtual Int32   CheckForLeaks () const = 0;
 };
 END_BENTLEY_EC_NAMESPACE

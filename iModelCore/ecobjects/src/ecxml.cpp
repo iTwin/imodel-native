@@ -19,7 +19,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 ECObjectsStatus ECXml::ParseBooleanString
 (
 bool & booleanValue,
-const wchar_t * booleanString
+WCharCP booleanString
 )
     {
     if (0 == wcsicmp (booleanString, ECXML_TRUE))
@@ -35,7 +35,7 @@ const wchar_t * booleanString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString const& ECXml::GetPrimitiveTypeName
+WStringCR ECXml::GetPrimitiveTypeName
 (
 PrimitiveType primitiveType
 )
@@ -71,7 +71,7 @@ PrimitiveType primitiveType
 ECObjectsStatus ECXml::ParsePrimitiveType
 (
 PrimitiveType&          primitiveType,
-WString const&     typeName
+WStringCR     typeName
 )
     {
     if (0 == typeName.length())
@@ -106,7 +106,7 @@ WString const&     typeName
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString const& ECXml::StrengthToString
+WStringCR ECXml::StrengthToString
 (
 StrengthType strength
 )
@@ -131,7 +131,7 @@ StrengthType strength
 ECObjectsStatus ECXml::ParseStrengthType
 (
 StrengthType&          strength,
-WString const&    strengthString
+WStringCR    strengthString
 )
     {
     if (0 == strengthString.length())
@@ -151,7 +151,7 @@ WString const&    strengthString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString const& ECXml::DirectionToString
+WStringCR ECXml::DirectionToString
 (
 ECRelatedInstanceDirection direction
 )
@@ -173,7 +173,7 @@ ECRelatedInstanceDirection direction
 ECObjectsStatus ECXml::ParseDirectionString
 (
 ECRelatedInstanceDirection& direction,
-WString const&         directionString
+WStringCR         directionString
 )
     {
     if (0 == directionString.length())

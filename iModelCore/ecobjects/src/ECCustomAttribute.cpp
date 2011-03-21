@@ -74,7 +74,7 @@ ECCustomAttributeCollection& returnList
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IECCustomAttributeContainer::IsDefined
 (
-WString const& className
+WStringCR className
 ) 
     {
     ECCustomAttributeCollection::const_iterator iter;
@@ -127,7 +127,7 @@ ECClassCR classDefinition
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstancePtr IECCustomAttributeContainer::GetCustomAttribute
 (
-WString const& className
+WStringCR className
 ) const
     {
     IECInstancePtr result;
@@ -238,7 +238,7 @@ IECInstanceR customAttributeInstance
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IECCustomAttributeContainer::RemoveCustomAttribute
 (
-WString const& className
+WStringCR className
 )
     {
     ECCustomAttributeCollection::iterator iter;
@@ -301,7 +301,7 @@ IStandaloneEnablerLocatorR standaloneEnablerLocator
             ECInstanceDeserializationContextPtr context = ECInstanceDeserializationContext::CreateContext (schema, standaloneEnablerLocator);
 
             IECInstancePtr ptr;
-            status = IECInstance::ReadXmlFromString(ptr, (const wchar_t*) instancePtr->Getxml(), *context);
+            status = IECInstance::ReadXmlFromString(ptr, (WCharCP) instancePtr->Getxml(), *context);
             if ( (INSTANCE_DESERIALIZATION_STATUS_Success != status) && (INSTANCE_DESERIALIZATION_STATUS_CommentOnly != status) )
                 return status;
             if (ptr.IsValid())

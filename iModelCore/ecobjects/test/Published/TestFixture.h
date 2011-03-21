@@ -16,7 +16,7 @@ private:
     static WString s_dllPath;
     static WString GetDllPath();
     WString GetLogConfigurationFilename();
-    BentleyStatus CheckProcessDirectory(wchar_t *filepath, DWORD bufferSize);
+    BentleyStatus CheckProcessDirectory(WCharP filepath, DWORD bufferSize);
 
 protected:
     ECTestFixture(void);
@@ -31,8 +31,8 @@ public:
     void    TestForECSchemaLeaks ();
     void    TestForIECInstanceLeaks ();
 
-    static WString GetTestDataPath(const wchar_t *fileName);
-    static WString GetWorkingDirectoryPath(const wchar_t *testFixture, const wchar_t *fileName);
+    static WString GetTestDataPath(WCharCP fileName);
+    static WString GetWorkingDirectoryPath(WCharCP testFixture, WCharCP fileName);
     };
 
 END_BENTLEY_EC_NAMESPACE

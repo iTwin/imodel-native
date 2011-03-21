@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/DesignByContract.h $
 |
-|  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -66,7 +66,7 @@ public:
 
 
 //! Avoid direct use of this function.  It is only intended for use by macros defined in this file.
-ECOBJECTS_EXPORT void LogFailureMessage (const wchar_t * message, ...);
+ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
 
 //! Avoid direct use of this macro.  It is only intended for use by other macros defined in this file.
 #define LOG_ASSERT_RETURN(_Expression, _ErrorStatus, _LogMessage, ...)           \

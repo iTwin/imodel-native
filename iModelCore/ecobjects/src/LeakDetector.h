@@ -51,7 +51,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-LeakDetector (const wchar_t* singular, const wchar_t* plural, bool buildMap)
+LeakDetector (WCharCP singular, WCharCP plural, bool buildMap)
     :
     m_singularTypeName (singular), m_pluralTypeName (plural), m_buildMap (buildMap),
     m_totalAllocs(0), m_totalFrees(0), m_currentLive(0)
@@ -95,7 +95,7 @@ virtual void    ResetStats() override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void    ReportStats (const wchar_t* prefix) const override
+virtual void    ReportStats (WCharCP prefix) const override
     {
     if (!prefix)
         prefix = L"";

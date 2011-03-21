@@ -11,7 +11,7 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-ECFileNameIterator::ECFileNameIterator (const wchar_t * path)
+ECFileNameIterator::ECFileNameIterator (WCharCP path)
     {
     m_valid = true;
     m_findHandle = ::FindFirstFileW (path, &m_findData);
@@ -24,7 +24,7 @@ ECFileNameIterator::~ECFileNameIterator ()
         ::FindClose (m_findHandle);
     }
     
-BentleyStatus ECFileNameIterator::GetNextFileName (wchar_t * name)
+BentleyStatus ECFileNameIterator::GetNextFileName (WCharP name)
     {
     if (INVALID_HANDLE_VALUE == m_findHandle || !m_valid)
         return  ERROR;

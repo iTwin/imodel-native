@@ -358,7 +358,7 @@ void            ECValue::FreeMemory ()
         {
         case PRIMITIVETYPE_String:
             if ((m_stringInfo.m_freeWhenDone) && (m_stringInfo.m_string != NULL))
-                free (const_cast<wchar_t *>(m_stringInfo.m_string));
+                free (const_cast<WCharP>(m_stringInfo.m_string));
             return;
 
         case PRIMITIVETYPE_Binary:
@@ -529,7 +529,7 @@ ECValue::ECValue (SystemTime& time)
 * EC::ECValue holds the original pointer. Intended only for use when initializing arrays of strings, to avoid duplicating them twice.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (const wchar_t * string, bool holdADuplicate)
+ECValue::ECValue (WCharCP string, bool holdADuplicate)
     {
     ConstructUninitialized();
     SetString (string, holdADuplicate);
@@ -806,7 +806,7 @@ BentleyStatus       ECValue::SetPoint3D (DPoint3dCR value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-const wchar_t * ECValue::GetString() const
+WCharCP ECValue::GetString() const
     {
     PRECONDITION (IsString() && "Tried to get string value from an EC::ECValue that is not a string.", L"<Programmer Error: Attempted to get string value from EC::ECValue that is not a string.>");
     return m_stringInfo.m_string;
@@ -817,7 +817,7 @@ const wchar_t * ECValue::GetString() const
 *                               EC::ECValue holds the original pointer
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECValue::SetString (const wchar_t * string, bool holdADuplicate)
+BentleyStatus ECValue::SetString (WCharCP string, bool holdADuplicate)
     {
     Clear();
         
@@ -1254,7 +1254,7 @@ void                                            ECValueAccessor::PushLocation (I
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void                                            ECValueAccessor::PushLocation (ECEnablerCR newEnabler, const wchar_t* accessString, int newArrayIndex)
+void                                            ECValueAccessor::PushLocation (ECEnablerCR newEnabler, WCharCP accessString, int newArrayIndex)
     {
     UInt32 propertyIndex;
     ECObjectsStatus status = newEnabler.GetPropertyIndex(propertyIndex, accessString);
@@ -1269,7 +1269,7 @@ void                                            ECValueAccessor::PushLocation (E
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void                                            ECValueAccessor::PushLocation (IECInstanceCR instance, const wchar_t* accessString, int newArrayIndex)
+void                                            ECValueAccessor::PushLocation (IECInstanceCR instance, WCharCP accessString, int newArrayIndex)
     {
     PushLocation (instance.GetEnabler(), accessString, newArrayIndex);
     }
@@ -1309,11 +1309,11 @@ UInt32                                          ECValueAccessor::GetDepth() cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-const wchar_t *                                 ECValueAccessor::GetAccessString (UInt32 depth) const
+WCharCP                                 ECValueAccessor::GetAccessString (UInt32 depth) const
     {
     int propertyIndex         = m_locationVector[depth].propertyIndex;
     ECEnablerCR enabler       = * m_locationVector[depth].enabler;
-    const wchar_t* accessString;
+    WCharCP accessString;
     if (ECOBJECTS_STATUS_Success == enabler.GetAccessString (accessString, propertyIndex))
         return accessString;
     return NULL;
@@ -1348,8 +1348,8 @@ WString                                        ECValueAccessor::GetManagedAccess
         if(depth > 0)
             temp << ".";
 
-        const wchar_t * str = GetAccessString (depth);
-        const wchar_t * lastDot = wcsrchr (str, L'.');
+        WCharCP str = GetAccessString (depth);
+        WCharCP lastDot = wcsrchr (str, L'.');
 
         if (NULL != lastDot)
             str = lastDot+1;
@@ -1433,7 +1433,7 @@ static void tokenize(const WString& str, bvector<WString>& tokens, const WString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECClassP getClassFromSchema (ECSchemaCR rootSchema, const wchar_t * className)
+static ECClassP getClassFromSchema (ECSchemaCR rootSchema, WCharCP className)
     {
     ECClassP classP = rootSchema.GetClassP (className);
     if (classP)
@@ -1452,7 +1452,7 @@ static ECClassP getClassFromSchema (ECSchemaCR rootSchema, const wchar_t * class
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECClassP getPropertyFromClass (ECClassCR enablerClass, const wchar_t * propertyName)
+static ECClassP getPropertyFromClass (ECClassCR enablerClass, WCharCP propertyName)
     {
     ECPropertyP propertyP = enablerClass.GetPropertyP (propertyName);
     if (!propertyP)
@@ -1465,14 +1465,14 @@ static ECClassP getPropertyFromClass (ECClassCR enablerClass, const wchar_t * pr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBuffer, wchar_t* indexBuffer, ECValueAccessor& va, ECEnablerCR  enabler, const wchar_t * managedPropertyAccessor)
+static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBuffer, wchar_t* indexBuffer, ECValueAccessor& va, ECEnablerCR  enabler, WCharCP managedPropertyAccessor)
     {
     ECObjectsStatus status;
     UInt32          propertyIndex;
     WString        asBufferStr;
 
     // see if access string specifies an array
-    const wchar_t* pos1 = wcschr (managedPropertyAccessor, L'[');
+    WCharCP pos1 = wcschr (managedPropertyAccessor, L'[');
 
     // if not an array then we have a primitive that we can access directly 
     if (NULL == pos1)
@@ -1501,7 +1501,7 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBu
     wcsncpy(asBuffer, managedPropertyAccessor, numChars>NUM_ACCESSSTRING_BUFFER_CHARS?NUM_ACCESSSTRING_BUFFER_CHARS:numChars);
     asBuffer[numChars]=0;
 
-    const wchar_t* pos2 = wcschr (pos1+1, L']');
+    WCharCP pos2 = wcschr (pos1+1, L']');
     if (!pos2)
         return ECOBJECTS_STATUS_Error;
 
@@ -1547,7 +1547,7 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECValueAccessor::PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, const wchar_t * managedPropertyAccessor)
+ECObjectsStatus ECValueAccessor::PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, WCharCP managedPropertyAccessor)
     {
     wchar_t         asBuffer[NUM_ACCESSSTRING_BUFFER_CHARS+1];
     wchar_t         indexBuffer[NUM_INDEX_BUFFER_CHARS+1];

@@ -20,9 +20,9 @@ struct ECFileNameIterator
     wchar_t          m_dirName[_MAX_DIR];
 
 public:
-    ECFileNameIterator (const wchar_t * path);
+    ECFileNameIterator (WCharCP path);
     ~ECFileNameIterator ();
-    BentleyStatus GetNextFileName (wchar_t * name);
+    BentleyStatus GetNextFileName (WCharP name);
      };
 
 struct ECFileUtilities

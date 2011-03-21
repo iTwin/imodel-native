@@ -161,7 +161,7 @@ ECSchemaP   schema
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-static  void    ValidateSchemaNameParsing (wchar_t const* fullName, bool expectFailure, wchar_t const* expectName, UInt32 expectMajor, UInt32 expectMinor)
+static  void    ValidateSchemaNameParsing (WCharCP fullName, bool expectFailure, WCharCP expectName, UInt32 expectMajor, UInt32 expectMinor)
     {
     WString    shortName;
     UInt32      versionMajor;
@@ -805,7 +805,7 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->AddBaseClass(*anotherBase));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, gadget->AddBaseClass(*class1));
     
-//    const wchar_t *ecSchemaXmlString;
+//    WCharCPecSchemaXmlString;
     
     //SchemaSerializationStatus status2 = schema->WriteXmlToFile(L"d:\\temp\\base.xml");
     //
@@ -1438,7 +1438,7 @@ TEST_F(ClassTest, ExpectFailureWhenStructTypeIsNotReferenced)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, ExpectPropertiesInOrder)
     {
-    std::vector<const wchar_t *> propertyNames;
+    std::vector<WCharCP> propertyNames;
     propertyNames.push_back(L"beta");
     propertyNames.push_back(L"gamma");
     propertyNames.push_back(L"delta");
