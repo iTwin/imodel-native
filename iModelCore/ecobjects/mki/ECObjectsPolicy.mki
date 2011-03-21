@@ -43,7 +43,7 @@ always:
     %include $(BuildContext)SubParts/mki/BentleyDlls.mki
 %endif
 
-ECNativeObjectsDllBase = ECObjects3
+ECNativeObjectsDllBase = ECObjects4
 ECNativeObjectsDllName = $(ECNativeObjectsDllBase).dll
 
 #-----------------------------------------------------------------------
