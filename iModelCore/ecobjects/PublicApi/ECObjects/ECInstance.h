@@ -18,12 +18,12 @@ BEGIN_BENTLEY_EC_NAMESPACE
 //  custom XML representation of itself. This was required to support 8.11 
 //  installedTypes as Vancouver ECStructs  
 //////////////////////////////////////////////////////////////////////////////////
-typedef bmap<bwstring, ICustomECStructSerializerP> NameSerializerMap;
+typedef bmap<WString, ICustomECStructSerializerP> NameSerializerMap;
 
 struct ICustomECStructSerializer
     {
     virtual bool            UsesCustomStructXmlString  (StructECPropertyP structProperty, IECInstanceCR ecInstance) const = 0;
-    virtual ECObjectsStatus GenerateXmlString  (bwstring& xmlString, StructECPropertyP structProperty, IECInstanceCR ecInstance, const wchar_t * baseAccessString) const = 0;
+    virtual ECObjectsStatus GenerateXmlString  (WString& xmlString, StructECPropertyP structProperty, IECInstanceCR ecInstance, const wchar_t * baseAccessString) const = 0;
     virtual void            LoadStructureFromString (StructECPropertyP structProperty, IECInstanceR ecInstance, const wchar_t * baseAccessString, const wchar_t * valueString) = 0;
     };
 
@@ -61,7 +61,7 @@ protected:
     ECOBJECTS_EXPORT IECInstance(); 
     ECOBJECTS_EXPORT virtual ~IECInstance();
 
-    virtual bwstring            _GetInstanceId() const = 0; // Virtual and returning bwstring because a subclass may want to calculate it on demand
+    virtual WString            _GetInstanceId() const = 0; // Virtual and returning WString because a subclass may want to calculate it on demand
     virtual ECObjectsStatus     _GetValue (ECValueR v, const wchar_t * managedPropertyAccessor, bool useArrayIndex, UInt32 arrayIndex) const = 0;
     virtual ECObjectsStatus     _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const = 0;
 public:
@@ -74,7 +74,7 @@ protected:
     virtual ECObjectsStatus     _ClearArray (const wchar_t * managedPropertyAccessor) = 0;    
     virtual ECEnablerCR         _GetEnabler() const = 0;
     virtual bool                _IsReadOnly() const = 0;
-    virtual bwstring            _ToString (const wchar_t* indent) const = 0;
+    virtual WString            _ToString (const wchar_t* indent) const = 0;
     virtual size_t              _GetOffsetToIECInstance () const = 0;
 
     ECOBJECTS_EXPORT virtual MemoryECInstanceBase* _GetAsMemoryECInstance () const;
@@ -84,7 +84,7 @@ public:
     ECOBJECTS_EXPORT ECEnablerCR        GetEnabler() const;
     ECOBJECTS_EXPORT ECEnablerR         GetEnablerR() const;      // use when enabler.ObtainStandaloneEnabler is called since a new enabler may be created.
 
-    ECOBJECTS_EXPORT bwstring           GetInstanceId() const;
+    ECOBJECTS_EXPORT WString           GetInstanceId() const;
     ECOBJECTS_EXPORT bool               IsReadOnly() const;
     
     ECOBJECTS_EXPORT ECClassCR          GetClass() const;
@@ -115,12 +115,12 @@ public:
     //WIP_FUSION ParseExpectedNIndices should move to AccessStringHelper struct... along with method to convert to/from .NET ECObjects style accessString
     ECOBJECTS_EXPORT static int         ParseExpectedNIndices (const wchar_t * managedPropertyAccessor);
     
-    ECOBJECTS_EXPORT bwstring           ToString (const wchar_t* indent) const;
+    ECOBJECTS_EXPORT WString           ToString (const wchar_t* indent) const;
 
     ECOBJECTS_EXPORT static void        Debug_ResetAllocationStats ();
     ECOBJECTS_EXPORT static void        Debug_DumpAllocationStats (const wchar_t* prefix);
     ECOBJECTS_EXPORT static void        Debug_GetAllocationStats (int* currentLive, int* totalAllocs, int* totalFrees);
-    ECOBJECTS_EXPORT static void        Debug_ReportLeaks (bvector<bwstring>& classNamesToExclude);
+    ECOBJECTS_EXPORT static void        Debug_ReportLeaks (bvector<WString>& classNamesToExclude);
 
     ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadXmlFromFile   (IECInstancePtr& ecInstance, const wchar_t* fileName, ECInstanceDeserializationContextR context);
     ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadXmlFromStream (IECInstancePtr& ecInstance, IStreamP stream, ECInstanceDeserializationContextR context);
@@ -128,7 +128,7 @@ public:
 
     ECOBJECTS_EXPORT InstanceSerializationStatus            WriteXmlToFile   (const wchar_t* fileName, bool isStandAlone);
     ECOBJECTS_EXPORT InstanceSerializationStatus            WriteXmlToStream (IStreamP stream, bool isStandAlone);
-    ECOBJECTS_EXPORT InstanceSerializationStatus            WriteXmlToString (bwstring & ecInstanceXml, bool isStandAlone);
+    ECOBJECTS_EXPORT InstanceSerializationStatus            WriteXmlToString (WString & ecInstanceXml, bool isStandAlone);
     };
     
 //=======================================================================================    

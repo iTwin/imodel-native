@@ -37,7 +37,7 @@ public:
     ECOBJECTS_EXPORT SystemTime(unsigned short year=1601, unsigned short month=1, unsigned short day=1, unsigned short hour=0, unsigned short minute=0, unsigned short second=0, unsigned short milliseconds=0);
     ECOBJECTS_EXPORT static SystemTime GetLocalTime();
     ECOBJECTS_EXPORT static SystemTime GetSystemTime();
-    ECOBJECTS_EXPORT bwstring      ToString ();
+    ECOBJECTS_EXPORT WString      ToString ();
     ECOBJECTS_EXPORT bool          operator== (const SystemTime&) const;
     };
 
@@ -216,7 +216,7 @@ public:
     static UInt32                   GetFixedPrimitiveValueSize (PrimitiveType primitiveType);
 
     //! This is intended for debugging purposes, not for presentation purposes.
-    ECOBJECTS_EXPORT bwstring       ToString () const;
+    ECOBJECTS_EXPORT WString       ToString () const;
     
     ECOBJECTS_EXPORT bool           Equals (ECValueCR v) const;
     };
@@ -329,7 +329,7 @@ public:
 
     ECOBJECTS_EXPORT void  Clear ();
 
-    ECOBJECTS_EXPORT bwstring               GetDebugAccessString () const;
+    ECOBJECTS_EXPORT WString               GetDebugAccessString () const;
 
     //! Constructs an empty ECValueAccessor.
     ECOBJECTS_EXPORT ECValueAccessor () { }
@@ -342,7 +342,7 @@ public:
     //! and traverses structs when necessary.  This full access string can be used with 
     //! managed code or the InteropHelper.
     //! @see            ECInstanceInteropHelper
-    ECOBJECTS_EXPORT bwstring               GetManagedAccessString () const;
+    ECOBJECTS_EXPORT WString               GetManagedAccessString () const;
 
     ECOBJECTS_EXPORT bool                   operator!=(ECValueAccessorCR accessor) const;
     ECOBJECTS_EXPORT bool                   operator==(ECValueAccessorCR accessor) const;

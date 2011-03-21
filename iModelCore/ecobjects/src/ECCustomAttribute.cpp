@@ -74,7 +74,7 @@ ECCustomAttributeCollection& returnList
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IECCustomAttributeContainer::IsDefined
 (
-bwstring const& className
+WString const& className
 ) 
     {
     ECCustomAttributeCollection::const_iterator iter;
@@ -127,7 +127,7 @@ ECClassCR classDefinition
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstancePtr IECCustomAttributeContainer::GetCustomAttribute
 (
-bwstring const& className
+WString const& className
 ) const
     {
     IECInstancePtr result;
@@ -238,7 +238,7 @@ IECInstanceR customAttributeInstance
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IECCustomAttributeContainer::RemoveCustomAttribute
 (
-bwstring const& className
+WString const& className
 )
     {
     ECCustomAttributeCollection::iterator iter;
@@ -320,7 +320,7 @@ MSXML2::IXMLDOMNode& propertyNode
 ) const
     {
     SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
-    bwstring customAttributeXml;
+    WString customAttributeXml;
     MSXML2::IXMLDOMAttributePtr attributePtr;
     if (m_customAttributes.size() < 1)
         return status;
@@ -381,7 +381,7 @@ MSXML2::IXMLDOMNode& newNode
         MSXML2::IXMLDOMNodePtr propertyPtr = newNode.ownerDocument->createNode(NODE_ELEMENT, xmlNodePtr->baseName, xmlNodePtr->namespaceURI);
         APPEND_CHILD_TO_PARENT(propertyPtr, (&newNode));
         MSXML2::IXMLDOMNodePtr childTextNodePtr = xmlNodePtr->firstChild;
-        bwstring nodeType = childTextNodePtr->nodeTypeString.GetBSTR();
+        WString nodeType = childTextNodePtr->nodeTypeString.GetBSTR();
         if (0 == nodeType.compare(L"text"))
             propertyPtr->text = childTextNodePtr->text;
         AddCustomAttributeProperties(xmlNodePtr, propertyPtr);

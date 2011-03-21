@@ -118,7 +118,7 @@ virtual Int32   CheckForLeaks () const override
         OTYPE const*    leakedObject = leak.first;
         UInt32          orderOfAllocation = leak.second;
         
-        bwstring name = leakedObject->GetName();
+        WString name = leakedObject->GetName();
         
         ECObjectsLogger::Log()->errorv (L"Leaked the %dth %s that was allocated: %s", orderOfAllocation, m_singularTypeName.c_str(), name.c_str());
         }

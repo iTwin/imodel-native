@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/native/ECValue.cpp $
+|     $Source: src/ECValue.cpp $
 |
 |   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -44,7 +44,7 @@ unsigned short milliseconds
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring SystemTime::ToString
+WString SystemTime::ToString
 (
 )
     {
@@ -918,7 +918,7 @@ BentleyStatus       ECValue::SetStruct (IECInstanceP structInstance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-bwstring    ECValue::ToString () const
+WString    ECValue::ToString () const
     {
     if (IsNull())
         return L"<null>";
@@ -1322,7 +1322,7 @@ const wchar_t *                                 ECValueAccessor::GetAccessString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring                                        ECValueAccessor::GetDebugAccessString() const
+WString                                        ECValueAccessor::GetDebugAccessString() const
     {
     std::wstringstream temp;
     for(UInt32 depth = 0; depth < GetDepth(); depth++)
@@ -1340,7 +1340,7 @@ bwstring                                        ECValueAccessor::GetDebugAccessS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring                                        ECValueAccessor::GetManagedAccessString() const
+WString                                        ECValueAccessor::GetManagedAccessString() const
     {
     std::wstringstream temp;
     for(UInt32 depth = 0; depth < GetDepth(); depth++)
@@ -1409,15 +1409,15 @@ bool ECValueAccessor::operator==(ECValueAccessorCR accessor) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void tokenize(const bwstring& str, bvector<bwstring>& tokens, const bwstring& delimiters)
+static void tokenize(const WString& str, bvector<WString>& tokens, const WString& delimiters)
     {
     // Skip delimiters at beginning.
-    bwstring::size_type lastPos = str.find_first_not_of(delimiters, 0);
+    WString::size_type lastPos = str.find_first_not_of(delimiters, 0);
 
     // Find first "non-delimiter".
-    bwstring::size_type pos = str.find_first_of(delimiters, lastPos);
+    WString::size_type pos = str.find_first_of(delimiters, lastPos);
 
-    while (bwstring::npos != pos || bwstring::npos != lastPos)
+    while (WString::npos != pos || WString::npos != lastPos)
         {
         // Found a token, add it to the vector.
         tokens.push_back(str.substr(lastPos, pos - lastPos));
@@ -1458,7 +1458,7 @@ static ECClassP getPropertyFromClass (ECClassCR enablerClass, const wchar_t * pr
     if (!propertyP)
         return NULL;
 
-    bwstring typeName = propertyP->GetTypeName();
+    WString typeName = propertyP->GetTypeName();
     return getClassFromSchema (enablerClass.Schema, typeName.c_str());
     }
 
@@ -1469,7 +1469,7 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBu
     {
     ECObjectsStatus status;
     UInt32          propertyIndex;
-    bwstring        asBufferStr;
+    WString        asBufferStr;
 
     // see if access string specifies an array
     const wchar_t* pos1 = wcschr (managedPropertyAccessor, L'[');
@@ -1528,7 +1528,7 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBu
         return ECOBJECTS_STATUS_Success;
         }
 
-    bwstring str = asBuffer; 
+    WString str = asBuffer; 
 
     ECClassP structClass = getPropertyFromClass (enabler.GetClass(), asBuffer);
     if (!structClass)
