@@ -86,31 +86,31 @@ static const WString ECXML_DIRECTION_BACKWARD          = L"backward";
 
 #define READ_OPTIONAL_XML_ATTRIBUTE(_xmlAttributeName, _setInPointer, _setInPropertyName)   \
     if ((NULL != (attributePtr = nodeAttributesPtr->getNamedItem (_xmlAttributeName))) &&   \
-        (ECOBJECTS_STATUS_Success != _setInPointer->Set##_setInPropertyName ((const wchar_t *)attributePtr->text))) \
+        (ECOBJECTS_STATUS_Success != _setInPointer->Set##_setInPropertyName ((WCharCP)attributePtr->text))) \
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
 
 #define READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS(_xmlAttributeName, _setInPointer, _setInPropertyName)   \
     if (NULL != (attributePtr = nodeAttributesPtr->getNamedItem (_xmlAttributeName)))   \
-        setterStatus = _setInPointer->Set##_setInPropertyName ((const wchar_t *)attributePtr->text); \
+        setterStatus = _setInPointer->Set##_setInPropertyName ((WCharCP)attributePtr->text); \
     else \
         setterStatus = ECOBJECTS_STATUS_Success;
 
 #define READ_REQUIRED_XML_ATTRIBUTE(_xmlAttributeName, _setInPointer, _setInPropertyName, _elementName)   \
     if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (_xmlAttributeName)))     \
         {   \
-        ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " _xmlAttributeName L" attribute\n", (const wchar_t *)_elementName);     \
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " _xmlAttributeName L" attribute\n", (WCharCP)_elementName);     \
         return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;        \
         }       \
-    if (ECOBJECTS_STATUS_Success != _setInPointer->Set##_setInPropertyName ((const wchar_t *)attributePtr->text))       \
+    if (ECOBJECTS_STATUS_Success != _setInPointer->Set##_setInPropertyName ((WCharCP)attributePtr->text))       \
         return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
 
 #define READ_REQUIRED_XML_ATTRIBUTE_IGNORING_SET_ERRORS(_xmlAttributeName, _setInPointer, _setInPropertyName, _elementName)   \
     if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (_xmlAttributeName)))     \
         {   \
-        ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " _xmlAttributeName L" attribute\n", (const wchar_t *)_elementName);     \
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " _xmlAttributeName L" attribute\n", (WCharCP)_elementName);     \
         status = SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;        \
         }       \
-    else if (ECOBJECTS_STATUS_ParseError == _setInPointer->Set##_setInPropertyName ((const wchar_t *)attributePtr->text)) \
+    else if (ECOBJECTS_STATUS_ParseError == _setInPointer->Set##_setInPropertyName ((WCharCP)attributePtr->text)) \
         status = SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml;
             
 #define APPEND_CHILD_TO_PARENT(_child, _parent) \
@@ -152,14 +152,14 @@ BEGIN_BENTLEY_EC_NAMESPACE
 struct ECXml abstract
 {
 public:
-    static ECObjectsStatus ParseBooleanString(bool & booleanValue,const wchar_t * booleanString);
-    static WString const& GetPrimitiveTypeName (PrimitiveType primitiveType);
-    static ECObjectsStatus ParsePrimitiveType (PrimitiveType& primitiveType,WString const& typeName);
-    static WString const& StrengthToString (StrengthType strength);
-    static ECObjectsStatus ParseStrengthType (StrengthType& strength, WString const& strengthString);
-    static WString const& DirectionToString (ECRelatedInstanceDirection direction);
-    static ECObjectsStatus ParseDirectionString (ECRelatedInstanceDirection& direction, WString const& directionString);
-    static ECObjectsStatus ParseCardinalityString (UInt32& lowerLimit, UInt32& upperLimit, WString const& cardinalityString);
+    static ECObjectsStatus ParseBooleanString(bool & booleanValue,WCharCP booleanString);
+    static WStringCR GetPrimitiveTypeName (PrimitiveType primitiveType);
+    static ECObjectsStatus ParsePrimitiveType (PrimitiveType& primitiveType,WStringCR typeName);
+    static WStringCR StrengthToString (StrengthType strength);
+    static ECObjectsStatus ParseStrengthType (StrengthType& strength, WStringCR strengthString);
+    static WStringCR DirectionToString (ECRelatedInstanceDirection direction);
+    static ECObjectsStatus ParseDirectionString (ECRelatedInstanceDirection& direction, WStringCR directionString);
+    static ECObjectsStatus ParseCardinalityString (UInt32& lowerLimit, UInt32& upperLimit, WStringCR cardinalityString);
     static void FormatXml(MSXML2::IXMLDOMDocument2* pXmlDoc);
 };
 

@@ -43,7 +43,7 @@ ECClass::~ECClass ()
     
     m_propertyList.clear();
     
-    for each (bpair<wchar_t const*, ECPropertyP> entry in m_propertyMap)
+    for each (bpair<WCharCP, ECPropertyP> entry in m_propertyMap)
         delete entry.second;
     
     m_propertyMap.clear();
@@ -60,7 +60,7 @@ ILeakDetector&  ECClass::Debug_GetLeakDetector() { return g_leakDetector; }
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString const& ECClass::GetName
+WStringCR ECClass::GetName
 (
 ) const
     {        
@@ -72,7 +72,7 @@ WString const& ECClass::GetName
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::SetName
 (
-WString const& name
+WStringCR name
 )
     {
     
@@ -86,7 +86,7 @@ WString const& name
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString const& ECClass::GetDescription
+WStringCR ECClass::GetDescription
 (
 ) const
     {
@@ -98,7 +98,7 @@ WString const& ECClass::GetDescription
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::SetDescription
 (
-WString const& description
+WStringCR description
 )
     {        
     m_description = description;
@@ -108,7 +108,7 @@ WString const& description
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString const& ECClass::GetDisplayLabel
+WStringCR ECClass::GetDisplayLabel
 (
 ) const
     {
@@ -120,7 +120,7 @@ WString const& ECClass::GetDisplayLabel
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::SetDisplayLabel
 (
-WString const& displayLabel
+WStringCR displayLabel
 )
     {        
     m_displayLabel = displayLabel;
@@ -164,7 +164,7 @@ bool isStruct
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::SetIsStruct
 (
-const wchar_t * isStruct
+WCharCP isStruct
 )
     {        
     PRECONDITION (NULL != isStruct, ECOBJECTS_STATUS_PreconditionViolated);
@@ -203,7 +203,7 @@ bool isCustomAttributeClass
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::SetIsCustomAttributeClass
 (
-const wchar_t * isCustomAttributeClass
+WCharCP isCustomAttributeClass
 )
     {      
     PRECONDITION (NULL != isCustomAttributeClass, ECOBJECTS_STATUS_PreconditionViolated);
@@ -242,7 +242,7 @@ bool isDomainClass
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::SetIsDomainClass
 (
-const wchar_t * isDomainClass
+WCharCP isDomainClass
 )
     {
     PRECONDITION (NULL != isDomainClass, ECOBJECTS_STATUS_PreconditionViolated);
@@ -285,7 +285,7 @@ ECPropertyP&                 pProperty
     ECPropertyP baseProperty = GetPropertyP(pProperty->Name);
     if (NULL == baseProperty)
         {
-        m_propertyMap.insert (bpair<const wchar_t *, ECPropertyP> (pProperty->Name.c_str(), pProperty));
+        m_propertyMap.insert (bpair<WCharCP, ECPropertyP> (pProperty->Name.c_str(), pProperty));
         m_propertyList.push_back(pProperty);
         return ECOBJECTS_STATUS_Success;
         }
@@ -295,7 +295,7 @@ ECPropertyP&                 pProperty
         return status;
 
     pProperty->BaseProperty = baseProperty;
-    m_propertyMap.insert (bpair<const wchar_t *, ECPropertyP> (pProperty->Name.c_str(), pProperty));
+    m_propertyMap.insert (bpair<WCharCP, ECPropertyP> (pProperty->Name.c_str(), pProperty));
     m_propertyList.push_back(pProperty);
     return ECOBJECTS_STATUS_Success;
     }
@@ -305,7 +305,7 @@ ECPropertyP&                 pProperty
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyP ECClass::GetPropertyP
 (
-wchar_t const* propertyName
+WCharCP propertyName
 ) const
     {
     PropertyMap::const_iterator  propertyIterator;
@@ -329,7 +329,7 @@ wchar_t const* propertyName
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyP ECClass::GetPropertyP
 (
-WString const& propertyName
+WStringCR propertyName
 ) const
     {
     return  GetPropertyP (propertyName.c_str());
@@ -891,7 +891,7 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
     MSXML2::IXMLDOMNodePtr xmlNodePtr;
     while (NULL != (xmlNodePtr = xmlNodeListPtr->nextNode()))
         {        
-        WString qualifiedClassName = xmlNodePtr->text;
+        WString qualifiedClassName = xmlNodePtr->text.GetBSTR();
         
         // Parse the potentially qualified class name into a namespace prefix and short class name
         WString namespacePrefix;
@@ -969,7 +969,7 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
 SchemaSerializationStatus ECClass::WriteXml
 (
 MSXML2::IXMLDOMElement &parentNode, 
-const wchar_t *elementName
+WCharCP elementName
 ) const
     {
     SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
@@ -1025,7 +1025,7 @@ ECObjectsStatus ECClass::ParseClassName
 (
 WString & prefix, 
 WString & className, 
-WString const& qualifiedClassName
+WStringCR qualifiedClassName
 )
     {
     if (0 == qualifiedClassName.length())
@@ -1395,7 +1395,7 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
         MSXML2::IXMLDOMNamedNodeMapPtr constraintClassAttributesPtr = xmlNodePtr->attributes;
         if (NULL == (attributePtr = constraintClassAttributesPtr->getNamedItem(CONSTRAINTCLASSNAME_ATTRIBUTE)))
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
-        WString constraintClassName = attributePtr->text;  
+        WString constraintClassName = attributePtr->text.GetBSTR();;  
         
         // Parse the potentially qualified class name into a namespace prefix and short class name
         WString namespacePrefix;
@@ -1583,7 +1583,7 @@ bool value
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipConstraint::SetIsPolymorphic
 (
-const wchar_t *isPolymorphic
+WCharCP isPolymorphic
 )
     {
     PRECONDITION (NULL != isPolymorphic, ECOBJECTS_STATUS_PreconditionViolated);
@@ -1644,7 +1644,7 @@ RelationshipCardinalityCR cardinality
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipConstraint::SetCardinality
 (
-const wchar_t *cardinality
+WCharCP cardinality
 )
     {
     PRECONDITION (NULL != cardinality, ECOBJECTS_STATUS_PreconditionViolated);
@@ -1748,7 +1748,7 @@ StrengthType strength
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipClass::SetStrength
 (
-const wchar_t *strength
+WCharCP strength
 )
     {
     PRECONDITION (NULL != strength, ECOBJECTS_STATUS_PreconditionViolated);
@@ -1790,7 +1790,7 @@ ECRelatedInstanceDirection direction
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipClass::SetStrengthDirection
 (
-const wchar_t *directionString
+WCharCP directionString
 )
     {
     PRECONDITION (NULL != directionString, ECOBJECTS_STATUS_PreconditionViolated);

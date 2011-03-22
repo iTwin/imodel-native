@@ -22,7 +22,7 @@ const UInt32 BITS_PER_NULLFLAGSBITMASK = (sizeof(NullflagsBitmask) * 8);
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    08/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            appendFormattedString (wostringstream& outStream, const wchar_t* fmtStr, ...)
+void            appendFormattedString (wostringstream& outStream, WCharCP fmtStr, ...)
     {
     wchar_t line[1024];
 
@@ -232,7 +232,7 @@ WString        ClassLayout::LogicalStructureToString (UInt32 parentStuctIndex, U
     if ( ! EXPECTED_CONDITION (it != m_logicalStructureMap.end()))
         return L"";
 
-    wchar_t const* indentStr = L"|--";
+    WCharCP indentStr = L"|--";
     wostringstream oss;
     oss << setiosflags (ios::left);
 
@@ -252,7 +252,7 @@ WString        ClassLayout::LogicalStructureToString (UInt32 parentStuctIndex, U
             continue;
             }
 
-        wchar_t const *  accessString = propertyLayout->GetAccessString();
+        WCharCP  accessString = propertyLayout->GetAccessString();
         oss << setw(40) << accessString << setw(10) << L"  Parent: " << propertyLayout->GetParentStructIndex() << endl;
 
         if (propertyLayout->GetTypeDescriptor().IsStruct())
@@ -465,11 +465,11 @@ int   ClassLayout::GetECPointerIndex (ECRelationshipEnd end) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/    
-UInt32          ClassLayout::Factory::GetParentStructIndex (wchar_t const * accessString) const
+UInt32          ClassLayout::Factory::GetParentStructIndex (WCharCP accessString) const
     {
     // The access string will contain a '.' only if the property is inside an embedded struct.
     UInt32          parentStructIndex = 0;
-    wchar_t const*  pLastDot = wcsrchr (accessString, L'.');
+    WCharCP  pLastDot = wcsrchr (accessString, L'.');
 
     if (NULL != pLastDot)
         {
@@ -485,7 +485,7 @@ UInt32          ClassLayout::Factory::GetParentStructIndex (wchar_t const * acce
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void            ClassLayout::Factory::AddStructProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor)
+void            ClassLayout::Factory::AddStructProperty (WCharCP accessString, ECTypeDescriptor typeDescriptor)
     {
     if (!EXPECTED_CONDITION (m_state == AcceptingFixedSizeProperties)) // ClassLayoutNotAcceptingFixedSizeProperties    
         return;
@@ -503,7 +503,7 @@ void            ClassLayout::Factory::AddStructProperty (wchar_t const * accessS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void            ClassLayout::Factory::AddProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 size, UInt32 modifierFlags, UInt32 modifierData)
+void            ClassLayout::Factory::AddProperty (WCharCP accessString, ECTypeDescriptor typeDescriptor, UInt32 size, UInt32 modifierFlags, UInt32 modifierData)
     {
     UInt32  positionInCurrentNullFlags = m_nonStructPropertyCount % 32;
     NullflagsBitmask  nullflagsBitmask = 0x01 << positionInCurrentNullFlags;
@@ -538,7 +538,7 @@ void            ClassLayout::Factory::AddProperty (wchar_t const * accessString,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void            ClassLayout::Factory::AddFixedSizeProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor)
+void            ClassLayout::Factory::AddFixedSizeProperty (WCharCP accessString, ECTypeDescriptor typeDescriptor)
     {
     if (!EXPECTED_CONDITION (m_state == AcceptingFixedSizeProperties)) // ClassLayoutNotAcceptingFixedSizeProperties    
         return;
@@ -557,7 +557,7 @@ void            ClassLayout::Factory::AddFixedSizeProperty (wchar_t const * acce
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/ 
-void            ClassLayout::Factory::AddFixedSizeArrayProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount)
+void            ClassLayout::Factory::AddFixedSizeArrayProperty (WCharCP accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount)
     {
     if (!EXPECTED_CONDITION (m_state == AcceptingFixedSizeProperties)) // ClassLayoutNotAcceptingFixedSizeProperties    
         return;
@@ -570,7 +570,7 @@ void            ClassLayout::Factory::AddFixedSizeArrayProperty (wchar_t const *
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/ 
-void            ClassLayout::Factory::AddVariableSizeProperty (wchar_t const * accessString, ECTypeDescriptor typeDescriptor)
+void            ClassLayout::Factory::AddVariableSizeProperty (WCharCP accessString, ECTypeDescriptor typeDescriptor)
     {
     if (m_state == AcceptingFixedSizeProperties)
         m_state = AcceptingVariableSizeProperties;
@@ -586,7 +586,7 @@ void            ClassLayout::Factory::AddVariableSizeProperty (wchar_t const * a
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/ 
-void            ClassLayout::Factory::AddVariableSizeArrayPropertyWithFixedCount (wchar_t const * accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount)
+void            ClassLayout::Factory::AddVariableSizeArrayPropertyWithFixedCount (WCharCP accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount)
     {
     if (m_state == AcceptingFixedSizeProperties)
         m_state = AcceptingVariableSizeProperties;
@@ -602,7 +602,7 @@ void            ClassLayout::Factory::AddVariableSizeArrayPropertyWithFixedCount
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, wchar_t const * nameRoot, bool addingFixedSizeProps)
+void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, WCharCP nameRoot, bool addingFixedSizeProps)
     {
     if (addingFixedSizeProps)
         AddStructProperty (NULL == nameRoot ? L"" : nameRoot, ECTypeDescriptor::CreateStructTypeDescriptor());
@@ -713,7 +713,7 @@ ClassLayoutP    ClassLayout::BuildFromClass (ECClassCR ecClass, ClassIndex class
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutP    ClassLayout::CreateEmpty (wchar_t const* className, ClassIndex classIndex, SchemaIndex schemaIndex, bool hideFromLeakDetection)
+ClassLayoutP    ClassLayout::CreateEmpty (WCharCP className, ClassIndex classIndex, SchemaIndex schemaIndex, bool hideFromLeakDetection)
     {
     ClassLayoutP classLayout = new ClassLayout(schemaIndex, hideFromLeakDetection);
 
@@ -725,7 +725,7 @@ ClassLayoutP    ClassLayout::CreateEmpty (wchar_t const* className, ClassIndex c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   ClassLayout::SetClass (wchar_t const* className, UInt16 classIndex)
+BentleyStatus   ClassLayout::SetClass (WCharCP className, UInt16 classIndex)
     {
     m_classIndex = classIndex;
     m_className  = className;
@@ -814,7 +814,7 @@ ECObjectsStatus       ClassLayout::FinishLayout ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/     
-void            ClassLayout::CheckForECPointers (wchar_t const * accessString)
+void            ClassLayout::CheckForECPointers (WCharCP accessString)
     {
     // Remember indices of source and target ECPointers for fast lookup
     if (0 == wcscmp (PROPERTYLAYOUT_Source_ECPointer, accessString))
@@ -853,7 +853,7 @@ void            ClassLayout::AddToLogicalStructureMap (PropertyLayoutR propertyL
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void            ClassLayout::AddPropertyLayout (wchar_t const * accessString, PropertyLayoutR propertyLayout)
+void            ClassLayout::AddPropertyLayout (WCharCP accessString, PropertyLayoutR propertyLayout)
     {
     m_propertyLayouts.push_back(&propertyLayout);
     m_propertyLayoutMap[propertyLayout.GetAccessString()] = m_propertyLayouts.back();
@@ -868,7 +868,7 @@ void            ClassLayout::AddPropertyLayout (wchar_t const * accessString, Pr
 +---------------+---------------+---------------+---------------+---------------+------*/     
 void            ClassLayout::AddPropertyDirect
 (
-wchar_t const *  accessString,
+WCharCP  accessString,
 UInt32           parentStructIndex,
 ECTypeDescriptor typeDescriptor,
 UInt32           offset,
@@ -908,7 +908,7 @@ UInt32          ClassLayout::GetPropertyCountExcludingEmbeddedStructs () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus       ClassLayout::GetPropertyLayout (PropertyLayoutCP & propertyLayout, wchar_t const * accessString) const
+ECObjectsStatus       ClassLayout::GetPropertyLayout (PropertyLayoutCP & propertyLayout, WCharCP accessString) const
     {
     PropertyLayoutMap::const_iterator it = m_propertyLayoutMap.find(accessString);
     
@@ -926,7 +926,7 @@ ECObjectsStatus       ClassLayout::GetPropertyLayout (PropertyLayoutCP & propert
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus     ClassLayout::GetPropertyIndex (UInt32& propertyIndex, wchar_t const * accessString) const
+ECObjectsStatus     ClassLayout::GetPropertyIndex (UInt32& propertyIndex, WCharCP accessString) const
     {
     PropertyLayoutCP    propertyLayout;
 
@@ -965,7 +965,7 @@ ECObjectsStatus       ClassLayout::GetPropertyLayoutByIndex (PropertyLayoutCP & 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan.Rush      12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus         ClassLayout::GetAccessStringByIndex(wchar_t const *& accessString, UInt32 propertyIndex) const
+ECObjectsStatus         ClassLayout::GetAccessStringByIndex(WCharCP& accessString, UInt32 propertyIndex) const
     {
     PropertyLayoutCP    propertyLayout;
     ECObjectsStatus     status = GetPropertyLayoutByIndex (propertyLayout, propertyIndex);
@@ -1049,7 +1049,7 @@ ClassLayoutCP   SchemaLayout::GetClassLayout (ClassIndex classIndex)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutCP   SchemaLayout::FindClassLayout (wchar_t const * className)
+ClassLayoutCP   SchemaLayout::FindClassLayout (WCharCP className)
     {
     for each (ClassLayoutCP classLayout in m_classLayouts)
         {
@@ -1423,7 +1423,7 @@ ECObjectsStatus       MemoryInstanceSupport::EnsureSpaceIsAvailable (UInt32& off
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus MemoryInstanceSupport::InsertNullArrayElementsAt (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, UInt32 insertIndex, UInt32 insertCount)
+ECObjectsStatus MemoryInstanceSupport::InsertNullArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 insertIndex, UInt32 insertCount)
     {        
     PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
                 
@@ -1445,7 +1445,7 @@ ECObjectsStatus MemoryInstanceSupport::InsertNullArrayElementsAt (ClassLayoutCR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus       MemoryInstanceSupport::AddNullArrayElementsAt (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, UInt32 count)
+ECObjectsStatus       MemoryInstanceSupport::AddNullArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 count)
     {        
     PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
                 
@@ -1727,7 +1727,7 @@ ECObjectsStatus       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValu
             } 
         case PRIMITIVETYPE_String:
             {
-            wchar_t * pString = (wchar_t *)pValue;
+            WCharP pString = (WCharP)pValue;
             v.SetString (pString, false); // WIP_FUSION: We are passing false for "makeDuplicateCopy" to avoid the allocation 
                                           // and copying... but how do make the caller aware of this? When do they need 
                                           // to be aware. The wchar_t* they get back would get invalidated if the 
@@ -1795,7 +1795,7 @@ ECObjectsStatus       MemoryInstanceSupport::GetValueFromMemory (ECValueR v, Pro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus       MemoryInstanceSupport::GetValueFromMemory (ClassLayoutCR classLayout, ECValueR v, const wchar_t * propertyAccessString, bool useIndex, UInt32 index) const
+ECObjectsStatus       MemoryInstanceSupport::GetValueFromMemory (ClassLayoutCR classLayout, ECValueR v, WCharCP propertyAccessString, bool useIndex, UInt32 index) const
     {
     PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
                 
@@ -1878,7 +1878,7 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             }       
         case PRIMITIVETYPE_String:
             {
-            wchar_t const * value = v.GetString();
+            WCharCP value = v.GetString();
             UInt32 bytesNeeded = (UInt32)(sizeof(wchar_t) * (wcslen(value) + 1)); // WIP_FUSION: what if the caller could tell us the size?
             
             ECObjectsStatus status;
@@ -1976,7 +1976,7 @@ ECObjectsStatus       MemoryInstanceSupport::SetValueToMemory (ECValueCR v, Clas
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayout, const wchar_t * propertyAccessString, ECValueCR v, bool useIndex, UInt32 index)
+ECObjectsStatus       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayout, WCharCP propertyAccessString, ECValueCR v, bool useIndex, UInt32 index)
     {
     PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
                 
@@ -2010,7 +2010,7 @@ ECObjectsStatus       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR cla
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString        MemoryInstanceSupport::InstanceDataToString (const wchar_t* indent, ClassLayoutCR classLayout) const
+WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, ClassLayoutCR classLayout) const
     {
     static bool s_skipDump = false;
     static int s_dumpCount = 0;

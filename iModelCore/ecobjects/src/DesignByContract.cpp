@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/native/DesignByContract.cpp $
+|     $Source: src/DesignByContract.cpp $
 |
-|   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -36,11 +36,11 @@ AssertDisabler::~AssertDisabler ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LogFailureMessage (const wchar_t * message, ...)
+void LogFailureMessage (WCharCP message, ...)
     {
     va_list arguments;
     int len;
-    wchar_t *buffer;
+    WCharP buffer;
     va_start (arguments, message);              
 
     len = _vscwprintf( message, arguments ) // _vscprintf doesn't count

@@ -23,8 +23,8 @@ typedef bmap<WString, ICustomECStructSerializerP> NameSerializerMap;
 struct ICustomECStructSerializer
     {
     virtual bool            UsesCustomStructXmlString  (StructECPropertyP structProperty, IECInstanceCR ecInstance) const = 0;
-    virtual ECObjectsStatus GenerateXmlString  (WString& xmlString, StructECPropertyP structProperty, IECInstanceCR ecInstance, const wchar_t * baseAccessString) const = 0;
-    virtual void            LoadStructureFromString (StructECPropertyP structProperty, IECInstanceR ecInstance, const wchar_t * baseAccessString, const wchar_t * valueString) = 0;
+    virtual ECObjectsStatus GenerateXmlString  (WString& xmlString, StructECPropertyP structProperty, IECInstanceCR ecInstance, WCharCP baseAccessString) const = 0;
+    virtual void            LoadStructureFromString (StructECPropertyP structProperty, IECInstanceR ecInstance, WCharCP baseAccessString, WCharCP valueString) = 0;
     };
 
 struct CustomStructSerializerManager
@@ -35,12 +35,12 @@ private:
     CustomStructSerializerManager();
     ~CustomStructSerializerManager();
 
-    ICustomECStructSerializerP GetCustomSerializer (const wchar_t* serializerName) const;
+    ICustomECStructSerializerP GetCustomSerializer (WCharCP serializerName) const;
 
 public:
     ECOBJECTS_EXPORT  ICustomECStructSerializerP            GetCustomSerializer (StructECPropertyP structProperty, IECInstanceCR ecInstance) const;
     ECOBJECTS_EXPORT  static CustomStructSerializerManagerR GetManager();
-    ECOBJECTS_EXPORT  BentleyStatus                         AddCustomSerializer (const wchar_t* serializerName, ICustomECStructSerializerP serializer);
+    ECOBJECTS_EXPORT  BentleyStatus                         AddCustomSerializer (WCharCP serializerName, ICustomECStructSerializerP serializer);
 };
 
 typedef RefCountedPtr<IECInstance> IECInstancePtr;
@@ -62,19 +62,19 @@ protected:
     ECOBJECTS_EXPORT virtual ~IECInstance();
 
     virtual WString            _GetInstanceId() const = 0; // Virtual and returning WString because a subclass may want to calculate it on demand
-    virtual ECObjectsStatus     _GetValue (ECValueR v, const wchar_t * managedPropertyAccessor, bool useArrayIndex, UInt32 arrayIndex) const = 0;
+    virtual ECObjectsStatus     _GetValue (ECValueR v, WCharCP managedPropertyAccessor, bool useArrayIndex, UInt32 arrayIndex) const = 0;
     virtual ECObjectsStatus     _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const = 0;
 public:
-    virtual ECObjectsStatus     _SetValue (const wchar_t * managedPropertyAccessor, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) = 0;
+    virtual ECObjectsStatus     _SetValue (WCharCP managedPropertyAccessor, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) = 0;
 protected:
     virtual ECObjectsStatus     _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) = 0;
-    virtual ECObjectsStatus     _InsertArrayElements (const wchar_t * managedPropertyAccessor, UInt32 index, UInt32 size) = 0;
-    virtual ECObjectsStatus     _AddArrayElements (const wchar_t * managedPropertyAccessor, UInt32 size) = 0;
-    virtual ECObjectsStatus     _RemoveArrayElement (const wchar_t * managedPropertyAccessor, UInt32 index) = 0;
-    virtual ECObjectsStatus     _ClearArray (const wchar_t * managedPropertyAccessor) = 0;    
+    virtual ECObjectsStatus     _InsertArrayElements (WCharCP managedPropertyAccessor, UInt32 index, UInt32 size) = 0;
+    virtual ECObjectsStatus     _AddArrayElements (WCharCP managedPropertyAccessor, UInt32 size) = 0;
+    virtual ECObjectsStatus     _RemoveArrayElement (WCharCP managedPropertyAccessor, UInt32 index) = 0;
+    virtual ECObjectsStatus     _ClearArray (WCharCP managedPropertyAccessor) = 0;    
     virtual ECEnablerCR         _GetEnabler() const = 0;
     virtual bool                _IsReadOnly() const = 0;
-    virtual WString            _ToString (const wchar_t* indent) const = 0;
+    virtual WString            _ToString (WCharCP indent) const = 0;
     virtual size_t              _GetOffsetToIECInstance () const = 0;
 
     ECOBJECTS_EXPORT virtual MemoryECInstanceBase* _GetAsMemoryECInstance () const;
@@ -88,45 +88,45 @@ public:
     ECOBJECTS_EXPORT bool               IsReadOnly() const;
     
     ECOBJECTS_EXPORT ECClassCR          GetClass() const;
-    ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, const wchar_t * managedPropertyAccessor) const;    
-    ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, const wchar_t * managedPropertyAccessor, UInt32 index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, WCharCP managedPropertyAccessor) const;    
+    ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, WCharCP managedPropertyAccessor, UInt32 index) const;
     ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, UInt32 propertyIndex) const;
     ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, UInt32 propertyIndex, UInt32 arrayIndex) const;
-    ECOBJECTS_EXPORT ECObjectsStatus    SetValue (const wchar_t * managedPropertyAccessor, ECValueCR v);    
-    ECOBJECTS_EXPORT ECObjectsStatus    SetValue (const wchar_t * managedPropertyAccessor, ECValueCR v, UInt32 index);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetValue (WCharCP managedPropertyAccessor, ECValueCR v);    
+    ECOBJECTS_EXPORT ECObjectsStatus    SetValue (WCharCP managedPropertyAccessor, ECValueCR v, UInt32 index);
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (UInt32 propertyIndex, ECValueCR v);
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex);
     ECOBJECTS_EXPORT ECObjectsStatus    GetValueUsingAccessor (ECValueR v, ECValueAccessorCR accessor) const;
     ECOBJECTS_EXPORT ECObjectsStatus    SetValueUsingAccessor (ECValueAccessorCR accessor, ECValueCR v);
     
-    ECOBJECTS_EXPORT static bool        IsFixedArrayProperty (EC::IECInstanceR instance, const wchar_t* accessString);
+    ECOBJECTS_EXPORT static bool        IsFixedArrayProperty (EC::IECInstanceR instance, WCharCP accessString);
 
     //! Contract:
     //! - For all of the methods, the managedPropertyAccessor should be in the "array element" form, 
     //!   e.g. "Aliases[]" instead of "Aliases"         
-    ECOBJECTS_EXPORT ECObjectsStatus      InsertArrayElements (const wchar_t * managedPropertyAccessor, UInt32 index, UInt32 size); //WIP_FUSION Return the new count?   
-    ECOBJECTS_EXPORT ECObjectsStatus      AddArrayElements (const wchar_t * managedPropertyAccessor, UInt32 size); //WIP_FUSION Return the new count?
-    ECOBJECTS_EXPORT ECObjectsStatus      RemoveArrayElement (const wchar_t * managedPropertyAccessor, UInt32 index); //WIP_FUSION return the removed one? YAGNI? Return the new count?
-    ECOBJECTS_EXPORT ECObjectsStatus      ClearArray (const wchar_t * managedPropertyAccessor);    
+    ECOBJECTS_EXPORT ECObjectsStatus      InsertArrayElements (WCharCP managedPropertyAccessor, UInt32 index, UInt32 size); //WIP_FUSION Return the new count?   
+    ECOBJECTS_EXPORT ECObjectsStatus      AddArrayElements (WCharCP managedPropertyAccessor, UInt32 size); //WIP_FUSION Return the new count?
+    ECOBJECTS_EXPORT ECObjectsStatus      RemoveArrayElement (WCharCP managedPropertyAccessor, UInt32 index); //WIP_FUSION return the removed one? YAGNI? Return the new count?
+    ECOBJECTS_EXPORT ECObjectsStatus      ClearArray (WCharCP managedPropertyAccessor);    
     
     ECOBJECTS_EXPORT MemoryECInstanceBase* GetAsMemoryECInstance () const;
     ECOBJECTS_EXPORT size_t                GetOffsetToIECInstance () const;
 
     //WIP_FUSION ParseExpectedNIndices should move to AccessStringHelper struct... along with method to convert to/from .NET ECObjects style accessString
-    ECOBJECTS_EXPORT static int         ParseExpectedNIndices (const wchar_t * managedPropertyAccessor);
+    ECOBJECTS_EXPORT static int         ParseExpectedNIndices (WCharCP managedPropertyAccessor);
     
-    ECOBJECTS_EXPORT WString           ToString (const wchar_t* indent) const;
+    ECOBJECTS_EXPORT WString           ToString (WCharCP indent) const;
 
     ECOBJECTS_EXPORT static void        Debug_ResetAllocationStats ();
-    ECOBJECTS_EXPORT static void        Debug_DumpAllocationStats (const wchar_t* prefix);
+    ECOBJECTS_EXPORT static void        Debug_DumpAllocationStats (WCharCP prefix);
     ECOBJECTS_EXPORT static void        Debug_GetAllocationStats (int* currentLive, int* totalAllocs, int* totalFrees);
     ECOBJECTS_EXPORT static void        Debug_ReportLeaks (bvector<WString>& classNamesToExclude);
 
-    ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadXmlFromFile   (IECInstancePtr& ecInstance, const wchar_t* fileName, ECInstanceDeserializationContextR context);
+    ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadXmlFromFile   (IECInstancePtr& ecInstance, WCharCP fileName, ECInstanceDeserializationContextR context);
     ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadXmlFromStream (IECInstancePtr& ecInstance, IStreamP stream, ECInstanceDeserializationContextR context);
-    ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadXmlFromString (IECInstancePtr& ecInstance, const wchar_t* xmlString, ECInstanceDeserializationContextR context);
+    ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadXmlFromString (IECInstancePtr& ecInstance, WCharCP xmlString, ECInstanceDeserializationContextR context);
 
-    ECOBJECTS_EXPORT InstanceSerializationStatus            WriteXmlToFile   (const wchar_t* fileName, bool isStandAlone);
+    ECOBJECTS_EXPORT InstanceSerializationStatus            WriteXmlToFile   (WCharCP fileName, bool isStandAlone);
     ECOBJECTS_EXPORT InstanceSerializationStatus            WriteXmlToStream (IStreamP stream, bool isStandAlone);
     ECOBJECTS_EXPORT InstanceSerializationStatus            WriteXmlToString (WString & ecInstanceXml, bool isStandAlone);
     };
@@ -158,27 +158,27 @@ struct ECInstanceInteropHelper
     {
     // These are not convenience methods.  They are intended for managed callers.  They enable
     // an access pattern that can get a value with only one managed to native transition    
-    ECOBJECTS_EXPORT static ECObjectsStatus GetValue         (IECInstanceCR, ECValueR value,          const wchar_t * managedPropertyAccessor);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetInteger       (IECInstanceCR, int & value,             const wchar_t * managedPropertyAccessor);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetLong          (IECInstanceCR, Int64 & value,           const wchar_t * managedPropertyAccessor);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetDouble        (IECInstanceCR, double & value,          const wchar_t * managedPropertyAccessor);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetString        (IECInstanceCR, const wchar_t * & value, const wchar_t * managedPropertyAccessor);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetBoolean       (IECInstanceCR, bool & value,            const wchar_t * managedPropertyAccessor);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetPoint2D       (IECInstanceCR, DPoint2dR value,         const wchar_t * managedPropertyAccessor);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetPoint3D       (IECInstanceCR, DPoint3dR value,         const wchar_t * managedPropertyAccessor);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTime      (IECInstanceCR, SystemTimeR value,       const wchar_t * managedPropertyAccessor);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTimeTicks (IECInstanceCR, Int64 & value,           const wchar_t * managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetValue         (IECInstanceCR, ECValueR value,          WCharCP managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetInteger       (IECInstanceCR, int & value,             WCharCP managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetLong          (IECInstanceCR, Int64 & value,           WCharCP managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetDouble        (IECInstanceCR, double & value,          WCharCP managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetString        (IECInstanceCR, WCharCP & value, WCharCP managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetBoolean       (IECInstanceCR, bool & value,            WCharCP managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetPoint2D       (IECInstanceCR, DPoint2dR value,         WCharCP managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetPoint3D       (IECInstanceCR, DPoint3dR value,         WCharCP managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTime      (IECInstanceCR, SystemTimeR value,       WCharCP managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTimeTicks (IECInstanceCR, Int64 & value,           WCharCP managedPropertyAccessor);
 
-    ECOBJECTS_EXPORT static ECObjectsStatus SetValue         (IECInstanceR, const wchar_t * managedPropertyAccessor, ECValueCR value);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetLongValue     (IECInstanceR, const wchar_t * managedPropertyAccessor, Int64 value);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetIntegerValue  (IECInstanceR, const wchar_t * managedPropertyAccessor, int value);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetStringValue   (IECInstanceR, const wchar_t * managedPropertyAccessor, const wchar_t * value);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetDoubleValue   (IECInstanceR, const wchar_t * managedPropertyAccessor, double value);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetBooleanValue  (IECInstanceR, const wchar_t * managedPropertyAccessor, bool value);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetPoint2DValue  (IECInstanceR, const wchar_t * managedPropertyAccessor, DPoint2dCR value);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetPoint3DValue  (IECInstanceR, const wchar_t * managedPropertyAccessor, DPoint3dCR value);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeValue (IECInstanceR, const wchar_t * managedPropertyAccessor, SystemTimeR value);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeTicks (IECInstanceR, const wchar_t * managedPropertyAccessor, Int64 value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetValue         (IECInstanceR, WCharCP managedPropertyAccessor, ECValueCR value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetLongValue     (IECInstanceR, WCharCP managedPropertyAccessor, Int64 value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetIntegerValue  (IECInstanceR, WCharCP managedPropertyAccessor, int value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetStringValue   (IECInstanceR, WCharCP managedPropertyAccessor, WCharCP value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetDoubleValue   (IECInstanceR, WCharCP managedPropertyAccessor, double value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetBooleanValue  (IECInstanceR, WCharCP managedPropertyAccessor, bool value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetPoint2DValue  (IECInstanceR, WCharCP managedPropertyAccessor, DPoint2dCR value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetPoint3DValue  (IECInstanceR, WCharCP managedPropertyAccessor, DPoint3dCR value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeValue (IECInstanceR, WCharCP managedPropertyAccessor, SystemTimeR value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeTicks (IECInstanceR, WCharCP managedPropertyAccessor, Int64 value);
 
     ECOBJECTS_EXPORT static PrimitiveType   GetPrimitiveType       (IECInstanceCR instance, int propertyIndex);
 #ifdef NOT_USED
@@ -200,8 +200,8 @@ struct ECInstanceInteropHelper
     //! @param       firstRunInStruct - whether or not this is the first time this method has been called in a struct enumerator.
     //!                                 This parameter will cause GetNextInteropProperty to avoid incrementing propertyIndex, as 
     //!                                 propertyIndex starts is the first property of that struct.
-    ECOBJECTS_EXPORT static bool            GetNextInteropProperty (int& propertyIndex, int& structNameLength, const wchar_t*& accessor, IECInstanceCR instance, int prefix, bool includeNulls, bool firstRunInStruct);
-    ECOBJECTS_EXPORT static int             FirstIndexOfStruct     (IECInstanceCR instance, const wchar_t* structName);
+    ECOBJECTS_EXPORT static bool            GetNextInteropProperty (int& propertyIndex, int& structNameLength, WCharCP& accessor, IECInstanceCR instance, int prefix, bool includeNulls, bool firstRunInStruct);
+    ECOBJECTS_EXPORT static int             FirstIndexOfStruct     (IECInstanceCR instance, WCharCP structName);
 
     ECOBJECTS_EXPORT static ECObjectsStatus SetValueByIndex         (IECInstanceR instance, int propertyIndex, int arrayIndex, ECValueCR value);
     ECOBJECTS_EXPORT static ECObjectsStatus GetValueByIndex         (ECValueR value, IECInstanceCR instance, int propertyIndex, int arrayIndex);

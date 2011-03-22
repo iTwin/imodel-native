@@ -80,7 +80,7 @@ ECClassCR ECProperty::GetClass
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString const& ECProperty::GetName
+WStringCR ECProperty::GetName
 (
 ) const
     {
@@ -92,7 +92,7 @@ WString const& ECProperty::GetName
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECProperty::SetName
 (
-WString const& name
+WStringCR name
 )
     {        
     if (!NameValidator::Validate(name))
@@ -105,7 +105,7 @@ WString const& name
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString const& ECProperty::GetDescription
+WStringCR ECProperty::GetDescription
 (
 ) const
     {
@@ -117,7 +117,7 @@ WString const& ECProperty::GetDescription
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECProperty::SetDescription
 (
-WString const& description
+WStringCR description
 )
     {        
     m_description = description;
@@ -127,7 +127,7 @@ WString const& description
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString const& ECProperty::GetDisplayLabel
+WStringCR ECProperty::GetDisplayLabel
 (
 ) const
     {
@@ -139,7 +139,7 @@ WString const& ECProperty::GetDisplayLabel
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECProperty::SetDisplayLabel
 (
-WString const& displayLabel
+WStringCR displayLabel
 )
     {        
     m_displayLabel = displayLabel;
@@ -173,7 +173,7 @@ bool readOnly
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECProperty::SetIsReadOnly
 (
-const wchar_t * isReadOnly
+WCharCP isReadOnly
 )
     {        
     PRECONDITION (NULL != isReadOnly, ECOBJECTS_STATUS_PreconditionViolated);
@@ -346,7 +346,7 @@ MSXML2::IXMLDOMElement& parentNode
 SchemaSerializationStatus ECProperty::_WriteXml
 (
 MSXML2::IXMLDOMElement& parentNode,
-const wchar_t *elementName
+WCharCP elementName
 )
     {
     SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
@@ -453,7 +453,7 @@ WString PrimitiveECProperty::_GetTypeName
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus PrimitiveECProperty::_SetTypeName 
 (
-WString const& typeName
+WStringCR typeName
 )
     {
     PrimitiveType primitiveType;
@@ -565,7 +565,7 @@ WString StructECProperty::_GetTypeName
 ECObjectsStatus ResolveStructType
 (
 ECClassP & structClass,
-WString const& typeName,
+WStringCR typeName,
 ECPropertyCR ecProperty
 )
     {
@@ -603,7 +603,7 @@ ECPropertyCR ecProperty
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus StructECProperty::_SetTypeName 
 (
-WString const& typeName
+WStringCR typeName
 )
     {
     ECClassP structClass;
@@ -759,7 +759,7 @@ WString ArrayECProperty::_GetTypeName
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ArrayECProperty::_SetTypeName 
 (
-WString const& typeName
+WStringCR typeName
 )
     {
     PrimitiveType primitiveType;
@@ -872,7 +872,7 @@ UInt32 minOccurs
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ArrayECProperty::SetMinOccurs
 (
-WString const& minOccurs
+WStringCR minOccurs
 )
     {    
     UInt32 iMinOccurs;
@@ -916,7 +916,7 @@ UInt32 maxOccurs
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ArrayECProperty::SetMaxOccurs
 (
-WString const& maxOccurs
+WStringCR maxOccurs
 )
     {    
     UInt32 iMaxOccurs;

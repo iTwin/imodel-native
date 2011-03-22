@@ -23,7 +23,7 @@ private:
     double ConvertLongIntegerToSeconds( LARGE_INTEGER & L);
     
 public:
-    StopWatch(wchar_t * description = L"", bool startImmediately = false);
+    StopWatch(WCharP description = L"", bool startImmediately = false);
     void         Start();
     void         Stop();
     double       GetElapsedSeconds();

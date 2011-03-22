@@ -88,7 +88,7 @@ ECSchemaCP ECSchema::_GetContainerSchema() const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString const& ECSchema::GetName
+WStringCR ECSchema::GetName
 (
 ) const
     {
@@ -100,7 +100,7 @@ WString const& ECSchema::GetName
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetName
 (
-WString const& name
+WStringCR name
 )
     {        
     if (!NameValidator::Validate(name))
@@ -113,7 +113,7 @@ WString const& name
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString const& ECSchema::GetNamespacePrefix
+WStringCR ECSchema::GetNamespacePrefix
 (
 ) const
     {        
@@ -125,7 +125,7 @@ WString const& ECSchema::GetNamespacePrefix
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetNamespacePrefix
 (
-WString const& namespacePrefix
+WStringCR namespacePrefix
 )
     {        
     m_namespacePrefix = namespacePrefix;  
@@ -135,7 +135,7 @@ WString const& namespacePrefix
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString const& ECSchema::GetDescription
+WStringCR ECSchema::GetDescription
 (
 ) const
     {
@@ -147,7 +147,7 @@ WString const& ECSchema::GetDescription
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetDescription
 (
-WString const& description
+WStringCR description
 )
     {        
     m_description = description;
@@ -157,7 +157,7 @@ WString const& description
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString const& ECSchema::GetDisplayLabel
+WStringCR ECSchema::GetDisplayLabel
 (
 ) const
     {
@@ -169,7 +169,7 @@ WString const& ECSchema::GetDisplayLabel
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetDisplayLabel
 (
-WString const& displayLabel
+WStringCR displayLabel
 )
     {        
     m_displayLabel = displayLabel;
@@ -235,7 +235,7 @@ const UInt32 versionMinor
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassP ECSchema::GetClassP
 (
-const wchar_t * name
+WCharCP name
 ) const
     {
     ClassMap::const_iterator  classIterator;
@@ -255,8 +255,8 @@ ECObjectsStatus ECSchema::AddClass
 ECClassP&                 pClass
 )
     {
-    bpair < bmap<const wchar_t *, ECClassP>::iterator, bool > resultPair;
-    resultPair = m_classMap.insert (bpair<const wchar_t *, ECClassP> (pClass->Name.c_str(), pClass));
+    bpair < bmap<WCharCP, ECClassP>::iterator, bool > resultPair;
+    resultPair = m_classMap.insert (bpair<WCharCP, ECClassP> (pClass->Name.c_str(), pClass));
     if (resultPair.second == false)
         {
         ECObjectsLogger::Log()->warningv (L"Can not create class '%s' because it already exists in the schema", pClass->Name.c_str());
@@ -274,7 +274,7 @@ ECClassP&                 pClass
 ECObjectsStatus ECSchema::CreateClass 
 (
 ECClassP&                 pClass, 
-WString const&     name
+WStringCR     name
 )
     {
     pClass = new ECClass(*this, m_hideFromLeakDetection);
@@ -295,7 +295,7 @@ WString const&     name
 ECObjectsStatus ECSchema::CreateRelationshipClass 
 (
 ECRelationshipClassP&     pClass, 
-WString const&     name
+WStringCR     name
 )
     {
     pClass = new ECRelationshipClass(*this);
@@ -307,8 +307,8 @@ WString const&     name
         return status;
         }
 
-    bpair < bmap<const wchar_t *, ECClassP>::iterator, bool > resultPair;
-    resultPair = m_classMap.insert (bpair<const wchar_t *, ECClassP> (pClass->Name.c_str(), pClass));
+    bpair < bmap<WCharCP, ECClassP>::iterator, bool > resultPair;
+    resultPair = m_classMap.insert (bpair<WCharCP, ECClassP> (pClass->Name.c_str(), pClass));
     if (resultPair.second == false)
         {
         delete pClass;
@@ -340,14 +340,14 @@ ECObjectsStatus ECSchema::ParseSchemaFullName
 WString&           schemaName,
 UInt32&             versionMajor, 
 UInt32&             versionMinor, 
-WString const&     fullName
+WStringCR     fullName
 )
     {
     if (fullName.empty())
         return ECOBJECTS_STATUS_ParseError;
 
-    const wchar_t * fullNameCP = fullName.c_str();
-    const wchar_t * firstDot = wcschr (fullNameCP, L'.');
+    WCharCP fullNameCP = fullName.c_str();
+    WCharCP firstDot = wcschr (fullNameCP, L'.');
     if (NULL == firstDot)
         {
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchema FullName String: '%s' does not contain a '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName.c_str());
@@ -375,13 +375,13 @@ ECObjectsStatus ECSchema::ParseSchemaFullName
 WString&           schemaName,
 UInt32&             versionMajor, 
 UInt32&             versionMinor, 
-const wchar_t*      fullName
+WCharCP      fullName
 )
     {
     if (NULL == fullName || '\0' == *fullName)
         return ECOBJECTS_STATUS_ParseError;
 
-    const wchar_t * firstDot = wcschr (fullName, L'.');
+    WCharCP firstDot = wcschr (fullName, L'.');
     if (NULL == firstDot)
         {
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchema FullName String: '%s' does not contain a '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName);
@@ -418,7 +418,7 @@ ECObjectsStatus ECSchema::ParseVersionString
 (
 UInt32&             versionMajor, 
 UInt32&             versionMinor, 
-const wchar_t*      versionString
+WCharCP      versionString
 )
     {
     versionMajor = DEFAULT_VERSION_MAJOR;
@@ -426,7 +426,7 @@ const wchar_t*      versionString
     if (NULL == versionString || '\0' == *versionString)
         return ECOBJECTS_STATUS_Success;
 
-    const wchar_t * theDot = wcschr (versionString, L'.');
+    WCharCP theDot = wcschr (versionString, L'.');
     if (NULL == theDot)
         {
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%s' does not contain a '.'!" ECSCHEMA_VERSION_FORMAT_EXPLAINATION, versionString);
@@ -447,7 +447,7 @@ const wchar_t*      versionString
         return ECOBJECTS_STATUS_ParseError;
         }
 
-    wchar_t * end = NULL;    
+    WCharP end = NULL;    
     UInt32    localMajor = wcstoul (versionString, &end, 10);
     if (versionString == end)
         {
@@ -478,7 +478,7 @@ const wchar_t*      versionString
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetVersionFromString 
 (
-const wchar_t*  versionString
+WCharCP  versionString
 )
     {
     UInt32 versionMajor;
@@ -498,10 +498,10 @@ const wchar_t*  versionString
 bool            ECSchema::SchemasMatch
 (
 SchemaMatchType matchType,
-const wchar_t * soughtName,
+WCharCP soughtName,
 UInt32          soughtMajor,
 UInt32          soughtMinor,
-const wchar_t * candidateName,
+WCharCP candidateName,
 UInt32          candidateMajor,
 UInt32          candidateMinor
 )
@@ -520,7 +520,7 @@ UInt32          candidateMinor
 ECObjectsStatus ECSchema::CreateSchema
 (
 ECSchemaP&          schemaOut, 
-WString const&     schemaName,
+WStringCR     schemaName,
 UInt32              versionMajor,
 UInt32              versionMinor,
 IECSchemaOwnerR     schemaOwner,
@@ -558,7 +558,7 @@ bool                hideFromLeakDetection
 ECObjectsStatus ECSchema::CreateSchema
 (
 ECSchemaP&          schemaOut, 
-WString const&     schemaName,
+WStringCR     schemaName,
 UInt32              versionMajor,
 UInt32              versionMinor,
 IECSchemaOwnerR     schemaOwner
@@ -581,7 +581,7 @@ void    ECSchema::DestroySchema (ECSchemaP& schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP ECSchema::GetSchemaByNamespacePrefixP
 (
-WString const&     namespacePrefix
+WStringCR     namespacePrefix
 ) const
     {
     if ((namespacePrefix.length() == 0) || (namespacePrefix == m_namespacePrefix))
@@ -864,25 +864,25 @@ ECSchemaDeserializationContextR schemaContext
 
         if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMAREF_NAME_ATTRIBUTE)))
             {
-            ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_NAME_ATTRIBUTE L" attribute", (const wchar_t *)xmlNodePtr->baseName);
+            ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_NAME_ATTRIBUTE L" attribute", (WCharCP)xmlNodePtr->baseName);
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
             
-        WString schemaName = (const wchar_t*) attributePtr->text;
+        WString schemaName = (WCharCP) attributePtr->text;
 
         if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMAREF_PREFIX_ATTRIBUTE)))
             {
-            ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_PREFIX_ATTRIBUTE L" attribute", (const wchar_t *)xmlNodePtr->baseName);
+            ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_PREFIX_ATTRIBUTE L" attribute", (WCharCP)xmlNodePtr->baseName);
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
-        WString prefix = (const wchar_t*) attributePtr->text;
+        WString prefix = (WCharCP) attributePtr->text;
 
         if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMAREF_VERSION_ATTRIBUTE)))
             {
-            ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_VERSION_ATTRIBUTE L" attribute", (const wchar_t *)xmlNodePtr->baseName);
+            ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_VERSION_ATTRIBUTE L" attribute", (WCharCP)xmlNodePtr->baseName);
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
-        WString versionString = (const wchar_t*) attributePtr->text;
+        WString versionString = (WCharCP) attributePtr->text;
 
         UInt32 versionMajor;
         UInt32 versionMinor;
@@ -915,7 +915,7 @@ ECSchemaDeserializationContextR schemaContext
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP IECSchemaLocator::LocateSchema(const wchar_t *name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaDeserializationContextR schemaContext)
+ECSchemaP IECSchemaLocator::LocateSchema(WCharCP name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaDeserializationContextR schemaContext)
     {
     return _LocateSchema (name, versionMajor, versionMinor, matchType, schemaContext);
     }
@@ -969,21 +969,21 @@ ECSchemaDeserializationContextR schemaContext
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  11/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, wchar_t const* filePath)
+static ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, WCharCP filePath)
     {
     wchar_t  name[256];
 
     // only process the filename 
     ::_wsplitpath (filePath, NULL, NULL, name, NULL);
 
-    const wchar_t * firstDot = wcschr (name, L'.');
+    WCharCP firstDot = wcschr (name, L'.');
     if (NULL == firstDot)
         {
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchema FullName String: '%s' does not contain a '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, filePath);
         return ECOBJECTS_STATUS_ParseError;
         }
 
-    const wchar_t * suffix = wcsstr (name, L".ecschema");
+    WCharCP suffix = wcsstr (name, L".ecschema");
     if (NULL == suffix)
         {
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchema FileName String: '%s' does not contain the suffix '.ecschema.xml'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, filePath);
@@ -1003,7 +1003,7 @@ static ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  11/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECObjectsStatus GetSchemaFileName (WString& fullFileName, wchar_t const* schemaPath, bool useLatestCompatibleMatch)
+static ECObjectsStatus GetSchemaFileName (WString& fullFileName, WCharCP schemaPath, bool useLatestCompatibleMatch)
     {
     ECFileNameIterator *fileList = new ECFileNameIterator(schemaPath);
     wchar_t filePath[MAX_PATH];
@@ -1180,15 +1180,15 @@ ECSchemaDeserializationContextR     schemaContext
     // OPTIONAL attributes - If these attributes exist they do not need to be valid.  We will ignore any errors setting them and use default values.
     // NEEDSWORK This is due to the current implementation in managed ECObjects.  We should reconsider whether it is the correct behavior.
     if ((NULL == (versionAttributePtr = nodeAttributesPtr->getNamedItem (SCHEMA_VERSION_ATTRIBUTE))) ||
-        SUCCESS != ParseVersionString (versionMajor, versionMinor, (const wchar_t *) versionAttributePtr->text))
+        SUCCESS != ParseVersionString (versionMajor, versionMinor, (WCharCP) versionAttributePtr->text))
         {
         ECObjectsLogger::Log()->warningv (L"Invalid version attribute has been ignored while deserializing ECSchema '%s'.  The default version number %d.%d has been applied.", 
-            (const wchar_t *)attributePtr->text, versionMajor, versionMinor);
+            (WCharCP)attributePtr->text, versionMajor, versionMinor);
         }
 
     IECSchemaOwnerR schemaOwner = schemaContext.GetSchemaOwner();
     bool            hideFromLeakDetection = schemaContext.GetHideSchemasFromLeakDetection();
-    if (ECOBJECTS_STATUS_Success != CreateSchema (schemaOut, (const wchar_t *)attributePtr->text, versionMajor, versionMinor, schemaOwner, hideFromLeakDetection))
+    if (ECOBJECTS_STATUS_Success != CreateSchema (schemaOut, (WCharCP)attributePtr->text, versionMajor, versionMinor, schemaOwner, hideFromLeakDetection))
         return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
 
     // OPTIONAL attributes - If these attributes exist they MUST be valid        
@@ -1339,7 +1339,7 @@ SchemaSerializationStatus ECSchema::WriteClass (MSXML2::IXMLDOMElement &parentNo
     if (&(ecClass.Schema) != this)
         return status;
     
-    bset<const wchar_t *>::const_iterator setIterator;
+    bset<WCharCP>::const_iterator setIterator;
     setIterator = context.m_alreadySerializedClasses.find(ecClass.Name.c_str());
     // Make sure we don't serialize any class twice
     if (setIterator != context.m_alreadySerializedClasses.end())
@@ -1479,7 +1479,7 @@ MSXML2::IXMLDOMDocument2& pXmlDoc
             if (NULL != pBURL.GetBSTR())
                 file = pBURL;
                 
-            WString reason = pBReason;
+            WString reason = pBReason.GetBSTR();
                         
             ECObjectsLogger::Log()->errorv (L"line %d, position %d parsing ECSchema file %s. %s", line, linePos, file.c_str(), reason.c_str());            
             return ERROR;
@@ -1495,7 +1495,7 @@ MSXML2::IXMLDOMDocument2& pXmlDoc
 SchemaDeserializationStatus ECSchema::ReadXmlFromFile
 (
 ECSchemaP&                      schemaOut, 
-const wchar_t *                 ecSchemaXmlFile, 
+WCharCP                 ecSchemaXmlFile, 
 ECSchemaDeserializationContextR schemaContext
 )
     {                  
@@ -1528,7 +1528,7 @@ ECSchemaDeserializationContextR schemaContext
 SchemaDeserializationStatus     ECSchema::ReadXmlFromString
 (
 ECSchemaP&                      schemaOut, 
-const wchar_t *                 ecSchemaXml,
+WCharCP                 ecSchemaXml,
 ECSchemaDeserializationContextR schemaContext
 )
     {                  
@@ -1646,7 +1646,7 @@ SchemaSerializationStatus ECSchema::WriteXmlToString (WString& ecSchemaXml) cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaSerializationStatus ECSchema::WriteXmlToFile
 (
-const wchar_t * ecSchemaXmlFile
+WCharCP ecSchemaXmlFile
 )
     {
     SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
@@ -1709,7 +1709,7 @@ ECSchemaDeserializationContextPtr  ECSchemaDeserializationContext::CreateContext
                                                                                         { return new ECSchemaDeserializationContext(owner, enablerLocator); }
 void  ECSchemaDeserializationContext::AddSchemaLocators (bvector<EC::IECSchemaLocatorP>& locators) { m_locators.insert (m_locators.begin(), locators.begin(), locators.end());  }
 void  ECSchemaDeserializationContext::AddSchemaLocator (IECSchemaLocatorR locator)      { m_locators.push_back (&locator);  }
-void  ECSchemaDeserializationContext::AddSchemaPath (const wchar_t* path)               { m_searchPaths.push_back (WString(path));   }
+void  ECSchemaDeserializationContext::AddSchemaPath (WCharCP path)               { m_searchPaths.push_back (WString(path));   }
 void  ECSchemaDeserializationContext::HideSchemasFromLeakDetection ()                   { m_hideSchemasFromLeakDetection = true; }
 bvector<IECSchemaLocatorP>& ECSchemaDeserializationContext::GetSchemaLocators ()                { return m_locators;    }
 T_WStringVectorR            ECSchemaDeserializationContext::GetSchemaPaths ()                   { return m_searchPaths; }
@@ -1727,8 +1727,8 @@ bool                        ECSchemaDeserializationContext::GetHideSchemasFromLe
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus IECSchemaOwner::AddSchema  (ECSchemaR schema) { return _AddSchema (schema); }
 ECObjectsStatus IECSchemaOwner::DropSchema (ECSchemaR schema) { return _DropSchema (schema); }
-ECSchemaP       IECSchemaOwner::GetSchema  (const wchar_t* name, UInt32 major, UInt32 minor) { return _GetSchema (name, major, minor); }
-ECSchemaP       IECSchemaOwner::LocateSchema (const wchar_t* name, UInt32 major, UInt32 minor, SchemaMatchType matchType) { return _LocateSchema (name, major, minor, matchType); }
+ECSchemaP       IECSchemaOwner::GetSchema  (WCharCP name, UInt32 major, UInt32 minor) { return _GetSchema (name, major, minor); }
+ECSchemaP       IECSchemaOwner::LocateSchema (WCharCP name, UInt32 major, UInt32 minor, SchemaMatchType matchType) { return _LocateSchema (name, major, minor, matchType); }
 
 #ifdef NO_MORE
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -1786,7 +1786,7 @@ ECObjectsStatus ECSchemaOwner::_DropSchema (ECSchemaR ecSchema)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  07/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP       ECSchemaOwner::_LocateSchema (const wchar_t* name, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType)
+ECSchemaP       ECSchemaOwner::_LocateSchema (WCharCP name, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType)
     { 
     for each (ECSchemaP ecSchema in m_schemas)
         {
@@ -1800,7 +1800,7 @@ ECSchemaP       ECSchemaOwner::_LocateSchema (const wchar_t* name, UInt32 versio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    07/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP       ECSchemaOwner::_GetSchema (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor)
+ECSchemaP       ECSchemaOwner::_GetSchema (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor)
     {
     return _LocateSchema (schemaName, versionMajor, versionMinor, SCHEMAMATCHTYPE_Exact);
     }
@@ -1813,7 +1813,7 @@ ECSchemaP       ECSchemaOwner::_GetSchema (const wchar_t* schemaName, UInt32 ver
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneECEnablerPtr  IStandaloneEnablerLocator::ObtainStandaloneInstanceEnabler (const wchar_t* schemaName, const wchar_t* className)
+StandaloneECEnablerPtr  IStandaloneEnablerLocator::ObtainStandaloneInstanceEnabler (WCharCP schemaName, WCharCP className)
     {
     return  _ObtainStandaloneInstanceEnabler (schemaName, className);
     }
@@ -1865,7 +1865,7 @@ ECObjectsStatus ECSchemaCache::_DropSchema  (ECSchemaR ecSchema)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP       ECSchemaCache::_GetSchema   (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor)
+ECSchemaP       ECSchemaCache::_GetSchema   (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor)
     {
     return _LocateSchema (schemaName, versionMajor, versionMinor, SCHEMAMATCHTYPE_Exact);
     }
@@ -1873,7 +1873,7 @@ ECSchemaP       ECSchemaCache::_GetSchema   (const wchar_t* schemaName, UInt32 v
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP       ECSchemaCache::_LocateSchema (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType)
+ECSchemaP       ECSchemaCache::_LocateSchema (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType)
     {
     for each (ECSchemaP ecSchema in m_schemas)
         {
@@ -1895,7 +1895,7 @@ ECSchemaCachePtr    ECSchemaCache::Create ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneECEnablerPtr          ECSchemaCache::_ObtainStandaloneInstanceEnabler (const wchar_t* schemaName, const wchar_t* className)
+StandaloneECEnablerPtr          ECSchemaCache::_ObtainStandaloneInstanceEnabler (WCharCP schemaName, WCharCP className)
     {
     SchemaNameClassNamePair keyPair(schemaName, className);
 
@@ -1967,7 +1967,7 @@ bool    ECClassContainer::const_iterator::operator!= (const_iterator const& rhs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassP   ECClassContainer::const_iterator::operator*() const
     {
-    bpair<const wchar_t * , ECClassP> mapPair = *(m_state->m_mapIterator);
+    bpair<WCharCP , ECClassP> mapPair = *(m_state->m_mapIterator);
     return mapPair.second;
     };
 

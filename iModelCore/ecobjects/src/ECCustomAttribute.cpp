@@ -74,7 +74,7 @@ ECCustomAttributeCollection& returnList
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IECCustomAttributeContainer::IsDefined
 (
-WString const& className
+WStringCR className
 ) 
     {
     ECCustomAttributeCollection::const_iterator iter;
@@ -127,7 +127,7 @@ ECClassCR classDefinition
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstancePtr IECCustomAttributeContainer::GetCustomAttribute
 (
-WString const& className
+WStringCR className
 ) const
     {
     IECInstancePtr result;
@@ -238,7 +238,7 @@ IECInstanceR customAttributeInstance
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IECCustomAttributeContainer::RemoveCustomAttribute
 (
-WString const& className
+WStringCR className
 )
     {
     ECCustomAttributeCollection::iterator iter;
@@ -301,7 +301,7 @@ IStandaloneEnablerLocatorR standaloneEnablerLocator
             ECInstanceDeserializationContextPtr context = ECInstanceDeserializationContext::CreateContext (schema, standaloneEnablerLocator);
 
             IECInstancePtr ptr;
-            status = IECInstance::ReadXmlFromString(ptr, (const wchar_t*) instancePtr->Getxml(), *context);
+            status = IECInstance::ReadXmlFromString(ptr, (WCharCP) instancePtr->Getxml(), *context);
             if ( (INSTANCE_DESERIALIZATION_STATUS_Success != status) && (INSTANCE_DESERIALIZATION_STATUS_CommentOnly != status) )
                 return status;
             if (ptr.IsValid())
@@ -381,7 +381,7 @@ MSXML2::IXMLDOMNode& newNode
         MSXML2::IXMLDOMNodePtr propertyPtr = newNode.ownerDocument->createNode(NODE_ELEMENT, xmlNodePtr->baseName, xmlNodePtr->namespaceURI);
         APPEND_CHILD_TO_PARENT(propertyPtr, (&newNode));
         MSXML2::IXMLDOMNodePtr childTextNodePtr = xmlNodePtr->firstChild;
-        WString nodeType = childTextNodePtr->nodeTypeString;
+        WString nodeType = childTextNodePtr->nodeTypeString.GetBSTR();
         if (0 == nodeType.compare(L"text"))
             propertyPtr->text = childTextNodePtr->text;
         AddCustomAttributeProperties(xmlNodePtr, propertyPtr);

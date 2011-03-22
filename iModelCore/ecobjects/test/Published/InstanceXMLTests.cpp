@@ -24,7 +24,7 @@ struct  Struct1
 struct  Struct2
     {
     bool            struct2StringMemberNull;
-    const wchar_t*  struct2StringMember;
+    WCharCP  struct2StringMember;
     bool            struct2DoubleMemberNull;
     double          struct2DoubleMember;
     Struct1*        nestedArray;
@@ -447,7 +447,8 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     VerifyTestInstance (testInstance.get(), false);
 
     LPSTREAM stream = NULL;
-    HRESULT res = ::CreateStreamOnHGlobal(NULL,TRUE,&stream);
+    //HRESULT res = ::CreateStreamOnHGlobal(NULL,TRUE,&stream);
+    ::CreateStreamOnHGlobal(NULL,TRUE,&stream);
 
     InstanceSerializationStatus status2 = testInstance->WriteXmlToStream(stream, true);
     EXPECT_EQ(INSTANCE_SERIALIZATION_STATUS_Success, status2);

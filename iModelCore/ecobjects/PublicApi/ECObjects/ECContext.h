@@ -49,7 +49,7 @@ public:
     ECOBJECTS_EXPORT void AddSchemaLocators (bvector<EC::IECSchemaLocatorP>&);
 
     ECOBJECTS_EXPORT void AddSchemaLocator (IECSchemaLocatorR);
-    ECOBJECTS_EXPORT void AddSchemaPath (const wchar_t *);
+    ECOBJECTS_EXPORT void AddSchemaPath (WCharCP);
 };
 
 typedef RefCountedPtr<ECInstanceDeserializationContext>      ECInstanceDeserializationContextPtr;
