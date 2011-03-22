@@ -161,9 +161,9 @@ ECSchemaP   schema
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-static  void    ValidateSchemaNameParsing (wchar_t const* fullName, bool expectFailure, wchar_t const* expectName, UInt32 expectMajor, UInt32 expectMinor)
+static  void    ValidateSchemaNameParsing (WCharCP fullName, bool expectFailure, WCharCP expectName, UInt32 expectMajor, UInt32 expectMinor)
     {
-    bwstring    shortName;
+    WString    shortName;
     UInt32      versionMajor;
     UInt32      versionMinor;
 
@@ -442,7 +442,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingSchemaWithBaseCl
 
     ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
     ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
-    bwstring seedPath(ECTestFixture::GetTestDataPath(L"").c_str());
+    WString seedPath(ECTestFixture::GetTestDataPath(L"").c_str());
     schemaContext->AddSchemaPath(seedPath.c_str());
 
     ECSchemaP schema;
@@ -592,7 +592,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);
 
-    bwstring ecSchemaXmlString;
+    WString ecSchemaXmlString;
     
     SchemaSerializationStatus status2 = schema->WriteXmlToString(ecSchemaXmlString);
     EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status2);
@@ -759,7 +759,7 @@ TEST_F(SchemaSerializationTest, ExpectErrorWhenCOMNotInitialized)
     ECSchema::CreateSchema(schema, L"Widget", 5, 5, *schemaOwner);
     
     DISABLE_ASSERTS
-    bwstring ecSchemaXmlString;
+    WString ecSchemaXmlString;
     
     SchemaSerializationStatus status = schema->WriteXmlToString(ecSchemaXmlString);
         
@@ -805,7 +805,7 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->AddBaseClass(*anotherBase));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, gadget->AddBaseClass(*class1));
     
-//    const wchar_t *ecSchemaXmlString;
+//    WCharCPecSchemaXmlString;
     
     //SchemaSerializationStatus status2 = schema->WriteXmlToFile(L"d:\\temp\\base.xml");
     //
@@ -813,7 +813,7 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     //ECSchemaDeserializationContextPtr schemaContext = ECSchemaDeserializationContext::CreateContext();
     //SchemaDeserializationStatus status3 = ECSchema::ReadXmlFromFile (schema4, L"d:\\temp\\base.xml", *schemaContext);
     
-    bwstring ecSchemaXmlString;
+    WString ecSchemaXmlString;
     
     SchemaSerializationStatus status2 = schema->WriteXmlToString(ecSchemaXmlString);
     EXPECT_EQ(SCHEMA_SERIALIZATION_STATUS_Success, status2);
@@ -922,7 +922,7 @@ TEST_F(SchemaReferenceTest, ExpectSuccessWithCircularReferences)
 
     ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
     ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
-    bwstring seedPath(ECTestFixture::GetTestDataPath(L"").c_str());
+    WString seedPath(ECTestFixture::GetTestDataPath(L"").c_str());
     schemaContext->AddSchemaPath(seedPath.c_str());
 
     ECSchemaP schema;
@@ -1438,7 +1438,7 @@ TEST_F(ClassTest, ExpectFailureWhenStructTypeIsNotReferenced)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, ExpectPropertiesInOrder)
     {
-    std::vector<const wchar_t *> propertyNames;
+    std::vector<WCharCP> propertyNames;
     propertyNames.push_back(L"beta");
     propertyNames.push_back(L"gamma");
     propertyNames.push_back(L"delta");

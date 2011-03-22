@@ -51,7 +51,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-LeakDetector (const wchar_t* singular, const wchar_t* plural, bool buildMap)
+LeakDetector (WCharCP singular, WCharCP plural, bool buildMap)
     :
     m_singularTypeName (singular), m_pluralTypeName (plural), m_buildMap (buildMap),
     m_totalAllocs(0), m_totalFrees(0), m_currentLive(0)
@@ -95,7 +95,7 @@ virtual void    ResetStats() override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void    ReportStats (const wchar_t* prefix) const override
+virtual void    ReportStats (WCharCP prefix) const override
     {
     if (!prefix)
         prefix = L"";
@@ -118,7 +118,7 @@ virtual Int32   CheckForLeaks () const override
         OTYPE const*    leakedObject = leak.first;
         UInt32          orderOfAllocation = leak.second;
         
-        bwstring name = leakedObject->GetName();
+        WString name = leakedObject->GetName();
         
         ECObjectsLogger::Log()->errorv (L"Leaked the %dth %s that was allocated: %s", orderOfAllocation, m_singularTypeName.c_str(), name.c_str());
         }

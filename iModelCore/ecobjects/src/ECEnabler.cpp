@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/native/ECEnabler.cpp $
+|     $Source: src/ECEnabler.cpp $
 |
 |   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -27,7 +27,7 @@ ECEnabler::~ECEnabler()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneECEnablerPtr          ECEnabler::_ObtainStandaloneInstanceEnabler (const wchar_t* schemaName, const wchar_t* className)  
+StandaloneECEnablerPtr          ECEnabler::_ObtainStandaloneInstanceEnabler (WCharCP schemaName, WCharCP className)  
     {
     return m_standaloneInstanceEnablerLocator.ObtainStandaloneInstanceEnabler (schemaName, className); 
     }
@@ -35,7 +35,7 @@ StandaloneECEnablerPtr          ECEnabler::_ObtainStandaloneInstanceEnabler (con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneECEnablerPtr          ECEnabler::ObtainStandaloneInstanceEnabler (const wchar_t* schemaName, const wchar_t* className)  
+StandaloneECEnablerPtr          ECEnabler::ObtainStandaloneInstanceEnabler (WCharCP schemaName, WCharCP className)  
     {
     return _ObtainStandaloneInstanceEnabler (schemaName, className); 
     }
@@ -44,10 +44,10 @@ StandaloneECEnablerPtr          ECEnabler::ObtainStandaloneInstanceEnabler (cons
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCR           ECEnabler::GetClass() const  { return m_ecClass; }
-wchar_t const *     ECEnabler::GetName() const { return _GetName(); }
-ECObjectsStatus     ECEnabler::GetPropertyIndex (UInt32& propertyIndex, const wchar_t * accessString) const { return _GetPropertyIndex (propertyIndex, accessString); }
+WCharCP     ECEnabler::GetName() const { return _GetName(); }
+ECObjectsStatus     ECEnabler::GetPropertyIndex (UInt32& propertyIndex, WCharCP accessString) const { return _GetPropertyIndex (propertyIndex, accessString); }
 
-ECObjectsStatus     ECEnabler::GetAccessString  (const wchar_t *& accessString, UInt32 propertyIndex) const { return _GetAccessString  (accessString, propertyIndex); }
+ECObjectsStatus     ECEnabler::GetAccessString  (WCharCP& accessString, UInt32 propertyIndex) const { return _GetAccessString  (accessString, propertyIndex); }
 UInt32              ECEnabler::GetPropertyCount () const { return _GetPropertyCount (); }
 UInt32              ECEnabler::GetFirstPropertyIndex (UInt32 parentIndex) const { return _GetFirstPropertyIndex (parentIndex); }
 UInt32              ECEnabler::GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const { return _GetNextPropertyIndex (parentIndex, inputIndex); }

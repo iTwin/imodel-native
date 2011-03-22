@@ -1,12 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/native/ecxml.cpp $
+|     $Source: src/ecxml.cpp $
 |    $RCSfile: file.tpl,v $
 |   $Revision: 1.10 $
 |       $Date: 2005/11/07 15:38:45 $
 |     $Author: EarlinLutz $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -19,7 +19,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 ECObjectsStatus ECXml::ParseBooleanString
 (
 bool & booleanValue,
-const wchar_t * booleanString
+WCharCP booleanString
 )
     {
     if (0 == wcsicmp (booleanString, ECXML_TRUE))
@@ -35,7 +35,7 @@ const wchar_t * booleanString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring const& ECXml::GetPrimitiveTypeName
+WStringCR ECXml::GetPrimitiveTypeName
 (
 PrimitiveType primitiveType
 )
@@ -71,7 +71,7 @@ PrimitiveType primitiveType
 ECObjectsStatus ECXml::ParsePrimitiveType
 (
 PrimitiveType&          primitiveType,
-bwstring const&     typeName
+WStringCR     typeName
 )
     {
     if (0 == typeName.length())
@@ -106,7 +106,7 @@ bwstring const&     typeName
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring const& ECXml::StrengthToString
+WStringCR ECXml::StrengthToString
 (
 StrengthType strength
 )
@@ -131,7 +131,7 @@ StrengthType strength
 ECObjectsStatus ECXml::ParseStrengthType
 (
 StrengthType&          strength,
-bwstring const&    strengthString
+WStringCR    strengthString
 )
     {
     if (0 == strengthString.length())
@@ -151,7 +151,7 @@ bwstring const&    strengthString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring const& ECXml::DirectionToString
+WStringCR ECXml::DirectionToString
 (
 ECRelatedInstanceDirection direction
 )
@@ -173,7 +173,7 @@ ECRelatedInstanceDirection direction
 ECObjectsStatus ECXml::ParseDirectionString
 (
 ECRelatedInstanceDirection& direction,
-bwstring const&         directionString
+WStringCR         directionString
 )
     {
     if (0 == directionString.length())
@@ -195,7 +195,7 @@ ECObjectsStatus ECXml::ParseCardinalityString
 (
 UInt32 &lowerLimit, 
 UInt32 &upperLimit, 
-const bwstring &cardinalityString
+const WString &cardinalityString
 )
     {
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
@@ -217,7 +217,7 @@ const bwstring &cardinalityString
         return status;
         }
     
-    bwstring cardinalityWithoutSpaces = cardinalityString;
+    WString cardinalityWithoutSpaces = cardinalityString;
     cardinalityWithoutSpaces.erase(std::remove_if(cardinalityWithoutSpaces.begin(), cardinalityWithoutSpaces.end(), ::isspace), cardinalityWithoutSpaces.end()); 
     size_t openParenIndex = cardinalityWithoutSpaces.find('(');
     if (openParenIndex == std::string::npos)

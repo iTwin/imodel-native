@@ -37,7 +37,7 @@ public:
     ECOBJECTS_EXPORT SystemTime(unsigned short year=1601, unsigned short month=1, unsigned short day=1, unsigned short hour=0, unsigned short minute=0, unsigned short second=0, unsigned short milliseconds=0);
     ECOBJECTS_EXPORT static SystemTime GetLocalTime();
     ECOBJECTS_EXPORT static SystemTime GetSystemTime();
-    ECOBJECTS_EXPORT bwstring      ToString ();
+    ECOBJECTS_EXPORT WString      ToString ();
     ECOBJECTS_EXPORT bool          operator== (const SystemTime&) const;
     };
 
@@ -94,7 +94,7 @@ protected:
     
     struct StringInfo
         {
-        const wchar_t *     m_string;
+        WCharCP     m_string;
         bool                m_freeWhenDone;   // WIP_FUSION: this could be stored in the "header"... shared with other DataTypes that need to be freed
         };                                    //             and it would make max size of StringInfo be 8 bytes
 
@@ -139,7 +139,7 @@ public:
     ECOBJECTS_EXPORT explicit ECValue (::Int32 integer32);
     ECOBJECTS_EXPORT explicit ECValue (::Int64 long64);
     ECOBJECTS_EXPORT explicit ECValue (double doubleVal);
-    ECOBJECTS_EXPORT explicit ECValue (const wchar_t * string, bool holdADuplicate = true);
+    ECOBJECTS_EXPORT explicit ECValue (WCharCP string, bool holdADuplicate = true);
     ECOBJECTS_EXPORT explicit ECValue (const byte * blob, size_t size);
     ECOBJECTS_EXPORT explicit ECValue (DPoint2dCR point2d);
     ECOBJECTS_EXPORT explicit ECValue (DPoint3dCR point3d);
@@ -191,9 +191,9 @@ public:
     ECOBJECTS_EXPORT double         GetDouble () const;
     ECOBJECTS_EXPORT BentleyStatus  SetDouble (double value);  
         
-    ECOBJECTS_EXPORT const wchar_t *GetString () const;
-                     const wchar_t *GetString0 () const {return m_stringInfo.m_string;}
-    ECOBJECTS_EXPORT BentleyStatus  SetString (const wchar_t * string, bool holdADuplicate = true);
+    ECOBJECTS_EXPORT WCharCP GetString () const;
+                     WCharCP GetString0 () const {return m_stringInfo.m_string;}
+    ECOBJECTS_EXPORT BentleyStatus  SetString (WCharCP string, bool holdADuplicate = true);
 
     ECOBJECTS_EXPORT const byte *   GetBinary (size_t& size) const;
     ECOBJECTS_EXPORT BentleyStatus  SetBinary (const byte * data, size_t size, bool holdADuplicate = false);
@@ -216,7 +216,7 @@ public:
     static UInt32                   GetFixedPrimitiveValueSize (PrimitiveType primitiveType);
 
     //! This is intended for debugging purposes, not for presentation purposes.
-    ECOBJECTS_EXPORT bwstring       ToString () const;
+    ECOBJECTS_EXPORT WString       ToString () const;
     
     ECOBJECTS_EXPORT bool           Equals (ECValueCR v) const;
     };
@@ -309,20 +309,20 @@ public:
     //! @param[in]      depth           The stack depth of the native access string.
     //! @return         The access string.
     //! @see            IECInstance
-    ECOBJECTS_EXPORT const wchar_t *        GetAccessString (UInt32 depth) const;
+    ECOBJECTS_EXPORT WCharCP        GetAccessString (UInt32 depth) const;
 
     ECOBJECTS_EXPORT void  PushLocation (ECEnablerCR, int propertyIndex, int arrayIndex=INDEX_ROOT);
-    ECOBJECTS_EXPORT void  PushLocation (ECEnablerCR, const wchar_t *,   int arrayIndex=INDEX_ROOT);
+    ECOBJECTS_EXPORT void  PushLocation (ECEnablerCR, WCharCP,   int arrayIndex=INDEX_ROOT);
 
     ECOBJECTS_EXPORT void  PushLocation (IECInstanceCR, int propertyIndex, int arrayIndex=INDEX_ROOT);
-    ECOBJECTS_EXPORT void  PushLocation (IECInstanceCR, const wchar_t *,   int arrayIndex=INDEX_ROOT);
+    ECOBJECTS_EXPORT void  PushLocation (IECInstanceCR, WCharCP,   int arrayIndex=INDEX_ROOT);
 
     ECOBJECTS_EXPORT void       PopLocation ();
     ECOBJECTS_EXPORT Location&  DeepestLocation ();
 
     ECOBJECTS_EXPORT void  Clear ();
 
-    ECOBJECTS_EXPORT bwstring               GetDebugAccessString () const;
+    ECOBJECTS_EXPORT WString               GetDebugAccessString () const;
 
     //! Constructs an empty ECValueAccessor.
     ECOBJECTS_EXPORT ECValueAccessor () { }
@@ -335,12 +335,12 @@ public:
     //! and traverses structs when necessary.  This full access string can be used with 
     //! managed code or the InteropHelper.
     //! @see            ECInstanceInteropHelper
-    ECOBJECTS_EXPORT bwstring               GetManagedAccessString () const;
+    ECOBJECTS_EXPORT WString               GetManagedAccessString () const;
 
     ECOBJECTS_EXPORT bool                   operator!=(ECValueAccessorCR accessor) const;
     ECOBJECTS_EXPORT bool                   operator==(ECValueAccessorCR accessor) const;
 
-    ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, const wchar_t * managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, WCharCP managedPropertyAccessor);
     };
 
 /*__PUBLISH_SECTION_END__*/

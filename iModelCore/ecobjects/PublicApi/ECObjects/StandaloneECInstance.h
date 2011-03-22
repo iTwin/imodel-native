@@ -97,7 +97,7 @@ struct StandaloneECInstance : MemoryECInstanceBase, IECInstance
     {
 friend StandaloneECEnabler;
 private:
-    bwstring         m_instanceId;
+    WString         m_instanceId;
     StandaloneECEnablerP m_sharedWipEnabler; 
 
 private:
@@ -108,18 +108,18 @@ private:
     
 protected:
     // IECInstance
-    virtual bwstring            _GetInstanceId() const override;
+    virtual WString            _GetInstanceId() const override;
     virtual bool                _IsReadOnly() const override;        
-    virtual ECObjectsStatus     _GetValue (ECValueR v, const wchar_t * propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const override;
+    virtual ECObjectsStatus     _GetValue (ECValueR v, WCharCP propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const override;
     virtual ECObjectsStatus     _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
-    virtual ECObjectsStatus     _SetValue (const wchar_t * propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
+    virtual ECObjectsStatus     _SetValue (WCharCP propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
     virtual ECObjectsStatus     _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
 
-    virtual ECObjectsStatus     _InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size) override;
-    virtual ECObjectsStatus     _AddArrayElements (const wchar_t * propertyAccessString, UInt32 size) override;
-    virtual ECObjectsStatus     _RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index) override;
-    virtual ECObjectsStatus     _ClearArray (const wchar_t * propertyAccessString) override;    
-    virtual bwstring            _ToString (const wchar_t* indent) const override;
+    virtual ECObjectsStatus     _InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size) override;
+    virtual ECObjectsStatus     _AddArrayElements (WCharCP propertyAccessString, UInt32 size) override;
+    virtual ECObjectsStatus     _RemoveArrayElement (WCharCP propertyAccessString, UInt32 index) override;
+    virtual ECObjectsStatus     _ClearArray (WCharCP propertyAccessString) override;    
+    virtual WString            _ToString (WCharCP indent) const override;
     virtual ClassLayoutCR       _GetClassLayout () const;
     virtual ECEnablerCR         _GetEnabler() const override;
     virtual MemoryECInstanceBase* _GetAsMemoryECInstance () const override;
@@ -149,9 +149,9 @@ private:
     virtual ~StandaloneECEnabler();
 
 protected:
-    virtual wchar_t const *             _GetName() const override;
-    virtual ECObjectsStatus             _GetPropertyIndex (UInt32& propertyIndex, const wchar_t * propertyAccessString) const override;
-    virtual ECObjectsStatus             _GetAccessString  (const wchar_t *& propertyAccessString, UInt32 propertyIndex) const override;
+    virtual WCharCP             _GetName() const override;
+    virtual ECObjectsStatus             _GetPropertyIndex (UInt32& propertyIndex, WCharCP propertyAccessString) const override;
+    virtual ECObjectsStatus             _GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const override;
     virtual UInt32                      _GetPropertyCount () const override;
     virtual UInt32                      _GetFirstPropertyIndex (UInt32 parentIndex) const override;
     virtual UInt32                      _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const override;

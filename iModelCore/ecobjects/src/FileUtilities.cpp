@@ -1,8 +1,8 @@
 /*-------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/native/FileUtilities.cpp $
+|     $Source: src/FileUtilities.cpp $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -11,7 +11,7 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-ECFileNameIterator::ECFileNameIterator (const wchar_t * path)
+ECFileNameIterator::ECFileNameIterator (WCharCP path)
     {
     m_valid = true;
     m_findHandle = ::FindFirstFileW (path, &m_findData);
@@ -24,7 +24,7 @@ ECFileNameIterator::~ECFileNameIterator ()
         ::FindClose (m_findHandle);
     }
     
-BentleyStatus ECFileNameIterator::GetNextFileName (wchar_t * name)
+BentleyStatus ECFileNameIterator::GetNextFileName (WCharP name)
     {
     if (INVALID_HANDLE_VALUE == m_findHandle || !m_valid)
         return  ERROR;
@@ -48,12 +48,12 @@ static void*    getDLLInstance ()
     return 0;
     }
  
-bwstring ECFileUtilities::s_dllPath = L"";
+WString ECFileUtilities::s_dllPath = L"";
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Carole.MacDonald 02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring ECFileUtilities::GetDllPath()
+WString ECFileUtilities::GetDllPath()
     {
     if (!s_dllPath.empty())
         return s_dllPath;

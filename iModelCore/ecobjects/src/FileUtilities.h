@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/native/FileUtilities.h $
+|     $Source: src/FileUtilities.h $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,19 +20,19 @@ struct ECFileNameIterator
     wchar_t          m_dirName[_MAX_DIR];
 
 public:
-    ECFileNameIterator (const wchar_t * path);
+    ECFileNameIterator (WCharCP path);
     ~ECFileNameIterator ();
-    BentleyStatus GetNextFileName (wchar_t * name);
+    BentleyStatus GetNextFileName (WCharP name);
      };
 
 struct ECFileUtilities
     {
 private:
-    static bwstring s_dllPath;
+    static WString s_dllPath;
     ECFileUtilities(void) {}
     
 public:
-    static bwstring GetDllPath();
+    static WString GetDllPath();
     };
 
 END_BENTLEY_EC_NAMESPACE

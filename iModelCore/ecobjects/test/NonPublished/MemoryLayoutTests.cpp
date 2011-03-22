@@ -25,7 +25,7 @@ struct MemoryLayoutTests : ECTestFixture {};
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyString (IECInstanceR instance, ECValueR v, wchar_t const * accessString, bool useIndex, UInt32 index, wchar_t const * value)
+void VerifyString (IECInstanceR instance, ECValueR v, WCharCP accessString, bool useIndex, UInt32 index, WCharCP value)
     {
     v.Clear();
     if (useIndex)
@@ -38,7 +38,7 @@ void VerifyString (IECInstanceR instance, ECValueR v, wchar_t const * accessStri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyString (IECInstanceR instance, ECValueR v, wchar_t const * accessString, wchar_t const * value)
+void VerifyString (IECInstanceR instance, ECValueR v, WCharCP accessString, WCharCP value)
     {
     return VerifyString (instance, v, accessString, false, 0, value);
     }    
@@ -46,7 +46,7 @@ void VerifyString (IECInstanceR instance, ECValueR v, wchar_t const * accessStri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void SetAndVerifyString (IECInstanceR instance, ECValueR v, wchar_t const * accessString, wchar_t const * value)
+void SetAndVerifyString (IECInstanceR instance, ECValueR v, WCharCP accessString, WCharCP value)
     {
     v.SetString(value);
     EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
@@ -56,7 +56,7 @@ void SetAndVerifyString (IECInstanceR instance, ECValueR v, wchar_t const * acce
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyInteger (IECInstanceR instance, ECValueR v, wchar_t const * accessString, bool useIndex, UInt32 index, UInt32 value)
+void VerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, bool useIndex, UInt32 index, UInt32 value)
     {
     v.Clear();
     if (useIndex)
@@ -69,7 +69,7 @@ void VerifyInteger (IECInstanceR instance, ECValueR v, wchar_t const * accessStr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyInteger (IECInstanceR instance, ECValueR v, wchar_t const * accessString, UInt32 value)
+void VerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 value)
     {
     return VerifyInteger (instance, v, accessString, false, 0, value);
     }    
@@ -77,7 +77,7 @@ void VerifyInteger (IECInstanceR instance, ECValueR v, wchar_t const * accessStr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void SetAndVerifyInteger (IECInstanceR instance, ECValueR v, wchar_t const * accessString, UInt32 value)
+void SetAndVerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 value)
     {
     v.SetInteger(value);
     EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
@@ -87,7 +87,7 @@ void SetAndVerifyInteger (IECInstanceR instance, ECValueR v, wchar_t const * acc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyDouble (IECInstanceR instance, ECValueR v, wchar_t const * accessString, double value)
+void VerifyDouble (IECInstanceR instance, ECValueR v, WCharCP accessString, double value)
     {
     v.Clear();
     EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
@@ -97,7 +97,7 @@ void VerifyDouble (IECInstanceR instance, ECValueR v, wchar_t const * accessStri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void SetAndVerifyDouble (IECInstanceR instance, ECValueR v, wchar_t const * accessString, double value)
+void SetAndVerifyDouble (IECInstanceR instance, ECValueR v, WCharCP accessString, double value)
     {
     v.SetDouble(value);
     EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
@@ -107,7 +107,7 @@ void SetAndVerifyDouble (IECInstanceR instance, ECValueR v, wchar_t const * acce
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyLong (IECInstanceR instance, ECValueR v, wchar_t const * accessString, UInt64 value)
+void VerifyLong (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt64 value)
     {
     v.Clear();
     EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
@@ -117,7 +117,7 @@ void VerifyLong (IECInstanceR instance, ECValueR v, wchar_t const * accessString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void SetAndVerifyLong (IECInstanceR instance, ECValueR v, wchar_t const * accessString, UInt64 value)
+void SetAndVerifyLong (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt64 value)
     {
     v.SetLong(value);
     EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
@@ -127,7 +127,7 @@ void SetAndVerifyLong (IECInstanceR instance, ECValueR v, wchar_t const * access
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyArrayInfo (IECInstanceR instance, ECValueR v, wchar_t const * accessString, UInt32 count, bool isFixedCount)
+void VerifyArrayInfo (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 count, bool isFixedCount)
     {
     v.Clear();
     EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
@@ -138,7 +138,7 @@ void VerifyArrayInfo (IECInstanceR instance, ECValueR v, wchar_t const * accessS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyOutOfBoundsError (IECInstanceR instance, ECValueR v, wchar_t const * accessString, UInt32 index)
+void VerifyOutOfBoundsError (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 index)
     {
     v.Clear();    
     // WIP_FUSION .. ERROR_InvalidIndex
@@ -150,9 +150,9 @@ void VerifyOutOfBoundsError (IECInstanceR instance, ECValueR v, wchar_t const * 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyStringArray (IECInstanceR instance, ECValueR v, wchar_t const * accessString, wchar_t const * value, UInt32 start, UInt32 count)
+void VerifyStringArray (IECInstanceR instance, ECValueR v, WCharCP accessString, WCharCP value, UInt32 start, UInt32 count)
     {
-    bwstring incrementingString = value;
+    WString incrementingString = value;
    
     for (UInt32 i=start ; i < start + count ; i++)        
         {
@@ -165,9 +165,9 @@ void VerifyStringArray (IECInstanceR instance, ECValueR v, wchar_t const * acces
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void SetAndVerifyStringArray (IECInstanceR instance, ECValueR v, wchar_t const * accessString, wchar_t const * value, UInt32 count)
+void SetAndVerifyStringArray (IECInstanceR instance, ECValueR v, WCharCP accessString, WCharCP value, UInt32 count)
     {
-    bwstring incrementingString = value;
+    WString incrementingString = value;
     for (UInt32 i=0 ; i < count ; i++)        
         {
         incrementingString.append (L"X");
@@ -181,7 +181,7 @@ void SetAndVerifyStringArray (IECInstanceR instance, ECValueR v, wchar_t const *
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyIntegerArray (IECInstanceR instance, ECValueR v, wchar_t const * accessString, UInt32 baseValue, UInt32 start, UInt32 count)
+void VerifyIntegerArray (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 baseValue, UInt32 start, UInt32 count)
     {       
     for (UInt32 i=start ; i < start + count ; i++)        
         {
@@ -192,7 +192,7 @@ void VerifyIntegerArray (IECInstanceR instance, ECValueR v, wchar_t const * acce
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void SetAndVerifyIntegerArray (IECInstanceR instance, ECValueR v, wchar_t const * accessString, UInt32 baseValue, UInt32 count)
+void SetAndVerifyIntegerArray (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 baseValue, UInt32 count)
     {
     for (UInt32 i=0 ; i < count ; i++)        
         {
@@ -206,7 +206,7 @@ void SetAndVerifyIntegerArray (IECInstanceR instance, ECValueR v, wchar_t const 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-void VerifyIsNullArrayElements (IECInstanceR instance, ECValueR v, wchar_t const * accessString, UInt32 start, UInt32 count, bool isNull)
+void VerifyIsNullArrayElements (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 start, UInt32 count, bool isNull)
     {
     for (UInt32 i = start ; i < start + count ; i++)    
         {
@@ -219,7 +219,7 @@ void VerifyIsNullArrayElements (IECInstanceR instance, ECValueR v, wchar_t const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bwstring    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versionMajor, UInt32 versionMinor, const wchar_t* className)
+WString    GetTestSchemaXMLString (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor, WCharCP className)
     {
     wchar_t fmt[] = L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                     L"<ECSchema schemaName=\"%s\" nameSpacePrefix=\"test\" version=\"%02d.%02d\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
@@ -380,7 +380,7 @@ bwstring    GetTestSchemaXMLString (const wchar_t* schemaName, UInt32 versionMaj
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP       CreateTestSchema (ECSchemaCacheR schemaOwner)
     {
-    bwstring schemaXMLString = GetTestSchemaXMLString (L"TestSchema", 0, 0, L"TestClass");
+    WString schemaXMLString = GetTestSchemaXMLString (L"TestSchema", 0, 0, L"TestClass");
 
     EXPECT_EQ (S_OK, CoInitialize(NULL));  
 
@@ -393,8 +393,8 @@ ECSchemaP       CreateTestSchema (ECSchemaCacheR schemaOwner)
     return schema;
     }
     
-typedef std::vector<bwstring> NameVector;
-static std::vector<bwstring> s_propertyNames;
+typedef std::vector<WString> NameVector;
+static std::vector<WString> s_propertyNames;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen    01/10
@@ -404,7 +404,7 @@ ECSchemaP       CreateProfilingSchema (int nStrings, ECSchemaCacheR schemaOwner)
     EXPECT_EQ (S_OK, CoInitialize(NULL));  
     s_propertyNames.clear();
     
-    bwstring schemaXml = 
+    WString schemaXml = 
                     L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                     L"<ECSchema schemaName=\"ProfilingSchema\" nameSpacePrefix=\"p\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                     L"    <ECClass typeName=\"Pidget\" isDomainClass=\"True\">";
@@ -414,7 +414,7 @@ ECSchemaP       CreateProfilingSchema (int nStrings, ECSchemaCacheR schemaOwner)
         wchar_t propertyName[32];
         swprintf(propertyName, L"StringProperty%02d", i);
         s_propertyNames.push_back (propertyName);
-        wchar_t const * propertyFormat = 
+        WCharCP propertyFormat = 
                     L"        <ECProperty propertyName=\"%s\" typeName=\"string\" />";
         wchar_t propertyXml[128];
         swprintf (propertyXml, propertyFormat, propertyName);
@@ -489,7 +489,7 @@ void ExerciseVariableCountStringArray (IECInstanceR instance, ECValue& v, wchar_
     VerifyStringArray           (instance, v, arrayAccessor, stringSeed, 0, 3);
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 3, 3, true);
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 6, 2, false);
-    bwstring stringSeedXXX(stringSeed);
+    WString stringSeedXXX(stringSeed);
     stringSeedXXX.append (L"XXX");
     VerifyStringArray           (instance, v, arrayAccessor, stringSeedXXX.c_str(), 6, 2);
     SetAndVerifyStringArray     (instance, v, arrayAccessor, stringSeed, 8);   
@@ -761,7 +761,7 @@ TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetInteger      (*instance, intVal, L"SomeInts[0]"));
     EXPECT_TRUE ((int)(50) == intVal);
 
-    const wchar_t*   stringVal;
+    WCharCP   stringVal;
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, L"AString", L"TEST123"));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetString      (*instance, stringVal, L"AString"));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, L"SomeStrings[0]", L"TEST432"));
@@ -977,7 +977,7 @@ TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper)
 
     WString testString = L"Charmed";
     WString testString2 = L"Charmed2";
-    const wchar_t* stringValueP = NULL;
+    WCharCP stringValueP = NULL;
 
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, L"ManufacturerArray[1].Name", testString.c_str()));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetString (*instance, stringValueP, L"ManufacturerArray[1].Name"));
@@ -1003,7 +1003,7 @@ TEST_F(MemoryLayoutTests, InstantiateStandaloneInstance)
     StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str());
 
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
-    bwstring instanceId = instance->GetInstanceId();
+    WString instanceId = instance->GetInstanceId();
     // WIP_FUSION: should pass the string to the logger via a backdoor
     instance->ToString(L"").c_str();
     ExerciseInstance (*instance, L"Test");
@@ -1027,7 +1027,7 @@ TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
     StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str());
 
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
-    bwstring instanceId = instance->GetInstanceId();
+    WString instanceId = instance->GetInstanceId();
     UInt32 size = instance->GetBytesUsed ();
     EXPECT_EQ (size, UInt32(sizeof(InstanceHeader)));
 
@@ -1111,10 +1111,10 @@ TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
     StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str());
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
-    const wchar_t * accessString = L"Property34";
+    WCharCP accessString = L"Property34";
 
     //UInt32          intValue = 12345;
-    const wchar_t * stringValue = L"Xyz";
+    WCharCP stringValue = L"Xyz";
 
     //instance->SetValue  (accessString, ECValue (intValue));
     instance->SetValue  (accessString, ECValue (stringValue));
@@ -1268,7 +1268,7 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     DPoint3d outPoint3 = pntVal3.GetPoint3D ();
     EXPECT_TRUE (pntVal3.IsPoint3D());
     EXPECT_TRUE (0 == memcmp(&inPoint3, &outPoint3, sizeof(outPoint3)));
-    bwstring point3Str = pntVal3.ToString();
+    WString point3Str = pntVal3.ToString();
     EXPECT_TRUE (0 == point3Str.compare (L"{10,100,1000}"));
 
     //DPoint2d
@@ -1277,7 +1277,7 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     EXPECT_TRUE (pntVal2.IsPoint2D());
     DPoint2d outPoint2 = pntVal2.GetPoint2D ();
     EXPECT_TRUE (0 == memcmp(&inPoint2, &outPoint2, sizeof(outPoint2)));
-    bwstring point2Str = pntVal2.ToString();
+    WString point2Str = pntVal2.ToString();
     EXPECT_TRUE (0 == point2Str.compare (L"{10,100}"));
 
     // DateTime
@@ -1290,7 +1290,7 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     EXPECT_TRUE (0 == memcmp(&nowtoo, &now, sizeof(nowtoo)));
     ECValue fixedDate;
     fixedDate.SetDateTimeTicks (634027121070910000);
-    bwstring dateStr = fixedDate.ToString();
+    WString dateStr = fixedDate.ToString();
     EXPECT_TRUE (0 == dateStr.compare (L"#2010/2/25-16:28:27:91#"));
 
     // WIP_FUSION - test array values
@@ -1339,7 +1339,7 @@ TEST_F (MemoryLayoutTests, TestSetGetNull)
     
 void SetStringToSpecifiedNumberOfCharacters (IECInstanceR instance, int nChars)
     {
-    wchar_t * string = (wchar_t *)alloca ((nChars + 1) * sizeof(wchar_t));
+    WCharP string = (WCharP)alloca ((nChars + 1) * sizeof(wchar_t));
     string[0] = '\0';
     for (int i = 0; i < nChars; i++)
         {

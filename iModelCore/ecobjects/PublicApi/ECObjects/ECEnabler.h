@@ -29,7 +29,7 @@ struct ECEnabler : RefCountedBase, IStandaloneEnablerLocator
         {
         //! Callback for primitive property on instance.
         //! @return true if the desired property was found and processing should stop; else return false if processing should continue.
-        virtual bool _ProcessPrimitiveProperty (IECInstance const& instance, wchar_t const* propName, ECValue const& propValue) const = 0;
+        virtual bool _ProcessPrimitiveProperty (IECInstance const& instance, WCharCP propName, ECValue const& propValue) const = 0;
         };
 
     enum PropertyProcessingResult  {PROPERTY_PROCESSING_RESULT_Miss=0, PROPERTY_PROCESSING_RESULT_Hit=1, PROPERTY_PROCESSING_RESULT_NoCandidates=3};
@@ -57,15 +57,15 @@ protected:
     //! where the ____ is a name specific to your subclass, and the parameters may vary per enabler.
     ECOBJECTS_EXPORT ECEnabler(ECClassCR ecClass, IStandaloneEnablerLocatorR childECEnablerLocator);
 
-    virtual wchar_t const *         _GetName() const = 0;
-    virtual ECObjectsStatus         _GetPropertyIndex (UInt32& propertyIndex, const wchar_t * propertyAccessString) const = 0;
-    virtual ECObjectsStatus         _GetAccessString  (const wchar_t *& propertyAccessString, UInt32 propertyIndex) const = 0;
+    virtual WCharCP         _GetName() const = 0;
+    virtual ECObjectsStatus         _GetPropertyIndex (UInt32& propertyIndex, WCharCP propertyAccessString) const = 0;
+    virtual ECObjectsStatus         _GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const = 0;
     virtual UInt32                  _GetFirstPropertyIndex (UInt32 parentIndex) const = 0;
     virtual UInt32                  _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const = 0;
     virtual UInt32                  _GetPropertyCount () const = 0;
 
     // IStandaloneEnablerLocator
-    ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr  _ObtainStandaloneInstanceEnabler (const wchar_t* schemaName, const wchar_t* className); 
+    ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr  _ObtainStandaloneInstanceEnabler (WCharCP schemaName, WCharCP className); 
 
 #if defined (EXPERIMENTAL_TEXT_FILTER)
     ECOBJECTS_EXPORT virtual PropertyProcessingResult   _ProcessPrimitiveProperties (bset<ECClassCP>& failedClasses, IECInstanceCR, EC::PrimitiveType, IPropertyProcessor const&, PropertyProcessingOptions) const;
@@ -75,17 +75,17 @@ protected:
 
 public:
     //! Primarily for debugging/logging purposes. Should match your fully-qualified class name
-    ECOBJECTS_EXPORT wchar_t const *            GetName() const;
+    ECOBJECTS_EXPORT WCharCP            GetName() const;
     
     ECOBJECTS_EXPORT ECClassCR                  GetClass() const;
-    ECOBJECTS_EXPORT ECObjectsStatus            GetPropertyIndex     (UInt32& propertyIndex, const wchar_t * propertyAccessString) const;
-    ECOBJECTS_EXPORT ECObjectsStatus            GetAccessString      (const wchar_t *& propertyAccessString, UInt32 propertyIndex) const;
+    ECOBJECTS_EXPORT ECObjectsStatus            GetPropertyIndex     (UInt32& propertyIndex, WCharCP propertyAccessString) const;
+    ECOBJECTS_EXPORT ECObjectsStatus            GetAccessString      (WCharCP& propertyAccessString, UInt32 propertyIndex) const;
     ECOBJECTS_EXPORT UInt32                     GetFirstPropertyIndex (UInt32 parentIndex) const;
     ECOBJECTS_EXPORT UInt32                     GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const;
     ECOBJECTS_EXPORT bool                       HasChildValues (ECValueAccessorCR, IECInstanceCR) const;
     ECOBJECTS_EXPORT ECValuesCollection         GetChildValues (ECValueAccessorCR, IECInstanceCR) const;
     ECOBJECTS_EXPORT UInt32                     GetPropertyCount () const;
-    ECOBJECTS_EXPORT StandaloneECEnablerPtr     ObtainStandaloneInstanceEnabler (const wchar_t* schemaName, const wchar_t* className); 
+    ECOBJECTS_EXPORT StandaloneECEnablerPtr     ObtainStandaloneInstanceEnabler (WCharCP schemaName, WCharCP className); 
 
 #if defined (EXPERIMENTAL_TEXT_FILTER)
     //! Call processor on all primitive-valued properties of specified type(s) on this instance. 

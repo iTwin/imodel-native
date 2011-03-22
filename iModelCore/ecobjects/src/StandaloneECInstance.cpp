@@ -590,7 +590,7 @@ ECEnablerCR         StandaloneECInstance::_GetEnabler() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-bwstring        StandaloneECInstance::_GetInstanceId() const
+WString        StandaloneECInstance::_GetInstanceId() const
     {
     if (m_instanceId.size() == 0)
         {
@@ -622,7 +622,7 @@ bool                StandaloneECInstance::_IsReadOnly() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECInstance::_GetValue (ECValueR v, const wchar_t * propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const
+ECObjectsStatus           StandaloneECInstance::_GetValue (ECValueR v, WCharCP propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const
     {
     ClassLayoutCR classLayout = GetClassLayout();
 
@@ -642,7 +642,7 @@ ECObjectsStatus           StandaloneECInstance::_GetValue (ECValueR v, UInt32 pr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECInstance::_SetValue (const wchar_t * propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
+ECObjectsStatus           StandaloneECInstance::_SetValue (WCharCP propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
     {
     ClassLayoutCR classLayout = GetClassLayout();
     return SetValueToMemory (classLayout, propertyAccessString, v, useArrayIndex, arrayIndex);
@@ -660,7 +660,7 @@ ECObjectsStatus           StandaloneECInstance::_SetValue (UInt32 propertyIndex,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECInstance::_InsertArrayElements (const wchar_t * propertyAccessString, UInt32 index, UInt32 size)
+ECObjectsStatus           StandaloneECInstance::_InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size)
     {
     ClassLayoutCR classLayout = GetClassLayout();
     ECObjectsStatus status = InsertNullArrayElementsAt (classLayout, propertyAccessString, index, size);
@@ -671,7 +671,7 @@ ECObjectsStatus           StandaloneECInstance::_InsertArrayElements (const wcha
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECInstance::_AddArrayElements (const wchar_t * propertyAccessString, UInt32 size)
+ECObjectsStatus           StandaloneECInstance::_AddArrayElements (WCharCP propertyAccessString, UInt32 size)
     {
     ClassLayoutCR classLayout = GetClassLayout();    
     ECObjectsStatus status = AddNullArrayElementsAt (classLayout, propertyAccessString, size);
@@ -682,7 +682,7 @@ ECObjectsStatus           StandaloneECInstance::_AddArrayElements (const wchar_t
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECInstance::_RemoveArrayElement (const wchar_t * propertyAccessString, UInt32 index)
+ECObjectsStatus           StandaloneECInstance::_RemoveArrayElement (WCharCP propertyAccessString, UInt32 index)
     {
     return ECOBJECTS_STATUS_OperationNotSupported;
     } 
@@ -690,7 +690,7 @@ ECObjectsStatus           StandaloneECInstance::_RemoveArrayElement (const wchar
  /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECInstance::_ClearArray (const wchar_t * propertyAccessString)
+ECObjectsStatus           StandaloneECInstance::_ClearArray (WCharCP propertyAccessString)
     {
     return ECOBJECTS_STATUS_OperationNotSupported;
     }                      
@@ -698,7 +698,7 @@ ECObjectsStatus           StandaloneECInstance::_ClearArray (const wchar_t * pro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-bwstring        StandaloneECInstance::_ToString (const wchar_t* indent) const
+WString        StandaloneECInstance::_ToString (WCharCP indent) const
     {
     return InstanceDataToString (indent, GetClassLayout());
     }
@@ -739,7 +739,7 @@ StandaloneECEnablerPtr    StandaloneECEnabler::CreateEnabler (ECClassCR ecClass,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-wchar_t const *           StandaloneECEnabler::_GetName() const
+WCharCP           StandaloneECEnabler::_GetName() const
     {
     return L"Bentley::EC::StandaloneECEnabler";
     }
@@ -747,8 +747,8 @@ wchar_t const *           StandaloneECEnabler::_GetName() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus StandaloneECEnabler::_GetPropertyIndex(UInt32& propertyIndex, const wchar_t * propertyAccessString) const { return GetClassLayout().GetPropertyIndex (propertyIndex, propertyAccessString); }
-ECObjectsStatus StandaloneECEnabler::_GetAccessString(wchar_t const *& accessString, UInt32 propertyIndex) const { return GetClassLayout().GetAccessStringByIndex (accessString, propertyIndex); }
+ECObjectsStatus StandaloneECEnabler::_GetPropertyIndex(UInt32& propertyIndex, WCharCP propertyAccessString) const { return GetClassLayout().GetPropertyIndex (propertyIndex, propertyAccessString); }
+ECObjectsStatus StandaloneECEnabler::_GetAccessString(WCharCP& accessString, UInt32 propertyIndex) const { return GetClassLayout().GetAccessStringByIndex (accessString, propertyIndex); }
 UInt32          StandaloneECEnabler::_GetPropertyCount() const    { return GetClassLayout().GetPropertyCount (); }
 UInt32          StandaloneECEnabler::_GetFirstPropertyIndex (UInt32 parentIndex) const {  return GetClassLayout().GetFirstChildPropertyIndex (parentIndex); }
 UInt32          StandaloneECEnabler::_GetNextPropertyIndex (UInt32 parentIndex, UInt32 inputIndex) const { return GetClassLayout().GetNextChildPropertyIndex (parentIndex, inputIndex);  }

@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/nativeatp/Published/TestFixture.h $
+|     $Source: test/Published/TestFixture.h $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,10 +13,10 @@ BEGIN_BENTLEY_EC_NAMESPACE
 struct ECTestFixture : public ::testing::Test
     {
 private:
-    static bwstring s_dllPath;
-    static bwstring GetDllPath();
-    bwstring GetLogConfigurationFilename();
-    BentleyStatus CheckProcessDirectory(wchar_t *filepath, DWORD bufferSize);
+    static WString s_dllPath;
+    static WString GetDllPath();
+    WString GetLogConfigurationFilename();
+    BentleyStatus CheckProcessDirectory(WCharP filepath, DWORD bufferSize);
 
 protected:
     ECTestFixture(void);
@@ -31,8 +31,8 @@ public:
     void    TestForECSchemaLeaks ();
     void    TestForIECInstanceLeaks ();
 
-    static bwstring GetTestDataPath(const wchar_t *fileName);
-    static bwstring GetWorkingDirectoryPath(const wchar_t *testFixture, const wchar_t *fileName);
+    static WString GetTestDataPath(WCharCP fileName);
+    static WString GetWorkingDirectoryPath(WCharCP testFixture, WCharCP fileName);
     };
 
 END_BENTLEY_EC_NAMESPACE

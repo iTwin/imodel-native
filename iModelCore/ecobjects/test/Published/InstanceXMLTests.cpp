@@ -24,7 +24,7 @@ struct  Struct1
 struct  Struct2
     {
     bool            struct2StringMemberNull;
-    const wchar_t*  struct2StringMember;
+    WCharCP  struct2StringMember;
     bool            struct2DoubleMemberNull;
     double          struct2DoubleMember;
     Struct1*        nestedArray;
@@ -391,7 +391,7 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingSimpleInstance
     EXPECT_EQ (INSTANCE_DESERIALIZATION_STATUS_Success, instanceStatus);
 
     // WIP_FUSION: should pass the string to the logger via a backdoor
-    bwstring str = testInstance->ToString(L"").c_str();
+    WString str = testInstance->ToString(L"").c_str();
     VerifyTestInstance (testInstance.get(), false);
     };
 
@@ -490,7 +490,7 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     testInstance->ToString(L"").c_str();
     VerifyTestInstance (testInstance.get(), false);
 
-    bwstring ecInstanceXml;
+    WString ecInstanceXml;
 
     InstanceSerializationStatus status2 = testInstance->WriteXmlToString(ecInstanceXml, true);
     EXPECT_EQ(INSTANCE_SERIALIZATION_STATUS_Success, status2);
