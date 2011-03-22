@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/native/StandaloneECInstance.cpp $
+|     $Source: src/StandaloneECInstance.cpp $
 |
 |   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -507,6 +507,23 @@ StandaloneECInstance::~StandaloneECInstance ()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    03/11
++---------------+---------------+---------------+---------------+---------------+------*/ 
+static void     duplicateProperties (IECInstanceR target, ECValuesCollectionCR source)
+    {
+    for each (ECPropertyValuePtr prop in source)
+        {
+        if (prop->HasChildValues())
+            {
+            duplicateProperties (target, *prop->GetChildValues());
+            continue;
+            }
+
+        target.SetValueUsingAccessor (prop->GetValueAccessor(), prop->GetValue());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan.Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 StandaloneECInstancePtr         StandaloneECInstance::Duplicate(IECInstanceCR instance)
@@ -517,12 +534,9 @@ StandaloneECInstancePtr         StandaloneECInstance::Duplicate(IECInstanceCR in
         return NULL;
 
     StandaloneECInstancePtr newInstance = standaloneEnabler->CreateInstance();
-    ECValueAccessorPairCollectionOptionsPtr options = ECValueAccessorPairCollectionOptions::Create (instance, false);
-    ECValueAccessorPairCollection collection (*options);
-    for each (ECValueAccessorPair pair in collection)
-        {
-        newInstance->SetValueUsingAccessor(pair.GetAccessor(), pair.GetValue());
-        }
+
+    ECValuesCollectionPtr   properties = ECValuesCollection::Create (instance);
+    duplicateProperties (*newInstance, *properties);
 
     return newInstance;
     }

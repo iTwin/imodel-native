@@ -229,11 +229,8 @@ public:
 //! an ECEnabler, property index, and array index.  In cases where the array index is not 
 //! applicable (primitive members or the roots of arrays), the INDEX_ROOT constant 
 //! is used.  
-//! Because of the way ECInstances are laid out in memory, the stack only increases in 
-//! size when the accessor describes a value within an element within an array of structs.
-//! (A struct that is not part of an array will become part of its parent's ClassLayout.)
 //! @group "ECInstance"
-//! @see ECValue, ECEnabler, ECValueAccessorPair, ECValueAccessorPairCollection
+//! @see ECValue, ECEnabler, ECPropertyValue, ECValuesCollection
 //! @bsiclass 
 //======================================================================================= 
 struct ECValueAccessor
@@ -270,10 +267,6 @@ private:
 
 
 public:
-    //friend ECValueAccessorPairCollectionIterator;
-    friend ECValueAccessorPairCollection;
-    friend ECValueAccessorPair;
-
 /*__PUBLISH_SECTION_END__*/
 
     Location&               operator[] (UInt32 depth);
@@ -350,22 +343,32 @@ public:
     ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, const wchar_t * managedPropertyAccessor);
     };
 
+/*__PUBLISH_SECTION_END__*/
+struct ECValuesCollection;
+struct ECValuesCollectionIterator;
+/*__PUBLISH_SECTION_START__*/
+
 //=======================================================================================  
 //! @bsiclass 
 //======================================================================================= 
 struct ECPropertyValue : RefCountedBase
     {
 /*__PUBLISH_SECTION_END__*/
+friend ECValuesCollection;
+friend ECValuesCollectionIterator;
+
 private:
     IECInstancePtr      m_instance;
     ECValueAccessor     m_accessor;
     ECValue             m_ecValue;
 
+    IECInstanceCR       GetInstance () const;
+
 public:
     ECPropertyValue ();
     ECPropertyValue (ECPropertyValueCR);
-    ECPropertyValue (IECInstanceR);
-    ECPropertyValue (IECInstanceR, ECValueAccessorCR);
+    ECPropertyValue (IECInstanceCR);
+    ECPropertyValue (IECInstanceCR, ECValueAccessorCR);
 
     ECValueAccessorR    GetValueAccessorR ();
     ECObjectsStatus     EvaluateValue ();
@@ -373,7 +376,6 @@ public:
 
 public:
     ECOBJECTS_EXPORT ECValueCR              GetValue () const;
-    ECOBJECTS_EXPORT IECInstancePtr         GetInstance () const;
     ECOBJECTS_EXPORT ECValueAccessorCR      GetValueAccessor () const;
     ECOBJECTS_EXPORT bool                   HasChildValues () const;
     ECOBJECTS_EXPORT ECValuesCollectionPtr  GetChildValues () const;
@@ -391,11 +393,11 @@ private:
 
     ECPropertyValue     m_propertyValue;
 
-    ECValuesCollectionIterator (IECInstanceR);
+    ECValuesCollectionIterator (IECInstanceCR);
     ECValuesCollectionIterator (ECPropertyValueCR parentPropertyValue);
     ECValuesCollectionIterator ();
 
-    ECPropertyValue     GetFirstPropertyValue (IECInstanceR);
+    ECPropertyValue     GetFirstPropertyValue (IECInstanceCR);
     ECPropertyValue     GetChildPropertyValue (ECPropertyValueCR parentPropertyValue);
 
 /*__PUBLISH_SECTION_START__*/
@@ -421,7 +423,7 @@ private:
 
     ECValuesCollection ();
     ECValuesCollection (ECPropertyValueCR parentPropValue);
-    ECValuesCollection (IECInstanceR);
+    ECValuesCollection (IECInstanceCR);
 /*__PUBLISH_SECTION_START__*/
 
 public:
@@ -431,110 +433,7 @@ public:
     ECOBJECTS_EXPORT const_iterator begin () const;
     ECOBJECTS_EXPORT const_iterator end ()   const;
 
-    ECOBJECTS_EXPORT static ECValuesCollectionPtr Create (IECInstanceR);
-    };
-
-//=======================================================================================    
-//! A structure that pairs ECValues along with their accessors.
-//! @group "ECInstance"
-//! @see ECValue, ECValueAccessor
-//! @bsiclass 
-//======================================================================================= 
-struct ECValueAccessorPair
-    {
-public:
-    friend ECValueAccessorPairCollection;
-
-    ECValue          m_value;
-    ECValueAccessor  m_valueAccessor;
-    ECOBJECTS_EXPORT ECValueAccessorPair ();
-    ECOBJECTS_EXPORT ECValueAccessorPair (ECValueAccessorPairCR pair);
-    ECOBJECTS_EXPORT ECValueAccessorPair (ECValueCR value, ECValueAccessorCR accessor);
-
-    ECOBJECTS_EXPORT void                     SetValue (ECValueCR value);
-    ECOBJECTS_EXPORT void                     SetAccessor (ECValueAccessorCR accessor);
-    ECOBJECTS_EXPORT ECValueCR                GetValue () const;
-    ECOBJECTS_EXPORT ECValueAccessorCR        GetAccessor () const;
-    };
-
-//=======================================================================================  
-//! @see ECValue, ECValueAccessor, ECValueAccessorPairCollection
-//! @bsiclass 
-//======================================================================================= 
-struct ECValueAccessorPairCollectionOptions : RefCountedBase
-    {
-private:
-/*__PUBLISH_SECTION_END__*/
-    bool             m_includeNullValues;
-    IECInstanceCR    m_instance;
-    ECValueAccessorPairCollectionOptions (IECInstanceCR instance, bool includeNullValues);
-/*__PUBLISH_SECTION_START__*/
-public:
-    ECOBJECTS_EXPORT static RefCountedPtr<ECValueAccessorPairCollectionOptions> Create 
-        (
-        IECInstanceCR   instance,
-        bool            includeNullValues
-        );
-
-    ECOBJECTS_EXPORT IECInstanceCR GetInstance ()           const;
-    ECOBJECTS_EXPORT bool          GetIncludesNullValues () const;
-
-    ECOBJECTS_EXPORT void          SetIncludesNullValues (bool includesNullValues);
-    };
-
-typedef RefCountedPtr<ECValueAccessorPairCollectionOptions> ECValueAccessorPairCollectionOptionsPtr;
-
-//=======================================================================================  
-//! @see ECValue, ECValueAccessor, ECValueAccessorPairCollection
-//! @bsiclass 
-//======================================================================================= 
-struct ECValueAccessorPairCollectionIterator : RefCountedBase
-    {
-private:
-/*__PUBLISH_SECTION_END__*/
-    friend ECValueAccessorPairCollection;
-
-    ECObjectsStatus                           m_status;
-    ECValueAccessor                           m_currentAccessor;
-    ECValue                                   m_currentValue;
-    ECValueAccessorPairCollectionOptionsPtr   m_options;
-
-    void            NextArrayElement();
-    void            NextProperty();
-    UInt32          CurrentMaxArrayLength();
-    UInt32          CurrentMaxPropertyCount();
-
-    ECValueAccessorPairCollectionIterator (ECValueAccessorPairCollectionOptionsR options);
-    ECValueAccessorPairCollectionIterator ();
-/*__PUBLISH_SECTION_START__*/
-public:
-    typedef ECValueAccessorPair             ReturnType;
-    ECOBJECTS_EXPORT bool                   IsDifferent(ECValueAccessorPairCollectionIterator const& iter) const;
-    ECOBJECTS_EXPORT void                   MoveToNext ();
-    ECOBJECTS_EXPORT ECValueAccessorPair    GetCurrent () const;
-    ECOBJECTS_EXPORT bool                   IsAtEnd () const;
-    };
-
-//=======================================================================================  
-//! ECValueAccessorPairCollection describes a set of ECValues and accessors that make up
-//! an ECInstance.  These values are found as needed.  It supports STL-like iteration, 
-//! and will recursively return values that are part of inner structs and struct array 
-//! members.  It will never return an ECValue representing a struct or an array.
-//! @see ECValue, ECValueAccessor, ECValueAccessorPair
-//! @bsiclass 
-//======================================================================================= 
-struct ECValueAccessorPairCollection
-    {
-private:
-    ECValueAccessorPairCollectionOptionsPtr  m_options;
-
-public:
-    ECOBJECTS_EXPORT ECValueAccessorPairCollection (ECValueAccessorPairCollectionOptionsR options);
-
-    typedef VirtualCollectionIterator<ECValueAccessorPairCollectionIterator> const_iterator;
-
-    ECOBJECTS_EXPORT const_iterator begin () const;
-    ECOBJECTS_EXPORT const_iterator end ()   const;
+    ECOBJECTS_EXPORT static ECValuesCollectionPtr Create (IECInstanceCR);
     };
 
 END_BENTLEY_EC_NAMESPACE
