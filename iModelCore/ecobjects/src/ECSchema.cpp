@@ -1005,14 +1005,14 @@ static ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 static ECObjectsStatus GetSchemaFileName (WString& fullFileName, WCharCP schemaPath, bool useLatestCompatibleMatch)
     {
-    ECFileNameIterator *fileList = new ECFileNameIterator(schemaPath);
+    ECFileNameIterator fileList (schemaPath);
     wchar_t filePath[MAX_PATH];
     UInt32 minorVersion=0;
     UInt32 currentMinorVersion=0;
 
     while (true)
         {
-        if (SUCCESS != fileList->GetNextFileName(filePath))
+        if (SUCCESS != fileList.GetNextFileName(filePath))
             break;
 
         if (!useLatestCompatibleMatch)
