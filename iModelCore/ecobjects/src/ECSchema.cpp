@@ -1477,7 +1477,7 @@ MSXML2::IXMLDOMDocument2& pXmlDoc
 
             WString file;
             if (NULL != pBURL.GetBSTR())
-                file = pBURL;
+                file = pBURL.GetBSTR();
                 
             WString reason = pBReason.GetBSTR();
                         
@@ -1635,8 +1635,8 @@ SchemaSerializationStatus ECSchema::WriteXmlToString (WString& ecSchemaXml) cons
     
     if (status != SCHEMA_SERIALIZATION_STATUS_Success)
         return status;
-        
-    ecSchemaXml = xmlDocPtr->xml;
+
+    ecSchemaXml = xmlDocPtr->xml.GetBSTR();
     
     return status;
     }
