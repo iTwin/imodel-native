@@ -1255,7 +1255,7 @@ static void                     AppendAccessString (WString& compoundAccessStrin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-static WCharCP           GetPrimitiveTypeString (PrimitiveType primitiveType)
+static WCharCP                  GetPrimitiveTypeString (PrimitiveType primitiveType)
     {
     switch (primitiveType)
         {

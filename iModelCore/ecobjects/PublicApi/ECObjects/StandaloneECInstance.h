@@ -149,7 +149,7 @@ private:
     virtual ~StandaloneECEnabler();
 
 protected:
-    virtual WCharCP             _GetName() const override;
+    virtual WCharCP                  _GetName() const override;
     virtual ECObjectsStatus             _GetPropertyIndex (UInt32& propertyIndex, WCharCP propertyAccessString) const override;
     virtual ECObjectsStatus             _GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const override;
     virtual UInt32                      _GetPropertyCount () const override;

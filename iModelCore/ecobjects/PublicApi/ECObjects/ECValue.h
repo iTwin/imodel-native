@@ -94,7 +94,7 @@ protected:
     
     struct StringInfo
         {
-        WCharCP     m_string;
+        WCharCP             m_string;
         bool                m_freeWhenDone;   // WIP_FUSION: this could be stored in the "header"... shared with other DataTypes that need to be freed
         };                                    //             and it would make max size of StringInfo be 8 bytes
 
@@ -309,7 +309,7 @@ public:
     //! @param[in]      depth           The stack depth of the native access string.
     //! @return         The access string.
     //! @see            IECInstance
-    ECOBJECTS_EXPORT WCharCP        GetAccessString (UInt32 depth) const;
+    ECOBJECTS_EXPORT WCharCP                GetAccessString (UInt32 depth) const;
 
     ECOBJECTS_EXPORT void  PushLocation (ECEnablerCR, int propertyIndex, int arrayIndex=INDEX_ROOT);
     ECOBJECTS_EXPORT void  PushLocation (ECEnablerCR, WCharCP,   int arrayIndex=INDEX_ROOT);
