@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/native/Logger.cpp $
+|     $Source: src/Logger.cpp $
 |
-|   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -11,7 +11,8 @@
 USING_NAMESPACE_BENTLEY_LOGGING
 
 BEGIN_BENTLEY_EC_NAMESPACE
- 
+
+#if defined (WIP_MT) 
 Bentley::NativeLogging::ILogger * ECObjectsLogger::s_log = NULL;  
 
 /*---------------------------------------------------------------------------------**//**
@@ -25,5 +26,14 @@ Bentley::NativeLogging::ILogger * ECObjectsLogger::Log()
         }
     return s_log;
     }
+#else
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                08/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+Bentley::NativeLogging::ILogger * ECObjectsLogger::Log()
+    {
+    return LoggingManager::GetLogger(L"ECObjectsNative");
+    }
+#endif
 
 END_BENTLEY_EC_NAMESPACE
