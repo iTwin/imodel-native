@@ -57,7 +57,7 @@ protected:
     //! where the ____ is a name specific to your subclass, and the parameters may vary per enabler.
     ECOBJECTS_EXPORT ECEnabler(ECClassCR ecClass, IStandaloneEnablerLocatorR childECEnablerLocator);
 
-    virtual WCharCP         _GetName() const = 0;
+    virtual WCharCP                 _GetName() const = 0;
     virtual ECObjectsStatus         _GetPropertyIndex (UInt32& propertyIndex, WCharCP propertyAccessString) const = 0;
     virtual ECObjectsStatus         _GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const = 0;
     virtual UInt32                  _GetFirstPropertyIndex (UInt32 parentIndex) const = 0;
@@ -75,7 +75,7 @@ protected:
 
 public:
     //! Primarily for debugging/logging purposes. Should match your fully-qualified class name
-    ECOBJECTS_EXPORT WCharCP            GetName() const;
+    ECOBJECTS_EXPORT WCharCP                    GetName() const;
     
     ECOBJECTS_EXPORT ECClassCR                  GetClass() const;
     ECOBJECTS_EXPORT ECObjectsStatus            GetPropertyIndex     (UInt32& propertyIndex, WCharCP propertyAccessString) const;

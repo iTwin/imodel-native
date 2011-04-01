@@ -44,7 +44,7 @@ StandaloneECEnablerPtr          ECEnabler::ObtainStandaloneInstanceEnabler (WCha
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCR           ECEnabler::GetClass() const  { return m_ecClass; }
-WCharCP     ECEnabler::GetName() const { return _GetName(); }
+WCharCP             ECEnabler::GetName() const { return _GetName(); }
 ECObjectsStatus     ECEnabler::GetPropertyIndex (UInt32& propertyIndex, WCharCP accessString) const { return _GetPropertyIndex (propertyIndex, accessString); }
 
 ECObjectsStatus     ECEnabler::GetAccessString  (WCharCP& accessString, UInt32 propertyIndex) const { return _GetAccessString  (accessString, propertyIndex); }

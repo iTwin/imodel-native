@@ -24,8 +24,8 @@
         <SubPart PartName="GeomDlls"        PartFile="geomlibs" Repository="GeomLibs" />
         <SubPart PartName="StandardSchemas" PartFile="ECStandards" Repository="ECStandards"/>
         <Bindings>
-            <Libs ProductDirectoryName="ECObjectsLibs" Required="false">Delivery\ECObjects3.lib</Libs>
-            <Assemblies ProductDirectoryName="ECObjectsNativeAssemblies">Delivery\ECObjects3.dll</Assemblies>
+            <Libs ProductDirectoryName="ECObjectsLibs" Required="false">Delivery\ECObjects4.lib</Libs>
+            <Assemblies ProductDirectoryName="ECObjectsNativeAssemblies">Delivery\ECObjects4.dll</Assemblies>
         </Bindings>
     </Part>
 
