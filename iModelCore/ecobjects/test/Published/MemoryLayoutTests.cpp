@@ -217,17 +217,6 @@ void VerifyIsNullArrayElements (IECInstanceR instance, ECValueR v, WCharCP acces
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Dylan.Rush      12/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool VerifyPair (IECInstancePtr source, ECValueAccessorPairCR pair)
-    {
-    ECValue original;
-    if(ECOBJECTS_STATUS_Success != source->GetValueUsingAccessor (original, pair.GetAccessor()))
-        return false;
-    return original.Equals (pair.GetValue());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString    GetTestSchemaXMLString (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor, WCharCP className)
@@ -1030,7 +1019,7 @@ typedef bpair<WString, ECValue>  AccessStringValuePair;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     verifyECValueEnumeration (ECValuesCollectionR collection, bvector <AccessStringValuePair>& expectedValues, UInt32& iValue)
+static void     verifyECValueEnumeration (ECValuesCollectionR collection, bvector <AccessStringValuePair>& expectedValues, UInt32& iValue, bool isDup)
     {
     for each (ECPropertyValuePtr propertyValue in collection)
         {
@@ -1042,14 +1031,24 @@ static void     verifyECValueEnumeration (ECValuesCollectionR collection, bvecto
         ECValueCR foundValue    = propertyValue->GetValue();
         ECValueCR expectedValue = expectedValues[iValue].second;
 
-        EXPECT_TRUE (foundValue.Equals (expectedValue));
+        if ( ! isDup || ! foundValue.IsStruct())
+            {
+            EXPECT_TRUE (foundValue.Equals (expectedValue));
+            }
+        else
+            {
+            // If we are enumerating a duplicate, it will have its own struct instances
+            // and we expect the struct pointers to be different so we can't call Equals
+            EXPECT_TRUE (foundValue.IsNull()   == expectedValue.IsNull());
+            EXPECT_TRUE (foundValue.IsStruct() == expectedValue.IsStruct());
+            }
 
         iValue++;;
 
         if (propertyValue->HasChildValues ())
             {
             ECValuesCollectionPtr children = propertyValue->GetChildValues();
-            verifyECValueEnumeration (*children, expectedValues, iValue);
+            verifyECValueEnumeration (*children, expectedValues, iValue, isDup);
             }
         }
     }
@@ -1098,7 +1097,19 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_PrimitiveProperties)
     ECValuesCollectionPtr   collection = ECValuesCollection::Create (*instance);
     UInt32                  iValue = 0;
 
-    verifyECValueEnumeration (*collection, expectedValues, iValue);
+    verifyECValueEnumeration (*collection, expectedValues, iValue, false);
+    //dumpPropertyValues (*collection, false, 0);
+
+    EXPECT_TRUE (expectedValues.size() == iValue);
+
+    /*--------------------------------------------------------------------------
+        Duplicate the instance and verify the duplicate.
+    --------------------------------------------------------------------------*/
+    StandaloneECInstancePtr standAloneInstance = StandaloneECInstance::Duplicate(*instance);
+
+    collection = ECValuesCollection::Create (*standAloneInstance);
+    iValue = 0;
+    verifyECValueEnumeration (*collection, expectedValues, iValue, true);
     //dumpPropertyValues (*collection, false, 0);
 
     EXPECT_TRUE (expectedValues.size() == iValue);
@@ -1187,7 +1198,19 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_PrimitiveArray)
     ECValuesCollectionPtr   collection = ECValuesCollection::Create (*instance);
     UInt32                  iValue = 0;
 
-    verifyECValueEnumeration (*collection, expectedValues, iValue);
+    verifyECValueEnumeration (*collection, expectedValues, iValue, false);
+    //dumpPropertyValues (*collection, false, 0);
+
+    EXPECT_TRUE (expectedValues.size() == iValue);
+
+    /*--------------------------------------------------------------------------
+        Duplicate the instance and verify the duplicate.
+    --------------------------------------------------------------------------*/
+    StandaloneECInstancePtr standAloneInstance = StandaloneECInstance::Duplicate(*instance);
+
+    collection = ECValuesCollection::Create (*standAloneInstance);
+    iValue = 0;
+    verifyECValueEnumeration (*collection, expectedValues, iValue, true);
     //dumpPropertyValues (*collection, false, 0);
 
     EXPECT_TRUE (expectedValues.size() == iValue);
@@ -1340,7 +1363,19 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmbeddedStructs)
     ECValuesCollectionPtr   collection = ECValuesCollection::Create (*instance);
     UInt32                  iValue = 0;
 
-    verifyECValueEnumeration (*collection, expectedValues, iValue);
+    verifyECValueEnumeration (*collection, expectedValues, iValue, false);
+    //dumpPropertyValues (*collection, false, 0);
+
+    EXPECT_TRUE (expectedValues.size() == iValue);
+
+    /*--------------------------------------------------------------------------
+        Duplicate the instance and verify the duplicate.
+    --------------------------------------------------------------------------*/
+    StandaloneECInstancePtr standAloneInstance = StandaloneECInstance::Duplicate(*instance);
+
+    collection = ECValuesCollection::Create (*standAloneInstance);
+    iValue = 0;
+    verifyECValueEnumeration (*collection, expectedValues, iValue, true);
     //dumpPropertyValues (*collection, false, 0);
 
     EXPECT_TRUE (expectedValues.size() == iValue);
@@ -1416,743 +1451,23 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_StructArray)
     ECValuesCollectionPtr   collection = ECValuesCollection::Create (*instance);
     UInt32                  iValue = 0;
 
-    verifyECValueEnumeration (*collection, expectedValues, iValue);
+    verifyECValueEnumeration (*collection, expectedValues, iValue, false);
+    //dumpPropertyValues (*collection, false, 0);
+
+    EXPECT_TRUE (expectedValues.size() == iValue);
+
+    /*--------------------------------------------------------------------------
+        Duplicate the instance and verify the duplicate.
+    --------------------------------------------------------------------------*/
+    StandaloneECInstancePtr standAloneInstance = StandaloneECInstance::Duplicate(*instance);
+
+    collection = ECValuesCollection::Create (*standAloneInstance);
+    iValue = 0;
+    verifyECValueEnumeration (*collection, expectedValues, iValue, true);
     //dumpPropertyValues (*collection, false, 0);
 
     EXPECT_TRUE (expectedValues.size() == iValue);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Dylan.Rush      11/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryLayoutTests, TestECValueEnumeration)
-    {
-    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
-    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
-    ASSERT_TRUE (schema != NULL);
-
-    ECClassP ecClass = schema->GetClassP (L"AllPrimitives");
-    ASSERT_TRUE (ecClass);
-
-    StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str()); 
-
-    EC::StandaloneECInstancePtr sourceInstance = enabler->CreateInstance();
-    EC::StandaloneECInstancePtr targetInstance = enabler->CreateInstance();
-
-    ECValue v;
-    v.SetDouble(1.0/3.0);
-    sourceInstance->SetValue(L"ADouble", v);
-    v.SetInteger(234);
-    sourceInstance->SetValue(L"AnInt", v);
-    v.SetInteger(50);
-    sourceInstance->SetValue(L"SomeInts[0]", v);
-    v.SetInteger(60);
-    sourceInstance->SetValue(L"SomeInts[1]", v);
-    v.SetInteger(70);
-    sourceInstance->SetValue(L"SomeInts[2]", v);
-    v.SetInteger(80);
-    sourceInstance->SetValue(L"SomeInts[3]", v);
-    v.SetString(L"This is a string");
-    sourceInstance->SetValue(L"AString", v);
-    sourceInstance->SetValue(L"SomeStrings[0]", v);
-    v.SetLong((Int64)2309480);
-    sourceInstance->SetValue(L"ALong", v);
-    sourceInstance->SetValue(L"SomeLongs[0]", v);
-    v.SetBoolean(true);
-    sourceInstance->SetValue(L"ABoolean", v);
-    sourceInstance->SetValue(L"SomeBooleans[0]", v);
-    DPoint2d   point2dInput = {1.0, 2.0};
-    v.SetPoint2D(point2dInput);
-    sourceInstance->SetValue(L"APoint2d", v);
-    sourceInstance->SetValue(L"SomePoint2ds[0]", v);
-    DPoint3d   point3dInput = {1.0, 2.0, 3.0};
-    v.SetPoint3D(point3dInput);
-    sourceInstance->SetValue(L"APoint3d", v);
-    sourceInstance->SetValue(L"SomePoint3ds[0]", v);
-    SystemTime timeInput  = SystemTime::GetLocalTime();
-    v.SetDateTime(timeInput);
-    sourceInstance->SetValue(L"ADateTime", v);
-    sourceInstance->SetValue(L"SomeDateTimes[0]", v);
-
-    ECValueAccessorPairCollectionOptionsPtr sourceOptions = ECValueAccessorPairCollectionOptions::Create (*sourceInstance, false);
-    ECValueAccessorPairCollection sourceCollection(*sourceOptions);
-    for each (ECValueAccessorPair pair in sourceCollection)
-        {
-        ECValueCR         value      = pair.GetValue();
-        ECValueAccessorCR accessor   = pair.GetAccessor();
-
-        //wprintf(L"%ls: %ls\n", accessor.GetManagedAccessString(), value.ToString());
-        EXPECT_TRUE (ECOBJECTS_STATUS_Success == targetInstance->SetValueUsingAccessor(accessor, value));
-        }
-
-    ECValueAccessorPairCollectionOptionsPtr targetOptions = ECValueAccessorPairCollectionOptions::Create (*targetInstance, false);
-    ECValueAccessorPairCollection targetCollection(*targetOptions);
-    for each (ECValueAccessorPair pair in targetCollection)
-        {
-        //ECValueAccessorCR accessor   = pair.GetAccessor();
-        // ECValueCR         value      = pair.GetValue();
-
-        //wprintf(L"%ls: %ls\n", accessor.GetManagedAccessString(), value.ToString());
-        EXPECT_TRUE (VerifyPair (sourceInstance, pair));
-        }
-
-    // instance.Compact()... then check values again
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Dylan.Rush      11/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryLayoutTests, TestECValueEnumerationStructArray)
-    {
-    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();;
-    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
-    ASSERT_TRUE (schema != NULL);
-
-    ECClassP ecClass = schema->GetClassP (L"ClassWithStructArray");
-    ECClassP primitiveClass = schema->GetClassP (L"AllPrimitives");
-
-    ASSERT_TRUE (ecClass);
-
-    StandaloneECEnablerPtr enabler          = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str()); 
-    StandaloneECEnablerPtr primitiveEnabler = schemaOwner->ObtainStandaloneInstanceEnabler (primitiveClass->Schema.Name.c_str(), primitiveClass->Name.c_str()); 
-
-    EC::StandaloneECInstancePtr sourceInstance  = enabler->CreateInstance();
-    EC::StandaloneECInstancePtr targetInstance0 = enabler->CreateInstance();
-
-    EC::StandaloneECInstancePtr primitiveInstance0 = primitiveEnabler->CreateInstance();
-    EC::StandaloneECInstancePtr primitiveInstance1 = primitiveEnabler->CreateInstance();
-    EC::StandaloneECInstancePtr primitiveInstance2 = primitiveEnabler->CreateInstance();
-
-    sourceInstance->AddArrayElements(L"StructArray[]", 2);
-
-    ECValue v;
-    v.SetDouble(1.0/3.0);
-    primitiveInstance0->SetValue(L"ADouble", v);
-    v.SetInteger(234);
-    primitiveInstance0->SetValue(L"AnInt", v);
-    v.SetInteger(50);
-    primitiveInstance0->AddArrayElements(L"SomeInts[]", 4);
-    primitiveInstance0->SetValue(L"SomeInts[]", v, 0);
-    v.SetInteger(60);
-    primitiveInstance0->SetValue(L"SomeInts[]", v, 1);
-    v.SetInteger(70);
-    primitiveInstance0->SetValue(L"SomeInts[]", v, 2);
-    v.SetInteger(80);
-    primitiveInstance0->SetValue(L"SomeInts[]", v, 3);
-
-    ECValue structArrayMemberPlaceholder;
-    structArrayMemberPlaceholder.SetStruct(primitiveInstance0.get());
-    sourceInstance->SetValue(L"StructArray[]", structArrayMemberPlaceholder, 0);
-
-    v.SetString(L"This is a string");
-    primitiveInstance1->SetValue(L"AString", v);
-    primitiveInstance1->AddArrayElements(L"SomeStrings[]", 1);
-    primitiveInstance1->SetValue(L"SomeStrings[]", v, 0);
-    v.SetLong((Int64)2309480);
-    primitiveInstance1->SetValue(L"ALong", v);
-    primitiveInstance1->AddArrayElements(L"SomeLongs[]", 1);
-    primitiveInstance1->SetValue(L"SomeLongs[]", v, 0);
-    v.SetBoolean(true);
-    primitiveInstance1->SetValue(L"ABoolean", v);
-    primitiveInstance1->AddArrayElements(L"SomeBooleans[]", 1);
-    primitiveInstance1->SetValue(L"SomeBooleans[]", v, 0);
-
-    structArrayMemberPlaceholder.SetStruct(primitiveInstance1.get());
-    sourceInstance->SetValue(L"StructArray[]", structArrayMemberPlaceholder, 1);
-
-    DPoint2d   point2dInput = {1.0, 2.0};
-    v.SetPoint2D(point2dInput);
-    sourceInstance->SetValue(L"StructMember.APoint2d", v);
-    sourceInstance->AddArrayElements(L"StructMember.SomePoint2ds[]", 1);
-    sourceInstance->SetValue(L"StructMember.SomePoint2ds[]", v, 0);
-    DPoint3d   point3dInput = {1.0, 2.0, 3.0};
-    v.SetPoint3D(point3dInput);
-    sourceInstance->SetValue(L"StructMember.APoint3d", v);
-    sourceInstance->AddArrayElements(L"StructMember.SomePoint3ds[]", 1);
-    sourceInstance->SetValue(L"StructMember.SomePoint3ds[]", v, 0);
-    SystemTime timeInput  = SystemTime::GetLocalTime();
-    v.SetDateTime(timeInput);
-    sourceInstance->SetValue(L"StructMember.ADateTime", v);
-    sourceInstance->AddArrayElements(L"StructMember.SomeDateTimes[]", 1);
-    sourceInstance->SetValue(L"StructMember.SomeDateTimes[]", v, 0);
-
-
-    int valuesFound;
-    //Below, true indicates that null values will be included.
-    ECValueAccessorPairCollectionOptionsPtr sourceOptions = ECValueAccessorPairCollectionOptions::Create (*sourceInstance, true);
-    ECValueAccessorPairCollection sourceCollection(*sourceOptions);
-
-    //Enumerate all values (including nulls.)  Does not output.
-    valuesFound = 0;
-    for each (ECValueAccessorPair pair in sourceCollection)
-        {
-        valuesFound ++;
-        }
-    EXPECT_TRUE (18 < valuesFound);
-
-    valuesFound = 0;
-    sourceOptions->SetIncludesNullValues(false);
-    for each (ECValueAccessorPair pair in sourceCollection)
-        {
-        valuesFound ++;
-        ECValueAccessorCR accessor   = pair.GetAccessor();
-        ECValueCR         value      = pair.GetValue();
-        //wprintf(L"%ls: %ls\n", accessor.GetManagedAccessString(), value.ToString());
-        EXPECT_TRUE (ECOBJECTS_STATUS_Success == targetInstance0->SetValueUsingAccessor (accessor, value));
-        }
-    EXPECT_EQ (18, valuesFound);
-
-    valuesFound = 0;   
-    ECValueAccessorPairCollectionOptionsPtr targetOptions0 = ECValueAccessorPairCollectionOptions::Create (*targetInstance0, false);
-    ECValueAccessorPairCollection targetCollection0(*targetOptions0);
-    for each (ECValueAccessorPair pair in targetCollection0)
-        {
-        valuesFound ++;
-        ECValueAccessorCR accessor = pair.GetAccessor();
-        ECValueCR value = pair.GetValue();
-        ECValue temp;
-        EXPECT_TRUE (ECOBJECTS_STATUS_Success == targetInstance0->GetValueUsingAccessor (temp, accessor));
-        EXPECT_TRUE (value.Equals (temp));
-        EXPECT_TRUE (VerifyPair (sourceInstance, pair));
-        }
-    EXPECT_EQ (18, valuesFound);
-
-    valuesFound = 0;   
-    ECValueAccessorPairCollectionOptionsPtr targetOptions1 = ECValueAccessorPairCollectionOptions::Create (*targetInstance0, false);
-    ECValueAccessorPairCollection targetCollection1(*targetOptions0);
-    for each (ECValueAccessorPair pair in targetCollection1)
-        {
-        valuesFound ++;
-        EXPECT_TRUE (VerifyPair (sourceInstance, pair));
-        }
-    EXPECT_EQ (18, valuesFound);
-
-    StandaloneECInstancePtr duplicatedTarget = StandaloneECInstance::Duplicate (*targetInstance0);
-    ECValueAccessorPairCollectionOptionsPtr duplicatedOptions = ECValueAccessorPairCollectionOptions::Create (*duplicatedTarget, false);
-    ECValueAccessorPairCollection duplicatedTargetCollection(*duplicatedOptions);
-    valuesFound = 0;
-    for each (ECValueAccessorPair pair in duplicatedTargetCollection)
-        {
-        valuesFound++;
-        EXPECT_TRUE (VerifyPair (sourceInstance, pair));
-        }
-    EXPECT_EQ (18, valuesFound); 
-    
-    // instance.Compact()... then check values again
-    
-    };
-
-//#ifdef NEEDSWORK
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Dylan.Rush      11/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryLayoutTests, ECValueEnumerationOverFixedSizeArrays)
-    {
-    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();;
-    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
-    ASSERT_TRUE (schema != NULL);
-
-    ECClassP ecClass0 = schema->GetClassP (L"FixedSizeArrayTester");
-    ASSERT_TRUE (ecClass0);
-    ECClassP ecClass1 = schema->GetClassP (L"BaseClass0");
-    ASSERT_TRUE (ecClass1);
-
-    StandaloneECEnablerPtr enabler          = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass0->Schema.Name.c_str(), ecClass0->Name.c_str()); 
-    StandaloneECEnablerPtr primitiveEnabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass1->Schema.Name.c_str(), ecClass1->Name.c_str()); 
-
-    StandaloneECInstancePtr sourceInstance  = enabler->CreateInstance();
-    StandaloneECInstancePtr targetInstance  = enabler->CreateInstance();
-
-    ECValue v;
-    v.SetString (L"a fixed string");
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == sourceInstance->SetValue (L"FixedString1[]", v, 0));
-
-    for (int i=0; i<10; i++)
-        EXPECT_TRUE (ECOBJECTS_STATUS_Success == sourceInstance->SetValue (L"FixedString10[]", v, i));
-
-    v.SetInteger (44);
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == sourceInstance->SetValue (L"FixedInt1[]", v, 0));
-
-    for (int i=0; i<10; i++)
-        {
-        v.SetInteger (i*i*i);
-        EXPECT_TRUE (ECOBJECTS_STATUS_Success == sourceInstance->SetValue (L"FixedInt10[]", v, i));
-        }
-
-    IECInstancePtr instance0 = primitiveEnabler->CreateInstance();
-    ECValue vForSettingStruct;
-    vForSettingStruct.SetInteger (5);
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == instance0->SetValue (L"BaseIntProperty", vForSettingStruct));
-    v.SetStruct (instance0.get());
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == sourceInstance->SetValue (L"Struct1[]", v, 0));
-
-    for (int i=0; i<10; i++)
-        {
-        instance0 = primitiveEnabler->CreateInstance();
-        vForSettingStruct.SetInteger(i*i*i);
-        EXPECT_TRUE (ECOBJECTS_STATUS_Success == instance0->SetValue(L"BaseIntProperty", vForSettingStruct));
-        v.SetStruct (instance0.get());
-        EXPECT_TRUE (ECOBJECTS_STATUS_Success == sourceInstance->SetValue (L"Struct10[]", v, i));
-        }
-
-    EXPECT_TRUE  (ECOBJECTS_STATUS_Success == sourceInstance->GetValue (v, L"FixedString1[]", 0));
-    EXPECT_FALSE (v.IsNull());
-    EXPECT_STREQ (L"a fixed string", v.GetString());
-
-    for (int i=0; i<10; i++)
-        {
-        EXPECT_TRUE  (ECOBJECTS_STATUS_Success == sourceInstance->GetValue (v, L"FixedString10[]", i));
-        EXPECT_FALSE (v.IsNull());
-        EXPECT_STREQ (L"a fixed string", v.GetString());
-        }
-
-    EXPECT_TRUE  (ECOBJECTS_STATUS_Success == sourceInstance->GetValue (v, L"FixedInt1[]", 0));
-    EXPECT_FALSE (v.IsNull());
-    EXPECT_EQ    (44, v.GetInteger());
-
-    for (int i=0; i<10; i++)
-        {
-        EXPECT_TRUE  (ECOBJECTS_STATUS_Success == sourceInstance->GetValue (v, L"FixedInt10[]", i));
-        EXPECT_FALSE (v.IsNull());
-        EXPECT_EQ    (i*i*i, v.GetInteger());
-        }
-
-    EXPECT_TRUE  (ECOBJECTS_STATUS_Success == sourceInstance->GetValue (v, L"Struct1[]", 0));
-    EXPECT_FALSE (v.IsNull());
-    instance0   = v.GetStruct();
-    EXPECT_TRUE  (ECOBJECTS_STATUS_Success == instance0->GetValue (v, L"BaseIntProperty"));
-    EXPECT_EQ    (5, v.GetInteger());
-
-    for (int i=0; i<10; i++)
-        {
-        EXPECT_TRUE  (ECOBJECTS_STATUS_Success == sourceInstance->GetValue (v, L"Struct10[]", i));
-        EXPECT_FALSE (v.IsNull());
-        instance0   = v.GetStruct();
-        EXPECT_TRUE  (ECOBJECTS_STATUS_Success == instance0->GetValue (v, L"BaseIntProperty"));
-        EXPECT_EQ    (i*i*i, v.GetInteger());
-        }
-
-    UInt32 propertyIndexOfStructArray;
-    enabler->GetPropertyIndex (propertyIndexOfStructArray, L"Struct1[]");
-
-    EXPECT_TRUE  (ECOBJECTS_STATUS_Success == sourceInstance->GetValue (v, propertyIndexOfStructArray, 0));
-    EXPECT_FALSE (v.IsNull());
-    instance0   = v.GetStruct();
-    EXPECT_TRUE  (ECOBJECTS_STATUS_Success == instance0->GetValue (v, L"BaseIntProperty"));
-    EXPECT_EQ    (5, v.GetInteger());
-
-    enabler->GetPropertyIndex (propertyIndexOfStructArray, L"Struct10[]");
-    for (int i=0; i<10; i++)
-        {
-        EXPECT_TRUE  (ECOBJECTS_STATUS_Success == sourceInstance->GetValue (v, propertyIndexOfStructArray, i));
-        EXPECT_FALSE (v.IsNull());
-        instance0   = v.GetStruct();
-        EXPECT_TRUE  (ECOBJECTS_STATUS_Success == instance0->GetValue (v, L"BaseIntProperty"));
-        EXPECT_EQ    (i*i*i, v.GetInteger());
-        }
-
-    int valuesFound;
-    valuesFound = 0;
-    ECValueAccessorPairCollectionOptionsPtr sourceOptions = ECValueAccessorPairCollectionOptions::Create (*sourceInstance, false);
-    ECValueAccessorPairCollection sourceCollection(*sourceOptions);
-    for each (ECValueAccessorPair pair in sourceCollection)
-        {
-        valuesFound ++;
-        ECValueAccessorCR accessor = pair.GetAccessor();
-        ECValueCR         value = pair.GetValue();
-        //wprintf(L"%ls: %ls\n", accessor.GetManagedAccessString(), value.ToString());
-        EXPECT_TRUE (ECOBJECTS_STATUS_Success == targetInstance->SetValueUsingAccessor (accessor, value));
-        }
-    EXPECT_EQ (33, valuesFound);
-
-    //Copy to target instance
-    //wprintf(L"\nEnumerating values in target instance...\n");
-    valuesFound = 0;   
-    ECValueAccessorPairCollectionOptionsPtr targetOptions = ECValueAccessorPairCollectionOptions::Create (*targetInstance, false);
-    ECValueAccessorPairCollection targetCollection(*targetOptions);
-    for each (ECValueAccessorPair pair in targetCollection)
-        {
-        valuesFound ++;
-        //ECValueAccessor accessor = pair.GetAccessor();
-        //ECValue value = pair.GetValue();
-        //wprintf(L"%ls: %ls", accessor.GetManagedAccessString(), value.ToString());
-        EXPECT_TRUE (VerifyPair (sourceInstance, pair));
-        }
-    EXPECT_EQ (33, valuesFound);
-
-    };
-//#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Dylan.Rush      11/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryLayoutTests, ECValueEnumerationPerformance)
-    {
-    //The purpose of this test is to see the performance loss from using two different class
-    //layouts.
-#ifdef IGNORE____
-    // CGM - this CoInitialize is only needed to de-serialize the schema.  Ideally, CreateTestSchema should handle this since the test shouldn't need to know
-    // that implementation detail
-    // DHR - I stuck this in CreateTestSchema(), but I don't see an easy way around having to CoUninitialize()
-    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();;
-    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
-    ASSERT_TRUE (schema != NULL);
-
-    //These two classes are thought to have different ClassLayouts.
-    ECClassP ecClass0 = schema->GetClassP (L"ClassLayoutPerformanceTest0");
-    ASSERT_TRUE (ecClass0);
-    ECClassP ecClass1 = schema->GetClassP (L"ClassLayoutPerformanceTest1");
-    ASSERT_TRUE (ecClass1);
-
-    StandaloneECEnablerPtr enabler          = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass0->Schema.Name.c_str(), ecClass0->Name.c_str()); 
-    StandaloneECEnablerPtr alternateEnabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass1->Schema.Name.c_str(), ecClass1->Name.c_str()); 
-
-    EC::StandaloneECInstancePtr sourceInstance  = enabler->CreateInstance();
-    EC::StandaloneECInstancePtr targetInstance0 = enabler->CreateInstance();
-    EC::StandaloneECInstancePtr targetInstance1 = alternateEnabler->CreateInstance();
-
-    ECValue v;
-    SetAndVerifyDouble (*sourceInstance, v, L"ADouble", 5.8);
-    SetAndVerifyInteger (*sourceInstance, v, L"AnInt", 8851);
-    SetAndVerifyString (*sourceInstance, v, L"AString", L"Do or do not, there is no try.");
-
-    ECValueAccessorPairCollectionOptionsPtr sourceOptions = ECValueAccessorPairCollectionOptions::Create (*sourceInstance, false);
-    ECValueAccessorPairCollection sourceCollection(*sourceOptions);
-
-    UInt32      numAccesses = 300000;
-
-    double      elapsedTime1 = 0.0;
-    StopWatch   timer1 (L"Time setting values using index", true);
-
-
-    for (UInt32 i = 0; i < numAccesses; i++)
-        {
-        timer1.Start();
-        for each (ECValueAccessorPair pair in sourceCollection)
-            {
-            targetInstance0->SetValueUsingAccessor(pair.GetAccessor(), pair.GetValue());
-            }
-        timer1.Stop();
-
-        elapsedTime1 += timer1.GetElapsedSeconds();
-        }
-
-    double      elapsedTime2 = 0.0;
-    StopWatch   timer2 (L"Time setting values using accessString", true);
-    for (UInt32 i = 0; i < numAccesses; i++)
-        {
-        timer2.Start();
-        for each (ECValueAccessorPair pair in sourceCollection)
-            {
-            targetInstance1->SetValueUsingAccessor(pair.GetAccessor(), pair.GetValue());
-            }
-        timer2.Stop();
-
-        elapsedTime2 += timer2.GetElapsedSeconds();
-        }
-
-    double      elapsedTime3 = 0.0;
-    StopWatch   timer3 (L"Time setting values using interop helper", true);
-    for (UInt32 i = 0; i < numAccesses; i++)
-        {
-        timer3.Start();
-        ECValue v;
-        ECInstanceInteropHelper::GetValue  (*sourceInstance, v, L"ADouble");
-        ECInstanceInteropHelper::SetValue  (*targetInstance0, L"ADouble", v);
-
-        ECInstanceInteropHelper::GetValue (*sourceInstance, v, L"AnInt");
-        ECInstanceInteropHelper::SetValue (*targetInstance0, L"AnInt", v);
-
-        ECInstanceInteropHelper::GetValue  (*sourceInstance, v, L"AString");
-        ECInstanceInteropHelper::SetValue  (*targetInstance0, L"AString", v);
-        timer3.Stop();
-        elapsedTime3 += timer3.GetElapsedSeconds();
-        }
-
-    double      elapsedTime4 = 0.0;
-    StopWatch   timer4 (L"Time setting values using interop helper and enum", true);
-    for (UInt32 i = 0; i < numAccesses; i++)
-        {
-        timer4.Start();
-        for each (ECValueAccessorPair pair in sourceCollection)
-            {
-            ECInstanceInteropHelper::SetValue (*targetInstance0, pair.GetAccessor().GetManagedAccessString().c_str(), pair.GetValue());
-            }
-        timer4.Stop();
-        elapsedTime4 += timer4.GetElapsedSeconds();
-        }
-    
-    wprintf (L"Time to set %d values by: index = %.4f, \n\
-              access string = %.4f, \n\
-              interop helper - harcoded access strings = %.4f\n\
-              interop helper - enumerated access strings = %.4f\n\
-              \n", numAccesses, elapsedTime1, elapsedTime2, elapsedTime3, elapsedTime4);
-
-#endif
-
-    // instance.Compact()... then check values again
-    
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Dylan.Rush      11/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryLayoutTests, PolymorphicStructArrayEnumeration)
-    {
-    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();;
-    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
-    ASSERT_TRUE (schema != NULL);
-
-    ECClassP ecClass = schema->GetClassP (L"ClassWithPolymorphicStructArray");
-    ASSERT_TRUE (ecClass);
-    ECClassP derivedClass0 = schema->GetClassP (L"DerivedClass0");
-    ASSERT_TRUE (derivedClass0);
-    ECClassP derivedClass1 = schema->GetClassP (L"DerivedClass1");
-    ASSERT_TRUE (derivedClass1);
-
-    StandaloneECEnablerPtr enabler   = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str()); 
-    StandaloneECEnablerPtr dEnabler0 = schemaOwner->ObtainStandaloneInstanceEnabler (derivedClass0->Schema.Name.c_str(), derivedClass0->Name.c_str()); 
-    StandaloneECEnablerPtr dEnabler1 = schemaOwner->ObtainStandaloneInstanceEnabler (derivedClass1->Schema.Name.c_str(), derivedClass1->Name.c_str()); 
-
-    EC::StandaloneECInstancePtr dInstance0 = dEnabler0->CreateInstance();
-
-    ECValue v;
-    v.SetInteger(1);
-    dInstance0->SetValue(L"BaseIntProperty", v);
-    v.SetString(L"Hello, polymorphism!");
-    dInstance0->SetValue(L"DerivedStringProperty", v);
-
-    EC::StandaloneECInstancePtr dInstance1 = dEnabler1->CreateInstance();
-
-    v.SetInteger(1);
-    dInstance1->SetValue(L"BaseIntProperty", v);
-    v.SetDouble(3.1415);
-    dInstance1->SetValue(L"DerivedDoubleProperty", v);
-
-    EC::StandaloneECInstancePtr sourceInstance = enabler->CreateInstance();
-
-    sourceInstance->AddArrayElements(L"PolymorphicStructArray[]", 2);
-    v.SetStruct(dInstance0.get());
-    sourceInstance->SetValue(L"PolymorphicStructArray[]", v, 0);
-    v.SetStruct(dInstance1.get());
-    sourceInstance->SetValue(L"PolymorphicStructArray[]", v, 1);
-
-    EC::StandaloneECInstancePtr targetInstance = enabler->CreateInstance();
-
-    ECValueAccessorPairCollectionOptionsPtr sourceOptions = ECValueAccessorPairCollectionOptions::Create (*sourceInstance, false);
-    ECValueAccessorPairCollection sourceCollection(*sourceOptions);
-
-    int valuesFound;
-
-    valuesFound = 0;
-    for each (ECValueAccessorPair pair in sourceCollection)
-        {
-        valuesFound++;
-        }
-    EXPECT_EQ (4, valuesFound); 
-
-    //Set those values to a target instance
-    valuesFound = 0;
-    for each (ECValueAccessorPair pair in sourceCollection)
-        {
-        valuesFound++;
-        ECValueCR value = pair.GetValue();
-        ECValueAccessorCR accessor = pair.GetAccessor();
-        targetInstance->SetValueUsingAccessor (accessor, value);
-        }
-    ASSERT_TRUE (4 == valuesFound); 
-
-    ECValueAccessorPairCollectionOptionsPtr targetOptions = ECValueAccessorPairCollectionOptions::Create (*targetInstance, false);
-    ECValueAccessorPairCollection targetCollection(*targetOptions);
-    valuesFound = 0;
-    for each (ECValueAccessorPair pair in targetCollection)
-        {
-        valuesFound++;
-        EXPECT_TRUE (VerifyPair (sourceInstance, pair));
-        }
-    ASSERT_TRUE (4 == valuesFound); 
-
-    StandaloneECInstancePtr duplicatedTarget = StandaloneECInstance::Duplicate (*targetInstance);
-    ECValueAccessorPairCollectionOptionsPtr duplicatedTargetOptions = ECValueAccessorPairCollectionOptions::Create (*duplicatedTarget, false);
-    ECValueAccessorPairCollection duplicatedTargetCollection(*duplicatedTargetOptions);
-    valuesFound = 0;
-    for each (ECValueAccessorPair pair in duplicatedTargetCollection)
-        {
-        valuesFound++;
-        EXPECT_TRUE (VerifyPair (sourceInstance, pair));
-        }
-    ASSERT_TRUE (4 == valuesFound); 
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Dylan.Rush      11/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryLayoutTests, ManualUseOfAccessors)
-    {
-    ECSchemaCachePtr schemaSession = ECSchemaCache::Create ();
-    ECSchemaP        schema = CreateTestSchema(*schemaSession);
-    ASSERT_TRUE (schema != NULL);
-
-    StandaloneECEnablerPtr  enabler                 =  schemaSession->ObtainStandaloneInstanceEnabler (schema->Name.c_str(), L"ClassWithStructArray");
-    StandaloneECEnablerPtr  structEnabler           =  schemaSession->ObtainStandaloneInstanceEnabler (schema->Name.c_str(), L"AllPrimitives");
-    StandaloneECEnablerPtr  nestedStuctEnabler      =  schemaSession->ObtainStandaloneInstanceEnabler (schema->Name.c_str(), L"NestedStructArray");
-    StandaloneECEnablerPtr  manufactureStuctEnabler =  schemaSession->ObtainStandaloneInstanceEnabler (schema->Name.c_str(), L"Manufacturer");
-
-    EC::StandaloneECInstancePtr sourceInstance  = enabler->CreateInstance();
-    EC::StandaloneECInstancePtr targetInstance0 = enabler->CreateInstance();
-    EC::StandaloneECInstancePtr targetInstance1 = enabler->CreateInstance();
-
-    ECValueAccessor accessor;
-    ECValue         v;
-    ECValue         readValue;
-
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success == ECValueAccessor::PopulateValueAccessor (accessor, *sourceInstance, L"StructMember.ADouble"));
-    v.SetDouble(3.1415);
-    sourceInstance->SetValueUsingAccessor (accessor, v);
-    sourceInstance->GetValueUsingAccessor (readValue, accessor);
-
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success == ECValueAccessor::PopulateValueAccessor (accessor, *sourceInstance, L"StructMember.SomeInts"));
-    sourceInstance->GetValueUsingAccessor (v, accessor);
-    ArrayInfo arrayInfo = v.GetArrayInfo ();
-    UInt32 count = arrayInfo.GetCount();
-    ASSERT_TRUE (0 == count); 
-    UInt32 newCount=5;
-
-    for (UInt32 newIndex=0; newIndex<newCount; newIndex++)
-        {
-        // set the accessor to add a new entry into the array
-        accessor.DeepestLocation().arrayIndex = newIndex;
-        v.SetInteger(100*newIndex);
-        sourceInstance->SetValueUsingAccessor(accessor, v);
-        sourceInstance->GetValueUsingAccessor (readValue, accessor);
-        }
-
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success == ECValueAccessor::PopulateValueAccessor (accessor, *sourceInstance, L"StructMember.SomeInts"));
-    sourceInstance->GetValueUsingAccessor (v, accessor);
-    arrayInfo = v.GetArrayInfo ();
-    count = arrayInfo.GetCount();
-    ASSERT_TRUE (count == newCount); 
-
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success == ECValueAccessor::PopulateValueAccessor (accessor, *sourceInstance, L"ComplicatedStructArray"));
-    sourceInstance->GetValueUsingAccessor (v, accessor);
-    arrayInfo = v.GetArrayInfo ();
-    count = arrayInfo.GetCount();
-    ASSERT_TRUE (0 == count); 
-
-    // set the accessor to add a new entry into the ComplicatedStructArray array
-    accessor.DeepestLocation().arrayIndex = 0;
-
-    accessor.PushLocation(*nestedStuctEnabler, L"NestPropString", -1);
-    v.SetString(L"It is possible to use accessors manually.");
-    sourceInstance->SetValueUsingAccessor(accessor, v);
-    sourceInstance->GetValueUsingAccessor (readValue, accessor);
-    accessor.PopLocation();    // remove Location of NestPropString
-
-    // push to the first array entry
-    accessor.PushLocation(*nestedStuctEnabler, L"ManufacturerArray[]", 0);
-    accessor.PushLocation(*manufactureStuctEnabler, L"Name");
-
-    // this will force a new standalone instance to get created
-    v.SetString(L"Nissan");
-    sourceInstance->SetValueUsingAccessor(accessor, v);
-    sourceInstance->GetValueUsingAccessor (readValue, accessor);
-
-    accessor.PopLocation();
-    accessor.PushLocation(*manufactureStuctEnabler, L"AccountNo");
-    v.SetInteger(3475);
-    sourceInstance->SetValueUsingAccessor(accessor, v);
-    sourceInstance->GetValueUsingAccessor (readValue, accessor);
-
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success == ECValueAccessor::PopulateValueAccessor (accessor, *sourceInstance, L"ComplicatedStructArray[0].ManufacturerArray[0].Name")); 
-    sourceInstance->GetValueUsingAccessor (readValue, accessor);
-
-    accessor.Clear ();
-    accessor.PushLocation(*sourceInstance, L"StructMember.ADouble", -1);
-    v.SetDouble(3.1415);
-    sourceInstance->SetValueUsingAccessor(accessor, v);
-    accessor.PopLocation();
-
-    accessor.PushLocation(*sourceInstance, L"StructMember.AnInt", -1);
-    v.SetInteger(234);
-    sourceInstance->SetValueUsingAccessor(accessor, v);
-    accessor.PopLocation();
-
-    accessor.PushLocation(*sourceInstance, L"StructMember.SomeInts[]", 0);
-    v.SetInteger(432);
-    sourceInstance->SetValueUsingAccessor(accessor, v);
-    accessor.PopLocation();
-    accessor.PushLocation(*sourceInstance, L"StructMember.SomeInts[]", 1);
-    v.SetInteger(555);
-    sourceInstance->SetValueUsingAccessor(accessor, v);
-    accessor.PopLocation();
-
-    //Step into struct array
-    accessor.PushLocation(*sourceInstance, L"StructArray[]", 0);
-
-    accessor.PushLocation(*structEnabler, L"AString", -1);
-    v.SetString(L"It is possible to use accessors manually.");
-    sourceInstance->SetValueUsingAccessor(accessor, v);
-    accessor.PopLocation();
-    accessor.PushLocation(*structEnabler, L"ALong", -1);
-    v.SetLong(5846543);
-    sourceInstance->SetValueUsingAccessor(accessor, v);
-    accessor.PopLocation();
-
-    int valuesFound;
-
-    ECValueAccessorPairCollectionOptionsPtr sourceOptions = ECValueAccessorPairCollectionOptions::Create (*sourceInstance, false);
-    ECValueAccessorPairCollection sourceCollection(*sourceOptions);
-
-    valuesFound = 0;
-    sourceOptions->SetIncludesNullValues(true);
-    for each (ECValueAccessorPair pair in sourceCollection)
-        {
-        ECValueAccessor accessor   = pair.GetAccessor();
-        wprintf (L"%ls\n", accessor.GetManagedAccessString());
-        valuesFound ++;
-        }
-    EXPECT_TRUE (12 < valuesFound);
-
-    valuesFound = 0;
-    sourceOptions->SetIncludesNullValues(false);
-    for each (ECValueAccessorPair pair in sourceCollection)
-        {
-        valuesFound ++;
-        ECValueAccessorCR accessor   = pair.GetAccessor();
-        ECValueCR         value      = pair.GetValue();
-        EXPECT_TRUE (ECOBJECTS_STATUS_Success == targetInstance0->SetValueUsingAccessor (accessor, value));
-        EXPECT_TRUE (ECOBJECTS_STATUS_Success == targetInstance1->SetValueUsingAccessor (accessor, value));
-        }
-    EXPECT_EQ (12, valuesFound); 
-
-    //Copy to target instance
-    valuesFound = 0;   
-    ECValueAccessorPairCollectionOptionsPtr targetOptions0 = ECValueAccessorPairCollectionOptions::Create (*targetInstance0, false);
-    ECValueAccessorPairCollection targetCollection0(*targetOptions0);
-    for each (ECValueAccessorPair pair in targetCollection0)
-        {
-        valuesFound ++;
-        ECValueAccessorCR accessor = pair.GetAccessor();
-        ECValueCR value = pair.GetValue();
-        ECValue temp;
-        EXPECT_TRUE (ECOBJECTS_STATUS_Success == targetInstance1->GetValueUsingAccessor (temp, accessor));
-        EXPECT_TRUE (value.Equals (temp));
-        EXPECT_TRUE (VerifyPair (sourceInstance, pair));
-        }
-    EXPECT_EQ (12, valuesFound); 
-
-    valuesFound = 0;   
-    ECValueAccessorPairCollectionOptionsPtr targetOptions1 = ECValueAccessorPairCollectionOptions::Create (*targetInstance1, false);
-    ECValueAccessorPairCollection targetCollection1(*targetOptions1);
-    for each (ECValueAccessorPair pair in targetCollection1)
-        {
-        valuesFound ++;
-        EXPECT_TRUE (VerifyPair (sourceInstance, pair));
-        }
-    EXPECT_EQ (12, valuesFound); 
-    
-    // instance.Compact()... then check values again
-    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan.Rush      11/10
@@ -2205,35 +1520,44 @@ TEST_F(MemoryLayoutTests, SimpleMergeTwoInstances)
     Note that in Options::Create (), the second flag is set to true: in this
     case, it is wise to include accessors that have null values.
     */
-    ECValueAccessorPairCollectionOptionsPtr sourceOptions = ECValueAccessorPairCollectionOptions::Create (*sourceInstance1, true);
-    ECValueAccessorPairCollection sourceCollection(*sourceOptions);
-    for each (ECValueAccessorPair pair in sourceCollection)
-        {
-        ECValue localValue;
+    ECValuesCollectionPtr collection = ECValuesCollection::Create (*sourceInstance1);
 
-        //value came from sourceInstance1
-        ECValueCP value = &pair.GetValue();
-        //if the value is null, get it from sourceInstance0
-        if(value->IsNull())
+    for each (ECPropertyValuePtr propertyValue in *collection)
+        {
+        ECValue             localValue;
+        ECValueCP           ecValue  = &propertyValue->GetValue();
+
+        if ( ! ecValue->IsPrimitive())
+            continue;
+
+        ECValueAccessorCR   accessor = propertyValue->GetValueAccessor();
+
+        // If the value from instance1 is NULL, try to get it from instance0
+        if (ecValue->IsNull())
             {
-            sourceInstance0->GetValueUsingAccessor (localValue, pair.GetAccessor());
-            value = &localValue;
+            sourceInstance0->GetValueUsingAccessor (localValue, accessor);
+            ecValue = &localValue;
             }
+            
         //set the value to target instance
-        if(!value->IsNull())
-            targetInstance->SetValueUsingAccessor (pair.GetAccessor(), *value);
+        if(!ecValue->IsNull())
+            targetInstance->SetValueUsingAccessor (accessor, *ecValue);
         }
 
     int valuesCounted = 0;
-    ECValueAccessorPairCollectionOptionsPtr targetOptions = ECValueAccessorPairCollectionOptions::Create (*targetInstance, false);
-    ECValueAccessorPairCollection targetCollection(*targetOptions);
-    for each (ECValueAccessorPair pair in targetCollection)
+    ECValuesCollectionPtr targetCollection = ECValuesCollection::Create (*targetInstance);
+
+    for each (ECPropertyValuePtr propertyValue in *targetCollection)
         {
+        if ( ! propertyValue->GetValue().IsPrimitive())
+            continue;
+
         valuesCounted++;
-        //wprintf(L"%ls: %ls\n", pair.GetAccessor().GetManagedAccessString(), pair.GetValue().ToString());
+        //wprintf(L"%ls: %ls\n", propertyValue->GetValueAccessor().GetManagedAccessString(), propertyValue->GetValue().ToString());
         }
+
     //Verify that the merge succeeded
-    EXPECT_EQ (8, valuesCounted);
+    EXPECT_EQ (9, valuesCounted);
     targetInstance->GetValue (v, L"AnInt");    //Came from sourceInstance0
     EXPECT_EQ (234, v.GetInteger());
     targetInstance->GetValue (v, L"ADouble");  //Came from sourceInstance1
