@@ -77,19 +77,19 @@
     <ClCompile Include="StandaloneECInstance.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\PublicApi\ECObjects\DesignByContract.h" />
-    <ClInclude Include="..\..\PublicApi\ECObjects\ECEnabler.h" />
-    <ClInclude Include="..\..\PublicApi\ECObjects\ECInstance.h" />
-    <ClInclude Include="..\..\PublicApi\ECObjects\ECObjects.h" />
-    <ClInclude Include="..\..\PublicApi\ECObjects\ECObjectsAPI.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\DesignByContract.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECEnabler.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECInstance.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECObjects.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPI.h" />
     <ClInclude Include="ECObjectsPch.h" />
-    <ClInclude Include="..\..\PublicApi\ECObjects\ECSchema.h" />
-    <ClInclude Include="..\..\PublicApi\ECObjects\ECValue.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECSchema.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECValue.h" />
     <ClInclude Include="ecxml.h" />
     <ClInclude Include="FileUtilities.h" />
     <ClInclude Include="Logger.h" />
-    <ClInclude Include="..\..\PublicApi\ECObjects\MemoryInstanceSupport.h" />
-    <ClInclude Include="..\..\PublicApi\ECObjects\StandaloneECInstance.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\MemoryInstanceSupport.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\StandaloneECInstance.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\ecf.PartFile.xml">

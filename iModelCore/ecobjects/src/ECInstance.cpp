@@ -1255,7 +1255,7 @@ static void                     AppendAccessString (WString& compoundAccessStrin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-static WCharCP           GetPrimitiveTypeString (PrimitiveType primitiveType)
+static WCharCP                  GetPrimitiveTypeString (PrimitiveType primitiveType)
     {
     switch (primitiveType)
         {
@@ -2061,6 +2061,13 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
     for (status = m_xmlReader->MoveToFirstAttribute(); S_OK == status; status = m_xmlReader->MoveToNextAttribute())
         {
         // we have an attribute.
+        WCharCP      qualifiedName;
+        if (S_OK == m_xmlReader->GetQualifiedName(&qualifiedName, NULL))
+            {
+            if ((L':' == qualifiedName[5]) && (0 == wcsncmp (XMLNS_ATTRIBUTE, qualifiedName, 5)))
+                continue;  // skip xmlns:xxxxx attributes
+            }
+
         WCharCP      attributeName;
         if (FAILED (status = m_xmlReader->GetLocalName (&attributeName, NULL)))
             return TranslateStatus (status);
@@ -2077,9 +2084,10 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
                 (0 == wcscmp (isNil, L"TRUE")) || (0 == wcscmp (isNil, L"1")))
                 {
                 ecValue.SetToNull();
+                return INSTANCE_DESERIALIZATION_STATUS_Success;
                 }
             }
-            m_xmlReader->MoveToElement();
+            //m_xmlReader->MoveToElement();
         }
 
     if (m_xmlReader->IsEmptyElement())

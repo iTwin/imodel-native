@@ -65,7 +65,7 @@ public:
         m_accessString(accessString), m_parentStructIndex (psi), m_typeDescriptor(typeDescriptor), m_offset(offset), m_nullflagsOffset(nullflagsOffset), 
         m_nullflagsBitmask (nullflagsBitmask), m_modifierFlags (modifierFlags), m_modifierData (modifierData) { }; //, m_property(property) {};
 
-    inline WCharCP  GetAccessString() const     { return m_accessString.c_str(); }
+    inline WCharCP          GetAccessString() const     { return m_accessString.c_str(); }
     inline UInt32           GetParentStructIndex() const{ return m_parentStructIndex; }
     inline UInt32           GetOffset() const           { assert ( ! m_typeDescriptor.IsStruct()); return m_offset; }
     inline UInt32           GetNullflagsOffset() const  { assert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsOffset; }
@@ -158,7 +158,7 @@ private:
 
 /*__PUBLISH_SECTION_END__*/
 public:    
-    WString                GetName() const;
+    WString                 GetName() const;
     void                    AddPropertyLayout (WCharCP accessString, PropertyLayoutR);
     void                    AddToLogicalStructureMap (PropertyLayoutR propertyLayout, UInt32 propertyIndex);
 
