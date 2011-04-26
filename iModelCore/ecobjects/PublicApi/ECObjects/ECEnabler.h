@@ -103,4 +103,19 @@ public:
 #endif
     };
 
+//=======================================================================================    
+//! Base class for all relationship enablers
+//=======================================================================================    
+ struct IECRelationshipEnabler
+ {
+protected:
+    virtual IECWipRelationshipInstanceP _CreateWipRelationshipInstance () const = 0;
+    virtual EC::ECRelationshipClassCR   _GetRelationshipClass() const = 0;
+
+ public:
+    //! Get a WipRelationshipInstance that is used to set relationship name and order Ids.
+    ECOBJECTS_EXPORT IECWipRelationshipInstanceP  CreateWipRelationshipInstance() const;
+    ECOBJECTS_EXPORT EC::ECRelationshipClassCR    GetRelationshipClass() const;
+ };
+
 END_BENTLEY_EC_NAMESPACE

@@ -152,6 +152,46 @@ struct IECRelationshipInstance
         ECOBJECTS_EXPORT IECInstancePtr  GetTarget () const;
     };
         
+typedef RefCountedPtr<ECRelationshipInstanceHolder> ECRelationshipInstanceHolderPtr;
+
+//=======================================================================================
+//! ECRelationshipInstanceHolder is used to hold a IECInstance that is also a 
+//! IECRelationshipInstance.
+//=======================================================================================
+struct ECRelationshipInstanceHolder : RefCountedBase 
+{
+private:
+    IECInstancePtr             m_iecInstance;
+    IECRelationshipInstanceP   m_relationshipInstance;
+
+    ECRelationshipInstanceHolder (IECInstanceR iecInstance);
+
+public:
+    ECOBJECTS_EXPORT IECInstanceP GetAsIECInstance ();
+    ECOBJECTS_EXPORT IECRelationshipInstanceP GetAsIECRelationshipInstance ();
+    ECOBJECTS_EXPORT static ECRelationshipInstanceHolderPtr Create (IECInstanceR iecInstance);
+};
+
+//=======================================================================================
+//! IECWipRelationshipInstance is used to set the name and order properties for an 
+//! ECRelationship.
+//=======================================================================================
+struct IECWipRelationshipInstance
+    {
+    protected:
+        ECOBJECTS_EXPORT virtual BentleyStatus  _SetName (WCharCP name) = 0;
+        ECOBJECTS_EXPORT virtual BentleyStatus  _SetSourceOrderId (Int64 sourceOrderId) = 0;
+        ECOBJECTS_EXPORT virtual BentleyStatus  _SetTargetOrderId (Int64 targetOrderId) = 0;
+        ECOBJECTS_EXPORT virtual ECEnablerP     _GetECEnablerP () = 0;
+
+    public:
+        ECOBJECTS_EXPORT BentleyStatus  SetName (WCharCP name);
+        ECOBJECTS_EXPORT BentleyStatus  SetSourceOrderId (Int64 sourceOrderId);
+        ECOBJECTS_EXPORT BentleyStatus  SetTargetOrderId (Int64 targetOrderId);
+        ECOBJECTS_EXPORT ECEnablerP     GetECEnablerP ();
+    };
+
+
 /*__PUBLISH_SECTION_END__*/
 
 struct ECInstanceInteropHelper

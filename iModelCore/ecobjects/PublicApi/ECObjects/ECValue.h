@@ -379,6 +379,7 @@ public:
     ECOBJECTS_EXPORT ECValueAccessorCR      GetValueAccessor () const;
     ECOBJECTS_EXPORT bool                   HasChildValues () const;
     ECOBJECTS_EXPORT ECValuesCollectionPtr  GetChildValues () const;
+    // TODO?? ECOBJECTS_EXPORT ECPropertyValuePtr     GetPropertyValue (IECInstanceCR, WCharCP propertyName) const;
     };
 
 //=======================================================================================  
