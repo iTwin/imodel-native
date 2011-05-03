@@ -2902,7 +2902,7 @@ static InstanceDeserializationStatus   ReportStatus (InstanceDeserializationStat
     if (INSTANCE_DESERIALIZATION_STATUS_Success != status)
         ECObjectsLogger::Log()->errorv (L"Failed to deserialize instance from XML string. Status %d, string %s\n", status, xmlString);
     else
-        ECObjectsLogger::Log()->infov (L"Native ECInstance of type %s deserialized from string", ecInstance.IsValid() ? ecInstance->GetClass().GetName() : L"Null");
+        ECObjectsLogger::Log()->debugv (L"Native ECInstance of type %s deserialized from string", ecInstance.IsValid() ? ecInstance->GetClass().GetName() : L"Null");
     return status;
     }
 	
