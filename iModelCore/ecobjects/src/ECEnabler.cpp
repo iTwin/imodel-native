@@ -152,5 +152,26 @@ ECEnabler::PropertyProcessingResult ECEnabler::_ProcessPrimitiveProperties (bset
 ECEnabler::PropertyProcessingResult ECEnabler::ProcessPrimitiveProperties (bset<ECClassCP>& a, IECInstanceCR b, PrimitiveType c, IPropertyProcessor const& d, PropertyProcessingOptions e) const {return _ProcessPrimitiveProperties(a,b,c,d,e);}
 #endif // defined (EXPERIMENTAL_TEXT_FILTER)
 
+ /////////////////////////////////////////////////////////////////////////////////////////
+#pragma region IECRelationshipEnabler
+/////////////////////////////////////////////////////////////////////////////////////////
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+IECWipRelationshipInstanceP  IECRelationshipEnabler::CreateWipRelationshipInstance() const
+     {
+     return _CreateWipRelationshipInstance ();
+     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+EC::ECRelationshipClassCR       IECRelationshipEnabler::GetRelationshipClass() const
+    {
+    return _GetRelationshipClass ();
+    }
+
+#pragma endregion //IECRelationshipEnabler
+
 END_BENTLEY_EC_NAMESPACE
     

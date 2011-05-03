@@ -1176,7 +1176,6 @@ ECObjectsStatus ECInstanceInteropHelper::GetValueByIndex (ECValueR value, IECIns
     return instance.GetValue (value, (UInt32) propertyIndex, (UInt32) arrayIndex);
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3047,5 +3046,67 @@ IECInstancePtr                    IECRelationshipInstance::GetTarget () const
     return _GetTarget ();
     }
 
-END_BENTLEY_EC_NAMESPACE
+///////////////////////////////////////////////////////////////////////////////////////////////
+//   IECWipRelationshipInstance
+///////////////////////////////////////////////////////////////////////////////////////////////
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus  IECWipRelationshipInstance::SetName (WCharCP name)   
+    {
+    return _SetName (name);
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus  IECWipRelationshipInstance::SetSourceOrderId (Int64 sourceOrderId)
+    {
+    return _SetSourceOrderId (sourceOrderId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus IECWipRelationshipInstance::SetTargetOrderId (Int64 targetOrderId)
+    {
+    return _SetTargetOrderId (targetOrderId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECEnablerP       IECWipRelationshipInstance::GetECEnablerP ()
+    {
+    return _GetECEnablerP();
+    }
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//   ECRelationshipInstanceHolder
+///////////////////////////////////////////////////////////////////////////////////////////////
+ECRelationshipInstanceHolder::ECRelationshipInstanceHolder (IECInstanceR iecInstance)
+    {
+    m_iecInstance = NULL;
+
+    m_relationshipInstance = dynamic_cast<IECRelationshipInstanceP>(&iecInstance);
+    if (NULL != m_relationshipInstance)
+        m_iecInstance = &iecInstance;
+    }
+
+    IECInstanceP ECRelationshipInstanceHolder::GetAsIECInstance ()
+    {
+    return m_iecInstance.get();
+    }
+
+IECRelationshipInstanceP ECRelationshipInstanceHolder::GetAsIECRelationshipInstance ()
+    {
+    return m_relationshipInstance;
+    }
+
+ECRelationshipInstanceHolderPtr ECRelationshipInstanceHolder::Create (IECInstanceR iecInstance)
+    {
+    return new ECRelationshipInstanceHolder (iecInstance);
+    }
+
+
+END_BENTLEY_EC_NAMESPACE

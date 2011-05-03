@@ -97,38 +97,38 @@ struct StandaloneECInstance : MemoryECInstanceBase, IECInstance
     {
 friend StandaloneECEnabler;
 private:
-    WString         m_instanceId;
+    WString              m_instanceId;
     StandaloneECEnablerP m_sharedWipEnabler; 
 
-private:
     //! The StandaloneECInstance will take ownership of the memory
     StandaloneECInstance (StandaloneECEnablerCR enabler, byte * data, UInt32 size);
-    StandaloneECInstance (StandaloneECEnablerCR enabler, UInt32 minimumBufferSize);
-    ~StandaloneECInstance ();
     
-protected:
-    // IECInstance
-    virtual WString            _GetInstanceId() const override;
-    virtual bool                _IsReadOnly() const override;        
-    virtual ECObjectsStatus     _GetValue (ECValueR v, WCharCP propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const override;
-    virtual ECObjectsStatus     _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
-    virtual ECObjectsStatus     _SetValue (WCharCP propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
-    virtual ECObjectsStatus     _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
+protected:  
+    ECOBJECTS_EXPORT StandaloneECInstance (StandaloneECEnablerCR enabler, UInt32 minimumBufferSize);
+    ECOBJECTS_EXPORT ~StandaloneECInstance ();
 
-    virtual ECObjectsStatus     _InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size) override;
-    virtual ECObjectsStatus     _AddArrayElements (WCharCP propertyAccessString, UInt32 size) override;
-    virtual ECObjectsStatus     _RemoveArrayElement (WCharCP propertyAccessString, UInt32 index) override;
-    virtual ECObjectsStatus     _ClearArray (WCharCP propertyAccessString) override;    
-    virtual WString            _ToString (WCharCP indent) const override;
-    virtual ClassLayoutCR       _GetClassLayout () const;
-    virtual ECEnablerCR         _GetEnabler() const override;
-    virtual MemoryECInstanceBase* _GetAsMemoryECInstance () const override;
-    virtual size_t                _GetObjectSize () const;
-    virtual size_t                _GetOffsetToIECInstance () const;
+    // IECInstance
+    ECOBJECTS_EXPORT virtual WString            _GetInstanceId() const override;
+    ECOBJECTS_EXPORT virtual bool                _IsReadOnly() const override;        
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetValue (ECValueR v, WCharCP propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetValue (WCharCP propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
+
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size) override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _AddArrayElements (WCharCP propertyAccessString, UInt32 size) override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _RemoveArrayElement (WCharCP propertyAccessString, UInt32 index) override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _ClearArray (WCharCP propertyAccessString) override;    
+    ECOBJECTS_EXPORT virtual WString            _ToString (WCharCP indent) const override;
+    ECOBJECTS_EXPORT virtual ClassLayoutCR       _GetClassLayout () const;
+    ECOBJECTS_EXPORT virtual ECEnablerCR         _GetEnabler() const override;
+    ECOBJECTS_EXPORT virtual MemoryECInstanceBase* _GetAsMemoryECInstance () const override;
+    ECOBJECTS_EXPORT virtual size_t                _GetObjectSize () const;
+    ECOBJECTS_EXPORT virtual size_t                _GetOffsetToIECInstance () const;
 
     // MemoryECInstanceBase
-    virtual IECInstancePtr      _GetAsIECInstance () const;
-    virtual size_t              _LoadObjectDataIntoManagedInstance (byte* managedBuffer) const;
+    ECOBJECTS_EXPORT virtual IECInstancePtr      _GetAsIECInstance () const;
+    ECOBJECTS_EXPORT virtual size_t              _LoadObjectDataIntoManagedInstance (byte* managedBuffer) const;
 
 public:
     //! Creates an in-memory duplicate of an instance, making deep copies of its ECValues.
