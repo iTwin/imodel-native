@@ -3012,6 +3012,98 @@ InstanceSerializationStatus     IECInstance::WriteXmlToString (WString & ecInsta
     return INSTANCE_SERIALIZATION_STATUS_Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  05/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP IECInstance::GetInstanceLabelPropertyName () const
+    {
+    ECClassCR ecClass = GetClass(); 
+
+        // see if the struct has a custom attribute to custom serialize itself
+    IECInstancePtr caInstance = ecClass.GetCustomAttribute(L"InstanceLabelSpecification");
+    if (caInstance.IsValid())
+        {
+        ECValue value;
+        if (SUCCESS == caInstance->GetValue (value, L"PropertyName") && !value.IsNull())
+            {
+            return value.GetString();
+            }
+        }
+
+    if (NULL != ecClass.GetPropertyP (L"DisplayLabel"))
+        return L"DisplayLabel";
+
+    if (NULL != ecClass.GetPropertyP (L"DISPLAYLABEL"))
+        return L"DISPLAYLABEL";
+
+     if (NULL != ecClass.GetPropertyP (L"displaylabel"))
+        return L"displaylabel";
+   
+    if (NULL != ecClass.GetPropertyP (L"Name"))
+        return L"Name";
+
+    if (NULL != ecClass.GetPropertyP (L"NAME"))
+        return L"NAME";
+
+    if (NULL != ecClass.GetPropertyP (L"name"))
+        return L"name";
+
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  05/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus      IECInstance::_GetDisplayLabel (WString& displayLabel) const
+    {
+    WCharCP propertyName = GetInstanceLabelPropertyName ();
+    if (NULL == propertyName)
+        return ECOBJECTS_STATUS_Error;
+
+    EC::ECValue ecValue;
+    if (SUCCESS == GetValue (ecValue, propertyName) && !ecValue.IsNull())
+        {
+        displayLabel = ecValue.GetString();
+        return ECOBJECTS_STATUS_Success;
+        }
+
+    return  ECOBJECTS_STATUS_Error;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  05/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus      IECInstance::GetDisplayLabel (WString& displayLabel) const
+    {
+    return  _GetDisplayLabel (displayLabel);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  05/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus      IECInstance::_SetDisplayLabel (WCharCP displayLabel)    
+    {
+    WCharCP propertyName = GetInstanceLabelPropertyName ();
+    if (NULL == propertyName)
+        return ECOBJECTS_STATUS_Error;
+
+    EC::ECValue ecValue;
+    ecValue.SetString (displayLabel);
+
+    if (SUCCESS == SetValue (propertyName, ecValue))
+        return ECOBJECTS_STATUS_Success;
+
+    return  ECOBJECTS_STATUS_Error;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  05/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus      IECInstance::SetDisplayLabel (WCharCP displayLabel)    
+    {
+    return  _SetDisplayLabel (displayLabel);
+    }
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //   IECRelationshipInstance
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -3042,6 +3134,22 @@ void                            IECRelationshipInstance::SetTarget (IECInstanceP
 IECInstancePtr                    IECRelationshipInstance::GetTarget () const
     {
     return _GetTarget ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  05/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus IECRelationshipInstance::GetSourceOrderId (Int64& sourceOrderId) const
+    {
+    return _GetSourceOrderId (sourceOrderId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  05/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ ECObjectsStatus IECRelationshipInstance::GetTargetOrderId (Int64& targetOrderId) const
+    {
+    return _GetTargetOrderId (targetOrderId);
     }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -3078,5 +3186,6 @@ ECEnablerP       IECWipRelationshipInstance::GetECEnablerP ()
     {
     return _GetECEnablerP();
     }
+
 
 END_BENTLEY_EC_NAMESPACE

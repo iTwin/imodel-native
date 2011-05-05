@@ -57,6 +57,8 @@ typedef RefCountedPtr<IECInstance> IECInstancePtr;
 struct IECInstance : RefCountedBase
     {
 private:
+    WCharCP GetInstanceLabelPropertyName () const;
+
 protected:    
     ECOBJECTS_EXPORT IECInstance(); 
     ECOBJECTS_EXPORT virtual ~IECInstance();
@@ -77,6 +79,8 @@ protected:
     virtual WString            _ToString (WCharCP indent) const = 0;
     virtual size_t              _GetOffsetToIECInstance () const = 0;
 
+    ECOBJECTS_EXPORT virtual ECObjectsStatus       _GetDisplayLabel (WString& displayLabel) const;    
+    ECOBJECTS_EXPORT virtual ECObjectsStatus       _SetDisplayLabel (WCharCP displayLabel);    
     ECOBJECTS_EXPORT virtual MemoryECInstanceBase* _GetAsMemoryECInstance () const;
 
 public:
@@ -84,7 +88,7 @@ public:
     ECOBJECTS_EXPORT ECEnablerCR        GetEnabler() const;
     ECOBJECTS_EXPORT ECEnablerR         GetEnablerR() const;      // use when enabler.ObtainStandaloneEnabler is called since a new enabler may be created.
 
-    ECOBJECTS_EXPORT WString           GetInstanceId() const;
+    ECOBJECTS_EXPORT WString            GetInstanceId() const;
     ECOBJECTS_EXPORT bool               IsReadOnly() const;
     
     ECOBJECTS_EXPORT ECClassCR          GetClass() const;
@@ -108,6 +112,8 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus      AddArrayElements (WCharCP managedPropertyAccessor, UInt32 size); //WIP_FUSION Return the new count?
     ECOBJECTS_EXPORT ECObjectsStatus      RemoveArrayElement (WCharCP managedPropertyAccessor, UInt32 index); //WIP_FUSION return the removed one? YAGNI? Return the new count?
     ECOBJECTS_EXPORT ECObjectsStatus      ClearArray (WCharCP managedPropertyAccessor);    
+    ECOBJECTS_EXPORT ECObjectsStatus      GetDisplayLabel (WString& displayLabel) const;    
+    ECOBJECTS_EXPORT ECObjectsStatus      SetDisplayLabel (WCharCP displayLabel);    
     
     ECOBJECTS_EXPORT MemoryECInstanceBase* GetAsMemoryECInstance () const;
     ECOBJECTS_EXPORT size_t                GetOffsetToIECInstance () const;
@@ -142,14 +148,18 @@ struct IECRelationshipInstance : virtual IECInstance
     private:
         virtual void            _SetSource (IECInstanceP instance) = 0;
         virtual IECInstancePtr  _GetSource () const = 0;
+        virtual ECObjectsStatus _GetSourceOrderId (Int64& sourceOrderId) const = 0;
         virtual void            _SetTarget (IECInstanceP instance)= 0;
         virtual IECInstancePtr  _GetTarget () const = 0;
+        virtual ECObjectsStatus _GetTargetOrderId (Int64& targetOrderId) const = 0;
 
     public:
         ECOBJECTS_EXPORT void            SetSource (IECInstanceP instance);
         ECOBJECTS_EXPORT IECInstancePtr  GetSource () const;
+        ECOBJECTS_EXPORT ECObjectsStatus GetSourceOrderId (Int64& targetOrderId) const;
         ECOBJECTS_EXPORT void            SetTarget (IECInstanceP instance);
         ECOBJECTS_EXPORT IECInstancePtr  GetTarget () const;
+        ECOBJECTS_EXPORT ECObjectsStatus GetTargetOrderId (Int64& targetOrderId) const;
     };
 
 typedef RefCountedPtr<IECRelationshipInstance> IECRelationshipInstancePtr;
@@ -161,7 +171,7 @@ typedef RefCountedPtr<IECRelationshipInstance> IECRelationshipInstancePtr;
 struct IECWipRelationshipInstance
     {
     protected:
-        ECOBJECTS_EXPORT virtual BentleyStatus  _SetName (WCharCP name) = 0;
+        ECOBJECTS_EXPORT virtual BentleyStatus  _SetName (WCharCP name) = 0;   // possibly add SetDisplayLabel to IECInstance and get rid of this.
         ECOBJECTS_EXPORT virtual BentleyStatus  _SetSourceOrderId (Int64 sourceOrderId) = 0;
         ECOBJECTS_EXPORT virtual BentleyStatus  _SetTargetOrderId (Int64 targetOrderId) = 0;
         ECOBJECTS_EXPORT virtual ECEnablerP     _GetECEnablerP () = 0;

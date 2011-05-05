@@ -812,7 +812,8 @@ public:
     //! Returns pointer to ECRelationshipClassP,  used to avoid dynamic_cast.
     //! @return     Returns NULL if not an ECRelationshipClass
     ECOBJECTS_EXPORT virtual ECRelationshipClassCP        GetRelationshipClassCP () const override {return this;};
-
+    ECOBJECTS_EXPORT ECObjectsStatus                      GetOrderedRelationshipPropertyName (WString& propertyName, ECRelationshipEnd end)  const;
+                                                           
     EXPORTED_PROPERTY (StrengthType, Strength);                
     EXPORTED_PROPERTY (ECRelatedInstanceDirection, StrengthDirection);
     //! Gets the constraint at the target end of the relationship
@@ -820,6 +821,7 @@ public:
     //! Gets the constraint at the source end of the relationship
     EXPORTED_READONLY_PROPERTY (ECRelationshipConstraintR, Source);
     EXPORTED_READONLY_PROPERTY (bool, IsExplicit);
+    EXPORTED_READONLY_PROPERTY (bool, IsOrdered );
 
 }; // ECRelationshipClass
 
