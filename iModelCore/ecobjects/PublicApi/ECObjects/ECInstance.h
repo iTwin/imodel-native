@@ -137,7 +137,7 @@ public:
 //! are derived from this class are also derived from IECInstance which is refcounted.
 //! @see IECInstance, ECRelationshipClass
 //=======================================================================================    
-struct IECRelationshipInstance 
+struct IECRelationshipInstance : virtual IECInstance
     {
     private:
         virtual void            _SetSource (IECInstanceP instance) = 0;
@@ -151,27 +151,9 @@ struct IECRelationshipInstance
         ECOBJECTS_EXPORT void            SetTarget (IECInstanceP instance);
         ECOBJECTS_EXPORT IECInstancePtr  GetTarget () const;
     };
+
+typedef RefCountedPtr<IECRelationshipInstance> IECRelationshipInstancePtr;
         
-typedef RefCountedPtr<ECRelationshipInstanceHolder> ECRelationshipInstanceHolderPtr;
-
-//=======================================================================================
-//! ECRelationshipInstanceHolder is used to hold a IECInstance that is also a 
-//! IECRelationshipInstance.
-//=======================================================================================
-struct ECRelationshipInstanceHolder : RefCountedBase 
-{
-private:
-    IECInstancePtr             m_iecInstance;
-    IECRelationshipInstanceP   m_relationshipInstance;
-
-    ECRelationshipInstanceHolder (IECInstanceR iecInstance);
-
-public:
-    ECOBJECTS_EXPORT IECInstanceP GetAsIECInstance ();
-    ECOBJECTS_EXPORT IECRelationshipInstanceP GetAsIECRelationshipInstance ();
-    ECOBJECTS_EXPORT static ECRelationshipInstanceHolderPtr Create (IECInstanceR iecInstance);
-};
-
 //=======================================================================================
 //! IECWipRelationshipInstance is used to set the name and order properties for an 
 //! ECRelationship.
@@ -190,6 +172,7 @@ struct IECWipRelationshipInstance
         ECOBJECTS_EXPORT BentleyStatus  SetTargetOrderId (Int64 targetOrderId);
         ECOBJECTS_EXPORT ECEnablerP     GetECEnablerP ();
     };
+typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
 
 
 /*__PUBLISH_SECTION_END__*/

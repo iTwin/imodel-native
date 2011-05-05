@@ -3079,32 +3079,4 @@ ECEnablerP       IECWipRelationshipInstance::GetECEnablerP ()
     return _GetECEnablerP();
     }
 
-///////////////////////////////////////////////////////////////////////////////////////////////
-//   ECRelationshipInstanceHolder
-///////////////////////////////////////////////////////////////////////////////////////////////
-ECRelationshipInstanceHolder::ECRelationshipInstanceHolder (IECInstanceR iecInstance)
-    {
-    m_iecInstance = NULL;
-
-    m_relationshipInstance = dynamic_cast<IECRelationshipInstanceP>(&iecInstance);
-    if (NULL != m_relationshipInstance)
-        m_iecInstance = &iecInstance;
-    }
-
-    IECInstanceP ECRelationshipInstanceHolder::GetAsIECInstance ()
-    {
-    return m_iecInstance.get();
-    }
-
-IECRelationshipInstanceP ECRelationshipInstanceHolder::GetAsIECRelationshipInstance ()
-    {
-    return m_relationshipInstance;
-    }
-
-ECRelationshipInstanceHolderPtr ECRelationshipInstanceHolder::Create (IECInstanceR iecInstance)
-    {
-    return new ECRelationshipInstanceHolder (iecInstance);
-    }
-
-
 END_BENTLEY_EC_NAMESPACE
