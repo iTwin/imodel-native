@@ -18,6 +18,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 
 typedef RefCountedPtr<StandaloneECEnabler>        StandaloneECEnablerPtr;
 typedef RefCountedPtr<ECEnabler>                  EnablerPtr;
+typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
 
 //=======================================================================================    
 //! base class ensuring that all enablers are refcounted
@@ -109,13 +110,13 @@ public:
  struct IECRelationshipEnabler
  {
 protected:
-    virtual IECWipRelationshipInstanceP _CreateWipRelationshipInstance () const = 0;
-    virtual EC::ECRelationshipClassCR   _GetRelationshipClass() const = 0;
+    virtual IECWipRelationshipInstancePtr _CreateWipRelationshipInstance () const = 0;
+    virtual EC::ECRelationshipClassCR     _GetRelationshipClass() const = 0;
 
  public:
     //! Get a WipRelationshipInstance that is used to set relationship name and order Ids.
-    ECOBJECTS_EXPORT IECWipRelationshipInstanceP  CreateWipRelationshipInstance() const;
-    ECOBJECTS_EXPORT EC::ECRelationshipClassCR    GetRelationshipClass() const;
+    ECOBJECTS_EXPORT IECWipRelationshipInstancePtr  CreateWipRelationshipInstance() const;
+    ECOBJECTS_EXPORT EC::ECRelationshipClassCR      GetRelationshipClass() const;
  };
 
 END_BENTLEY_EC_NAMESPACE
