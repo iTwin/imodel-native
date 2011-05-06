@@ -39,6 +39,23 @@
             typedef _name_ const&    _name_##CR; \
         END_BENTLEY_EC_NAMESPACE
 
+/*__PUBLISH_SECTION_END__*/
+// These BENTLEY_EXCLUDE_WINDOWS_HEADERS shenanigans are necessary to allow ECObjects headers to be included without sucking in conflicting windows headers
+// and also to support porting to other XML parsers
+#ifdef BENTLEY_EXCLUDE_WINDOWS_HEADERS
+/*__PUBLISH_SECTION_START__*/        
+    #define MSXML2_IXMLDOMNode      void *
+    #define MSXML2_IXMLDOMNodePtr   void *
+    #define MSXML2_IXMLDOMDocument2 void *
+    #define MSXML2_IXMLDOMElement   void *
+/*__PUBLISH_SECTION_END__*/
+#else
+    #define MSXML2_IXMLDOMNode      MSXML2::IXMLDOMNode
+    #define MSXML2_IXMLDOMNodePtr   MSXML2::IXMLDOMNodePtr
+    #define MSXML2_IXMLDOMDocument2 MSXML2::IXMLDOMDocument2
+    #define MSXML2_IXMLDOMElement   MSXML2::IXMLDOMElement
+#endif
+/*__PUBLISH_SECTION_START__*/
 
 EC_TYPEDEFS(ECValue);
 EC_TYPEDEFS(ECValueAccessor);
@@ -85,20 +102,6 @@ EC_TYPEDEFS(SystemTime);
 
 EC_TYPEDEFS(ICustomECStructSerializer);
 EC_TYPEDEFS(CustomStructSerializerManager);
-
-#define EXPORTED_PROPERTY(TYPE, NAME) \
-    ECOBJECTS_EXPORT TYPE Get##NAME() const; \
-    ECOBJECTS_EXPORT ECObjectsStatus Set##NAME (TYPE value); \
-    __declspec(property(get=Get##NAME,put=Set##NAME)) TYPE NAME
-
-#define READONLY_PROPERTY(TYPE, NAME) TYPE Get##NAME() const; \
-    __declspec(property(get=Get##NAME)) TYPE NAME;
-
-#define EXPORTED_READONLY_PROPERTY(TYPE, NAME) \
-    ECOBJECTS_EXPORT TYPE Get##NAME() const; \
-    __declspec(property(get=Get##NAME)) TYPE NAME;
-
-#define WRITEONLY_PROPERTY(TYPE, NAME) __declspec(property(put=Set##NAME)) TYPE NAME
 
 typedef struct IStream* IStreamP;
 
