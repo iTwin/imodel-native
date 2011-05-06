@@ -38,8 +38,9 @@ bool operator()(WCharCP s1, WCharCP s2) const
     }
 };
 
-struct NameValidator abstract
+struct NameValidator /*abstract*/
 {
+    virtual void _Abstract() = 0;
 public:
     static bool Validate(const WString& name);
 };
@@ -190,7 +191,7 @@ public:
     struct const_iterator
         {
         private:
-            friend ECCustomAttributeInstanceIterable;
+            friend struct ECCustomAttributeInstanceIterable;
             RefCountedPtr<IteratorState> m_state;
             bool m_isEnd;
 /*__PUBLISH_SECTION_END__*/
@@ -214,7 +215,7 @@ struct PrimitiveECProperty;
 //=======================================================================================
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
 //=======================================================================================
-struct ECProperty abstract : public IECCustomAttributeContainer
+struct ECProperty /*abstract*/ : public IECCustomAttributeContainer
 {
 /*__PUBLISH_SECTION_END__*/
 friend struct ECClass;
@@ -243,10 +244,10 @@ protected:
     virtual bool                        _IsArray () const { return false; }
     // This method returns a wstring by value because it may be a computed string.  For instance struct properties may return a qualified typename with a namespace
     // prefix relative to the containing schema.
-    virtual WString                    _GetTypeName () const abstract;
-    virtual ECObjectsStatus             _SetTypeName (WStringCR typeName) abstract;
+    virtual WString                    _GetTypeName () const = 0;
+    virtual ECObjectsStatus             _SetTypeName (WStringCR typeName) = 0;
 
-    virtual bool                        _CanOverride(ECPropertyCR baseProperty) const abstract;
+    virtual bool                        _CanOverride(ECPropertyCR baseProperty) const = 0;
 
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
     virtual ECSchemaCP                  _GetContainerSchema() const override;
@@ -258,13 +259,13 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
 public:    
-    EXPORTED_READONLY_PROPERTY (ECClassCR,              Class);   
+    EXPORTED_READONLY_PROPERTY (ECClassCR,      Class);   
     // ECClass implementation will index property by name so publicly name can not be reset
-    EXPORTED_READONLY_PROPERTY (WStringCR,        Name);        
-    EXPORTED_READONLY_PROPERTY (bool,                   IsDisplayLabelDefined);    
-    EXPORTED_READONLY_PROPERTY (bool,                   IsStruct);    
-    EXPORTED_READONLY_PROPERTY (bool,                   IsArray);    
-    EXPORTED_READONLY_PROPERTY (bool,                   IsPrimitive);    
+    EXPORTED_READONLY_PROPERTY (WStringCR,      Name);        
+    EXPORTED_READONLY_PROPERTY (bool,           IsDisplayLabelDefined);    
+    EXPORTED_READONLY_PROPERTY (bool,           IsStruct);    
+    EXPORTED_READONLY_PROPERTY (bool,           IsArray);    
+    EXPORTED_READONLY_PROPERTY (bool,           IsPrimitive);    
 
     //! The ECXML typename for the property.  
     //! The TypeName for struct properties will be the ECClass name of the struct.  It may be qualified with a namespacePrefix if 
@@ -272,9 +273,9 @@ public:
     //! The TypeName for array properties will be the type of the elements the array contains.
     //! This method returns a wstring by value because it may be a computed string.  For instance struct properties may return a qualified typename with a namespace
     //! prefix relative to the containing schema.
-    EXPORTED_PROPERTY  (WString,               TypeName);        
-    EXPORTED_PROPERTY  (WStringCR,        Description);
-    EXPORTED_PROPERTY  (WStringCR,        DisplayLabel);    
+    EXPORTED_PROPERTY  (WString,                TypeName);        
+    EXPORTED_PROPERTY  (WStringCR,              Description);
+    EXPORTED_PROPERTY  (WStringCR,              DisplayLabel);    
     EXPORTED_PROPERTY  (bool,                   IsReadOnly);
     EXPORTED_PROPERTY  (ECPropertyCP,           BaseProperty);    
 
@@ -419,7 +420,7 @@ public:
     struct const_iterator
         {
         private:
-            friend ECPropertyIterable;
+            friend struct ECPropertyIterable;
             RefCountedPtr<IteratorState>   m_state;
             bool m_isEnd;
  
@@ -865,7 +866,7 @@ public:
     struct const_iterator
     {    
     private:                
-        friend          ECClassContainer;                   
+        friend struct ECClassContainer;                   
         RefCountedPtr<IteratorState>   m_state;
 
 /*__PUBLISH_SECTION_END__*/

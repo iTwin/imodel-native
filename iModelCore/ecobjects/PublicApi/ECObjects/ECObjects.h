@@ -19,9 +19,9 @@
 // ONLY support cpp callers and therefore do not repeat this pattern.
 
 #ifdef __ECOBJECTS_BUILD__
-#define ECOBJECTS_EXPORT __declspec(dllexport)
+#define ECOBJECTS_EXPORT EXPORT_ATTRIBUTE
 #else
-#define ECOBJECTS_EXPORT __declspec(dllimport)
+#define ECOBJECTS_EXPORT IMPORT_ATTRIBUTE
 #endif
 
 #define BEGIN_BENTLEY_EC_NAMESPACE  BEGIN_BENTLEY_NAMESPACE namespace EC {

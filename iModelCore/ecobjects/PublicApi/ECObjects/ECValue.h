@@ -354,8 +354,8 @@ struct ECValuesCollectionIterator;
 struct ECPropertyValue : RefCountedBase
     {
 /*__PUBLISH_SECTION_END__*/
-friend ECValuesCollection;
-friend ECValuesCollectionIterator;
+friend struct ECValuesCollection;
+friend struct ECValuesCollectionIterator;
 
 private:
     IECInstancePtr      m_instance;
@@ -390,7 +390,7 @@ struct ECValuesCollectionIterator : RefCountedBase
     {
 /*__PUBLISH_SECTION_END__*/
 private:
-    friend ECValuesCollection;
+    friend struct ECValuesCollection;
 
     ECPropertyValue     m_propertyValue;
 
@@ -417,7 +417,7 @@ public:
 struct ECValuesCollection : RefCountedBase
     {
 /*__PUBLISH_SECTION_END__*/
-    friend ECPropertyValue;
+    friend struct ECPropertyValue;
 
 private:
     ECPropertyValue     m_parentPropertyValue;
