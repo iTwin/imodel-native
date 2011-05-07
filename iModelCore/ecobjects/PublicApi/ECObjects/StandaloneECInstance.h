@@ -148,16 +148,14 @@ struct IECWipRelationshipInstance : StandaloneECInstance
     protected:
         ECOBJECTS_EXPORT IECWipRelationshipInstance (StandaloneECEnablerCR enabler) : StandaloneECInstance (enabler, 0){}
 
-        ECOBJECTS_EXPORT virtual BentleyStatus  _SetName (WCharCP name) = 0;   // possibly add SetDisplayLabel to IECInstance and get rid of this.
+        ECOBJECTS_EXPORT virtual BentleyStatus  _SetName (WCharCP name) = 0;
         ECOBJECTS_EXPORT virtual BentleyStatus  _SetSourceOrderId (Int64 sourceOrderId) = 0;
         ECOBJECTS_EXPORT virtual BentleyStatus  _SetTargetOrderId (Int64 targetOrderId) = 0;
-        ECOBJECTS_EXPORT virtual ECEnablerP     _GetECEnablerP () = 0;
 
     public:
         ECOBJECTS_EXPORT BentleyStatus  SetName (WCharCP name);
         ECOBJECTS_EXPORT BentleyStatus  SetSourceOrderId (Int64 sourceOrderId);
         ECOBJECTS_EXPORT BentleyStatus  SetTargetOrderId (Int64 targetOrderId);
-        ECOBJECTS_EXPORT ECEnablerP     GetECEnablerP ();
     };
 
 //=======================================================================================
