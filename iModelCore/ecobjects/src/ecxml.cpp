@@ -254,7 +254,7 @@ const WString &cardinalityString
 #ifdef winNT // *** WIP_NONPORT
 void FormatXmlNode
 (
-MSXML2::IXMLDOMNode& domNode,
+MSXML2_IXMLDOMNode& domNode,
 UInt32 indentLevel
 )
     {

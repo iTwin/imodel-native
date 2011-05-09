@@ -121,7 +121,7 @@ WString    PropertyLayout::ToString ()
     else
         typeName = L"struct";
 
-    if (m_typeDescriptor.IsArray())
+    if (m_typeDescriptor.GetIsArray()())
         typeName += L"[]";
     
     wchar_t line[1024];
@@ -323,7 +323,7 @@ void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 byt
         PropertyLayoutCP layout = m_propertyLayouts[i];
         if (layout->IsFixedSized())
             {
-            if (layout->GetTypeDescriptor().IsArray())
+            if (layout->GetTypeDescriptor().GetIsArray()())
                 {
                 nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks (layout->GetModifierData());
                 InitializeNullFlags ((NullflagsBitmask *)(data + layout->GetOffset()), nNullflagsBitmasks);
@@ -524,7 +524,7 @@ void            ClassLayout::Factory::AddProperty (WCharCP accessString, ECTypeD
     // IECInstance must include the brackets.  If you want to obtain an array element value then you specify an index.  If you want to obtain an array info value
     // then you do not specify an index.  I'd like to consider an update to this so if an access string does not include the [] then we always return the ArrayInfo value.
     WString tempAccessString = accessString;
-    if (typeDescriptor.IsArray())
+    if (typeDescriptor.GetIsArray()())
         tempAccessString += L"[]";
 
     UInt32          parentStructIndex = GetParentStructIndex(accessString);
@@ -1338,7 +1338,7 @@ UInt32          MemoryInstanceSupport::GetOffsetOfPropertyValue (PropertyLayoutC
 +---------------+---------------+---------------+---------------+---------------+------*/
 UInt32          MemoryInstanceSupport::GetOffsetOfArrayIndex (UInt32 arrayOffset, PropertyLayoutCR propertyLayout, UInt32 index) const
     {    
-    DEBUG_EXPECT (propertyLayout.GetTypeDescriptor().IsArray());
+    DEBUG_EXPECT (propertyLayout.GetTypeDescriptor().GetIsArray()());
     
     ArrayCount count = GetAllocatedArrayCount (propertyLayout);
     DEBUG_EXPECT (count > index);
@@ -1435,7 +1435,7 @@ ECObjectsStatus MemoryInstanceSupport::InsertNullArrayElementsAt (ClassLayoutCR 
     PropertyLayoutCR propertyLayout = *pPropertyLayout;
     // WIP_FUSION improve error codes
     bool isFixedCount = (propertyLayout.GetModifierFlags() & ARRAYMODIFIERFLAGS_IsFixedCount);
-    PRECONDITION (!isFixedCount && propertyLayout.GetTypeDescriptor().IsArray() && "A variable size array property is required to grow an array", ECOBJECTS_STATUS_PreconditionViolated);
+    PRECONDITION (!isFixedCount && propertyLayout.GetTypeDescriptor().GetIsArray()() && "A variable size array property is required to grow an array", ECOBJECTS_STATUS_PreconditionViolated);
     
     PRECONDITION (insertCount > 0, ECOBJECTS_STATUS_IndexOutOfRange)        
     
@@ -1457,7 +1457,7 @@ ECObjectsStatus       MemoryInstanceSupport::AddNullArrayElementsAt (ClassLayout
     PropertyLayoutCR propertyLayout = *pPropertyLayout;
     // WIP_FUSION improve error codes
     bool isFixedCount = (propertyLayout.GetModifierFlags() & ARRAYMODIFIERFLAGS_IsFixedCount);
-    PRECONDITION (!isFixedCount && propertyLayout.GetTypeDescriptor().IsArray() && "A variable size array property is required to grow an array", ECOBJECTS_STATUS_PreconditionViolated);
+    PRECONDITION (!isFixedCount && propertyLayout.GetTypeDescriptor().GetIsArray()() && "A variable size array property is required to grow an array", ECOBJECTS_STATUS_PreconditionViolated);
     
     PRECONDITION (count > 0, ECOBJECTS_STATUS_IndexOutOfRange)        
     
@@ -1641,7 +1641,7 @@ void            MemoryInstanceSupport::InitializeMemory(ClassLayoutCR classLayou
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index) const
     {
-    DEBUG_EXPECT (propertyLayout.GetTypeDescriptor().IsArray() == useIndex);   
+    DEBUG_EXPECT (propertyLayout.GetTypeDescriptor().GetIsArray()() == useIndex);   
 
     bool isInUninitializedFixedCountArray = ((useIndex) && (propertyLayout.GetModifierFlags() & ARRAYMODIFIERFLAGS_IsFixedCount) && (GetAllocatedArrayCount (propertyLayout) == 0));    
     if (isInUninitializedFixedCountArray || (IsPropertyValueNull(propertyLayout, useIndex, index)))
@@ -1757,7 +1757,7 @@ ECObjectsStatus       MemoryInstanceSupport::GetValueFromMemory (ECValueR v, Pro
         v.SetStruct (NULL);
         return ECOBJECTS_STATUS_Success;
         }
-    else if (typeDescriptor.IsArray())
+    else if (typeDescriptor.GetIsArray()())
         {                
         UInt32 arrayCount = GetReservedArrayCount (propertyLayout);  
         bool isFixedArrayCount = propertyLayout.GetModifierFlags() & ARRAYMODIFIERFLAGS_IsFixedCount;                            
@@ -1776,7 +1776,7 @@ ECObjectsStatus       MemoryInstanceSupport::GetValueFromMemory (ECValueR v, Pro
 ECObjectsStatus       MemoryInstanceSupport::GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const
     {
     ECTypeDescriptor typeDescriptor = propertyLayout.GetTypeDescriptor();
-    PRECONDITION (typeDescriptor.IsArray() && 
+    PRECONDITION (typeDescriptor.GetIsArray()() && 
         "Can not obtain value from memory at an array index using the specified property layout because it is not an array datatype", 
         ECOBJECTS_STATUS_PreconditionViolated);    
            
@@ -1958,7 +1958,7 @@ ECObjectsStatus       MemoryInstanceSupport::SetValueToMemory (ECValueCR v, Clas
 ECObjectsStatus       MemoryInstanceSupport::SetValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index)
     {   
     ECTypeDescriptor typeDescriptor = propertyLayout.GetTypeDescriptor();
-    PRECONDITION (typeDescriptor.IsArray() && 
+    PRECONDITION (typeDescriptor.GetIsArray()() && 
         "Can not set the value to memory at an array index using the specified property layout because it is not an array datatype", 
         ECOBJECTS_STATUS_PreconditionViolated);  
                         
@@ -2074,7 +2074,7 @@ WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, Clas
             appendFormattedString (oss, L"%s  [0x%x][%4.d] -> [0x%x][%4.d] %s = %s\n", indent, address, offset, realAddress, secondaryOffset, propertyLayout->GetAccessString(), valueAsString.c_str());
             }
             
-        if (propertyLayout->GetTypeDescriptor().IsArray())
+        if (propertyLayout->GetTypeDescriptor().GetIsArray()())
             {
             UInt32 count = GetAllocatedArrayCount (*propertyLayout);
             if (count != GetReservedArrayCount (*propertyLayout))

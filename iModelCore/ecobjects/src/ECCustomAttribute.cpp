@@ -281,7 +281,7 @@ ECClassCR classDefinition
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceDeserializationStatus IECCustomAttributeContainer::ReadCustomAttributes
 (
-MSXML2::IXMLDOMNode&       containerNode,
+MSXML2_IXMLDOMNode&       containerNode,
 ECSchemaCR                 schema,
 IStandaloneEnablerLocatorR standaloneEnablerLocator
 )
@@ -316,7 +316,7 @@ IStandaloneEnablerLocatorR standaloneEnablerLocator
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaSerializationStatus IECCustomAttributeContainer::WriteCustomAttributes
 (
-MSXML2::IXMLDOMNode& propertyNode
+MSXML2_IXMLDOMNode& propertyNode
 ) const
     {
     SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
@@ -364,8 +364,8 @@ MSXML2::IXMLDOMNode& propertyNode
 
 SchemaSerializationStatus IECCustomAttributeContainer::AddCustomAttributeProperties
 (
-MSXML2::IXMLDOMNode& oldNode, 
-MSXML2::IXMLDOMNode& newNode
+MSXML2_IXMLDOMNode& oldNode, 
+MSXML2_IXMLDOMNode& newNode
 ) const
     {
     if (!oldNode.hasChildNodes())

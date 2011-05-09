@@ -80,7 +80,7 @@ WString ECFileUtilities::GetDllPath()
     wchar_t executingDirectory[_MAX_DIR];
     wchar_t executingDrive[_MAX_DRIVE];
     _wsplitpath(strExePath, executingDrive, executingDirectory, NULL, NULL);
-    wchar_t filepath[_MAX_PATH];
+    wchar_t filepath[MAX_PATH];
     _wmakepath(filepath, executingDrive, executingDirectory, NULL, NULL);
     s_dllPath = filepath;
     return filepath;

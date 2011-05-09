@@ -43,8 +43,8 @@ ECClass::~ECClass ()
     
     m_propertyList.clear();
     
-    FOR_EACH (bpair<WCharCP, ECPropertyP> entry, m_propertyMap)
-        delete entry.second;
+    for (PropertyMap::iterator entry=m_propertyMap.begin(); entry != m_propertyMap.end(); ++entry)
+        delete entry->second;
     
     m_propertyMap.clear();
 
@@ -112,7 +112,7 @@ WStringCR ECClass::GetDisplayLabel
 (
 ) const
     {
-    return (m_displayLabel.empty()) ? Name : m_displayLabel;
+    return (m_displayLabel.empty()) ? GetName() : m_displayLabel;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -294,7 +294,7 @@ ECPropertyP&                 pProperty
     if (ECOBJECTS_STATUS_Success != status)
         return status;
 
-    pProperty->BaseProperty = baseProperty;
+    pProperty->SetBaseProperty (baseProperty);
     m_propertyMap.insert (bpair<WCharCP, ECPropertyP> (pProperty->GetName().c_str(), pProperty));
     m_propertyList.push_back(pProperty);
     return ECOBJECTS_STATUS_Success;
@@ -345,7 +345,7 @@ ECPropertyCR newProperty
     // If the type of base property is an array and the type of the current property is not an array (or vice-versa),
     // return an error immediately.  Unfortunately, there are a class of schemas that have been delivered with this type
     // of override.  So need to check if this is one of those schemas before returning an error
-    if ((baseProperty.IsArray && !newProperty.IsArray) || (!baseProperty.IsArray && newProperty.IsArray))
+    if ((baseProperty.GetIsArray() && !newProperty.GetIsArray()) || (!baseProperty.GetIsArray() && newProperty.GetIsArray()))
         {
         //if (!EC::ECSchema::SchemaAllowsOverridingArrays(this->GetSchema()))
         //    return ECOBJECTS_STATUS_DataTypeMismatch;
@@ -436,7 +436,7 @@ PrimitiveType primitiveType
 )
     {
     ecProperty = new PrimitiveECProperty(*this, m_hideFromLeakDetection);
-    ecProperty->GetType() = primitiveType;
+    ecProperty->SetType(primitiveType);
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECOBJECTS_STATUS_Success)
         {
@@ -520,7 +520,7 @@ PrimitiveType primitiveType
 )
     {
     ecProperty = new ArrayECProperty(*this, m_hideFromLeakDetection);
-    ecProperty->PrimitiveElementType = primitiveType;
+    ecProperty->SetPrimitiveElementType (primitiveType);
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECOBJECTS_STATUS_Success)
         {
@@ -689,7 +689,7 @@ ECClassCR baseClass
         
     if (!baseClassRemoved)
         {
-        ECObjectsLogger::Log()->warningv(L"Class '%s' is not a base class of class '%s'", baseClass.GetName(), m_name);
+        ECObjectsLogger::Log()->warningv(L"Class '%s' is not a base class of class '%s'", baseClass.GetName().c_str(), m_name.c_str());
         return ECOBJECTS_STATUS_ClassNotFound;
         }
         

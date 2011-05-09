@@ -757,7 +757,7 @@ ECSchemaR       refSchema
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaDeserializationStatus ECSchema::ReadClassStubsFromXml
 (
-MSXML2::IXMLDOMNode&                schemaNode,
+MSXML2_IXMLDOMNode&                schemaNode,
 ClassDeserializationVector&         classes, 
 ECSchemaDeserializationContextR     schemaContext
 )
@@ -848,7 +848,7 @@ ECSchemaDeserializationContextR     schemaContext
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaDeserializationStatus ECSchema::ReadSchemaReferencesFromXml
 (
-MSXML2::IXMLDOMNode&            schemaNode, 
+MSXML2_IXMLDOMNode&            schemaNode, 
 ECSchemaDeserializationContextR schemaContext
 )
     {
@@ -1080,13 +1080,13 @@ ECSchemaDeserializationContextR schemaContext
         
     schemaContext.AddSchemaPath (dllPath.c_str());
     
-    wchar_t schemaPath[_MAX_PATH];
-    wchar_t generalPath[_MAX_PATH];
-    wchar_t libraryPath[_MAX_PATH];
+    wchar_t schemaPath[MAX_PATH];
+    wchar_t generalPath[MAX_PATH];
+    wchar_t libraryPath[MAX_PATH];
     
-    swprintf(schemaPath, _MAX_PATH, L"%sSchemas", dllPath.c_str());
-    swprintf(generalPath, _MAX_PATH, L"%sSchemas\\General", dllPath.c_str());
-    swprintf(libraryPath, _MAX_PATH, L"%sSchemas\\LibraryUnits", dllPath.c_str());
+    swprintf(schemaPath, MAX_PATH, L"%sSchemas", dllPath.c_str());
+    swprintf(generalPath, MAX_PATH, L"%sSchemas\\General", dllPath.c_str());
+    swprintf(libraryPath, MAX_PATH, L"%sSchemas\\LibraryUnits", dllPath.c_str());
     schemaContext.AddSchemaPath(schemaPath);
     schemaContext.AddSchemaPath(generalPath);
     schemaContext.AddSchemaPath(libraryPath);

@@ -1874,7 +1874,7 @@ InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayPropert
     ArrayKind   arrayKind = arrayProperty->Kind;
     if (ARRAYKIND_Primitive == arrayKind)
         {
-        PrimitiveType   memberType = arrayProperty->PrimitiveElementType;
+        PrimitiveType   memberType = arrayProperty->GetPrimitiveElementType();
 
         bool            isFixedSizeArray = false;
 
@@ -2716,7 +2716,7 @@ InstanceSerializationStatus     WriteArrayProperty (ArrayECPropertyR arrayProper
     InstanceSerializationStatus     ixwStatus;
     if (ARRAYKIND_Primitive == arrayKind)
         {
-        PrimitiveType   memberType  = arrayProperty.PrimitiveElementType;
+        PrimitiveType   memberType  = arrayProperty.GetPrimitiveElementType();
         WCharCP  typeString  = GetPrimitiveTypeString (memberType);
         for (int index=0; ; index++)
             {

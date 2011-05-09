@@ -54,7 +54,7 @@ ECSchemaP   CreateCustomAttributeTestSchema(IECSchemaOwnerR schemaOwner)
 
     PrimitiveECPropertyP stringProp;
     EXPECT_EQ(ECOBJECTS_STATUS_Success, classWithProperties->CreatePrimitiveProperty(stringProp, L"StringMember", PRIMITIVETYPE_String));
-    EXPECT_EQ(baseStringProp, stringProp->BaseProperty);
+    EXPECT_EQ(baseStringProp, stringProp->GetBaseProperty());
 
     return schema;
     }                                    

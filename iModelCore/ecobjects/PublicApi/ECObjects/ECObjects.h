@@ -41,7 +41,7 @@
 
 /*__PUBLISH_SECTION_END__*/
 // These BENTLEY_EXCLUDE_WINDOWS_HEADERS shenanigans are necessary to allow ECObjects headers to be included without sucking in conflicting windows headers
-// and help us split off the non-portable code and to move to a different XML parser
+// and to help us split off the non-portable code and to move to a different XML parser
 #ifdef BENTLEY_EXCLUDE_WINDOWS_HEADERS
 /*__PUBLISH_SECTION_START__*/        
     #define MSXML2_IXMLDOMNode      void *
@@ -50,7 +50,7 @@
     #define MSXML2_IXMLDOMElement   void *
 /*__PUBLISH_SECTION_END__*/
 #else
-    #define MSXML2_IXMLDOMNode      MSXML2::IXMLDOMNode
+    #define MSXML2_IXMLDOMNode      MSXML2_IXMLDOMNode
     #define MSXML2_IXMLDOMNodePtr   MSXML2::IXMLDOMNodePtr
     #define MSXML2_IXMLDOMDocument2 MSXML2::IXMLDOMDocument2
     #define MSXML2_IXMLDOMElement   MSXML2::IXMLDOMElement
@@ -248,7 +248,7 @@ virtual Int32   CheckForLeaks () const = 0;
 //! Represents the classification of the data type of an EC ECValue.  The classification is not the data type itself, but a category of type
 //! such as struct, array or primitive.
 //=======================================================================================    
-enum ValueKind : unsigned short
+enum ValueKind ENUM_UNDERLYING_TYPE(unsigned short)
     {
     VALUEKIND_Uninitialized                  = 0x00,
     VALUEKIND_Primitive                      = 0x01,
@@ -268,7 +268,7 @@ enum ValueKind : unsigned short
 //! Represents the classification of the data type of an EC array element.  The classification is not the data type itself, but a category of type.
 //! Currently an ECArray can only contain primitive or struct data types.
 //=======================================================================================    
-enum ArrayKind : unsigned short
+enum ArrayKind ENUM_UNDERLYING_TYPE(unsigned short)
     {
     ARRAYKIND_Primitive       = 0x01,
     ARRAYKIND_Struct          = 0x02
@@ -290,7 +290,7 @@ enum ArrayKind : unsigned short
 //! Enumeration of primitive datatypes supported by native "ECObjects" implementation.
 //! These should correspond to all of the datatypes supported in .NET ECObjects
 //=======================================================================================    
-enum PrimitiveType : unsigned short
+enum PrimitiveType ENUM_UNDERLYING_TYPE(unsigned short)
     {
     PRIMITIVETYPE_Binary                    = 0x101,
     PRIMITIVETYPE_Boolean                   = 0x201,

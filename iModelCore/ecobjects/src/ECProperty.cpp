@@ -131,7 +131,7 @@ WStringCR ECProperty::GetDisplayLabel
 (
 ) const
     {
-    return (m_displayLabel.empty()) ? Name : m_displayLabel;
+    return (m_displayLabel.empty()) ? GetName() : m_displayLabel;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -373,7 +373,7 @@ WCharCP elementName
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaDeserializationStatus PrimitiveECProperty::_ReadXml
 (
-MSXML2::IXMLDOMNode& propertyNode, 
+MSXML2_IXMLDOMNode& propertyNode, 
 IStandaloneEnablerLocatorR  standaloneEnablerLocator
 )
     {  
@@ -421,7 +421,7 @@ ECPropertyCR baseProperty
     // normally, we do not allow a primitive property to override an array property.  However, there is a set of schemas that
     // have been delivered that allow this behavior.  If the primitive property type is the same as the type used in the array, then
     // we allow it to be overridden.
-    if (baseProperty.IsArray)
+    if (baseProperty.GetIsArray())
         {
         ArrayECPropertyP arrayProperty = baseProperty.GetAsArrayProperty();
         if (ARRAYKIND_Struct == arrayProperty->Kind)
@@ -494,7 +494,7 @@ PrimitiveType primitiveType
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaDeserializationStatus StructECProperty::_ReadXml
 (
-MSXML2::IXMLDOMNode& propertyNode, 
+MSXML2_IXMLDOMNode& propertyNode, 
 IStandaloneEnablerLocatorR  standaloneEnablerLocator
 )
     {  
@@ -533,7 +533,7 @@ ECPropertyCR baseProperty
     if (baseProperty.IsPrimitive)
         return false;
         
-    if (baseProperty.IsArray)
+    if (baseProperty.GetIsArray())
         {
         ArrayECPropertyP arrayProp = baseProperty.GetAsArrayProperty();
         if (ARRAYKIND_Struct != arrayProp->Kind)
@@ -653,7 +653,7 @@ ECClassCR structType
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaDeserializationStatus ArrayECProperty::_ReadXml
 (
-MSXML2::IXMLDOMNode& propertyNode, 
+MSXML2_IXMLDOMNode& propertyNode, 
 IStandaloneEnablerLocatorR  standaloneEnablerLocator
 )
     {  
