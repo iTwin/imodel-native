@@ -518,7 +518,7 @@ void    VerifyPolymorphismInstance (IECInstanceCP testInstance)
     IECInstancePtr  polymorphArrayInstance = ecValue.GetStruct();
     EXPECT_EQ (true, polymorphArrayInstance.IsValid());
     ECClassCR       arrayMember0Class = polymorphArrayInstance->GetClass();
-    EXPECT_STREQ (L"BaseClass", arrayMember0Class.Name.c_str());
+    EXPECT_STREQ (L"BaseClass", arrayMember0Class.GetName().c_str());
 
     EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetValue (ecValue, L"InBaseClass"));
     EXPECT_EQ (0, ecValue.GetInteger());
@@ -528,7 +528,7 @@ void    VerifyPolymorphismInstance (IECInstanceCP testInstance)
     polymorphArrayInstance = ecValue.GetStruct();
     EXPECT_EQ (true, polymorphArrayInstance.IsValid());
     ECClassCR arrayMember1Class = polymorphArrayInstance->GetClass();
-    EXPECT_STREQ (L"SubClass1", arrayMember1Class.Name.c_str());
+    EXPECT_STREQ (L"SubClass1", arrayMember1Class.GetName().c_str());
 
     EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetValue (ecValue, L"InBaseClass"));
     EXPECT_EQ (1, ecValue.GetInteger());
@@ -541,7 +541,7 @@ void    VerifyPolymorphismInstance (IECInstanceCP testInstance)
     polymorphArrayInstance = ecValue.GetStruct();
     EXPECT_EQ (true, polymorphArrayInstance.IsValid());
     ECClassCR arrayMember2Class = polymorphArrayInstance->GetClass();
-    EXPECT_STREQ (L"SubClass2", arrayMember2Class.Name.c_str());
+    EXPECT_STREQ (L"SubClass2", arrayMember2Class.GetName().c_str());
 
     EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetValue (ecValue, L"InBaseClass"));
     EXPECT_EQ (3, ecValue.GetInteger());

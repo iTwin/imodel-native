@@ -87,7 +87,7 @@ ICustomECStructSerializerP                      CustomStructSerializerManager::G
         return NULL;
 
     // see if the struct has a custom attribute to custom serialize itself
-    IECInstancePtr caInstance = structProperty->Type.GetCustomAttribute(L"CustomStructSerializer");
+    IECInstancePtr caInstance = structProperty->GetType().GetCustomAttribute(L"CustomStructSerializer");
     if (caInstance.IsValid())
         {
         ECValue value;
@@ -160,7 +160,7 @@ void IECInstance::Debug_DumpAllocationStats(WCharCP prefix)
 
     ECObjectsLogger::Log()->debugv (L"%s Live IECInstances: %d, Total Allocs: %d, TotalFrees: %d", prefix, g_currentLive, g_totalAllocs, g_totalFrees);
 #ifdef DEBUG_INSTANCE_LEAKS
-    for each (DebugInstanceLeakMap::value_type leak in g_debugInstanceLeakMap)
+    FOR_EACH (DebugInstanceLeakMap::value_type leak, g_debugInstanceLeakMap)
         {
         IECInstance* leakedInstance = leak.first;
         UInt32    orderOfAllocation = leak.second;
@@ -175,7 +175,7 @@ void IECInstance::Debug_DumpAllocationStats(WCharCP prefix)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IsExcluded(WString& className, bvector<WString>& classNamesToExclude)
     {
-    for each (WString excludedClass in classNamesToExclude)
+    FOR_EACH (WString excludedClass, classNamesToExclude)
         {
         if (0 == className.compare (excludedClass))
             return true;
@@ -190,7 +190,7 @@ bool IsExcluded(WString& className, bvector<WString>& classNamesToExclude)
 void IECInstance::Debug_ReportLeaks(bvector<WString>& classNamesToExclude)
     {
 #ifdef DEBUG_INSTANCE_LEAKS
-    for each (DebugInstanceLeakMap::value_type leak in g_debugInstanceLeakMap)
+    FOR_EACH (DebugInstanceLeakMap::value_type leak, g_debugInstanceLeakMap)
         {
         IECInstance* leakedInstance = leak.first;
         UInt32    orderOfAllocation = leak.second;
@@ -535,7 +535,7 @@ ECObjectsStatus           IECInstance::SetValueUsingAccessor (ECValueAccessorCR 
             {
             EC::ECEnablerR          structEnabler = *(const_cast<EC::ECEnablerP>(&accessor.GetEnabler (depth + 1)));
             ECClassCR               structClass   = accessor.GetEnabler (depth + 1).GetClass();
-            StandaloneECEnablerPtr  standaloneEnabler = structEnabler.ObtainStandaloneInstanceEnabler (structClass.Schema.Name.c_str(), structClass.Name.c_str());
+            StandaloneECEnablerPtr  standaloneEnabler = structEnabler.ObtainStandaloneInstanceEnabler (structClass.GetSchema().GetName().c_str(), structClass.GetName().c_str());
 
             newInstance = standaloneEnabler->CreateInstance();
 
@@ -695,9 +695,9 @@ ECObjectsStatus ECInstanceInteropHelper::GetDateTimeTicks (IECInstanceCR instanc
 +---------------+---------------+---------------+---------------+---------------+------*/
 static ECClassP GetClassFromReferencedSchemas (ECSchemaCR rootSchema, WCharCP schemaName, WCharCP className)
     {
-    for each (ECSchemaCP refSchema in rootSchema.GetReferencedSchemas())
+    FOR_EACH (ECSchemaCP refSchema, rootSchema.GetReferencedSchemas())
         {
-        if (!refSchema->Name.EqualsI (schemaName))
+        if (!refSchema->GetName().EqualsI (schemaName))
             {
             // look in reference schemas
             ECClassP foundClassP = GetClassFromReferencedSchemas (*refSchema, schemaName, className);
@@ -772,16 +772,16 @@ static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar
             ECClassCR    ecClass     = instance.GetClass();
 
             ECPropertyP  prop = ecClass.GetPropertyP (asBuffer);
-            if (!prop->IsArray)
+            if (!prop->GetIsArray())
                 return ECOBJECTS_STATUS_Error;
 
             ArrayECPropertyP arrayProp = dynamic_cast<ArrayECPropertyP>(prop);
             if (!arrayProp)
                 return ECOBJECTS_STATUS_Error;
 
-            ECClassCP structClass = arrayProp->StructElementType;
+            ECClassCP structClass = arrayProp->GetStructElementType();
 
-            StandaloneECEnablerPtr standaloneEnabler = instance.GetEnablerR().ObtainStandaloneInstanceEnabler (structClass->Schema.Name.c_str(), structClass->Name.c_str());
+            StandaloneECEnablerPtr standaloneEnabler = instance.GetEnablerR().ObtainStandaloneInstanceEnabler (structClass->GetSchema().GetName().c_str(), structClass->GetName().c_str());
             if (standaloneEnabler.IsNull())
                 return ECOBJECTS_STATUS_Error;
 
@@ -1077,7 +1077,7 @@ static ECPropertyP getProperty  (ECClassCR ecClass, WCharCP accessor, wchar_t* b
         if (NULL == structProperty)
             return NULL;
 
-        return getProperty (structProperty->Type, &dotPos[1], &buffer[dotIndex+1]);
+        return getProperty (structProperty->GetType(), &dotPos[1], &buffer[dotIndex+1]);
         }
 
     WCharCP bracketPos = wcschr (accessor, L'[');
@@ -1532,7 +1532,7 @@ InstanceDeserializationStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr&
     ClassLayoutP                classLayout         = ClassLayout::BuildFromClass (*foundClass, 0, 0);
     StandaloneECEnablerPtr      standaloneEnabler   = StandaloneECEnabler::CreateEnabler (*foundClass, *classLayout, m_context.GetStandaloneEnablerLocator(), true);
 #else
-    StandaloneECEnablerPtr      standaloneEnabler   = m_context.GetStandaloneEnablerLocator().ObtainStandaloneInstanceEnabler (foundClass->Schema.Name.c_str(), foundClass->Name.c_str());
+    StandaloneECEnablerPtr      standaloneEnabler   = m_context.GetStandaloneEnablerLocator().ObtainStandaloneInstanceEnabler (foundClass->GetSchema().GetName().c_str(), foundClass->GetName().c_str());
 #endif
 
     // create the instance.
@@ -1621,7 +1621,7 @@ InstanceDeserializationStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr&
             WCharCP  nameSpace;
             if (FAILED (status = m_xmlReader->GetValue (&nameSpace, NULL)))
                 return TranslateStatus (status);
-            WCharCP  schemaName = foundClass->Schema.Name.c_str();
+            WCharCP  schemaName = foundClass->GetSchema().GetName().c_str();
             assert (0 == wcsncmp (schemaName, nameSpace, wcslen (schemaName)));
             }
 
@@ -1775,9 +1775,9 @@ InstanceDeserializationStatus   ReadCustomSerializedStruct (StructECPropertyP st
 
     WString    thisAccessString;
     if (NULL != baseAccessString)
-        AppendAccessString (thisAccessString, *baseAccessString, structProperty->Name);
+        AppendAccessString (thisAccessString, *baseAccessString, structProperty->GetName());
     else
-        thisAccessString = structProperty->Name.c_str();
+        thisAccessString = structProperty->GetName().c_str();
     thisAccessString.append (L".");
 
     customECStructSerializerP->LoadStructureFromString (structProperty, *ecInstance, thisAccessString.c_str(), propertyValueString);
@@ -1796,16 +1796,16 @@ InstanceDeserializationStatus   ReadEmbeddedStructProperty (StructECPropertyP st
 
     WString    thisAccessString;
     if (NULL != baseAccessString)
-        AppendAccessString (thisAccessString, *baseAccessString, structProperty->Name);
+        AppendAccessString (thisAccessString, *baseAccessString, structProperty->GetName());
     else
-        thisAccessString = structProperty->Name.c_str();
+        thisAccessString = structProperty->GetName().c_str();
     thisAccessString.append (L".");
 
     ICustomECStructSerializerP customECStructSerializerP = CustomStructSerializerManager::GetManager().GetCustomSerializer (structProperty, *ecInstance);
     if (customECStructSerializerP)
         return ReadCustomSerializedStruct (structProperty, ecInstance, baseAccessString, customECStructSerializerP);
 
-    return ReadInstanceOrStructMembers (structProperty->Type, ecInstance, &thisAccessString);
+    return ReadInstanceOrStructMembers (structProperty->GetType(), ecInstance, &thisAccessString);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1814,7 +1814,7 @@ InstanceDeserializationStatus   ReadEmbeddedStructProperty (StructECPropertyP st
 InstanceDeserializationStatus   ReadPrimitiveProperty (PrimitiveECPropertyP primitiveProperty, IECInstanceP ecInstance, WString* baseAccessString)
     {
     // on entry, we are positioned in the PrimitiveProperty element.
-    PrimitiveType                   propertyType = primitiveProperty->Type;
+    PrimitiveType                   propertyType = primitiveProperty->GetType();
     InstanceDeserializationStatus   ixrStatus;
     ECValue         ecValue;
     if (INSTANCE_DESERIALIZATION_STATUS_Success != (ixrStatus = ReadPrimitiveValue (ecValue, propertyType)))
@@ -1829,15 +1829,15 @@ InstanceDeserializationStatus   ReadPrimitiveProperty (PrimitiveECPropertyP prim
     ECObjectsStatus setStatus;
     if (NULL == baseAccessString)
         {
-        setStatus = ecInstance->SetValue (primitiveProperty->Name.c_str(), ecValue);
+        setStatus = ecInstance->SetValue (primitiveProperty->GetName().c_str(), ecValue);
 
         if (ECOBJECTS_STATUS_Success != setStatus)
-            ECObjectsLogger::Log()->warningv(L"Unable to set value for property %ls", primitiveProperty->Name.c_str());
+            ECObjectsLogger::Log()->warningv(L"Unable to set value for property %ls", primitiveProperty->GetName().c_str());
         }
     else
         {
         WString compoundAccessString;
-        AppendAccessString (compoundAccessString, *baseAccessString, primitiveProperty->Name);
+        AppendAccessString (compoundAccessString, *baseAccessString, primitiveProperty->GetName());
         setStatus = ecInstance->SetValue (compoundAccessString.c_str(), ecValue);
 
         if (ECOBJECTS_STATUS_Success != setStatus)
@@ -1861,9 +1861,9 @@ InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayPropert
 
     WString    accessString;
     if (NULL == baseAccessString)
-        accessString = arrayProperty->Name;    
+        accessString = arrayProperty->GetName();    
     else
-        AppendAccessString (accessString, *baseAccessString, arrayProperty->Name);
+        AppendAccessString (accessString, *baseAccessString, arrayProperty->GetName());
 
     accessString.append (L"[]");
 
@@ -1958,7 +1958,7 @@ InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayPropert
 
     else if (ARRAYKIND_Struct == arrayKind)
         {
-        ECClassCP   structMemberType = arrayProperty->StructElementType;
+        ECClassCP   structMemberType = arrayProperty->GetStructElementType();
 
         // read nodes - we expect to find an Element with LocalName being the class name of structMemberType.
         // For polymorphic arrays, the LocalName might also be the name of a class that has structMemberType as a BaseType.
@@ -2018,7 +2018,7 @@ InstanceDeserializationStatus   ReadStructArrayMember (ECClassCR structClass, IE
     StandaloneECEnablerPtr          standaloneEnabler   = StandaloneECEnabler::CreateEnabler (structClass, *classLayout, owningInstance->GetEnablerR(), true);
 
     // The following way causes an assert in ECPerSchemaCache::LoadSchema processing SetSchemaPtr (schemaP) because the schemacache's ptr was set recursively when processing struct arrays
-    //StandaloneECEnablerPtr standaloneEnabler = owningInstance->GetEnablerR().ObtainStandaloneInstanceEnabler (structClass.Schema.Name.c_str(), structClass.Name.c_str());
+    //StandaloneECEnablerPtr standaloneEnabler = owningInstance->GetEnablerR().ObtainStandaloneInstanceEnabler (structClass.GetSchema().GetName().c_str(), structClass.GetName().c_str());
 
     if (standaloneEnabler.IsNull())
         return INSTANCE_DESERIALIZATION_STATUS_UnableToGetStandaloneEnabler;
@@ -2337,7 +2337,7 @@ bool                            ValidateArrayPrimitiveType (WCharCP typeFound, P
 ECClassCP                       ValidateArrayStructType (WCharCP typeFound, ECClassCP expectedType)
     {
     // the common case is that they're all of the expected ECClass.
-    if (0 == wcscmp (typeFound, expectedType->Name.c_str()))
+    if (0 == wcscmp (typeFound, expectedType->GetName().c_str()))
         return expectedType;
 
     ECSchemaCP  schema = GetSchema();
@@ -2461,7 +2461,7 @@ InstanceSerializationStatus     Init ()
 InstanceSerializationStatus     WriteInstance (IECInstanceCR instance, bool writeStart)
     {
     ECClassCR               ecClass     = instance.GetClass();
-    ECSchemaCR              ecSchema    = ecClass.Schema;
+    ECSchemaCR              ecSchema    = ecClass.GetSchema();
 
     HRESULT status;
     if (writeStart)
@@ -2471,10 +2471,10 @@ InstanceSerializationStatus     WriteInstance (IECInstanceCR instance, bool writ
         }
 
     // start by writing the name of the class as an element, with the schema name as the namespace.
-    size_t size = wcslen(ecSchema.Name.c_str()) + 8;
+    size_t size = wcslen(ecSchema.GetName().c_str()) + 8;
     WCharP fullSchemaName = (wchar_t*)malloc(size * sizeof(wchar_t));
-    swprintf(fullSchemaName, size, L"%s.%02d.%02d", ecSchema.Name.c_str(), ecSchema.VersionMajor, ecSchema.VersionMinor);
-    if (S_OK != (status = m_xmlWriter->WriteStartElement (NULL, ecClass.Name.c_str(), fullSchemaName)))
+    swprintf(fullSchemaName, size, L"%s.%02d.%02d", ecSchema.GetName().c_str(), ecSchema.GetVersionMajor(), ecSchema.GetVersionMinor());
+    if (S_OK != (status = m_xmlWriter->WriteStartElement (NULL, ecClass.GetName().c_str(), fullSchemaName)))
         {
         free(fullSchemaName);
         return TranslateStatus (status);
@@ -2501,7 +2501,7 @@ InstanceSerializationStatus     WritePropertiesOfClassOrStructArrayMember (ECCla
     CustomStructSerializerManagerR customStructSerializerMgr = CustomStructSerializerManager::GetManager();
 
     ECPropertyIterableCR    collection  = ecClass.GetProperties (true);
-    for each (ECPropertyP ecProperty in collection)
+    FOR_EACH (ECPropertyP ecProperty, collection)
         {
         PrimitiveECPropertyP        primitiveProperty;
         ArrayECPropertyP            arrayProperty;
@@ -2525,7 +2525,7 @@ InstanceSerializationStatus     WritePropertiesOfClassOrStructArrayMember (ECCla
 
                 if (ECOBJECTS_STATUS_Success == customECStructSerializerP->GenerateXmlString (xmlString, structProperty, ecInstance, baseAccessString?baseAccessString->c_str():NULL))
                     {
-                    if (S_OK != (status = m_xmlWriter->WriteStartElement (NULL, structProperty->Name.c_str(), NULL)))
+                    if (S_OK != (status = m_xmlWriter->WriteStartElement (NULL, structProperty->GetName().c_str(), NULL)))
                         return TranslateStatus (status);
 
                     if (S_OK != (status = m_xmlWriter->WriteChars (xmlString.c_str(), static_cast <UINT> (xmlString.length()))))
@@ -2560,7 +2560,7 @@ InstanceSerializationStatus     WritePrimitiveProperty (PrimitiveECPropertyR pri
     {
     ECObjectsStatus     getStatus;
     ECValue             ecValue;
-    WStringCR propertyName = primitiveProperty.Name;
+    WStringCR propertyName = primitiveProperty.GetName();
 
     if (NULL == baseAccessString)
         {
@@ -2696,9 +2696,9 @@ InstanceSerializationStatus     WriteArrayProperty (ArrayECPropertyR arrayProper
 
     WString    accessString;
     if (NULL == baseAccessString)
-        accessString = arrayProperty.Name;    
+        accessString = arrayProperty.GetName();    
     else
-        AppendAccessString (accessString, *baseAccessString, arrayProperty.Name);
+        AppendAccessString (accessString, *baseAccessString, arrayProperty.GetName());
 
     accessString.append (L"[]");
 
@@ -2710,7 +2710,7 @@ InstanceSerializationStatus     WriteArrayProperty (ArrayECPropertyR arrayProper
     // write the start element, which consists of the member name.
     HRESULT     status;
 
-    if (S_OK != (status = m_xmlWriter->WriteStartElement (NULL, arrayProperty.Name.c_str(), NULL)))
+    if (S_OK != (status = m_xmlWriter->WriteStartElement (NULL, arrayProperty.GetName().c_str(), NULL)))
         return TranslateStatus (status);
 
     InstanceSerializationStatus     ixwStatus;
@@ -2758,7 +2758,7 @@ InstanceSerializationStatus     WriteArrayProperty (ArrayECPropertyR arrayProper
             ECClassCR   structClass = structInstance->GetClass();
             assert (structClass.Is (memberClass));
 
-            if (S_OK != (status = m_xmlWriter->WriteStartElement (NULL, structClass.Name.c_str(), NULL)))
+            if (S_OK != (status = m_xmlWriter->WriteStartElement (NULL, structClass.GetName().c_str(), NULL)))
                 return TranslateStatus (status);
 
             WritePropertiesOfClassOrStructArrayMember (structClass, *structInstance.get(), NULL);
@@ -2788,14 +2788,14 @@ InstanceSerializationStatus     WriteEmbeddedStructProperty (StructECPropertyR s
     {
     // the tag of the element for an embedded struct is the property name.
     HRESULT     status;
-    if (S_OK != (status = m_xmlWriter->WriteStartElement (NULL, structProperty.Name.c_str(), NULL)))
+    if (S_OK != (status = m_xmlWriter->WriteStartElement (NULL, structProperty.GetName().c_str(), NULL)))
         return TranslateStatus (status);
 
     WString    thisAccessString;
     if (NULL != baseAccessString)
-        AppendAccessString (thisAccessString, *baseAccessString, structProperty.Name);
+        AppendAccessString (thisAccessString, *baseAccessString, structProperty.GetName());
     else
-        thisAccessString = structProperty.Name.c_str();
+        thisAccessString = structProperty.GetName().c_str();
     thisAccessString.append (L".");
 
     ECClassCR   structClass = structProperty.Type;

@@ -61,7 +61,7 @@ ECSchemaP   CreateCustomAttributeTestSchema(IECSchemaOwnerR schemaOwner)
 
 IECInstancePtr GetInstanceForClass(WCharCP className, ECSchemaR schema, ECSchemaCacheR schemaSession)
     {
-    StandaloneECEnablerPtr enabler = schemaSession.ObtainStandaloneInstanceEnabler (schema.Name.c_str(), className);
+    StandaloneECEnablerPtr enabler = schemaSession.ObtainStandaloneInstanceEnabler (schema.GetName().c_str(), className);
     IECInstancePtr instance = enabler->CreateInstance().get();
     return instance;
     }
@@ -224,13 +224,13 @@ TEST_F(CustomAttributeTest, ExpectCanGetAllCustomAttributes)
     bool foundCustomAttrib = false;
     bool foundCustomAttrib2 = false;
     bool foundCustomAttrib3 = false;
-    for each (IECInstancePtr testInstance in containerClass->GetCustomAttributes(false))
+    FOR_EACH (IECInstancePtr testInstance, containerClass->GetCustomAttributes(false))
         {
-        if (testInstance->GetClass().Name.compare(L"CustomAttribClass") == 0)
+        if (testInstance->GetClass().GetName().compare(L"CustomAttribClass") == 0)
             foundCustomAttrib = true;
-        else if (testInstance->GetClass().Name.compare(L"CustomAttribClass2") == 0)
+        else if (testInstance->GetClass().GetName().compare(L"CustomAttribClass2") == 0)
             foundCustomAttrib2 = true;
-        else if (testInstance->GetClass().Name.compare(L"CustomAttribClass3") == 0)
+        else if (testInstance->GetClass().GetName().compare(L"CustomAttribClass3") == 0)
             foundCustomAttrib3 = true;
         }
     EXPECT_TRUE(foundCustomAttrib);
@@ -240,13 +240,13 @@ TEST_F(CustomAttributeTest, ExpectCanGetAllCustomAttributes)
     foundCustomAttrib = false;
     foundCustomAttrib2 = false;
     foundCustomAttrib3 = false;
-    for each (IECInstancePtr testInstance in containerClass->GetCustomAttributes(true))
+    FOR_EACH (IECInstancePtr testInstance, containerClass->GetCustomAttributes(true))
         {
-        if (testInstance->GetClass().Name.compare(L"CustomAttribClass") == 0)
+        if (testInstance->GetClass().GetName().compare(L"CustomAttribClass") == 0)
             foundCustomAttrib = true;
-        else if (testInstance->GetClass().Name.compare(L"CustomAttribClass2") == 0)
+        else if (testInstance->GetClass().GetName().compare(L"CustomAttribClass2") == 0)
             foundCustomAttrib2 = true;
-        else if (testInstance->GetClass().Name.compare(L"CustomAttribClass3") == 0)
+        else if (testInstance->GetClass().GetName().compare(L"CustomAttribClass3") == 0)
             foundCustomAttrib3 = true;
         }
     EXPECT_TRUE(foundCustomAttrib);

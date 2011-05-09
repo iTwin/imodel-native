@@ -47,8 +47,6 @@ ECObjectsHeaders = $(ecobjectsPublicAPISrc)ECObjects.h $(ecobjectsPublicAPISrc)E
 
 $(o)ecxml$(oext)           : $(baseDir)ecxml.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)FileUtilities$(oext)   : $(baseDir)FileUtilities.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
-
 $(o)ecschema$(oext)        : $(baseDir)ecschema.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
 $(o)ectype$(oext)          : $(baseDir)ectype.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
@@ -72,6 +70,12 @@ $(o)StandaloneECInstance$(oext)    : $(baseDir)StandaloneECInstance.cpp $(ECObje
 $(o)designbycontract$(oext)        : $(baseDir)designbycontract.cpp $(ecobjectsPublicAPISrc)designbycontract.h ${MultiCompileDepends} 
 
 $(o)logger$(oext)          : $(baseDir)Logger.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+#non-portable code
+# WIP_NONPORT
+%if !defined (BUILD_USING_GCC)
+$(o)FileUtilities$(oext)   : $(baseDir)FileUtilities.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+%endif
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)

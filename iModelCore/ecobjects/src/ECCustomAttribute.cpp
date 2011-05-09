@@ -41,13 +41,13 @@ void IECCustomAttributeContainer::AddUniqueCustomAttributesToList
 ECCustomAttributeCollection& returnList
 ) 
     {
-    for each (IECInstancePtr instance in GetCustomAttributes(false))
+    FOR_EACH (IECInstancePtr instance, GetCustomAttributes(false))
         {
         bool alreadyFound = false;
         ECClassCR classDefinition = instance->GetClass();
 
         // only add the instance if there isn't already one with the same classDefinition in the list
-        for each (IECInstancePtr testInstance in returnList)
+        FOR_EACH (IECInstancePtr testInstance, returnList)
             {
             ECClassCR testClass = testInstance->GetClass();
             if (&classDefinition == &testClass || ECClass::ClassesAreEqualByName(&classDefinition, &testClass))
@@ -63,7 +63,7 @@ ECCustomAttributeCollection& returnList
     // do base containers
     bvector<IECCustomAttributeContainerP> baseContainers;
     _GetBaseContainers(baseContainers);
-    for each (IECCustomAttributeContainerP container in baseContainers)
+    FOR_EACH (IECCustomAttributeContainerP container, baseContainers)
         {
         container->AddUniqueCustomAttributesToList(returnList);
         }
@@ -81,14 +81,14 @@ WStringCR className
     for (iter = m_customAttributes.begin(); iter != m_customAttributes.end(); iter++)
         {
         ECClassCR currentClass = (*iter)->GetClass();
-        if (0 == className.compare(currentClass.Name))
+        if (0 == className.compare(currentClass.GetName()))
             return true;
         }
 
     // check base containers
     bvector<IECCustomAttributeContainerP> baseContainers;
     _GetBaseContainers(baseContainers);
-    for each (IECCustomAttributeContainerP container in baseContainers)
+    FOR_EACH (IECCustomAttributeContainerP container, baseContainers)
         {
         if (container->IsDefined(className))
             return true;
@@ -114,7 +114,7 @@ ECClassCR classDefinition
     // check base containers
     bvector<IECCustomAttributeContainerP> baseContainers;
     _GetBaseContainers(baseContainers);
-    for each (IECCustomAttributeContainerP container in baseContainers)
+    FOR_EACH (IECCustomAttributeContainerP container, baseContainers)
         {
         if (container->IsDefined(classDefinition))
             return true;
@@ -135,14 +135,14 @@ WStringCR className
     for (iter = m_customAttributes.begin(); iter != m_customAttributes.end(); iter++)
         {
         ECClassCR currentClass = (*iter)->GetClass();
-        if (0 == className.compare(currentClass.Name))
+        if (0 == className.compare(currentClass.GetName()))
             {
             return *iter;
             }
         }
     bvector<IECCustomAttributeContainerP> baseContainers;
     _GetBaseContainers(baseContainers);
-    for each (IECCustomAttributeContainerP container in baseContainers)
+    FOR_EACH (IECCustomAttributeContainerP container, baseContainers)
         {
         result = container->GetCustomAttribute(className);
         if (result.IsValid())
@@ -171,7 +171,7 @@ ECClassCR classDefinition
         }
     bvector<IECCustomAttributeContainerP> baseContainers;
     _GetBaseContainers(baseContainers);
-    for each (IECCustomAttributeContainerP container in baseContainers)
+    FOR_EACH (IECCustomAttributeContainerP container, baseContainers)
         {
         result = container->GetCustomAttribute(classDefinition);
         if (result.IsValid())
@@ -208,9 +208,9 @@ IECInstanceR customAttributeInstance
 
     // first need to verify that this custom attribute instance is from either the current schema or a referenced schema
     ECSchemaCP containerSchema = _GetContainerSchema();
-    if (containerSchema != &(classDefinition.Schema))
+    if (containerSchema != &(classDefinition.GetSchema()))
         {
-        if (!ECSchema::IsSchemaReferenced(*containerSchema, classDefinition.Schema))
+        if (!ECSchema::IsSchemaReferenced(*containerSchema, classDefinition.GetSchema()))
             {
             assert (false);
             return ECOBJECTS_STATUS_SchemaNotFound;
@@ -245,7 +245,7 @@ WStringCR className
     for (iter = m_customAttributes.begin(); iter != m_customAttributes.end(); iter++)
         {
         ECClassCR currentClass = (*iter)->GetClass();
-        if (0 == className.compare(currentClass.Name))
+        if (0 == className.compare(currentClass.GetName()))
             {
             m_customAttributes.erase(iter);
             return true;
@@ -468,13 +468,13 @@ bool includeBase
 )
     {
     m_customAttributes = new ECCustomAttributeCollection();
-    for each (IECInstancePtr ptr in container.m_customAttributes)
+    FOR_EACH (IECInstancePtr ptr, container.m_customAttributes)
         m_customAttributes->push_back(ptr);
     if (includeBase)
         {
         bvector<IECCustomAttributeContainerP> baseContainers;
         container._GetBaseContainers(baseContainers);
-        for each (IECCustomAttributeContainerP baseContainer in baseContainers)
+        FOR_EACH (IECCustomAttributeContainerP baseContainer, baseContainers)
             {
             baseContainer->AddUniqueCustomAttributesToList(*m_customAttributes);
             }

@@ -9,6 +9,7 @@
 
 #include <ECObjects\ECObjects.h>
 #include <Logging\bentleylogging.h>
+#include <boost\foreach.hpp>
 
 USING_NAMESPACE_BENTLEY_LOGGING
 BEGIN_BENTLEY_EC_NAMESPACE
@@ -113,7 +114,7 @@ virtual Int32   CheckForLeaks () const override
     if ( ! m_buildMap)
         return m_currentLive;
 
-    for each (ObjectsMap::value_type leak in m_objectsMap)
+    FOR_EACH (typename ObjectsMap::value_type leak, m_objectsMap)
         {
         OTYPE const*    leakedObject = leak.first;
         UInt32          orderOfAllocation = leak.second;

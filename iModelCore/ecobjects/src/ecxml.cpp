@@ -10,6 +10,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
+#include <ctype.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -22,9 +23,9 @@ bool & booleanValue,
 WCharCP booleanString
 )
     {
-    if (0 == wcsicmp (booleanString, ECXML_TRUE))
+    if (0 == _wcsicmp (booleanString, ECXML_TRUE))
         booleanValue = true;
-    else if (0 == wcsicmp (booleanString, ECXML_FALSE))
+    else if (0 == _wcsicmp (booleanString, ECXML_FALSE))
         booleanValue = false;
     else
         return ECOBJECTS_STATUS_ParseError;
@@ -211,7 +212,7 @@ const WString &cardinalityString
              (0 == cardinalityString.compare(L"unbounded")) || (0 == cardinalityString.compare(L"n")) ||
              (0 == cardinalityString.compare(L"N")))
         {
-        ECObjectsLogger::Log()->warningv(L"Legacy cardinality of '%s' interpreted as '(0,n)'", cardinalityString);
+        ECObjectsLogger::Log()->warningv(L"Legacy cardinality of '%s' interpreted as '(0,n)'", cardinalityString.c_str());
         lowerLimit = 0;
         upperLimit = UINT_MAX;
         return status;
@@ -250,6 +251,7 @@ const WString &cardinalityString
     return status;
     }
  
+#ifdef winNT // *** WIP_NONPORT
 void FormatXmlNode
 (
 MSXML2::IXMLDOMNode& domNode,
@@ -325,4 +327,6 @@ MSXML2::IXMLDOMDocument2 *pXmlDoc
     {
     FormatXmlNode(pXmlDoc->documentElement, 0);
     }
+#endif
+
 END_BENTLEY_EC_NAMESPACE

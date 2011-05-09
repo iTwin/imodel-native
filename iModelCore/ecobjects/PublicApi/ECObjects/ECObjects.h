@@ -41,7 +41,7 @@
 
 /*__PUBLISH_SECTION_END__*/
 // These BENTLEY_EXCLUDE_WINDOWS_HEADERS shenanigans are necessary to allow ECObjects headers to be included without sucking in conflicting windows headers
-// and also to support porting to other XML parsers
+// and help us split off the non-portable code and to move to a different XML parser
 #ifdef BENTLEY_EXCLUDE_WINDOWS_HEADERS
 /*__PUBLISH_SECTION_START__*/        
     #define MSXML2_IXMLDOMNode      void *

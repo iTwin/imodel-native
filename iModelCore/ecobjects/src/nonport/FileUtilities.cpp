@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------------------+
 |
-|     $Source: src/FileUtilities.cpp $
+|     $Source: src/nonport/FileUtilities.cpp $
 |
 |  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -10,6 +10,20 @@
 #include "ECObjectsPch.h"
 
 BEGIN_BENTLEY_EC_NAMESPACE
+
+struct ECFileNameIterator
+    {
+    WIN32_FIND_DATAW m_findData;
+    HANDLE           m_findHandle;
+    bool             m_valid;
+    wchar_t          m_deviceName[_MAX_DRIVE];
+    wchar_t          m_dirName[_MAX_DIR];
+
+public:
+    ECFileNameIterator (WCharCP path);
+    ~ECFileNameIterator ();
+    BentleyStatus GetNextFileName (WCharP name);
+     };
 
 ECFileNameIterator::ECFileNameIterator (WCharCP path)
     {
@@ -72,4 +86,49 @@ WString ECFileUtilities::GetDllPath()
     return filepath;
     
     }     
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  11/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus GetSchemaFileName (WString& fullFileName, WCharCP schemaPath, bool useLatestCompatibleMatch)
+    {
+    ECFileNameIterator fileList (schemaPath);
+    wchar_t filePath[MAX_PATH];
+    UInt32 minorVersion=0;
+    UInt32 currentMinorVersion=0;
+
+    while (true)
+        {
+        if (SUCCESS != fileList.GetNextFileName(filePath))
+            break;
+
+        if (!useLatestCompatibleMatch)
+            {
+            fullFileName = filePath;
+            return ECOBJECTS_STATUS_Success;
+            }
+
+        if (fullFileName.empty())
+            {
+            fullFileName = filePath;
+            GetMinorVersionFromSchemaFileName (minorVersion, filePath);
+            continue;
+            }
+
+        if (ECOBJECTS_STATUS_Success != GetMinorVersionFromSchemaFileName (currentMinorVersion, filePath))
+            continue;
+
+        if (currentMinorVersion > minorVersion)
+            {
+            minorVersion = currentMinorVersion;
+            fullFileName = filePath;
+            }
+        }
+
+    if (fullFileName.empty())
+        return ECOBJECTS_STATUS_Error;
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
 END_BENTLEY_EC_NAMESPACE

@@ -15,6 +15,8 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
+extern ECObjectsStatus GetSchemaFileName (WString& fullFileName, WCharCP schemaPath, bool useLatestCompatibleMatch);
+
 //#define DEBUG_SCHEMA_LEAKS
 #ifdef DEBUG_SCHEMA_LEAKS
 LeakDetector<ECSchema> g_leakDetector (L"ECSchema", L"ECSchemas", true);
@@ -161,7 +163,7 @@ WStringCR ECSchema::GetDisplayLabel
 (
 ) const
     {
-    return (m_displayLabel.empty()) ? Name : m_displayLabel;
+    return (m_displayLabel.empty()) ? GetName() : m_displayLabel;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -256,10 +258,10 @@ ECClassP&                 pClass
 )
     {
     bpair < bmap<WCharCP, ECClassP>::iterator, bool > resultPair;
-    resultPair = m_classMap.insert (bpair<WCharCP, ECClassP> (pClass->Name.c_str(), pClass));
+    resultPair = m_classMap.insert (bpair<WCharCP, ECClassP> (pClass->GetName().c_str(), pClass));
     if (resultPair.second == false)
         {
-        ECObjectsLogger::Log()->warningv (L"Can not create class '%s' because it already exists in the schema", pClass->Name.c_str());
+        ECObjectsLogger::Log()->warningv (L"Can not create class '%s' because it already exists in the schema", pClass->GetName().c_str());
         delete pClass;
         pClass = NULL;        
         return ECOBJECTS_STATUS_NamedItemAlreadyExists;
@@ -308,7 +310,7 @@ WStringCR     name
         }
 
     bpair < bmap<WCharCP, ECClassP>::iterator, bool > resultPair;
-    resultPair = m_classMap.insert (bpair<WCharCP, ECClassP> (pClass->Name.c_str(), pClass));
+    resultPair = m_classMap.insert (bpair<WCharCP, ECClassP> (pClass->GetName().c_str(), pClass));
     if (resultPair.second == false)
         {
         delete pClass;
@@ -326,12 +328,12 @@ WStringCR     name
 ECOBJECTS_EXPORT WString ECSchema::GetFullSchemaName () const
     {
     std::wostringstream fullName;
-    fullName << Name.c_str() << L"." << std::setfill(L'0') << std::setw(2) << VersionMajor << L"." << std::setw(2) << VersionMinor;
+    fullName << GetName().c_str() << L"." << std::setfill(L'0') << std::setw(2) << GetVersionMajor() << L"." << std::setw(2) << GetVersionMinor();
     
     return fullName.str().c_str();
     }
 
-#define     ECSCHEMA_FULLNAME_FORMAT_EXPLANATION L" Format must be Name.MM.mm where Name is the schema name, MM is major version and mm is minor version."
+#define     ECSCHEMA_FULLNAME_FORMAT_EXPLANATION L" Format must be GetName().MM.mm where Name is the schema name, MM is major version and mm is minor version."
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -366,7 +368,7 @@ WStringCR     fullName
     return ParseVersionString (versionMajor, versionMinor, firstDot+1);
     }
 
-#define     ECSCHEMA_FULLNAME_FORMAT_EXPLANATION L" Format must be Name.MM.mm where Name is the schema name, MM is major version and mm is minor version."
+#define     ECSCHEMA_FULLNAME_FORMAT_EXPLANATION L" Format must be GetName().MM.mm where Name is the schema name, MM is major version and mm is minor version."
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -406,7 +408,7 @@ WCharCP      fullName
 WString ECSchema::FormatSchemaVersion (UInt32& versionMajor, UInt32& versionMinor)
     {
     wchar_t versionString[80];
-    swprintf (versionString, L"%02d.%02d", versionMajor, versionMinor);
+    _snwprintf (versionString, _countof(versionString), L"%02d.%02d", versionMajor, versionMinor);
     return WString (versionString);
     }
 
@@ -506,7 +508,7 @@ UInt32          candidateMajor,
 UInt32          candidateMinor
 )
     {
-    if (wcsicmp (candidateName, soughtName))
+    if (_wcsicmp (candidateName, soughtName))
         return false;
     
     return ((matchType == SCHEMAMATCHTYPE_Latest) ||
@@ -657,7 +659,7 @@ ECSchemaR       refSchema
         }
             
     m_refSchemaList.push_back(&refSchema);
-    m_referencedSchemaNamespaceMap.insert(bpair<ECSchemaP, const WString> (&refSchema, refSchema.NamespacePrefix));
+    m_referencedSchemaNamespaceMap.insert(bpair<ECSchemaP, const WString> (&refSchema, refSchema.GetNamespacePrefix()));
     return ECOBJECTS_STATUS_Success;
     }
     
@@ -684,12 +686,12 @@ ECSchemaR       refSchema
     // Can only remove the reference if nothing actually references it.
     
     ECSchemaP foundSchemaP = *schemaIterator;
-    for each (ECClassP ecClass in Classes)
+    FOR_EACH (ECClassP ecClass, GetClasses())
         {
         // First, check each base class to see if the base class uses that schema
-        for each (ECClassP baseClass in ecClass->BaseClasses)
+        FOR_EACH (ECClassP baseClass, ecClass->GetBaseClasses())
             {
-            if ((ECSchemaP) &(baseClass->Schema) == foundSchemaP)
+            if ((ECSchemaP) &(baseClass->GetSchema()) == foundSchemaP)
                 {
                 return ECOBJECTS_STATUS_SchemaInUse;
                 }
@@ -699,16 +701,16 @@ ECSchemaR       refSchema
         ECRelationshipClassP relClass = dynamic_cast<ECRelationshipClassP>(ecClass);
         if (NULL != relClass)
             {
-            for each (ECClassP target in relClass->Target.Classes)
+            FOR_EACH (ECClassP target, relClass->GetTarget().GetClasses())
                 {
-                if ((ECSchemaP) &(target->Schema) == foundSchemaP)
+                if ((ECSchemaP) &(target->GetSchema()) == foundSchemaP)
                     {
                     return ECOBJECTS_STATUS_SchemaInUse;
                     }
                 }
-            for each (ECClassP source in relClass->Source.Classes)
+            FOR_EACH (ECClassP source, relClass->GetSource().GetClasses())
                 {
-                if ((ECSchemaP) &(source->Schema) == foundSchemaP)
+                if ((ECSchemaP) &(source->GetSchema()) == foundSchemaP)
                     {
                     return ECOBJECTS_STATUS_SchemaInUse;
                     }
@@ -716,16 +718,16 @@ ECSchemaR       refSchema
             }
             
         // And make sure that there are no struct types from another schema
-        for each (ECPropertyP prop in ecClass->GetProperties(false))
+        FOR_EACH (ECPropertyP prop, ecClass->GetProperties(false))
             {
             ECClassCP typeClass;
-            if (prop->IsStruct)
+            if (prop->GetIsStruct())
                 {
-                typeClass = &(prop->GetAsStructProperty()->Type);
+                typeClass = &(prop->GetAsStructProperty()->GetType());
                 }
-            else if (prop->IsArray)
+            else if (prop->GetIsArray())
                 {
-                typeClass = prop->GetAsArrayProperty()->StructElementType;
+                typeClass = prop->GetAsArrayProperty()->GetStructElementType();
                 }
             else
                 {
@@ -733,8 +735,8 @@ ECSchemaR       refSchema
                 }
             if (NULL == typeClass)
                 continue;
-            if (this->Name.compare(typeClass->Schema.Name) == 0 && this->VersionMajor == typeClass->Schema.VersionMajor &&
-                this->VersionMinor == typeClass->Schema.VersionMinor)
+            if (this->GetName().compare(typeClass->GetSchema().GetName()) == 0 && this->GetVersionMajor() == typeClass->GetSchema().GetVersionMajor() &&
+                this->GetVersionMinor() == typeClass->GetSchema().GetVersionMinor())
                 continue;
             return ECOBJECTS_STATUS_SchemaInUse;
             }
@@ -790,7 +792,7 @@ ECSchemaDeserializationContextR     schemaContext
             return status;           
             }
 
-        ECClassP existingClass = this->GetClassP(pClass->Name.c_str());
+        ECClassP existingClass = this->GetClassP(pClass->GetName().c_str());
 
         if (NULL != existingClass)
             {
@@ -802,9 +804,9 @@ ECSchemaDeserializationContextR     schemaContext
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
 
         if (NULL == pRelationshipClass)
-            ECObjectsLogger::Log()->tracev (L"    Created ECClass Stub: %s", pClass->Name.c_str());
+            ECObjectsLogger::Log()->tracev (L"    Created ECClass Stub: %s", pClass->GetName().c_str());
         else
-            ECObjectsLogger::Log()->tracev (L"    Created Relationship ECClass Stub: %s", pClass->Name.c_str());
+            ECObjectsLogger::Log()->tracev (L"    Created Relationship ECClass Stub: %s", pClass->GetName().c_str());
 
         classes.push_back (make_bpair (pClass, xmlNodePtr));
         }
@@ -946,7 +948,7 @@ ECSchemaDeserializationContextR schemaContext
         return schema;
 
     // Step 2: ask the schemaLocators
-    for each (IECSchemaLocatorP schemaLocator in schemaContext.GetSchemaLocators())
+    FOR_EACH (IECSchemaLocatorP schemaLocator, schemaContext.GetSchemaLocators())
         {
         if ( ! EXPECTED_CONDITION (NULL != schemaLocator))
             continue;
@@ -1001,50 +1003,6 @@ static ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, 
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  11/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-static ECObjectsStatus GetSchemaFileName (WString& fullFileName, WCharCP schemaPath, bool useLatestCompatibleMatch)
-    {
-    ECFileNameIterator fileList (schemaPath);
-    wchar_t filePath[MAX_PATH];
-    UInt32 minorVersion=0;
-    UInt32 currentMinorVersion=0;
-
-    while (true)
-        {
-        if (SUCCESS != fileList.GetNextFileName(filePath))
-            break;
-
-        if (!useLatestCompatibleMatch)
-            {
-            fullFileName = filePath;
-            return ECOBJECTS_STATUS_Success;
-            }
-
-        if (fullFileName.empty())
-            {
-            fullFileName = filePath;
-            GetMinorVersionFromSchemaFileName (minorVersion, filePath);
-            continue;
-            }
-
-        if (ECOBJECTS_STATUS_Success != GetMinorVersionFromSchemaFileName (currentMinorVersion, filePath))
-            continue;
-
-        if (currentMinorVersion > minorVersion)
-            {
-            minorVersion = currentMinorVersion;
-            fullFileName = filePath;
-            }
-        }
-
-    if (fullFileName.empty())
-        return ECOBJECTS_STATUS_Error;
-
-    return ECOBJECTS_STATUS_Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP       ECSchema::LocateSchemaByPath
@@ -1067,7 +1025,7 @@ bool                            useLatestCompatibleMatch
     schemaName += versionString;
     WString fullFileName;
 
-    for each (WString schemaPath in schemaContext.GetSchemaPaths())
+    FOR_EACH (WString schemaPath, schemaContext.GetSchemaPaths())
         {
         if (schemaPath[schemaPath.length() - 1] != '\\')
             schemaPath += '\\';
@@ -1238,7 +1196,7 @@ ECClassP class2
         return true;
     if (NULL == class2)
         return false;
-    int comparison = wcscmp(class1->Name.c_str(), class2->Name.c_str());
+    int comparison = wcscmp(class1->GetName().c_str(), class2->GetName().c_str());
     return (comparison <= 0);
     }
   
@@ -1296,10 +1254,10 @@ SchemaSerializationStatus ECSchema::WriteSchemaReferences (MSXML2::IXMLDOMElemen
         schemaPtr = parentNode.ownerDocument->createNode(NODE_ELEMENT, EC_SCHEMAREFERENCE_ELEMENT, ECXML_URI_2_0);
         APPEND_CHILD_TO_PARENT(schemaPtr, (&parentNode));
         
-        WRITE_XML_ATTRIBUTE(SCHEMAREF_NAME_ATTRIBUTE, refSchema->Name.c_str(), schemaPtr);
+        WRITE_XML_ATTRIBUTE(SCHEMAREF_NAME_ATTRIBUTE, refSchema->GetName().c_str(), schemaPtr);
         
         wchar_t versionString[8];
-        swprintf(versionString, 8, L"%02d.%02d", refSchema->VersionMajor, refSchema->VersionMinor);
+        swprintf(versionString, 8, L"%02d.%02d", refSchema->GetVersionMajor(), refSchema->GetVersionMinor());
         WRITE_XML_ATTRIBUTE(SCHEMAREF_VERSION_ATTRIBUTE, versionString, schemaPtr);
         const WString prefix = mapPair.second;
         WRITE_XML_ATTRIBUTE(SCHEMAREF_PREFIX_ATTRIBUTE, prefix.c_str(), schemaPtr);
@@ -1319,7 +1277,7 @@ ECSchemaSerializationContext&   context
     {
     SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
 
-    for each (IECInstancePtr instance in container.GetCustomAttributes(false))
+    FOR_EACH (IECInstancePtr instance, container.GetCustomAttributes(false))
         {
         ECClassCR currentClass = instance->GetClass();
         status = WriteClass(parentNode, currentClass, context);
@@ -1336,19 +1294,19 @@ SchemaSerializationStatus ECSchema::WriteClass (MSXML2::IXMLDOMElement &parentNo
     {
     SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
     // don't serialize any classes that aren't in the schema we're serializing.
-    if (&(ecClass.Schema) != this)
+    if (&(ecClass.GetSchema()) != this)
         return status;
     
     bset<WCharCP>::const_iterator setIterator;
-    setIterator = context.m_alreadySerializedClasses.find(ecClass.Name.c_str());
+    setIterator = context.m_alreadySerializedClasses.find(ecClass.GetName().c_str());
     // Make sure we don't serialize any class twice
     if (setIterator != context.m_alreadySerializedClasses.end())
         return status;
     else
-        context.m_alreadySerializedClasses.insert(ecClass.Name.c_str());
+        context.m_alreadySerializedClasses.insert(ecClass.GetName().c_str());
         
     // serialize the base classes first.
-    for each (ECClassP baseClass in ecClass.BaseClasses)
+    FOR_EACH (ECClassP baseClass, ecClass.GetBaseClasses())
         {
         WriteClass(parentNode, *baseClass, context);
         }
@@ -1357,10 +1315,10 @@ SchemaSerializationStatus ECSchema::WriteClass (MSXML2::IXMLDOMElement &parentNo
     ECRelationshipClassP relClass = dynamic_cast<ECRelationshipClassP>((ECClassP) &ecClass);
     if (NULL != relClass)
         {
-        for each (ECClassP source in relClass->Source.Classes)
+        FOR_EACH (ECClassP source, relClass->GetSource().GetClasses())
             WriteClass(parentNode, *source, context);
             
-        for each (ECClassP target in relClass->Target.Classes)
+        FOR_EACH (ECClassP target, relClass->GetTarget().GetClasses())
             WriteClass(parentNode, *target, context);
         }
     WritePropertyDependencies(parentNode, ecClass, context); 
@@ -1383,14 +1341,14 @@ ECSchemaSerializationContext&   context
     {
     SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
     
-    for each (ECPropertyP prop in ecClass.GetProperties(false))
+    FOR_EACH (ECPropertyP prop, ecClass.GetProperties(false))
         {
-        if (prop->IsStruct)
+        if (prop->GetIsStruct())
             {
             StructECPropertyP structProperty = prop->GetAsStructProperty();
-            WriteClass(parentNode, structProperty->Type, context);
+            WriteClass(parentNode, structProperty->GetType(), context);
             }
-        else if (prop->IsArray)
+        else if (prop->GetIsArray())
             {
             ArrayECPropertyP arrayProperty = prop->GetAsArrayProperty();
             if (arrayProperty->GetKind() == ARRAYKIND_Struct)
@@ -1425,7 +1383,7 @@ SchemaSerializationStatus ECSchema::WriteXml (MSXML2::IXMLDOMDocument2* pXmlDoc)
     MSXML2::IXMLDOMAttributePtr attributePtr;
     wchar_t versionString[8];
     swprintf(versionString, 8, L"%02d.%02d", m_versionMajor, m_versionMinor);
-    WRITE_XML_ATTRIBUTE(SCHEMA_NAME_ATTRIBUTE, this->Name.c_str(), schemaElementPtr);
+    WRITE_XML_ATTRIBUTE(SCHEMA_NAME_ATTRIBUTE, this->GetName().c_str(), schemaElementPtr);
     WRITE_OPTIONAL_XML_ATTRIBUTE(SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE, NamespacePrefix, schemaElementPtr);
     WRITE_XML_ATTRIBUTE(SCHEMA_VERSION_ATTRIBUTE, versionString, schemaElementPtr);
     WRITE_OPTIONAL_XML_ATTRIBUTE(DESCRIPTION_ATTRIBUTE, Description, schemaElementPtr);
@@ -1442,12 +1400,12 @@ SchemaSerializationStatus ECSchema::WriteXml (MSXML2::IXMLDOMDocument2* pXmlDoc)
     
     std::list<ECClassP> sortedClasses;
     // sort the classes by name so the order in which they are serialized is predictable.
-    for each (ECClassP pClass in Classes)
+    FOR_EACH (ECClassP pClass, GetClasses())
         sortedClasses.push_back(pClass);
         
     sortedClasses.sort(ClassNameComparer);
     
-    for each (ECClassP pClass in sortedClasses)
+    FOR_EACH (ECClassP pClass, sortedClasses)
         {
         WriteClass(schemaElementPtr, *pClass, context);
         }
@@ -1518,7 +1476,7 @@ ECSchemaDeserializationContextR schemaContext
         ECObjectsLogger::Log()->errorv (L"Failed to deserialize XML file: %s", ecSchemaXmlFile);
     else
         ECObjectsLogger::Log()->infov (L"Native ECSchema Deserialized from file: fileName='%s', schemaName='%s.%d.%d' classCount='%d' address='0x%x'", 
-            ecSchemaXmlFile, schemaOut->Name.c_str(), schemaOut->VersionMajor, schemaOut->VersionMinor, schemaOut->m_classMap.size(), schemaOut);        
+            ecSchemaXmlFile, schemaOut->GetName().c_str(), schemaOut->GetVersionMajor(), schemaOut->GetVersionMinor(), schemaOut->m_classMap.size(), schemaOut);        
     return status;
     }
 
@@ -1551,7 +1509,7 @@ ECSchemaDeserializationContextR schemaContext
         ECObjectsLogger::Log()->errorv (L"Failed to deserialize XML from string: %s", ecSchemaXml);
     else
         ECObjectsLogger::Log()->infov (L"Native ECSchema Deserialized from string: schemaName='%s.%d.%d' classCount='%d' schemaAddress='0x%x' stringAddress='0x%x'", 
-            schemaOut->Name.c_str(), schemaOut->VersionMajor, schemaOut->VersionMinor, schemaOut->m_classMap.size(), schemaOut, ecSchemaXml);
+            schemaOut->GetName().c_str(), schemaOut->GetVersionMajor(), schemaOut->GetVersionMinor(), schemaOut->m_classMap.size(), schemaOut, ecSchemaXml);
     return status;
     }
 
@@ -1582,9 +1540,9 @@ ECSchemaCR thatSchema
 bool ECSchema::SchemasAreEqualByName (ECSchemaCP thisSchema, ECSchemaCP thatSchema)
     {
     return ((thisSchema == thatSchema) ||
-            ( (0 == thisSchema->Name.compare(thatSchema->Name)) &&
-              (thisSchema->VersionMajor == thatSchema->VersionMajor) &&
-              (thisSchema->VersionMinor == thatSchema->VersionMinor)));
+            ( (0 == thisSchema->GetName().compare(thatSchema->GetName())) &&
+              (thisSchema->GetVersionMajor() == thatSchema->GetVersionMajor()) &&
+              (thisSchema->GetVersionMinor() == thatSchema->GetVersionMinor())));
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -1751,7 +1709,7 @@ ECSchemaOwner::~ECSchemaOwner ()
     if (0 == m_schemas.size())
         return;
 
-    for each (ECSchemaP ecSchema in m_schemas)
+    FOR_EACH (ECSchemaP ecSchema, m_schemas)
         ECSchema::DestroySchema (ecSchema);
     }
 
@@ -1788,7 +1746,7 @@ ECObjectsStatus ECSchemaOwner::_DropSchema (ECSchemaR ecSchema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP       ECSchemaOwner::_LocateSchema (WCharCP name, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType)
     { 
-    for each (ECSchemaP ecSchema in m_schemas)
+    FOR_EACH (ECSchemaP ecSchema, m_schemas)
         {
         if (ECSchema::SchemasMatch (matchType, name, versionMajor, versionMinor, ecSchema->GetName().c_str(), ecSchema->GetVersionMajor(), ecSchema->GetVersionMinor()))
             return ecSchema;
@@ -1832,7 +1790,7 @@ ECSchemaCache::~ECSchemaCache ()
     if (0 == m_schemas.size())
         return;
 
-    for each (ECSchemaP ecSchema in m_schemas)
+    FOR_EACH (ECSchemaP ecSchema, m_schemas)
         ECSchema::DestroySchema (ecSchema);
     }
 
@@ -1875,7 +1833,7 @@ ECSchemaP       ECSchemaCache::_GetSchema   (WCharCP schemaName, UInt32 versionM
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP       ECSchemaCache::_LocateSchema (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType)
     {
-    for each (ECSchemaP ecSchema in m_schemas)
+    FOR_EACH (ECSchemaP ecSchema, m_schemas)
         {
         if (ECSchema::SchemasMatch (matchType, schemaName, versionMajor, versionMinor, ecSchema->GetName().c_str(), ecSchema->GetVersionMajor(), ecSchema->GetVersionMinor()))
             return ecSchema;
@@ -1906,7 +1864,7 @@ StandaloneECEnablerPtr          ECSchemaCache::_ObtainStandaloneInstanceEnabler 
         return mapIterator->second;
 
     // no existing enabler, try to find schema and build one now
-    for each (ECSchemaP ecSchema in m_schemas)
+    FOR_EACH (ECSchemaP ecSchema, m_schemas)
         {
         if (ecSchema->GetName().EqualsI (schemaName))
             {

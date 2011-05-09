@@ -171,7 +171,7 @@ public:
 /*__PUBLISH_SECTION_START__*/                        
         };
 
-    struct const_iterator
+    struct const_iterator : std::iterator<std::forward_iterator_tag, IECInstancePtr>
         {
         private:
             friend struct ECCustomAttributeInstanceIterable;
@@ -411,7 +411,7 @@ public:
 /*__PUBLISH_SECTION_START__*/                        
         };
         
-    struct const_iterator
+    struct const_iterator : std::iterator<std::forward_iterator_tag, ECPropertyP>
         {
         private:
             friend struct ECPropertyIterable;
@@ -867,7 +867,7 @@ public:
     //=======================================================================================
     // @bsistruct
     //=======================================================================================
-    struct const_iterator
+    struct const_iterator : std::iterator<std::forward_iterator_tag, ECClassP>
     {    
     private:                
         friend struct ECClassContainer;                   
@@ -1157,7 +1157,7 @@ public:
     ECOBJECTS_EXPORT SchemaSerializationStatus  WriteXmlToStream (IStreamP ecSchemaXmlStream);
     
     
-    //! Return full schema name in format Name.MM.mm where Name is the schema name, MM is major version and mm is minor version.
+    //! Return full schema name in format GetName().MM.mm where Name is the schema name, MM is major version and mm is minor version.
     ECOBJECTS_EXPORT WString               GetFullSchemaName () const;
 
     // ************************************************************************************************************************
@@ -1196,7 +1196,7 @@ public:
     //! @param[out] schemaName      The schema name without version number qualifiers
     //! @param[out] versionMajor    The major version number
     //! @param[out] versionMinor    The minor version number
-    //! @param[in]  fullName        A string containing the schema name and major and minor versions (Name.MM.NN)
+    //! @param[in]  fullName        A string containing the schema name and major and minor versions (GetName().MM.NN)
     //! @return A status code indicating whether the string was successfully parsed
     ECOBJECTS_EXPORT static ECObjectsStatus ParseSchemaFullName (WString& schemaName, UInt32& versionMajor, UInt32& versionMinor, WCharCP fullName);
 
@@ -1204,7 +1204,7 @@ public:
     //! @param[out] schemaName      The schema name without version number qualifiers
     //! @param[out] versionMajor    The major version number
     //! @param[out] versionMinor    The minor version number
-    //! @param[in]  fullName        A string containing the schema name and major and minor versions (Name.MM.NN)
+    //! @param[in]  fullName        A string containing the schema name and major and minor versions (GetName().MM.NN)
     //! @return A status code indicating whether the string was successfully parsed
     ECOBJECTS_EXPORT static ECObjectsStatus ParseSchemaFullName (WString& schemaName, UInt32& versionMajor, UInt32& versionMinor, WStringCR fullName);
 
