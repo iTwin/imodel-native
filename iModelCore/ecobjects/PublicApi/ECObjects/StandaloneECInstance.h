@@ -17,6 +17,8 @@ BEGIN_BENTLEY_EC_NAMESPACE
 #define STANDALONEENABLER_EnablerID         0xEC5E
 typedef RefCountedPtr<StandaloneECEnabler>  StandaloneECEnablerPtr;
 typedef RefCountedPtr<StandaloneECInstance> StandaloneECInstancePtr;
+typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
+
 typedef int StructValueIdentifier;
 
 struct StructArrayEntry
@@ -135,6 +137,25 @@ public:
     //! @param[in]  instance    The instance to be duplicated.
     //! @return     The in-memory duplicated instance.
     ECOBJECTS_EXPORT static StandaloneECInstancePtr Duplicate(IECInstanceCR instance);
+    };
+
+//=======================================================================================
+//! IECWipRelationshipInstance is used to set the name and order properties for an 
+//! ECRelationship.
+//=======================================================================================
+struct IECWipRelationshipInstance : StandaloneECInstance
+    {
+    protected:
+        ECOBJECTS_EXPORT IECWipRelationshipInstance (StandaloneECEnablerCR enabler) : StandaloneECInstance (enabler, 0){}
+
+        ECOBJECTS_EXPORT virtual BentleyStatus  _SetName (WCharCP name) = 0;
+        ECOBJECTS_EXPORT virtual BentleyStatus  _SetSourceOrderId (Int64 sourceOrderId) = 0;
+        ECOBJECTS_EXPORT virtual BentleyStatus  _SetTargetOrderId (Int64 targetOrderId) = 0;
+
+    public:
+        ECOBJECTS_EXPORT BentleyStatus  SetName (WCharCP name);
+        ECOBJECTS_EXPORT BentleyStatus  SetSourceOrderId (Int64 sourceOrderId);
+        ECOBJECTS_EXPORT BentleyStatus  SetTargetOrderId (Int64 targetOrderId);
     };
 
 //=======================================================================================

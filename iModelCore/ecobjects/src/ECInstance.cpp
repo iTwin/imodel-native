@@ -1527,13 +1527,8 @@ InstanceDeserializationStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr&
     *ecClass = foundClass;
 
     // create a StandAloneECInstance instance of the class
-#define THIS_WORKS
-#ifdef THIS_WORKS
     ClassLayoutP                classLayout         = ClassLayout::BuildFromClass (*foundClass, 0, 0);
     StandaloneECEnablerPtr      standaloneEnabler   = StandaloneECEnabler::CreateEnabler (*foundClass, *classLayout, m_context.GetStandaloneEnablerLocator(), true);
-#else
-    StandaloneECEnablerPtr      standaloneEnabler   = m_context.GetStandaloneEnablerLocator().ObtainStandaloneInstanceEnabler (foundClass->Schema.Name.c_str(), foundClass->Name.c_str());
-#endif
 
     // create the instance.
     ecInstance                                      = standaloneEnabler->CreateInstance().get();
@@ -3178,14 +3173,5 @@ BentleyStatus IECWipRelationshipInstance::SetTargetOrderId (Int64 targetOrderId)
     {
     return _SetTargetOrderId (targetOrderId);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  04/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECEnablerP       IECWipRelationshipInstance::GetECEnablerP ()
-    {
-    return _GetECEnablerP();
-    }
-
 
 END_BENTLEY_EC_NAMESPACE
