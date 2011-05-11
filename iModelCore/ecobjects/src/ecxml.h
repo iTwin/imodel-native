@@ -9,10 +9,6 @@
 
 #include <ECObjects\ECObjects.h>
 
-#ifdef WIP_NONPORT // *** Why don't I get this from ECObjects.h????
-#endif
-    #define MSXML2_IXMLDOMDocument2 void *
-
 #include <string>
 
 #define ECXML_URI_2_0 L"http://www.bentley.com/schemas/Bentley.ECXML.2.0"
@@ -165,7 +161,7 @@ public:
     static WStringCR DirectionToString (ECRelatedInstanceDirection direction);
     static ECObjectsStatus ParseDirectionString (ECRelatedInstanceDirection& direction, WStringCR directionString);
     static ECObjectsStatus ParseCardinalityString (UInt32& lowerLimit, UInt32& upperLimit, WStringCR cardinalityString);
-    static void FormatXml(MSXML2_IXMLDOMDocument2* pXmlDoc);
+    static void FormatXml(MSXML2::IXMLDOMDocument2* pXmlDoc);
 };
 
 END_BENTLEY_EC_NAMESPACE

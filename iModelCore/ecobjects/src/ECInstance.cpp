@@ -1871,7 +1871,7 @@ InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayPropert
     UInt32      index = 0;
 
     // we have to find out what type the array is.
-    ArrayKind   arrayKind = arrayProperty->Kind;
+    ArrayKind   arrayKind = arrayProperty->GetKind();
     if (ARRAYKIND_Primitive == arrayKind)
         {
         PrimitiveType   memberType = arrayProperty->GetPrimitiveElementType();
@@ -2344,7 +2344,7 @@ ECClassCP                       ValidateArrayStructType (WCharCP typeFound, ECCl
     if (NULL == schema)
         return NULL;
 
-    // typeFound must resolve to an ECClass that is either expectedType or a class that has expectedType as a Base Class.
+    // typeFound must resolve to an ECClass that is either expectedType or a class that has expectedType as a Base GetClass().
     ECClassCP    classFound;
     if (NULL == (classFound = schema->GetClassP (typeFound)))
         {
@@ -2582,7 +2582,7 @@ InstanceSerializationStatus     WritePrimitiveProperty (PrimitiveECPropertyR pri
         return TranslateStatus (status);
 
     InstanceSerializationStatus     ixwStatus;
-    PrimitiveType                   propertyType = primitiveProperty.Type;
+    PrimitiveType                   propertyType = primitiveProperty.GetType();
     if (INSTANCE_SERIALIZATION_STATUS_Success != (ixwStatus = WritePrimitiveValue (ecValue, propertyType)))
         return ixwStatus;
 
@@ -2692,7 +2692,7 @@ InstanceSerializationStatus     WritePrimitiveValue (ECValueCR ecValue, Primitiv
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceSerializationStatus     WriteArrayProperty (ArrayECPropertyR arrayProperty, IECInstanceCR ecInstance, WString* baseAccessString)
     {
-    ArrayKind       arrayKind = arrayProperty.Kind;
+    ArrayKind       arrayKind = arrayProperty.GetKind();
 
     WString    accessString;
     if (NULL == baseAccessString)
@@ -2739,7 +2739,7 @@ InstanceSerializationStatus     WriteArrayProperty (ArrayECPropertyR arrayProper
         }
     else if (ARRAYKIND_Struct == arrayKind)
         {
-        ECClassCP   memberClass = arrayProperty.StructElementType;
+        ECClassCP   memberClass = arrayProperty.GetStructElementType();
         for (int index=0; ; index++)
             {
             if (SUCCESS != ecInstance.GetValue (ecValue, accessString.c_str(), index))
@@ -2798,7 +2798,7 @@ InstanceSerializationStatus     WriteEmbeddedStructProperty (StructECPropertyR s
         thisAccessString = structProperty.GetName().c_str();
     thisAccessString.append (L".");
 
-    ECClassCR   structClass = structProperty.Type;
+    ECClassCR   structClass = structProperty.GetType();
     WritePropertiesOfClassOrStructArrayMember (structClass, ecInstance, &thisAccessString);
 
     // write the end element for the array as a whole.

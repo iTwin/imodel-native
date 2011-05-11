@@ -360,7 +360,7 @@ WCharCP elementName
     WRITE_XML_ATTRIBUTE(PROPERTY_NAME_ATTRIBUTE, this->GetName().c_str(), propertyPtr);
     WRITE_XML_ATTRIBUTE(TYPE_NAME_ATTRIBUTE, this->GetTypeName().c_str(), propertyPtr);
     WRITE_OPTIONAL_XML_ATTRIBUTE(DESCRIPTION_ATTRIBUTE, Description, propertyPtr);
-    if (IsDisplayLabelDefined)
+    if (GetIsDisplayLabelDefined())
         WRITE_OPTIONAL_XML_ATTRIBUTE(DISPLAY_LABEL_ATTRIBUTE, DisplayLabel, propertyPtr);
     WRITE_OPTIONAL_BOOL_XML_ATTRIBUTE(READONLY_ATTRIBUTE, IsReadOnly, propertyPtr);
     
@@ -373,7 +373,7 @@ WCharCP elementName
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaDeserializationStatus PrimitiveECProperty::_ReadXml
 (
-MSXML2_IXMLDOMNode& propertyNode, 
+MSXML2::IXMLDOMNode& propertyNode, 
 IStandaloneEnablerLocatorR  standaloneEnablerLocator
 )
     {  
@@ -390,7 +390,7 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
 
     if (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml == status)
         {
-        ECObjectsLogger::Log()->warningv (L"Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.\n", this->GetName().c_str(), this->TypeName.c_str());
+        ECObjectsLogger::Log()->warningv (L"Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.\n", this->GetName().c_str(), this->GetTypeName().c_str());
         return SCHEMA_DESERIALIZATION_STATUS_Success;
         }
 
@@ -402,7 +402,7 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaSerializationStatus PrimitiveECProperty::_WriteXml
 (
-MSXML2_IXMLDOMElement& parentNode
+MSXML2::IXMLDOMElement& parentNode
 )
     {
     return __super::_WriteXml(parentNode, EC_PROPERTY_ELEMENT);
@@ -424,11 +424,11 @@ ECPropertyCR baseProperty
     if (baseProperty.GetIsArray())
         {
         ArrayECPropertyP arrayProperty = baseProperty.GetAsArrayProperty();
-        if (ARRAYKIND_Struct == arrayProperty->Kind)
+        if (ARRAYKIND_Struct == arrayProperty->GetKind())
             return false;
         basePrimitiveType = arrayProperty->GetPrimitiveElementType();
         }
-    else if (baseProperty.IsStruct)
+    else if (baseProperty.GetIsStruct())
         return false;
     else
         {
@@ -494,7 +494,7 @@ PrimitiveType primitiveType
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaDeserializationStatus StructECProperty::_ReadXml
 (
-MSXML2_IXMLDOMNode& propertyNode, 
+MSXML2::IXMLDOMNode& propertyNode, 
 IStandaloneEnablerLocatorR  standaloneEnablerLocator
 )
     {  
@@ -530,13 +530,13 @@ ECPropertyCR baseProperty
 ) const
     {
 
-    if (baseProperty.IsPrimitive)
+    if (baseProperty.GetIsPrimitive())
         return false;
         
     if (baseProperty.GetIsArray())
         {
         ArrayECPropertyP arrayProp = baseProperty.GetAsArrayProperty();
-        if (ARRAYKIND_Struct != arrayProp->Kind)
+        if (ARRAYKIND_Struct != arrayProp->GetKind())
             return false;
         }
 
@@ -544,7 +544,7 @@ ECPropertyCR baseProperty
     if (NULL == m_structType)
         return true;
 
-    return (TypeName == baseProperty.TypeName);
+    return (GetTypeName() == baseProperty.GetTypeName());
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -556,7 +556,7 @@ WString StructECProperty::_GetTypeName
     {
     if (!EXPECTED_CONDITION (NULL != m_structType))
         return EMPTY_STRING;
-    return ECClass::GetQualifiedClassName (this->Class.GetSchema(), *m_structType);
+    return ECClass::GetQualifiedClassName (this->GetClass().GetSchema(), *m_structType);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -579,7 +579,7 @@ ECPropertyCR ecProperty
         return status;
         }
     
-    ECSchemaP resolvedSchema = ecProperty.Class.GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
+    ECSchemaP resolvedSchema = ecProperty.GetClass().GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
     if (NULL == resolvedSchema)
         {
         ECObjectsLogger::Log()->warningv (L"Can not resolve the type name '%s' as a struct type because the namespacePrefix '%s' can not be resolved to the primary or a referenced schema.\n", 
@@ -636,11 +636,11 @@ ECObjectsStatus StructECProperty::SetType
 ECClassCR structType
 )
     {            
-    PRECONDITION (structType.IsStruct, ECOBJECTS_STATUS_PreconditionViolated);
+    PRECONDITION (structType.GetIsStruct(), ECOBJECTS_STATUS_PreconditionViolated);
 
-    if (&(structType.GetSchema()) != &(this->Class.GetSchema()))
+    if (&(structType.GetSchema()) != &(this->GetClass().GetSchema()))
         {
-        if (!ECSchema::IsSchemaReferenced(this->Class.GetSchema(), structType.GetSchema()))
+        if (!ECSchema::IsSchemaReferenced(this->GetClass().GetSchema(), structType.GetSchema()))
             return ECOBJECTS_STATUS_SchemaNotFound;
         }
     
@@ -653,7 +653,7 @@ ECClassCR structType
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaDeserializationStatus ArrayECProperty::_ReadXml
 (
-MSXML2_IXMLDOMNode& propertyNode, 
+MSXML2::IXMLDOMNode& propertyNode, 
 IStandaloneEnablerLocatorR  standaloneEnablerLocator
 )
     {  
@@ -675,7 +675,7 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
 
     if (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml == setterStatus)
         {
-        ECObjectsLogger::Log()->warningv (L"Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.\n", this->GetName().c_str(), this->TypeName.c_str());
+        ECObjectsLogger::Log()->warningv (L"Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.\n", this->GetName().c_str(), this->GetTypeName().c_str());
         return SCHEMA_DESERIALIZATION_STATUS_Success;
         }
 
@@ -733,7 +733,7 @@ bool ArrayECProperty::_CanOverride
 ECPropertyCR baseProperty
 ) const
     {
-    return (TypeName == EMPTY_STRING) || (TypeName == baseProperty.TypeName);
+    return (GetTypeName() == EMPTY_STRING) || (GetTypeName() == baseProperty.GetTypeName());
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -743,12 +743,12 @@ WString ArrayECProperty::_GetTypeName
 (
 ) const
     {    
-    switch (Kind)
+    switch (GetKind())
         {
         case ARRAYKIND_Primitive:
             return ECXml::GetPrimitiveTypeName (m_primitiveType);
         case ARRAYKIND_Struct:
-            return ECClass::GetQualifiedClassName (this->Class.GetSchema(), *m_structType);
+            return ECClass::GetQualifiedClassName (this->GetClass().GetSchema(), *m_structType);
         default:
             return EMPTY_STRING;
         }
@@ -833,9 +833,9 @@ ECClassCP structType
     PRECONDITION (NULL != structType, ECOBJECTS_STATUS_PreconditionViolated);
     PRECONDITION (structType->GetIsStruct(), ECOBJECTS_STATUS_PreconditionViolated);
 
-    if (&(structType->GetSchema()) != &(this->Class.GetSchema()))
+    if (&(structType->GetSchema()) != &(this->GetClass().GetSchema()))
         {
-        if (!ECSchema::IsSchemaReferenced(this->Class.GetSchema(), structType->GetSchema()))
+        if (!ECSchema::IsSchemaReferenced(this->GetClass().GetSchema(), structType->GetSchema()))
             return ECOBJECTS_STATUS_SchemaNotFound;
         }
 

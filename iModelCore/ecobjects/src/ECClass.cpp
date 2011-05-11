@@ -871,7 +871,7 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
     READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (IS_DOMAINCLASS_ATTRIBUTE,      this, IsDomainClass)
 
     // when isDomainClass is not specified in the ECSchemaXML and isCustomAttributeClass is specified and set to true, we will default to a non-domain class
-    if ((NULL == attributePtr) && (this->IsCustomAttributeClass))
+    if ((NULL == attributePtr) && (this->GetIsCustomAttributeClass()))
         this->SetIsDomainClass (false);
 
     return SCHEMA_DESERIALIZATION_STATUS_Success;
@@ -903,7 +903,7 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
         
-        ECSchemaP resolvedSchema = Schema.GetSchemaByNamespacePrefixP (namespacePrefix);
+        ECSchemaP resolvedSchema = GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
         if (NULL == resolvedSchema)
             {
             ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the namespace prefix '%s' that can not be resolved to a referenced schema.", 
@@ -984,7 +984,7 @@ WCharCP elementName
     
     WRITE_XML_ATTRIBUTE(TYPE_NAME_ATTRIBUTE, this->GetName().c_str(), classPtr);
     WRITE_OPTIONAL_XML_ATTRIBUTE(DESCRIPTION_ATTRIBUTE, Description, classPtr);
-    if (IsDisplayLabelDefined)
+    if (GetIsDisplayLabelDefined())
         WRITE_OPTIONAL_XML_ATTRIBUTE(DISPLAY_LABEL_ATTRIBUTE, DisplayLabel, classPtr);
     WRITE_OPTIONAL_BOOL_XML_ATTRIBUTE(IS_STRUCT_ATTRIBUTE, IsStruct, classPtr);
     WRITE_BOOL_XML_ATTRIBUTE(IS_DOMAINCLASS_ATTRIBUTE, IsDomainClass, classPtr);
@@ -993,7 +993,7 @@ WCharCP elementName
     FOR_EACH (const ECClassP& baseClass, m_baseClasses)
         {
         MSXML2::IXMLDOMElementPtr basePtr = parentNode.ownerDocument->createNode(NODE_ELEMENT, EC_BASE_CLASS_ELEMENT, ECXML_URI_2_0);
-        basePtr->text = (ECClass::GetQualifiedClassName(Schema, *baseClass)).c_str();
+        basePtr->text = (ECClass::GetQualifiedClassName(GetSchema(), *baseClass)).c_str();
         
         APPEND_CHILD_TO_PARENT(basePtr, classPtr);
         }
@@ -1635,7 +1635,7 @@ ECObjectsStatus ECRelationshipConstraint::SetCardinality
 RelationshipCardinalityCR cardinality
 )
     {
-    m_cardinality = new RelationshipCardinality(cardinality.LowerLimit, cardinality.UpperLimit);
+    m_cardinality = new RelationshipCardinality(cardinality.GetLowerLimit(), cardinality.GetUpperLimit());
     return ECOBJECTS_STATUS_Success;
     }
     
@@ -1683,8 +1683,8 @@ WString const ECRelationshipConstraint::GetRoleLabel
         return m_roleLabel;
         
     if (&(m_relClass->GetTarget()) == this)
-        return m_relClass->DisplayLabel + L" (Reversed)";
-    return m_relClass->DisplayLabel;
+        return m_relClass->GetDisplayLabel() + L" (Reversed)";
+    return m_relClass->GetDisplayLabel();
     }
     
 /*---------------------------------------------------------------------------------**//**

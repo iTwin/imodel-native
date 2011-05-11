@@ -50,7 +50,7 @@
     #define MSXML2_IXMLDOMElement   void *
 /*__PUBLISH_SECTION_END__*/
 #else
-    #define MSXML2_IXMLDOMNode      MSXML2_IXMLDOMNode
+    #define MSXML2_IXMLDOMNode      MSXML2::IXMLDOMNode
     #define MSXML2_IXMLDOMNodePtr   MSXML2::IXMLDOMNodePtr
     #define MSXML2_IXMLDOMDocument2 MSXML2::IXMLDOMDocument2
     #define MSXML2_IXMLDOMElement   MSXML2::IXMLDOMElement

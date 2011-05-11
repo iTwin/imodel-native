@@ -200,7 +200,7 @@ IECInstanceR customAttributeInstance
 )
     {
     ECClassCR classDefinition = customAttributeInstance.GetClass();
-    if (!classDefinition.IsCustomAttributeClass)
+    if (!classDefinition.GetIsCustomAttributeClass())
         {
         assert (false);
         return ECOBJECTS_STATUS_NotCustomAttributeClass;
@@ -281,7 +281,7 @@ ECClassCR classDefinition
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceDeserializationStatus IECCustomAttributeContainer::ReadCustomAttributes
 (
-MSXML2_IXMLDOMNode&       containerNode,
+MSXML2::IXMLDOMNode&       containerNode,
 ECSchemaCR                 schema,
 IStandaloneEnablerLocatorR standaloneEnablerLocator
 )
@@ -316,7 +316,7 @@ IStandaloneEnablerLocatorR standaloneEnablerLocator
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaSerializationStatus IECCustomAttributeContainer::WriteCustomAttributes
 (
-MSXML2_IXMLDOMNode& propertyNode
+MSXML2::IXMLDOMNode& propertyNode
 ) const
     {
     SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
@@ -364,8 +364,8 @@ MSXML2_IXMLDOMNode& propertyNode
 
 SchemaSerializationStatus IECCustomAttributeContainer::AddCustomAttributeProperties
 (
-MSXML2_IXMLDOMNode& oldNode, 
-MSXML2_IXMLDOMNode& newNode
+MSXML2::IXMLDOMNode& oldNode, 
+MSXML2::IXMLDOMNode& newNode
 ) const
     {
     if (!oldNode.hasChildNodes())

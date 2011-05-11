@@ -242,13 +242,13 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
 public:    
-    ECOBJECTS_EXPORT ECClassCR GetClass() const;   
+    ECOBJECTS_EXPORT ECClassCR          GetClass() const;   
     // ECClass implementation will index property by name so publicly name can not be reset
-    ECOBJECTS_EXPORT WStringCR GetName() const;        
-    ECOBJECTS_EXPORT bool GetIsDisplayLabelDefined() const;    
-    ECOBJECTS_EXPORT bool GetIsStruct() const;    
-    ECOBJECTS_EXPORT bool GetIsArray() const;    
-    ECOBJECTS_EXPORT bool GetIsPrimitive() const;    
+    ECOBJECTS_EXPORT WStringCR          GetName() const;        
+    ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;    
+    ECOBJECTS_EXPORT bool               GetIsStruct() const;    
+    ECOBJECTS_EXPORT bool               GetIsArray() const;    
+    ECOBJECTS_EXPORT bool               GetIsPrimitive() const;    
 
     //! The ECXML typename for the property.  
     //! The TypeName for struct properties will be the ECClass name of the struct.  It may be qualified with a namespacePrefix if 
@@ -256,24 +256,24 @@ public:
     //! The TypeName for array properties will be the type of the elements the array contains.
     //! This method returns a wstring by value because it may be a computed string.  For instance struct properties may return a qualified typename with a namespace
     //! prefix relative to the containing schema.
-    ECOBJECTS_EXPORT ECObjectsStatus            SetTypeName(WString value);
-    ECOBJECTS_EXPORT WString                    GetTypeName() const;        
-    ECOBJECTS_EXPORT ECObjectsStatus            SetDescription(WStringCR value);
-    ECOBJECTS_EXPORT WStringCR                  GetDescription() const;
-    ECOBJECTS_EXPORT ECObjectsStatus            SetDisplayLabel(WStringCR value);
-    ECOBJECTS_EXPORT WStringCR                  GetDisplayLabel() const;    
-    ECOBJECTS_EXPORT ECObjectsStatus            SetIsReadOnly(bool value);
-    ECOBJECTS_EXPORT bool                       GetIsReadOnly() const;
-    ECOBJECTS_EXPORT ECObjectsStatus            SetBaseProperty(ECPropertyCP value);
-    ECOBJECTS_EXPORT ECPropertyCP               GetBaseProperty() const;    
+    ECOBJECTS_EXPORT ECObjectsStatus    SetTypeName(WString value);
+    ECOBJECTS_EXPORT WString            GetTypeName() const;        
+    ECOBJECTS_EXPORT ECObjectsStatus    SetDescription(WStringCR value);
+    ECOBJECTS_EXPORT WStringCR          GetDescription() const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel(WStringCR value);
+    ECOBJECTS_EXPORT WStringCR          GetDisplayLabel() const;    
+    ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly(bool value);
+    ECOBJECTS_EXPORT bool               GetIsReadOnly() const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetBaseProperty(ECPropertyCP value);
+    ECOBJECTS_EXPORT ECPropertyCP       GetBaseProperty() const;    
 
-    ECOBJECTS_EXPORT ECObjectsStatus            SetIsReadOnly (WCharCP isReadOnly);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly (WCharCP isReadOnly);
 
     // NEEDSWORK, don't necessarily like this pattern but it will suffice for now.  Necessary since you can't dynamic_cast when using the published headers.  How
     // do other similiar classes deal with this.
-    ECOBJECTS_EXPORT PrimitiveECPropertyP       GetAsPrimitiveProperty () const;    // FUSION_WIP: this removes const!
-    ECOBJECTS_EXPORT ArrayECPropertyP           GetAsArrayProperty () const;        //  "
-    ECOBJECTS_EXPORT StructECPropertyP          GetAsStructProperty () const;       //  "
+    ECOBJECTS_EXPORT PrimitiveECPropertyP GetAsPrimitiveProperty () const;    // FUSION_WIP: this removes const!
+    ECOBJECTS_EXPORT ArrayECPropertyP     GetAsArrayProperty () const;        //  "
+    ECOBJECTS_EXPORT StructECPropertyP    GetAsStructProperty () const;       //  "
 };
 
 

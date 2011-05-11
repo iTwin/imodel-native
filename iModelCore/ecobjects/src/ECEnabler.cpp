@@ -102,7 +102,7 @@ ECEnabler::PropertyProcessingResult ECEnabler::_ProcessPrimitiveProperties (bset
 /*<==*/             return PROPERTY_PROCESSING_RESULT_Hit;
                 }
             }
-        else if (v.IsStruct ())
+        else if (v.GetIsStruct() ())
             {
             if (ProcessStructProperty (failedClasses, noCandidateInAnyStruct, v, primitiveType, proc, opts))
 /*<==*/         return PROPERTY_PROCESSING_RESULT_Hit;

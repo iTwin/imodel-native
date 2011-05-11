@@ -757,7 +757,7 @@ ECSchemaR       refSchema
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaDeserializationStatus ECSchema::ReadClassStubsFromXml
 (
-MSXML2_IXMLDOMNode&                schemaNode,
+MSXML2::IXMLDOMNode&                schemaNode,
 ClassDeserializationVector&         classes, 
 ECSchemaDeserializationContextR     schemaContext
 )
@@ -848,7 +848,7 @@ ECSchemaDeserializationContextR     schemaContext
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaDeserializationStatus ECSchema::ReadSchemaReferencesFromXml
 (
-MSXML2_IXMLDOMNode&            schemaNode, 
+MSXML2::IXMLDOMNode&            schemaNode, 
 ECSchemaDeserializationContextR schemaContext
 )
     {
@@ -971,7 +971,7 @@ ECSchemaDeserializationContextR schemaContext
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  11/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, WCharCP filePath)
+ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, WCharCP filePath)
     {
     wchar_t  name[256];
 
@@ -1217,7 +1217,7 @@ SchemaSerializationStatus ECSchema::WriteSchemaReferences (MSXML2::IXMLDOMElemen
     for (schemaIterator = m_refSchemaList.begin(); schemaIterator != m_refSchemaList.end(); schemaIterator++)
         {
         ECSchemaP refSchema = *schemaIterator;
-        WString prefix(refSchema->NamespacePrefix);
+        WString prefix(refSchema->GetNamespacePrefix());
         if (prefix.length() == 0)
             prefix = L"s";
             
@@ -1270,7 +1270,7 @@ SchemaSerializationStatus ECSchema::WriteSchemaReferences (MSXML2::IXMLDOMElemen
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaSerializationStatus ECSchema::WriteCustomAttributeDependencies
 (
-MSXML2_IXMLDOMElement&          parentNode,
+MSXML2::IXMLDOMElement&          parentNode,
 IECCustomAttributeContainerCR   container,
 ECSchemaSerializationContext&   context
 ) const
@@ -1387,7 +1387,7 @@ SchemaSerializationStatus ECSchema::WriteXml (MSXML2::IXMLDOMDocument2* pXmlDoc)
     WRITE_OPTIONAL_XML_ATTRIBUTE(SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE, NamespacePrefix, schemaElementPtr);
     WRITE_XML_ATTRIBUTE(SCHEMA_VERSION_ATTRIBUTE, versionString, schemaElementPtr);
     WRITE_OPTIONAL_XML_ATTRIBUTE(DESCRIPTION_ATTRIBUTE, Description, schemaElementPtr);
-    if (IsDisplayLabelDefined)
+    if (GetIsDisplayLabelDefined())
         {
         WRITE_OPTIONAL_XML_ATTRIBUTE(DISPLAY_LABEL_ATTRIBUTE, DisplayLabel, schemaElementPtr);
         }

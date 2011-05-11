@@ -251,10 +251,9 @@ const WString &cardinalityString
     return status;
     }
  
-#ifdef winNT // *** WIP_NONPORT
 void FormatXmlNode
 (
-MSXML2_IXMLDOMNode& domNode,
+MSXML2::IXMLDOMNode& domNode,
 UInt32 indentLevel
 )
     {
@@ -327,6 +326,5 @@ MSXML2::IXMLDOMDocument2 *pXmlDoc
     {
     FormatXmlNode(pXmlDoc->documentElement, 0);
     }
-#endif
 
 END_BENTLEY_EC_NAMESPACE

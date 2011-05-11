@@ -33,7 +33,7 @@ ECSchemaP   schema
     EXPECT_STREQ (L"Widgets", schema->GetName().c_str());
     EXPECT_STREQ (L"wid", schema->NamespacePrefix.c_str());
     EXPECT_STREQ (L"Widgets Display Label", schema->DisplayLabel.c_str());
-    EXPECT_TRUE (schema->IsDisplayLabelDefined);
+    EXPECT_TRUE (schema->GetIsDisplayLabelDefined();
     EXPECT_STREQ (L"Widgets Description", schema->Description.c_str());
     EXPECT_EQ (9, schema->GetVersionMajor());
     EXPECT_EQ (6, schema->GetVersionMinor());        
@@ -50,21 +50,21 @@ ECSchemaP   schema
     ASSERT_TRUE (pClass);
     EXPECT_STREQ (L"ecProject", pClass->GetName().c_str());    
     EXPECT_STREQ (L"Project", pClass->DisplayLabel.c_str());
-    EXPECT_TRUE (pClass->IsDisplayLabelDefined);
+    EXPECT_TRUE (pClass->GetIsDisplayLabelDefined();
     EXPECT_STREQ (L"Project Class", pClass->Description.c_str());
     EXPECT_FALSE (pClass->GetIsStruct());
-    EXPECT_FALSE (pClass->IsCustomAttributeClass);
-    EXPECT_TRUE (pClass->IsDomainClass);
+    EXPECT_FALSE (pClass->GetIsCustomAttributeClass();
+    EXPECT_TRUE (pClass->GetIsDomainClass();
     EXPECT_FALSE (pClass->HasBaseClasses());
     ECPropertyP pProperty = pClass->GetPropertyP (L"Name");
     EXPECT_TRUE (pProperty);
     EXPECT_STREQ (L"Name", pProperty->GetName().c_str());
-    EXPECT_TRUE (pProperty->IsPrimitive);
+    EXPECT_TRUE (pProperty->GetIsPrimitive();
     EXPECT_FALSE (pProperty->GetIsStruct());
     EXPECT_FALSE (pProperty->GetIsArray());
-    EXPECT_STREQ (L"string", pProperty->TypeName.c_str());
+    EXPECT_STREQ (L"string", pProperty->GetTypeName().c_str());
     EXPECT_TRUE (PRIMITIVETYPE_String == pProperty->GetAsPrimitiveProperty()->GetType());
-    EXPECT_TRUE (pProperty->IsDisplayLabelDefined);
+    EXPECT_TRUE (pProperty->GetIsDisplayLabelDefined();
     EXPECT_STREQ (L"Project Name", pProperty->DisplayLabel.c_str());
     EXPECT_STREQ (L"", pProperty->Description.c_str());
     EXPECT_EQ (pClass, &pProperty->Class);
@@ -77,47 +77,47 @@ ECSchemaP   schema
     ASSERT_TRUE (customAttribClass);
     EXPECT_STREQ (L"AccessCustomAttributes", customAttribClass->GetName().c_str());    
     EXPECT_STREQ (L"AccessCustomAttributes", customAttribClass->DisplayLabel.c_str());
-    EXPECT_FALSE (customAttribClass->IsDisplayLabelDefined);
+    EXPECT_FALSE (customAttribClass->GetIsDisplayLabelDefined();
     EXPECT_STREQ (L"", customAttribClass->Description.c_str());
     EXPECT_FALSE (customAttribClass->GetIsStruct());
-    EXPECT_TRUE (customAttribClass->IsCustomAttributeClass);
-    EXPECT_FALSE (customAttribClass->IsDomainClass);
+    EXPECT_TRUE (customAttribClass->GetIsCustomAttributeClass();
+    EXPECT_FALSE (customAttribClass->GetIsDomainClass();
     EXPECT_FALSE (customAttribClass->HasBaseClasses());
 
     pClass = schema->GetClassP(L"Struct1");
     ASSERT_TRUE (pClass);
     EXPECT_STREQ (L"Struct1", pClass->GetName().c_str());    
     EXPECT_STREQ (L"Struct1", pClass->DisplayLabel.c_str());
-    EXPECT_FALSE (pClass->IsDisplayLabelDefined);
+    EXPECT_FALSE (pClass->GetIsDisplayLabelDefined();
     EXPECT_STREQ (L"", pClass->Description.c_str());
     EXPECT_TRUE (pClass->GetIsStruct());
-    EXPECT_FALSE (pClass->IsCustomAttributeClass);
-    EXPECT_FALSE (pClass->IsDomainClass);
+    EXPECT_FALSE (pClass->GetIsCustomAttributeClass();
+    EXPECT_FALSE (pClass->GetIsDomainClass();
     EXPECT_FALSE (pClass->HasBaseClasses());
 
     pClass = schema->GetClassP(L"Struct2");
     ASSERT_TRUE (pClass);
     EXPECT_STREQ (L"Struct2", pClass->GetName().c_str());    
     EXPECT_STREQ (L"Struct2", pClass->DisplayLabel.c_str());
-    EXPECT_FALSE (pClass->IsDisplayLabelDefined);
+    EXPECT_FALSE (pClass->GetIsDisplayLabelDefined();
     EXPECT_STREQ (L"", pClass->Description.c_str());
     EXPECT_TRUE (pClass->GetIsStruct());
-    EXPECT_FALSE (pClass->IsCustomAttributeClass);
-    EXPECT_TRUE (pClass->IsDomainClass);
+    EXPECT_FALSE (pClass->GetIsCustomAttributeClass();
+    EXPECT_TRUE (pClass->GetIsDomainClass();
     EXPECT_FALSE (pClass->HasBaseClasses());
     pProperty = pClass->GetPropertyP (L"NestedArray");
     EXPECT_TRUE (pProperty);
     EXPECT_STREQ (L"NestedArray", pProperty->GetName().c_str());
-    EXPECT_FALSE (pProperty->IsPrimitive);
+    EXPECT_FALSE (pProperty->GetIsPrimitive();
     EXPECT_FALSE (pProperty->GetIsStruct());
     EXPECT_TRUE (pProperty->GetIsArray());
-    EXPECT_STREQ (L"Struct1", pProperty->TypeName.c_str());
+    EXPECT_STREQ (L"Struct1", pProperty->GetTypeName().c_str());
     ArrayECPropertyP arrayProperty = pProperty->GetAsArrayProperty();
-    EXPECT_TRUE (ARRAYKIND_Struct == arrayProperty->Kind);
+    EXPECT_TRUE (ARRAYKIND_Struct == arrayProperty->GetKind());
     EXPECT_EQ (schema->GetClassP(L"Struct1"), arrayProperty->GetStructElementType());
     EXPECT_EQ (0, arrayProperty->MinOccurs);
     EXPECT_EQ (UINT_MAX, arrayProperty->MaxOccurs);    
-    EXPECT_FALSE (pProperty->IsDisplayLabelDefined);
+    EXPECT_FALSE (pProperty->GetIsDisplayLabelDefined();
     EXPECT_STREQ (L"NestedArray", pProperty->DisplayLabel.c_str());
     EXPECT_STREQ (L"", pProperty->Description.c_str());
     EXPECT_EQ (pClass, &pProperty->Class);
@@ -129,13 +129,13 @@ ECSchemaP   schema
     pProperty = pClass->GetPropertyP (L"EmbeddedStruct");
     EXPECT_TRUE (pProperty);
     EXPECT_STREQ (L"EmbeddedStruct", pProperty->GetName().c_str());
-    EXPECT_FALSE (pProperty->IsPrimitive);
+    EXPECT_FALSE (pProperty->GetIsPrimitive();
     EXPECT_TRUE (pProperty->GetIsStruct());
     EXPECT_FALSE (pProperty->GetIsArray());
-    EXPECT_STREQ (L"Struct1", pProperty->TypeName.c_str());
+    EXPECT_STREQ (L"Struct1", pProperty->GetTypeName().c_str());
     StructECPropertyP structProperty = pProperty->GetAsStructProperty();    
     EXPECT_EQ (schema->GetClassP(L"Struct1"), &(structProperty->GetType()));
-    EXPECT_FALSE (pProperty->IsDisplayLabelDefined);
+    EXPECT_FALSE (pProperty->GetIsDisplayLabelDefined();
     EXPECT_STREQ (L"EmbeddedStruct", pProperty->DisplayLabel.c_str());
     EXPECT_STREQ (L"", pProperty->Description.c_str());
     EXPECT_EQ (pClass, &pProperty->Class);
@@ -153,7 +153,7 @@ ECSchemaP   schema
    
     FOR_EACH (ECPropertyP pProperty, pClass->Properties)
         {
-        wprintf (L"TestClass contains property: %s of type %s\n", pProperty->GetName().c_str(), pProperty->TypeName.c_str());
+        wprintf (L"TestClass contains property: %s of type %s\n", pProperty->GetName().c_str(), pProperty->GetTypeName().c_str());
         }
     
     }
@@ -472,7 +472,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenECSchemaContainsOnlyRequiredA
     EXPECT_STREQ (L"OnlyRequiredECSchemaAttributes", schema->GetName().c_str());
     EXPECT_STREQ (L"", schema->NamespacePrefix.c_str());
     EXPECT_STREQ (L"OnlyRequiredECSchemaAttributes", schema->DisplayLabel.c_str());
-    EXPECT_FALSE (schema->IsDisplayLabelDefined);
+    EXPECT_FALSE (schema->GetIsDisplayLabelDefined();
     EXPECT_STREQ (L"", schema->Description.c_str());
     EXPECT_EQ (1, schema->GetVersionMajor());
     EXPECT_EQ (0, schema->GetVersionMinor());
@@ -481,11 +481,11 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenECSchemaContainsOnlyRequiredA
     ASSERT_TRUE (pClass);
     EXPECT_STREQ (L"OnlyRequiredECClassAttributes", pClass->GetName().c_str());    
     EXPECT_STREQ (L"OnlyRequiredECClassAttributes", pClass->DisplayLabel.c_str());
-    EXPECT_FALSE (pClass->IsDisplayLabelDefined);
+    EXPECT_FALSE (pClass->GetIsDisplayLabelDefined();
     EXPECT_STREQ (L"", pClass->Description.c_str());
     EXPECT_FALSE (pClass->GetIsStruct());
-    EXPECT_FALSE (pClass->IsCustomAttributeClass);
-    EXPECT_TRUE (pClass->IsDomainClass);
+    EXPECT_FALSE (pClass->GetIsCustomAttributeClass();
+    EXPECT_TRUE (pClass->GetIsDomainClass();
 
     CoUninitialize();
     };
@@ -532,7 +532,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromStri
     EXPECT_STREQ (L"Widgets", schema->GetName().c_str());
     EXPECT_STREQ (L"wid", schema->NamespacePrefix.c_str());
     EXPECT_STREQ (L"Widgets Display Label", schema->DisplayLabel.c_str());
-    EXPECT_TRUE (schema->IsDisplayLabelDefined);
+    EXPECT_TRUE (schema->GetIsDisplayLabelDefined();
     EXPECT_STREQ (L"Widgets Description", schema->Description.c_str());
     EXPECT_EQ (9, schema->GetVersionMajor());
     EXPECT_EQ (6, schema->GetVersionMinor());        
@@ -549,21 +549,21 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromStri
     ASSERT_TRUE (pClass);
     EXPECT_STREQ (L"ecProject", pClass->GetName().c_str());    
     EXPECT_STREQ (L"Project", pClass->DisplayLabel.c_str());
-    EXPECT_TRUE (pClass->IsDisplayLabelDefined);
+    EXPECT_TRUE (pClass->GetIsDisplayLabelDefined();
     EXPECT_STREQ (L"Project ECClass", pClass->Description.c_str());
     EXPECT_FALSE (pClass->GetIsStruct());
-    EXPECT_FALSE (pClass->IsCustomAttributeClass);
-    EXPECT_TRUE (pClass->IsDomainClass);
+    EXPECT_FALSE (pClass->GetIsCustomAttributeClass();
+    EXPECT_TRUE (pClass->GetIsDomainClass();
     EXPECT_FALSE (pClass->HasBaseClasses());
     ECPropertyP pProperty = pClass->GetPropertyP (L"Name");
     EXPECT_TRUE (pProperty);
     EXPECT_STREQ (L"Name", pProperty->GetName().c_str());
-    EXPECT_TRUE (pProperty->IsPrimitive);
+    EXPECT_TRUE (pProperty->GetIsPrimitive();
     EXPECT_FALSE (pProperty->GetIsStruct());
     EXPECT_FALSE (pProperty->GetIsArray());
-    EXPECT_STREQ (L"string", pProperty->TypeName.c_str());
+    EXPECT_STREQ (L"string", pProperty->GetTypeName().c_str());
     EXPECT_TRUE (PRIMITIVETYPE_String == pProperty->GetAsPrimitiveProperty()->GetType());
-    EXPECT_TRUE (pProperty->IsDisplayLabelDefined);
+    EXPECT_TRUE (pProperty->GetIsDisplayLabelDefined();
     EXPECT_STREQ (L"Project Name", pProperty->DisplayLabel.c_str());
     EXPECT_STREQ (L"", pProperty->Description.c_str());
     EXPECT_EQ (pClass, &pProperty->Class);
@@ -640,10 +640,10 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateClassesInXml)
     ECPropertyP pProperty = projectClass->GetPropertyP (L"Name");
     EXPECT_TRUE (pProperty);
     EXPECT_STREQ (L"Name", pProperty->GetName().c_str());
-    EXPECT_TRUE (pProperty->IsPrimitive);
+    EXPECT_TRUE (pProperty->GetIsPrimitive();
     EXPECT_FALSE (pProperty->GetIsStruct());
     EXPECT_FALSE (pProperty->GetIsArray());
-    EXPECT_STREQ (L"string", pProperty->TypeName.c_str());
+    EXPECT_STREQ (L"string", pProperty->GetTypeName().c_str());
 
 
     ECSchemaP schema2;
@@ -670,18 +670,18 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateClassesInXml)
     pProperty = projectClass->GetPropertyP (L"Name");
     EXPECT_TRUE (pProperty);
     EXPECT_STREQ (L"Name", pProperty->GetName().c_str());
-    EXPECT_TRUE (pProperty->IsPrimitive);
+    EXPECT_TRUE (pProperty->GetIsPrimitive();
     EXPECT_FALSE (pProperty->GetIsStruct());
     EXPECT_FALSE (pProperty->GetIsArray());
-    EXPECT_STREQ (L"string", pProperty->TypeName.c_str());
+    EXPECT_STREQ (L"string", pProperty->GetTypeName().c_str());
 
     pProperty = projectClass->GetPropertyP (L"Author");
     EXPECT_TRUE (pProperty);
     EXPECT_STREQ (L"Author", pProperty->GetName().c_str());
-    EXPECT_TRUE (pProperty->IsPrimitive);
+    EXPECT_TRUE (pProperty->GetIsPrimitive();
     EXPECT_FALSE (pProperty->GetIsStruct());
     EXPECT_FALSE (pProperty->GetIsArray());
-    EXPECT_STREQ (L"string", pProperty->TypeName.c_str());
+    EXPECT_STREQ (L"string", pProperty->GetTypeName().c_str());
     CoUninitialize();
     }
 
@@ -945,7 +945,7 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     testSchema->Description = L"Schema for testing programmatic construction";
     testSchema->DisplayLabel = L"Test Schema";
     
-    EXPECT_TRUE(testSchema->IsDisplayLabelDefined);
+    EXPECT_TRUE(testSchema->GetIsDisplayLabelDefined();
     EXPECT_EQ(1, testSchema->GetVersionMajor());
     EXPECT_EQ(2, testSchema->GetVersionMinor());
     EXPECT_EQ(0, wcscmp(testSchema->GetName().c_str(), L"TestSchema"));
@@ -975,14 +975,14 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     EXPECT_EQ(0, wcscmp(class1->Description.c_str(), L"Class for testing purposes"));
     EXPECT_EQ(0, wcscmp(class1->DisplayLabel.c_str(), L"Test Class"));
     EXPECT_FALSE(class1->GetIsStruct());
-    EXPECT_FALSE(class1->IsCustomAttributeClass);
-    EXPECT_TRUE(class1->IsDomainClass);
+    EXPECT_FALSE(class1->GetIsCustomAttributeClass();
+    EXPECT_TRUE(class1->GetIsDomainClass();
     EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->AddBaseClass(*baseClass));
     EXPECT_TRUE(class1->HasBaseClasses());
     
     structClass->GetIsStruct() = true;
     EXPECT_TRUE(structClass->GetIsStruct());
-    EXPECT_TRUE(structClass->IsDomainClass);
+    EXPECT_TRUE(structClass->GetIsDomainClass();
     
     PrimitiveECPropertyP stringProp;
     StructECPropertyP structProp;
@@ -1000,28 +1000,28 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     primitiveArrayProp->MinOccurs = 1;
     primitiveArrayProp->MaxOccurs = 10;
     
-    EXPECT_TRUE(ARRAYKIND_Struct == nestedArrayProp->Kind);
-    EXPECT_TRUE(ARRAYKIND_Primitive == primitiveArrayProp->Kind);
+    EXPECT_TRUE(ARRAYKIND_Struct == nestedArrayProp->GetKind());
+    EXPECT_TRUE(ARRAYKIND_Primitive == primitiveArrayProp->GetKind());
     EXPECT_EQ(0, nestedArrayProp->MinOccurs);
     EXPECT_EQ(UINT_MAX, nestedArrayProp->MaxOccurs);
     EXPECT_EQ(1, primitiveArrayProp->MinOccurs);
     EXPECT_EQ(10, primitiveArrayProp->MaxOccurs);
     
-    EXPECT_TRUE(stringProp->IsPrimitive);
+    EXPECT_TRUE(stringProp->GetIsPrimitive();
     EXPECT_FALSE(stringProp->GetIsStruct());
     EXPECT_FALSE(stringProp->GetIsArray());
     
-    EXPECT_FALSE(structProp->IsPrimitive);
+    EXPECT_FALSE(structProp->GetIsPrimitive();
     EXPECT_TRUE(structProp->GetIsStruct());
     EXPECT_FALSE(structProp->GetIsArray());
     
-    EXPECT_FALSE(primitiveArrayProp->IsPrimitive);
+    EXPECT_FALSE(primitiveArrayProp->GetIsPrimitive();
     EXPECT_FALSE(primitiveArrayProp->GetIsStruct());
     EXPECT_TRUE(primitiveArrayProp->GetIsArray());
     
     EXPECT_FALSE(stringProp->IsReadOnly);
     
-    EXPECT_EQ(0, wcscmp(stringProp->TypeName.c_str(), L"string"));
+    EXPECT_EQ(0, wcscmp(stringProp->GetTypeName().c_str(), L"string"));
     EXPECT_TRUE(PRIMITIVETYPE_String == stringProp->GetType());
     EXPECT_EQ(0, wcscmp(structProp->GetType().GetName().c_str(), L"StructClass"));
     
@@ -1043,16 +1043,16 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     class1->CreatePrimitiveProperty(point2DProperty, L"Point2DProp");
     class1->CreatePrimitiveProperty(point3DProperty, L"Point3DProp");
     
-    EXPECT_EQ(ECOBJECTS_STATUS_ParseError, binaryProperty->TypeName = L"fake");
+    EXPECT_EQ(ECOBJECTS_STATUS_ParseError, binaryProperty->SetTypeName (L"fake"));
     
-    binaryProperty->TypeName = L"binary";
-    booleanProperty->TypeName = L"boolean";
-    dateTimeProperty->TypeName = L"dateTime";
-    doubleProperty->TypeName = L"double";
-    integerProperty->TypeName = L"int";
-    longProperty->TypeName = L"long";
-    point2DProperty->TypeName = L"point2d";
-    point3DProperty->TypeName = L"point3d";
+    binaryProperty->SetTypeName (L"binary");
+    booleanProperty->SetTypeName (L"boolean");
+    dateTimeProperty->SetTypeName (L"dateTime");
+    doubleProperty->SetTypeName (L"double");
+    integerProperty->SetTypeName (L"int");
+    longProperty->SetTypeName (L"long");
+    point2DProperty->SetTypeName (L"point2d");
+    point3DProperty->SetTypeName (L"point3d");
     
     EXPECT_TRUE(PRIMITIVETYPE_Binary == binaryProperty->GetType());
     EXPECT_TRUE(PRIMITIVETYPE_Boolean == booleanProperty->GetType());
@@ -1084,11 +1084,11 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     class1->CreateStructProperty(structProp, L"StructMember2", *structClass);
     class1->CreateArrayProperty(nestedArrayProp, L"NestedArray2", structClass);
     class1->CreateArrayProperty(primitiveArrayProp, L"PrimitiveArray2", PRIMITIVETYPE_Integer);
-    EXPECT_TRUE(ARRAYKIND_Struct == nestedArrayProp->Kind);
-    EXPECT_TRUE(ARRAYKIND_Primitive == primitiveArrayProp->Kind);
+    EXPECT_TRUE(ARRAYKIND_Struct == nestedArrayProp->GetKind());
+    EXPECT_TRUE(ARRAYKIND_Primitive == primitiveArrayProp->GetKind());
     EXPECT_EQ(0, wcscmp(structProp->GetType().GetName().c_str(), L"StructClass"));
-    EXPECT_EQ(0, wcscmp(nestedArrayProp->TypeName.c_str(), L"StructClass"));
-    EXPECT_EQ(0, wcscmp(primitiveArrayProp->TypeName.c_str(), L"int"));
+    EXPECT_EQ(0, wcscmp(nestedArrayProp->GetTypeName().c_str(), L"StructClass"));
+    EXPECT_EQ(0, wcscmp(primitiveArrayProp->GetTypeName().c_str(), L"int"));
 
     testSchema->CreateRelationshipClass(relationshipClass, L"RelationshipClass");
     EXPECT_TRUE(STRENGTHTYPE_Referencing == relationshipClass->Strength);

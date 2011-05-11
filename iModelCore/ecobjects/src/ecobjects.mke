@@ -71,11 +71,7 @@ $(o)designbycontract$(oext)        : $(baseDir)designbycontract.cpp $(ecobjectsP
 
 $(o)logger$(oext)          : $(baseDir)Logger.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-#non-portable code
-# WIP_NONPORT
-%if !defined (BUILD_USING_GCC)
-$(o)FileUtilities$(oext)   : $(baseDir)FileUtilities.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
-%endif
+$(o)FileUtilities$(oext)   : $(baseDir)nonport/FileUtilities.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)
