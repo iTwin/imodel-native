@@ -2091,7 +2091,6 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
 
     if (m_xmlReader->IsEmptyElement())
         {
-	ECObjectsLogger::Log()->warningv(L"Empty element encountered in deserialization.  Setting ECValue to NULL...");
         return INSTANCE_DESERIALIZATION_STATUS_Success;
         }
 
@@ -2108,7 +2107,6 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
             case XmlNodeType_EndElement:
                 // we have encountered the end of the class or struct without getting a value from the element.
                 // we will break here to keep the ECValue null.
-                ECObjectsLogger::Log()->warningv(L"Element encountered in deserialization with no value.  Setting ECValue to NULL...");
                 return INSTANCE_DESERIALIZATION_STATUS_Success;
 
             case XmlNodeType_Text:
@@ -2904,7 +2902,7 @@ static InstanceDeserializationStatus   ReportStatus (InstanceDeserializationStat
     if (INSTANCE_DESERIALIZATION_STATUS_Success != status)
         ECObjectsLogger::Log()->errorv (L"Failed to deserialize instance from XML string. Status %d, string %s\n", status, xmlString);
     else
-        ECObjectsLogger::Log()->infov (L"Native ECInstance of type %s deserialized from string", ecInstance.IsValid() ? ecInstance->GetClass().GetName() : L"Null");
+        ECObjectsLogger::Log()->debugv (L"Native ECInstance of type %s deserialized from string", ecInstance.IsValid() ? ecInstance->GetClass().GetName() : L"Null");
     return status;
     }
 	
