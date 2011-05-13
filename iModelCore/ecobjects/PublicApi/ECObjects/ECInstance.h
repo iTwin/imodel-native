@@ -139,8 +139,6 @@ public:
     
 //=======================================================================================    
 //! EC::IECRelationshipInstance is the native equivalent of a .NET IECRelationshipInstance.
-//! Note: This class is not RefCounted because the Legacy and ECX Relationships that 
-//! are derived from this class are also derived from IECInstance which is refcounted.
 //! @see IECInstance, ECRelationshipClass
 //=======================================================================================    
 struct IECRelationshipInstance : virtual IECInstance
