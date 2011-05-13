@@ -95,7 +95,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
 +===============+===============+===============+===============+===============+======*/
 struct StandaloneECInstance : MemoryECInstanceBase, IECInstance
     {
-friend StandaloneECEnabler;
+friend struct StandaloneECEnabler;
 private:
     WString              m_instanceId;
     StandaloneECEnablerP m_sharedWipEnabler; 

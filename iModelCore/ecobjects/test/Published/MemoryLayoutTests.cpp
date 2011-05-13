@@ -661,7 +661,7 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     SetAndVerifyString (instance, v, L"B", L"sad");
     SetAndVerifyString (instance, v, L"B", L"Very Very Happy");
     VerifyString (instance, v, L"S", L"Lucky");
-    SetAndVerifyString (instance, v, L"Manufacturer.Name", L"Charmed");
+    SetAndVerifyString (instance, v, L"Manufacturer.GetName()", L"Charmed");
     SetAndVerifyString (instance, v, L"S", L"Lucky Strike");
         
     wchar_t largeString[3300];
@@ -711,7 +711,7 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     ClassLayoutP manufClassLayout = ClassLayout::BuildFromClass (*manufacturerClass, 43, 24);
     StandaloneECEnablerPtr manufEnabler = StandaloneECEnabler::CreateEnabler (*manufacturerClass, *manufClassLayout, true);
 #endif
-    StandaloneECEnablerPtr manufEnabler =  instance.GetEnablerR().ObtainStandaloneInstanceEnabler (manufacturerClass->Schema.Name.c_str(), manufacturerClass->Name.c_str()); 
+    StandaloneECEnablerPtr manufEnabler =  instance.GetEnablerR().ObtainStandaloneInstanceEnabler (manufacturerClass->GetSchema().GetName().c_str(), manufacturerClass->GetName().c_str()); 
     ExerciseVariableCountManufacturerArray (instance, *manufEnabler, v, L"ManufacturerArray[]");
     
     // WIP_FUSION verify I can set array elements to NULL        
@@ -726,7 +726,7 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     VerifyDouble  (instance, v, L"D", doubleValue);
     VerifyInteger (instance, v, L"AA", 12);
     VerifyString  (instance, v, L"B", L"Very Very Happy");
-    VerifyString (instance, v, L"Manufacturer.Name", L"Charmed");
+    VerifyString (instance, v, L"Manufacturer.GetName()", L"Charmed");
     for (int i = 0; i < N_FINAL_STRING_PROPS_IN_FAKE_CLASS; i++)
         {
         wchar_t propertyName[66];
@@ -799,12 +799,12 @@ TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper)
     WString testString2 = L"Charmed2";
     WCharCP stringValueP = NULL;
 
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, L"ManufacturerArray[1].Name", testString.c_str()));
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetString (*instance, stringValueP, L"ManufacturerArray[1].Name"));
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, L"ManufacturerArray[1].GetName()", testString.c_str()));
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetString (*instance, stringValueP, L"ManufacturerArray[1].GetName()"));
     EXPECT_STREQ (testString.c_str(), stringValueP);
 
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, L"ManufacturerArray[0].Name", testString2.c_str()));
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetString (*instance, stringValueP, L"ManufacturerArray[0].Name"));
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, L"ManufacturerArray[0].GetName()", testString2.c_str()));
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetString (*instance, stringValueP, L"ManufacturerArray[0].GetName()"));
     EXPECT_STREQ (testString2.c_str(), stringValueP);
 
     CoUninitialize();
@@ -823,7 +823,7 @@ TEST_F(MemoryLayoutTests, ECValueEqualsMethod)
     ECClassP ecClass = schema->GetClassP (L"AllPrimitives");
     ASSERT_TRUE (ecClass);
 
-    StandaloneECEnablerPtr enabler =  schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str()); 
+    StandaloneECEnablerPtr enabler =  schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str()); 
 
     ECValue v1, v2;
     EXPECT_TRUE   (v1.Equals(v2));
@@ -923,7 +923,7 @@ TEST_F(MemoryLayoutTests, GetEnablerPropertyInformation)
     ECClassP ecClass = schema->GetClassP (L"AllPrimitives");
     ASSERT_TRUE (ecClass);
 
-    StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str()); 
+    StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str()); 
 
     const int expectedPropertyCount = 19;
 
@@ -983,7 +983,7 @@ static void     dumpPropertyValues (ECValuesCollectionR collection, bool isArray
     {
     UInt32  arrayIndex = 0;
 
-    for each (ECPropertyValuePtr propertyValue in collection)
+    FOR_EACH (ECPropertyValuePtr propertyValue, collection)
         {
         ECValueCR v = propertyValue->GetValue();
 
@@ -1021,7 +1021,7 @@ typedef bpair<WString, ECValue>  AccessStringValuePair;
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void     verifyECValueEnumeration (ECValuesCollectionR collection, bvector <AccessStringValuePair>& expectedValues, UInt32& iValue, bool isDup)
     {
-    for each (ECPropertyValuePtr propertyValue in collection)
+    FOR_EACH (ECPropertyValuePtr propertyValue, collection)
         {
         WString   foundAccessString    = propertyValue->GetValueAccessor().GetManagedAccessString(); 
         WString   expectedAccessString = expectedValues[iValue].first;
@@ -1435,7 +1435,7 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_StructArray)
     addExpectedContactInfo (L"Employees[0].Home", 610, 7654321, L"175",   L"Oak Lane",    L"Wayne", L"PA", 12348, L"jsmith@home.com", expectedValues);
     addExpectedContactInfo (L"Employees[0].Work", 610, 1234567, L"123-4", L"Main Street", L"Exton", L"PA", 12345, L"jsmith@work.com", expectedValues);
 
-    expectedValues.push_back (AccessStringValuePair (L"Employees[0].Name", ECValue (L"John Smith")));
+    expectedValues.push_back (AccessStringValuePair (L"Employees[0].GetName()", ECValue (L"John Smith")));
 
     structValue.SetStruct (arrayMemberInstance2.get());
     expectedValues.push_back (AccessStringValuePair (L"Employees[1]", structValue));
@@ -1443,7 +1443,7 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_StructArray)
     addExpectedContactInfo (L"Employees[1].Home", 555, 1122334, L"1600", L"Pennsylvania Ave", L"Washington", L"DC", 10001, L"prez@gmail.com", expectedValues);
     addExpectedContactInfo (L"Employees[1].Work", 555, 1000000, L"1600", L"Pennsylvania Ave", L"Washington", L"DC", 10001, L"president@whitehouse.gov", expectedValues);
 
-    expectedValues.push_back (AccessStringValuePair (L"Employees[1].Name", ECValue (L"Jane Doe")));
+    expectedValues.push_back (AccessStringValuePair (L"Employees[1].GetName()", ECValue (L"Jane Doe")));
 
     /*--------------------------------------------------------------------------
         Verify that the values returned from the instance match the expected ones.
@@ -1480,7 +1480,7 @@ TEST_F(MemoryLayoutTests, SimpleMergeTwoInstances)
     ECClassP primitiveClass = schema->GetClassP (L"AllPrimitives");
     ASSERT_TRUE (primitiveClass);
 
-    StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (primitiveClass->Schema.Name.c_str(), primitiveClass->Name.c_str());
+    StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (primitiveClass->GetSchema().GetName().c_str(), primitiveClass->GetName().c_str());
     
     EC::StandaloneECInstancePtr sourceInstance0 = enabler->CreateInstance();
     EC::StandaloneECInstancePtr sourceInstance1 = enabler->CreateInstance();
@@ -1522,7 +1522,7 @@ TEST_F(MemoryLayoutTests, SimpleMergeTwoInstances)
     */
     ECValuesCollectionPtr collection = ECValuesCollection::Create (*sourceInstance1);
 
-    for each (ECPropertyValuePtr propertyValue in *collection)
+    FOR_EACH (ECPropertyValuePtr propertyValue, *collection)
         {
         ECValue             localValue;
         ECValueCP           ecValue  = &propertyValue->GetValue();
@@ -1547,7 +1547,7 @@ TEST_F(MemoryLayoutTests, SimpleMergeTwoInstances)
     int valuesCounted = 0;
     ECValuesCollectionPtr targetCollection = ECValuesCollection::Create (*targetInstance);
 
-    for each (ECPropertyValuePtr propertyValue in *targetCollection)
+    FOR_EACH (ECPropertyValuePtr propertyValue, *targetCollection)
         {
         if ( ! propertyValue->GetValue().IsPrimitive())
             continue;
@@ -1576,7 +1576,7 @@ TEST_F(MemoryLayoutTests, InstantiateStandaloneInstance)
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);
 
-    StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str());
+    StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
 
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     WString instanceId = instance->GetInstanceId();
@@ -1600,7 +1600,7 @@ TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
     ECClassP ecClass = schema->GetClassP (L"EmptyClass");
     ASSERT_TRUE (ecClass);
 
-    StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str());
+    StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
 
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     WString instanceId = instance->GetInstanceId();
@@ -1625,7 +1625,7 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     ECClassP ecClass = schema->GetClassP (L"CadData");
     ASSERT_TRUE (ecClass);
     
-    StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str());
+    StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     DPoint2d   inSize = {10.5, 22.3};
@@ -1684,7 +1684,7 @@ TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);
     
-    StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str());
+    StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     WCharCP accessString = L"Property34";
@@ -1747,7 +1747,7 @@ TEST_F(MemoryLayoutTests, ExpectErrorsWhenViolatingArrayConstraints)
     ASSERT_TRUE (schema != NULL);
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);    
-    StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str());
+    StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     {
@@ -1884,7 +1884,7 @@ TEST_F (MemoryLayoutTests, TestSetGetNull)
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (ecClass);
         
-    StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str());
+    StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     ECValue v;
     
@@ -1946,7 +1946,7 @@ TEST_F (MemoryLayoutTests, ProfileSettingValues)
     ECClassP           ecClass     = schema->GetClassP (L"Pidget");
     ASSERT_TRUE (ecClass);
         
-    StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->Schema.Name.c_str(), ecClass->Name.c_str());
+    StandaloneECEnablerPtr enabler = schemaOwner->ObtainStandaloneInstanceEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     
     //UInt32 slack = 0;

@@ -149,8 +149,9 @@ static const WString ECXML_DIRECTION_BACKWARD          = L"backward";
     
 BEGIN_BENTLEY_EC_NAMESPACE
 
-struct ECXml abstract
+struct ECXml /*abstract*/
 {
+    virtual void _Abstract() = 0;
 public:
     static ECObjectsStatus ParseBooleanString(bool & booleanValue,WCharCP booleanString);
     static WStringCR GetPrimitiveTypeName (PrimitiveType primitiveType);

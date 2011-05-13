@@ -85,10 +85,10 @@ ECEnabler::PropertyProcessingResult ECEnabler::_ProcessPrimitiveProperties (bset
     bool anyCandidates = false;
     bool allTypes = (opts & PROPERTY_PROCESSING_OPTIONS_AllTypes) != 0;
 
-    for each (ECPropertyCP prop in instance.GetClass().GetProperties())
+    FOR_EACH (ECPropertyCP prop, instance.GetClass().GetProperties())
         {
         ECValue v;
-        instance.GetValue (v, prop->Name.c_str());
+        instance.GetValue (v, prop->GetName().c_str());
     
         if (v.IsNull())
             continue;
@@ -98,11 +98,11 @@ ECEnabler::PropertyProcessingResult ECEnabler::_ProcessPrimitiveProperties (bset
             if (allTypes || v.GetPrimitiveType() == primitiveType)
                 {
                 anyCandidates = true;
-                if (proc._ProcessPrimitiveProperty (instance, prop->Name.c_str(), v))
+                if (proc._ProcessPrimitiveProperty (instance, prop->GetName().c_str(), v))
 /*<==*/             return PROPERTY_PROCESSING_RESULT_Hit;
                 }
             }
-        else if (v.IsStruct ())
+        else if (v.GetIsStruct() ())
             {
             if (ProcessStructProperty (failedClasses, noCandidateInAnyStruct, v, primitiveType, proc, opts))
 /*<==*/         return PROPERTY_PROCESSING_RESULT_Hit;
@@ -119,7 +119,7 @@ ECEnabler::PropertyProcessingResult ECEnabler::_ProcessPrimitiveProperties (bset
             for (UInt32 idx = 0, count = ai.GetCount(); idx < count; ++idx)
                 {
                 ECValue vitem;
-                instance.GetValue (vitem, prop->Name.c_str(), idx);
+                instance.GetValue (vitem, prop->GetName().c_str(), idx);
                 
                 bool foundOne;
 
@@ -128,7 +128,7 @@ ECEnabler::PropertyProcessingResult ECEnabler::_ProcessPrimitiveProperties (bset
                 else
                     {
                     anyCandidates = true;
-                    foundOne = proc._ProcessPrimitiveProperty (instance, prop->Name.c_str(), vitem);
+                    foundOne = proc._ProcessPrimitiveProperty (instance, prop->GetName().c_str(), vitem);
                     }
 
                 if (foundOne)

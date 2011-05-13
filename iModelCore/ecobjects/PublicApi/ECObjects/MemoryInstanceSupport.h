@@ -46,7 +46,7 @@ enum ArrayModifierFlags : UInt32
 +===============+===============+===============+===============+===============+======*/      
 struct PropertyLayout
     {
-friend ClassLayout;    
+friend struct ClassLayout;    
 private:
     WString                m_accessString;        
     UInt32                  m_parentStructIndex;
@@ -88,7 +88,7 @@ public:
 +===============+===============+===============+===============+===============+======*/      
 struct ClassLayout
     {
-    friend MemoryInstanceSupport;
+    friend struct MemoryInstanceSupport;
 private:
     struct StringComparer {bool operator()(WCharCP s1, WCharCP s2) const   {return wcscmp (s1, s2) < 0;}};
 #ifdef USE_HASHMAP_IN_CLASSLAYOUT    
@@ -125,7 +125,7 @@ private:
     
     struct  Factory
     {
-    friend ClassLayout;
+    friend struct ClassLayout;
 
     private:
         State           m_state;
@@ -247,7 +247,7 @@ public:
 //! An internal helper used by MemoryInstanceSupport to resize (add/remove elements) array property values
 struct      ArrayResizer
     {
-    friend MemoryInstanceSupport;
+    friend struct MemoryInstanceSupport;
     
 private:
     ClassLayoutCR           m_classLayout;
@@ -304,7 +304,7 @@ private:
 struct MemoryInstanceSupport
     {
 /*__PUBLISH_SECTION_END__*/    
-    friend  ArrayResizer;
+    friend  struct ArrayResizer;
 /*__PUBLISH_SECTION_START__*/    
     
 private:    
