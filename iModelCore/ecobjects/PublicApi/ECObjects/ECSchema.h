@@ -825,7 +825,7 @@ public:
     //! Gets the constraint at the source end of the relationship
     ECOBJECTS_EXPORT ECRelationshipConstraintR  GetSource() const;
     ECOBJECTS_EXPORT bool                       GetIsExplicit() const;
-    EXPORTED_READONLY_PROPERTY (bool, IsOrdered );
+    ECOBJECTS_EXPORT bool                       GetIsOrdered () const;
 
 }; // ECRelationshipClass
 
