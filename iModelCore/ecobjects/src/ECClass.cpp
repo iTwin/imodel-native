@@ -1824,7 +1824,47 @@ ECRelationshipConstraintR ECRelationshipClass::GetTarget
     {
     return *m_target;
     }
-        
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  05/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECRelationshipClass::GetIsOrdered
+(
+) const
+    {
+    // see if the custom attribute signifying a Ordered relationship is defined
+    IECInstancePtr caInstance = GetCustomAttribute(L"SupportsOrderedRelationships");
+    if (caInstance.IsValid())
+        return true;
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipClass::GetOrderedRelationshipPropertyName (WString& propertyName, ECRelationshipEnd end) const
+    {
+    // see if the struct has a custom attribute to custom serialize itself
+    IECInstancePtr caInstance = GetCustomAttribute(L"SupportsOrderedRelationships");
+    if (caInstance.IsValid())
+        {
+        EC::ECValue value;
+        WCharCP propertyName=L"OrderIdTargetProperty";
+
+        if (end == ECRelationshipEnd_Source)
+            propertyName = L"OrderIdSourceProperty";
+
+        if (SUCCESS == caInstance->GetValue (value, propertyName))
+            {
+            propertyName = value.GetString ();
+            return ECOBJECTS_STATUS_Success;
+            }
+        }
+
+    return ECOBJECTS_STATUS_Error;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
