@@ -661,7 +661,7 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     SetAndVerifyString (instance, v, L"B", L"sad");
     SetAndVerifyString (instance, v, L"B", L"Very Very Happy");
     VerifyString (instance, v, L"S", L"Lucky");
-    SetAndVerifyString (instance, v, L"Manufacturer.GetName()", L"Charmed");
+    SetAndVerifyString (instance, v, L"Manufacturer.Name", L"Charmed");
     SetAndVerifyString (instance, v, L"S", L"Lucky Strike");
         
     wchar_t largeString[3300];
@@ -726,7 +726,7 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     VerifyDouble  (instance, v, L"D", doubleValue);
     VerifyInteger (instance, v, L"AA", 12);
     VerifyString  (instance, v, L"B", L"Very Very Happy");
-    VerifyString (instance, v, L"Manufacturer.GetName()", L"Charmed");
+    VerifyString (instance, v, L"Manufacturer.Name", L"Charmed");
     for (int i = 0; i < N_FINAL_STRING_PROPS_IN_FAKE_CLASS; i++)
         {
         wchar_t propertyName[66];
@@ -799,12 +799,12 @@ TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper)
     WString testString2 = L"Charmed2";
     WCharCP stringValueP = NULL;
 
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, L"ManufacturerArray[1].GetName()", testString.c_str()));
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetString (*instance, stringValueP, L"ManufacturerArray[1].GetName()"));
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, L"ManufacturerArray[1].Name", testString.c_str()));
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetString (*instance, stringValueP, L"ManufacturerArray[1].Name));
     EXPECT_STREQ (testString.c_str(), stringValueP);
 
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, L"ManufacturerArray[0].GetName()", testString2.c_str()));
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetString (*instance, stringValueP, L"ManufacturerArray[0].GetName()"));
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, L"ManufacturerArray[0].Name", testString2.c_str()));
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetString (*instance, stringValueP, L"ManufacturerArray[0].Name"));
     EXPECT_STREQ (testString2.c_str(), stringValueP);
 
     CoUninitialize();
@@ -1435,7 +1435,7 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_StructArray)
     addExpectedContactInfo (L"Employees[0].Home", 610, 7654321, L"175",   L"Oak Lane",    L"Wayne", L"PA", 12348, L"jsmith@home.com", expectedValues);
     addExpectedContactInfo (L"Employees[0].Work", 610, 1234567, L"123-4", L"Main Street", L"Exton", L"PA", 12345, L"jsmith@work.com", expectedValues);
 
-    expectedValues.push_back (AccessStringValuePair (L"Employees[0].GetName()", ECValue (L"John Smith")));
+    expectedValues.push_back (AccessStringValuePair (L"Employees[0].Name", ECValue (L"John Smith")));
 
     structValue.SetStruct (arrayMemberInstance2.get());
     expectedValues.push_back (AccessStringValuePair (L"Employees[1]", structValue));
@@ -1443,7 +1443,7 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_StructArray)
     addExpectedContactInfo (L"Employees[1].Home", 555, 1122334, L"1600", L"Pennsylvania Ave", L"Washington", L"DC", 10001, L"prez@gmail.com", expectedValues);
     addExpectedContactInfo (L"Employees[1].Work", 555, 1000000, L"1600", L"Pennsylvania Ave", L"Washington", L"DC", 10001, L"president@whitehouse.gov", expectedValues);
 
-    expectedValues.push_back (AccessStringValuePair (L"Employees[1].GetName()", ECValue (L"Jane Doe")));
+    expectedValues.push_back (AccessStringValuePair (L"Employees[1].Name", ECValue (L"Jane Doe")));
 
     /*--------------------------------------------------------------------------
         Verify that the values returned from the instance match the expected ones.
