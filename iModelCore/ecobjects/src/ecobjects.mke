@@ -45,33 +45,33 @@ MultiCompileDepends=$(_MakeFileSpec)
 #----------------------------------------------------------------------
 ECObjectsHeaders = $(ecobjectsPublicAPISrc)ECObjects.h $(ecobjectsPublicAPISrc)ECSchema.h $(ecobjectsPublicAPISrc)ECValue.h $(ecobjectsPublicAPISrc)ECInstance.h $(ecobjectsPublicAPISrc)ECEnabler.h $(ecobjectsPublicAPISrc)designbycontract.h $(baseDir)ecxml.h $(baseDir)Logger.h $(baseDir)FileUtilities.h
 
-$(o)ecxml.obj           : $(baseDir)ecxml.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ecxml$(oext)           : $(baseDir)ecxml.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)FileUtilities.obj   : $(baseDir)FileUtilities.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ecschema$(oext)        : $(baseDir)ecschema.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)ecschema.obj        : $(baseDir)ecschema.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ectype$(oext)          : $(baseDir)ectype.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)ectype.obj          : $(baseDir)ectype.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ecclass$(oext)         : $(baseDir)ecclass.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)ecclass.obj         : $(baseDir)ecclass.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+$(o)ecproperty$(oext)      : $(baseDir)ecproperty.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)ecproperty.obj      : $(baseDir)ecproperty.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ecinstance$(oext)      : $(baseDir)ecinstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)ecinstance.obj      : $(baseDir)ecinstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)eccustomattribute$(oext)         : $(baseDir)eccustomattribute.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)eccustomattribute.obj         : $(baseDir)eccustomattribute.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ecvalue$(oext)         : $(baseDir)ecvalue.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)ecvalue.obj         : $(baseDir)ecvalue.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ecenabler$(oext)       : $(baseDir)ecenabler.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)ecenabler.obj       : $(baseDir)ecenabler.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)MemoryInstanceSupport$(oext) : $(baseDir)MemoryInstanceSupport.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)MemoryInstanceSupport.h
 
-$(o)MemoryInstanceSupport.obj : $(baseDir)MemoryInstanceSupport.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)MemoryInstanceSupport.h
+$(o)StandaloneECInstance$(oext)    : $(baseDir)StandaloneECInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)StandaloneECInstance.h $(ecobjectsPublicAPISrc)MemoryInstanceSupport.h
 
-$(o)StandaloneECInstance.obj    : $(baseDir)StandaloneECInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)StandaloneECInstance.h $(ecobjectsPublicAPISrc)MemoryInstanceSupport.h
+$(o)designbycontract$(oext)        : $(baseDir)designbycontract.cpp $(ecobjectsPublicAPISrc)designbycontract.h ${MultiCompileDepends} 
 
-$(o)designbycontract.obj        : $(baseDir)designbycontract.cpp $(ecobjectsPublicAPISrc)designbycontract.h ${MultiCompileDepends} 
+$(o)logger$(oext)          : $(baseDir)Logger.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)logger.obj          : $(baseDir)Logger.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+$(o)FileUtilities$(oext)   : $(baseDir)nonport/FileUtilities.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)
@@ -86,13 +86,13 @@ DLM_NO_DEF                  = 1
 DLM_NAME                    = $(ECNativeObjectsDllBase)
 DLM_DEST                    = $(o)
 DLM_OBJECT_DEST             = $(o)
-DLM_OBJECT_FILES            = $(cppObjects) $(o)ECObjectsPch.obj
+DLM_OBJECT_FILES            = $(cppObjects) $(o)ECObjectsPch$(oext)
 DLM_EXPORT_OBJS             = $(cppObjects)
 DLM_EXPORT_DEST             = $(o)
 DLM_NOINITFUNC              = 1
 DLM_NOMSBUILTINS            = 1
 DLM_NOENTRY                 = 1
-LINKER__LIBRARIES           = $(BuildContext)SubParts/Libs/bentleylogging-2.0.lib xmllite.lib $(BuildContext)SubParts/Libs/bentley2.lib
+LINKER__LIBRARIES           = $(BuildContext)SubParts/Libs/bentleylogging-2.0$(libext) xmllite$(libext) $(BuildContext)SubParts/Libs/bentley2$(libext)
 DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1

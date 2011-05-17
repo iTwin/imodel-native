@@ -191,7 +191,7 @@ ClassLayout::ClassLayout(SchemaIndex schemaIndex, bool hideFromLeakDetection)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassLayout::~ClassLayout()
     {
-    for each (PropertyLayoutP layout in m_propertyLayouts)
+    FOR_EACH (PropertyLayoutP layout, m_propertyLayouts)
         delete layout;
 
     if ( ! m_hideFromLeakDetection)
@@ -209,7 +209,7 @@ ILeakDetector&  ClassLayout::Debug_GetLeakDetector() { return g_classLayoutLeakD
 WString        ClassLayout::GetShortDescription () const
     {
     wchar_t line[1024];
-    swprintf (line, _countof(line), L"ClassLayout for ECClassIndex=%i, ECClass.Name=%s", m_classIndex, m_className.c_str());
+    swprintf (line, _countof(line), L"ClassLayout for ECClassIndex=%i, ECClass.GetName()=%s", m_classIndex, m_className.c_str());
 
     return line;
     }
@@ -236,7 +236,7 @@ WString        ClassLayout::LogicalStructureToString (UInt32 parentStuctIndex, U
     wostringstream oss;
     oss << setiosflags (ios::left);
 
-    for each (UInt32 propIndex in it->second)
+    FOR_EACH (UInt32 propIndex, it->second)
         {
         for (UInt32 i = 0; i < indentLevel; i++)
             oss << indentStr;
@@ -273,7 +273,7 @@ WString        ClassLayout::ToString () const
 
     UInt32 propIndex = 0;
 
-    for each (PropertyLayoutP layout in m_propertyLayouts)
+    FOR_EACH (PropertyLayoutP layout, m_propertyLayouts)
         {
         oss << setiosflags( ios::left ) << setw(4) << propIndex;
         oss << layout->ToString();
@@ -607,7 +607,7 @@ void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, WCharCP 
     if (addingFixedSizeProps)
         AddStructProperty (NULL == nameRoot ? L"" : nameRoot, ECTypeDescriptor::CreateStructTypeDescriptor());
 
-    for each (ECPropertyP property in ecClass.GetProperties())
+    FOR_EACH (ECPropertyP property, ecClass.GetProperties())
         {
         WString    propName = property->GetName();
         
@@ -1051,12 +1051,12 @@ ClassLayoutCP   SchemaLayout::GetClassLayout (ClassIndex classIndex)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassLayoutCP   SchemaLayout::FindClassLayout (WCharCP className)
     {
-    for each (ClassLayoutCP classLayout in m_classLayouts)
+    FOR_EACH (ClassLayoutCP classLayout, m_classLayouts)
         {
         if (NULL == classLayout)
             continue;
 
-        if (0 == wcsicmp (classLayout->GetECClassName().c_str(), className))
+        if (0 == _wcsicmp (classLayout->GetECClassName().c_str(), className))
             return classLayout;
         }
 

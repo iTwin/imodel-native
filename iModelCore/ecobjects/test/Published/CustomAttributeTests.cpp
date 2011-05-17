@@ -31,16 +31,16 @@ ECSchemaP   CreateCustomAttributeTestSchema(IECSchemaOwnerR schemaOwner)
     
     ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, schemaOwner);
     schema->CreateClass(customAttributeClass, L"CustomAttribClass");
-    customAttributeClass->IsCustomAttributeClass = true;
+    customAttributeClass->SetIsCustomAttributeClass(true);
 
     schema->CreateClass(customAttributeClass2, L"CustomAttribClass2");
-    customAttributeClass2->IsCustomAttributeClass = true;
+    customAttributeClass2->SetIsCustomAttributeClass(true);
 
     schema->CreateClass(customAttributeClass3, L"CustomAttribClass3");
-    customAttributeClass3->IsCustomAttributeClass = true;
+    customAttributeClass3->SetIsCustomAttributeClass(true);
 
     schema->CreateClass(customAttributeClass4, L"CustomAttribClass4");
-    customAttributeClass4->IsCustomAttributeClass = true;
+    customAttributeClass4->SetIsCustomAttributeClass(true);
 
     schema->CreateClass(baseClass, L"BaseClass");
     PrimitiveECPropertyP baseStringProp;
@@ -54,14 +54,14 @@ ECSchemaP   CreateCustomAttributeTestSchema(IECSchemaOwnerR schemaOwner)
 
     PrimitiveECPropertyP stringProp;
     EXPECT_EQ(ECOBJECTS_STATUS_Success, classWithProperties->CreatePrimitiveProperty(stringProp, L"StringMember", PRIMITIVETYPE_String));
-    EXPECT_EQ(baseStringProp, stringProp->BaseProperty);
+    EXPECT_EQ(baseStringProp, stringProp->GetBaseProperty());
 
     return schema;
     }                                    
 
 IECInstancePtr GetInstanceForClass(WCharCP className, ECSchemaR schema, ECSchemaCacheR schemaSession)
     {
-    StandaloneECEnablerPtr enabler = schemaSession.ObtainStandaloneInstanceEnabler (schema.Name.c_str(), className);
+    StandaloneECEnablerPtr enabler = schemaSession.ObtainStandaloneInstanceEnabler (schema.GetName().c_str(), className);
     IECInstancePtr instance = enabler->CreateInstance().get();
     return instance;
     }
@@ -224,13 +224,13 @@ TEST_F(CustomAttributeTest, ExpectCanGetAllCustomAttributes)
     bool foundCustomAttrib = false;
     bool foundCustomAttrib2 = false;
     bool foundCustomAttrib3 = false;
-    for each (IECInstancePtr testInstance in containerClass->GetCustomAttributes(false))
+    FOR_EACH (IECInstancePtr testInstance, containerClass->GetCustomAttributes(false))
         {
-        if (testInstance->GetClass().Name.compare(L"CustomAttribClass") == 0)
+        if (testInstance->GetClass().GetName().compare(L"CustomAttribClass") == 0)
             foundCustomAttrib = true;
-        else if (testInstance->GetClass().Name.compare(L"CustomAttribClass2") == 0)
+        else if (testInstance->GetClass().GetName().compare(L"CustomAttribClass2") == 0)
             foundCustomAttrib2 = true;
-        else if (testInstance->GetClass().Name.compare(L"CustomAttribClass3") == 0)
+        else if (testInstance->GetClass().GetName().compare(L"CustomAttribClass3") == 0)
             foundCustomAttrib3 = true;
         }
     EXPECT_TRUE(foundCustomAttrib);
@@ -240,13 +240,13 @@ TEST_F(CustomAttributeTest, ExpectCanGetAllCustomAttributes)
     foundCustomAttrib = false;
     foundCustomAttrib2 = false;
     foundCustomAttrib3 = false;
-    for each (IECInstancePtr testInstance in containerClass->GetCustomAttributes(true))
+    FOR_EACH (IECInstancePtr testInstance, containerClass->GetCustomAttributes(true))
         {
-        if (testInstance->GetClass().Name.compare(L"CustomAttribClass") == 0)
+        if (testInstance->GetClass().GetName().compare(L"CustomAttribClass") == 0)
             foundCustomAttrib = true;
-        else if (testInstance->GetClass().Name.compare(L"CustomAttribClass2") == 0)
+        else if (testInstance->GetClass().GetName().compare(L"CustomAttribClass2") == 0)
             foundCustomAttrib2 = true;
-        else if (testInstance->GetClass().Name.compare(L"CustomAttribClass3") == 0)
+        else if (testInstance->GetClass().GetName().compare(L"CustomAttribClass3") == 0)
             foundCustomAttrib3 = true;
         }
     EXPECT_TRUE(foundCustomAttrib);
@@ -294,7 +294,7 @@ TEST_F(CustomAttributeTest, ExpectFailureWithUnreferencedCustomAttribute)
 
     ECClassP refClass;
     refSchema->CreateClass(refClass, L"RefClass");
-    refClass->IsCustomAttributeClass = true;
+    refClass->SetIsCustomAttributeClass(true);
 
     ECClassP containerClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (containerClass);

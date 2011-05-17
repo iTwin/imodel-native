@@ -191,7 +191,7 @@ WString ECTestFixture::GetDllPath()
         wchar_t executingDirectory[_MAX_DIR];
         wchar_t executingDrive[_MAX_DRIVE];
         _wsplitpath(strExePath, executingDrive, executingDirectory, NULL, NULL);
-        wchar_t filepath[_MAX_PATH];
+        wchar_t filepath[MAX_PATH];
         _wmakepath(filepath, executingDrive, executingDirectory, NULL, NULL);
         s_dllPath = filepath;
         }
@@ -213,11 +213,11 @@ WString ECTestFixture::GetTestDataPath(WCharCP dataFile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString ECTestFixture::GetWorkingDirectoryPath(WCharCP testFixture, WCharCP dataFile)
     {
-    wchar_t path[_MAX_PATH];
+    wchar_t path[MAX_PATH];
 
-    if (0 == GetEnvironmentVariableW(L"OutRoot", path, _MAX_PATH))
+    if (0 == GetEnvironmentVariableW(L"OutRoot", path, MAX_PATH))
         {
-        GetEnvironmentVariableW(L"tmp", path, _MAX_PATH);
+        GetEnvironmentVariableW(L"tmp", path, MAX_PATH);
         }
 
     WString filePath(path);
@@ -269,9 +269,9 @@ DWORD bufferSize
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString ECTestFixture::GetLogConfigurationFilename()
     {
-    wchar_t filepath[_MAX_PATH];
+    wchar_t filepath[MAX_PATH];
 
-    if ((0 != GetEnvironmentVariableW(L"BENTLEY_LOGGING_CONFIG", filepath, _MAX_PATH)) && (0 ==_waccess(filepath, 0)))
+    if ((0 != GetEnvironmentVariableW(L"BENTLEY_LOGGING_CONFIG", filepath, MAX_PATH)) && (0 ==_waccess(filepath, 0)))
         {
         wprintf (L"ECObjects.dll configuring logging with %s (Set by BENTLEY_LOGGING_CONFIG environment variable.)\n", filepath);
         return filepath;
@@ -281,7 +281,7 @@ WString ECTestFixture::GetLogConfigurationFilename()
         wprintf (L"ECObjects.dll configuring logging using %s. Override by setting BENTLEY_LOGGING_CONFIG in environment.\n", filepath);
         return filepath;
         }
-    else if (0 != GetEnvironmentVariableW(L"OutRoot", filepath, _MAX_PATH))
+    else if (0 != GetEnvironmentVariableW(L"OutRoot", filepath, MAX_PATH))
         {
         WCharP processorArchitecture = (8 == sizeof(void*)) ? L"Winx64" : L"Winx86";
         wcscat (filepath, processorArchitecture);
