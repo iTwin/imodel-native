@@ -1439,7 +1439,7 @@ static ECClassP getClassFromSchema (ECSchemaCR rootSchema, WCharCP className)
     if (classP)
         return classP;
 
-    for each (ECSchemaCP refSchema in rootSchema.GetReferencedSchemas())
+    FOR_EACH (ECSchemaCP refSchema, rootSchema.GetReferencedSchemas())
         {
         classP = getClassFromSchema (*refSchema, className);
         if (classP)
@@ -1459,7 +1459,7 @@ static ECClassP getPropertyFromClass (ECClassCR enablerClass, WCharCP propertyNa
         return NULL;
 
     WString typeName = propertyP->GetTypeName();
-    return getClassFromSchema (enablerClass.Schema, typeName.c_str());
+    return getClassFromSchema (enablerClass.GetSchema(), typeName.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1535,7 +1535,7 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBu
         return ECOBJECTS_STATUS_Error;
 
     EC::ECEnablerP enablerP = const_cast<EC::ECEnablerP>(&enabler);
-    StandaloneECEnablerPtr structEnabler = dynamic_cast<StandaloneECEnablerP>(enablerP->ObtainStandaloneInstanceEnabler (structClass->Schema.Name.c_str(), structClass->Name.c_str()).get());
+    StandaloneECEnablerPtr structEnabler = dynamic_cast<StandaloneECEnablerP>(enablerP->ObtainStandaloneInstanceEnabler (structClass->GetSchema().GetName().c_str(), structClass->GetName().c_str()).get());
     if (structEnabler.IsNull())
         return ECOBJECTS_STATUS_Error;
 

@@ -511,7 +511,7 @@ StandaloneECInstance::~StandaloneECInstance ()
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 static void     duplicateProperties (IECInstanceR target, ECValuesCollectionCR source)
     {
-    for each (ECPropertyValuePtr prop in source)
+    FOR_EACH (ECPropertyValuePtr prop, source)
         {
         if (prop->HasChildValues())
             {
@@ -529,7 +529,7 @@ static void     duplicateProperties (IECInstanceR target, ECValuesCollectionCR s
 StandaloneECInstancePtr         StandaloneECInstance::Duplicate(IECInstanceCR instance)
     {
     ECClassCR              ecClass           = instance.GetClass();
-    StandaloneECEnablerPtr standaloneEnabler = instance.GetEnablerR().ObtainStandaloneInstanceEnabler (ecClass.Schema.Name.c_str(), ecClass.Name.c_str());
+    StandaloneECEnablerPtr standaloneEnabler = instance.GetEnablerR().ObtainStandaloneInstanceEnabler (ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str());
     if (standaloneEnabler.IsNull())
         return NULL;
 

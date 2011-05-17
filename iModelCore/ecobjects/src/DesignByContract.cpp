@@ -48,7 +48,7 @@ void LogFailureMessage (WCharCP message, ...)
     
     buffer = (wchar_t*)malloc( len * sizeof(wchar_t) );
 
-    vswprintf( buffer, message, arguments ); // C4996
+    _vsnwprintf( buffer, len, message, arguments ); // C4996
     Bentley::EC::ECObjectsLogger::Log()->warning(buffer );
     free( buffer );
     }

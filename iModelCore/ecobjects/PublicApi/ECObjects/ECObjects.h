@@ -19,9 +19,9 @@
 // ONLY support cpp callers and therefore do not repeat this pattern.
 
 #ifdef __ECOBJECTS_BUILD__
-#define ECOBJECTS_EXPORT __declspec(dllexport)
+#define ECOBJECTS_EXPORT EXPORT_ATTRIBUTE
 #else
-#define ECOBJECTS_EXPORT __declspec(dllimport)
+#define ECOBJECTS_EXPORT IMPORT_ATTRIBUTE
 #endif
 
 #define BEGIN_BENTLEY_EC_NAMESPACE  BEGIN_BENTLEY_NAMESPACE namespace EC {
@@ -39,6 +39,23 @@
             typedef _name_ const&    _name_##CR; \
         END_BENTLEY_EC_NAMESPACE
 
+/*__PUBLISH_SECTION_END__*/
+// These BENTLEY_EXCLUDE_WINDOWS_HEADERS shenanigans are necessary to allow ECObjects headers to be included without sucking in conflicting windows headers
+// and to help us split off the non-portable code and to move to a different XML parser
+#ifdef BENTLEY_EXCLUDE_WINDOWS_HEADERS
+/*__PUBLISH_SECTION_START__*/        
+    #define MSXML2_IXMLDOMNode      void *
+    #define MSXML2_IXMLDOMNodePtr   void *
+    #define MSXML2_IXMLDOMDocument2 void *
+    #define MSXML2_IXMLDOMElement   void *
+/*__PUBLISH_SECTION_END__*/
+#else
+    #define MSXML2_IXMLDOMNode      MSXML2::IXMLDOMNode
+    #define MSXML2_IXMLDOMNodePtr   MSXML2::IXMLDOMNodePtr
+    #define MSXML2_IXMLDOMDocument2 MSXML2::IXMLDOMDocument2
+    #define MSXML2_IXMLDOMElement   MSXML2::IXMLDOMElement
+#endif
+/*__PUBLISH_SECTION_START__*/
 
 EC_TYPEDEFS(ECValue);
 EC_TYPEDEFS(ECValueAccessor);
@@ -85,20 +102,6 @@ EC_TYPEDEFS(SystemTime);
 
 EC_TYPEDEFS(ICustomECStructSerializer);
 EC_TYPEDEFS(CustomStructSerializerManager);
-
-#define EXPORTED_PROPERTY(TYPE, NAME) \
-    ECOBJECTS_EXPORT TYPE Get##NAME() const; \
-    ECOBJECTS_EXPORT ECObjectsStatus Set##NAME (TYPE value); \
-    __declspec(property(get=Get##NAME,put=Set##NAME)) TYPE NAME
-
-#define READONLY_PROPERTY(TYPE, NAME) TYPE Get##NAME() const; \
-    __declspec(property(get=Get##NAME)) TYPE NAME;
-
-#define EXPORTED_READONLY_PROPERTY(TYPE, NAME) \
-    ECOBJECTS_EXPORT TYPE Get##NAME() const; \
-    __declspec(property(get=Get##NAME)) TYPE NAME;
-
-#define WRITEONLY_PROPERTY(TYPE, NAME) __declspec(property(put=Set##NAME)) TYPE NAME
 
 typedef struct IStream* IStreamP;
 
@@ -245,7 +248,7 @@ virtual Int32   CheckForLeaks () const = 0;
 //! Represents the classification of the data type of an EC ECValue.  The classification is not the data type itself, but a category of type
 //! such as struct, array or primitive.
 //=======================================================================================    
-enum ValueKind : unsigned short
+enum ValueKind ENUM_UNDERLYING_TYPE(unsigned short)
     {
     VALUEKIND_Uninitialized                  = 0x00,
     VALUEKIND_Primitive                      = 0x01,
@@ -265,7 +268,7 @@ enum ValueKind : unsigned short
 //! Represents the classification of the data type of an EC array element.  The classification is not the data type itself, but a category of type.
 //! Currently an ECArray can only contain primitive or struct data types.
 //=======================================================================================    
-enum ArrayKind : unsigned short
+enum ArrayKind ENUM_UNDERLYING_TYPE(unsigned short)
     {
     ARRAYKIND_Primitive       = 0x01,
     ARRAYKIND_Struct          = 0x02
@@ -287,7 +290,7 @@ enum ArrayKind : unsigned short
 //! Enumeration of primitive datatypes supported by native "ECObjects" implementation.
 //! These should correspond to all of the datatypes supported in .NET ECObjects
 //=======================================================================================    
-enum PrimitiveType : unsigned short
+enum PrimitiveType ENUM_UNDERLYING_TYPE(unsigned short)
     {
     PRIMITIVETYPE_Binary                    = 0x101,
     PRIMITIVETYPE_Boolean                   = 0x201,

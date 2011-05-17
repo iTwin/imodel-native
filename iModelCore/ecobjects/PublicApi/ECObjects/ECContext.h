@@ -20,7 +20,7 @@ typedef RefCountedPtr<ECSchemaDeserializationContext>      ECSchemaDeserializati
 struct ECSchemaDeserializationContext /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
 {
 /*__PUBLISH_SECTION_END__*/
-friend  ECSchema;
+friend struct ECSchema;
 
 private:
     IECSchemaOwnerR                 m_schemaOwner;

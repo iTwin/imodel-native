@@ -38,13 +38,13 @@ ECClass::ECClass (ECSchemaCR schema, bool hideFromLeakDetection)
 ECClass::~ECClass ()
     {
     // NEEDSWORK make sure everything is destroyed
-    ECObjectsLogger::Log()->tracev (L"~~~~ Destroying ECClass %s", this->Name.c_str());
+    ECObjectsLogger::Log()->tracev (L"~~~~ Destroying ECClass %s", this->GetName().c_str());
     ECObjectsLogger::Log()->tracev  (L"     Freeing memory for %d properties", m_propertyMap.size());
     
     m_propertyList.clear();
     
-    for each (bpair<WCharCP, ECPropertyP> entry in m_propertyMap)
-        delete entry.second;
+    for (PropertyMap::iterator entry=m_propertyMap.begin(); entry != m_propertyMap.end(); ++entry)
+        delete entry->second;
     
     m_propertyMap.clear();
 
@@ -112,7 +112,7 @@ WStringCR ECClass::GetDisplayLabel
 (
 ) const
     {
-    return (m_displayLabel.empty()) ? Name : m_displayLabel;
+    return (m_displayLabel.empty()) ? GetName() : m_displayLabel;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -171,7 +171,7 @@ WCharCP isStruct
 
     ECObjectsStatus status = ECXml::ParseBooleanString (m_isStruct, isStruct);
     if (ECOBJECTS_STATUS_Success != status)
-        ECObjectsLogger::Log()->warningv  (L"Failed to parse the isStruct string '%s' for ECClass '%s'.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE , isStruct, this->Name.c_str());
+        ECObjectsLogger::Log()->warningv  (L"Failed to parse the isStruct string '%s' for ECClass '%s'.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE , isStruct, this->GetName().c_str());
         
     return status;
     }
@@ -210,7 +210,7 @@ WCharCP isCustomAttributeClass
 
     ECObjectsStatus status = ECXml::ParseBooleanString (m_isCustomAttributeClass, isCustomAttributeClass);
     if (ECOBJECTS_STATUS_Success != status)
-        ECObjectsLogger::Log()->warningv  (L"Failed to parse the isCustomAttributeClass string '%s' for ECClass '%s'.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE , isCustomAttributeClass, this->Name.c_str());
+        ECObjectsLogger::Log()->warningv  (L"Failed to parse the isCustomAttributeClass string '%s' for ECClass '%s'.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE , isCustomAttributeClass, this->GetName().c_str());
         
     return status;
     }
@@ -249,7 +249,7 @@ WCharCP isDomainClass
 
     ECObjectsStatus status = ECXml::ParseBooleanString (m_isDomainClass, isDomainClass);
     if (ECOBJECTS_STATUS_Success != status)
-        ECObjectsLogger::Log()->warningv  (L"Failed to parse the isDomainClass string '%s' for ECClass '%s'.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE, isDomainClass, this->Name.c_str());
+        ECObjectsLogger::Log()->warningv  (L"Failed to parse the isDomainClass string '%s' for ECClass '%s'.  Expected values are " ECXML_TRUE L" or " ECXML_FALSE, isDomainClass, this->GetName().c_str());
         
     return status;
     }
@@ -274,18 +274,18 @@ ECPropertyP&                 pProperty
     {
     PropertyMap::const_iterator propertyIterator;
     
-    propertyIterator = m_propertyMap.find(pProperty->Name.c_str());
+    propertyIterator = m_propertyMap.find(pProperty->GetName().c_str());
     if (m_propertyMap.end() != propertyIterator)
         {
-        ECObjectsLogger::Log()->warningv  (L"Can not create property '%s' because it already exists in this ECClass", pProperty->Name.c_str());
+        ECObjectsLogger::Log()->warningv  (L"Can not create property '%s' because it already exists in this ECClass", pProperty->GetName().c_str());
         return ECOBJECTS_STATUS_NamedItemAlreadyExists;
         }
 
     // It isn't part of this schema, but does it exist as a property on a baseClass?
-    ECPropertyP baseProperty = GetPropertyP(pProperty->Name);
+    ECPropertyP baseProperty = GetPropertyP(pProperty->GetName());
     if (NULL == baseProperty)
         {
-        m_propertyMap.insert (bpair<WCharCP, ECPropertyP> (pProperty->Name.c_str(), pProperty));
+        m_propertyMap.insert (bpair<WCharCP, ECPropertyP> (pProperty->GetName().c_str(), pProperty));
         m_propertyList.push_back(pProperty);
         return ECOBJECTS_STATUS_Success;
         }
@@ -294,8 +294,8 @@ ECPropertyP&                 pProperty
     if (ECOBJECTS_STATUS_Success != status)
         return status;
 
-    pProperty->BaseProperty = baseProperty;
-    m_propertyMap.insert (bpair<WCharCP, ECPropertyP> (pProperty->Name.c_str(), pProperty));
+    pProperty->SetBaseProperty (baseProperty);
+    m_propertyMap.insert (bpair<WCharCP, ECPropertyP> (pProperty->GetName().c_str(), pProperty));
     m_propertyList.push_back(pProperty);
     return ECOBJECTS_STATUS_Success;
     }
@@ -315,7 +315,7 @@ WCharCP propertyName
         return propertyIterator->second;
 
     // not found yet, search the inheritence hierarchy
-    for each (const ECClassP& baseClass in m_baseClasses)
+    FOR_EACH (const ECClassP& baseClass, m_baseClasses)
         {
         ECPropertyP baseProperty = baseClass->GetPropertyP (propertyName);
         if (NULL != baseProperty)
@@ -345,9 +345,9 @@ ECPropertyCR newProperty
     // If the type of base property is an array and the type of the current property is not an array (or vice-versa),
     // return an error immediately.  Unfortunately, there are a class of schemas that have been delivered with this type
     // of override.  So need to check if this is one of those schemas before returning an error
-    if ((baseProperty.IsArray && !newProperty.IsArray) || (!baseProperty.IsArray && newProperty.IsArray))
+    if ((baseProperty.GetIsArray() && !newProperty.GetIsArray()) || (!baseProperty.GetIsArray() && newProperty.GetIsArray()))
         {
-        //if (!EC::ECSchema::SchemaAllowsOverridingArrays(this->Schema))
+        //if (!EC::ECSchema::SchemaAllowsOverridingArrays(this->GetSchema()))
         //    return ECOBJECTS_STATUS_DataTypeMismatch;
         }
     
@@ -436,7 +436,7 @@ PrimitiveType primitiveType
 )
     {
     ecProperty = new PrimitiveECProperty(*this, m_hideFromLeakDetection);
-    ecProperty->Type = primitiveType;
+    ecProperty->SetType(primitiveType);
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECOBJECTS_STATUS_Success)
         {
@@ -520,7 +520,7 @@ PrimitiveType primitiveType
 )
     {
     ecProperty = new ArrayECProperty(*this, m_hideFromLeakDetection);
-    ecProperty->PrimitiveElementType = primitiveType;
+    ecProperty->SetPrimitiveElementType (primitiveType);
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECOBJECTS_STATUS_Success)
         {
@@ -613,9 +613,9 @@ ECObjectsStatus ECClass::AddBaseClass
 ECClassCR baseClass
 )
     {
-    if (&(baseClass.Schema) != &(this->Schema))
+    if (&(baseClass.GetSchema()) != &(this->GetSchema()))
         {
-        if (!ECSchema::IsSchemaReferenced(this->Schema, baseClass.Schema))
+        if (!ECSchema::IsSchemaReferenced(this->GetSchema(), baseClass.GetSchema()))
             return ECOBJECTS_STATUS_SchemaNotFound;
         }
 
@@ -627,7 +627,7 @@ ECClassCR baseClass
         {
         if (*baseClassIterator == (ECClassP)&baseClass)
             {
-            ECObjectsLogger::Log()->warningv (L"Can not add class '%s' as a base class to '%s' because it already exists as a base class", baseClass.Name.c_str(), m_name.c_str());
+            ECObjectsLogger::Log()->warningv (L"Can not add class '%s' as a base class to '%s' because it already exists as a base class", baseClass.GetName().c_str(), m_name.c_str());
             return ECOBJECTS_STATUS_NamedItemAlreadyExists;
             }
         }
@@ -637,10 +637,10 @@ ECClassCR baseClass
     if (ECOBJECTS_STATUS_Success != status)
         return status;
 
-    for each (ECPropertyP prop in baseClassProperties)
+    FOR_EACH (ECPropertyP prop, baseClassProperties)
         {
         ECPropertyP thisProperty;
-        if (NULL != (thisProperty = this->GetPropertyP(prop->Name)))
+        if (NULL != (thisProperty = this->GetPropertyP(prop->GetName())))
             {
             if (ECOBJECTS_STATUS_Success != (status = ECClass::CanPropertyBeOverridden(*prop, *thisProperty)))
                 return status;
@@ -689,7 +689,7 @@ ECClassCR baseClass
         
     if (!baseClassRemoved)
         {
-        ECObjectsLogger::Log()->warningv(L"Class '%s' is not a base class of class '%s'", baseClass.Name, m_name);
+        ECObjectsLogger::Log()->warningv(L"Class '%s' is not a base class of class '%s'", baseClass.GetName().c_str(), m_name.c_str());
         return ECOBJECTS_STATUS_ClassNotFound;
         }
         
@@ -729,10 +729,10 @@ const void * arg
         return true;
         
     return ((thisClass == thatClass) ||
-            ( (0 == thisClass->Name.compare(thatClass->Name)) &&
-              (0 == thisClass->Schema.Name.compare(thatClass->Schema.Name)) &&
-              (thisClass->Schema.VersionMajor == thatClass->Schema.VersionMajor) &&
-              (thisClass->Schema.VersionMinor == thatClass->Schema.VersionMinor)));
+            ( (0 == thisClass->GetName().compare(thatClass->GetName())) &&
+              (0 == thisClass->GetSchema().GetName().compare(thatClass->GetSchema().GetName())) &&
+              (thisClass->GetSchema().GetVersionMajor() == thatClass->GetSchema().GetVersionMajor()) &&
+              (thisClass->GetSchema().GetVersionMinor() == thatClass->GetSchema().GetVersionMinor())));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -765,7 +765,7 @@ bool includeBaseProperties,
 PropertyList* propertyList
 ) const
     {
-    for each (ECPropertyP prop in m_propertyList)
+    FOR_EACH (ECPropertyP prop, m_propertyList)
         propertyList->push_back(prop);
         
     if (!includeBaseProperties)
@@ -793,13 +793,13 @@ const void *arg
     
     PropertyList newProperties;
     PropertyList::iterator currentEnd = propertyList->end();
-    for each (ECPropertyP prop in currentBaseClass->GetProperties(false))
+    FOR_EACH (ECPropertyP prop, currentBaseClass->GetProperties(false))
         {
         PropertyList::iterator testIter;
         for (testIter = propertyList->begin(); testIter != currentEnd; testIter++)
             {
             ECPropertyP testProperty = *testIter;
-            if (testProperty->Name.compare(prop->Name) == 0)
+            if (testProperty->GetName().compare(prop->GetName()) == 0)
                 break;
             }
         // we didn't find it
@@ -827,7 +827,7 @@ const void*       arg
     if (m_baseClasses.size() == 0)
         return false;
         
-    for each (const ECClassP& baseClass in m_baseClasses)
+    FOR_EACH (const ECClassP& baseClass, m_baseClasses)
         {
         if (traverseMethod(baseClass, arg))
             return true;
@@ -871,7 +871,7 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
     READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (IS_DOMAINCLASS_ATTRIBUTE,      this, IsDomainClass)
 
     // when isDomainClass is not specified in the ECSchemaXML and isCustomAttributeClass is specified and set to true, we will default to a non-domain class
-    if ((NULL == attributePtr) && (this->IsCustomAttributeClass))
+    if ((NULL == attributePtr) && (this->GetIsCustomAttributeClass()))
         this->SetIsDomainClass (false);
 
     return SCHEMA_DESERIALIZATION_STATUS_Success;
@@ -899,15 +899,15 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
         if (ECOBJECTS_STATUS_Success != ECClass::ParseClassName (namespacePrefix, className, qualifiedClassName))
             {
             ECObjectsLogger::Log()->warningv (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the value '%s' that can not be parsed.", 
-                this->Name.c_str(), qualifiedClassName.c_str());
+                this->GetName().c_str(), qualifiedClassName.c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
         
-        ECSchemaP resolvedSchema = Schema.GetSchemaByNamespacePrefixP (namespacePrefix);
+        ECSchemaP resolvedSchema = GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
         if (NULL == resolvedSchema)
             {
             ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the namespace prefix '%s' that can not be resolved to a referenced schema.", 
-                this->Name.c_str(), namespacePrefix.c_str());
+                this->GetName().c_str(), namespacePrefix.c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
 
@@ -915,7 +915,7 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
         if (NULL == baseClass)
             {
             ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'", 
-                this->Name.c_str(), qualifiedClassName.c_str(), className.c_str(), resolvedSchema->Name.c_str());
+                this->GetName().c_str(), qualifiedClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
 
@@ -936,14 +936,14 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
             pProperty = new StructECProperty (*this, m_hideFromLeakDetection);
         else
             {
-            ECObjectsLogger::Log()->warningv (L"Invalid ECSchemaXML: Unknown property type '%s' of ECClass '%s' in the ECSchema '%s'", xmlNodePtr->baseName, this->Name.c_str(), this->Schema.Name.c_str());
+            ECObjectsLogger::Log()->warningv (L"Invalid ECSchemaXML: Unknown property type '%s' of ECClass '%s' in the ECSchema '%s'", xmlNodePtr->baseName, this->GetName().c_str(), this->GetSchema().GetName().c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
 
         SchemaDeserializationStatus status = pProperty->_ReadXml(xmlNodePtr, standaloneEnablerLocator);
         if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
             {
-            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to deserialize properties of ECClass '%s' in the ECSchema '%s'", this->Name.c_str(), this->Schema.Name.c_str());                
+            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to deserialize properties of ECClass '%s' in the ECSchema '%s'", this->GetName().c_str(), this->GetSchema().GetName().c_str());                
             delete pProperty;
             return status;
             }
@@ -951,7 +951,7 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
         if (ECOBJECTS_STATUS_Success != this->AddProperty (pProperty))
             {
             ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to deserialize ECClass '%s' in the ECSchema '%s' because a problem occurred while adding ECProperty '%s'", 
-                this->Name.c_str(), this->Schema.Name.c_str(), pProperty->Name.c_str());
+                this->GetName().c_str(), this->GetSchema().GetName().c_str(), pProperty->GetName().c_str());
             delete pProperty;
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
@@ -982,25 +982,25 @@ WCharCP elementName
     
     APPEND_CHILD_TO_PARENT(classPtr, (&parentNode));
     
-    WRITE_XML_ATTRIBUTE(TYPE_NAME_ATTRIBUTE, this->Name.c_str(), classPtr);
+    WRITE_XML_ATTRIBUTE(TYPE_NAME_ATTRIBUTE, this->GetName().c_str(), classPtr);
     WRITE_OPTIONAL_XML_ATTRIBUTE(DESCRIPTION_ATTRIBUTE, Description, classPtr);
-    if (IsDisplayLabelDefined)
+    if (GetIsDisplayLabelDefined())
         WRITE_OPTIONAL_XML_ATTRIBUTE(DISPLAY_LABEL_ATTRIBUTE, DisplayLabel, classPtr);
     WRITE_OPTIONAL_BOOL_XML_ATTRIBUTE(IS_STRUCT_ATTRIBUTE, IsStruct, classPtr);
     WRITE_BOOL_XML_ATTRIBUTE(IS_DOMAINCLASS_ATTRIBUTE, IsDomainClass, classPtr);
     WRITE_OPTIONAL_BOOL_XML_ATTRIBUTE(IS_CUSTOMATTRIBUTE_ATTRIBUTE, IsCustomAttributeClass, classPtr);
     
-    for each (const ECClassP& baseClass in m_baseClasses)
+    FOR_EACH (const ECClassP& baseClass, m_baseClasses)
         {
         MSXML2::IXMLDOMElementPtr basePtr = parentNode.ownerDocument->createNode(NODE_ELEMENT, EC_BASE_CLASS_ELEMENT, ECXML_URI_2_0);
-        basePtr->text = (ECClass::GetQualifiedClassName(Schema, *baseClass)).c_str();
+        basePtr->text = (ECClass::GetQualifiedClassName(GetSchema(), *baseClass)).c_str();
         
         APPEND_CHILD_TO_PARENT(basePtr, classPtr);
         }
 
     WriteCustomAttributes(classPtr);
             
-    for each (ECPropertyP prop in GetProperties(false))
+    FOR_EACH (ECPropertyP prop, GetProperties(false))
         {
         prop->_WriteXml(classPtr);
         }
@@ -1069,16 +1069,16 @@ ECClassCR  ecClass
 )
     {
     WString namespacePrefix;
-    if (!EXPECTED_CONDITION (ECOBJECTS_STATUS_Success == primarySchema.ResolveNamespacePrefix (ecClass.Schema, namespacePrefix)))
+    if (!EXPECTED_CONDITION (ECOBJECTS_STATUS_Success == primarySchema.ResolveNamespacePrefix (ecClass.GetSchema(), namespacePrefix)))
         {
         ECObjectsLogger::Log()->warningv (L"warning: Can not qualify an ECClass name with a namespace prefix unless the schema containing the ECClass is referenced by the primary schema."
-            L"The class name will remain unqualified.\n  Primary ECSchema: %s\n  ECClass: %s\n ECSchema containing ECClass: %s", primarySchema.Name.c_str(), ecClass.Name.c_str(), ecClass.Schema.Name.c_str());
-        return ecClass.Name;
+            L"The class name will remain unqualified.\n  Primary ECSchema: %s\n  ECClass: %s\n ECSchema containing ECClass: %s", primarySchema.GetName().c_str(), ecClass.GetName().c_str(), ecClass.GetSchema().GetName().c_str());
+        return ecClass.GetName();
         }
     if (namespacePrefix.empty())
-        return ecClass.Name;
+        return ecClass.GetName();
     else
-        return namespacePrefix + L":" + ecClass.Name;
+        return namespacePrefix + L":" + ecClass.GetName();
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -1099,7 +1099,7 @@ void ECClass::_GetBaseContainers
 bvector<IECCustomAttributeContainerP>& returnList
 ) const
     {
-    for each (ECClassP baseClass in m_baseClasses)
+    FOR_EACH (ECClassP baseClass, m_baseClasses)
         returnList.push_back(baseClass);
     }
 
@@ -1365,7 +1365,7 @@ ECRelationshipConstraint::~ECRelationshipConstraint
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCP ECRelationshipConstraint::_GetContainerSchema() const
     {
-    return &(m_relClass->Schema);
+    return &(m_relClass->GetSchema());
     }
  
 /*---------------------------------------------------------------------------------**//**
@@ -1407,7 +1407,7 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
         
-        ECSchemaP resolvedSchema = m_relClass->Schema.GetSchemaByNamespacePrefixP (namespacePrefix);
+        ECSchemaP resolvedSchema = m_relClass->GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
         if (NULL == resolvedSchema)
             {
             ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: ECRelationshipConstraint contains a " CONSTRAINTCLASSNAME_ATTRIBUTE L" attribute with the namespace prefix '%s' that can not be resolved to a referenced schema.", 
@@ -1419,14 +1419,14 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
         if (NULL == constraintClass)
             {
             ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: The ECRelationshipConstraint contains a " CONSTRAINTCLASSNAME_ATTRIBUTE L" attribute with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'", 
-                constraintClassName.c_str(), className.c_str(), resolvedSchema->Name.c_str());
+                constraintClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
         AddClass(*constraintClass);
         }
 
     // Add Custom Attributes
-    ReadCustomAttributes(constraintNode, m_relClass->Schema, standaloneEnablerLocator);
+    ReadCustomAttributes(constraintNode, m_relClass->GetSchema(), standaloneEnablerLocator);
 
     return status;
     }
@@ -1459,12 +1459,12 @@ const WString &elementName
         
     WriteCustomAttributes(constraintPtr);
 
-    for each (ECClassP constraint in m_constraintClasses)
+    FOR_EACH (ECClassP constraint, m_constraintClasses)
         {
         MSXML2::IXMLDOMElementPtr constraintClassPtr = NULL;
         constraintClassPtr = parentNode.ownerDocument->createNode(NODE_ELEMENT, EC_CONSTRAINTCLASS_ELEMENT, ECXML_URI_2_0);
         APPEND_CHILD_TO_PARENT(constraintClassPtr, constraintPtr);
-        WRITE_XML_ATTRIBUTE(CONSTRAINTCLASSNAME_ATTRIBUTE, ECClass::GetQualifiedClassName(m_relClass->Schema, *constraint).c_str(), constraintClassPtr);
+        WRITE_XML_ATTRIBUTE(CONSTRAINTCLASSNAME_ATTRIBUTE, ECClass::GetQualifiedClassName(m_relClass->GetSchema(), *constraint).c_str(), constraintClassPtr);
         }
     
     return status;
@@ -1478,15 +1478,15 @@ ECObjectsStatus ECRelationshipConstraint::AddClass
 ECClassCR classConstraint
 )
     {
-    if (&(classConstraint.Schema) != &(m_relClass->Schema))
+    if (&(classConstraint.GetSchema()) != &(m_relClass->GetSchema()))
         {
         bool foundRefSchema = false;
-        ECSchemaReferenceList referencedSchemas = m_relClass->Schema.GetReferencedSchemas();
+        ECSchemaReferenceList referencedSchemas = m_relClass->GetSchema().GetReferencedSchemas();
         ECSchemaReferenceList::const_iterator schemaIterator;
         for (schemaIterator = referencedSchemas.begin(); schemaIterator != referencedSchemas.end(); schemaIterator++)
             {
             ECSchemaP refSchema = *schemaIterator;
-            if (refSchema == &(classConstraint.Schema))
+            if (refSchema == &(classConstraint.GetSchema()))
                 {
                 foundRefSchema = true;
                 break;
@@ -1635,7 +1635,7 @@ ECObjectsStatus ECRelationshipConstraint::SetCardinality
 RelationshipCardinalityCR cardinality
 )
     {
-    m_cardinality = new RelationshipCardinality(cardinality.LowerLimit, cardinality.UpperLimit);
+    m_cardinality = new RelationshipCardinality(cardinality.GetLowerLimit(), cardinality.GetUpperLimit());
     return ECOBJECTS_STATUS_Success;
     }
     
@@ -1682,9 +1682,9 @@ WString const ECRelationshipConstraint::GetRoleLabel
     if (m_roleLabel.length() != 0)
         return m_roleLabel;
         
-    if (&(m_relClass->Target) == this)
-        return m_relClass->DisplayLabel + L" (Reversed)";
-    return m_relClass->DisplayLabel;
+    if (&(m_relClass->GetTarget()) == this)
+        return m_relClass->GetDisplayLabel() + L" (Reversed)";
+    return m_relClass->GetDisplayLabel();
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -1756,7 +1756,7 @@ WCharCP strength
     StrengthType strengthType;
     ECObjectsStatus status = ECXml::ParseStrengthType(strengthType, strength);
     if (ECOBJECTS_STATUS_Success != status)
-        ECObjectsLogger::Log()->errorv (L"Failed to parse the Strength string '%s' for ECRelationshipClass '%s'.", strength, this->Name.c_str());
+        ECObjectsLogger::Log()->errorv (L"Failed to parse the Strength string '%s' for ECRelationshipClass '%s'.", strength, this->GetName().c_str());
     else
         SetStrength (strengthType);
         
@@ -1798,7 +1798,7 @@ WCharCP directionString
     ECRelatedInstanceDirection direction;
     ECObjectsStatus status = ECXml::ParseDirectionString(direction, directionString);
     if (ECOBJECTS_STATUS_Success != status)
-        ECObjectsLogger::Log()->errorv (L"Failed to parse the ECRelatedInstanceDirection string '%s' for ECRelationshipClass '%s'.", directionString, this->Name.c_str());
+        ECObjectsLogger::Log()->errorv (L"Failed to parse the ECRelatedInstanceDirection string '%s' for ECRelationshipClass '%s'.", directionString, this->GetName().c_str());
     else
         SetStrengthDirection (direction);
         
