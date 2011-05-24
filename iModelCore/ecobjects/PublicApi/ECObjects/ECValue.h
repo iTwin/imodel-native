@@ -269,7 +269,7 @@ private:
 public:
 /*__PUBLISH_SECTION_END__*/
 
-    Location&               operator[] (UInt32 depth);
+    ECOBJECTS_EXPORT Location&          operator[] (UInt32 depth);
 
     //! Constructs an ECValueAccessor for a given instance.
     //! @param[in]      instance         The instance that the accessor is representative of.
