@@ -709,6 +709,7 @@ public:
 struct ECRelationshipConstraint : IECCustomAttributeContainer
 {
 friend struct ECRelationshipClass;
+/*__PUBLISH_SECTION_END__*/
 
 private:
     // NEEDSWORK: To be completely compatible, we need to store an ECRelationshipConstraintClass with properties in order
@@ -733,6 +734,7 @@ private:
     
 protected:
     virtual ECSchemaCP          _GetContainerSchema() const override;
+/*__PUBLISH_SECTION_START__*/
   
 public:
     //! Initializes a new instance of the ECRelationshipConstraint class.
