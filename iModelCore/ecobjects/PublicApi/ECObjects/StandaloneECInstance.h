@@ -110,7 +110,8 @@ protected:
     ECOBJECTS_EXPORT ~StandaloneECInstance ();
 
     // IECInstance
-    ECOBJECTS_EXPORT virtual WString            _GetInstanceId() const override;
+    ECOBJECTS_EXPORT virtual WString             _GetInstanceId() const override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetInstanceId(WCharCP id) override;
     ECOBJECTS_EXPORT virtual bool                _IsReadOnly() const override;        
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetValue (ECValueR v, WCharCP propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
@@ -121,12 +122,12 @@ protected:
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _AddArrayElements (WCharCP propertyAccessString, UInt32 size) override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _RemoveArrayElement (WCharCP propertyAccessString, UInt32 index) override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _ClearArray (WCharCP propertyAccessString) override;    
-    ECOBJECTS_EXPORT virtual WString            _ToString (WCharCP indent) const override;
+    ECOBJECTS_EXPORT virtual WString             _ToString (WCharCP indent) const override;
     ECOBJECTS_EXPORT virtual ClassLayoutCR       _GetClassLayout () const;
     ECOBJECTS_EXPORT virtual ECEnablerCR         _GetEnabler() const override;
     ECOBJECTS_EXPORT virtual MemoryECInstanceBase* _GetAsMemoryECInstance () const override;
-    ECOBJECTS_EXPORT virtual size_t                _GetObjectSize () const;
-    ECOBJECTS_EXPORT virtual size_t                _GetOffsetToIECInstance () const;
+    ECOBJECTS_EXPORT virtual size_t              _GetObjectSize () const;
+    ECOBJECTS_EXPORT virtual size_t              _GetOffsetToIECInstance () const;
 
     // MemoryECInstanceBase
     ECOBJECTS_EXPORT virtual IECInstancePtr      _GetAsIECInstance () const;
