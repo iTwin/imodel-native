@@ -30,7 +30,10 @@ private:
     T_WStringVector                 m_searchPaths;
     bool                            m_hideSchemasFromLeakDetection;
 
-    ECSchemaDeserializationContext(IECSchemaOwnerR, IStandaloneEnablerLocatorR);
+    //! Constructs a context for deserializing ECSchemas
+    //! @param[in] schemaOwner  This object will control the lifetime of any ECSchemas deserialized with this context
+    //! @param[in] standaloneEnablerLocator  Used to find enablers for instantiating instances of ECCustomAttributes used in the deserialized ECSchema
+    ECSchemaDeserializationContext(IECSchemaOwnerR schemaOwner, IStandaloneEnablerLocatorR standaloneEnablerLocator);
 
     bvector<IECSchemaLocatorP>& GetSchemaLocators ();
     T_WStringVector&            GetSchemaPaths ();
@@ -44,7 +47,11 @@ public:
     ECOBJECTS_EXPORT void HideSchemasFromLeakDetection();
 
 /*__PUBLISH_SECTION_START__*/
-    ECOBJECTS_EXPORT static ECSchemaDeserializationContextPtr CreateContext (IECSchemaOwnerR, IStandaloneEnablerLocatorR);
+
+    //! Creates a context for deserializing ECSchemas
+    //! @param[in] schemaOwner  This object will control the lifetime of any ECSchemas deserialized with this context
+    //! @param[in] standaloneEnablerLocator  Used to find enablers for instantiating instances of ECCustomAttributes used in the deserialized ECSchema
+    ECOBJECTS_EXPORT static ECSchemaDeserializationContextPtr CreateContext (IECSchemaOwnerR schemaOwner, IStandaloneEnablerLocatorR standaloneEnablerLocator);
 
     ECOBJECTS_EXPORT void AddSchemaLocators (bvector<EC::IECSchemaLocatorP>&);
 
