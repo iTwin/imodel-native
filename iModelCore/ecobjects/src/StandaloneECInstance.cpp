@@ -592,15 +592,16 @@ ECEnablerCR         StandaloneECInstance::_GetEnabler() const
 +---------------+---------------+---------------+---------------+---------------+------*/    
 WString        StandaloneECInstance::_GetInstanceId() const
     {
-    if (m_instanceId.size() == 0)
-        {
-        wchar_t id[1024];
-        swprintf(id, sizeof(id)/sizeof(wchar_t), L"%s-0x%X", _GetEnabler().GetClass().GetName().c_str(), this);
-        StandaloneECInstanceP thisNotConst = const_cast<StandaloneECInstanceP>(this);
-        thisNotConst->m_instanceId = id;        
-        }
-
     return m_instanceId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/11
++---------------+---------------+---------------+---------------+---------------+------*/    
+ECObjectsStatus StandaloneECInstance::_SetInstanceId (WCharCP instanceId)
+    {
+    m_instanceId = instanceId;
+    return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

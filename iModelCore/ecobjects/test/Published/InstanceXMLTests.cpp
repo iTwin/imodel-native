@@ -450,7 +450,7 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     //HRESULT res = ::CreateStreamOnHGlobal(NULL,TRUE,&stream);
     ::CreateStreamOnHGlobal(NULL,TRUE,&stream);
 
-    InstanceSerializationStatus status2 = testInstance->WriteXmlToStream(stream, true);
+    InstanceSerializationStatus status2 = testInstance->WriteXmlToStream(stream, true, false);
     EXPECT_EQ(INSTANCE_SERIALIZATION_STATUS_Success, status2);
     
     LARGE_INTEGER liPos = {0};
@@ -492,7 +492,7 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
 
     WString ecInstanceXml;
 
-    InstanceSerializationStatus status2 = testInstance->WriteXmlToString(ecInstanceXml, true);
+    InstanceSerializationStatus status2 = testInstance->WriteXmlToString(ecInstanceXml, true, false);
     EXPECT_EQ(INSTANCE_SERIALIZATION_STATUS_Success, status2);
     
     IECInstancePtr deserializedInstance;
@@ -502,7 +502,6 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     VerifyTestInstance (deserializedInstance.get(), false);
     CoUninitialize();
     };
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
