@@ -181,7 +181,7 @@ WCharCP isReadOnly
     bool bReadOnly;
     ECObjectsStatus status = ECXml::ParseBooleanString (bReadOnly, isReadOnly);
     if (ECOBJECTS_STATUS_Success != status)
-        ECObjectsLogger::Log()->errorv (L"Failed to parse the isReadOnly string '%s' for ECProperty '%s'.\n", isReadOnly, this->GetName().c_str());
+        ECObjectsLogger::Log()->errorv (L"Failed to parse the isReadOnly string '%s' for ECProperty '%s'.", isReadOnly, this->GetName().c_str());
     else
         SetIsReadOnly (bReadOnly);
         
@@ -390,7 +390,7 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
 
     if (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml == status)
         {
-        ECObjectsLogger::Log()->warningv (L"Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.\n", this->GetName().c_str(), this->GetTypeName().c_str());
+        ECObjectsLogger::Log()->warningv (L"Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.", this->GetName().c_str(), this->GetTypeName().c_str());
         return SCHEMA_DESERIALIZATION_STATUS_Success;
         }
 
@@ -460,7 +460,7 @@ WStringCR typeName
     ECObjectsStatus status = ECXml::ParsePrimitiveType (primitiveType, typeName);
     if (ECOBJECTS_STATUS_Success != status)
         {            
-        ECObjectsLogger::Log()->errorv (L"Failed to set the type name of ECProperty '%s' to '%s' because the typeName could not be parsed into a primitive type.\n", this->GetName().c_str(), typeName.c_str());        
+        ECObjectsLogger::Log()->errorv (L"Failed to set the type name of ECProperty '%s' to '%s' because the typeName could not be parsed into a primitive type.", this->GetName().c_str(), typeName.c_str());        
         return status;
         }
 
@@ -575,14 +575,14 @@ ECPropertyCR ecProperty
     ECObjectsStatus status = ECClass::ParseClassName (namespacePrefix, className, typeName);
     if (ECOBJECTS_STATUS_Success != status)
         {
-        ECObjectsLogger::Log()->warningv (L"Can not resolve the type name '%s' as a struct type because the typeName could not be parsed.\n", typeName.c_str());
+        ECObjectsLogger::Log()->warningv (L"Can not resolve the type name '%s' as a struct type because the typeName could not be parsed.", typeName.c_str());
         return status;
         }
     
     ECSchemaP resolvedSchema = ecProperty.GetClass().GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
     if (NULL == resolvedSchema)
         {
-        ECObjectsLogger::Log()->warningv (L"Can not resolve the type name '%s' as a struct type because the namespacePrefix '%s' can not be resolved to the primary or a referenced schema.\n", 
+        ECObjectsLogger::Log()->warningv (L"Can not resolve the type name '%s' as a struct type because the namespacePrefix '%s' can not be resolved to the primary or a referenced schema.", 
             typeName.c_str(), namespacePrefix.c_str());
         return ECOBJECTS_STATUS_SchemaNotFound;
         }
@@ -590,7 +590,7 @@ ECPropertyCR ecProperty
     structClass = resolvedSchema->GetClassP (className.c_str());
     if (NULL == structClass)
         {
-        ECObjectsLogger::Log()->warningv (L"Can not resolve the type name '%s' as a struct type because ECClass '%s' does not exist in the schema '%s'.\n", 
+        ECObjectsLogger::Log()->warningv (L"Can not resolve the type name '%s' as a struct type because ECClass '%s' does not exist in the schema '%s'.", 
             typeName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
         return ECOBJECTS_STATUS_ClassNotFound;
         }
@@ -610,7 +610,7 @@ WStringCR typeName
     ECObjectsStatus status = ResolveStructType (structClass, typeName, *this);
     if (ECOBJECTS_STATUS_Success != status)
         {
-        ECObjectsLogger::Log()->errorv (L"Failed to set the type name of ECStructProperty '%s' to '%s' because the typeName could not be parsed into a resolvable ECClass.\n", this->GetName().c_str(), typeName.c_str());        
+        ECObjectsLogger::Log()->errorv (L"Failed to set the type name of ECStructProperty '%s' to '%s' because the typeName could not be parsed into a resolvable ECClass.", this->GetName().c_str(), typeName.c_str());        
         return status;
         }
     else
@@ -675,7 +675,7 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
 
     if (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml == setterStatus)
         {
-        ECObjectsLogger::Log()->warningv (L"Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.\n", this->GetName().c_str(), this->GetTypeName().c_str());
+        ECObjectsLogger::Log()->warningv (L"Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.", this->GetName().c_str(), this->GetTypeName().c_str());
         return SCHEMA_DESERIALIZATION_STATUS_Success;
         }
 
@@ -772,7 +772,7 @@ WStringCR typeName
     if (ECOBJECTS_STATUS_Success == status)
         return SetStructElementType (structClass);
 
-    ECObjectsLogger::Log()->errorv (L"Failed to set the type name of ArrayECProperty '%s' to '%s' because the typeName could not be parsed into a resolvable type.\n", this->GetName().c_str(), typeName.c_str());        
+    ECObjectsLogger::Log()->errorv (L"Failed to set the type name of ArrayECProperty '%s' to '%s' because the typeName could not be parsed into a resolvable type.", this->GetName().c_str(), typeName.c_str());        
     return ECOBJECTS_STATUS_ParseError;
     }
 
