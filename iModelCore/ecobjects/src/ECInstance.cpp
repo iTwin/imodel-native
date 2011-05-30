@@ -1507,7 +1507,10 @@ InstanceDeserializationStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr&
 
     ECSchemaCP  schema = GetSchema();
     if (NULL == schema)
+        {
+        ECObjectsLogger::Log()->errorv (L"Failed to locate ECSchema %s", m_fullSchemaName.c_str());
         return INSTANCE_DESERIALIZATION_STATUS_ECSchemaNotFound;
+        }
 
     // see if we can find the class from the schema.
     ECClassCP    foundClass;
@@ -1522,7 +1525,10 @@ InstanceDeserializationStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr&
             }
         }
     if (NULL == foundClass)
+        {
+        ECObjectsLogger::Log()->errorv (L"Failed to find ECClass %s in %s", className, m_fullSchemaName.c_str());
         return INSTANCE_DESERIALIZATION_STATUS_ECClassNotFound;
+        }
 
     *ecClass = foundClass;
 
@@ -2895,7 +2901,7 @@ InstanceDeserializationStatus   IECInstance::ReadXmlFromStream (IECInstancePtr& 
 static InstanceDeserializationStatus   ReportStatus (InstanceDeserializationStatus status, WCharCP xmlString, IECInstancePtr& ecInstance)
     {
     if (INSTANCE_DESERIALIZATION_STATUS_Success != status)
-        ECObjectsLogger::Log()->errorv (L"Failed to deserialize instance from XML string. Status %d, string %s\n", status, xmlString);
+        ECObjectsLogger::Log()->errorv (L"Failed to deserialize instance from XML string. Status %d, string %s", status, xmlString);
     else
         ECObjectsLogger::Log()->tracev (L"Native ECInstance of type %s deserialized from string", ecInstance.IsValid() ? ecInstance->GetClass().GetName() : L"Null");
     return status;
