@@ -15,7 +15,7 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-extern ECObjectsStatus GetSchemaFileName (WString& fullFileName, WCharCP schemaPath, bool useLatestCompatibleMatch);
+extern ECObjectsStatus GetSchemaFileName (WString& fullFileName, UInt32& foundVersionMinor, WCharCP schemaPath, bool useLatestCompatibleMatch);
 
 //#define DEBUG_SCHEMA_LEAKS
 #ifdef DEBUG_SCHEMA_LEAKS
@@ -1025,18 +1025,28 @@ bool                            useLatestCompatibleMatch
     schemaName += versionString;
     WString fullFileName;
 
+    UInt32 foundVersionMinor;
+
     FOR_EACH (WString schemaPath, schemaContext.GetSchemaPaths())
         {
         if (schemaPath[schemaPath.length() - 1] != '\\')
             schemaPath += '\\';
         schemaPath += schemaName;
 
-        if (SUCCESS != GetSchemaFileName (fullFileName, schemaPath.c_str(), useLatestCompatibleMatch))
+        //Finds latest
+        if (SUCCESS != GetSchemaFileName (fullFileName, foundVersionMinor, schemaPath.c_str(), useLatestCompatibleMatch))
+            continue;
+
+        //Check if schema is compatible before serializing, as serializing would add the schema to the cache.
+        if (! SchemasMatch (useLatestCompatibleMatch? SCHEMAMATCHTYPE_LatestCompatible : SCHEMAMATCHTYPE_Exact, 
+                            name.c_str(),   versionMajor,   versionMinor,
+                            name.c_str(),   versionMajor,   foundVersionMinor))
             continue;
 
         if (SCHEMA_DESERIALIZATION_STATUS_Success != ECSchema::ReadXmlFromFile (schemaOut, fullFileName.c_str(), schemaContext))
             continue;
-        
+
+
         return schemaOut;
         }
 
