@@ -1054,6 +1054,55 @@ static void     verifyECValueEnumeration (ECValuesCollectionR collection, bvecto
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan.Rush      5/11
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmptyInstance)
+    {
+    ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
+    ECSchemaP        schema = CreateTestSchema(*schemaCache);
+    ASSERT_TRUE (schema != NULL);
+
+    StandaloneECEnablerPtr enabler = schemaCache->ObtainStandaloneInstanceEnabler (schema->GetName().c_str(), L"EmptyClass");
+
+    //The class has zero properties?
+    //EXPECT_TRUE (0 == enabler->GetPropertyCount());
+
+    EXPECT_TRUE (1 == enabler->GetPropertyCount());
+
+    ASSERT_TRUE (enabler.IsValid());
+
+    /*--------------------------------------------------------------------------
+        Create an empty instance
+    --------------------------------------------------------------------------*/
+    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+
+    EC::ECValuesCollectionPtr collection = EC::ECValuesCollection::Create (*instance);
+
+    /*--------------------------------------------------------------------------
+        Iterate through its values - shouldn't find any
+    --------------------------------------------------------------------------*/
+    UInt32 foundValues = 0;
+    FOR_EACH (ECPropertyValuePtr propertyValue, *collection)
+        {
+        foundValues++;
+        }
+    EXPECT_TRUE (0 == foundValues);
+
+    /*--------------------------------------------------------------------------
+        Duplicate the instance and verify the duplicate.
+    --------------------------------------------------------------------------*/
+    StandaloneECInstancePtr standAloneInstance = StandaloneECInstance::Duplicate(*instance);
+
+    collection = ECValuesCollection::Create (*standAloneInstance);
+    foundValues = 0;
+    FOR_EACH (ECPropertyValuePtr propertyValue, *collection)
+        {
+        foundValues++;
+        }
+    EXPECT_TRUE (0 == foundValues);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_PrimitiveProperties)

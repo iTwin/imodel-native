@@ -1666,6 +1666,9 @@ ECPropertyValue ECValuesCollectionIterator::GetFirstPropertyValue (IECInstanceCR
 
     ECEnablerCR enabler = instance.GetEnabler();
 
+    if (1 == enabler.GetPropertyCount())
+        return ECPropertyValue ();
+
     UInt32  firstIndex = enabler.GetFirstPropertyIndex (0);
 
     if (0 != firstIndex)
