@@ -1516,10 +1516,18 @@ InstanceDeserializationStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr&
     ECClassCP    foundClass;
     if (NULL == (foundClass = schema->GetClassP (className)))
         {
+        WString schemaName;
+        UInt32  majorVersion;
+        UInt32  minorVersion;
+        bool checkName = ECOBJECTS_STATUS_Success == ECSchema::ParseSchemaFullName (schemaName, majorVersion, minorVersion, m_fullSchemaName);
+        
         ECSchemaReferenceList refList = schema->GetReferencedSchemas();
         ECSchemaReferenceList::const_iterator schemaIterator;
         for (schemaIterator = refList.begin(); schemaIterator != refList.end(); schemaIterator++)
             {
+            if (checkName && (*schemaIterator)->GetName() != schemaName)
+                continue;
+                
             if (NULL != (foundClass = (*schemaIterator)->GetClassP (className)))
                 break;
             }
@@ -1623,13 +1631,15 @@ InstanceDeserializationStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr&
             if (FAILED (status = m_xmlReader->GetValue (&nameSpace, NULL)))
                 return TranslateStatus (status);
             WCharCP  schemaName = foundClass->GetSchema().GetName().c_str();
-            assert (0 == wcsncmp (schemaName, nameSpace, wcslen (schemaName)));
+            if (0 != wcsncmp (schemaName, nameSpace, wcslen (schemaName)))
+                ECObjectsLogger::Log()->warningv(L"ECInstance of (%s) has xmlns (%s) that disagrees with its ECSchemaName (%s)", 
+                    foundClass->GetName().c_str(), nameSpace, schemaName);
             }
 
         else
             {
-            // unexpected attribute.
-            assert (false);
+            ECObjectsLogger::Log()->warningv(L"ECInstance of (%s) has an unrecognized attribute (%s)", 
+                    foundClass->GetName().c_str(), attributeName);
             }
 
         // the namespace should agree with the schema name.
