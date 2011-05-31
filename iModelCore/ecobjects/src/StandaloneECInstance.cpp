@@ -709,8 +709,8 @@ WString        StandaloneECInstance::_ToString (WCharCP indent) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StandaloneECEnabler::StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocatorR childECEnablerLocator, bool ownsClassLayout) :
-    ECEnabler (ecClass, childECEnablerLocator),
+StandaloneECEnabler::StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocaterR childECEnablerLocater, bool ownsClassLayout) :
+    ECEnabler (ecClass, childECEnablerLocater),
     ClassLayoutHolder (classLayout),
     m_ownsClassLayout (ownsClassLayout)
     {
@@ -731,9 +731,9 @@ StandaloneECEnabler::~StandaloneECEnabler ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StandaloneECEnablerPtr    StandaloneECEnabler::CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocatorR childECEnablerLocator, bool ownsClassLayout)
+StandaloneECEnablerPtr    StandaloneECEnabler::CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocaterR childECEnablerLocater, bool ownsClassLayout)
     {
-    return new StandaloneECEnabler (ecClass, classLayout, childECEnablerLocator, ownsClassLayout);
+    return new StandaloneECEnabler (ecClass, classLayout, childECEnablerLocater, ownsClassLayout);
     }
     
 /*---------------------------------------------------------------------------------**//**

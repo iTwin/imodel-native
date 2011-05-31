@@ -1218,17 +1218,17 @@ WString                        IECInstance::ToString (WCharCP indent) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceDeserializationContextPtr ECInstanceDeserializationContext::CreateContext (ECSchemaCR schema, IStandaloneEnablerLocatorR standaloneEnablerLocator)
+ECInstanceDeserializationContextPtr ECInstanceDeserializationContext::CreateContext (ECSchemaCR schema, IStandaloneEnablerLocaterR standaloneEnablerLocater)
     {
-    return new ECInstanceDeserializationContext (&schema, NULL, standaloneEnablerLocator);
+    return new ECInstanceDeserializationContext (&schema, NULL, standaloneEnablerLocater);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceDeserializationContextPtr ECInstanceDeserializationContext::CreateContext (ECSchemaDeserializationContextR context, IStandaloneEnablerLocatorR standaloneEnablerLocator)
+ECInstanceDeserializationContextPtr ECInstanceDeserializationContext::CreateContext (ECSchemaDeserializationContextR context, IStandaloneEnablerLocaterR standaloneEnablerLocater)
     {
-    return new ECInstanceDeserializationContext (NULL, &context, standaloneEnablerLocator);
+    return new ECInstanceDeserializationContext (NULL, &context, standaloneEnablerLocater);
     }
 
 END_BENTLEY_EC_NAMESPACE
@@ -1542,7 +1542,7 @@ InstanceDeserializationStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr&
 
     // create a StandAloneECInstance instance of the class
     ClassLayoutP                classLayout         = ClassLayout::BuildFromClass (*foundClass, 0, 0);
-    StandaloneECEnablerPtr      standaloneEnabler   = StandaloneECEnabler::CreateEnabler (*foundClass, *classLayout, m_context.GetStandaloneEnablerLocator(), true);
+    StandaloneECEnablerPtr      standaloneEnabler   = StandaloneECEnabler::CreateEnabler (*foundClass, *classLayout, m_context.GetStandaloneEnablerLocater(), true);
 
     // create the instance.
     ecInstance                                      = standaloneEnabler->CreateInstance().get();

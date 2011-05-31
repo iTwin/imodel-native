@@ -80,7 +80,7 @@ EC_TYPEDEFS(IECInstance);
 EC_TYPEDEFS(IECRelationshipInstance);
 EC_TYPEDEFS(ECSchemaOwner);
 EC_TYPEDEFS(IECSchemaOwner);
-EC_TYPEDEFS(IECSchemaLocator);
+EC_TYPEDEFS(IECSchemaLocater);
 EC_TYPEDEFS(IECCustomAttributeContainer);
 EC_TYPEDEFS(ECInstanceDeserializationContext);
 EC_TYPEDEFS(ECSchemaCache);
@@ -89,7 +89,7 @@ EC_TYPEDEFS(IECWipRelationshipInstance);
 EC_TYPEDEFS(ECRelationshipInstanceHolder);
 
 EC_TYPEDEFS(ECEnabler);
-EC_TYPEDEFS(IStandaloneEnablerLocator);
+EC_TYPEDEFS(IStandaloneEnablerLocater);
 EC_TYPEDEFS(IArrayManipulator);
 
 EC_TYPEDEFS(SchemaLayout);

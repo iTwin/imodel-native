@@ -848,7 +848,7 @@ const void*       arg
 SchemaDeserializationStatus ECClass::ReadXmlAttributes
 (
 MSXML2::IXMLDOMNode& classNode,
-IStandaloneEnablerLocatorR  standaloneEnablerLocator
+IStandaloneEnablerLocaterR  standaloneEnablerLocater
 )
     {                
     MSXML2::IXMLDOMNamedNodeMapPtr nodeAttributesPtr = classNode.attributes;
@@ -883,7 +883,7 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
 SchemaDeserializationStatus ECClass::ReadXmlContents
 (
 MSXML2::IXMLDOMNode&        classNode,
-IStandaloneEnablerLocatorR  standaloneEnablerLocator
+IStandaloneEnablerLocaterR  standaloneEnablerLocater
 )
     {            
     // Build inheritance hierarchy 
@@ -940,7 +940,7 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
             return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
             }
 
-        SchemaDeserializationStatus status = pProperty->_ReadXml(xmlNodePtr, standaloneEnablerLocator);
+        SchemaDeserializationStatus status = pProperty->_ReadXml(xmlNodePtr, standaloneEnablerLocater);
         if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
             {
             ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to deserialize properties of ECClass '%s' in the ECSchema '%s'", this->GetName().c_str(), this->GetSchema().GetName().c_str());                
@@ -958,7 +958,7 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
         }
 
     // Add Custom Attributes
-    ReadCustomAttributes(classNode, m_schema, standaloneEnablerLocator);
+    ReadCustomAttributes(classNode, m_schema, standaloneEnablerLocater);
 
     return SCHEMA_DESERIALIZATION_STATUS_Success;
     }
@@ -1374,7 +1374,7 @@ ECSchemaCP ECRelationshipConstraint::_GetContainerSchema() const
 SchemaDeserializationStatus ECRelationshipConstraint::ReadXml
 (
 MSXML2::IXMLDOMNode         &constraintNode,
-IStandaloneEnablerLocatorR  standaloneEnablerLocator
+IStandaloneEnablerLocaterR  standaloneEnablerLocater
 )
     {
     SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
@@ -1426,7 +1426,7 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
         }
 
     // Add Custom Attributes
-    ReadCustomAttributes(constraintNode, m_relClass->GetSchema(), standaloneEnablerLocator);
+    ReadCustomAttributes(constraintNode, m_relClass->GetSchema(), standaloneEnablerLocater);
 
     return status;
     }
@@ -1904,10 +1904,10 @@ MSXML2::IXMLDOMElement& parentNode
 SchemaDeserializationStatus ECRelationshipClass::ReadXmlAttributes
 (
 MSXML2::IXMLDOMNode &classNode, 
-IStandaloneEnablerLocatorR  standaloneEnablerLocator
+IStandaloneEnablerLocaterR  standaloneEnablerLocater
 )
     {
-    SchemaDeserializationStatus status = __super::ReadXmlAttributes(classNode, standaloneEnablerLocator);
+    SchemaDeserializationStatus status = __super::ReadXmlAttributes(classNode, standaloneEnablerLocater);
     if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
         return status;
         
@@ -1926,20 +1926,20 @@ IStandaloneEnablerLocatorR  standaloneEnablerLocator
 SchemaDeserializationStatus ECRelationshipClass::ReadXmlContents
 (
 MSXML2::IXMLDOMNode &classNode, 
-IStandaloneEnablerLocatorR  standaloneEnablerLocator
+IStandaloneEnablerLocaterR  standaloneEnablerLocater
 )
     {
-    SchemaDeserializationStatus status = __super::ReadXmlContents(classNode, standaloneEnablerLocator);
+    SchemaDeserializationStatus status = __super::ReadXmlContents(classNode, standaloneEnablerLocater);
     if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
         return status;
         
     MSXML2::IXMLDOMNodePtr xmlNodePtr = classNode.selectSingleNode (EC_NAMESPACE_PREFIX L":" EC_SOURCECONSTRAINT_ELEMENT);
     if (NULL != xmlNodePtr)
-        m_source->ReadXml(xmlNodePtr, standaloneEnablerLocator);
+        m_source->ReadXml(xmlNodePtr, standaloneEnablerLocater);
     
     xmlNodePtr = classNode.selectSingleNode (EC_NAMESPACE_PREFIX L":" EC_TARGETCONSTRAINT_ELEMENT);
     if (NULL != xmlNodePtr)
-        m_target->ReadXml(xmlNodePtr, standaloneEnablerLocator);
+        m_target->ReadXml(xmlNodePtr, standaloneEnablerLocater);
         
     return SCHEMA_DESERIALIZATION_STATUS_Success;
     }
