@@ -329,7 +329,7 @@ MSXML2::IXMLDOMNode& propertyNode
     MSXML2::IXMLDOMNodePtr customAttributesNodePtr = propertyNode.ownerDocument->createNode(NODE_ELEMENT, EC_CUSTOM_ATTRIBUTES_ELEMENT, ECXML_URI_2_0);
     for (iter = m_customAttributes.begin(); iter != m_customAttributes.end(); iter++)
         {
-        (*iter)->WriteXmlToString(customAttributeXml, false);
+        (*iter)->WriteXmlToString(customAttributeXml, false, false);
         MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;        
         if (S_OK != xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)))
             return SCHEMA_SERIALIZATION_STATUS_FailedToInitializeMsmxl;

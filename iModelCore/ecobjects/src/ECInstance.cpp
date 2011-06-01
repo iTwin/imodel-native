@@ -230,6 +230,12 @@ void IECInstance::Debug_ResetAllocationStats()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/11
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus        IECInstance::_SetInstanceId (WCharCP id)    { return ECOBJECTS_STATUS_OperationNotSupported; }
+ECObjectsStatus        IECInstance::SetInstanceId (WCharCP id)     { return _SetInstanceId(id); }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString        IECInstance::GetInstanceId() const
@@ -1566,9 +1572,7 @@ InstanceDeserializationStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr&
             WCharCP  instanceId;
             if (FAILED (status = m_xmlReader->GetValue (&instanceId, NULL)))
                 return TranslateStatus (status);
-#if defined (NEEDSWORK_INSTANCEID)
             ecInstance->SetInstanceId (instanceId);
-#endif
             }
 
         else if (0 == wcscmp (SOURCEINSTANCEID_ATTRIBUTE, attributeName))
@@ -2451,7 +2455,7 @@ InstanceSerializationStatus     Init ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceSerializationStatus     WriteInstance (IECInstanceCR instance, bool writeStart)
+InstanceSerializationStatus     WriteInstance (IECInstanceCR instance, bool writeStart, bool writeInstanceId)
     {
     ECClassCR               ecClass     = instance.GetClass();
     ECSchemaCR              ecSchema    = ecClass.GetSchema();
@@ -2473,6 +2477,12 @@ InstanceSerializationStatus     WriteInstance (IECInstanceCR instance, bool writ
         return TranslateStatus (status);
         }
     free(fullSchemaName);
+
+    if (writeInstanceId)
+        {
+        if (S_OK != (status = m_xmlWriter->WriteAttributeString (NULL, INSTANCEID_ATTRIBUTE, NULL, instance.GetInstanceId().c_str())))
+            return TranslateStatus (status);
+        }
 
     WritePropertiesOfClassOrStructArrayMember (ecClass, instance, NULL);
 
@@ -2941,7 +2951,7 @@ InstanceDeserializationStatus   IECInstance::ReadXmlFromString (IECInstancePtr& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceSerializationStatus     IECInstance::WriteXmlToFile (WCharCP fileName, bool isStandAlone)
+InstanceSerializationStatus     IECInstance::WriteXmlToFile (WCharCP fileName, bool isStandAlone, bool writeInstanceId)
     {
     InstanceXmlWriter writer (fileName);
 
@@ -2949,13 +2959,13 @@ InstanceSerializationStatus     IECInstance::WriteXmlToFile (WCharCP fileName, b
     if (INSTANCE_SERIALIZATION_STATUS_Success != (status = writer.Init ()))
         return status;
 
-    return writer.WriteInstance (*this, isStandAlone);
+    return writer.WriteInstance (*this, isStandAlone, writeInstanceId);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceSerializationStatus     IECInstance::WriteXmlToStream (IStreamP stream, bool isStandAlone)
+InstanceSerializationStatus     IECInstance::WriteXmlToStream (IStreamP stream, bool isStandAlone, bool writeInstanceId)
     {
     InstanceXmlWriter writer (stream);
 
@@ -2963,13 +2973,13 @@ InstanceSerializationStatus     IECInstance::WriteXmlToStream (IStreamP stream, 
     if (INSTANCE_SERIALIZATION_STATUS_Success != (status = writer.Init ()))
         return status;
 
-    return writer.WriteInstance (*this, isStandAlone);
+    return writer.WriteInstance (*this, isStandAlone, writeInstanceId);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceSerializationStatus     IECInstance::WriteXmlToString (WString & ecInstanceXml, bool isStandAlone )
+InstanceSerializationStatus     IECInstance::WriteXmlToString (WString & ecInstanceXml, bool isStandAlone, bool writeInstanceId)
     {
     InstanceSerializationStatus   status;
 
@@ -2981,7 +2991,7 @@ InstanceSerializationStatus     IECInstance::WriteXmlToString (WString & ecInsta
     if (INSTANCE_SERIALIZATION_STATUS_Success != (status = writer.Init ()))
         return status;
 
-    if (INSTANCE_SERIALIZATION_STATUS_Success != (status = writer.WriteInstance(*this, isStandAlone)))
+    if (INSTANCE_SERIALIZATION_STATUS_Success != (status = writer.WriteInstance(*this, isStandAlone, writeInstanceId)))
         return status;
 
     LARGE_INTEGER liPos = {0};
