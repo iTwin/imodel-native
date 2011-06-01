@@ -919,10 +919,10 @@ protected:
     virtual ECSchemaP       _LocateSchema (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType) = 0;
 
 public:
-    ECObjectsStatus         AddSchema   (ECSchemaR);
-    ECObjectsStatus         DropSchema  (ECSchemaR);
-    ECSchemaP               GetSchema   (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor);
-    ECSchemaP               LocateSchema (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType);
+    ECOBJECTS_EXPORT ECObjectsStatus         AddSchema   (ECSchemaR);
+    ECOBJECTS_EXPORT ECObjectsStatus         DropSchema  (ECSchemaR);
+    ECOBJECTS_EXPORT ECSchemaP               GetSchema   (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor);
+    ECOBJECTS_EXPORT ECSchemaP               LocateSchema (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType);
 
 /*__PUBLISH_SECTION_START__*/
 };
