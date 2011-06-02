@@ -90,6 +90,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     };
 
 /*=================================================================================**//**
+//! @ingroup ECObjectsGroup
 * EC::StandaloneECInstance is the native equivalent of a .NET "Heavyweight" ECInstance.
 * It holds the values in memory that it allocates... laid out according to the ClassLayout
 * @see ClassLayoutHolder, IECInstance
@@ -159,7 +160,8 @@ struct IECWipRelationshipInstance : StandaloneECInstance
     };
 
 //=======================================================================================
-//! ECEnabler for Standalone ECInstances
+//! @ingroup ECObjectsGroup
+//! ECEnabler for Standalone ECInstances (IECInstances not tied to a specific persistent store)
 //=======================================================================================
 struct StandaloneECEnabler : public ClassLayoutHolder, public ECEnabler
     {
@@ -170,7 +172,7 @@ private:
     virtual ~StandaloneECEnabler();
 
 protected:
-    virtual WCharCP                  _GetName() const override;
+    virtual WCharCP                     _GetName() const override;
     virtual ECObjectsStatus             _GetPropertyIndex (UInt32& propertyIndex, WCharCP propertyAccessString) const override;
     virtual ECObjectsStatus             _GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const override;
     virtual UInt32                      _GetPropertyCount () const override;

@@ -1234,9 +1234,6 @@ ECInstanceDeserializationContextPtr ECInstanceDeserializationContext::CreateCont
 END_BENTLEY_EC_NAMESPACE
 
 
-
-
-
 #include <xmllite.h>
 #include <atlbase.h>
 

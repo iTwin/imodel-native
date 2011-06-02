@@ -196,6 +196,7 @@ public:
 struct PrimitiveECProperty;
 
 //=======================================================================================
+//! @ingroup ECObjectsGroup
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
 //=======================================================================================
 struct ECProperty /*abstract*/ : public IECCustomAttributeContainer
@@ -227,7 +228,7 @@ protected:
     virtual bool                        _IsArray () const { return false; }
     // This method returns a wstring by value because it may be a computed string.  For instance struct properties may return a qualified typename with a namespace
     // prefix relative to the containing schema.
-    virtual WString                    _GetTypeName () const = 0;
+    virtual WString                     _GetTypeName () const = 0;
     virtual ECObjectsStatus             _SetTypeName (WStringCR typeName) = 0;
 
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const = 0;
@@ -293,7 +294,7 @@ protected:
     virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode, IStandaloneEnablerLocaterR  standaloneEnablerLocater) override;
     virtual SchemaSerializationStatus   _WriteXml(MSXML2_IXMLDOMElement& parentNode) override;
     virtual bool                        _IsPrimitive () const override { return true;}
-    virtual WString                    _GetTypeName () const override;
+    virtual WString                     _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (WStringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
     virtual PrimitiveECProperty*        _GetAsPrimitiveECProperty() {return this;}
@@ -320,7 +321,7 @@ protected:
     virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode, IStandaloneEnablerLocaterR  standaloneEnablerLocater) override;
     virtual SchemaSerializationStatus   _WriteXml(MSXML2_IXMLDOMElement& parentNode) override;
     virtual bool                        _IsStruct () const override { return true;}
-    virtual WString                    _GetTypeName () const override;
+    virtual WString                     _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (WStringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
 
@@ -443,6 +444,7 @@ typedef bool (*TraversalDelegate) (ECClassCP, const void *);
 /*__PUBLISH_SECTION_START__*/
 
 //=======================================================================================
+//! @ingroup ECObjectsGroup
 //! The in-memory representation of an ECClass as defined by ECSchemaXML
 //=======================================================================================
 struct ECClass /*__PUBLISH_ABSTRACT__*/ : IECCustomAttributeContainer
@@ -784,6 +786,7 @@ public:
 };
 
 //=======================================================================================
+//! @ingroup ECObjectsGroup
 //! The in-memory representation of a relationship class as defined by ECSchemaXML
 //=======================================================================================
 struct ECRelationshipClass /*__PUBLISH_ABSTRACT__*/ : public ECClass
@@ -1013,6 +1016,7 @@ public:
 };
 
 //=======================================================================================
+//! @ingroup ECObjectsGroup
 //! The in-memory representation of a schema as defined by ECSchemaXML
 //=======================================================================================
 struct ECSchema /*__PUBLISH_ABSTRACT__*/ : public IECCustomAttributeContainer
@@ -1242,7 +1246,7 @@ public:
     //! @param[out]   thatSchema           Pointer to schema
     ECOBJECTS_EXPORT static bool                        SchemasAreEqualByName (ECSchemaCP thisSchema, ECSchemaCP thatSchema);
 
-    //! Deserializes an ECXML schema from a file.
+    //! Deserializes an ECSchema from an ECSchemaXML-formatted file
     //! @code
     //! // The IECSchemaOwner determines the lifespan of any ECSchema objects that are created using it.
     //! // ECSchemaCache also caches ECSchemas and implements IStandaloneEnablerLocater for use by ECSchemaDeserializationContext
@@ -1250,7 +1254,7 @@ public:
     //! 
     //! // The schemaContext supplies an IECSchemaOwner to control the lifetime of deserialized ECSchemas and a 
     //! // IStandaloneEnablerLocater to locate enablers for ECCustomAttributes in the ECSchema
-    //! ECSchemaDeserializationContextPtr schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
+    //! ECSchemaDeserializationContextPtr schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
     //! 
     //! ECSchemaP schema;
     //! SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ecSchemaFilename, *schemaContext);
@@ -1275,7 +1279,7 @@ public:
      ECOBJECTS_EXPORT static ECSchemaP                   LocateSchema(const WString & name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR schemaContext);
     
     //! 
-    //! Deserializes an ECXML schema from a string.
+    //! Deserializes an ECSchema from an ECSchemaXML-formatted string.
     //! @code
     //! // The IECSchemaOwner determines the lifespan of any ECSchema objects that are created using it.
     //! // ECSchemaCache also caches ECSchemas and implements IStandaloneEnablerLocater for use by ECSchemaDeserializationContext
@@ -1283,7 +1287,7 @@ public:
     //! 
     //! // The schemaContext supplies an IECSchemaOwner to control the lifetime of deserialized ECSchemas and a 
     //! // IStandaloneEnablerLocater to locate enablers for ECCustomAttributes in the ECSchema
-    //! ECSchemaDeserializationContextPtr schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
+    //! ECSchemaDeserializationContextPtr schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
     //! 
     //! ECSchemaP schema;
     //! SchemaDeserializationStatus status = ECSchema::ReadXmlFromString (schema, ecSchemaAsString, *schemaContext);
@@ -1299,7 +1303,28 @@ public:
     //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
     ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromString (ECSchemaP& schemaOut, WCharCP ecSchemaXml, ECSchemaDeserializationContextR schemaContext);
 
-    //! Deserializes an ECXML schema from an IStream.
+    //! 
+    //! Deserializes an ECSchema from an ECSchemaXML-formatted string.
+    //! @code
+    //! // The IECSchemaOwner determines the lifespan of any ECSchema objects that are created using it.
+    //! // ECSchemaCache also caches ECSchemas and implements IStandaloneEnablerLocater for use by ECSchemaDeserializationContext
+    //! ECSchemaCachePtr                  schemaOwner = ECSchemaCache::Create();
+    //! 
+    //! ECSchemaP schema;
+    //! SchemaDeserializationStatus status = ECSchema::ReadXmlFromString (schema, ecSchemaAsString, *schemaOwner);
+    //! if (SCHEMA_DESERIALIZATION_STATUS_Success != status)
+    //!     return ERROR;
+    //! @endcode
+    //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and
+    //! uninitialize COM using CoInitialize/CoUninitialize</b>
+    //! @param[out]   schemaOut           The deserialized schema
+    //! @param[in]    ecSchemaXml         The string containing ECSchemaXML to deserialize
+    //! @param[in]    schemaCache         Will own the deserialized ECSchema and referenced ECSchemas.
+    //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
+    //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
+    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromString (ECSchemaP& schemaOut, WCharCP ecSchemaXml, ECSchemaCacheR schemaCache);
+
+    //! Deserializes an ECSchema from an ECSchemaXML-formatted string in an IStream.
     //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and
     //! uninitialize COM using CoInitialize/CoUninitialize</b>
     //! @param[out]   schemaOut           The deserialized schema

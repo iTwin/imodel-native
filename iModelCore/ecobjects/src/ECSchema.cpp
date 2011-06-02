@@ -1665,6 +1665,7 @@ ECSchemaDeserializationContext::ECSchemaDeserializationContext(IECSchemaOwnerR o
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaDeserializationContextPtr  ECSchemaDeserializationContext::CreateContext (IECSchemaOwnerR owner, IStandaloneEnablerLocaterR enablerLocater)   
                                                                                         { return new ECSchemaDeserializationContext(owner, enablerLocater); }
+ECSchemaDeserializationContextPtr  ECSchemaDeserializationContext::CreateContext (ECSchemaCacheR owner) { return CreateContext (owner, owner); }
 void  ECSchemaDeserializationContext::AddSchemaLocaters (bvector<EC::IECSchemaLocaterP>& locators) { m_locators.insert (m_locators.begin(), locators.begin(), locators.end());  }
 void  ECSchemaDeserializationContext::AddSchemaLocater (IECSchemaLocaterR locater)      { m_locators.push_back (&locater);  }
 void  ECSchemaDeserializationContext::AddSchemaPath (WCharCP path)               { m_searchPaths.push_back (WString(path));   }
@@ -1687,83 +1688,6 @@ ECObjectsStatus IECSchemaOwner::AddSchema  (ECSchemaR schema) { return _AddSchem
 ECObjectsStatus IECSchemaOwner::DropSchema (ECSchemaR schema) { return _DropSchema (schema); }
 ECSchemaP       IECSchemaOwner::GetSchema  (WCharCP name, UInt32 major, UInt32 minor) { return _GetSchema (name, major, minor); }
 ECSchemaP       IECSchemaOwner::LocateSchema (WCharCP name, UInt32 major, UInt32 minor, SchemaMatchType matchType) { return _LocateSchema (name, major, minor, matchType); }
-
-#ifdef NO_MORE
-/////////////////////////////////////////////////////////////////////////////////////////
-// ECSchemaOwner
-/////////////////////////////////////////////////////////////////////////////////////////
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    06/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaOwnerPtr    ECSchemaOwner::CreateOwner ()
-    {
-    return new ECSchemaOwner;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    06/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaOwner::~ECSchemaOwner ()
-    {
-    if (0 == m_schemas.size())
-        return;
-
-    FOR_EACH (ECSchemaP ecSchema, m_schemas)
-        ECSchema::DestroySchema (ecSchema);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    06/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchemaOwner::_AddSchema (ECSchemaR ecSchema)
-    {
-    bvector<ECSchemaP>::iterator iter = std::find(m_schemas.begin(), m_schemas.end(), &ecSchema);
-    if (iter == m_schemas.end())
-        m_schemas.push_back (&ecSchema);
-
-    return ECOBJECTS_STATUS_Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    06/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchemaOwner::_DropSchema (ECSchemaR ecSchema)
-    {
-    bvector<ECSchemaP>::iterator iter = std::find(m_schemas.begin(), m_schemas.end(), &ecSchema);
-    if (iter == m_schemas.end())
-        return ECOBJECTS_STATUS_SchemaNotFound;
-
-    ECSchema::DestroySchema (*iter);
-
-    m_schemas.erase(iter);
-
-    return ECOBJECTS_STATUS_Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  07/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP       ECSchemaOwner::_LocateSchema (WCharCP name, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType)
-    { 
-    FOR_EACH (ECSchemaP ecSchema, m_schemas)
-        {
-        if (ECSchema::SchemasMatch (matchType, name, versionMajor, versionMinor, ecSchema->GetName().c_str(), ecSchema->GetVersionMajor(), ecSchema->GetVersionMinor()))
-            return ecSchema;
-        }
-
-    return NULL;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    07/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP       ECSchemaOwner::_GetSchema (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor)
-    {
-    return _LocateSchema (schemaName, versionMajor, versionMinor, SCHEMAMATCHTYPE_Exact);
-    }
-
-#endif
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // IStandaloneEnablerLocater
@@ -1883,6 +1807,7 @@ StandaloneECEnablerPtr          ECSchemaCache::_ObtainStandaloneInstanceEnabler 
 
     return NULL;
     }
+    
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // ECClassContainer
