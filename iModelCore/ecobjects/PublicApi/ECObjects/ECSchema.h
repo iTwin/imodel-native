@@ -115,14 +115,14 @@ protected:
     SchemaSerializationStatus           WriteCustomAttributes(MSXML2_IXMLDOMNode& parentNode) const;
 
     void                                AddUniqueCustomAttributesToList(ECCustomAttributeCollection& returnList);
-/*__PUBLISH_SECTION_START__*/
 protected:
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const;
     virtual ECSchemaCP                  _GetContainerSchema() const {return NULL;};
 
-public:
     ECOBJECTS_EXPORT virtual ~IECCustomAttributeContainer();
 
+public:
+/*__PUBLISH_SECTION_START__*/
     //! Returns true if the conainer has a custom attribute of a class of the specified name
     ECOBJECTS_EXPORT bool               IsDefined(WStringCR className) ;
     //! Returns true if the conainer has a custom attribute of a class of the specified class definition
@@ -709,6 +709,7 @@ public:
 struct ECRelationshipConstraint : IECCustomAttributeContainer
 {
 friend struct ECRelationshipClass;
+/*__PUBLISH_SECTION_END__*/
 
 private:
     // NEEDSWORK: To be completely compatible, we need to store an ECRelationshipConstraintClass with properties in order
@@ -733,6 +734,7 @@ private:
     
 protected:
     virtual ECSchemaCP          _GetContainerSchema() const override;
+/*__PUBLISH_SECTION_START__*/
   
 public:
     //! Initializes a new instance of the ECRelationshipConstraint class.
@@ -1241,6 +1243,20 @@ public:
     ECOBJECTS_EXPORT static bool                        SchemasAreEqualByName (ECSchemaCP thisSchema, ECSchemaCP thatSchema);
 
     //! Deserializes an ECXML schema from a file.
+    //! @code
+    //! // The IECSchemaOwner determines the lifespan of any ECSchema objects that are created using it.
+    //! // ECSchemaCache also caches ECSchemas and implements IStandaloneEnablerLocator for use by ECSchemaDeserializationContext
+    //! ECSchemaCachePtr                  schemaOwner = ECSchemaCache::Create();
+    //! 
+    //! // The schemaContext supplies an IECSchemaOwner to control the lifetime of deserialized ECSchemas and a 
+    //! // IStandaloneEnablerLocator to locate enablers for ECCustomAttributes in the ECSchema
+    //! ECSchemaDeserializationContextPtr schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
+    //! 
+    //! ECSchemaP schema;
+    //! SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ecSchemaFilename, *schemaContext);
+    //! if (SCHEMA_DESERIALIZATION_STATUS_Success != status)
+    //!     return ERROR;
+    //! @endcode
     //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and
     //! uninitialize COM using CoInitialize/CoUninitialize</b>
     //! @param[out]   schemaOut           The deserialized schema
@@ -1256,9 +1272,24 @@ public:
     //! @param[in]    versionMajor        The major version number of the schema to locate.
     //! @param[in]    versionMinor        The minor version number of the schema to locate.
     //! @param[in]    schemaContext       Required to create schemas
-    ECOBJECTS_EXPORT static ECSchemaP                   LocateSchema(const WString & name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR schemaContext);
-
+     ECOBJECTS_EXPORT static ECSchemaP                   LocateSchema(const WString & name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR schemaContext);
+    
+    //! 
     //! Deserializes an ECXML schema from a string.
+    //! @code
+    //! // The IECSchemaOwner determines the lifespan of any ECSchema objects that are created using it.
+    //! // ECSchemaCache also caches ECSchemas and implements IStandaloneEnablerLocator for use by ECSchemaDeserializationContext
+    //! ECSchemaCachePtr                  schemaOwner = ECSchemaCache::Create();
+    //! 
+    //! // The schemaContext supplies an IECSchemaOwner to control the lifetime of deserialized ECSchemas and a 
+    //! // IStandaloneEnablerLocator to locate enablers for ECCustomAttributes in the ECSchema
+    //! ECSchemaDeserializationContextPtr schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
+    //! 
+    //! ECSchemaP schema;
+    //! SchemaDeserializationStatus status = ECSchema::ReadXmlFromString (schema, ecSchemaAsString, *schemaContext);
+    //! if (SCHEMA_DESERIALIZATION_STATUS_Success != status)
+    //!     return ERROR;
+    //! @endcode
     //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and
     //! uninitialize COM using CoInitialize/CoUninitialize</b>
     //! @param[out]   schemaOut           The deserialized schema
