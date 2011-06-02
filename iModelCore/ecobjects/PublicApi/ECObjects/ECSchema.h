@@ -115,14 +115,13 @@ protected:
     SchemaSerializationStatus           WriteCustomAttributes(MSXML2_IXMLDOMNode& parentNode) const;
 
     void                                AddUniqueCustomAttributesToList(ECCustomAttributeCollection& returnList);
-protected:
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const;
-    virtual ECSchemaCP                  _GetContainerSchema() const {return NULL;};
+    virtual ECSchemaCP                  _GetContainerSchema() const = 0;// {return NULL;};
 
     ECOBJECTS_EXPORT virtual ~IECCustomAttributeContainer();
 
-public:
 /*__PUBLISH_SECTION_START__*/
+public:
     //! Returns true if the conainer has a custom attribute of a class of the specified name
     ECOBJECTS_EXPORT bool               IsDefined(WStringCR className) ;
     //! Returns true if the conainer has a custom attribute of a class of the specified class definition
@@ -455,9 +454,9 @@ friend struct ECSchema;
 friend struct ECPropertyIterable::IteratorState;
 
 private:
-    WString                        m_name;
-    WString                        m_displayLabel;
-    WString                        m_description;
+    WString                         m_name;
+    WString                         m_displayLabel;
+    WString                         m_description;
     bool                            m_isStruct;
     bool                            m_isCustomAttributeClass;
     bool                            m_isDomainClass;
@@ -506,6 +505,8 @@ protected:
     virtual SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode) const;
     SchemaSerializationStatus           WriteXml(MSXML2_IXMLDOMElement& parentNode, WCharCP elementName) const;
 
+    virtual ECRelationshipClassCP       _GetRelationshipClassCP () const { return NULL; }  // used to avoid dynamic_cast
+    
 public:    
     ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();
 
@@ -530,10 +531,6 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsDomainClass(bool value);
     ECOBJECTS_EXPORT bool               GetIsDomainClass() const;    
     
-    //! Returns pointer to ECRelationshipClassP,  used to avoid dynamic_cast.
-    //! @return     Returns NULL if not an ECRelationshipClass
-    ECOBJECTS_EXPORT virtual ECRelationshipClassCP GetRelationshipClassCP () const {return NULL;}  // used to avoid dynamic_cast
-
     //! Returns a list of properties for this class.
     //! @param[in]  includeBaseProperties If true, then will return properties that are contained in this class's base class(es)
     //! @return     An iterable container of ECProperties
@@ -710,8 +707,8 @@ public:
 //=======================================================================================
 struct ECRelationshipConstraint : IECCustomAttributeContainer
 {
-friend struct ECRelationshipClass;
 /*__PUBLISH_SECTION_END__*/
+friend struct ECRelationshipClass;
 
 private:
     // NEEDSWORK: To be completely compatible, we need to store an ECRelationshipConstraintClass with properties in order
@@ -736,15 +733,16 @@ private:
     
 protected:
     virtual ECSchemaCP          _GetContainerSchema() const override;
-/*__PUBLISH_SECTION_START__*/
   
-public:
     //! Initializes a new instance of the ECRelationshipConstraint class.
     //! IsPolymorphic defaults to true and IsMultiple defaults to false 
-    ECRelationshipConstraint(ECRelationshipClassP relationshipClass);
+    ECRelationshipConstraint(ECRelationshipClassP relationshipClass);  // WIP_CEM... should not be public... create a factory method
     
     //! Initializes a new instance of the ECRelationshipConstraint class
-    ECRelationshipConstraint(ECRelationshipClassP relationshipClass, bool isMultiple);
+    ECRelationshipConstraint(ECRelationshipClassP relationshipClass, bool isMultiple); // WIP_CEM... should not be public... create a factory method
+
+/*__PUBLISH_SECTION_START__*/
+public:
     
     //! Returns true if the constraint allows for a variable number of classes
     ECOBJECTS_EXPORT bool                       GetIsMultiple() const;
@@ -814,12 +812,12 @@ protected:
 
     virtual SchemaDeserializationStatus ReadXmlAttributes (MSXML2_IXMLDOMNode& classNode, IStandaloneEnablerLocaterR  standaloneEnablerLocater) override;
     virtual SchemaDeserializationStatus ReadXmlContents (MSXML2_IXMLDOMNode& classNode, IStandaloneEnablerLocaterR  standaloneEnablerLocater) override;
+    virtual ECRelationshipClassCP       _GetRelationshipClassCP () const override {return this;};
 
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Returns pointer to ECRelationshipClassP,  used to avoid dynamic_cast.
     //! @return     Returns NULL if not an ECRelationshipClass
-    ECOBJECTS_EXPORT virtual ECRelationshipClassCP        GetRelationshipClassCP () const override {return this;};
     ECOBJECTS_EXPORT ECObjectsStatus                      GetOrderedRelationshipPropertyName (WString& propertyName, ECRelationshipEnd end)  const;
     ECOBJECTS_EXPORT ECObjectsStatus            SetStrength(StrengthType value);
     ECOBJECTS_EXPORT StrengthType               GetStrength() const;                
@@ -1282,12 +1280,9 @@ public:
     //! Deserializes an ECSchema from an ECSchemaXML-formatted string.
     //! @code
     //! // The IECSchemaOwner determines the lifespan of any ECSchema objects that are created using it.
-    //! // ECSchemaCache also caches ECSchemas and implements IStandaloneEnablerLocater for use by ECSchemaDeserializationContext
     //! ECSchemaCachePtr                  schemaOwner = ECSchemaCache::Create();
     //! 
     //! // The schemaContext supplies an IECSchemaOwner to control the lifetime of deserialized ECSchemas and a 
-    //! // IStandaloneEnablerLocater to locate enablers for ECCustomAttributes in the ECSchema
-    //! ECSchemaDeserializationContextPtr schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
     //! 
     //! ECSchemaP schema;
     //! SchemaDeserializationStatus status = ECSchema::ReadXmlFromString (schema, ecSchemaAsString, *schemaContext);
