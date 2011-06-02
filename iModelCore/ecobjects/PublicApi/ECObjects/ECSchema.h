@@ -115,6 +115,7 @@ protected:
     SchemaSerializationStatus           WriteCustomAttributes(MSXML2_IXMLDOMNode& parentNode) const;
 
     void                                AddUniqueCustomAttributesToList(ECCustomAttributeCollection& returnList);
+/*__PUBLISH_SECTION_START__*/
 protected:
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const;
     virtual ECSchemaCP                  _GetContainerSchema() const {return NULL;};
@@ -122,7 +123,6 @@ protected:
     ECOBJECTS_EXPORT virtual ~IECCustomAttributeContainer();
 
 public:
-/*__PUBLISH_SECTION_START__*/
     //! Returns true if the conainer has a custom attribute of a class of the specified name
     ECOBJECTS_EXPORT bool               IsDefined(WStringCR className) ;
     //! Returns true if the conainer has a custom attribute of a class of the specified class definition
