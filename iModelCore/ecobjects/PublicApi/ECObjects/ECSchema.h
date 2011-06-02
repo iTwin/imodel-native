@@ -115,9 +115,8 @@ protected:
     SchemaSerializationStatus           WriteCustomAttributes(MSXML2_IXMLDOMNode& parentNode) const;
 
     void                                AddUniqueCustomAttributesToList(ECCustomAttributeCollection& returnList);
-protected:
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const;
-    virtual ECSchemaCP                  _GetContainerSchema() const {return NULL;};
+    virtual ECSchemaCP                  _GetContainerSchema() const = 0;// {return NULL;};
 
     ECOBJECTS_EXPORT virtual ~IECCustomAttributeContainer();
 
@@ -453,9 +452,9 @@ friend struct ECSchema;
 friend struct ECPropertyIterable::IteratorState;
 
 private:
-    WString                        m_name;
-    WString                        m_displayLabel;
-    WString                        m_description;
+    WString                         m_name;
+    WString                         m_displayLabel;
+    WString                         m_description;
     bool                            m_isStruct;
     bool                            m_isCustomAttributeClass;
     bool                            m_isDomainClass;
@@ -708,8 +707,8 @@ public:
 //=======================================================================================
 struct ECRelationshipConstraint : IECCustomAttributeContainer
 {
-friend struct ECRelationshipClass;
 /*__PUBLISH_SECTION_END__*/
+friend struct ECRelationshipClass;
 
 private:
     // NEEDSWORK: To be completely compatible, we need to store an ECRelationshipConstraintClass with properties in order
@@ -734,15 +733,16 @@ private:
     
 protected:
     virtual ECSchemaCP          _GetContainerSchema() const override;
-/*__PUBLISH_SECTION_START__*/
   
-public:
     //! Initializes a new instance of the ECRelationshipConstraint class.
     //! IsPolymorphic defaults to true and IsMultiple defaults to false 
     ECRelationshipConstraint(ECRelationshipClassP relationshipClass);
     
     //! Initializes a new instance of the ECRelationshipConstraint class
     ECRelationshipConstraint(ECRelationshipClassP relationshipClass, bool isMultiple);
+
+/*__PUBLISH_SECTION_START__*/
+public:
     
     //! Returns true if the constraint allows for a variable number of classes
     ECOBJECTS_EXPORT bool                       GetIsMultiple() const;
