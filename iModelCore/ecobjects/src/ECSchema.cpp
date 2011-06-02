@@ -329,7 +329,7 @@ ECOBJECTS_EXPORT WString ECSchema::GetFullSchemaName () const
     return fullName.str().c_str();
     }
 
-#define     ECSCHEMA_FULLNAME_FORMAT_EXPLANATION L" Format must be GetName().MM.mm where Name is the schema name, MM is major version and mm is minor version."
+#define     ECSCHEMA_FULLNAME_FORMAT_EXPLANATION L" Format must be Name.MM.mm where Name is the schema name, MM is major version and mm is minor version."
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -364,7 +364,7 @@ WStringCR     fullName
     return ParseVersionString (versionMajor, versionMinor, firstDot+1);
     }
 
-#define     ECSCHEMA_FULLNAME_FORMAT_EXPLANATION L" Format must be GetName().MM.mm where Name is the schema name, MM is major version and mm is minor version."
+#define     ECSCHEMA_FULLNAME_FORMAT_EXPLANATION L" Format must be Name.MM.mm where Name is the schema name, MM is major version and mm is minor version."
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/

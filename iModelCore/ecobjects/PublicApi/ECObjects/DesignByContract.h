@@ -158,7 +158,7 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
 
 //! This macro should be utilized to check that an expected condition is true.  If the condition evaluates to false the macro will log and assert leaving it to the caller
 //! to return an error code or take any additional action.
-//! The assertion will only occur in debug builds.  Further, the assertion will only occur as long as they have not been disabled using the DISABLE_ASSERTS macros which allows
+//! The assertion will only occur in debug builds.  Further, the assertion will only occur as long as they have not been disabled using the DISABLE_ASSERTS macro which allows
 //! for creation of tests to validate failure cases without being aborted by the standard assert behavior.
 //! Example:
 //! \code

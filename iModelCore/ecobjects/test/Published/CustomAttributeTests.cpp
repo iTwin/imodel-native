@@ -31,16 +31,16 @@ ECSchemaP   CreateCustomAttributeTestSchema(IECSchemaOwnerR schemaOwner)
     
     ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, schemaOwner);
     schema->CreateClass(customAttributeClass, L"CustomAttribClass");
-    customAttributeClass->GetIsCustomAttributeClass() = true;
+    customAttributeClass->SetIsCustomAttributeClass(true);
 
     schema->CreateClass(customAttributeClass2, L"CustomAttribClass2");
-    customAttributeClass2->GetIsCustomAttributeClass() = true;
+    customAttributeClass2->SetIsCustomAttributeClass(true);
 
     schema->CreateClass(customAttributeClass3, L"CustomAttribClass3");
-    customAttributeClass3->GetIsCustomAttributeClass() = true;
+    customAttributeClass3->SetIsCustomAttributeClass(true);
 
     schema->CreateClass(customAttributeClass4, L"CustomAttribClass4");
-    customAttributeClass4->GetIsCustomAttributeClass() = true;
+    customAttributeClass4->SetIsCustomAttributeClass(true);
 
     schema->CreateClass(baseClass, L"BaseClass");
     PrimitiveECPropertyP baseStringProp;
@@ -294,7 +294,7 @@ TEST_F(CustomAttributeTest, ExpectFailureWithUnreferencedCustomAttribute)
 
     ECClassP refClass;
     refSchema->CreateClass(refClass, L"RefClass");
-    refClass->GetIsCustomAttributeClass() = true;
+    refClass->SetIsCustomAttributeClass(true);
 
     ECClassP containerClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (containerClass);

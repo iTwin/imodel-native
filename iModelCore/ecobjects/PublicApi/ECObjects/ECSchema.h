@@ -815,7 +815,7 @@ public:
     //! Returns pointer to ECRelationshipClassP,  used to avoid dynamic_cast.
     //! @return     Returns NULL if not an ECRelationshipClass
     ECOBJECTS_EXPORT virtual ECRelationshipClassCP        GetRelationshipClassCP () const override {return this;};
-
+    ECOBJECTS_EXPORT ECObjectsStatus                      GetOrderedRelationshipPropertyName (WString& propertyName, ECRelationshipEnd end)  const;
     ECOBJECTS_EXPORT ECObjectsStatus            SetStrength(StrengthType value);
     ECOBJECTS_EXPORT StrengthType               GetStrength() const;                
     ECOBJECTS_EXPORT ECObjectsStatus            SetStrengthDirection(ECRelatedInstanceDirection value);
@@ -825,6 +825,7 @@ public:
     //! Gets the constraint at the source end of the relationship
     ECOBJECTS_EXPORT ECRelationshipConstraintR  GetSource() const;
     ECOBJECTS_EXPORT bool                       GetIsExplicit() const;
+    ECOBJECTS_EXPORT bool                       GetIsOrdered () const;
 
 }; // ECRelationshipClass
 
@@ -916,10 +917,10 @@ protected:
     virtual ECSchemaP       _LocateSchema (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType) = 0;
 
 public:
-    ECObjectsStatus         AddSchema   (ECSchemaR);
-    ECObjectsStatus         DropSchema  (ECSchemaR);
-    ECSchemaP               GetSchema   (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor);
-    ECSchemaP               LocateSchema (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType);
+    ECOBJECTS_EXPORT ECObjectsStatus         AddSchema   (ECSchemaR);
+    ECOBJECTS_EXPORT ECObjectsStatus         DropSchema  (ECSchemaR);
+    ECOBJECTS_EXPORT ECSchemaP               GetSchema   (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor);
+    ECOBJECTS_EXPORT ECSchemaP               LocateSchema (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType);
 
 /*__PUBLISH_SECTION_START__*/
 };
