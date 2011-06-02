@@ -116,7 +116,7 @@ protected:
 
     void                                AddUniqueCustomAttributesToList(ECCustomAttributeCollection& returnList);
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const;
-    virtual ECSchemaCP                  _GetContainerSchema() const {return NULL;};
+    virtual ECSchemaCP                  _GetContainerSchema() const = 0;// {return NULL;};
 
     ECOBJECTS_EXPORT virtual ~IECCustomAttributeContainer();
 
@@ -452,9 +452,9 @@ friend struct ECSchema;
 friend struct ECPropertyIterable::IteratorState;
 
 private:
-    WString                        m_name;
-    WString                        m_displayLabel;
-    WString                        m_description;
+    WString                         m_name;
+    WString                         m_displayLabel;
+    WString                         m_description;
     bool                            m_isStruct;
     bool                            m_isCustomAttributeClass;
     bool                            m_isDomainClass;
@@ -732,13 +732,13 @@ private:
 protected:
     virtual ECSchemaCP          _GetContainerSchema() const override;
   
-public:
     //! Initializes a new instance of the ECRelationshipConstraint class.
     //! IsPolymorphic defaults to true and IsMultiple defaults to false 
     ECRelationshipConstraint(ECRelationshipClassP relationshipClass);  // WIP_CEM... should not be public... create a factory method
     
     //! Initializes a new instance of the ECRelationshipConstraint class
     ECRelationshipConstraint(ECRelationshipClassP relationshipClass, bool isMultiple); // WIP_CEM... should not be public... create a factory method
+
 /*__PUBLISH_SECTION_START__*/
 public:
     
@@ -917,10 +917,10 @@ protected:
     virtual ECSchemaP       _LocateSchema (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType) = 0;
 
 public:
-    ECObjectsStatus         AddSchema   (ECSchemaR);
-    ECObjectsStatus         DropSchema  (ECSchemaR);
-    ECSchemaP               GetSchema   (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor);
-    ECSchemaP               LocateSchema (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType);
+    ECOBJECTS_EXPORT ECObjectsStatus         AddSchema   (ECSchemaR);
+    ECOBJECTS_EXPORT ECObjectsStatus         DropSchema  (ECSchemaR);
+    ECOBJECTS_EXPORT ECSchemaP               GetSchema   (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor);
+    ECOBJECTS_EXPORT ECSchemaP               LocateSchema (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType);
 
 /*__PUBLISH_SECTION_START__*/
 };
