@@ -115,13 +115,12 @@ protected:
     SchemaSerializationStatus           WriteCustomAttributes(MSXML2_IXMLDOMNode& parentNode) const;
 
     void                                AddUniqueCustomAttributesToList(ECCustomAttributeCollection& returnList);
-/*__PUBLISH_SECTION_START__*/
-protected:
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const;
     virtual ECSchemaCP                  _GetContainerSchema() const {return NULL;};
 
     ECOBJECTS_EXPORT virtual ~IECCustomAttributeContainer();
 
+/*__PUBLISH_SECTION_START__*/
 public:
     //! Returns true if the conainer has a custom attribute of a class of the specified name
     ECOBJECTS_EXPORT bool               IsDefined(WStringCR className) ;
@@ -504,6 +503,8 @@ protected:
     virtual SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode) const;
     SchemaSerializationStatus           WriteXml(MSXML2_IXMLDOMElement& parentNode, WCharCP elementName) const;
 
+    virtual ECRelationshipClassCP       _GetRelationshipClassCP () const { return NULL; }  // used to avoid dynamic_cast
+    
 public:    
     ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();
 
@@ -528,10 +529,6 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsDomainClass(bool value);
     ECOBJECTS_EXPORT bool               GetIsDomainClass() const;    
     
-    //! Returns pointer to ECRelationshipClassP,  used to avoid dynamic_cast.
-    //! @return     Returns NULL if not an ECRelationshipClass
-    ECOBJECTS_EXPORT virtual ECRelationshipClassCP GetRelationshipClassCP () const {return NULL;}  // used to avoid dynamic_cast
-
     //! Returns a list of properties for this class.
     //! @param[in]  includeBaseProperties If true, then will return properties that are contained in this class's base class(es)
     //! @return     An iterable container of ECProperties
@@ -708,6 +705,7 @@ public:
 //=======================================================================================
 struct ECRelationshipConstraint : IECCustomAttributeContainer
 {
+/*__PUBLISH_SECTION_END__*/
 friend struct ECRelationshipClass;
 
 private:
@@ -737,10 +735,12 @@ protected:
 public:
     //! Initializes a new instance of the ECRelationshipConstraint class.
     //! IsPolymorphic defaults to true and IsMultiple defaults to false 
-    ECRelationshipConstraint(ECRelationshipClassP relationshipClass);
+    ECRelationshipConstraint(ECRelationshipClassP relationshipClass);  // WIP_CEM... should not be public... create a factory method
     
     //! Initializes a new instance of the ECRelationshipConstraint class
-    ECRelationshipConstraint(ECRelationshipClassP relationshipClass, bool isMultiple);
+    ECRelationshipConstraint(ECRelationshipClassP relationshipClass, bool isMultiple); // WIP_CEM... should not be public... create a factory method
+/*__PUBLISH_SECTION_START__*/
+public:
     
     //! Returns true if the constraint allows for a variable number of classes
     ECOBJECTS_EXPORT bool                       GetIsMultiple() const;
@@ -809,12 +809,12 @@ protected:
 
     virtual SchemaDeserializationStatus ReadXmlAttributes (MSXML2_IXMLDOMNode& classNode, IStandaloneEnablerLocatorR  standaloneEnablerLocator) override;
     virtual SchemaDeserializationStatus ReadXmlContents (MSXML2_IXMLDOMNode& classNode, IStandaloneEnablerLocatorR  standaloneEnablerLocator) override;
+    virtual ECRelationshipClassCP       _GetRelationshipClassCP () const override {return this;};
 
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Returns pointer to ECRelationshipClassP,  used to avoid dynamic_cast.
     //! @return     Returns NULL if not an ECRelationshipClass
-    ECOBJECTS_EXPORT virtual ECRelationshipClassCP        GetRelationshipClassCP () const override {return this;};
     ECOBJECTS_EXPORT ECObjectsStatus                      GetOrderedRelationshipPropertyName (WString& propertyName, ECRelationshipEnd end)  const;
     ECOBJECTS_EXPORT ECObjectsStatus            SetStrength(StrengthType value);
     ECOBJECTS_EXPORT StrengthType               GetStrength() const;                
