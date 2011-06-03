@@ -512,6 +512,7 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
 public:    
+    ECOBJECTS_EXPORT ECRelationshipClassCP GetRelationshipClassCP() const;
     ECOBJECTS_EXPORT ECSchemaCR         GetSchema() const;                
     // schemas index class by name so publicly name can not be reset
     ECOBJECTS_EXPORT WStringCR          GetName() const;        

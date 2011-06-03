@@ -267,6 +267,14 @@ ECSchemaCR ECClass::GetSchema
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipClassCP ECClass::GetRelationshipClassCP() const
+    {
+    return _GetRelationshipClassCP();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::AddProperty
 (
 ECPropertyP&                 pProperty
