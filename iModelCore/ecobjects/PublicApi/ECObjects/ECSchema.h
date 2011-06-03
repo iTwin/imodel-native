@@ -819,7 +819,7 @@ protected:
 public:
     //! Returns pointer to ECRelationshipClassP,  used to avoid dynamic_cast.
     //! @return     Returns NULL if not an ECRelationshipClass
-    ECOBJECTS_EXPORT ECObjectsStatus                      GetOrderedRelationshipPropertyName (WString& propertyName, ECRelationshipEnd end)  const;
+    ECOBJECTS_EXPORT ECObjectsStatus            GetOrderedRelationshipPropertyName (WString& propertyName, ECRelationshipEnd end)  const;
     ECOBJECTS_EXPORT ECObjectsStatus            SetStrength(StrengthType value);
     ECOBJECTS_EXPORT StrengthType               GetStrength() const;                
     ECOBJECTS_EXPORT ECObjectsStatus            SetStrengthDirection(ECRelatedInstanceDirection value);
