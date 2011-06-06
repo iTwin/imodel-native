@@ -257,9 +257,7 @@ WCharCP isDomainClass
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCR ECClass::GetSchema
-(
-) const
+ECSchemaCR ECClass::GetSchema () const
     {
     return m_schema;
     }
