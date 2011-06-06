@@ -2900,7 +2900,7 @@ static InstanceDeserializationStatus   ReportStatus (InstanceDeserializationStat
         ECObjectsLogger::Log()->debugv (L"Native ECInstance of type %s deserialized from string", ecInstance.IsValid() ? ecInstance->GetClass().GetName() : L"Null");
     return status;
     }
-	
+        
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/

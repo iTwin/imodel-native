@@ -1865,6 +1865,17 @@ ECValuesCollectionPtr ECValuesCollection::Create (IECInstanceCR instance)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/11
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValuesCollectionPtr ECValuesCollection::Create (ECPropertyValueCR  parentProperty)
+    {
+    if (parentProperty.HasChildValues ())
+        return new ECValuesCollection (parentProperty);
+
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValuesCollection::const_iterator ECValuesCollection::begin () const

@@ -368,7 +368,7 @@ public:
     ECPropertyValue ();
     ECPropertyValue (ECPropertyValueCR);
     ECPropertyValue (IECInstanceCR);
-    ECPropertyValue (IECInstanceCR, ECValueAccessorCR);
+    ECOBJECTS_EXPORT ECPropertyValue (IECInstanceCR, ECValueAccessorCR);
 
     ECValueAccessorR    GetValueAccessorR ();
     ECObjectsStatus     EvaluateValue ();
@@ -435,6 +435,7 @@ public:
     ECOBJECTS_EXPORT const_iterator end ()   const;
 
     ECOBJECTS_EXPORT static ECValuesCollectionPtr Create (IECInstanceCR);
+    ECOBJECTS_EXPORT static ECValuesCollectionPtr Create (ECPropertyValueCR);
     };
 
 END_BENTLEY_EC_NAMESPACE
