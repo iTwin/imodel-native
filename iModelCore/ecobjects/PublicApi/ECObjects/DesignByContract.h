@@ -7,33 +7,24 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-/*__BENTLEY_INTERNAL_ONLY__*/
-
-#include <ECObjects\ECObjects.h>
 #include <assert.h>
 #include <stdarg.h>
+/*__PUBLISH_SECTION_START__*/
+#include <ECObjects\ECObjects.h>
 
 //! This class is utilzed by the macros defined in this header file.  No calling code should typically ever need to use this class directly.
 struct AssertDisabler
 {
+/*__PUBLISH_SECTION_END__*/
 private:
     static int s_globalIgnoreCount;    
 
 public:
+/*__PUBLISH_SECTION_START__*/
     ECOBJECTS_EXPORT static bool AreAssertsDisabled (void);
     ECOBJECTS_EXPORT AssertDisabler(void);
     ECOBJECTS_EXPORT ~AssertDisabler(void);
 };
-
-#ifdef  NDEBUG
-    #define ASSERT_FALSE_IF_NOT_DISABLED    __noop
-
-#else
-        
-    //! Avoid direct use of this macro.  It is only intended for use by other macros defined in this file.
-    // Forces an assert with the specified message as long as asserts are enabled.  No expression is evaluated.
-    #define ASSERT_FALSE_IF_NOT_DISABLED(_Message)    (void)((AssertDisabler::AreAssertsDisabled()) || (_wassert(_CRT_WIDE(#_Message), _CRT_WIDE(__FILE__), __LINE__), 0))
-#endif    
 
     //! Utilize this macro to disable asserts that may occur within a codeblock.
     //! The intent is that this macro will only ever be used by ATPs when testing failure scenarios.  No delivered code should ever utilize this macro.
@@ -64,6 +55,17 @@ public:
     //! \endcode
     #define DISABLE_ASSERTS           AssertDisabler assertDisabler;
 
+/*__PUBLISH_SECTION_END__*/
+
+#ifdef  NDEBUG
+    #define ASSERT_FALSE_IF_NOT_DISABLED    __noop
+
+#else
+        
+    //! Avoid direct use of this macro.  It is only intended for use by other macros defined in this file.
+    // Forces an assert with the specified message as long as asserts are enabled.  No expression is evaluated.
+    #define ASSERT_FALSE_IF_NOT_DISABLED(_Message)    (void)((AssertDisabler::AreAssertsDisabled()) || (_wassert(_CRT_WIDE(#_Message), _CRT_WIDE(__FILE__), __LINE__), 0))
+#endif    
 
 //! Avoid direct use of this function.  It is only intended for use by macros defined in this file.
 ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);

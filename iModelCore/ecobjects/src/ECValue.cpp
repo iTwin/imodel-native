@@ -813,7 +813,7 @@ WCharCP ECValue::GetString() const
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @param holdADuplicate     IN  If true, EC::ECValue will make a duplicate, otherwise 
+* @param[in] holdADuplicate     If true, EC::ECValue will make a duplicate, otherwise 
 *                               EC::ECValue holds the original pointer
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1040,7 +1040,7 @@ bool              ECValue::Equals (ECValueCR v) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @param        capacity IN  Estimated size of the array.
+* @param[in]        capacity Estimated size of the array.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus   ECValue::SetStructArrayInfo (UInt32 count, bool isFixedCount)
@@ -1057,7 +1057,7 @@ ECObjectsStatus   ECValue::SetStructArrayInfo (UInt32 count, bool isFixedCount)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @param        capacity IN  Estimated size of the array.
+* @param[in]        capacity Estimated size of the array.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus       ECValue::SetPrimitiveArrayInfo (PrimitiveType primitiveElementType, UInt32 count, bool isFixedSize)
@@ -1665,6 +1665,9 @@ ECPropertyValue ECValuesCollectionIterator::GetFirstPropertyValue (IECInstanceCR
     ECValueAccessor firstPropertyAccessor;
 
     ECEnablerCR enabler = instance.GetEnabler();
+
+    if (1 == enabler.GetPropertyCount())
+        return ECPropertyValue ();
 
     UInt32  firstIndex = enabler.GetFirstPropertyIndex (0);
 

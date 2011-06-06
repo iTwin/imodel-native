@@ -23,7 +23,7 @@ typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
 //=======================================================================================    
 //! base class ensuring that all enablers are refcounted
 //=======================================================================================    
-struct ECEnabler : RefCountedBase, IStandaloneEnablerLocator
+struct ECEnabler : RefCountedBase, IStandaloneEnablerLocater
     {
     //! Interface of functor that wants to process text-valued properties
     struct IPropertyProcessor 
@@ -38,7 +38,7 @@ struct ECEnabler : RefCountedBase, IStandaloneEnablerLocator
 
 private:
     ECClassCR                    m_ecClass;
-    IStandaloneEnablerLocatorR   m_standaloneInstanceEnablerLocator;    // can't be const because the m_standaloneInstanceEnablerLocator may grow if a new enabler is added to its cache
+    IStandaloneEnablerLocaterR   m_standaloneInstanceEnablerLocater;    // can't be const because the m_standaloneInstanceEnablerLocater may grow if a new enabler is added to its cache
 
     ECEnabler(); // Hidden as part of the RefCounted pattern
 
@@ -56,7 +56,7 @@ protected:
     //!       };
     //! /endcode
     //! where the ____ is a name specific to your subclass, and the parameters may vary per enabler.
-    ECOBJECTS_EXPORT ECEnabler(ECClassCR ecClass, IStandaloneEnablerLocatorR childECEnablerLocator);
+    ECOBJECTS_EXPORT ECEnabler(ECClassCR ecClass, IStandaloneEnablerLocaterR childECEnablerLocater);
 
     virtual WCharCP                 _GetName() const = 0;
     virtual ECObjectsStatus         _GetPropertyIndex (UInt32& propertyIndex, WCharCP propertyAccessString) const = 0;
@@ -65,7 +65,7 @@ protected:
     virtual UInt32                  _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const = 0;
     virtual UInt32                  _GetPropertyCount () const = 0;
 
-    // IStandaloneEnablerLocator
+    // IStandaloneEnablerLocater
     ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr  _ObtainStandaloneInstanceEnabler (WCharCP schemaName, WCharCP className); 
 
 #if defined (EXPERIMENTAL_TEXT_FILTER)
