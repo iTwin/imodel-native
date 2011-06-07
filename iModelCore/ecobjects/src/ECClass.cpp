@@ -1173,11 +1173,12 @@ bool            ECPropertyIterable::const_iterator::operator!= (const_iterator c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyP       ECPropertyIterable::const_iterator::operator*() const
+ECPropertyP const& ECPropertyIterable::const_iterator::operator*() const
     {
+    static ECPropertyP s_nullPtr;
     if (m_isEnd)
-        return NULL;
-    ECPropertyP pProperty = *(m_state->m_listIterator);
+        return s_nullPtr;
+    ECPropertyP const& pProperty = *(m_state->m_listIterator);
     return pProperty;
     }
 

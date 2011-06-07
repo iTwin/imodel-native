@@ -15,6 +15,9 @@
 #include <Bentley\bvector.h>
 #include <Bentley\bmap.h>
 #include <Bentley\bset.h>
+//__PUBLISH_SECTION_END__
+#include <boost/foreach.hpp>
+//__PUBLISH_SECTION_START__
 
 #define DEFAULT_VERSION_MAJOR   1
 #define DEFAULT_VERSION_MINOR   0
@@ -185,6 +188,7 @@ public:
         public:
             ECOBJECTS_EXPORT const_iterator&     operator++();
             ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const;
+            ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const {return !(*this != rhs);}
             ECOBJECTS_EXPORT IECInstancePtr      operator* () const;
         };
 
@@ -411,7 +415,7 @@ public:
 /*__PUBLISH_SECTION_START__*/                        
         };
         
-    struct const_iterator : std::iterator<std::forward_iterator_tag, ECPropertyP>
+    struct const_iterator : std::iterator<std::forward_iterator_tag, const ECPropertyP>
         {
         private:
             friend struct ECPropertyIterable;
@@ -426,7 +430,8 @@ public:
         public:
             ECOBJECTS_EXPORT const_iterator&     operator++();
             ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const;
-            ECOBJECTS_EXPORT ECPropertyP         operator* () const;
+            ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const {return !(*this != rhs);}
+            ECOBJECTS_EXPORT ECPropertyP const&  operator* () const;
         };
 
 public:
@@ -868,7 +873,7 @@ public:
     //=======================================================================================
     // @bsistruct
     //=======================================================================================
-    struct const_iterator : std::iterator<std::forward_iterator_tag, ECClassP>
+    struct const_iterator : std::iterator<std::forward_iterator_tag, ECClassP const>
     {    
     private:                
         friend struct ECClassContainer;                   
@@ -881,7 +886,8 @@ public:
     public:
         ECOBJECTS_EXPORT const_iterator&     operator++();
         ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const;
-        ECOBJECTS_EXPORT ECClassP            operator* () const;
+        ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const {return !(*this != rhs);}
+        ECOBJECTS_EXPORT ECClassP const&     operator* () const;
     };
 
 public:
@@ -1286,3 +1292,8 @@ END_BENTLEY_EC_NAMESPACE
 #undef MSXML2_IXMLDOMNodePtr
 #undef MSXML2_IXMLDOMDocument2
 #undef MSXML2_IXMLDOMElementPtr
+
+//__PUBLISH_SECTION_END__
+ENABLE_BOOST_FOREACH_ITERATOR(Bentley::EC::ECCustomAttributeInstanceIterable)
+ENABLE_BOOST_FOREACH_ITERATOR(Bentley::EC::ECPropertyIterable)
+//__PUBLISH_SECTION_START__
