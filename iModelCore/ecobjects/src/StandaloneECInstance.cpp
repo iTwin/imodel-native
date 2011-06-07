@@ -511,8 +511,9 @@ StandaloneECInstance::~StandaloneECInstance ()
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 static void     duplicateProperties (IECInstanceR target, ECValuesCollectionCR source)
     {
-    FOR_EACH (ECPropertyValuePtr prop, source)
+    for (ECValuesCollection::const_iterator it=source.begin(); it != source.end(); ++it)
         {
+        ECPropertyValuePtr prop = *it;
         if (prop->HasChildValues())
             {
             duplicateProperties (target, *prop->GetChildValues());
