@@ -174,7 +174,7 @@ public:
 /*__PUBLISH_SECTION_START__*/                        
         };
 
-    struct const_iterator : std::iterator<std::forward_iterator_tag, IECInstancePtr>
+    struct const_iterator : std::iterator<std::forward_iterator_tag, IECInstancePtr const>
         {
         private:
             friend struct ECCustomAttributeInstanceIterable;
@@ -189,7 +189,7 @@ public:
             ECOBJECTS_EXPORT const_iterator&     operator++();
             ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const;
             ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const {return !(*this != rhs);}
-            ECOBJECTS_EXPORT IECInstancePtr      operator* () const;
+            ECOBJECTS_EXPORT IECInstancePtr const& operator* () const;
         };
 
 public:
