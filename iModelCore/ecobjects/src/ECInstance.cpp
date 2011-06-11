@@ -914,6 +914,7 @@ ECObjectsStatus ECInstanceInteropHelper::SetDateTimeTicks (IECInstanceR instance
     return setECValueInInstance (v, instance, managedPropertyAccessor);
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Dylan.Rush                      1/11
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -936,6 +937,246 @@ static ECTypeDescriptor getTypeDescriptor  (IECInstanceCR instance, int property
         return d;
         }
     return propLayout->GetTypeDescriptor();
+    }
+
+///////////////////////////////////////////////////////////////////////////////
+// Get Using ECValueAccessor
+///////////////////////////////////////////////////////////////////////////////
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECInstanceInteropHelper::GetLong (IECInstanceCR instance, Int64 & value, ECValueAccessorCR accessor)
+    {
+    ECValue v;
+
+    ECObjectsStatus status = instance.GetValueUsingAccessor (v, accessor);
+    if (status == ECOBJECTS_STATUS_Success)
+        value = v.GetLong();
+    
+    return status;
+    }    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/        
+ECObjectsStatus ECInstanceInteropHelper::GetInteger (IECInstanceCR instance, int & value, ECValueAccessorCR accessor)
+    {
+    ECValue v;
+
+    ECObjectsStatus status = instance.GetValueUsingAccessor (v, accessor);
+    if (status == ECOBJECTS_STATUS_Success)
+        value = v.GetInteger();
+    
+    return status;
+    }    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/                
+ECObjectsStatus ECInstanceInteropHelper::GetDouble (IECInstanceCR instance, double& value, ECValueAccessorCR accessor)
+    {
+    ECValue v;
+
+    ECObjectsStatus status = instance.GetValueUsingAccessor (v, accessor);
+    if (status == ECOBJECTS_STATUS_Success)        
+        value = v.GetDouble();
+        
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/       
+ECObjectsStatus ECInstanceInteropHelper::GetString (IECInstanceCR instance, WCharCP & value, ECValueAccessorCR accessor)
+    {
+    ECValue v;
+
+    ECObjectsStatus status = instance.GetValueUsingAccessor (v, accessor);
+    if (status == ECOBJECTS_STATUS_Success)
+        value = v.GetString();
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECInstanceInteropHelper::GetBoolean (IECInstanceCR instance, bool & value, ECValueAccessorCR accessor)
+    {
+    ECValue v;
+
+    ECObjectsStatus status = instance.GetValueUsingAccessor (v, accessor);
+    if (status == ECOBJECTS_STATUS_Success)
+        value = v.GetBoolean();
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECInstanceInteropHelper::GetPoint2D (IECInstanceCR instance, DPoint2d & value, ECValueAccessorCR accessor)
+    {
+    ECValue v;
+
+    ECObjectsStatus status = instance.GetValueUsingAccessor (v, accessor);
+    if (status == ECOBJECTS_STATUS_Success)
+        value = v.GetPoint2D();
+        
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECInstanceInteropHelper::GetPoint3D (IECInstanceCR instance, DPoint3d & value, ECValueAccessorCR accessor)
+    {
+    ECValue v;
+
+    ECObjectsStatus status = instance.GetValueUsingAccessor (v, accessor);
+    if (status == ECOBJECTS_STATUS_Success)
+        value = v.GetPoint3D();
+        
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECInstanceInteropHelper::GetDateTime (IECInstanceCR instance, SystemTime & value, ECValueAccessorCR accessor)
+    {
+    ECValue v;
+
+    ECObjectsStatus status = instance.GetValueUsingAccessor (v, accessor);
+    if (status == ECOBJECTS_STATUS_Success)
+        value = v.GetDateTime();
+        
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECInstanceInteropHelper::GetDateTimeTicks (IECInstanceCR instance, Int64 & value, ECValueAccessorCR accessor)
+    {
+    ECValue v;
+
+    ECObjectsStatus status = instance.GetValueUsingAccessor (v, accessor);
+    if (status == ECOBJECTS_STATUS_Success)
+        value = v.GetDateTimeTicks();
+        
+    return status;
+    }
+
+///////////////////////////////////////////////////////////////////////////////
+// Set Using ECValueAccessor
+///////////////////////////////////////////////////////////////////////////////
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  06/2011
++---------------+---------------+---------------+---------------+---------------+------*/       
+ECObjectsStatus ECInstanceInteropHelper::SetLongValue (IECInstanceR instance, ECValueAccessorCR accessor, Int64 value)
+    {
+    ECValue v(value);
+    return  instance.SetValueUsingAccessor (accessor, v);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  06/2011
++---------------+---------------+---------------+---------------+---------------+------*/       
+ECObjectsStatus ECInstanceInteropHelper::SetIntegerValue (IECInstanceR instance, ECValueAccessorCR accessor, int value)
+    {
+    ECValue v(value);
+    return  instance.SetValueUsingAccessor (accessor, v);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  06/2011
++---------------+---------------+---------------+---------------+---------------+------*/       
+ECObjectsStatus ECInstanceInteropHelper::SetDoubleValue (IECInstanceR instance, ECValueAccessorCR accessor, double value)
+    {
+    ECValue v(value);
+    return  instance.SetValueUsingAccessor (accessor, v);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  06/2011
++---------------+---------------+---------------+---------------+---------------+------*/       
+ECObjectsStatus ECInstanceInteropHelper::SetStringValue  (IECInstanceR instance, ECValueAccessorCR accessor, WCharCP value)
+    {
+    ECValue v(value, false);
+    return  instance.SetValueUsingAccessor (accessor, v);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  06/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECInstanceInteropHelper::SetBooleanValue  (IECInstanceR instance, ECValueAccessorCR accessor, bool value)
+    {
+    ECValue v(value);
+    return  instance.SetValueUsingAccessor (accessor, v);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  06/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECInstanceInteropHelper::SetPoint2DValue  (IECInstanceR instance, ECValueAccessorCR accessor, DPoint2dCR value)
+    {
+    ECValue v(value);
+    return  instance.SetValueUsingAccessor (accessor, v);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECInstanceInteropHelper::SetPoint3DValue  (IECInstanceR instance, ECValueAccessorCR accessor, DPoint3dCR value)
+    {
+    ECValue v(value);
+    return  instance.SetValueUsingAccessor (accessor, v);
+    }
+   
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  06/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECInstanceInteropHelper::SetDateTimeValue (IECInstanceR instance, ECValueAccessorCR accessor, SystemTime& value)
+    {
+    ECValue v(value);
+    return  instance.SetValueUsingAccessor (accessor, v);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  06/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECInstanceInteropHelper::SetDateTimeTicks (IECInstanceR instance, ECValueAccessorCR accessor, Int64 value)
+    {
+    ECValue v;
+    v.SetDateTimeTicks (value);
+    return  instance.SetValueUsingAccessor (accessor, v);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  06/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            ECInstanceInteropHelper::IsNull (IECInstanceR instance, ECValueAccessorCR accessor)
+    {
+    ECValue v;
+
+    ECObjectsStatus status = instance.GetValueUsingAccessor (v, accessor);
+    if (status != ECOBJECTS_STATUS_Success)
+        return true;
+
+    return v.IsNull();
+    }
+
+ /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  06/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECInstanceInteropHelper::SetToNull (IECInstanceR instance, ECValueAccessorCR accessor)
+    {
+    ECValue v;
+
+    ECObjectsStatus status = instance.GetValueUsingAccessor (v, accessor);
+    if (status == ECOBJECTS_STATUS_Success)
+        v.SetToNull();
     }
 
 #ifdef NOT_USED

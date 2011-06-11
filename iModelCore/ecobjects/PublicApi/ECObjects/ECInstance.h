@@ -213,6 +213,29 @@ struct ECInstanceInteropHelper
     ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeValue (IECInstanceR, WCharCP managedPropertyAccessor, SystemTimeR value);
     ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeTicks (IECInstanceR, WCharCP managedPropertyAccessor, Int64 value);
 
+    ECOBJECTS_EXPORT static ECObjectsStatus GetInteger       (IECInstanceCR, int & value,        ECValueAccessorCR accessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetLong          (IECInstanceCR, Int64 & value,      ECValueAccessorCR accessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetDouble        (IECInstanceCR, double & value,     ECValueAccessorCR accessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetString        (IECInstanceCR, WCharCP & value,    ECValueAccessorCR accessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetBoolean       (IECInstanceCR, bool & value,       ECValueAccessorCR accessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetPoint2D       (IECInstanceCR, DPoint2dR value,    ECValueAccessorCR accessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetPoint3D       (IECInstanceCR, DPoint3dR value,    ECValueAccessorCR accessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTime      (IECInstanceCR, SystemTimeR value,  ECValueAccessorCR accessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTimeTicks (IECInstanceCR, Int64 & value,      ECValueAccessorCR accessor);
+
+    ECOBJECTS_EXPORT static ECObjectsStatus SetLongValue     (IECInstanceR, ECValueAccessorCR accessor, Int64 value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetIntegerValue  (IECInstanceR, ECValueAccessorCR accessor, int value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetStringValue   (IECInstanceR, ECValueAccessorCR accessor, WCharCP value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetDoubleValue   (IECInstanceR, ECValueAccessorCR accessor, double value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetBooleanValue  (IECInstanceR, ECValueAccessorCR accessor, bool value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetPoint2DValue  (IECInstanceR, ECValueAccessorCR accessor, DPoint2dCR value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetPoint3DValue  (IECInstanceR, ECValueAccessorCR accessor, DPoint3dCR value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeValue (IECInstanceR, ECValueAccessorCR accessor, SystemTimeR value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeTicks (IECInstanceR, ECValueAccessorCR accessor, Int64 value);
+
+    ECOBJECTS_EXPORT static bool            IsNull (IECInstanceR, ECValueAccessorCR);
+    ECOBJECTS_EXPORT static void            SetToNull (IECInstanceR, ECValueAccessorCR);
+
     ECOBJECTS_EXPORT static PrimitiveType   GetPrimitiveType       (IECInstanceCR instance, int propertyIndex);
 #ifdef NOT_USED
     ECOBJECTS_EXPORT static ValueKind       GetValueKind           (IECInstanceCR instance, int propertyIndex);
