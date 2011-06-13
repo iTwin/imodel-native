@@ -923,7 +923,7 @@ WString    ECValue::ToString () const
     if (IsNull())
         return L"<null>";
         
-    std::wostringstream valueAsString;
+    std::wostringstream valueAsString; // Not used in all cases, but avoid predicting buffer size when it is used.
     
     if (IsArray())
         {
@@ -932,7 +932,7 @@ WString    ECValue::ToString () const
         }
     else if (IsStruct())
         {
-        valueAsString << "IECInstance containing struct value";
+        return L"IECInstance containing struct value";
         }
     else
         {
@@ -955,13 +955,11 @@ WString    ECValue::ToString () const
                 }            
             case PRIMITIVETYPE_String:
                 {
-                valueAsString << GetString();
-                break;          
+                return GetString();
                 }            
             case PRIMITIVETYPE_Boolean:
                 {
-                valueAsString << GetBoolean()?"true":"false";
-                break;          
+                return GetBoolean() ? L"true" : L"false";
                 }
             case PRIMITIVETYPE_Point2D:
                 {
@@ -978,13 +976,11 @@ WString    ECValue::ToString () const
             case PRIMITIVETYPE_DateTime:
                 {
                 SystemTime timeDate = GetDateTime();
-                valueAsString << timeDate.ToString();
-                break;          
+                return timeDate.ToString();
                 }
             default:
                 {
-                valueAsString << L"EC::ECValue::ToString needs work... unsupported data type";
-                break;          
+                return L"EC::ECValue::ToString needs work... unsupported data type";
                 }            
             }
         }
