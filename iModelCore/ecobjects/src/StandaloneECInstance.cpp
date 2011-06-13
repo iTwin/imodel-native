@@ -513,14 +513,14 @@ static void     duplicateProperties (IECInstanceR target, ECValuesCollectionCR s
     {
     for (ECValuesCollection::const_iterator it=source.begin(); it != source.end(); ++it)
         {
-        ECPropertyValuePtr prop = *it;
-        if (prop->HasChildValues())
+        ECPropertyValue const& prop = *it;
+        if (prop.HasChildValues())
             {
-            duplicateProperties (target, *prop->GetChildValues());
+            duplicateProperties (target, *prop.GetChildValues());
             continue;
             }
 
-        target.SetValueUsingAccessor (prop->GetValueAccessor(), prop->GetValue());
+        target.SetValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue());
         }
     }
 

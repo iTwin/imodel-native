@@ -404,10 +404,10 @@ private:
 /*__PUBLISH_SECTION_START__*/
 
 public:
-    typedef ECPropertyValuePtr          ReturnType;
+    typedef ECPropertyValue const       ReturnType;
     ECOBJECTS_EXPORT bool               IsDifferent(ECValuesCollectionIterator const& iter) const;
     ECOBJECTS_EXPORT void               MoveToNext ();
-    ECOBJECTS_EXPORT ECPropertyValuePtr GetCurrent () const;
+    ECOBJECTS_EXPORT ECPropertyValue const& GetCurrent () const;
     ECOBJECTS_EXPORT bool               IsAtEnd () const;
     };
 
