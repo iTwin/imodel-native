@@ -283,7 +283,7 @@ InstanceDeserializationStatus IECCustomAttributeContainer::ReadCustomAttributes
 (
 MSXML2::IXMLDOMNode&       containerNode,
 ECSchemaCR                 schema,
-IStandaloneEnablerLocatorR standaloneEnablerLocator
+IStandaloneEnablerLocaterR standaloneEnablerLocater
 )
     {
     InstanceDeserializationStatus status = INSTANCE_DESERIALIZATION_STATUS_Success;
@@ -298,7 +298,7 @@ IStandaloneEnablerLocatorR standaloneEnablerLocator
         MSXML2::IXMLDOMNodeListPtr attributeInstances = xmlNodePtr->childNodes;
         while (NULL != (instancePtr = attributeInstances->nextNode()))
             {
-            ECInstanceDeserializationContextPtr context = ECInstanceDeserializationContext::CreateContext (schema, standaloneEnablerLocator);
+            ECInstanceDeserializationContextPtr context = ECInstanceDeserializationContext::CreateContext (schema, standaloneEnablerLocater);
 
             IECInstancePtr ptr;
             status = IECInstance::ReadXmlFromString(ptr, (WCharCP) instancePtr->Getxml(), *context);

@@ -90,6 +90,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     };
 
 /*=================================================================================**//**
+//! @ingroup ECObjectsGroup
 * EC::StandaloneECInstance is the native equivalent of a .NET "Heavyweight" ECInstance.
 * It holds the values in memory that it allocates... laid out according to the ClassLayout
 * @see ClassLayoutHolder, IECInstance
@@ -160,18 +161,19 @@ struct IECWipRelationshipInstance : StandaloneECInstance
     };
 
 //=======================================================================================
-//! ECEnabler for Standalone ECInstances
+//! @ingroup ECObjectsGroup
+//! ECEnabler for Standalone ECInstances (IECInstances not tied to a specific persistent store)
 //=======================================================================================
 struct StandaloneECEnabler : public ClassLayoutHolder, public ECEnabler
     {
 private:
     bool    m_ownsClassLayout;
 
-    StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocatorR childECEnablerLocator, bool ownsClassLayout);
+    StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocaterR childECEnablerLocater, bool ownsClassLayout);
     virtual ~StandaloneECEnabler();
 
 protected:
-    virtual WCharCP                  _GetName() const override;
+    virtual WCharCP                     _GetName() const override;
     virtual ECObjectsStatus             _GetPropertyIndex (UInt32& propertyIndex, WCharCP propertyAccessString) const override;
     virtual ECObjectsStatus             _GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const override;
     virtual UInt32                      _GetPropertyCount () const override;
@@ -179,7 +181,7 @@ protected:
     virtual UInt32                      _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const override;
 
 public: 
-    ECOBJECTS_EXPORT static StandaloneECEnablerPtr CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocatorR childECEnablerLocator, bool ownsClassLayout);
+    ECOBJECTS_EXPORT static StandaloneECEnablerPtr CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocaterR childECEnablerLocater, bool ownsClassLayout);
     ECOBJECTS_EXPORT StandaloneECInstancePtr       CreateInstance (UInt32 minimumInitialSize = 0) const;
     //ECOBJECTS_EXPORT StandaloneECInstanceP         CreateInstanceFromUninitializedMemory (byte * data, UInt32 size);
     //! Used to construct from another memory source like ECXData. The caller is claiming that the memory
