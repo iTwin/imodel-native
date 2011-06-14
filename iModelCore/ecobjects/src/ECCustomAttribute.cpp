@@ -283,7 +283,7 @@ InstanceDeserializationStatus IECCustomAttributeContainer::ReadCustomAttributes
 (
 MSXML2::IXMLDOMNode&       containerNode,
 ECSchemaCR                 schema,
-IStandaloneEnablerLocatorR standaloneEnablerLocator
+IStandaloneEnablerLocaterR standaloneEnablerLocater
 )
     {
     InstanceDeserializationStatus status = INSTANCE_DESERIALIZATION_STATUS_Success;
@@ -298,7 +298,7 @@ IStandaloneEnablerLocatorR standaloneEnablerLocator
         MSXML2::IXMLDOMNodeListPtr attributeInstances = xmlNodePtr->childNodes;
         while (NULL != (instancePtr = attributeInstances->nextNode()))
             {
-            ECInstanceDeserializationContextPtr context = ECInstanceDeserializationContext::CreateContext (schema, standaloneEnablerLocator);
+            ECInstanceDeserializationContextPtr context = ECInstanceDeserializationContext::CreateContext (schema, standaloneEnablerLocater);
 
             IECInstancePtr ptr;
             status = IECInstance::ReadXmlFromString(ptr, (WCharCP) instancePtr->Getxml(), *context);
@@ -329,7 +329,7 @@ MSXML2::IXMLDOMNode& propertyNode
     MSXML2::IXMLDOMNodePtr customAttributesNodePtr = propertyNode.ownerDocument->createNode(NODE_ELEMENT, EC_CUSTOM_ATTRIBUTES_ELEMENT, ECXML_URI_2_0);
     for (iter = m_customAttributes.begin(); iter != m_customAttributes.end(); iter++)
         {
-        (*iter)->WriteXmlToString(customAttributeXml, false);
+        (*iter)->WriteXmlToString(customAttributeXml, false, false);
         MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;        
         if (S_OK != xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)))
             return SCHEMA_SERIALIZATION_STATUS_FailedToInitializeMsmxl;

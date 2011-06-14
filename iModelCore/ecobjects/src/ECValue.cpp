@@ -813,7 +813,7 @@ WCharCP ECValue::GetString() const
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @param holdADuplicate     IN  If true, EC::ECValue will make a duplicate, otherwise 
+* @param[in] holdADuplicate     If true, EC::ECValue will make a duplicate, otherwise 
 *                               EC::ECValue holds the original pointer
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -923,7 +923,7 @@ WString    ECValue::ToString () const
     if (IsNull())
         return L"<null>";
         
-    std::wostringstream valueAsString;
+    std::wostringstream valueAsString; // Not used in all cases, but avoid predicting buffer size when it is used.
     
     if (IsArray())
         {
@@ -932,7 +932,7 @@ WString    ECValue::ToString () const
         }
     else if (IsStruct())
         {
-        valueAsString << "IECInstance containing struct value";
+        return L"IECInstance containing struct value";
         }
     else
         {
@@ -955,13 +955,11 @@ WString    ECValue::ToString () const
                 }            
             case PRIMITIVETYPE_String:
                 {
-                valueAsString << GetString();
-                break;          
+                return GetString();
                 }            
             case PRIMITIVETYPE_Boolean:
                 {
-                valueAsString << GetBoolean()?"true":"false";
-                break;          
+                return GetBoolean() ? L"true" : L"false";
                 }
             case PRIMITIVETYPE_Point2D:
                 {
@@ -978,13 +976,11 @@ WString    ECValue::ToString () const
             case PRIMITIVETYPE_DateTime:
                 {
                 SystemTime timeDate = GetDateTime();
-                valueAsString << timeDate.ToString();
-                break;          
+                return timeDate.ToString();
                 }
             default:
                 {
-                valueAsString << L"EC::ECValue::ToString needs work... unsupported data type";
-                break;          
+                return L"EC::ECValue::ToString needs work... unsupported data type";
                 }            
             }
         }
@@ -1040,7 +1036,7 @@ bool              ECValue::Equals (ECValueCR v) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @param        capacity IN  Estimated size of the array.
+* @param[in]        capacity Estimated size of the array.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus   ECValue::SetStructArrayInfo (UInt32 count, bool isFixedCount)
@@ -1057,7 +1053,7 @@ ECObjectsStatus   ECValue::SetStructArrayInfo (UInt32 count, bool isFixedCount)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @param        capacity IN  Estimated size of the array.
+* @param[in]        capacity Estimated size of the array.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus       ECValue::SetPrimitiveArrayInfo (PrimitiveType primitiveElementType, UInt32 count, bool isFixedSize)
@@ -1865,6 +1861,17 @@ ECValuesCollection::ECValuesCollection (IECInstanceCR instance)
 ECValuesCollectionPtr ECValuesCollection::Create (IECInstanceCR instance)
     {
     return new ECValuesCollection (instance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/11
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValuesCollectionPtr ECValuesCollection::Create (ECPropertyValueCR  parentProperty)
+    {
+    if (parentProperty.HasChildValues ())
+        return new ECValuesCollection (parentProperty);
+
+    return NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
