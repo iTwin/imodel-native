@@ -90,11 +90,10 @@ WString ECFileUtilities::GetDllPath()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  11/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus GetSchemaFileName (WString& fullFileName, WCharCP schemaPath, bool useLatestCompatibleMatch)
+ECObjectsStatus GetSchemaFileName (WString& fullFileName, UInt32& foundMinorVersion, WCharCP schemaPath, bool useLatestCompatibleMatch)
     {
     ECFileNameIterator fileList (schemaPath);
     wchar_t filePath[MAX_PATH];
-    UInt32 minorVersion=0;
     UInt32 currentMinorVersion=0;
 
     while (true)
@@ -111,16 +110,16 @@ ECObjectsStatus GetSchemaFileName (WString& fullFileName, WCharCP schemaPath, bo
         if (fullFileName.empty())
             {
             fullFileName = filePath;
-            GetMinorVersionFromSchemaFileName (minorVersion, filePath);
+            GetMinorVersionFromSchemaFileName (foundMinorVersion, filePath);
             continue;
             }
 
         if (ECOBJECTS_STATUS_Success != GetMinorVersionFromSchemaFileName (currentMinorVersion, filePath))
             continue;
 
-        if (currentMinorVersion > minorVersion)
+        if (currentMinorVersion > foundMinorVersion)
             {
-            minorVersion = currentMinorVersion;
+            foundMinorVersion = currentMinorVersion;
             fullFileName = filePath;
             }
         }

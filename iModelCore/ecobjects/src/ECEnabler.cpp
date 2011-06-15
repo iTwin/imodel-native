@@ -12,7 +12,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECEnabler::ECEnabler(ECClassCR ecClass, IStandaloneEnablerLocatorR childECEnablerLocator) : m_ecClass (ecClass), m_standaloneInstanceEnablerLocator (childECEnablerLocator)
+ECEnabler::ECEnabler(ECClassCR ecClass, IStandaloneEnablerLocaterR childECEnablerLocater) : m_ecClass (ecClass), m_standaloneInstanceEnablerLocater (childECEnablerLocater)
     {
     };
 
@@ -29,7 +29,7 @@ ECEnabler::~ECEnabler()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StandaloneECEnablerPtr          ECEnabler::_ObtainStandaloneInstanceEnabler (WCharCP schemaName, WCharCP className)  
     {
-    return m_standaloneInstanceEnablerLocator.ObtainStandaloneInstanceEnabler (schemaName, className); 
+    return m_standaloneInstanceEnablerLocater.ObtainStandaloneInstanceEnabler (schemaName, className); 
     }
 
 /*---------------------------------------------------------------------------------**//**

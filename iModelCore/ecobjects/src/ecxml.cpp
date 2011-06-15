@@ -202,7 +202,7 @@ const WString &cardinalityString
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
     if (0 == cardinalityString.compare(L"1"))
         {
-        ECObjectsLogger::Log()->warningv(L"Legacy cardinality of '1' interpreted as '(1,1)'");
+        ECObjectsLogger::Log()->debugv(L"Legacy cardinality of '1' interpreted as '(1,1)'");
         lowerLimit = 1;
         upperLimit = 1;
         return status;
@@ -212,7 +212,7 @@ const WString &cardinalityString
              (0 == cardinalityString.compare(L"unbounded")) || (0 == cardinalityString.compare(L"n")) ||
              (0 == cardinalityString.compare(L"N")))
         {
-        ECObjectsLogger::Log()->warningv(L"Legacy cardinality of '%s' interpreted as '(0,n)'", cardinalityString.c_str());
+        ECObjectsLogger::Log()->debugv(L"Legacy cardinality of '%s' interpreted as '(0,n)'", cardinalityString.c_str());
         lowerLimit = 0;
         upperLimit = UINT_MAX;
         return status;
@@ -225,7 +225,7 @@ const WString &cardinalityString
         {
         if (0 == swscanf(cardinalityWithoutSpaces.c_str(), L"%d", &upperLimit))
             return ECOBJECTS_STATUS_ParseError;
-        ECObjectsLogger::Log()->warningv(L"Legacy cardinality of '%d' interpreted as '(0,%d)'", upperLimit, upperLimit);
+        ECObjectsLogger::Log()->debugv(L"Legacy cardinality of '%d' interpreted as '(0,%d)'", upperLimit, upperLimit);
         lowerLimit = 0;
         return status;
         }

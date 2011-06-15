@@ -85,10 +85,17 @@ TEST_F(CustomAttributeTest, CanAddSingleCustomAttribute)
     ECSchemaCachePtr  schemaOwner = ECSchemaCache::Create();
     ECSchemaP           schema = CreateCustomAttributeTestSchema(*schemaOwner);
 
-    ECClassP containerClass = schema->GetClassP (L"TestClass");
+    ECClassP containerClass = schema->GetClassP (L"ClassWithProperties");
     ASSERT_TRUE (containerClass);
 
+    ECPropertyP p = containerClass->GetPropertyP (L"StringMember");
+
     IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema, *schemaOwner);
+
+
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->SetCustomAttribute(*instance));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, p->SetCustomAttribute(*instance));
+
     EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
     }
 

@@ -42,9 +42,7 @@ always:
 # All warnings on
 WARNINGS_UP=1
 
-%if exists ($(BuildContext)SubParts/mki/BentleyDlls.mki)
-    %include $(BuildContext)SubParts/mki/BentleyDlls.mki
-%endif
+%include $(BuildContext)SubParts/mki/BentleyDlls.mki
 
 ECNativeObjectsDllBase = ECObjects4
 ECNativeObjectsDllName = $(ECNativeObjectsDllBase).dll

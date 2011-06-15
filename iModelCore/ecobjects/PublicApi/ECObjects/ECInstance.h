@@ -13,6 +13,26 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
+//! @addtogroup ECObjectsGroup
+//! ECObjects is a set of abstractions for working with engineering/business data and metadata. 
+//! "EC" stands for "Engineering Content".
+//! There are several implementations of the ECObjects abstractions:
+//! @li In XML (two formats ECSchemaXML and ECInstanceXML)
+//! @li This native C++ implementation
+//! @li In .NET (multiple implementations of IECInstance, IECClass, and related interfaces. One implementation actually wraps a native IECInstance with a managed one
+//!
+//! You can think of an ECClass as being like a C++ or .NET class that only defines properties (ECClasses define no methods or behaviors.) In some ways, they are closer to .NET interfaces that hold only properties... or C++ pure virtual abstract base classes that only contain property getters and setters. They are also very analogous to a database table definition.
+//!
+//! ECClasses contain ECProperties. These are property *definitions* not values.
+//!
+//! ECInstances represent instances of objects. Each "belongs" to an ECClass and holds ECPropertyValues. They are somewhat analogous to the rows of a database table.
+//!
+//! An ECSchema is just a collection of ECClasses.
+//!
+//! There are also ECRelationshipClasses that are ECClasses that also define "RelationshipConstraints" indicating what ECClasses they relate. ECRelationshipInstances represent the relationships between the ECinstances (defined/constrainted by their ECRelationshipClass) ECRelationships work more like database foreign key constraint that C++ pointers or .NET object references.
+//! @see Bentley::EC
+
+
 //////////////////////////////////////////////////////////////////////////////////
 //  The following definitions are used to allow a struct property to generate a
 //  custom XML representation of itself. This was required to support 8.11 
@@ -45,6 +65,7 @@ public:
 
 typedef RefCountedPtr<IECInstance> IECInstancePtr;
 //=======================================================================================    
+//! @ingroup ECObjectsGroup
 //! EC::IECInstance is the native equivalent of a .NET IECInstance.
 //! Unlike IECInstance, it is not a pure interface, but is a concrete struct.
 //! Whereas in .NET, one might implement IECInstance, or use the "Lightweight" system
@@ -63,7 +84,7 @@ protected:
     ECOBJECTS_EXPORT IECInstance(); 
     ECOBJECTS_EXPORT virtual ~IECInstance();
 
-    virtual WString            _GetInstanceId() const = 0; // Virtual and returning WString because a subclass may want to calculate it on demand
+    virtual WString             _GetInstanceId() const = 0; // Virtual and returning WString because a subclass may want to calculate it on demand
     virtual ECObjectsStatus     _GetValue (ECValueR v, WCharCP managedPropertyAccessor, bool useArrayIndex, UInt32 arrayIndex) const = 0;
     virtual ECObjectsStatus     _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const = 0;
 public:
@@ -121,7 +142,7 @@ public:
     //WIP_FUSION ParseExpectedNIndices should move to AccessStringHelper struct... along with method to convert to/from .NET ECObjects style accessString
     ECOBJECTS_EXPORT static int         ParseExpectedNIndices (WCharCP managedPropertyAccessor);
     
-    ECOBJECTS_EXPORT WString           ToString (WCharCP indent) const;
+    ECOBJECTS_EXPORT WString            ToString (WCharCP indent) const;
 
     ECOBJECTS_EXPORT static void        Debug_ResetAllocationStats ();
     ECOBJECTS_EXPORT static void        Debug_DumpAllocationStats (WCharCP prefix);
@@ -138,6 +159,7 @@ public:
     };
     
 //=======================================================================================    
+//! @ingroup ECObjectsGroup
 //! EC::IECRelationshipInstance is the native equivalent of a .NET IECRelationshipInstance.
 //! @see IECInstance, ECRelationshipClass
 //=======================================================================================    
@@ -190,6 +212,29 @@ struct ECInstanceInteropHelper
     ECOBJECTS_EXPORT static ECObjectsStatus SetPoint3DValue  (IECInstanceR, WCharCP managedPropertyAccessor, DPoint3dCR value);
     ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeValue (IECInstanceR, WCharCP managedPropertyAccessor, SystemTimeR value);
     ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeTicks (IECInstanceR, WCharCP managedPropertyAccessor, Int64 value);
+
+    ECOBJECTS_EXPORT static ECObjectsStatus GetInteger       (IECInstanceCR, int & value,        ECValueAccessorCR accessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetLong          (IECInstanceCR, Int64 & value,      ECValueAccessorCR accessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetDouble        (IECInstanceCR, double & value,     ECValueAccessorCR accessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetString        (IECInstanceCR, WCharCP & value,    ECValueAccessorCR accessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetBoolean       (IECInstanceCR, bool & value,       ECValueAccessorCR accessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetPoint2D       (IECInstanceCR, DPoint2dR value,    ECValueAccessorCR accessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetPoint3D       (IECInstanceCR, DPoint3dR value,    ECValueAccessorCR accessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTime      (IECInstanceCR, SystemTimeR value,  ECValueAccessorCR accessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTimeTicks (IECInstanceCR, Int64 & value,      ECValueAccessorCR accessor);
+
+    ECOBJECTS_EXPORT static ECObjectsStatus SetLongValue     (IECInstanceR, ECValueAccessorCR accessor, Int64 value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetIntegerValue  (IECInstanceR, ECValueAccessorCR accessor, int value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetStringValue   (IECInstanceR, ECValueAccessorCR accessor, WCharCP value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetDoubleValue   (IECInstanceR, ECValueAccessorCR accessor, double value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetBooleanValue  (IECInstanceR, ECValueAccessorCR accessor, bool value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetPoint2DValue  (IECInstanceR, ECValueAccessorCR accessor, DPoint2dCR value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetPoint3DValue  (IECInstanceR, ECValueAccessorCR accessor, DPoint3dCR value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeValue (IECInstanceR, ECValueAccessorCR accessor, SystemTimeR value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeTicks (IECInstanceR, ECValueAccessorCR accessor, Int64 value);
+
+    ECOBJECTS_EXPORT static bool            IsNull (IECInstanceR, ECValueAccessorCR);
+    ECOBJECTS_EXPORT static void            SetToNull (IECInstanceR, ECValueAccessorCR);
 
     ECOBJECTS_EXPORT static PrimitiveType   GetPrimitiveType       (IECInstanceCR instance, int propertyIndex);
 #ifdef NOT_USED
