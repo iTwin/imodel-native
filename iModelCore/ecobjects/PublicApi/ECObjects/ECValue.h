@@ -442,4 +442,7 @@ public:
 
 END_BENTLEY_EC_NAMESPACE
 
-
+//__PUBLISH_SECTION_END__
+#include <boost/foreach.hpp>
+BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::EC::ECValuesCollection)
+//__PUBLISH_SECTION_START__
