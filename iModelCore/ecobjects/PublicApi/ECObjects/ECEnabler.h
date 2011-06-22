@@ -78,13 +78,23 @@ public:
     //! Primarily for debugging/logging purposes. Should match your fully-qualified class name
     ECOBJECTS_EXPORT WCharCP                    GetName() const;
     
+    //! Get the ECClass that this enabler 'enables'
     ECOBJECTS_EXPORT ECClassCR                  GetClass() const;
+    
+    //! Obtain a propertyIndex given an access string. The propertyIndex can be used with ECInstances enabled by this enabler for more efficient property value access
     ECOBJECTS_EXPORT ECObjectsStatus            GetPropertyIndex     (UInt32& propertyIndex, WCharCP propertyAccessString) const;
+    
+    //! Given a propertyIndex, find the corresponding property access string
     ECOBJECTS_EXPORT ECObjectsStatus            GetAccessString      (WCharCP& propertyAccessString, UInt32 propertyIndex) const;
+    
+    //! Get the first propertyIndex (used in conjunction with GetNextPropertyIndex for efficiently looping over property values.)
     ECOBJECTS_EXPORT UInt32                     GetFirstPropertyIndex (UInt32 parentIndex) const;
+    
+    //! Get the next (after inputIndex) propertyIndex (used in conjunction with GetNeGetFirstPropertyIndexxtPropertyIndex for efficiently looping over property values.)
     ECOBJECTS_EXPORT UInt32                     GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const;
-    ECOBJECTS_EXPORT bool                       HasChildValues (ECValueAccessorCR, IECInstanceCR) const;
-    ECOBJECTS_EXPORT ECValuesCollection         GetChildValues (ECValueAccessorCR, IECInstanceCR) const;
+
+//    ECOBJECTS_EXPORT bool                       HasChildValues (ECValueAccessorCR, IECInstanceCR) const;
+//    ECOBJECTS_EXPORT ECValuesCollection         GetChildValues (ECValueAccessorCR, IECInstanceCR) const;
     ECOBJECTS_EXPORT UInt32                     GetPropertyCount () const;
     ECOBJECTS_EXPORT StandaloneECEnablerPtr     ObtainStandaloneInstanceEnabler (WCharCP schemaName, WCharCP className); 
 

@@ -97,9 +97,10 @@ protected:
     virtual ECObjectsStatus     _ClearArray (WCharCP managedPropertyAccessor) = 0;    
     virtual ECEnablerCR         _GetEnabler() const = 0;
     virtual bool                _IsReadOnly() const = 0;
-    virtual WString            _ToString (WCharCP indent) const = 0;
+    virtual WString             _ToString (WCharCP indent) const = 0;
     virtual size_t              _GetOffsetToIECInstance () const = 0;
 
+    ECOBJECTS_EXPORT virtual ECObjectsStatus       _SetInstanceId(WCharCP);
     ECOBJECTS_EXPORT virtual ECObjectsStatus       _GetDisplayLabel (WString& displayLabel) const;    
     ECOBJECTS_EXPORT virtual ECObjectsStatus       _SetDisplayLabel (WCharCP displayLabel);    
     ECOBJECTS_EXPORT virtual MemoryECInstanceBase* _GetAsMemoryECInstance () const;
@@ -110,6 +111,7 @@ public:
     ECOBJECTS_EXPORT ECEnablerR         GetEnablerR() const;      // use when enabler.ObtainStandaloneEnabler is called since a new enabler may be created.
 
     ECOBJECTS_EXPORT WString            GetInstanceId() const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetInstanceId(WCharCP instanceId);
     ECOBJECTS_EXPORT bool               IsReadOnly() const;
     
     ECOBJECTS_EXPORT ECClassCR          GetClass() const;
@@ -153,9 +155,9 @@ public:
     ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadXmlFromStream (IECInstancePtr& ecInstance, IStreamP stream, ECInstanceDeserializationContextR context);
     ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadXmlFromString (IECInstancePtr& ecInstance, WCharCP xmlString, ECInstanceDeserializationContextR context);
 
-    ECOBJECTS_EXPORT InstanceSerializationStatus            WriteXmlToFile   (WCharCP fileName, bool isStandAlone);
-    ECOBJECTS_EXPORT InstanceSerializationStatus            WriteXmlToStream (IStreamP stream, bool isStandAlone);
-    ECOBJECTS_EXPORT InstanceSerializationStatus            WriteXmlToString (WString & ecInstanceXml, bool isStandAlone);
+    ECOBJECTS_EXPORT InstanceSerializationStatus            WriteXmlToFile   (WCharCP fileName, bool isStandAlone, bool writeInstanceId);
+    ECOBJECTS_EXPORT InstanceSerializationStatus            WriteXmlToStream (IStreamP stream, bool isStandAlone, bool writeInstanceId);
+    ECOBJECTS_EXPORT InstanceSerializationStatus            WriteXmlToString (WString & ecInstanceXml, bool isStandAlone, bool writeInstanceId);
     };
     
 //=======================================================================================    
