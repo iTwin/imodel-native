@@ -351,6 +351,7 @@ struct ECValuesCollectionIterator;
 
 //=======================================================================================  
 //! @ingroup ECObjectsGroup
+//! Relates an ECProperty with an ECValue. Used when iterating over the values of an ECInstance
 //! @bsiclass 
 //======================================================================================= 
 struct ECPropertyValue : RefCountedBase
@@ -379,7 +380,11 @@ public:
 public:
     ECOBJECTS_EXPORT ECValueCR              GetValue () const;
     ECOBJECTS_EXPORT ECValueAccessorCR      GetValueAccessor () const;
+    
+    //! Indicates whether the value is an array or struct
     ECOBJECTS_EXPORT bool                   HasChildValues () const;
+    
+    //! For array and struct values, gets a virtual collection of the embedded values
     ECOBJECTS_EXPORT ECValuesCollectionPtr  GetChildValues () const;
     // TODO?? ECOBJECTS_EXPORT ECPropertyValuePtr     GetPropertyValue (IECInstanceCR, WCharCP propertyName) const;
     };
