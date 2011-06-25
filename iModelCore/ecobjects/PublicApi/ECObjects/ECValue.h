@@ -411,10 +411,10 @@ private:
 /*__PUBLISH_SECTION_START__*/
 
 public:
-    typedef ECPropertyValuePtr          ReturnType;
+    typedef ECPropertyValue const       ReturnType;
     ECOBJECTS_EXPORT bool               IsDifferent(ECValuesCollectionIterator const& iter) const;
     ECOBJECTS_EXPORT void               MoveToNext ();
-    ECOBJECTS_EXPORT ECPropertyValuePtr GetCurrent () const;
+    ECOBJECTS_EXPORT ECPropertyValue const& GetCurrent () const;
     ECOBJECTS_EXPORT bool               IsAtEnd () const;
     };
 
@@ -447,4 +447,7 @@ public:
 
 END_BENTLEY_EC_NAMESPACE
 
-
+//__PUBLISH_SECTION_END__
+#include <boost/foreach.hpp>
+BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::EC::ECValuesCollection)
+//__PUBLISH_SECTION_START__

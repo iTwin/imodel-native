@@ -1858,9 +1858,9 @@ bool    ECClassContainer::const_iterator::operator!= (const_iterator const& rhs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassP   ECClassContainer::const_iterator::operator*() const
+ECClassP const& ECClassContainer::const_iterator::operator*() const
     {
-    bpair<WCharCP , ECClassP> mapPair = *(m_state->m_mapIterator);
+    bpair<WCharCP , ECClassP> const& mapPair = *(m_state->m_mapIterator);
     return mapPair.second;
     };
 
