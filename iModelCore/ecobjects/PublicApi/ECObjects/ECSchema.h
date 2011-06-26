@@ -986,7 +986,6 @@ protected:
     bvector<ECSchemaP>                                     m_schemas;
     bmap<SchemaNameClassNamePair, StandaloneECEnablerPtr>  m_ecEnablerMap;
     
-    ECOBJECTS_EXPORT virtual ~ECSchemaCache ();
 
     // IECSchemaOwner
     ECOBJECTS_EXPORT virtual ECObjectsStatus _AddSchema   (ECSchemaR) override;
@@ -999,6 +998,7 @@ protected:
 
 /*__PUBLISH_SECTION_START__*/
 public:
+    ECOBJECTS_EXPORT virtual ~ECSchemaCache ();
     ECOBJECTS_EXPORT static  ECSchemaCachePtr Create ();
 };
 

@@ -898,6 +898,7 @@ ECSchemaDeserializationContextR schemaContext
         if (m_name.compare(schemaName) == 0)
             continue;
 
+        ECObjectsLogger::Log()->debugv (L"About to locate referenced ECSchema %s.%d.%d", schemaName, versionMajor, versionMinor);
         ECSchemaP referencedSchema = LocateSchema(schemaName, versionMajor, versionMinor, schemaContext);
 
         if (NULL != referencedSchema)
@@ -946,15 +947,15 @@ ECSchemaDeserializationContextR schemaContext
     schema = schemaContext.GetSchemaOwner().LocateSchema(name.c_str(), versionMajor, versionMinor, SCHEMAMATCHTYPE_LatestCompatible);
     if (NULL != schema)
         return schema;
-
+  
     // Step 2: ask the schemaLocaters
     FOR_EACH (IECSchemaLocaterP schemaLocater, schemaContext.GetSchemaLocaters())
+
         {
         if ( ! EXPECTED_CONDITION (NULL != schemaLocater))
             continue;
 
         schema = schemaLocater->LocateSchema(name.c_str(), versionMajor, versionMinor, SCHEMAMATCHTYPE_LatestCompatible, schemaContext);
-
         if (NULL != schema)
             return schema;
         }
@@ -1032,13 +1033,14 @@ bool                            useLatestCompatibleMatch
         if (schemaPath[schemaPath.length() - 1] != '\\')
             schemaPath += '\\';
         schemaPath += schemaName;
+        ECObjectsLogger::Log()->debugv (L"Checking for existence of %s...", schemaPath.c_str());
 
         //Finds latest
         if (SUCCESS != GetSchemaFileName (fullFileName, foundVersionMinor, schemaPath.c_str(), useLatestCompatibleMatch))
             continue;
 
         //Check if schema is compatible before serializing, as serializing would add the schema to the cache.
-        if (! SchemasMatch (useLatestCompatibleMatch? SCHEMAMATCHTYPE_LatestCompatible : SCHEMAMATCHTYPE_Exact, 
+        if (!SchemasMatch (useLatestCompatibleMatch ? SCHEMAMATCHTYPE_LatestCompatible : SCHEMAMATCHTYPE_Exact, 
                             name.c_str(),   versionMajor,   versionMinor,
                             name.c_str(),   versionMajor,   foundVersionMinor))
             continue;
@@ -1046,6 +1048,7 @@ bool                            useLatestCompatibleMatch
         if (SCHEMA_DESERIALIZATION_STATUS_Success != ECSchema::ReadXmlFromFile (schemaOut, fullFileName.c_str(), schemaContext))
             continue;
 
+        ECObjectsLogger::Log()->debugv (L"Located %s...", fullFileName.c_str());
 
         return schemaOut;
         }
@@ -1153,6 +1156,8 @@ ECSchemaDeserializationContextR     schemaContext
         ECObjectsLogger::Log()->warningv (L"Invalid version attribute has been ignored while deserializing ECSchema '%s'.  The default version number %d.%d has been applied.", 
             (WCharCP)attributePtr->text, versionMajor, versionMinor);
         }
+
+    ECObjectsLogger::Log()->debugv (L"Deserializing ECSchema %s.%d.%d", (WCharCP)attributePtr->text, versionMajor, versionMinor);
 
     IECSchemaOwnerR schemaOwner = schemaContext.GetSchemaOwner();
     bool            hideFromLeakDetection = schemaContext.GetHideSchemasFromLeakDetection();
@@ -1516,7 +1521,12 @@ ECSchemaDeserializationContextR schemaContext
 
     status = ReadXml (schemaOut, xmlDocPtr, schemaContext);
     if (ECOBJECTS_STATUS_Success != status)
-        ECObjectsLogger::Log()->errorv (L"Failed to deserialize XML from string: %s", ecSchemaXml);
+        {
+        WChar first200Characters[201];
+        wcsncpy (first200Characters, ecSchemaXml, 200);
+        first200Characters[200] = L'\0';
+        ECObjectsLogger::Log()->errorv (L"Failed to deserialize XML from string (1st 200 characters): %s", first200Characters);
+        }
     else
         ECObjectsLogger::Log()->infov (L"Native ECSchema Deserialized from string: schemaName='%s.%d.%d' classCount='%d' schemaAddress='0x%x' stringAddress='0x%x'", 
             schemaOut->GetName().c_str(), schemaOut->GetVersionMajor(), schemaOut->GetVersionMinor(), schemaOut->m_classMap.size(), schemaOut, ecSchemaXml);
@@ -1800,7 +1810,7 @@ StandaloneECEnablerPtr          ECSchemaCache::_ObtainStandaloneInstanceEnabler 
     // no existing enabler, try to find schema and build one now
     FOR_EACH (ECSchemaP ecSchema, m_schemas)
         {
-        if (ecSchema->GetName().EqualsI (schemaName))
+        if (ecSchema->GetName().Equals (schemaName))
             {
             ECClassP structClass = ecSchema->GetClassP (className);
             if (structClass)
