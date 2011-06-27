@@ -1810,7 +1810,7 @@ StandaloneECEnablerPtr          ECSchemaCache::_ObtainStandaloneInstanceEnabler 
     // no existing enabler, try to find schema and build one now
     FOR_EACH (ECSchemaP ecSchema, m_schemas)
         {
-        if (ecSchema->GetName().Equals (schemaName))
+        if (ecSchema->GetName().EqualsI (schemaName))
             {
             ECClassP structClass = ecSchema->GetClassP (className);
             if (structClass)
