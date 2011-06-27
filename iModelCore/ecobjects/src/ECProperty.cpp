@@ -772,7 +772,7 @@ WStringCR typeName
     if (ECOBJECTS_STATUS_Success == status)
         return SetStructElementType (structClass);
 
-    ECObjectsLogger::Log()->errorv (L"Failed to set the type name of ArrayECProperty '%s' to '%s' because the typeName could not be parsed into a resolvable type.", this->GetName().c_str(), typeName.c_str());        
+    ECObjectsLogger::Log()->errorv (L"Failed ArrayECProperty::_SetTypeName for '%s'. '%s' is not a recognized type.", this->GetName().c_str(), typeName.c_str());        
     return ECOBJECTS_STATUS_ParseError;
     }
 

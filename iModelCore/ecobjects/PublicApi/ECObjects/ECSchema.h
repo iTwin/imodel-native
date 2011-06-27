@@ -992,8 +992,6 @@ protected:
     bvector<ECSchemaP>                                     m_schemas;
     bmap<SchemaNameClassNamePair, StandaloneECEnablerPtr>  m_ecEnablerMap;
     
-    ECOBJECTS_EXPORT virtual ~ECSchemaCache ();
-
     // IECSchemaOwner
     ECOBJECTS_EXPORT virtual ECObjectsStatus _AddSchema   (ECSchemaR) override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus _DropSchema  (ECSchemaR) override;
@@ -1005,6 +1003,7 @@ protected:
 
 /*__PUBLISH_SECTION_START__*/
 public:
+    ECOBJECTS_EXPORT virtual ~ECSchemaCache ();
     ECOBJECTS_EXPORT static  ECSchemaCachePtr Create ();
 };
 
@@ -1083,21 +1082,21 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
 public:    
-    ECOBJECTS_EXPORT ECObjectsStatus SetName(WStringCR value);
-    ECOBJECTS_EXPORT WStringCR GetName() const;    
-    ECOBJECTS_EXPORT ECObjectsStatus SetNamespacePrefix(WStringCR value);
-    ECOBJECTS_EXPORT WStringCR GetNamespacePrefix() const;
-    ECOBJECTS_EXPORT ECObjectsStatus SetDescription(WStringCR value);
-    ECOBJECTS_EXPORT WStringCR GetDescription() const;
-    ECOBJECTS_EXPORT ECObjectsStatus SetDisplayLabel(WStringCR value);
-    ECOBJECTS_EXPORT WStringCR GetDisplayLabel() const;
-    ECOBJECTS_EXPORT ECObjectsStatus SetVersionMajor(UInt32 value);
-    ECOBJECTS_EXPORT UInt32 GetVersionMajor() const;
-    ECOBJECTS_EXPORT ECObjectsStatus SetVersionMinor(UInt32 value);
-    ECOBJECTS_EXPORT UInt32 GetVersionMinor() const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetName(WStringCR value);
+    ECOBJECTS_EXPORT WStringCR          GetName() const;    
+    ECOBJECTS_EXPORT ECObjectsStatus    SetNamespacePrefix(WStringCR value);
+    ECOBJECTS_EXPORT WStringCR          GetNamespacePrefix() const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetDescription(WStringCR value);
+    ECOBJECTS_EXPORT WStringCR          GetDescription() const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel(WStringCR value);
+    ECOBJECTS_EXPORT WStringCR          GetDisplayLabel() const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetVersionMajor(UInt32 value);
+    ECOBJECTS_EXPORT UInt32             GetVersionMajor() const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetVersionMinor(UInt32 value);
+    ECOBJECTS_EXPORT UInt32             GetVersionMinor() const;
 
     ECOBJECTS_EXPORT ECClassContainerCR GetClasses() const;
-    ECOBJECTS_EXPORT bool GetIsDisplayLabelDefined() const;
+    ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
 
     //! If the class name is valid, will create an ECClass object and add the new class to the schema
     //! @param[out] ecClass If successful, will contain a new ECClass object
