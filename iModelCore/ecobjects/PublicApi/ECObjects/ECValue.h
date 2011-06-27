@@ -70,7 +70,8 @@ public:
     };
 
 //=======================================================================================    
-//! Variant-like object representing the value of a conceptual ECPropertyValue. 
+//! @ingroup ECObjectsGroup
+//! Variant-like object representing the value of an ECPropertyValue. 
 //! It does not represent a "live" reference into the underlying EC::IECInstance 
 //! (or the object that the EC::IECInstance represents). Changing the EC::ECValue will not affect
 //! the EC::IECInstance unless you subsequently call SetValue() with it.
@@ -349,6 +350,8 @@ struct ECValuesCollectionIterator;
 /*__PUBLISH_SECTION_START__*/
 
 //=======================================================================================  
+//! @ingroup ECObjectsGroup
+//! Relates an ECProperty with an ECValue. Used when iterating over the values of an ECInstance
 //! @bsiclass 
 //======================================================================================= 
 struct ECPropertyValue : RefCountedBase
@@ -368,7 +371,7 @@ public:
     ECPropertyValue ();
     ECPropertyValue (ECPropertyValueCR);
     ECPropertyValue (IECInstanceCR);
-    ECPropertyValue (IECInstanceCR, ECValueAccessorCR);
+    ECOBJECTS_EXPORT ECPropertyValue (IECInstanceCR, ECValueAccessorCR);
 
     ECValueAccessorR    GetValueAccessorR ();
     ECObjectsStatus     EvaluateValue ();
@@ -377,7 +380,11 @@ public:
 public:
     ECOBJECTS_EXPORT ECValueCR              GetValue () const;
     ECOBJECTS_EXPORT ECValueAccessorCR      GetValueAccessor () const;
+    
+    //! Indicates whether the value is an array or struct
     ECOBJECTS_EXPORT bool                   HasChildValues () const;
+    
+    //! For array and struct values, gets a virtual collection of the embedded values
     ECOBJECTS_EXPORT ECValuesCollectionPtr  GetChildValues () const;
     // TODO?? ECOBJECTS_EXPORT ECPropertyValuePtr     GetPropertyValue (IECInstanceCR, WCharCP propertyName) const;
     };
@@ -404,10 +411,10 @@ private:
 /*__PUBLISH_SECTION_START__*/
 
 public:
-    typedef ECPropertyValuePtr          ReturnType;
+    typedef ECPropertyValue const       ReturnType;
     ECOBJECTS_EXPORT bool               IsDifferent(ECValuesCollectionIterator const& iter) const;
     ECOBJECTS_EXPORT void               MoveToNext ();
-    ECOBJECTS_EXPORT ECPropertyValuePtr GetCurrent () const;
+    ECOBJECTS_EXPORT ECPropertyValue const& GetCurrent () const;
     ECOBJECTS_EXPORT bool               IsAtEnd () const;
     };
 
@@ -435,8 +442,12 @@ public:
     ECOBJECTS_EXPORT const_iterator end ()   const;
 
     ECOBJECTS_EXPORT static ECValuesCollectionPtr Create (IECInstanceCR);
+    ECOBJECTS_EXPORT static ECValuesCollectionPtr Create (ECPropertyValueCR);
     };
 
 END_BENTLEY_EC_NAMESPACE
 
-
+//__PUBLISH_SECTION_END__
+#include <boost/foreach.hpp>
+BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::EC::ECValuesCollection)
+//__PUBLISH_SECTION_START__

@@ -90,6 +90,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     };
 
 /*=================================================================================**//**
+//! @ingroup ECObjectsGroup
 * EC::StandaloneECInstance is the native equivalent of a .NET "Heavyweight" ECInstance.
 * It holds the values in memory that it allocates... laid out according to the ClassLayout
 * @see ClassLayoutHolder, IECInstance
@@ -110,7 +111,8 @@ protected:
     ECOBJECTS_EXPORT ~StandaloneECInstance ();
 
     // IECInstance
-    ECOBJECTS_EXPORT virtual WString            _GetInstanceId() const override;
+    ECOBJECTS_EXPORT virtual WString             _GetInstanceId() const override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetInstanceId(WCharCP id) override;
     ECOBJECTS_EXPORT virtual bool                _IsReadOnly() const override;        
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetValue (ECValueR v, WCharCP propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
@@ -121,12 +123,12 @@ protected:
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _AddArrayElements (WCharCP propertyAccessString, UInt32 size) override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _RemoveArrayElement (WCharCP propertyAccessString, UInt32 index) override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _ClearArray (WCharCP propertyAccessString) override;    
-    ECOBJECTS_EXPORT virtual WString            _ToString (WCharCP indent) const override;
+    ECOBJECTS_EXPORT virtual WString             _ToString (WCharCP indent) const override;
     ECOBJECTS_EXPORT virtual ClassLayoutCR       _GetClassLayout () const;
     ECOBJECTS_EXPORT virtual ECEnablerCR         _GetEnabler() const override;
     ECOBJECTS_EXPORT virtual MemoryECInstanceBase* _GetAsMemoryECInstance () const override;
-    ECOBJECTS_EXPORT virtual size_t                _GetObjectSize () const;
-    ECOBJECTS_EXPORT virtual size_t                _GetOffsetToIECInstance () const;
+    ECOBJECTS_EXPORT virtual size_t              _GetObjectSize () const;
+    ECOBJECTS_EXPORT virtual size_t              _GetOffsetToIECInstance () const;
 
     // MemoryECInstanceBase
     ECOBJECTS_EXPORT virtual IECInstancePtr      _GetAsIECInstance () const;
@@ -159,18 +161,19 @@ struct IECWipRelationshipInstance : StandaloneECInstance
     };
 
 //=======================================================================================
-//! ECEnabler for Standalone ECInstances
+//! @ingroup ECObjectsGroup
+//! ECEnabler for Standalone ECInstances (IECInstances not tied to a specific persistent store)
 //=======================================================================================
 struct StandaloneECEnabler : public ClassLayoutHolder, public ECEnabler
     {
 private:
     bool    m_ownsClassLayout;
 
-    StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocatorR childECEnablerLocator, bool ownsClassLayout);
+    StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocaterR childECEnablerLocater, bool ownsClassLayout);
     virtual ~StandaloneECEnabler();
 
 protected:
-    virtual WCharCP                  _GetName() const override;
+    virtual WCharCP                     _GetName() const override;
     virtual ECObjectsStatus             _GetPropertyIndex (UInt32& propertyIndex, WCharCP propertyAccessString) const override;
     virtual ECObjectsStatus             _GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const override;
     virtual UInt32                      _GetPropertyCount () const override;
@@ -178,7 +181,7 @@ protected:
     virtual UInt32                      _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const override;
 
 public: 
-    ECOBJECTS_EXPORT static StandaloneECEnablerPtr CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocatorR childECEnablerLocator, bool ownsClassLayout);
+    ECOBJECTS_EXPORT static StandaloneECEnablerPtr CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocaterR childECEnablerLocater, bool ownsClassLayout);
     ECOBJECTS_EXPORT StandaloneECInstancePtr       CreateInstance (UInt32 minimumInitialSize = 0) const;
     //ECOBJECTS_EXPORT StandaloneECInstanceP         CreateInstanceFromUninitializedMemory (byte * data, UInt32 size);
     //! Used to construct from another memory source like ECXData. The caller is claiming that the memory

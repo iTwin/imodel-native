@@ -98,7 +98,7 @@ static const WString ECXML_DIRECTION_BACKWARD          = L"backward";
 #define READ_REQUIRED_XML_ATTRIBUTE(_xmlAttributeName, _setInPointer, _setInPropertyName, _elementName)   \
     if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (_xmlAttributeName)))     \
         {   \
-        ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " _xmlAttributeName L" attribute\n", (WCharCP)_elementName);     \
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " _xmlAttributeName L" attribute", (WCharCP)_elementName);     \
         return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;        \
         }       \
     if (ECOBJECTS_STATUS_Success != _setInPointer->Set##_setInPropertyName ((WCharCP)attributePtr->text))       \
@@ -107,7 +107,7 @@ static const WString ECXML_DIRECTION_BACKWARD          = L"backward";
 #define READ_REQUIRED_XML_ATTRIBUTE_IGNORING_SET_ERRORS(_xmlAttributeName, _setInPointer, _setInPropertyName, _elementName)   \
     if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (_xmlAttributeName)))     \
         {   \
-        ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " _xmlAttributeName L" attribute\n", (WCharCP)_elementName);     \
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " _xmlAttributeName L" attribute", (WCharCP)_elementName);     \
         status = SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;        \
         }       \
     else if (ECOBJECTS_STATUS_ParseError == _setInPointer->Set##_setInPropertyName ((WCharCP)attributePtr->text)) \

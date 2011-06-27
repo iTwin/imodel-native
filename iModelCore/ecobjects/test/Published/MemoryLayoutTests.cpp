@@ -408,7 +408,7 @@ ECSchemaP       CreateTestSchema (ECSchemaCacheR schemaOwner)
 
     EXPECT_EQ (S_OK, CoInitialize(NULL));  
 
-    ECSchemaDeserializationContextPtr  schemaContext = ECSchemaDeserializationContext::CreateContext(schemaOwner, schemaOwner);
+    ECSchemaDeserializationContextPtr  schemaContext = ECSchemaDeserializationContext::CreateContext(schemaOwner);
 
     ECSchemaP schema;        
     EXPECT_EQ (SUCCESS, ECSchema::ReadXmlFromString (schema, schemaXMLString.c_str(), *schemaContext));  
@@ -449,7 +449,7 @@ ECSchemaP       CreateProfilingSchema (int nStrings, ECSchemaCacheR schemaOwner)
     schemaXml +=    L"    </ECClass>"
                     L"</ECSchema>";
 
-    ECSchemaDeserializationContextPtr  schemaContext = ECSchemaDeserializationContext::CreateContext(schemaOwner, schemaOwner);
+    ECSchemaDeserializationContextPtr  schemaContext = ECSchemaDeserializationContext::CreateContext(schemaOwner);
 
     ECSchemaP schema;        
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, ECSchema::ReadXmlFromString (schema, schemaXml.c_str(), *schemaContext));

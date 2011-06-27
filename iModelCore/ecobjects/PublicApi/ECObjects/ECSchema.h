@@ -15,6 +15,9 @@
 #include <Bentley\bvector.h>
 #include <Bentley\bmap.h>
 #include <Bentley\bset.h>
+//__PUBLISH_SECTION_END__
+#include <boost/foreach.hpp>
+//__PUBLISH_SECTION_START__
 
 #define DEFAULT_VERSION_MAJOR   1
 #define DEFAULT_VERSION_MINOR   0
@@ -111,18 +114,17 @@ private:
     SchemaSerializationStatus           AddCustomAttributeProperties(MSXML2_IXMLDOMNode& oldNode, MSXML2_IXMLDOMNode& newNode) const;
 
 protected:
-    InstanceDeserializationStatus       ReadCustomAttributes(MSXML2_IXMLDOMNode& containerNode, ECSchemaCR schema, IStandaloneEnablerLocatorR standaloneEnablerLocator);
+    InstanceDeserializationStatus       ReadCustomAttributes(MSXML2_IXMLDOMNode& containerNode, ECSchemaCR schema, IStandaloneEnablerLocaterR standaloneEnablerLocater);
     SchemaSerializationStatus           WriteCustomAttributes(MSXML2_IXMLDOMNode& parentNode) const;
 
     void                                AddUniqueCustomAttributesToList(ECCustomAttributeCollection& returnList);
-/*__PUBLISH_SECTION_START__*/
-protected:
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const;
-    virtual ECSchemaCP                  _GetContainerSchema() const {return NULL;};
+    virtual ECSchemaCP                  _GetContainerSchema() const = 0;// {return NULL;};
 
-public:
     ECOBJECTS_EXPORT virtual ~IECCustomAttributeContainer();
 
+/*__PUBLISH_SECTION_START__*/
+public:
     //! Returns true if the conainer has a custom attribute of a class of the specified name
     ECOBJECTS_EXPORT bool               IsDefined(WStringCR className) ;
     //! Returns true if the conainer has a custom attribute of a class of the specified class definition
@@ -171,7 +173,7 @@ public:
 /*__PUBLISH_SECTION_START__*/                        
         };
 
-    struct const_iterator : std::iterator<std::forward_iterator_tag, IECInstancePtr>
+    struct const_iterator : std::iterator<std::forward_iterator_tag, IECInstancePtr const>
         {
         private:
             friend struct ECCustomAttributeInstanceIterable;
@@ -185,7 +187,8 @@ public:
         public:
             ECOBJECTS_EXPORT const_iterator&     operator++();
             ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const;
-            ECOBJECTS_EXPORT IECInstancePtr      operator* () const;
+            ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const {return !(*this != rhs);}
+            ECOBJECTS_EXPORT IECInstancePtr const& operator* () const;
         };
 
 public:
@@ -196,6 +199,7 @@ public:
 struct PrimitiveECProperty;
 
 //=======================================================================================
+//! @ingroup ECObjectsGroup
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
 //=======================================================================================
 struct ECProperty /*abstract*/ : public IECCustomAttributeContainer
@@ -218,7 +222,7 @@ protected:
 
     ECObjectsStatus                     SetName (WStringCR name);
 
-    virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode, IStandaloneEnablerLocatorR  standaloneEnablerLocator);
+    virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode, IStandaloneEnablerLocaterR  standaloneEnablerLocater);
     virtual SchemaSerializationStatus   _WriteXml(MSXML2_IXMLDOMElement& parentNode);
     SchemaSerializationStatus           _WriteXml(MSXML2_IXMLDOMElement& parentNode, WCharCP elementName);
 
@@ -227,7 +231,7 @@ protected:
     virtual bool                        _IsArray () const { return false; }
     // This method returns a wstring by value because it may be a computed string.  For instance struct properties may return a qualified typename with a namespace
     // prefix relative to the containing schema.
-    virtual WString                    _GetTypeName () const = 0;
+    virtual WString                     _GetTypeName () const = 0;
     virtual ECObjectsStatus             _SetTypeName (WStringCR typeName) = 0;
 
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const = 0;
@@ -290,10 +294,10 @@ private:
     PrimitiveECProperty (ECClassCR ecClass, bool hideFromLeakDetection) : m_primitiveType(PRIMITIVETYPE_String), ECProperty(ecClass, hideFromLeakDetection) {};
 
 protected:
-    virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode, IStandaloneEnablerLocatorR  standaloneEnablerLocator) override;
+    virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode, IStandaloneEnablerLocaterR  standaloneEnablerLocater) override;
     virtual SchemaSerializationStatus   _WriteXml(MSXML2_IXMLDOMElement& parentNode) override;
     virtual bool                        _IsPrimitive () const override { return true;}
-    virtual WString                    _GetTypeName () const override;
+    virtual WString                     _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (WStringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
     virtual PrimitiveECProperty*        _GetAsPrimitiveECProperty() {return this;}
@@ -317,10 +321,10 @@ private:
     StructECProperty (ECClassCR ecClass, bool hideFromLeakDetection) : m_structType(NULL), ECProperty(ecClass, hideFromLeakDetection) {};
 
 protected:
-    virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode, IStandaloneEnablerLocatorR  standaloneEnablerLocator) override;
+    virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode, IStandaloneEnablerLocaterR  standaloneEnablerLocater) override;
     virtual SchemaSerializationStatus   _WriteXml(MSXML2_IXMLDOMElement& parentNode) override;
     virtual bool                        _IsStruct () const override { return true;}
-    virtual WString                    _GetTypeName () const override;
+    virtual WString                     _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (WStringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
 
@@ -359,7 +363,7 @@ private:
     ECObjectsStatus                     SetMaxOccurs (WStringCR maxOccurs);          
 
 protected:
-    virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode, IStandaloneEnablerLocatorR  standaloneEnablerLocator) override;
+    virtual SchemaDeserializationStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode, IStandaloneEnablerLocaterR  standaloneEnablerLocater) override;
     virtual SchemaSerializationStatus   _WriteXml(MSXML2_IXMLDOMElement& parentNode) override;
     virtual bool                        _IsArray () const override { return true;}
     virtual WString                    _GetTypeName () const override;
@@ -411,7 +415,7 @@ public:
 /*__PUBLISH_SECTION_START__*/                        
         };
         
-    struct const_iterator : std::iterator<std::forward_iterator_tag, ECPropertyP>
+    struct const_iterator : std::iterator<std::forward_iterator_tag, const ECPropertyP>
         {
         private:
             friend struct ECPropertyIterable;
@@ -426,7 +430,8 @@ public:
         public:
             ECOBJECTS_EXPORT const_iterator&     operator++();
             ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const;
-            ECOBJECTS_EXPORT ECPropertyP         operator* () const;
+            ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const {return !(*this != rhs);}
+            ECOBJECTS_EXPORT ECPropertyP const&  operator* () const;
         };
 
 public:
@@ -443,6 +448,7 @@ typedef bool (*TraversalDelegate) (ECClassCP, const void *);
 /*__PUBLISH_SECTION_START__*/
 
 //=======================================================================================
+//! @ingroup ECObjectsGroup
 //! The in-memory representation of an ECClass as defined by ECSchemaXML
 //=======================================================================================
 struct ECClass /*__PUBLISH_ABSTRACT__*/ : IECCustomAttributeContainer
@@ -453,9 +459,9 @@ friend struct ECSchema;
 friend struct ECPropertyIterable::IteratorState;
 
 private:
-    WString                        m_name;
-    WString                        m_displayLabel;
-    WString                        m_description;
+    WString                         m_name;
+    WString                         m_displayLabel;
+    WString                         m_description;
     bool                            m_isStruct;
     bool                            m_isCustomAttributeClass;
     bool                            m_isDomainClass;
@@ -492,23 +498,26 @@ protected:
     // schemas index class by name so publicly name can not be reset
     ECObjectsStatus                     SetName (WStringCR name);    
 
-    virtual SchemaDeserializationStatus ReadXmlAttributes (MSXML2_IXMLDOMNode& classNode, IStandaloneEnablerLocatorR  standaloneEnablerLocator);
+    virtual SchemaDeserializationStatus ReadXmlAttributes (MSXML2_IXMLDOMNode& classNode, IStandaloneEnablerLocaterR  standaloneEnablerLocater);
 
     //! Uses the specified xml node (which must conform to an ECClass as defined in ECSchemaXML) to populate the base classes and properties of this class.
     //! Before this method is invoked the schema containing the class must have loaded all schema references and stubs for all classes within
     //! the schema itself otherwise the method may fail because such dependencies can not be located.
     //! @param[in]  classNode       The XML DOM node to read
     //! @return   Status code
-    virtual SchemaDeserializationStatus ReadXmlContents (MSXML2_IXMLDOMNode& classNode, IStandaloneEnablerLocatorR  standaloneEnablerLocator);    
+    virtual SchemaDeserializationStatus ReadXmlContents (MSXML2_IXMLDOMNode& classNode, IStandaloneEnablerLocaterR  standaloneEnablerLocater);    
     
     virtual SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode) const;
     SchemaSerializationStatus           WriteXml(MSXML2_IXMLDOMElement& parentNode, WCharCP elementName) const;
 
+    virtual ECRelationshipClassCP       _GetRelationshipClassCP () const { return NULL; }  // used to avoid dynamic_cast
+    
 public:    
     ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();
 
 /*__PUBLISH_SECTION_START__*/
 public:    
+    ECOBJECTS_EXPORT ECRelationshipClassCP GetRelationshipClassCP() const;
     ECOBJECTS_EXPORT ECSchemaCR         GetSchema() const;                
     // schemas index class by name so publicly name can not be reset
     ECOBJECTS_EXPORT WStringCR          GetName() const;        
@@ -528,10 +537,6 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsDomainClass(bool value);
     ECOBJECTS_EXPORT bool               GetIsDomainClass() const;    
     
-    //! Returns pointer to ECRelationshipClassP,  used to avoid dynamic_cast.
-    //! @return     Returns NULL if not an ECRelationshipClass
-    ECOBJECTS_EXPORT virtual ECRelationshipClassCP GetRelationshipClassCP () const {return NULL;}  // used to avoid dynamic_cast
-
     //! Returns a list of properties for this class.
     //! @param[in]  includeBaseProperties If true, then will return properties that are contained in this class's base class(es)
     //! @return     An iterable container of ECProperties
@@ -708,6 +713,7 @@ public:
 //=======================================================================================
 struct ECRelationshipConstraint : IECCustomAttributeContainer
 {
+/*__PUBLISH_SECTION_END__*/
 friend struct ECRelationshipClass;
 
 private:
@@ -727,20 +733,22 @@ private:
     ECObjectsStatus             SetCardinality(UInt32& lowerLimit, UInt32& upperLimit);
    
     SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode, WStringCR elementName) const;
-    SchemaDeserializationStatus ReadXml(MSXML2_IXMLDOMNode& constraintNode, IStandaloneEnablerLocatorR  standaloneEnablerLocator);
+    SchemaDeserializationStatus ReadXml(MSXML2_IXMLDOMNode& constraintNode, IStandaloneEnablerLocaterR  standaloneEnablerLocater);
     
     virtual ~ECRelationshipConstraint();
     
 protected:
     virtual ECSchemaCP          _GetContainerSchema() const override;
   
-public:
     //! Initializes a new instance of the ECRelationshipConstraint class.
     //! IsPolymorphic defaults to true and IsMultiple defaults to false 
-    ECRelationshipConstraint(ECRelationshipClassP relationshipClass);
+    ECRelationshipConstraint(ECRelationshipClassP relationshipClass);  // WIP_CEM... should not be public... create a factory method
     
     //! Initializes a new instance of the ECRelationshipConstraint class
-    ECRelationshipConstraint(ECRelationshipClassP relationshipClass, bool isMultiple);
+    ECRelationshipConstraint(ECRelationshipClassP relationshipClass, bool isMultiple); // WIP_CEM... should not be public... create a factory method
+
+/*__PUBLISH_SECTION_START__*/
+public:
     
     //! Returns true if the constraint allows for a variable number of classes
     ECOBJECTS_EXPORT bool                       GetIsMultiple() const;
@@ -782,6 +790,7 @@ public:
 };
 
 //=======================================================================================
+//! @ingroup ECObjectsGroup
 //! The in-memory representation of a relationship class as defined by ECSchemaXML
 //=======================================================================================
 struct ECRelationshipClass /*__PUBLISH_ABSTRACT__*/ : public ECClass
@@ -807,15 +816,15 @@ private:
 protected:
     virtual SchemaSerializationStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode) const override;
 
-    virtual SchemaDeserializationStatus ReadXmlAttributes (MSXML2_IXMLDOMNode& classNode, IStandaloneEnablerLocatorR  standaloneEnablerLocator) override;
-    virtual SchemaDeserializationStatus ReadXmlContents (MSXML2_IXMLDOMNode& classNode, IStandaloneEnablerLocatorR  standaloneEnablerLocator) override;
+    virtual SchemaDeserializationStatus ReadXmlAttributes (MSXML2_IXMLDOMNode& classNode, IStandaloneEnablerLocaterR  standaloneEnablerLocater) override;
+    virtual SchemaDeserializationStatus ReadXmlContents (MSXML2_IXMLDOMNode& classNode, IStandaloneEnablerLocaterR  standaloneEnablerLocater) override;
+    virtual ECRelationshipClassCP       _GetRelationshipClassCP () const override {return this;};
 
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Returns pointer to ECRelationshipClassP,  used to avoid dynamic_cast.
     //! @return     Returns NULL if not an ECRelationshipClass
-    ECOBJECTS_EXPORT virtual ECRelationshipClassCP        GetRelationshipClassCP () const override {return this;};
-    ECOBJECTS_EXPORT ECObjectsStatus                      GetOrderedRelationshipPropertyName (WString& propertyName, ECRelationshipEnd end)  const;
+    ECOBJECTS_EXPORT ECObjectsStatus            GetOrderedRelationshipPropertyName (WString& propertyName, ECRelationshipEnd end)  const;
     ECOBJECTS_EXPORT ECObjectsStatus            SetStrength(StrengthType value);
     ECOBJECTS_EXPORT StrengthType               GetStrength() const;                
     ECOBJECTS_EXPORT ECObjectsStatus            SetStrengthDirection(ECRelatedInstanceDirection value);
@@ -868,7 +877,7 @@ public:
     //=======================================================================================
     // @bsistruct
     //=======================================================================================
-    struct const_iterator : std::iterator<std::forward_iterator_tag, ECClassP>
+    struct const_iterator : std::iterator<std::forward_iterator_tag, ECClassP const>
     {    
     private:                
         friend struct ECClassContainer;                   
@@ -881,7 +890,8 @@ public:
     public:
         ECOBJECTS_EXPORT const_iterator&     operator++();
         ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const;
-        ECOBJECTS_EXPORT ECClassP            operator* () const;
+        ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const {return !(*this != rhs);}
+        ECOBJECTS_EXPORT ECClassP const&     operator* () const;
     };
 
 public:
@@ -932,7 +942,7 @@ typedef RefCountedPtr<ECSchemaCache>        ECSchemaCachePtr;
 //=======================================================================================
 //! Interface to find a standalone enabler for a child class of an ECInstance.</summary>
 //=======================================================================================
-struct IStandaloneEnablerLocator
+struct IStandaloneEnablerLocater
 {
 /*__PUBLISH_CLASS_VIRTUAL__*/
 /*__PUBLISH_SECTION_END__*/
@@ -975,33 +985,32 @@ public:
 //! An object that controls the lifetime of a set of ECSchemas.  When the schema
 //! owner is destroyed, so are the schemas that it owns.</summary>
 //=======================================================================================
-struct ECSchemaCache /*__PUBLISH_ABSTRACT__*/ :  RefCountedBase, IECSchemaOwner, IStandaloneEnablerLocator
+struct ECSchemaCache /*__PUBLISH_ABSTRACT__*/ :  RefCountedBase, IECSchemaOwner, IStandaloneEnablerLocater
 {
 /*__PUBLISH_SECTION_END__*/
 protected:
     bvector<ECSchemaP>                                     m_schemas;
     bmap<SchemaNameClassNamePair, StandaloneECEnablerPtr>  m_ecEnablerMap;
     
-    ECOBJECTS_EXPORT virtual ~ECSchemaCache ();
-
     // IECSchemaOwner
     ECOBJECTS_EXPORT virtual ECObjectsStatus _AddSchema   (ECSchemaR) override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus _DropSchema  (ECSchemaR) override;
     ECOBJECTS_EXPORT virtual ECSchemaP       _GetSchema   (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor);
     ECOBJECTS_EXPORT virtual ECSchemaP       _LocateSchema (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType);
     
-    // IStandaloneEnablerLocator
+    // IStandaloneEnablerLocater
     ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr _ObtainStandaloneInstanceEnabler (WCharCP schemaName, WCharCP className);
 
 /*__PUBLISH_SECTION_START__*/
 public:
+    ECOBJECTS_EXPORT virtual ~ECSchemaCache ();
     ECOBJECTS_EXPORT static  ECSchemaCachePtr Create ();
 };
 
 //=======================================================================================
 //! Interface implemented by class that provides schema location services.</summary>
 //=======================================================================================
-struct IECSchemaLocator
+struct IECSchemaLocater
 {
 protected:
     virtual ECSchemaP _LocateSchema(WCharCP name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaDeserializationContextR schemaContext) const = 0;
@@ -1011,6 +1020,7 @@ public:
 };
 
 //=======================================================================================
+//! @ingroup ECObjectsGroup
 //! The in-memory representation of a schema as defined by ECSchemaXML
 //=======================================================================================
 struct ECSchema /*__PUBLISH_ABSTRACT__*/ : public IECCustomAttributeContainer
@@ -1072,21 +1082,21 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
 public:    
-    ECOBJECTS_EXPORT ECObjectsStatus SetName(WStringCR value);
-    ECOBJECTS_EXPORT WStringCR GetName() const;    
-    ECOBJECTS_EXPORT ECObjectsStatus SetNamespacePrefix(WStringCR value);
-    ECOBJECTS_EXPORT WStringCR GetNamespacePrefix() const;
-    ECOBJECTS_EXPORT ECObjectsStatus SetDescription(WStringCR value);
-    ECOBJECTS_EXPORT WStringCR GetDescription() const;
-    ECOBJECTS_EXPORT ECObjectsStatus SetDisplayLabel(WStringCR value);
-    ECOBJECTS_EXPORT WStringCR GetDisplayLabel() const;
-    ECOBJECTS_EXPORT ECObjectsStatus SetVersionMajor(UInt32 value);
-    ECOBJECTS_EXPORT UInt32 GetVersionMajor() const;
-    ECOBJECTS_EXPORT ECObjectsStatus SetVersionMinor(UInt32 value);
-    ECOBJECTS_EXPORT UInt32 GetVersionMinor() const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetName(WStringCR value);
+    ECOBJECTS_EXPORT WStringCR          GetName() const;    
+    ECOBJECTS_EXPORT ECObjectsStatus    SetNamespacePrefix(WStringCR value);
+    ECOBJECTS_EXPORT WStringCR          GetNamespacePrefix() const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetDescription(WStringCR value);
+    ECOBJECTS_EXPORT WStringCR          GetDescription() const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel(WStringCR value);
+    ECOBJECTS_EXPORT WStringCR          GetDisplayLabel() const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetVersionMajor(UInt32 value);
+    ECOBJECTS_EXPORT UInt32             GetVersionMajor() const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetVersionMinor(UInt32 value);
+    ECOBJECTS_EXPORT UInt32             GetVersionMinor() const;
 
     ECOBJECTS_EXPORT ECClassContainerCR GetClasses() const;
-    ECOBJECTS_EXPORT bool GetIsDisplayLabelDefined() const;
+    ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
 
     //! If the class name is valid, will create an ECClass object and add the new class to the schema
     //! @param[out] ecClass If successful, will contain a new ECClass object
@@ -1240,7 +1250,21 @@ public:
     //! @param[out]   thatSchema           Pointer to schema
     ECOBJECTS_EXPORT static bool                        SchemasAreEqualByName (ECSchemaCP thisSchema, ECSchemaCP thatSchema);
 
-    //! Deserializes an ECXML schema from a file.
+    //! Deserializes an ECSchema from an ECSchemaXML-formatted file
+    //! @code
+    //! // The IECSchemaOwner determines the lifespan of any ECSchema objects that are created using it.
+    //! // ECSchemaCache also caches ECSchemas and implements IStandaloneEnablerLocater for use by ECSchemaDeserializationContext
+    //! ECSchemaCachePtr                  schemaOwner = ECSchemaCache::Create();
+    //! 
+    //! // The schemaContext supplies an IECSchemaOwner to control the lifetime of deserialized ECSchemas and a 
+    //! // IStandaloneEnablerLocater to locate enablers for ECCustomAttributes in the ECSchema
+    //! ECSchemaDeserializationContextPtr schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+    //! 
+    //! ECSchemaP schema;
+    //! SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ecSchemaFilename, *schemaContext);
+    //! if (SCHEMA_DESERIALIZATION_STATUS_Success != status)
+    //!     return ERROR;
+    //! @endcode
     //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and
     //! uninitialize COM using CoInitialize/CoUninitialize</b>
     //! @param[out]   schemaOut           The deserialized schema
@@ -1256,9 +1280,21 @@ public:
     //! @param[in]    versionMajor        The major version number of the schema to locate.
     //! @param[in]    versionMinor        The minor version number of the schema to locate.
     //! @param[in]    schemaContext       Required to create schemas
-    ECOBJECTS_EXPORT static ECSchemaP                   LocateSchema(const WString & name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR schemaContext);
-
-    //! Deserializes an ECXML schema from a string.
+     ECOBJECTS_EXPORT static ECSchemaP                   LocateSchema(const WString & name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR schemaContext);
+    
+    //! 
+    //! Deserializes an ECSchema from an ECSchemaXML-formatted string.
+    //! @code
+    //! // The IECSchemaOwner determines the lifespan of any ECSchema objects that are created using it.
+    //! ECSchemaCachePtr                  schemaOwner = ECSchemaCache::Create();
+    //! 
+    //! // The schemaContext supplies an IECSchemaOwner to control the lifetime of deserialized ECSchemas and a 
+    //! 
+    //! ECSchemaP schema;
+    //! SchemaDeserializationStatus status = ECSchema::ReadXmlFromString (schema, ecSchemaAsString, *schemaContext);
+    //! if (SCHEMA_DESERIALIZATION_STATUS_Success != status)
+    //!     return ERROR;
+    //! @endcode
     //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and
     //! uninitialize COM using CoInitialize/CoUninitialize</b>
     //! @param[out]   schemaOut           The deserialized schema
@@ -1268,7 +1304,28 @@ public:
     //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
     ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromString (ECSchemaP& schemaOut, WCharCP ecSchemaXml, ECSchemaDeserializationContextR schemaContext);
 
-    //! Deserializes an ECXML schema from an IStream.
+    //! 
+    //! Deserializes an ECSchema from an ECSchemaXML-formatted string.
+    //! @code
+    //! // The IECSchemaOwner determines the lifespan of any ECSchema objects that are created using it.
+    //! // ECSchemaCache also caches ECSchemas and implements IStandaloneEnablerLocater for use by ECSchemaDeserializationContext
+    //! ECSchemaCachePtr                  schemaOwner = ECSchemaCache::Create();
+    //! 
+    //! ECSchemaP schema;
+    //! SchemaDeserializationStatus status = ECSchema::ReadXmlFromString (schema, ecSchemaAsString, *schemaOwner);
+    //! if (SCHEMA_DESERIALIZATION_STATUS_Success != status)
+    //!     return ERROR;
+    //! @endcode
+    //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and
+    //! uninitialize COM using CoInitialize/CoUninitialize</b>
+    //! @param[out]   schemaOut           The deserialized schema
+    //! @param[in]    ecSchemaXml         The string containing ECSchemaXML to deserialize
+    //! @param[in]    schemaCache         Will own the deserialized ECSchema and referenced ECSchemas.
+    //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
+    //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
+    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromString (ECSchemaP& schemaOut, WCharCP ecSchemaXml, ECSchemaCacheR schemaCache);
+
+    //! Deserializes an ECSchema from an ECSchemaXML-formatted string in an IStream.
     //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and
     //! uninitialize COM using CoInitialize/CoUninitialize</b>
     //! @param[out]   schemaOut           The deserialized schema
@@ -1286,3 +1343,8 @@ END_BENTLEY_EC_NAMESPACE
 #undef MSXML2_IXMLDOMNodePtr
 #undef MSXML2_IXMLDOMDocument2
 #undef MSXML2_IXMLDOMElementPtr
+
+//__PUBLISH_SECTION_END__
+BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::EC::ECCustomAttributeInstanceIterable)
+BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::EC::ECPropertyIterable)
+//__PUBLISH_SECTION_START__

@@ -24,18 +24,21 @@ friend struct ECSchema;
 
 private:
     IECSchemaOwnerR                 m_schemaOwner;
-    IStandaloneEnablerLocatorR      m_standaloneEnablerLocator;
+    IStandaloneEnablerLocaterR      m_standaloneEnablerLocater;
 
-    bvector<IECSchemaLocatorP>      m_locators;
+    bvector<IECSchemaLocaterP>      m_locators;
     T_WStringVector                 m_searchPaths;
     bool                            m_hideSchemasFromLeakDetection;
 
-    ECSchemaDeserializationContext(IECSchemaOwnerR, IStandaloneEnablerLocatorR);
+    //! Constructs a context for deserializing ECSchemas
+    //! @param[in] schemaOwner  This object will control the lifetime of any ECSchemas deserialized with this context
+    //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the deserialized ECSchema
+    ECSchemaDeserializationContext(IECSchemaOwnerR schemaOwner, IStandaloneEnablerLocaterR standaloneEnablerLocater);
 
-    bvector<IECSchemaLocatorP>& GetSchemaLocators ();
+    bvector<IECSchemaLocaterP>& GetSchemaLocaters ();
     T_WStringVector&            GetSchemaPaths ();
     IECSchemaOwnerR             GetSchemaOwner();
-    IStandaloneEnablerLocatorR  GetStandaloneEnablerLocator();
+    IStandaloneEnablerLocaterR  GetStandaloneEnablerLocater();
     bool                        GetHideSchemasFromLeakDetection();
 
     void                        ClearSchemaPaths();
@@ -44,11 +47,20 @@ public:
     ECOBJECTS_EXPORT void HideSchemasFromLeakDetection();
 
 /*__PUBLISH_SECTION_START__*/
-    ECOBJECTS_EXPORT static ECSchemaDeserializationContextPtr CreateContext (IECSchemaOwnerR, IStandaloneEnablerLocatorR);
 
-    ECOBJECTS_EXPORT void AddSchemaLocators (bvector<EC::IECSchemaLocatorP>&);
+    //! Creates a context for deserializing ECSchemas
+    //! @param[in] schemaOwner  This object will control the lifetime of any ECSchemas deserialized with this context
+    //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the deserialized ECSchema
+    //! @remarks This more-flexible override is primarily for internal use
+    ECOBJECTS_EXPORT static ECSchemaDeserializationContextPtr CreateContext (IECSchemaOwnerR schemaOwner, IStandaloneEnablerLocaterR standaloneEnablerLocater);
+    
+    //! Creates a context for deserializing ECSchemas
+    //! @param[in] schemaOwner  This object will control the lifetime of any ECSchemas deserialized with this context
+    ECOBJECTS_EXPORT static ECSchemaDeserializationContextPtr CreateContext (ECSchemaCacheR schemaOwner);
 
-    ECOBJECTS_EXPORT void AddSchemaLocator (IECSchemaLocatorR);
+    ECOBJECTS_EXPORT void AddSchemaLocaters (bvector<EC::IECSchemaLocaterP>&);
+
+    ECOBJECTS_EXPORT void AddSchemaLocater (IECSchemaLocaterR);
     ECOBJECTS_EXPORT void AddSchemaPath (WCharCP);
 };
 
@@ -62,10 +74,10 @@ struct ECInstanceDeserializationContext /*__PUBLISH_ABSTRACT__*/ : RefCountedBas
 private:
     ECSchemaCP                              m_schema;
     EC::ECSchemaDeserializationContextPtr   m_schemaContext;
-    IStandaloneEnablerLocatorR              m_standaloneEnablerLocator;
+    IStandaloneEnablerLocaterR              m_standaloneEnablerLocater;
 
-    /* ctor */ ECInstanceDeserializationContext(ECSchemaCP schema, ECSchemaDeserializationContextP context, IStandaloneEnablerLocatorR standaloneEnablerLocator) 
-        : m_standaloneEnablerLocator (standaloneEnablerLocator)
+    /* ctor */ ECInstanceDeserializationContext(ECSchemaCP schema, ECSchemaDeserializationContextP context, IStandaloneEnablerLocaterR standaloneEnablerLocater) 
+        : m_standaloneEnablerLocater (standaloneEnablerLocater)
         {
         assert (NULL == schema || NULL == context && L"Either schema or context should be NULL");
 
@@ -76,15 +88,15 @@ private:
 public:
     ECSchemaCP                          GetSchemaCP()  { return m_schema; }
     ECSchemaDeserializationContextPtr   GetSchemaContextPtr()  { return m_schemaContext; }
-    IStandaloneEnablerLocatorR          GetStandaloneEnablerLocator() { return m_standaloneEnablerLocator; }
+    IStandaloneEnablerLocaterR          GetStandaloneEnablerLocater() { return m_standaloneEnablerLocater; }
 
 /*__PUBLISH_SECTION_START__*/
 
     //! - For use when the caller knows the schema of the instance he is deserializing.
-    ECOBJECTS_EXPORT static ECInstanceDeserializationContextPtr CreateContext (ECSchemaCR, IStandaloneEnablerLocatorR);
+    ECOBJECTS_EXPORT static ECInstanceDeserializationContextPtr CreateContext (ECSchemaCR, IStandaloneEnablerLocaterR);
 
     //! - For use when the caller does not know the schema of the instance he is deserializing.
-    ECOBJECTS_EXPORT static ECInstanceDeserializationContextPtr CreateContext (ECSchemaDeserializationContextR, IStandaloneEnablerLocatorR);
+    ECOBJECTS_EXPORT static ECInstanceDeserializationContextPtr CreateContext (ECSchemaDeserializationContextR, IStandaloneEnablerLocaterR);
 };
 
 END_BENTLEY_EC_NAMESPACE

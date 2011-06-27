@@ -511,15 +511,16 @@ StandaloneECInstance::~StandaloneECInstance ()
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 static void     duplicateProperties (IECInstanceR target, ECValuesCollectionCR source)
     {
-    FOR_EACH (ECPropertyValuePtr prop, source)
+    for (ECValuesCollection::const_iterator it=source.begin(); it != source.end(); ++it)
         {
-        if (prop->HasChildValues())
+        ECPropertyValue const& prop = *it;
+        if (prop.HasChildValues())
             {
-            duplicateProperties (target, *prop->GetChildValues());
+            duplicateProperties (target, *prop.GetChildValues());
             continue;
             }
 
-        target.SetValueUsingAccessor (prop->GetValueAccessor(), prop->GetValue());
+        target.SetValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue());
         }
     }
 
@@ -592,15 +593,16 @@ ECEnablerCR         StandaloneECInstance::_GetEnabler() const
 +---------------+---------------+---------------+---------------+---------------+------*/    
 WString        StandaloneECInstance::_GetInstanceId() const
     {
-    if (m_instanceId.size() == 0)
-        {
-        wchar_t id[1024];
-        swprintf(id, sizeof(id)/sizeof(wchar_t), L"%s-0x%X", _GetEnabler().GetClass().GetName().c_str(), this);
-        StandaloneECInstanceP thisNotConst = const_cast<StandaloneECInstanceP>(this);
-        thisNotConst->m_instanceId = id;        
-        }
-
     return m_instanceId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/11
++---------------+---------------+---------------+---------------+---------------+------*/    
+ECObjectsStatus StandaloneECInstance::_SetInstanceId (WCharCP instanceId)
+    {
+    m_instanceId = instanceId;
+    return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -709,8 +711,8 @@ WString        StandaloneECInstance::_ToString (WCharCP indent) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StandaloneECEnabler::StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocatorR childECEnablerLocator, bool ownsClassLayout) :
-    ECEnabler (ecClass, childECEnablerLocator),
+StandaloneECEnabler::StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocaterR childECEnablerLocater, bool ownsClassLayout) :
+    ECEnabler (ecClass, childECEnablerLocater),
     ClassLayoutHolder (classLayout),
     m_ownsClassLayout (ownsClassLayout)
     {
@@ -731,9 +733,9 @@ StandaloneECEnabler::~StandaloneECEnabler ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StandaloneECEnablerPtr    StandaloneECEnabler::CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocatorR childECEnablerLocator, bool ownsClassLayout)
+StandaloneECEnablerPtr    StandaloneECEnabler::CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocaterR childECEnablerLocater, bool ownsClassLayout)
     {
-    return new StandaloneECEnabler (ecClass, classLayout, childECEnablerLocator, ownsClassLayout);
+    return new StandaloneECEnabler (ecClass, classLayout, childECEnablerLocater, ownsClassLayout);
     }
     
 /*---------------------------------------------------------------------------------**//**

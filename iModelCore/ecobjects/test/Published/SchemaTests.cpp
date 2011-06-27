@@ -862,6 +862,29 @@ TEST_F(SchemaReferenceTest, AddAndRemoveReferencedSchemas)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaReferenceTest, InvalidReference)
+    {
+    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
+
+    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
+    WString seedPath(ECTestFixture::GetTestDataPath(L"").c_str());
+    schemaContext->AddSchemaPath(seedPath.c_str());
+
+    //The "InvalidReference" schema contains a reference to BaseSchema.01.01.  This schema 
+    //does not exist.  1.0 exists, but the minor version numbers are incompatible.
+    ECSchemaP schema;
+    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"InvalidReference.01.00.ecschema.xml").c_str(), *schemaContext);  
+
+    EXPECT_EQ (NULL, schema);
+    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_ReferencedSchemaNotFound, status);
+    
+    CoUninitialize();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
     {
     ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
