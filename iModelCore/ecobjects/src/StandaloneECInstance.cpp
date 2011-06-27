@@ -100,20 +100,22 @@ size_t                MemoryECInstanceBase::GetObjectSize () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t          MemoryECInstanceBase::CalculateSupportingInstanceDataSize () const
     {
-    if (!m_structInstances)
-        return 0;
+    size_t size = sizeof(UInt32); // number of StructArrayEntry members
 
-    size_t size = (m_structInstances->size() * sizeof (StructArrayEntry));
-    for (size_t i = 0; i<m_structInstances->size(); i++)
+    if (m_structInstances)
         {
-        StructArrayEntry const& entry = (*m_structInstances)[i];
+        size += (m_structInstances->size() * sizeof (StructArrayEntry));
+        for (size_t i = 0; i<m_structInstances->size(); i++)
+            {
+            StructArrayEntry const& entry = (*m_structInstances)[i];
         
-        MemoryECInstanceBase* mbInstance = entry.structInstance->GetAsMemoryECInstance();
-        DEBUG_EXPECT (NULL != mbInstance);
-        if (!mbInstance)
-            continue;
+            MemoryECInstanceBase* mbInstance = entry.structInstance->GetAsMemoryECInstance();
+            DEBUG_EXPECT (NULL != mbInstance);
+            if (!mbInstance)
+                continue;
 
-        size += mbInstance->GetObjectSize ();
+            size += mbInstance->GetObjectSize ();
+            }
         }
 
     return size;
@@ -132,16 +134,6 @@ size_t          MemoryECInstanceBase::LoadDataIntoManagedInstance (byte* managed
     size_t offsetToIsInManagedInstance = (size_t)((byte const* )&m_isInManagedInstance - (byte const* )this); 
     memcpy (managedBuffer+offsetToIsInManagedInstance, &isInManagedInstance, sizeof(isInManagedInstance));
 
-    // store the allocated size of the managed buffer in m_bytesAllocated in managedBuffer
-    size_t offsetToAllocatedSize = (size_t)((byte const* )&m_bytesAllocated - (byte const* )this); 
-    UInt32 managedBufferSize = (UInt32)sizeOfManagedBuffer;
-    memcpy (managedBuffer+offsetToAllocatedSize, &managedBufferSize, sizeof(managedBufferSize));
-
-    // store the number of supporting struct instances in m_structValueId within managedBuffer   - this will need to change if we allow property changes in managed code
-    size_t offsetToStructValueId = (size_t)((byte const* )&m_structValueId - (byte const* )this); 
-    UInt32 numArrayInstances     = m_structInstances ? (UInt32)m_structInstances->size() : 0;
-    memcpy (managedBuffer+offsetToStructValueId, &numArrayInstances, sizeof(numArrayInstances));
-
     // store the offset to the property data in m_data within managedBuffer
     size_t offsetToPropertyData = (size_t)((byte const* )&m_data - (byte const* )this); 
     memcpy (managedBuffer+offsetToPropertyData, &offset, sizeof(offset));
@@ -152,12 +144,18 @@ size_t          MemoryECInstanceBase::LoadDataIntoManagedInstance (byte* managed
 
     offset += currentBytesUsed;
 
-    if (!m_structInstances)
-        return offset;
+    // store the number of supporting struct instances
+    UInt32 numArrayInstances     = m_structInstances ? (UInt32)m_structInstances->size() : 0;
+    memcpy (managedBuffer+offset, &numArrayInstances, sizeof(numArrayInstances));
 
-    // the current offset is set to the location to store the first StructArrayEntry. Store this offset in location of m_structInstances within managedBuffer
-    size_t offsetToFirstStructArrayEntry = (size_t)((byte const* )&m_structInstances - (byte const* )this); 
-    memcpy (managedBuffer+offsetToFirstStructArrayEntry, &offset, sizeof(offset));
+    // the current offset is set to the location to store the number of StructArrayEntry. Store this offset in location of m_structInstances within managedBuffer
+    size_t offsetToStructArrayVector = (size_t)((byte const* )&m_structInstances - (byte const* )this); 
+    memcpy (managedBuffer+offsetToStructArrayVector, &offset, sizeof(offset));
+
+    offset += sizeof(numArrayInstances);
+
+    if (!m_structInstances || 0 == numArrayInstances)
+        return offset;
     
     // all the following pointer to offset "hocus pocus" assumes that sizeof(IECInstancePtr) >= sizeof(offset) so that it is 
     // safe to stuff the offset into the pointer.
@@ -347,8 +345,11 @@ StructArrayEntry const* MemoryECInstanceBase::GetAddressOfStructArrayEntry (Stru
         numEntries = m_structValueId;
 
         byte const* baseAddress = (byte const*)this;
-        byte const* arrayAddress =  baseAddress + (size_t)m_structInstances;
+        byte const* arrayCountAddress =  baseAddress + (size_t)m_structInstances;
+        byte const* arrayAddress      =  arrayCountAddress + sizeof(UInt32);
 
+        UInt32 const* arrayCount = (UInt32 const*)arrayCountAddress;
+        numEntries = *arrayCount;
         instanceArray = (StructArrayEntry const*)arrayAddress;
         }
 
@@ -380,7 +381,7 @@ IECInstancePtr  MemoryECInstanceBase::GetStructArrayInstance (StructValueIdentif
     size_t offset = (size_t)(entry->structInstance.get());
     byte const* arrayAddress =  baseAddress + offset;
 
-    // since the offset we put us at the vtable of the IECInstance and not to the start of the concrete object 
+    // since the offset will put us at the vtable of the IECInstance and not to the start of the concrete object 
     // we can cast is directly to an IECInstanceP. See comments in method LoadDataIntoManagedInstance
     IECInstanceP iecInstanceP = (IECInstanceP) const_cast<byte*>(arrayAddress);
     return iecInstanceP;
