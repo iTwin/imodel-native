@@ -890,7 +890,7 @@ public:
     public:
         ECOBJECTS_EXPORT const_iterator&     operator++();
         ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const;
-        ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const {return !(*this != rhs);}
+        ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const;
         ECOBJECTS_EXPORT ECClassP const&     operator* () const;
     };
 
@@ -1041,8 +1041,8 @@ private:
     bool                m_hideFromLeakDetection;
 
     // maps class name -> class pointer    
-    ClassMap m_classMap;
-    
+    public: ClassMap m_classMap;
+   private: 
     ECSchemaReferenceList m_refSchemaList;
     
     bmap<ECSchemaP, const WString> m_referencedSchemaNamespaceMap;
@@ -1082,6 +1082,8 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
 public:    
+
+    ECOBJECTS_EXPORT void    DebugDump() const;
     ECOBJECTS_EXPORT ECObjectsStatus    SetName(WStringCR value);
     ECOBJECTS_EXPORT WStringCR          GetName() const;    
     ECOBJECTS_EXPORT ECObjectsStatus    SetNamespacePrefix(WStringCR value);
