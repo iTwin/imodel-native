@@ -20,7 +20,6 @@ BEGIN_BENTLEY_EC_NAMESPACE
 using namespace std;
 
 struct SchemaTest : ECTestFixture {};
-#ifdef broken
 TEST_F(SchemaTest, ShouldBeAbleToIterateOverECClassContainer)
     {
     ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
@@ -56,5 +55,4 @@ TEST_F(SchemaTest, ShouldBeAbleToIterateOverECClassContainer)
         }
     ASSERT_EQ(4, count);
     }
-#endif
 END_BENTLEY_EC_NAMESPACE

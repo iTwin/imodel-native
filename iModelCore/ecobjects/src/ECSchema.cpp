@@ -1888,8 +1888,12 @@ bool    ECClassContainer::const_iterator::operator== (const_iterator const& rhs)
 ECClassP const& ECClassContainer::const_iterator::operator*() const
     {
     // Get rid of ECClassContainer or make it return a pointer directly
+#ifdef CREATES_A_TEMP
     bpair<WCharCP , ECClassP> const& mapPair = *(m_state->m_mapIterator);
     return mapPair.second;
+#else
+    return m_state->m_mapIterator->second;
+#endif
     };
 
 /*---------------------------------------------------------------------------------**//**

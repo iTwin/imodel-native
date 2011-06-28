@@ -23,3 +23,5 @@
 #include <ECObjects\ECObjectsAPI.h>
 #include <gtest\gtest.h>
 
+#undef FOR_EACH
+#define FOR_EACH(V,C) for each (V in C)
