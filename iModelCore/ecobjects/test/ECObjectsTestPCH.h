@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+#include <boost/foreach.hpp>
 
 #if defined (COMPILING_PUBLISHED_TESTS)
    // Need to reach in and grab this header since it won't be part of the published API yet we still
