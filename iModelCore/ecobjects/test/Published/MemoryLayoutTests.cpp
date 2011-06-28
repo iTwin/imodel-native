@@ -1084,6 +1084,7 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmptyInstance)
     UInt32 foundValues = 0;
     for each(ECPropertyValueCR propertyValue in *collection)
         {
+        propertyValue.HasChildValues(); // Use it to avoid warning about unused propertyValue object
         foundValues++;
         }
     EXPECT_TRUE (0 == foundValues);
@@ -1097,6 +1098,7 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmptyInstance)
     foundValues = 0;
     for each(ECPropertyValueCR propertyValue in *collection)
         {
+        propertyValue.HasChildValues(); // Use it to avoid warning about unused propertyValue object
         foundValues++;
         }
     EXPECT_TRUE (0 == foundValues);
