@@ -1,8 +1,8 @@
 #----------------------------------------------------------------------------------------
 #
-#  $Source: ecobjects/nativeatp/nonpublishedCompileRules.mki $
+#  $Source: test/nonpublishedCompileRules.mki $
 #
-#  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -14,4 +14,6 @@ $(o)StopWatch$(oext)          : $(baseDir)NonPublished/StopWatch.cpp   $(PCHHead
 $(o)TestFixture$(oext)        : $(baseDir)NonPublished/TestFixture.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
 
 $(o)MemoryLayoutTests$(oext)  : $(baseDir)NonPublished/MemoryLayoutTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
+
+$(o)NonPublishedSchemaTests$(oext)  : $(baseDir)NonPublished/NonPublishedSchemaTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
 

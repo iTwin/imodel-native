@@ -29,7 +29,7 @@ LeakDetector<ECSchema> g_leakDetector (L"ECSchema", L"ECSchemas", false);
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchema::ECSchema (bool hideFromLeakDetection)
     :
-    m_versionMajor (DEFAULT_VERSION_MAJOR), m_versionMinor (DEFAULT_VERSION_MINOR), m_classContainer(ECClassContainer(m_classMap)),
+    m_versionMajor (DEFAULT_VERSION_MAJOR), m_versionMinor (DEFAULT_VERSION_MINOR), m_classContainer(m_classMap),
     m_hideFromLeakDetection(hideFromLeakDetection)
     {
     if ( ! m_hideFromLeakDetection)
@@ -249,6 +249,17 @@ WCharCP name
         return NULL;
     }
 
+void ECSchema::DebugDump()const
+    {
+    wprintf(L"ECSchema: this=0x%x  %s.%d.%d, nClasses=%d\n", this, m_name.c_str(), m_versionMajor, m_versionMinor, m_classMap.size());
+    for (ClassMap::const_iterator it = m_classMap.begin(); it != m_classMap.end(); ++it)
+        {
+        bpair<WCharCP, ECClassP>const& entry = *it;
+        ECClassCP ecClass = entry.second;
+        wprintf(L"    ECClass: 0x%x, %s\n", ecClass, ecClass->GetName().c_str());
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -257,7 +268,7 @@ ECObjectsStatus ECSchema::AddClass
 ECClassP&                 pClass
 )
     {
-    bpair < bmap<WCharCP, ECClassP>::iterator, bool > resultPair;
+    bpair <ClassMap::iterator, bool> resultPair;
     resultPair = m_classMap.insert (bpair<WCharCP, ECClassP> (pClass->GetName().c_str(), pClass));
     if (resultPair.second == false)
         {
@@ -266,7 +277,7 @@ ECClassP&                 pClass
         pClass = NULL;        
         return ECOBJECTS_STATUS_NamedItemAlreadyExists;
         }
-
+    //DebugDump(); wprintf(L"\n");
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -309,7 +320,7 @@ WStringCR     name
         return status;
         }
 
-    bpair < bmap<WCharCP, ECClassP>::iterator, bool > resultPair;
+    bpair < ClassMap::iterator, bool > resultPair;
     resultPair = m_classMap.insert (bpair<WCharCP, ECClassP> (pClass->GetName().c_str(), pClass));
     if (resultPair.second == false)
         {
@@ -630,7 +641,7 @@ ECClassContainerCR ECSchema::GetClasses
 (
 ) const
     {
-    return m_classContainer;
+    return m_classContainer; // return m_classMap directly?
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1501,7 +1512,7 @@ ECSchemaDeserializationContextR schemaContext
 SchemaDeserializationStatus     ECSchema::ReadXmlFromString
 (
 ECSchemaP&                      schemaOut, 
-WCharCP                 ecSchemaXml,
+WCharCP                         ecSchemaXml,
 ECSchemaDeserializationContextR schemaContext
 )
     {                  
@@ -1864,12 +1875,19 @@ bool    ECClassContainer::const_iterator::operator!= (const_iterator const& rhs)
     {
     return (m_state->m_mapIterator != rhs.m_state->m_mapIterator);
     }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    ECClassContainer::const_iterator::operator== (const_iterator const& rhs) const
+    {
+    return (m_state->m_mapIterator == rhs.m_state->m_mapIterator);
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassP const& ECClassContainer::const_iterator::operator*() const
     {
+    // Get rid of ECClassContainer or make it return a pointer directly
     bpair<WCharCP , ECClassP> const& mapPair = *(m_state->m_mapIterator);
     return mapPair.second;
     };
