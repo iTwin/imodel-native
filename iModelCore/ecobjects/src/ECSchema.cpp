@@ -277,7 +277,7 @@ ECClassP&                 pClass
         pClass = NULL;        
         return ECOBJECTS_STATUS_NamedItemAlreadyExists;
         }
-    DebugDump(); wprintf(L"\n");
+    //DebugDump(); wprintf(L"\n");
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -1889,9 +1889,6 @@ ECClassP const& ECClassContainer::const_iterator::operator*() const
     {
     // Get rid of ECClassContainer or make it return a pointer directly
     bpair<WCharCP , ECClassP> const& mapPair = *(m_state->m_mapIterator);
-    ECClassP ecClass = mapPair.second;
-    ECClassP ecClass2 = ecClass;
-    wprintf(L"mapPair.second = %x\n", ecClass);
     return mapPair.second;
     };
 

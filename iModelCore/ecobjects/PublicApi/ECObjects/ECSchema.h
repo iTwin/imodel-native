@@ -854,7 +854,8 @@ private:
         
     ClassMap const&     m_classMap;
     
-    ECClassContainer (ClassMap const& classMap) : m_classMap (classMap) {};
+public:
+    ECOBJECTS_EXPORT ECClassContainer (ClassMap const& classMap) : m_classMap (classMap) {}; //public for test purposes only
 
 /*__PUBLISH_SECTION_START__*/
 
@@ -1041,8 +1042,8 @@ private:
     bool                m_hideFromLeakDetection;
 
     // maps class name -> class pointer    
-    public: ClassMap m_classMap;
-   private: 
+    ClassMap m_classMap;
+
     ECSchemaReferenceList m_refSchemaList;
     
     bmap<ECSchemaP, const WString> m_referencedSchemaNamespaceMap;
@@ -1349,4 +1350,5 @@ END_BENTLEY_EC_NAMESPACE
 //__PUBLISH_SECTION_END__
 BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::EC::ECCustomAttributeInstanceIterable)
 BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::EC::ECPropertyIterable)
+BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::EC::ECClassContainer)
 //__PUBLISH_SECTION_START__
