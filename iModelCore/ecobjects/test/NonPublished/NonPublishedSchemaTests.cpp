@@ -46,6 +46,7 @@ TEST_F(SchemaTest, ShouldBeAbleToIterateOverECClassContainer)
         wprintf(L"ECClass=0x%x, name=%s\n", name.c_str());
         count++;
         }
+    ASSERT_EQ(2, count);
 
     FOR_EACH (ECClassCP ecClass, container)
         {
@@ -53,7 +54,7 @@ TEST_F(SchemaTest, ShouldBeAbleToIterateOverECClassContainer)
         wprintf(L"ECClass=0x%x, name=%s\n", name.c_str());
         count++;
         }
-    ASSERT_EQ(2, count);
+    ASSERT_EQ(4, count);
     }
 #endif
 END_BENTLEY_EC_NAMESPACE
