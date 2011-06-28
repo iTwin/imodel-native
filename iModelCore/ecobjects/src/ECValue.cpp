@@ -1764,9 +1764,9 @@ bool            ECValuesCollectionIterator::IsDifferent(ECValuesCollectionIterat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyValuePtr  ECValuesCollectionIterator::GetCurrent () const
+ECPropertyValue const& ECValuesCollectionIterator::GetCurrent () const
     {
-    return new ECPropertyValue (m_propertyValue);
+    return m_propertyValue;
     }
 
 /*---------------------------------------------------------------------------------**//**

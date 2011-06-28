@@ -450,11 +450,11 @@ bool ECCustomAttributeInstanceIterable::const_iterator::operator!= (const_iterat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr ECCustomAttributeInstanceIterable::const_iterator::operator*() const
+IECInstancePtr const& ECCustomAttributeInstanceIterable::const_iterator::operator*() const
     {
-    IECInstancePtr result;
+    static IECInstancePtr s_result;
     if (m_isEnd)
-        return result;
+        return s_result;
     return *(m_state->m_customAttributesIterator);
     }
 

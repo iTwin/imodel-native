@@ -15,6 +15,9 @@
 #include <Bentley\bvector.h>
 #include <Bentley\bmap.h>
 #include <Bentley\bset.h>
+//__PUBLISH_SECTION_END__
+#include <boost/foreach.hpp>
+//__PUBLISH_SECTION_START__
 
 #define DEFAULT_VERSION_MAJOR   1
 #define DEFAULT_VERSION_MINOR   0
@@ -170,7 +173,7 @@ public:
 /*__PUBLISH_SECTION_START__*/                        
         };
 
-    struct const_iterator : std::iterator<std::forward_iterator_tag, IECInstancePtr>
+    struct const_iterator : std::iterator<std::forward_iterator_tag, IECInstancePtr const>
         {
         private:
             friend struct ECCustomAttributeInstanceIterable;
@@ -184,7 +187,8 @@ public:
         public:
             ECOBJECTS_EXPORT const_iterator&     operator++();
             ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const;
-            ECOBJECTS_EXPORT IECInstancePtr      operator* () const;
+            ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const {return !(*this != rhs);}
+            ECOBJECTS_EXPORT IECInstancePtr const& operator* () const;
         };
 
 public:
@@ -411,7 +415,7 @@ public:
 /*__PUBLISH_SECTION_START__*/                        
         };
         
-    struct const_iterator : std::iterator<std::forward_iterator_tag, ECPropertyP>
+    struct const_iterator : std::iterator<std::forward_iterator_tag, const ECPropertyP>
         {
         private:
             friend struct ECPropertyIterable;
@@ -426,7 +430,8 @@ public:
         public:
             ECOBJECTS_EXPORT const_iterator&     operator++();
             ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const;
-            ECOBJECTS_EXPORT ECPropertyP         operator* () const;
+            ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const {return !(*this != rhs);}
+            ECOBJECTS_EXPORT ECPropertyP const&  operator* () const;
         };
 
 public:
@@ -872,7 +877,7 @@ public:
     //=======================================================================================
     // @bsistruct
     //=======================================================================================
-    struct const_iterator : std::iterator<std::forward_iterator_tag, ECClassP>
+    struct const_iterator : std::iterator<std::forward_iterator_tag, ECClassP const>
     {    
     private:                
         friend struct ECClassContainer;                   
@@ -885,7 +890,8 @@ public:
     public:
         ECOBJECTS_EXPORT const_iterator&     operator++();
         ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const;
-        ECOBJECTS_EXPORT ECClassP            operator* () const;
+        ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const {return !(*this != rhs);}
+        ECOBJECTS_EXPORT ECClassP const&     operator* () const;
     };
 
 public:
@@ -986,7 +992,6 @@ protected:
     bvector<ECSchemaP>                                     m_schemas;
     bmap<SchemaNameClassNamePair, StandaloneECEnablerPtr>  m_ecEnablerMap;
     
-
     // IECSchemaOwner
     ECOBJECTS_EXPORT virtual ECObjectsStatus _AddSchema   (ECSchemaR) override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus _DropSchema  (ECSchemaR) override;
@@ -1077,21 +1082,21 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
 public:    
-    ECOBJECTS_EXPORT ECObjectsStatus SetName(WStringCR value);
-    ECOBJECTS_EXPORT WStringCR GetName() const;    
-    ECOBJECTS_EXPORT ECObjectsStatus SetNamespacePrefix(WStringCR value);
-    ECOBJECTS_EXPORT WStringCR GetNamespacePrefix() const;
-    ECOBJECTS_EXPORT ECObjectsStatus SetDescription(WStringCR value);
-    ECOBJECTS_EXPORT WStringCR GetDescription() const;
-    ECOBJECTS_EXPORT ECObjectsStatus SetDisplayLabel(WStringCR value);
-    ECOBJECTS_EXPORT WStringCR GetDisplayLabel() const;
-    ECOBJECTS_EXPORT ECObjectsStatus SetVersionMajor(UInt32 value);
-    ECOBJECTS_EXPORT UInt32 GetVersionMajor() const;
-    ECOBJECTS_EXPORT ECObjectsStatus SetVersionMinor(UInt32 value);
-    ECOBJECTS_EXPORT UInt32 GetVersionMinor() const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetName(WStringCR value);
+    ECOBJECTS_EXPORT WStringCR          GetName() const;    
+    ECOBJECTS_EXPORT ECObjectsStatus    SetNamespacePrefix(WStringCR value);
+    ECOBJECTS_EXPORT WStringCR          GetNamespacePrefix() const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetDescription(WStringCR value);
+    ECOBJECTS_EXPORT WStringCR          GetDescription() const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel(WStringCR value);
+    ECOBJECTS_EXPORT WStringCR          GetDisplayLabel() const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetVersionMajor(UInt32 value);
+    ECOBJECTS_EXPORT UInt32             GetVersionMajor() const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetVersionMinor(UInt32 value);
+    ECOBJECTS_EXPORT UInt32             GetVersionMinor() const;
 
     ECOBJECTS_EXPORT ECClassContainerCR GetClasses() const;
-    ECOBJECTS_EXPORT bool GetIsDisplayLabelDefined() const;
+    ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
 
     //! If the class name is valid, will create an ECClass object and add the new class to the schema
     //! @param[out] ecClass If successful, will contain a new ECClass object
@@ -1338,3 +1343,8 @@ END_BENTLEY_EC_NAMESPACE
 #undef MSXML2_IXMLDOMNodePtr
 #undef MSXML2_IXMLDOMDocument2
 #undef MSXML2_IXMLDOMElementPtr
+
+//__PUBLISH_SECTION_END__
+BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::EC::ECCustomAttributeInstanceIterable)
+BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::EC::ECPropertyIterable)
+//__PUBLISH_SECTION_START__
