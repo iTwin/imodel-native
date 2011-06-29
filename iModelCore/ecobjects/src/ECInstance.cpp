@@ -873,7 +873,7 @@ ECObjectsStatus ECInstanceInteropHelper::SetStringValue  (IECInstanceR instance,
     ECValue v(value, false);
     return setECValueInInstance (v, instance, managedPropertyAccessor);
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1077,6 +1077,14 @@ ECObjectsStatus ECInstanceInteropHelper::GetDateTimeTicks (IECInstanceCR instanc
 ///////////////////////////////////////////////////////////////////////////////
 // Set Using ECValueAccessor
 ///////////////////////////////////////////////////////////////////////////////
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     01/10
++---------------+---------------+---------------+---------------+---------------+------*/       
+ECObjectsStatus ECInstanceInteropHelper::SetValue  (IECInstanceR instance, ECValueAccessorCR accessor, ECValueCR value)
+    {
+    return  instance.SetValueUsingAccessor (accessor, value);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/       

@@ -88,7 +88,9 @@ private:
         };
     bool                m_isNull;     
     bool                m_isReadOnly; // Really indicates that the property from which this came is readonly... not the value itself.
-    
+
+    EmbeddedInstanceCallbackP m_memoryCallback;  // used when managed code is setting value of a non-fixed size property
+
 protected:    
     typedef bvector<ECValue>  ValuesVector;
     typedef bvector<ECValue>* ValuesVectorP;
@@ -148,6 +150,11 @@ public:
     ECOBJECTS_EXPORT explicit ECValue (SystemTime& time);
 
     ECOBJECTS_EXPORT void           SetReadOnly(bool isReadOnly);
+
+/*__PUBLISH_SECTION_END__*/
+    ECOBJECTS_EXPORT void                        SetMemoryCallback(EmbeddedInstanceCallbackP memoryCallback) {m_memoryCallback = memoryCallback;}
+    ECOBJECTS_EXPORT EmbeddedInstanceCallbackP   GetMemoryCallback() const {return m_memoryCallback;}
+/*__PUBLISH_SECTION_START__*/
 
     ECOBJECTS_EXPORT bool           IsReadOnly() const;
     ECOBJECTS_EXPORT bool           IsNull() const;

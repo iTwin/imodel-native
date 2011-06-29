@@ -33,6 +33,24 @@ BEGIN_BENTLEY_EC_NAMESPACE
 //! @see Bentley::EC
 
 
+/*__PUBLISH_SECTION_END__*/
+
+// Define structure used to pass data to/from callback that is used to allocate memory in a native IECInstance.
+// This is needed to support embedding a native instance in a managed instance without requiring the managed
+// instance to be Disposed.
+struct MemoryCallbackData
+    {
+    size_t  neededSize;
+    byte*   gapAddress;
+    byte*   newDataAddress;
+    };
+
+// Declare an unmanaged function prototype 
+// Note the use of __stdcall for compatibility with managed code
+typedef int (__stdcall *EmbeddedInstanceCallbackP)(MemoryCallbackData* callbackData);
+
+/*__PUBLISH_SECTION_END__*/
+
 //////////////////////////////////////////////////////////////////////////////////
 //  The following definitions are used to allow a struct property to generate a
 //  custom XML representation of itself. This was required to support 8.11 
@@ -225,6 +243,7 @@ struct ECInstanceInteropHelper
     ECOBJECTS_EXPORT static ECObjectsStatus GetDateTime      (IECInstanceCR, SystemTimeR value,  ECValueAccessorCR accessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetDateTimeTicks (IECInstanceCR, Int64 & value,      ECValueAccessorCR accessor);
 
+    ECOBJECTS_EXPORT static ECObjectsStatus SetValue         (IECInstanceR, ECValueAccessorCR accessor, ECValueCR value);
     ECOBJECTS_EXPORT static ECObjectsStatus SetLongValue     (IECInstanceR, ECValueAccessorCR accessor, Int64 value);
     ECOBJECTS_EXPORT static ECObjectsStatus SetIntegerValue  (IECInstanceR, ECValueAccessorCR accessor, int value);
     ECOBJECTS_EXPORT static ECObjectsStatus SetStringValue   (IECInstanceR, ECValueAccessorCR accessor, WCharCP value);

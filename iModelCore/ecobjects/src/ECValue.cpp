@@ -225,9 +225,10 @@ void            ECValue::ConstructUninitialized()
 #ifndef NDEBUG
     memset (this, 0xBAADF00D, size); // avoid accidental misinterpretation of uninitialized data
 #endif
-    m_valueKind    = VALUEKIND_Uninitialized;
+    m_valueKind         = VALUEKIND_Uninitialized;
     m_isNull            = true;
     m_isReadOnly        = false;
+    m_memoryCallback    = NULL;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -241,7 +242,7 @@ void            ECValue::DeepCopy (ECValueCR v)
         return;
 
     memcpy (this, &v, sizeof(ECValue));
-
+    
     if (IsNull())
         return;
         
@@ -449,7 +450,7 @@ ECValue::ECValue (ECValueCR v, bool doDeepCopy)
 *  Construct a Null EC::ECValue (of a specific type, but with IsNull = true)
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (ValueKind classification) : m_valueKind(classification), m_isNull(true)
+ECValue::ECValue (ValueKind classification) : m_valueKind(classification), m_isNull(true), m_memoryCallback(NULL)
     {
     }       
 
@@ -457,7 +458,7 @@ ECValue::ECValue (ValueKind classification) : m_valueKind(classification), m_isN
 *  Construct a Null EC::ECValue (of a specific type, but with IsNull = true)
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (PrimitiveType primitiveType) : m_primitiveType(primitiveType), m_isNull(true)
+ECValue::ECValue (PrimitiveType primitiveType) : m_primitiveType(primitiveType), m_isNull(true), m_memoryCallback(NULL)
     {
     }
     

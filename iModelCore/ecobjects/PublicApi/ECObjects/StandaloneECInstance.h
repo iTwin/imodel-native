@@ -53,6 +53,7 @@ private:
     
     IECInstancePtr          GetStructArrayInstance (StructValueIdentifier structValueId) const;
     StructArrayEntry const* GetAddressOfStructArrayEntry (StructValueIdentifier key) const;
+    byte*                   GetAddressOfPropertyData () const;
 
 protected:
     //! The MemoryECInstanceBase will take ownership of the memory
@@ -64,7 +65,7 @@ protected:
     ECOBJECTS_EXPORT virtual ECObjectsStatus  _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength);    
     ECOBJECTS_EXPORT virtual void             _ShrinkAllocation (UInt32 newAllocation);
     ECOBJECTS_EXPORT virtual void             _FreeAllocation ();
-    ECOBJECTS_EXPORT virtual ECObjectsStatus  _GrowAllocation (UInt32 bytesNeeded);        
+    ECOBJECTS_EXPORT virtual ECObjectsStatus  _GrowAllocation (UInt32 bytesNeeded, EmbeddedInstanceCallbackP memoryCallback);        
 
     ECOBJECTS_EXPORT virtual byte const *     _GetData () const override;
     ECOBJECTS_EXPORT virtual UInt32           _GetBytesAllocated () const override;
@@ -80,6 +81,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT void                     SetData (byte * data, UInt32 size, bool freeExisitingData); //The MemoryECInstanceBase will take ownership of the memory
 
     ECOBJECTS_EXPORT byte const *             GetData () const;
+    ECOBJECTS_EXPORT byte*                    GetDataAddress () const {return const_cast<byte*>((byte const* )&m_data);}  
     ECOBJECTS_EXPORT UInt32                   GetBytesUsed () const;
     ECOBJECTS_EXPORT void                     ClearValues ();
     ECOBJECTS_EXPORT ClassLayoutCR            GetClassLayout() const;
