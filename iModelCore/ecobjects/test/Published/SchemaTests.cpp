@@ -507,7 +507,6 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingWidgetsECSchema)
     VerifyWidgetsSchema(schema);  
     CoUninitialize();
     };
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -705,7 +704,6 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateClassesInXml)
 //    SchemaSerializationStatus status2 = schema->WriteXmlToFile(L"d:\\temp\\test.xml");
 //    CoUninitialize();
 //    }
-    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -741,7 +739,6 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingStream)
 
     CoUninitialize();
     }
-    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1787,7 +1784,6 @@ TEST_F(ClassTest, ExpectErrorWithBadClassName)
     EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->SetDisplayLabel(foreignString));
     }
     
-
 TEST_F(ClassTest, ExpectReadOnlyFromBaseClass)
     {
     ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
@@ -1811,5 +1807,5 @@ TEST_F(ClassTest, ExpectReadOnlyFromBaseClass)
     ASSERT_EQ(true, ecProp->GetIsReadOnly());
 
     }
-          
+
 END_BENTLEY_EC_NAMESPACE

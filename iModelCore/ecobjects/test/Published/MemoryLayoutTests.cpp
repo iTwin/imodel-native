@@ -983,9 +983,9 @@ static void     dumpPropertyValues (ECValuesCollectionR collection, bool isArray
     {
     UInt32  arrayIndex = 0;
 
-    FOR_EACH (ECPropertyValuePtr propertyValue, collection)
+    for each (ECPropertyValueCR propertyValue in collection)
         {
-        ECValueCR v = propertyValue->GetValue();
+        ECValueCR v = propertyValue.GetValue();
 
         printfIndent (indentDepth);
 
@@ -995,7 +995,7 @@ static void     dumpPropertyValues (ECValuesCollectionR collection, bool isArray
             }
         else
             {
-            ECValueAccessorCR   accessor     = propertyValue->GetValueAccessor();
+            ECValueAccessorCR   accessor     = propertyValue.GetValueAccessor();
             WCharCP     accessString = accessor.GetAccessString (accessor.GetDepth() - 1);
 
             printf ("%S", accessString);
@@ -1006,9 +1006,9 @@ static void     dumpPropertyValues (ECValuesCollectionR collection, bool isArray
             printf ("\n");
             }
 
-        if (propertyValue->HasChildValues ())
+        if (propertyValue.HasChildValues ())
             {
-            ECValuesCollectionPtr children = propertyValue->GetChildValues();
+            ECValuesCollectionPtr children = propertyValue.GetChildValues();
             dumpPropertyValues (*children, v.IsArray(), indentDepth+1);
             }
         }
@@ -1021,14 +1021,14 @@ typedef bpair<WString, ECValue>  AccessStringValuePair;
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void     verifyECValueEnumeration (ECValuesCollectionR collection, bvector <AccessStringValuePair>& expectedValues, UInt32& iValue, bool isDup)
     {
-    FOR_EACH (ECPropertyValuePtr propertyValue, collection)
+    for each (ECPropertyValueCR propertyValue in collection)
         {
-        WString   foundAccessString    = propertyValue->GetValueAccessor().GetManagedAccessString(); 
+        WString   foundAccessString    = propertyValue.GetValueAccessor().GetManagedAccessString(); 
         WString   expectedAccessString = expectedValues[iValue].first;
 
         EXPECT_STREQ (expectedAccessString.c_str(), foundAccessString.c_str());
 
-        ECValueCR foundValue    = propertyValue->GetValue();
+        ECValueCR foundValue    = propertyValue.GetValue();
         ECValueCR expectedValue = expectedValues[iValue].second;
 
         if ( ! isDup || ! foundValue.IsStruct())
@@ -1045,9 +1045,9 @@ static void     verifyECValueEnumeration (ECValuesCollectionR collection, bvecto
 
         iValue++;;
 
-        if (propertyValue->HasChildValues ())
+        if (propertyValue.HasChildValues ())
             {
-            ECValuesCollectionPtr children = propertyValue->GetChildValues();
+            ECValuesCollectionPtr children = propertyValue.GetChildValues();
             verifyECValueEnumeration (*children, expectedValues, iValue, isDup);
             }
         }
@@ -1082,8 +1082,9 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmptyInstance)
         Iterate through its values - shouldn't find any
     --------------------------------------------------------------------------*/
     UInt32 foundValues = 0;
-    FOR_EACH (ECPropertyValuePtr propertyValue, *collection)
+    for each(ECPropertyValueCR propertyValue in *collection)
         {
+        propertyValue.HasChildValues(); // Use it to avoid warning about unused propertyValue object
         foundValues++;
         }
     EXPECT_TRUE (0 == foundValues);
@@ -1095,8 +1096,9 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmptyInstance)
 
     collection = ECValuesCollection::Create (*standAloneInstance);
     foundValues = 0;
-    FOR_EACH (ECPropertyValuePtr propertyValue, *collection)
+    for each(ECPropertyValueCR propertyValue in *collection)
         {
+        propertyValue.HasChildValues(); // Use it to avoid warning about unused propertyValue object
         foundValues++;
         }
     EXPECT_TRUE (0 == foundValues);
@@ -1571,15 +1573,15 @@ TEST_F(MemoryLayoutTests, SimpleMergeTwoInstances)
     */
     ECValuesCollectionPtr collection = ECValuesCollection::Create (*sourceInstance1);
 
-    FOR_EACH (ECPropertyValuePtr propertyValue, *collection)
+    for each(ECPropertyValueCR propertyValue in *collection)
         {
         ECValue             localValue;
-        ECValueCP           ecValue  = &propertyValue->GetValue();
+        ECValueCP           ecValue  = &propertyValue.GetValue();
 
         if ( ! ecValue->IsPrimitive())
             continue;
 
-        ECValueAccessorCR   accessor = propertyValue->GetValueAccessor();
+        ECValueAccessorCR   accessor = propertyValue.GetValueAccessor();
 
         // If the value from instance1 is NULL, try to get it from instance0
         if (ecValue->IsNull())
@@ -1596,13 +1598,13 @@ TEST_F(MemoryLayoutTests, SimpleMergeTwoInstances)
     int valuesCounted = 0;
     ECValuesCollectionPtr targetCollection = ECValuesCollection::Create (*targetInstance);
 
-    FOR_EACH (ECPropertyValuePtr propertyValue, *targetCollection)
+    for each(ECPropertyValueCR propertyValue in *targetCollection)
         {
-        if ( ! propertyValue->GetValue().IsPrimitive())
+        if ( ! propertyValue.GetValue().IsPrimitive())
             continue;
 
         valuesCounted++;
-        //wprintf(L"%ls: %ls\n", propertyValue->GetValueAccessor().GetManagedAccessString(), propertyValue->GetValue().ToString());
+        //wprintf(L"%ls: %ls\n", propertyValue.GetValueAccessor().GetManagedAccessString(), propertyValue.GetValue().ToString());
         }
 
     //Verify that the merge succeeded

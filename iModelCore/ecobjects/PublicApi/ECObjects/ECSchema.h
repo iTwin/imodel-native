@@ -854,7 +854,8 @@ private:
         
     ClassMap const&     m_classMap;
     
-    ECClassContainer (ClassMap const& classMap) : m_classMap (classMap) {};
+public:
+    ECOBJECTS_EXPORT ECClassContainer (ClassMap const& classMap) : m_classMap (classMap) {}; //public for test purposes only
 
 /*__PUBLISH_SECTION_START__*/
 
@@ -890,7 +891,7 @@ public:
     public:
         ECOBJECTS_EXPORT const_iterator&     operator++();
         ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const;
-        ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const {return !(*this != rhs);}
+        ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const;
         ECOBJECTS_EXPORT ECClassP const&     operator* () const;
     };
 
@@ -1042,7 +1043,7 @@ private:
 
     // maps class name -> class pointer    
     ClassMap m_classMap;
-    
+
     ECSchemaReferenceList m_refSchemaList;
     
     bmap<ECSchemaP, const WString> m_referencedSchemaNamespaceMap;
@@ -1082,6 +1083,8 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
 public:    
+
+    ECOBJECTS_EXPORT void    DebugDump() const;
     ECOBJECTS_EXPORT ECObjectsStatus    SetName(WStringCR value);
     ECOBJECTS_EXPORT WStringCR          GetName() const;    
     ECOBJECTS_EXPORT ECObjectsStatus    SetNamespacePrefix(WStringCR value);
@@ -1347,4 +1350,5 @@ END_BENTLEY_EC_NAMESPACE
 //__PUBLISH_SECTION_END__
 BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::EC::ECCustomAttributeInstanceIterable)
 BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::EC::ECPropertyIterable)
+BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::EC::ECClassContainer)
 //__PUBLISH_SECTION_START__
