@@ -9,6 +9,7 @@
 /*__PUBLISH_SECTION_START__*/
 
 #include <Bentley\VirtualCollectionIterator.h>
+#include <ECObjects\ECInstance.h>
 #include <ECObjects\ECObjects.h>
 #include <Geom\GeomApi.h>
 

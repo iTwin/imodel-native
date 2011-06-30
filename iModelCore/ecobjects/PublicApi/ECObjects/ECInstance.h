@@ -33,8 +33,6 @@ BEGIN_BENTLEY_EC_NAMESPACE
 //! @see Bentley::EC
 
 
-/*__PUBLISH_SECTION_END__*/
-
 // Define structure used to pass data to/from callback that is used to allocate memory in a native IECInstance.
 // This is needed to support embedding a native instance in a managed instance without requiring the managed
 // instance to be Disposed.
@@ -48,8 +46,6 @@ struct MemoryCallbackData
 // Declare an unmanaged function prototype 
 // Note the use of __stdcall for compatibility with managed code
 typedef int (__stdcall *EmbeddedInstanceCallbackP)(MemoryCallbackData* callbackData);
-
-/*__PUBLISH_SECTION_END__*/
 
 //////////////////////////////////////////////////////////////////////////////////
 //  The following definitions are used to allow a struct property to generate a
