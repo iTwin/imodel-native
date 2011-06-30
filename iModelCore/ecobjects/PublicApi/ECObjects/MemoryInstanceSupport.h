@@ -421,6 +421,7 @@ protected:
     //! Reallocates memory for the IECInstance and copies the old IECInstance data into the new memory
     //! You might get more memory than used asked for, but you won't get less
     //! @param additionalBytesNeeded  Additional bytes of memory needed above current allocation
+    //! @param memoryCallback         Callback used only when setting resizeable property values from Manage IECInstance that embeds a native instance.
     virtual ECObjectsStatus    _GrowAllocation (UInt32 additionalBytesNeeded, EmbeddedInstanceCallbackP memoryCallback) = 0;
     
     //! Reallocates memory for the IECInstance and copies the old IECInstance data into the new memory
