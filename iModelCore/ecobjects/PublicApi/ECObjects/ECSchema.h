@@ -9,6 +9,7 @@
 
 /*__PUBLISH_SECTION_START__*/
 
+#include <ECObjects\ECInstance.h>
 #include <ECObjects\ECObjects.h>
 #include <ECObjects\ECEnabler.h>
 #include <Bentley\RefCounted.h>
