@@ -32,13 +32,14 @@ BEGIN_BENTLEY_EC_NAMESPACE
 //! There are also ECRelationshipClasses that are ECClasses that also define "RelationshipConstraints" indicating what ECClasses they relate. ECRelationshipInstances represent the relationships between the ECinstances (defined/constrainted by their ECRelationshipClass) ECRelationships work more like database foreign key constraint that C++ pointers or .NET object references.
 //! @see Bentley::EC
 
-
+//! @cond DONTINCLUDEINDOC
 // Define structure used to pass data to/from callback that is used to allocate memory in a native IECInstance.
 // This is needed to support embedding a native instance in a managed instance without requiring the managed
 // instance to be Disposed.
 struct MemoryCallbackData
     {
     size_t  neededSize;
+    byte*   dataAddress;
     byte*   gapAddress;
     byte*   newDataAddress;
     };
@@ -46,6 +47,7 @@ struct MemoryCallbackData
 // Declare an unmanaged function prototype 
 // Note the use of __stdcall for compatibility with managed code
 typedef int (__stdcall *EmbeddedInstanceCallbackP)(MemoryCallbackData* callbackData);
+//! @endcond
 
 //////////////////////////////////////////////////////////////////////////////////
 //  The following definitions are used to allow a struct property to generate a
@@ -105,8 +107,8 @@ public:
     virtual ECObjectsStatus     _SetValue (WCharCP managedPropertyAccessor, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) = 0;
 protected:
     virtual ECObjectsStatus     _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) = 0;
-    virtual ECObjectsStatus     _InsertArrayElements (WCharCP managedPropertyAccessor, UInt32 index, UInt32 size) = 0;
-    virtual ECObjectsStatus     _AddArrayElements (WCharCP managedPropertyAccessor, UInt32 size) = 0;
+    virtual ECObjectsStatus     _InsertArrayElements (WCharCP managedPropertyAccessor, UInt32 index, UInt32 size, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP) = 0;
+    virtual ECObjectsStatus     _AddArrayElements (WCharCP managedPropertyAccessor, UInt32 size, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP) = 0;
     virtual ECObjectsStatus     _RemoveArrayElement (WCharCP managedPropertyAccessor, UInt32 index) = 0;
     virtual ECObjectsStatus     _ClearArray (WCharCP managedPropertyAccessor) = 0;    
     virtual ECEnablerCR         _GetEnabler() const = 0;
@@ -145,8 +147,8 @@ public:
     //! Contract:
     //! - For all of the methods, the managedPropertyAccessor should be in the "array element" form, 
     //!   e.g. "Aliases[]" instead of "Aliases"         
-    ECOBJECTS_EXPORT ECObjectsStatus      InsertArrayElements (WCharCP managedPropertyAccessor, UInt32 index, UInt32 size); //WIP_FUSION Return the new count?   
-    ECOBJECTS_EXPORT ECObjectsStatus      AddArrayElements (WCharCP managedPropertyAccessor, UInt32 size); //WIP_FUSION Return the new count?
+    ECOBJECTS_EXPORT ECObjectsStatus      InsertArrayElements (WCharCP managedPropertyAccessor, UInt32 index, UInt32 size, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP=NULL); //WIP_FUSION Return the new count?   
+    ECOBJECTS_EXPORT ECObjectsStatus      AddArrayElements (WCharCP managedPropertyAccessor, UInt32 size, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP=NULL); //WIP_FUSION Return the new count?
     ECOBJECTS_EXPORT ECObjectsStatus      RemoveArrayElement (WCharCP managedPropertyAccessor, UInt32 index); //WIP_FUSION return the removed one? YAGNI? Return the new count?
     ECOBJECTS_EXPORT ECObjectsStatus      ClearArray (WCharCP managedPropertyAccessor);    
     ECOBJECTS_EXPORT ECObjectsStatus      GetDisplayLabel (WString& displayLabel) const;    

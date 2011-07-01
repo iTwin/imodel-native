@@ -248,6 +248,73 @@ void                MemoryECInstanceBase::_FreeAllocation ()
     }
     
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  07/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void    MemoryECInstanceBase::UpdateStructArrayOffsets (byte const* gapAddress, bool& updateOffset, size_t resizeAmount)
+    {
+    StructArrayEntry* instanceArray = NULL;
+
+    byte const* thisAddress       = (byte const*)this;
+    byte const* arrayCountAddress =  thisAddress + (size_t)m_structInstances;
+    byte const* arrayAddress      =  arrayCountAddress + sizeof(UInt32);
+
+    UInt32 const* arrayCount      = (UInt32 const*)arrayCountAddress;
+    size_t        numEntries      = *arrayCount;
+    size_t        newOffset;
+
+    instanceArray = (StructArrayEntry*)(const_cast<byte*>(arrayAddress));
+
+    for (size_t i = 0; i<numEntries; i++)
+        {
+        StructArrayEntry* entry       = &instanceArray[i];
+        byte*             baseAddress = (byte*)entry;
+        size_t            offset      = (size_t)(entry->structInstance.get());
+
+        if (updateOffset)
+            {
+            newOffset = offset + resizeAmount;
+            memcpy (&entry->structInstance, &newOffset, sizeof(newOffset));
+            continue;
+            }
+
+        if (baseAddress > gapAddress)
+            {
+            updateOffset = true;
+            return;   // we don't need to adjust any offsets at this level in the heirarchy
+            }
+
+        // see if any child instances grew
+        byte const* instanceAddress = baseAddress + offset;
+
+        // since the offset will put us at the vtable of the IECInstance and not to the start of the concrete object 
+        // we can cast is directly to an IECInstanceP. See comments in method LoadDataIntoManagedInstance
+        IECInstanceP iecInstanceP = (IECInstanceP) const_cast<byte*>(instanceAddress);
+
+        MemoryECInstanceBase* mbInstance = dynamic_cast<MemoryECInstanceBase*>(iecInstanceP);
+        if (mbInstance)
+            mbInstance->UpdateStructArrayOffsets (gapAddress, updateOffset, resizeAmount); 
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* This should only be called for root instance. This method builds a tree structure on
+* struct array instance offsets. Once built it locates the instance that has been 
+* modified. Once located, all subsequent sibling instance offsets must be updated to
+* account for the growth of the property data.
+* @bsimethod                                    Bill.Steinbock                  06/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void    MemoryECInstanceBase::FixupStructArrayOffsets (int offsetBeyondGap, size_t resizeAmount)
+    {
+    if (!m_isInManagedInstance)
+        return;
+
+    byte const* gapAddress = (byte const*)this + offsetBeyondGap;
+    bool   updateOffset    = false;
+
+    UpdateStructArrayOffsets (gapAddress, updateOffset, resizeAmount);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           MemoryECInstanceBase::_GrowAllocation (UInt32 bytesNeeded, EmbeddedInstanceCallbackP memoryCallback)
@@ -265,6 +332,7 @@ ECObjectsStatus           MemoryECInstanceBase::_GrowAllocation (UInt32 bytesNee
 
         MemoryCallbackData data;
         data.neededSize = (size_t)(bytesNeeded * 2); 
+        data.dataAddress = dataAddress;
         data.gapAddress = dataAddress + m_bytesAllocated;
 
         // adjust offset stored in m_structInstances by the amount the propertydata grew - this way when we copy the instance data 
@@ -273,10 +341,11 @@ ECObjectsStatus           MemoryECInstanceBase::_GrowAllocation (UInt32 bytesNee
         Int64 offsetToStructArrayVector = (Int64)m_structInstances + data.neededSize;
         memcpy (&m_structInstances, &offsetToStructArrayVector, sizeof(byte*));
 
+        // update the byte allocated so it will be correct in the copied instance.
+        m_bytesAllocated += (UInt32)data.neededSize;
+
         if (0 == memoryCallback (&data))
             {
-            m_bytesAllocated += (UInt32)data.neededSize;
-
             // hocus pocus - set offsets in this object to point to data in newly allocated object
             Int64 deltaOffset = data.newDataAddress - dataAddress;   // delta between memory locations for propertyData
 
@@ -291,6 +360,9 @@ ECObjectsStatus           MemoryECInstanceBase::_GrowAllocation (UInt32 bytesNee
             }
         else
             {
+            // reset values if managed callback was unsuccessful
+            m_bytesAllocated -= (UInt32)data.neededSize;
+
             memcpy (&m_structInstances, &saveOffsetToStructArrayVector, sizeof(byte*));
             return ECOBJECTS_STATUS_Error;
             }
@@ -391,8 +463,6 @@ StructArrayEntry const* MemoryECInstanceBase::GetAddressOfStructArrayEntry (Stru
         }
     else
         {
-        numEntries = m_structValueId;
-
         byte const* baseAddress = (byte const*)this;
         byte const* arrayCountAddress =  baseAddress + (size_t)m_structInstances;
         byte const* arrayAddress      =  arrayCountAddress + sizeof(UInt32);
@@ -428,11 +498,11 @@ IECInstancePtr  MemoryECInstanceBase::GetStructArrayInstance (StructValueIdentif
 
     byte const* baseAddress = (byte const*)entry;
     size_t offset = (size_t)(entry->structInstance.get());
-    byte const* arrayAddress =  baseAddress + offset;
+    byte const* instanceAddress =  baseAddress + offset;
 
     // since the offset will put us at the vtable of the IECInstance and not to the start of the concrete object 
     // we can cast is directly to an IECInstanceP. See comments in method LoadDataIntoManagedInstance
-    IECInstanceP iecInstanceP = (IECInstanceP) const_cast<byte*>(arrayAddress);
+    IECInstanceP iecInstanceP = (IECInstanceP) const_cast<byte*>(instanceAddress);
     return iecInstanceP;
     }
 
@@ -722,10 +792,10 @@ ECObjectsStatus           StandaloneECInstance::_SetValue (UInt32 propertyIndex,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECInstance::_InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size)
+ECObjectsStatus           StandaloneECInstance::_InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP)
     {
     ClassLayoutCR classLayout = GetClassLayout();
-    ECObjectsStatus status = InsertNullArrayElementsAt (classLayout, propertyAccessString, index, size);
+    ECObjectsStatus status = InsertNullArrayElementsAt (classLayout, propertyAccessString, index, size, memoryReallocationCallbackP);
     
     return status;
     } 
@@ -733,10 +803,10 @@ ECObjectsStatus           StandaloneECInstance::_InsertArrayElements (WCharCP pr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECInstance::_AddArrayElements (WCharCP propertyAccessString, UInt32 size)
+ECObjectsStatus           StandaloneECInstance::_AddArrayElements (WCharCP propertyAccessString, UInt32 size, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP)
     {
     ClassLayoutCR classLayout = GetClassLayout();    
-    ECObjectsStatus status = AddNullArrayElementsAt (classLayout, propertyAccessString, size);
+    ECObjectsStatus status = AddNullArrayElementsAt (classLayout, propertyAccessString, size, memoryReallocationCallbackP);
     
     return status;
     }        
