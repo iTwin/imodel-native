@@ -954,7 +954,7 @@ protected:
 /*__PUBLISH_SECTION_START__*/
 
 public:
-    ECOBJECTS_EXPORT StandaloneECEnablerPtr  ObtainStandaloneInstanceEnabler (WCharCP schemaName, WCharCP className);
+    ECOBJECTS_EXPORT StandaloneECEnablerPtr  XObtainStandaloneInstanceEnabler (WCharCP schemaName, WCharCP className);
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1007,6 +1007,8 @@ protected:
 public:
     ECOBJECTS_EXPORT virtual ~ECSchemaCache ();
     ECOBJECTS_EXPORT static  ECSchemaCachePtr Create ();
+    ECOBJECTS_EXPORT int     GetCount();
+    ECOBJECTS_EXPORT void    Clear();
 };
 
 //=======================================================================================
@@ -1245,9 +1247,9 @@ public:
 
     //! Given two schemas, will check to see if the second schema is referenced by the first schema
     //! @param[in]    thisSchema            The base schema to check the references of
-    //! @param[in]    thatSchema            The schema to search for
+    //! @param[in]    potentiallyReferencedSchema  The schema to search for
     //! @return True if thatSchema is referenced by thisSchema, false otherwise
-    ECOBJECTS_EXPORT static bool                        IsSchemaReferenced (ECSchemaCR thisSchema, ECSchemaCR thatSchema);
+    ECOBJECTS_EXPORT static bool                        IsSchemaReferenced (ECSchemaCR thisSchema, ECSchemaCR potentiallyReferencedSchema);
 
     //! Compare two schemas and returns true if the schema pointers are equal or the names and version of the schemas are the same 
     //! @param[out]   thisSchema           Pointer to schema
@@ -1265,7 +1267,7 @@ public:
     //! ECSchemaDeserializationContextPtr schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
     //! 
     //! ECSchemaP schema;
-    //! SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ecSchemaFilename, *schemaContext);
+    //! SchemaDeserializationStatus status = ECSchema::ReadFromFile (schema, ecSchemaFilename, *schemaContext);
     //! if (SCHEMA_DESERIALIZATION_STATUS_Success != status)
     //!     return ERROR;
     //! @endcode
@@ -1276,7 +1278,7 @@ public:
     //! @param[in]    schemaContext       Required to create schemas
     //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
     //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
-    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromFile (ECSchemaP& schemaOut, WCharCP ecSchemaXmlFile, ECSchemaDeserializationContextR schemaContext);
+    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadFromFile (ECSchemaP& schemaOut, WCharCP ecSchemaXmlFile, ECSchemaDeserializationContextR schemaContext);
 
     //! Locate a schema using the provided schema locators and paths. If not found in those by either of those parameters standard schema pathes 
     //! relative to the executing dll will be searched.
@@ -1295,7 +1297,7 @@ public:
     //! // The schemaContext supplies an IECSchemaOwner to control the lifetime of deserialized ECSchemas and a 
     //! 
     //! ECSchemaP schema;
-    //! SchemaDeserializationStatus status = ECSchema::ReadXmlFromString (schema, ecSchemaAsString, *schemaContext);
+    //! SchemaDeserializationStatus status = ECSchema::ReadFromXml (schema, ecSchemaAsString, *schemaContext);
     //! if (SCHEMA_DESERIALIZATION_STATUS_Success != status)
     //!     return ERROR;
     //! @endcode
@@ -1306,7 +1308,7 @@ public:
     //! @param[in]    schemaContext       Required to create schemas
     //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
     //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
-    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromString (ECSchemaP& schemaOut, WCharCP ecSchemaXml, ECSchemaDeserializationContextR schemaContext);
+    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadFromXml (ECSchemaP& schemaOut, WCharCP ecSchemaXml, ECSchemaDeserializationContextR schemaContext);
 
     //! 
     //! Deserializes an ECSchema from an ECSchemaXML-formatted string.
@@ -1316,7 +1318,7 @@ public:
     //! ECSchemaCachePtr                  schemaOwner = ECSchemaCache::Create();
     //! 
     //! ECSchemaP schema;
-    //! SchemaDeserializationStatus status = ECSchema::ReadXmlFromString (schema, ecSchemaAsString, *schemaOwner);
+    //! SchemaDeserializationStatus status = ECSchema::ReadFromXml (schema, ecSchemaAsString, *schemaOwner);
     //! if (SCHEMA_DESERIALIZATION_STATUS_Success != status)
     //!     return ERROR;
     //! @endcode
@@ -1327,7 +1329,7 @@ public:
     //! @param[in]    schemaCache         Will own the deserialized ECSchema and referenced ECSchemas.
     //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
     //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
-    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadXmlFromString (ECSchemaP& schemaOut, WCharCP ecSchemaXml, ECSchemaCacheR schemaCache);
+    ECOBJECTS_EXPORT static SchemaDeserializationStatus ReadFromXml (ECSchemaP& schemaOut, WCharCP ecSchemaXml, ECSchemaCacheR schemaCache);
 
     //! Deserializes an ECSchema from an ECSchemaXML-formatted string in an IStream.
     //! XML Deserialization utilizes MSXML through COM.  <b>Any thread calling this method must therefore be certain to initialize and

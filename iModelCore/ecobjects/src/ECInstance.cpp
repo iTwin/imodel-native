@@ -541,7 +541,7 @@ ECObjectsStatus           IECInstance::SetValueUsingAccessor (ECValueAccessorCR 
             {
             EC::ECEnablerR          structEnabler = *(const_cast<EC::ECEnablerP>(&accessor.GetEnabler (depth + 1)));
             ECClassCR               structClass   = accessor.GetEnabler (depth + 1).GetClass();
-            StandaloneECEnablerPtr  standaloneEnabler = structEnabler.ObtainStandaloneInstanceEnabler (structClass.GetSchema().GetName().c_str(), structClass.GetName().c_str());
+            StandaloneECEnablerPtr  standaloneEnabler = structEnabler.GetEnablerForStructArrayMember (structClass.GetSchema().GetName().c_str(), structClass.GetName().c_str());
 
             newInstance = standaloneEnabler->CreateInstance();
 
@@ -787,7 +787,7 @@ static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar
 
             ECClassCP structClass = arrayProp->GetStructElementType();
 
-            StandaloneECEnablerPtr standaloneEnabler = instance.GetEnablerR().ObtainStandaloneInstanceEnabler (structClass->GetSchema().GetName().c_str(), structClass->GetName().c_str());
+            StandaloneECEnablerPtr standaloneEnabler = instance.GetEnablerR().GetEnablerForStructArrayMember (structClass->GetSchema().GetName().c_str(), structClass->GetName().c_str());
             if (standaloneEnabler.IsNull())
                 return ECOBJECTS_STATUS_Error;
 
@@ -3136,7 +3136,7 @@ InstanceSerializationStatus     TranslateStatus (HRESULT status)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   IECInstance::ReadXmlFromFile (IECInstancePtr& ecInstance, WCharCP fileName, ECInstanceDeserializationContextR context)
+InstanceDeserializationStatus   IECInstance::ReadFromFile (IECInstancePtr& ecInstance, WCharCP fileName, ECInstanceDeserializationContextR context)
     {
     InstanceXmlReader reader (context, fileName);
 
@@ -3176,7 +3176,7 @@ static InstanceDeserializationStatus   ReportStatus (InstanceDeserializationStat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   IECInstance::ReadXmlFromString (IECInstancePtr& ecInstance, WCharCP xmlString, ECInstanceDeserializationContextR context)
+InstanceDeserializationStatus   IECInstance::ReadFromXml (IECInstancePtr& ecInstance, WCharCP xmlString, ECInstanceDeserializationContextR context)
     {
     CComPtr <IStream> stream;
     if (S_OK != ::CreateStreamOnHGlobal(NULL,TRUE,&stream))

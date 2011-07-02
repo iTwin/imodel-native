@@ -211,7 +211,7 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenCOMNotInitialized)
 
     DISABLE_ASSERTS
     ECSchemaP schema;
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, L"t", *schemaContext);
+    SchemaDeserializationStatus status = ECSchema::ReadFromFile (schema, L"t", *schemaContext);
         
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_FailedToInitializeMsmxl, status);
     };
@@ -227,7 +227,7 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileDoesNotExist)
     ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
 
     ECSchemaP schema;
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath(L"ThisFileIsntReal.xml").c_str(), *schemaContext);
+    SchemaDeserializationStatus status = ECSchema::ReadFromFile (schema, ECTestFixture::GetTestDataPath(L"ThisFileIsntReal.xml").c_str(), *schemaContext);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml, status);
     
@@ -245,7 +245,7 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNodes)
     ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
 
     ECSchemaP schema;
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"MissingNodes.01.00.ecschema.xml").c_str(), *schemaContext);  
+    SchemaDeserializationStatus status = ECSchema::ReadFromFile (schema, ECTestFixture::GetTestDataPath( L"MissingNodes.01.00.ecschema.xml").c_str(), *schemaContext);  
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml, status);
     
@@ -263,7 +263,7 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsIllFormed)
     ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
 
     ECSchemaP schema;
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"IllFormedXml.01.00.ecschema.xml").c_str(), *schemaContext);
+    SchemaDeserializationStatus status = ECSchema::ReadFromFile (schema, ECTestFixture::GetTestDataPath( L"IllFormedXml.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml, status);
     
@@ -281,7 +281,7 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingECSchemaNode)
     ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
 
     ECSchemaP schema;
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"MissingECSchemaNode.01.00.ecschema.xml").c_str(), *schemaContext);
+    SchemaDeserializationStatus status = ECSchema::ReadFromFile (schema, ECTestFixture::GetTestDataPath( L"MissingECSchemaNode.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
     
@@ -299,7 +299,7 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNamespace)
     ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
 
     ECSchemaP schema;
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"MissingNamespace.01.00.ecschema.xml").c_str(), *schemaContext);
+    SchemaDeserializationStatus status = ECSchema::ReadFromFile (schema, ECTestFixture::GetTestDataPath( L"MissingNamespace.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
     
@@ -317,7 +317,7 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasUnsupportedNamespace)
     ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
 
     ECSchemaP schema;
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"UnsupportedECXmlNamespace.01.00.ecschema.xml").c_str(), *schemaContext);
+    SchemaDeserializationStatus status = ECSchema::ReadFromFile (schema, ECTestFixture::GetTestDataPath( L"UnsupportedECXmlNamespace.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
     
@@ -335,7 +335,7 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingSchemaNameAttr
     ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
 
     ECSchemaP schema;
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"MissingSchemaName.01.00.ecschema.xml").c_str(), *schemaContext);
+    SchemaDeserializationStatus status = ECSchema::ReadFromFile (schema, ECTestFixture::GetTestDataPath( L"MissingSchemaName.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
     
@@ -353,7 +353,7 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingClassNameAttri
     ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
 
     ECSchemaP schema;
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"MissingClassName.01.00.ecschema.xml").c_str(), *schemaContext);
+    SchemaDeserializationStatus status = ECSchema::ReadFromFile (schema, ECTestFixture::GetTestDataPath( L"MissingClassName.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml, status);
     
@@ -371,7 +371,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenXmlFileHasInvalidVersionStrin
     ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
 
     ECSchemaP schema;
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"InvalidVersionString.01.00.ecschema.xml").c_str(), *schemaContext);
+    SchemaDeserializationStatus status = ECSchema::ReadFromFile (schema, ECTestFixture::GetTestDataPath( L"InvalidVersionString.01.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_EQ (1, schema->GetVersionMajor());
     EXPECT_EQ (0, schema->GetVersionMinor());
 
@@ -391,7 +391,7 @@ TEST_F(SchemaDeserializationTest, ExpectFailureWhenMissingTypeNameInProperty)
     ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
 
     ECSchemaP schema;
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromString (schema, 
+    SchemaDeserializationStatus status = ECSchema::ReadFromXml (schema, 
         L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         L"<ECSchema schemaName=\"Widgets\" version=\"09.06\" displayLabel=\"Widgets Display Label\" description=\"Widgets Description\" nameSpacePrefix=\"wid\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
         L"    <ECClass typeName=\"ecProject\" description=\"Project ECClass\" displayLabel=\"Project\" isDomainClass=\"True\">"
@@ -415,7 +415,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithInvalidTypeNameInPrimitivePro
     ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
 
     ECSchemaP schema;
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromString (schema, 
+    SchemaDeserializationStatus status = ECSchema::ReadFromXml (schema, 
         L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         L"<ECSchema schemaName=\"Widgets\" version=\"09.06\" displayLabel=\"Widgets Display Label\" description=\"Widgets Description\" nameSpacePrefix=\"wid\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
         L"<ECSchemaReference name=\"EditorCustomAttributes\" version=\"01.00\" prefix=\"beca\" />"
@@ -446,7 +446,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingSchemaWithBaseCl
     schemaContext->AddSchemaPath(seedPath.c_str());
 
     ECSchemaP schema;
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"SchemaThatReferences.01.00.ecschema.xml").c_str(), *schemaContext);
+    SchemaDeserializationStatus status = ECSchema::ReadFromFile (schema, ECTestFixture::GetTestDataPath( L"SchemaThatReferences.01.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);    
 
     ECClassP pClass = schema->GetClassP(L"circle");    
@@ -466,7 +466,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenECSchemaContainsOnlyRequiredA
     ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
 
     ECSchemaP schema;
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"OnlyRequiredECSchemaAttributes.01.00.ecschema.xml").c_str(), *schemaContext);
+    SchemaDeserializationStatus status = ECSchema::ReadFromFile (schema, ECTestFixture::GetTestDataPath( L"OnlyRequiredECSchemaAttributes.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);    
     EXPECT_STREQ (L"OnlyRequiredECSchemaAttributes", schema->GetName().c_str());
@@ -501,7 +501,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingWidgetsECSchema)
     ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
 
     ECSchemaP schema;
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"Widgets.01.00.ecschema.xml").c_str(), *schemaContext);
+    SchemaDeserializationStatus status = ECSchema::ReadFromFile (schema, ECTestFixture::GetTestDataPath( L"Widgets.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);  
     VerifyWidgetsSchema(schema);  
@@ -518,7 +518,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromStri
     ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
 
     ECSchemaP schema;
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromString (schema, 
+    SchemaDeserializationStatus status = ECSchema::ReadFromXml (schema, 
         L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         L"<ECSchema schemaName=\"Widgets\" version=\"09.06\" displayLabel=\"Widgets Display Label\" description=\"Widgets Description\" nameSpacePrefix=\"wid\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
         L"<ECSchemaReference name=\"EditorCustomAttributes\" version=\"01.00\" prefix=\"beca\" />"
@@ -585,7 +585,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
     ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
 
     ECSchemaP schema;
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"Widgets.01.00.ecschema.xml").c_str(), *schemaContext);
+    SchemaDeserializationStatus status = ECSchema::ReadFromFile (schema, ECTestFixture::GetTestDataPath( L"Widgets.01.00.ecschema.xml").c_str(), *schemaContext);
     wprintf(L"Verifying original schema from file.\n"); 
     VerifyWidgetsSchema(schema);
 
@@ -598,7 +598,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
     
     ECSchemaP deserializedSchema;
     schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
-    status = ECSchema::ReadXmlFromString(deserializedSchema, ecSchemaXmlString.c_str(), *schemaContext);
+    status = ECSchema::ReadFromXml(deserializedSchema, ecSchemaXmlString.c_str(), *schemaContext);
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status); 
     wprintf(L"Verifying schema deserialized from string.\n");
     VerifyWidgetsSchema(deserializedSchema);
@@ -617,7 +617,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateClassesInXml)
     ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
 
     ECSchemaP schema;
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromString (schema, 
+    SchemaDeserializationStatus status = ECSchema::ReadFromXml (schema, 
         L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         L"<ECSchema schemaName=\"Widgets\" version=\"09.06\" displayLabel=\"Widgets Display Label\" description=\"Widgets Description\" nameSpacePrefix=\"wid\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
         L"    <ECClass typeName=\"DifferentClass\" isDomainClass=\"True\">"
@@ -650,7 +650,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateClassesInXml)
     ECSchemaDeserializationContextPtr   schemaContext2 = ECSchemaDeserializationContext::CreateContext(*schemaOwner2, *schemaOwner2);
 
 
-    status = ECSchema::ReadXmlFromString (schema2, 
+    status = ECSchema::ReadFromXml (schema2, 
         L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         L"<ECSchema schemaName=\"Widgets2\" version=\"09.06\" displayLabel=\"Widgets Display Label\" description=\"Widgets Description\" nameSpacePrefix=\"wid\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
         L"    <ECClass typeName=\"ecProject\" description=\"Project ECClass\" displayLabel=\"Project\" isDomainClass=\"True\">"
@@ -695,7 +695,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateClassesInXml)
 //    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
 //    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
 //
-//    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml", *schemaContext);
+//    SchemaDeserializationStatus status = ECSchema::ReadFromFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml", *schemaContext);
 //    wprintf(L"Verifying original schema from file.\n"); 
 //    VerifyWidgetsSchema(schema);
 //
@@ -715,7 +715,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingStream)
     ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
 
     ECSchemaP schema;
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"Widgets.01.00.ecschema.xml").c_str(), *schemaContext);
+    SchemaDeserializationStatus status = ECSchema::ReadFromFile (schema, ECTestFixture::GetTestDataPath( L"Widgets.01.00.ecschema.xml").c_str(), *schemaContext);
     wprintf(L"Verifying original schema from file.\n"); 
     VerifyWidgetsSchema(schema);
 
@@ -808,7 +808,7 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     //
     //ECSchemaP schema4;
     //ECSchemaDeserializationContextPtr schemaContext = ECSchemaDeserializationContext::CreateContext();
-    //SchemaDeserializationStatus status3 = ECSchema::ReadXmlFromFile (schema4, L"d:\\temp\\base.xml", *schemaContext);
+    //SchemaDeserializationStatus status3 = ECSchema::ReadFromFile (schema4, L"d:\\temp\\base.xml", *schemaContext);
     
     WString ecSchemaXmlString;
     
@@ -871,7 +871,7 @@ TEST_F(SchemaReferenceTest, InvalidReference)
     //The "InvalidReference" schema contains a reference to BaseSchema.01.01.  This schema 
     //does not exist.  1.0 exists, but the minor version numbers are incompatible.
     ECSchemaP schema;
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"InvalidReference.01.00.ecschema.xml").c_str(), *schemaContext);  
+    SchemaDeserializationStatus status = ECSchema::ReadFromFile (schema, ECTestFixture::GetTestDataPath( L"InvalidReference.01.00.ecschema.xml").c_str(), *schemaContext);  
 
     EXPECT_EQ (NULL, schema);
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_ReferencedSchemaNotFound, status);
@@ -946,7 +946,7 @@ TEST_F(SchemaReferenceTest, ExpectSuccessWithCircularReferences)
     schemaContext->AddSchemaPath(seedPath.c_str());
 
     ECSchemaP schema;
-    SchemaDeserializationStatus status = ECSchema::ReadXmlFromFile (schema, ECTestFixture::GetTestDataPath( L"CircleSchema.01.00.ecschema.xml").c_str(), *schemaContext);
+    SchemaDeserializationStatus status = ECSchema::ReadFromFile (schema, ECTestFixture::GetTestDataPath( L"CircleSchema.01.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, status);
 
     CoUninitialize();

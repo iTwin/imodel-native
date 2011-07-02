@@ -641,7 +641,7 @@ ECClassContainerCR ECSchema::GetClasses
 (
 ) const
     {
-    return m_classContainer; // return m_classMap directly?
+    return m_classContainer;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -668,7 +668,8 @@ ECSchemaR       refSchema
         if (*schemaIterator == &refSchema)
             return ECOBJECTS_STATUS_NamedItemAlreadyExists;
         }
-            
+    
+    // Check for recursion
     m_refSchemaList.push_back(&refSchema);
     m_referencedSchemaNamespaceMap.insert(bpair<ECSchemaP, const WString> (&refSchema, refSchema.GetNamespacePrefix()));
     return ECOBJECTS_STATUS_Success;
@@ -1056,7 +1057,7 @@ bool                            useLatestCompatibleMatch
                             name.c_str(),   versionMajor,   foundVersionMinor))
             continue;
 
-        if (SCHEMA_DESERIALIZATION_STATUS_Success != ECSchema::ReadXmlFromFile (schemaOut, fullFileName.c_str(), schemaContext))
+        if (SCHEMA_DESERIALIZATION_STATUS_Success != ECSchema::ReadFromFile (schemaOut, fullFileName.c_str(), schemaContext))
             continue;
 
         ECObjectsLogger::Log()->debugv (L"Located %s...", fullFileName.c_str());
@@ -1172,7 +1173,12 @@ ECSchemaDeserializationContextR     schemaContext
 
     IECSchemaOwnerR schemaOwner = schemaContext.GetSchemaOwner();
     bool            hideFromLeakDetection = schemaContext.GetHideSchemasFromLeakDetection();
-    if (ECOBJECTS_STATUS_Success != CreateSchema (schemaOut, (WCharCP)attributePtr->text, versionMajor, versionMinor, schemaOwner, hideFromLeakDetection))
+    
+    ECObjectsStatus createStatus = CreateSchema (schemaOut, (WCharCP)attributePtr->text, versionMajor, versionMinor, schemaOwner, hideFromLeakDetection);
+    if (ECOBJECTS_STATUS_DuplicateSchema == createStatus)
+        return SCHEMA_DESERIALIZATION_STATUS_DuplicateSchema;
+    
+    if (ECOBJECTS_STATUS_Success != createStatus)
         return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
 
     // OPTIONAL attributes - If these attributes exist they MUST be valid        
@@ -1476,7 +1482,7 @@ MSXML2::IXMLDOMDocument2& pXmlDoc
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus ECSchema::ReadXmlFromFile
+SchemaDeserializationStatus ECSchema::ReadFromFile
 (
 ECSchemaP&                      schemaOut, 
 WCharCP                 ecSchemaXmlFile, 
@@ -1498,18 +1504,22 @@ ECSchemaDeserializationContextR schemaContext
         }
 
     status = ReadXml (schemaOut, xmlDocPtr, schemaContext);
+    if (SCHEMA_DESERIALIZATION_STATUS_DuplicateSchema == status)
+        return status; // already logged
+
     if (ECOBJECTS_STATUS_Success != status)
         ECObjectsLogger::Log()->errorv (L"Failed to deserialize XML file: %s", ecSchemaXmlFile);
     else
         ECObjectsLogger::Log()->infov (L"Native ECSchema Deserialized from file: fileName='%s', schemaName='%s.%d.%d' classCount='%d' address='0x%x'", 
             ecSchemaXmlFile, schemaOut->GetName().c_str(), schemaOut->GetVersionMajor(), schemaOut->GetVersionMinor(), schemaOut->m_classMap.size(), schemaOut);        
+
     return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus     ECSchema::ReadXmlFromString
+SchemaDeserializationStatus     ECSchema::ReadFromXml
 (
 ECSchemaP&                      schemaOut, 
 WCharCP                         ecSchemaXml,
@@ -1531,6 +1541,9 @@ ECSchemaDeserializationContextR schemaContext
         }
 
     status = ReadXml (schemaOut, xmlDocPtr, schemaContext);
+    if (SCHEMA_DESERIALIZATION_STATUS_DuplicateSchema == status)
+        return status; // already logged
+
     if (ECOBJECTS_STATUS_Success != status)
         {
         WChar first200Characters[201];
@@ -1550,7 +1563,7 @@ ECSchemaDeserializationContextR schemaContext
 bool ECSchema::IsSchemaReferenced
 (
 ECSchemaCR thisSchema, 
-ECSchemaCR thatSchema
+ECSchemaCR potentiallyReferencedSchema
 )
     {
     ECSchemaReferenceList referencedSchemas = thisSchema.GetReferencedSchemas();
@@ -1558,7 +1571,7 @@ ECSchemaCR thatSchema
     for (schemaIterator = referencedSchemas.begin(); schemaIterator != referencedSchemas.end(); schemaIterator++)
         {
         ECSchemaP refSchema = *schemaIterator;
-        if (ECSchema::SchemasAreEqualByName (refSchema, &(thatSchema)))
+        if (ECSchema::SchemasAreEqualByName (refSchema, &(potentiallyReferencedSchema)))
             {
             return true;
             }
@@ -1601,6 +1614,9 @@ ECSchemaDeserializationContextR schemaContext
         }
 
     status = ReadXml (schemaOut, xmlDocPtr, schemaContext);
+    if (SCHEMA_DESERIALIZATION_STATUS_DuplicateSchema == status)
+        return status; // already logged
+    
     if (ECOBJECTS_STATUS_Success != status)
         ECObjectsLogger::Log()->errorv (L"Failed to deserialize XML from stream");
     return status;
@@ -1726,7 +1742,7 @@ ECSchemaP       IECSchemaOwner::LocateSchema (WCharCP name, UInt32 major, UInt32
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneECEnablerPtr  IStandaloneEnablerLocater::ObtainStandaloneInstanceEnabler (WCharCP schemaName, WCharCP className)
+StandaloneECEnablerPtr  IStandaloneEnablerLocater::XObtainStandaloneInstanceEnabler (WCharCP schemaName, WCharCP className)
     {
     return  _ObtainStandaloneInstanceEnabler (schemaName, className);
     }
@@ -1747,6 +1763,14 @@ ECSchemaCache::~ECSchemaCache ()
 
     FOR_EACH (ECSchemaP ecSchema, m_schemas)
         ECSchema::DestroySchema (ecSchema);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Casey.Mullen                  06/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+int                             ECSchemaCache::GetCount ()
+    {
+    return (int)m_schemas.size();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1775,6 +1799,17 @@ ECObjectsStatus ECSchemaCache::_DropSchema  (ECSchemaR ecSchema)
     return ECOBJECTS_STATUS_Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Casey.Mullen                  06/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void                             ECSchemaCache::Clear ()
+    {
+    for (bvector<ECSchemaP>::iterator it = m_schemas.begin(); it != m_schemas.end(); ++it)
+        ECSchema::DestroySchema (*it);
+    m_schemas.clear();
+    m_ecEnablerMap.clear();
+    }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -301,7 +301,7 @@ IStandaloneEnablerLocaterR standaloneEnablerLocater
             ECInstanceDeserializationContextPtr context = ECInstanceDeserializationContext::CreateContext (schema, standaloneEnablerLocater);
 
             IECInstancePtr ptr;
-            status = IECInstance::ReadXmlFromString(ptr, (WCharCP) instancePtr->Getxml(), *context);
+            status = IECInstance::ReadFromXml(ptr, (WCharCP) instancePtr->Getxml(), *context);
             if ( (INSTANCE_DESERIALIZATION_STATUS_Success != status) && (INSTANCE_DESERIALIZATION_STATUS_CommentOnly != status) )
                 return status;
             if (ptr.IsValid())

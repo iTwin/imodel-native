@@ -148,6 +148,7 @@ enum ECObjectsStatus
     ECOBJECTS_STATUS_MemoryBoundsOverrun                                = ECOBJECTS_ERROR_BASE + 0x15,
     ECOBJECTS_STATUS_NullPointerValue                                   = ECOBJECTS_ERROR_BASE + 0x16,
     ECOBJECTS_STATUS_NotCustomAttributeClass                            = ECOBJECTS_ERROR_BASE + 0x17,
+    ECOBJECTS_STATUS_DuplicateSchema                                    = ECOBJECTS_ERROR_BASE + 0x18,
     ECOBJECTS_STATUS_Error                                              = ECOBJECTS_ERROR_BASE + 0xFFF,
     }; 
 
@@ -161,6 +162,7 @@ enum SchemaDeserializationStatus
     SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml                      = SCHEMA_DESERIALIZATION_STATUS_BASE + 0x02,
     SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml                    = SCHEMA_DESERIALIZATION_STATUS_BASE + 0x03,
     SCHEMA_DESERIALIZATION_STATUS_ReferencedSchemaNotFound              = SCHEMA_DESERIALIZATION_STATUS_BASE + 0x04,
+    SCHEMA_DESERIALIZATION_STATUS_DuplicateSchema                       = SCHEMA_DESERIALIZATION_STATUS_BASE + 0x05,
     };
 
 /*=================================================================================**//**
