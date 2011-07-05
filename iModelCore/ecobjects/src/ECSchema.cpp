@@ -533,7 +533,7 @@ UInt32          candidateMinor
 ECObjectsStatus ECSchema::CreateSchema
 (
 ECSchemaP&          schemaOut, 
-WStringCR     schemaName,
+WStringCR           schemaName,
 UInt32              versionMajor,
 UInt32              versionMinor,
 IECSchemaOwnerR     schemaOwner,
@@ -641,7 +641,7 @@ ECClassContainerCR ECSchema::GetClasses
 (
 ) const
     {
-    return m_classContainer; // return m_classMap directly?
+    return m_classContainer;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -668,7 +668,8 @@ ECSchemaR       refSchema
         if (*schemaIterator == &refSchema)
             return ECOBJECTS_STATUS_NamedItemAlreadyExists;
         }
-            
+    
+    // Check for recursion
     m_refSchemaList.push_back(&refSchema);
     m_referencedSchemaNamespaceMap.insert(bpair<ECSchemaP, const WString> (&refSchema, refSchema.GetNamespacePrefix()));
     return ECOBJECTS_STATUS_Success;
@@ -766,14 +767,14 @@ ECSchemaR       refSchema
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus ECSchema::ReadClassStubsFromXml
+SchemaReadStatus ECSchema::ReadClassStubsFromXml
 (
 MSXML2::IXMLDOMNode&                schemaNode,
 ClassDeserializationVector&         classes, 
 ECSchemaDeserializationContextR     schemaContext
 )
     {
-    SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
+    SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
 
     // Create ECClass Stubs (no attributes or properties)
     size_t classElementLength = wcslen (EC_CLASS_ELEMENT);
@@ -797,7 +798,7 @@ ECSchemaDeserializationContextR     schemaContext
             pClass = pRelationshipClass;
             }
 
-        if (SCHEMA_DESERIALIZATION_STATUS_Success != (status = pClass->ReadXmlAttributes(xmlNodePtr, schemaContext.GetStandaloneEnablerLocater())))
+        if (SCHEMA_READ_STATUS_Success != (status = pClass->ReadXmlAttributes(xmlNodePtr, schemaContext.GetStandaloneEnablerLocater())))
             {
             delete pClass;
             return status;           
@@ -812,7 +813,7 @@ ECSchemaDeserializationContextR     schemaContext
             pClass = existingClass;
             }
         else if (ECOBJECTS_STATUS_Success != this->AddClass (pClass))
-            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
 
         if (NULL == pRelationshipClass)
             ECObjectsLogger::Log()->tracev (L"    Created ECClass Stub: %s", pClass->GetName().c_str());
@@ -831,13 +832,13 @@ ECSchemaDeserializationContextR     schemaContext
    base classes, properties & relationship endpoints.
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus ECSchema::ReadClassContentsFromXml
+SchemaReadStatus ECSchema::ReadClassContentsFromXml
 (
 ClassDeserializationVector&         classes, 
 ECSchemaDeserializationContextR     schemaContext
 )
     {
-    SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
+    SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
 
     ClassDeserializationVector::const_iterator  classesStart, classesEnd, classesIterator;
     ECClassP pClass;
@@ -847,7 +848,7 @@ ECSchemaDeserializationContextR     schemaContext
         pClass = classesIterator->first;
         xmlNodePtr = classesIterator->second;
         status = pClass->ReadXmlContents (xmlNodePtr, schemaContext.GetStandaloneEnablerLocater());
-        if (SCHEMA_DESERIALIZATION_STATUS_Success != status)
+        if (SCHEMA_READ_STATUS_Success != status)
             return status;
         }
 
@@ -857,13 +858,13 @@ ECSchemaDeserializationContextR     schemaContext
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus ECSchema::ReadSchemaReferencesFromXml
+SchemaReadStatus ECSchema::ReadSchemaReferencesFromXml
 (
 MSXML2::IXMLDOMNode&            schemaNode, 
 ECSchemaDeserializationContextR schemaContext
 )
     {
-    SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
+    SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
         
     m_referencedSchemaNamespaceMap.clear();
 
@@ -878,7 +879,7 @@ ECSchemaDeserializationContextR schemaContext
         if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMAREF_NAME_ATTRIBUTE)))
             {
             ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_NAME_ATTRIBUTE L" attribute", (WCharCP)xmlNodePtr->baseName);
-            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
             
         WString schemaName = (WCharCP) attributePtr->text;
@@ -886,14 +887,14 @@ ECSchemaDeserializationContextR schemaContext
         if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMAREF_PREFIX_ATTRIBUTE)))
             {
             ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_PREFIX_ATTRIBUTE L" attribute", (WCharCP)xmlNodePtr->baseName);
-            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
         WString prefix = (WCharCP) attributePtr->text;
 
         if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMAREF_VERSION_ATTRIBUTE)))
             {
             ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " SCHEMAREF_VERSION_ATTRIBUTE L" attribute", (WCharCP)xmlNodePtr->baseName);
-            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
         WString versionString = (WCharCP) attributePtr->text;
 
@@ -902,7 +903,7 @@ ECSchemaDeserializationContextR schemaContext
         if (ECOBJECTS_STATUS_Success != ParseVersionString (versionMajor, versionMinor, versionString.c_str()))
             {
             ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: unable to parse version string for referenced schema %s.", schemaName.c_str());
-            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
             
         // If the schema (uselessly) references itself, just skip it
@@ -919,7 +920,7 @@ ECSchemaDeserializationContextR schemaContext
         else
             {
             ECObjectsLogger::Log()->errorv(L"Unable to locate referenced schema %s.%02d.%02d", schemaName.c_str(), versionMajor, versionMinor);
-            return SCHEMA_DESERIALIZATION_STATUS_ReferencedSchemaNotFound;
+            return SCHEMA_READ_STATUS_ReferencedSchemaNotFound;
             }
         }
 
@@ -970,7 +971,7 @@ ECSchemaDeserializationContextR schemaContext
         if (NULL != schema)
             return schema;
         }
-        
+
     // Step 3: look in the paths provided by the context
     schema = LocateSchemaByPath(name, versionMajor, versionMinor, schemaContext);
     if (NULL != schema)
@@ -1056,7 +1057,7 @@ bool                            useLatestCompatibleMatch
                             name.c_str(),   versionMajor,   foundVersionMinor))
             continue;
 
-        if (SCHEMA_DESERIALIZATION_STATUS_Success != ECSchema::ReadXmlFromFile (schemaOut, fullFileName.c_str(), schemaContext))
+        if (SCHEMA_READ_STATUS_Success != ECSchema::ReadFromXmlFile (schemaOut, fullFileName.c_str(), schemaContext))
             continue;
 
         ECObjectsLogger::Log()->debugv (L"Located %s...", fullFileName.c_str());
@@ -1127,21 +1128,21 @@ ECSchemaDeserializationContextR schemaContext
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus ECSchema::ReadXml
+SchemaReadStatus ECSchema::ReadXml
 (
 ECSchemaP&                          schemaOut, 
 MSXML2::IXMLDOMDocument2&           pXmlDoc, 
 ECSchemaDeserializationContextR     schemaContext
 )
     {            
-    SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
+    SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
     
     pXmlDoc.setProperty("SelectionNamespaces", L"xmlns:" EC_NAMESPACE_PREFIX L"='" ECXML_URI_2_0 L"'");
     MSXML2::IXMLDOMNodePtr xmlNodePtr = pXmlDoc.selectSingleNode (L"/" EC_NAMESPACE_PREFIX L":" EC_SCHEMA_ELEMENT);
     if (NULL == xmlNodePtr)
         {
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: Missing a top-level " EC_SCHEMA_ELEMENT L" node in the " ECXML_URI_2_0 L" namespace");
-        return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+        return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
     
     MSXML2::IXMLDOMNodePtr schemaNodePtr = xmlNodePtr;       
@@ -1152,7 +1153,7 @@ ECSchemaDeserializationContextR     schemaContext
     if ((NULL == nodeAttributesPtr) || (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (SCHEMA_NAME_ATTRIBUTE))))
         {
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: " EC_SCHEMA_ELEMENT L" element must contain a schemaName attribute");
-        return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+        return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
 
     UInt32  versionMajor = DEFAULT_VERSION_MAJOR;
@@ -1172,15 +1173,20 @@ ECSchemaDeserializationContextR     schemaContext
 
     IECSchemaOwnerR schemaOwner = schemaContext.GetSchemaOwner();
     bool            hideFromLeakDetection = schemaContext.GetHideSchemasFromLeakDetection();
-    if (ECOBJECTS_STATUS_Success != CreateSchema (schemaOut, (WCharCP)attributePtr->text, versionMajor, versionMinor, schemaOwner, hideFromLeakDetection))
-        return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+    
+    ECObjectsStatus createStatus = CreateSchema (schemaOut, (WCharCP)attributePtr->text, versionMajor, versionMinor, schemaOwner, hideFromLeakDetection);
+    if (ECOBJECTS_STATUS_DuplicateSchema == createStatus)
+        return SCHEMA_READ_STATUS_DuplicateSchema;
+    
+    if (ECOBJECTS_STATUS_Success != createStatus)
+        return SCHEMA_READ_STATUS_InvalidECSchemaXml;
 
     // OPTIONAL attributes - If these attributes exist they MUST be valid        
     READ_OPTIONAL_XML_ATTRIBUTE (SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE,         schemaOut, NamespacePrefix)
     READ_OPTIONAL_XML_ATTRIBUTE (DESCRIPTION_ATTRIBUTE,                     schemaOut, Description)
     READ_OPTIONAL_XML_ATTRIBUTE (DISPLAY_LABEL_ATTRIBUTE,                   schemaOut, DisplayLabel)
 
-    if (SCHEMA_DESERIALIZATION_STATUS_Success != (status = schemaOut->ReadSchemaReferencesFromXml(schemaNodePtr, schemaContext)))
+    if (SCHEMA_READ_STATUS_Success != (status = schemaOut->ReadSchemaReferencesFromXml(schemaNodePtr, schemaContext)))
         {
         schemaOwner.DropSchema (*schemaOut);
         schemaOut = NULL;
@@ -1188,7 +1194,7 @@ ECSchemaDeserializationContextR     schemaContext
         }
 
     ClassDeserializationVector classes;
-    if (SCHEMA_DESERIALIZATION_STATUS_Success != (status = schemaOut->ReadClassStubsFromXml (schemaNodePtr, classes, schemaContext)))
+    if (SCHEMA_READ_STATUS_Success != (status = schemaOut->ReadClassStubsFromXml (schemaNodePtr, classes, schemaContext)))
         {
         schemaOwner.DropSchema (*schemaOut);
         schemaOut = NULL;
@@ -1196,7 +1202,7 @@ ECSchemaDeserializationContextR     schemaContext
         }
 
     // NEEDSWORK ECClass inheritance (base classes, properties & relationship endpoints)
-    if (SCHEMA_DESERIALIZATION_STATUS_Success != (status = schemaOut->ReadClassContentsFromXml (classes, schemaContext)))
+    if (SCHEMA_READ_STATUS_Success != (status = schemaOut->ReadClassContentsFromXml (classes, schemaContext)))
         {
         schemaOwner.DropSchema (*schemaOut);
         schemaOut = NULL;
@@ -1205,7 +1211,7 @@ ECSchemaDeserializationContextR     schemaContext
 
     schemaOut->ReadCustomAttributes(schemaNodePtr, *schemaOut, schemaContext.GetStandaloneEnablerLocater());
 
-    return SCHEMA_DESERIALIZATION_STATUS_Success;
+    return SCHEMA_READ_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1229,9 +1235,9 @@ ECClassP class2
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus ECSchema::WriteSchemaReferences (MSXML2::IXMLDOMElement &parentNode) const
+SchemaWriteStatus ECSchema::WriteSchemaReferences (MSXML2::IXMLDOMElement &parentNode) const
     {
-    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+    SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
     ECSchemaReferenceList referencedSchemas = GetReferencedSchemas();
     
     std::set<const WString> usedPrefixes;
@@ -1294,20 +1300,20 @@ SchemaSerializationStatus ECSchema::WriteSchemaReferences (MSXML2::IXMLDOMElemen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus ECSchema::WriteCustomAttributeDependencies
+SchemaWriteStatus ECSchema::WriteCustomAttributeDependencies
 (
 MSXML2::IXMLDOMElement&          parentNode,
 IECCustomAttributeContainerCR   container,
 ECSchemaSerializationContext&   context
 ) const
     {
-    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+    SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
 
     FOR_EACH (IECInstancePtr instance, container.GetCustomAttributes(false))
         {
         ECClassCR currentClass = instance->GetClass();
         status = WriteClass(parentNode, currentClass, context);
-        if (SCHEMA_SERIALIZATION_STATUS_Success != status)
+        if (SCHEMA_WRITE_STATUS_Success != status)
             return status;
         }
     return status;
@@ -1316,9 +1322,9 @@ ECSchemaSerializationContext&   context
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus ECSchema::WriteClass (MSXML2::IXMLDOMElement &parentNode, ECClassCR ecClass, ECSchemaSerializationContext& context) const
+SchemaWriteStatus ECSchema::WriteClass (MSXML2::IXMLDOMElement &parentNode, ECClassCR ecClass, ECSchemaSerializationContext& context) const
     {
-    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+    SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
     // don't serialize any classes that aren't in the schema we're serializing.
     if (&(ecClass.GetSchema()) != this)
         return status;
@@ -1358,14 +1364,14 @@ SchemaSerializationStatus ECSchema::WriteClass (MSXML2::IXMLDOMElement &parentNo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus ECSchema::WritePropertyDependencies
+SchemaWriteStatus ECSchema::WritePropertyDependencies
 (
 MSXML2::IXMLDOMElement&         parentNode,
 ECClassCR                       ecClass,
 ECSchemaSerializationContext&   context
 ) const
     {
-    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+    SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
     
     FOR_EACH (ECPropertyP prop, ecClass.GetProperties(false))
         {
@@ -1390,9 +1396,9 @@ ECSchemaSerializationContext&   context
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                               
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus ECSchema::WriteXml (MSXML2::IXMLDOMDocument2* pXmlDoc) const
+SchemaWriteStatus ECSchema::WriteXml (MSXML2::IXMLDOMDocument2* pXmlDoc) const
     {
-    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+    SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
 
     ECSchemaSerializationContext context;
 
@@ -1476,17 +1482,17 @@ MSXML2::IXMLDOMDocument2& pXmlDoc
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus ECSchema::ReadXmlFromFile
+SchemaReadStatus ECSchema::ReadFromXmlFile
 (
 ECSchemaP&                      schemaOut, 
 WCharCP                 ecSchemaXmlFile, 
 ECSchemaDeserializationContextR schemaContext
 )
     {                  
-    SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
+    SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
 
     MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;        
-    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_DESERIALIZATION_STATUS_FailedToInitializeMsmxl);
+    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_READ_STATUS_FailedToInitializeMsmxl);
     xmlDocPtr->put_validateOnParse(VARIANT_TRUE);
     xmlDocPtr->put_async(VARIANT_FALSE);
     
@@ -1494,32 +1500,36 @@ ECSchemaDeserializationContextR schemaContext
     if (returnCode != VARIANT_TRUE)
         {
         LogXmlLoadError(xmlDocPtr);
-        return SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml;
+        return SCHEMA_READ_STATUS_FailedToParseXml;
         }
 
     status = ReadXml (schemaOut, xmlDocPtr, schemaContext);
+    if (SCHEMA_READ_STATUS_DuplicateSchema == status)
+        return status; // already logged
+
     if (ECOBJECTS_STATUS_Success != status)
         ECObjectsLogger::Log()->errorv (L"Failed to deserialize XML file: %s", ecSchemaXmlFile);
     else
         ECObjectsLogger::Log()->infov (L"Native ECSchema Deserialized from file: fileName='%s', schemaName='%s.%d.%d' classCount='%d' address='0x%x'", 
             ecSchemaXmlFile, schemaOut->GetName().c_str(), schemaOut->GetVersionMajor(), schemaOut->GetVersionMinor(), schemaOut->m_classMap.size(), schemaOut);        
+
     return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus     ECSchema::ReadXmlFromString
+SchemaReadStatus     ECSchema::ReadFromXmlString
 (
 ECSchemaP&                      schemaOut, 
 WCharCP                         ecSchemaXml,
 ECSchemaDeserializationContextR schemaContext
 )
     {                  
-    SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
+    SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
 
     MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;        
-    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_DESERIALIZATION_STATUS_FailedToInitializeMsmxl);
+    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_READ_STATUS_FailedToInitializeMsmxl);
     xmlDocPtr->put_validateOnParse(VARIANT_TRUE);
     xmlDocPtr->put_async(VARIANT_FALSE);
     
@@ -1527,10 +1537,13 @@ ECSchemaDeserializationContextR schemaContext
     if (returnCode != VARIANT_TRUE)
         {
         LogXmlLoadError(xmlDocPtr);
-        return SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml;
+        return SCHEMA_READ_STATUS_FailedToParseXml;
         }
 
     status = ReadXml (schemaOut, xmlDocPtr, schemaContext);
+    if (SCHEMA_READ_STATUS_DuplicateSchema == status)
+        return status; // already logged
+
     if (ECOBJECTS_STATUS_Success != status)
         {
         WChar first200Characters[201];
@@ -1550,7 +1563,7 @@ ECSchemaDeserializationContextR schemaContext
 bool ECSchema::IsSchemaReferenced
 (
 ECSchemaCR thisSchema, 
-ECSchemaCR thatSchema
+ECSchemaCR potentiallyReferencedSchema
 )
     {
     ECSchemaReferenceList referencedSchemas = thisSchema.GetReferencedSchemas();
@@ -1558,7 +1571,7 @@ ECSchemaCR thatSchema
     for (schemaIterator = referencedSchemas.begin(); schemaIterator != referencedSchemas.end(); schemaIterator++)
         {
         ECSchemaP refSchema = *schemaIterator;
-        if (ECSchema::SchemasAreEqualByName (refSchema, &(thatSchema)))
+        if (ECSchema::SchemasAreEqualByName (refSchema, &(potentiallyReferencedSchema)))
             {
             return true;
             }
@@ -1579,17 +1592,17 @@ bool ECSchema::SchemasAreEqualByName (ECSchemaCP thisSchema, ECSchemaCP thatSche
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus     ECSchema::ReadXmlFromStream
+SchemaReadStatus     ECSchema::ReadFromXmlStream
 (
 ECSchemaP&                      schemaOut, 
 IStreamP                        ecSchemaXmlStream,
 ECSchemaDeserializationContextR schemaContext
 )
     {                  
-    SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
+    SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
 
     MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;        
-    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_DESERIALIZATION_STATUS_FailedToInitializeMsmxl);
+    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_READ_STATUS_FailedToInitializeMsmxl);
     xmlDocPtr->put_validateOnParse(VARIANT_TRUE);
     xmlDocPtr->put_async(VARIANT_FALSE);
     
@@ -1597,10 +1610,13 @@ ECSchemaDeserializationContextR schemaContext
     if (returnCode != VARIANT_TRUE)
         {
         LogXmlLoadError(xmlDocPtr);
-        return SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml;
+        return SCHEMA_READ_STATUS_FailedToParseXml;
         }
 
     status = ReadXml (schemaOut, xmlDocPtr, schemaContext);
+    if (SCHEMA_READ_STATUS_DuplicateSchema == status)
+        return status; // already logged
+    
     if (ECOBJECTS_STATUS_Success != status)
         ECObjectsLogger::Log()->errorv (L"Failed to deserialize XML from stream");
     return status;
@@ -1609,12 +1625,12 @@ ECSchemaDeserializationContextR schemaContext
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus ECSchema::WriteXmlToString (WString& ecSchemaXml) const
+SchemaWriteStatus ECSchema::WriteToXmlString (WString& ecSchemaXml) const
     {
-    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+    SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
 
     MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;        
-    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_SERIALIZATION_STATUS_FailedToInitializeMsmxl);
+    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl);
     xmlDocPtr->put_validateOnParse(VARIANT_TRUE);
     xmlDocPtr->put_async(VARIANT_FALSE);
     xmlDocPtr->put_preserveWhiteSpace(VARIANT_TRUE);
@@ -1622,7 +1638,7 @@ SchemaSerializationStatus ECSchema::WriteXmlToString (WString& ecSchemaXml) cons
     
     status = WriteXml(xmlDocPtr);
     
-    if (status != SCHEMA_SERIALIZATION_STATUS_Success)
+    if (status != SCHEMA_WRITE_STATUS_Success)
         return status;
 
     ecSchemaXml = xmlDocPtr->xml.GetBSTR();
@@ -1633,25 +1649,25 @@ SchemaSerializationStatus ECSchema::WriteXmlToString (WString& ecSchemaXml) cons
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus ECSchema::WriteXmlToFile
+SchemaWriteStatus ECSchema::WriteToXmlFile
 (
 WCharCP ecSchemaXmlFile
 )
     {
-    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+    SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
 
     MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;        
-    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_SERIALIZATION_STATUS_FailedToInitializeMsmxl);
+    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl);
     xmlDocPtr->put_validateOnParse(VARIANT_TRUE);
     xmlDocPtr->put_async(VARIANT_FALSE);
     xmlDocPtr->put_preserveWhiteSpace(VARIANT_TRUE);
     xmlDocPtr->put_resolveExternals(VARIANT_FALSE);
     
     status = WriteXml(xmlDocPtr);
-    if (status != SCHEMA_SERIALIZATION_STATUS_Success)
+    if (status != SCHEMA_WRITE_STATUS_Success)
         return status;
         
-    VERIFY_HRESULT_OK(xmlDocPtr->save(ecSchemaXmlFile), SCHEMA_SERIALIZATION_STATUS_FailedToSaveXml);
+    VERIFY_HRESULT_OK(xmlDocPtr->save(ecSchemaXmlFile), SCHEMA_WRITE_STATUS_FailedToSaveXml);
 
     return status;
     }
@@ -1659,25 +1675,25 @@ WCharCP ecSchemaXmlFile
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus ECSchema::WriteXmlToStream
+SchemaWriteStatus ECSchema::WriteToXmlStream
 (
 IStreamP ecSchemaXmlStream
 )
     {
-    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+    SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
 
     MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;        
-    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_SERIALIZATION_STATUS_FailedToInitializeMsmxl);
+    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl);
     xmlDocPtr->put_validateOnParse(VARIANT_TRUE);
     xmlDocPtr->put_async(VARIANT_FALSE);
     xmlDocPtr->put_preserveWhiteSpace(VARIANT_TRUE);
     xmlDocPtr->put_resolveExternals(VARIANT_FALSE);
     
     status = WriteXml(xmlDocPtr);
-    if (status != SCHEMA_SERIALIZATION_STATUS_Success)
+    if (status != SCHEMA_WRITE_STATUS_Success)
         return status;
         
-    VERIFY_HRESULT_OK(xmlDocPtr->save(ecSchemaXmlStream), SCHEMA_SERIALIZATION_STATUS_FailedToSaveXml);
+    VERIFY_HRESULT_OK(xmlDocPtr->save(ecSchemaXmlStream), SCHEMA_WRITE_STATUS_FailedToSaveXml);
 
     return status;
     }
@@ -1726,7 +1742,7 @@ ECSchemaP       IECSchemaOwner::LocateSchema (WCharCP name, UInt32 major, UInt32
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneECEnablerPtr  IStandaloneEnablerLocater::ObtainStandaloneInstanceEnabler (WCharCP schemaName, WCharCP className)
+StandaloneECEnablerPtr  IStandaloneEnablerLocater::XObtainStandaloneInstanceEnabler (WCharCP schemaName, WCharCP className)
     {
     return  _ObtainStandaloneInstanceEnabler (schemaName, className);
     }
@@ -1747,6 +1763,14 @@ ECSchemaCache::~ECSchemaCache ()
 
     FOR_EACH (ECSchemaP ecSchema, m_schemas)
         ECSchema::DestroySchema (ecSchema);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Casey.Mullen                  06/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+int                             ECSchemaCache::GetCount ()
+    {
+    return (int)m_schemas.size();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1775,6 +1799,17 @@ ECObjectsStatus ECSchemaCache::_DropSchema  (ECSchemaR ecSchema)
     return ECOBJECTS_STATUS_Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Casey.Mullen                  06/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void                             ECSchemaCache::Clear ()
+    {
+    for (bvector<ECSchemaP>::iterator it = m_schemas.begin(); it != m_schemas.end(); ++it)
+        ECSchema::DestroySchema (*it);
+    m_schemas.clear();
+    m_ecEnablerMap.clear();
+    }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/

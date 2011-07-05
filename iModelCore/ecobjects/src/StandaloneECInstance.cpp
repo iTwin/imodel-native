@@ -660,7 +660,7 @@ static void     duplicateProperties (IECInstanceR target, ECValuesCollectionCR s
 StandaloneECInstancePtr         StandaloneECInstance::Duplicate(IECInstanceCR instance)
     {
     ECClassCR              ecClass           = instance.GetClass();
-    StandaloneECEnablerPtr standaloneEnabler = instance.GetEnablerR().ObtainStandaloneInstanceEnabler (ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str());
+    StandaloneECEnablerPtr standaloneEnabler = instance.GetEnablerR().GetEnablerForStructArrayMember (ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str());
     if (standaloneEnabler.IsNull())
         return NULL;
 

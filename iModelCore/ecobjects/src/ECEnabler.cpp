@@ -29,13 +29,13 @@ ECEnabler::~ECEnabler()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StandaloneECEnablerPtr          ECEnabler::_ObtainStandaloneInstanceEnabler (WCharCP schemaName, WCharCP className)  
     {
-    return m_standaloneInstanceEnablerLocater.ObtainStandaloneInstanceEnabler (schemaName, className); 
+    return m_standaloneInstanceEnablerLocater.XObtainStandaloneInstanceEnabler (schemaName, className); 
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneECEnablerPtr          ECEnabler::ObtainStandaloneInstanceEnabler (WCharCP schemaName, WCharCP className)  
+StandaloneECEnablerPtr          ECEnabler::GetEnablerForStructArrayMember (WCharCP schemaName, WCharCP className)  
     {
     return _ObtainStandaloneInstanceEnabler (schemaName, className); 
     }

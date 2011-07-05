@@ -541,7 +541,7 @@ ECObjectsStatus           IECInstance::SetValueUsingAccessor (ECValueAccessorCR 
             {
             EC::ECEnablerR          structEnabler = *(const_cast<EC::ECEnablerP>(&accessor.GetEnabler (depth + 1)));
             ECClassCR               structClass   = accessor.GetEnabler (depth + 1).GetClass();
-            StandaloneECEnablerPtr  standaloneEnabler = structEnabler.ObtainStandaloneInstanceEnabler (structClass.GetSchema().GetName().c_str(), structClass.GetName().c_str());
+            StandaloneECEnablerPtr  standaloneEnabler = structEnabler.GetEnablerForStructArrayMember (structClass.GetSchema().GetName().c_str(), structClass.GetName().c_str());
 
             newInstance = standaloneEnabler->CreateInstance();
 
@@ -787,7 +787,7 @@ static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar
 
             ECClassCP structClass = arrayProp->GetStructElementType();
 
-            StandaloneECEnablerPtr standaloneEnabler = instance.GetEnablerR().ObtainStandaloneInstanceEnabler (structClass->GetSchema().GetName().c_str(), structClass->GetName().c_str());
+            StandaloneECEnablerPtr standaloneEnabler = instance.GetEnablerR().GetEnablerForStructArrayMember (structClass->GetSchema().GetName().c_str(), structClass->GetName().c_str());
             if (standaloneEnabler.IsNull())
                 return ECOBJECTS_STATUS_Error;
 
@@ -1589,41 +1589,41 @@ InstanceXmlReader (ECInstanceDeserializationContextR context, WCharCP fileName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   Init ()
+InstanceReadStatus   Init ()
     {
     // different constructors set different members, according to the source of the stream and the reader.
     HRESULT     status;
     if (NULL == m_stream)
         {
         if FAILED (status = SHCreateStreamOnFileW (m_fileName.c_str (), STGM_READ, &m_stream))
-            return INSTANCE_DESERIALIZATION_STATUS_FileNotFound;
+            return INSTANCE_READ_STATUS_FileNotFound;
         }
 
     if (NULL == m_xmlReader)
         {
         if (FAILED (status = CreateXmlReader (__uuidof(IXmlReader), (void**) &m_xmlReader, NULL)))
-            return INSTANCE_DESERIALIZATION_STATUS_CantCreateXmlReader;
+            return INSTANCE_READ_STATUS_CantCreateXmlReader;
 
         if (FAILED (status= m_xmlReader->SetInput (m_stream)))
-            return INSTANCE_DESERIALIZATION_STATUS_CantSetStream;
+            return INSTANCE_READ_STATUS_CantSetStream;
         }
-    return INSTANCE_DESERIALIZATION_STATUS_Success;
+    return INSTANCE_READ_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   TranslateStatus (HRESULT status)
+InstanceReadStatus   TranslateStatus (HRESULT status)
     {
-    struct ErrorMap { HRESULT m_hResult; InstanceDeserializationStatus m_ixrStatus; };
+    struct ErrorMap { HRESULT m_hResult; InstanceReadStatus m_ixrStatus; };
     static ErrorMap s_errorMap[] = 
         {
-        { WC_E_DECLELEMENT,         INSTANCE_DESERIALIZATION_STATUS_BadElement              },
-        { WC_E_NAME,                INSTANCE_DESERIALIZATION_STATUS_NoElementName           },  
-        { WC_E_ELEMENTMATCH,        INSTANCE_DESERIALIZATION_STATUS_EndElementDoesntMatch   },
-        { WC_E_ENTITYCONTENT,       INSTANCE_DESERIALIZATION_STATUS_BadElement              },  
-        { WC_E_ROOTELEMENT,         INSTANCE_DESERIALIZATION_STATUS_BadElement              },    
-        { S_FALSE,                  INSTANCE_DESERIALIZATION_STATUS_XmlFileIncomplete       },
+        { WC_E_DECLELEMENT,         INSTANCE_READ_STATUS_BadElement              },
+        { WC_E_NAME,                INSTANCE_READ_STATUS_NoElementName           },  
+        { WC_E_ELEMENTMATCH,        INSTANCE_READ_STATUS_EndElementDoesntMatch   },
+        { WC_E_ENTITYCONTENT,       INSTANCE_READ_STATUS_BadElement              },  
+        { WC_E_ROOTELEMENT,         INSTANCE_READ_STATUS_BadElement              },    
+        { S_FALSE,                  INSTANCE_READ_STATUS_XmlFileIncomplete       },
         };
     
     for (int iError=0; iError < _countof (s_errorMap); iError++)
@@ -1631,13 +1631,13 @@ InstanceDeserializationStatus   TranslateStatus (HRESULT status)
         if (status == s_errorMap[iError].m_hResult)
             return s_errorMap[iError].m_ixrStatus;
         }
-    return INSTANCE_DESERIALIZATION_STATUS_XmlParseError;
+    return INSTANCE_READ_STATUS_XmlParseError;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   ReadInstance (IECInstancePtr& ecInstance)
+InstanceReadStatus   ReadInstance (IECInstancePtr& ecInstance)
     {
     // The Instance XML element starts with a node that has the name of the class of the instance.
     HRESULT         status;
@@ -1653,7 +1653,7 @@ InstanceDeserializationStatus   ReadInstance (IECInstancePtr& ecInstance)
                 {
                 // we should not hit this.
                 assert (false);
-                return INSTANCE_DESERIALIZATION_STATUS_Success;
+                return INSTANCE_READ_STATUS_Success;
                 }
 
             case XmlNodeType_Element:
@@ -1662,8 +1662,8 @@ InstanceDeserializationStatus   ReadInstance (IECInstancePtr& ecInstance)
 
                 nonComment = true;
                 // the first Element tells us ECClass of the instance.
-                InstanceDeserializationStatus       ixrStatus;
-                if (INSTANCE_DESERIALIZATION_STATUS_Success != (ixrStatus = GetInstance (&ecClass, ecInstance)))
+                InstanceReadStatus       ixrStatus;
+                if (INSTANCE_READ_STATUS_Success != (ixrStatus = GetInstance (&ecClass, ecInstance)))
                     return ixrStatus;
 
                 // this reads the property members and consumes the XmlNodeType_EndElement corresponding to this XmlNodeType_Element.
@@ -1684,7 +1684,7 @@ InstanceDeserializationStatus   ReadInstance (IECInstancePtr& ecInstance)
             }
         }
     if (gotComment && !nonComment)
-        return INSTANCE_DESERIALIZATION_STATUS_CommentOnly;
+        return INSTANCE_READ_STATUS_CommentOnly;
 
     // should not get here.
     return TranslateStatus (status);
@@ -1723,18 +1723,18 @@ ECSchemaCP       GetSchema()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr& ecInstance)
+InstanceReadStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr& ecInstance)
     {
     *ecClass = NULL;
 
     // when this method is called, we are positioned at the node that should have a className.
     HRESULT         status;
     if (FAILED (status = m_xmlReader->MoveToElement()))
-        return INSTANCE_DESERIALIZATION_STATUS_BadElement;
+        return INSTANCE_READ_STATUS_BadElement;
 
     WCharCP      className;
     if (FAILED (status = m_xmlReader->GetLocalName (&className, NULL)))
-        return INSTANCE_DESERIALIZATION_STATUS_NoElementName;
+        return INSTANCE_READ_STATUS_NoElementName;
 
     // read the className attributes.
     for (status = m_xmlReader->MoveToFirstAttribute(); S_OK == status; status = m_xmlReader->MoveToNextAttribute())
@@ -1761,7 +1761,7 @@ InstanceDeserializationStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr&
     if (NULL == schema)
         {
         ECObjectsLogger::Log()->errorv (L"Failed to locate ECSchema %s", m_fullSchemaName.c_str());
-        return INSTANCE_DESERIALIZATION_STATUS_ECSchemaNotFound;
+        return INSTANCE_READ_STATUS_ECSchemaNotFound;
         }
 
     // see if we can find the class from the schema.
@@ -1787,7 +1787,7 @@ InstanceDeserializationStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr&
     if (NULL == foundClass)
         {
         ECObjectsLogger::Log()->errorv (L"Failed to find ECClass %s in %s", className, m_fullSchemaName.c_str());
-        return INSTANCE_DESERIALIZATION_STATUS_ECClassNotFound;
+        return INSTANCE_READ_STATUS_ECClassNotFound;
         }
 
     *ecClass = foundClass;
@@ -1899,13 +1899,13 @@ InstanceDeserializationStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr&
     // Pay no attention to the return code - if there are no attributes MoveToElement returns S_FALSE.
     m_xmlReader->MoveToElement();
 
-    return INSTANCE_DESERIALIZATION_STATUS_Success;
+    return INSTANCE_READ_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   ReadInstanceOrStructMembers (ECClassCR ecClass, IECInstanceP ecInstance, WString* baseAccessString)
+InstanceReadStatus   ReadInstanceOrStructMembers (ECClassCR ecClass, IECInstanceP ecInstance, WString* baseAccessString)
     {
     // On entry, the reader is positioned in the content of an instance or struct.
 
@@ -1913,7 +1913,7 @@ InstanceDeserializationStatus   ReadInstanceOrStructMembers (ECClassCR ecClass, 
 
     // if it's an empty node, all members of the instance are NULL.
     if (m_xmlReader->IsEmptyElement())
-        return INSTANCE_DESERIALIZATION_STATUS_Success;
+        return INSTANCE_READ_STATUS_Success;
 
     XmlNodeType     nodeType;
     while (S_OK == (status = m_xmlReader->Read (&nodeType)))
@@ -1921,14 +1921,14 @@ InstanceDeserializationStatus   ReadInstanceOrStructMembers (ECClassCR ecClass, 
         switch (nodeType) 
             {
             case XmlNodeType_Element:
-                InstanceDeserializationStatus   propertyStatus;
-                if (INSTANCE_DESERIALIZATION_STATUS_Success != (propertyStatus = ReadProperty (ecClass, ecInstance, baseAccessString)))
+                InstanceReadStatus   propertyStatus;
+                if (INSTANCE_READ_STATUS_Success != (propertyStatus = ReadProperty (ecClass, ecInstance, baseAccessString)))
                     return propertyStatus;
                 break;
 
             case XmlNodeType_EndElement:
                 // we have encountered the end of the class or struct.
-                return INSTANCE_DESERIALIZATION_STATUS_Success;
+                return INSTANCE_READ_STATUS_Success;
 
             case XmlNodeType_Text:
                 {
@@ -1952,19 +1952,20 @@ InstanceDeserializationStatus   ReadInstanceOrStructMembers (ECClassCR ecClass, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   ReadProperty (ECClassCR ecClass, IECInstanceP ecInstance, WString* baseAccessString)
+InstanceReadStatus   ReadProperty (ECClassCR ecClass, IECInstanceP ecInstance, WString* baseAccessString)
     {
     // on entry, the reader is positioned at the Element.
     // get the element name, which is the property name.
     HRESULT         status;
     WCharCP        propertyName;
     if (FAILED (status = m_xmlReader->GetLocalName (&propertyName, NULL)))
-        return INSTANCE_DESERIALIZATION_STATUS_NoElementName;
+        return INSTANCE_READ_STATUS_NoElementName;
 
     // try to find the property in the class.
     ECPropertyP ecProperty;
     if (NULL == (ecProperty = ecClass.GetPropertyP (propertyName)))
         {
+        ECObjectsLogger::Log()->warningv (L"No ECProperty '%s'found in ECClass '%s'. Value will be ignored.", propertyName, ecClass.GetName().c_str());
         // couldn't find it, skip the rest of the property.
         return SkipToElementEnd ();
         }
@@ -1982,20 +1983,20 @@ InstanceDeserializationStatus   ReadProperty (ECClassCR ecClass, IECInstanceP ec
 
     // should be one of those!
     assert (false);
-    return INSTANCE_DESERIALIZATION_STATUS_BadECProperty;
+    return INSTANCE_READ_STATUS_BadECProperty;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   ReadCustomSerializedStruct (StructECPropertyP structProperty, IECInstanceP ecInstance, WString* baseAccessString, ICustomECStructSerializerP customECStructSerializerP)
+InstanceReadStatus   ReadCustomSerializedStruct (StructECPropertyP structProperty, IECInstanceP ecInstance, WString* baseAccessString, ICustomECStructSerializerP customECStructSerializerP)
     {
     // On entry, the reader is positioned in the content of an instance or struct.
     HRESULT         status;
 
     // if it's an empty node, all members of the instance are NULL.
     if (m_xmlReader->IsEmptyElement())
-        return INSTANCE_DESERIALIZATION_STATUS_Success;
+        return INSTANCE_READ_STATUS_Success;
 
 
     XmlNodeType     nodeType;
@@ -2011,7 +2012,7 @@ InstanceDeserializationStatus   ReadCustomSerializedStruct (StructECPropertyP st
 
             case XmlNodeType_EndElement:
                 // we have encountered the end of the class or struct.
-                return INSTANCE_DESERIALIZATION_STATUS_Success;
+                return INSTANCE_READ_STATUS_Success;
 
             case XmlNodeType_Text:
                 {
@@ -2043,17 +2044,17 @@ InstanceDeserializationStatus   ReadCustomSerializedStruct (StructECPropertyP st
 
     customECStructSerializerP->LoadStructureFromString (structProperty, *ecInstance, thisAccessString.c_str(), propertyValueString);
 
-    return INSTANCE_DESERIALIZATION_STATUS_Success;
+    return INSTANCE_READ_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   ReadEmbeddedStructProperty (StructECPropertyP structProperty, IECInstanceP ecInstance, WString* baseAccessString)
+InstanceReadStatus   ReadEmbeddedStructProperty (StructECPropertyP structProperty, IECInstanceP ecInstance, WString* baseAccessString)
     {
     // empty element OK for struct - all members are null.
     if (m_xmlReader->IsEmptyElement())
-        return INSTANCE_DESERIALIZATION_STATUS_Success;
+        return INSTANCE_READ_STATUS_Success;
 
     WString    thisAccessString;
     if (NULL != baseAccessString)
@@ -2072,19 +2073,19 @@ InstanceDeserializationStatus   ReadEmbeddedStructProperty (StructECPropertyP st
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   ReadPrimitiveProperty (PrimitiveECPropertyP primitiveProperty, IECInstanceP ecInstance, WString* baseAccessString)
+InstanceReadStatus   ReadPrimitiveProperty (PrimitiveECPropertyP primitiveProperty, IECInstanceP ecInstance, WString* baseAccessString)
     {
     // on entry, we are positioned in the PrimitiveProperty element.
     PrimitiveType                   propertyType = primitiveProperty->GetType();
-    InstanceDeserializationStatus   ixrStatus;
+    InstanceReadStatus   ixrStatus;
     ECValue         ecValue;
-    if (INSTANCE_DESERIALIZATION_STATUS_Success != (ixrStatus = ReadPrimitiveValue (ecValue, propertyType)))
+    if (INSTANCE_READ_STATUS_Success != (ixrStatus = ReadPrimitiveValue (ecValue, propertyType)))
         return ixrStatus;
 
     if(ecValue.IsUninitialized())
         {
         //A malformed value was found.  A warning was shown; just move on.
-        return INSTANCE_DESERIALIZATION_STATUS_Success;
+        return INSTANCE_READ_STATUS_Success;
         }
 
     ECObjectsStatus setStatus;
@@ -2107,18 +2108,18 @@ InstanceDeserializationStatus   ReadPrimitiveProperty (PrimitiveECPropertyP prim
 
     assert (ECOBJECTS_STATUS_Success == setStatus);
 
-    return INSTANCE_DESERIALIZATION_STATUS_Success;
+    return INSTANCE_READ_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayProperty, IECInstanceP ecInstance, WString* baseAccessString)
+InstanceReadStatus   ReadArrayProperty (ArrayECPropertyP arrayProperty, IECInstanceP ecInstance, WString* baseAccessString)
     {
     // on entry, the reader is positioned at the element that indicates the start of the array.
     // empty element OK for array - no members.
     if (m_xmlReader->IsEmptyElement())
-        return INSTANCE_DESERIALIZATION_STATUS_Success;
+        return INSTANCE_READ_STATUS_Success;
 
     WString    accessString;
     if (NULL == baseAccessString)
@@ -2154,7 +2155,7 @@ InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayPropert
                     // validate the LocalName against the expected primitiveType.
                     WCharCP        primitiveTypeName;
                     if (FAILED (status = m_xmlReader->GetLocalName (&primitiveTypeName, NULL)))
-                        return INSTANCE_DESERIALIZATION_STATUS_NoElementName;
+                        return INSTANCE_READ_STATUS_NoElementName;
 
                     if (!ValidateArrayPrimitiveType (primitiveTypeName, memberType))
                         {
@@ -2168,9 +2169,9 @@ InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayPropert
 
                     // now we know the type and we are positioned at the element containing the value.
                     // read it, populating the ECInstance using accessString and arrayIndex.
-                    InstanceDeserializationStatus   ixrStatus;
+                    InstanceReadStatus   ixrStatus;
                     ECValue                         ecValue;
-                    if (INSTANCE_DESERIALIZATION_STATUS_Success != (ixrStatus = ReadPrimitiveValue (ecValue, memberType)))
+                    if (INSTANCE_READ_STATUS_Success != (ixrStatus = ReadPrimitiveValue (ecValue, memberType)))
                         return ixrStatus;
                     if(ecValue.IsUninitialized())
                         {
@@ -2185,7 +2186,7 @@ InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayPropert
                     if (ECOBJECTS_STATUS_Success != (setStatus = ecInstance->SetValue (accessString.c_str(), ecValue, index)))
                         {
                         assert (false);
-                        return INSTANCE_DESERIALIZATION_STATUS_CantSetValue;
+                        return INSTANCE_READ_STATUS_CantSetValue;
                         }
 
                     // increment the array index.
@@ -2203,7 +2204,7 @@ InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayPropert
 
                 case XmlNodeType_EndElement:
                     // we have encountered the end of the array.
-                    return INSTANCE_DESERIALIZATION_STATUS_Success;
+                    return INSTANCE_READ_STATUS_Success;
 
                 default:
                     {
@@ -2234,14 +2235,14 @@ InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayPropert
                     // validate the LocalName against the structMemberType
                     WCharCP        structName;
                     if (FAILED (status = m_xmlReader->GetLocalName (&structName, NULL)))
-                        return INSTANCE_DESERIALIZATION_STATUS_NoElementName;
+                        return INSTANCE_READ_STATUS_NoElementName;
 
                     ECClassCP   thisMemberType;
                     if (NULL == (thisMemberType = ValidateArrayStructType (structName, structMemberType)))
-                        return INSTANCE_DESERIALIZATION_STATUS_BadArrayElement;
+                        return INSTANCE_READ_STATUS_BadArrayElement;
 
-                    InstanceDeserializationStatus ixrStatus;
-                    if (INSTANCE_DESERIALIZATION_STATUS_Success != (ixrStatus = ReadStructArrayMember (*thisMemberType, ecInstance, accessString, index)))
+                    InstanceReadStatus ixrStatus;
+                    if (INSTANCE_READ_STATUS_Success != (ixrStatus = ReadStructArrayMember (*thisMemberType, ecInstance, accessString, index)))
                         return ixrStatus;
 
                     // increment the array index.
@@ -2252,7 +2253,7 @@ InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayPropert
 
                 case XmlNodeType_EndElement:
                     // we have encountered the end of the array.
-                    return INSTANCE_DESERIALIZATION_STATUS_Success;
+                    return INSTANCE_READ_STATUS_Success;
 
                 default:
                     {
@@ -2265,13 +2266,13 @@ InstanceDeserializationStatus   ReadArrayProperty (ArrayECPropertyP arrayPropert
         return TranslateStatus (status);
         }
     
-    return INSTANCE_DESERIALIZATION_STATUS_Success;
+    return INSTANCE_READ_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   ReadStructArrayMember (ECClassCR structClass, IECInstanceP owningInstance, WString& accessString, UInt32 index)
+InstanceReadStatus   ReadStructArrayMember (ECClassCR structClass, IECInstanceP owningInstance, WString& accessString, UInt32 index)
     {
     // On entry, the reader is positioned at the element that starts the struct.
     // we have to create an IECInstance for the array member.
@@ -2282,13 +2283,13 @@ InstanceDeserializationStatus   ReadStructArrayMember (ECClassCR structClass, IE
     //StandaloneECEnablerPtr standaloneEnabler = owningInstance->GetEnablerR().ObtainStandaloneInstanceEnabler (structClass.GetSchema().GetName().c_str(), structClass.GetName().c_str());
 
     if (standaloneEnabler.IsNull())
-        return INSTANCE_DESERIALIZATION_STATUS_UnableToGetStandaloneEnabler;
+        return INSTANCE_READ_STATUS_UnableToGetStandaloneEnabler;
 
     // create the instance.
     IECInstancePtr                  structInstance      = standaloneEnabler->CreateInstance().get();
 
-    InstanceDeserializationStatus   ixrStatus;
-    if (INSTANCE_DESERIALIZATION_STATUS_Success != (ixrStatus = ReadInstanceOrStructMembers (structClass, structInstance.get(), NULL)))
+    InstanceReadStatus   ixrStatus;
+    if (INSTANCE_READ_STATUS_Success != (ixrStatus = ReadInstanceOrStructMembers (structClass, structInstance.get(), NULL)))
         return ixrStatus;
 
     // every StructArrayMember is a new ECInstance, 
@@ -2305,13 +2306,13 @@ InstanceDeserializationStatus   ReadStructArrayMember (ECClassCR structClass, IE
     ECObjectsStatus setStatus = owningInstance->SetValue (accessString.c_str(), structValue, index);
     assert (ECOBJECTS_STATUS_Success == setStatus);
 
-    return INSTANCE_DESERIALIZATION_STATUS_Success;
+    return INSTANCE_READ_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propertyType)
+InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propertyType)
     {
     // The reader is positioned at the XmlNodeType_Element that holds the value. 
     // We expect to find a Text element with the value, advance until we do.
@@ -2344,7 +2345,7 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
                 (0 == wcscmp (isNil, L"TRUE")) || (0 == wcscmp (isNil, L"1")))
                 {
                 ecValue.SetToNull();
-                return INSTANCE_DESERIALIZATION_STATUS_Success;
+                return INSTANCE_READ_STATUS_Success;
                 }
             }
             //m_xmlReader->MoveToElement();
@@ -2352,7 +2353,7 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
 
     if (m_xmlReader->IsEmptyElement())
         {
-        return INSTANCE_DESERIALIZATION_STATUS_Success;
+        return INSTANCE_READ_STATUS_Success;
         }
 
     XmlNodeType     nodeType;
@@ -2363,12 +2364,12 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
             {
             case XmlNodeType_Element:
                 assert (false);
-                return INSTANCE_DESERIALIZATION_STATUS_UnexpectedElement;
+                return INSTANCE_READ_STATUS_UnexpectedElement;
 
             case XmlNodeType_EndElement:
                 // we have encountered the end of the class or struct without getting a value from the element.
                 // we will break here to keep the ECValue null.
-                return INSTANCE_DESERIALIZATION_STATUS_Success;
+                return INSTANCE_READ_STATUS_Success;
 
             case XmlNodeType_Text:
                 {
@@ -2398,7 +2399,7 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
             {
             T_ByteArray                     byteArray;
 
-            if (INSTANCE_DESERIALIZATION_STATUS_Success != ConvertStringToByteArray (byteArray, propertyValueString))
+            if (INSTANCE_READ_STATUS_Success != ConvertStringToByteArray (byteArray, propertyValueString))
                 {
                 ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Binary", propertyValueString);
                 return SkipToElementEnd();
@@ -2497,7 +2498,7 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
         default:
             {
             assert (false);
-            return INSTANCE_DESERIALIZATION_STATUS_BadPrimitivePropertyType;
+            return INSTANCE_READ_STATUS_BadPrimitivePropertyType;
             }
         }
 
@@ -2507,11 +2508,11 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
         switch (nodeType) 
             {
             case XmlNodeType_Element:
-                return INSTANCE_DESERIALIZATION_STATUS_UnexpectedElement;
+                return INSTANCE_READ_STATUS_UnexpectedElement;
 
             case XmlNodeType_EndElement:
                 // we have encountered the end of the class or struct.
-                return INSTANCE_DESERIALIZATION_STATUS_Success;
+                return INSTANCE_READ_STATUS_Success;
 
             default:
                 {
@@ -2529,12 +2530,12 @@ InstanceDeserializationStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   ConvertStringToByteArray (T_ByteArray& byteData, WCharCP stringData)
+InstanceReadStatus   ConvertStringToByteArray (T_ByteArray& byteData, WCharCP stringData)
     {
     // the length of stringData should be a muttiple of four.
     size_t  stringLen = wcslen (stringData);
     if (0 != (stringLen % 4))
-        return INSTANCE_DESERIALIZATION_STATUS_BadBinaryData;
+        return INSTANCE_READ_STATUS_BadBinaryData;
 
     // from each 4 characters we get 3 byte values.
     for (size_t iPos=0; iPos < stringLen; iPos+= 4)
@@ -2560,13 +2561,13 @@ InstanceDeserializationStatus   ConvertStringToByteArray (T_ByteArray& byteData,
                 {
                 // = should only appear in the last two characters of the string.
                 if (stringLen - (iPos + jPos) > 2)
-                    return INSTANCE_DESERIALIZATION_STATUS_BadBinaryData;
+                    return INSTANCE_READ_STATUS_BadBinaryData;
                 numBytesToPush = jPos-1;
                 break;
                 }
             else
                 {
-                return INSTANCE_DESERIALIZATION_STATUS_BadBinaryData;
+                return INSTANCE_READ_STATUS_BadBinaryData;
                 }
 
             }
@@ -2579,7 +2580,7 @@ InstanceDeserializationStatus   ConvertStringToByteArray (T_ByteArray& byteData,
             byteData.push_back (*(bytes+2));
         }
 
-    return INSTANCE_DESERIALIZATION_STATUS_Success;
+    return INSTANCE_READ_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2622,7 +2623,7 @@ ECClassCP                       ValidateArrayStructType (WCharCP typeFound, ECCl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   SkipToElementEnd ()
+InstanceReadStatus   SkipToElementEnd ()
     {
     // skips from current point to the end of the current element.
     HRESULT         status;
@@ -2631,10 +2632,10 @@ InstanceDeserializationStatus   SkipToElementEnd ()
         {
         // ignore everything except the end of the element.
         if (XmlNodeType_EndElement == nodeType)
-            return INSTANCE_DESERIALIZATION_STATUS_Success;
+            return INSTANCE_READ_STATUS_Success;
         }
 
-    return INSTANCE_DESERIALIZATION_STATUS_BadElement;
+    return INSTANCE_READ_STATUS_BadElement;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2686,38 +2687,38 @@ InstanceXmlWriter (WString fileName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceSerializationStatus     Init ()
+InstanceWriteStatus     Init ()
     {
     // different constructors set different members, according to the source of the stream and the writer.
     HRESULT     status;
     if (NULL == m_stream)
         {
         if FAILED (status = SHCreateStreamOnFileW (m_fileName.c_str (), STGM_CREATE | STGM_WRITE, &m_stream))
-            return INSTANCE_SERIALIZATION_STATUS_CantCreateStream;
+            return INSTANCE_WRITE_STATUS_CantCreateStream;
         }
 
     if (NULL == m_xmlWriter)
         {
         if (FAILED (status = CreateXmlWriter (__uuidof(IXmlWriter), (void**) &m_xmlWriter, NULL)))
-            return INSTANCE_SERIALIZATION_STATUS_CantCreateXmlWriter;
+            return INSTANCE_WRITE_STATUS_CantCreateXmlWriter;
 
 
         if (FAILED (status = CreateXmlWriterOutputWithEncodingName(m_stream, 0, L"utf-16", &m_xmlOutput)))
-            return INSTANCE_SERIALIZATION_STATUS_CantCreateXmlWriter;
+            return INSTANCE_WRITE_STATUS_CantCreateXmlWriter;
 
         if (FAILED (status= m_xmlWriter->SetOutput (m_xmlOutput)))
-            return INSTANCE_SERIALIZATION_STATUS_CantSetStream;
+            return INSTANCE_WRITE_STATUS_CantSetStream;
 
         if (!m_compacted)
             m_xmlWriter->SetProperty (XmlWriterProperty_Indent, true);
         }
-    return INSTANCE_SERIALIZATION_STATUS_Success;
+    return INSTANCE_WRITE_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceSerializationStatus     WriteInstance (IECInstanceCR instance, bool writeStart, bool writeInstanceId)
+InstanceWriteStatus     WriteInstance (IECInstanceCR instance, bool writeStart, bool writeInstanceId)
     {
     ECClassCR               ecClass     = instance.GetClass();
     ECSchemaCR              ecSchema    = ecClass.GetSchema();
@@ -2755,13 +2756,13 @@ InstanceSerializationStatus     WriteInstance (IECInstanceCR instance, bool writ
 
     m_xmlWriter->Flush();
 
-    return INSTANCE_SERIALIZATION_STATUS_Success;
+    return INSTANCE_WRITE_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceSerializationStatus     WritePropertiesOfClassOrStructArrayMember (ECClassCR ecClass, IECInstanceCR ecInstance, WString* baseAccessString)
+InstanceWriteStatus     WritePropertiesOfClassOrStructArrayMember (ECClassCR ecClass, IECInstanceCR ecInstance, WString* baseAccessString)
     {
     CustomStructSerializerManagerR customStructSerializerMgr = CustomStructSerializerManager::GetManager();
 
@@ -2771,7 +2772,7 @@ InstanceSerializationStatus     WritePropertiesOfClassOrStructArrayMember (ECCla
         PrimitiveECPropertyP        primitiveProperty;
         ArrayECPropertyP            arrayProperty;
         StructECPropertyP           structProperty;
-        InstanceSerializationStatus ixwStatus;
+        InstanceWriteStatus ixwStatus;
             
         if (NULL != (primitiveProperty = ecProperty->GetAsPrimitiveProperty()))
             ixwStatus = WritePrimitiveProperty (*primitiveProperty, ecInstance, baseAccessString);
@@ -2783,7 +2784,7 @@ InstanceSerializationStatus     WritePropertiesOfClassOrStructArrayMember (ECCla
 
             if (customECStructSerializerP)
                 {
-                ixwStatus = INSTANCE_SERIALIZATION_STATUS_BadPrimitivePropertyType;
+                ixwStatus = INSTANCE_WRITE_STATUS_BadPrimitivePropertyType;
 
                 HRESULT     status;
                 WString xmlString; 
@@ -2799,7 +2800,7 @@ InstanceSerializationStatus     WritePropertiesOfClassOrStructArrayMember (ECCla
                     if (S_OK != (status = m_xmlWriter->WriteEndElement ()))
                         return TranslateStatus (status);
 
-                    ixwStatus = INSTANCE_SERIALIZATION_STATUS_Success;
+                    ixwStatus = INSTANCE_WRITE_STATUS_Success;
                     }
                 }
             else
@@ -2808,20 +2809,20 @@ InstanceSerializationStatus     WritePropertiesOfClassOrStructArrayMember (ECCla
                 }
             }
 
-        if (INSTANCE_SERIALIZATION_STATUS_Success != ixwStatus)
+        if (INSTANCE_WRITE_STATUS_Success != ixwStatus)
             {
             assert (false);
             return ixwStatus;
             }
         }
 
-     return INSTANCE_SERIALIZATION_STATUS_Success;
+     return INSTANCE_WRITE_STATUS_Success;
      }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceSerializationStatus     WritePrimitiveProperty (PrimitiveECPropertyR primitiveProperty, IECInstanceCR ecInstance, WString* baseAccessString)
+InstanceWriteStatus     WritePrimitiveProperty (PrimitiveECPropertyR primitiveProperty, IECInstanceCR ecInstance, WString* baseAccessString)
     {
     ECObjectsStatus     getStatus;
     ECValue             ecValue;
@@ -2840,27 +2841,27 @@ InstanceSerializationStatus     WritePrimitiveProperty (PrimitiveECPropertyR pri
 
     // couldn't get, or NULL value, write nothing.
     if ( (ECOBJECTS_STATUS_Success != getStatus) || ecValue.IsNull() )
-        return INSTANCE_SERIALIZATION_STATUS_Success;
+        return INSTANCE_WRITE_STATUS_Success;
 
     HRESULT     status;
     if (S_OK != (status = m_xmlWriter->WriteStartElement (NULL, propertyName.c_str(), NULL)))
         return TranslateStatus (status);
 
-    InstanceSerializationStatus     ixwStatus;
+    InstanceWriteStatus     ixwStatus;
     PrimitiveType                   propertyType = primitiveProperty.GetType();
-    if (INSTANCE_SERIALIZATION_STATUS_Success != (ixwStatus = WritePrimitiveValue (ecValue, propertyType)))
+    if (INSTANCE_WRITE_STATUS_Success != (ixwStatus = WritePrimitiveValue (ecValue, propertyType)))
         return ixwStatus;
 
     if (S_OK != (status = m_xmlWriter->WriteEndElement ()))
         return TranslateStatus (status);
 
-    return INSTANCE_SERIALIZATION_STATUS_Success;
+    return INSTANCE_WRITE_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceSerializationStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType propertyType)
+InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType propertyType)
     {
     wchar_t     outString[512];
 
@@ -2878,10 +2879,10 @@ InstanceSerializationStatus     WritePrimitiveValue (ECValueCR ecValue, Primitiv
                 if (S_OK != (status = m_xmlWriter->WriteChars (byteString.c_str(), static_cast <UINT> (byteString.length()))))
                     return TranslateStatus (status);
                 else
-                    return INSTANCE_SERIALIZATION_STATUS_Success;
+                    return INSTANCE_WRITE_STATUS_Success;
                 }
             else
-                return INSTANCE_SERIALIZATION_STATUS_Success;
+                return INSTANCE_WRITE_STATUS_Success;
             break;
             }
 
@@ -2935,13 +2936,13 @@ InstanceSerializationStatus     WritePrimitiveValue (ECValueCR ecValue, Primitiv
             HRESULT         status;
             if (S_OK != (status = m_xmlWriter->WriteChars (stringValue, static_cast <UINT> (wcslen (stringValue)))))
                 return TranslateStatus (status);
-            return INSTANCE_SERIALIZATION_STATUS_Success;
+            return INSTANCE_WRITE_STATUS_Success;
             }
 
         default:
             {
             assert (false);
-            return INSTANCE_SERIALIZATION_STATUS_BadPrimitivePropertyType;
+            return INSTANCE_WRITE_STATUS_BadPrimitivePropertyType;
             }
         }
 
@@ -2949,13 +2950,13 @@ InstanceSerializationStatus     WritePrimitiveValue (ECValueCR ecValue, Primitiv
     if (S_OK != (status = m_xmlWriter->WriteChars (outString, static_cast <UINT> (wcslen (outString)))))
         return TranslateStatus (status);
 
-    return INSTANCE_SERIALIZATION_STATUS_Success;
+    return INSTANCE_WRITE_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceSerializationStatus     WriteArrayProperty (ArrayECPropertyR arrayProperty, IECInstanceCR ecInstance, WString* baseAccessString)
+InstanceWriteStatus     WriteArrayProperty (ArrayECPropertyR arrayProperty, IECInstanceCR ecInstance, WString* baseAccessString)
     {
     ArrayKind       arrayKind = arrayProperty.GetKind();
 
@@ -2970,7 +2971,7 @@ InstanceSerializationStatus     WriteArrayProperty (ArrayECPropertyR arrayProper
     // no members, don't write anything.
     ECValue         ecValue;
     if (SUCCESS != ecInstance.GetValue (ecValue, accessString.c_str(), 0) || ecValue.IsNull())
-        return INSTANCE_SERIALIZATION_STATUS_Success;
+        return INSTANCE_WRITE_STATUS_Success;
 
     // write the start element, which consists of the member name.
     HRESULT     status;
@@ -2978,7 +2979,7 @@ InstanceSerializationStatus     WriteArrayProperty (ArrayECPropertyR arrayProper
     if (S_OK != (status = m_xmlWriter->WriteStartElement (NULL, arrayProperty.GetName().c_str(), NULL)))
         return TranslateStatus (status);
 
-    InstanceSerializationStatus     ixwStatus;
+    InstanceWriteStatus     ixwStatus;
     if (ARRAYKIND_Primitive == arrayKind)
         {
         PrimitiveType   memberType  = arrayProperty.GetPrimitiveElementType();
@@ -2992,7 +2993,7 @@ InstanceSerializationStatus     WriteArrayProperty (ArrayECPropertyR arrayProper
                 return TranslateStatus (status);
 
             // write the primitve value
-            if (INSTANCE_SERIALIZATION_STATUS_Success != (ixwStatus = WritePrimitiveValue (ecValue, memberType)))
+            if (INSTANCE_WRITE_STATUS_Success != (ixwStatus = WritePrimitiveValue (ecValue, memberType)))
                 {
                 assert (false);
                 return ixwStatus;
@@ -3043,13 +3044,13 @@ InstanceSerializationStatus     WriteArrayProperty (ArrayECPropertyR arrayProper
     if (S_OK != (status = m_xmlWriter->WriteEndElement ()))
         return TranslateStatus (status);
 
-    return INSTANCE_SERIALIZATION_STATUS_Success;
+    return INSTANCE_WRITE_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceSerializationStatus     WriteEmbeddedStructProperty (StructECPropertyR structProperty, IECInstanceCR ecInstance, WString* baseAccessString)
+InstanceWriteStatus     WriteEmbeddedStructProperty (StructECPropertyR structProperty, IECInstanceCR ecInstance, WString* baseAccessString)
     {
     // the tag of the element for an embedded struct is the property name.
     HRESULT     status;
@@ -3070,7 +3071,7 @@ InstanceSerializationStatus     WriteEmbeddedStructProperty (StructECPropertyR s
     if (S_OK != (status = m_xmlWriter->WriteEndElement ()))
         return TranslateStatus (status);
 
-    return INSTANCE_SERIALIZATION_STATUS_Success;
+    return INSTANCE_WRITE_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3108,18 +3109,18 @@ WString                        ConvertByteArrayToString (const byte *byteData, s
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceSerializationStatus     TranslateStatus (HRESULT status)
+InstanceWriteStatus     TranslateStatus (HRESULT status)
     {
 #if 0
-    struct ErrorMap { HRESULT m_hResult; InstanceSerializationStatus m_ixrStatus; };
+    struct ErrorMap { HRESULT m_hResult; InstanceWriteStatus m_ixrStatus; };
     // I'm not sure what the possible errors are when writing, so this method does pretty much nothing.
     static ErrorMap s_errorMap[] = 
         {
-        { WC_E_DECLELEMENT,         INSTANCE_DESERIALIZATION_STATUS_BadElement              },
-        { WC_E_NAME,                INSTANCE_DESERIALIZATION_STATUS_NoElementName           },  
-        { WC_E_ELEMENTMATCH,        INSTANCE_DESERIALIZATION_STATUS_EndElementDoesntMatch   },
-        { WC_E_ENTITYCONTENT,       INSTANCE_DESERIALIZATION_STATUS_BadElement              },      
-        { S_FALSE,                  INSTANCE_DESERIALIZATION_STATUS_XmlFileIncomplete       },
+        { WC_E_DECLELEMENT,         INSTANCE_READ_STATUS_BadElement              },
+        { WC_E_NAME,                INSTANCE_READ_STATUS_NoElementName           },  
+        { WC_E_ELEMENTMATCH,        INSTANCE_READ_STATUS_EndElementDoesntMatch   },
+        { WC_E_ENTITYCONTENT,       INSTANCE_READ_STATUS_BadElement              },      
+        { S_FALSE,                  INSTANCE_READ_STATUS_XmlFileIncomplete       },
         };
     
     for (int iError=0; iError < _countof (s_errorMap); iError++)
@@ -3128,7 +3129,7 @@ InstanceSerializationStatus     TranslateStatus (HRESULT status)
             return s_errorMap[iError].m_ixrStatus;
         }
 #endif
-    return INSTANCE_SERIALIZATION_STATUS_XmlWriteError;
+    return INSTANCE_WRITE_STATUS_XmlWriteError;
     }
 
 };
@@ -3136,12 +3137,12 @@ InstanceSerializationStatus     TranslateStatus (HRESULT status)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   IECInstance::ReadXmlFromFile (IECInstancePtr& ecInstance, WCharCP fileName, ECInstanceDeserializationContextR context)
+InstanceReadStatus   IECInstance::ReadFromXmlFile (IECInstancePtr& ecInstance, WCharCP fileName, ECInstanceDeserializationContextR context)
     {
     InstanceXmlReader reader (context, fileName);
 
-    InstanceDeserializationStatus   status;
-    if (INSTANCE_DESERIALIZATION_STATUS_Success != (status = reader.Init ()))
+    InstanceReadStatus   status;
+    if (INSTANCE_READ_STATUS_Success != (status = reader.Init ()))
         return status;
 
     return reader.ReadInstance (ecInstance);
@@ -3150,12 +3151,12 @@ InstanceDeserializationStatus   IECInstance::ReadXmlFromFile (IECInstancePtr& ec
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   IECInstance::ReadXmlFromStream (IECInstancePtr& ecInstance, IStreamP stream, ECInstanceDeserializationContextR context)
+InstanceReadStatus   IECInstance::ReadFromXmlStream (IECInstancePtr& ecInstance, IStreamP stream, ECInstanceDeserializationContextR context)
     {
     InstanceXmlReader reader (context, stream);
 
-    InstanceDeserializationStatus   status;
-    if (INSTANCE_DESERIALIZATION_STATUS_Success != (status = reader.Init ()))
+    InstanceReadStatus   status;
+    if (INSTANCE_READ_STATUS_Success != (status = reader.Init ()))
         return status;
 
     return reader.ReadInstance (ecInstance);
@@ -3164,9 +3165,9 @@ InstanceDeserializationStatus   IECInstance::ReadXmlFromStream (IECInstancePtr& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-static InstanceDeserializationStatus   ReportStatus (InstanceDeserializationStatus status, WCharCP xmlString, IECInstancePtr& ecInstance)
+static InstanceReadStatus   ReportStatus (InstanceReadStatus status, WCharCP xmlString, IECInstancePtr& ecInstance)
     {
-    if (INSTANCE_DESERIALIZATION_STATUS_Success != status)
+    if (INSTANCE_READ_STATUS_Success != status)
         ECObjectsLogger::Log()->errorv (L"Failed to deserialize instance from XML string. Status %d, string %s", status, xmlString);
     else
         ECObjectsLogger::Log()->tracev (L"Native ECInstance of type %s deserialized from string", ecInstance.IsValid() ? ecInstance->GetClass().GetName() : L"Null");
@@ -3176,15 +3177,15 @@ static InstanceDeserializationStatus   ReportStatus (InstanceDeserializationStat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus   IECInstance::ReadXmlFromString (IECInstancePtr& ecInstance, WCharCP xmlString, ECInstanceDeserializationContextR context)
+InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr& ecInstance, WCharCP xmlString, ECInstanceDeserializationContextR context)
     {
     CComPtr <IStream> stream;
     if (S_OK != ::CreateStreamOnHGlobal(NULL,TRUE,&stream))
-        return ReportStatus (INSTANCE_DESERIALIZATION_STATUS_CantCreateStream, xmlString, ecInstance);
+        return ReportStatus (INSTANCE_READ_STATUS_CantCreateStream, xmlString, ecInstance);
 
     LARGE_INTEGER liPos = {0};
     if (S_OK != stream->Seek(liPos, STREAM_SEEK_SET, NULL))
-        return ReportStatus (INSTANCE_DESERIALIZATION_STATUS_CantCreateStream, xmlString, ecInstance);
+        return ReportStatus (INSTANCE_READ_STATUS_CantCreateStream, xmlString, ecInstance);
 
     ULARGE_INTEGER uliSize = { 0 };
     stream->SetSize(uliSize);
@@ -3193,18 +3194,18 @@ InstanceDeserializationStatus   IECInstance::ReadXmlFromString (IECInstancePtr& 
     ULONG ulSize = (ULONG) wcslen(xmlString) * sizeof(wchar_t);
 
     if (S_OK != stream->Write(xmlString, ulSize, &bytesWritten))
-        return ReportStatus (INSTANCE_DESERIALIZATION_STATUS_CantCreateStream, xmlString, ecInstance);
+        return ReportStatus (INSTANCE_READ_STATUS_CantCreateStream, xmlString, ecInstance);
 
     if (ulSize != bytesWritten)
-        return ReportStatus (INSTANCE_DESERIALIZATION_STATUS_CantCreateStream, xmlString, ecInstance);
+        return ReportStatus (INSTANCE_READ_STATUS_CantCreateStream, xmlString, ecInstance);
 
     if (S_OK != stream->Seek(liPos, STREAM_SEEK_SET, NULL))
-        return ReportStatus (INSTANCE_DESERIALIZATION_STATUS_CantCreateStream, xmlString, ecInstance);
+        return ReportStatus (INSTANCE_READ_STATUS_CantCreateStream, xmlString, ecInstance);
 
     InstanceXmlReader reader (context, stream);
 
-    InstanceDeserializationStatus   status;
-    if (INSTANCE_DESERIALIZATION_STATUS_Success != (status = reader.Init ()))
+    InstanceReadStatus   status;
+    if (INSTANCE_READ_STATUS_Success != (status = reader.Init ()))
         return ReportStatus (status, xmlString, ecInstance);
 
     return ReportStatus (reader.ReadInstance (ecInstance), xmlString, ecInstance);
@@ -3213,12 +3214,12 @@ InstanceDeserializationStatus   IECInstance::ReadXmlFromString (IECInstancePtr& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceSerializationStatus     IECInstance::WriteXmlToFile (WCharCP fileName, bool isStandAlone, bool writeInstanceId)
+InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool isStandAlone, bool writeInstanceId)
     {
     InstanceXmlWriter writer (fileName);
 
-    InstanceSerializationStatus   status;
-    if (INSTANCE_SERIALIZATION_STATUS_Success != (status = writer.Init ()))
+    InstanceWriteStatus   status;
+    if (INSTANCE_WRITE_STATUS_Success != (status = writer.Init ()))
         return status;
 
     return writer.WriteInstance (*this, isStandAlone, writeInstanceId);
@@ -3227,12 +3228,12 @@ InstanceSerializationStatus     IECInstance::WriteXmlToFile (WCharCP fileName, b
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceSerializationStatus     IECInstance::WriteXmlToStream (IStreamP stream, bool isStandAlone, bool writeInstanceId)
+InstanceWriteStatus     IECInstance::WriteToXmlStream (IStreamP stream, bool isStandAlone, bool writeInstanceId)
     {
     InstanceXmlWriter writer (stream);
 
-    InstanceSerializationStatus   status;
-    if (INSTANCE_SERIALIZATION_STATUS_Success != (status = writer.Init ()))
+    InstanceWriteStatus   status;
+    if (INSTANCE_WRITE_STATUS_Success != (status = writer.Init ()))
         return status;
 
     return writer.WriteInstance (*this, isStandAlone, writeInstanceId);
@@ -3241,19 +3242,19 @@ InstanceSerializationStatus     IECInstance::WriteXmlToStream (IStreamP stream, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceSerializationStatus     IECInstance::WriteXmlToString (WString & ecInstanceXml, bool isStandAlone, bool writeInstanceId)
+InstanceWriteStatus     IECInstance::WriteToXmlString (WString & ecInstanceXml, bool isStandAlone, bool writeInstanceId)
     {
-    InstanceSerializationStatus   status;
+    InstanceWriteStatus   status;
 
     CComPtr <IStream> stream;
     if (S_OK != ::CreateStreamOnHGlobal(NULL,TRUE,&stream))
-        return INSTANCE_SERIALIZATION_STATUS_CantCreateStream;
+        return INSTANCE_WRITE_STATUS_CantCreateStream;
 
     InstanceXmlWriter writer (stream);
-    if (INSTANCE_SERIALIZATION_STATUS_Success != (status = writer.Init ()))
+    if (INSTANCE_WRITE_STATUS_Success != (status = writer.Init ()))
         return status;
 
-    if (INSTANCE_SERIALIZATION_STATUS_Success != (status = writer.WriteInstance(*this, isStandAlone, writeInstanceId)))
+    if (INSTANCE_WRITE_STATUS_Success != (status = writer.WriteInstance(*this, isStandAlone, writeInstanceId)))
         return status;
 
     LARGE_INTEGER liPos = {0};
@@ -3261,11 +3262,11 @@ InstanceSerializationStatus     IECInstance::WriteXmlToString (WString & ecInsta
     
     ULARGE_INTEGER beginningPos;
     if (S_OK != stream->Seek(liPos, STREAM_SEEK_SET, &beginningPos))
-        return INSTANCE_SERIALIZATION_STATUS_CantSetStream;
+        return INSTANCE_WRITE_STATUS_CantSetStream;
 
     memset (&statstg, 0, sizeof(statstg));
     if (S_OK != stream->Stat(&statstg, STATFLAG_NONAME))
-        return INSTANCE_SERIALIZATION_STATUS_CantReadFromStream;
+        return INSTANCE_WRITE_STATUS_CantReadFromStream;
     
     WCharP xml = (WCharP) malloc((statstg.cbSize.LowPart + 1) * sizeof(wchar_t) );
     ULONG bytesRead;
@@ -3276,7 +3277,7 @@ InstanceSerializationStatus     IECInstance::WriteXmlToString (WString & ecInsta
     // There is an invisible UNICODE character in the beginning that messes things up
     ecInstanceXml = ecInstanceXml.substr(1);
     free(xml);
-    return INSTANCE_SERIALIZATION_STATUS_Success;
+    return INSTANCE_WRITE_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

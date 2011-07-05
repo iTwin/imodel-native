@@ -112,10 +112,10 @@ BEGIN_BENTLEY_EC_NAMESPACE
 typedef enum ECErrorCategories
     {
     ECOBJECTS_ERROR_BASE                    = 0x31000,
-    SCHEMA_DESERIALIZATION_STATUS_BASE      = 0x32000,
-    SCHEMA_SERIALIZATION_STATUS_BASE        = 0x33000,
-    INSTANCE_DESERIALIZATION_STATUS_BASE    = 0x34000,
-    INSTANCE_SERIALIZATION_STATUS_BASE      = 0x35000,
+    SCHEMA_READ_STATUS_BASE      = 0x32000,
+    SCHEMA_WRITE_STATUS_BASE        = 0x33000,
+    INSTANCE_READ_STATUS_BASE    = 0x34000,
+    INSTANCE_WRITE_STATUS_BASE      = 0x35000,
     } ECErrorCategories;
 
 
@@ -148,80 +148,82 @@ enum ECObjectsStatus
     ECOBJECTS_STATUS_MemoryBoundsOverrun                                = ECOBJECTS_ERROR_BASE + 0x15,
     ECOBJECTS_STATUS_NullPointerValue                                   = ECOBJECTS_ERROR_BASE + 0x16,
     ECOBJECTS_STATUS_NotCustomAttributeClass                            = ECOBJECTS_ERROR_BASE + 0x17,
+    ECOBJECTS_STATUS_DuplicateSchema                                    = ECOBJECTS_ERROR_BASE + 0x18,
     ECOBJECTS_STATUS_Error                                              = ECOBJECTS_ERROR_BASE + 0xFFF,
     }; 
 
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-enum SchemaDeserializationStatus
+enum SchemaReadStatus
     {
-    SCHEMA_DESERIALIZATION_STATUS_Success                               = SUCCESS,
-    SCHEMA_DESERIALIZATION_STATUS_FailedToInitializeMsmxl               = SCHEMA_DESERIALIZATION_STATUS_BASE + 0x01,
-    SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml                      = SCHEMA_DESERIALIZATION_STATUS_BASE + 0x02,
-    SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml                    = SCHEMA_DESERIALIZATION_STATUS_BASE + 0x03,
-    SCHEMA_DESERIALIZATION_STATUS_ReferencedSchemaNotFound              = SCHEMA_DESERIALIZATION_STATUS_BASE + 0x04,
+    SCHEMA_READ_STATUS_Success                               = SUCCESS,
+    SCHEMA_READ_STATUS_FailedToInitializeMsmxl               = SCHEMA_READ_STATUS_BASE + 0x01,
+    SCHEMA_READ_STATUS_FailedToParseXml                      = SCHEMA_READ_STATUS_BASE + 0x02,
+    SCHEMA_READ_STATUS_InvalidECSchemaXml                    = SCHEMA_READ_STATUS_BASE + 0x03,
+    SCHEMA_READ_STATUS_ReferencedSchemaNotFound              = SCHEMA_READ_STATUS_BASE + 0x04,
+    SCHEMA_READ_STATUS_DuplicateSchema                       = SCHEMA_READ_STATUS_BASE + 0x05,
     };
 
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-enum SchemaSerializationStatus
+enum SchemaWriteStatus
     {
-    SCHEMA_SERIALIZATION_STATUS_Success                                 = SUCCESS,
-    SCHEMA_SERIALIZATION_STATUS_FailedToInitializeMsmxl                 = SCHEMA_SERIALIZATION_STATUS_BASE + 0x01,
-    SCHEMA_SERIALIZATION_STATUS_FailedToSaveXml                         = SCHEMA_SERIALIZATION_STATUS_BASE + 0x02,
-    SCHEMA_SERIALIZATION_STATUS_FailedToCreateXml                       = SCHEMA_SERIALIZATION_STATUS_BASE + 0x03
+    SCHEMA_WRITE_STATUS_Success                                 = SUCCESS,
+    SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl                 = SCHEMA_WRITE_STATUS_BASE + 0x01,
+    SCHEMA_WRITE_STATUS_FailedToSaveXml                         = SCHEMA_WRITE_STATUS_BASE + 0x02,
+    SCHEMA_WRITE_STATUS_FailedToCreateXml                       = SCHEMA_WRITE_STATUS_BASE + 0x03
     };
 
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-enum InstanceDeserializationStatus
+enum InstanceReadStatus
     {
-    INSTANCE_DESERIALIZATION_STATUS_Success                             = 0,
-    INSTANCE_DESERIALIZATION_STATUS_FileNotFound                        = INSTANCE_DESERIALIZATION_STATUS_BASE + 1,
-    INSTANCE_DESERIALIZATION_STATUS_CantCreateStream                    = INSTANCE_DESERIALIZATION_STATUS_BASE + 2,
-    INSTANCE_DESERIALIZATION_STATUS_CantCreateXmlReader                 = INSTANCE_DESERIALIZATION_STATUS_BASE + 3,
-    INSTANCE_DESERIALIZATION_STATUS_CantSetStream                       = INSTANCE_DESERIALIZATION_STATUS_BASE + 4,
-    INSTANCE_DESERIALIZATION_STATUS_NoElementName                       = INSTANCE_DESERIALIZATION_STATUS_BASE + 5,
-    INSTANCE_DESERIALIZATION_STATUS_BadElement                          = INSTANCE_DESERIALIZATION_STATUS_BASE + 6,
-    INSTANCE_DESERIALIZATION_STATUS_UnexpectedElement                   = INSTANCE_DESERIALIZATION_STATUS_BASE + 7,
-    INSTANCE_DESERIALIZATION_STATUS_EmptyElement                        = INSTANCE_DESERIALIZATION_STATUS_BASE + 8,
-    INSTANCE_DESERIALIZATION_STATUS_EndElementDoesntMatch               = INSTANCE_DESERIALIZATION_STATUS_BASE + 9,
-    INSTANCE_DESERIALIZATION_STATUS_XmlFileIncomplete                   = INSTANCE_DESERIALIZATION_STATUS_BASE + 10,
-    INSTANCE_DESERIALIZATION_STATUS_XmlParseError                       = INSTANCE_DESERIALIZATION_STATUS_BASE + 20,
+    INSTANCE_READ_STATUS_Success                             = 0,
+    INSTANCE_READ_STATUS_FileNotFound                        = INSTANCE_READ_STATUS_BASE + 1,
+    INSTANCE_READ_STATUS_CantCreateStream                    = INSTANCE_READ_STATUS_BASE + 2,
+    INSTANCE_READ_STATUS_CantCreateXmlReader                 = INSTANCE_READ_STATUS_BASE + 3,
+    INSTANCE_READ_STATUS_CantSetStream                       = INSTANCE_READ_STATUS_BASE + 4,
+    INSTANCE_READ_STATUS_NoElementName                       = INSTANCE_READ_STATUS_BASE + 5,
+    INSTANCE_READ_STATUS_BadElement                          = INSTANCE_READ_STATUS_BASE + 6,
+    INSTANCE_READ_STATUS_UnexpectedElement                   = INSTANCE_READ_STATUS_BASE + 7,
+    INSTANCE_READ_STATUS_EmptyElement                        = INSTANCE_READ_STATUS_BASE + 8,
+    INSTANCE_READ_STATUS_EndElementDoesntMatch               = INSTANCE_READ_STATUS_BASE + 9,
+    INSTANCE_READ_STATUS_XmlFileIncomplete                   = INSTANCE_READ_STATUS_BASE + 10,
+    INSTANCE_READ_STATUS_XmlParseError                       = INSTANCE_READ_STATUS_BASE + 20,
 
-    INSTANCE_DESERIALIZATION_STATUS_ECClassNotFound                     = INSTANCE_DESERIALIZATION_STATUS_BASE + 30,
-    INSTANCE_DESERIALIZATION_STATUS_BadECProperty                       = INSTANCE_DESERIALIZATION_STATUS_BASE + 31,
-    INSTANCE_DESERIALIZATION_STATUS_BadPrimitivePropertyType            = INSTANCE_DESERIALIZATION_STATUS_BASE + 32,
-    INSTANCE_DESERIALIZATION_STATUS_BadBinaryData                       = INSTANCE_DESERIALIZATION_STATUS_BASE + 33,
-    INSTANCE_DESERIALIZATION_STATUS_BadTimeValue                        = INSTANCE_DESERIALIZATION_STATUS_BASE + 34,
-    INSTANCE_DESERIALIZATION_STATUS_BadDoubleValue                      = INSTANCE_DESERIALIZATION_STATUS_BASE + 35,
-    INSTANCE_DESERIALIZATION_STATUS_BadIntegerValue                     = INSTANCE_DESERIALIZATION_STATUS_BASE + 36,
-    INSTANCE_DESERIALIZATION_STATUS_BadLongValue                        = INSTANCE_DESERIALIZATION_STATUS_BASE + 37,
-    INSTANCE_DESERIALIZATION_STATUS_BadPoint2dValue                     = INSTANCE_DESERIALIZATION_STATUS_BASE + 38,
-    INSTANCE_DESERIALIZATION_STATUS_BadPoint3dValue                     = INSTANCE_DESERIALIZATION_STATUS_BASE + 39,
-    INSTANCE_DESERIALIZATION_STATUS_BadArrayElement                     = INSTANCE_DESERIALIZATION_STATUS_BASE + 40,
-    INSTANCE_DESERIALIZATION_STATUS_CantSetValue                        = INSTANCE_DESERIALIZATION_STATUS_BASE + 41,
-    INSTANCE_DESERIALIZATION_STATUS_ECSchemaNotFound                    = INSTANCE_DESERIALIZATION_STATUS_BASE + 42,
-    INSTANCE_DESERIALIZATION_STATUS_UnableToGetStandaloneEnabler        = INSTANCE_DESERIALIZATION_STATUS_BASE + 43,
-    INSTANCE_DESERIALIZATION_STATUS_CommentOnly                         = INSTANCE_DESERIALIZATION_STATUS_BASE + 44,
+    INSTANCE_READ_STATUS_ECClassNotFound                     = INSTANCE_READ_STATUS_BASE + 30,
+    INSTANCE_READ_STATUS_BadECProperty                       = INSTANCE_READ_STATUS_BASE + 31,
+    INSTANCE_READ_STATUS_BadPrimitivePropertyType            = INSTANCE_READ_STATUS_BASE + 32,
+    INSTANCE_READ_STATUS_BadBinaryData                       = INSTANCE_READ_STATUS_BASE + 33,
+    INSTANCE_READ_STATUS_BadTimeValue                        = INSTANCE_READ_STATUS_BASE + 34,
+    INSTANCE_READ_STATUS_BadDoubleValue                      = INSTANCE_READ_STATUS_BASE + 35,
+    INSTANCE_READ_STATUS_BadIntegerValue                     = INSTANCE_READ_STATUS_BASE + 36,
+    INSTANCE_READ_STATUS_BadLongValue                        = INSTANCE_READ_STATUS_BASE + 37,
+    INSTANCE_READ_STATUS_BadPoint2dValue                     = INSTANCE_READ_STATUS_BASE + 38,
+    INSTANCE_READ_STATUS_BadPoint3dValue                     = INSTANCE_READ_STATUS_BASE + 39,
+    INSTANCE_READ_STATUS_BadArrayElement                     = INSTANCE_READ_STATUS_BASE + 40,
+    INSTANCE_READ_STATUS_CantSetValue                        = INSTANCE_READ_STATUS_BASE + 41,
+    INSTANCE_READ_STATUS_ECSchemaNotFound                    = INSTANCE_READ_STATUS_BASE + 42,
+    INSTANCE_READ_STATUS_UnableToGetStandaloneEnabler        = INSTANCE_READ_STATUS_BASE + 43,
+    INSTANCE_READ_STATUS_CommentOnly                         = INSTANCE_READ_STATUS_BASE + 44,
     };
     
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-enum InstanceSerializationStatus
+enum InstanceWriteStatus
     {
-    INSTANCE_SERIALIZATION_STATUS_Success                               = 0,
-    INSTANCE_SERIALIZATION_STATUS_CantCreateStream                      = INSTANCE_SERIALIZATION_STATUS_BASE + 1,
-    INSTANCE_SERIALIZATION_STATUS_CantCreateXmlWriter                   = INSTANCE_SERIALIZATION_STATUS_BASE + 3,
-    INSTANCE_SERIALIZATION_STATUS_CantSetStream                         = INSTANCE_SERIALIZATION_STATUS_BASE + 4,
-    INSTANCE_SERIALIZATION_STATUS_XmlWriteError                         = INSTANCE_SERIALIZATION_STATUS_BASE + 5,
-    INSTANCE_SERIALIZATION_STATUS_CantReadFromStream                    = INSTANCE_SERIALIZATION_STATUS_BASE + 6,
+    INSTANCE_WRITE_STATUS_Success                               = 0,
+    INSTANCE_WRITE_STATUS_CantCreateStream                      = INSTANCE_WRITE_STATUS_BASE + 1,
+    INSTANCE_WRITE_STATUS_CantCreateXmlWriter                   = INSTANCE_WRITE_STATUS_BASE + 3,
+    INSTANCE_WRITE_STATUS_CantSetStream                         = INSTANCE_WRITE_STATUS_BASE + 4,
+    INSTANCE_WRITE_STATUS_XmlWriteError                         = INSTANCE_WRITE_STATUS_BASE + 5,
+    INSTANCE_WRITE_STATUS_CantReadFromStream                    = INSTANCE_WRITE_STATUS_BASE + 6,
 
-    INSTANCE_SERIALIZATION_STATUS_BadPrimitivePropertyType              = INSTANCE_SERIALIZATION_STATUS_BASE + 30,
+    INSTANCE_WRITE_STATUS_BadPrimitivePropertyType              = INSTANCE_WRITE_STATUS_BASE + 30,
     };
     
 /*__PUBLISH_SECTION_END__*/
