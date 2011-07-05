@@ -411,7 +411,7 @@ ECSchemaP       CreateTestSchema (ECSchemaCacheR schemaOwner)
     ECSchemaDeserializationContextPtr  schemaContext = ECSchemaDeserializationContext::CreateContext(schemaOwner);
 
     ECSchemaP schema;        
-    EXPECT_EQ (SUCCESS, ECSchema::ReadFromXml (schema, schemaXMLString.c_str(), *schemaContext));  
+    EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (schema, schemaXMLString.c_str(), *schemaContext));  
 
     CoUninitialize();
     return schema;
@@ -452,7 +452,7 @@ ECSchemaP       CreateProfilingSchema (int nStrings, ECSchemaCacheR schemaOwner)
     ECSchemaDeserializationContextPtr  schemaContext = ECSchemaDeserializationContext::CreateContext(schemaOwner);
 
     ECSchemaP schema;        
-    EXPECT_EQ (SCHEMA_DESERIALIZATION_STATUS_Success, ECSchema::ReadFromXml (schema, schemaXml.c_str(), *schemaContext));
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlString (schema, schemaXml.c_str(), *schemaContext));
 
     CoUninitialize ();
     return schema;

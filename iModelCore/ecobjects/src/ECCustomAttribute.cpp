@@ -279,14 +279,14 @@ ECClassCR classDefinition
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceDeserializationStatus IECCustomAttributeContainer::ReadCustomAttributes
+InstanceReadStatus IECCustomAttributeContainer::ReadCustomAttributes
 (
 MSXML2::IXMLDOMNode&       containerNode,
 ECSchemaCR                 schema,
 IStandaloneEnablerLocaterR standaloneEnablerLocater
 )
     {
-    InstanceDeserializationStatus status = INSTANCE_DESERIALIZATION_STATUS_Success;
+    InstanceReadStatus status = INSTANCE_READ_STATUS_Success;
     MSXML2::IXMLDOMNodeListPtr xmlNodeListPtr;
     MSXML2::IXMLDOMNodePtr xmlNodePtr;
     MSXML2::IXMLDOMNodeListPtr attributeInstances;
@@ -301,8 +301,8 @@ IStandaloneEnablerLocaterR standaloneEnablerLocater
             ECInstanceDeserializationContextPtr context = ECInstanceDeserializationContext::CreateContext (schema, standaloneEnablerLocater);
 
             IECInstancePtr ptr;
-            status = IECInstance::ReadFromXml(ptr, (WCharCP) instancePtr->Getxml(), *context);
-            if ( (INSTANCE_DESERIALIZATION_STATUS_Success != status) && (INSTANCE_DESERIALIZATION_STATUS_CommentOnly != status) )
+            status = IECInstance::ReadFromXmlString(ptr, (WCharCP) instancePtr->Getxml(), *context);
+            if ( (INSTANCE_READ_STATUS_Success != status) && (INSTANCE_READ_STATUS_CommentOnly != status) )
                 return status;
             if (ptr.IsValid())
                 SetCustomAttribute(*ptr);
@@ -314,12 +314,12 @@ IStandaloneEnablerLocaterR standaloneEnablerLocater
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus IECCustomAttributeContainer::WriteCustomAttributes
+SchemaWriteStatus IECCustomAttributeContainer::WriteCustomAttributes
 (
 MSXML2::IXMLDOMNode& propertyNode
 ) const
     {
-    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+    SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
     WString customAttributeXml;
     MSXML2::IXMLDOMAttributePtr attributePtr;
     if (m_customAttributes.size() < 1)
@@ -329,10 +329,10 @@ MSXML2::IXMLDOMNode& propertyNode
     MSXML2::IXMLDOMNodePtr customAttributesNodePtr = propertyNode.ownerDocument->createNode(NODE_ELEMENT, EC_CUSTOM_ATTRIBUTES_ELEMENT, ECXML_URI_2_0);
     for (iter = m_customAttributes.begin(); iter != m_customAttributes.end(); iter++)
         {
-        (*iter)->WriteXmlToString(customAttributeXml, false, false);
+        (*iter)->WriteToXmlString(customAttributeXml, false, false);
         MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;        
         if (S_OK != xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)))
-            return SCHEMA_SERIALIZATION_STATUS_FailedToInitializeMsmxl;
+            return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;
 
         xmlDocPtr->loadXML(customAttributeXml.c_str());
         MSXML2::IXMLDOMNodeListPtr xmlNodeListPtr = xmlDocPtr->childNodes;
@@ -362,14 +362,14 @@ MSXML2::IXMLDOMNode& propertyNode
     return status;
     }
 
-SchemaSerializationStatus IECCustomAttributeContainer::AddCustomAttributeProperties
+SchemaWriteStatus IECCustomAttributeContainer::AddCustomAttributeProperties
 (
 MSXML2::IXMLDOMNode& oldNode, 
 MSXML2::IXMLDOMNode& newNode
 ) const
     {
     if (!oldNode.hasChildNodes())
-        return SCHEMA_SERIALIZATION_STATUS_Success;
+        return SCHEMA_WRITE_STATUS_Success;
 
     MSXML2::IXMLDOMNodeListPtr xmlNodeListPtr = oldNode.childNodes;
     MSXML2::IXMLDOMNodePtr xmlNodePtr;
@@ -387,7 +387,7 @@ MSXML2::IXMLDOMNode& newNode
         AddCustomAttributeProperties(xmlNodePtr, propertyPtr);
         }
 
-    return SCHEMA_SERIALIZATION_STATUS_Success;
+    return SCHEMA_WRITE_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

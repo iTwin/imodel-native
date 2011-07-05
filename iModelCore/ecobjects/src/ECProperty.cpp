@@ -306,7 +306,7 @@ ECSchemaCP ECProperty::_GetContainerSchema
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus ECProperty::_ReadXml
+SchemaReadStatus ECProperty::_ReadXml
 (
 MSXML2::IXMLDOMNode&        propertyNode,
 IStandaloneEnablerLocaterR  standaloneEnablerLocater
@@ -327,13 +327,13 @@ IStandaloneEnablerLocaterR  standaloneEnablerLocater
     READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (READONLY_ATTRIBUTE,            this, IsReadOnly)
 
     ReadCustomAttributes(propertyNode, m_class.GetSchema(), standaloneEnablerLocater);
-    return SCHEMA_DESERIALIZATION_STATUS_Success;
+    return SCHEMA_READ_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus ECProperty::_WriteXml
+SchemaWriteStatus ECProperty::_WriteXml
 (
 MSXML2::IXMLDOMElement& parentNode
 )
@@ -343,13 +343,13 @@ MSXML2::IXMLDOMElement& parentNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus ECProperty::_WriteXml
+SchemaWriteStatus ECProperty::_WriteXml
 (
 MSXML2::IXMLDOMElement& parentNode,
 WCharCP elementName
 )
     {
-    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+    SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
 
     MSXML2::IXMLDOMTextPtr textPtr = NULL;
     MSXML2::IXMLDOMAttributePtr attributePtr;
@@ -371,14 +371,14 @@ WCharCP elementName
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus PrimitiveECProperty::_ReadXml
+SchemaReadStatus PrimitiveECProperty::_ReadXml
 (
 MSXML2::IXMLDOMNode& propertyNode, 
 IStandaloneEnablerLocaterR  standaloneEnablerLocater
 )
     {  
-    SchemaDeserializationStatus status = __super::_ReadXml(propertyNode, standaloneEnablerLocater);
-    if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
+    SchemaReadStatus status = __super::_ReadXml(propertyNode, standaloneEnablerLocater);
+    if (status != SCHEMA_READ_STATUS_Success)
         return status;
 
     MSXML2::IXMLDOMNamedNodeMapPtr nodeAttributesPtr = propertyNode.attributes;
@@ -388,10 +388,10 @@ IStandaloneEnablerLocaterR  standaloneEnablerLocater
     // For Primitive & Array properties we ignore parse errors and default to string.  Struct properties will require a resolvable typename.
     READ_REQUIRED_XML_ATTRIBUTE_IGNORING_SET_ERRORS (TYPE_NAME_ATTRIBUTE,           this, TypeName, propertyNode.baseName)  
 
-    if (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml == status)
+    if (SCHEMA_READ_STATUS_FailedToParseXml == status)
         {
         ECObjectsLogger::Log()->warningv (L"Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.", this->GetName().c_str(), this->GetTypeName().c_str());
-        return SCHEMA_DESERIALIZATION_STATUS_Success;
+        return SCHEMA_READ_STATUS_Success;
         }
 
     return status;
@@ -400,7 +400,7 @@ IStandaloneEnablerLocaterR  standaloneEnablerLocater
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus PrimitiveECProperty::_WriteXml
+SchemaWriteStatus PrimitiveECProperty::_WriteXml
 (
 MSXML2::IXMLDOMElement& parentNode
 )
@@ -492,14 +492,14 @@ PrimitiveType primitiveType
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus StructECProperty::_ReadXml
+SchemaReadStatus StructECProperty::_ReadXml
 (
 MSXML2::IXMLDOMNode& propertyNode, 
 IStandaloneEnablerLocaterR  standaloneEnablerLocater
 )
     {  
-    SchemaDeserializationStatus status = __super::_ReadXml(propertyNode, standaloneEnablerLocater);
-    if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
+    SchemaReadStatus status = __super::_ReadXml(propertyNode, standaloneEnablerLocater);
+    if (status != SCHEMA_READ_STATUS_Success)
         return status;
 
     MSXML2::IXMLDOMNamedNodeMapPtr nodeAttributesPtr = propertyNode.attributes;
@@ -508,12 +508,12 @@ IStandaloneEnablerLocaterR  standaloneEnablerLocater
     // For Primitive & Array properties we ignore parse errors and default to string.  Struct properties will require a resolvable typename.
     READ_REQUIRED_XML_ATTRIBUTE (TYPE_NAME_ATTRIBUTE,       this, TypeName,     propertyNode.baseName)        
 
-    return SCHEMA_DESERIALIZATION_STATUS_Success;
+    return SCHEMA_READ_STATUS_Success;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus StructECProperty::_WriteXml
+SchemaWriteStatus StructECProperty::_WriteXml
 (
 MSXML2::IXMLDOMElement& parentNode
 )
@@ -651,14 +651,14 @@ ECClassCR structType
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus ArrayECProperty::_ReadXml
+SchemaReadStatus ArrayECProperty::_ReadXml
 (
 MSXML2::IXMLDOMNode& propertyNode, 
 IStandaloneEnablerLocaterR  standaloneEnablerLocater
 )
     {  
-    SchemaDeserializationStatus status = __super::_ReadXml(propertyNode, standaloneEnablerLocater);
-    if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
+    SchemaReadStatus status = __super::_ReadXml(propertyNode, standaloneEnablerLocater);
+    if (status != SCHEMA_READ_STATUS_Success)
         return status;
 
     MSXML2::IXMLDOMNamedNodeMapPtr nodeAttributesPtr = propertyNode.attributes;
@@ -673,36 +673,36 @@ IStandaloneEnablerLocaterR  standaloneEnablerLocater
     // For Primitive & Array properties we ignore parse errors and default to string.  Struct properties will require a resolvable typename.
     READ_REQUIRED_XML_ATTRIBUTE_IGNORING_SET_ERRORS (TYPE_NAME_ATTRIBUTE,           this, TypeName, propertyNode.baseName)  
 
-    if (SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml == setterStatus)
+    if (SCHEMA_READ_STATUS_FailedToParseXml == setterStatus)
         {
         ECObjectsLogger::Log()->warningv (L"Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.", this->GetName().c_str(), this->GetTypeName().c_str());
-        return SCHEMA_DESERIALIZATION_STATUS_Success;
+        return SCHEMA_READ_STATUS_Success;
         }
 
-    return SCHEMA_DESERIALIZATION_STATUS_Success;
+    return SCHEMA_READ_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus ArrayECProperty::_WriteXml
+SchemaWriteStatus ArrayECProperty::_WriteXml
 (
 MSXML2::IXMLDOMElement& parentNode
 )
     {
-    SchemaSerializationStatus status = __super::_WriteXml(parentNode, EC_ARRAYPROPERTY_ELEMENT);
-    if (status != SCHEMA_SERIALIZATION_STATUS_Success)
+    SchemaWriteStatus status = __super::_WriteXml(parentNode, EC_ARRAYPROPERTY_ELEMENT);
+    if (status != SCHEMA_WRITE_STATUS_Success)
         return status;
         
     MSXML2::IXMLDOMAttributePtr attributePtr;
 
     MSXML2::IXMLDOMElementPtr propertyPtr = parentNode.lastChild;
     if (NULL == propertyPtr)
-        return SCHEMA_SERIALIZATION_STATUS_FailedToCreateXml;
+        return SCHEMA_WRITE_STATUS_FailedToCreateXml;
         
     // verify that this really is the current array property element
     if (wcscmp(propertyPtr->nodeName, EC_ARRAYPROPERTY_ELEMENT) != 0)
-        return SCHEMA_SERIALIZATION_STATUS_FailedToCreateXml;
+        return SCHEMA_WRITE_STATUS_FailedToCreateXml;
 
     wchar_t buf[64];
     swprintf(buf, sizeof(buf), L"%u", m_minOccurs);

@@ -165,13 +165,13 @@ public:
     ECOBJECTS_EXPORT static void        Debug_GetAllocationStats (int* currentLive, int* totalAllocs, int* totalFrees);
     ECOBJECTS_EXPORT static void        Debug_ReportLeaks (bvector<WString>& classNamesToExclude);
 
-    ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadFromFile   (IECInstancePtr& ecInstance, WCharCP fileName, ECInstanceDeserializationContextR context);
-    ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadXmlFromStream (IECInstancePtr& ecInstance, IStreamP stream, ECInstanceDeserializationContextR context);
-    ECOBJECTS_EXPORT static InstanceDeserializationStatus   ReadFromXml (IECInstancePtr& ecInstance, WCharCP xmlString, ECInstanceDeserializationContextR context);
+    ECOBJECTS_EXPORT static InstanceReadStatus   ReadFromXmlFile   (IECInstancePtr& ecInstance, WCharCP fileName, ECInstanceDeserializationContextR context);
+    ECOBJECTS_EXPORT static InstanceReadStatus   ReadFromXmlStream (IECInstancePtr& ecInstance, IStreamP stream, ECInstanceDeserializationContextR context);
+    ECOBJECTS_EXPORT static InstanceReadStatus   ReadFromXmlString (IECInstancePtr& ecInstance, WCharCP xmlString, ECInstanceDeserializationContextR context);
 
-    ECOBJECTS_EXPORT InstanceSerializationStatus            WriteXmlToFile   (WCharCP fileName, bool isStandAlone, bool writeInstanceId);
-    ECOBJECTS_EXPORT InstanceSerializationStatus            WriteXmlToStream (IStreamP stream, bool isStandAlone, bool writeInstanceId);
-    ECOBJECTS_EXPORT InstanceSerializationStatus            WriteXmlToString (WString & ecInstanceXml, bool isStandAlone, bool writeInstanceId);
+    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlFile   (WCharCP fileName, bool isStandAlone, bool writeInstanceId);
+    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlStream (IStreamP stream, bool isStandAlone, bool writeInstanceId);
+    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlString (WString & ecInstanceXml, bool isStandAlone, bool writeInstanceId);
     };
     
 //=======================================================================================    
