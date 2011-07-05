@@ -1965,6 +1965,7 @@ InstanceDeserializationStatus   ReadProperty (ECClassCR ecClass, IECInstanceP ec
     ECPropertyP ecProperty;
     if (NULL == (ecProperty = ecClass.GetPropertyP (propertyName)))
         {
+        ECObjectsLogger::Log()->warningv (L"No ECProperty '%s'found in ECClass '%s'. Value will be ignored.", propertyName, ecClass.GetName().c_str());
         // couldn't find it, skip the rest of the property.
         return SkipToElementEnd ();
         }
