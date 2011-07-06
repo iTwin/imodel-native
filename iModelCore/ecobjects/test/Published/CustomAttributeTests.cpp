@@ -61,7 +61,7 @@ ECSchemaP   CreateCustomAttributeTestSchema(IECSchemaOwnerR schemaOwner)
 
 IECInstancePtr GetInstanceForClass(WCharCP className, ECSchemaR schema, ECSchemaCacheR schemaSession)
     {
-    StandaloneECEnablerPtr enabler = schemaSession.XObtainStandaloneInstanceEnabler (schema.GetName().c_str(), className);
+    StandaloneECEnablerPtr enabler = schemaSession.LocateStandaloneEnabler (schema.GetName().c_str(), className);
     IECInstancePtr instance = enabler->CreateInstance().get();
     return instance;
     }

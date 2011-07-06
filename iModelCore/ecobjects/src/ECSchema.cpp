@@ -1742,9 +1742,9 @@ ECSchemaP       IECSchemaOwner::LocateSchema (WCharCP name, UInt32 major, UInt32
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneECEnablerPtr  IStandaloneEnablerLocater::XObtainStandaloneInstanceEnabler (WCharCP schemaName, WCharCP className)
+StandaloneECEnablerPtr  IStandaloneEnablerLocater::LocateStandaloneEnabler (WCharCP schemaName, WCharCP className)
     {
-    return  _ObtainStandaloneInstanceEnabler (schemaName, className);
+    return  _LocateStandaloneEnabler (schemaName, className);
     }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -1843,7 +1843,7 @@ ECSchemaCachePtr    ECSchemaCache::Create ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneECEnablerPtr          ECSchemaCache::_ObtainStandaloneInstanceEnabler (WCharCP schemaName, WCharCP className)
+StandaloneECEnablerPtr          ECSchemaCache::_LocateStandaloneEnabler (WCharCP schemaName, WCharCP className)
     {
     SchemaNameClassNamePair keyPair(schemaName, className);
 

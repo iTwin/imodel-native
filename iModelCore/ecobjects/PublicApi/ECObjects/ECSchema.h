@@ -949,12 +949,12 @@ struct IStandaloneEnablerLocater
 /*__PUBLISH_CLASS_VIRTUAL__*/
 /*__PUBLISH_SECTION_END__*/
 protected:
-    virtual    StandaloneECEnablerPtr  _ObtainStandaloneInstanceEnabler (WCharCP schemaName, WCharCP className) = 0;
+    virtual    StandaloneECEnablerPtr  _LocateStandaloneEnabler (WCharCP schemaName, WCharCP className) = 0;
 
 /*__PUBLISH_SECTION_START__*/
 
 public:
-    ECOBJECTS_EXPORT StandaloneECEnablerPtr  XObtainStandaloneInstanceEnabler (WCharCP schemaName, WCharCP className);
+    ECOBJECTS_EXPORT StandaloneECEnablerPtr  LocateStandaloneEnabler (WCharCP schemaName, WCharCP className);
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1001,7 +1001,7 @@ protected:
     ECOBJECTS_EXPORT virtual ECSchemaP       _LocateSchema (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType);
     
     // IStandaloneEnablerLocater
-    ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr _ObtainStandaloneInstanceEnabler (WCharCP schemaName, WCharCP className);
+    ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr _LocateStandaloneEnabler (WCharCP schemaName, WCharCP className);
 
 /*__PUBLISH_SECTION_START__*/
 public:
