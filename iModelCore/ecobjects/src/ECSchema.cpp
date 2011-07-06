@@ -1956,6 +1956,5 @@ const WString &name
         } 
     return true;
     }
-        
 
 END_BENTLEY_EC_NAMESPACE
