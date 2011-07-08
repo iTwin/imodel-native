@@ -1017,7 +1017,7 @@ public:
 struct IECSchemaLocater
 {
 protected:
-    virtual ECSchemaP _LocateSchema(WCharCP name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaDeserializationContextR schemaContext) const = 0;
+    virtual ECSchemaP _LocateSchema(WCharCP name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaDeserializationContextR schemaContext) = 0;
 
 public:
     ECOBJECTS_EXPORT ECSchemaP LocateSchema(WCharCP name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaDeserializationContextR schemaContext);
