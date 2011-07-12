@@ -38,10 +38,22 @@ BEGIN_BENTLEY_EC_NAMESPACE
 // instance to be Disposed.
 struct MemoryCallbackData
     {
-    size_t  neededSize;
     byte*   dataAddress;
+    size_t  gapSize;
     byte*   gapAddress;
+    size_t  instanceGapSize;
+    byte*   instanceGapAddress;
     byte*   newDataAddress;
+
+    MemoryCallbackData ()
+        {
+        dataAddress = NULL;
+        gapSize = 0;
+        gapAddress = NULL;
+        instanceGapSize = 0;
+        instanceGapAddress = NULL;
+        newDataAddress = NULL;
+        }
     };
 
 // Declare an unmanaged function prototype 
