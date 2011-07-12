@@ -66,7 +66,7 @@ private:
     IECInstancePtr          GetStructArrayInstance (StructValueIdentifier structValueId) const;
     StructArrayEntry const* GetAddressOfStructArrayEntry (StructValueIdentifier key) const;
     byte*                   GetAddressOfPropertyData () const;
-    void                    UpdateStructArrayOffsets (byte const* gapAddress, bool& updateOffset, size_t resizeAmount);
+    void                    UpdateStructArrayOffsets (byte const* gapAddress, bool& updateOffset, bool& updateOffsetToEnd, size_t resizeAmount);
  //__PUBLISH_SECTION_START__
 
 protected:

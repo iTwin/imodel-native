@@ -9,6 +9,26 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  07/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+static IECInstanceP    getEmbeddedSupportingStructInstance (StructArrayEntry const* entry)
+    {
+    if (!entry)
+        return NULL;
+
+    byte const* baseAddress = (byte const*)entry;
+    size_t offset = (size_t)(entry->structInstance.get());
+    byte const* instanceAddress =  baseAddress + offset;
+
+    // since the offset will put us at the vtable of the IECInstance and not to the start of the concrete object 
+    // we can cast is directly to an IECInstanceP. See comments in method LoadDataIntoManagedInstance
+    IECInstanceP iecInstanceP = (IECInstanceP) const_cast<byte*>(instanceAddress);
+    return iecInstanceP;
+    }
+
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 //  MemoryECInstanceBase
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -100,21 +120,57 @@ size_t                MemoryECInstanceBase::GetObjectSize () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t          MemoryECInstanceBase::CalculateSupportingInstanceDataSize () const
     {
-    size_t size = sizeof(UInt32); // number of StructArrayEntry members
+    size_t size = sizeof(UInt32); // number of StructArrayEntry members 
+    size += sizeof(size_t); // offset to end of supporting instances
 
     if (m_structInstances)
         {
-        size += (m_structInstances->size() * sizeof (StructArrayEntry));
-        for (size_t i = 0; i<m_structInstances->size(); i++)
+        if (m_isInManagedInstance)
             {
-            StructArrayEntry const& entry = (*m_structInstances)[i];
-        
-            MemoryECInstanceBase* mbInstance = entry.structInstance->GetAsMemoryECInstance();
-            DEBUG_EXPECT (NULL != mbInstance);
-            if (!mbInstance)
-                continue;
+            byte const* thisAddress       = (byte const*)this;
+            byte const* arrayCountAddress =  thisAddress + (size_t)m_structInstances;
+            byte const* arrayAddress      =  arrayCountAddress + sizeof(UInt32) + sizeof(size_t);
+            size_t      numEntries        = *(UInt32 const*)arrayCountAddress;
 
-            size += mbInstance->GetObjectSize ();
+            size += (numEntries * sizeof (StructArrayEntry));
+
+            StructArrayEntry* instanceArray = (StructArrayEntry*)(const_cast<byte*>(arrayAddress));
+
+            for (size_t i = 0; i<numEntries; i++)
+                {
+                StructArrayEntry* entry       = &instanceArray[i];
+                byte*             baseAddress = (byte*)entry;
+
+                size_t  offset = (size_t)(entry->structInstance.get());
+
+                byte const* instanceAddress = baseAddress + offset;
+
+                // since the offset will put us at the vtable of the IECInstance and not to the start of the concrete object 
+                // we can cast is directly to an IECInstanceP. See comments in method LoadDataIntoManagedInstance
+                IECInstanceP iecInstanceP = (IECInstanceP) const_cast<byte*>(instanceAddress);
+
+                MemoryECInstanceBase* mbInstance = iecInstanceP->GetAsMemoryECInstance();
+                DEBUG_EXPECT (NULL != mbInstance);
+                if (!mbInstance)
+                    continue;
+
+                size += mbInstance->GetObjectSize ();
+                }
+            }
+        else
+            {
+            size += (m_structInstances->size() * sizeof (StructArrayEntry));
+            for (size_t i = 0; i<m_structInstances->size(); i++)
+                {
+                StructArrayEntry const& entry = (*m_structInstances)[i];
+        
+                MemoryECInstanceBase* mbInstance = entry.structInstance->GetAsMemoryECInstance();
+                DEBUG_EXPECT (NULL != mbInstance);
+                if (!mbInstance)
+                    continue;
+
+                size += mbInstance->GetObjectSize ();
+                }
             }
         }
 
@@ -144,15 +200,24 @@ size_t          MemoryECInstanceBase::LoadDataIntoManagedInstance (byte* managed
 
     offset += currentBytesUsed;
 
+    // store the current offset in m_structInstances - this points to the begining of the StructEntryArray data
+    // number of entries
+    // offset to end of supporting instances
+    // struct entry[0]....struct entry[n]
+    size_t offsetToStructArrayVector = (size_t)((byte const* )&m_structInstances - (byte const* )this); 
+    memcpy (managedBuffer+offsetToStructArrayVector, &offset, sizeof(offset));
+
     // store the number of supporting struct instances
     UInt32 numArrayInstances     = m_structInstances ? (UInt32)m_structInstances->size() : 0;
     memcpy (managedBuffer+offset, &numArrayInstances, sizeof(numArrayInstances));
 
-    // the current offset is set to the location to store the number of StructArrayEntry. Store this offset in location of m_structInstances within managedBuffer
-    size_t offsetToStructArrayVector = (size_t)((byte const* )&m_structInstances - (byte const* )this); 
-    memcpy (managedBuffer+offsetToStructArrayVector, &offset, sizeof(offset));
-
     offset += sizeof(numArrayInstances);
+    
+    size_t offsetToEndOfSupportingStructInstance = offset;   // we will update this after writing supporting instances
+    offset += sizeof(size_t); 
+
+    // go ahead and set this in case there are no supporting instances
+    memcpy (managedBuffer+offsetToEndOfSupportingStructInstance, &offset, sizeof(offset));
 
     if (!m_structInstances || 0 == numArrayInstances)
         return offset;
@@ -167,9 +232,8 @@ size_t          MemoryECInstanceBase::LoadDataIntoManagedInstance (byte* managed
 
     // calculate relative offset from address of entry to first struct instance
     // Note: on 64 bit  sizeof (structValueIdentifier) + sizeof (IECInstancePtr) is not equal to sizeof(StructArrayEntry)
-    size_t relativeOffsetToFirstStructInstance = (numArrayInstances * sizeof(StructArrayEntry));  
-    size_t relativeOffsetToStructInstance = 0; 
-    size_t totalOffsetToStructInstance = offset + relativeOffsetToFirstStructInstance; 
+    size_t relativeOffsetToStructInstance = (numArrayInstances * sizeof(StructArrayEntry));  
+    size_t totalOffsetToInstanceEnd       = offset + relativeOffsetToStructInstance; 
 
     size_t iecInstanceOffset;
     size_t sizeOfStructInstance;
@@ -183,9 +247,9 @@ size_t          MemoryECInstanceBase::LoadDataIntoManagedInstance (byte* managed
         // store the StructValueIdentifier
         memcpy (managedBuffer+offset, &entry.structValueIdentifier, sizeof(entry.structValueIdentifier));
 
-        // At this point the offsetToStructInstance is the offset to the concrete object (most likely a StandAloneECInstance). We need to adjust this to
+        // At this point the offsetToStructInstance is the offset to the concrete object (most likely a StandaloneECInstance). We need to adjust this to
         // point to the vtable of a IECInstance 
-        iecInstanceOffset = relativeOffsetToStructInstance + relativeOffsetToFirstStructInstance + entry.structInstance->GetOffsetToIECInstance();
+        iecInstanceOffset = relativeOffsetToStructInstance + entry.structInstance->GetOffsetToIECInstance();
 
         // store the offset to the instance
         memcpy (managedBuffer+(offset+offsetToInstancePtr), &iecInstanceOffset, sizeof(iecInstanceOffset)); 
@@ -196,14 +260,16 @@ size_t          MemoryECInstanceBase::LoadDataIntoManagedInstance (byte* managed
         DEBUG_EXPECT (NULL != mbInstance);
         if (!mbInstance)
             continue;
-        sizeOfStructInstance = mbInstance->LoadDataIntoManagedInstance (managedBuffer+totalOffsetToStructInstance, sizeOfManagedBuffer-totalOffsetToStructInstance);
+        sizeOfStructInstance = mbInstance->LoadDataIntoManagedInstance (managedBuffer+totalOffsetToInstanceEnd, sizeOfManagedBuffer-totalOffsetToInstanceEnd);
 
-        totalOffsetToStructInstance         += sizeOfStructInstance; 
-        relativeOffsetToStructInstance      += sizeOfStructInstance; 
-        relativeOffsetToFirstStructInstance -= sizeof (StructArrayEntry);
+        totalOffsetToInstanceEnd       += sizeOfStructInstance; 
+        relativeOffsetToStructInstance += sizeOfStructInstance; 
+        relativeOffsetToStructInstance -= sizeof (StructArrayEntry); 
         }
 
-    return  totalOffsetToStructInstance;
+    memcpy (managedBuffer+offsetToEndOfSupportingStructInstance, &totalOffsetToInstanceEnd, sizeof(totalOffsetToInstanceEnd));
+
+    return  totalOffsetToInstanceEnd;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -247,28 +313,66 @@ void                MemoryECInstanceBase::_FreeAllocation ()
         }
     }
     
+#ifdef NOT_USED
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    MemoryECInstanceBase::UpdateStructArrayOffsets (byte const* gapAddress, bool& updateOffset, size_t resizeAmount)
+void    MemoryECInstanceBase::WalkSupportingStructs ()
     {
     StructArrayEntry* instanceArray = NULL;
 
     byte const* thisAddress       = (byte const*)this;
     byte const* arrayCountAddress =  thisAddress + (size_t)m_structInstances;
-    byte const* arrayAddress      =  arrayCountAddress + sizeof(UInt32);
-
-    UInt32 const* arrayCount      = (UInt32 const*)arrayCountAddress;
-    size_t        numEntries      = *arrayCount;
-    size_t        newOffset;
+    byte const* arrayAddress      =  arrayCountAddress + sizeof(UInt32) + sizeof(size_t);
+    size_t      numEntries        = *(UInt32 const*)arrayCountAddress;
 
     instanceArray = (StructArrayEntry*)(const_cast<byte*>(arrayAddress));
 
     for (size_t i = 0; i<numEntries; i++)
         {
+        StructArrayEntry* entry = &instanceArray[i];
+
+        IECInstanceP iecInstanceP =  getEmbeddedSupportingStructInstance (entry);
+        MemoryECInstanceBase* mbInstance = iecInstanceP->GetAsMemoryECInstance();
+        if (mbInstance)
+            mbInstance->WalkSupportingStructs (); 
+        }
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* update OffsetToEnd as we move forward, update m_structInstances offset as we back
+* out of the recursion.
+* @bsimethod                                    Bill.Steinbock                  07/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void    MemoryECInstanceBase::UpdateStructArrayOffsets (byte const* gapAddress, bool& updateOffset, bool& updateOffsetToEnd, size_t resizeAmount)
+    {
+    StructArrayEntry* instanceArray = NULL;
+
+    byte const* thisAddress       = (byte const*)this;
+    byte const* arrayCountAddress =  thisAddress + (size_t)m_structInstances;
+    byte const* arrayAddress      =  arrayCountAddress + sizeof(UInt32) + sizeof(size_t);
+    size_t      numEntries        = *(UInt32 const*)arrayCountAddress;
+    size_t      newOffset;
+
+    if (updateOffsetToEnd)
+        {
+        size_t*  offsetToEndAddress = (size_t*)(const_cast<byte*>(arrayCountAddress) + sizeof(UInt32));
+
+        *offsetToEndAddress += resizeAmount;
+        }
+
+    instanceArray = (StructArrayEntry*)(const_cast<byte*>(arrayAddress));
+    for (size_t i = 0; i<numEntries; i++)
+        {
         StructArrayEntry* entry       = &instanceArray[i];
         byte*             baseAddress = (byte*)entry;
-        size_t            offset      = (size_t)(entry->structInstance.get());
+
+        // check to see if this is a new StructArrayEntry that has not been populated yet.
+        if (0 == *baseAddress)
+            return;
+
+        size_t  offset = (size_t)(entry->structInstance.get());
 
         if (updateOffset)
             {
@@ -280,6 +384,7 @@ void    MemoryECInstanceBase::UpdateStructArrayOffsets (byte const* gapAddress, 
         if (baseAddress > gapAddress)
             {
             updateOffset = true;
+            updateOffsetToEnd = false;
             return;   // we don't need to adjust any offsets at this level in the heirarchy
             }
 
@@ -290,9 +395,9 @@ void    MemoryECInstanceBase::UpdateStructArrayOffsets (byte const* gapAddress, 
         // we can cast is directly to an IECInstanceP. See comments in method LoadDataIntoManagedInstance
         IECInstanceP iecInstanceP = (IECInstanceP) const_cast<byte*>(instanceAddress);
 
-        MemoryECInstanceBase* mbInstance = dynamic_cast<MemoryECInstanceBase*>(iecInstanceP);
+        MemoryECInstanceBase* mbInstance = iecInstanceP->GetAsMemoryECInstance();
         if (mbInstance)
-            mbInstance->UpdateStructArrayOffsets (gapAddress, updateOffset, resizeAmount); 
+            mbInstance->UpdateStructArrayOffsets (gapAddress, updateOffset, updateOffsetToEnd, resizeAmount); 
         }
     }
 
@@ -309,9 +414,10 @@ void    MemoryECInstanceBase::FixupStructArrayOffsets (int offsetBeyondGap, size
         return;
 
     byte const* gapAddress = (byte const*)this + offsetBeyondGap;
-    bool   updateOffset    = false;
+    bool   updateOffset      = false;
+    bool   updateOffsetToEnd = true;    // if a supporting instance grew then we must adjust the offset used to position new supporting instances
 
-    UpdateStructArrayOffsets (gapAddress, updateOffset, resizeAmount);
+    UpdateStructArrayOffsets (gapAddress, updateOffset, updateOffsetToEnd, resizeAmount);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -331,18 +437,18 @@ ECObjectsStatus           MemoryECInstanceBase::_GrowAllocation (UInt32 bytesNee
         byte* dataAddress = const_cast<byte*>(_GetData ());
 
         MemoryCallbackData data;
-        data.neededSize = (size_t)(bytesNeeded * 2); 
+        data.gapSize = (size_t)(bytesNeeded * 2); 
         data.dataAddress = dataAddress;
         data.gapAddress = dataAddress + m_bytesAllocated;
 
         // adjust offset stored in m_structInstances by the amount the propertydata grew - this way when we copy the instance data 
         // into the new buffer in managed code the offset is properly set
         Int64 saveOffsetToStructArrayVector = (Int64)m_structInstances;
-        Int64 offsetToStructArrayVector = (Int64)m_structInstances + data.neededSize;
+        Int64 offsetToStructArrayVector = (Int64)m_structInstances + data.gapSize;
         memcpy (&m_structInstances, &offsetToStructArrayVector, sizeof(byte*));
 
         // update the byte allocated so it will be correct in the copied instance.
-        m_bytesAllocated += (UInt32)data.neededSize;
+        m_bytesAllocated += (UInt32)data.gapSize;
 
         if (0 == memoryCallback (&data))
             {
@@ -361,7 +467,7 @@ ECObjectsStatus           MemoryECInstanceBase::_GrowAllocation (UInt32 bytesNee
         else
             {
             // reset values if managed callback was unsuccessful
-            m_bytesAllocated -= (UInt32)data.neededSize;
+            m_bytesAllocated -= (UInt32)data.gapSize;
 
             memcpy (&m_structInstances, &saveOffsetToStructArrayVector, sizeof(byte*));
             return ECOBJECTS_STATUS_Error;
@@ -415,10 +521,6 @@ UInt32              MemoryECInstanceBase::_GetBytesAllocated () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index)
     {
-    DEBUG_EXPECT (!m_isInManagedInstance);
-    if (m_isInManagedInstance)
-        return ECOBJECTS_STATUS_Error;
-
     IECInstancePtr p;
     ECValue binaryValue (PRIMITIVETYPE_Binary);
     m_structValueId++;
@@ -432,16 +534,137 @@ ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueC
         p = v.GetStruct();    
         binaryValue.SetBinary ((const byte *)&(m_structValueId), sizeof (StructValueIdentifier));
         }
-        
+   
+    size_t offsetToData;
+    size_t offsetToArrayCount;
+    size_t bytesAllocated;
+
+    if (m_isInManagedInstance)
+        {
+        offsetToData = (size_t)m_data;
+        offsetToArrayCount = (size_t)m_structInstances;
+        bytesAllocated = (size_t)m_bytesAllocated;
+
+        // set up memory allocation callback in case memory needs to grow to set the structValueId value
+        binaryValue.SetMemoryCallback(v.GetMemoryCallback());
+        }
+
     ECObjectsStatus status = SetPrimitiveValueToMemory (binaryValue, classLayout, propertyLayout, true, index);      
     if (status != ECOBJECTS_STATUS_Success)
         return status;
                  
-    if (NULL == m_structInstances)
-        m_structInstances = new StructInstanceVector ();
+    if (m_isInManagedInstance)
+        {
+        EmbeddedInstanceCallbackP  memoryCallback   = v.GetMemoryCallback();
+        MemoryECInstanceBaseP      mbStructInstance = p->GetAsMemoryECInstance();
 
-    m_structInstances->push_back (StructArrayEntry (m_structValueId, p));
-    
+        if (NULL == mbStructInstance)
+            return ECOBJECTS_STATUS_Error;
+
+        size_t offsetFromConcreteToIECInstance = p->GetOffsetToIECInstance();
+
+        size_t neededSize = mbStructInstance->GetObjectSize ();
+        neededSize += sizeof (StructArrayEntry);
+
+        //get the gap location for new StructArrayEntry and for new Instance
+        byte* dataAddress = const_cast<byte*>(_GetData ());
+
+        byte*   baseAddress            =  dataAddress - offsetToData;  // need to base it on dataAddress since call to SetPrimitiveValueToMemory may have reallocated the buffer
+        byte*   arrayCountAddress      =  baseAddress + offsetToArrayCount + (m_bytesAllocated-bytesAllocated);
+        UInt32* arrayCountP            = (UInt32*)arrayCountAddress;
+        size_t* endOffsetP             = (size_t*)(arrayCountAddress + sizeof(UInt32));
+        byte*   arrayAddress           =  arrayCountAddress + sizeof(UInt32) + sizeof(size_t);
+        UInt32  arrayCount             = *arrayCountP;
+        byte*   entryAddress           =  arrayAddress + sizeof(StructArrayEntry)*arrayCount;
+        byte*   structInstanceAddress  =  baseAddress + *endOffsetP;
+
+        MemoryCallbackData data;
+        data.dataAddress        = dataAddress;
+        data.gapSize            = sizeof (StructArrayEntry);
+        data.gapAddress         = entryAddress;
+        data.instanceGapSize    = mbStructInstance->GetObjectSize ();
+        data.instanceGapAddress = structInstanceAddress;
+
+        // update the array count, the end offset address, and the offset to the struct instances before inserting the 
+        // gaps for the data. This way the values are properly set in the new managed byte buffer holding the resized 
+        // instance. We will reset the values if the resizing is unsuccessful.
+
+        // update the array count    
+        *arrayCountP = arrayCount+1;
+
+        // Note: endOffsetP that points just beyond the last supporting struct instance will be updated 
+        //       in the memory resize callback call to FixupStructArrayOffsets
+
+        // update existing struct array offsets.
+        size_t             newOffset;
+        StructArrayEntry*  entryArray   = (StructArrayEntry*)arrayAddress;
+        StructArrayEntry*  currentEntry;
+
+        for (UInt32 i = 0; i<arrayCount; i++)
+            {
+            currentEntry = &entryArray[i];
+            newOffset    = (size_t)(currentEntry->structInstance.get());
+            newOffset    += data.gapSize;
+            memcpy (&currentEntry->structInstance, &newOffset, sizeof(newOffset));
+            }
+
+        if (0 == memoryCallback (&data))
+            {
+            // hocus pocus - set offsets in this object to point to data in newly allocated object
+            Int64 deltaOffset = data.newDataAddress - dataAddress;   // delta between memory locations for propertyData
+
+            Int64 offsetToPropertyData = (Int64)m_data + deltaOffset; 
+            memcpy (&m_data, &offsetToPropertyData, sizeof(byte*));
+
+            // adjust offset stored in m_structInstances by the delta between the old and new data addresses.
+            Int64 offsetToStructArrayVector = (Int64)m_structInstances + (Int64)deltaOffset;
+            memcpy (&m_structInstances, &offsetToStructArrayVector, sizeof(byte*));
+
+            // now actually populate the gaps in the reallocated buffer with the new StructArrayEntry and the new Struct Instance
+            size_t            offsetToNewEntry          = entryAddress - dataAddress;     // offset relative to m_data
+            byte*             newEntryAddress           = data.newDataAddress + offsetToNewEntry;
+            StructArrayEntry* newEntry                  = (StructArrayEntry*)newEntryAddress;
+
+            size_t            deltaToNewStructInstance  = (structInstanceAddress - dataAddress) + data.gapSize; // offset relative to m_data
+            size_t            newStructInstanceOffset   = (data.newDataAddress + deltaToNewStructInstance) - newEntryAddress;
+            byte*             newStructInstanceLocation = newEntryAddress + newStructInstanceOffset;
+                                                                         
+            // set the new struct array entry structValueIdentifier into the reallocated buffer
+            newEntry->structValueIdentifier = m_structValueId;
+
+            // set the new struct array entry instance offset into the reallocated buffer
+            newStructInstanceOffset += offsetFromConcreteToIECInstance;
+            memcpy (&newEntry->structInstance, &newStructInstanceOffset, sizeof (newStructInstanceOffset));
+
+            // load the new struct instance data into the reallocated buffer
+            mbStructInstance->LoadDataIntoManagedInstance (newStructInstanceLocation, data.instanceGapSize);
+
+            return ECOBJECTS_STATUS_Success;
+            }
+        else
+            {
+            // error occurred reset values
+            *arrayCountP = arrayCount;
+
+            for (UInt32 i = 0; i<arrayCount; i++)
+                {
+                currentEntry = &entryArray[i];
+                newOffset    = (size_t)(currentEntry->structInstance.get());
+                newOffset    -=  data.gapSize;
+                memcpy (&currentEntry->structInstance, &newOffset, sizeof(newOffset));
+                }
+
+            return ECOBJECTS_STATUS_Error;
+            }
+        }
+    else
+        {
+        if (NULL == m_structInstances)
+            m_structInstances = new StructInstanceVector ();
+
+        m_structInstances->push_back (StructArrayEntry (m_structValueId, p));
+        }
+
     return ECOBJECTS_STATUS_Success; 
     }    
     
@@ -465,7 +688,7 @@ StructArrayEntry const* MemoryECInstanceBase::GetAddressOfStructArrayEntry (Stru
         {
         byte const* baseAddress = (byte const*)this;
         byte const* arrayCountAddress =  baseAddress + (size_t)m_structInstances;
-        byte const* arrayAddress      =  arrayCountAddress + sizeof(UInt32);
+        byte const* arrayAddress      =  arrayCountAddress + sizeof(UInt32) + sizeof(size_t);  // array count + offset to end of supporting struct instances
 
         UInt32 const* arrayCount = (UInt32 const*)arrayCountAddress;
         numEntries = *arrayCount;
@@ -489,21 +712,10 @@ StructArrayEntry const* MemoryECInstanceBase::GetAddressOfStructArrayEntry (Stru
 IECInstancePtr  MemoryECInstanceBase::GetStructArrayInstance (StructValueIdentifier structValueId) const
     {
     StructArrayEntry const* entry = GetAddressOfStructArrayEntry (structValueId);
-
-    if (!entry)
-        return NULL;
-
     if (!m_isInManagedInstance)
         return entry->structInstance;
 
-    byte const* baseAddress = (byte const*)entry;
-    size_t offset = (size_t)(entry->structInstance.get());
-    byte const* instanceAddress =  baseAddress + offset;
-
-    // since the offset will put us at the vtable of the IECInstance and not to the start of the concrete object 
-    // we can cast is directly to an IECInstanceP. See comments in method LoadDataIntoManagedInstance
-    IECInstanceP iecInstanceP = (IECInstanceP) const_cast<byte*>(instanceAddress);
-    return iecInstanceP;
+    return getEmbeddedSupportingStructInstance(entry);
     }
 
 /*---------------------------------------------------------------------------------**//**

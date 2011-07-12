@@ -1126,6 +1126,7 @@ UInt32          MemoryInstanceSupport::GetPropertyValueSize (PropertyLayoutCR pr
         if (0 == secondaryOffset)
             return 0;
 
+        // get offset, in the fixed-sized section, to the next variable size property
         SecondaryOffset nextSecondaryOffset = *(pSecondaryOffset + 1);
         if (0 == nextSecondaryOffset)
             return 0;
@@ -1467,7 +1468,7 @@ ECObjectsStatus       MemoryInstanceSupport::AddNullArrayElementsAt (ClassLayout
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus       MemoryInstanceSupport::EnsureSpaceIsAvailableForArrayIndexValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 bytesNeeded)
+ECObjectsStatus       MemoryInstanceSupport::EnsureSpaceIsAvailableForArrayIndexValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 bytesNeeded, EmbeddedInstanceCallbackP callbackP)
     {    
     UInt32 availableBytes = GetPropertyValueSize (propertyLayout, arrayIndex);
     
@@ -1483,7 +1484,7 @@ ECObjectsStatus       MemoryInstanceSupport::EnsureSpaceIsAvailableForArrayIndex
     UInt32 arrayCount = GetAllocatedArrayCount (propertyLayout);
     
     UInt32 endOfValueDataPreGrow = *((SecondaryOffset*)(_GetData() + propertyLayout.GetOffset()) + 1);
-    ECObjectsStatus status = GrowPropertyValue (classLayout, propertyLayout, additionalBytesNeeded);
+    ECObjectsStatus status = GrowPropertyValue (classLayout, propertyLayout, additionalBytesNeeded, callbackP);
 
     if (ECOBJECTS_STATUS_Success != status)
         return status;
@@ -1903,9 +1904,9 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
 
             ECObjectsStatus status;
             if (useIndex)
-                status = EnsureSpaceIsAvailableForArrayIndexValue (classLayout, propertyLayout, index, bytesNeeded);
+                status = EnsureSpaceIsAvailableForArrayIndexValue (classLayout, propertyLayout, index, bytesNeeded, v.GetMemoryCallback());
             else
-                status = EnsureSpaceIsAvailable (offset, classLayout, propertyLayout, bytesNeeded);
+                status = EnsureSpaceIsAvailable (offset, classLayout, propertyLayout, bytesNeeded, v.GetMemoryCallback());
             if (ECOBJECTS_STATUS_Success != status)
                 return status;
                 
@@ -2083,7 +2084,26 @@ WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, Clas
             if (count != GetReservedArrayCount (*propertyLayout))
                 appendFormattedString (oss, L"      array has not yet been initialized\n");
             else
-                {            
+                {  
+                if (count > 0)
+                    {
+                    UInt32 nullflagsOffset;
+                    UInt32 nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks (count);
+
+                    if (propertyLayout->IsFixedSized())
+                        nullflagsOffset = propertyLayout->GetOffset();
+                    else
+                        nullflagsOffset = *((SecondaryOffset*)(data + propertyLayout->GetOffset())) + sizeof (ArrayCount);
+
+                    for (UInt32 i = 0; i < nNullflagsBitmasks; i++)
+                        {
+                        byte const * bitAddress = nullflagsOffset + data;
+
+                        appendFormattedString (oss, L"%s  [0x%x][%4.d] Nullflags[%d] = 0x%x\n", indent, bitAddress, nullflagsOffset, i, *(NullflagsBitmask*)(bitAddress));
+                        nullflagsOffset += sizeof(NullflagsBitmask);
+                        }
+                    }
+
                 for (UInt32 i = 0; i < count; i++)
                     {                
                     offset = GetOffsetOfArrayIndex (GetOffsetOfPropertyValue (*propertyLayout), *propertyLayout, i);
