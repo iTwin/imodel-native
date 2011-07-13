@@ -47,7 +47,7 @@ ECSchemaP   schema
     EXPECT_FALSE (pClass);
 
     pClass = schema->GetClassP(L"ecProject");
-    ASSERT_TRUE (pClass);
+    ASSERT_TRUE (NULL != pClass);
     EXPECT_STREQ (L"ecProject", pClass->GetName().c_str());    
     EXPECT_STREQ (L"Project", pClass->GetDisplayLabel().c_str());
     EXPECT_TRUE (pClass->GetIsDisplayLabelDefined());
@@ -57,7 +57,7 @@ ECSchemaP   schema
     EXPECT_TRUE (pClass->GetIsDomainClass());
     EXPECT_FALSE (pClass->HasBaseClasses());
     ECPropertyP pProperty = pClass->GetPropertyP (L"Name");
-    EXPECT_TRUE (pProperty);
+    ASSERT_TRUE (NULL != pProperty);
     EXPECT_STREQ (L"Name", pProperty->GetName().c_str());
     EXPECT_TRUE (pProperty->GetIsPrimitive());
     EXPECT_FALSE (pProperty->GetIsStruct());
@@ -74,7 +74,7 @@ ECSchemaP   schema
     EXPECT_FALSE (pProperty);
 
     ECClassP customAttribClass = schema->GetClassP(L"AccessCustomAttributes");
-    ASSERT_TRUE (customAttribClass);
+    ASSERT_TRUE (NULL != customAttribClass);
     EXPECT_STREQ (L"AccessCustomAttributes", customAttribClass->GetName().c_str());    
     EXPECT_STREQ (L"AccessCustomAttributes", customAttribClass->GetDisplayLabel().c_str());
     EXPECT_FALSE (customAttribClass->GetIsDisplayLabelDefined());
@@ -85,7 +85,7 @@ ECSchemaP   schema
     EXPECT_FALSE (customAttribClass->HasBaseClasses());
 
     pClass = schema->GetClassP(L"Struct1");
-    ASSERT_TRUE (pClass);
+    ASSERT_TRUE (NULL != pClass);
     EXPECT_STREQ (L"Struct1", pClass->GetName().c_str());    
     EXPECT_STREQ (L"Struct1", pClass->GetDisplayLabel().c_str());
     EXPECT_FALSE (pClass->GetIsDisplayLabelDefined());
@@ -96,7 +96,7 @@ ECSchemaP   schema
     EXPECT_FALSE (pClass->HasBaseClasses());
 
     pClass = schema->GetClassP(L"Struct2");
-    ASSERT_TRUE (pClass);
+    ASSERT_TRUE (NULL != pClass);
     EXPECT_STREQ (L"Struct2", pClass->GetName().c_str());    
     EXPECT_STREQ (L"Struct2", pClass->GetDisplayLabel().c_str());
     EXPECT_FALSE (pClass->GetIsDisplayLabelDefined());
@@ -106,7 +106,7 @@ ECSchemaP   schema
     EXPECT_TRUE (pClass->GetIsDomainClass());
     EXPECT_FALSE (pClass->HasBaseClasses());
     pProperty = pClass->GetPropertyP (L"NestedArray");
-    EXPECT_TRUE (pProperty);
+    EXPECT_TRUE (NULL != pProperty);
     EXPECT_STREQ (L"NestedArray", pProperty->GetName().c_str());
     EXPECT_FALSE (pProperty->GetIsPrimitive());
     EXPECT_FALSE (pProperty->GetIsStruct());
@@ -124,10 +124,10 @@ ECSchemaP   schema
     EXPECT_FALSE (pProperty->GetIsReadOnly());
 
     pClass = schema->GetClassP(L"TestClass");
-    ASSERT_TRUE (pClass);
+    ASSERT_TRUE (NULL != pClass);
     EXPECT_TRUE (pClass->HasBaseClasses());
     pProperty = pClass->GetPropertyP (L"EmbeddedStruct");
-    EXPECT_TRUE (pProperty);
+    ASSERT_TRUE (NULL != pProperty);
     EXPECT_STREQ (L"EmbeddedStruct", pProperty->GetName().c_str());
     EXPECT_FALSE (pProperty->GetIsPrimitive());
     EXPECT_TRUE (pProperty->GetIsStruct());
@@ -450,7 +450,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingSchemaWithBaseCl
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);    
 
     ECClassP pClass = schema->GetClassP(L"circle");    
-    ASSERT_TRUE (pClass);
+    ASSERT_TRUE (NULL != pClass);
 
     CoUninitialize();
     }; 
@@ -478,7 +478,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenECSchemaContainsOnlyRequiredA
     EXPECT_EQ (0, schema->GetVersionMinor());
     
     ECClassP pClass = schema->GetClassP(L"OnlyRequiredECClassAttributes");    
-    ASSERT_TRUE (pClass);
+    ASSERT_TRUE (NULL != pClass);
     EXPECT_STREQ (L"OnlyRequiredECClassAttributes", pClass->GetName().c_str());    
     EXPECT_STREQ (L"OnlyRequiredECClassAttributes", pClass->GetDisplayLabel().c_str());
     EXPECT_FALSE (pClass->GetIsDisplayLabelDefined());
@@ -545,7 +545,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromStri
     EXPECT_FALSE (pClass);
 
     pClass = schema->GetClassP(L"ecProject");
-    ASSERT_TRUE (pClass);
+    ASSERT_TRUE (NULL != pClass);
     EXPECT_STREQ (L"ecProject", pClass->GetName().c_str());    
     EXPECT_STREQ (L"Project", pClass->GetDisplayLabel().c_str());
     EXPECT_TRUE (pClass->GetIsDisplayLabelDefined());
@@ -555,7 +555,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromStri
     EXPECT_TRUE (pClass->GetIsDomainClass());
     EXPECT_FALSE (pClass->HasBaseClasses());
     ECPropertyP pProperty = pClass->GetPropertyP (L"Name");
-    EXPECT_TRUE (pProperty);
+    ASSERT_TRUE (NULL != pProperty);
     EXPECT_STREQ (L"Name", pProperty->GetName().c_str());
     EXPECT_TRUE (pProperty->GetIsPrimitive());
     EXPECT_FALSE (pProperty->GetIsStruct());
@@ -633,11 +633,11 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateClassesInXml)
 
     // Nothing should have been overwritten
     ECClassP projectClass = schema->GetClassP(L"ecProject");
-    ASSERT_TRUE (projectClass);
+    ASSERT_TRUE (NULL != projectClass);
     EXPECT_STREQ(L"Project ECClass", projectClass->GetDescription().c_str());
     EXPECT_STREQ(L"Project", projectClass->GetDisplayLabel().c_str());
     ECPropertyP pProperty = projectClass->GetPropertyP (L"Name");
-    EXPECT_TRUE (pProperty);
+    ASSERT_TRUE (NULL != pProperty);
     EXPECT_STREQ (L"Name", pProperty->GetName().c_str());
     EXPECT_TRUE (pProperty->GetIsPrimitive());
     EXPECT_FALSE (pProperty->GetIsStruct());
@@ -663,11 +663,11 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateClassesInXml)
 
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, status); 
     projectClass = schema2->GetClassP(L"ecProject");
-    ASSERT_TRUE (projectClass);
+    ASSERT_TRUE (NULL != projectClass);
     EXPECT_STREQ(L"New Project ECClass", projectClass->GetDescription().c_str());
     EXPECT_STREQ(L"Project", projectClass->GetDisplayLabel().c_str());
     pProperty = projectClass->GetPropertyP (L"Name");
-    EXPECT_TRUE (pProperty);
+    ASSERT_TRUE (NULL != pProperty);
     EXPECT_STREQ (L"Name", pProperty->GetName().c_str());
     EXPECT_TRUE (pProperty->GetIsPrimitive());
     EXPECT_FALSE (pProperty->GetIsStruct());
@@ -675,7 +675,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateClassesInXml)
     EXPECT_STREQ (L"string", pProperty->GetTypeName().c_str());
 
     pProperty = projectClass->GetPropertyP (L"Author");
-    EXPECT_TRUE (pProperty);
+    ASSERT_TRUE (NULL != pProperty);
     EXPECT_STREQ (L"Author", pProperty->GetName().c_str());
     EXPECT_TRUE (pProperty->GetIsPrimitive());
     EXPECT_FALSE (pProperty->GetIsStruct());
