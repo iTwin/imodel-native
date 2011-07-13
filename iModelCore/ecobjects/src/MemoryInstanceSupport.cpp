@@ -1383,7 +1383,7 @@ UInt32          MemoryInstanceSupport::GetOffsetOfArrayIndexValue (UInt32 arrayO
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus       MemoryInstanceSupport::EnsureSpaceIsAvailable (UInt32& offset, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded)
+ECObjectsStatus       MemoryInstanceSupport::EnsureSpaceIsAvailable (UInt32& offset, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded, EmbeddedInstanceCallbackP callbackP)
     {
     byte const *             data = _GetData();
     SecondaryOffset*         pSecondaryOffset = (SecondaryOffset*)(data + propertyLayout.GetOffset());
@@ -1417,13 +1417,13 @@ ECObjectsStatus       MemoryInstanceSupport::EnsureSpaceIsAvailable (UInt32& off
     if (additionalBytesNeeded <= 0)
         return ECOBJECTS_STATUS_Success;
         
-    return GrowPropertyValue (classLayout, propertyLayout, additionalBytesNeeded);
+    return GrowPropertyValue (classLayout, propertyLayout, additionalBytesNeeded, callbackP);
     }        
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus MemoryInstanceSupport::InsertNullArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 insertIndex, UInt32 insertCount)
+ECObjectsStatus MemoryInstanceSupport::InsertNullArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 insertIndex, UInt32 insertCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP)
     {        
     PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
                 
@@ -1439,13 +1439,13 @@ ECObjectsStatus MemoryInstanceSupport::InsertNullArrayElementsAt (ClassLayoutCR 
     
     PRECONDITION (insertCount > 0, ECOBJECTS_STATUS_IndexOutOfRange)        
     
-    return ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, insertIndex, insertCount);
+    return ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, insertIndex, insertCount, memoryReallocationCallbackP);
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus       MemoryInstanceSupport::AddNullArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 count)
+ECObjectsStatus       MemoryInstanceSupport::AddNullArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 count, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP)
     {        
     PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
                 
@@ -1461,7 +1461,7 @@ ECObjectsStatus       MemoryInstanceSupport::AddNullArrayElementsAt (ClassLayout
     
     PRECONDITION (count > 0, ECOBJECTS_STATUS_IndexOutOfRange)        
     
-    return ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, GetAllocatedArrayCount (propertyLayout), count);
+    return ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, GetAllocatedArrayCount (propertyLayout), count, memoryReallocationCallbackP);
     }         
 
 /*---------------------------------------------------------------------------------**//**
@@ -1497,7 +1497,7 @@ ECObjectsStatus       MemoryInstanceSupport::EnsureSpaceIsAvailableForArrayIndex
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus       MemoryInstanceSupport::GrowPropertyValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 additionalBytesNeeded)
+ECObjectsStatus       MemoryInstanceSupport::GrowPropertyValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 additionalBytesNeeded, EmbeddedInstanceCallbackP callbackP)
     {
     byte const * data = _GetData();
     UInt32 bytesUsed = classLayout.CalculateBytesUsed(data);
@@ -1506,10 +1506,10 @@ ECObjectsStatus       MemoryInstanceSupport::GrowPropertyValue (ClassLayoutCR cl
     UInt32 additionalBytesAvailable = bytesAllocated - bytesUsed;
     
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
-    UInt32 growBy = additionalBytesNeeded - additionalBytesAvailable;
     if (additionalBytesNeeded > additionalBytesAvailable)
         {
-        status = _GrowAllocation (growBy);
+        UInt32 growBy = additionalBytesNeeded - additionalBytesAvailable;
+        status = _GrowAllocation (growBy, callbackP);
         UInt32 newBytesAllocated = _GetBytesAllocated();
         DEBUG_EXPECT (newBytesAllocated >= bytesAllocated + growBy);
         bytesAllocated = newBytesAllocated;
@@ -1519,7 +1519,8 @@ ECObjectsStatus       MemoryInstanceSupport::GrowPropertyValue (ClassLayoutCR cl
         return status;
         
     byte * writeableData = (byte *)_GetData();
-    DEBUG_EXPECT (bytesUsed == classLayout.CalculateBytesUsed(writeableData));
+    UInt32 revisedBytesUsed = classLayout.CalculateBytesUsed(writeableData);
+    DEBUG_EXPECT (bytesUsed == revisedBytesUsed);
     
     status = ShiftValueData(classLayout, writeableData, bytesAllocated, propertyLayout, additionalBytesNeeded);
 
@@ -1880,12 +1881,14 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             {
             WCharCP value = v.GetString();
             UInt32 bytesNeeded = (UInt32)(sizeof(wchar_t) * (wcslen(value) + 1)); // WIP_FUSION: what if the caller could tell us the size?
-            
+
+            EC::EmbeddedInstanceCallbackP callbackP = v.GetMemoryCallback();
             ECObjectsStatus status;
+
             if (useIndex)
                 status = EnsureSpaceIsAvailableForArrayIndexValue (classLayout, propertyLayout, index, bytesNeeded);
             else
-                status = EnsureSpaceIsAvailable (offset, classLayout, propertyLayout, bytesNeeded);
+                status = EnsureSpaceIsAvailable (offset, classLayout, propertyLayout, bytesNeeded, callbackP);
             if (ECOBJECTS_STATUS_Success != status)
                 return status;
                 
@@ -2376,12 +2379,12 @@ ECObjectsStatus            ArrayResizer::WriteArrayHeader ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus       ArrayResizer::CreateNullArrayElementsAt (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, MemoryInstanceSupportR instance, UInt32 insertIndex, UInt32 insertCount)
+ECObjectsStatus       ArrayResizer::CreateNullArrayElementsAt (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, MemoryInstanceSupportR instance, UInt32 insertIndex, UInt32 insertCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP)
     {                        
     ArrayResizer resizer (classLayout, propertyLayout, instance, insertIndex, insertCount);
     PRECONDITION (resizer.m_resizeIndex <= resizer.m_preAllocatedArrayCount, ECOBJECTS_STATUS_IndexOutOfRange);        
     
-    ECObjectsStatus status = instance.EnsureSpaceIsAvailable (resizer.m_arrayOffset, classLayout, propertyLayout, resizer.m_preArrayByteCount + resizer.m_resizeByteCount);
+    ECObjectsStatus status = instance.EnsureSpaceIsAvailable (resizer.m_arrayOffset, classLayout, propertyLayout, resizer.m_preArrayByteCount + resizer.m_resizeByteCount, memoryReallocationCallbackP);
     if (ECOBJECTS_STATUS_Success != status)
         return status;       
         

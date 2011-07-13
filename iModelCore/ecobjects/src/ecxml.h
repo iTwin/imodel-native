@@ -87,7 +87,7 @@ static const WString ECXML_DIRECTION_BACKWARD          = L"backward";
 #define READ_OPTIONAL_XML_ATTRIBUTE(_xmlAttributeName, _setInPointer, _setInPropertyName)   \
     if ((NULL != (attributePtr = nodeAttributesPtr->getNamedItem (_xmlAttributeName))) &&   \
         (ECOBJECTS_STATUS_Success != _setInPointer->Set##_setInPropertyName ((WCharCP)attributePtr->text))) \
-            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
 
 #define READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS(_xmlAttributeName, _setInPointer, _setInPropertyName)   \
     if (NULL != (attributePtr = nodeAttributesPtr->getNamedItem (_xmlAttributeName)))   \
@@ -99,29 +99,29 @@ static const WString ECXML_DIRECTION_BACKWARD          = L"backward";
     if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (_xmlAttributeName)))     \
         {   \
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " _xmlAttributeName L" attribute", (WCharCP)_elementName);     \
-        return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;        \
+        return SCHEMA_READ_STATUS_InvalidECSchemaXml;        \
         }       \
     if (ECOBJECTS_STATUS_Success != _setInPointer->Set##_setInPropertyName ((WCharCP)attributePtr->text))       \
-        return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+        return SCHEMA_READ_STATUS_InvalidECSchemaXml;
 
 #define READ_REQUIRED_XML_ATTRIBUTE_IGNORING_SET_ERRORS(_xmlAttributeName, _setInPointer, _setInPropertyName, _elementName)   \
     if (NULL == (attributePtr = nodeAttributesPtr->getNamedItem (_xmlAttributeName)))     \
         {   \
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %s element must contain a " _xmlAttributeName L" attribute", (WCharCP)_elementName);     \
-        status = SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;        \
+        status = SCHEMA_READ_STATUS_InvalidECSchemaXml;        \
         }       \
     else if (ECOBJECTS_STATUS_ParseError == _setInPointer->Set##_setInPropertyName ((WCharCP)attributePtr->text)) \
-        status = SCHEMA_DESERIALIZATION_STATUS_FailedToParseXml;
+        status = SCHEMA_READ_STATUS_FailedToParseXml;
             
 #define APPEND_CHILD_TO_PARENT(_child, _parent) \
     if (NULL == _child)\
-        return SCHEMA_SERIALIZATION_STATUS_FailedToCreateXml;\
+        return SCHEMA_WRITE_STATUS_FailedToCreateXml;\
     if (NULL == _parent->appendChild(_child))\
-        return SCHEMA_SERIALIZATION_STATUS_FailedToCreateXml; 
+        return SCHEMA_WRITE_STATUS_FailedToCreateXml; 
 
 #define WRITE_XML_ATTRIBUTE(_xmlAttributeName, _value, _parent) \
     if (NULL == (attributePtr = _parent->ownerDocument->createAttribute(_xmlAttributeName))) \
-        return SCHEMA_SERIALIZATION_STATUS_FailedToCreateXml; \
+        return SCHEMA_WRITE_STATUS_FailedToCreateXml; \
     attributePtr->Putvalue(_value); \
     _parent->setAttributeNode(attributePtr);
 

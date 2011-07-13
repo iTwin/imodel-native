@@ -851,7 +851,7 @@ const void*       arg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus ECClass::ReadXmlAttributes
+SchemaReadStatus ECClass::ReadXmlAttributes
 (
 MSXML2::IXMLDOMNode& classNode,
 IStandaloneEnablerLocaterR  standaloneEnablerLocater
@@ -880,13 +880,13 @@ IStandaloneEnablerLocaterR  standaloneEnablerLocater
     if ((NULL == attributePtr) && (this->GetIsCustomAttributeClass()))
         this->SetIsDomainClass (false);
 
-    return SCHEMA_DESERIALIZATION_STATUS_Success;
+    return SCHEMA_READ_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus ECClass::ReadXmlContents
+SchemaReadStatus ECClass::ReadXmlContents
 (
 MSXML2::IXMLDOMNode&        classNode,
 IStandaloneEnablerLocaterR  standaloneEnablerLocater
@@ -906,7 +906,7 @@ IStandaloneEnablerLocaterR  standaloneEnablerLocater
             {
             ECObjectsLogger::Log()->warningv (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the value '%s' that can not be parsed.", 
                 this->GetName().c_str(), qualifiedClassName.c_str());
-            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
         
         ECSchemaP resolvedSchema = GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
@@ -914,7 +914,7 @@ IStandaloneEnablerLocaterR  standaloneEnablerLocater
             {
             ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the namespace prefix '%s' that can not be resolved to a referenced schema.", 
                 this->GetName().c_str(), namespacePrefix.c_str());
-            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
 
         ECClassP baseClass = resolvedSchema->GetClassP (className.c_str());
@@ -922,12 +922,15 @@ IStandaloneEnablerLocaterR  standaloneEnablerLocater
             {
             ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: The ECClass '%s' contains a " EC_BASE_CLASS_ELEMENT L" element with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'", 
                 this->GetName().c_str(), qualifiedClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
-            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
 
         if (ECOBJECTS_STATUS_Success != AddBaseClass(*baseClass))
-            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
+    
+//    if (m_name.Equals(L"MANWAY"))
+//        ECObjectsLogger::Log()->warning  (L"MANWAY");
 
     // Build properties
     xmlNodeListPtr = classNode.selectNodes (EC_NAMESPACE_PREFIX L":" EC_PROPERTY_ELEMENT L" | " EC_NAMESPACE_PREFIX L":" EC_ARRAYPROPERTY_ELEMENT L" | " EC_NAMESPACE_PREFIX L":" EC_STRUCTPROPERTY_ELEMENT);
@@ -943,11 +946,11 @@ IStandaloneEnablerLocaterR  standaloneEnablerLocater
         else
             {
             ECObjectsLogger::Log()->warningv (L"Invalid ECSchemaXML: Unknown property type '%s' of ECClass '%s' in the ECSchema '%s'", xmlNodePtr->baseName, this->GetName().c_str(), this->GetSchema().GetName().c_str());
-            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
 
-        SchemaDeserializationStatus status = pProperty->_ReadXml(xmlNodePtr, standaloneEnablerLocater);
-        if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
+        SchemaReadStatus status = pProperty->_ReadXml(xmlNodePtr, standaloneEnablerLocater);
+        if (status != SCHEMA_READ_STATUS_Success)
             {
             ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to deserialize properties of ECClass '%s' in the ECSchema '%s'", this->GetName().c_str(), this->GetSchema().GetName().c_str());                
             delete pProperty;
@@ -959,26 +962,26 @@ IStandaloneEnablerLocaterR  standaloneEnablerLocater
             ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to deserialize ECClass '%s' in the ECSchema '%s' because a problem occurred while adding ECProperty '%s'", 
                 this->GetName().c_str(), this->GetSchema().GetName().c_str(), pProperty->GetName().c_str());
             delete pProperty;
-            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
         }
 
     // Add Custom Attributes
     ReadCustomAttributes(classNode, m_schema, standaloneEnablerLocater);
 
-    return SCHEMA_DESERIALIZATION_STATUS_Success;
+    return SCHEMA_READ_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus ECClass::WriteXml
+SchemaWriteStatus ECClass::WriteXml
 (
 MSXML2::IXMLDOMElement &parentNode, 
 WCharCP elementName
 ) const
     {
-    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+    SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
     MSXML2::IXMLDOMTextPtr textPtr = NULL;
     MSXML2::IXMLDOMAttributePtr attributePtr;
 
@@ -1016,7 +1019,7 @@ WCharCP elementName
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus ECClass::WriteXml
+SchemaWriteStatus ECClass::WriteXml
 (
 MSXML2::IXMLDOMElement& parentNode
 ) const
@@ -1378,13 +1381,13 @@ ECSchemaCP ECRelationshipConstraint::_GetContainerSchema() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus ECRelationshipConstraint::ReadXml
+SchemaReadStatus ECRelationshipConstraint::ReadXml
 (
 MSXML2::IXMLDOMNode         &constraintNode,
 IStandaloneEnablerLocaterR  standaloneEnablerLocater
 )
     {
-    SchemaDeserializationStatus status = SCHEMA_DESERIALIZATION_STATUS_Success;
+    SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
     
     MSXML2::IXMLDOMNamedNodeMapPtr nodeAttributesPtr = constraintNode.attributes;
     MSXML2::IXMLDOMNodePtr attributePtr;
@@ -1401,7 +1404,7 @@ IStandaloneEnablerLocaterR  standaloneEnablerLocater
         {
         MSXML2::IXMLDOMNamedNodeMapPtr constraintClassAttributesPtr = xmlNodePtr->attributes;
         if (NULL == (attributePtr = constraintClassAttributesPtr->getNamedItem(CONSTRAINTCLASSNAME_ATTRIBUTE)))
-            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         WString constraintClassName = attributePtr->text.GetBSTR();;  
         
         // Parse the potentially qualified class name into a namespace prefix and short class name
@@ -1411,7 +1414,7 @@ IStandaloneEnablerLocaterR  standaloneEnablerLocater
             {
             ECObjectsLogger::Log()->warningv (L"Invalid ECSchemaXML: The ECRelationshipConstraint contains a " CONSTRAINTCLASSNAME_ATTRIBUTE L" attribute with the value '%s' that can not be parsed.", 
                 constraintClassName.c_str());
-            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
         
         ECSchemaP resolvedSchema = m_relClass->GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
@@ -1419,7 +1422,7 @@ IStandaloneEnablerLocaterR  standaloneEnablerLocater
             {
             ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: ECRelationshipConstraint contains a " CONSTRAINTCLASSNAME_ATTRIBUTE L" attribute with the namespace prefix '%s' that can not be resolved to a referenced schema.", 
                 namespacePrefix.c_str());
-            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
 
         ECClassP constraintClass = resolvedSchema->GetClassP (className.c_str());
@@ -1427,7 +1430,7 @@ IStandaloneEnablerLocaterR  standaloneEnablerLocater
             {
             ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: The ECRelationshipConstraint contains a " CONSTRAINTCLASSNAME_ATTRIBUTE L" attribute with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'", 
                 constraintClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
-            return SCHEMA_DESERIALIZATION_STATUS_InvalidECSchemaXml;
+            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
         AddClass(*constraintClass);
         }
@@ -1441,13 +1444,13 @@ IStandaloneEnablerLocaterR  standaloneEnablerLocater
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus ECRelationshipConstraint::WriteXml
+SchemaWriteStatus ECRelationshipConstraint::WriteXml
 (
 MSXML2::IXMLDOMElement &parentNode, 
 const WString &elementName
 ) const
     {
-    SchemaSerializationStatus status = SCHEMA_SERIALIZATION_STATUS_Success;
+    SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
     MSXML2::IXMLDOMTextPtr textPtr = NULL;
     MSXML2::IXMLDOMAttributePtr attributePtr;
 
@@ -1875,26 +1878,26 @@ ECObjectsStatus ECRelationshipClass::GetOrderedRelationshipPropertyName (WString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaSerializationStatus ECRelationshipClass::WriteXml
+SchemaWriteStatus ECRelationshipClass::WriteXml
 (
 MSXML2::IXMLDOMElement& parentNode
 ) const
     {
         
-    SchemaSerializationStatus status = __super::WriteXml(parentNode, EC_RELATIONSHIP_CLASS_ELEMENT);
+    SchemaWriteStatus status = __super::WriteXml(parentNode, EC_RELATIONSHIP_CLASS_ELEMENT);
     
-    if (status != SCHEMA_SERIALIZATION_STATUS_Success)
+    if (status != SCHEMA_WRITE_STATUS_Success)
         return status;
         
     MSXML2::IXMLDOMAttributePtr attributePtr;
 
     MSXML2::IXMLDOMElementPtr propertyPtr = parentNode.lastChild;
     if (NULL == propertyPtr)
-        return SCHEMA_SERIALIZATION_STATUS_FailedToCreateXml;
+        return SCHEMA_WRITE_STATUS_FailedToCreateXml;
         
     // verify that this really is the current relationship class element
     if (wcscmp(propertyPtr->nodeName, EC_RELATIONSHIP_CLASS_ELEMENT) != 0)
-        return SCHEMA_SERIALIZATION_STATUS_FailedToCreateXml;
+        return SCHEMA_WRITE_STATUS_FailedToCreateXml;
         
     WRITE_XML_ATTRIBUTE(STRENGTH_ATTRIBUTE, ECXml::StrengthToString(m_strength).c_str(), propertyPtr);
     WRITE_XML_ATTRIBUTE(STRENGTHDIRECTION_ATTRIBUTE, ECXml::DirectionToString(m_strengthDirection).c_str(), propertyPtr);
@@ -1908,14 +1911,14 @@ MSXML2::IXMLDOMElement& parentNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus ECRelationshipClass::ReadXmlAttributes
+SchemaReadStatus ECRelationshipClass::ReadXmlAttributes
 (
 MSXML2::IXMLDOMNode &classNode, 
 IStandaloneEnablerLocaterR  standaloneEnablerLocater
 )
     {
-    SchemaDeserializationStatus status = __super::ReadXmlAttributes(classNode, standaloneEnablerLocater);
-    if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
+    SchemaReadStatus status = __super::ReadXmlAttributes(classNode, standaloneEnablerLocater);
+    if (status != SCHEMA_READ_STATUS_Success)
         return status;
         
     MSXML2::IXMLDOMNamedNodeMapPtr nodeAttributesPtr = classNode.attributes;
@@ -1924,20 +1927,20 @@ IStandaloneEnablerLocaterR  standaloneEnablerLocater
     READ_OPTIONAL_XML_ATTRIBUTE (STRENGTH_ATTRIBUTE, this, Strength)
     READ_OPTIONAL_XML_ATTRIBUTE (STRENGTHDIRECTION_ATTRIBUTE, this, StrengthDirection)
     
-    return SCHEMA_DESERIALIZATION_STATUS_Success;
+    return SCHEMA_READ_STATUS_Success;
     }
  
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaDeserializationStatus ECRelationshipClass::ReadXmlContents
+SchemaReadStatus ECRelationshipClass::ReadXmlContents
 (
 MSXML2::IXMLDOMNode &classNode, 
 IStandaloneEnablerLocaterR  standaloneEnablerLocater
 )
     {
-    SchemaDeserializationStatus status = __super::ReadXmlContents(classNode, standaloneEnablerLocater);
-    if (status != SCHEMA_DESERIALIZATION_STATUS_Success)
+    SchemaReadStatus status = __super::ReadXmlContents(classNode, standaloneEnablerLocater);
+    if (status != SCHEMA_READ_STATUS_Success)
         return status;
         
     MSXML2::IXMLDOMNodePtr xmlNodePtr = classNode.selectSingleNode (EC_NAMESPACE_PREFIX L":" EC_SOURCECONSTRAINT_ELEMENT);
@@ -1948,7 +1951,7 @@ IStandaloneEnablerLocaterR  standaloneEnablerLocater
     if (NULL != xmlNodePtr)
         m_target->ReadXml(xmlNodePtr, standaloneEnablerLocater);
         
-    return SCHEMA_DESERIALIZATION_STATUS_Success;
+    return SCHEMA_READ_STATUS_Success;
     }
     
 END_BENTLEY_EC_NAMESPACE

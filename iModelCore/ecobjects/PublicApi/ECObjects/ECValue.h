@@ -9,6 +9,7 @@
 /*__PUBLISH_SECTION_START__*/
 
 #include <Bentley\VirtualCollectionIterator.h>
+#include <ECObjects\ECInstance.h>
 #include <ECObjects\ECObjects.h>
 #include <Geom\GeomApi.h>
 
@@ -88,7 +89,9 @@ private:
         };
     bool                m_isNull;     
     bool                m_isReadOnly; // Really indicates that the property from which this came is readonly... not the value itself.
-    
+
+    EmbeddedInstanceCallbackP m_memoryCallback;  // used when managed code is setting value of a non-fixed size property
+
 protected:    
     typedef bvector<ECValue>  ValuesVector;
     typedef bvector<ECValue>* ValuesVectorP;
@@ -149,6 +152,11 @@ public:
 
     ECOBJECTS_EXPORT void           SetReadOnly(bool isReadOnly);
 
+/*__PUBLISH_SECTION_END__*/
+    ECOBJECTS_EXPORT void                        SetMemoryCallback(EmbeddedInstanceCallbackP memoryCallback) {m_memoryCallback = memoryCallback;}
+    ECOBJECTS_EXPORT EmbeddedInstanceCallbackP   GetMemoryCallback() const {return m_memoryCallback;}
+/*__PUBLISH_SECTION_START__*/
+
     ECOBJECTS_EXPORT bool           IsReadOnly() const;
     ECOBJECTS_EXPORT bool           IsNull() const;
     ECOBJECTS_EXPORT void           SetToNull();
@@ -192,8 +200,8 @@ public:
     ECOBJECTS_EXPORT double         GetDouble () const;
     ECOBJECTS_EXPORT BentleyStatus  SetDouble (double value);  
         
-    ECOBJECTS_EXPORT WCharCP GetString () const;
-                     WCharCP GetString0 () const {return m_stringInfo.m_string;}
+    ECOBJECTS_EXPORT WCharCP        GetString () const;
+                     WCharCP        GetString0 () const {return m_stringInfo.m_string;}
     ECOBJECTS_EXPORT BentleyStatus  SetString (WCharCP string, bool holdADuplicate = true);
 
     ECOBJECTS_EXPORT const byte *   GetBinary (size_t& size) const;

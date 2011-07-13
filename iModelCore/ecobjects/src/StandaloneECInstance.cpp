@@ -139,7 +139,7 @@ size_t          MemoryECInstanceBase::LoadDataIntoManagedInstance (byte* managed
     memcpy (managedBuffer+offsetToPropertyData, &offset, sizeof(offset));
 
     // now copy the property data
-    size_t currentBytesUsed = (size_t)GetBytesUsed ();
+    size_t currentBytesUsed = (size_t)m_bytesAllocated; //GetBytesUsed ();
     memcpy (managedBuffer+offset, m_data, currentBytesUsed);
 
     offset += currentBytesUsed;
@@ -161,13 +161,15 @@ size_t          MemoryECInstanceBase::LoadDataIntoManagedInstance (byte* managed
     // safe to stuff the offset into the pointer.
     DEBUG_EXPECT (sizeof(IECInstancePtr) >= sizeof(offset));
 
-    // find the offset to the location in managed memory for the first struct instance
-    // Note: on 64 bit  sizeof (structValueIdentifier) + sizeof (IECInstancePtr) is not equal to sizeof(StructArrayEntry)
-    size_t offsetToStructInstance = offset + (numArrayInstances * sizeof(StructArrayEntry));
-
     // calculate offset to instance pointer in array entry - on 64 bit we can not just use sizeof(entry.structValueIdentifier)
     StructArrayEntry const& firstEntry = (*m_structInstances)[0];
     size_t offsetToInstancePtr = (byte const* )&firstEntry.structInstance - (byte const* )&firstEntry.structValueIdentifier;
+
+    // calculate relative offset from address of entry to first struct instance
+    // Note: on 64 bit  sizeof (structValueIdentifier) + sizeof (IECInstancePtr) is not equal to sizeof(StructArrayEntry)
+    size_t relativeOffsetToFirstStructInstance = (numArrayInstances * sizeof(StructArrayEntry));  
+    size_t relativeOffsetToStructInstance = 0; 
+    size_t totalOffsetToStructInstance = offset + relativeOffsetToFirstStructInstance; 
 
     size_t iecInstanceOffset;
     size_t sizeOfStructInstance;
@@ -183,7 +185,7 @@ size_t          MemoryECInstanceBase::LoadDataIntoManagedInstance (byte* managed
 
         // At this point the offsetToStructInstance is the offset to the concrete object (most likely a StandAloneECInstance). We need to adjust this to
         // point to the vtable of a IECInstance 
-        iecInstanceOffset = offsetToStructInstance + entry.structInstance->GetOffsetToIECInstance();
+        iecInstanceOffset = relativeOffsetToStructInstance + relativeOffsetToFirstStructInstance + entry.structInstance->GetOffsetToIECInstance();
 
         // store the offset to the instance
         memcpy (managedBuffer+(offset+offsetToInstancePtr), &iecInstanceOffset, sizeof(iecInstanceOffset)); 
@@ -194,11 +196,14 @@ size_t          MemoryECInstanceBase::LoadDataIntoManagedInstance (byte* managed
         DEBUG_EXPECT (NULL != mbInstance);
         if (!mbInstance)
             continue;
-        sizeOfStructInstance = mbInstance->LoadDataIntoManagedInstance (managedBuffer+offsetToStructInstance, sizeOfManagedBuffer-offsetToStructInstance);
-        offsetToStructInstance += sizeOfStructInstance; 
+        sizeOfStructInstance = mbInstance->LoadDataIntoManagedInstance (managedBuffer+totalOffsetToStructInstance, sizeOfManagedBuffer-totalOffsetToStructInstance);
+
+        totalOffsetToStructInstance         += sizeOfStructInstance; 
+        relativeOffsetToStructInstance      += sizeOfStructInstance; 
+        relativeOffsetToFirstStructInstance -= sizeof (StructArrayEntry);
         }
 
-    return  offsetToStructInstance;
+    return  totalOffsetToStructInstance;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -208,7 +213,8 @@ ECObjectsStatus           MemoryECInstanceBase::_ModifyData (UInt32 offset, void
     {
     PRECONDITION (NULL != m_data, ECOBJECTS_STATUS_PreconditionViolated);
     PRECONDITION (offset + dataLength <= m_bytesAllocated, ECOBJECTS_STATUS_MemoryBoundsOverrun);
-    byte * dest = m_data + offset;
+
+    byte * dest = GetAddressOfPropertyData() + offset;
     memcpy (dest, newData, dataLength);
     
     return ECOBJECTS_STATUS_Success;
@@ -242,26 +248,141 @@ void                MemoryECInstanceBase::_FreeAllocation ()
     }
     
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  07/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void    MemoryECInstanceBase::UpdateStructArrayOffsets (byte const* gapAddress, bool& updateOffset, size_t resizeAmount)
+    {
+    StructArrayEntry* instanceArray = NULL;
+
+    byte const* thisAddress       = (byte const*)this;
+    byte const* arrayCountAddress =  thisAddress + (size_t)m_structInstances;
+    byte const* arrayAddress      =  arrayCountAddress + sizeof(UInt32);
+
+    UInt32 const* arrayCount      = (UInt32 const*)arrayCountAddress;
+    size_t        numEntries      = *arrayCount;
+    size_t        newOffset;
+
+    instanceArray = (StructArrayEntry*)(const_cast<byte*>(arrayAddress));
+
+    for (size_t i = 0; i<numEntries; i++)
+        {
+        StructArrayEntry* entry       = &instanceArray[i];
+        byte*             baseAddress = (byte*)entry;
+        size_t            offset      = (size_t)(entry->structInstance.get());
+
+        if (updateOffset)
+            {
+            newOffset = offset + resizeAmount;
+            memcpy (&entry->structInstance, &newOffset, sizeof(newOffset));
+            continue;
+            }
+
+        if (baseAddress > gapAddress)
+            {
+            updateOffset = true;
+            return;   // we don't need to adjust any offsets at this level in the heirarchy
+            }
+
+        // see if any child instances grew
+        byte const* instanceAddress = baseAddress + offset;
+
+        // since the offset will put us at the vtable of the IECInstance and not to the start of the concrete object 
+        // we can cast is directly to an IECInstanceP. See comments in method LoadDataIntoManagedInstance
+        IECInstanceP iecInstanceP = (IECInstanceP) const_cast<byte*>(instanceAddress);
+
+        MemoryECInstanceBase* mbInstance = dynamic_cast<MemoryECInstanceBase*>(iecInstanceP);
+        if (mbInstance)
+            mbInstance->UpdateStructArrayOffsets (gapAddress, updateOffset, resizeAmount); 
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* This should only be called for root instance. This method builds a tree structure on
+* struct array instance offsets. Once built it locates the instance that has been 
+* modified. Once located, all subsequent sibling instance offsets must be updated to
+* account for the growth of the property data.
+* @bsimethod                                    Bill.Steinbock                  06/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void    MemoryECInstanceBase::FixupStructArrayOffsets (int offsetBeyondGap, size_t resizeAmount)
+    {
+    if (!m_isInManagedInstance)
+        return;
+
+    byte const* gapAddress = (byte const*)this + offsetBeyondGap;
+    bool   updateOffset    = false;
+
+    UpdateStructArrayOffsets (gapAddress, updateOffset, resizeAmount);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           MemoryECInstanceBase::_GrowAllocation (UInt32 bytesNeeded)
+ECObjectsStatus           MemoryECInstanceBase::_GrowAllocation (UInt32 bytesNeeded, EmbeddedInstanceCallbackP memoryCallback)
     {
-    DEBUG_EXPECT (!m_isInManagedInstance);
-    if (m_isInManagedInstance)
-        return ECOBJECTS_STATUS_Error;
-
     DEBUG_EXPECT (m_bytesAllocated > 0);
     DEBUG_EXPECT (NULL != m_data);
     // WIP_FUSION: add performance counter
             
-    UInt32 newSize = 2 * (m_bytesAllocated + bytesNeeded); // Assume the growing trend will continue.
-    byte * reallocedData = (byte*)realloc(m_data, newSize);
-    DEBUG_EXPECT (NULL != reallocedData);
-    if (NULL == reallocedData)
-        return ECOBJECTS_STATUS_UnableToAllocateMemory;
+    if (memoryCallback)
+        {
+        if (!m_isInManagedInstance)
+            return ECOBJECTS_STATUS_Error;
+
+        byte* dataAddress = const_cast<byte*>(_GetData ());
+
+        MemoryCallbackData data;
+        data.neededSize = (size_t)(bytesNeeded * 2); 
+        data.dataAddress = dataAddress;
+        data.gapAddress = dataAddress + m_bytesAllocated;
+
+        // adjust offset stored in m_structInstances by the amount the propertydata grew - this way when we copy the instance data 
+        // into the new buffer in managed code the offset is properly set
+        Int64 saveOffsetToStructArrayVector = (Int64)m_structInstances;
+        Int64 offsetToStructArrayVector = (Int64)m_structInstances + data.neededSize;
+        memcpy (&m_structInstances, &offsetToStructArrayVector, sizeof(byte*));
+
+        // update the byte allocated so it will be correct in the copied instance.
+        m_bytesAllocated += (UInt32)data.neededSize;
+
+        if (0 == memoryCallback (&data))
+            {
+            // hocus pocus - set offsets in this object to point to data in newly allocated object
+            Int64 deltaOffset = data.newDataAddress - dataAddress;   // delta between memory locations for propertyData
+
+            Int64 offsetToPropertyData = (Int64)m_data + deltaOffset; 
+            memcpy (&m_data, &offsetToPropertyData, sizeof(byte*));
+
+            // adjust offset stored in m_structInstances by the delta between the old and new data addresses.
+            Int64 offsetToStructArrayVector = (Int64)m_structInstances + (Int64)deltaOffset;
+            memcpy (&m_structInstances, &offsetToStructArrayVector, sizeof(byte*));
+
+            return ECOBJECTS_STATUS_Success;
+            }
+        else
+            {
+            // reset values if managed callback was unsuccessful
+            m_bytesAllocated -= (UInt32)data.neededSize;
+
+            memcpy (&m_structInstances, &saveOffsetToStructArrayVector, sizeof(byte*));
+            return ECOBJECTS_STATUS_Error;
+            }
+        }
+    else
+        {
+        if (m_isInManagedInstance)
+            return ECOBJECTS_STATUS_Error;
+
+        UInt32 newSize = 2 * (m_bytesAllocated + bytesNeeded); // Assume the growing trend will continue.
+
+        byte * reallocedData = (byte*)realloc(m_data, newSize);
+        DEBUG_EXPECT (NULL != reallocedData);
+        if (NULL == reallocedData)
+            return ECOBJECTS_STATUS_UnableToAllocateMemory;
         
-    m_data = reallocedData;    
-    m_bytesAllocated = newSize;
+        m_data = reallocedData; 
+
+        m_bytesAllocated = newSize;
+        }
     
     return ECOBJECTS_STATUS_Success;
     }
@@ -342,8 +463,6 @@ StructArrayEntry const* MemoryECInstanceBase::GetAddressOfStructArrayEntry (Stru
         }
     else
         {
-        numEntries = m_structValueId;
-
         byte const* baseAddress = (byte const*)this;
         byte const* arrayCountAddress =  baseAddress + (size_t)m_structInstances;
         byte const* arrayAddress      =  arrayCountAddress + sizeof(UInt32);
@@ -377,13 +496,13 @@ IECInstancePtr  MemoryECInstanceBase::GetStructArrayInstance (StructValueIdentif
     if (!m_isInManagedInstance)
         return entry->structInstance;
 
-    byte const* baseAddress = (byte const*)this;
+    byte const* baseAddress = (byte const*)entry;
     size_t offset = (size_t)(entry->structInstance.get());
-    byte const* arrayAddress =  baseAddress + offset;
+    byte const* instanceAddress =  baseAddress + offset;
 
     // since the offset will put us at the vtable of the IECInstance and not to the start of the concrete object 
     // we can cast is directly to an IECInstanceP. See comments in method LoadDataIntoManagedInstance
-    IECInstanceP iecInstanceP = (IECInstanceP) const_cast<byte*>(arrayAddress);
+    IECInstanceP iecInstanceP = (IECInstanceP) const_cast<byte*>(instanceAddress);
     return iecInstanceP;
     }
 
@@ -421,6 +540,16 @@ byte const *        MemoryECInstanceBase::GetData () const
     }
     
 /*---------------------------------------------------------------------------------**//**
+* Get the address of the data, this is &m_data if not in embedded in a managed
+* instance, otherwise m_data is an offset and the address is calculated.
+* @bsimethod                                    Bill.Steinbock                  06/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+byte*        MemoryECInstanceBase::GetAddressOfPropertyData () const
+    {
+    return const_cast<byte*>(_GetData());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 UInt32              MemoryECInstanceBase::GetBytesUsed () const
@@ -428,7 +557,7 @@ UInt32              MemoryECInstanceBase::GetBytesUsed () const
     if (NULL == m_data)
         return 0;
 
-    return GetClassLayout().CalculateBytesUsed(m_data);
+    return GetClassLayout().CalculateBytesUsed(_GetData());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -443,7 +572,7 @@ void                MemoryECInstanceBase::ClearValues ()
     if (m_structInstances)
         m_structInstances->clear ();
 
-    InitializeMemory (GetClassLayout(), m_data, m_bytesAllocated);
+    InitializeMemory (GetClassLayout(), GetAddressOfPropertyData(), m_bytesAllocated);
     }
    
 /*---------------------------------------------------------------------------------**//**
@@ -531,7 +660,7 @@ static void     duplicateProperties (IECInstanceR target, ECValuesCollectionCR s
 StandaloneECInstancePtr         StandaloneECInstance::Duplicate(IECInstanceCR instance)
     {
     ECClassCR              ecClass           = instance.GetClass();
-    StandaloneECEnablerPtr standaloneEnabler = instance.GetEnablerR().ObtainStandaloneInstanceEnabler (ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str());
+    StandaloneECEnablerPtr standaloneEnabler = instance.GetEnablerR().GetEnablerForStructArrayMember (ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str());
     if (standaloneEnabler.IsNull())
         return NULL;
 
@@ -549,7 +678,7 @@ StandaloneECInstancePtr         StandaloneECInstance::Duplicate(IECInstanceCR in
 size_t                StandaloneECInstance::_GetObjectSize () const
     {
     size_t objectSize = sizeof(*this);
-    size_t primaryInstanceDataSize = (size_t)GetBytesUsed();
+    size_t primaryInstanceDataSize = (size_t)_GetBytesAllocated(); //GetBytesUsed();
     size_t supportingInstanceDataSize = CalculateSupportingInstanceDataSize ();
 
     return objectSize+primaryInstanceDataSize+supportingInstanceDataSize;
@@ -663,10 +792,10 @@ ECObjectsStatus           StandaloneECInstance::_SetValue (UInt32 propertyIndex,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECInstance::_InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size)
+ECObjectsStatus           StandaloneECInstance::_InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP)
     {
     ClassLayoutCR classLayout = GetClassLayout();
-    ECObjectsStatus status = InsertNullArrayElementsAt (classLayout, propertyAccessString, index, size);
+    ECObjectsStatus status = InsertNullArrayElementsAt (classLayout, propertyAccessString, index, size, memoryReallocationCallbackP);
     
     return status;
     } 
@@ -674,10 +803,10 @@ ECObjectsStatus           StandaloneECInstance::_InsertArrayElements (WCharCP pr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECInstance::_AddArrayElements (WCharCP propertyAccessString, UInt32 size)
+ECObjectsStatus           StandaloneECInstance::_AddArrayElements (WCharCP propertyAccessString, UInt32 size, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP)
     {
     ClassLayoutCR classLayout = GetClassLayout();    
-    ECObjectsStatus status = AddNullArrayElementsAt (classLayout, propertyAccessString, size);
+    ECObjectsStatus status = AddNullArrayElementsAt (classLayout, propertyAccessString, size, memoryReallocationCallbackP);
     
     return status;
     }        
