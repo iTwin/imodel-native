@@ -73,7 +73,7 @@ TEST_F(CustomAttributeTest, ExpectFailureWhenSetNonCustomAttributeClass)
     ECSchemaP           schema = CreateCustomAttributeTestSchema(*schemaOwner);
 
     ECClassP containerClass = schema->GetClassP (L"TestClass");
-    ASSERT_TRUE (containerClass);
+    ASSERT_TRUE (NULL != containerClass);
 
     IECInstancePtr instance = GetInstanceForClass(L"BaseClass", *schema, *schemaOwner);
     EXPECT_EQ(ECOBJECTS_STATUS_NotCustomAttributeClass, containerClass->SetCustomAttribute(*instance));
@@ -304,7 +304,7 @@ TEST_F(CustomAttributeTest, ExpectFailureWithUnreferencedCustomAttribute)
     refClass->SetIsCustomAttributeClass(true);
 
     ECClassP containerClass = schema->GetClassP (L"TestClass");
-    ASSERT_TRUE (containerClass);
+    ASSERT_TRUE (NULL != containerClass);
 
     IECInstancePtr instance = GetInstanceForClass(L"RefClass", *refSchema, *schemaOwner);
 
