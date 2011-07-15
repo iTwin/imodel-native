@@ -1885,7 +1885,19 @@ ECValuesCollection::const_iterator ECValuesCollection::begin () const
     if (0 == m_parentPropertyValue.GetValueAccessor().GetDepth())
         iter = new ECValuesCollectionIterator (m_parentPropertyValue.GetInstance());
     else
+        {
+        ECValueCR       parentValue = m_parentPropertyValue.GetValue();
+        if (parentValue.IsArray())
+            {
+            ArrayInfo   arrayInfo  = parentValue.GetArrayInfo();
+            UInt32      arrayCount = arrayInfo.GetCount();
+
+            if (0 == arrayCount)
+                return const_iterator ();
+            }
+
         iter = new ECValuesCollectionIterator (m_parentPropertyValue);
+        }
 
     return const_iterator (*iter);
     }
