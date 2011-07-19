@@ -71,6 +71,12 @@
             <int></int>
             <string>Test</string>
         </StringArray>
+        <StringArrayThatIsNotInSchema>
+            <int>3</int>
+            <int>Seven</int>
+            <int></int>
+            <string>Test</string>
+        </StringArrayThatIsNotInSchema>
     </FormattedStructWithArrays0>
 
     <!-- Check misformatted in arrays -->
