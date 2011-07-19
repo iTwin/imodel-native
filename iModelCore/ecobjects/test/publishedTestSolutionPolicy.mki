@@ -14,6 +14,17 @@ nameToDefine = COMPILING_PUBLISHED_TESTS
 nameToDefine = USE_PUBLISHED_HEADERS
 %include cdefapnd.mki
 
+#-----------------------------------------------------------------------
+#   Set flags for a proper gtest compile
+#-----------------------------------------------------------------------
+%if defined(BUILD_USING_VS2010)
+    nameToDefine = GTEST_USE_OWN_TR1_TUPLE=0
+    %include cdefapnd.mki
+%else
+    nameToDefine = GTEST_HAS_TR1_TUPLE=1
+    %include cdefapnd.mki
+%endif
+
 # When the published tests build they will set USE_PUBLIC_PUBLISHED_HEADERS which should make sure they
 # compile with the published headers and not the internal headers.  All other portions of the build will use
 # internal headers.
