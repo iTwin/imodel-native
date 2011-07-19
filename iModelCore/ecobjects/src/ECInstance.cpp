@@ -2636,10 +2636,8 @@ InstanceReadStatus   SkipToElementEnd ()
         }
 
     m_xmlReader->MoveToElement();
-    LPCWSTR localName = NULL;
-    m_xmlReader->GetLocalName(&localName, NULL);
-    WString elementName(localName);
-    bool notInitiallyPositionedOnElement = (0 == elementName.size());
+    UINT initialDepth = 0;
+    m_xmlReader->GetDepth(&initialDepth);
 
     HRESULT         status;
     XmlNodeType     nodeType;
@@ -2648,11 +2646,9 @@ InstanceReadStatus   SkipToElementEnd ()
         // ignore everything except the end of the element.
         if (XmlNodeType_EndElement == nodeType)
             {
-            if (notInitiallyPositionedOnElement)
-                return INSTANCE_READ_STATUS_Success;
-
-            m_xmlReader->GetLocalName(&localName, NULL);
-            if (0 == wcscmp (localName, elementName.c_str()))
+            UINT depth = 0;
+            m_xmlReader->GetDepth(&depth);
+            if (depth <= initialDepth + 1) // skip nested elements, too
                 return INSTANCE_READ_STATUS_Success;
             }
         }
