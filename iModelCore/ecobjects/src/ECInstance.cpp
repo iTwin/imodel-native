@@ -1964,7 +1964,7 @@ InstanceReadStatus   ReadProperty (ECClassCR ecClass, IECInstanceP ecInstance, W
     ECPropertyP ecProperty;
     if (NULL == (ecProperty = ecClass.GetPropertyP (propertyName)))
         {
-        ECObjectsLogger::Log()->warningv (L"No ECProperty '%s'found in ECClass '%s'. Value will be ignored.", propertyName, ecClass.GetName().c_str());
+        ECObjectsLogger::Log()->warningv (L"No ECProperty '%s' found in ECClass '%s'. Value will be ignored.", propertyName, ecClass.GetName().c_str());
         // couldn't find it, skip the rest of the property.
         return SkipToElementEnd ();
         }
@@ -2625,13 +2625,36 @@ ECClassCP                       ValidateArrayStructType (WCharCP typeFound, ECCl
 InstanceReadStatus   SkipToElementEnd ()
     {
     // skips from current point to the end of the current element.
+    BOOL isEmpty = m_xmlReader->IsEmptyElement();
+    if (isEmpty)
+        {
+        while (S_OK == m_xmlReader->MoveToNextAttribute())
+            {
+            // just skip it
+            }
+        return INSTANCE_READ_STATUS_Success;
+        }
+
+    m_xmlReader->MoveToElement();
+    LPCWSTR localName = NULL;
+    m_xmlReader->GetLocalName(&localName, NULL);
+    WString elementName(localName);
+    bool notInitiallyPositionedOnElement = (0 == elementName.size());
+
     HRESULT         status;
     XmlNodeType     nodeType;
     while (S_OK == (status = m_xmlReader->Read (&nodeType)))
         {
         // ignore everything except the end of the element.
         if (XmlNodeType_EndElement == nodeType)
-            return INSTANCE_READ_STATUS_Success;
+            {
+            if (notInitiallyPositionedOnElement)
+                return INSTANCE_READ_STATUS_Success;
+
+            m_xmlReader->GetLocalName(&localName, NULL);
+            if (0 == wcscmp (localName, elementName.c_str()))
+                return INSTANCE_READ_STATUS_Success;
+            }
         }
 
     return INSTANCE_READ_STATUS_BadElement;
