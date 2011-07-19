@@ -12,7 +12,7 @@
         <Point2DMember>BAD</Point2DMember>        
         <Point3DMember>BAD</Point3DMember>
         <StringMember></StringMember>
-        <ThisPropertyIsAgainNotInTheSchema/>
+        <NOT_IN_SCHEMA_UseDefaultOnFailure xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" xmlns="Bentley_Standard_CustomAttributes.01.02" />
     </FormattedBadStruct>
     
     <!-- Check mismatched types in arrays -->
