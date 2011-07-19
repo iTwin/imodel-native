@@ -42,11 +42,6 @@ always:
 # All warnings on
 WARNINGS_UP=1
 
-%include $(BuildContext)SubParts/mki/BentleyDlls.mki
-
-ECNativeObjectsDllBase = ECObjects4
-ECNativeObjectsDllName = $(ECNativeObjectsDllBase).dll
-
 #-----------------------------------------------------------------------
 #       Source directories
 #-----------------------------------------------------------------------
