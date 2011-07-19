@@ -82,7 +82,7 @@ bool CreateDirectoryRecursive (WCharCP path, bool failIfExists)
     return (DirExists (path));
     }
 
- 
+bool ECTestFixture::s_isLoggerInitialized = false;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                08/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -90,10 +90,14 @@ ECTestFixture::ECTestFixture()
     {
     //LoggingConfig::ActivateProvider(CONSOLE_LOGGING_PROVIDER);
 
-    LoggingConfig::ActivateProvider(LOG4CXX_LOGGING_PROVIDER);
-    LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, GetLogConfigurationFilename().c_str());
+    if (!s_isLoggerInitialized)
+        {
+        LoggingConfig::ActivateProvider(LOG4CXX_LOGGING_PROVIDER);
+        LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, GetLogConfigurationFilename().c_str());
 
-    LoggingConfig::SetSeverity(L"ECObjectsNative", LOG_WARNING);
+        LoggingConfig::SetSeverity(L"ECObjectsNative", LOG_WARNING);
+        s_isLoggerInitialized = true;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
