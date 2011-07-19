@@ -88,13 +88,12 @@ bool CreateDirectoryRecursive (WCharCP path, bool failIfExists)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECTestFixture::ECTestFixture()
     {
-    LoggingConfig::ActivateProvider(CONSOLE_LOGGING_PROVIDER);
+    //LoggingConfig::ActivateProvider(CONSOLE_LOGGING_PROVIDER);
 
-    // Eventually this will switch to the Log4cxx Provider
-    // LoggingConfig::ActivateProvider(LOG4CXX_LOGGING_PROVIDER);
-     //LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, GetLogConfigurationFilename().c_str());
+    LoggingConfig::ActivateProvider(LOG4CXX_LOGGING_PROVIDER);
+    LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, GetLogConfigurationFilename().c_str());
 
-    //LoggingConfig::SetSeverity(L"ECObjectsNative", LOG_TRACE);
+    LoggingConfig::SetSeverity(L"ECObjectsNative", LOG_WARNING);
     }
 
 /*---------------------------------------------------------------------------------**//**
