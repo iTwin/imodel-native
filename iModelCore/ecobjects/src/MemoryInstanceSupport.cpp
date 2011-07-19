@@ -1696,7 +1696,11 @@ ECObjectsStatus       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValu
                 size = GetPropertyValueSize (propertyLayout, index);
             else
                 size = GetPropertyValueSize (propertyLayout);
-            v.SetBinary (pValue, size);
+
+            UInt32 const* actualSize   = (UInt32 const*)pValue;
+            byte const*   actualBuffer = pValue+sizeof(UInt32);
+
+            v.SetBinary (actualBuffer, *actualSize);
             return ECOBJECTS_STATUS_Success;
             }  
         case PRIMITIVETYPE_Boolean:
@@ -1915,7 +1919,15 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
 
             size_t size;
             byte const * data = v.GetBinary (size);
-            UInt32 bytesNeeded = (UInt32)size;
+            size_t totalSize = size + sizeof(UInt32);
+            UInt32 propertySize = (UInt32)size;
+
+            // set up a buffer that will hold both the size and the data
+            byte* dataBuffer = (byte*)calloc (totalSize, sizeof(byte));
+            memcpy (dataBuffer, &propertySize, sizeof(UInt32));
+            memcpy (dataBuffer+sizeof(UInt32), data, size);
+
+            UInt32 bytesNeeded = (UInt32)totalSize;
 
             ECObjectsStatus status;
             if (useIndex)
@@ -1932,7 +1944,7 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
                 return ECOBJECTS_STATUS_Success;
             
             // WIP_FUSION: would it speed things up to poke directly when m_allowWritingDirectlyToInstanceMemory is true?    
-            return _ModifyData (offset, data, bytesNeeded);
+            return _ModifyData (offset, dataBuffer, bytesNeeded);
             }
         case PRIMITIVETYPE_Boolean:
             {
