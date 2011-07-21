@@ -1186,10 +1186,9 @@ bool            ECInstanceInteropHelper::IsNull (IECInstanceR instance, ECValueA
 void            ECInstanceInteropHelper::SetToNull (IECInstanceR instance, ECValueAccessorCR accessor)
     {
     ECValue v;
+    v.SetToNull();
 
-    ECObjectsStatus status = instance.GetValueUsingAccessor (v, accessor);
-    if (status == ECOBJECTS_STATUS_Success)
-        v.SetToNull();
+    instance.SetValueUsingAccessor (accessor, v);
     }
 
 #ifdef NOT_USED
