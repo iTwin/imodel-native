@@ -434,6 +434,33 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithInvalidTypeNameInPrimitivePro
     };
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                07/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectSuccessWithEmptyCustomAttribute)
+    {
+    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
+
+    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
+
+    ECSchemaP schema;
+
+    //schemaContext->AddSchemaPath(L"C:\\temp\\data\\ECXA\\SchemasAndDgn\\");
+    //SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, L"C:\\temp\\data\\ECXA\\SchemasAndDgn\\Bentley_Plant.06.00.ecschema.xml", *schemaContext);
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath( L"EmptyCustomAttribute.01.00.ecschema.xml").c_str(), *schemaContext);
+
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);  
+
+    WString ecSchemaXmlString;
+
+    SchemaWriteStatus status2 = schema->WriteToXmlString(ecSchemaXmlString);
+    EXPECT_EQ(SCHEMA_WRITE_STATUS_Success, status2);
+
+    CoUninitialize();
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingSchemaWithBaseClassInReferencedFile)
