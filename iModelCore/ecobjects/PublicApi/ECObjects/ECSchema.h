@@ -9,13 +9,13 @@
 
 /*__PUBLISH_SECTION_START__*/
 
-#include <ECObjects\ECInstance.h>
-#include <ECObjects\ECObjects.h>
-#include <ECObjects\ECEnabler.h>
-#include <Bentley\RefCounted.h>
-#include <Bentley\bvector.h>
-#include <Bentley\bmap.h>
-#include <Bentley\bset.h>
+#include <ECObjects/ECInstance.h>
+#include <ECObjects/ECObjects.h>
+#include <ECObjects/ECEnabler.h>
+#include <Bentley/RefCounted.h>
+#include <Bentley/bvector.h>
+#include <Bentley/bmap.h>
+#include <Bentley/bset.h>
 //__PUBLISH_SECTION_END__
 #include <boost/foreach.hpp>
 //__PUBLISH_SECTION_START__
@@ -1060,7 +1060,7 @@ private:
     ECObjectsStatus                     AddClass (ECClassP& pClass);
     ECObjectsStatus                     SetVersionFromString (WCharCP versionString);
 
-    typedef bvector<bpair<ECClassP, MSXML2_IXMLDOMNodePtr>>  ClassDeserializationVector;
+    typedef bvector<bpair<ECClassP, MSXML2_IXMLDOMNodePtr> >  ClassDeserializationVector;
     SchemaReadStatus         ReadClassStubsFromXml(MSXML2_IXMLDOMNode& schemaNodePtr,ClassDeserializationVector& classes, ECSchemaDeserializationContextR context);
     SchemaReadStatus         ReadClassContentsFromXml(ClassDeserializationVector&  classes, ECSchemaDeserializationContextR context);
     SchemaReadStatus         ReadSchemaReferencesFromXml(MSXML2_IXMLDOMNode& schemaNodePtr, ECSchemaDeserializationContextR context);

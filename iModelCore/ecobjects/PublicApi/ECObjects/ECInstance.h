@@ -9,7 +9,7 @@
 /*__PUBLISH_SECTION_START__*/
 
 #include "ECObjects.h"
-#include <Geom\GeomApi.h>
+#include <Geom/GeomApi.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -58,7 +58,7 @@ struct MemoryCallbackData
 
 // Declare an unmanaged function prototype 
 // Note the use of __stdcall for compatibility with managed code
-typedef int (__stdcall *EmbeddedInstanceCallbackP)(MemoryCallbackData* callbackData);
+typedef int (STDCALL_ATTRIBUTE *EmbeddedInstanceCallbackP)(MemoryCallbackData* callbackData);
 //! @endcond
 
 //////////////////////////////////////////////////////////////////////////////////

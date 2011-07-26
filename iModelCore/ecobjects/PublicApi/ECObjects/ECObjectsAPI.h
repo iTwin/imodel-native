@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECObjectsAPI.h $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,7 +11,7 @@
 //#define EC_TRACE_MEMORY
 
 #ifndef BENTLEY_EXCLUDE_WINDOWS_HEADERS
-#include <msxml6\msxml6.tlh>
+#include <msxml6/msxml6.tlh>
 #endif
 /*__PUBLISH_SECTION_START__*/
 
@@ -29,7 +29,7 @@
 * By far the most convenient and efficient way of accessing the classes in the ECObjects API is to use:
 
 \code
-    #include <ECObjects\ECObjectsAPI.h>
+    #include <ECObjects/ECObjectsAPI.h>
 \endcode
 
 * in each of your source files. This will include \e all of the individual header files in the API.
@@ -59,16 +59,16 @@
 #include <limits>
 #include <set>
 
-#include <ECObjects\ECEnabler.h>
-#include <ECObjects\ECInstance.h>
-#include <ECObjects\ECSchema.h>
-#include <ECObjects\ECContext.h>
-#include <ECObjects\ECValue.h>
-#include <ECObjects\MemoryInstanceSupport.h>
-#include <ECObjects\StandaloneECInstance.h>
+#include <ECObjects/ECEnabler.h>
+#include <ECObjects/ECInstance.h>
+#include <ECObjects/ECSchema.h>
+#include <ECObjects/ECContext.h>
+#include <ECObjects/ECValue.h>
+#include <ECObjects/MemoryInstanceSupport.h>
+#include <ECObjects/StandaloneECInstance.h>
 
 /*__PUBLISH_SECTION_END__*/
-#include <ECObjects\DesignByContract.h>
+#include <ECObjects/DesignByContract.h>
 
 // This define is checked from the ECObjects Published ATPs to ensure that they are building against the published header files.
 #define NON_PUBLISHED_HEADER_INCLUDED

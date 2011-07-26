@@ -10,7 +10,7 @@
 #include <assert.h>
 #include <stdarg.h>
 /*__PUBLISH_SECTION_START__*/
-#include <ECObjects\ECObjects.h>
+#include <ECObjects/ECObjects.h>
 
 //! This class is utilzed by the macros defined in this header file.  No calling code should typically ever need to use this class directly.
 struct AssertDisabler
