@@ -15,6 +15,7 @@
 #include "Logger.h"
 #include "FileUtilities.h"
 #include <Logging\bentleylogging.h>
+
 #include "LeakDetector.h"
 
 BEGIN_BENTLEY_EC_NAMESPACE

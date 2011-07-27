@@ -1917,6 +1917,7 @@ bool    ECClassContainer::const_iterator::operator== (const_iterator const& rhs)
     {
     return (m_state->m_mapIterator == rhs.m_state->m_mapIterator);
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1956,6 +1957,5 @@ const WString &name
         } 
     return true;
     }
-        
 
 END_BENTLEY_EC_NAMESPACE

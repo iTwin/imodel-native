@@ -1306,6 +1306,18 @@ UInt32                                          ECValueAccessor::GetDepth() cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP                                 ECValueAccessor::GetAccessString () const
+    {
+    UInt32 depth = GetDepth();
+    if (0 == depth)
+        return NULL;
+
+    return GetAccessString (depth-1);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
 WCharCP                                 ECValueAccessor::GetAccessString (UInt32 depth) const
     {
     int propertyIndex         = m_locationVector[depth].propertyIndex;
@@ -1315,6 +1327,37 @@ WCharCP                                 ECValueAccessor::GetAccessString (UInt32
         return accessString;
     return NULL;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  07/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+WString                                        ECValueAccessor::GetPropertyName() const
+    {
+    UInt32 depth = GetDepth();
+    if (0 == depth)
+        return WString();
+
+    WString name = GetAccessString (GetDepth()-1);
+
+    // get the name after the last .
+    size_t lastDotIndex = name.rfind ('.');
+    if (WString::npos != lastDotIndex)
+        {
+        lastDotIndex++;
+        size_t len =  name.length()-lastDotIndex;
+        name = name.substr (lastDotIndex, len);
+        }
+
+    // strip [] from array names
+    size_t bracketIndex = name.rfind ('[');
+    if (WString::npos != bracketIndex)
+        {
+        name = name.substr (0, bracketIndex);
+        }
+
+    return name;
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
@@ -1876,6 +1919,14 @@ ECValuesCollectionPtr ECValuesCollection::Create (ECPropertyValueCR  parentPrope
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  07/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyValueCR  ECValuesCollection::GetParentProperty () const
+    {
+    return m_parentPropertyValue;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValuesCollection::const_iterator ECValuesCollection::begin () const
@@ -1885,7 +1936,19 @@ ECValuesCollection::const_iterator ECValuesCollection::begin () const
     if (0 == m_parentPropertyValue.GetValueAccessor().GetDepth())
         iter = new ECValuesCollectionIterator (m_parentPropertyValue.GetInstance());
     else
+        {
+        ECValueCR       parentValue = m_parentPropertyValue.GetValue();
+        if (parentValue.IsArray())
+            {
+            ArrayInfo   arrayInfo  = parentValue.GetArrayInfo();
+            UInt32      arrayCount = arrayInfo.GetCount();
+
+            if (0 == arrayCount)
+                return const_iterator ();
+            }
+
         iter = new ECValuesCollectionIterator (m_parentPropertyValue);
+        }
 
     return const_iterator (*iter);
     }
