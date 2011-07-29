@@ -29,11 +29,12 @@ private:
     bvector<IECSchemaLocaterP>      m_locators;
     T_WStringVector                 m_searchPaths;
     bool                            m_hideSchemasFromLeakDetection;
+    bool                            m_acceptLegacyImperfectLatestCompatibleMatch;
 
     //! Constructs a context for deserializing ECSchemas
     //! @param[in] schemaOwner  This object will control the lifetime of any ECSchemas deserialized with this context
     //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the deserialized ECSchema
-    ECSchemaDeserializationContext(IECSchemaOwnerR schemaOwner, IStandaloneEnablerLocaterR standaloneEnablerLocater);
+    ECSchemaDeserializationContext(IECSchemaOwnerR schemaOwner, IStandaloneEnablerLocaterR standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch);
 
     bvector<IECSchemaLocaterP>& GetSchemaLocaters ();
     T_WStringVector&            GetSchemaPaths ();
@@ -52,11 +53,11 @@ public:
     //! @param[in] schemaOwner  This object will control the lifetime of any ECSchemas deserialized with this context
     //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the deserialized ECSchema
     //! @remarks This more-flexible override is primarily for internal use
-    ECOBJECTS_EXPORT static ECSchemaDeserializationContextPtr CreateContext (IECSchemaOwnerR schemaOwner, IStandaloneEnablerLocaterR standaloneEnablerLocater);
+    ECOBJECTS_EXPORT static ECSchemaDeserializationContextPtr CreateContext (IECSchemaOwnerR schemaOwner, IStandaloneEnablerLocaterR standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch = false);
     
     //! Creates a context for deserializing ECSchemas
     //! @param[in] schemaOwner  This object will control the lifetime of any ECSchemas deserialized with this context
-    ECOBJECTS_EXPORT static ECSchemaDeserializationContextPtr CreateContext (ECSchemaCacheR schemaOwner);
+    ECOBJECTS_EXPORT static ECSchemaDeserializationContextPtr CreateContext (ECSchemaCacheR schemaOwner, bool acceptLegacyImperfectLatestCompatibleMatch = false);
 
     ECOBJECTS_EXPORT void AddSchemaLocaters (bvector<EC::IECSchemaLocaterP>&);
 
