@@ -58,8 +58,11 @@ public:
 /*__PUBLISH_SECTION_END__*/
 
 #ifdef  NDEBUG
+#if defined (_WIN32) // WIP_NONPORT -- we don't really need to use _noop here, right?
     #define ASSERT_FALSE_IF_NOT_DISABLED    __noop
-
+#elif defined (__unix__) // WIP_NONPORT - this implementation should be good for both platforms??
+    #define ASSERT_FALSE_IF_NOT_DISABLED(_Message)  (void)0
+#endif
 #else
         
     //! Avoid direct use of this macro.  It is only intended for use by other macros defined in this file.
@@ -180,8 +183,13 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
     || (ASSERT_FALSE_IF_NOT_DISABLED (_Expression), 0) )
     
 #ifdef NDEBUG
+#if defined (_WIN32) // WIP_NONPORT -- we don't really need to use _noop here, right?
     #define DEBUG_EXPECT(_Expression)    __noop
     #define DEBUG_FAIL(_Message)         __noop
+#elif defined (__unix__) // WIP_NONPORT - this implementation should be good for both platforms??
+    #define DEBUG_EXPECT(_Expression)    
+    #define DEBUG_FAIL(_Message)         
+#endif
 #else
     #define DEBUG_EXPECT(_Expression)    EXPECTED_CONDITION(_Expression)
     #define DEBUG_FAIL(_Message)         EXPECTED_CONDITION(false && _Message)
