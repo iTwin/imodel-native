@@ -64,7 +64,11 @@ public:
         
     //! Avoid direct use of this macro.  It is only intended for use by other macros defined in this file.
     // Forces an assert with the specified message as long as asserts are enabled.  No expression is evaluated.
+#if defined (_WIN32) // WIP_NONPORT -- we should move BeAssert into Bentley
     #define ASSERT_FALSE_IF_NOT_DISABLED(_Message)    (void)((AssertDisabler::AreAssertsDisabled()) || (_wassert(_CRT_WIDE(#_Message), _CRT_WIDE(__FILE__), __LINE__), 0))
+#elif defined (__unix__)
+    #define ASSERT_FALSE_IF_NOT_DISABLED(_Message)    (void)((AssertDisabler::AreAssertsDisabled()) || (assert(0),0))
+#endif
 #endif    
 
 //! Avoid direct use of this function.  It is only intended for use by macros defined in this file.

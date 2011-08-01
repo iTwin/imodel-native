@@ -19,6 +19,8 @@ BEGIN_BENTLEY_EC_NAMESPACE
 
 const UInt32 BITS_PER_NULLFLAGSBITMASK = (sizeof(NullflagsBitmask) * 8);
 
+#if defined (_WIN32) // WIP_NONPORT
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    08/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -36,6 +38,9 @@ void            appendFormattedString (wostringstream& outStream, WCharCP fmtStr
 
     outStream << line;
     }
+#elif defined (__unix__)
+    // *** NEEDS WORK: iostreams not supported on Android
+#endif 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/09
@@ -166,9 +171,9 @@ UInt32          PropertyLayout::GetSizeInFixedSection () const
 
 #define DEBUG_CLASSLAYOUT_LEAKS
 #ifdef DEBUG_CLASSLAYOUT_LEAKS
-LeakDetector<ClassLayout> g_classLayoutLeakDetector (L"ClassLayout", L"ClassLayouts", true);
+static LeakDetector<ClassLayout> g_classLayoutLeakDetector (L"ClassLayout", L"ClassLayouts", true);
 #else
-LeakDetector<ClassLayout> g_classLayoutLeakDetector (L"ClassLayout", L"ClassLayouts", false);
+static LeakDetector<ClassLayout> g_classLayoutLeakDetector (L"ClassLayout", L"ClassLayouts", false);
 #endif
 
 /*---------------------------------------------------------------------------------**//**
@@ -227,6 +232,7 @@ WString        ClassLayout::GetName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString        ClassLayout::LogicalStructureToString (UInt32 parentStuctIndex, UInt32 indentLevel) const
     {
+#if defined (_WIN32) // WIP_NONPORT
     LogicalStructureMap::const_iterator it = m_logicalStructureMap.find(parentStuctIndex);
 
     if ( ! EXPECTED_CONDITION (it != m_logicalStructureMap.end()))
@@ -260,6 +266,9 @@ WString        ClassLayout::LogicalStructureToString (UInt32 parentStuctIndex, U
         }
     
     return oss.str().c_str();
+#elif defined (__unix__)
+    // *** NEEDS WORK: iostreams not supported on Android
+#endif 
     }    
 
 /*---------------------------------------------------------------------------------**//**
@@ -267,6 +276,7 @@ WString        ClassLayout::LogicalStructureToString (UInt32 parentStuctIndex, U
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString        ClassLayout::ToString () const
     {
+#if defined (_WIN32) // WIP_NONPORT
     wostringstream oss;
 
     oss << GetShortDescription() << endl;
@@ -286,6 +296,9 @@ WString        ClassLayout::ToString () const
     oss << LogicalStructureToString ();
 
     return oss.str().c_str();
+#elif defined (__unix__)
+    // *** NEEDS WORK: iostreams not supported on Android
+#endif 
     }
         
 /*---------------------------------------------------------------------------------**//**
@@ -359,7 +372,7 @@ void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 byt
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ClassLayout::IsCompatible (ClassLayoutCR classLayout) const
     {
-    if (0 != _wcsicmp (GetECClassName().c_str(), classLayout.GetECClassName().c_str()))
+    if (0 != BeStringUtilities::Wcsicmp (GetECClassName().c_str(), classLayout.GetECClassName().c_str()))
         return false;
 
     UInt32 nProperties = GetPropertyCount ();
@@ -984,7 +997,7 @@ ECObjectsStatus         ClassLayout::GetAccessStringByIndex(WCharCP& accessStrin
 UInt32  ClassLayout::GetFirstChildPropertyIndex (UInt32 parentIndex) const
     {
     // Find the parent in the map
-    bmap<UInt32, bvector<UInt32>>::const_iterator mapIterator = m_logicalStructureMap.find (parentIndex);
+    bmap<UInt32, bvector<UInt32> >::const_iterator mapIterator = m_logicalStructureMap.find (parentIndex);
 
     if ( ! EXPECTED_CONDITION (m_logicalStructureMap.end() != mapIterator))
         return 0;
@@ -1001,7 +1014,7 @@ UInt32  ClassLayout::GetFirstChildPropertyIndex (UInt32 parentIndex) const
 UInt32  ClassLayout::GetNextChildPropertyIndex (UInt32 parentIndex, UInt32 childIndex) const
     {
     // Find the parent in the map
-    bmap<UInt32, bvector<UInt32>>::const_iterator mapIterator = m_logicalStructureMap.find (parentIndex);
+    bmap<UInt32, bvector<UInt32> >::const_iterator mapIterator = m_logicalStructureMap.find (parentIndex);
 
     if ( ! EXPECTED_CONDITION (m_logicalStructureMap.end() != mapIterator))
         return 0;
@@ -1056,7 +1069,7 @@ ClassLayoutCP   SchemaLayout::FindClassLayout (WCharCP className)
         if (NULL == classLayout)
             continue;
 
-        if (0 == _wcsicmp (classLayout->GetECClassName().c_str(), className))
+        if (0 == BeStringUtilities::Wcsicmp (classLayout->GetECClassName().c_str(), className))
             return classLayout;
         }
 
@@ -2016,6 +2029,7 @@ ECObjectsStatus       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR cla
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, ClassLayoutCR classLayout) const
     {
+#if defined (_WIN32) // WIP_NONPORT
     static bool s_skipDump = false;
     static int s_dumpCount = 0;
     s_dumpCount++;
@@ -2147,6 +2161,10 @@ WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, Clas
     appendFormattedString (oss, L"%s  [0x%x][%4.d] Offset of TheEnd = %d\n", indent, pLast, offsetOfLast, *pLast);
 
     return oss.str().c_str();
+#elif defined (__unix__)
+    // *** NEEDS WORK: iostreams not supported on Android
+    return L"";
+#endif 
     }
     
 /*---------------------------------------------------------------------------------**//**

@@ -53,7 +53,12 @@ MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 mi
     m_isInManagedInstance = false;
     m_structInstances = NULL;
 
+#if defined (_WIN32) // WIP_NONPORT
     UInt32 size = max (minimumBufferSize, classLayout.GetSizeOfFixedSection());
+#elif defined (__unix__)
+    // *** NEEDS WORK: When you stop including Windows.h, you can use this for both platforms:
+    UInt32 size = std::max (minimumBufferSize, classLayout.GetSizeOfFixedSection());
+#endif    
     m_data = (byte*)malloc (size);
     m_bytesAllocated = size;
 

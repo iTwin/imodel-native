@@ -7,9 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <ECObjects\ECObjects.h>
-#include <Logging\bentleylogging.h>
-#include <boost\foreach.hpp>
+#include <ECObjects/ECObjects.h>
+#include <Logging/bentleylogging.h>
+#include <boost/foreach.hpp>
 
 USING_NAMESPACE_BENTLEY_LOGGING
 BEGIN_BENTLEY_EC_NAMESPACE
