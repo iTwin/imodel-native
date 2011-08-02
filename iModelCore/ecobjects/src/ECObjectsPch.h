@@ -8,6 +8,7 @@
 #pragma once
 
 #include <ECObjects\ECObjectsAPI.h>
+#include <Bentley\BeFileName.h>
 #include <sstream>
 #include <assert.h>
 #include <boost\foreach.hpp>

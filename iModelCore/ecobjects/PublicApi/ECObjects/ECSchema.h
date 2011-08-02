@@ -842,6 +842,7 @@ public:
 typedef RefCountedPtr<ECRelationshipClass>      ECRelationshipClassPtr;
 
 typedef bvector<ECSchemaP> ECSchemaReferenceList;
+typedef const bvector<ECSchemaP>& ECSchemaReferenceListCR;
 //=======================================================================================
 //! Supports STL like iterator of classes in a schema
 //=======================================================================================
@@ -1043,7 +1044,7 @@ private:
     UInt32              m_versionMinor;    
     ECClassContainer    m_classContainer;
     bool                m_hideFromLeakDetection;
-
+    bool                m_isStandardSchema;
     // maps class name -> class pointer    
     ClassMap m_classMap;
 
@@ -1103,6 +1104,7 @@ public:
 
     ECOBJECTS_EXPORT ECClassContainerCR GetClasses() const;
     ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
+    ECOBJECTS_EXPORT bool               IsStandardSchema() const;
 
     //! If the class name is valid, will create an ECClass object and add the new class to the schema
     //! @param[out] ecClass If successful, will contain a new ECClass object

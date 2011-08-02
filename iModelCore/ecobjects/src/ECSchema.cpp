@@ -30,7 +30,7 @@ LeakDetector<ECSchema> g_leakDetector (L"ECSchema", L"ECSchemas", false);
 ECSchema::ECSchema (bool hideFromLeakDetection)
     :
     m_versionMajor (DEFAULT_VERSION_MAJOR), m_versionMinor (DEFAULT_VERSION_MINOR), m_classContainer(m_classMap),
-    m_hideFromLeakDetection(hideFromLeakDetection)
+    m_hideFromLeakDetection(hideFromLeakDetection), m_isStandardSchema(false)
     {
     if ( ! m_hideFromLeakDetection)
         g_leakDetector.ObjectCreated(*this);
@@ -188,6 +188,16 @@ bool ECSchema::GetIsDisplayLabelDefined
     return (!m_displayLabel.empty());        
     }
 
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchema::IsStandardSchema
+(
+) const
+    {
+    return m_isStandardSchema;
+    }
+    
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1158,6 +1168,8 @@ ECSchemaDeserializationContextR schemaContext
     
     // Do the search
     ECSchemaP   foundSchema = LocateSchemaByPath (name, versionMajor, versionMinor, schemaContext);
+    if (NULL != foundSchema)
+        foundSchema->m_isStandardSchema = true;
 
     // Put the context back the way it was when we started
     schemaContext.GetSchemaPaths() = originalPaths;
@@ -1522,10 +1534,33 @@ MSXML2::IXMLDOMDocument2& pXmlDoc
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
+void AddFilePathToSchemaPaths 
+(
+ECSchemaDeserializationContextR schemaContext,
+T_WStringVectorR                schemaPaths,
+WCharCP                         ecSchemaXmlFile
+)
+    {
+    WString dev, dir;
+    BeFileName::ParseName (&dev, &dir, NULL, NULL, ecSchemaXmlFile);
+    WString pathToThisSchema = dev + WCSDIR_DEV_SEPARATOR_CHAR + dir;
+    FOR_EACH(WStringCR schemaPath, schemaPaths)
+        {
+        BeFileName::ParseName (&dev, &dir, NULL, NULL, schemaPath.c_str());
+        WString normalizedPath = dev + WCSDIR_DEV_SEPARATOR_CHAR + dir;
+        if (0 == normalizedPath.CompareToI(pathToThisSchema))
+            return; // it's already there
+        }
+    schemaContext.AddSchemaPath(pathToThisSchema.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus ECSchema::ReadFromXmlFile
 (
 ECSchemaP&                      schemaOut, 
-WCharCP                 ecSchemaXmlFile, 
+WCharCP                         ecSchemaXmlFile, 
 ECSchemaDeserializationContextR schemaContext
 )
     {                  
@@ -1542,6 +1577,8 @@ ECSchemaDeserializationContextR schemaContext
         LogXmlLoadError(xmlDocPtr);
         return SCHEMA_READ_STATUS_FailedToParseXml;
         }
+    
+    AddFilePathToSchemaPaths(schemaContext, schemaContext.GetSchemaPaths(), ecSchemaXmlFile);
 
     status = ReadXml (schemaOut, xmlDocPtr, schemaContext);
     if (SCHEMA_READ_STATUS_DuplicateSchema == status)
