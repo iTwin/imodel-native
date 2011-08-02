@@ -1709,7 +1709,11 @@ ECObjectsStatus       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValu
                 size = GetPropertyValueSize (propertyLayout, index);
             else
                 size = GetPropertyValueSize (propertyLayout);
-            v.SetBinary (pValue, size);
+
+            UInt32 const* actualSize   = (UInt32 const*)pValue;
+            byte const*   actualBuffer = pValue+sizeof(UInt32);
+
+            v.SetBinary (actualBuffer, *actualSize);
             return ECOBJECTS_STATUS_Success;
             }  
         case PRIMITIVETYPE_Boolean:
@@ -1877,22 +1881,34 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
         {
         case PRIMITIVETYPE_Integer:
             {
+            if (!v.IsInteger ())
+                return ECOBJECTS_STATUS_DataTypeMismatch;
+
             Int32 value = v.GetInteger();
             // WIP_FUSION: would it speed things up to poke directly when m_allowWritingDirectlyToInstanceMemory is true?
             return _ModifyData (offset, &value, sizeof(value));
             }
         case PRIMITIVETYPE_Long:
             {
+            if (!v.IsLong ())
+                return ECOBJECTS_STATUS_DataTypeMismatch;
+
             Int64 value = v.GetLong();
             return _ModifyData (offset, &value, sizeof(value));
             }
         case PRIMITIVETYPE_Double:
             {
+            if (!v.IsDouble ())
+                return ECOBJECTS_STATUS_DataTypeMismatch;
+
             double value = v.GetDouble();
             return _ModifyData (offset, &value, sizeof(value));
             }       
         case PRIMITIVETYPE_String:
             {
+            if (!v.IsString ())
+                return ECOBJECTS_STATUS_DataTypeMismatch;
+
             WCharCP value = v.GetString();
             UInt32 bytesNeeded = (UInt32)(sizeof(wchar_t) * (wcslen(value) + 1)); // WIP_FUSION: what if the caller could tell us the size?
 
@@ -1911,9 +1927,20 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             }
         case PRIMITIVETYPE_Binary:
             {
+            if (!v.IsBinary ())
+                return ECOBJECTS_STATUS_DataTypeMismatch;
+
             size_t size;
             byte const * data = v.GetBinary (size);
-            UInt32 bytesNeeded = (UInt32)size;
+            size_t totalSize = size + sizeof(UInt32);
+            UInt32 propertySize = (UInt32)size;
+
+            // set up a buffer that will hold both the size and the data
+            byte* dataBuffer = (byte*)calloc (totalSize, sizeof(byte));
+            memcpy (dataBuffer, &propertySize, sizeof(UInt32));
+            memcpy (dataBuffer+sizeof(UInt32), data, size);
+
+            UInt32 bytesNeeded = (UInt32)totalSize;
 
             ECObjectsStatus status;
             if (useIndex)
@@ -1930,25 +1957,37 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
                 return ECOBJECTS_STATUS_Success;
             
             // WIP_FUSION: would it speed things up to poke directly when m_allowWritingDirectlyToInstanceMemory is true?    
-            return _ModifyData (offset, data, bytesNeeded);
+            return _ModifyData (offset, dataBuffer, bytesNeeded);
             }
         case PRIMITIVETYPE_Boolean:
             {
+            if (!v.IsBoolean ())
+                return ECOBJECTS_STATUS_DataTypeMismatch;
+
             bool value = v.GetBoolean();
             return _ModifyData (offset, &value, sizeof(value));
             }       
         case PRIMITIVETYPE_Point2D:
             {
+            if (!v.IsPoint2D ())
+                return ECOBJECTS_STATUS_DataTypeMismatch;
+
             DPoint2d value = v.GetPoint2D();
             return _ModifyData (offset, &value, sizeof(value));
             }       
         case PRIMITIVETYPE_Point3D:
             {
+            if (!v.IsPoint3D ())
+                return ECOBJECTS_STATUS_DataTypeMismatch;
+
             DPoint3d value = v.GetPoint3D();
             return _ModifyData (offset, &value, sizeof(value));
             } 
         case PRIMITIVETYPE_DateTime:      // stored as long
             {
+            if (!v.IsDateTime ())
+                return ECOBJECTS_STATUS_DataTypeMismatch;
+
             Int64 value = v.GetDateTimeTicks();
             return _ModifyData (offset, &value, sizeof(value));
             }

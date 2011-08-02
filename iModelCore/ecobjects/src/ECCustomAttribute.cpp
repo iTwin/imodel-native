@@ -381,8 +381,12 @@ MSXML2::IXMLDOMNode& newNode
         if (xmlNodePtr->nodeType != NODE_ELEMENT)
             continue;
 
+        // If the custom property is a struct class, it gets serialized as an empty element.  So need to check if it is empty
+        if (!xmlNodePtr->hasChildNodes())
+            continue;
         MSXML2::IXMLDOMNodePtr propertyPtr = newNode.ownerDocument->createNode(NODE_ELEMENT, xmlNodePtr->baseName, xmlNodePtr->namespaceURI);
         APPEND_CHILD_TO_PARENT(propertyPtr, (&newNode));
+        WString basename = xmlNodePtr->baseName.GetBSTR();
         MSXML2::IXMLDOMNodePtr childTextNodePtr = xmlNodePtr->firstChild;
         WString nodeType = childTextNodePtr->nodeTypeString.GetBSTR();
         if (0 == nodeType.compare(L"text"))
