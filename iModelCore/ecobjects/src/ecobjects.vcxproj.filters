@@ -62,28 +62,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\PublicApi\ECObjects\DesignByContract.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\PublicApi\ECObjects\ECEnabler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\PublicApi\ECObjects\ECInstance.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\PublicApi\ECObjects\ECObjects.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\PublicApi\ECObjects\ECObjectsAPI.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ECObjectsPch.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\PublicApi\ECObjects\ECSchema.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\PublicApi\ECObjects\ECValue.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ecxml.h">
@@ -95,10 +74,31 @@
     <ClInclude Include="Logger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\PublicApi\ECObjects\MemoryInstanceSupport.h">
+    <ClInclude Include="..\PublicApi\ECObjects\DesignByContract.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\PublicApi\ECObjects\StandaloneECInstance.h">
+    <ClInclude Include="..\PublicApi\ECObjects\ECEnabler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\ECInstance.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\ECObjects.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\ECSchema.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\ECValue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\MemoryInstanceSupport.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\StandaloneECInstance.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
