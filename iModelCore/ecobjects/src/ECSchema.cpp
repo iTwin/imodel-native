@@ -972,7 +972,6 @@ ECSchemaDeserializationContextR schemaContext
   
     // Step 2: ask the schemaLocaters
     FOR_EACH (IECSchemaLocaterP schemaLocater, schemaContext.GetSchemaLocaters())
-
         {
         if ( ! EXPECTED_CONDITION (NULL != schemaLocater))
             continue;
@@ -986,9 +985,19 @@ ECSchemaDeserializationContextR schemaContext
     schema = LocateSchemaByPath(name, versionMajor, versionMinor, schemaContext);
     if (NULL != schema)
         return schema;
-        
+
     // Step 4: look in a set of standard paths
-    return LocateSchemaByStandardPaths (name, versionMajor, versionMinor, schemaContext);
+    schema = LocateSchemaByStandardPaths (name, versionMajor, versionMinor, schemaContext);
+    if (NULL != schema)
+        return schema;
+
+    // Step 5: the final locator... this should be a managed locator from the interop layer, if it is present
+    IECSchemaLocaterP schemaLocater = schemaContext.GetFinalSchemaLocater();
+    if (NULL == schemaLocater)
+        return NULL;
+
+    schema = schemaLocater->LocateSchema(name.c_str(), versionMajor, versionMinor, SCHEMAMATCHTYPE_LatestCompatible, schemaContext);
+    return schema;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1780,7 +1789,9 @@ IStreamP ecSchemaXmlStream
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaDeserializationContext::ECSchemaDeserializationContext(IECSchemaOwnerR owner, IStandaloneEnablerLocaterR enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch)
     :
-    m_schemaOwner (owner), m_standaloneEnablerLocater(enablerLocater), m_hideSchemasFromLeakDetection (false), m_acceptLegacyImperfectLatestCompatibleMatch(acceptLegacyImperfectLatestCompatibleMatch)
+    m_schemaOwner (owner), m_standaloneEnablerLocater(enablerLocater), m_hideSchemasFromLeakDetection (false), 
+    m_acceptLegacyImperfectLatestCompatibleMatch(acceptLegacyImperfectLatestCompatibleMatch),
+    m_finalSchemaLocater (NULL)
     {
     }
 
@@ -1795,6 +1806,8 @@ void  ECSchemaDeserializationContext::AddSchemaLocater (IECSchemaLocaterR locate
 void  ECSchemaDeserializationContext::AddSchemaPath (WCharCP path)               { m_searchPaths.push_back (WString(path));   }
 void  ECSchemaDeserializationContext::HideSchemasFromLeakDetection ()                   { m_hideSchemasFromLeakDetection = true; }
 bvector<IECSchemaLocaterP>& ECSchemaDeserializationContext::GetSchemaLocaters ()                { return m_locators;    }
+void                        ECSchemaDeserializationContext::SetFinalSchemaLocater (IECSchemaLocaterR locater) { m_finalSchemaLocater = &locater;  }
+IECSchemaLocaterP           ECSchemaDeserializationContext::GetFinalSchemaLocater ()                { return m_finalSchemaLocater; }
 T_WStringVectorR            ECSchemaDeserializationContext::GetSchemaPaths ()                   { return m_searchPaths; }
 void                        ECSchemaDeserializationContext::ClearSchemaPaths ()                 { m_searchPaths.clear();    }
 IECSchemaOwnerR             ECSchemaDeserializationContext::GetSchemaOwner()                    { return m_schemaOwner;  }

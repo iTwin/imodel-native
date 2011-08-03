@@ -27,6 +27,7 @@ private:
     IStandaloneEnablerLocaterR      m_standaloneEnablerLocater;
 
     bvector<IECSchemaLocaterP>      m_locators;
+    IECSchemaLocaterP               m_finalSchemaLocater;
     T_WStringVector                 m_searchPaths;
     bool                            m_hideSchemasFromLeakDetection;
     bool                            m_acceptLegacyImperfectLatestCompatibleMatch;
@@ -37,6 +38,7 @@ private:
     ECSchemaDeserializationContext(IECSchemaOwnerR schemaOwner, IStandaloneEnablerLocaterR standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch);
 
     bvector<IECSchemaLocaterP>& GetSchemaLocaters ();
+    IECSchemaLocaterP           GetFinalSchemaLocater ();
     T_WStringVector&            GetSchemaPaths ();
     IECSchemaOwnerR             GetSchemaOwner();
     IStandaloneEnablerLocaterR  GetStandaloneEnablerLocater();
@@ -63,6 +65,7 @@ public:
 
     ECOBJECTS_EXPORT void AddSchemaLocater (IECSchemaLocaterR);
     ECOBJECTS_EXPORT void AddSchemaPath (WCharCP);
+    ECOBJECTS_EXPORT void SetFinalSchemaLocater (IECSchemaLocaterR);
 };
 
 typedef RefCountedPtr<ECInstanceDeserializationContext>      ECInstanceDeserializationContextPtr;
