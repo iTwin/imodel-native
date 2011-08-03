@@ -259,6 +259,9 @@ WString    GetTestSchemaXMLString (WCharCP schemaName, UInt32 versionMajor, UInt
                     L"        <ECArrayProperty propertyName=\"SomeBooleans\"    typeName=\"boolean\"  />"
                     L"        <ECArrayProperty propertyName=\"SomeLongs\"       typeName=\"long\"  />"
                     L"        <ECArrayProperty propertyName=\"SomeBinaries\"    typeName=\"binary\"  />"
+                    L"        <ECArrayProperty propertyName=\"FixedArrayFixedElement\" typeName=\"int\" minOccurs=\"10\" maxOccurs=\"10\"/>"  
+                    L"        <ECArrayProperty propertyName=\"FixedArrayVariableElement\" typeName=\"string\" minOccurs=\"12\" maxOccurs=\"12\"/>"  
+                    L"        <ECArrayProperty propertyName=\"ManufacturerArray\" typeName=\"Manufacturer\" />"
                     L"    </ECClass>"
                     L"    <ECClass typeName=\"FixedSizeArrayTester\" isStruct=\"True\" isDomainClass=\"True\">"
                     L"        <ECArrayProperty propertyName=\"FixedString1\"  typeName=\"string\"     minOccurs=\"1\"  maxOccurs=\"1\" />"
@@ -1961,8 +1964,6 @@ TEST_F (MemoryLayoutTests, TestSetGetNull)
     EXPECT_FALSE (v.IsNull());     
     
     // WIP_FUSION test arrays
-
-    
     };
     
 /*---------------------------------------------------------------------------------**//**
@@ -2003,6 +2004,135 @@ TEST_F (MemoryLayoutTests, TestBinarySetGet)
     EXPECT_TRUE (SUCCESS == instance->GetValue (v1Out, L"ABinary"));
     EXPECT_TRUE (v1In.Equals (v1Out));
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  07/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+static void validateArrayCount  (EC::StandaloneECInstanceCR instance, WCharCP propertyName, UInt32 expectedCount)
+    {
+    ECValue varray;
+    EXPECT_TRUE (SUCCESS == instance.GetValue (varray, propertyName));
+    UInt32 count = varray.GetArrayInfo().GetCount();
+    EXPECT_TRUE (count == expectedCount);
+
+    ECValue ventry;
+
+    for (UInt32 i=0; i<count; i++)
+        {
+        EXPECT_TRUE (SUCCESS == instance.GetValue (ventry, propertyName, i));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  07/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (MemoryLayoutTests, TestRemovingArrayEntries)
+    {
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();;
+    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    ASSERT_TRUE (schema != NULL);
+    ECClassP ecClass = schema->GetClassP (L"AllPrimitives");
+    ASSERT_TRUE (NULL != ecClass);
+        
+    StandaloneECEnablerPtr enabler = schemaOwner->LocateStandaloneEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
+    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"FixedArrayFixedElement[]",  ECValue ((int)1), 1));
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"FixedArrayFixedElement[]",  ECValue ((int)3), 3));
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"FixedArrayFixedElement[]",  ECValue ((int)5), 5));
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"FixedArrayFixedElement[]",  ECValue ((int)7), 7));
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"FixedArrayFixedElement[]",  ECValue ((int)9), 9));
+
+    {
+    DISABLE_ASSERTS    
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success != instance->RemoveArrayElement(L"FixedArrayFixedElement[]", 2));
+    }
+
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"FixedArrayVariableElement[]", ECValue (L"ArrayMember 1"), 1));
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"FixedArrayVariableElement[]", ECValue (L"ArrayMember 3"), 3));
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"FixedArrayVariableElement[]", ECValue (L"ArrayMember 5"), 5));
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"FixedArrayVariableElement[]", ECValue (L"ArrayMember 7"), 7));
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"FixedArrayVariableElement[]", ECValue (L"ArrayMember 9"), 9));
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"FixedArrayVariableElement[]", ECValue (L"ArrayMember 11"), 11));
+
+    {
+    DISABLE_ASSERTS    
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success != instance->RemoveArrayElement(L"FixedArrayVariableElement[]", 2));
+    }
+
+    instance->AddArrayElements(L"SomeStrings[]", 5);
+
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"SomeStrings[]",  ECValue (L"ArrayMember 0"), 0));
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"SomeStrings[]",  ECValue (L"ArrayMember 1"), 1));
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"SomeStrings[]",  ECValue (L"ArrayMember 2"), 2));
+    // leave index 3 null
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"SomeStrings[]",  ECValue (L"ArrayMember 4"), 4));
+
+    validateArrayCount (*instance, L"SomeStrings[]", 5); 
+
+    instance->AddArrayElements(L"SomeInts[]", 6);
+
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"SomeInts[]",  ECValue ((int)0), 0));
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"SomeInts[]",  ECValue ((int)1), 1));
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"SomeInts[]",  ECValue ((int)2), 2));
+    // leave index 3 null
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"SomeInts[]",  ECValue ((int)4), 4));
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"SomeInts[]",  ECValue ((int)5), 5));
+
+    validateArrayCount (*instance, L"SomeInts[]", 6); 
+
+    // define struct array
+    StandaloneECEnablerPtr manufacturerEnabler = instance->GetEnablerR().GetEnablerForStructArrayMember (schema->GetName().c_str(), L"Manufacturer"); 
+    EXPECT_TRUE (manufacturerEnabler.IsValid());
+
+    ECValue v;
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success == instance->AddArrayElements (L"ManufacturerArray[]", 4));
+    VerifyArrayInfo (*instance, v, L"ManufacturerArray[]", 4, false);
+    VerifyIsNullArrayElements (*instance, v, L"ManufacturerArray[]", 0, 4, true);
+
+    IECInstancePtr manufInst = manufacturerEnabler->CreateInstance().get();    
+
+    SetAndVerifyString (*manufInst, v, L"Name", L"Nissan");
+    SetAndVerifyInteger (*manufInst, v, L"AccountNo", 3475);
+    v.SetStruct (manufInst.get());
+    ASSERT_TRUE (SUCCESS == instance->SetValue (L"ManufacturerArray[]", v, 0));
+
+    manufInst = manufacturerEnabler->CreateInstance().get();    
+    SetAndVerifyString (*manufInst, v, L"Name", L"Kia");
+    SetAndVerifyInteger (*manufInst, v, L"AccountNo", 1791);
+    v.SetStruct (manufInst.get());
+    ASSERT_TRUE (SUCCESS == instance->SetValue (L"ManufacturerArray[]", v, 1));    
+
+    manufInst = manufacturerEnabler->CreateInstance().get();    
+    SetAndVerifyString (*manufInst, v, L"Name", L"Honda");
+    SetAndVerifyInteger (*manufInst, v, L"AccountNo", 1592);
+    v.SetStruct (manufInst.get());
+    ASSERT_TRUE (SUCCESS == instance->SetValue (L"ManufacturerArray[]", v, 2));    
+
+    manufInst = manufacturerEnabler->CreateInstance().get();    
+    SetAndVerifyString (*manufInst, v, L"Name", L"Chevy");
+    SetAndVerifyInteger (*manufInst, v, L"AccountNo", 19341);
+    v.SetStruct (manufInst.get());
+    ASSERT_TRUE (SUCCESS == instance->SetValue (L"ManufacturerArray[]", v, 3));    
+
+    VerifyIsNullArrayElements (*instance, v, L"ManufacturerArray[]", 0, 4, false);    
+
+    // remove from start of array
+    instance->RemoveArrayElement(L"SomeStrings[]", 0);
+    validateArrayCount (*instance, L"SomeStrings[]", 4); 
+
+    // remove from middle of array
+    instance->RemoveArrayElement(L"SomeStrings[]", 2);
+    validateArrayCount (*instance, L"SomeStrings[]", 3); 
+
+    // remove from end of array
+    instance->RemoveArrayElement(L"SomeInts[]", 2);
+    validateArrayCount (*instance, L"SomeInts[]", 5);
+
+    // remove struct array element
+    instance->RemoveArrayElement(L"ManufacturerArray[]", 2);
+    validateArrayCount (*instance, L"ManufacturerArray[]", 3);
+    }
 
 void SetStringToSpecifiedNumberOfCharacters (IECInstanceR instance, int nChars)
     {

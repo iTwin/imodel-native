@@ -66,7 +66,12 @@ private:
     IECInstancePtr          GetStructArrayInstance (StructValueIdentifier structValueId) const;
     StructArrayEntry const* GetAddressOfStructArrayEntry (StructValueIdentifier key) const;
     byte*                   GetAddressOfPropertyData () const;
-    void                    UpdateStructArrayOffsets (byte const* gapAddress, bool& updateOffset, bool& updateOffsetToEnd, size_t resizeAmount);
+    //void                    UpdateStructArrayOffsets (byte const* gapAddress, bool& updateOffset, bool& updateOffsetToEnd, size_t resizeAmount);
+    void                    UpdateStructArrayOffsets (byte const* gapAddress, size_t resizeAmount);
+    ECObjectsStatus         RemoveStructStructArrayEntry (StructValueIdentifier structValueId, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP);
+    void                    RemoveGapFromStructArrayEntries (byte const* gapAddress, size_t resizeAmount);
+    void                    WalkSupportingStructs (WStringR completeString, WCharCP prefix) const;
+
  //__PUBLISH_SECTION_START__
 
 protected:
@@ -85,12 +90,13 @@ protected:
     ECOBJECTS_EXPORT virtual UInt32           _GetBytesAllocated () const override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus  _SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index) override;    
     ECOBJECTS_EXPORT virtual ECObjectsStatus  _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const override;  
+    ECOBJECTS_EXPORT virtual ECObjectsStatus  _RemoveStructArrayElementsFromMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount, EmbeddedInstanceCallbackP memoryCallback) override;
 
     virtual ClassLayoutCR       _GetClassLayout () const = 0;
     virtual IECInstancePtr      _GetAsIECInstance () const = 0;
     virtual size_t              _GetObjectSize () const = 0;
     virtual size_t              _LoadObjectDataIntoManagedInstance (byte* managedBuffer) const = 0;
-
+                             
 public: // These must be public so that ECXInstanceEnabler can get at the guts of StandaloneECInstance to copy it into an XAttribute
     ECOBJECTS_EXPORT void                     SetData (byte * data, UInt32 size, bool freeExisitingData); //The MemoryECInstanceBase will take ownership of the memory
 
@@ -102,7 +108,9 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT size_t                   GetObjectSize () const;
     ECOBJECTS_EXPORT size_t                   CalculateSupportingInstanceDataSize () const;
     ECOBJECTS_EXPORT size_t                   LoadDataIntoManagedInstance (byte* managedBuffer, size_t sizeOfManagedBuffer) const;
-    ECOBJECTS_EXPORT void                     FixupStructArrayOffsets (int offsetBeyondGap, size_t resizeAmount);
+    ECOBJECTS_EXPORT void                     FixupStructArrayOffsets (int offsetToGap, size_t resizeAmount, bool removingGap);
+    ECOBJECTS_EXPORT ECObjectsStatus          RemoveStructArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount, EmbeddedInstanceCallbackP memoryCallback);
+
     };
 
 /*=================================================================================**//**
