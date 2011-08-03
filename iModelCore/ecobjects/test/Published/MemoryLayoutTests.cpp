@@ -240,6 +240,20 @@ WString    GetTestSchemaXMLString (WCharCP schemaName, UInt32 versionMajor, UInt
                     L"        <ECProperty propertyName=\"Service_Date\" typeName=\"dateTime\"  />"
                     L"        <ECProperty propertyName=\"Field_Tested\" typeName=\"boolean\"  />"
                     L"    </ECClass>"
+                    L"    <ECClass typeName=\"ArrayTest\" isStruct=\"True\" isDomainClass=\"True\">"
+                    L"        <ECArrayProperty propertyName=\"SomeStrings\" typeName=\"string\" />"
+                    L"        <ECArrayProperty propertyName=\"SomeInts\"    typeName=\"int\" />"
+                    L"        <ECArrayProperty propertyName=\"SomePoint3ds\"    typeName=\"point3d\" />"
+                    L"        <ECArrayProperty propertyName=\"SomePoint2ds\"    typeName=\"point2d\" />"
+                    L"        <ECArrayProperty propertyName=\"SomeDoubles\"     typeName=\"double\"  />"
+                    L"        <ECArrayProperty propertyName=\"SomeDateTimes\"   typeName=\"dateTime\"  />"
+                    L"        <ECArrayProperty propertyName=\"SomeBooleans\"    typeName=\"boolean\"  />"
+                    L"        <ECArrayProperty propertyName=\"SomeLongs\"       typeName=\"long\"  />"
+                    L"        <ECArrayProperty propertyName=\"SomeBinaries\"    typeName=\"binary\"  />"
+                    L"        <ECArrayProperty propertyName=\"FixedArrayFixedElement\" typeName=\"int\" minOccurs=\"10\" maxOccurs=\"10\"/>"  
+                    L"        <ECArrayProperty propertyName=\"FixedArrayVariableElement\" typeName=\"string\" minOccurs=\"12\" maxOccurs=\"12\"/>"  
+                    L"        <ECArrayProperty propertyName=\"ManufacturerArray\" typeName=\"Manufacturer\" />"
+                    L"    </ECClass>"
                     L"    <ECClass typeName=\"AllPrimitives\" isStruct=\"True\" isDomainClass=\"True\">"
                     L"        <ECProperty propertyName=\"AString\"          typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"AnInt\"            typeName=\"int\" />"
@@ -259,9 +273,6 @@ WString    GetTestSchemaXMLString (WCharCP schemaName, UInt32 versionMajor, UInt
                     L"        <ECArrayProperty propertyName=\"SomeBooleans\"    typeName=\"boolean\"  />"
                     L"        <ECArrayProperty propertyName=\"SomeLongs\"       typeName=\"long\"  />"
                     L"        <ECArrayProperty propertyName=\"SomeBinaries\"    typeName=\"binary\"  />"
-                    L"        <ECArrayProperty propertyName=\"FixedArrayFixedElement\" typeName=\"int\" minOccurs=\"10\" maxOccurs=\"10\"/>"  
-                    L"        <ECArrayProperty propertyName=\"FixedArrayVariableElement\" typeName=\"string\" minOccurs=\"12\" maxOccurs=\"12\"/>"  
-                    L"        <ECArrayProperty propertyName=\"ManufacturerArray\" typeName=\"Manufacturer\" />"
                     L"    </ECClass>"
                     L"    <ECClass typeName=\"FixedSizeArrayTester\" isStruct=\"True\" isDomainClass=\"True\">"
                     L"        <ECArrayProperty propertyName=\"FixedString1\"  typeName=\"string\"     minOccurs=\"1\"  maxOccurs=\"1\" />"
@@ -2031,7 +2042,7 @@ TEST_F (MemoryLayoutTests, TestRemovingArrayEntries)
     ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();;
     ECSchemaP        schema = CreateTestSchema(*schemaOwner);
     ASSERT_TRUE (schema != NULL);
-    ECClassP ecClass = schema->GetClassP (L"AllPrimitives");
+    ECClassP ecClass = schema->GetClassP (L"ArrayTest");
     ASSERT_TRUE (NULL != ecClass);
         
     StandaloneECEnablerPtr enabler = schemaOwner->LocateStandaloneEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
