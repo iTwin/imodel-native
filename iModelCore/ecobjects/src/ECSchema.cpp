@@ -1257,7 +1257,11 @@ SchemaWriteStatus ECSchema::WriteSchemaReferences (MSXML2::IXMLDOMElement &paren
     std::set<const WString> usedPrefixes;
     std::set<const WString>::const_iterator setIterator;
 
+#if defined USE_HASHMAP_IN_CLASSLAYOUT
     stdext::hash_map<ECSchemaP, const WString> localReferencedSchemaNamespaceMap;
+#else
+    std::map<ECSchemaP, const WString> localReferencedSchemaNamespaceMap;
+#endif
 
     ECSchemaReferenceList::const_iterator schemaIterator;
     for (schemaIterator = m_refSchemaList.begin(); schemaIterator != m_refSchemaList.end(); schemaIterator++)
@@ -1292,7 +1296,11 @@ SchemaWriteStatus ECSchema::WriteSchemaReferences (MSXML2::IXMLDOMElement &paren
     MSXML2::IXMLDOMAttributePtr attributePtr;
     MSXML2::IXMLDOMElementPtr schemaPtr = NULL;
     
+#if defined USE_HASHMAP_IN_CLASSLAYOUT
     stdext::hash_map<ECSchemaP, const WString>::const_iterator iterator;
+#else
+    std::map<ECSchemaP, const WString>::const_iterator iterator;
+#endif
     for (iterator = localReferencedSchemaNamespaceMap.begin(); iterator != localReferencedSchemaNamespaceMap.end(); iterator++)
         {
         std::pair<ECSchemaP, const WString> mapPair = *(iterator);

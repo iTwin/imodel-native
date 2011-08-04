@@ -14,11 +14,12 @@
         <SubPart PartName="HeaderFiles" />
         <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="Logging8.11"     PartFile="${SrcBsiCommon}CvsPartFiles\bsibin"           Repository="bsibin-loggingsdk" />
-        <SubPart PartName="GeomDlls"        PartFile="geomlibs" Repository="GeomLibs" />
+        <SubPart PartName="GeomDlls"        PartFile="geomlibs"     Repository="GeomLibs" />
+        <SubPart PartName="BeXmlDll"        PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
         <SubPart PartName="StandardSchemas" PartFile="ECStandards" Repository="ECStandards"/>
         <Bindings>
-            <Libs ProductDirectoryName="ECObjectsLibs" Required="false">Delivery\ECObjects.lib</Libs>
-            <Files ProductDirectoryName="ECObjectsNativeAssemblies">Delivery\ECObjects$(ApiNumber).dll</Files>
+            <Libs ProductDirectoryName="ECObjectsLibs" Required="false">Delivery\$(libprefix)ECObjects$(libext)</Libs>
+            <Files ProductDirectoryName="ECObjectsNativeAssemblies">Delivery\$(shlibprefix)ECObjects$(ApiNumber)$(shlibext)</Files>
         </Bindings>
     </Part>
 
@@ -57,7 +58,7 @@
 
     <Part Name="ECObjectsTestBackDoor" BMakeFile="test\BackDoor\BackDoor.mke">
         <Bindings>
-            <Libs>Delivery\ECObjectsTestBackDoor.lib</Libs>
+            <Libs>Delivery\$(libprefix)ECObjectsTestBackDoor$(libext)</Libs>
         </Bindings>
     </Part>
 

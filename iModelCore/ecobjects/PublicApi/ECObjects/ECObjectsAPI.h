@@ -10,7 +10,7 @@
 
 //#define EC_TRACE_MEMORY
 
-#ifndef BENTLEY_EXCLUDE_WINDOWS_HEADERS
+#if defined (_WIN32) && !defined (BENTLEY_EXCLUDE_WINDOWS_HEADERS)
 #include <msxml6/msxml6.tlh>
 #endif
 /*__PUBLISH_SECTION_START__*/
@@ -55,9 +55,11 @@
 #include <string>
 #include <vector>
 #include <map>
+#ifdef USE_HASHMAP_IN_CLASSLAYOUT   // WIP_NONPORT - No hashmap on Android
 #include <hash_map>
+#endif
 #include <limits>
-#include <set>
+#include <set>  // WIP_EC - don't use std::set in a published API
 
 #include <ECObjects/ECEnabler.h>
 #include <ECObjects/ECInstance.h>
