@@ -34,17 +34,19 @@ struct StructArrayEntry
     };
 
 typedef bvector<StructArrayEntry> StructInstanceVector;
-    
-//__PUBLISH_SECTION_END__
-struct StructInstanceNode;
-struct StructInstanceNode
-    {
-    byte*                        m_offsetAddress;
-    size_t                       m_offset;
-    bvector <StructInstanceNode> m_childInstanceNodes;
-    StructInstanceNode (byte* offsetAddress, size_t offset) : m_offsetAddress(offsetAddress), m_offset(offset) {}
-    };
-//__PUBLISH_SECTION_START__
+
+
+union InstanceDataUnion
+{
+    byte *  address;
+    Int64   offset; 
+};
+
+union SupportingInstanceUnion
+{
+    StructInstanceVector *  vectorP;
+    Int64                   offset; 
+};
 
 /*=================================================================================**//**
 * EC::MemoryECInstanceBase is base class for ECInstances that holds its values in memory that it allocates. 
@@ -56,11 +58,11 @@ struct StructInstanceNode
 struct MemoryECInstanceBase : MemoryInstanceSupport
     {
 private:
-    byte *                  m_data;
+    InstanceDataUnion       m_data;
     UInt32                  m_bytesAllocated;
     bool                    m_isInManagedInstance;
     StructValueIdentifier   m_structValueId;
-    StructInstanceVector*   m_structInstances;
+    SupportingInstanceUnion m_structInstances;
     
 //__PUBLISH_SECTION_END__
     IECInstancePtr          GetStructArrayInstance (StructValueIdentifier structValueId) const;
