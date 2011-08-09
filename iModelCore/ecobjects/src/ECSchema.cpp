@@ -994,7 +994,7 @@ ECSchemaDeserializationContextR schemaContext
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, WCharCP filePath)
     {
-#if defined (WIP_NONPORT)
+#if defined (_WIN32) // WIP_NONPORT
     wchar_t  name[256];
 
     // only process the filename 
