@@ -16,9 +16,9 @@ BEGIN_BENTLEY_EC_NAMESPACE
 
 //#define DEBUG_CLASS_LEAKS
 #ifdef DEBUG_CLASS_LEAKS
-LeakDetector<ECClass> g_leakDetector (L"ECClass", L"ECClasss", true);
+static LeakDetector<ECClass> g_leakDetector (L"ECClass", L"ECClasss", true);
 #else
-LeakDetector<ECClass> g_leakDetector (L"ECClass", L"ECClasss", false);
+static LeakDetector<ECClass> g_leakDetector (L"ECClass", L"ECClasss", false);
 #endif
 
 /*---------------------------------------------------------------------------------**//**
@@ -848,6 +848,7 @@ const void*       arg
     return false;
     }
 
+#if defined (_WIN32) // WIP_NONPORT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1026,6 +1027,7 @@ MSXML2::IXMLDOMElement& parentNode
     {
     return WriteXml(parentNode, EC_CLASS_ELEMENT);
     }
+#endif //defined (_WIN32) // WIP_NONPORT
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
@@ -1378,6 +1380,7 @@ ECSchemaCP ECRelationshipConstraint::_GetContainerSchema() const
     return &(m_relClass->GetSchema());
     }
  
+#if defined (_WIN32) // WIP_NONPORT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1479,7 +1482,8 @@ const WString &elementName
     
     return status;
     }
-   
+#endif //defined (_WIN32) // WIP_NONPORT
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1875,6 +1879,8 @@ ECObjectsStatus ECRelationshipClass::GetOrderedRelationshipPropertyName (WString
     return ECOBJECTS_STATUS_Error;
     }
 
+#if defined (_WIN32) // WIP_NONPORT
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1954,4 +1960,25 @@ IStandaloneEnablerLocaterR  standaloneEnablerLocater
     return SCHEMA_READ_STATUS_Success;
     }
     
+#endif //defined (_WIN32) // WIP_NONPORT
+
 END_BENTLEY_EC_NAMESPACE
+
+#if defined (__unix__)
+BEGIN_BENTLEY_EC_NAMESPACE
+    #define MSXML2_IXMLDOMNode      void *
+    #define MSXML2_IXMLDOMNodePtr   void *
+    #define MSXML2_IXMLDOMDocument2 void *
+    #define MSXML2_IXMLDOMElement   void *
+SchemaReadStatus ECClass::ReadXmlAttributes(MSXML2_IXMLDOMNode& ,IStandaloneEnablerLocaterR  ){return SCHEMA_READ_STATUS_FailedToParseXml;}
+SchemaReadStatus ECClass::ReadXmlContents(MSXML2_IXMLDOMNode&        ,IStandaloneEnablerLocaterR  ){return SCHEMA_READ_STATUS_FailedToParseXml;}
+SchemaWriteStatus ECClass::WriteXml(MSXML2_IXMLDOMElement &, WCharCP ) const{return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
+SchemaWriteStatus ECClass::WriteXml(MSXML2_IXMLDOMElement& ) const{return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
+SchemaReadStatus ECRelationshipConstraint::ReadXml(MSXML2_IXMLDOMNode         &,IStandaloneEnablerLocaterR  ){return SCHEMA_READ_STATUS_FailedToParseXml;}
+SchemaWriteStatus ECRelationshipConstraint::WriteXml(MSXML2_IXMLDOMElement &, const WString &) const{return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
+SchemaWriteStatus ECRelationshipClass::WriteXml(MSXML2_IXMLDOMElement& ) const{return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
+SchemaReadStatus ECRelationshipClass::ReadXmlAttributes(MSXML2_IXMLDOMNode &, IStandaloneEnablerLocaterR  ){return SCHEMA_READ_STATUS_FailedToParseXml;}
+SchemaReadStatus ECRelationshipClass::ReadXmlContents(MSXML2_IXMLDOMNode &, IStandaloneEnablerLocaterR  ){return SCHEMA_READ_STATUS_FailedToParseXml;}
+
+END_BENTLEY_EC_NAMESPACE
+#endif // defined (__unix__)

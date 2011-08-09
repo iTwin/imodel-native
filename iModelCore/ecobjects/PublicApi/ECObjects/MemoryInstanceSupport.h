@@ -97,7 +97,7 @@ private:
     typedef bmap<WCharCP, PropertyLayoutCP, StringComparer> PropertyLayoutMap;
 #endif    
     typedef bvector<PropertyLayoutP>                                PropertyLayoutVector;
-    typedef bmap<UInt32, bvector<UInt32>>                           LogicalStructureMap;
+    typedef bmap<UInt32, bvector<UInt32> >                          LogicalStructureMap;
     
     enum State
         {
