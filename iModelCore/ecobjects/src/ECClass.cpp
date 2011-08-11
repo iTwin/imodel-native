@@ -278,9 +278,7 @@ ECObjectsStatus ECClass::AddProperty
 ECPropertyP&                 pProperty
 )
     {
-    PropertyMap::const_iterator propertyIterator;
-    
-    propertyIterator = m_propertyMap.find(pProperty->GetName().c_str());
+    PropertyMap::const_iterator propertyIterator = m_propertyMap.find(pProperty->GetName().c_str());
     if (m_propertyMap.end() != propertyIterator)
         {
         ECObjectsLogger::Log()->warningv  (L"Can not create property '%s' because it already exists in this ECClass", pProperty->GetName().c_str());
@@ -314,8 +312,7 @@ ECPropertyP ECClass::GetPropertyP
 WCharCP propertyName
 ) const
     {
-    PropertyMap::const_iterator  propertyIterator;
-    propertyIterator = m_propertyMap.find (propertyName);
+    PropertyMap::const_iterator  propertyIterator = m_propertyMap.find (propertyName);
     
     if ( propertyIterator != m_propertyMap.end() )
         return propertyIterator->second;
@@ -370,8 +367,7 @@ ECObjectsStatus ECClass::RemoveProperty
 const WString &name
 )
     {
-    PropertyMap::iterator  propertyIterator;
-    propertyIterator = m_propertyMap.find (name.c_str());
+    PropertyMap::iterator  propertyIterator = m_propertyMap.find (name.c_str());
     
     if ( propertyIterator == m_propertyMap.end() )
         return ECOBJECTS_STATUS_ClassNotFound;
