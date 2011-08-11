@@ -273,6 +273,8 @@ struct ECInstanceInteropHelper
     ECOBJECTS_EXPORT static bool            IsNull (IECInstanceR, ECValueAccessorCR);
     ECOBJECTS_EXPORT static void            SetToNull (IECInstanceR, ECValueAccessorCR);
 
+    ECOBJECTS_EXPORT static bool            IsPropertyReadOnly (IECInstanceCR, ECValueAccessorR);
+
     ECOBJECTS_EXPORT static PrimitiveType   GetPrimitiveType       (IECInstanceCR instance, int propertyIndex);
 #ifdef NOT_USED
     ECOBJECTS_EXPORT static ValueKind       GetValueKind           (IECInstanceCR instance, int propertyIndex);

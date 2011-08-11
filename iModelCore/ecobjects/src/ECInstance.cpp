@@ -291,6 +291,9 @@ size_t IECInstance::GetOffsetToIECInstance () const
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 bool                IECInstance::_IsPropertyReadOnly (WCharCP accessString) const
     {
+    if (_IsReadOnly())
+        return true;
+
     // For array properties, the convention has been to use them with
     // empty brackets at the end: PropertyName[]
     // As ECProperties, they do not have any brackets: PropertyName
@@ -310,8 +313,10 @@ bool                IECInstance::_IsPropertyReadOnly (WCharCP accessString) cons
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 bool                IECInstance::_IsPropertyReadOnly (UInt32 propertyIndex) const
     {
+    if (_IsReadOnly())
+        return true;
+
     WCharCP accessString;
-    
     ECObjectsStatus status = GetEnabler().GetAccessString  (accessString, propertyIndex);
     if (ECOBJECTS_STATUS_Success != status)
         {
@@ -1226,6 +1231,28 @@ void            ECInstanceInteropHelper::SetToNull (IECInstanceR instance, ECVal
     v.SetToNull();
 
     instance.SetValueUsingAccessor (accessor, v);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Dylan.Rush                      08/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            ECInstanceInteropHelper::IsPropertyReadOnly (IECInstanceCR instance, ECValueAccessorR accessor)
+    {
+    ECObjectsStatus status;
+    UInt32 propertyIndex = accessor.DeepestLocation().propertyIndex;
+    if (1 < accessor.GetDepth())
+        {
+        ECValue v;
+        ECValueAccessor newAccessor(accessor);
+        newAccessor.PopLocation();
+        status = instance.GetValueUsingAccessor(v, newAccessor);
+        if (ECOBJECTS_STATUS_Success != status)
+            return false;
+
+        IECInstancePtr structInstance = v.GetStruct();
+        return structInstance->IsPropertyReadOnly (propertyIndex);
+        }
+    return instance.IsPropertyReadOnly (propertyIndex);
     }
 
 #ifdef NOT_USED
