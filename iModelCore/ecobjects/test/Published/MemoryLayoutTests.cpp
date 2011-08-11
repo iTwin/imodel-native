@@ -390,6 +390,10 @@ WString    GetTestSchemaXMLString (WCharCP schemaName, UInt32 versionMajor, UInt
                     L"    <ECClass typeName=\"EmployeeDirectory\" isDomainClass=\"True\">"
                     L"        <ECArrayProperty propertyName=\"Employees\" typeName=\"Employee\"  minOccurs=\"0\" maxOccurs=\"unbounded\" />"
                     L"    </ECClass>"
+                    L"    <ECClass typeName=\"Car\" isStruct=\"True\" isDomainClass=\"True\">"
+                    L"        <ECProperty       propertyName=\"Name\"       typeName=\"string\"/>"
+                    L"        <ECProperty       propertyName=\"Wheels\"     typeName=\"int\"  readOnly=\"True\"/>"
+                    L"    </ECClass>"
                     L"</ECSchema>";
 
     wchar_t* buff = (wchar_t*) _alloca (2 * (50 + wcslen (fmt) + wcslen (schemaName) + wcslen (className)));
@@ -1964,7 +1968,40 @@ TEST_F (MemoryLayoutTests, TestSetGetNull)
 
     
     };
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan.Rush      08/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (MemoryLayoutTests, TestPropertyReadOnly)
+    {
+    //L"    <ECClass typeName=\"Car\" isStruct=\"True\" isDomainClass=\"True\">"
+    //L"        <ECProperty       propertyName=\"Name\"       typeName=\"string\"/>"
+    //L"        <ECProperty       propertyName=\"Wheels\"     typeName=\"int\"  readOnly=\"True\"/>"
+    //L"    </ECClass>"
+
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();;
+    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    ASSERT_TRUE (schema != NULL);
+    ECClassP ecClass = schema->GetClassP (L"Car");
+    ASSERT_TRUE (NULL != ecClass);
+        
+    StandaloneECEnablerPtr enabler = schemaOwner->LocateStandaloneEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
+    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     
+    WCharCP nameAccessString = L"Name";
+    WCharCP wheelsAccessString = L"Wheels";
+    UInt32  namePropertyIndex = 9999;
+    UInt32  wheelsPropertyIndex = 9998;
+    EXPECT_TRUE (SUCCESS == enabler->GetPropertyIndex (namePropertyIndex, nameAccessString));
+    EXPECT_TRUE (SUCCESS == enabler->GetPropertyIndex (wheelsPropertyIndex, wheelsAccessString));
+
+    EXPECT_FALSE (instance->IsPropertyReadOnly (nameAccessString));
+    EXPECT_FALSE (instance->IsPropertyReadOnly (namePropertyIndex));
+
+    EXPECT_TRUE  (instance->IsPropertyReadOnly (wheelsAccessString));
+    EXPECT_TRUE  (instance->IsPropertyReadOnly (wheelsPropertyIndex));   
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/

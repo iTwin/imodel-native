@@ -258,7 +258,7 @@ ECClassCR       IECInstance::GetClass() const
 +---------------+---------------+---------------+---------------+---------------+------*/    
 int IECInstance::ParseExpectedNIndices (WCharCP propertyAccessString)
     {
-    WCharCP pointerToBrackets = pointerToBrackets = wcsstr (propertyAccessString, L"[]"); ;
+    WCharCP pointerToBrackets = wcsstr (propertyAccessString, L"[]");
     int nBrackets = 0;
     while (NULL != pointerToBrackets)
         {
@@ -287,6 +287,41 @@ size_t IECInstance::GetOffsetToIECInstance () const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan.Rush      08/2011
++---------------+---------------+---------------+---------------+---------------+------*/ 
+bool                IECInstance::_IsPropertyReadOnly (WCharCP accessString) const
+    {
+    // For array properties, the convention has been to use them with
+    // empty brackets at the end: PropertyName[]
+    // As ECProperties, they do not have any brackets: PropertyName
+    WString unBracketedAccessString = accessString;
+    unBracketedAccessString.Trim (L"[]");
+
+    ECPropertyP ecProperty = GetClass().GetPropertyP (unBracketedAccessString.c_str());
+    if (ecProperty)
+        return ecProperty->GetIsReadOnly();
+
+    ECObjectsLogger::Log()->errorv (L"IECInstance: Attempted to check if property '%ls' is read only; could not find property in class '%ls'", unBracketedAccessString.c_str(), GetClass().GetName().c_str());
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan.Rush      08/2011
++---------------+---------------+---------------+---------------+---------------+------*/ 
+bool                IECInstance::_IsPropertyReadOnly (UInt32 propertyIndex) const
+    {
+    WCharCP accessString;
+    
+    ECObjectsStatus status = GetEnabler().GetAccessString  (accessString, propertyIndex);
+    if (ECOBJECTS_STATUS_Success != status)
+        {
+        ECObjectsLogger::Log()->errorv (L"IECInstance: Attempted to check if property with index '%d' is read only; could not resolve property name from enabler '%ls'", propertyIndex, GetEnabler().GetName());
+        return false;
+        }
+    return IECInstance::_IsPropertyReadOnly (accessString);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/   
 ECEnablerCR           IECInstance::GetEnabler() const { return _GetEnabler();  }
@@ -302,6 +337,8 @@ ECObjectsStatus     IECInstance::SetValue (WCharCP propertyAccessString, ECValue
 ECObjectsStatus     IECInstance::SetValue (WCharCP propertyAccessString, ECValueCR v, UInt32 arrayIndex) { return _SetValue (propertyAccessString, v, true, arrayIndex); }
 ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v) { return _SetValue (propertyIndex, v, false, 0); }
 ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) { return _SetValue (propertyIndex, v, true, arrayIndex); }
+bool                IECInstance::IsPropertyReadOnly (UInt32 propertyIndex) const { return _IsPropertyReadOnly (propertyIndex); }
+bool                IECInstance::IsPropertyReadOnly (WCharCP accessString) const { return _IsPropertyReadOnly (accessString); }
 
 #define NUM_INDEX_BUFFER_CHARS 63
 #define NUM_ACCESSSTRING_BUFFER_CHARS 1023
