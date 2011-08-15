@@ -1433,7 +1433,228 @@ ECObjectsStatus       MemoryInstanceSupport::EnsureSpaceIsAvailable (UInt32& off
         
     return GrowPropertyValue (classLayout, propertyLayout, additionalBytesNeeded, callbackP);
     }        
+        
+#define DEBUGGING_ARRAYENTRY_REMOVAL   
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  07/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus MemoryInstanceSupport::RemoveArrayElementsFromMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount)
+    {
+    ECObjectsStatus status = ECOBJECTS_STATUS_Error;
+
+    bool isFixedCount = (propertyLayout.GetModifierFlags() & ARRAYMODIFIERFLAGS_IsFixedCount);
+    PRECONDITION (!isFixedCount && propertyLayout.GetTypeDescriptor().IsArray() && "A variable size array property is required to remove an array entry", ECOBJECTS_STATUS_PreconditionViolated);
     
+    PRECONDITION (removeCount > 0, ECOBJECTS_STATUS_IndexOutOfRange)        
+   
+    UInt32       bytesAllocated = _GetBytesAllocated();    
+    byte *       currentData    = (byte*)_GetData();
+
+    // since we can not use memmove on XAttribute memory, copy the memory move it around and then use _ModifyData
+    // copy the entire instance into allocated memory
+    ScopedArray<byte> scoped((size_t)bytesAllocated);
+    byte*   data = scoped.GetData();
+    memcpy (data, currentData, (size_t)bytesAllocated);
+
+    bool    hasFixedSizedElements = IsArrayOfFixedSizeElements (propertyLayout);
+    UInt32  arrayOffset           = GetOffsetOfPropertyValue (propertyLayout);   
+    byte   *arrayAddress          = data + arrayOffset;
+
+    // modify from bottom up
+    SecondaryOffset  beginIndexValueOffset = GetOffsetOfArrayIndexValue (arrayOffset, propertyLayout, removeIndex);
+    byte *           destination = data + beginIndexValueOffset;
+    byte *           source;
+    UInt32           bytesToMove;
+    UInt32           totalBytesAdjusted=0;
+    ArrayCount       preArrayCount = GetAllocatedArrayCount (propertyLayout);
+    ArrayCount       postArrayCount = preArrayCount - removeCount;
+    SecondaryOffset* pThisProperty = (SecondaryOffset*)(data + propertyLayout.GetOffset());
+    SecondaryOffset* pNextProperty = pThisProperty + 1;
+
+    if ((removeIndex + removeCount) >= preArrayCount) // removing entries an end of array
+        {
+        source = data + *pNextProperty;
+        bytesToMove = bytesAllocated - *pNextProperty;
+        }
+    else   // removing entries at beginning or in middle of array
+        {
+        SecondaryOffset endIndexValueOffset = GetOffsetOfArrayIndexValue (arrayOffset, propertyLayout, removeIndex+removeCount);
+        source = data + endIndexValueOffset;
+
+        bytesToMove = bytesAllocated - endIndexValueOffset;
+        }
+
+    if (bytesToMove <= 0)
+        return ECOBJECTS_STATUS_Error;
+
+    // remove the array values
+    memmove (destination, source, bytesToMove);
+    totalBytesAdjusted += (UInt32)(source - destination);
+
+    UInt32           preNullFlagBitmasksCount = CalculateNumberNullFlagsBitmasks (preArrayCount);   
+    UInt32           postNullFlagBitmasksCount = CalculateNumberNullFlagsBitmasks (postArrayCount);
+    UInt32           nullFlagsDelta = 0;
+    SecondaryOffset* firstArrayEntryOffset = (SecondaryOffset *)(data + GetOffsetOfArrayIndex (arrayOffset, propertyLayout, 0));
+
+    if (!hasFixedSizedElements)
+        {
+        // remove secondary offsets to array entry values
+        SecondaryOffset  beginIndexValueOffset = GetOffsetOfArrayIndex (arrayOffset, propertyLayout, removeIndex);
+        byte *           destination = data + beginIndexValueOffset;  
+        UInt32           offsetDelta = removeCount * sizeof(SecondaryOffset);
+
+        source      = destination + offsetDelta;    
+        bytesToMove = bytesAllocated - (beginIndexValueOffset+offsetDelta);
+
+        memmove (destination, source, bytesToMove);
+        totalBytesAdjusted += (UInt32)(source - destination);
+
+        if (preNullFlagBitmasksCount != postNullFlagBitmasksCount)
+            nullFlagsDelta = ((preNullFlagBitmasksCount-postNullFlagBitmasksCount)*sizeof(NullflagsBitmask));
+
+        // now adjust the offsets to the entries in the array
+        for (UInt32 iOffset=0; iOffset<postArrayCount; iOffset++)
+            {
+            SecondaryOffset* pCurrOffset = firstArrayEntryOffset+iOffset;
+            if (iOffset < removeIndex)
+                *pCurrOffset -=  (offsetDelta + nullFlagsDelta);             // adjust by removed SecondaryOffsets
+            else
+                *pCurrOffset -=  (totalBytesAdjusted + nullFlagsDelta);      // adjust by removed values and SecondaryOffsets
+            }
+        }
+           
+    // update the null flags
+    NullflagsBitmask* preNullflagsStart = (NullflagsBitmask*)(arrayAddress + sizeof (ArrayCount));
+    NullflagsBitmask* pNullflagsCurrent;
+
+    // update/shift the null flags
+    UInt32 firstMoveIndex = removeIndex+removeCount;
+
+    UInt32 group;
+    UInt32 bit;
+    UInt32 nullflagsBitmask;
+
+    if (firstMoveIndex >= preArrayCount)  // removed last entries
+        {
+        for (UInt32 iRemove = removeIndex; iRemove < removeIndex+removeCount; iRemove++)
+            {
+            group = iRemove / BITS_PER_NULLFLAGSBITMASK;
+            bit = iRemove % BITS_PER_NULLFLAGSBITMASK;
+            nullflagsBitmask = 0x01 << bit;
+            pNullflagsCurrent = preNullflagsStart + group;
+            *pNullflagsCurrent |= nullflagsBitmask; // turn on the null bit
+            }
+        }
+    else // removing entries from middle of array
+        {
+        UInt32 oldgroup;
+        UInt32 oldbit;
+        UInt32 oldnullflagsBitmask;
+        NullflagsBitmask* pOldNullflagsCurrent;
+        NullflagsBitmask* pNullflagsCurrent;
+        bool isNull;
+
+        for (UInt32 iRemove = removeIndex; iRemove < postArrayCount; iRemove++)
+            {
+            oldgroup = (iRemove+removeCount) / BITS_PER_NULLFLAGSBITMASK;
+            oldbit = (iRemove+removeCount) % BITS_PER_NULLFLAGSBITMASK;
+            oldnullflagsBitmask = 0x01 << oldbit;
+            pOldNullflagsCurrent = preNullflagsStart + oldgroup;
+
+            group = iRemove / BITS_PER_NULLFLAGSBITMASK;
+            bit = iRemove % BITS_PER_NULLFLAGSBITMASK;
+            nullflagsBitmask = 0x01 << bit; 
+            pNullflagsCurrent = preNullflagsStart + group;
+            isNull = (nullflagsBitmask == (*pNullflagsCurrent & nullflagsBitmask)); 
+
+            if (isNull && 0 == (*pOldNullflagsCurrent & oldnullflagsBitmask))
+                *pNullflagsCurrent ^= nullflagsBitmask; // turn off the null bit 
+            else if (!isNull && oldnullflagsBitmask == (*pOldNullflagsCurrent & oldnullflagsBitmask))
+                *pNullflagsCurrent |= nullflagsBitmask; // turn on the null bit
+            }
+        }
+
+    if (preNullFlagBitmasksCount != postNullFlagBitmasksCount)
+        {
+        // now actually remove any unneeded NullFlagBitmask
+        destination = arrayAddress + sizeof(ArrayCount) + (postNullFlagBitmasksCount*sizeof(NullflagsBitmask));
+        source = (byte*)firstArrayEntryOffset;
+
+        bytesToMove = bytesAllocated - (arrayOffset + sizeof(ArrayCount) + (postNullFlagBitmasksCount*sizeof(NullflagsBitmask)));
+
+        memmove (destination, source, bytesToMove);
+        totalBytesAdjusted += (UInt32)(source - destination);
+        }
+
+    // Update the array count
+    memcpy (arrayAddress, &postArrayCount, sizeof(ArrayCount));
+   
+    SecondaryOffset * pLast = (SecondaryOffset*)(data + classLayout.GetSizeOfFixedSection() - sizeof(SecondaryOffset));
+
+    // adjust the offsets in the fixed section beyond the one we just modified
+    while (pNextProperty <= pLast)
+        {
+        *pNextProperty -= totalBytesAdjusted;
+        pNextProperty++;
+        }
+
+    // replace all property data for the instance
+    status = _ModifyData (0, data, bytesAllocated);
+
+#ifdef DEBUGGING_ARRAYENTRY_REMOVAL           
+    WString postDeleteLayout = InstanceDataToString (L"", classLayout);
+    if (postDeleteLayout.empty())
+        return status;
+#endif
+
+    return status;
+    }
+             
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  07/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus MemoryInstanceSupport::RemoveArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP)
+    {
+    ECTypeDescriptor typeDescriptor = propertyLayout.GetTypeDescriptor();
+    PRECONDITION (typeDescriptor.IsArray() && 
+        "Can not set the value to memory at an array index using the specified property layout because it is not an array datatype", 
+        ECOBJECTS_STATUS_PreconditionViolated);  
+                        
+    if (removeIndex >= GetReservedArrayCount (propertyLayout))
+        return ECOBJECTS_STATUS_IndexOutOfRange;  
+
+
+#ifdef DEBUGGING_ARRAYENTRY_REMOVAL 
+    ECObjectsStatus status = ECOBJECTS_STATUS_Error;
+    WString preDeleteLayout = InstanceDataToString (L"", classLayout);
+    if (preDeleteLayout.empty())
+        return status;
+#endif
+
+    if (typeDescriptor.IsPrimitiveArray())
+        return RemoveArrayElementsFromMemory (classLayout, propertyLayout, removeIndex, removeCount);
+    else if (typeDescriptor.IsStructArray())              
+        return _RemoveStructArrayElementsFromMemory (classLayout, propertyLayout, removeIndex, removeCount, memoryReallocationCallbackP);       
+
+    POSTCONDITION (false && "Can not set the value to memory using the specified property layout because it is an unsupported datatype", ECOBJECTS_STATUS_DataTypeNotSupported);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  07/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus MemoryInstanceSupport::RemoveArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 removeIndex, UInt32 removeCount)
+    {        
+    PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
+       
+    PropertyLayoutCP pPropertyLayout = NULL;
+    ECObjectsStatus status = classLayout.GetPropertyLayout (pPropertyLayout, propertyAccessString);
+    if (SUCCESS != status || NULL == pPropertyLayout)
+        return ECOBJECTS_STATUS_PropertyNotFound;
+
+    return RemoveArrayElements (classLayout, *pPropertyLayout, removeIndex, removeCount);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1912,13 +2133,12 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             WCharCP value = v.GetString();
             UInt32 bytesNeeded = (UInt32)(sizeof(wchar_t) * (wcslen(value) + 1)); // WIP_FUSION: what if the caller could tell us the size?
 
-            EC::EmbeddedInstanceCallbackP callbackP = v.GetMemoryCallback();
             ECObjectsStatus status;
 
             if (useIndex)
-                status = EnsureSpaceIsAvailableForArrayIndexValue (classLayout, propertyLayout, index, bytesNeeded);
+                status = EnsureSpaceIsAvailableForArrayIndexValue (classLayout, propertyLayout, index, bytesNeeded, v.GetMemoryCallback());
             else
-                status = EnsureSpaceIsAvailable (offset, classLayout, propertyLayout, bytesNeeded, callbackP);
+                status = EnsureSpaceIsAvailable (offset, classLayout, propertyLayout, bytesNeeded, v.GetMemoryCallback());
             if (ECOBJECTS_STATUS_Success != status)
                 return status;
                 
@@ -2234,20 +2454,18 @@ ArrayResizer::ArrayResizer (ClassLayoutCR classLayout, PropertyLayoutCR property
     m_postNullFlagBitmasksCount = CalculateNumberNullFlagsBitmasks (m_postAllocatedArrayCount);
     m_postHeaderByteCount = sizeof (ArrayCount) + (m_postNullFlagBitmasksCount * sizeof (NullflagsBitmask));
     m_postFixedSectionByteCount = m_postHeaderByteCount + (m_postAllocatedArrayCount * m_elementSizeInFixedSection);
-    
-    m_resizeByteCount = m_postFixedSectionByteCount - m_preFixedSectionByteCount;    
+    m_resizeFixedSectionByteCount = m_postFixedSectionByteCount - m_preFixedSectionByteCount;
     }    
-
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/    
 ECObjectsStatus            ArrayResizer::ShiftDataFollowingResizeIndex ()
     {
-    // shift all data (fixed & variable) to the right of the element where the resixe should occur
+    // shift all data (fixed & variable) to the right of the element where the resize should occur
     UInt32 offsetOfResizePoint = m_preHeaderByteCount + (m_resizeIndex * m_elementSizeInFixedSection);         
     m_pResizeIndexPreShift = m_data + m_arrayOffset + offsetOfResizePoint;
-    m_pResizeIndexPostShift = m_pResizeIndexPreShift + m_resizeByteCount;        
+    m_pResizeIndexPostShift = m_pResizeIndexPreShift + m_resizeFixedSectionByteCount;        
     #ifndef NDEBUG
     UInt32 arrayByteCountAfterGrow = m_instance.GetPropertyValueSize (m_propertyLayout);
     byte const * pNextProperty = m_data + m_arrayOffset + arrayByteCountAfterGrow;
@@ -2259,7 +2477,7 @@ ECObjectsStatus            ArrayResizer::ShiftDataFollowingResizeIndex ()
         DEBUG_EXPECT (m_pResizeIndexPostShift + byteCountToShift <= pNextProperty); 
         memmove ((byte*)m_pResizeIndexPostShift, m_pResizeIndexPreShift, byteCountToShift); // WIP_FUSION .. use _MoveData, waiting on Keith (D-60516)
         }
-        
+    
     return SetSecondaryOffsetsFollowingResizeIndex();        
     }
 
@@ -2280,7 +2498,7 @@ ECObjectsStatus            ArrayResizer::SetSecondaryOffsetsFollowingResizeIndex
     if (m_preAllocatedArrayCount > m_resizeIndex)
         {
         nSecondaryOffsetsShifted = m_preAllocatedArrayCount - m_resizeIndex;
-        m_postSecondaryOffsetOfResizeIndex = *((SecondaryOffset*)m_pResizeIndexPostShift) + m_resizeByteCount;
+        m_postSecondaryOffsetOfResizeIndex = *((SecondaryOffset*)m_pResizeIndexPostShift) + m_resizeFixedSectionByteCount;
         }
     else
         {
@@ -2307,7 +2525,7 @@ ECObjectsStatus            ArrayResizer::SetSecondaryOffsetsFollowingResizeIndex
     // update shifted secondary offsets        
     for (UInt32 i = m_resizeElementCount; i < nSecondaryOffsetsShifted + m_resizeElementCount ;i++)
         {
-        pSecondaryOffsetWriteBuffer[i] = pSecondaryOffset[i] + m_resizeByteCount;
+        pSecondaryOffsetWriteBuffer[i] = pSecondaryOffset[i] + m_resizeFixedSectionByteCount;
         DEBUG_EXPECT (pSecondaryOffsetWriteBuffer[i] <= m_instance.GetPropertyValueSize (m_propertyLayout));
         }
         
@@ -2372,7 +2590,7 @@ ECObjectsStatus            ArrayResizer::SetSecondaryOffsetsPreceedingResizeInde
 
     for (UInt32 i = 0; i < m_resizeIndex ;i++)
         {
-        pSecondaryOffsetWriteBuffer[i] = pSecondaryOffset[i] + m_resizeByteCount;
+        pSecondaryOffsetWriteBuffer[i] = pSecondaryOffset[i] + m_resizeFixedSectionByteCount;
         DEBUG_EXPECT (pSecondaryOffsetWriteBuffer[i] <= m_postSecondaryOffsetOfResizeIndex);
         }
         
@@ -2461,7 +2679,7 @@ ECObjectsStatus       ArrayResizer::CreateNullArrayElementsAt (ClassLayoutCR cla
     ArrayResizer resizer (classLayout, propertyLayout, instance, insertIndex, insertCount);
     PRECONDITION (resizer.m_resizeIndex <= resizer.m_preAllocatedArrayCount, ECOBJECTS_STATUS_IndexOutOfRange);        
     
-    ECObjectsStatus status = instance.EnsureSpaceIsAvailable (resizer.m_arrayOffset, classLayout, propertyLayout, resizer.m_preArrayByteCount + resizer.m_resizeByteCount, memoryReallocationCallbackP);
+    ECObjectsStatus status = instance.EnsureSpaceIsAvailable (resizer.m_arrayOffset, classLayout, propertyLayout, resizer.m_preArrayByteCount + resizer.m_resizeFixedSectionByteCount, memoryReallocationCallbackP);
     if (ECOBJECTS_STATUS_Success != status)
         return status;       
         
@@ -2479,5 +2697,5 @@ ECObjectsStatus       ArrayResizer::CreateNullArrayElementsAt (ClassLayoutCR cla
     return status;    
     // WIP_FUSION how do we deal with an error that occurs during the insert "transaction" after some data has already been moved/modified but we haven't finished?
     }    
-    
+
 END_BENTLEY_EC_NAMESPACE

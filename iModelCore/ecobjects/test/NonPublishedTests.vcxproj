@@ -61,8 +61,8 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="$(SrcRoot)ecf\ecobjects\nativeatp\NonPublished\MemoryLayoutTests.cpp" />
     <ClCompile Include="ECObjectsTestPCH.cpp" />
+    <ClCompile Include="NonPublished\MemoryLayoutTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h" />

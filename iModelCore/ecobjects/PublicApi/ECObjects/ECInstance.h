@@ -36,6 +36,13 @@ BEGIN_BENTLEY_EC_NAMESPACE
 // Define structure used to pass data to/from callback that is used to allocate memory in a native IECInstance.
 // This is needed to support embedding a native instance in a managed instance without requiring the managed
 // instance to be Disposed.
+
+enum  UseFlags
+    {
+    USE_FLAG_ADDGAPS    = 0x0000,
+    USE_FLAG_REMOVEGAPS = 0x0001,
+    };
+
 struct MemoryCallbackData
     {
     byte*   dataAddress;
@@ -44,6 +51,7 @@ struct MemoryCallbackData
     size_t  instanceGapSize;
     byte*   instanceGapAddress;
     byte*   newDataAddress;
+    UInt16  useFlags;
 
     MemoryCallbackData ()
         {
@@ -53,6 +61,7 @@ struct MemoryCallbackData
         instanceGapSize = 0;
         instanceGapAddress = NULL;
         newDataAddress = NULL;
+        useFlags = USE_FLAG_ADDGAPS;
         }
     };
 
