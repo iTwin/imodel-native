@@ -348,10 +348,10 @@ WStringCR     name
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECOBJECTS_EXPORT WString ECSchema::GetFullSchemaName () const
     {
-    std::wostringstream fullName;
-    fullName << GetName().c_str() << L"." << std::setfill(L'0') << std::setw(2) << GetVersionMajor() << L"." << std::setw(2) << GetVersionMinor();
-    
-    return fullName.str().c_str();
+    wchar_t fullName[1024]; // we decided to use a large buffer instead of caculating the length and using _alloc to boost performance 
+
+    swprintf (fullName, L"%s.%02d.%02d", GetName().c_str(), GetVersionMajor(), GetVersionMinor());
+    return fullName;
     }
 
 #define     ECSCHEMA_FULLNAME_FORMAT_EXPLANATION L" Format must be Name.MM.mm where Name is the schema name, MM is major version and mm is minor version."
