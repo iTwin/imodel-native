@@ -13,6 +13,7 @@
 #include "ECObjectsPch.h"
 #include <iomanip>
 #include <Bentley/BeFileName.h>
+#include <list>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
