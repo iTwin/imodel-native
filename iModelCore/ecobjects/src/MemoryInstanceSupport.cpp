@@ -7,7 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include    "ECObjectsPch.h"
 #include    <algorithm>
+#if defined (_WIN32) // WIP_NONPORT - iostreams not support on Android
 #include    <iomanip>
+#endif
 
 // SHRINK_TO_FIT will cause space reserved for variable-sized values to be reduced to the minimum upon every set operation.
 // SHRINK_TO_FIT is not recommended and is mainly for testing. It it better to "compact" everything at once

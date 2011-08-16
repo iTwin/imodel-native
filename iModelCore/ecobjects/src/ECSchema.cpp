@@ -11,7 +11,10 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "ECObjectsPch.h"
+#if defined (_WIN32) // WIP_NONPORT - iostreams not support on Android
 #include <iomanip>
+#endif
+#include <list>
 #include <Bentley/BeFileName.h>
 #include <list>
 
