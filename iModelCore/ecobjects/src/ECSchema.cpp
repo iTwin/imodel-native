@@ -1145,6 +1145,7 @@ bool                            acceptImperfectLegacyMatch
                 {
                 ECObjectsLogger::Log()->warningv (L"Located %s, which does not meet 'latest compatible' criteria to match %s.%d.%d, but is being accepted because some legacy schemas are known to require this", 
                                                   fullFileName.c_str(), name.c_str(), versionMajor, versionMinor);
+                // See if this imperfect match ECSchema has is already cached (so we can avoid loading it, below)
                 schemaOut = schemaContext.GetSchemaOwner().LocateSchema (name.c_str(), versionMajor, foundVersionMinor, SCHEMAMATCHTYPE_Exact);
                 if (NULL != schemaOut)
                     return schemaOut;
