@@ -1017,18 +1017,17 @@ static void     dumpPropertyValues (ECValuesCollectionR collection, bool isArray
         ECValueCR v = propertyValue.GetValue();
 
         printfIndent (indentDepth);
+        ECValueAccessorCR   accessor = propertyValue.GetValueAccessor();
+        UInt32  accessorDepth = accessor.GetDepth();
+        WCharCP accessString = accessor.GetAccessString (accessorDepth- 1);
 
         if (isArray)
             {
-            printf ("Array Member [%d] = %S\n", arrayIndex++, v.ToString());
+            printf ("Array Member [%d] %S (depth=%d) = %S\n", arrayIndex++, accessString, accessorDepth, v.ToString());
             }
         else
             {
-            ECValueAccessorCR   accessor     = propertyValue.GetValueAccessor();
-            WCharCP     accessString = accessor.GetAccessString (accessor.GetDepth() - 1);
-
-            printf ("%S", accessString);
-
+            printf ("%S (depth=%d)", accessString, accessorDepth);
             if ( ! v.IsStruct())
                 printf (" = %S", v.ToString().c_str());
 
@@ -2204,6 +2203,7 @@ TEST_F (MemoryLayoutTests, IterateCompleClass)
     structVal.SetStruct (structInstance.get());
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"StructArrayProperty[]", structVal, 0));
 
+    // ensure we can walk the properties
     ECValuesCollectionPtr   collection = ECValuesCollection::Create (*instance);
     dumpPropertyValues (*collection, false, 0);
     }
