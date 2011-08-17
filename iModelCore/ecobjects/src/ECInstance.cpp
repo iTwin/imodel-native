@@ -3104,7 +3104,7 @@ InstanceWriteStatus     WriteArrayProperty (ArrayECPropertyR arrayProperty, IECI
                 }
 
             ECClassCR   structClass = structInstance->GetClass();
-            assert (ECOBJECTS_STATUS_Success == structClass.Is (memberClass));
+            assert (structClass.Is (memberClass));
 
             if (S_OK != (status = m_xmlWriter->WriteStartElement (NULL, structClass.GetName().c_str(), NULL)))
                 return TranslateStatus (status);
