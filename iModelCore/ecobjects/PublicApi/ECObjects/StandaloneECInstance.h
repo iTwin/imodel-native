@@ -8,7 +8,7 @@
 //__PUBLISH_SECTION_START__
 #pragma once
 
-#include <ECObjects\ECObjects.h>
+#include <ECObjects/ECObjects.h>
 
 EC_TYPEDEFS(StandaloneECEnabler);
 
