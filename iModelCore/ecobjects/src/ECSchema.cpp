@@ -355,7 +355,7 @@ ECOBJECTS_EXPORT WString ECSchema::GetFullSchemaName () const
     {
     wchar_t fullName[1024]; // we decided to use a large buffer instead of caculating the length and using _alloc to boost performance 
 
-    swprintf (fullName, L"%s.%02d.%02d", GetName().c_str(), GetVersionMajor(), GetVersionMinor());
+    BeStringUtilities::Snwprintf (fullName, L"%s.%02d.%02d", GetName().c_str(), GetVersionMajor(), GetVersionMinor());
     return fullName;
     }
 
