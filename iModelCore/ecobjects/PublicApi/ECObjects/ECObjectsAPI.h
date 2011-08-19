@@ -68,6 +68,7 @@
 #include <ECObjects/ECValue.h>
 #include <ECObjects/MemoryInstanceSupport.h>
 #include <ECObjects/StandaloneECInstance.h>
+#include <Bentley/ScopedArray.h>
 
 /*__PUBLISH_SECTION_END__*/
 #include <ECObjects/DesignByContract.h>

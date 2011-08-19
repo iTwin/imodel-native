@@ -35,7 +35,7 @@ static LeakDetector<ECSchema> g_leakDetector (L"ECSchema", L"ECSchemas", false);
 ECSchema::ECSchema (bool hideFromLeakDetection)
     :
     m_versionMajor (DEFAULT_VERSION_MAJOR), m_versionMinor (DEFAULT_VERSION_MINOR), m_classContainer(m_classMap),
-    m_hideFromLeakDetection(hideFromLeakDetection)
+    m_hideFromLeakDetection(hideFromLeakDetection), m_isStandardSchema(false)
     {
     if ( ! m_hideFromLeakDetection)
         g_leakDetector.ObjectCreated(*this);
@@ -196,6 +196,16 @@ bool ECSchema::GetIsDisplayLabelDefined
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchema::IsStandardSchema
+(
+) const
+    {
+    return m_isStandardSchema;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
 UInt32 ECSchema::GetVersionMajor
 (
 ) const
@@ -343,15 +353,10 @@ WStringCR     name
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECOBJECTS_EXPORT WString ECSchema::GetFullSchemaName () const
     {
-#if defined (_WIN32) // WIP_NONPORT
-    std::wostringstream fullName;
-    fullName << GetName().c_str() << L"." << std::setfill(L'0') << std::setw(2) << GetVersionMajor() << L"." << std::setw(2) << GetVersionMinor();
-    
-    return fullName.str().c_str();
-#elif defined (__unix__)
-    // *** NEEDS WORK: iostreams not support on Android
-    return L"";
-#endif
+    wchar_t fullName[1024]; // we decided to use a large buffer instead of caculating the length and using _alloc to boost performance 
+
+    swprintf (fullName, L"%s.%02d.%02d", GetName().c_str(), GetVersionMajor(), GetVersionMinor());
+    return fullName;
     }
 
 #define     ECSCHEMA_FULLNAME_FORMAT_EXPLANATION L" Format must be Name.MM.mm where Name is the schema name, MM is major version and mm is minor version."
@@ -974,7 +979,6 @@ ECSchemaDeserializationContextR schemaContext
   
     // Step 2: ask the schemaLocaters
     FOR_EACH (IECSchemaLocaterP schemaLocater, schemaContext.GetSchemaLocaters())
-
         {
         if ( ! EXPECTED_CONDITION (NULL != schemaLocater))
             continue;
@@ -988,9 +992,19 @@ ECSchemaDeserializationContextR schemaContext
     schema = LocateSchemaByPath(name, versionMajor, versionMinor, schemaContext);
     if (NULL != schema)
         return schema;
-        
+
     // Step 4: look in a set of standard paths
-    return LocateSchemaByStandardPaths (name, versionMajor, versionMinor, schemaContext);
+    schema = LocateSchemaByStandardPaths (name, versionMajor, versionMinor, schemaContext);
+    if (NULL != schema)
+        return schema;
+
+    // Step 5: the final locator... this should be a managed locator from the interop layer, if it is present
+    IECSchemaLocaterP schemaLocater = schemaContext.GetFinalSchemaLocater();
+    if (NULL == schemaLocater)
+        return NULL;
+
+    schema = schemaLocater->LocateSchema(name.c_str(), versionMajor, versionMinor, SCHEMAMATCHTYPE_LatestCompatible, schemaContext);
+    return schema;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -998,7 +1012,7 @@ ECSchemaDeserializationContextR schemaContext
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, WCharCP filePath)
     {
-#if defined (WIP_NONPORT)
+#if defined (_WIN32) // WIP_NONPORT
     wchar_t  name[256];
 
     // only process the filename 
@@ -1035,6 +1049,69 @@ ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, WCharCP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaP       ECSchema::FindMatchingSchema
+(
+bool&                           foundImperfectLegacyMatch,
+WStringCR                       schemaMatchExpression,
+WStringCR                       name,
+UInt32&                         versionMajor,
+UInt32&                         versionMinor,
+ECSchemaDeserializationContextR schemaContext,
+bool                            useLatestCompatibleMatch,
+bool                            acceptImperfectLegacyMatch
+)
+    {
+    foundImperfectLegacyMatch = false;
+    if (!useLatestCompatibleMatch)
+        acceptImperfectLegacyMatch = false;
+
+    ECSchemaP   schemaOut = NULL;
+    WString fullFileName;
+
+    FOR_EACH (WString schemaPath, schemaContext.GetSchemaPaths())
+        {
+        if (schemaPath[schemaPath.length() - 1] != '\\')
+            schemaPath += '\\';
+        schemaPath += schemaMatchExpression;
+        ECObjectsLogger::Log()->debugv (L"Checking for existence of %s...", schemaPath.c_str());
+
+        //Finds latest
+        UInt32 foundVersionMinor;
+        if (SUCCESS != GetSchemaFileName (fullFileName, foundVersionMinor, schemaPath.c_str(), useLatestCompatibleMatch))
+            continue;
+
+        //Check if schema is compatible before reading, as reading it would add the schema to the cache.
+        if (!SchemasMatch (useLatestCompatibleMatch ? SCHEMAMATCHTYPE_LatestCompatible : SCHEMAMATCHTYPE_Exact, 
+                            name.c_str(),   versionMajor,   versionMinor,
+                            name.c_str(),   versionMajor,   foundVersionMinor))
+            {
+            foundImperfectLegacyMatch = true;
+            if (acceptImperfectLegacyMatch)
+                {
+                ECObjectsLogger::Log()->warningv (L"Located %s, which does not meet 'latest compatible' criteria to match %s.%d.%d, but is being accepted because some legacy schemas are known to require this", 
+                                                  fullFileName.c_str(), name.c_str(), versionMajor, versionMinor);
+                schemaOut = schemaContext.GetSchemaOwner().LocateSchema (name.c_str(), versionMajor, foundVersionMinor, SCHEMAMATCHTYPE_Exact);
+                if (NULL != schemaOut)
+                    return schemaOut;
+                }
+            else
+                continue;
+            }
+
+        if (SCHEMA_READ_STATUS_Success != ECSchema::ReadFromXmlFile (schemaOut, fullFileName.c_str(), schemaContext))
+            continue;
+
+        ECObjectsLogger::Log()->debugv (L"Located %s...", fullFileName.c_str());
+
+        return schemaOut;
+        }
+
+    return schemaOut;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP       ECSchema::LocateSchemaByPath
 (
 const WString&                 name,
@@ -1044,43 +1121,20 @@ ECSchemaDeserializationContextR schemaContext,
 bool                            useLatestCompatibleMatch
 )
     {
-    ECSchemaP   schemaOut = NULL;
     wchar_t versionString[24];
     if (useLatestCompatibleMatch)
         swprintf(versionString, 24, L".%02d.*.ecschema.xml", versionMajor);
     else
         swprintf(versionString, 24, L".%02d.%02d.ecschema.xml", versionMajor, versionMinor);
 
-    WString schemaName = name;
-    schemaName += versionString;
+    WString schemaMatchExpression = name;
+    schemaMatchExpression += versionString;
     WString fullFileName;
 
-    UInt32 foundVersionMinor;
-
-    FOR_EACH (WString schemaPath, schemaContext.GetSchemaPaths())
-        {
-        if (schemaPath[schemaPath.length() - 1] != '\\')
-            schemaPath += '\\';
-        schemaPath += schemaName;
-        ECObjectsLogger::Log()->debugv (L"Checking for existence of %s...", schemaPath.c_str());
-
-        //Finds latest
-        if (SUCCESS != GetSchemaFileName (fullFileName, foundVersionMinor, schemaPath.c_str(), useLatestCompatibleMatch))
-            continue;
-
-        //Check if schema is compatible before serializing, as serializing would add the schema to the cache.
-        if (!SchemasMatch (useLatestCompatibleMatch ? SCHEMAMATCHTYPE_LatestCompatible : SCHEMAMATCHTYPE_Exact, 
-                            name.c_str(),   versionMajor,   versionMinor,
-                            name.c_str(),   versionMajor,   foundVersionMinor))
-            continue;
-
-        if (SCHEMA_READ_STATUS_Success != ECSchema::ReadFromXmlFile (schemaOut, fullFileName.c_str(), schemaContext))
-            continue;
-
-        ECObjectsLogger::Log()->debugv (L"Located %s...", fullFileName.c_str());
-
-        return schemaOut;
-        }
+    bool foundImperfectLegacyMatch;
+    ECSchemaP   schemaOut = FindMatchingSchema (foundImperfectLegacyMatch, schemaMatchExpression, name, versionMajor, versionMinor, schemaContext, useLatestCompatibleMatch, false);
+    if (schemaContext.m_acceptLegacyImperfectLatestCompatibleMatch && NULL == schemaOut && foundImperfectLegacyMatch && useLatestCompatibleMatch)
+        schemaOut = FindMatchingSchema (foundImperfectLegacyMatch, schemaMatchExpression, name, versionMajor, versionMinor, schemaContext, useLatestCompatibleMatch, true);
 
     return schemaOut;
     }
@@ -1135,6 +1189,8 @@ ECSchemaDeserializationContextR schemaContext
     
     // Do the search
     ECSchemaP   foundSchema = LocateSchemaByPath (name, versionMajor, versionMinor, schemaContext);
+    if (NULL != foundSchema)
+        foundSchema->m_isStandardSchema = true;
 
     // Put the context back the way it was when we started
     schemaContext.GetSchemaPaths() = originalPaths;
@@ -1508,10 +1564,33 @@ MSXML2::IXMLDOMDocument2& pXmlDoc
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
+void AddFilePathToSchemaPaths 
+(
+ECSchemaDeserializationContextR schemaContext,
+T_WStringVectorR                schemaPaths,
+WCharCP                         ecSchemaXmlFile
+)
+    {
+    WString dev, dir;
+    BeFileName::ParseName (&dev, &dir, NULL, NULL, ecSchemaXmlFile);
+    WString pathToThisSchema = dev + WCSDIR_DEV_SEPARATOR_CHAR + dir;
+    FOR_EACH(WStringCR schemaPath, schemaPaths)
+        {
+        BeFileName::ParseName (&dev, &dir, NULL, NULL, schemaPath.c_str());
+        WString normalizedPath = dev + WCSDIR_DEV_SEPARATOR_CHAR + dir;
+        if (0 == normalizedPath.CompareToI(pathToThisSchema))
+            return; // it's already there
+        }
+    schemaContext.AddSchemaPath(pathToThisSchema.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus ECSchema::ReadFromXmlFile
 (
 ECSchemaP&                      schemaOut, 
-WCharCP                 ecSchemaXmlFile, 
+WCharCP                         ecSchemaXmlFile, 
 ECSchemaDeserializationContextR schemaContext
 )
     {                  
@@ -1528,6 +1607,8 @@ ECSchemaDeserializationContextR schemaContext
         LogXmlLoadError(xmlDocPtr);
         return SCHEMA_READ_STATUS_FailedToParseXml;
         }
+    
+    AddFilePathToSchemaPaths(schemaContext, schemaContext.GetSchemaPaths(), ecSchemaXmlFile);
 
     status = ReadXml (schemaOut, xmlDocPtr, schemaContext);
     if (SCHEMA_READ_STATUS_DuplicateSchema == status)
@@ -1736,23 +1817,27 @@ IStreamP ecSchemaXmlStream
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaDeserializationContext::ECSchemaDeserializationContext(IECSchemaOwnerR owner, IStandaloneEnablerLocaterR enablerLocater)
+ECSchemaDeserializationContext::ECSchemaDeserializationContext(IECSchemaOwnerR owner, IStandaloneEnablerLocaterR enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch)
     :
-    m_schemaOwner (owner), m_standaloneEnablerLocater(enablerLocater), m_hideSchemasFromLeakDetection (false)
+    m_schemaOwner (owner), m_standaloneEnablerLocater(enablerLocater), m_hideSchemasFromLeakDetection (false), 
+    m_acceptLegacyImperfectLatestCompatibleMatch(acceptLegacyImperfectLatestCompatibleMatch),
+    m_finalSchemaLocater (NULL)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaDeserializationContextPtr  ECSchemaDeserializationContext::CreateContext (IECSchemaOwnerR owner, IStandaloneEnablerLocaterR enablerLocater)   
-                                                                                        { return new ECSchemaDeserializationContext(owner, enablerLocater); }
-ECSchemaDeserializationContextPtr  ECSchemaDeserializationContext::CreateContext (ECSchemaCacheR owner) { return CreateContext (owner, owner); }
+ECSchemaDeserializationContextPtr  ECSchemaDeserializationContext::CreateContext (IECSchemaOwnerR owner, IStandaloneEnablerLocaterR enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch)   
+                                                                                        { return new ECSchemaDeserializationContext(owner, enablerLocater, acceptLegacyImperfectLatestCompatibleMatch); }
+ECSchemaDeserializationContextPtr  ECSchemaDeserializationContext::CreateContext (ECSchemaCacheR owner, bool acceptLegacyImperfectLatestCompatibleMatch) { return CreateContext (owner, owner, acceptLegacyImperfectLatestCompatibleMatch); }
 void  ECSchemaDeserializationContext::AddSchemaLocaters (bvector<EC::IECSchemaLocaterP>& locators) { m_locators.insert (m_locators.begin(), locators.begin(), locators.end());  }
 void  ECSchemaDeserializationContext::AddSchemaLocater (IECSchemaLocaterR locater)      { m_locators.push_back (&locater);  }
 void  ECSchemaDeserializationContext::AddSchemaPath (WCharCP path)               { m_searchPaths.push_back (WString(path));   }
 void  ECSchemaDeserializationContext::HideSchemasFromLeakDetection ()                   { m_hideSchemasFromLeakDetection = true; }
 bvector<IECSchemaLocaterP>& ECSchemaDeserializationContext::GetSchemaLocaters ()                { return m_locators;    }
+void                        ECSchemaDeserializationContext::SetFinalSchemaLocater (IECSchemaLocaterR locater) { m_finalSchemaLocater = &locater;  }
+IECSchemaLocaterP           ECSchemaDeserializationContext::GetFinalSchemaLocater ()                { return m_finalSchemaLocater; }
 T_WStringVectorR            ECSchemaDeserializationContext::GetSchemaPaths ()                   { return m_searchPaths; }
 void                        ECSchemaDeserializationContext::ClearSchemaPaths ()                 { m_searchPaths.clear();    }
 IECSchemaOwnerR             ECSchemaDeserializationContext::GetSchemaOwner()                    { return m_schemaOwner;  }

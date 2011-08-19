@@ -20,6 +20,7 @@
 #include "Logger.h"
 #include "FileUtilities.h"
 #include <Logging/bentleylogging.h>
+#include <Bentley/BeFileName.h>
 
 #include "LeakDetector.h"
 
