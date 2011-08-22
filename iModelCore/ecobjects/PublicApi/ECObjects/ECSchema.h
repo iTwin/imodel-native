@@ -1044,7 +1044,6 @@ private:
     UInt32              m_versionMinor;    
     ECClassContainer    m_classContainer;
     bool                m_hideFromLeakDetection;
-    bool                m_isStandardSchema;
     // maps class name -> class pointer    
     ClassMap m_classMap;
 
@@ -1104,7 +1103,15 @@ public:
 
     ECOBJECTS_EXPORT ECClassContainerCR GetClasses() const;
     ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
+
+    //! Returns true if the schema is an ECStandard schema
+    //! @return True if a standard schema, false otherwise
     ECOBJECTS_EXPORT bool               IsStandardSchema() const;
+
+    //! Returns true if and only if the full schema name (including version) represents a standard schema that should never
+    //! be imported into a repository.
+    //@return True if this version of the schema is one that should never be imported into a repository
+    ECOBJECTS_EXPORT bool               ShouldSchemaNotBeImported() const;
 
     //! If the class name is valid, will create an ECClass object and add the new class to the schema
     //! @param[out] ecClass If successful, will contain a new ECClass object

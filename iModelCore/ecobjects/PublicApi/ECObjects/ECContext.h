@@ -35,6 +35,7 @@ private:
     //! Constructs a context for deserializing ECSchemas
     //! @param[in] schemaOwner  This object will control the lifetime of any ECSchemas deserialized with this context
     //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the deserialized ECSchema
+    //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestCompatible only checks that the major version matches. A warning will be logged if minor version is too low, but the ECSchema will be accepted
     ECSchemaDeserializationContext(IECSchemaOwnerR schemaOwner, IStandaloneEnablerLocaterR standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch);
 
     bvector<IECSchemaLocaterP>& GetSchemaLocaters ();
