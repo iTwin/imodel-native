@@ -408,6 +408,21 @@ WString    GetTestSchemaXMLString (WCharCP schemaName, UInt32 versionMajor, UInt
                     L"        <ECProperty       propertyName=\"Name\"       typeName=\"string\"/>"
                     L"        <ECProperty       propertyName=\"Wheels\"     typeName=\"int\"  readOnly=\"True\"/>"
                     L"    </ECClass>"
+                    L"  <ECClass typeName=\"StructClass\" isStruct=\"True\" isDomainClass=\"False\">"
+                    L"    <ECProperty propertyName=\"StringProperty\" typeName=\"string\" /> "
+                    L"    <ECProperty propertyName=\"IntProperty\" typeName=\"int\" /> "
+                    L"    <ECArrayProperty propertyName=\"ArrayProperty\" typeName=\"string\" minOccurs=\"1\" maxOccurs=\"1\" /> "
+                    L"    </ECClass>"
+                    L"  <ECClass typeName=\"ComplexClass\" isDomainClass=\"True\">"
+                    L"    <ECProperty propertyName=\"IntProperty\" typeName=\"int\" />" 
+                    L"    <ECProperty propertyName=\"StringProperty\" typeName=\"string\" /> "
+                    L"    <ECProperty propertyName=\"DoubleProperty\" typeName=\"double\" /> "
+                    L"    <ECProperty propertyName=\"DateTimeProperty\" typeName=\"dateTime\" />" 
+                    L"    <ECProperty propertyName=\"BooleanProperty\" typeName=\"boolean\" />" 
+                    L"    <ECArrayProperty propertyName=\"SimpleArrayProperty\" typeName=\"string\" minOccurs=\"1\" maxOccurs=\"1\" />"
+                    L"    <ECArrayProperty propertyName=\"StructArrayProperty\" typeName=\"StructClass\" minOccurs=\"1\" maxOccurs=\"1\" isStruct=\"True\" />" 
+                    L"    <ECStructProperty propertyName=\"StructProperty\" typeName=\"StructClass\" />" 
+                    L"  </ECClass>"
                     L"</ECSchema>";
 
     wchar_t* buff = (wchar_t*) _alloca (2 * (50 + wcslen (fmt) + wcslen (schemaName) + wcslen (className)));
@@ -1006,18 +1021,17 @@ static void     dumpPropertyValues (ECValuesCollectionR collection, bool isArray
         ECValueCR v = propertyValue.GetValue();
 
         printfIndent (indentDepth);
+        ECValueAccessorCR   accessor = propertyValue.GetValueAccessor();
+        UInt32  accessorDepth = accessor.GetDepth();
+        WCharCP accessString = accessor.GetAccessString (accessorDepth- 1);
 
         if (isArray)
             {
-            printf ("Array Member [%d] = %S\n", arrayIndex++, v.ToString());
+            printf ("Array Member [%d] %S (depth=%d) = %S\n", arrayIndex++, accessString, accessorDepth, v.ToString());
             }
         else
             {
-            ECValueAccessorCR   accessor     = propertyValue.GetValueAccessor();
-            WCharCP     accessString = accessor.GetAccessString (accessor.GetDepth() - 1);
-
-            printf ("%S", accessString);
-
+            printf ("%S (depth=%d)", accessString, accessorDepth);
             if ( ! v.IsStruct())
                 printf (" = %S", v.ToString().c_str());
 
@@ -2076,7 +2090,7 @@ static void validateArrayCount  (EC::StandaloneECInstanceCR instance, WCharCP pr
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (MemoryLayoutTests, TestRemovingArrayEntries)
     {
-    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();;
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
     ECSchemaP        schema = CreateTestSchema(*schemaOwner);
     ASSERT_TRUE (schema != NULL);
     ECClassP ecClass = schema->GetClassP (L"ArrayTest");
@@ -2181,6 +2195,56 @@ TEST_F (MemoryLayoutTests, TestRemovingArrayEntries)
     instance->RemoveArrayElement(L"ManufacturerArray[]", 2);
     validateArrayCount (*instance, L"ManufacturerArray[]", 3);
     }
+
+TEST_F (MemoryLayoutTests, IterateCompleClass)
+    {
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
+    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    ASSERT_TRUE (schema != NULL);
+    ECClassP ecClass = schema->GetClassP (L"ComplexClass");
+    ASSERT_TRUE (NULL != ecClass);
+        
+    StandaloneECEnablerPtr enabler = schemaOwner->LocateStandaloneEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
+    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+
+    StandaloneECEnablerPtr structArrayEnabler = schemaOwner->LocateStandaloneEnabler (schema->GetName().c_str(), L"StructClass");
+    EC::StandaloneECInstancePtr structInstance = structArrayEnabler->CreateInstance();
+
+    ECValue b(true);
+    ECValue s1(L"719372644");
+    ECValue s2(L"asasdasd");
+    ECValue s3(L"1338164264");
+    ECValue s4(L"string val");
+    ECValue s5(L"asdasdas");
+    ECValue s6(L"392010267");
+    ECValue i1((int)1683483880);
+    ECValue i2((int)1367822242);
+    ECValue i3((int)32323);
+    ECValue d1(0.71266461290077521);
+
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"BooleanProperty", b));
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"SimpleArrayProperty[]", s1, 0));
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"StructProperty.StringProperty", s2));
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"StructProperty.IntProperty", i1));
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"StructProperty.ArrayProperty[]", s3, 0));
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"StringProperty", s4));
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"IntProperty", i2));
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"DoubleProperty", d1));
+
+    EXPECT_TRUE (SUCCESS == structInstance->SetValue (L"StringProperty", s5));
+    EXPECT_TRUE (SUCCESS == structInstance->SetValue (L"IntProperty", i3));
+    EXPECT_TRUE (SUCCESS == structInstance->SetValue (L"ArrayProperty[]", s6, 0));
+
+    // This is a fixed-size struct array so we don't have to insert members
+    ECValue structVal;
+    structVal.SetStruct (structInstance.get());
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"StructArrayProperty[]", structVal, 0));
+
+    // ensure we can walk the properties
+    ECValuesCollectionPtr   collection = ECValuesCollection::Create (*instance);
+    dumpPropertyValues (*collection, false, 0);
+    }
+
 
 void SetStringToSpecifiedNumberOfCharacters (IECInstanceR instance, int nChars)
     {
