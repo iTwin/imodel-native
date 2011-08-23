@@ -264,7 +264,7 @@ bool ECSchema::ShouldSchemaNotBeImported
         return true;
 
     // We don't want to import any version of the Units_Schema
-    if (_wcsicmp(L"Units_Schema", m_name.c_str()) == 0)
+    if (BeStringUtilities::Wcsicmp(L"Units_Schema", m_name.c_str()) == 0)
         return true;
 
     return false;
