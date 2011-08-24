@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
+#include <typeinfo>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 

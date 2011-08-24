@@ -258,7 +258,7 @@ ECClassCR       IECInstance::GetClass() const
 +---------------+---------------+---------------+---------------+---------------+------*/    
 int IECInstance::ParseExpectedNIndices (WCharCP propertyAccessString)
     {
-    WCharCP pointerToBrackets = pointerToBrackets = wcsstr (propertyAccessString, L"[]"); ;
+    WCharCP pointerToBrackets = wcsstr (propertyAccessString, L"[]");
     int nBrackets = 0;
     while (NULL != pointerToBrackets)
         {
@@ -287,6 +287,46 @@ size_t IECInstance::GetOffsetToIECInstance () const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan.Rush      08/2011
++---------------+---------------+---------------+---------------+---------------+------*/ 
+bool                IECInstance::_IsPropertyReadOnly (WCharCP accessString) const
+    {
+    if (_IsReadOnly())
+        return true;
+
+    // For array properties, the convention has been to use them with
+    // empty brackets at the end: PropertyName[]
+    // As ECProperties, they do not have any brackets: PropertyName
+    WString unBracketedAccessString = accessString;
+    unBracketedAccessString.Trim (L"[]");
+
+    ECPropertyP ecProperty = GetClass().GetPropertyP (unBracketedAccessString.c_str());
+    if (ecProperty)
+        return ecProperty->GetIsReadOnly();
+
+    ECObjectsLogger::Log()->errorv (L"IECInstance: Attempted to check if property '%ls' is read only; could not find property in class '%ls'", unBracketedAccessString.c_str(), GetClass().GetName().c_str());
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan.Rush      08/2011
++---------------+---------------+---------------+---------------+---------------+------*/ 
+bool                IECInstance::_IsPropertyReadOnly (UInt32 propertyIndex) const
+    {
+    if (_IsReadOnly())
+        return true;
+
+    WCharCP accessString;
+    ECObjectsStatus status = GetEnabler().GetAccessString  (accessString, propertyIndex);
+    if (ECOBJECTS_STATUS_Success != status)
+        {
+        ECObjectsLogger::Log()->errorv (L"IECInstance: Attempted to check if property with index '%d' is read only; could not resolve property name from enabler '%ls'", propertyIndex, GetEnabler().GetName());
+        return false;
+        }
+    return IECInstance::_IsPropertyReadOnly (accessString);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/   
 ECEnablerCR           IECInstance::GetEnabler() const { return _GetEnabler();  }
@@ -302,6 +342,8 @@ ECObjectsStatus     IECInstance::SetValue (WCharCP propertyAccessString, ECValue
 ECObjectsStatus     IECInstance::SetValue (WCharCP propertyAccessString, ECValueCR v, UInt32 arrayIndex) { return _SetValue (propertyAccessString, v, true, arrayIndex); }
 ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v) { return _SetValue (propertyIndex, v, false, 0); }
 ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) { return _SetValue (propertyIndex, v, true, arrayIndex); }
+bool                IECInstance::IsPropertyReadOnly (UInt32 propertyIndex) const { return _IsPropertyReadOnly (propertyIndex); }
+bool                IECInstance::IsPropertyReadOnly (WCharCP accessString) const { return _IsPropertyReadOnly (accessString); }
 
 #define NUM_INDEX_BUFFER_CHARS 63
 #define NUM_ACCESSSTRING_BUFFER_CHARS 1023
@@ -920,7 +962,6 @@ ECObjectsStatus ECInstanceInteropHelper::SetDateTimeTicks (IECInstanceR instance
     return setECValueInInstance (v, instance, managedPropertyAccessor);
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Dylan.Rush                      1/11
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1187,10 +1228,31 @@ bool            ECInstanceInteropHelper::IsNull (IECInstanceR instance, ECValueA
 void            ECInstanceInteropHelper::SetToNull (IECInstanceR instance, ECValueAccessorCR accessor)
     {
     ECValue v;
+    v.SetToNull();
 
-    ECObjectsStatus status = instance.GetValueUsingAccessor (v, accessor);
-    if (status == ECOBJECTS_STATUS_Success)
-        v.SetToNull();
+    instance.SetValueUsingAccessor (accessor, v);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Dylan.Rush                      08/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            ECInstanceInteropHelper::IsPropertyReadOnly (IECInstanceCR instance, ECValueAccessorR accessor)
+    {
+    ECObjectsStatus status;
+    UInt32 propertyIndex = accessor.DeepestLocation().propertyIndex;
+    if (1 < accessor.GetDepth())
+        {
+        ECValue v;
+        ECValueAccessor newAccessor(accessor);
+        newAccessor.PopLocation();
+        status = instance.GetValueUsingAccessor(v, newAccessor);
+        if (ECOBJECTS_STATUS_Success != status)
+            return false;
+
+        IECInstancePtr structInstance = v.GetStruct();
+        return structInstance->IsPropertyReadOnly (propertyIndex);
+        }
+    return instance.IsPropertyReadOnly (propertyIndex);
     }
 
 #ifdef NOT_USED
@@ -1488,6 +1550,7 @@ ECInstanceDeserializationContextPtr ECInstanceDeserializationContext::CreateCont
 
 END_BENTLEY_EC_NAMESPACE
 
+#if defined (_WIN32) // WIP_NONPORT
 
 #include <xmllite.h>
 #include <atlbase.h>
@@ -1965,7 +2028,7 @@ InstanceReadStatus   ReadProperty (ECClassCR ecClass, IECInstanceP ecInstance, W
     ECPropertyP ecProperty;
     if (NULL == (ecProperty = ecClass.GetPropertyP (propertyName)))
         {
-        ECObjectsLogger::Log()->warningv (L"No ECProperty '%s'found in ECClass '%s'. Value will be ignored.", propertyName, ecClass.GetName().c_str());
+        ECObjectsLogger::Log()->warningv (L"No ECProperty '%s' found in ECClass '%s'. Value will be ignored.", propertyName, ecClass.GetName().c_str());
         // couldn't find it, skip the rest of the property.
         return SkipToElementEnd ();
         }
@@ -2626,13 +2689,32 @@ ECClassCP                       ValidateArrayStructType (WCharCP typeFound, ECCl
 InstanceReadStatus   SkipToElementEnd ()
     {
     // skips from current point to the end of the current element.
+    BOOL isEmpty = m_xmlReader->IsEmptyElement();
+    if (isEmpty)
+        {
+        while (S_OK == m_xmlReader->MoveToNextAttribute())
+            {
+            // just skip it
+            }
+        return INSTANCE_READ_STATUS_Success;
+        }
+
+    m_xmlReader->MoveToElement();
+    UINT initialDepth = 0;
+    m_xmlReader->GetDepth(&initialDepth);
+
     HRESULT         status;
     XmlNodeType     nodeType;
     while (S_OK == (status = m_xmlReader->Read (&nodeType)))
         {
         // ignore everything except the end of the element.
         if (XmlNodeType_EndElement == nodeType)
-            return INSTANCE_READ_STATUS_Success;
+            {
+            UINT depth = 0;
+            m_xmlReader->GetDepth(&depth);
+            if (depth <= initialDepth + 1) // skip nested elements, too
+                return INSTANCE_READ_STATUS_Success;
+            }
         }
 
     return INSTANCE_READ_STATUS_BadElement;
@@ -3280,6 +3362,12 @@ InstanceWriteStatus     IECInstance::WriteToXmlString (WString & ecInstanceXml, 
     return INSTANCE_WRITE_STATUS_Success;
     }
 
+END_BENTLEY_EC_NAMESPACE
+
+#endif // defined (_WIN32) // WIP_NONPORT
+
+BEGIN_BENTLEY_EC_NAMESPACE
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3448,3 +3536,20 @@ BentleyStatus IECWipRelationshipInstance::SetTargetOrderId (Int64 targetOrderId)
     }
 
 END_BENTLEY_EC_NAMESPACE
+
+#if defined (__unix__)
+BEGIN_BENTLEY_EC_NAMESPACE
+    #define MSXML2_IXMLDOMNode      void *
+    #define MSXML2_IXMLDOMNodePtr   void *
+    #define MSXML2_IXMLDOMDocument2 void *
+    #define MSXML2_IXMLDOMElement   void *
+
+InstanceWriteStatus     IECInstance::WriteToXmlString (WString & ecInstanceXml, bool isStandAlone, bool writeInstanceId) {return INSTANCE_WRITE_STATUS_CantCreateXmlWriter;}
+InstanceWriteStatus     IECInstance::WriteToXmlStream (IStreamP stream, bool isStandAlone, bool writeInstanceId){return INSTANCE_WRITE_STATUS_CantCreateXmlWriter;}
+InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool isStandAlone, bool writeInstanceId){return INSTANCE_WRITE_STATUS_CantCreateXmlWriter;}
+InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr& ecInstance, WCharCP xmlString, ECInstanceDeserializationContextR context){return INSTANCE_READ_STATUS_CantCreateXmlReader;}
+InstanceReadStatus   IECInstance::ReadFromXmlStream (IECInstancePtr& ecInstance, IStreamP stream, ECInstanceDeserializationContextR context){return INSTANCE_READ_STATUS_CantCreateXmlReader;}
+InstanceReadStatus   IECInstance::ReadFromXmlFile (IECInstancePtr& ecInstance, WCharCP fileName, ECInstanceDeserializationContextR context){return INSTANCE_READ_STATUS_CantCreateXmlReader;}
+
+END_BENTLEY_EC_NAMESPACE
+#endif // defined (__unix__)

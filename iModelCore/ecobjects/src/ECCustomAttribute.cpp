@@ -11,8 +11,10 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "ECObjectsPch.h"
+#if defined (_WIN32) // WIP_NONPORT
 #include <objbase.h>
 #include <comdef.h>
+#endif //defined (_WIN32) // WIP_NONPORT
 
 BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
@@ -276,6 +278,7 @@ ECClassCR classDefinition
     return false;
     }
 
+#if defined (_WIN32) // WIP_NONPORT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -378,8 +381,12 @@ MSXML2::IXMLDOMNode& newNode
         if (xmlNodePtr->nodeType != NODE_ELEMENT)
             continue;
 
+        // If the custom property is a struct class, it gets serialized as an empty element.  So need to check if it is empty
+        if (!xmlNodePtr->hasChildNodes())
+            continue;
         MSXML2::IXMLDOMNodePtr propertyPtr = newNode.ownerDocument->createNode(NODE_ELEMENT, xmlNodePtr->baseName, xmlNodePtr->namespaceURI);
         APPEND_CHILD_TO_PARENT(propertyPtr, (&newNode));
+        WString basename = xmlNodePtr->baseName.GetBSTR();
         MSXML2::IXMLDOMNodePtr childTextNodePtr = xmlNodePtr->firstChild;
         WString nodeType = childTextNodePtr->nodeTypeString.GetBSTR();
         if (0 == nodeType.compare(L"text"))
@@ -389,6 +396,7 @@ MSXML2::IXMLDOMNode& newNode
 
     return SCHEMA_WRITE_STATUS_Success;
     }
+#endif //defined (_WIN32) // WIP_NONPORT
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010

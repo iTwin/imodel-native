@@ -9,7 +9,7 @@
 /*__PUBLISH_SECTION_START__*/
 
 #include "ECObjects.h"
-#include <Geom\GeomApi.h>
+#include <Geom/GeomApi.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -36,17 +36,38 @@ BEGIN_BENTLEY_EC_NAMESPACE
 // Define structure used to pass data to/from callback that is used to allocate memory in a native IECInstance.
 // This is needed to support embedding a native instance in a managed instance without requiring the managed
 // instance to be Disposed.
+
+enum  UseFlags
+    {
+    USE_FLAG_ADDGAPS    = 0x0000,
+    USE_FLAG_REMOVEGAPS = 0x0001,
+    };
+
 struct MemoryCallbackData
     {
-    size_t  neededSize;
     byte*   dataAddress;
+    size_t  gapSize;
     byte*   gapAddress;
+    size_t  instanceGapSize;
+    byte*   instanceGapAddress;
     byte*   newDataAddress;
+    UInt16  useFlags;
+
+    MemoryCallbackData ()
+        {
+        dataAddress = NULL;
+        gapSize = 0;
+        gapAddress = NULL;
+        instanceGapSize = 0;
+        instanceGapAddress = NULL;
+        newDataAddress = NULL;
+        useFlags = USE_FLAG_ADDGAPS;
+        }
     };
 
 // Declare an unmanaged function prototype 
 // Note the use of __stdcall for compatibility with managed code
-typedef int (__stdcall *EmbeddedInstanceCallbackP)(MemoryCallbackData* callbackData);
+typedef int (STDCALL_ATTRIBUTE *EmbeddedInstanceCallbackP)(MemoryCallbackData* callbackData);
 //! @endcond
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -120,6 +141,9 @@ protected:
     ECOBJECTS_EXPORT virtual ECObjectsStatus       _GetDisplayLabel (WString& displayLabel) const;    
     ECOBJECTS_EXPORT virtual ECObjectsStatus       _SetDisplayLabel (WCharCP displayLabel);    
     ECOBJECTS_EXPORT virtual MemoryECInstanceBase* _GetAsMemoryECInstance () const;
+    //! If you override one of these IsPropertyReadOnly methods, you should override the other.
+    ECOBJECTS_EXPORT virtual bool                  _IsPropertyReadOnly (WCharCP accessString) const;
+    ECOBJECTS_EXPORT virtual bool                  _IsPropertyReadOnly (UInt32 propertyIndex) const;
 
 public:
     ECOBJECTS_EXPORT void const*        GetBaseAddress () {return this;}
@@ -143,6 +167,9 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetValueUsingAccessor (ECValueAccessorCR accessor, ECValueCR v);
     
     ECOBJECTS_EXPORT static bool        IsFixedArrayProperty (EC::IECInstanceR instance, WCharCP accessString);
+
+    ECOBJECTS_EXPORT bool               IsPropertyReadOnly (WCharCP accessString) const;
+    ECOBJECTS_EXPORT bool               IsPropertyReadOnly (UInt32 propertyIndex) const;
 
     //! Contract:
     //! - For all of the methods, the managedPropertyAccessor should be in the "array element" form, 
@@ -254,6 +281,8 @@ struct ECInstanceInteropHelper
 
     ECOBJECTS_EXPORT static bool            IsNull (IECInstanceR, ECValueAccessorCR);
     ECOBJECTS_EXPORT static void            SetToNull (IECInstanceR, ECValueAccessorCR);
+
+    ECOBJECTS_EXPORT static bool            IsPropertyReadOnly (IECInstanceCR, ECValueAccessorR);
 
     ECOBJECTS_EXPORT static PrimitiveType   GetPrimitiveType       (IECInstanceCR instance, int propertyIndex);
 #ifdef NOT_USED

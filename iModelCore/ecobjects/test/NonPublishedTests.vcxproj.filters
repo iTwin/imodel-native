@@ -18,7 +18,7 @@
     <ClCompile Include="ECObjectsTestPCH.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="$(SrcRoot)ecf\ecobjects\nativeatp\NonPublished\MemoryLayoutTests.cpp">
+    <ClCompile Include="NonPublished\MemoryLayoutTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

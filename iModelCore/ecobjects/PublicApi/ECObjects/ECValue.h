@@ -8,10 +8,10 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include <Bentley\VirtualCollectionIterator.h>
-#include <ECObjects\ECInstance.h>
-#include <ECObjects\ECObjects.h>
-#include <Geom\GeomApi.h>
+#include <Bentley/VirtualCollectionIterator.h>
+#include <ECObjects/ECInstance.h>
+#include <ECObjects/ECObjects.h>
+#include <Geom/GeomApi.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -319,6 +319,7 @@ public:
     //! @return         The access string.
     //! @see            IECInstance
     ECOBJECTS_EXPORT WCharCP                GetAccessString (UInt32 depth) const;
+    ECOBJECTS_EXPORT WCharCP                GetAccessString () const;
 
     ECOBJECTS_EXPORT void  PushLocation (ECEnablerCR, int propertyIndex, int arrayIndex=INDEX_ROOT);
     ECOBJECTS_EXPORT void  PushLocation (ECEnablerCR, WCharCP,   int arrayIndex=INDEX_ROOT);
@@ -332,6 +333,7 @@ public:
     ECOBJECTS_EXPORT void  Clear ();
 
     ECOBJECTS_EXPORT WString               GetDebugAccessString () const;
+    ECOBJECTS_EXPORT WString               GetPropertyName () const;
 
     //! Constructs an empty ECValueAccessor.
     ECOBJECTS_EXPORT ECValueAccessor () { }
@@ -373,7 +375,6 @@ private:
     ECValueAccessor     m_accessor;
     ECValue             m_ecValue;
 
-    IECInstanceCR       GetInstance () const;
 
 public:
     ECPropertyValue ();
@@ -386,6 +387,8 @@ public:
 /*__PUBLISH_SECTION_START__*/
 
 public:
+    ECOBJECTS_EXPORT IECInstanceCR          GetInstance () const;
+
     ECOBJECTS_EXPORT ECValueCR              GetValue () const;
     ECOBJECTS_EXPORT ECValueAccessorCR      GetValueAccessor () const;
     
@@ -451,6 +454,7 @@ public:
 
     ECOBJECTS_EXPORT static ECValuesCollectionPtr Create (IECInstanceCR);
     ECOBJECTS_EXPORT static ECValuesCollectionPtr Create (ECPropertyValueCR);
+    ECOBJECTS_EXPORT ECPropertyValueCR  GetParentProperty () const;
     };
 
 END_BENTLEY_EC_NAMESPACE

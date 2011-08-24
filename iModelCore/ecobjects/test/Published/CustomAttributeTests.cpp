@@ -73,7 +73,7 @@ TEST_F(CustomAttributeTest, ExpectFailureWhenSetNonCustomAttributeClass)
     ECSchemaP           schema = CreateCustomAttributeTestSchema(*schemaOwner);
 
     ECClassP containerClass = schema->GetClassP (L"TestClass");
-    ASSERT_TRUE (containerClass);
+    ASSERT_TRUE (NULL != containerClass);
 
     IECInstancePtr instance = GetInstanceForClass(L"BaseClass", *schema, *schemaOwner);
     EXPECT_EQ(ECOBJECTS_STATUS_NotCustomAttributeClass, containerClass->SetCustomAttribute(*instance));
@@ -86,7 +86,7 @@ TEST_F(CustomAttributeTest, CanAddSingleCustomAttribute)
     ECSchemaP           schema = CreateCustomAttributeTestSchema(*schemaOwner);
 
     ECClassP containerClass = schema->GetClassP (L"ClassWithProperties");
-    ASSERT_TRUE (containerClass);
+    ASSERT_TRUE (NULL != containerClass);
 
     ECPropertyP p = containerClass->GetPropertyP (L"StringMember");
 
@@ -105,7 +105,7 @@ TEST_F(CustomAttributeTest, CanAddMultipleCustomAttributes)
     ECSchemaP           schema = CreateCustomAttributeTestSchema(*schemaOwner);
 
     ECClassP containerClass = schema->GetClassP (L"TestClass");
-    ASSERT_TRUE (containerClass);
+    ASSERT_TRUE (NULL != containerClass);
 
     IECInstancePtr instance  = GetInstanceForClass(L"CustomAttribClass",  *schema, *schemaOwner);
     IECInstancePtr instance2 = GetInstanceForClass(L"CustomAttribClass2", *schema, *schemaOwner);
@@ -124,7 +124,7 @@ TEST_F(CustomAttributeTest, ExpectSuccessWhenAddDuplicateCustomAttribute)
     ECSchemaP           schema = CreateCustomAttributeTestSchema(*schemaOwner);
 
     ECClassP containerClass = schema->GetClassP (L"TestClass");
-    ASSERT_TRUE (containerClass);
+    ASSERT_TRUE (NULL != containerClass);
 
     IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema, *schemaOwner);
     EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
@@ -137,9 +137,9 @@ TEST_F(CustomAttributeTest, ExpectSuccessWhenAddCustomAttributeToProperty)
     ECSchemaP           schema = CreateCustomAttributeTestSchema(*schemaOwner);
 
     ECClassP classWithProperties = schema->GetClassP (L"ClassWithProperties");
-    ASSERT_TRUE (classWithProperties);
+    ASSERT_TRUE (NULL != classWithProperties);
     ECPropertyP stringProperty = classWithProperties->GetPropertyP(L"StringMember");
-    ASSERT_TRUE(stringProperty);
+    ASSERT_TRUE (NULL != stringProperty);
 
     IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema, *schemaOwner);
     EXPECT_EQ(ECOBJECTS_STATUS_Success, stringProperty->SetCustomAttribute(*instance));
@@ -151,7 +151,7 @@ TEST_F(CustomAttributeTest, ExpectIsDefined)
     ECSchemaP           schema = CreateCustomAttributeTestSchema(*schemaOwner);
 
     ECClassP containerClass = schema->GetClassP (L"TestClass");
-    ASSERT_TRUE (containerClass);
+    ASSERT_TRUE (NULL != containerClass);
     ECClassP customAttributeClass = schema->GetClassP (L"CustomAttribClass");
 
     IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema, *schemaOwner);
@@ -169,11 +169,11 @@ TEST_F(CustomAttributeTest, ExpectIsDefinedOnBaseClass)
     ECSchemaP           schema = CreateCustomAttributeTestSchema(*schemaOwner);
 
     ECClassP containerClass = schema->GetClassP (L"TestClass");
-    ASSERT_TRUE (containerClass);
+    ASSERT_TRUE (NULL != containerClass);
     ECClassP customAttributeClass = schema->GetClassP (L"CustomAttribClass");
-    ASSERT_TRUE (customAttributeClass);
+    ASSERT_TRUE (NULL != customAttributeClass);
     ECClassP baseClass = schema->GetClassP (L"BaseClass");
-    ASSERT_TRUE (baseClass);
+    ASSERT_TRUE (NULL != baseClass);
 
     IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema, *schemaOwner);
     EXPECT_FALSE(containerClass->IsDefined(L"CustomAttribClass"));
@@ -192,7 +192,7 @@ TEST_F(CustomAttributeTest, ExpectCanGetCustomAttribute)
     ECSchemaP           schema = CreateCustomAttributeTestSchema(*schemaOwner);
 
     ECClassP containerClass = schema->GetClassP (L"TestClass");
-    ASSERT_TRUE (containerClass);
+    ASSERT_TRUE (NULL != containerClass);
 
     IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema, *schemaOwner);
     EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
@@ -202,7 +202,7 @@ TEST_F(CustomAttributeTest, ExpectCanGetCustomAttribute)
     EXPECT_TRUE(instance == gotInstance);
 
     ECClassP caClass = schema->GetClassP(L"CustomAttribClass");
-    ASSERT_TRUE(caClass);
+    ASSERT_TRUE (NULL != caClass);
     gotInstance = containerClass->GetCustomAttribute(*caClass);
     EXPECT_TRUE(gotInstance.IsValid());
     EXPECT_TRUE(instance == gotInstance);
@@ -214,10 +214,10 @@ TEST_F(CustomAttributeTest, ExpectCanGetAllCustomAttributes)
     ECSchemaP           schema = CreateCustomAttributeTestSchema(*schemaOwner);
 
     ECClassP containerClass = schema->GetClassP (L"TestClass");
-    ASSERT_TRUE (containerClass);
+    ASSERT_TRUE (NULL != containerClass);
 
     ECClassP baseClass = schema->GetClassP (L"BaseClass");
-    ASSERT_TRUE (baseClass);
+    ASSERT_TRUE (NULL != baseClass);
 
     IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema, *schemaOwner);
     EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
@@ -267,7 +267,7 @@ TEST_F(CustomAttributeTest, ExpectCanRemoveCustomAttribute)
     ECSchemaP           schema = CreateCustomAttributeTestSchema(*schemaOwner);
 
     ECClassP containerClass = schema->GetClassP (L"TestClass");
-    ASSERT_TRUE (containerClass);
+    ASSERT_TRUE (NULL != containerClass);
 
     IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema, *schemaOwner);
     EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
@@ -282,7 +282,7 @@ TEST_F(CustomAttributeTest, ExpectCanRemoveCustomAttribute)
 
     EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
     ECClassP caClass = schema->GetClassP (L"CustomAttribClass");
-    ASSERT_TRUE (caClass);
+    ASSERT_TRUE (NULL != caClass);
     EXPECT_TRUE(containerClass->RemoveCustomAttribute(*caClass));
     IECInstancePtr gotInstance3 = containerClass->GetCustomAttribute(*caClass);
     EXPECT_FALSE(gotInstance3.IsValid());
@@ -304,7 +304,7 @@ TEST_F(CustomAttributeTest, ExpectFailureWithUnreferencedCustomAttribute)
     refClass->SetIsCustomAttributeClass(true);
 
     ECClassP containerClass = schema->GetClassP (L"TestClass");
-    ASSERT_TRUE (containerClass);
+    ASSERT_TRUE (NULL != containerClass);
 
     IECInstancePtr instance = GetInstanceForClass(L"RefClass", *refSchema, *schemaOwner);
 
