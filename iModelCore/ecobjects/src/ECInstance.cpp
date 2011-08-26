@@ -1250,6 +1250,13 @@ bool            ECInstanceInteropHelper::IsPropertyReadOnly (IECInstanceCR insta
             return false;
 
         IECInstancePtr structInstance = v.GetStruct();
+        if (structInstance.IsNull ())
+            {
+            // note: null structs were throwing exceptions in element info dlg
+            // I assume that if the struct is null, it is considered read-only
+            return true;
+            }
+
         return structInstance->IsPropertyReadOnly (propertyIndex);
         }
     return instance.IsPropertyReadOnly (propertyIndex);
