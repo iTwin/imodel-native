@@ -2277,7 +2277,7 @@ InstanceReadStatus   ReadStructArrayMember (ECClassCR structClass, IECInstanceP 
     ClassLayoutP                    classLayout         = ClassLayout::BuildFromClass (structClass, 0, 0);
     StandaloneECEnablerPtr          standaloneEnabler   = StandaloneECEnabler::CreateEnabler (structClass, *classLayout, owningInstance->GetEnablerR(), true);
 
-    // The following way causes an assert in ECPerSchemaCache::LoadSchema processing SetSchemaPtr (schemaP) because the schemacache's ptr was set recursively when processing struct arrays
+    // The following way causes an assert in ECPerSchemaCache::LoadSchema processing SetSchemaPAndAddRefToSharedSchemaCache (schemaP) because the schemacache's ptr was set recursively when processing struct arrays
     //StandaloneECEnablerPtr standaloneEnabler = owningInstance->GetEnablerR().ObtainStandaloneInstanceEnabler (structClass.GetSchema().GetName().c_str(), structClass.GetName().c_str());
 
     if (standaloneEnabler.IsNull())
