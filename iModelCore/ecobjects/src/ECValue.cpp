@@ -1232,7 +1232,6 @@ ECValueAccessor::ECValueAccessor (ECValueAccessorCR accessor)
     : m_locationVector (accessor.GetLocationVector())
     {
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1456,7 +1455,6 @@ WString                                        ECValueAccessor::GetManagedAccess
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool                                            ECValueAccessor::MatchesEnabler(UInt32 depth, ECEnablerCR other) const
     {
-    // 
     ECEnablerCR enabler = GetEnabler (depth);
     return & enabler == & other;
     }
@@ -1798,13 +1796,20 @@ ECPropertyValue ECValuesCollectionIterator::GetChildPropertyValue (ECPropertyVal
 
         if (ECValueAccessor::INDEX_ROOT != childAccessor[pathLength - 1].arrayIndex)
             {
-            // WIP_FUSION: need to check for NULL array member? ecValue.IsNull()
-
             IECInstancePtr  structInstance  = parentValue.GetStruct();
-            ECEnablerCR     enabler         = structInstance->GetEnabler();
-            UInt32          firstIndex      = enabler.GetFirstPropertyIndex (0);
+            if (structInstance.IsValid())
+                {
+                ECEnablerCR     enabler         = structInstance->GetEnabler();
+                UInt32          firstIndex      = enabler.GetFirstPropertyIndex (0);
 
-            childAccessor.PushLocation (enabler, firstIndex, -1);
+                childAccessor.PushLocation (enabler, firstIndex, -1);
+                }
+            else
+                {
+                // if the parent struct array entry contains a NULL instance then there are no 
+                // child properties to iterate.
+                childAccessor.Clear();
+                }
             }
         else
             {
@@ -1888,7 +1893,10 @@ void            ECValuesCollectionIterator::MoveToNext()
 
         // If that was the last member of the array, we are done
         if (currentAccessor.DeepestLocation().arrayIndex >= (Int32) arrayCount)
+            {
             currentAccessor.Clear();
+            return;
+            }
         }
     else
         {
@@ -1910,7 +1918,10 @@ void            ECValuesCollectionIterator::MoveToNext()
 
         // If that was the last index in the current struct, we are done
         if (0 == nextIndex)
+            {
             currentAccessor.Clear();
+            return;
+            }
         }
 
     m_propertyValue.EvaluateValue ();

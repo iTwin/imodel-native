@@ -160,7 +160,7 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
         _com_error err(hresult);                    \
         LOG_ASSERT_RETURN(_Expression != S_OK, _ErrorStatus,             \
             L"The following HRESULT success check has failed:\n  result obtained from: %S\n  HRESULT Code: %x\n  HRESULT Message: %S\n  file: %S\n  line: %i\n",    \
-            #_Expression, hresult, err.ErrorMessage(), __FILE__, __LINE__, hresult);   \
+            #_Expression, hresult, err.ErrorMessage(), __FILE__, __LINE__);   \
         }                                           \
     }
 #endif

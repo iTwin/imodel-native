@@ -41,7 +41,7 @@ void LogFailureMessage (WCharCP message, ...)
     va_list arguments;
     WString msg;
     va_start (arguments, message);              
-    WString::Sprintf (msg, message, arguments);
+    WString::VSprintf (msg, message, arguments);
     Bentley::EC::ECObjectsLogger::Log()->warning(msg.c_str());
     }
 

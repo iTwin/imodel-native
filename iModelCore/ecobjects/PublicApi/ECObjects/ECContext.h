@@ -27,15 +27,19 @@ private:
     IStandaloneEnablerLocaterR      m_standaloneEnablerLocater;
 
     bvector<IECSchemaLocaterP>      m_locators;
+    IECSchemaLocaterP               m_finalSchemaLocater;
     T_WStringVector                 m_searchPaths;
     bool                            m_hideSchemasFromLeakDetection;
+    bool                            m_acceptLegacyImperfectLatestCompatibleMatch;
 
     //! Constructs a context for deserializing ECSchemas
     //! @param[in] schemaOwner  This object will control the lifetime of any ECSchemas deserialized with this context
     //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the deserialized ECSchema
-    ECSchemaDeserializationContext(IECSchemaOwnerR schemaOwner, IStandaloneEnablerLocaterR standaloneEnablerLocater);
+    //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestCompatible only checks that the major version matches. A warning will be logged if minor version is too low, but the ECSchema will be accepted
+    ECSchemaDeserializationContext(IECSchemaOwnerR schemaOwner, IStandaloneEnablerLocaterR standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch);
 
     bvector<IECSchemaLocaterP>& GetSchemaLocaters ();
+    IECSchemaLocaterP           GetFinalSchemaLocater ();
     T_WStringVector&            GetSchemaPaths ();
     IECSchemaOwnerR             GetSchemaOwner();
     IStandaloneEnablerLocaterR  GetStandaloneEnablerLocater();
@@ -51,17 +55,20 @@ public:
     //! Creates a context for deserializing ECSchemas
     //! @param[in] schemaOwner  This object will control the lifetime of any ECSchemas deserialized with this context
     //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the deserialized ECSchema
+    //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestCompatible only checks that the major version matches. A warning will be logged if minor version is too low, but the ECSchema will be accepted
     //! @remarks This more-flexible override is primarily for internal use
-    ECOBJECTS_EXPORT static ECSchemaDeserializationContextPtr CreateContext (IECSchemaOwnerR schemaOwner, IStandaloneEnablerLocaterR standaloneEnablerLocater);
+    ECOBJECTS_EXPORT static ECSchemaDeserializationContextPtr CreateContext (IECSchemaOwnerR schemaOwner, IStandaloneEnablerLocaterR standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch = false);
     
     //! Creates a context for deserializing ECSchemas
     //! @param[in] schemaOwner  This object will control the lifetime of any ECSchemas deserialized with this context
-    ECOBJECTS_EXPORT static ECSchemaDeserializationContextPtr CreateContext (ECSchemaCacheR schemaOwner);
+    //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestCompatible only checks that the major version matches. A warning will be logged if minor version is too low, but the ECSchema will be accepted
+    ECOBJECTS_EXPORT static ECSchemaDeserializationContextPtr CreateContext (ECSchemaCacheR schemaOwner, bool acceptLegacyImperfectLatestCompatibleMatch = false);
 
     ECOBJECTS_EXPORT void AddSchemaLocaters (bvector<EC::IECSchemaLocaterP>&);
 
     ECOBJECTS_EXPORT void AddSchemaLocater (IECSchemaLocaterR);
     ECOBJECTS_EXPORT void AddSchemaPath (WCharCP);
+    ECOBJECTS_EXPORT void SetFinalSchemaLocater (IECSchemaLocaterR);
 };
 
 typedef RefCountedPtr<ECInstanceDeserializationContext>      ECInstanceDeserializationContextPtr;

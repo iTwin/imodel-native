@@ -19,6 +19,7 @@
 #include "ecxml.h"
 #include "Logger.h"
 #include "FileUtilities.h"
+#include <Bentley/BeFileName.h>
 
 #if defined (ANDROID) && defined (NDK_BUILD)
     #include <bentleylogging.h>
