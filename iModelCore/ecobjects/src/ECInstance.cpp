@@ -1790,14 +1790,9 @@ InstanceReadStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr& ecInstance
 
     *ecClass = foundClass;
 
-    // create a StandAloneECInstance instance of the class
-    ClassLayoutP                classLayout         = ClassLayout::BuildFromClass (*foundClass, 0, 0);
-    StandaloneECEnablerPtr      standaloneEnabler   = StandaloneECEnabler::CreateEnabler (*foundClass, *classLayout, m_context.GetStandaloneEnablerLocater(), true);
-
-    // create the instance.
-    ecInstance                                      = standaloneEnabler->CreateInstance().get();
-
-    IECRelationshipInstance*    relationshipInstance = dynamic_cast <IECRelationshipInstance*> (ecInstance.get());
+    // NEEDSWORK: we could first look for an optional enabler supplied via the context
+    StandaloneECEnablerPtr      standaloneEnabler  = foundClass->GetDefaultStandaloneEnabler();
+                                ecInstance         = standaloneEnabler->CreateInstance().get();
 
     bool                        needSourceClass    = false;
     bool                        needSourceId       = false;
@@ -1805,6 +1800,7 @@ InstanceReadStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr& ecInstance
     bool                        needTargetId       = false;
 
     // if relationship, need the attributes.
+    IECRelationshipInstance*    relationshipInstance = dynamic_cast <IECRelationshipInstance*> (ecInstance.get());
     if (NULL != relationshipInstance)
         needSourceClass = needSourceId = needTargetClass = needTargetId = true;
 

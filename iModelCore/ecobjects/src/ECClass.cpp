@@ -47,6 +47,8 @@ ECClass::~ECClass ()
         delete entry->second;
     
     m_propertyMap.clear();
+    
+    m_defaultStandaloneEnabler = NULL;
 
     if ( ! m_hideFromLeakDetection)
         g_leakDetector.ObjectDestroyed(*this);
@@ -268,6 +270,22 @@ ECSchemaCR ECClass::GetSchema () const
 ECRelationshipClassCP ECClass::GetRelationshipClassCP() const
     {
     return _GetRelationshipClassCP();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+StandaloneECEnablerP ECClass::GetDefaultStandaloneEnabler() const
+    {
+    if (!m_defaultStandaloneEnabler.IsValid())
+        {
+        ClassLayoutP classLayout   = ClassLayout::BuildFromClass (*this, 0, 0, m_hideFromLeakDetection);
+        ECSchemaR schema = const_cast<ECSchemaR>(GetSchema());
+        m_defaultStandaloneEnabler = StandaloneECEnabler::CreateEnabler (*this, *classLayout, schema, true);
+        }
+
+    assert(m_defaultStandaloneEnabler.IsValid());
+    return m_defaultStandaloneEnabler.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
