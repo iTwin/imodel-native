@@ -141,6 +141,9 @@ protected:
     ECOBJECTS_EXPORT virtual ECObjectsStatus       _GetDisplayLabel (WString& displayLabel) const;    
     ECOBJECTS_EXPORT virtual ECObjectsStatus       _SetDisplayLabel (WCharCP displayLabel);    
     ECOBJECTS_EXPORT virtual MemoryECInstanceBase* _GetAsMemoryECInstance () const;
+    //! If you override one of these IsPropertyReadOnly methods, you should override the other.
+    ECOBJECTS_EXPORT virtual bool                  _IsPropertyReadOnly (WCharCP accessString) const;
+    ECOBJECTS_EXPORT virtual bool                  _IsPropertyReadOnly (UInt32 propertyIndex) const;
 
 public:
     ECOBJECTS_EXPORT void const*        GetBaseAddress () {return this;}
@@ -164,6 +167,9 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetValueUsingAccessor (ECValueAccessorCR accessor, ECValueCR v);
     
     ECOBJECTS_EXPORT static bool        IsFixedArrayProperty (EC::IECInstanceR instance, WCharCP accessString);
+
+    ECOBJECTS_EXPORT bool               IsPropertyReadOnly (WCharCP accessString) const;
+    ECOBJECTS_EXPORT bool               IsPropertyReadOnly (UInt32 propertyIndex) const;
 
     //! Contract:
     //! - For all of the methods, the managedPropertyAccessor should be in the "array element" form, 
@@ -275,6 +281,8 @@ struct ECInstanceInteropHelper
 
     ECOBJECTS_EXPORT static bool            IsNull (IECInstanceR, ECValueAccessorCR);
     ECOBJECTS_EXPORT static void            SetToNull (IECInstanceR, ECValueAccessorCR);
+
+    ECOBJECTS_EXPORT static bool            IsPropertyReadOnly (IECInstanceCR, ECValueAccessorR);
 
     ECOBJECTS_EXPORT static PrimitiveType   GetPrimitiveType       (IECInstanceCR instance, int propertyIndex);
 #ifdef NOT_USED
