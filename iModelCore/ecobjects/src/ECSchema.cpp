@@ -90,21 +90,6 @@ ECSchemaCP ECSchema::_GetContainerSchema() const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneECEnablerPtr  ECSchema::_LocateStandaloneEnabler (WCharCP schemaName, WCharCP className)
-    {
-    if (!m_name.Equals(schemaName))
-        return NULL;
-    
-    ECClassP ecClass = GetClassP(className);
-    if (NULL == ecClass)
-        return NULL;
-    
-    return ecClass->GetDefaultStandaloneEnabler();
-    }
-    
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR ECSchema::GetName
 (
 ) const
@@ -890,7 +875,7 @@ ECSchemaDeserializationContextR     schemaContext
             pClass = pRelationshipClass;
             }
 
-        if (SCHEMA_READ_STATUS_Success != (status = pClass->ReadXmlAttributes(xmlNodePtr, schemaContext.GetStandaloneEnablerLocater())))
+        if (SCHEMA_READ_STATUS_Success != (status = pClass->ReadXmlAttributes(xmlNodePtr)))
             {
             delete pClass;
             return status;           
@@ -900,7 +885,7 @@ ECSchemaDeserializationContextR     schemaContext
 
         if (NULL != existingClass)
             {
-            existingClass->ReadXmlAttributes(xmlNodePtr, schemaContext.GetStandaloneEnablerLocater());
+            existingClass->ReadXmlAttributes(xmlNodePtr);
             delete pClass;
             pClass = existingClass;
             }
@@ -1891,9 +1876,30 @@ void            ECSchema::FindAllSchemasInGraph (bvector<EC::ECSchemaCP>& allSch
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod 
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaCP ECSchema::FindSchema (WCharCP schemaName) const
+    {
+    if (NULL == schemaName)
+        return NULL;
+    
+    if (m_name.EqualsI(schemaName))
+        return this;
+    
+    FOR_EACH (ECSchemaP referencedSchema, GetReferencedSchemas())
+        {
+        ECSchemaCP schema = referencedSchema->FindSchema (schemaName);
+        if (NULL != schema)
+            return schema;
+        }
+    
+    return NULL;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaDeserializationContext::ECSchemaDeserializationContext(IECSchemaOwnerR owner, IStandaloneEnablerLocaterR enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch)
+ECSchemaDeserializationContext::ECSchemaDeserializationContext(IECSchemaOwnerR owner, IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch)
     :
     m_schemaOwner (owner), m_standaloneEnablerLocater(enablerLocater), m_hideSchemasFromLeakDetection (false), 
     m_acceptLegacyImperfectLatestCompatibleMatch(acceptLegacyImperfectLatestCompatibleMatch),
@@ -1904,9 +1910,9 @@ ECSchemaDeserializationContext::ECSchemaDeserializationContext(IECSchemaOwnerR o
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaDeserializationContextPtr  ECSchemaDeserializationContext::CreateContext (IECSchemaOwnerR owner, IStandaloneEnablerLocaterR enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch)   
+ECSchemaDeserializationContextPtr  ECSchemaDeserializationContext::CreateContext (IECSchemaOwnerR owner, IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch)   
                                                                                         { return new ECSchemaDeserializationContext(owner, enablerLocater, acceptLegacyImperfectLatestCompatibleMatch); }
-ECSchemaDeserializationContextPtr  ECSchemaDeserializationContext::CreateContext (ECSchemaCacheR owner, bool acceptLegacyImperfectLatestCompatibleMatch) { return CreateContext (owner, owner, acceptLegacyImperfectLatestCompatibleMatch); }
+ECSchemaDeserializationContextPtr  ECSchemaDeserializationContext::CreateContext (ECSchemaCacheR owner, bool acceptLegacyImperfectLatestCompatibleMatch) { return CreateContext (owner, &owner, acceptLegacyImperfectLatestCompatibleMatch); }
 void  ECSchemaDeserializationContext::AddSchemaLocaters (bvector<EC::IECSchemaLocaterP>& locators) { m_locators.insert (m_locators.begin(), locators.begin(), locators.end());  }
 void  ECSchemaDeserializationContext::AddSchemaLocater (IECSchemaLocaterR locater)      { m_locators.push_back (&locater);  }
 void  ECSchemaDeserializationContext::AddSchemaPath (WCharCP path)               { m_searchPaths.push_back (WString(path));   }
@@ -1917,7 +1923,7 @@ IECSchemaLocaterP           ECSchemaDeserializationContext::GetFinalSchemaLocate
 T_WStringVectorR            ECSchemaDeserializationContext::GetSchemaPaths ()                   { return m_searchPaths; }
 void                        ECSchemaDeserializationContext::ClearSchemaPaths ()                 { m_searchPaths.clear();    }
 IECSchemaOwnerR             ECSchemaDeserializationContext::GetSchemaOwner()                    { return m_schemaOwner;  }
-IStandaloneEnablerLocaterR  ECSchemaDeserializationContext::GetStandaloneEnablerLocater()       { return m_standaloneEnablerLocater;  }
+IStandaloneEnablerLocaterP  ECSchemaDeserializationContext::GetStandaloneEnablerLocater()       { return m_standaloneEnablerLocater;  }
 bool                        ECSchemaDeserializationContext::GetHideSchemasFromLeakDetection()   { return m_hideSchemasFromLeakDetection;  }
 
 
@@ -2054,7 +2060,11 @@ StandaloneECEnablerPtr          ECSchemaCache::_LocateStandaloneEnabler (WCharCP
         {
         if (ecSchema->GetName().EqualsI (schemaName))
             {
-            StandaloneECEnablerPtr enabler = ecSchema->LocateStandaloneEnabler(schemaName, className);
+            ECClassP ecClass = ecSchema->GetClassP(className);
+            if (NULL == ecClass)
+                return NULL;
+    
+            StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
             if (enabler.IsValid())
                 m_ecEnablerMap[keyPair] = enabler;
 

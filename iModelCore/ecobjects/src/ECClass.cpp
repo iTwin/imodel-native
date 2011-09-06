@@ -280,8 +280,7 @@ StandaloneECEnablerP ECClass::GetDefaultStandaloneEnabler() const
     if (!m_defaultStandaloneEnabler.IsValid())
         {
         ClassLayoutP classLayout   = ClassLayout::BuildFromClass (*this, 0, 0, m_hideFromLeakDetection);
-        ECSchemaR schema = const_cast<ECSchemaR>(GetSchema());
-        m_defaultStandaloneEnabler = StandaloneECEnabler::CreateEnabler (*this, *classLayout, schema, true);
+        m_defaultStandaloneEnabler = StandaloneECEnabler::CreateEnabler (*this, *classLayout, NULL, true);
         }
 
     assert(m_defaultStandaloneEnabler.IsValid());
@@ -867,8 +866,7 @@ const void*       arg
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus ECClass::ReadXmlAttributes
 (
-MSXML2::IXMLDOMNode& classNode,
-IStandaloneEnablerLocaterR  standaloneEnablerLocater
+MSXML2::IXMLDOMNode& classNode
 )
     {                
     MSXML2::IXMLDOMNamedNodeMapPtr nodeAttributesPtr = classNode.attributes;
@@ -903,7 +901,7 @@ IStandaloneEnablerLocaterR  standaloneEnablerLocater
 SchemaReadStatus ECClass::ReadXmlContents
 (
 MSXML2::IXMLDOMNode&        classNode,
-IStandaloneEnablerLocaterR  standaloneEnablerLocater
+IStandaloneEnablerLocaterP  standaloneEnablerLocater
 )
     {            
     // Build inheritance hierarchy 
@@ -1398,7 +1396,7 @@ ECSchemaCP ECRelationshipConstraint::_GetContainerSchema() const
 SchemaReadStatus ECRelationshipConstraint::ReadXml
 (
 MSXML2::IXMLDOMNode         &constraintNode,
-IStandaloneEnablerLocaterR  standaloneEnablerLocater
+IStandaloneEnablerLocaterP  standaloneEnablerLocater
 )
     {
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
@@ -1927,11 +1925,10 @@ MSXML2::IXMLDOMElement& parentNode
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus ECRelationshipClass::ReadXmlAttributes
 (
-MSXML2::IXMLDOMNode &classNode, 
-IStandaloneEnablerLocaterR  standaloneEnablerLocater
+MSXML2::IXMLDOMNode &classNode
 )
     {
-    SchemaReadStatus status = __super::ReadXmlAttributes(classNode, standaloneEnablerLocater);
+    SchemaReadStatus status = __super::ReadXmlAttributes(classNode);
     if (status != SCHEMA_READ_STATUS_Success)
         return status;
         
@@ -1950,7 +1947,7 @@ IStandaloneEnablerLocaterR  standaloneEnablerLocater
 SchemaReadStatus ECRelationshipClass::ReadXmlContents
 (
 MSXML2::IXMLDOMNode &classNode, 
-IStandaloneEnablerLocaterR  standaloneEnablerLocater
+IStandaloneEnablerLocaterP  standaloneEnablerLocater
 )
     {
     SchemaReadStatus status = __super::ReadXmlContents(classNode, standaloneEnablerLocater);

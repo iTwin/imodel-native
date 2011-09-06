@@ -283,7 +283,7 @@ InstanceReadStatus IECCustomAttributeContainer::ReadCustomAttributes
 (
 MSXML2::IXMLDOMNode&       containerNode,
 ECSchemaCR                 schema,
-IStandaloneEnablerLocaterR standaloneEnablerLocater
+IStandaloneEnablerLocaterP standaloneEnablerLocater
 )
     {
     InstanceReadStatus status = INSTANCE_READ_STATUS_Success;

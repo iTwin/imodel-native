@@ -116,7 +116,7 @@ private:
     SchemaWriteStatus           AddCustomAttributeProperties(MSXML2_IXMLDOMNode& oldNode, MSXML2_IXMLDOMNode& newNode) const;
 
 protected:
-    InstanceReadStatus       ReadCustomAttributes(MSXML2_IXMLDOMNode& containerNode, ECSchemaCR schema, IStandaloneEnablerLocaterR standaloneEnablerLocater);
+    InstanceReadStatus       ReadCustomAttributes(MSXML2_IXMLDOMNode& containerNode, ECSchemaCR schema, IStandaloneEnablerLocaterP standaloneEnablerLocater);
     SchemaWriteStatus           WriteCustomAttributes(MSXML2_IXMLDOMNode& parentNode) const;
 
     void                                AddUniqueCustomAttributesToList(ECCustomAttributeCollection& returnList);
@@ -224,7 +224,7 @@ protected:
 
     ECObjectsStatus                     SetName (WStringCR name);
 
-    virtual SchemaReadStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode, IStandaloneEnablerLocaterR  standaloneEnablerLocater);
+    virtual SchemaReadStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode, IStandaloneEnablerLocaterP  standaloneEnablerLocater);
     virtual SchemaWriteStatus   _WriteXml(MSXML2_IXMLDOMElement& parentNode);
     SchemaWriteStatus           _WriteXml(MSXML2_IXMLDOMElement& parentNode, WCharCP elementName);
 
@@ -296,7 +296,7 @@ private:
     PrimitiveECProperty (ECClassCR ecClass, bool hideFromLeakDetection) : m_primitiveType(PRIMITIVETYPE_String), ECProperty(ecClass, hideFromLeakDetection) {};
 
 protected:
-    virtual SchemaReadStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode, IStandaloneEnablerLocaterR  standaloneEnablerLocater) override;
+    virtual SchemaReadStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode, IStandaloneEnablerLocaterP  standaloneEnablerLocater) override;
     virtual SchemaWriteStatus   _WriteXml(MSXML2_IXMLDOMElement& parentNode) override;
     virtual bool                        _IsPrimitive () const override { return true;}
     virtual WString                     _GetTypeName () const override;
@@ -323,7 +323,7 @@ private:
     StructECProperty (ECClassCR ecClass, bool hideFromLeakDetection) : m_structType(NULL), ECProperty(ecClass, hideFromLeakDetection) {};
 
 protected:
-    virtual SchemaReadStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode, IStandaloneEnablerLocaterR  standaloneEnablerLocater) override;
+    virtual SchemaReadStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode, IStandaloneEnablerLocaterP  standaloneEnablerLocater) override;
     virtual SchemaWriteStatus   _WriteXml(MSXML2_IXMLDOMElement& parentNode) override;
     virtual bool                        _IsStruct () const override { return true;}
     virtual WString                     _GetTypeName () const override;
@@ -365,7 +365,7 @@ private:
     ECObjectsStatus                     SetMaxOccurs (WStringCR maxOccurs);          
 
 protected:
-    virtual SchemaReadStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode, IStandaloneEnablerLocaterR  standaloneEnablerLocater) override;
+    virtual SchemaReadStatus _ReadXml (MSXML2_IXMLDOMNode& propertyNode, IStandaloneEnablerLocaterP  standaloneEnablerLocater) override;
     virtual SchemaWriteStatus   _WriteXml(MSXML2_IXMLDOMElement& parentNode) override;
     virtual bool                        _IsArray () const override { return true;}
     virtual WString                    _GetTypeName () const override;
@@ -506,14 +506,14 @@ protected:
     // schemas index class by name so publicly name can not be reset
     ECObjectsStatus                     SetName (WStringCR name);    
 
-    virtual SchemaReadStatus ReadXmlAttributes (MSXML2_IXMLDOMNode& classNode, IStandaloneEnablerLocaterR  standaloneEnablerLocater);
+    virtual SchemaReadStatus ReadXmlAttributes (MSXML2_IXMLDOMNode& classNode);
 
     //! Uses the specified xml node (which must conform to an ECClass as defined in ECSchemaXML) to populate the base classes and properties of this class.
     //! Before this method is invoked the schema containing the class must have loaded all schema references and stubs for all classes within
     //! the schema itself otherwise the method may fail because such dependencies can not be located.
     //! @param[in]  classNode       The XML DOM node to read
     //! @return   Status code
-    virtual SchemaReadStatus ReadXmlContents (MSXML2_IXMLDOMNode& classNode, IStandaloneEnablerLocaterR  standaloneEnablerLocater);    
+    virtual SchemaReadStatus ReadXmlContents (MSXML2_IXMLDOMNode& classNode, IStandaloneEnablerLocaterP  standaloneEnablerLocater);    
     
     virtual SchemaWriteStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode) const;
     SchemaWriteStatus           WriteXml(MSXML2_IXMLDOMElement& parentNode, WCharCP elementName) const;
@@ -522,11 +522,10 @@ protected:
     
 public:    
     ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();
-    
 
 /*__PUBLISH_SECTION_START__*/
 public:    
-    StandaloneECEnablerP                GetDefaultStandaloneEnabler() const;
+    ECOBJECTS_EXPORT StandaloneECEnablerP  GetDefaultStandaloneEnabler() const;
     ECOBJECTS_EXPORT ECRelationshipClassCP GetRelationshipClassCP() const;
     ECOBJECTS_EXPORT ECSchemaCR         GetSchema() const;                
     // schemas index class by name so publicly name can not be reset
@@ -743,7 +742,7 @@ private:
     ECObjectsStatus             SetCardinality(UInt32& lowerLimit, UInt32& upperLimit);
    
     SchemaWriteStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode, WStringCR elementName) const;
-    SchemaReadStatus ReadXml(MSXML2_IXMLDOMNode& constraintNode, IStandaloneEnablerLocaterR  standaloneEnablerLocater);
+    SchemaReadStatus ReadXml(MSXML2_IXMLDOMNode& constraintNode, IStandaloneEnablerLocaterP  standaloneEnablerLocater);
     
     virtual ~ECRelationshipConstraint();
     
@@ -826,8 +825,8 @@ private:
 protected:
     virtual SchemaWriteStatus   WriteXml(MSXML2_IXMLDOMElement& parentNode) const override;
 
-    virtual SchemaReadStatus ReadXmlAttributes (MSXML2_IXMLDOMNode& classNode, IStandaloneEnablerLocaterR  standaloneEnablerLocater) override;
-    virtual SchemaReadStatus ReadXmlContents (MSXML2_IXMLDOMNode& classNode, IStandaloneEnablerLocaterR  standaloneEnablerLocater) override;
+    virtual SchemaReadStatus ReadXmlAttributes (MSXML2_IXMLDOMNode& classNode);
+    virtual SchemaReadStatus ReadXmlContents (MSXML2_IXMLDOMNode& classNode, IStandaloneEnablerLocaterP  standaloneEnablerLocater) override;
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const override {return this;};
 
 /*__PUBLISH_SECTION_START__*/
@@ -1033,7 +1032,7 @@ public:
 //! @ingroup ECObjectsGroup
 //! The in-memory representation of a schema as defined by ECSchemaXML
 //=======================================================================================
-struct ECSchema /*__PUBLISH_ABSTRACT__*/ : public IECCustomAttributeContainer, IStandaloneEnablerLocater
+struct ECSchema /*__PUBLISH_ABSTRACT__*/ : public IECCustomAttributeContainer
 {
 /*__PUBLISH_SECTION_END__*/
 
@@ -1084,7 +1083,6 @@ private:
     SchemaWriteStatus           WritePropertyDependencies(MSXML2_IXMLDOMElement& parentNode, ECClassCR ecClass, ECSchemaSerializationContext&) const;
 
 protected:
-    virtual StandaloneECEnablerPtr  _LocateStandaloneEnabler (WCharCP schemaName, WCharCP className) override;
     virtual ECSchemaCP              _GetContainerSchema() const override;
 
 public:    
@@ -1361,6 +1359,11 @@ public:
     //! @param[in]    rootSchema            This schema and it reference schemas will be added to the vector of allSchemas.
     //! @param[in]    includeRootSchema     If true then root schema is added to the vector of allSchemas. Defaults to true.
     ECOBJECTS_EXPORT static void FindAllSchemasInGraph (bvector<EC::ECSchemaCP>& allSchemas, EC::ECSchemaCR rootSchema, bool includeRootSchema=true);
+    
+    //! Returns this if the name matches, otherwise searches referenced ECSchemas for one whose name matches schemaName
+    ECOBJECTS_EXPORT ECSchemaCP FindSchema (WCharCP schemaName) const;
+
+    
 }; // ECSchema
 
 END_BENTLEY_EC_NAMESPACE

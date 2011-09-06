@@ -851,7 +851,6 @@ TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
     ASSERT_TRUE (NULL != ecClass);
 
     StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
-    StandaloneECEnablerPtr enabler =  schemaOwner->LocateStandaloneEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str()); 
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     //Testing array of structs
     ECValue structArrayValueInput(42);
@@ -869,7 +868,7 @@ TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
     ECClassP structClass = schema->GetClassP (L"AllPrimitives");
     ASSERT_TRUE (NULL != structClass);
 
-    StandaloneECEnablerPtr structEnabler          = ecClass->GetDefaultStandaloneEnabler();
+    StandaloneECEnablerPtr structEnabler          = structClass->GetDefaultStandaloneEnabler();
     EC::StandaloneECInstancePtr newStructInstance = structEnabler->CreateInstance();
 
     ECValue manualIntEntry(64);

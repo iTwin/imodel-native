@@ -1535,7 +1535,7 @@ WString                        IECInstance::ToString (WCharCP indent) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceDeserializationContextPtr ECInstanceDeserializationContext::CreateContext (ECSchemaCR schema, IStandaloneEnablerLocaterR standaloneEnablerLocater)
+ECInstanceDeserializationContextPtr ECInstanceDeserializationContext::CreateContext (ECSchemaCR schema, IStandaloneEnablerLocaterP standaloneEnablerLocater)
     {
     return new ECInstanceDeserializationContext (&schema, NULL, standaloneEnablerLocater);
     }
@@ -1543,7 +1543,7 @@ ECInstanceDeserializationContextPtr ECInstanceDeserializationContext::CreateCont
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceDeserializationContextPtr ECInstanceDeserializationContext::CreateContext (ECSchemaDeserializationContextR context, IStandaloneEnablerLocaterR standaloneEnablerLocater)
+ECInstanceDeserializationContextPtr ECInstanceDeserializationContext::CreateContext (ECSchemaDeserializationContextR context, IStandaloneEnablerLocaterP standaloneEnablerLocater)
     {
     return new ECInstanceDeserializationContext (NULL, &context, standaloneEnablerLocater);
     }
