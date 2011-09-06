@@ -2270,8 +2270,7 @@ InstanceReadStatus   ReadStructArrayMember (ECClassCR structClass, IECInstanceP 
     {
     // On entry, the reader is positioned at the element that starts the struct.
     // we have to create an IECInstance for the array member.
-    ClassLayoutP                    classLayout         = ClassLayout::BuildFromClass (structClass, 0, 0);
-    StandaloneECEnablerPtr          standaloneEnabler   = StandaloneECEnabler::CreateEnabler (structClass, *classLayout, owningInstance->GetEnablerR(), true);
+    StandaloneECEnablerPtr          standaloneEnabler   = structClass.GetDefaultStandaloneEnabler();
 
     // The following way causes an assert in ECPerSchemaCache::LoadSchema processing SetSchemaPAndAddRefToSharedSchemaCache (schemaP) because the schemacache's ptr was set recursively when processing struct arrays
     //StandaloneECEnablerPtr standaloneEnabler = owningInstance->GetEnablerR().ObtainStandaloneInstanceEnabler (structClass.GetSchema().GetName().c_str(), structClass.GetName().c_str());

@@ -2029,16 +2029,11 @@ StandaloneECEnablerPtr          ECSchemaCache::_LocateStandaloneEnabler (WCharCP
         {
         if (ecSchema->GetName().EqualsI (schemaName))
             {
-            ECClassP structClass = ecSchema->GetClassP (className);
-            if (structClass)
-                {
-                ClassLayoutP classLayout = ClassLayout::BuildFromClass (*structClass, 0, 0);
-                StandaloneECEnablerPtr structEnabler = StandaloneECEnabler::CreateEnabler (*structClass, *classLayout, *this, true);
-                if (structEnabler.IsValid())
-                    m_ecEnablerMap[keyPair] = structEnabler;
+            StandaloneECEnablerPtr structEnabler = ecSchema->LocateStandaloneEnabler(schemaName, className);
+            if (structEnabler.IsValid())
+                m_ecEnablerMap[keyPair] = structEnabler;
 
-                return structEnabler;
-                }
+            return structEnabler;
             }
         }
 
