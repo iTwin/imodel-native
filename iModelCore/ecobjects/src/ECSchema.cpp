@@ -83,10 +83,25 @@ ILeakDetector&  ECSchema::Debug_GetLeakDetector() { return g_leakDetector; }
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCP ECSchema::_GetContainerSchema() const
-        {
-        return this;
-        }
+    {
+    return this;
+    }
 
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+StandaloneECEnablerPtr  ECSchema::_LocateStandaloneEnabler (WCharCP schemaName, WCharCP className)
+    {
+    if (!m_name.Equals(schemaName))
+        return NULL;
+    
+    ECClassP ecClass = GetClassP(className);
+    if (NULL == ecClass)
+        return NULL;
+    
+    return ecClass->GetDefaultStandaloneEnabler();
+    }
+    
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1598,7 +1613,7 @@ MSXML2::IXMLDOMDocument2& pXmlDoc
                 
             WString reason = pBReason.GetBSTR();
                         
-            ECObjectsLogger::Log()->errorv (L"line %d, position %d parsing ECSchema file %s. %s", line, linePos, file.c_str(), reason.c_str());            
+            ECObjectsLogger::Log()->errorv (L"line %d, position %d parsing ECSchema file '%s'. %s", line, linePos, file.c_str(), reason.c_str());            
             return ERROR;
             }
         }
@@ -2039,16 +2054,11 @@ StandaloneECEnablerPtr          ECSchemaCache::_LocateStandaloneEnabler (WCharCP
         {
         if (ecSchema->GetName().EqualsI (schemaName))
             {
-            ECClassP structClass = ecSchema->GetClassP (className);
-            if (structClass)
-                {
-                ClassLayoutP classLayout = ClassLayout::BuildFromClass (*structClass, 0, 0);
-                StandaloneECEnablerPtr structEnabler = StandaloneECEnabler::CreateEnabler (*structClass, *classLayout, *this, true);
-                if (structEnabler.IsValid())
-                    m_ecEnablerMap[keyPair] = structEnabler;
+            StandaloneECEnablerPtr enabler = ecSchema->LocateStandaloneEnabler(schemaName, className);
+            if (enabler.IsValid())
+                m_ecEnablerMap[keyPair] = enabler;
 
-                return structEnabler;
-                }
+            return enabler;
             }
         }
 

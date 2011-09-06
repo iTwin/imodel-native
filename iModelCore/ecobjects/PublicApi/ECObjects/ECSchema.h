@@ -108,6 +108,7 @@ struct ECCustomAttributeInstanceIterable;
 //=======================================================================================
 struct IECCustomAttributeContainer /*__PUBLISH_ABSTRACT__*/  
 {
+/*__PUBLISH_CLASS_VIRTUAL__*/
 /*__PUBLISH_SECTION_END__*/
 private:
     friend struct ECCustomAttributeInstanceIterable;
@@ -448,6 +449,11 @@ typedef bvector<ECClassP> ECConstraintClassesList;
 typedef bool (*TraversalDelegate) (ECClassCP, const void *);
 /*__PUBLISH_SECTION_START__*/
 
+struct StandaloneECEnabler;
+typedef RefCountedPtr<StandaloneECEnabler>  StandaloneECEnablerPtr;
+typedef StandaloneECEnabler*                StandaloneECEnablerP;
+typedef RefCountedPtr<ECSchemaCache>        ECSchemaCachePtr;
+
 //=======================================================================================
 //! @ingroup ECObjectsGroup
 //! The in-memory representation of an ECClass as defined by ECSchemaXML
@@ -472,7 +478,8 @@ private:
     bool                            m_hideFromLeakDetection;
 
     PropertyMap                     m_propertyMap;
-    PropertyList                    m_propertyList;    
+    PropertyList                    m_propertyList;
+    mutable StandaloneECEnablerPtr  m_defaultStandaloneEnabler;
     
     ECObjectsStatus AddProperty (ECPropertyP& pProperty);
     ECObjectsStatus AddProperty (ECPropertyP pProperty, WStringCR name);
@@ -515,9 +522,11 @@ protected:
     
 public:    
     ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();
+    
 
 /*__PUBLISH_SECTION_START__*/
 public:    
+    StandaloneECEnablerP                GetDefaultStandaloneEnabler() const;
     ECOBJECTS_EXPORT ECRelationshipClassCP GetRelationshipClassCP() const;
     ECOBJECTS_EXPORT ECSchemaCR         GetSchema() const;                
     // schemas index class by name so publicly name can not be reset
@@ -938,12 +947,8 @@ public:
 /*__PUBLISH_SECTION_START__*/
 };
 
-struct StandaloneECEnabler;
-typedef RefCountedPtr<StandaloneECEnabler>    StandaloneECEnablerPtr;
-typedef RefCountedPtr<ECSchemaCache>        ECSchemaCachePtr;
-
 //=======================================================================================
-//! Interface to find a standalone enabler for a child class of an ECInstance.</summary>
+//! Interface to find a standalone enabler, typically for an embedded ECStruct in an ECInstance.</summary>
 //=======================================================================================
 struct IStandaloneEnablerLocater
 {
@@ -1028,7 +1033,7 @@ public:
 //! @ingroup ECObjectsGroup
 //! The in-memory representation of a schema as defined by ECSchemaXML
 //=======================================================================================
-struct ECSchema /*__PUBLISH_ABSTRACT__*/ : public IECCustomAttributeContainer
+struct ECSchema /*__PUBLISH_ABSTRACT__*/ : public IECCustomAttributeContainer, IStandaloneEnablerLocater
 {
 /*__PUBLISH_SECTION_END__*/
 
@@ -1079,7 +1084,8 @@ private:
     SchemaWriteStatus           WritePropertyDependencies(MSXML2_IXMLDOMElement& parentNode, ECClassCR ecClass, ECSchemaSerializationContext&) const;
 
 protected:
-    virtual ECSchemaCP                  _GetContainerSchema() const override;
+    virtual StandaloneECEnablerPtr  _LocateStandaloneEnabler (WCharCP schemaName, WCharCP className) override;
+    virtual ECSchemaCP              _GetContainerSchema() const override;
 
 public:    
     ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();

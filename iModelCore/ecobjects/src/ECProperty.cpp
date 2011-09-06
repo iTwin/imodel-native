@@ -831,7 +831,11 @@ ECClassCP structType
 )
     {        
     PRECONDITION (NULL != structType, ECOBJECTS_STATUS_PreconditionViolated);
-    PRECONDITION (structType->GetIsStruct(), ECOBJECTS_STATUS_PreconditionViolated);
+    if (!structType->GetIsStruct())
+        {
+        ECObjectsLogger::Log()->errorv (L"ECArrayProperty '%s' uses ECClass '%s', but isStructClass='false' on '%s'", GetName().c_str(), structType->GetName().c_str(), structType->GetName().c_str());
+        return ECOBJECTS_STATUS_ParseError;
+        }
 
     if (&(structType->GetSchema()) != &(this->GetClass().GetSchema()))
         {

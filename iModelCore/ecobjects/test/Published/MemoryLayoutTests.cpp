@@ -852,7 +852,7 @@ TEST_F(MemoryLayoutTests, ECValueEqualsMethod)
     ECClassP ecClass = schema->GetClassP (L"AllPrimitives");
     ASSERT_TRUE (NULL != ecClass);
 
-    StandaloneECEnablerPtr enabler =  schemaOwner->LocateStandaloneEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str()); 
+    StandaloneECEnablerPtr enabler =  ecClass->GetDefaultStandaloneEnabler();
 
     ECValue v1, v2;
     EXPECT_TRUE   (v1.Equals(v2));
@@ -952,7 +952,7 @@ TEST_F(MemoryLayoutTests, GetEnablerPropertyInformation)
     ECClassP ecClass = schema->GetClassP (L"AllPrimitives");
     ASSERT_TRUE (NULL != ecClass);
 
-    StandaloneECEnablerPtr enabler = schemaOwner->LocateStandaloneEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str()); 
+    StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
 
     const int expectedPropertyCount = 19;
 
@@ -1559,7 +1559,7 @@ TEST_F(MemoryLayoutTests, SimpleMergeTwoInstances)
     ECClassP primitiveClass = schema->GetClassP (L"AllPrimitives");
     ASSERT_TRUE (NULL != primitiveClass);
 
-    StandaloneECEnablerPtr enabler = schemaOwner->LocateStandaloneEnabler (primitiveClass->GetSchema().GetName().c_str(), primitiveClass->GetName().c_str());
+    StandaloneECEnablerPtr enabler = primitiveClass->GetDefaultStandaloneEnabler();
     
     EC::StandaloneECInstancePtr sourceInstance0 = enabler->CreateInstance();
     EC::StandaloneECInstancePtr sourceInstance1 = enabler->CreateInstance();
@@ -1655,8 +1655,7 @@ TEST_F(MemoryLayoutTests, InstantiateStandaloneInstance)
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (NULL != ecClass);
 
-    StandaloneECEnablerPtr enabler = schemaOwner->LocateStandaloneEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
-
+    StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     WString instanceId = instance->GetInstanceId();
     // WIP_FUSION: should pass the string to the logger via a backdoor
@@ -1679,8 +1678,7 @@ TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
     ECClassP ecClass = schema->GetClassP (L"EmptyClass");
     ASSERT_TRUE (NULL != ecClass);
 
-    StandaloneECEnablerPtr enabler = schemaOwner->LocateStandaloneEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
-
+    StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     WString instanceId = instance->GetInstanceId();
     UInt32 size = instance->GetBytesUsed ();
@@ -1704,7 +1702,7 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     ECClassP ecClass = schema->GetClassP (L"CadData");
     ASSERT_TRUE (NULL != ecClass);
     
-    StandaloneECEnablerPtr enabler = schemaOwner->LocateStandaloneEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
+    StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     DPoint2d   inSize = {10.5, 22.3};
@@ -1763,7 +1761,7 @@ TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (NULL != ecClass);
     
-    StandaloneECEnablerPtr enabler = schemaOwner->LocateStandaloneEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
+    StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     WCharCP accessString = L"Property34";
@@ -1826,7 +1824,7 @@ TEST_F(MemoryLayoutTests, ExpectErrorsWhenViolatingArrayConstraints)
     ASSERT_TRUE (schema != NULL);
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (NULL != ecClass);    
-    StandaloneECEnablerPtr enabler = schemaOwner->LocateStandaloneEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
+    StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     {
@@ -1963,7 +1961,7 @@ TEST_F (MemoryLayoutTests, TestSetGetNull)
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (NULL != ecClass);
         
-    StandaloneECEnablerPtr enabler = schemaOwner->LocateStandaloneEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
+    StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     ECValue v;
     
@@ -2017,7 +2015,7 @@ TEST_F (MemoryLayoutTests, TestBinarySetGet)
     ECClassP ecClass = schema->GetClassP (L"AllPrimitives");
     ASSERT_TRUE (NULL != ecClass);
         
-    StandaloneECEnablerPtr enabler = schemaOwner->LocateStandaloneEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
+    StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"ABinary", v0In));
@@ -2059,7 +2057,7 @@ TEST_F (MemoryLayoutTests, TestRemovingArrayEntries)
     ECClassP ecClass = schema->GetClassP (L"ArrayTest");
     ASSERT_TRUE (NULL != ecClass);
         
-    StandaloneECEnablerPtr enabler = schemaOwner->LocateStandaloneEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
+    StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"FixedArrayFixedElement[]",  ECValue ((int)1), 1));
@@ -2167,7 +2165,7 @@ TEST_F (MemoryLayoutTests, IterateCompleClass)
     ECClassP ecClass = schema->GetClassP (L"ComplexClass");
     ASSERT_TRUE (NULL != ecClass);
         
-    StandaloneECEnablerPtr enabler = schemaOwner->LocateStandaloneEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
+    StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     StandaloneECEnablerPtr structArrayEnabler = schemaOwner->LocateStandaloneEnabler (schema->GetName().c_str(), L"StructClass");
@@ -2241,7 +2239,7 @@ TEST_F (MemoryLayoutTests, ProfileSettingValues)
     ECClassP           ecClass     = schema->GetClassP (L"Pidget");
     ASSERT_TRUE (NULL != ecClass);
         
-    StandaloneECEnablerPtr enabler = schemaOwner->LocateStandaloneEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
+    StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     
     //UInt32 slack = 0;
