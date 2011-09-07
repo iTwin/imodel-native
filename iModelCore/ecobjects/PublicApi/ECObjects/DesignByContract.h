@@ -10,7 +10,7 @@
 #include <assert.h>
 #include <stdarg.h>
 /*__PUBLISH_SECTION_START__*/
-#include <ECObjects\ECObjects.h>
+#include <ECObjects/ECObjects.h>
 
 //! This class is utilzed by the macros defined in this header file.  No calling code should typically ever need to use this class directly.
 struct AssertDisabler
@@ -58,13 +58,20 @@ public:
 /*__PUBLISH_SECTION_END__*/
 
 #ifdef  NDEBUG
+#if defined (_WIN32) // WIP_NONPORT -- we don't really need to use _noop here, right?
     #define ASSERT_FALSE_IF_NOT_DISABLED    __noop
-
+#elif defined (__unix__) // WIP_NONPORT - this implementation should be good for both platforms??
+    #define ASSERT_FALSE_IF_NOT_DISABLED(_Message)  (void)0
+#endif
 #else
         
     //! Avoid direct use of this macro.  It is only intended for use by other macros defined in this file.
     // Forces an assert with the specified message as long as asserts are enabled.  No expression is evaluated.
+#if defined (_WIN32) // WIP_NONPORT -- we should move BeAssert into Bentley
     #define ASSERT_FALSE_IF_NOT_DISABLED(_Message)    (void)((AssertDisabler::AreAssertsDisabled()) || (_wassert(_CRT_WIDE(#_Message), _CRT_WIDE(__FILE__), __LINE__), 0))
+#elif defined (__unix__)
+    #define ASSERT_FALSE_IF_NOT_DISABLED(_Message)    (void)((AssertDisabler::AreAssertsDisabled()) || (assert(0),0))
+#endif
 #endif    
 
 //! Avoid direct use of this function.  It is only intended for use by macros defined in this file.
@@ -153,7 +160,7 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
         _com_error err(hresult);                    \
         LOG_ASSERT_RETURN(_Expression != S_OK, _ErrorStatus,             \
             L"The following HRESULT success check has failed:\n  result obtained from: %S\n  HRESULT Code: %x\n  HRESULT Message: %S\n  file: %S\n  line: %i\n",    \
-            #_Expression, hresult, err.ErrorMessage(), __FILE__, __LINE__, hresult);   \
+            #_Expression, hresult, err.ErrorMessage(), __FILE__, __LINE__);   \
         }                                           \
     }
 #endif
@@ -176,8 +183,13 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
     || (ASSERT_FALSE_IF_NOT_DISABLED (_Expression), 0) )
     
 #ifdef NDEBUG
+#if defined (_WIN32) // WIP_NONPORT -- we don't really need to use _noop here, right?
     #define DEBUG_EXPECT(_Expression)    __noop
     #define DEBUG_FAIL(_Message)         __noop
+#elif defined (__unix__) // WIP_NONPORT - this implementation should be good for both platforms??
+    #define DEBUG_EXPECT(_Expression)    
+    #define DEBUG_FAIL(_Message)         
+#endif
 #else
     #define DEBUG_EXPECT(_Expression)    EXPECTED_CONDITION(_Expression)
     #define DEBUG_FAIL(_Message)         EXPECTED_CONDITION(false && _Message)

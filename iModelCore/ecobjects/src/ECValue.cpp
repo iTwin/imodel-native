@@ -6,7 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
+#if defined (_WIN32) // WIP_NONPORT
 #include <windows.h>
+#endif //defined (_WIN32) // WIP_NONPORT
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -48,9 +50,13 @@ WString SystemTime::ToString
 (
 )
     {
+#if defined (_WIN32) // WIP_NONPORT
     std::wostringstream valueAsString;
     valueAsString << "#" << wYear << "/" << wMonth << "/" << wDay << "-" << wHour << ":" << wMinute << ":" << wSecond << ":" << wMilliseconds << "#";
     return valueAsString.str().c_str();
+#else
+    return L"";
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -59,11 +65,17 @@ WString SystemTime::ToString
 +---------------+---------------+---------------+---------------+---------------+------*/
 SystemTime SystemTime::GetLocalTime()
     {
+#if defined (_WIN32) // WIP_NONPORT
     SYSTEMTIME wtime;
     ::GetLocalTime(&wtime);
     SystemTime time;
     memcpy (&time, &wtime, sizeof(time));
     return time;
+#elif defined (__unix__)
+    // *** NEEDS WORK: Change SystemTime to use a portable time concept such as what's offered in BeTimeUtilities
+    SystemTime time;
+    return time;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -72,11 +84,17 @@ SystemTime SystemTime::GetLocalTime()
 +---------------+---------------+---------------+---------------+---------------+------*/
 SystemTime SystemTime::GetSystemTime()
     {
+#if defined (_WIN32) // WIP_NONPORT
     SYSTEMTIME wtime;
     ::GetSystemTime(&wtime);
     SystemTime time;
     memcpy (&time, &wtime, sizeof(time));
     return time;
+#elif defined (__unix__)
+    // *** NEEDS WORK: Change SystemTime to use a portable time concept such as what's offered in BeTimeUtilities
+    SystemTime time;
+    return time;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -722,6 +740,7 @@ SystemTime          ECValue::GetDateTime () const
 
     memset (&systemTime, 0, sizeof(systemTime));
 
+#if defined (_WIN32) // WIP_NONPORT
     // m_dateTime is number of ticks since 00:00:00 01/01/01 - Fileticks are relative to 00:00:00 01/01/1601
     systemDateTicks -= TICKADJUSTMENT; 
     FILETIME fileTime;
@@ -730,6 +749,9 @@ SystemTime          ECValue::GetDateTime () const
     SYSTEMTIME  tempTime;
     if (FileTimeToSystemTime (&fileTime, &tempTime))
         memcpy (&systemTime, &tempTime, sizeof(systemTime));
+#elif defined (__unix__)
+    // *** NEEDS WORK: Change SystemTime to use a portable time concept such as what's offered in BeTimeUtilities
+#endif
 
     return systemTime;
     }
@@ -739,6 +761,7 @@ SystemTime          ECValue::GetDateTime () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus          ECValue::SetDateTime (SystemTime& systemTime) 
     {
+#if defined (_WIN32) // WIP_NONPORT
     Clear();
     FILETIME fileTime;
     SYSTEMTIME wtime;
@@ -751,6 +774,9 @@ BentleyStatus          ECValue::SetDateTime (SystemTime& systemTime)
         systemDateTicks += TICKADJUSTMENT; 
         return SetDateTimeTicks (systemDateTicks);
         }
+#elif defined (__unix__)
+    // *** NEEDS WORK: Change SystemTime to use a portable time concept such as what's offered in BeTimeUtilities
+#endif
 
     return ERROR;
     }
@@ -834,7 +860,7 @@ BentleyStatus ECValue::SetString (WCharCP string, bool holdADuplicate)
     m_isNull = false;
 
     if (holdADuplicate)    
-        m_stringInfo.m_string = _wcsdup (string);
+        m_stringInfo.m_string = BeStringUtilities::Wcsdup (string);
     else
         m_stringInfo.m_string = string;
             
@@ -921,6 +947,8 @@ BentleyStatus       ECValue::SetStruct (IECInstanceP structInstance)
 +---------------+---------------+---------------+---------------+---------------+------*/    
 WString    ECValue::ToString () const
     {
+#if defined (_WIN32) // WIP_NONPORT
+
     if (IsNull())
         return L"<null>";
         
@@ -987,6 +1015,11 @@ WString    ECValue::ToString () const
         }
         
     return valueAsString.str().c_str();
+
+#elif defined (__unix__) // WIP_NONPORT
+        // *** NEEDS WORK: iostreams not supported on Android
+    return L"";
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1199,7 +1232,6 @@ ECValueAccessor::ECValueAccessor (ECValueAccessorCR accessor)
     : m_locationVector (accessor.GetLocationVector())
     {
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1364,6 +1396,7 @@ WString                                        ECValueAccessor::GetPropertyName(
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString                                        ECValueAccessor::GetDebugAccessString() const
     {
+#if defined (_WIN32) // WIP_NONPORT
     std::wstringstream temp;
     for(UInt32 depth = 0; depth < GetDepth(); depth++)
         {
@@ -1375,6 +1408,10 @@ WString                                        ECValueAccessor::GetDebugAccessSt
         temp << "}" << GetAccessString (depth);
         }
     return temp.str().c_str();
+#elif defined (__unix__) // WIP_NONPORT
+    // *** NEEDS WORK: iostreams not supported on Android
+    return L"";
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1382,6 +1419,7 @@ WString                                        ECValueAccessor::GetDebugAccessSt
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString                                        ECValueAccessor::GetManagedAccessString() const
     {
+#if defined (_WIN32) // WIP_NONPORT
     std::wstringstream temp;
     for(UInt32 depth = 0; depth < GetDepth(); depth++)
         {
@@ -1406,6 +1444,10 @@ WString                                        ECValueAccessor::GetManagedAccess
             }
         }
     return temp.str().c_str();
+#elif defined (__unix__) // WIP_NONPORT
+    // *** NEEDS WORK: iostreams not supported on Android
+    return L"";
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1413,7 +1455,6 @@ WString                                        ECValueAccessor::GetManagedAccess
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool                                            ECValueAccessor::MatchesEnabler(UInt32 depth, ECEnablerCR other) const
     {
-    // 
     ECEnablerCR enabler = GetEnabler (depth);
     return & enabler == & other;
     }
@@ -1755,13 +1796,20 @@ ECPropertyValue ECValuesCollectionIterator::GetChildPropertyValue (ECPropertyVal
 
         if (ECValueAccessor::INDEX_ROOT != childAccessor[pathLength - 1].arrayIndex)
             {
-            // WIP_FUSION: need to check for NULL array member? ecValue.IsNull()
-
             IECInstancePtr  structInstance  = parentValue.GetStruct();
-            ECEnablerCR     enabler         = structInstance->GetEnabler();
-            UInt32          firstIndex      = enabler.GetFirstPropertyIndex (0);
+            if (structInstance.IsValid())
+                {
+                ECEnablerCR     enabler         = structInstance->GetEnabler();
+                UInt32          firstIndex      = enabler.GetFirstPropertyIndex (0);
 
-            childAccessor.PushLocation (enabler, firstIndex, -1);
+                childAccessor.PushLocation (enabler, firstIndex, -1);
+                }
+            else
+                {
+                // if the parent struct array entry contains a NULL instance then there are no 
+                // child properties to iterate.
+                childAccessor.Clear();
+                }
             }
         else
             {
@@ -1845,7 +1893,10 @@ void            ECValuesCollectionIterator::MoveToNext()
 
         // If that was the last member of the array, we are done
         if (currentAccessor.DeepestLocation().arrayIndex >= (Int32) arrayCount)
+            {
             currentAccessor.Clear();
+            return;
+            }
         }
     else
         {
@@ -1867,7 +1918,10 @@ void            ECValuesCollectionIterator::MoveToNext()
 
         // If that was the last index in the current struct, we are done
         if (0 == nextIndex)
+            {
             currentAccessor.Clear();
+            return;
+            }
         }
 
     m_propertyValue.EvaluateValue ();

@@ -23,7 +23,7 @@ BuildContext   = $(OutBuildContexts)ECObjects/
 ContextDeliveryDir         = $(BuildContext)Delivery/
 
 # Give a name to some common locations in the BuildContext
-BuildContextPublicApiDir = $(BuildContext)PublicAPI/
+BuildContextPublicApiDir = $(BuildContext)PublicApi/
 BuildContextPublishedApiDir            = $(BuildContext)Delivery/PublishedAPI/
 
 %if !defined (programName)
@@ -45,7 +45,7 @@ WARNINGS_UP=1
 #-----------------------------------------------------------------------
 #       Source directories
 #-----------------------------------------------------------------------
-ecPublicAPISrc      = $(SrcRoot)ecobjects/PublicAPI/
+ecPublicAPISrc      = $(SrcRoot)ecobjects/PublicApi/
 ecobjectsPublicAPISrc = $(ecPublicAPISrc)ECObjects/
 ecobjectsSrc        = $(SrcRoot)ecobjects/
 
@@ -60,6 +60,6 @@ GUnitTestDir        = $(BuildContext)SubParts/google_gtest/
 #-----------------------------------------------------------------------
 %include $(SharedMki)DefinePublicApiIncludes.mki
 #_PublicApiIncludes =% $(PublicApiIncludes)
-PublicApiIncludes = -I$(ecPublicAPISrc) -I${BuildContext}/PublicAPI/ -I${BuildContext}/VendorAPI/
+PublicApiIncludes = -I$(ecPublicAPISrc) -I${BuildContext}/PublicApi/ -I${BuildContext}/VendorAPI/
 
 certDir = $(bsiCerts)

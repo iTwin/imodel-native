@@ -11,7 +11,7 @@
 #if defined (COMPILING_PUBLISHED_TESTS)
    // Need to reach in and grab this header since it won't be part of the published API yet we still
    // need to utilize it in the published API tests
-   #include "..\..\PublicAPI\ECObjects\DesignByContract.h"
+   #include "..\..\PublicApi\ECObjects\DesignByContract.h"
 #else
    #include <ECObjects\DesignByContract.h>
 #endif

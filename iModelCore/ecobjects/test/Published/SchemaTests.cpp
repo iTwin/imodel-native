@@ -21,6 +21,7 @@ struct SchemaSerializationTest   : ECTestFixture {};
 struct SchemaReferenceTest       : ECTestFixture {};
 struct SchemaCreationTest        : ECTestFixture {};
 struct ClassTest                 : ECTestFixture {};
+struct SchemaLocateTest          : ECTestFixture {};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
@@ -978,7 +979,77 @@ TEST_F(SchemaReferenceTest, ExpectSuccessWithCircularReferences)
 
     CoUninitialize();
     }
+
+TEST_F(SchemaLocateTest, ExpectSuccessWhenLocatingStandardSchema)
+    {
+    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
+
+    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
+
+    bmap<WString, WCharCP> standardSchemaNames;
+    standardSchemaNames.insert(bpair<WString, WCharCP>(L"Bentley_Standard_CustomAttributes", L"01.04"));
+    standardSchemaNames.insert(bpair<WString, WCharCP>(L"Bentley_Standard_Classes", L"01.00"));
+    standardSchemaNames.insert(bpair<WString, WCharCP>(L"Bentley_ECSchemaMap", L"01.00"));
+    standardSchemaNames.insert(bpair<WString, WCharCP>(L"EditorCustomAttributes", L"01.00"));
+    standardSchemaNames.insert(bpair<WString, WCharCP>(L"Bentley_Common_Classes", L"01.00"));
+    standardSchemaNames.insert(bpair<WString, WCharCP>(L"Dimension_Schema", L"01.00"));
+    standardSchemaNames.insert(bpair<WString, WCharCP>(L"iip_mdb_customAttributes", L"01.00"));
+    standardSchemaNames.insert(bpair<WString, WCharCP>(L"KindOfQuantity_Schema", L"01.01"));
+    standardSchemaNames.insert(bpair<WString, WCharCP>(L"rdl_customAttributes", L"01.00"));
+    standardSchemaNames.insert(bpair<WString, WCharCP>(L"SIUnitSystemDefaults", L"01.00"));
+    standardSchemaNames.insert(bpair<WString, WCharCP>(L"Unit_Attributes", L"01.00"));
+    standardSchemaNames.insert(bpair<WString, WCharCP>(L"Units_Schema", L"01.00"));
+    standardSchemaNames.insert(bpair<WString, WCharCP>(L"USCustomaryUnitSystemDefaults", L"01.00"));
+
+    ECSchemaP schema;
+
+    for (bmap<WString, WCharCP>::const_iterator it = standardSchemaNames.begin(); it != standardSchemaNames.end(); ++it)
+        {
+        bpair<WString, WCharCP>const& entry = *it;
+
+        UInt32 versionMajor;
+        UInt32 versionMinor;
+        ECSchema::ParseVersionString(versionMajor, versionMinor, entry.second);
+        schema = ECSchema::LocateSchema(entry.first, versionMajor, versionMinor, *schemaContext);
+        EXPECT_TRUE(NULL != schema);
+        EXPECT_TRUE(schema->IsStandardSchema());
+        }
+
+    CoUninitialize();
+    }
+  
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                08/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaLocateTest, ExpectFailureWithNonStandardSchema)
+    {
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
+
+    ECSchemaP testSchema;
+    ECSchema::CreateSchema(testSchema, L"TestSchema", 1, 2, *schemaOwner);
+    EXPECT_FALSE(testSchema->IsStandardSchema());
+    }
     
+TEST_F(SchemaLocateTest, DetermineWhetherSchemaCanBeImported)
+    {
+    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
+
+    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
+    ECSchemaDeserializationContextPtr   schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner, *schemaOwner);
+    ECSchemaP schema;
+    UInt32 versionMajor = 1;
+    UInt32 versionMinor = 4;
+    schema = ECSchema::LocateSchema(L"Bentley_Standard_CustomAttributes", versionMajor, versionMinor, *schemaContext);
+    EXPECT_TRUE(NULL != schema);
+    EXPECT_FALSE(schema->ShouldSchemaNotBeImported());
+
+    ECSchema::CreateSchema(schema, L"Units_Schema", 1, 4, *schemaOwner);
+    EXPECT_TRUE(schema->ShouldSchemaNotBeImported());
+
+    CoUninitialize();
+    }
+      
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/

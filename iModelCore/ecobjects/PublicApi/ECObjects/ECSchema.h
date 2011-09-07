@@ -9,13 +9,13 @@
 
 /*__PUBLISH_SECTION_START__*/
 
-#include <ECObjects\ECInstance.h>
-#include <ECObjects\ECObjects.h>
-#include <ECObjects\ECEnabler.h>
-#include <Bentley\RefCounted.h>
-#include <Bentley\bvector.h>
-#include <Bentley\bmap.h>
-#include <Bentley\bset.h>
+#include <ECObjects/ECInstance.h>
+#include <ECObjects/ECObjects.h>
+#include <ECObjects/ECEnabler.h>
+#include <Bentley/RefCounted.h>
+#include <Bentley/bvector.h>
+#include <Bentley/bmap.h>
+#include <Bentley/bset.h>
 //__PUBLISH_SECTION_END__
 #include <boost/foreach.hpp>
 //__PUBLISH_SECTION_START__
@@ -842,6 +842,7 @@ public:
 typedef RefCountedPtr<ECRelationshipClass>      ECRelationshipClassPtr;
 
 typedef bvector<ECSchemaP> ECSchemaReferenceList;
+typedef const bvector<ECSchemaP>& ECSchemaReferenceListCR;
 //=======================================================================================
 //! Supports STL like iterator of classes in a schema
 //=======================================================================================
@@ -1043,7 +1044,6 @@ private:
     UInt32              m_versionMinor;    
     ECClassContainer    m_classContainer;
     bool                m_hideFromLeakDetection;
-
     // maps class name -> class pointer    
     ClassMap m_classMap;
 
@@ -1060,14 +1060,14 @@ private:
     ECObjectsStatus                     AddClass (ECClassP& pClass);
     ECObjectsStatus                     SetVersionFromString (WCharCP versionString);
 
-    typedef bvector<bpair<ECClassP, MSXML2_IXMLDOMNodePtr>>  ClassDeserializationVector;
-    SchemaReadStatus         ReadClassStubsFromXml(MSXML2_IXMLDOMNode& schemaNodePtr,ClassDeserializationVector& classes, ECSchemaDeserializationContextR context);
-    SchemaReadStatus         ReadClassContentsFromXml(ClassDeserializationVector&  classes, ECSchemaDeserializationContextR context);
-    SchemaReadStatus         ReadSchemaReferencesFromXml(MSXML2_IXMLDOMNode& schemaNodePtr, ECSchemaDeserializationContextR context);
-    static ECSchemaP                    LocateSchemaByPath(const WString & name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR context, bool useLatestCompatibleMatch);
-    static ECSchemaP                    LocateSchemaByPath(const WString & name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR context);
-    static ECSchemaP                    LocateSchemaByStandardPaths(const WString & name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR context);
-    
+    typedef bvector<bpair<ECClassP, MSXML2_IXMLDOMNodePtr> >  ClassDeserializationVector;
+    SchemaReadStatus ReadClassStubsFromXml(MSXML2_IXMLDOMNode& schemaNodePtr,ClassDeserializationVector& classes, ECSchemaDeserializationContextR context);
+    SchemaReadStatus ReadClassContentsFromXml(ClassDeserializationVector&  classes, ECSchemaDeserializationContextR context);
+    SchemaReadStatus ReadSchemaReferencesFromXml(MSXML2_IXMLDOMNode& schemaNodePtr, ECSchemaDeserializationContextR context);
+    static ECSchemaP LocateSchemaByPath(const WString & name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR context, bool useLatestCompatibleMatch);
+    static ECSchemaP LocateSchemaByPath(const WString & name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR context);
+    static ECSchemaP LocateSchemaByStandardPaths(const WString & name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR context);
+    static ECSchemaP FindMatchingSchema(bool& foundImperfectLegacyMatch, WStringCR schemaMatchExpression, WStringCR name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR schemaContext, bool useLatestCompatibleMatch, bool acceptImperfectLegacyMatch);
     struct  ECSchemaSerializationContext
         {
         bset<WCharCP> m_alreadySerializedClasses;
@@ -1103,6 +1103,15 @@ public:
 
     ECOBJECTS_EXPORT ECClassContainerCR GetClasses() const;
     ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
+
+    //! Returns true if the schema is an ECStandard schema
+    //! @return True if a standard schema, false otherwise
+    ECOBJECTS_EXPORT bool               IsStandardSchema() const;
+
+    //! Returns true if and only if the full schema name (including version) represents a standard schema that should never
+    //! be imported into a repository.
+    //@return True if this version of the schema is one that should never be imported into a repository
+    ECOBJECTS_EXPORT bool               ShouldSchemaNotBeImported() const;
 
     //! If the class name is valid, will create an ECClass object and add the new class to the schema
     //! @param[out] ecClass If successful, will contain a new ECClass object

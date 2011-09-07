@@ -9,7 +9,9 @@
 #pragma once
 
 #include "ECObjects.h"
+#ifdef USE_HASHMAP_IN_CLASSLAYOUT // WIP_NONPORT - No hashmap on Android
 #include <hash_map>
+#endif
 
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
 #define PROPERTYLAYOUT_Source_ECPointer L"Source ECPointer"
@@ -97,7 +99,7 @@ private:
     typedef bmap<WCharCP, PropertyLayoutCP, StringComparer> PropertyLayoutMap;
 #endif    
     typedef bvector<PropertyLayoutP>                                PropertyLayoutVector;
-    typedef bmap<UInt32, bvector<UInt32>>                           LogicalStructureMap;
+    typedef bmap<UInt32, bvector<UInt32> >                          LogicalStructureMap;
     
     enum State
         {
@@ -257,13 +259,13 @@ private:
     UInt32          m_arrayOffset;
     
     UInt32          m_resizeIndex;
-    UInt32          m_resizeElementCount;
-    UInt32          m_resizeByteCount; // bytesNeeded
+    UInt32          m_resizeElementCount; 
+    UInt32          m_resizeFixedSectionByteCount; // bytesNeeded
         
     PrimitiveType   m_elementType;
     bool            m_elementTypeIsFixedSize;
     UInt32          m_elementSizeInFixedSection;
-    
+
     // state variables for pre resize
     ArrayCount      m_preAllocatedArrayCount;
     UInt32          m_preNullFlagBitmasksCount;
@@ -293,7 +295,6 @@ private:
     ECObjectsStatus       WriteArrayHeader ();
         
     static ECObjectsStatus    CreateNullArrayElementsAt (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, MemoryInstanceSupportR instance, UInt32 insertIndex, UInt32 insertCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP=NULL);
-    
     };
 /*__PUBLISH_SECTION_START__*/    
 
@@ -398,6 +399,8 @@ protected:
     ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ClassLayoutCR classLayout, UInt32 propertyIndex, ECValueCR v, bool useArrayIndex = false, UInt32 arrayIndex = 0);      
     ECOBJECTS_EXPORT ECObjectsStatus  InsertNullArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 insertIndex, UInt32 insertCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP=NULL);
     ECOBJECTS_EXPORT ECObjectsStatus  AddNullArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 insertCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP=NULL);
+    ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElementsFromMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
+    ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 removeIndex, UInt32 removeCount);
     ECOBJECTS_EXPORT WString          InstanceDataToString (WCharCP indent, ClassLayoutCR classLayout) const;
     
     virtual ~MemoryInstanceSupport () {}
@@ -410,7 +413,8 @@ protected:
     //! externally.
     virtual ECObjectsStatus           _SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index) = 0;
     virtual ECObjectsStatus           _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const = 0;
-    
+    virtual ECObjectsStatus           _RemoveStructArrayElementsFromMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP) = 0;
+
     virtual bool                _IsMemoryInitialized () const = 0;    
     
     //! Get a pointer to the first byte of the data    
@@ -435,6 +439,8 @@ protected:
     
 public:
     ECOBJECTS_EXPORT static InstanceHeader const&   PeekInstanceHeader (void const* data);
+
+    ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP=NULL);
     };    
 
 
