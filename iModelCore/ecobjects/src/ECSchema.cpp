@@ -1912,7 +1912,10 @@ ECSchemaDeserializationContext::ECSchemaDeserializationContext(IECSchemaOwnerR o
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaDeserializationContextPtr  ECSchemaDeserializationContext::CreateContext (IECSchemaOwnerR owner, IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch)   
                                                                                         { return new ECSchemaDeserializationContext(owner, enablerLocater, acceptLegacyImperfectLatestCompatibleMatch); }
-ECSchemaDeserializationContextPtr  ECSchemaDeserializationContext::CreateContext (ECSchemaCacheR owner, bool acceptLegacyImperfectLatestCompatibleMatch) { return CreateContext (owner, &owner, acceptLegacyImperfectLatestCompatibleMatch); }
+ECSchemaDeserializationContextPtr  ECSchemaDeserializationContext::CreateContext (IECSchemaOwnerR owner, bool acceptLegacyImperfectLatestCompatibleMatch) 
+    { 
+    return CreateContext (owner, NULL, acceptLegacyImperfectLatestCompatibleMatch); 
+    }
 void  ECSchemaDeserializationContext::AddSchemaLocaters (bvector<EC::IECSchemaLocaterP>& locators) { m_locators.insert (m_locators.begin(), locators.begin(), locators.end());  }
 void  ECSchemaDeserializationContext::AddSchemaLocater (IECSchemaLocaterR locater)      { m_locators.push_back (&locater);  }
 void  ECSchemaDeserializationContext::AddSchemaPath (WCharCP path)               { m_searchPaths.push_back (WString(path));   }

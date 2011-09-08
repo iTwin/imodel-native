@@ -1548,6 +1548,24 @@ ECInstanceDeserializationContextPtr ECInstanceDeserializationContext::CreateCont
     return new ECInstanceDeserializationContext (NULL, &context, standaloneEnablerLocater);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr ECInstanceDeserializationContext::CreateStandaloneInstance (ECClassCR ecClass)
+    {
+    // By passing in the class, we have a chance of handling case where there are different versions of the same ECSchema in play
+    if (m_standaloneEnablerLocater)
+        {
+        StandaloneECEnablerPtr standaloneEnabler = m_standaloneEnablerLocater->LocateStandaloneEnabler (ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str());
+        if (standaloneEnabler.IsValid())
+            return standaloneEnabler->CreateInstance();
+        }
+        
+    StandaloneECEnablerPtr standaloneEnabler = ecClass.GetDefaultStandaloneEnabler();
+        
+    return standaloneEnabler->CreateInstance();
+    }
+    
 END_BENTLEY_EC_NAMESPACE
 
 
@@ -1854,10 +1872,8 @@ InstanceReadStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr& ecInstance
 
     *ecClass = foundClass;
 
-    // NEEDSWORK: we could first look for an optional enabler supplied via the context
-    StandaloneECEnablerPtr      standaloneEnabler  = foundClass->GetDefaultStandaloneEnabler();
-                                ecInstance         = standaloneEnabler->CreateInstance().get();
-
+    ecInstance = m_context.CreateStandaloneInstance (*foundClass).get();
+    
     bool                        needSourceClass    = false;
     bool                        needSourceId       = false;
     bool                        needTargetClass    = false;
@@ -2333,18 +2349,10 @@ InstanceReadStatus   ReadArrayProperty (ArrayECPropertyP arrayProperty, IECInsta
 InstanceReadStatus   ReadStructArrayMember (ECClassCR structClass, IECInstanceP owningInstance, WString& accessString, UInt32 index)
     {
     // On entry, the reader is positioned at the element that starts the struct.
-    // we have to create an IECInstance for the array member.
-    StandaloneECEnablerPtr          standaloneEnabler   = structClass.GetDefaultStandaloneEnabler();
 
-    // The following way causes an assert in ECPerSchemaCache::LoadSchema processing SetSchemaPAndAddRefToSharedSchemaCache (schemaP) because the schemacache's ptr was set recursively when processing struct arrays
-    //StandaloneECEnablerPtr standaloneEnabler = owningInstance->GetEnablerR().ObtainStandaloneInstanceEnabler (structClass.GetSchema().GetName().c_str(), structClass.GetName().c_str());
-
-    if (standaloneEnabler.IsNull())
-        return INSTANCE_READ_STATUS_UnableToGetStandaloneEnabler;
-
-    // create the instance.
-    IECInstancePtr                  structInstance      = standaloneEnabler->CreateInstance().get();
-
+    // Create an IECInstance for the array member.
+    IECInstancePtr structInstance = m_context.CreateStandaloneInstance (structClass).get();
+    
     InstanceReadStatus   ixrStatus;
     if (INSTANCE_READ_STATUS_Success != (ixrStatus = ReadInstanceOrStructMembers (structClass, structInstance.get(), NULL)))
         return ixrStatus;

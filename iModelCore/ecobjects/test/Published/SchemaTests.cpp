@@ -625,6 +625,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
     EXPECT_EQ(SCHEMA_WRITE_STATUS_Success, status2);
     
     ECSchemaP deserializedSchema;
+    schemaOwner = ECSchemaCache::Create(); // We need a new cache... we don't want to read the ECSchema into the cache that already has a copy of this ECSchema
     schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
     status = ECSchema::ReadFromXmlString(deserializedSchema, ecSchemaXmlString.c_str(), *schemaContext);
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, status); 
@@ -759,6 +760,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingStream)
     stream->Seek(liPos, STREAM_SEEK_SET, NULL);
 
     ECSchemaP deserializedSchema;
+    schemaOwner = ECSchemaCache::Create(); // We need a new cache... we don't want to read the ECSchema into the cache that already has a copy of this ECSchema
     schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
     status = ECSchema::ReadFromXmlStream(deserializedSchema, stream, *schemaContext);
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, status); 
