@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <ECObjects\ECObjects.h>
+#include <ECObjects/ECObjects.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 

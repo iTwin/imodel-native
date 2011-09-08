@@ -1550,6 +1550,7 @@ ECInstanceDeserializationContextPtr ECInstanceDeserializationContext::CreateCont
 
 END_BENTLEY_EC_NAMESPACE
 
+#if defined (_WIN32) // WIP_NONPORT
 
 #include <xmllite.h>
 #include <atlbase.h>
@@ -3361,6 +3362,12 @@ InstanceWriteStatus     IECInstance::WriteToXmlString (WString & ecInstanceXml, 
     return INSTANCE_WRITE_STATUS_Success;
     }
 
+END_BENTLEY_EC_NAMESPACE
+
+#endif // defined (_WIN32) // WIP_NONPORT
+
+BEGIN_BENTLEY_EC_NAMESPACE
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3529,3 +3536,20 @@ BentleyStatus IECWipRelationshipInstance::SetTargetOrderId (Int64 targetOrderId)
     }
 
 END_BENTLEY_EC_NAMESPACE
+
+#if defined (__unix__)
+BEGIN_BENTLEY_EC_NAMESPACE
+    #define MSXML2_IXMLDOMNode      void *
+    #define MSXML2_IXMLDOMNodePtr   void *
+    #define MSXML2_IXMLDOMDocument2 void *
+    #define MSXML2_IXMLDOMElement   void *
+
+InstanceWriteStatus     IECInstance::WriteToXmlString (WString & ecInstanceXml, bool isStandAlone, bool writeInstanceId) {return INSTANCE_WRITE_STATUS_CantCreateXmlWriter;}
+InstanceWriteStatus     IECInstance::WriteToXmlStream (IStreamP stream, bool isStandAlone, bool writeInstanceId){return INSTANCE_WRITE_STATUS_CantCreateXmlWriter;}
+InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool isStandAlone, bool writeInstanceId){return INSTANCE_WRITE_STATUS_CantCreateXmlWriter;}
+InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr& ecInstance, WCharCP xmlString, ECInstanceDeserializationContextR context){return INSTANCE_READ_STATUS_CantCreateXmlReader;}
+InstanceReadStatus   IECInstance::ReadFromXmlStream (IECInstancePtr& ecInstance, IStreamP stream, ECInstanceDeserializationContextR context){return INSTANCE_READ_STATUS_CantCreateXmlReader;}
+InstanceReadStatus   IECInstance::ReadFromXmlFile (IECInstancePtr& ecInstance, WCharCP fileName, ECInstanceDeserializationContextR context){return INSTANCE_READ_STATUS_CantCreateXmlReader;}
+
+END_BENTLEY_EC_NAMESPACE
+#endif // defined (__unix__)

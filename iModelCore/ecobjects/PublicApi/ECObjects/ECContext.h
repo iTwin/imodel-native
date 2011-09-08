@@ -9,7 +9,7 @@
 /*__PUBLISH_SECTION_START__*/
 
 #include "ECObjects.h"
-#include <Geom\GeomApi.h>
+#include <Geom/GeomApi.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -55,11 +55,13 @@ public:
     //! Creates a context for deserializing ECSchemas
     //! @param[in] schemaOwner  This object will control the lifetime of any ECSchemas deserialized with this context
     //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the deserialized ECSchema
+    //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestCompatible only checks that the major version matches. A warning will be logged if minor version is too low, but the ECSchema will be accepted
     //! @remarks This more-flexible override is primarily for internal use
     ECOBJECTS_EXPORT static ECSchemaDeserializationContextPtr CreateContext (IECSchemaOwnerR schemaOwner, IStandaloneEnablerLocaterR standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch = false);
     
     //! Creates a context for deserializing ECSchemas
     //! @param[in] schemaOwner  This object will control the lifetime of any ECSchemas deserialized with this context
+    //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestCompatible only checks that the major version matches. A warning will be logged if minor version is too low, but the ECSchema will be accepted
     ECOBJECTS_EXPORT static ECSchemaDeserializationContextPtr CreateContext (ECSchemaCacheR schemaOwner, bool acceptLegacyImperfectLatestCompatibleMatch = false);
 
     ECOBJECTS_EXPORT void AddSchemaLocaters (bvector<EC::IECSchemaLocaterP>&);

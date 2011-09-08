@@ -9,7 +9,9 @@
 #pragma once
 
 #include "ECObjects.h"
+#ifdef USE_HASHMAP_IN_CLASSLAYOUT // WIP_NONPORT - No hashmap on Android
 #include <hash_map>
+#endif
 
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
 #define PROPERTYLAYOUT_Source_ECPointer L"Source ECPointer"
@@ -97,7 +99,7 @@ private:
     typedef bmap<WCharCP, PropertyLayoutCP, StringComparer> PropertyLayoutMap;
 #endif    
     typedef bvector<PropertyLayoutP>                                PropertyLayoutVector;
-    typedef bmap<UInt32, bvector<UInt32>>                           LogicalStructureMap;
+    typedef bmap<UInt32, bvector<UInt32> >                          LogicalStructureMap;
     
     enum State
         {
