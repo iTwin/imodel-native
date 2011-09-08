@@ -19,8 +19,13 @@
 #include "ecxml.h"
 #include "Logger.h"
 #include "FileUtilities.h"
-#include <Logging/bentleylogging.h>
 #include <Bentley/BeFileName.h>
+
+#if defined (ANDROID) && defined (NDK_BUILD)
+    #include <bentleylogging.h>
+#else
+    #include <Logging/bentleylogging.h>
+#endif
 
 #include "LeakDetector.h"
 
@@ -29,6 +34,3 @@ extern ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, 
 END_BENTLEY_EC_NAMESPACE
 
 
-
-
-  
