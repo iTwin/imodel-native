@@ -9,6 +9,7 @@
 #pragma once
 
 #include <ECObjects\ECObjects.h>
+#include <ECObjects\MemoryInstanceSupport.h>
 
 EC_TYPEDEFS(StandaloneECEnabler);
 

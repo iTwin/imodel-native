@@ -1549,21 +1549,28 @@ ECInstanceDeserializationContextPtr ECInstanceDeserializationContext::CreateCont
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    
+* @bsimethod                                                    CaseyMullen     09/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr ECInstanceDeserializationContext::CreateStandaloneInstance (ECClassCR ecClass)
+StandaloneECInstancePtr ECInstanceDeserializationContext::_CreateStandaloneInstance (ECClassCR ecClass)
     {
-    // By passing in the class, we have a chance of handling case where there are different versions of the same ECSchema in play
-    if (m_standaloneEnablerLocater)
+    /*if (m_standaloneEnablerLocater)
         {
         StandaloneECEnablerPtr standaloneEnabler = m_standaloneEnablerLocater->LocateStandaloneEnabler (ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str());
         if (standaloneEnabler.IsValid())
             return standaloneEnabler->CreateInstance();
-        }
+        }*/
         
     StandaloneECEnablerPtr standaloneEnabler = ecClass.GetDefaultStandaloneEnabler();
         
     return standaloneEnabler->CreateInstance();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/11
++---------------+---------------+---------------+---------------+---------------+------*/
+StandaloneECInstancePtr ECInstanceDeserializationContext::CreateStandaloneInstance (ECClassCR ecClass)
+    {
+    return _CreateStandaloneInstance (ecClass);
     }
     
 END_BENTLEY_EC_NAMESPACE
@@ -2802,13 +2809,13 @@ InstanceWriteStatus     Init ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     WriteInstance (IECInstanceCR instance, bool writeStart, bool writeInstanceId)
+InstanceWriteStatus     WriteInstance (IECInstanceCR instance, bool isCompleteXmlDocument, bool writeInstanceId)
     {
     ECClassCR               ecClass     = instance.GetClass();
     ECSchemaCR              ecSchema    = ecClass.GetSchema();
 
     HRESULT status;
-    if (writeStart)
+    if (isCompleteXmlDocument)
         {
         if (S_OK != (status = m_xmlWriter->WriteStartDocument (XmlStandalone_Omit)))
             return TranslateStatus (status);
@@ -3298,7 +3305,7 @@ InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr& ecInstance,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool isStandAlone, bool writeInstanceId)
+InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool isCompleteXmlDocument, bool writeInstanceId)
     {
     InstanceXmlWriter writer (fileName);
 
@@ -3306,13 +3313,13 @@ InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool isSt
     if (INSTANCE_WRITE_STATUS_Success != (status = writer.Init ()))
         return status;
 
-    return writer.WriteInstance (*this, isStandAlone, writeInstanceId);
+    return writer.WriteInstance (*this, isCompleteXmlDocument, writeInstanceId);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     IECInstance::WriteToXmlStream (IStreamP stream, bool isStandAlone, bool writeInstanceId)
+InstanceWriteStatus     IECInstance::WriteToXmlStream (IStreamP stream, bool isCompleteXmlDocument, bool writeInstanceId)
     {
     InstanceXmlWriter writer (stream);
 
@@ -3320,13 +3327,13 @@ InstanceWriteStatus     IECInstance::WriteToXmlStream (IStreamP stream, bool isS
     if (INSTANCE_WRITE_STATUS_Success != (status = writer.Init ()))
         return status;
 
-    return writer.WriteInstance (*this, isStandAlone, writeInstanceId);
+    return writer.WriteInstance (*this, isCompleteXmlDocument, writeInstanceId);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     IECInstance::WriteToXmlString (WString & ecInstanceXml, bool isStandAlone, bool writeInstanceId)
+InstanceWriteStatus     IECInstance::WriteToXmlString (WString & ecInstanceXml, bool isCompleteXmlDocument, bool writeInstanceId)
     {
     InstanceWriteStatus   status;
 
@@ -3338,7 +3345,7 @@ InstanceWriteStatus     IECInstance::WriteToXmlString (WString & ecInstanceXml, 
     if (INSTANCE_WRITE_STATUS_Success != (status = writer.Init ()))
         return status;
 
-    if (INSTANCE_WRITE_STATUS_Success != (status = writer.WriteInstance(*this, isStandAlone, writeInstanceId)))
+    if (INSTANCE_WRITE_STATUS_Success != (status = writer.WriteInstance(*this, isCompleteXmlDocument, writeInstanceId)))
         return status;
 
     LARGE_INTEGER liPos = {0};

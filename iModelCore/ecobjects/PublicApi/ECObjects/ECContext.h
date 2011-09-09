@@ -10,6 +10,7 @@
 
 #include "ECObjects.h"
 #include <Geom\GeomApi.h>
+#include <ECObjects\StandaloneECInstance.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -80,7 +81,9 @@ private:
     ECSchemaCP                              m_schema;
     EC::ECSchemaDeserializationContextPtr   m_schemaContext;
     IStandaloneEnablerLocaterP              m_standaloneEnablerLocater;
+    StandaloneECInstancePtr m_dummy;
 
+protected:
     ECInstanceDeserializationContext(ECSchemaCP schema, ECSchemaDeserializationContextP context, IStandaloneEnablerLocaterP standaloneEnablerLocater = NULL) 
         : m_standaloneEnablerLocater (standaloneEnablerLocater)
         {
@@ -90,12 +93,16 @@ private:
         m_schemaContext = context;
         }
 
+    //! Will be called by ECInstance deserialization to create the ECInstances that it returns.
+    //! The default implementation calls GetDefaultStandaloneEnabler() on the ecClass
+    ECOBJECTS_EXPORT virtual StandaloneECInstancePtr _CreateStandaloneInstance (ECClassCR ecClass);
+    
 public:
     ECSchemaCP                          GetSchemaCP()  { return m_schema; }
     ECSchemaDeserializationContextPtr   GetSchemaContextPtr()  { return m_schemaContext; }
 
-    IECInstancePtr CreateStandaloneInstance (ECClassCR ecClass);
-    
+    StandaloneECInstancePtr CreateStandaloneInstance (ECClassCR ecClass);
+
 /*__PUBLISH_SECTION_START__*/
 
     //! - For use when the caller knows the schema of the instance he is deserializing.
