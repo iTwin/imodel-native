@@ -1881,6 +1881,31 @@ IStreamP ecSchemaXmlStream
 #endif //defined (_WIN32) // WIP_NONPORT
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    07/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECSchema::FindAllSchemasInGraph (bvector<EC::ECSchemaCP>& allSchemas, ECSchemaCR rootSchema, bool includeRootSchema)
+    {
+    if (includeRootSchema)
+        allSchemas.push_back (&rootSchema);
+
+    FOR_EACH(ECSchemaP refSchema , rootSchema.GetReferencedSchemas())
+        {
+        if (!includeRootSchema)
+            {
+            if (&rootSchema == refSchema)
+                continue;
+            }
+
+        bvector<EC::ECSchemaCP>::iterator it = std::find (allSchemas.begin(), allSchemas.end(), refSchema);
+
+        if (it != allSchemas.end())
+            continue;
+
+        FindAllSchemasInGraph (allSchemas, *refSchema);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaDeserializationContext::ECSchemaDeserializationContext(IECSchemaOwnerR owner, IStandaloneEnablerLocaterR enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch)

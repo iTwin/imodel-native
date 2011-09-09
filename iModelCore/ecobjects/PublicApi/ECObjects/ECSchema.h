@@ -1349,7 +1349,12 @@ public:
     //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
     //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
     ECOBJECTS_EXPORT static SchemaReadStatus ReadFromXmlStream (ECSchemaP& schemaOut, IStreamP ecSchemaXmlStream, ECSchemaDeserializationContextR schemaContext);
-    
+
+    //! Find all ECSchemas in the schema graph, avoiding duplicates and any cycles.
+    //! @param[out]   allSchemas            Vector of schemas including rootSchema.
+    //! @param[in]    rootSchema            This schema and it reference schemas will be added to the vector of allSchemas.
+    //! @param[in]    includeRootSchema     If true then root schema is added to the vector of allSchemas. Defaults to true.
+    ECOBJECTS_EXPORT static void FindAllSchemasInGraph (bvector<EC::ECSchemaCP>& allSchemas, EC::ECSchemaCR rootSchema, bool includeRootSchema=true);
 }; // ECSchema
 
 END_BENTLEY_EC_NAMESPACE
