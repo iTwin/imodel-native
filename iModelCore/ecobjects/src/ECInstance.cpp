@@ -1551,15 +1551,8 @@ ECInstanceDeserializationContextPtr ECInstanceDeserializationContext::CreateCont
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneECInstancePtr ECInstanceDeserializationContext::_CreateStandaloneInstance (ECClassCR ecClass)
+IECInstancePtr ECInstanceDeserializationContext::_CreateStandaloneInstance (ECClassCR ecClass)
     {
-    /*if (m_standaloneEnablerLocater)
-        {
-        StandaloneECEnablerPtr standaloneEnabler = m_standaloneEnablerLocater->LocateStandaloneEnabler (ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str());
-        if (standaloneEnabler.IsValid())
-            return standaloneEnabler->CreateInstance();
-        }*/
-        
     StandaloneECEnablerPtr standaloneEnabler = ecClass.GetDefaultStandaloneEnabler();
         
     return standaloneEnabler->CreateInstance();
@@ -1568,7 +1561,7 @@ StandaloneECInstancePtr ECInstanceDeserializationContext::_CreateStandaloneInsta
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneECInstancePtr ECInstanceDeserializationContext::CreateStandaloneInstance (ECClassCR ecClass)
+IECInstancePtr ECInstanceDeserializationContext::CreateStandaloneInstance (ECClassCR ecClass)
     {
     return _CreateStandaloneInstance (ecClass);
     }

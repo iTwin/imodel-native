@@ -95,13 +95,13 @@ protected:
 
     //! Will be called by ECInstance deserialization to create the ECInstances that it returns.
     //! The default implementation calls GetDefaultStandaloneEnabler() on the ecClass
-    ECOBJECTS_EXPORT virtual StandaloneECInstancePtr _CreateStandaloneInstance (ECClassCR ecClass);
+    ECOBJECTS_EXPORT virtual IECInstancePtr _CreateStandaloneInstance (ECClassCR ecClass);
     
 public:
     ECSchemaCP                          GetSchemaCP()  { return m_schema; }
     ECSchemaDeserializationContextPtr   GetSchemaContextPtr()  { return m_schemaContext; }
 
-    StandaloneECInstancePtr CreateStandaloneInstance (ECClassCR ecClass);
+    IECInstancePtr CreateStandaloneInstance (ECClassCR ecClass);
 
 /*__PUBLISH_SECTION_START__*/
 
