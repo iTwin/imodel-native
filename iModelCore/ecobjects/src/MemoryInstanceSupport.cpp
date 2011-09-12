@@ -996,6 +996,24 @@ UInt32  ClassLayout::GetFirstChildPropertyIndex (UInt32 parentIndex) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ClassLayout::GetPropertyIndices (bvector<UInt32>& properties, UInt32 parentIndex) const
+    {
+    bmap<UInt32, bvector<UInt32>>::const_iterator mapIterator = m_logicalStructureMap.find (parentIndex);
+    if ( ! EXPECTED_CONDITION (m_logicalStructureMap.end() != mapIterator))
+        return ECOBJECTS_STATUS_Error;
+
+    FOR_EACH (UInt32 propIndex, mapIterator->second)
+        properties.push_back(propIndex);
+
+    if (properties.size() > 0)
+        return ECOBJECTS_STATUS_Success;
+
+    return ECOBJECTS_STATUS_Error;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 UInt32  ClassLayout::GetNextChildPropertyIndex (UInt32 parentIndex, UInt32 childIndex) const

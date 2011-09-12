@@ -64,6 +64,7 @@ protected:
     virtual UInt32                  _GetFirstPropertyIndex (UInt32 parentIndex) const = 0;
     virtual UInt32                  _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const = 0;
     virtual UInt32                  _GetPropertyCount () const = 0;
+    virtual ECObjectsStatus         _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const = 0;
 
     // IStandaloneEnablerLocater
     ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr  _LocateStandaloneEnabler (WCharCP schemaName, WCharCP className); 
@@ -92,6 +93,9 @@ public:
     
     //! Get the next (after inputIndex) propertyIndex (used in conjunction with GetNeGetFirstPropertyIndexxtPropertyIndex for efficiently looping over property values.)
     ECOBJECTS_EXPORT UInt32                     GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const;
+
+    //! Get vector of all property indices for property defined by parent index. An index of 0 means root properties.
+    ECOBJECTS_EXPORT ECObjectsStatus         GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const;
 
 //    ECOBJECTS_EXPORT bool                       HasChildValues (ECValueAccessorCR, IECInstanceCR) const;
 //    ECOBJECTS_EXPORT ECValuesCollection         GetChildValues (ECValueAccessorCR, IECInstanceCR) const;
