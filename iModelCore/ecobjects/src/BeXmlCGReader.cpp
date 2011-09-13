@@ -487,7 +487,7 @@ BeXmlCGParser::BeXmlCGParser ()
     }
 
 
-size_t BeXmlCGParser::AddGeometry (BeXmlNodeP node, bvector<IGeometryPtr> &geometry, size_t maxDepth)
+bool BeXmlCGParser::TryParse (BeXmlNodeP node, bvector<IGeometryPtr> &geometry, size_t maxDepth)
     {
     ICurvePrimitivePtr curvePrimitive;
     ISolidPrimitivePtr solidPrimitive;
@@ -510,10 +510,10 @@ size_t BeXmlCGParser::AddGeometry (BeXmlNodeP node, bvector<IGeometryPtr> &geome
         for (BeXmlNodeP child = node->GetFirstChild (BEXMLNODE_Element); NULL != child;
                     child = child->GetNextSibling (BEXMLNODE_Element))
             {
-            count += AddGeometry (child, geometry, maxDepth - 1);
+            count += TryParse (child, geometry, maxDepth - 1);
             }
         }
-    return count;
+    return count > 0;
     }
 
 
