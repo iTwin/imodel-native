@@ -38,7 +38,7 @@ struct  InstanceHeader
     InstanceFlags   m_instanceFlags;
     };
 
-enum ArrayModifierFlags : UInt32
+enum ArrayModifierFlags ENUM_UNDERLYING_TYPE (UInt32)
     {
     ARRAYMODIFIERFLAGS_IsFixedCount    = 0x01
     };
