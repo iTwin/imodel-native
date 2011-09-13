@@ -19,7 +19,9 @@ using namespace std;
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-const UInt32 BITS_PER_NULLFLAGSBITMASK = (sizeof(NullflagsBitmask) * 8);
+const UInt32 FLAGBITS_PER_NONSTRUCT_PROPERTY = 2;
+const UInt32 BITS_PER_NULLFLAGSBITMASK = (sizeof(NullflagsBitmask) * 8) >> FLAGBITS_PER_NONSTRUCT_PROPERTY;
+const UInt32 DIRTYFLAG_SHIFT = 0x10;
 
 #if defined (_WIN32) // WIP_NONPORT
 
@@ -520,7 +522,7 @@ void            ClassLayout::Factory::AddStructProperty (WCharCP accessString, E
 +---------------+---------------+---------------+---------------+---------------+------*/    
 void            ClassLayout::Factory::AddProperty (WCharCP accessString, ECTypeDescriptor typeDescriptor, UInt32 size, UInt32 modifierFlags, UInt32 modifierData)
     {
-    UInt32  positionInCurrentNullFlags = m_nonStructPropertyCount % 32;
+    UInt32  positionInCurrentNullFlags = m_nonStructPropertyCount % /*32*/ BITS_PER_NULLFLAGSBITMASK;
     NullflagsBitmask  nullflagsBitmask = 0x01 << positionInCurrentNullFlags;
     
     if (0 == positionInCurrentNullFlags && 0 != m_nonStructPropertyCount)
@@ -1330,6 +1332,47 @@ void            MemoryInstanceSupport::SetPropertyValueNull (PropertyLayoutCR pr
     else if (!isNull && nullflagsBitmask == (*nullflags & nullflagsBitmask))
         *nullflags ^= nullflagsBitmask; // turn off the null bit // WIP_FUSION: Needs to use ModifyData
     }    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            MemoryInstanceSupport::IsPropertyDirty (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index) const
+    {
+    UInt32 nullflagsOffset;
+    UInt32 nullflagsBitmask;
+    byte const * data = _GetData();
+    if (useIndex)
+        PrepareToAccessNullFlags (nullflagsOffset, nullflagsBitmask, data, propertyLayout, index);    
+    else
+        PrepareToAccessNullFlags (nullflagsOffset, nullflagsBitmask, data, propertyLayout);
+
+    nullflagsBitmask <<= DIRTYFLAG_SHIFT;   // upper bytes of bitfield are for dirty bits
+
+    NullflagsBitmask const * nullflags = (NullflagsBitmask const *)(data + nullflagsOffset);
+    return (0 != (*nullflags & nullflagsBitmask));    
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/
+void            MemoryInstanceSupport::SetPropertyDirty (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, bool isDirty)
+    {  
+    UInt32 nullflagsOffset;
+    UInt32 nullflagsBitmask;
+    byte const * data = _GetData();
+    if (useIndex)
+        PrepareToAccessNullFlags (nullflagsOffset, nullflagsBitmask, data, propertyLayout, index);   
+    else
+        PrepareToAccessNullFlags (nullflagsOffset, nullflagsBitmask, data, propertyLayout);   
+    
+    nullflagsBitmask <<= DIRTYFLAG_SHIFT;   // upper bytes of bitfield are for dirty bits
+
+    NullflagsBitmask * nullflags = (NullflagsBitmask *)(data + nullflagsOffset);
+    if (isDirty && 0 == (*nullflags & nullflagsBitmask))
+        *nullflags |= nullflagsBitmask;
+    else if (!isDirty && nullflagsBitmask == (*nullflags & nullflagsBitmask))
+        *nullflags ^= nullflagsBitmask;
+    }   
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
