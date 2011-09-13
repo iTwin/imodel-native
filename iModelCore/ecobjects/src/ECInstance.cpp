@@ -1855,15 +1855,24 @@ InstanceReadStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr& ecInstance
         
         ECSchemaReferenceList refList = schema->GetReferencedSchemas();
         ECSchemaReferenceList::const_iterator schemaIterator;
+        bool foundSchema = false;
         for (schemaIterator = refList.begin(); schemaIterator != refList.end(); schemaIterator++)
             {
             if (checkName && (*schemaIterator)->GetName() != schemaName)
                 continue;
-                
+            
+            foundSchema = true;
             if (NULL != (foundClass = (*schemaIterator)->GetClassP (className)))
                 break;
             }
+
+        if (!foundSchema)
+            {
+            ECObjectsLogger::Log()->errorv (L"ECCustomAttribute '%s' is from ECSchema '%s', which either was not referenced from ECSchema '%s' or could not be found.", className, m_fullSchemaName.c_str(), schema->GetName().c_str());
+            return INSTANCE_READ_STATUS_ECSchemaNotFound;
+            }
         }
+
     if (NULL == foundClass)
         {
         ECObjectsLogger::Log()->errorv (L"Failed to find ECClass %s in %s", className, m_fullSchemaName.c_str());
