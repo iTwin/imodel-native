@@ -73,7 +73,9 @@ $(o)Logger$(oext)          : $(baseDir)Logger.cpp $(ECObjectsHeaders) ${MultiCom
 
 $(o)FileUtilities$(oext)   : $(baseDir)nonport/FileUtilities.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)CGReader$(oext)         : $(baseDir)CGReader.cpp $(ecobjectsPublicAPISrc)CGReader.h ${MultiCompileDepends} 
+$(o)BeXmlCGReader$(oext)         : $(baseDir)BeXmlCGReader.cpp $(ecobjectsPublicAPISrc)BeXmlCommonGeometry.h ${MultiCompileDepends} 
+
+$(o)BeXmlCGWriter$(oext)         : $(baseDir)BeXmlCGWriter.cpp $(ecobjectsPublicAPISrc)BeXmlCommonGeometry.h ${MultiCompileDepends} 
 
 
 %include MultiCppCompileGo.mki

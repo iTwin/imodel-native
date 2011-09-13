@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: src/CGReader.cpp $
+|  $Source: src/BeXmlCGReader.cpp $
 |
 |  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,6 +8,7 @@
 
 #include "ECObjectsPch.h"
 
+BEGIN_BENTLEY_EC_NAMESPACE
 // If primitve has a child curve vector, just extract it.
 // Otherwise put the primitive in a new curve vector.
 static CurveVectorPtr CurveVectorOf (ICurvePrimitivePtr primitive, CurveVector::BoundaryType btype)
@@ -516,3 +517,4 @@ size_t BeXmlCGParser::AddGeometry (BeXmlNodeP node, bvector<IGeometryPtr> &geome
     }
 
 
+END_BENTLEY_EC_NAMESPACE
