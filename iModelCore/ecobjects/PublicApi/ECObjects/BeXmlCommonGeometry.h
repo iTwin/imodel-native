@@ -29,6 +29,12 @@ static ECOBJECTS_EXPORT bool TryParse (BeXmlNodeP node, ICurvePrimitivePtr &resu
 //! @param [out] result solid primitive.
 static ECOBJECTS_EXPORT bool TryParse (BeXmlNodeP node, ISolidPrimitivePtr &result);
 
+//! Try to read a bspline surface
+//! @return false if this node is not a bspline surface
+//! @param [in] node xml node
+//! @param [out] result bspline surface
+static ECOBJECTS_EXPORT bool TryParse (BeXmlNodeP node, MSBsplineSurfacePtr &result);
+
 //! Try to read any geometry types, optionally recursing through the xml tree
 //!    to find geometry items.
 //! @param [in] node top node of search
@@ -106,6 +112,10 @@ static ECOBJECTS_EXPORT void WriteDisk (BeXmlWriterR dest, DEllipse3dCR geometry
 //! Write a common geometry bspline curve
 //! @param [in] dest xml receiver
 static ECOBJECTS_EXPORT void WriteCurve (BeXmlWriterR dest, MSBsplineCurveCR curve);
+//! Write a common geometry bspline surface
+//! @param [in] dest xml receiver
+static ECOBJECTS_EXPORT void WriteSurface (BeXmlWriterR dest, MSBsplineSurfaceCR surface);
+
 //! Write a common geometry indexed mesh
 //! @param [in] dest xml receiver
 static ECOBJECTS_EXPORT void WritePolyface (BeXmlWriterR dest, PolyfaceVectors &mesh);
@@ -115,17 +125,6 @@ static ECOBJECTS_EXPORT void WriteTextPlacement (BeXmlWriterR dest, DPoint3dCR x
 //! Write a common geometry linestring
 //! @param [in] dest xml receiver
 static ECOBJECTS_EXPORT void WriteLineString (BeXmlWriterR dest, bvector<DPoint3d> const &points);
-
-//! Write common geometry xml for curve primitive.
-//! @param [in] dest xml receiver
-static ECOBJECTS_EXPORT void WriteCurvePrimitive (BeXmlWriterR dest, ICurvePrimitiveCR curve);
-//! Write common geometry xml for curve vector.
-//! @param [in] dest xml receiver
-static ECOBJECTS_EXPORT void WriteCurveVector (BeXmlWriterR dest, CurveVectorCR curve);
-//! @param [in] dest receiver writer.
-//! @param [in] curves source geometry
-//! @param [in] preferMostCompactPrimitives if true, try to substitute circular disk, elliptic disk for formal curve chain over singel primitive.
-static ECOBJECTS_EXPORT void WriteCurveVector (BeXmlWriterR dest, CurveVectorCR curves, bool preferMostCompactPrimitives);
 
 //! Write a placement from X and Y vectors.
 //! @param [in] origin origin of placement system.
@@ -163,6 +162,19 @@ static ECOBJECTS_EXPORT void WriteDgnRotationalSweepDetail (BeXmlWriterR dest, D
 //! @param [in] dest xml receiver
 //! @param [in] data ruled sweep data
 static ECOBJECTS_EXPORT void WriteDgnRuledSweepDetail (BeXmlWriterR dest, DgnRuledSweepDetail data);
+
+
+//! Write common geometry xml for curve primitive.
+//! @param [in] dest xml receiver
+static ECOBJECTS_EXPORT void Write (BeXmlWriterR dest, ICurvePrimitiveCR curve);
+//! Write common geometry xml for curve vector.
+//! @param [in] dest xml receiver
+static ECOBJECTS_EXPORT void Write (BeXmlWriterR dest, CurveVectorCR curve);
+//! @param [in] dest receiver writer.
+//! @param [in] curves source geometry
+//! @param [in] preferMostCompactPrimitives if true, try to substitute circular disk, elliptic disk for formal curve chain over singel primitive.
+static ECOBJECTS_EXPORT void Write (BeXmlWriterR dest, CurveVectorCR curves, bool preferMostCompactPrimitives);
+
 
 //! @param [in] dest xml receiver
 static ECOBJECTS_EXPORT void BeXmlCGWriter::Write (BeXmlWriterR dest, ISolidPrimitiveR data);

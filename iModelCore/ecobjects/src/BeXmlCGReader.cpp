@@ -141,6 +141,47 @@ bool GetDoubles (BeXmlNodeP parent, CharCP listName, CharCP pointName, bvector<d
 
 
 
+bool BeXmlCGParser::TryParse (BeXmlNodeP node, MSBsplineSurfacePtr &result)
+    {
+    int orderU = 0;
+    int orderV = 0;
+    bool closedU = false;
+    bool closedV = false;
+    int numPolesU = 0;
+    int numPolesV = 0;
+
+    bvector<DPoint3d> points;
+    bvector<double>   knotsU;
+    bvector<double>   knotsV;
+    bvector<double>   weights;
+
+
+    if (0 == stricmp (node->GetName (), "BsplineSurface")
+        && FindChildInt (node, "orderU", orderU)
+        && FindChildInt (node, "numUControlPoint", numPolesU)
+        && FindChildInt (node, "orderV", orderV)
+        && FindChildInt (node, "numVControlPoint", numPolesV)
+        && GetPoints (node, "ListOfControlPoint", NULL, points)
+        )
+        {
+        FindChildBool (node, "closedU", closedU);   // optional !!
+        FindChildBool (node, "closedV", closedV);   // optional !!
+        GetDoubles (node, "ListOfKnotU", "knotU", knotsU);
+        GetDoubles (node, "ListOfKnotU", "knotV", knotsV);
+        MSBsplineSurfacePtr surface = MSBsplineSurface::CreatePtr ();
+        if (SUCCESS == surface->Populate (points,
+                weights.size () > 0 ? &weights : NULL,
+                knotsU.size () > 0 ? &knotsU : NULL, orderU, numPolesU, closedU,
+                knotsV.size () > 0 ? &knotsV : NULL, orderV, numPolesV, closedV
+                ))
+            {
+            result = surface;
+            return true;
+            }
+        return true;
+        }
+    return false;
+    }
 
 bool BeXmlCGParser::TryParse (BeXmlNodeP node, ICurvePrimitivePtr &result)
     {
@@ -491,6 +532,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, bvector<IGeometryPtr> &geometry, 
     {
     ICurvePrimitivePtr curvePrimitive;
     ISolidPrimitivePtr solidPrimitive;
+    MSBsplineSurfacePtr surface;
     size_t count = 0;
     if (TryParse (node, curvePrimitive))
         {
@@ -500,6 +542,11 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, bvector<IGeometryPtr> &geometry, 
     else if (TryParse (node, solidPrimitive))
         {
         geometry.push_back (IGeometryPtr::Create(solidPrimitive));
+        count = 1;
+        }
+    else if (TryParse (node, surface))
+        {
+        geometry.push_back (IGeometryPtr::Create (surface));
         count = 1;
         }
     else if (maxDepth == 0)

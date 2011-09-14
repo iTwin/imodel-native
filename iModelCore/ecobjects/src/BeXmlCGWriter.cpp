@@ -316,6 +316,45 @@ void BeXmlCGWriter::WriteCurve (BeXmlWriterR dest, MSBsplineCurveCR curve)
     dest.WriteElementEnd ();
     }
 
+
+void BeXmlCGWriter::WriteSurface (BeXmlWriterR dest, MSBsplineSurfaceCR surface)
+    {
+    dest.WriteElementStart ("BsplineSurface");
+
+    WriteInt (dest, "orderU", surface.uParams.order);
+    WriteInt (dest, "numUControlPoint", surface.uParams.numPoles);
+    WriteBool (dest, "closedU", surface.uParams.closed ? true : false);
+
+    WriteInt (dest, "orderV", surface.vParams.order);
+    WriteInt (dest, "numVControlPoint", surface.vParams.numPoles);
+    WriteBool (dest, "closedV", surface.vParams.closed ? true : false);
+
+    size_t totalPoles = (size_t)surface.uParams.numPoles * (size_t)surface.vParams.numPoles;
+    bvector<DPoint3d> poles;
+    poles.assign (surface.poles, surface.poles + totalPoles);
+    WriteList (dest, poles, "ListOfControlPoint", "ControlPoint");
+    
+    if (surface.rational)
+        {
+        bvector<double> weights;
+        weights.assign (surface.weights, surface.weights + totalPoles);
+        WriteList (dest, weights, "ListOfWeight", "Weight");
+        }
+
+    bvector<double> uknots;
+    int numUKnots = surface.uParams.NumberAllocatedKnots ();
+    uknots.assign (surface.uKnots, surface.uKnots + numUKnots);
+    WriteList (dest, uknots, "ListOfKnotU", "KnotU");
+
+    bvector<double> vknots;
+    int numVKnots = surface.vParams.NumberAllocatedKnots ();
+    vknots.assign (surface.vKnots, surface.vKnots + numVKnots);
+    WriteList (dest, vknots, "ListOfKnotV", "KnotV");
+
+    dest.WriteElementEnd ();
+    }
+
+
 void BeXmlCGWriter::WriteTextPlacement
 (
 BeXmlWriterR dest,
@@ -343,7 +382,7 @@ void BeXmlCGWriter::WriteLineString (BeXmlWriterR dest, bvector<DPoint3d> const 
     }
 
 
-void BeXmlCGWriter::WriteCurvePrimitive (BeXmlWriterR dest, ICurvePrimitiveCR curve)
+void BeXmlCGWriter::Write (BeXmlWriterR dest, ICurvePrimitiveCR curve)
     {
     switch (curve.GetCurvePrimitiveType ())
         {
@@ -364,7 +403,7 @@ void BeXmlCGWriter::WriteCurvePrimitive (BeXmlWriterR dest, ICurvePrimitiveCR cu
             break;
 
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector:
-            WriteCurveVector (dest, *curve.GetChildCurveVectorCP ());
+            Write (dest, *curve.GetChildCurveVectorCP ());
             break;
         default:
             return;
@@ -372,12 +411,12 @@ void BeXmlCGWriter::WriteCurvePrimitive (BeXmlWriterR dest, ICurvePrimitiveCR cu
     }
 
 
-void BeXmlCGWriter::WriteCurveVector (BeXmlWriterR dest, CurveVectorCR curveVector)
+void BeXmlCGWriter::Write (BeXmlWriterR dest, CurveVectorCR curveVector)
     {
-    WriteCurveVector (dest, curveVector, true);
+    Write (dest, curveVector, true);
     }
 
-void BeXmlCGWriter::WriteCurveVector (BeXmlWriterR dest, CurveVectorCR curveVector, bool preferMostCompactPrimitives)
+void BeXmlCGWriter::Write (BeXmlWriterR dest, CurveVectorCR curveVector, bool preferMostCompactPrimitives)
     {
     switch (curveVector.GetBoundaryType ())
         {
@@ -397,7 +436,7 @@ void BeXmlCGWriter::WriteCurveVector (BeXmlWriterR dest, CurveVectorCR curveVect
                 dest.WriteElementStart ("CurveChain");
                     dest.WriteElementStart ("ListOfCurve");
                     FOR_EACH(ICurvePrimitivePtr curve , curveVector)
-                        WriteCurvePrimitive (dest, *curve);
+                        Write (dest, *curve);
                     dest.WriteElementEnd ();
                 dest.WriteElementEnd ();
                 }
@@ -409,7 +448,7 @@ void BeXmlCGWriter::WriteCurveVector (BeXmlWriterR dest, CurveVectorCR curveVect
             dest.WriteElementStart ("CurveChain");
                 dest.WriteElementStart ("ListOfCurve");
                 FOR_EACH(ICurvePrimitivePtr curve , curveVector)
-                    WriteCurvePrimitive (dest, *curve);
+                    Write (dest, *curve);
                 dest.WriteElementEnd ();
             dest.WriteElementEnd ();
 
@@ -430,7 +469,7 @@ void BeXmlCGWriter::WriteCurveVector (BeXmlWriterR dest, CurveVectorCR curveVect
                         case CurveVector::BOUNDARY_TYPE_Outer:
                             {
                             dest.WriteElementStart ("ExteriorLoop");
-                                WriteCurveVector (dest, *curve->GetChildCurveVectorCP (), false);
+                                Write (dest, *curve->GetChildCurveVectorCP (), false);
                             dest.WriteElementEnd ();
 
                             break;
@@ -450,7 +489,7 @@ void BeXmlCGWriter::WriteCurveVector (BeXmlWriterR dest, CurveVectorCR curveVect
 
             dest.WriteElementStart ("ListOfHoleLoop");
             for (size_t i=0; i<holeLoop.size (); i++)
-                WriteCurveVector (dest, *holeLoop[i]->GetChildCurveVectorCP (), false);
+                Write (dest, *holeLoop[i]->GetChildCurveVectorCP (), false);
             dest.WriteElementEnd ();
             dest.WriteElementEnd ();
             break;
@@ -460,7 +499,7 @@ void BeXmlCGWriter::WriteCurveVector (BeXmlWriterR dest, CurveVectorCR curveVect
             {
             dest.WriteElementStart ("SurfaceGroup");
             FOR_EACH(ICurvePrimitivePtr curve , curveVector)
-                WriteCurveVector (dest, *curve->GetChildCurveVectorCP ());
+                Write (dest, *curve->GetChildCurveVectorCP ());
             dest.WriteElementEnd ();
             
             break;
@@ -470,7 +509,7 @@ void BeXmlCGWriter::WriteCurveVector (BeXmlWriterR dest, CurveVectorCR curveVect
             {
             dest.WriteElementStart ("Group");
             FOR_EACH(ICurvePrimitivePtr curve , curveVector)
-                WriteCurvePrimitive (dest, *curve);
+                Write (dest, *curve);
             dest.WriteElementEnd ();
             
             break;
@@ -574,7 +613,7 @@ void BeXmlCGWriter::WriteDgnExtrusionDetail (BeXmlWriterR dest, DgnExtrusionDeta
         {
         dest.WriteElementStart (data.m_capped ? "SolidBySweptCurve" : "SurfaceBySweptCurve");
             dest.WriteElementStart ("BaseGeometry");
-            WriteCurveVector (dest, *data.m_baseCurve);
+            Write (dest, *data.m_baseCurve);
             dest.WriteElementEnd ();
             DSegment3d segment;
             segment.point[0] = curveStart;
@@ -639,7 +678,7 @@ void BeXmlCGWriter::WriteDgnRotationalSweepDetail (BeXmlWriterR dest, DgnRotatio
         {
         dest.WriteElementStart (data.m_capped ? "SolidBySweptCurve" : "SurfaceBySweptCurve");
             dest.WriteElementStart ("BaseGeometry");
-            WriteCurveVector (dest, *data.m_baseCurve);
+            Write (dest, *data.m_baseCurve);
             dest.WriteElementEnd ();
             DEllipse3d arc = BuildSweepArc (*data.m_baseCurve, localToWorld, worldToLocal, data.m_sweepAngle);
             dest.WriteElementStart ("RailCurve");
@@ -716,14 +755,14 @@ void BeXmlCGWriter::Write (BeXmlWriterR dest, IGeometryPtr geometry)
     CurveVectorPtr cv;
     if (geometry.TryGetAs (cv))
         {
-        WriteCurveVector (dest, *cv);
+        Write (dest, *cv);
         return;
         }
 
     ICurvePrimitivePtr cp;
     if (geometry.TryGetAs (cp))
         {
-        WriteCurvePrimitive (dest, *cp);
+        Write (dest, *cp);
         return;
         }
 
@@ -741,13 +780,11 @@ void BeXmlCGWriter::Write (BeXmlWriterR dest, IGeometryPtr geometry)
         return;
         }
     
-#ifdef WriteBsurface
     MSBsplineSurfacePtr bsurface;
     if (geometry.TryGetAs (bsurface))
         {
-        WriteSurface (bsurface);
+        WriteSurface (dest, *bsurface);
         return;
         }
-#endif
     }
 END_BENTLEY_EC_NAMESPACE
