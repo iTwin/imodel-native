@@ -9,7 +9,7 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 static double s_nearZero = 9.0e-16;
-static int s_maxIndexPerLine = 5;
+static size_t s_maxIndexPerLine = 5;
 static wchar_t const *sNamespaceAttribute = L"xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"";
 
 static double SuppressNearZeroCoordinate (double x, double refValue)
