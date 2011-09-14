@@ -381,6 +381,13 @@ void BeXmlCGWriter::WriteLineString (BeXmlWriterR dest, bvector<DPoint3d> const 
     dest.WriteElementEnd ();
     }
 
+void BeXmlCGWriter::WritePolygon (BeXmlWriterR dest, bvector<DPoint3d> const &points)
+    {
+    dest.WriteElementStart ("Polygon");
+    WriteList (dest, points, "ListOfPoint", "xyz");
+    dest.WriteElementEnd ();
+    }
+
 
 void BeXmlCGWriter::Write (BeXmlWriterR dest, ICurvePrimitiveCR curve)
     {
@@ -424,12 +431,20 @@ void BeXmlCGWriter::Write (BeXmlWriterR dest, CurveVectorCR curveVector, bool pr
         case CurveVector::BOUNDARY_TYPE_Inner:
             {
             DEllipse3d arc;
+            bvector<DPoint3d> const *points;
             if (preferMostCompactPrimitives
                 && curveVector.size () == 1
                 && curveVector[0]->TryGetArc (arc)
                 && arc.IsFullEllipse ())
                 {
-                WriteArc (dest, arc);
+                WriteDisk (dest, arc);
+                }
+            else if (preferMostCompactPrimitives
+                && curveVector.size () == 1
+                && NULL != (points = curveVector[0]->GetLineStringCP ())
+                )
+                {
+                WritePolygon (dest, *points);
                 }
             else
                 {
@@ -445,13 +460,19 @@ void BeXmlCGWriter::Write (BeXmlWriterR dest, CurveVectorCR curveVector, bool pr
 
         case CurveVector::BOUNDARY_TYPE_Open:
             {
-            dest.WriteElementStart ("CurveChain");
-                dest.WriteElementStart ("ListOfCurve");
-                FOR_EACH(ICurvePrimitivePtr curve , curveVector)
-                    Write (dest, *curve);
+            if (preferMostCompactPrimitives && curveVector.size () == 1)
+                {
+                Write (dest, *curveVector[0]);
+                }
+            else
+                {
+                dest.WriteElementStart ("CurveChain");
+                    dest.WriteElementStart ("ListOfCurve");
+                    FOR_EACH(ICurvePrimitivePtr curve , curveVector)
+                        Write (dest, *curve);
+                    dest.WriteElementEnd ();
                 dest.WriteElementEnd ();
-            dest.WriteElementEnd ();
-
+                }
             break;
             }
 

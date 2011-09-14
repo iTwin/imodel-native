@@ -300,6 +300,19 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ICurvePrimitivePtr &result)
             return true;
             }
         }
+    else if (stricmp (node->GetName (), "Polygon") == 0)
+        {
+        bvector<DPoint3d> points;
+        if (GetPoints (node, "ListOfPoint", NULL, points))    // allow any tag name in the points !!!
+            {
+            ICurvePrimitivePtr linestring = ICurvePrimitive::CreateLineString (points);
+            CurveVectorPtr area = CurveVector::Create
+                        (CurveVector::BOUNDARY_TYPE_Outer);
+            area->push_back (linestring);
+            result = ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*area);
+            return true;
+            }
+        }
     else if (stricmp (node->GetName (), "CircularDisk") == 0)
         {
         RotMatrix axes;

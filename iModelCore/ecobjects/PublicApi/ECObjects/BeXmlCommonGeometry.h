@@ -125,6 +125,9 @@ static ECOBJECTS_EXPORT void WriteTextPlacement (BeXmlWriterR dest, DPoint3dCR x
 //! Write a common geometry linestring
 //! @param [in] dest xml receiver
 static ECOBJECTS_EXPORT void WriteLineString (BeXmlWriterR dest, bvector<DPoint3d> const &points);
+//! Write a common geometry polygon
+//! @param [in] dest xml receiver
+static ECOBJECTS_EXPORT void WritePolygon (BeXmlWriterR dest, bvector<DPoint3d> const &points);
 
 //! Write a placement from X and Y vectors.
 //! @param [in] origin origin of placement system.
