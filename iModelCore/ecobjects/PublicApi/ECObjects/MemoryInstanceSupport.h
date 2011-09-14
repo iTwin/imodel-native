@@ -296,6 +296,7 @@ private:
         
     static ECObjectsStatus    CreateNullArrayElementsAt (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, MemoryInstanceSupportR instance, UInt32 insertIndex, UInt32 insertCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP=NULL);
     };
+
 /*__PUBLISH_SECTION_START__*/    
 
 //=======================================================================================    
@@ -310,7 +311,7 @@ struct MemoryInstanceSupport
     
 private:    
     bool                        m_allowWritingDirectlyToInstanceMemory;
-       
+
     //! Returns the offset of the property value relative to the start of the instance data.
     //! If useIndex is true then the offset of the array element value at the specified index is returned.
     UInt32              GetOffsetOfPropertyValue (PropertyLayoutCR propertyLayout, bool useIndex = false, UInt32 index = 0) const;
@@ -401,14 +402,6 @@ protected:
     ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElementsFromMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
     ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 removeIndex, UInt32 removeCount);
     ECOBJECTS_EXPORT WString          InstanceDataToString (WCharCP indent, ClassLayoutCR classLayout) const;
-    
-    //! Returns true if the dirty bit has been set for the specified property
-    ECOBJECTS_EXPORT bool             IsPropertyDirty (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index) const;
-
-    //! Sets or unsets the dirty bit for the specified property
-    //! MemoryInstanceSupport only provides the facilities for getting/setting dirty bits
-    //! Any decision-making based on the dirty bits is left to derived classes
-    ECOBJECTS_EXPORT void             SetPropertyDirty (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, bool isDirty);
 
     virtual ~MemoryInstanceSupport () {}
 
@@ -421,6 +414,9 @@ protected:
     virtual ECObjectsStatus           _SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index) = 0;
     virtual ECObjectsStatus           _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const = 0;
     virtual ECObjectsStatus           _RemoveStructArrayElementsFromMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP) = 0;
+
+    //! Invoked after a variable-sized array is successfully resized, to allow derived classes to adjust their internal state in response if necessary.
+    virtual void                      _HandleArrayResize (PropertyLayoutCP propertyLayout, UInt32 atIndex, Int32 countDelta) { };
 
     virtual bool                _IsMemoryInitialized () const = 0;    
     

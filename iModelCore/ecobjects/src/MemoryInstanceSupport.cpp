@@ -19,9 +19,7 @@ using namespace std;
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-const UInt32 FLAGBITS_PER_NONSTRUCT_PROPERTY = 2;
-const UInt32 BITS_PER_NULLFLAGSBITMASK = (sizeof(NullflagsBitmask) * 8) >> FLAGBITS_PER_NONSTRUCT_PROPERTY;
-const UInt32 DIRTYFLAG_SHIFT = 0x10;
+const UInt32 BITS_PER_NULLFLAGSBITMASK = (sizeof(NullflagsBitmask) * 8);
 
 #if defined (_WIN32) // WIP_NONPORT
 
@@ -1336,47 +1334,6 @@ void            MemoryInstanceSupport::SetPropertyValueNull (PropertyLayoutCR pr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            MemoryInstanceSupport::IsPropertyDirty (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index) const
-    {
-    UInt32 nullflagsOffset;
-    UInt32 nullflagsBitmask;
-    byte const * data = _GetData();
-    if (useIndex)
-        PrepareToAccessNullFlags (nullflagsOffset, nullflagsBitmask, data, propertyLayout, index);    
-    else
-        PrepareToAccessNullFlags (nullflagsOffset, nullflagsBitmask, data, propertyLayout);
-
-    nullflagsBitmask <<= DIRTYFLAG_SHIFT;   // upper bytes of bitfield are for dirty bits
-
-    NullflagsBitmask const * nullflags = (NullflagsBitmask const *)(data + nullflagsOffset);
-    return (0 != (*nullflags & nullflagsBitmask));    
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            MemoryInstanceSupport::SetPropertyDirty (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, bool isDirty)
-    {  
-    UInt32 nullflagsOffset;
-    UInt32 nullflagsBitmask;
-    byte const * data = _GetData();
-    if (useIndex)
-        PrepareToAccessNullFlags (nullflagsOffset, nullflagsBitmask, data, propertyLayout, index);   
-    else
-        PrepareToAccessNullFlags (nullflagsOffset, nullflagsBitmask, data, propertyLayout);   
-    
-    nullflagsBitmask <<= DIRTYFLAG_SHIFT;   // upper bytes of bitfield are for dirty bits
-
-    NullflagsBitmask * nullflags = (NullflagsBitmask *)(data + nullflagsOffset);
-    if (isDirty && 0 == (*nullflags & nullflagsBitmask))
-        *nullflags |= nullflagsBitmask;
-    else if (!isDirty && nullflagsBitmask == (*nullflags & nullflagsBitmask))
-        *nullflags ^= nullflagsBitmask;
-    }   
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/
 UInt32          MemoryInstanceSupport::GetOffsetOfPropertyValue (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index) const
     {
     UInt32 offset = propertyLayout.GetOffset();
@@ -1647,6 +1604,9 @@ ECObjectsStatus MemoryInstanceSupport::RemoveArrayElementsFromMemory (ClassLayou
     // replace all property data for the instance
     status = _ModifyData (0, data, bytesAllocated);
 
+    if (ECOBJECTS_STATUS_Success == status)
+        _HandleArrayResize (&propertyLayout, removeIndex, -1 * removeCount);
+
 #ifdef DEBUGGING_ARRAYENTRY_REMOVAL           
     WString postDeleteLayout = InstanceDataToString (L"", classLayout);
     if (postDeleteLayout.empty())
@@ -1679,8 +1639,13 @@ ECObjectsStatus MemoryInstanceSupport::RemoveArrayElements (ClassLayoutCR classL
 
     if (typeDescriptor.IsPrimitiveArray())
         return RemoveArrayElementsFromMemory (classLayout, propertyLayout, removeIndex, removeCount);
-    else if (typeDescriptor.IsStructArray())              
-        return _RemoveStructArrayElementsFromMemory (classLayout, propertyLayout, removeIndex, removeCount, memoryReallocationCallbackP);       
+    else if (typeDescriptor.IsStructArray())    
+        {
+        ECObjectsStatus result = _RemoveStructArrayElementsFromMemory (classLayout, propertyLayout, removeIndex, removeCount, memoryReallocationCallbackP);       
+        if (ECOBJECTS_STATUS_Success == result)
+            _HandleArrayResize (&propertyLayout, removeIndex, -1 * removeCount);
+        return result;
+        }
 
     POSTCONDITION (false && "Can not set the value to memory using the specified property layout because it is an unsupported datatype", ECOBJECTS_STATUS_DataTypeNotSupported);
     }
@@ -1719,7 +1684,11 @@ ECObjectsStatus MemoryInstanceSupport::InsertNullArrayElementsAt (ClassLayoutCR 
     
     PRECONDITION (insertCount > 0, ECOBJECTS_STATUS_IndexOutOfRange)        
     
-    return ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, insertIndex, insertCount, memoryReallocationCallbackP);
+    status = ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, insertIndex, insertCount, memoryReallocationCallbackP);
+    if (ECOBJECTS_STATUS_Success == status)
+        _HandleArrayResize (pPropertyLayout, insertIndex, insertCount);
+
+    return status;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -1741,7 +1710,12 @@ ECObjectsStatus       MemoryInstanceSupport::AddNullArrayElementsAt (ClassLayout
     
     PRECONDITION (count > 0, ECOBJECTS_STATUS_IndexOutOfRange)        
     
-    return ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, GetAllocatedArrayCount (propertyLayout), count, memoryReallocationCallbackP);
+    ArrayCount index = GetAllocatedArrayCount (propertyLayout);
+    status = ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, index, count, memoryReallocationCallbackP);
+    if (ECOBJECTS_STATUS_Success == status)
+        _HandleArrayResize (pPropertyLayout, index, count);
+
+    return status;
     }         
 
 /*---------------------------------------------------------------------------------**//**
@@ -1813,7 +1787,7 @@ ECObjectsStatus       MemoryInstanceSupport::GrowPropertyValue (ClassLayoutCR cl
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 MemoryInstanceSupport::MemoryInstanceSupport (bool allowWritingDirectlyToInstanceMemory) :
-    m_allowWritingDirectlyToInstanceMemory (allowWritingDirectlyToInstanceMemory) 
+    m_allowWritingDirectlyToInstanceMemory (allowWritingDirectlyToInstanceMemory)
     {
     }
         
@@ -2470,7 +2444,7 @@ WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, Clas
     return L"";
 #endif 
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
