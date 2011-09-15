@@ -2179,7 +2179,9 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
                 return ECOBJECTS_STATUS_Success;
             
             // WIP_FUSION: would it speed things up to poke directly when m_allowWritingDirectlyToInstanceMemory is true?    
-            return _ModifyData (offset, dataBuffer, bytesNeeded);
+            ECObjectsStatus result = _ModifyData (offset, dataBuffer, bytesNeeded);
+            free (dataBuffer);
+            return result;
             }
         case PRIMITIVETYPE_Boolean:
             {

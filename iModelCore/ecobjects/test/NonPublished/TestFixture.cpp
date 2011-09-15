@@ -170,6 +170,7 @@ void    ECTestFixture::TestForIECInstanceLeaks ()
         IECInstance::Debug_ReportLeaks (classNamesToExclude);
 
         EXPECT_TRUE (numLiveInstances <= MAX_INTERNAL_INSTANCES) << message;
+        IECInstance::Debug_ResetAllocationStats ();
         }
 #endif
     }
