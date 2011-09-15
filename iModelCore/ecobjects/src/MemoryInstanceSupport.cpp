@@ -520,7 +520,7 @@ void            ClassLayout::Factory::AddStructProperty (WCharCP accessString, E
 +---------------+---------------+---------------+---------------+---------------+------*/    
 void            ClassLayout::Factory::AddProperty (WCharCP accessString, ECTypeDescriptor typeDescriptor, UInt32 size, UInt32 modifierFlags, UInt32 modifierData)
     {
-    UInt32  positionInCurrentNullFlags = m_nonStructPropertyCount % 32;
+    UInt32  positionInCurrentNullFlags = m_nonStructPropertyCount % /*32*/ BITS_PER_NULLFLAGSBITMASK;
     NullflagsBitmask  nullflagsBitmask = 0x01 << positionInCurrentNullFlags;
     
     if (0 == positionInCurrentNullFlags && 0 != m_nonStructPropertyCount)
@@ -1604,6 +1604,9 @@ ECObjectsStatus MemoryInstanceSupport::RemoveArrayElementsFromMemory (ClassLayou
     // replace all property data for the instance
     status = _ModifyData (0, data, bytesAllocated);
 
+    if (ECOBJECTS_STATUS_Success == status)
+        _HandleArrayResize (&propertyLayout, removeIndex, -1 * removeCount);
+
 #ifdef DEBUGGING_ARRAYENTRY_REMOVAL           
     WString postDeleteLayout = InstanceDataToString (L"", classLayout);
     if (postDeleteLayout.empty())
@@ -1636,8 +1639,13 @@ ECObjectsStatus MemoryInstanceSupport::RemoveArrayElements (ClassLayoutCR classL
 
     if (typeDescriptor.IsPrimitiveArray())
         return RemoveArrayElementsFromMemory (classLayout, propertyLayout, removeIndex, removeCount);
-    else if (typeDescriptor.IsStructArray())              
-        return _RemoveStructArrayElementsFromMemory (classLayout, propertyLayout, removeIndex, removeCount, memoryReallocationCallbackP);       
+    else if (typeDescriptor.IsStructArray())    
+        {
+        ECObjectsStatus result = _RemoveStructArrayElementsFromMemory (classLayout, propertyLayout, removeIndex, removeCount, memoryReallocationCallbackP);       
+        if (ECOBJECTS_STATUS_Success == result)
+            _HandleArrayResize (&propertyLayout, removeIndex, -1 * removeCount);
+        return result;
+        }
 
     POSTCONDITION (false && "Can not set the value to memory using the specified property layout because it is an unsupported datatype", ECOBJECTS_STATUS_DataTypeNotSupported);
     }
@@ -1676,7 +1684,11 @@ ECObjectsStatus MemoryInstanceSupport::InsertNullArrayElementsAt (ClassLayoutCR 
     
     PRECONDITION (insertCount > 0, ECOBJECTS_STATUS_IndexOutOfRange)        
     
-    return ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, insertIndex, insertCount, memoryReallocationCallbackP);
+    status = ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, insertIndex, insertCount, memoryReallocationCallbackP);
+    if (ECOBJECTS_STATUS_Success == status)
+        _HandleArrayResize (pPropertyLayout, insertIndex, insertCount);
+
+    return status;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -1698,7 +1710,12 @@ ECObjectsStatus       MemoryInstanceSupport::AddNullArrayElementsAt (ClassLayout
     
     PRECONDITION (count > 0, ECOBJECTS_STATUS_IndexOutOfRange)        
     
-    return ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, GetAllocatedArrayCount (propertyLayout), count, memoryReallocationCallbackP);
+    ArrayCount index = GetAllocatedArrayCount (propertyLayout);
+    status = ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, index, count, memoryReallocationCallbackP);
+    if (ECOBJECTS_STATUS_Success == status)
+        _HandleArrayResize (pPropertyLayout, index, count);
+
+    return status;
     }         
 
 /*---------------------------------------------------------------------------------**//**
@@ -1770,7 +1787,7 @@ ECObjectsStatus       MemoryInstanceSupport::GrowPropertyValue (ClassLayoutCR cl
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 MemoryInstanceSupport::MemoryInstanceSupport (bool allowWritingDirectlyToInstanceMemory) :
-    m_allowWritingDirectlyToInstanceMemory (allowWritingDirectlyToInstanceMemory) 
+    m_allowWritingDirectlyToInstanceMemory (allowWritingDirectlyToInstanceMemory)
     {
     }
         
@@ -2429,7 +2446,7 @@ WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, Clas
     return L"";
 #endif 
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/

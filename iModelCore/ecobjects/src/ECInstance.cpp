@@ -503,7 +503,13 @@ ECObjectsStatus           IECInstance::GetValueUsingAccessor (ECValueR v, ECValu
 
         status = getValueHelper (v, *currentInstance, accessor, depth, compatible);
         if (ECOBJECTS_STATUS_Success != status)
-            return status;
+            {
+            // if we're accessing a property of an embedded struct, we expect GetValue() to return a null struct - so continue
+            if (v.IsStruct () && v.IsNull () && ECValueAccessor::INDEX_ROOT == accessor[depth].arrayIndex)
+                continue;
+            else
+                return status;
+            }
 
         if (v.IsStruct() && accessor[depth].arrayIndex >= 0)
             currentInstance = v.GetStruct();
