@@ -249,7 +249,7 @@ void initOriginalStandardSchemaNames()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchema::ShouldSchemaNotBeImported
+bool ECSchema::ShouldNotBeStored
 (
 ) const
     {
@@ -1049,7 +1049,7 @@ ECSchemaDeserializationContextR schemaContext
         }
 
     // Step 3: look in the paths provided by the context
-    schema = LocateSchemaByPath(name, versionMajor, versionMinor, schemaContext);
+    schema = LocateSchemaByPath(name, versionMajor, versionMinor, schemaContext, true, NULL);
     if (NULL != schema)
         return schema;
 
@@ -1113,7 +1113,8 @@ UInt32&                         versionMajor,
 UInt32&                         versionMinor,
 ECSchemaDeserializationContextR schemaContext,
 bool                            useLatestCompatibleMatch,
-bool                            acceptImperfectLegacyMatch
+bool                            acceptImperfectLegacyMatch,
+bvector<WString>*               searchPaths
 )
     {
     foundImperfectLegacyMatch = false;
@@ -1123,7 +1124,10 @@ bool                            acceptImperfectLegacyMatch
     ECSchemaP   schemaOut = NULL;
     WString fullFileName;
 
-    FOR_EACH (WString schemaPath, schemaContext.GetSchemaPaths())
+    if (NULL == searchPaths)
+        searchPaths = &schemaContext.GetSchemaPaths();
+        
+    FOR_EACH (WString schemaPath, *searchPaths)
         {
         if (schemaPath[schemaPath.length() - 1] != '\\')
             schemaPath += '\\';
@@ -1174,7 +1178,8 @@ const WString&                 name,
 UInt32&                         versionMajor,
 UInt32&                         versionMinor,
 ECSchemaDeserializationContextR schemaContext,
-bool                            useLatestCompatibleMatch
+bool                            useLatestCompatibleMatch,
+bvector<WString>*               searchPaths
 )
     {
     wchar_t versionString[24];
@@ -1188,27 +1193,41 @@ bool                            useLatestCompatibleMatch
     WString fullFileName;
 
     bool foundImperfectLegacyMatch;
-    ECSchemaP   schemaOut = FindMatchingSchema (foundImperfectLegacyMatch, schemaMatchExpression, name, versionMajor, versionMinor, schemaContext, useLatestCompatibleMatch, false);
+    ECSchemaP   schemaOut = FindMatchingSchema (foundImperfectLegacyMatch, schemaMatchExpression, name, versionMajor, versionMinor, schemaContext, useLatestCompatibleMatch, false, searchPaths);
     if (schemaContext.m_acceptLegacyImperfectLatestCompatibleMatch && NULL == schemaOut && foundImperfectLegacyMatch && useLatestCompatibleMatch)
-        schemaOut = FindMatchingSchema (foundImperfectLegacyMatch, schemaMatchExpression, name, versionMajor, versionMinor, schemaContext, useLatestCompatibleMatch, true);
+        schemaOut = FindMatchingSchema (foundImperfectLegacyMatch, schemaMatchExpression, name, versionMajor, versionMinor, schemaContext, useLatestCompatibleMatch, true, searchPaths);
 
     return schemaOut;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                02/2010
+* @bsimethod                                    Casey.Mullen                09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP       ECSchema::LocateSchemaByPath
-(
-const WString&                 name,
-UInt32&                         versionMajor,
-UInt32&                         versionMinor,
-ECSchemaDeserializationContextR schemaContext
-)
+SchemaFileLocater::SchemaFileLocater (bvector<WString>& searchPaths) : m_searchPaths(searchPaths) {};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Casey.Mullen                09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaFileLocater::~SchemaFileLocater () {};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Casey.Mullen                09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaFileLocaterPtr SchemaFileLocater::CreateSchemaFileLocater(bvector<WString>& searchPaths)
     {
-    return LocateSchemaByPath (name, versionMajor, versionMinor, schemaContext, true);
+    return new SchemaFileLocater(searchPaths);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Casey.Mullen                09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaP SchemaFileLocater::_LocateSchema(WCharCP name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaDeserializationContextR schemaContext)
+    {
+    WString schemaName(name);
+    bool useLatestCompatibleMatch = matchType != SCHEMAMATCHTYPE_Exact;
+    return ECSchema::LocateSchemaByPath (schemaName, versionMajor, versionMinor, schemaContext, useLatestCompatibleMatch, &m_searchPaths);
+    }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1220,17 +1239,12 @@ UInt32&                         versionMinor,
 ECSchemaDeserializationContextR schemaContext
 )
     {
-    // Make a copy of the paths stored in schemaContext
-    T_WStringVector originalPaths = schemaContext.GetSchemaPaths();
-
-    // Clear out the stored paths and replace with the standard ones
-    schemaContext.ClearSchemaPaths();
-
     WString dllPath = ECFileUtilities::GetDllPath();
     if (0 == dllPath.length())
         return NULL;
-        
-    schemaContext.AddSchemaPath (dllPath.c_str());
+    
+    bvector<WString> searchPaths;
+    searchPaths.push_back (dllPath);    
     
     wchar_t schemaPath[MAX_PATH];
     wchar_t generalPath[MAX_PATH];
@@ -1239,17 +1253,11 @@ ECSchemaDeserializationContextR schemaContext
     swprintf(schemaPath, MAX_PATH, L"%sECSchemas\\Standard", dllPath.c_str());
     swprintf(generalPath, MAX_PATH, L"%sECSchemas\\Standard\\General", dllPath.c_str());
     swprintf(libraryPath, MAX_PATH, L"%sECSchemas\\Standard\\LibraryUnits", dllPath.c_str());
-    schemaContext.AddSchemaPath(schemaPath);
-    schemaContext.AddSchemaPath(generalPath);
-    schemaContext.AddSchemaPath(libraryPath);
+    searchPaths.push_back (schemaPath);
+    searchPaths.push_back (generalPath);
+    searchPaths.push_back (libraryPath);
     
-    // Do the search
-    ECSchemaP   foundSchema = LocateSchemaByPath (name, versionMajor, versionMinor, schemaContext);
-
-    // Put the context back the way it was when we started
-    schemaContext.GetSchemaPaths() = originalPaths;
-
-    return foundSchema;
+    return LocateSchemaByPath (name, versionMajor, versionMinor, schemaContext, true, &searchPaths);
     }
 
 /*---------------------------------------------------------------------------------**//**

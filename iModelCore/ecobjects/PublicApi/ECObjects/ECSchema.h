@@ -450,9 +450,11 @@ typedef bool (*TraversalDelegate) (ECClassCP, const void *);
 /*__PUBLISH_SECTION_START__*/
 
 struct StandaloneECEnabler;
+struct SchemaFileLocater;
 typedef RefCountedPtr<StandaloneECEnabler>  StandaloneECEnablerPtr;
 typedef StandaloneECEnabler*                StandaloneECEnablerP;
 typedef RefCountedPtr<ECSchemaCache>        ECSchemaCachePtr;
+typedef RefCountedPtr<SchemaFileLocater>    SchemaFileLocaterPtr;
 
 //=======================================================================================
 //! @ingroup ECObjectsGroup
@@ -1029,13 +1031,30 @@ public:
 };
 
 //=======================================================================================
+//! Locates schemas by looking in a given set of file system folder for ECSchemaXml files
+//=======================================================================================
+struct SchemaFileLocater : IECSchemaLocater, RefCountedBase, NonCopyableClass
+{
+/*__PUBLISH_SECTION_END__*/
+private:
+    bvector<WString> m_searchPaths;
+    SchemaFileLocater (bvector<WString>& searchPaths);
+    virtual ~SchemaFileLocater();
+protected:
+    virtual ECSchemaP _LocateSchema(WCharCP name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaDeserializationContextR schemaContext) override;
+/*__PUBLISH_SECTION_START__*/
+public:
+    ECOBJECTS_EXPORT static SchemaFileLocaterPtr CreateSchemaFileLocater(bvector<WString>& searchPaths);
+};
+
+//=======================================================================================
 //! @ingroup ECObjectsGroup
 //! The in-memory representation of a schema as defined by ECSchemaXML
 //=======================================================================================
 struct ECSchema /*__PUBLISH_ABSTRACT__*/ : public IECCustomAttributeContainer
 {
 /*__PUBLISH_SECTION_END__*/
-
+friend SchemaFileLocater;
 // Schemas are RefCounted but none of the constructs held by schemas (classes, properties, etc.) are.
 // They are freed when the schema is freed.
 
@@ -1068,10 +1087,9 @@ private:
     SchemaReadStatus ReadClassStubsFromXml(MSXML2_IXMLDOMNode& schemaNodePtr,ClassDeserializationVector& classes, ECSchemaDeserializationContextR context);
     SchemaReadStatus ReadClassContentsFromXml(ClassDeserializationVector&  classes, ECSchemaDeserializationContextR context);
     SchemaReadStatus ReadSchemaReferencesFromXml(MSXML2_IXMLDOMNode& schemaNodePtr, ECSchemaDeserializationContextR context);
-    static ECSchemaP LocateSchemaByPath(const WString & name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR context, bool useLatestCompatibleMatch);
-    static ECSchemaP LocateSchemaByPath(const WString & name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR context);
+    static ECSchemaP LocateSchemaByPath(const WString & name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR context, bool useLatestCompatibleMatch, bvector<WString>* searchPaths);
     static ECSchemaP LocateSchemaByStandardPaths(const WString & name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR context);
-    static ECSchemaP FindMatchingSchema(bool& foundImperfectLegacyMatch, WStringCR schemaMatchExpression, WStringCR name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR schemaContext, bool useLatestCompatibleMatch, bool acceptImperfectLegacyMatch);
+    static ECSchemaP FindMatchingSchema(bool& foundImperfectLegacyMatch, WStringCR schemaMatchExpression, WStringCR name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR schemaContext, bool useLatestCompatibleMatch, bool acceptImperfectLegacyMatch, bvector<WString>* searchPaths);
     struct  ECSchemaSerializationContext
         {
         bset<WCharCP> m_alreadySerializedClasses;
@@ -1113,9 +1131,9 @@ public:
     ECOBJECTS_EXPORT bool               IsStandardSchema() const;
 
     //! Returns true if and only if the full schema name (including version) represents a standard schema that should never
-    //! be imported into a repository.
+    //! be stored persistently in a repository (we expect it to be found elsewhere)
     //@return True if this version of the schema is one that should never be imported into a repository
-    ECOBJECTS_EXPORT bool               ShouldSchemaNotBeImported() const;
+    ECOBJECTS_EXPORT bool               ShouldNotBeStored() const;
 
     //! If the class name is valid, will create an ECClass object and add the new class to the schema
     //! @param[out] ecClass If successful, will contain a new ECClass object

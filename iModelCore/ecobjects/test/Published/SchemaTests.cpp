@@ -1044,10 +1044,10 @@ TEST_F(SchemaLocateTest, DetermineWhetherSchemaCanBeImported)
     UInt32 versionMinor = 4;
     schema = ECSchema::LocateSchema(L"Bentley_Standard_CustomAttributes", versionMajor, versionMinor, *schemaContext);
     EXPECT_TRUE(NULL != schema);
-    EXPECT_FALSE(schema->ShouldSchemaNotBeImported());
+    EXPECT_FALSE(schema->ShouldNotBeStored());
 
     ECSchema::CreateSchema(schema, L"Units_Schema", 1, 4, *schemaOwner);
-    EXPECT_TRUE(schema->ShouldSchemaNotBeImported());
+    EXPECT_TRUE(schema->ShouldNotBeStored());
 
     CoUninitialize();
     }
