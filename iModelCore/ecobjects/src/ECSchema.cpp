@@ -328,7 +328,7 @@ WCharCP name
 
 void ECSchema::DebugDump()const
     {
-    wprintf(L"ECSchema: this=0x%x  %s.%d.%d, nClasses=%d\n", this, m_name.c_str(), m_versionMajor, m_versionMinor, m_classMap.size());
+    wprintf(L"ECSchema: this=0x%x  %s.%02d.%02d, nClasses=%d\n", this, m_name.c_str(), m_versionMajor, m_versionMinor, m_classMap.size());
     for (ClassMap::const_iterator it = m_classMap.begin(); it != m_classMap.end(); ++it)
         {
         bpair<WCharCP, ECClassP>const& entry = *it;
@@ -987,7 +987,7 @@ ECSchemaDeserializationContextR schemaContext
         if (m_name.compare(schemaName) == 0)
             continue;
 
-        ECObjectsLogger::Log()->debugv (L"About to locate referenced ECSchema %s.%d.%d", schemaName, versionMajor, versionMinor);
+        ECObjectsLogger::Log()->debugv (L"About to locate referenced ECSchema %s.%02d.%02d", schemaName, versionMajor, versionMinor);
         ECSchemaP referencedSchema = LocateSchema(schemaName, versionMajor, versionMinor, schemaContext);
 
         if (NULL != referencedSchema)
@@ -1147,7 +1147,7 @@ bvector<WString>*               searchPaths
             foundImperfectLegacyMatch = true;
             if (acceptImperfectLegacyMatch)
                 {
-                ECObjectsLogger::Log()->warningv (L"Located %s, which does not meet 'latest compatible' criteria to match %s.%d.%d, but is being accepted because some legacy schemas are known to require this", 
+                ECObjectsLogger::Log()->warningv (L"Located %s, which does not meet 'latest compatible' criteria to match %s.%02d.%02d, but is being accepted because some legacy schemas are known to require this", 
                                                   fullFileName.c_str(), name.c_str(), versionMajor, versionMinor);
                 // See if this imperfect match ECSchema has is already cached (so we can avoid loading it, below)
                 schemaOut = schemaContext.GetSchemaOwner().LocateSchema (name.c_str(), versionMajor, foundVersionMinor, SCHEMAMATCHTYPE_Exact);
@@ -1300,11 +1300,11 @@ ECSchemaDeserializationContextR     schemaContext
     if ((NULL == (versionAttributePtr = nodeAttributesPtr->getNamedItem (SCHEMA_VERSION_ATTRIBUTE))) ||
         SUCCESS != ParseVersionString (versionMajor, versionMinor, (WCharCP) versionAttributePtr->text))
         {
-        ECObjectsLogger::Log()->warningv (L"Invalid version attribute has been ignored while deserializing ECSchema '%s'.  The default version number %d.%d has been applied.", 
+        ECObjectsLogger::Log()->warningv (L"Invalid version attribute has been ignored while deserializing ECSchema '%s'.  The default version number %02d.%02d has been applied.", 
             (WCharCP)attributePtr->text, versionMajor, versionMinor);
         }
 
-    ECObjectsLogger::Log()->debugv (L"Deserializing ECSchema %s.%d.%d", (WCharCP)attributePtr->text, versionMajor, versionMinor);
+    ECObjectsLogger::Log()->debugv (L"Deserializing ECSchema %s.%02d.%02d", (WCharCP)attributePtr->text, versionMajor, versionMinor);
 
     IECSchemaOwnerR schemaOwner = schemaContext.GetSchemaOwner();
     bool            hideFromLeakDetection = schemaContext.GetHideSchemasFromLeakDetection();
@@ -1670,7 +1670,7 @@ ECSchemaDeserializationContextR schemaContext
     if (ECOBJECTS_STATUS_Success != status)
         ECObjectsLogger::Log()->errorv (L"Failed to deserialize XML file: %s", ecSchemaXmlFile);
     else
-        ECObjectsLogger::Log()->infov (L"Native ECSchema Deserialized from file: fileName='%s', schemaName='%s.%d.%d' classCount='%d' address='0x%x'", 
+        ECObjectsLogger::Log()->infov (L"Native ECSchema Deserialized from file: fileName='%s', schemaName='%s.%02d.%02d' classCount='%d' address='0x%x'", 
             ecSchemaXmlFile, schemaOut->GetName().c_str(), schemaOut->GetVersionMajor(), schemaOut->GetVersionMinor(), schemaOut->m_classMap.size(), schemaOut);        
 
     return status;
@@ -1712,7 +1712,7 @@ ECSchemaDeserializationContextR schemaContext
         ECObjectsLogger::Log()->errorv (L"Failed to deserialize XML from string (1st 200 characters): %s", first200Characters);
         }
     else
-        ECObjectsLogger::Log()->infov (L"Native ECSchema Deserialized from string: schemaName='%s.%d.%d' classCount='%d' schemaAddress='0x%x' stringAddress='0x%x'", 
+        ECObjectsLogger::Log()->infov (L"Native ECSchema Deserialized from string: schemaName='%s.%02d.%02d' classCount='%d' schemaAddress='0x%x' stringAddress='0x%x'", 
             schemaOut->GetName().c_str(), schemaOut->GetVersionMajor(), schemaOut->GetVersionMinor(), schemaOut->m_classMap.size(), schemaOut, ecSchemaXml);
     return status;
     }
