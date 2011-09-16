@@ -172,7 +172,10 @@ void SetAndVerifyStringArray (IECInstanceR instance, ECValueR v, WCharCP accessS
         {
         incrementingString.append (L"X");
         v.SetString(incrementingString.c_str());
-        EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v, i));
+
+        // since the test sets some of the array values more than once to the same value we must check SUCCESS || ECOBJECTS_STATUS_PropertyValueMatchesNoChange 
+        ECObjectsStatus status = instance.SetValue (accessString, v, i);
+        EXPECT_TRUE (SUCCESS == status || ECOBJECTS_STATUS_PropertyValueMatchesNoChange == status);
         }
     
     VerifyStringArray (instance, v, accessString, value, 0, count);
@@ -196,8 +199,11 @@ void SetAndVerifyIntegerArray (IECInstanceR instance, ECValueR v, WCharCP access
     {
     for (UInt32 i=0 ; i < count ; i++)        
         {
-        v.SetInteger(baseValue + i);        
-        EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v, i));
+        v.SetInteger(baseValue + i); 
+
+        // since the test sets some of the array values more than once to the same value we must check SUCCESS || ECOBJECTS_STATUS_PropertyValueMatchesNoChange 
+        ECObjectsStatus status = instance.SetValue (accessString, v, i);
+        EXPECT_TRUE (SUCCESS == status || ECOBJECTS_STATUS_PropertyValueMatchesNoChange == status);
         }
         
     VerifyIntegerArray (instance, v, accessString, baseValue, 0, count);
@@ -250,6 +256,7 @@ WString    GetTestSchemaXMLString (WCharCP schemaName, UInt32 versionMajor, UInt
                     L"        <ECProperty propertyName=\"ABoolean\"         typeName=\"boolean\"  />"
                     L"        <ECProperty propertyName=\"ALong\"            typeName=\"long\"  />"
                     L"        <ECProperty propertyName=\"ABinary\"          typeName=\"binary\"  />"
+                    L"        <ECProperty propertyName=\"ReadOnlyInt\"      typeName=\"int\" readOnly=\"True\"  />"
                     L"        <ECArrayProperty propertyName=\"SomeStrings\" typeName=\"string\" />"
                     L"        <ECArrayProperty propertyName=\"SomeInts\"    typeName=\"int\" />"
                     L"        <ECArrayProperty propertyName=\"SomePoint3ds\"    typeName=\"point3d\" />"
@@ -633,7 +640,6 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     SetAndVerifyString (instance, v, L"B", L"Very Happy");
     SetAndVerifyString (instance, v, L"B", L"sad");
     SetAndVerifyString (instance, v, L"S", L"Lucky");
-    SetAndVerifyString (instance, v, L"B", L"sad");
     SetAndVerifyString (instance, v, L"B", L"Very Very Happy");
     VerifyString (instance, v, L"S", L"Lucky");
     SetAndVerifyString (instance, v, L"Manufacturer.Name", L"Charmed");
@@ -644,7 +650,6 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     for (int i = 0; i < 20; i++)
         wcscat (largeString, L"S2345678901234567890123456789012");
     
-    //size_t len = wcslen(largeString);
     SetAndVerifyString (instance, v, L"S", largeString);
     
     for (int i = 0; i < N_FINAL_STRING_PROPS_IN_FAKE_CLASS; i++)
@@ -760,6 +765,11 @@ TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetIntegerValue (*instance, L"SomeInts[0]", (int)(50)));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetInteger      (*instance, intVal, L"SomeInts[0]"));
     EXPECT_TRUE ((int)(50) == intVal);
+
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetIntegerValue (*instance, L"ReadOnlyInt", (int)(50)));
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetInteger  (*instance, intVal, L"ReadOnlyInt"));
+    EXPECT_TRUE ((int)(50) == intVal);
+    EXPECT_TRUE (ECOBJECTS_STATUS_UnableToSetReadOnlyProperty == ECInstanceInteropHelper::SetIntegerValue (*instance, L"ReadOnlyInt", (int)(50)));
 
     WCharCP   stringVal;
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, L"AString", L"TEST123"));

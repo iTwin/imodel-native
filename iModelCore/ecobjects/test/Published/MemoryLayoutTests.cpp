@@ -172,7 +172,10 @@ void SetAndVerifyStringArray (IECInstanceR instance, ECValueR v, WCharCP accessS
         {
         incrementingString.append (L"X");
         v.SetString(incrementingString.c_str());
-        EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v, i));
+
+        // since the test sets some of the array values more than once to the same value we must check SUCCESS || ECOBJECTS_STATUS_PropertyValueMatchesNoChange 
+        ECObjectsStatus status = instance.SetValue (accessString, v, i);
+        EXPECT_TRUE (SUCCESS == status || ECOBJECTS_STATUS_PropertyValueMatchesNoChange == status);
         }
     
     VerifyStringArray (instance, v, accessString, value, 0, count);
@@ -196,8 +199,11 @@ void SetAndVerifyIntegerArray (IECInstanceR instance, ECValueR v, WCharCP access
     {
     for (UInt32 i=0 ; i < count ; i++)        
         {
-        v.SetInteger(baseValue + i);        
-        EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v, i));
+        v.SetInteger(baseValue + i); 
+
+        // since the test sets some of the array values more than once to the same value we must check SUCCESS || ECOBJECTS_STATUS_PropertyValueMatchesNoChange 
+        ECObjectsStatus status = instance.SetValue (accessString, v, i);
+        EXPECT_TRUE (SUCCESS == status || ECOBJECTS_STATUS_PropertyValueMatchesNoChange == status);
         }
         
     VerifyIntegerArray (instance, v, accessString, baseValue, 0, count);
@@ -687,7 +693,6 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     SetAndVerifyString (instance, v, L"B", L"Very Happy");
     SetAndVerifyString (instance, v, L"B", L"sad");
     SetAndVerifyString (instance, v, L"S", L"Lucky");
-    SetAndVerifyString (instance, v, L"B", L"sad");
     SetAndVerifyString (instance, v, L"B", L"Very Very Happy");
     VerifyString (instance, v, L"S", L"Lucky");
     SetAndVerifyString (instance, v, L"Manufacturer.Name", L"Charmed");
@@ -2186,13 +2191,17 @@ TEST_F (MemoryLayoutTests, IterateCompleClass)
     ECValue d1(0.71266461290077521);
 
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"BooleanProperty", b));
+    EXPECT_TRUE (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == instance->SetValue (L"BooleanProperty", b));
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"SimpleArrayProperty[]", s1, 0));
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"StructProperty.StringProperty", s2));
+    EXPECT_TRUE (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == instance->SetValue (L"StructProperty.StringProperty", s2));
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"StructProperty.IntProperty", i1));
+    EXPECT_TRUE (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == instance->SetValue (L"StructProperty.IntProperty", i1));
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"StructProperty.ArrayProperty[]", s3, 0));
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"StringProperty", s4));
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"IntProperty", i2));
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"DoubleProperty", d1));
+    EXPECT_TRUE (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == instance->SetValue (L"DoubleProperty", d1));
 
     EXPECT_TRUE (SUCCESS == structInstance->SetValue (L"StringProperty", s5));
     EXPECT_TRUE (SUCCESS == structInstance->SetValue (L"IntProperty", i3));

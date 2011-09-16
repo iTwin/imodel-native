@@ -149,6 +149,10 @@ enum ECObjectsStatus
     ECOBJECTS_STATUS_NullPointerValue                                   = ECOBJECTS_ERROR_BASE + 0x16,
     ECOBJECTS_STATUS_NotCustomAttributeClass                            = ECOBJECTS_ERROR_BASE + 0x17,
     ECOBJECTS_STATUS_DuplicateSchema                                    = ECOBJECTS_ERROR_BASE + 0x18,
+    ECOBJECTS_STATUS_UnableToSetReadOnlyInstance                        = ECOBJECTS_ERROR_BASE + 0x19,
+    ECOBJECTS_STATUS_UnableToSetReadOnlyProperty                        = ECOBJECTS_ERROR_BASE + 0x1A,
+    ECOBJECTS_STATUS_ArrayIndexDoesNotExist                             = ECOBJECTS_ERROR_BASE + 0x1B,
+    ECOBJECTS_STATUS_PropertyValueMatchesNoChange                       = ECOBJECTS_ERROR_BASE + 0x1C,
     ECOBJECTS_STATUS_Error                                              = ECOBJECTS_ERROR_BASE + 0xFFF,
     }; 
 

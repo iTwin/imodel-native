@@ -1199,6 +1199,7 @@ ECValueAccessor::ECValueAccessor (ECValueAccessorCR accessor)
     : m_locationVector (accessor.GetLocationVector())
     {
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/

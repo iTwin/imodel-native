@@ -56,7 +56,9 @@ union SupportingInstanceUnion
 * @bsiclass 
 +===============+===============+===============+===============+===============+======*/
 struct MemoryECInstanceBase : MemoryInstanceSupport
-    {
+{
+friend struct IECInstance;
+
 private:
     InstanceDataUnion       m_data;
     UInt32                  m_bytesAllocated;
@@ -112,8 +114,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT size_t                   LoadDataIntoManagedInstance (byte* managedBuffer, size_t sizeOfManagedBuffer) const;
     ECOBJECTS_EXPORT void                     FixupStructArrayOffsets (int offsetToGap, size_t resizeAmount, bool removingGap);
     ECOBJECTS_EXPORT ECObjectsStatus          RemoveStructArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount, EmbeddedInstanceCallbackP memoryCallback);
-
-    };
+};
 
 /*=================================================================================**//**
 //! @ingroup ECObjectsGroup

@@ -338,10 +338,38 @@ ECObjectsStatus     IECInstance::GetValue (ECValueR v, WCharCP propertyAccessStr
 ECObjectsStatus     IECInstance::GetValue (ECValueR v, WCharCP propertyAccessString, UInt32 arrayIndex) const { return _GetValue (v, propertyAccessString, true, arrayIndex); }
 ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex) const { return _GetValue (v, propertyIndex, false, 0); }
 ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex, UInt32 arrayIndex) const { return _GetValue (v, propertyIndex, true, arrayIndex); }
-ECObjectsStatus     IECInstance::SetValue (WCharCP propertyAccessString, ECValueCR v) { return _SetValue (propertyAccessString, v, false, 0); }
-ECObjectsStatus     IECInstance::SetValue (WCharCP propertyAccessString, ECValueCR v, UInt32 arrayIndex) { return _SetValue (propertyAccessString, v, true, arrayIndex); }
-ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v) { return _SetValue (propertyIndex, v, false, 0); }
-ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) { return _SetValue (propertyIndex, v, true, arrayIndex); }
+
+ECObjectsStatus     IECInstance::SetValue (WCharCP propertyAccessString, ECValueCR v) 
+    {
+    if (IsReadOnly())
+        return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
+    return _SetValue (propertyAccessString, v, false, 0); 
+    }
+
+ECObjectsStatus     IECInstance::SetValue (WCharCP propertyAccessString, ECValueCR v, UInt32 arrayIndex) 
+    {
+    if (IsReadOnly())
+        return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
+
+    return _SetValue (propertyAccessString, v, true, arrayIndex); 
+    }
+
+ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v) 
+    {
+    if (IsReadOnly())
+        return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
+
+    return _SetValue (propertyIndex, v, false, 0); 
+    }
+
+ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) 
+    { 
+    if (IsReadOnly())
+        return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
+
+    return _SetValue (propertyIndex, v, true, arrayIndex); 
+    }
+
 bool                IECInstance::IsPropertyReadOnly (UInt32 propertyIndex) const { return _IsPropertyReadOnly (propertyIndex); }
 bool                IECInstance::IsPropertyReadOnly (WCharCP accessString) const { return _IsPropertyReadOnly (accessString); }
 
@@ -472,9 +500,23 @@ static ECObjectsStatus          setValueHelper (IECInstanceR instance, ECValueAc
     if (compatible)
         {
         UInt32 propertyIndex = (UInt32)accessor[depth].propertyIndex;
-        if(arrayIndex < 0)
-            return instance.SetValue(propertyIndex, value);
 
+#ifdef NOT_YET
+        bool readonlyProperty = instance.IsPropertyReadOnly (propertyIndex);
+#endif
+
+        if(arrayIndex < 0)
+            {
+#ifdef NOT_YET
+            if (readonlyProperty && !instance.IsNullValue(propertyIndex))
+                return ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
+#endif
+            return instance.SetValue(propertyIndex, value);
+            }
+#ifdef NOT_YET
+        if (readonlyProperty && !instance.IsNullValue (propertyIndex, (UInt32)arrayIndex))
+            return ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
+#endif
         return instance.SetValue (propertyIndex, value, (UInt32)arrayIndex);
         }
 
@@ -517,6 +559,9 @@ ECObjectsStatus           IECInstance::GetValueUsingAccessor (ECValueR v, ECValu
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 ECObjectsStatus           IECInstance::SetValueUsingAccessor (ECValueAccessorCR accessor, ECValueCR valueToSet)
     {
+    if (IsReadOnly())
+        return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
+
     ECObjectsStatus status          = ECOBJECTS_STATUS_Success;
     IECInstancePtr  currentInstance = this;
 
@@ -541,11 +586,15 @@ ECObjectsStatus           IECInstance::SetValueUsingAccessor (ECValueAccessorCR 
 
             UInt32 arraySize = arrayInfoPlaceholder.GetArrayInfo().GetCount();
 
-            //Expand array if necessary.
+            //Expand array if necessary. -- this should never be called for a native instance embedded in a managed instance
             if ((UInt32)arrayIndex >= arraySize)
                 {
                 if (arrayInfoPlaceholder.GetArrayInfo().IsFixedCount())
                     return ECOBJECTS_STATUS_IndexOutOfRange;
+
+                 MemoryECInstanceBase* mbInstance = GetAsMemoryECInstance();
+                 if (NULL != mbInstance && mbInstance->m_isInManagedInstance)
+                     return ECOBJECTS_STATUS_ArrayIndexDoesNotExist;
 
                 UInt32 numToInsert = 1 + (UInt32)arrayIndex - arraySize;
 
@@ -768,6 +817,10 @@ static ECClassP GetClassFromReferencedSchemas (ECSchemaCR rootSchema, WCharCP sc
 +---------------+---------------+---------------+---------------+---------------+------*/
 static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar_t* indexBuffer, ECValueCR v, IECInstanceR instance, WCharCP managedPropertyAccessor)
     {
+    // skip all the work if the instance is read only
+    if (instance.IsReadOnly())
+        return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
+
     // see if access string specifies an array
     WCharCP pos1 = wcschr (managedPropertyAccessor, L'[');
 
@@ -897,7 +950,7 @@ ECObjectsStatus ECInstanceInteropHelper::SetIntegerValue (IECInstanceR instance,
     ECValue v(value);
     return setECValueInInstance (v, instance, managedPropertyAccessor);
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/       
@@ -1254,6 +1307,37 @@ bool            ECInstanceInteropHelper::IsPropertyReadOnly (IECInstanceCR insta
         }
     return instance.IsPropertyReadOnly (propertyIndex);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+EC::ECEnablerP                  ECInstanceInteropHelper::GetEnablerForStructArrayEntry (IECInstanceR instance, ECValueAccessorR arrayMemberAccessor, WCharCP schemaName, WCharCP className)
+    {
+    EC::ECValue v;
+    instance.GetValueUsingAccessor (v, arrayMemberAccessor);
+
+    if (!v.IsStruct())
+        return NULL;
+
+    if (!v.IsNull())
+        {
+        EC::IECInstancePtr structInstance = v.GetStruct();
+        return &structInstance->GetEnablerR();
+        }
+
+    // if we get here we probably have a fixed size array with NULL entries
+    EC::ECEnablerP structArrayEnabler = const_cast<EC::ECEnablerP>(arrayMemberAccessor.DeepestLocation().enabler);
+
+    EC::StandaloneECEnablerPtr standaloneEnabler = structArrayEnabler->GetEnablerForStructArrayMember (schemaName, className);
+    if (standaloneEnabler.IsNull())
+        {
+        ECObjectsLogger::Log()->errorv (L"Unable to locate a standalone enabler for class %s", className);
+        return NULL;
+        }
+
+    return standaloneEnabler.get();
+    }
+
 
 #ifdef NOT_USED
 /*---------------------------------------------------------------------------------**//**
@@ -3368,7 +3452,7 @@ WCharCP IECInstance::GetInstanceLabelPropertyName () const
     {
     ECClassCR ecClass = GetClass(); 
 
-        // see if the struct has a custom attribute to custom serialize itself
+    // see if the struct has a custom attribute to custom serialize itself
     IECInstancePtr caInstance = ecClass.GetCustomAttribute(L"InstanceLabelSpecification");
     if (caInstance.IsValid())
         {

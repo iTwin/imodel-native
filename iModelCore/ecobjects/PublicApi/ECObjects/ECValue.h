@@ -274,7 +274,6 @@ private:
     LocationVector          m_locationVector;
     const LocationVector&   GetLocationVector() const;
 
-
 public:
 /*__PUBLISH_SECTION_END__*/
 

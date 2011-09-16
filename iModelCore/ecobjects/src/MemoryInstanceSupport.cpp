@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+
+
 |
 |     $Source: src/MemoryInstanceSupport.cpp $
 |
@@ -109,7 +109,22 @@ static inline UInt32    CalculateFixedArrayPropertySize (UInt32 fixedCount, Prim
     return (CalculateNumberNullFlagsBitmasks (fixedCount) * sizeof (NullflagsBitmask)) + 
         (fixedCount *ECValue::GetFixedPrimitiveValueSize(primitiveType));
     }  
-            
+           
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    PropertyLayout::SetReadOnlyMask (bool readOnly)
+    {
+    bool outVal = PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly == (m_modifierFlags & PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly);
+
+    if (readOnly)
+        m_modifierFlags |= PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly;
+    else
+        m_modifierFlags &= ~PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly;
+
+    return outVal;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -140,7 +155,7 @@ bool            PropertyLayout::IsFixedSized () const
         return true;
 
     return ( ( m_typeDescriptor.IsPrimitive() || 
-               (m_typeDescriptor.IsPrimitiveArray() && (m_modifierFlags & ARRAYMODIFIERFLAGS_IsFixedCount))
+               (m_typeDescriptor.IsPrimitiveArray() && (m_modifierFlags & PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount))
              ) && PrimitiveTypeIsFixedSize (m_typeDescriptor.GetPrimitiveType()));
     }
       
@@ -538,7 +553,7 @@ void            ClassLayout::Factory::AddProperty (WCharCP accessString, ECTypeD
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void            ClassLayout::Factory::AddFixedSizeProperty (WCharCP accessString, ECTypeDescriptor typeDescriptor)
+void            ClassLayout::Factory::AddFixedSizeProperty (WCharCP accessString, ECTypeDescriptor typeDescriptor, bool isReadOnly)
     {
     if (!EXPECTED_CONDITION (m_state == AcceptingFixedSizeProperties)) // ClassLayoutNotAcceptingFixedSizeProperties    
         return;
@@ -550,27 +565,35 @@ void            ClassLayout::Factory::AddFixedSizeProperty (WCharCP accessString
         }
     
     UInt32 size = ECValue::GetFixedPrimitiveValueSize (typeDescriptor.GetPrimitiveType());
-    
-    AddProperty (accessString, typeDescriptor, size);
+ 
+    UInt32  modifierFlags = 0;
+    if (isReadOnly)
+        modifierFlags |= PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly; 
+
+    AddProperty (accessString, typeDescriptor, size, modifierFlags);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/ 
-void            ClassLayout::Factory::AddFixedSizeArrayProperty (WCharCP accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount)
+void            ClassLayout::Factory::AddFixedSizeArrayProperty (WCharCP accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount, bool isReadOnly)
     {
     if (!EXPECTED_CONDITION (m_state == AcceptingFixedSizeProperties)) // ClassLayoutNotAcceptingFixedSizeProperties    
         return;
     
     UInt32 size = CalculateFixedArrayPropertySize (arrayCount, typeDescriptor.GetPrimitiveType());
-    
-    AddProperty (accessString, typeDescriptor, size, ARRAYMODIFIERFLAGS_IsFixedCount, arrayCount);
+
+    UInt32  modifierFlags = PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount;
+    if (isReadOnly)
+        modifierFlags |= PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly; 
+   
+    AddProperty (accessString, typeDescriptor, size, modifierFlags, arrayCount);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/ 
-void            ClassLayout::Factory::AddVariableSizeProperty (WCharCP accessString, ECTypeDescriptor typeDescriptor)
+void            ClassLayout::Factory::AddVariableSizeProperty (WCharCP accessString, ECTypeDescriptor typeDescriptor, bool isReadOnly)
     {
     if (m_state == AcceptingFixedSizeProperties)
         m_state = AcceptingVariableSizeProperties;
@@ -580,13 +603,17 @@ void            ClassLayout::Factory::AddVariableSizeProperty (WCharCP accessStr
         
     UInt32 size = sizeof(SecondaryOffset); // the offset will just point to this secondary offset
 
-    AddProperty (accessString, typeDescriptor, size);
+    UInt32  modifierFlags = 0;
+    if (isReadOnly)
+        modifierFlags |= PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly; 
+
+    AddProperty (accessString, typeDescriptor, size, modifierFlags);
     }  
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/ 
-void            ClassLayout::Factory::AddVariableSizeArrayPropertyWithFixedCount (WCharCP accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount)
+void            ClassLayout::Factory::AddVariableSizeArrayPropertyWithFixedCount (WCharCP accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount, bool isReadOnly)
     {
     if (m_state == AcceptingFixedSizeProperties)
         m_state = AcceptingVariableSizeProperties;
@@ -595,8 +622,11 @@ void            ClassLayout::Factory::AddVariableSizeArrayPropertyWithFixedCount
         return;
         
     UInt32 size = sizeof(SecondaryOffset); // the offset will just point to this secondary offset
-    
-    AddProperty (accessString, typeDescriptor, size, ARRAYMODIFIERFLAGS_IsFixedCount, arrayCount);
+    UInt32 modifierFlags = PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount;
+    if (isReadOnly)
+        modifierFlags |= PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly; 
+
+    AddProperty (accessString, typeDescriptor, size, modifierFlags, arrayCount);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -622,9 +652,9 @@ void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, WCharCP 
             bool isFixedSize = PrimitiveTypeIsFixedSize(primitiveType);
 
             if (addingFixedSizeProps && isFixedSize)
-                AddFixedSizeProperty (propName.c_str(), primitiveType);
+                AddFixedSizeProperty (propName.c_str(), primitiveType, property->GetIsReadOnly());
             else if ( ! addingFixedSizeProps && ! isFixedSize)
-                AddVariableSizeProperty (propName.c_str(), primitiveType);
+                AddVariableSizeProperty (propName.c_str(), primitiveType, property->GetIsReadOnly());
             }
         else if (property->GetIsStruct())
             {
@@ -643,22 +673,22 @@ void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, WCharCP 
                 bool isFixedPropertySize = isFixedArrayCount && PrimitiveTypeIsFixedSize (arrayProp->GetPrimitiveElementType());
                 
                 if (addingFixedSizeProps && isFixedPropertySize)
-                    AddFixedSizeArrayProperty (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()), arrayProp->GetMinOccurs());
+                    AddFixedSizeArrayProperty (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()), arrayProp->GetMinOccurs(), property->GetIsReadOnly());
                 else if (!addingFixedSizeProps && !isFixedPropertySize)
                     {
                     if (isFixedArrayCount)
-                        AddVariableSizeArrayPropertyWithFixedCount (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()), arrayProp->GetMinOccurs());
+                        AddVariableSizeArrayPropertyWithFixedCount (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()), arrayProp->GetMinOccurs(), property->GetIsReadOnly());
                     else
-                        AddVariableSizeProperty (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()));
+                        AddVariableSizeProperty (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()), property->GetIsReadOnly());
                     }
                 }
             else if ((arrayKind == ARRAYKIND_Struct) && (!addingFixedSizeProps))
                 {
                 bool isFixedArrayCount = (arrayProp->GetMinOccurs() == arrayProp->GetMaxOccurs());
                 if (isFixedArrayCount)
-                    AddVariableSizeArrayPropertyWithFixedCount (propName.c_str(), ECTypeDescriptor::CreateStructArrayTypeDescriptor(), arrayProp->GetMinOccurs());
+                    AddVariableSizeArrayPropertyWithFixedCount (propName.c_str(), ECTypeDescriptor::CreateStructArrayTypeDescriptor(), arrayProp->GetMinOccurs(), property->GetIsReadOnly());
                 else
-                    AddVariableSizeProperty (propName.c_str(), ECTypeDescriptor::CreateStructArrayTypeDescriptor());                
+                    AddVariableSizeProperty (propName.c_str(), ECTypeDescriptor::CreateStructArrayTypeDescriptor(), property->GetIsReadOnly());                
                 }
             }
         }
@@ -677,8 +707,8 @@ ClassLayoutP    ClassLayout::Factory::DoBuildClassLayout ()
 
     if (m_underConstruction.m_isRelationshipClass)
         {
-        AddVariableSizeProperty (PROPERTYLAYOUT_Source_ECPointer, PRIMITIVETYPE_Binary);
-        AddVariableSizeProperty (PROPERTYLAYOUT_Target_ECPointer, PRIMITIVETYPE_Binary);
+        AddVariableSizeProperty (PROPERTYLAYOUT_Source_ECPointer, PRIMITIVETYPE_Binary, false);
+        AddVariableSizeProperty (PROPERTYLAYOUT_Target_ECPointer, PRIMITIVETYPE_Binary, false);
         }
 
     m_underConstruction.FinishLayout ();
@@ -904,6 +934,30 @@ UInt32          ClassLayout::GetPropertyCountExcludingEmbeddedStructs () const
 
     return nonStructPropertyCount;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            ClassLayout::IsPropertyReadOnly (UInt32 propertyIndex) const
+    {
+    assert (propertyIndex < m_propertyLayouts.size());
+    if (propertyIndex >= m_propertyLayouts.size())
+        return true; 
+        
+    return m_propertyLayouts[propertyIndex]->IsReadOnlyProperty (); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            ClassLayout::SetPropertyReadOnly (UInt32 propertyIndex,  bool readOnly) const
+    {
+    assert (propertyIndex < m_propertyLayouts.size());
+    if (propertyIndex >= m_propertyLayouts.size())
+        return false; 
+        
+    return m_propertyLayouts[propertyIndex]->SetReadOnlyMask (readOnly); 
+    }    
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
@@ -1199,7 +1253,7 @@ InstanceHeader const& MemoryInstanceSupport::PeekInstanceHeader (void const* dat
 +---------------+---------------+---------------+---------------+---------------+------*/
 ArrayCount      MemoryInstanceSupport::GetReservedArrayCount (PropertyLayoutCR propertyLayout) const
     {
-    if (propertyLayout.GetModifierFlags() & ARRAYMODIFIERFLAGS_IsFixedCount)
+    if (propertyLayout.GetModifierFlags() & PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount)
         return propertyLayout.GetModifierData();
     else
         return GetAllocatedArrayCount (propertyLayout);
@@ -1448,7 +1502,7 @@ ECObjectsStatus MemoryInstanceSupport::RemoveArrayElementsFromMemory (ClassLayou
     {
     ECObjectsStatus status = ECOBJECTS_STATUS_Error;
 
-    bool isFixedCount = (propertyLayout.GetModifierFlags() & ARRAYMODIFIERFLAGS_IsFixedCount);
+    bool isFixedCount = (propertyLayout.GetModifierFlags() & PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount);
     PRECONDITION (!isFixedCount && propertyLayout.GetTypeDescriptor().IsArray() && "A variable size array property is required to remove an array entry", ECOBJECTS_STATUS_PreconditionViolated);
     
     PRECONDITION (removeCount > 0, ECOBJECTS_STATUS_IndexOutOfRange)        
@@ -1674,7 +1728,7 @@ ECObjectsStatus MemoryInstanceSupport::InsertNullArrayElementsAt (ClassLayoutCR 
             
     PropertyLayoutCR propertyLayout = *pPropertyLayout;
     // WIP_FUSION improve error codes
-    bool isFixedCount = (propertyLayout.GetModifierFlags() & ARRAYMODIFIERFLAGS_IsFixedCount);
+    bool isFixedCount = (propertyLayout.GetModifierFlags() & PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount);
     PRECONDITION (!isFixedCount && propertyLayout.GetTypeDescriptor().IsArray() && "A variable size array property is required to grow an array", ECOBJECTS_STATUS_PreconditionViolated);
     
     PRECONDITION (insertCount > 0, ECOBJECTS_STATUS_IndexOutOfRange)        
@@ -1696,7 +1750,7 @@ ECObjectsStatus       MemoryInstanceSupport::AddNullArrayElementsAt (ClassLayout
             
     PropertyLayoutCR propertyLayout = *pPropertyLayout;
     // WIP_FUSION improve error codes
-    bool isFixedCount = (propertyLayout.GetModifierFlags() & ARRAYMODIFIERFLAGS_IsFixedCount);
+    bool isFixedCount = (propertyLayout.GetModifierFlags() & PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount);
     PRECONDITION (!isFixedCount && propertyLayout.GetTypeDescriptor().IsArray() && "A variable size array property is required to grow an array", ECOBJECTS_STATUS_PreconditionViolated);
     
     PRECONDITION (count > 0, ECOBJECTS_STATUS_IndexOutOfRange)        
@@ -1884,7 +1938,7 @@ ECObjectsStatus       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValu
     {
     DEBUG_EXPECT (propertyLayout.GetTypeDescriptor().IsArray() == useIndex);   
 
-    bool isInUninitializedFixedCountArray = ((useIndex) && (propertyLayout.GetModifierFlags() & ARRAYMODIFIERFLAGS_IsFixedCount) && (GetAllocatedArrayCount (propertyLayout) == 0));    
+    bool isInUninitializedFixedCountArray = ((useIndex) && (propertyLayout.GetModifierFlags() & PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount) && (GetAllocatedArrayCount (propertyLayout) == 0));    
     if (isInUninitializedFixedCountArray || (IsPropertyValueNull(propertyLayout, useIndex, index)))
         {
         v.SetPrimitiveType (propertyLayout.GetTypeDescriptor().GetPrimitiveType());
@@ -2005,7 +2059,7 @@ ECObjectsStatus       MemoryInstanceSupport::GetValueFromMemory (ECValueR v, Pro
     else if (typeDescriptor.IsArray())
         {                
         UInt32 arrayCount = GetReservedArrayCount (propertyLayout);  
-        bool isFixedArrayCount = propertyLayout.GetModifierFlags() & ARRAYMODIFIERFLAGS_IsFixedCount;                            
+        bool isFixedArrayCount = propertyLayout.GetModifierFlags() & PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount;                            
         if (typeDescriptor.IsPrimitiveArray())
             return v.SetPrimitiveArrayInfo (typeDescriptor.GetPrimitiveType(), arrayCount, isFixedArrayCount);
         else if (typeDescriptor.IsStructArray())
@@ -2076,19 +2130,32 @@ ECObjectsStatus  MemoryInstanceSupport::GetValueFromMemory (ClassLayoutCR classL
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index)
     {        
-    bool isInUninitializedFixedCountArray = ((useIndex) && (propertyLayout.GetModifierFlags() & ARRAYMODIFIERFLAGS_IsFixedCount) && (GetAllocatedArrayCount (propertyLayout) == 0));
+    bool isInUninitializedFixedCountArray = ((useIndex) && (propertyLayout.GetModifierFlags() & PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount) && (GetAllocatedArrayCount (propertyLayout) == 0));
             
+    bool  isOriginalValueNull = IsPropertyValueNull (propertyLayout, useIndex, index);
+
     if (v.IsNull())
         {
         if (!isInUninitializedFixedCountArray)
             SetPropertyValueNull (propertyLayout, useIndex, index, true);
+
+        if (isOriginalValueNull)
+            return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
+
         return ECOBJECTS_STATUS_Success;
         }   
+    else
+        {
+        // to match ECF, if the property is marked as read only then we only allow setting the value if the current value is NULL
+        if (!isOriginalValueNull && propertyLayout.IsReadOnlyProperty())
+            return ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
+        }
              
     if (isInUninitializedFixedCountArray)
         {
         ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, 0, GetReservedArrayCount (propertyLayout));
-        }        
+        }   
+
     SetPropertyValueNull (propertyLayout, useIndex, index, false);            
     
     UInt32 offset = GetOffsetOfPropertyValue (propertyLayout, useIndex, index);
@@ -2111,6 +2178,10 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
             Int32 value = v.GetInteger();
+
+            if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, &value, sizeof(value)))
+                return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
+
             // WIP_FUSION: would it speed things up to poke directly when m_allowWritingDirectlyToInstanceMemory is true?
             return _ModifyData (offset, &value, sizeof(value));
             }
@@ -2120,6 +2191,10 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
             Int64 value = v.GetLong();
+
+            if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, &value, sizeof(value)))
+                return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
+
             return _ModifyData (offset, &value, sizeof(value));
             }
         case PRIMITIVETYPE_Double:
@@ -2128,6 +2203,10 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
             double value = v.GetDouble();
+
+            if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, &value, sizeof(value)))
+                return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
+
             return _ModifyData (offset, &value, sizeof(value));
             }       
         case PRIMITIVETYPE_String:
@@ -2138,6 +2217,9 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             WCharCP value = v.GetString();
             UInt32 bytesNeeded = (UInt32)(sizeof(wchar_t) * (wcslen(value) + 1)); // WIP_FUSION: what if the caller could tell us the size?
 
+            if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, value, bytesNeeded))
+                return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
+
             ECObjectsStatus status;
 
             if (useIndex)
@@ -2146,10 +2228,11 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
                 status = EnsureSpaceIsAvailable (offset, classLayout, propertyLayout, bytesNeeded, v.GetMemoryCallback());
             if (ECOBJECTS_STATUS_Success != status)
                 return status;
-                
+
             // WIP_FUSION: would it speed things up to poke directly when m_allowWritingDirectlyToInstanceMemory is true?
             return _ModifyData (offset, value, bytesNeeded);
             }
+
         case PRIMITIVETYPE_Binary:
             {
             if (!v.IsBinary ())
@@ -2166,6 +2249,9 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             memcpy (dataBuffer+sizeof(UInt32), data, size);
 
             UInt32 bytesNeeded = (UInt32)totalSize;
+
+            if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, dataBuffer, bytesNeeded))
+                return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
             ECObjectsStatus status;
             if (useIndex)
@@ -2192,6 +2278,10 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
             bool value = v.GetBoolean();
+
+            if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, &value, sizeof(value)))
+                return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
+
             return _ModifyData (offset, &value, sizeof(value));
             }       
         case PRIMITIVETYPE_Point2D:
@@ -2200,6 +2290,10 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
             DPoint2d value = v.GetPoint2D();
+
+            if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, &value, sizeof(value)))
+                return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
+
             return _ModifyData (offset, &value, sizeof(value));
             }       
         case PRIMITIVETYPE_Point3D:
@@ -2208,6 +2302,10 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
             DPoint3d value = v.GetPoint3D();
+
+            if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, &value, sizeof(value)))
+                return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
+
             return _ModifyData (offset, &value, sizeof(value));
             } 
         case PRIMITIVETYPE_DateTime:      // stored as long
@@ -2216,6 +2314,10 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
             Int64 value = v.GetDateTimeTicks();
+
+            if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, &value, sizeof(value)))
+                return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
+
             return _ModifyData (offset, &value, sizeof(value));
             }
         }
