@@ -1203,25 +1203,25 @@ bvector<WString>*               searchPaths
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Casey.Mullen                09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaFileLocater::SchemaFileLocater (bvector<WString>& searchPaths) : m_searchPaths(searchPaths) {};
+SearchPathSchemaFileLocater::SearchPathSchemaFileLocater (bvector<WString>& searchPaths) : m_searchPaths(searchPaths) {};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Casey.Mullen                09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaFileLocater::~SchemaFileLocater () {};
+SearchPathSchemaFileLocater::~SearchPathSchemaFileLocater () {};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Casey.Mullen                09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaFileLocaterPtr SchemaFileLocater::CreateSchemaFileLocater(bvector<WString>& searchPaths)
+SearchPathSchemaFileLocaterPtr SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(bvector<WString>& searchPaths)
     {
-    return new SchemaFileLocater(searchPaths);
+    return new SearchPathSchemaFileLocater(searchPaths);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Casey.Mullen                09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP SchemaFileLocater::_LocateSchema(WCharCP name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaDeserializationContextR schemaContext)
+ECSchemaP SearchPathSchemaFileLocater::_LocateSchema(WCharCP name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaDeserializationContextR schemaContext)
     {
     WString schemaName(name);
     bool useLatestCompatibleMatch = matchType != SCHEMAMATCHTYPE_Exact;

@@ -450,11 +450,11 @@ typedef bool (*TraversalDelegate) (ECClassCP, const void *);
 /*__PUBLISH_SECTION_START__*/
 
 struct StandaloneECEnabler;
-struct SchemaFileLocater;
+struct SearchPathSchemaFileLocater;
 typedef RefCountedPtr<StandaloneECEnabler>  StandaloneECEnablerPtr;
 typedef StandaloneECEnabler*                StandaloneECEnablerP;
 typedef RefCountedPtr<ECSchemaCache>        ECSchemaCachePtr;
-typedef RefCountedPtr<SchemaFileLocater>    SchemaFileLocaterPtr;
+typedef RefCountedPtr<SearchPathSchemaFileLocater> SearchPathSchemaFileLocaterPtr;
 
 //=======================================================================================
 //! @ingroup ECObjectsGroup
@@ -1033,18 +1033,18 @@ public:
 //=======================================================================================
 //! Locates schemas by looking in a given set of file system folder for ECSchemaXml files
 //=======================================================================================
-struct SchemaFileLocater : IECSchemaLocater, RefCountedBase, NonCopyableClass
+struct SearchPathSchemaFileLocater : IECSchemaLocater, RefCountedBase, NonCopyableClass
 {
 /*__PUBLISH_SECTION_END__*/
 private:
     bvector<WString> m_searchPaths;
-    SchemaFileLocater (bvector<WString>& searchPaths);
-    virtual ~SchemaFileLocater();
+    SearchPathSchemaFileLocater (bvector<WString>& searchPaths);
+    virtual ~SearchPathSchemaFileLocater();
 protected:
     virtual ECSchemaP _LocateSchema(WCharCP name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaDeserializationContextR schemaContext) override;
 /*__PUBLISH_SECTION_START__*/
 public:
-    ECOBJECTS_EXPORT static SchemaFileLocaterPtr CreateSchemaFileLocater(bvector<WString>& searchPaths);
+    ECOBJECTS_EXPORT static SearchPathSchemaFileLocaterPtr CreateSearchPathSchemaFileLocater(bvector<WString>& searchPaths);
 };
 
 //=======================================================================================
@@ -1054,7 +1054,7 @@ public:
 struct ECSchema /*__PUBLISH_ABSTRACT__*/ : public IECCustomAttributeContainer
 {
 /*__PUBLISH_SECTION_END__*/
-friend SchemaFileLocater;
+friend SearchPathSchemaFileLocater;
 // Schemas are RefCounted but none of the constructs held by schemas (classes, properties, etc.) are.
 // They are freed when the schema is freed.
 
