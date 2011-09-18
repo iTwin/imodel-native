@@ -2053,40 +2053,6 @@ ECSchemaCachePtr    ECSchemaCache::Create ()
     return new ECSchemaCache;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  01/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneECEnablerPtr          ECSchemaCache::_LocateStandaloneEnabler (WCharCP schemaName, WCharCP className)
-    {
-    SchemaNameClassNamePair keyPair(schemaName, className);
-
-    bmap<SchemaNameClassNamePair, StandaloneECEnablerPtr>::const_iterator  mapIterator;
-    mapIterator = m_ecEnablerMap.find (keyPair);
-
-    if (mapIterator != m_ecEnablerMap.end())
-        return mapIterator->second;
-
-    // no existing enabler, try to find schema and build one now
-    FOR_EACH (ECSchemaP ecSchema, m_schemas)
-        {
-        if (ecSchema->GetName().EqualsI (schemaName))
-            {
-            ECClassP ecClass = ecSchema->GetClassP(className);
-            if (NULL == ecClass)
-                return NULL;
-    
-            StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
-            if (enabler.IsValid())
-                m_ecEnablerMap[keyPair] = enabler;
-
-            return enabler;
-            }
-        }
-
-    return NULL;
-    }
-    
-
 /////////////////////////////////////////////////////////////////////////////////////////
 // ECClassContainer
 /////////////////////////////////////////////////////////////////////////////////////////

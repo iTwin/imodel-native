@@ -68,7 +68,7 @@ protected:
     virtual UInt32                  _GetPropertyCount () const = 0;
 
     // IStandaloneEnablerLocater
-    ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr  _LocateStandaloneEnabler (WCharCP schemaName, WCharCP className); 
+    ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr  _LocateStandaloneEnabler (WCharCP schemaName, WCharCP className);
 
 #if defined (EXPERIMENTAL_TEXT_FILTER)
     ECOBJECTS_EXPORT virtual PropertyProcessingResult   _ProcessPrimitiveProperties (bset<ECClassCP>& failedClasses, IECInstanceCR, EC::PrimitiveType, IPropertyProcessor const&, PropertyProcessingOptions) const;

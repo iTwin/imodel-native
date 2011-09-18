@@ -994,7 +994,7 @@ public:
 //! An object that controls the lifetime of a set of ECSchemas.  When the schema
 //! owner is destroyed, so are the schemas that it owns.</summary>
 //=======================================================================================
-struct ECSchemaCache /*__PUBLISH_ABSTRACT__*/ :  RefCountedBase, IECSchemaOwner, IStandaloneEnablerLocater
+struct ECSchemaCache /*__PUBLISH_ABSTRACT__*/ :  RefCountedBase, IECSchemaOwner
 {
 /*__PUBLISH_SECTION_END__*/
 protected:
@@ -1007,9 +1007,6 @@ protected:
     ECOBJECTS_EXPORT virtual ECSchemaP       _GetSchema   (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor);
     ECOBJECTS_EXPORT virtual ECSchemaP       _LocateSchema (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType);
     
-    // IStandaloneEnablerLocater
-    ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr _LocateStandaloneEnabler (WCharCP schemaName, WCharCP className);
-
 /*__PUBLISH_SECTION_START__*/
 public:
     ECOBJECTS_EXPORT virtual ~ECSchemaCache ();
