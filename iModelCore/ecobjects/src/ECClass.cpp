@@ -964,14 +964,14 @@ IStandaloneEnablerLocaterP  standaloneEnablerLocater
         SchemaReadStatus status = pProperty->_ReadXml(xmlNodePtr, standaloneEnablerLocater);
         if (status != SCHEMA_READ_STATUS_Success)
             {
-            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to deserialize properties of ECClass '%s' in the ECSchema '%s'", this->GetName().c_str(), this->GetSchema().GetName().c_str());                
+            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to read properties of ECClass '%s' in the ECSchema '%s'", this->GetName().c_str(), this->GetSchema().GetName().c_str());                
             delete pProperty;
             return status;
             }
         
         if (ECOBJECTS_STATUS_Success != this->AddProperty (pProperty))
             {
-            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to deserialize ECClass '%s' in the ECSchema '%s' because a problem occurred while adding ECProperty '%s'", 
+            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to read ECClass '%s' in the ECSchema '%s' because a problem occurred while adding ECProperty '%s'", 
                 this->GetName().c_str(), this->GetSchema().GetName().c_str(), pProperty->GetName().c_str());
             delete pProperty;
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
@@ -1867,7 +1867,7 @@ bool ECRelationshipClass::GetIsOrdered
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipClass::GetOrderedRelationshipPropertyName (WString& propertyName, ECRelationshipEnd end) const
     {
-    // see if the struct has a custom attribute to custom serialize itself
+    // see if the struct has a custom attribute to custom persist itself
     IECInstancePtr caInstance = GetCustomAttribute(L"SupportsOrderedRelationships");
     if (caInstance.IsValid())
         {

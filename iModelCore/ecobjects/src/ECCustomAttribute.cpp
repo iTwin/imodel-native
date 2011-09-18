@@ -298,7 +298,7 @@ IStandaloneEnablerLocaterP standaloneEnablerLocater
         MSXML2::IXMLDOMNodeListPtr attributeInstances = xmlNodePtr->childNodes;
         while (NULL != (instancePtr = attributeInstances->nextNode()))
             {
-            ECInstanceDeserializationContextPtr context = ECInstanceDeserializationContext::CreateContext (schema, standaloneEnablerLocater);
+            ECInstanceReadContextPtr context = ECInstanceReadContext::CreateContext (schema, standaloneEnablerLocater);
 
             IECInstancePtr ptr;
             status = IECInstance::ReadFromXmlString(ptr, (WCharCP) instancePtr->Getxml(), *context);

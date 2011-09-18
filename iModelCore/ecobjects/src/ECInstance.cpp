@@ -1535,23 +1535,23 @@ WString                        IECInstance::ToString (WCharCP indent) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceDeserializationContextPtr ECInstanceDeserializationContext::CreateContext (ECSchemaCR schema, IStandaloneEnablerLocaterP standaloneEnablerLocater)
+ECInstanceReadContextPtr ECInstanceReadContext::CreateContext (ECSchemaCR schema, IStandaloneEnablerLocaterP standaloneEnablerLocater)
     {
-    return new ECInstanceDeserializationContext (&schema, NULL, standaloneEnablerLocater);
+    return new ECInstanceReadContext (&schema, NULL, standaloneEnablerLocater);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceDeserializationContextPtr ECInstanceDeserializationContext::CreateContext (ECSchemaDeserializationContextR context, IStandaloneEnablerLocaterP standaloneEnablerLocater)
+ECInstanceReadContextPtr ECInstanceReadContext::CreateContext (ECSchemaReadContextR context, IStandaloneEnablerLocaterP standaloneEnablerLocater)
     {
-    return new ECInstanceDeserializationContext (NULL, &context, standaloneEnablerLocater);
+    return new ECInstanceReadContext (NULL, &context, standaloneEnablerLocater);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr ECInstanceDeserializationContext::_CreateStandaloneInstance (ECClassCR ecClass)
+IECInstancePtr ECInstanceReadContext::_CreateStandaloneInstance (ECClassCR ecClass)
     {
     StandaloneECEnablerPtr standaloneEnabler = ecClass.GetDefaultStandaloneEnabler();
         
@@ -1561,7 +1561,7 @@ IECInstancePtr ECInstanceDeserializationContext::_CreateStandaloneInstance (ECCl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr ECInstanceDeserializationContext::CreateStandaloneInstance (ECClassCR ecClass)
+IECInstancePtr ECInstanceReadContext::CreateStandaloneInstance (ECClassCR ecClass)
     {
     return _CreateStandaloneInstance (ecClass);
     }
@@ -1644,14 +1644,14 @@ private:
     CComPtr <IXmlReader>                m_xmlReader;
     WString                            m_fullSchemaName;
     ECSchemaCP                          m_schema;
-    ECInstanceDeserializationContextR   m_context;
+    ECInstanceReadContextR   m_context;
 
 
 public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceXmlReader (ECInstanceDeserializationContextR context, CComPtr <IStream> stream)
+InstanceXmlReader (ECInstanceReadContextR context, CComPtr <IStream> stream)
     :
     m_context (context), m_stream (stream), m_xmlReader (NULL), m_schema (NULL)
     {
@@ -1660,7 +1660,7 @@ InstanceXmlReader (ECInstanceDeserializationContextR context, CComPtr <IStream> 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceXmlReader (ECInstanceDeserializationContextR context, WCharCP fileName)
+InstanceXmlReader (ECInstanceReadContextR context, WCharCP fileName)
     :
     m_context (context), m_fileName (fileName), m_stream (NULL), m_xmlReader (NULL), m_schema (NULL)
     {
@@ -1785,7 +1785,7 @@ ECSchemaCP       GetSchema()
     if (NULL != m_schema)
         return m_schema;
 
-    ECSchemaDeserializationContextPtr schemaContext = m_context.GetSchemaContextPtr();
+    ECSchemaReadContextPtr schemaContext = m_context.GetSchemaContextPtr();
 
     if (schemaContext.IsValid())
         {
@@ -3230,7 +3230,7 @@ InstanceWriteStatus     TranslateStatus (HRESULT status)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceReadStatus   IECInstance::ReadFromXmlFile (IECInstancePtr& ecInstance, WCharCP fileName, ECInstanceDeserializationContextR context)
+InstanceReadStatus   IECInstance::ReadFromXmlFile (IECInstancePtr& ecInstance, WCharCP fileName, ECInstanceReadContextR context)
     {
     InstanceXmlReader reader (context, fileName);
 
@@ -3244,7 +3244,7 @@ InstanceReadStatus   IECInstance::ReadFromXmlFile (IECInstancePtr& ecInstance, W
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceReadStatus   IECInstance::ReadFromXmlStream (IECInstancePtr& ecInstance, IStreamP stream, ECInstanceDeserializationContextR context)
+InstanceReadStatus   IECInstance::ReadFromXmlStream (IECInstancePtr& ecInstance, IStreamP stream, ECInstanceReadContextR context)
     {
     InstanceXmlReader reader (context, stream);
 
@@ -3270,7 +3270,7 @@ static InstanceReadStatus   ReportStatus (InstanceReadStatus status, WCharCP xml
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr& ecInstance, WCharCP xmlString, ECInstanceDeserializationContextR context)
+InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr& ecInstance, WCharCP xmlString, ECInstanceReadContextR context)
     {
     CComPtr <IStream> stream;
     if (S_OK != ::CreateStreamOnHGlobal(NULL,TRUE,&stream))
