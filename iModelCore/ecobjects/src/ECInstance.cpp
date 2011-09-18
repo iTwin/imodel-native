@@ -23,6 +23,14 @@ DebugInstanceLeakMap    g_debugInstanceLeakMap;
 //WIP_FUSION:  This should use EC::LeakDetector  (see ecschema.cpp)
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECStructArrayMemberAccessor::ECStructArrayMemberAccessor (ECValueAccessorCR accessor, WCharCP schemaName, WCharCP className) 
+    : m_accessor(accessor), m_schemaName(schemaName), m_className(className)
+        {
+        }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  09/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 CustomStructSerializerManager::CustomStructSerializerManager ()
@@ -1338,6 +1346,170 @@ EC::ECEnablerP                  ECInstanceInteropHelper::GetEnablerForStructArra
     return standaloneEnabler.get();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<EC::ECValueAccessor> ECInstanceInteropHelper::GetChildValueAccessors (IECInstanceCR instance, EC::ECValueAccessor parentAccessor, bool includeNullValues)
+    {
+    bvector<EC::ECValueAccessor> childAccessors;
+    EC::ECValue                  parentValue;
+    EC::ECValue                  v;
+
+    EC::ECEnablerCP     enabler        = parentAccessor.DeepestLocation().enabler;            // this will be overridden is struct array entry
+    ::UInt32            parentIndex    = parentAccessor.DeepestLocation().propertyIndex;      // this will be overridden is struct array entry
+
+    // get the parent value, if it a struct array entry we will need to get the instance for the value, 
+    // if it is an array we will need to get the array count
+    if (SUCCESS != instance.GetValueUsingAccessor (parentValue, parentAccessor))
+        return childAccessors;
+
+    // container must either be a struct or an array
+    if (parentValue.IsStruct())
+        {
+        // If the parent is a struct array entry then use the enabler from its instance. 
+        // If the parent is an embedded struct then we do not need to override the default values set above.
+        EC::IECInstancePtr structInstance = parentValue.GetStruct();
+        if (structInstance.IsValid())
+            {
+            parentIndex = 0;
+            enabler = &structInstance->GetEnablerR();
+            }
+
+        bvector<::UInt32>   propertyIndices;
+
+        if (EC::ECOBJECTS_STATUS_Success != enabler->GetPropertyIndices (propertyIndices, parentIndex))
+            return childAccessors;
+   
+        // loop through all the properties of the struct and create a managed PropertyValue
+        FOR_EACH (::UInt32 propertyIndex, propertyIndices)
+            {
+            EC::ECValueAccessor valueAccessor (parentAccessor);
+            valueAccessor.PushLocation (*enabler, propertyIndex, -1); 
+
+            if (!includeNullValues)
+                {
+                if (SUCCESS != instance.GetValueUsingAccessor (v, valueAccessor))
+                    continue;
+
+                if (v.IsPrimitive() &&  v.IsNull())
+                    continue;
+                }
+
+            childAccessors.push_back (valueAccessor);
+            }
+
+        return childAccessors;
+        }
+
+    if (!parentValue.IsArray())
+        return childAccessors;  // return empty property list
+
+    // if we get here we have an array
+    ArrayInfo   arrayInfo  = parentValue.GetArrayInfo();
+    UInt32      arrayCount = arrayInfo.GetCount();
+
+    if (0 == arrayCount)
+        return childAccessors;  // return empty property list
+
+    // see if it is a struct array or a primitive array
+    if (arrayInfo.IsPrimitiveArray()) 
+        {
+        // container is a struct array, add each struct array entry.
+        for (::UInt32 i=0; i<arrayCount; i++)
+            {
+            EC::ECValueAccessor valueAccessor (parentAccessor);
+            valueAccessor.DeepestLocation().arrayIndex = i;
+
+            if (!includeNullValues)
+                {
+                if (SUCCESS != instance.GetValueUsingAccessor (v, valueAccessor))
+                    continue;
+
+                if (v.IsPrimitive() &&  v.IsNull())
+                    continue;
+                }
+
+            childAccessors.push_back (valueAccessor);
+            }
+
+        return childAccessors;
+        }
+
+    // container is a primitive array, add each primitive PropertyValue.
+    for (::UInt32 i=0; i<arrayCount; i++)
+        {
+        EC::ECValueAccessor valueAccessor (parentAccessor);
+        valueAccessor.DeepestLocation().arrayIndex = i;
+
+        if (!includeNullValues)
+            {
+            if (SUCCESS != instance.GetValueUsingAccessor (v, valueAccessor))
+                continue;
+
+            if (v.IsNull())
+                continue;
+            }
+
+        childAccessors.push_back (valueAccessor);
+        }
+
+    return childAccessors;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<EC::ECStructArrayMemberAccessor> ECInstanceInteropHelper::GetStructArrayMemberAccessors (IECInstanceCR instance, EC::ECValueAccessor parentAccessor, bool includeNullValues)
+    {
+    bvector<EC::ECStructArrayMemberAccessor> childAccessors;
+    EC::ECValue                  parentValue;
+    EC::ECValue                  v;
+
+    // get the parent value, if it a struct array entry we will need to get the instance for the value, 
+    // if it is an array we will need to get the array count
+    if (SUCCESS != instance.GetValueUsingAccessor (parentValue, parentAccessor))
+        return childAccessors;
+
+    if (!parentValue.IsArray())
+        return childAccessors;  // return empty property list
+
+    // if we get here we have an array
+    ArrayInfo   arrayInfo  = parentValue.GetArrayInfo();
+    UInt32      arrayCount = arrayInfo.GetCount();
+
+    if (0 == arrayCount)
+        return childAccessors;  // return empty property list
+
+    // see if it is a struct array or a primitive array
+    if (!arrayInfo.IsStructArray()) 
+        return childAccessors;  // return empty property list
+
+    // container is a primitive array, add each primitive PropertyValue.
+    for (::UInt32 i=0; i<arrayCount; i++)
+        {
+        EC::ECValueAccessor valueAccessor (parentAccessor);
+        valueAccessor.DeepestLocation().arrayIndex = i;
+
+        if (SUCCESS != instance.GetValueUsingAccessor (v, valueAccessor))
+            continue;
+        
+        if (!includeNullValues)
+            {
+            if (v.IsNull())
+                continue;
+            }
+
+        IECInstancePtr  structInstance = v.GetStruct();
+        if (!structInstance.IsValid())
+            continue;
+
+        ECClassCR structClass = structInstance->GetClass(); 
+        
+        childAccessors.push_back (ECStructArrayMemberAccessor(valueAccessor, structClass.GetSchema().GetName().c_str(), structClass.GetName().c_str()));
+        }
+
+    return childAccessors;
+    }
 
 #ifdef NOT_USED
 /*---------------------------------------------------------------------------------**//**

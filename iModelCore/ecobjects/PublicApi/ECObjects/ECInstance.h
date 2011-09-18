@@ -231,6 +231,8 @@ typedef RefCountedPtr<IECRelationshipInstance> IECRelationshipInstancePtr;
 
 /*__PUBLISH_SECTION_END__*/
 
+struct ECStructArrayMemberAccessor;
+
 struct ECInstanceInteropHelper
     {
     // These are not convenience methods.  They are intended for managed callers.  They enable
@@ -283,6 +285,8 @@ struct ECInstanceInteropHelper
 
     ECOBJECTS_EXPORT static bool            IsPropertyReadOnly (IECInstanceCR, ECValueAccessorR);
     ECOBJECTS_EXPORT static EC::ECEnablerP  GetEnablerForStructArrayEntry (IECInstanceR instance, ECValueAccessorR arrayMemberAccessor, WCharCP schemaName, WCharCP className);
+    ECOBJECTS_EXPORT static bvector<EC::ECValueAccessor> GetChildValueAccessors (IECInstanceCR instance, EC::ECValueAccessor parentAccessor, bool includeNullValues);
+    ECOBJECTS_EXPORT static bvector<EC::ECStructArrayMemberAccessor> GetStructArrayMemberAccessors (IECInstanceCR instance, EC::ECValueAccessor parentAccessor, bool includeNullValues);
 
     ECOBJECTS_EXPORT static PrimitiveType   GetPrimitiveType       (IECInstanceCR instance, int propertyIndex);
 #ifdef NOT_USED
