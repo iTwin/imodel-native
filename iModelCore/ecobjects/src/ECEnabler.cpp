@@ -12,7 +12,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECEnabler::ECEnabler(ECClassCR ecClass, IStandaloneEnablerLocaterR childECEnablerLocater) : m_ecClass (ecClass), m_standaloneInstanceEnablerLocater (childECEnablerLocater)
+ECEnabler::ECEnabler(ECClassCR ecClass, IStandaloneEnablerLocaterP structStandaloneEnablerLocater) : m_ecClass (ecClass), m_standaloneInstanceEnablerLocater (structStandaloneEnablerLocater)
     {
     };
 
@@ -29,7 +29,19 @@ ECEnabler::~ECEnabler()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StandaloneECEnablerPtr          ECEnabler::_LocateStandaloneEnabler (WCharCP schemaName, WCharCP className)  
     {
-    return m_standaloneInstanceEnablerLocater.LocateStandaloneEnabler (schemaName, className); 
+    if (NULL != m_standaloneInstanceEnablerLocater)
+        return m_standaloneInstanceEnablerLocater->LocateStandaloneEnabler (schemaName, className);
+    
+    
+    ECSchemaCP schema = m_ecClass.GetSchema().FindSchema(schemaName);
+    if (NULL == schema)
+        return NULL;
+
+    ECClassP ecClass = schema->GetClassP(className);
+    if (NULL == ecClass)
+        return NULL;
+    
+    return ecClass->GetDefaultStandaloneEnabler();
     }
 
 /*---------------------------------------------------------------------------------**//**

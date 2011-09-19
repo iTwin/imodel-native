@@ -1791,19 +1791,37 @@ WString                        IECInstance::ToString (WCharCP indent) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceDeserializationContextPtr ECInstanceDeserializationContext::CreateContext (ECSchemaCR schema, IStandaloneEnablerLocaterR standaloneEnablerLocater)
+ECInstanceReadContextPtr ECInstanceReadContext::CreateContext (ECSchemaCR schema, IStandaloneEnablerLocaterP standaloneEnablerLocater)
     {
-    return new ECInstanceDeserializationContext (&schema, NULL, standaloneEnablerLocater);
+    return new ECInstanceReadContext (&schema, NULL, standaloneEnablerLocater);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceDeserializationContextPtr ECInstanceDeserializationContext::CreateContext (ECSchemaDeserializationContextR context, IStandaloneEnablerLocaterR standaloneEnablerLocater)
+ECInstanceReadContextPtr ECInstanceReadContext::CreateContext (ECSchemaReadContextR context, IStandaloneEnablerLocaterP standaloneEnablerLocater)
     {
-    return new ECInstanceDeserializationContext (NULL, &context, standaloneEnablerLocater);
+    return new ECInstanceReadContext (NULL, &context, standaloneEnablerLocater);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/11
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr ECInstanceReadContext::_CreateStandaloneInstance (ECClassCR ecClass)
+    {
+    StandaloneECEnablerPtr standaloneEnabler = ecClass.GetDefaultStandaloneEnabler();
+        
+    return standaloneEnabler->CreateInstance();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/11
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr ECInstanceReadContext::CreateStandaloneInstance (ECClassCR ecClass)
+    {
+    return _CreateStandaloneInstance (ecClass);
+    }
+    
 END_BENTLEY_EC_NAMESPACE
 
 
@@ -1882,14 +1900,14 @@ private:
     CComPtr <IXmlReader>                m_xmlReader;
     WString                            m_fullSchemaName;
     ECSchemaCP                          m_schema;
-    ECInstanceDeserializationContextR   m_context;
+    ECInstanceReadContextR   m_context;
 
 
 public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceXmlReader (ECInstanceDeserializationContextR context, CComPtr <IStream> stream)
+InstanceXmlReader (ECInstanceReadContextR context, CComPtr <IStream> stream)
     :
     m_context (context), m_stream (stream), m_xmlReader (NULL), m_schema (NULL)
     {
@@ -1898,7 +1916,7 @@ InstanceXmlReader (ECInstanceDeserializationContextR context, CComPtr <IStream> 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceXmlReader (ECInstanceDeserializationContextR context, WCharCP fileName)
+InstanceXmlReader (ECInstanceReadContextR context, WCharCP fileName)
     :
     m_context (context), m_fileName (fileName), m_stream (NULL), m_xmlReader (NULL), m_schema (NULL)
     {
@@ -2023,7 +2041,7 @@ ECSchemaCP       GetSchema()
     if (NULL != m_schema)
         return m_schema;
 
-    ECSchemaDeserializationContextPtr schemaContext = m_context.GetSchemaContextPtr();
+    ECSchemaReadContextPtr schemaContext = m_context.GetSchemaContextPtr();
 
     if (schemaContext.IsValid())
         {
@@ -2093,15 +2111,24 @@ InstanceReadStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr& ecInstance
         
         ECSchemaReferenceList refList = schema->GetReferencedSchemas();
         ECSchemaReferenceList::const_iterator schemaIterator;
+        bool foundSchema = false;
         for (schemaIterator = refList.begin(); schemaIterator != refList.end(); schemaIterator++)
             {
             if (checkName && (*schemaIterator)->GetName() != schemaName)
                 continue;
-                
+            
+            foundSchema = true;
             if (NULL != (foundClass = (*schemaIterator)->GetClassP (className)))
                 break;
             }
+
+        if (!foundSchema)
+            {
+            ECObjectsLogger::Log()->errorv (L"ECCustomAttribute '%s' is from ECSchema '%s', which either was not referenced from ECSchema '%s' or could not be found.", className, m_fullSchemaName.c_str(), schema->GetName().c_str());
+            return INSTANCE_READ_STATUS_ECSchemaNotFound;
+            }
         }
+
     if (NULL == foundClass)
         {
         ECObjectsLogger::Log()->errorv (L"Failed to find ECClass %s in %s", className, m_fullSchemaName.c_str());
@@ -2110,21 +2137,15 @@ InstanceReadStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr& ecInstance
 
     *ecClass = foundClass;
 
-    // create a StandAloneECInstance instance of the class
-    ClassLayoutP                classLayout         = ClassLayout::BuildFromClass (*foundClass, 0, 0);
-    StandaloneECEnablerPtr      standaloneEnabler   = StandaloneECEnabler::CreateEnabler (*foundClass, *classLayout, m_context.GetStandaloneEnablerLocater(), true);
-
-    // create the instance.
-    ecInstance                                      = standaloneEnabler->CreateInstance().get();
-
-    IECRelationshipInstance*    relationshipInstance = dynamic_cast <IECRelationshipInstance*> (ecInstance.get());
-
+    ecInstance = m_context.CreateStandaloneInstance (*foundClass).get();
+    
     bool                        needSourceClass    = false;
     bool                        needSourceId       = false;
     bool                        needTargetClass    = false;
     bool                        needTargetId       = false;
 
     // if relationship, need the attributes.
+    IECRelationshipInstance*    relationshipInstance = dynamic_cast <IECRelationshipInstance*> (ecInstance.get());
     if (NULL != relationshipInstance)
         needSourceClass = needSourceId = needTargetClass = needTargetId = true;
 
@@ -2593,19 +2614,10 @@ InstanceReadStatus   ReadArrayProperty (ArrayECPropertyP arrayProperty, IECInsta
 InstanceReadStatus   ReadStructArrayMember (ECClassCR structClass, IECInstanceP owningInstance, WString& accessString, UInt32 index)
     {
     // On entry, the reader is positioned at the element that starts the struct.
-    // we have to create an IECInstance for the array member.
-    ClassLayoutP                    classLayout         = ClassLayout::BuildFromClass (structClass, 0, 0);
-    StandaloneECEnablerPtr          standaloneEnabler   = StandaloneECEnabler::CreateEnabler (structClass, *classLayout, owningInstance->GetEnablerR(), true);
 
-    // The following way causes an assert in ECPerSchemaCache::LoadSchema processing SetSchemaPtr (schemaP) because the schemacache's ptr was set recursively when processing struct arrays
-    //StandaloneECEnablerPtr standaloneEnabler = owningInstance->GetEnablerR().ObtainStandaloneInstanceEnabler (structClass.GetSchema().GetName().c_str(), structClass.GetName().c_str());
-
-    if (standaloneEnabler.IsNull())
-        return INSTANCE_READ_STATUS_UnableToGetStandaloneEnabler;
-
-    // create the instance.
-    IECInstancePtr                  structInstance      = standaloneEnabler->CreateInstance().get();
-
+    // Create an IECInstance for the array member.
+    IECInstancePtr structInstance = m_context.CreateStandaloneInstance (structClass).get();
+    
     InstanceReadStatus   ixrStatus;
     if (INSTANCE_READ_STATUS_Success != (ixrStatus = ReadInstanceOrStructMembers (structClass, structInstance.get(), NULL)))
         return ixrStatus;
@@ -3055,13 +3067,13 @@ InstanceWriteStatus     Init ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     WriteInstance (IECInstanceCR instance, bool writeStart, bool writeInstanceId)
+InstanceWriteStatus     WriteInstance (IECInstanceCR instance, bool isCompleteXmlDocument, bool writeInstanceId)
     {
     ECClassCR               ecClass     = instance.GetClass();
     ECSchemaCR              ecSchema    = ecClass.GetSchema();
 
     HRESULT status;
-    if (writeStart)
+    if (isCompleteXmlDocument)
         {
         if (S_OK != (status = m_xmlWriter->WriteStartDocument (XmlStandalone_Omit)))
             return TranslateStatus (status);
@@ -3474,7 +3486,7 @@ InstanceWriteStatus     TranslateStatus (HRESULT status)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceReadStatus   IECInstance::ReadFromXmlFile (IECInstancePtr& ecInstance, WCharCP fileName, ECInstanceDeserializationContextR context)
+InstanceReadStatus   IECInstance::ReadFromXmlFile (IECInstancePtr& ecInstance, WCharCP fileName, ECInstanceReadContextR context)
     {
     InstanceXmlReader reader (context, fileName);
 
@@ -3488,7 +3500,7 @@ InstanceReadStatus   IECInstance::ReadFromXmlFile (IECInstancePtr& ecInstance, W
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceReadStatus   IECInstance::ReadFromXmlStream (IECInstancePtr& ecInstance, IStreamP stream, ECInstanceDeserializationContextR context)
+InstanceReadStatus   IECInstance::ReadFromXmlStream (IECInstancePtr& ecInstance, IStreamP stream, ECInstanceReadContextR context)
     {
     InstanceXmlReader reader (context, stream);
 
@@ -3514,7 +3526,7 @@ static InstanceReadStatus   ReportStatus (InstanceReadStatus status, WCharCP xml
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr& ecInstance, WCharCP xmlString, ECInstanceDeserializationContextR context)
+InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr& ecInstance, WCharCP xmlString, ECInstanceReadContextR context)
     {
     CComPtr <IStream> stream;
     if (S_OK != ::CreateStreamOnHGlobal(NULL,TRUE,&stream))
@@ -3551,7 +3563,7 @@ InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr& ecInstance,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool isStandAlone, bool writeInstanceId)
+InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool isCompleteXmlDocument, bool writeInstanceId)
     {
     InstanceXmlWriter writer (fileName);
 
@@ -3559,13 +3571,13 @@ InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool isSt
     if (INSTANCE_WRITE_STATUS_Success != (status = writer.Init ()))
         return status;
 
-    return writer.WriteInstance (*this, isStandAlone, writeInstanceId);
+    return writer.WriteInstance (*this, isCompleteXmlDocument, writeInstanceId);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     IECInstance::WriteToXmlStream (IStreamP stream, bool isStandAlone, bool writeInstanceId)
+InstanceWriteStatus     IECInstance::WriteToXmlStream (IStreamP stream, bool isCompleteXmlDocument, bool writeInstanceId)
     {
     InstanceXmlWriter writer (stream);
 
@@ -3573,13 +3585,13 @@ InstanceWriteStatus     IECInstance::WriteToXmlStream (IStreamP stream, bool isS
     if (INSTANCE_WRITE_STATUS_Success != (status = writer.Init ()))
         return status;
 
-    return writer.WriteInstance (*this, isStandAlone, writeInstanceId);
+    return writer.WriteInstance (*this, isCompleteXmlDocument, writeInstanceId);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     IECInstance::WriteToXmlString (WString & ecInstanceXml, bool isStandAlone, bool writeInstanceId)
+InstanceWriteStatus     IECInstance::WriteToXmlString (WString & ecInstanceXml, bool isCompleteXmlDocument, bool writeInstanceId)
     {
     InstanceWriteStatus   status;
 
@@ -3591,7 +3603,7 @@ InstanceWriteStatus     IECInstance::WriteToXmlString (WString & ecInstanceXml, 
     if (INSTANCE_WRITE_STATUS_Success != (status = writer.Init ()))
         return status;
 
-    if (INSTANCE_WRITE_STATUS_Success != (status = writer.WriteInstance(*this, isStandAlone, writeInstanceId)))
+    if (INSTANCE_WRITE_STATUS_Success != (status = writer.WriteInstance(*this, isCompleteXmlDocument, writeInstanceId)))
         return status;
 
     LARGE_INTEGER liPos = {0};

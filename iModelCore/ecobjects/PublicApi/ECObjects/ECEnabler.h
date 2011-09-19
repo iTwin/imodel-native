@@ -38,7 +38,7 @@ struct ECEnabler : RefCountedBase, IStandaloneEnablerLocater
 
 private:
     ECClassCR                    m_ecClass;
-    IStandaloneEnablerLocaterR   m_standaloneInstanceEnablerLocater;    // can't be const because the m_standaloneInstanceEnablerLocater may grow if a new enabler is added to its cache
+    IStandaloneEnablerLocaterP   m_standaloneInstanceEnablerLocater;    // can't be const because the m_standaloneInstanceEnablerLocater may grow if a new enabler is added to its cache
 
     ECEnabler(); // Hidden as part of the RefCounted pattern
 
@@ -56,7 +56,9 @@ protected:
     //!       };
     //! /endcode
     //! where the ____ is a name specific to your subclass, and the parameters may vary per enabler.
-    ECOBJECTS_EXPORT ECEnabler(ECClassCR ecClass, IStandaloneEnablerLocaterR childECEnablerLocater);
+    //! @param ecClass The ECClass for which the enabler will be used
+    //! @param structStandaloneEnablerLocater If NULL, we'll use GetDefaultStandaloneEnabler for embedded structs
+    ECOBJECTS_EXPORT ECEnabler(ECClassCR ecClass, IStandaloneEnablerLocaterP structStandaloneEnablerLocater);
 
     virtual WCharCP                 _GetName() const = 0;
     virtual ECObjectsStatus         _GetPropertyIndex (UInt32& propertyIndex, WCharCP propertyAccessString) const = 0;
@@ -67,7 +69,7 @@ protected:
     virtual ECObjectsStatus         _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const = 0;
 
     // IStandaloneEnablerLocater
-    ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr  _LocateStandaloneEnabler (WCharCP schemaName, WCharCP className); 
+    ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr  _LocateStandaloneEnabler (WCharCP schemaName, WCharCP className);
 
 #if defined (EXPERIMENTAL_TEXT_FILTER)
     ECOBJECTS_EXPORT virtual PropertyProcessingResult   _ProcessPrimitiveProperties (bset<ECClassCP>& failedClasses, IECInstanceCR, EC::PrimitiveType, IPropertyProcessor const&, PropertyProcessingOptions) const;

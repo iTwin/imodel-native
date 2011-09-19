@@ -283,7 +283,7 @@ InstanceReadStatus IECCustomAttributeContainer::ReadCustomAttributes
 (
 MSXML2::IXMLDOMNode&       containerNode,
 ECSchemaCR                 schema,
-IStandaloneEnablerLocaterR standaloneEnablerLocater
+IStandaloneEnablerLocaterP standaloneEnablerLocater
 )
     {
     InstanceReadStatus status = INSTANCE_READ_STATUS_Success;
@@ -298,7 +298,7 @@ IStandaloneEnablerLocaterR standaloneEnablerLocater
         MSXML2::IXMLDOMNodeListPtr attributeInstances = xmlNodePtr->childNodes;
         while (NULL != (instancePtr = attributeInstances->nextNode()))
             {
-            ECInstanceDeserializationContextPtr context = ECInstanceDeserializationContext::CreateContext (schema, standaloneEnablerLocater);
+            ECInstanceReadContextPtr context = ECInstanceReadContext::CreateContext (schema, standaloneEnablerLocater);
 
             IECInstancePtr ptr;
             status = IECInstance::ReadFromXmlString(ptr, (WCharCP) instancePtr->Getxml(), *context);

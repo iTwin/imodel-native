@@ -309,7 +309,7 @@ ECSchemaCP ECProperty::_GetContainerSchema
 SchemaReadStatus ECProperty::_ReadXml
 (
 MSXML2::IXMLDOMNode&        propertyNode,
-IStandaloneEnablerLocaterR  standaloneEnablerLocater
+IStandaloneEnablerLocaterP  standaloneEnablerLocater
 )
     {  
     MSXML2::IXMLDOMNamedNodeMapPtr nodeAttributesPtr = propertyNode.attributes;
@@ -374,7 +374,7 @@ WCharCP elementName
 SchemaReadStatus PrimitiveECProperty::_ReadXml
 (
 MSXML2::IXMLDOMNode& propertyNode, 
-IStandaloneEnablerLocaterR  standaloneEnablerLocater
+IStandaloneEnablerLocaterP  standaloneEnablerLocater
 )
     {  
     SchemaReadStatus status = __super::_ReadXml(propertyNode, standaloneEnablerLocater);
@@ -495,7 +495,7 @@ PrimitiveType primitiveType
 SchemaReadStatus StructECProperty::_ReadXml
 (
 MSXML2::IXMLDOMNode& propertyNode, 
-IStandaloneEnablerLocaterR  standaloneEnablerLocater
+IStandaloneEnablerLocaterP  standaloneEnablerLocater
 )
     {  
     SchemaReadStatus status = __super::_ReadXml(propertyNode, standaloneEnablerLocater);
@@ -654,7 +654,7 @@ ECClassCR structType
 SchemaReadStatus ArrayECProperty::_ReadXml
 (
 MSXML2::IXMLDOMNode& propertyNode, 
-IStandaloneEnablerLocaterR  standaloneEnablerLocater
+IStandaloneEnablerLocaterP  standaloneEnablerLocater
 )
     {  
     SchemaReadStatus status = __super::_ReadXml(propertyNode, standaloneEnablerLocater);
@@ -831,7 +831,11 @@ ECClassCP structType
 )
     {        
     PRECONDITION (NULL != structType, ECOBJECTS_STATUS_PreconditionViolated);
-    PRECONDITION (structType->GetIsStruct(), ECOBJECTS_STATUS_PreconditionViolated);
+    if (!structType->GetIsStruct())
+        {
+        ECObjectsLogger::Log()->errorv (L"ECArrayProperty '%s' uses ECClass '%s', but isStructClass='false' on '%s'", GetName().c_str(), structType->GetName().c_str(), structType->GetName().c_str());
+        return ECOBJECTS_STATUS_ParseError;
+        }
 
     if (&(structType->GetSchema()) != &(this->GetClass().GetSchema()))
         {
