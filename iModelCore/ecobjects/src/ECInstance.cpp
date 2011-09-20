@@ -2432,7 +2432,7 @@ InstanceReadStatus   ReadPrimitiveProperty (PrimitiveECPropertyP primitiveProper
         {
         setStatus = ecInstance->SetValue (primitiveProperty->GetName().c_str(), ecValue);
 
-        if (ECOBJECTS_STATUS_Success != setStatus)
+        if (ECOBJECTS_STATUS_Success != setStatus && ECOBJECTS_STATUS_PropertyValueMatchesNoChange != setStatus)
             ECObjectsLogger::Log()->warningv(L"Unable to set value for property %ls", primitiveProperty->GetName().c_str());
         }
     else
@@ -2441,7 +2441,7 @@ InstanceReadStatus   ReadPrimitiveProperty (PrimitiveECPropertyP primitiveProper
         AppendAccessString (compoundAccessString, *baseAccessString, primitiveProperty->GetName());
         setStatus = ecInstance->SetValue (compoundAccessString.c_str(), ecValue);
 
-        if (ECOBJECTS_STATUS_Success != setStatus)
+        if (ECOBJECTS_STATUS_Success != setStatus && ECOBJECTS_STATUS_PropertyValueMatchesNoChange != setStatus)
             ECObjectsLogger::Log()->warningv(L"Unable to set value for property %ls", compoundAccessString.c_str());
         }
 
@@ -2521,8 +2521,8 @@ InstanceReadStatus   ReadArrayProperty (ArrayECPropertyP arrayProperty, IECInsta
                     if ( ! isFixedSizeArray)
                         ecInstance->AddArrayElements (accessString.c_str(), 1);
 
-                    ECObjectsStatus   setStatus;
-                    if (ECOBJECTS_STATUS_Success != (setStatus = ecInstance->SetValue (accessString.c_str(), ecValue, index)))
+                    ECObjectsStatus   setStatus = ecInstance->SetValue (accessString.c_str(), ecValue, index);
+                    if (ECOBJECTS_STATUS_Success != setStatus && ECOBJECTS_STATUS_PropertyValueMatchesNoChange != setStatus)       
                         {
                         assert (false);
                         return INSTANCE_READ_STATUS_CantSetValue;
