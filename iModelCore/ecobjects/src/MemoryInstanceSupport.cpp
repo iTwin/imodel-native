@@ -2217,7 +2217,13 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             WCharCP value = v.GetString();
             UInt32 bytesNeeded = (UInt32)(sizeof(wchar_t) * (wcslen(value) + 1)); // WIP_FUSION: what if the caller could tell us the size?
 
-            if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, value, bytesNeeded))
+            UInt32 currentSize;
+            if (useIndex)
+                currentSize = GetPropertyValueSize (propertyLayout, index);
+            else
+                currentSize = GetPropertyValueSize (propertyLayout);
+
+            if (!isOriginalValueNull && currentSize>=bytesNeeded && 0 == memcmp (_GetData() + offset, value, bytesNeeded))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
             ECObjectsStatus status;
@@ -2238,6 +2244,12 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             if (!v.IsBinary ())
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
+            UInt32 currentSize;
+            if (useIndex)
+                currentSize = GetPropertyValueSize (propertyLayout, index);
+            else
+                currentSize = GetPropertyValueSize (propertyLayout);
+
             size_t size;
             byte const * data = v.GetBinary (size);
             size_t totalSize = size + sizeof(UInt32);
@@ -2250,7 +2262,7 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
 
             UInt32 bytesNeeded = (UInt32)totalSize;
 
-            if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, dataBuffer, bytesNeeded))
+            if (!isOriginalValueNull && currentSize>=totalSize && 0 == memcmp (_GetData() + offset, dataBuffer, bytesNeeded))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
             ECObjectsStatus status;
