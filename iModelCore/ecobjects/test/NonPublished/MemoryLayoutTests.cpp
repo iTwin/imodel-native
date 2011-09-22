@@ -1183,20 +1183,28 @@ TEST_F(MemoryLayoutTests, CheckPerPropertyFlags)
     checkValue (L"Service_Date", ECValue (inTime), instance);
     checkValue (L"Install_Date", ecValue, instance);
 
-    bool isSet;
+    bool isSet, lastPropertyEncountered=false;
     UInt32  propertyIndex=0;
     instance->ClearAllPerPropertyFlags ();
+    ECObjectsStatus status;
 
-    while (true)
+    while (!lastPropertyEncountered)
         {
         for (UInt8 i=0; i<numBitPerProperty; i++)
             {
+            status = instance->IsPerPropertyBitSet (isSet, i, propertyIndex);
             // break when property index exceeds actual property count
-            if (ECOBJECTS_STATUS_Success =! instance->IsPerPropertyBitSet (isSet, i, propertyIndex))
+            if (ECOBJECTS_STATUS_Success == status)
+                {
+                EXPECT_TRUE (false == isSet);
+                }
+            else
+                {
+                lastPropertyEncountered = true;
                 break;
-
-            EXPECT_TRUE (false == isSet);
+                }
             }
+
         propertyIndex++;
         }
     };
