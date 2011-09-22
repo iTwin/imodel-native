@@ -1098,6 +1098,110 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     };
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+static void  checkValue (WCharCP accessString, ECValueCR value, EC::StandaloneECInstancePtr& instance)
+    {
+    UInt32  propertyIndex;
+    bool isSet;
+
+    ECValue ecValue;
+
+    EXPECT_TRUE (SUCCESS  == instance->GetEnabler().GetPropertyIndex (propertyIndex, accessString));
+    EXPECT_TRUE (SUCCESS  == instance->GetValue (ecValue, propertyIndex));
+    EXPECT_TRUE (ecValue.Equals(value));
+
+    EXPECT_TRUE (SUCCESS  == instance->IsPerPropertyBitSet (isSet, 0, propertyIndex));
+    EXPECT_TRUE (true == isSet);
+    EXPECT_TRUE (SUCCESS  == instance->IsPerPropertyBitSet (isSet, 1, propertyIndex));
+    EXPECT_TRUE ((0==propertyIndex%2) == isSet);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+static void  setValue (WCharCP accessString, ECValueCR value, EC::StandaloneECInstancePtr& instance)
+    {
+    UInt32  propertyIndex;
+    bool isSet;
+
+    EXPECT_TRUE (SUCCESS  == instance->GetEnabler().GetPropertyIndex (propertyIndex, accessString));
+    EXPECT_TRUE (SUCCESS  == instance->SetValue (propertyIndex, value));
+
+    EXPECT_TRUE (SUCCESS  == instance->IsPerPropertyBitSet (isSet, 0, propertyIndex));
+    EXPECT_TRUE (false  == isSet);
+    EXPECT_TRUE (SUCCESS  == instance->SetPerPropertyBit (0, propertyIndex, true));
+    EXPECT_TRUE (SUCCESS  == instance->SetPerPropertyBit (1, propertyIndex, 0==propertyIndex%2));
+    }
+
+ /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MemoryLayoutTests, CheckPerPropertyFlags)
+    {
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
+    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    ASSERT_TRUE (schema != NULL);
+    ECClassP ecClass = schema->GetClassP (L"CadData");
+    ASSERT_TRUE (NULL != ecClass);
+    
+    StandaloneECEnablerPtr enabler = schemaOwner->LocateStandaloneEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
+    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+
+    UInt8  numBitPerProperty =  instance->GetNumBitsInPerPropertyFlags ();
+    EXPECT_TRUE (numBitPerProperty == 2);
+
+    DPoint2d   inSize = {10.5, 22.3};
+    DPoint3d   inPoint1 = {10.10, 11.11, 12.12};
+    DPoint3d   inPoint2 ={100.100, 110.110, 120.120};
+    SystemTime inTime = SystemTime::GetLocalTime();
+    int        inCount = 100;
+    double     inLength = 432.178;
+    bool       inTest = true;
+    Int64      inTicks = 634027121070910000;
+
+    ECValue ecValue;
+    ecValue.SetDateTimeTicks(inTicks);
+
+    setValue (L"Count",        ECValue (inCount), instance);
+    setValue (L"Name",         ECValue (L"Test"), instance);
+    setValue (L"Length",       ECValue (inLength), instance);
+    setValue (L"Field_Tested", ECValue (inTest), instance);
+    setValue (L"Size",         ECValue (inSize), instance);
+    setValue (L"StartPoint",   ECValue (inPoint1), instance);
+    setValue (L"EndPoint",     ECValue (inPoint2), instance);
+    setValue (L"Service_Date", ECValue (inTime), instance);
+    setValue (L"Install_Date", ecValue, instance);
+
+    checkValue (L"Count",        ECValue (inCount), instance);
+    checkValue (L"Name",         ECValue (L"Test"), instance);
+    checkValue (L"Length",       ECValue (inLength), instance);
+    checkValue (L"Field_Tested", ECValue (inTest), instance);
+    checkValue (L"Size",         ECValue (inSize), instance);
+    checkValue (L"StartPoint",   ECValue (inPoint1), instance);
+    checkValue (L"EndPoint",     ECValue (inPoint2), instance);
+    checkValue (L"Service_Date", ECValue (inTime), instance);
+    checkValue (L"Install_Date", ecValue, instance);
+
+    bool isSet;
+    UInt32  propertyIndex=0;
+    instance->ClearAllPerPropertyFlags ();
+
+    while (true)
+        {
+        for (UInt8 i=0; i<numBitPerProperty; i++)
+            {
+            // break when property index exceeds actual property count
+            if (ECOBJECTS_STATUS_Success =! instance->IsPerPropertyBitSet (isSet, i, propertyIndex))
+                break;
+
+            EXPECT_TRUE (false == isSet);
+            }
+        propertyIndex++;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
