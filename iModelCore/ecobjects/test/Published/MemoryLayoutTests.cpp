@@ -2014,7 +2014,7 @@ TEST_F (MemoryLayoutTests, TestPropertyReadOnly)
     ECClassP ecClass = schema->GetClassP (L"Car");
     ASSERT_TRUE (NULL != ecClass);
         
-    StandaloneECEnablerPtr enabler = schemaOwner->LocateStandaloneEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
+    StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     
     WCharCP nameAccessString = L"Name";
