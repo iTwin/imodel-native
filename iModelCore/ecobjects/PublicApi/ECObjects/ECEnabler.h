@@ -8,11 +8,11 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include <ECObjects\ECObjects.h>
-#include <ECObjects\ECInstance.h>
-#include <ECObjects\ECSchema.h>
-#include <Bentley\RefCounted.h>
-#include <Bentley\bset.h>
+#include <ECObjects/ECObjects.h>
+#include <ECObjects/ECInstance.h>
+#include <ECObjects/ECSchema.h>
+#include <Bentley/RefCounted.h>
+#include <Bentley/bset.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 

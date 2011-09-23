@@ -11,8 +11,10 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "ECObjectsPch.h"
+#if defined (_WIN32) // WIP_NONPORT
 #include <objbase.h>
 #include <comdef.h>
+#endif //defined (_WIN32) // WIP_NONPORT
 
 BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
@@ -276,6 +278,7 @@ ECClassCR classDefinition
     return false;
     }
 
+#if defined (_WIN32) // WIP_NONPORT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -393,6 +396,7 @@ MSXML2::IXMLDOMNode& newNode
 
     return SCHEMA_WRITE_STATUS_Success;
     }
+#endif //defined (_WIN32) // WIP_NONPORT
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010

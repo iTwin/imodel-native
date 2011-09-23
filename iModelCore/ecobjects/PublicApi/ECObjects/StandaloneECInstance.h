@@ -8,8 +8,8 @@
 //__PUBLISH_SECTION_START__
 #pragma once
 
-#include <ECObjects\ECObjects.h>
-#include <ECObjects\MemoryInstanceSupport.h>
+#include <ECObjects/ECObjects.h>
+#include <ECObjects/MemoryInstanceSupport.h>
 
 EC_TYPEDEFS(StandaloneECEnabler);
 
