@@ -65,7 +65,7 @@ EC_TYPEDEFS(ECValueAccessorPairCollectionOptions);
 EC_TYPEDEFS(ECValuesCollection);
 EC_TYPEDEFS(ArrayInfo);
 EC_TYPEDEFS(ECSchema);
-EC_TYPEDEFS(ECSchemaDeserializationContext);
+EC_TYPEDEFS(ECSchemaReadContext);
 EC_TYPEDEFS(ECProperty);
 EC_TYPEDEFS(PrimitiveECProperty);
 EC_TYPEDEFS(StructECProperty);
@@ -81,7 +81,7 @@ EC_TYPEDEFS(IECRelationshipInstance);
 EC_TYPEDEFS(IECSchemaOwner);
 EC_TYPEDEFS(IECSchemaLocater);
 EC_TYPEDEFS(IECCustomAttributeContainer);
-EC_TYPEDEFS(ECInstanceDeserializationContext);
+EC_TYPEDEFS(ECInstanceReadContext);
 EC_TYPEDEFS(ECSchemaCache);
 EC_TYPEDEFS(ECPropertyValue);
 EC_TYPEDEFS(IECWipRelationshipInstance);
@@ -149,6 +149,10 @@ enum ECObjectsStatus
     ECOBJECTS_STATUS_NullPointerValue                                   = ECOBJECTS_ERROR_BASE + 0x16,
     ECOBJECTS_STATUS_NotCustomAttributeClass                            = ECOBJECTS_ERROR_BASE + 0x17,
     ECOBJECTS_STATUS_DuplicateSchema                                    = ECOBJECTS_ERROR_BASE + 0x18,
+    ECOBJECTS_STATUS_UnableToSetReadOnlyInstance                        = ECOBJECTS_ERROR_BASE + 0x19,
+    ECOBJECTS_STATUS_UnableToSetReadOnlyProperty                        = ECOBJECTS_ERROR_BASE + 0x1A,
+    ECOBJECTS_STATUS_ArrayIndexDoesNotExist                             = ECOBJECTS_ERROR_BASE + 0x1B,
+    ECOBJECTS_STATUS_PropertyValueMatchesNoChange                       = ECOBJECTS_ERROR_BASE + 0x1C,
     ECOBJECTS_STATUS_Error                                              = ECOBJECTS_ERROR_BASE + 0xFFF,
     }; 
 

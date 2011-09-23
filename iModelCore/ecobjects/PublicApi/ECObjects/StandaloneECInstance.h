@@ -9,6 +9,7 @@
 #pragma once
 
 #include <ECObjects/ECObjects.h>
+#include <ECObjects/MemoryInstanceSupport.h>
 
 EC_TYPEDEFS(StandaloneECEnabler);
 
@@ -56,7 +57,9 @@ union SupportingInstanceUnion
 * @bsiclass 
 +===============+===============+===============+===============+===============+======*/
 struct MemoryECInstanceBase : MemoryInstanceSupport
-    {
+{
+friend struct IECInstance;
+
 private:
     InstanceDataUnion       m_data;
     UInt32                  m_bytesAllocated;
@@ -112,8 +115,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT size_t                   LoadDataIntoManagedInstance (byte* managedBuffer, size_t sizeOfManagedBuffer) const;
     ECOBJECTS_EXPORT void                     FixupStructArrayOffsets (int offsetToGap, size_t resizeAmount, bool removingGap);
     ECOBJECTS_EXPORT ECObjectsStatus          RemoveStructArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount, EmbeddedInstanceCallbackP memoryCallback);
-
-    };
+};
 
 /*=================================================================================**//**
 //! @ingroup ECObjectsGroup
@@ -195,7 +197,7 @@ struct StandaloneECEnabler : public ClassLayoutHolder, public ECEnabler
 private:
     bool    m_ownsClassLayout;
 
-    StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocaterR childECEnablerLocater, bool ownsClassLayout);
+    StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater, bool ownsClassLayout);
     virtual ~StandaloneECEnabler();
 
 protected:
@@ -205,9 +207,11 @@ protected:
     virtual UInt32                      _GetPropertyCount () const override;
     virtual UInt32                      _GetFirstPropertyIndex (UInt32 parentIndex) const override;
     virtual UInt32                      _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const override;
+    virtual ECObjectsStatus             _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const override;
 
 public: 
-    ECOBJECTS_EXPORT static StandaloneECEnablerPtr CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocaterR childECEnablerLocater, bool ownsClassLayout);
+    //! if structStandaloneEnablerLocater is NULL, we'll use GetDefaultStandaloneEnabler for embedded structs
+    ECOBJECTS_EXPORT static StandaloneECEnablerPtr CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater, bool ownsClassLayout);
     ECOBJECTS_EXPORT StandaloneECInstancePtr       CreateInstance (UInt32 minimumInitialSize = 0) const;
     //ECOBJECTS_EXPORT StandaloneECInstanceP         CreateInstanceFromUninitializedMemory (byte * data, UInt32 size);
     //! Used to construct from another memory source like ECXData. The caller is claiming that the memory
