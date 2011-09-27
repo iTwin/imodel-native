@@ -674,15 +674,15 @@ ECSchemaP ECSchema::GetSchemaByNamespacePrefixP
 WStringCR     namespacePrefix
 ) const
     {
-    if ((namespacePrefix.length() == 0) || (namespacePrefix == m_namespacePrefix))
+    if (namespacePrefix.length() == 0)
         return (ECSchemaP)this;
 
     // lookup referenced schema by prefix
-    ECSchemaReferenceList::const_iterator schemaIterator;
-    for (schemaIterator = m_refSchemaList.begin(); schemaIterator != m_refSchemaList.end(); schemaIterator++)
+    bmap<ECSchemaP, WString const>::const_iterator schemaIterator;
+    for (schemaIterator = m_referencedSchemaNamespaceMap.begin(); schemaIterator != m_referencedSchemaNamespaceMap.end(); schemaIterator++)
         {
-        if (0 == namespacePrefix.compare ((*schemaIterator)->m_namespacePrefix))
-            return *schemaIterator;
+        if (0 == namespacePrefix.compare (schemaIterator->second))
+            return schemaIterator->first;
         }
 
     return NULL;
@@ -739,6 +739,18 @@ ECObjectsStatus ECSchema::AddReferencedSchema
 ECSchemaR       refSchema
 )
     {
+    return AddReferencedSchema(refSchema, refSchema.GetNamespacePrefix());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::AddReferencedSchema
+(
+ECSchemaR refSchema, 
+WStringCR namespacePrefix
+)
+    {
     ECSchemaReferenceList::const_iterator schemaIterator;
     for (schemaIterator = m_refSchemaList.begin(); schemaIterator != m_refSchemaList.end(); schemaIterator++)
         {
@@ -746,9 +758,48 @@ ECSchemaR       refSchema
             return ECOBJECTS_STATUS_NamedItemAlreadyExists;
         }
     
+    WString prefix(namespacePrefix);
+    if (prefix.length() == 0)
+        prefix = L"s";
+
+    // Make sure prefix is unique within this schema
+    bmap<ECSchemaP, WString const>::const_iterator namespaceIterator;
+    for (namespaceIterator = m_referencedSchemaNamespaceMap.begin(); namespaceIterator != m_referencedSchemaNamespaceMap.end(); namespaceIterator++)
+        {
+        if (0 == prefix.compare (namespaceIterator->second))
+            {
+            break;
+            }
+        }
+
+    // We found a matching prefix already being referenced
+    if (namespaceIterator != m_referencedSchemaNamespaceMap.end())
+        {
+        int subScript;
+        for (subScript = 1; subScript < 500; subScript++)
+            {
+            wchar_t temp[256];
+            swprintf(temp, 256, L"%s%d", prefix.c_str(), subScript);
+            WString tryPrefix(temp);
+            for (namespaceIterator = m_referencedSchemaNamespaceMap.begin(); namespaceIterator != m_referencedSchemaNamespaceMap.end(); namespaceIterator++)
+                {
+                if (0 == tryPrefix.compare (namespaceIterator->second))
+                    {
+                    break;
+                    }
+                }
+            // we didn't find the prefix in the map
+            if (namespaceIterator == m_referencedSchemaNamespaceMap.end())
+                {
+                prefix = tryPrefix;
+                break;
+                }
+            }
+        }
+
     // Check for recursion
     m_refSchemaList.push_back(&refSchema);
-    m_referencedSchemaNamespaceMap.insert(bpair<ECSchemaP, const WString> (&refSchema, refSchema.GetNamespacePrefix()));
+    m_referencedSchemaNamespaceMap.insert(bpair<ECSchemaP, const WString> (&refSchema, prefix));
     return ECOBJECTS_STATUS_Success;
     }
     
@@ -992,7 +1043,7 @@ ECSchemaReadContextR schemaContext
 
         if (NULL != referencedSchema)
             {
-            AddReferencedSchema (*referencedSchema);
+            AddReferencedSchema (*referencedSchema, prefix);
             }
         else
             {
@@ -1373,50 +1424,14 @@ ECClassP class2
 SchemaWriteStatus ECSchema::WriteSchemaReferences (MSXML2::IXMLDOMElement &parentNode) const
     {
     SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
-    ECSchemaReferenceList referencedSchemas = GetReferencedSchemas();
-    
-    std::set<const WString> usedPrefixes;
-    std::set<const WString>::const_iterator setIterator;
-
-    stdext::hash_map<ECSchemaP, const WString> localReferencedSchemaNamespaceMap;
-
-    ECSchemaReferenceList::const_iterator schemaIterator;
-    for (schemaIterator = m_refSchemaList.begin(); schemaIterator != m_refSchemaList.end(); schemaIterator++)
-        {
-        ECSchemaP refSchema = *schemaIterator;
-        WString prefix(refSchema->GetNamespacePrefix());
-        if (prefix.length() == 0)
-            prefix = L"s";
-            
-        setIterator = usedPrefixes.find(prefix);
-        if (setIterator != usedPrefixes.end())
-            {
-            int subScript;
-            for (subScript = 1; subScript < 500; subScript++)
-                {
-                wchar_t temp[256];
-                swprintf(temp, 256, L"%s%d", prefix.c_str(), subScript);
-                WString tryPrefix(temp);
-                setIterator = usedPrefixes.find(tryPrefix);
-                if (setIterator == usedPrefixes.end())
-                    {
-                    prefix = tryPrefix;
-                    break;
-                    }
-                }
-            }
-        usedPrefixes.insert(prefix);
-        localReferencedSchemaNamespaceMap.insert(std::pair<ECSchemaP, const WString> (refSchema, prefix));
-        }
-
     MSXML2::IXMLDOMTextPtr textPtr = NULL;
     MSXML2::IXMLDOMAttributePtr attributePtr;
     MSXML2::IXMLDOMElementPtr schemaPtr = NULL;
     
-    stdext::hash_map<ECSchemaP, const WString>::const_iterator iterator;
-    for (iterator = localReferencedSchemaNamespaceMap.begin(); iterator != localReferencedSchemaNamespaceMap.end(); iterator++)
+    bmap<ECSchemaP, const WString>::const_iterator iterator;
+    for (iterator = m_referencedSchemaNamespaceMap.begin(); iterator != m_referencedSchemaNamespaceMap.end(); iterator++)
         {
-        std::pair<ECSchemaP, const WString> mapPair = *(iterator);
+        bpair<ECSchemaP, const WString> mapPair = *(iterator);
         ECSchemaP refSchema = mapPair.first;
         schemaPtr = parentNode.ownerDocument->createNode(NODE_ELEMENT, EC_SCHEMAREFERENCE_ELEMENT, ECXML_URI_2_0);
         APPEND_CHILD_TO_PARENT(schemaPtr, (&parentNode));

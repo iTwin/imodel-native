@@ -328,6 +328,25 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasUnsupportedNamespace)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateNamespacePrefixes)
+    {
+    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
+
+    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
+
+    ECSchemaP schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath( L"DuplicatePrefixes.01.00.ecschema.xml").c_str(), *schemaContext);
+
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
+    
+    CoUninitialize();
+    };
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingSchemaNameAttribute)
     {
     EXPECT_EQ (S_OK, CoInitialize(NULL)); 
