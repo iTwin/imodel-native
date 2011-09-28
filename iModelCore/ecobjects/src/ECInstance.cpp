@@ -509,19 +509,19 @@ static ECObjectsStatus          setValueHelper (IECInstanceR instance, ECValueAc
         {
         UInt32 propertyIndex = (UInt32)accessor[depth].propertyIndex;
 
-#ifdef NOT_YET
+#ifdef NOT_YET  // Casey decided that the ReadOnlyProperty setting was for GUI use only
         bool readonlyProperty = instance.IsPropertyReadOnly (propertyIndex);
 #endif
 
         if(arrayIndex < 0)
             {
-#ifdef NOT_YET
+#ifdef NOT_YET  // Casey decided that the ReadOnlyProperty setting was for GUI use only
             if (readonlyProperty && !instance.IsNullValue(propertyIndex))
                 return ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
 #endif
             return instance.SetValue(propertyIndex, value);
             }
-#ifdef NOT_YET
+#ifdef NOT_YET  // Casey decided that the ReadOnlyProperty setting was for GUI use only
         if (readonlyProperty && !instance.IsNullValue (propertyIndex, (UInt32)arrayIndex))
             return ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
 #endif

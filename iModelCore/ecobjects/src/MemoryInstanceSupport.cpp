@@ -2143,14 +2143,16 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
         return ECOBJECTS_STATUS_Success;
-        }   
+        } 
+#ifdef REMOVE // Casey decided that the ReadOnlyProperty setting was for GUI use only and that it should not be enforced at the API level  9/11
     else
         {
         // to match ECF, if the property is marked as read only then we only allow setting the value if the current value is NULL
         if (!isOriginalValueNull && propertyLayout.IsReadOnlyProperty())
             return ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
         }
-             
+#endif
+
     if (isInUninitializedFixedCountArray)
         {
         ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, 0, GetReservedArrayCount (propertyLayout));
