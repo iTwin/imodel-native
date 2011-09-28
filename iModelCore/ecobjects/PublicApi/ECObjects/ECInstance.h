@@ -286,19 +286,10 @@ struct ECInstanceInteropHelper
 
     ECOBJECTS_EXPORT static bool            IsPropertyReadOnly (IECInstanceCR, ECValueAccessorR);
     ECOBJECTS_EXPORT static EC::ECEnablerP  GetEnablerForStructArrayEntry (IECInstanceR instance, ECValueAccessorR arrayMemberAccessor, WCharCP schemaName, WCharCP className);
-    ECOBJECTS_EXPORT static bvector<EC::ECValueAccessor> GetChildValueAccessors (IECInstanceCR instance, EC::ECValueAccessorR parentAccessor, bool includeNullValues);
-    ECOBJECTS_EXPORT static bvector<EC::ECStructArrayMemberAccessor> GetStructArrayMemberAccessors (IECInstanceCR instance, EC::ECValueAccessorR parentAccessor, bool includeNullValues);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetChildLocations (IECInstanceCR instance, EC::ECValueAccessorR parentAccessor, bool includeNullValues, EC::PropertyCollectionCallbackP  memoryAllocationCallbackP);
-    ECOBJECTS_EXPORT static UInt32 GetChildStructArrayMemberLocations (IECInstanceCR instance, EC::ECValueAccessorR parentAccessor, bool includeNullValues, EC::PropertyCollectionCallbackP memoryAllocationCallbackP);
-
-    ECOBJECTS_EXPORT static ECObjectsStatus  GetStructArrayEntry (EC::ECValueAccessorR structArrayEntryValueAccessor, IECInstanceR instance, UInt32 index, EC::ECValueAccessorCR structArrayValueAccessor, 
+    ECOBJECTS_EXPORT static ECObjectsStatus GetStructArrayEntry (EC::ECValueAccessorR structArrayEntryValueAccessor, IECInstanceR instance, UInt32 index, EC::ECValueAccessorCR structArrayValueAccessor, 
                                                                   bool createPropertyIfNotFound, WCharCP wcharAccessString, WCharCP schemaName, WCharCP className);
 
     ECOBJECTS_EXPORT static PrimitiveType   GetPrimitiveType       (IECInstanceCR instance, int propertyIndex);
-#ifdef NOT_USED
-    ECOBJECTS_EXPORT static ValueKind       GetValueKind           (IECInstanceCR instance, int propertyIndex);
-    ECOBJECTS_EXPORT static ArrayKind       GetArrayKind           (IECInstanceCR instance, int propertyIndex);
-#endif
     ECOBJECTS_EXPORT static bool            IsStructArray          (IECInstanceCR instance, int propertyIndex);
     ECOBJECTS_EXPORT static bool            IsArray                (IECInstanceCR instance, int propertyIndex);
     ECOBJECTS_EXPORT static bool            IsCalculatedECProperty (IECInstanceCR instance, int propertyIndex);
