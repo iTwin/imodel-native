@@ -38,9 +38,11 @@ struct  InstanceHeader
     InstanceFlags   m_instanceFlags;
     };
 
-enum ArrayModifierFlags : UInt32
+enum PropertyLayoutModifierFlags : UInt32
     {
-    ARRAYMODIFIERFLAGS_IsFixedCount    = 0x01
+    PROPERTYLAYOUTMODIFIERFLAGS_None              = 0x00,
+    PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount = 0x01,
+    PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly        = 0x02
     };
 
 /*=================================================================================**//**
@@ -50,38 +52,40 @@ struct PropertyLayout
     {
 friend struct ClassLayout;    
 private:
-    WString                m_accessString;        
+    WString                 m_accessString;        
     UInt32                  m_parentStructIndex;
     ECTypeDescriptor        m_typeDescriptor;
     
     // Using UInt32 instead of size_t below because we will persist this struct in an XAttribute. It will never be very big.
-    UInt32                  m_offset; //! An offset to either the data holding that property's value (for fixed-size values) or to the offset at which the properties value can be found.
-    UInt32                  m_modifierFlags; //! Can be used to indicate that a string should be treated as fixed size, with a max length, or that a longer fixed size type should be treated as an optional variable-sized type, or that for a string that only an entry to a StringTable is Stored, or that a default value should be used.
-    UInt32                  m_modifierData;  //! Data used with the modifier flag, like the length of a fixed-sized string.
-    UInt32                  m_nullflagsOffset;
-    NullflagsBitmask        m_nullflagsBitmask;
-  //ECPropertyCP            m_property; // WIP_FUSION: optional? YAGNI?
+    UInt32              m_offset; //! An offset to either the data holding that property's value (for fixed-size values) or to the offset at which the properties value can be found.
+    UInt32              m_modifierFlags; //! Can be used to indicate that a string should be treated as fixed size, with a max length, or that a longer fixed size type should be treated as an optional variable-sized type, or that for a string that only an entry to a StringTable is Stored, or that a default value should be used.
+    UInt32              m_modifierData;  //! Data used with the modifier flag, like the length of a fixed-sized string.
+    UInt32              m_nullflagsOffset;
+    NullflagsBitmask    m_nullflagsBitmask;
+  //ECPropertyCP        m_property; // WIP_FUSION: optional? YAGNI?
     
 public:
-    PropertyLayout (WCharCP accessString, UInt32 psi, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask, UInt32 modifierFlags = 0, UInt32 modifierData = 0) : //, ECPropertyCP property) :
+    PropertyLayout (WCharCP accessString, UInt32 psi, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask, UInt32 modifierFlags = 0,  UInt32 modifierData = 0) : //, ECPropertyCP property) :
         m_accessString(accessString), m_parentStructIndex (psi), m_typeDescriptor(typeDescriptor), m_offset(offset), m_nullflagsOffset(nullflagsOffset), 
         m_nullflagsBitmask (nullflagsBitmask), m_modifierFlags (modifierFlags), m_modifierData (modifierData) { }; //, m_property(property) {};
 
-    inline WCharCP          GetAccessString() const     { return m_accessString.c_str(); }
-    inline UInt32           GetParentStructIndex() const{ return m_parentStructIndex; }
-    inline UInt32           GetOffset() const           { assert ( ! m_typeDescriptor.IsStruct()); return m_offset; }
-    inline UInt32           GetNullflagsOffset() const  { assert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsOffset; }
-    inline NullflagsBitmask GetNullflagsBitmask() const { assert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsBitmask; }
-    inline ECTypeDescriptor GetTypeDescriptor() const   { return m_typeDescriptor; }
-    inline UInt32           GetModifierFlags() const    { return m_modifierFlags; }
-    inline UInt32           GetModifierData() const     { return m_modifierData; }    
-    
-    bool                    IsFixedSized() const;
+    inline WCharCP                     GetAccessString() const     { return m_accessString.c_str(); }
+    inline UInt32                      GetParentStructIndex() const{ return m_parentStructIndex; }
+    inline UInt32                      GetOffset() const           { assert ( ! m_typeDescriptor.IsStruct()); return m_offset; }
+    inline UInt32                      GetNullflagsOffset() const  { assert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsOffset; }
+    inline NullflagsBitmask            GetNullflagsBitmask() const { assert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsBitmask; }
+    inline ECTypeDescriptor            GetTypeDescriptor() const   { return m_typeDescriptor; }
+    inline UInt32                      GetModifierFlags() const    { return m_modifierFlags; }
+    inline UInt32                      GetModifierData() const     { return m_modifierData; }    
+    inline bool                        IsReadOnlyProperty () const {return PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly == (m_modifierFlags & PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly);}
+
+    bool                               SetReadOnlyMask (bool readOnly);
+    bool                               IsFixedSized() const;
     //! Gets the size required for this PropertyValue in the fixed Section of the IECInstance's memory
     //! Variable-sized types will have 4 byte SecondaryOffset stored in the fixed Section.
-    UInt32                  GetSizeInFixedSection() const;
+    UInt32                             GetSizeInFixedSection() const;
     
-    WString                ToString();
+    WString                            ToString();
     };
 
 //#define USE_HASHMAP_IN_CLASSLAYOUT    
@@ -141,10 +145,10 @@ private:
 
         void        AddProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, UInt32 size, UInt32 modifierFlags = 0, UInt32 modifierData = 0);
         void        AddStructProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor);
-        void        AddFixedSizeProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor);
-        void        AddFixedSizeArrayProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, UInt32 arrayCount);
-        void        AddVariableSizeProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor);
-        void        AddVariableSizeArrayPropertyWithFixedCount (WCharCP accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount);        
+        void        AddFixedSizeProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, bool isReadOnly);
+        void        AddFixedSizeArrayProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, UInt32 arrayCount, bool isReadOnly);
+        void        AddVariableSizeProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, bool isReadOnly);
+        void        AddVariableSizeArrayPropertyWithFixedCount (WCharCP accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount, bool isReadOnly);        
         void        AddProperties (ECClassCR ecClass, WCharCP nameRoot, bool addFixedSize);
 
         Factory (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex, bool hideFromLeakDetection);
@@ -167,6 +171,7 @@ public:
     ECOBJECTS_EXPORT UInt32                  GetFirstChildPropertyIndex (UInt32 parentIndex) const;
     ECOBJECTS_EXPORT UInt32                  GetNextChildPropertyIndex (UInt32 parentIndex, UInt32 childIndex) const;
     ECOBJECTS_EXPORT ECObjectsStatus         GetAccessStringByIndex (WCharCP& accessString, UInt32 propertyIndex) const;
+    ECOBJECTS_EXPORT ECObjectsStatus         GetPropertyIndices (bvector<UInt32>& properties, UInt32 parentIndex) const;
 
     ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();
 
@@ -188,6 +193,8 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyLayout (PropertyLayoutCP & propertyLayout, WCharCP accessString) const;
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const;
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyIndex (UInt32& propertyIndex, WCharCP accessString) const;
+    ECOBJECTS_EXPORT bool            IsPropertyReadOnly (UInt32 propertyIndex) const;
+    ECOBJECTS_EXPORT bool            SetPropertyReadOnly (UInt32 propertyIndex, bool readOnly) const;
     
 /*__PUBLISH_SECTION_END__*/
     ECOBJECTS_EXPORT void            AddPropertyDirect (WCharCP accessString, UInt32 parentStructIndex, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask);
@@ -296,6 +303,7 @@ private:
         
     static ECObjectsStatus    CreateNullArrayElementsAt (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, MemoryInstanceSupportR instance, UInt32 insertIndex, UInt32 insertCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP=NULL);
     };
+
 /*__PUBLISH_SECTION_START__*/    
 
 //=======================================================================================    
@@ -310,7 +318,7 @@ struct MemoryInstanceSupport
     
 private:    
     bool                        m_allowWritingDirectlyToInstanceMemory;
-       
+
     //! Returns the offset of the property value relative to the start of the instance data.
     //! If useIndex is true then the offset of the array element value at the specified index is returned.
     UInt32              GetOffsetOfPropertyValue (PropertyLayoutCR propertyLayout, bool useIndex = false, UInt32 index = 0) const;
@@ -344,7 +352,7 @@ private:
     //! Sets the null bit of the specified property to the value indicated by isNull
     //! If nIndices is > 0 then the null bit is set for the array element at the specified index    
     void                SetPropertyValueNull (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, bool isNull);    
-    
+
     //! Returns the number of elements in the specfieid array that are currently reserved but not necessarily allocated.
     //! This is important when an array has a minimum size but has not yet been initialized.  We delay initializing the memory for the minimum # of elements until
     //! the first value is set.  If an array does not have a minimum element count then GetReservedArrayCount will always equal GetAllocatedArrayCount
@@ -356,7 +364,6 @@ private:
     //! Returns the number of elements in the specfieid array that are currently allocated in the instance data memory block.
     //! See the description of GetReservedArrayCount for explanation about the differences between the two.
     ArrayCount          GetAllocatedArrayCount (PropertyLayoutCR propertyLayout) const;
-    
     
     //! Shifts the values' data and adjusts SecondaryOffsets for all variable-sized property values 
     //! AFTER the given one, to make room for additional bytes needed for the property value of the given PropertyLayout
@@ -402,7 +409,7 @@ protected:
     ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElementsFromMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
     ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 removeIndex, UInt32 removeCount);
     ECOBJECTS_EXPORT WString          InstanceDataToString (WCharCP indent, ClassLayoutCR classLayout) const;
-    
+
     virtual ~MemoryInstanceSupport () {}
 
     //! Sets the in-memory value of the array index of the specified property to be the struct value as held by v
@@ -414,6 +421,9 @@ protected:
     virtual ECObjectsStatus           _SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index) = 0;
     virtual ECObjectsStatus           _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const = 0;
     virtual ECObjectsStatus           _RemoveStructArrayElementsFromMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP) = 0;
+
+    //! Invoked after a variable-sized array is successfully resized, to allow derived classes to adjust their internal state in response if necessary.
+    virtual void                      _HandleArrayResize (PropertyLayoutCP propertyLayout, UInt32 atIndex, Int32 countDelta) { };
 
     virtual bool                _IsMemoryInitialized () const = 0;    
     
