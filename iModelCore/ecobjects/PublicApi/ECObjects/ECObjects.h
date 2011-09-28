@@ -153,6 +153,11 @@ enum ECObjectsStatus
     ECOBJECTS_STATUS_UnableToSetReadOnlyProperty                        = ECOBJECTS_ERROR_BASE + 0x1A,
     ECOBJECTS_STATUS_ArrayIndexDoesNotExist                             = ECOBJECTS_ERROR_BASE + 0x1B,
     ECOBJECTS_STATUS_PropertyValueMatchesNoChange                       = ECOBJECTS_ERROR_BASE + 0x1C,
+    ECOBJECTS_STATUS_NoChildProperties                                  = ECOBJECTS_ERROR_BASE + 0x1D,
+    ECOBJECTS_STATUS_UnableToAllocateManagedMemory                      = ECOBJECTS_ERROR_BASE + 0x1E,
+    ECOBJECTS_STATUS_MemoryAllocationCallbackRequired                   = ECOBJECTS_ERROR_BASE + 0x1F,
+    ECOBJECTS_STATUS_UnableToAddStructArrayMember                       = ECOBJECTS_ERROR_BASE + 0x20,
+    ECOBJECTS_STATUS_UnableToSetStructArrayMemberInstance               = ECOBJECTS_ERROR_BASE + 0x21,
     ECOBJECTS_STATUS_Error                                              = ECOBJECTS_ERROR_BASE + 0xFFF,
     }; 
 

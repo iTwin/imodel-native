@@ -17,7 +17,6 @@
 #include "FileUtilities.h"
 #include <Logging\bentleylogging.h>
 #include <Bentley/BeStringUtilities.h>
-
 #include "LeakDetector.h"
 
 BEGIN_BENTLEY_EC_NAMESPACE

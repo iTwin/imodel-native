@@ -1203,6 +1203,25 @@ ECValueAccessor::ECValueAccessor (ECValueAccessorCR accessor)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
+void ECValueAccessor::Clone (ECValueAccessorCR accessor)
+    {
+    m_locationVector.clear();
+
+    FOR_EACH (ECValueAccessor::Location const & location, accessor.GetLocationVectorCR())
+        PushLocation (*location.enabler, location.propertyIndex, location.arrayIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValueAccessor::LocationVector const &   ECValueAccessor::GetLocationVectorCR() const
+    {
+    return m_locationVector;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
 const ECValueAccessor::LocationVector&          ECValueAccessor::GetLocationVector() const
     {
     return m_locationVector;
@@ -1291,6 +1310,14 @@ void                                            ECValueAccessor::Clear ()
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValueAccessor::Location&                      ECValueAccessor::DeepestLocation()
+    {
+    return m_locationVector.back();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValueAccessor::Location const&  ECValueAccessor::DeepestLocationCR () const
     {
     return m_locationVector.back();
     }

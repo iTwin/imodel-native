@@ -1349,7 +1349,7 @@ EC::ECEnablerP                  ECInstanceInteropHelper::GetEnablerForStructArra
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<EC::ECValueAccessor> ECInstanceInteropHelper::GetChildValueAccessors (IECInstanceCR instance, EC::ECValueAccessor parentAccessor, bool includeNullValues)
+bvector<EC::ECValueAccessor> ECInstanceInteropHelper::GetChildValueAccessors (IECInstanceCR instance, EC::ECValueAccessorR parentAccessor, bool includeNullValues)
     {
     bvector<EC::ECValueAccessor> childAccessors;
     EC::ECValue                  parentValue;
@@ -1459,7 +1459,45 @@ bvector<EC::ECValueAccessor> ECInstanceInteropHelper::GetChildValueAccessors (IE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<EC::ECStructArrayMemberAccessor> ECInstanceInteropHelper::GetStructArrayMemberAccessors (IECInstanceCR instance, EC::ECValueAccessor parentAccessor, bool includeNullValues)
+ECObjectsStatus ECInstanceInteropHelper::GetChildLocations (IECInstanceCR instance, EC::ECValueAccessorR parentAccessor, bool includeNullValues, EC::PropertyCollectionCallbackP memoryAllocationCallbackP)
+    {
+    if (NULL == memoryAllocationCallbackP)
+        return ECOBJECTS_STATUS_MemoryAllocationCallbackRequired;
+
+    bvector<EC::ECValueAccessor> childValueAccessors = ECInstanceInteropHelper::GetChildValueAccessors (instance, parentAccessor, includeNullValues);
+    if (0 == childValueAccessors.size())
+        return ECOBJECTS_STATUS_NoChildProperties;
+
+    UInt32 numLocationEntries = 0;
+    FOR_EACH (ECValueAccessorCR va, childValueAccessors)
+        numLocationEntries += (va.GetDepth () + 1);
+
+    byte* buffer = NULL;
+    size_t locationSize = sizeof(ECValueAccessor::Location);
+
+    if (0 != memoryAllocationCallbackP (buffer, (UInt32)(locationSize * numLocationEntries)))
+        return ECOBJECTS_STATUS_UnableToAllocateManagedMemory;
+
+    ECValueAccessor::Location* locationBuffer = (ECValueAccessor::Location*)buffer;
+
+    FOR_EACH (ECValueAccessorCR va, childValueAccessors)
+        {
+        FOR_EACH (ECValueAccessor::Location const & location, va.GetLocationVectorCR())
+            {
+            memcpy (locationBuffer, &location, locationSize);
+            locationBuffer++;
+            }
+
+        locationBuffer++;  // leave an empty location between ECValueAccessor
+        }
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<EC::ECStructArrayMemberAccessor> ECInstanceInteropHelper::GetStructArrayMemberAccessors (IECInstanceCR instance, EC::ECValueAccessorR parentAccessor, bool includeNullValues)
     {
     bvector<EC::ECStructArrayMemberAccessor> childAccessors;
     EC::ECValue                  parentValue;
@@ -1484,7 +1522,7 @@ bvector<EC::ECStructArrayMemberAccessor> ECInstanceInteropHelper::GetStructArray
     if (!arrayInfo.IsStructArray()) 
         return childAccessors;  // return empty property list
 
-    // container is a primitive array, add each primitive PropertyValue.
+    // container is an array, add a value accessor for each member.
     for (::UInt32 i=0; i<arrayCount; i++)
         {
         EC::ECValueAccessor valueAccessor (parentAccessor);
@@ -1509,6 +1547,197 @@ bvector<EC::ECStructArrayMemberAccessor> ECInstanceInteropHelper::GetStructArray
         }
 
     return childAccessors;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32 ECInstanceInteropHelper::GetChildStructArrayMemberLocations (IECInstanceCR instance, EC::ECValueAccessorR parentAccessor, bool includeNullValues, EC::PropertyCollectionCallbackP memoryAllocationCallbackP)
+    {
+    if (NULL == memoryAllocationCallbackP)
+        return 0;
+
+    bvector<EC::ECStructArrayMemberAccessor> childValueAccessors = ECInstanceInteropHelper::GetStructArrayMemberAccessors (instance, parentAccessor, includeNullValues);
+    if (0 == childValueAccessors.size())
+        return 0;
+
+    size_t  totalSize = 0;
+    size_t  stringCountSizePerAccessor = 2 * sizeof (UInt32);
+    UInt32  numLocationEntries = 0;
+
+    // calculate the size of the memory buffer that is needed
+    FOR_EACH (EC::ECStructArrayMemberAccessor const & sa, childValueAccessors)
+        {
+        totalSize += (((sa.m_schemaName.size() + sa.m_className.size() ) * sizeof (wchar_t)) + stringCountSizePerAccessor);
+        numLocationEntries += (sa.m_accessor.GetDepth () + 1);
+        }
+
+    totalSize += (numLocationEntries * sizeof(ECValueAccessor::Location));
+    byte* buffer = NULL;
+
+    // allocate the buffer
+    if (0 != memoryAllocationCallbackP (buffer, (UInt32)totalSize))
+        return 0;
+
+    byte* bufferLoc = buffer;
+    UInt32 numChars;
+    UInt32 numBytes;
+
+    // populate the allocated buffer
+    FOR_EACH (EC::ECStructArrayMemberAccessor const & sa, childValueAccessors)
+        {
+        numChars = (UInt32)sa.m_schemaName.length();
+        memcpy (bufferLoc, &numChars, sizeof (UInt32));
+        bufferLoc += sizeof (UInt32);
+
+        numBytes = numChars * sizeof (wchar_t);
+        memcpy (bufferLoc, sa.m_schemaName.c_str(), numBytes);
+        bufferLoc += numBytes;
+
+        numChars = (UInt32)sa.m_className.length();
+        memcpy (bufferLoc, &numChars, sizeof (UInt32));
+        bufferLoc += sizeof (UInt32);
+
+        numBytes = numChars * sizeof (wchar_t);
+        memcpy (bufferLoc, sa.m_className.c_str(), numBytes);
+        bufferLoc += numBytes;
+
+        ECValueAccessor::Location* locationBuffer = (ECValueAccessor::Location*)bufferLoc;
+
+        FOR_EACH (ECValueAccessor::Location const & location, sa.m_accessor.GetLocationVectorCR())
+            {
+            memcpy (locationBuffer, &location, sizeof(ECValueAccessor::Location));
+            locationBuffer++;
+
+            bufferLoc += sizeof(ECValueAccessor::Location);
+            }
+
+        locationBuffer++;  // leave an empty location between ECValueAccessor
+        bufferLoc += sizeof(ECValueAccessor::Location);
+        }
+
+    return numLocationEntries;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* This method is called from derived class so the rootInstance was pinned if necessary
+* before calling this method.
+* @bsimethod                                    Bill.Steinbock                  06/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+/* static */ EC::IECInstancePtr getParentNativeInstance (EC::IECInstanceCP rootInstance, EC::ECValueAccessorCR structValueAccessor)
+    {
+    // if not a top level property, get the native instance that will contain this struct array
+    if (structValueAccessor.GetDepth () > 1)
+        {
+        EC::ECValue parentStructValue;
+
+        EC::ECValueAccessor parentInstanceAccessor (structValueAccessor);
+        parentInstanceAccessor.PopLocation ();   // remove one level to get to the parent instance
+
+        rootInstance->GetValueUsingAccessor (parentStructValue, parentInstanceAccessor);
+        if (!parentStructValue.IsStruct ())
+            return NULL;
+
+        EC::IECInstancePtr structInstance = parentStructValue.GetStruct ();
+        if (structInstance.IsValid())
+            return structInstance;
+
+        // we may be processing a member of an embedded struct so we need to check the next level up
+        return getParentNativeInstance (rootInstance, parentInstanceAccessor);
+        }
+
+    return const_cast<EC::IECInstanceP>(rootInstance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  06/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (EC::ECValueAccessorR structArrayEntryValueAccessor, IECInstanceR instance, UInt32 index, EC::ECValueAccessorCR structArrayValueAccessor, 
+                                                             bool createPropertyIfNotFound, WCharCP wcharAccessString, 
+                                                             WCharCP schemaName, WCharCP className)
+    {
+    EC::ECEnablerR structArrayEnabler = *(const_cast<EC::ECEnablerP>(structArrayValueAccessor.DeepestLocationCR().enabler));
+    EC::StandaloneECEnablerPtr standaloneEnabler = structArrayEnabler.GetEnablerForStructArrayMember (schemaName, className);
+    if (standaloneEnabler.IsNull())
+        {
+        ECObjectsLogger::Log()->errorv (L"Unable to locate a standalone enabler for class \" %s \"", className);
+        return ECOBJECTS_STATUS_EnablerNotFound;
+        }
+
+    EC::ECValue  arrayVal;
+    instance.GetValueUsingAccessor (arrayVal, structArrayValueAccessor);
+
+    ArrayInfo   arrayInfo  = arrayVal.GetArrayInfo();
+    UInt32      arrayCount = arrayInfo.GetCount();
+
+    // adjust the ECVAlueAccessor to include the array index
+    EC::ECValueAccessor arrayEntryValueAccessor (structArrayValueAccessor);
+    arrayEntryValueAccessor.DeepestLocation ().arrayIndex = index;
+
+    if (arrayCount <= index)
+        {
+        // see if we are allowed to add a new strct array instance
+        if (!createPropertyIfNotFound)
+            return ECOBJECTS_STATUS_Error;
+
+        // only proceed if not read only instance
+        if (instance.IsReadOnly())
+            return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
+
+        EC::IECInstancePtr parentNativeInstance = getParentNativeInstance (&instance, structArrayValueAccessor);
+        if (parentNativeInstance.IsNull())
+            {
+            ECObjectsLogger::Log()->error (L"Unable to get native instance when processing ECInstanceInteropHelper::GetStructArrayEntry");
+            return ECOBJECTS_STATUS_Error;
+            }
+
+        ::UInt32 numToInsert = (index + 1) - arrayCount;
+        if (EC::ECOBJECTS_STATUS_Success != parentNativeInstance->AddArrayElements (wcharAccessString, numToInsert))
+            {
+            ECObjectsLogger::Log()->errorv(L"Unable to add array element(s) to native instance - access string \"%s\"", structArrayValueAccessor.GetManagedAccessString().c_str());
+            return ECOBJECTS_STATUS_UnableToAddStructArrayMember;
+            }
+
+        EC::ECValue  arrayEntryVal;
+        for (::UInt32 i=0; i<numToInsert; i++)
+            {
+            arrayEntryVal.SetStruct (standaloneEnabler->CreateInstance().get());
+            if (SUCCESS != parentNativeInstance->SetValue (wcharAccessString, arrayEntryVal, arrayCount+i))
+                return ECOBJECTS_STATUS_UnableToSetStructArrayMemberInstance;
+            }
+        }
+    else
+        {
+        // make sure the struct instance is not null
+        EC::ECValue arrayEntryVal;
+
+        instance.GetValueUsingAccessor (arrayEntryVal, arrayEntryValueAccessor);
+        if (arrayEntryVal.IsNull())
+            {
+            // see if we are allowed to add a new strct array instance
+            if (!createPropertyIfNotFound)
+                return ECOBJECTS_STATUS_Error;
+
+            // only proceed if not read only instance
+            if (instance.IsReadOnly())
+                return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
+
+            arrayEntryVal.SetStruct (standaloneEnabler->CreateInstance().get());
+
+            EC::IECInstancePtr parentNativeInstance = getParentNativeInstance (&instance, structArrayValueAccessor);
+            if (parentNativeInstance.IsNull())
+                {
+                ECObjectsLogger::Log()->error (L"Unable to get native instance when processing ECInstanceInteropHelper::GetStructArrayEntry");
+                return ECOBJECTS_STATUS_Error;
+                }
+
+            if (SUCCESS != parentNativeInstance->SetValue (wcharAccessString, arrayEntryVal, index))
+                return ECOBJECTS_STATUS_UnableToSetStructArrayMemberInstance;
+            }
+        }
+
+    structArrayEntryValueAccessor.Clone (arrayEntryValueAccessor);
+    return ECOBJECTS_STATUS_Success;
     }
 
 #ifdef NOT_USED

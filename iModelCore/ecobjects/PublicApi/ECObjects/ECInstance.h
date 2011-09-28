@@ -68,6 +68,7 @@ struct MemoryCallbackData
 // Declare an unmanaged function prototype 
 // Note the use of __stdcall for compatibility with managed code
 typedef int (__stdcall *EmbeddedInstanceCallbackP)(MemoryCallbackData* callbackData);
+typedef int (__stdcall *PropertyCollectionCallbackP)(byte* & layoutBufferAddress, unsigned int requiredSize);
 //! @endcond
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -285,8 +286,13 @@ struct ECInstanceInteropHelper
 
     ECOBJECTS_EXPORT static bool            IsPropertyReadOnly (IECInstanceCR, ECValueAccessorR);
     ECOBJECTS_EXPORT static EC::ECEnablerP  GetEnablerForStructArrayEntry (IECInstanceR instance, ECValueAccessorR arrayMemberAccessor, WCharCP schemaName, WCharCP className);
-    ECOBJECTS_EXPORT static bvector<EC::ECValueAccessor> GetChildValueAccessors (IECInstanceCR instance, EC::ECValueAccessor parentAccessor, bool includeNullValues);
-    ECOBJECTS_EXPORT static bvector<EC::ECStructArrayMemberAccessor> GetStructArrayMemberAccessors (IECInstanceCR instance, EC::ECValueAccessor parentAccessor, bool includeNullValues);
+    ECOBJECTS_EXPORT static bvector<EC::ECValueAccessor> GetChildValueAccessors (IECInstanceCR instance, EC::ECValueAccessorR parentAccessor, bool includeNullValues);
+    ECOBJECTS_EXPORT static bvector<EC::ECStructArrayMemberAccessor> GetStructArrayMemberAccessors (IECInstanceCR instance, EC::ECValueAccessorR parentAccessor, bool includeNullValues);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetChildLocations (IECInstanceCR instance, EC::ECValueAccessorR parentAccessor, bool includeNullValues, EC::PropertyCollectionCallbackP  memoryAllocationCallbackP);
+    ECOBJECTS_EXPORT static UInt32 GetChildStructArrayMemberLocations (IECInstanceCR instance, EC::ECValueAccessorR parentAccessor, bool includeNullValues, EC::PropertyCollectionCallbackP memoryAllocationCallbackP);
+
+    ECOBJECTS_EXPORT static ECObjectsStatus  GetStructArrayEntry (EC::ECValueAccessorR structArrayEntryValueAccessor, IECInstanceR instance, UInt32 index, EC::ECValueAccessorCR structArrayValueAccessor, 
+                                                                  bool createPropertyIfNotFound, WCharCP wcharAccessString, WCharCP schemaName, WCharCP className);
 
     ECOBJECTS_EXPORT static PrimitiveType   GetPrimitiveType       (IECInstanceCR instance, int propertyIndex);
 #ifdef NOT_USED
