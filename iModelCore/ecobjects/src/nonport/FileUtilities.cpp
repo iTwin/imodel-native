@@ -5,9 +5,9 @@
 |  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
-#include <windows.h>
 #include "ECObjectsPch.h"
+
+#if defined (_WIN32) // WIP_NONPORT *** rewrite this entire file in terms of BeFileName, BeFileListIterator, etc.
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -131,3 +131,13 @@ ECObjectsStatus GetSchemaFileName (WString& fullFileName, UInt32& foundMinorVers
     }
 
 END_BENTLEY_EC_NAMESPACE
+
+#elif defined (__unix__)
+
+BEGIN_BENTLEY_EC_NAMESPACE
+ECObjectsStatus GetSchemaFileName (WString& fullFileName, UInt32& foundMinorVersion, WCharCP schemaPath, bool useLatestCompatibleMatch) {return ECOBJECTS_STATUS_Success;}
+WString ECFileUtilities::GetDllPath(){return L"";}
+END_BENTLEY_EC_NAMESPACE
+
+#endif
+

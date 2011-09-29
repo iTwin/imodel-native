@@ -32,22 +32,26 @@ static IECInstanceP    getEmbeddedSupportingStructInstance (StructArrayEntry con
 ///////////////////////////////////////////////////////////////////////////////////////////
 //  MemoryECInstanceBase
 ///////////////////////////////////////////////////////////////////////////////////////////
+const UInt32 BITS_PER_FLAGSBITMASK = (sizeof(UInt32) * 8);
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-MemoryECInstanceBase::MemoryECInstanceBase (byte * data, UInt32 size, bool allowWritingDirectlyToInstanceMemory) :
+MemoryECInstanceBase::MemoryECInstanceBase (byte * data, UInt32 size, ClassLayoutCR classLayout, bool allowWritingDirectlyToInstanceMemory, UInt8 numBitsPerPropertyFlag) :
         MemoryInstanceSupport (allowWritingDirectlyToInstanceMemory),
         m_bytesAllocated(size), m_structValueId (0)
     {
     m_data.address = data;
     m_isInManagedInstance = false;
     m_structInstances.vectorP = NULL;
+
+    InitializePerPropertyFlags (classLayout, numBitsPerPropertyFlag);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory) :
+MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory, UInt8 numBitsPerPropertyFlag) :
         MemoryInstanceSupport (allowWritingDirectlyToInstanceMemory),
         m_bytesAllocated(0), m_structValueId (0)
     {
@@ -55,11 +59,55 @@ MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 mi
     m_structInstances.vectorP = NULL;
     m_data.address = NULL;
 
+#if defined (_WIN32) // WIP_NONPORT
     UInt32 size = max (minimumBufferSize, classLayout.GetSizeOfFixedSection());
+#elif defined (__unix__)
+    // *** NEEDS WORK: When you stop including Windows.h, you can use this for both platforms:
+    UInt32 size = std::max (minimumBufferSize, classLayout.GetSizeOfFixedSection());
+#endif    
     m_data.address = (byte*)malloc (size);
     m_bytesAllocated = size;
 
     InitializeMemory (classLayout, m_data.address, m_bytesAllocated);
+    InitializePerPropertyFlags (classLayout, numBitsPerPropertyFlag);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void    MemoryECInstanceBase::InitializePerPropertyFlags (ClassLayoutCR classLayout, UInt8 numBitsPerPropertyFlag)
+    {
+    // max numBitsPerPropertyFlag = 16
+    m_perPropertyFlagsHolder.numBitsPerProperty = (numBitsPerPropertyFlag > 16) ? 16 : numBitsPerPropertyFlag;
+
+    UInt32 numProperties = classLayout.GetPropertyCount ();
+    if (numBitsPerPropertyFlag > 0 && numProperties > 0)
+        {
+        m_perPropertyFlagsHolder.numPerPropertyFlagsEntries = ((numProperties * m_perPropertyFlagsHolder.numBitsPerProperty)+BITS_PER_FLAGSBITMASK) / BITS_PER_FLAGSBITMASK;
+        m_perPropertyFlagsHolder.perPropertyFlags.address = (UInt32*)calloc(m_perPropertyFlagsHolder.numPerPropertyFlagsEntries, sizeof(UInt32));
+        }
+    else
+        {
+        m_perPropertyFlagsHolder.numPerPropertyFlagsEntries = 0;
+        m_perPropertyFlagsHolder.perPropertyFlags.address = NULL;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt8                    MemoryECInstanceBase::GetNumBitsInPerPropertyFlags ()
+    {
+    return m_perPropertyFlagsHolder.numBitsPerProperty;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32     MemoryECInstanceBase::GetPerPropertyFlagsSize () const
+    {
+    return     m_perPropertyFlagsHolder.numPerPropertyFlagsEntries;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -115,6 +163,92 @@ bool                MemoryECInstanceBase::_IsMemoryInitialized () const
 size_t                MemoryECInstanceBase::GetObjectSize () const
     {
     return _GetObjectSize();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus          MemoryECInstanceBase::IsPerPropertyBitSet (bool& isSet, UInt8 bitIndex, UInt32 propertyIndex) const
+    {
+    if (bitIndex >= m_perPropertyFlagsHolder.numBitsPerProperty)
+        return ECOBJECTS_STATUS_InvalidIndexForPerPropertFlag;
+
+    if (propertyIndex >= GetClassLayout().GetPropertyCount ())
+        return ECOBJECTS_STATUS_IndexOutOfRange;
+
+    UInt32* addressOfPerPropertyFlags = m_perPropertyFlagsHolder.perPropertyFlags.address;
+
+    if (!addressOfPerPropertyFlags)
+        return ECOBJECTS_STATUS_Error;
+
+    if (m_isInManagedInstance)
+        {
+        byte const* thisAddress   = (byte const*)this;
+        addressOfPerPropertyFlags =  (UInt32*) (thisAddress + m_perPropertyFlagsHolder.perPropertyFlags.offset);
+        }
+
+    UInt32 bitToCheck = (propertyIndex * m_perPropertyFlagsHolder.numBitsPerProperty) + bitIndex;
+    UInt32 offset = bitToCheck / BITS_PER_FLAGSBITMASK;
+    UInt32 bit    = bitToCheck % BITS_PER_FLAGSBITMASK;
+    UInt32 bitValue = 1 << bit;
+
+    isSet = (bitValue == (addressOfPerPropertyFlags[offset] & bitValue));
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus          MemoryECInstanceBase::SetPerPropertyBit (UInt8 bitIndex, UInt32 propertyIndex, bool setBit)
+    {
+    if (bitIndex >= m_perPropertyFlagsHolder.numBitsPerProperty)
+        return ECOBJECTS_STATUS_InvalidIndexForPerPropertFlag;
+
+    if (propertyIndex >= GetClassLayout().GetPropertyCount ())
+        return ECOBJECTS_STATUS_IndexOutOfRange;
+
+    UInt32* addressOfPerPropertyFlags = m_perPropertyFlagsHolder.perPropertyFlags.address;
+
+    if (!addressOfPerPropertyFlags)
+        return ECOBJECTS_STATUS_InvalidIndexForPerPropertFlag;
+
+    if (m_isInManagedInstance)
+        {
+        byte const* thisAddress   = (byte const*)this;
+        addressOfPerPropertyFlags =  (UInt32*) (thisAddress + m_perPropertyFlagsHolder.perPropertyFlags.offset);
+        }
+
+    UInt32 bitToSet = (propertyIndex * m_perPropertyFlagsHolder.numBitsPerProperty) + bitIndex;
+    UInt32 offset = bitToSet / BITS_PER_FLAGSBITMASK;
+    UInt32 bit    = bitToSet % BITS_PER_FLAGSBITMASK;
+    UInt32 bitValue = 1 << bit;
+
+    if (setBit)
+        addressOfPerPropertyFlags[offset] |= bitValue;
+    else
+        addressOfPerPropertyFlags[offset] &= ~bitValue;
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void    MemoryECInstanceBase::ClearAllPerPropertyFlags ()
+    {
+    UInt32* addressOfPerPropertyFlags = m_perPropertyFlagsHolder.perPropertyFlags.address;
+    if (!addressOfPerPropertyFlags)
+        return;
+
+    if (m_isInManagedInstance)
+        {
+        byte const* thisAddress   = (byte const*)this;
+        addressOfPerPropertyFlags =  (UInt32*) (thisAddress + m_perPropertyFlagsHolder.perPropertyFlags.offset);
+        }
+
+    if (addressOfPerPropertyFlags)
+        memset (addressOfPerPropertyFlags, 0, m_perPropertyFlagsHolder.numPerPropertyFlagsEntries*sizeof(UInt32));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -193,13 +327,24 @@ size_t          MemoryECInstanceBase::LoadDataIntoManagedInstance (byte* managed
     size_t offsetToIsInManagedInstance = (size_t)((byte const* )&m_isInManagedInstance - (byte const* )this); 
     memcpy (managedBuffer+offsetToIsInManagedInstance, &isInManagedInstance, sizeof(isInManagedInstance));
 
+    // store the offset to the perPropertyFlags in m_perPropertyFlags.address within managedBuffer
+    size_t offsetToPropertyFlags = (size_t)((byte const* )&m_perPropertyFlagsHolder.perPropertyFlags.address - (byte const* )this); 
+    globalOffset = (Int64)offset;
+    memcpy (managedBuffer+offsetToPropertyFlags, &globalOffset, sizeof(globalOffset));
+
+    // now copy the perPropertyFlags data
+    size_t currentBytesUsed = m_perPropertyFlagsHolder.numPerPropertyFlagsEntries * sizeof(UInt32);
+    memcpy (managedBuffer+offset, m_perPropertyFlagsHolder.perPropertyFlags.address, currentBytesUsed);
+
+    offset += currentBytesUsed;
+
     // store the offset to the property data in m_data.address within managedBuffer
     size_t offsetToPropertyData = (size_t)((byte const* )&m_data.address - (byte const* )this); 
     globalOffset = (Int64)offset;
     memcpy (managedBuffer+offsetToPropertyData, &globalOffset, sizeof(globalOffset));
 
     // now copy the property data
-    size_t currentBytesUsed = (size_t)m_bytesAllocated;
+    currentBytesUsed = (size_t)m_bytesAllocated;
     memcpy (managedBuffer+offset, m_data.address, currentBytesUsed);
 
     offset += currentBytesUsed;
@@ -306,6 +451,12 @@ void                MemoryECInstanceBase::_FreeAllocation ()
     {
     if (m_isInManagedInstance)
         return;
+
+    if (m_perPropertyFlagsHolder.perPropertyFlags.address)
+        {
+        free (m_perPropertyFlagsHolder.perPropertyFlags.address); 
+        m_perPropertyFlagsHolder.perPropertyFlags.address = NULL;
+        }
 
     free (m_data.address); 
     m_data.address = NULL;
@@ -951,6 +1102,8 @@ void                MemoryECInstanceBase::ClearValues ()
         m_structInstances.vectorP->clear ();
 
     InitializeMemory (GetClassLayout(), GetAddressOfPropertyData(), m_bytesAllocated);
+
+    ClearAllPerPropertyFlags ();
     }
    
 /*---------------------------------------------------------------------------------**//**
@@ -1133,7 +1286,7 @@ size_t                StandaloneECInstance::_GetOffsetToIECInstance () const
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
 StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, byte * data, UInt32 size) :
-        MemoryECInstanceBase (data, size, true),
+        MemoryECInstanceBase (data, size, enabler.GetClassLayout(), true, 2),
         m_sharedWipEnabler(const_cast<StandaloneECEnablerP>(&enabler)) // WIP_FUSION: can we get rid of the const cast?
     {
     m_sharedWipEnabler->AddRef ();
@@ -1143,7 +1296,7 @@ StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, byte 
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/        
 StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, UInt32 minimumBufferSize) :
-        MemoryECInstanceBase (enabler.GetClassLayout(), minimumBufferSize, true),
+        MemoryECInstanceBase (enabler.GetClassLayout(), minimumBufferSize, true, 2),
         m_sharedWipEnabler(const_cast<StandaloneECEnablerP>(&enabler)) // WIP_FUSION: can we get rid of the const cast?
     {
     m_sharedWipEnabler->AddRef ();
@@ -1202,9 +1355,10 @@ size_t                StandaloneECInstance::_GetObjectSize () const
     {
     size_t objectSize = sizeof(*this);
     size_t primaryInstanceDataSize = (size_t)_GetBytesAllocated(); //GetBytesUsed();
+    size_t perPropertyDataSize = sizeof(UInt32) * GetPerPropertyFlagsSize();
     size_t supportingInstanceDataSize = CalculateSupportingInstanceDataSize ();
 
-    return objectSize+primaryInstanceDataSize+supportingInstanceDataSize;
+    return objectSize+primaryInstanceDataSize+perPropertyDataSize+supportingInstanceDataSize;
     }
 
 /*---------------------------------------------------------------------------------**//**
