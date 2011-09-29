@@ -40,12 +40,11 @@ BeXmlNodeP FindChild (BeXmlNodeP parent, CharCP name)
 
 bool GetDPoint3d (BeXmlNodeP element, DPoint3dR xyz)
     {
-#if defined (WIP_NONPORT)
     BeXmlNodeP text;
     bvector<double> doubles;
     if (   NULL != element
         && NULL != (text = element->GetFirstChild (BEXMLNODE_Any))
-        && BEXML_Success == text->GetContentDoubleValues (doubles)          // *** WIP_NONPORT -- function not found
+        && BEXML_Success == text->GetContentDoubleValues (doubles)
         && doubles.size () == 3)
         {
         xyz.x = doubles[0];
@@ -53,7 +52,6 @@ bool GetDPoint3d (BeXmlNodeP element, DPoint3dR xyz)
         xyz.z = doubles[2];
         return true;
         }
-#endif
     return false;
     }
 
