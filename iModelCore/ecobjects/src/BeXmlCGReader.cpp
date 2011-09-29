@@ -8,6 +8,8 @@
 
 #include "ECObjectsPch.h"
 
+#include <Bentley/CatchNonPortable.h>
+
 BEGIN_BENTLEY_EC_NAMESPACE
 // If primitve has a child curve vector, just extract it.
 // Otherwise put the primitive in a new curve vector.
@@ -30,7 +32,7 @@ BeXmlNodeP FindChild (BeXmlNodeP parent, CharCP name)
     for (BeXmlNodeP child = parent->GetFirstChild (BEXMLNODE_Any); NULL != child;
                 child = child->GetNextSibling (BEXMLNODE_Any))
         {
-        if (0 == stricmp (child->GetName (), name))
+        if (0 == BeStringUtilities::Stricmp (child->GetName (), name))
             return child;
         }
     return NULL;
@@ -38,11 +40,12 @@ BeXmlNodeP FindChild (BeXmlNodeP parent, CharCP name)
 
 bool GetDPoint3d (BeXmlNodeP element, DPoint3dR xyz)
     {
+#if defined (WIP_NONPORT)
     BeXmlNodeP text;
     bvector<double> doubles;
     if (   NULL != element
         && NULL != (text = element->GetFirstChild (BEXMLNODE_Any))
-        && BEXML_Success == text->GetContentDoubleValues (doubles)
+        && BEXML_Success == text->GetContentDoubleValues (doubles)          // *** WIP_NONPORT -- function not found
         && doubles.size () == 3)
         {
         xyz.x = doubles[0];
@@ -50,6 +53,7 @@ bool GetDPoint3d (BeXmlNodeP element, DPoint3dR xyz)
         xyz.z = doubles[2];
         return true;
         }
+#endif
     return false;
     }
 
@@ -116,7 +120,7 @@ bool GetPoints (BeXmlNodeP parent, CharCP listName, CharCP pointName, bvector<DP
                 child = child->GetNextSibling (BEXMLNODE_Element))
         {
         if ((NULL == pointName
-             || 0 == stricmp (child->GetName (), pointName))
+             || 0 == BeStringUtilities::Stricmp (child->GetName (), pointName))
             && GetDPoint3d (child, xyz))
             points.push_back (xyz);
         }
@@ -132,7 +136,7 @@ bool GetDoubles (BeXmlNodeP parent, CharCP listName, CharCP pointName, bvector<d
     for (BeXmlNodeP child = listNode->GetFirstChild (BEXMLNODE_Any); NULL != child;
                 child = child->GetNextSibling (BEXMLNODE_Any))
         {
-        if (0 == stricmp (child->GetName (), pointName)
+        if (0 == BeStringUtilities::Stricmp (child->GetName (), pointName)
             && GetDouble (child, value))
             values.push_back (value);
         }
@@ -156,7 +160,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, MSBsplineSurfacePtr &result)
     bvector<double>   weights;
 
 
-    if (0 == stricmp (node->GetName (), "BsplineSurface")
+    if (0 == BeStringUtilities::Stricmp (node->GetName (), "BsplineSurface")
         && FindChildInt (node, "orderU", orderU)
         && FindChildInt (node, "numUControlPoint", numPolesU)
         && FindChildInt (node, "orderV", orderV)
@@ -185,7 +189,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, MSBsplineSurfacePtr &result)
 
 bool BeXmlCGParser::TryParse (BeXmlNodeP node, ICurvePrimitivePtr &result)
     {
-    if (stricmp (node->GetName (), "LineSegment") == 0)
+    if (BeStringUtilities::Stricmp (node->GetName (), "LineSegment") == 0)
         {
         DSegment3d segment;
         if (   FindChildDPoint3d (node, "StartPoint", segment.point[0])
@@ -195,7 +199,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ICurvePrimitivePtr &result)
             return true;
             }
         }
-    else if (stricmp (node->GetName (), "CircularArc") == 0)
+    else if (BeStringUtilities::Stricmp (node->GetName (), "CircularArc") == 0)
         {
         RotMatrix axes;
         DPoint3d origin;
@@ -218,7 +222,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ICurvePrimitivePtr &result)
             return true;
             }
         }
-    else if (stricmp (node->GetName (), "EllipticArc") == 0)
+    else if (BeStringUtilities::Stricmp (node->GetName (), "EllipticArc") == 0)
         {
         RotMatrix axes;
         DPoint3d origin;
@@ -244,7 +248,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ICurvePrimitivePtr &result)
             return true;
             }
         }
-    else if (stricmp (node->GetName (), "SurfacePatch") == 0)
+    else if (BeStringUtilities::Stricmp (node->GetName (), "SurfacePatch") == 0)
         {
         BeXmlNodeP exteriorLoop = FindChild (node, "ExteriorLoop");
         BeXmlNodeP holeLoops     = FindChild (node, "ListOfHoleLoop");
@@ -277,7 +281,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ICurvePrimitivePtr &result)
                 }
             }
         }
-    else if (stricmp (node->GetName (), "CurveChain") == 0)
+    else if (BeStringUtilities::Stricmp (node->GetName (), "CurveChain") == 0)
         {
         BeXmlNodeP curveList = FindChild (node, "ListOfCurve");
         CurveVectorPtr curves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
@@ -291,7 +295,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ICurvePrimitivePtr &result)
         result = ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*curves);
         return true;
         }
-    else if (stricmp (node->GetName (), "Linestring") == 0)
+    else if (BeStringUtilities::Stricmp (node->GetName (), "Linestring") == 0)
         {
         bvector<DPoint3d> points;
         if (GetPoints (node, "ListOfPoint", NULL, points))    // allow any tag name in the points !!!
@@ -300,7 +304,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ICurvePrimitivePtr &result)
             return true;
             }
         }
-    else if (stricmp (node->GetName (), "Polygon") == 0)
+    else if (BeStringUtilities::Stricmp (node->GetName (), "Polygon") == 0)
         {
         bvector<DPoint3d> points;
         if (GetPoints (node, "ListOfPoint", NULL, points))    // allow any tag name in the points !!!
@@ -313,7 +317,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ICurvePrimitivePtr &result)
             return true;
             }
         }
-    else if (stricmp (node->GetName (), "CircularDisk") == 0)
+    else if (BeStringUtilities::Stricmp (node->GetName (), "CircularDisk") == 0)
         {
         RotMatrix axes;
         DPoint3d origin;
@@ -334,7 +338,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ICurvePrimitivePtr &result)
             return true;
             }
         }
-    else if (stricmp (node->GetName (), "EllipticDisk") == 0)
+    else if (BeStringUtilities::Stricmp (node->GetName (), "EllipticDisk") == 0)
         {
         RotMatrix axes;
         DPoint3d origin;
@@ -356,7 +360,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ICurvePrimitivePtr &result)
             return true;
             }
         }
-    else if (stricmp (node->GetName (), "BsplineCurve") == 0)
+    else if (BeStringUtilities::Stricmp (node->GetName (), "BsplineCurve") == 0)
         {
         int order;
         bool closed = false;
@@ -385,7 +389,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ICurvePrimitivePtr &result)
 bool BeXmlCGParser::TryParse (BeXmlNodeP node, ISolidPrimitivePtr &result)
     {
     CharCP name = node->GetName ();
-    if (stricmp (name, "CircularCone") == 0)
+    if (BeStringUtilities::Stricmp (name, "CircularCone") == 0)
         {
         RotMatrix axes;
         DPoint3d centerA, centerB;
@@ -409,7 +413,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ISolidPrimitivePtr &result)
             return true;
             }
         }
-    else if (stricmp (name, "SkewedCone") == 0)
+    else if (BeStringUtilities::Stricmp (name, "SkewedCone") == 0)
         {
         RotMatrix axes;
         DPoint3d centerA, centerB;
@@ -432,7 +436,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ISolidPrimitivePtr &result)
             return true;
             }
         }
-    else if (stricmp (name, "Sphere") == 0)
+    else if (BeStringUtilities::Stricmp (name, "Sphere") == 0)
         {
         RotMatrix axes;
         DPoint3d center;
@@ -446,7 +450,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ISolidPrimitivePtr &result)
             return true;
             }
         }
-    else if (stricmp (name, "CircularCylinder") == 0)
+    else if (BeStringUtilities::Stricmp (name, "CircularCylinder") == 0)
         {
         RotMatrix axes;
         DPoint3d centerA, centerB;
@@ -470,7 +474,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ISolidPrimitivePtr &result)
             return true;
             }
         }
-    else if (stricmp (name, "TorusPipe") == 0)
+    else if (BeStringUtilities::Stricmp (name, "TorusPipe") == 0)
         {
         RotMatrix axes;
         DPoint3d center;
@@ -501,7 +505,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ISolidPrimitivePtr &result)
             return true;
             }
         }
-    else if (stricmp (name, "SurfaceBySweptCurve") == 0)
+    else if (BeStringUtilities::Stricmp (name, "SurfaceBySweptCurve") == 0)
         {
         BeXmlNodeP baseGeometryNode = FindChild (node, "BaseGeometry");
         BeXmlNodeP railCurveNode    = FindChild (node, "RailCurve");
