@@ -1153,7 +1153,7 @@ TEST_F(MemoryLayoutTests, CheckPerPropertyFlags)
     ECClassP ecClass = schema->GetClassP (L"CadData");
     ASSERT_TRUE (NULL != ecClass);
     
-    StandaloneECEnablerPtr enabler = schemaOwner->LocateStandaloneEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
+    StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     UInt8  numBitPerProperty =  instance->GetNumBitsInPerPropertyFlags ();
