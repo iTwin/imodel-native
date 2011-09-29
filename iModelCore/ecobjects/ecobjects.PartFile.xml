@@ -133,11 +133,11 @@
         <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
         <ProductDirectory Name="mergemodules"                       Deliver="false"/>
         <ProductDirectory Name="libs"                               Deliver="false"/>
-        <ProductDirectory Name="geomnativeassemblies"               Deliver="false"/>
 
         <ProductDirectory Name="ECObjectsTestSeedData"              Path="SeedData"/>
         <ProductDirectory Name="ECObjectsTestLoggingConfig"         Path=""/>
 
+        <ProductDirectory Name="geomnativeassemblies"               Path=""/>
         <ProductDirectory Name="loggingnativeassemblies"            Path=""/>
         <ProductDirectory Name="LoggingOptionalNativeAssemblies"    Path="" />
         <ProductDirectory Name="BentleyNativeAssemblies"            Path=""/>

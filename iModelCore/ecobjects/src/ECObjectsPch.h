@@ -20,7 +20,7 @@
 #include "Logger.h"
 #include "FileUtilities.h"
 #include <Bentley/BeFileName.h>
-
+#include <ECObjects/BeXmlCommonGeometry.h>
 #if defined (ANDROID) && defined (NDK_BUILD)
     #include <bentleylogging.h>
 #else

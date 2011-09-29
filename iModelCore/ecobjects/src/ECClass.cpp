@@ -47,6 +47,8 @@ ECClass::~ECClass ()
         delete entry->second;
     
     m_propertyMap.clear();
+    
+    m_defaultStandaloneEnabler = NULL;
 
     if ( ! m_hideFromLeakDetection)
         g_leakDetector.ObjectDestroyed(*this);
@@ -268,6 +270,21 @@ ECSchemaCR ECClass::GetSchema () const
 ECRelationshipClassCP ECClass::GetRelationshipClassCP() const
     {
     return _GetRelationshipClassCP();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+StandaloneECEnablerP ECClass::GetDefaultStandaloneEnabler() const
+    {
+    if (!m_defaultStandaloneEnabler.IsValid())
+        {
+        ClassLayoutP classLayout   = ClassLayout::BuildFromClass (*this, 0, 0, m_hideFromLeakDetection);
+        m_defaultStandaloneEnabler = StandaloneECEnabler::CreateEnabler (*this, *classLayout, NULL, true);
+        }
+
+    assert(m_defaultStandaloneEnabler.IsValid());
+    return m_defaultStandaloneEnabler.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -850,8 +867,7 @@ const void*       arg
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus ECClass::ReadXmlAttributes
 (
-MSXML2::IXMLDOMNode& classNode,
-IStandaloneEnablerLocaterR  standaloneEnablerLocater
+MSXML2::IXMLDOMNode& classNode
 )
     {                
     MSXML2::IXMLDOMNamedNodeMapPtr nodeAttributesPtr = classNode.attributes;
@@ -886,7 +902,7 @@ IStandaloneEnablerLocaterR  standaloneEnablerLocater
 SchemaReadStatus ECClass::ReadXmlContents
 (
 MSXML2::IXMLDOMNode&        classNode,
-IStandaloneEnablerLocaterR  standaloneEnablerLocater
+IStandaloneEnablerLocaterP  standaloneEnablerLocater
 )
     {            
     // Build inheritance hierarchy 
@@ -949,14 +965,14 @@ IStandaloneEnablerLocaterR  standaloneEnablerLocater
         SchemaReadStatus status = pProperty->_ReadXml(xmlNodePtr, standaloneEnablerLocater);
         if (status != SCHEMA_READ_STATUS_Success)
             {
-            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to deserialize properties of ECClass '%s' in the ECSchema '%s'", this->GetName().c_str(), this->GetSchema().GetName().c_str());                
+            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to read properties of ECClass '%s' in the ECSchema '%s'", this->GetName().c_str(), this->GetSchema().GetName().c_str());                
             delete pProperty;
             return status;
             }
         
         if (ECOBJECTS_STATUS_Success != this->AddProperty (pProperty))
             {
-            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to deserialize ECClass '%s' in the ECSchema '%s' because a problem occurred while adding ECProperty '%s'", 
+            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to read ECClass '%s' in the ECSchema '%s' because a problem occurred while adding ECProperty '%s'", 
                 this->GetName().c_str(), this->GetSchema().GetName().c_str(), pProperty->GetName().c_str());
             delete pProperty;
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
@@ -1383,7 +1399,7 @@ ECSchemaCP ECRelationshipConstraint::_GetContainerSchema() const
 SchemaReadStatus ECRelationshipConstraint::ReadXml
 (
 MSXML2::IXMLDOMNode         &constraintNode,
-IStandaloneEnablerLocaterR  standaloneEnablerLocater
+IStandaloneEnablerLocaterP  standaloneEnablerLocater
 )
     {
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
@@ -1855,7 +1871,7 @@ bool ECRelationshipClass::GetIsOrdered
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipClass::GetOrderedRelationshipPropertyName (WString& propertyName, ECRelationshipEnd end) const
     {
-    // see if the struct has a custom attribute to custom serialize itself
+    // see if the struct has a custom attribute to custom persist itself
     IECInstancePtr caInstance = GetCustomAttribute(L"SupportsOrderedRelationships");
     if (caInstance.IsValid())
         {
@@ -1915,11 +1931,10 @@ MSXML2::IXMLDOMElement& parentNode
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus ECRelationshipClass::ReadXmlAttributes
 (
-MSXML2::IXMLDOMNode &classNode, 
-IStandaloneEnablerLocaterR  standaloneEnablerLocater
+MSXML2::IXMLDOMNode &classNode
 )
     {
-    SchemaReadStatus status = __super::ReadXmlAttributes(classNode, standaloneEnablerLocater);
+    SchemaReadStatus status = __super::ReadXmlAttributes(classNode);
     if (status != SCHEMA_READ_STATUS_Success)
         return status;
         
@@ -1938,7 +1953,7 @@ IStandaloneEnablerLocaterR  standaloneEnablerLocater
 SchemaReadStatus ECRelationshipClass::ReadXmlContents
 (
 MSXML2::IXMLDOMNode &classNode, 
-IStandaloneEnablerLocaterR  standaloneEnablerLocater
+IStandaloneEnablerLocaterP  standaloneEnablerLocater
 )
     {
     SchemaReadStatus status = __super::ReadXmlContents(classNode, standaloneEnablerLocater);

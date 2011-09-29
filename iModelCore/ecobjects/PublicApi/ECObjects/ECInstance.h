@@ -136,7 +136,6 @@ protected:
     virtual bool                _IsReadOnly() const = 0;
     virtual WString             _ToString (WCharCP indent) const = 0;
     virtual size_t              _GetOffsetToIECInstance () const = 0;
-
     ECOBJECTS_EXPORT virtual ECObjectsStatus       _SetInstanceId(WCharCP);
     ECOBJECTS_EXPORT virtual ECObjectsStatus       _GetDisplayLabel (WString& displayLabel) const;    
     ECOBJECTS_EXPORT virtual ECObjectsStatus       _SetDisplayLabel (WCharCP displayLabel);    
@@ -194,13 +193,13 @@ public:
     ECOBJECTS_EXPORT static void        Debug_GetAllocationStats (int* currentLive, int* totalAllocs, int* totalFrees);
     ECOBJECTS_EXPORT static void        Debug_ReportLeaks (bvector<WString>& classNamesToExclude);
 
-    ECOBJECTS_EXPORT static InstanceReadStatus   ReadFromXmlFile   (IECInstancePtr& ecInstance, WCharCP fileName, ECInstanceDeserializationContextR context);
-    ECOBJECTS_EXPORT static InstanceReadStatus   ReadFromXmlStream (IECInstancePtr& ecInstance, IStreamP stream, ECInstanceDeserializationContextR context);
-    ECOBJECTS_EXPORT static InstanceReadStatus   ReadFromXmlString (IECInstancePtr& ecInstance, WCharCP xmlString, ECInstanceDeserializationContextR context);
+    ECOBJECTS_EXPORT static InstanceReadStatus   ReadFromXmlFile   (IECInstancePtr& ecInstance, WCharCP fileName, ECInstanceReadContextR context);
+    ECOBJECTS_EXPORT static InstanceReadStatus   ReadFromXmlStream (IECInstancePtr& ecInstance, IStreamP stream, ECInstanceReadContextR context);
+    ECOBJECTS_EXPORT static InstanceReadStatus   ReadFromXmlString (IECInstancePtr& ecInstance, WCharCP xmlString, ECInstanceReadContextR context);
 
-    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlFile   (WCharCP fileName, bool isStandAlone, bool writeInstanceId);
-    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlStream (IStreamP stream, bool isStandAlone, bool writeInstanceId);
-    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlString (WString & ecInstanceXml, bool isStandAlone, bool writeInstanceId);
+    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlFile   (WCharCP fileName, bool isCompleteXmlDocument, bool writeInstanceId);
+    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlStream (IStreamP stream, bool isCompleteXmlDocument, bool writeInstanceId);
+    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlString (WStringR ecInstanceXml, bool isCompleteXmlDocument, bool writeInstanceId);
     };
     
 //=======================================================================================    
@@ -231,6 +230,8 @@ typedef RefCountedPtr<IECRelationshipInstance> IECRelationshipInstancePtr;
         
 
 /*__PUBLISH_SECTION_END__*/
+
+struct ECStructArrayMemberAccessor;
 
 struct ECInstanceInteropHelper
     {
@@ -283,6 +284,9 @@ struct ECInstanceInteropHelper
     ECOBJECTS_EXPORT static void            SetToNull (IECInstanceR, ECValueAccessorCR);
 
     ECOBJECTS_EXPORT static bool            IsPropertyReadOnly (IECInstanceCR, ECValueAccessorR);
+    ECOBJECTS_EXPORT static EC::ECEnablerP  GetEnablerForStructArrayEntry (IECInstanceR instance, ECValueAccessorR arrayMemberAccessor, WCharCP schemaName, WCharCP className);
+    ECOBJECTS_EXPORT static bvector<EC::ECValueAccessor> GetChildValueAccessors (IECInstanceCR instance, EC::ECValueAccessor parentAccessor, bool includeNullValues);
+    ECOBJECTS_EXPORT static bvector<EC::ECStructArrayMemberAccessor> GetStructArrayMemberAccessors (IECInstanceCR instance, EC::ECValueAccessor parentAccessor, bool includeNullValues);
 
     ECOBJECTS_EXPORT static PrimitiveType   GetPrimitiveType       (IECInstanceCR instance, int propertyIndex);
 #ifdef NOT_USED
