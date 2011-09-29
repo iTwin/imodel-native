@@ -1051,7 +1051,7 @@ public:
 struct ECSchema /*__PUBLISH_ABSTRACT__*/ : public IECCustomAttributeContainer
 {
 /*__PUBLISH_SECTION_END__*/
-friend SearchPathSchemaFileLocater;
+friend struct SearchPathSchemaFileLocater;
 // Schemas are RefCounted but none of the constructs held by schemas (classes, properties, etc.) are.
 // They are freed when the schema is freed.
 

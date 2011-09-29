@@ -1388,7 +1388,7 @@ bvector<EC::ECValueAccessor> ECInstanceInteropHelper::GetChildValueAccessors (IE
             enabler = &structInstance->GetEnablerR();
             }
 
-        bvector<::UInt32>   propertyIndices;
+        bvector< ::UInt32>   propertyIndices;
 
         if (EC::ECOBJECTS_STATUS_Success != enabler->GetPropertyIndices (propertyIndices, parentIndex))
             return childAccessors;
@@ -3817,20 +3817,3 @@ BentleyStatus IECWipRelationshipInstance::SetTargetOrderId (Int64 targetOrderId)
     }
 
 END_BENTLEY_EC_NAMESPACE
-
-#if defined (__unix__)
-BEGIN_BENTLEY_EC_NAMESPACE
-    #define MSXML2_IXMLDOMNode      void *
-    #define MSXML2_IXMLDOMNodePtr   void *
-    #define MSXML2_IXMLDOMDocument2 void *
-    #define MSXML2_IXMLDOMElement   void *
-
-InstanceWriteStatus     IECInstance::WriteToXmlString (WString & ecInstanceXml, bool isStandAlone, bool writeInstanceId) {return INSTANCE_WRITE_STATUS_CantCreateXmlWriter;}
-InstanceWriteStatus     IECInstance::WriteToXmlStream (IStreamP stream, bool isStandAlone, bool writeInstanceId){return INSTANCE_WRITE_STATUS_CantCreateXmlWriter;}
-InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool isStandAlone, bool writeInstanceId){return INSTANCE_WRITE_STATUS_CantCreateXmlWriter;}
-InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr& ecInstance, WCharCP xmlString, ECInstanceDeserializationContextR context){return INSTANCE_READ_STATUS_CantCreateXmlReader;}
-InstanceReadStatus   IECInstance::ReadFromXmlStream (IECInstancePtr& ecInstance, IStreamP stream, ECInstanceDeserializationContextR context){return INSTANCE_READ_STATUS_CantCreateXmlReader;}
-InstanceReadStatus   IECInstance::ReadFromXmlFile (IECInstancePtr& ecInstance, WCharCP fileName, ECInstanceDeserializationContextR context){return INSTANCE_READ_STATUS_CantCreateXmlReader;}
-
-END_BENTLEY_EC_NAMESPACE
-#endif // defined (__unix__)

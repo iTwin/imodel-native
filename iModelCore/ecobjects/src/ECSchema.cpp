@@ -2167,27 +2167,3 @@ const WString &name
     }
 
 END_BENTLEY_EC_NAMESPACE
-
-
-#if defined (__unix__)
-BEGIN_BENTLEY_EC_NAMESPACE
-    #define MSXML2_IXMLDOMNode      void *
-    #define MSXML2_IXMLDOMNodePtr   void *
-    #define MSXML2_IXMLDOMDocument2 void *
-    #define MSXML2_IXMLDOMElement   void *
-SchemaReadStatus ECSchema::ReadClassStubsFromXml(MSXML2_IXMLDOMNode&,ClassDeserializationVector&,ECSchemaDeserializationContextR){return SCHEMA_READ_STATUS_FailedToParseXml;}
-SchemaReadStatus ECSchema::ReadClassContentsFromXml(ClassDeserializationVector&,ECSchemaDeserializationContextR){return SCHEMA_READ_STATUS_FailedToParseXml;}
-SchemaReadStatus ECSchema::ReadSchemaReferencesFromXml(MSXML2_IXMLDOMNode&,ECSchemaDeserializationContextR){return SCHEMA_READ_STATUS_FailedToParseXml;}
-SchemaReadStatus ECSchema::ReadXml(ECSchemaP&,MSXML2_IXMLDOMDocument2&,ECSchemaDeserializationContextR){return SCHEMA_READ_STATUS_FailedToParseXml;}
-SchemaReadStatus ECSchema::ReadFromXmlFile(ECSchemaP&,WCharCP,ECSchemaDeserializationContextR){return SCHEMA_READ_STATUS_FailedToParseXml;}
-SchemaWriteStatus ECSchema::WriteSchemaReferences(MSXML2_IXMLDOMElement&)const{return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
-SchemaWriteStatus ECSchema::WriteCustomAttributeDependencies(MSXML2_IXMLDOMElement&,IECCustomAttributeContainerCR,ECSchemaSerializationContext&)const{return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
-SchemaWriteStatus ECSchema::WriteClass(MSXML2_IXMLDOMElement&,ECClassCR,ECSchemaSerializationContext&)const{return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
-SchemaWriteStatus ECSchema::WritePropertyDependencies(MSXML2_IXMLDOMElement&,ECClassCR,ECSchemaSerializationContext&)const{return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
-SchemaWriteStatus ECSchema::WriteXml(MSXML2_IXMLDOMDocument2*)const{return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
-SchemaWriteStatus ECSchema::WriteToXmlString(WString&)const{return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
-SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP){return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
-SchemaWriteStatus ECSchema::WriteToXmlStream(IStreamP){return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
-
-END_BENTLEY_EC_NAMESPACE
-#endif // defined (__unix__)

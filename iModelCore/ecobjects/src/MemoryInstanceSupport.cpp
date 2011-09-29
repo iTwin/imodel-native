@@ -1,4 +1,4 @@
-
+/*---------------------------------------------------------------------------------**//**
 |
 |     $Source: src/MemoryInstanceSupport.cpp $
 |
@@ -1069,7 +1069,7 @@ UInt32  ClassLayout::GetFirstChildPropertyIndex (UInt32 parentIndex) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ClassLayout::GetPropertyIndices (bvector<UInt32>& properties, UInt32 parentIndex) const
     {
-    bmap<UInt32, bvector<UInt32>>::const_iterator mapIterator = m_logicalStructureMap.find (parentIndex);
+    bmap<UInt32, bvector<UInt32> >::const_iterator mapIterator = m_logicalStructureMap.find (parentIndex);
     if ( ! EXPECTED_CONDITION (m_logicalStructureMap.end() != mapIterator))
         return ECOBJECTS_STATUS_Error;
 

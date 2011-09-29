@@ -950,22 +950,3 @@ WStringCR maxOccurs
     }
 
 END_BENTLEY_EC_NAMESPACE
-
-#if defined (__unix__)
-BEGIN_BENTLEY_EC_NAMESPACE
-    #define MSXML2_IXMLDOMNode      void *
-    #define MSXML2_IXMLDOMNodePtr   void *
-    #define MSXML2_IXMLDOMDocument2 void *
-    #define MSXML2_IXMLDOMElement   void *
-SchemaReadStatus ECProperty::_ReadXml(MSXML2_IXMLDOMNode&,IStandaloneEnablerLocaterR){return SCHEMA_READ_STATUS_FailedToParseXml;}
-SchemaWriteStatus ECProperty::_WriteXml(MSXML2_IXMLDOMElement&){return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
-SchemaWriteStatus ECProperty::_WriteXml(MSXML2_IXMLDOMElement&,WCharCP){return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
-SchemaReadStatus PrimitiveECProperty::_ReadXml(MSXML2_IXMLDOMNode&,IStandaloneEnablerLocaterR){return SCHEMA_READ_STATUS_FailedToParseXml;}
-SchemaWriteStatus PrimitiveECProperty::_WriteXml(MSXML2_IXMLDOMElement&){return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
-SchemaReadStatus StructECProperty::_ReadXml(MSXML2_IXMLDOMNode&,IStandaloneEnablerLocaterR){return SCHEMA_READ_STATUS_FailedToParseXml;}
-SchemaWriteStatus StructECProperty::_WriteXml(MSXML2_IXMLDOMElement&){return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
-SchemaReadStatus ArrayECProperty::_ReadXml(MSXML2_IXMLDOMNode&,IStandaloneEnablerLocaterR){return SCHEMA_READ_STATUS_FailedToParseXml;}
-SchemaWriteStatus ArrayECProperty::_WriteXml(MSXML2_IXMLDOMElement&){return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
-
-END_BENTLEY_EC_NAMESPACE
-#endif // defined (__unix__)
