@@ -10,7 +10,7 @@
 
 //#define EC_TRACE_MEMORY
 
-#if defined (_WIN32) && !defined (BENTLEY_EXCLUDE_WINDOWS_HEADERS)
+#if defined (_WIN32) && !defined (BENTLEY_EXCLUDE_WINDOWS_HEADERS) && !defined(BENTLEY_EXCLUDE_MSXML)
 #include <msxml6/msxml6.tlh>
 #endif
 /*__PUBLISH_SECTION_START__*/
