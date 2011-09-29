@@ -1974,3 +1974,19 @@ IStandaloneEnablerLocaterP  standaloneEnablerLocater
 #endif //defined (_WIN32) // WIP_NONPORT
 
 END_BENTLEY_EC_NAMESPACE
+
+#if defined (__unix__)
+BEGIN_BENTLEY_EC_NAMESPACE
+    #define MSXML2_IXMLDOMNode      void *
+    #define MSXML2_IXMLDOMNodePtr   void *
+    #define MSXML2_IXMLDOMDocument2 void *
+    #define MSXML2_IXMLDOMElement   void *
+SchemaReadStatus ECRelationshipClass::ReadXmlAttributes(MSXML2_IXMLDOMNode &){return SCHEMA_READ_STATUS_FailedToParseXml;}
+SchemaReadStatus ECRelationshipClass::ReadXmlContents(MSXML2_IXMLDOMNode &,IStandaloneEnablerLocaterP){return SCHEMA_READ_STATUS_FailedToParseXml;}
+SchemaWriteStatus ECRelationshipClass::WriteXml(MSXML2_IXMLDOMElement& ) const{return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
+SchemaReadStatus ECClass::ReadXmlContents(MSXML2_IXMLDOMNode &, IStandaloneEnablerLocaterP  ){return SCHEMA_READ_STATUS_FailedToParseXml;}
+SchemaReadStatus ECClass::ReadXmlAttributes(MSXML2_IXMLDOMNode &){return SCHEMA_READ_STATUS_FailedToParseXml;}
+SchemaWriteStatus ECClass::WriteXml(MSXML2_IXMLDOMElement& ) const{return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
+
+END_BENTLEY_EC_NAMESPACE
+#endif // defined (__unix__)

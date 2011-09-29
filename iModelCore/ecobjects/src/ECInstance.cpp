@@ -3817,3 +3817,16 @@ BentleyStatus IECWipRelationshipInstance::SetTargetOrderId (Int64 targetOrderId)
     }
 
 END_BENTLEY_EC_NAMESPACE
+
+#if defined (__unix__)
+BEGIN_BENTLEY_EC_NAMESPACE
+    #define MSXML2_IXMLDOMNode      void *
+    #define MSXML2_IXMLDOMNodePtr   void *
+    #define MSXML2_IXMLDOMDocument2 void *
+    #define MSXML2_IXMLDOMElement   void *
+
+InstanceWriteStatus     IECInstance::WriteToXmlString (WString & ecInstanceXml, bool isStandAlone, bool writeInstanceId) {return INSTANCE_WRITE_STATUS_CantCreateXmlWriter;}
+InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr&, WCharCP, ECInstanceReadContextR){return INSTANCE_READ_STATUS_CantCreateXmlReader;}
+
+END_BENTLEY_EC_NAMESPACE
+#endif // defined (__unix__)

@@ -2167,3 +2167,17 @@ const WString &name
     }
 
 END_BENTLEY_EC_NAMESPACE
+
+
+#if defined (__unix__)
+BEGIN_BENTLEY_EC_NAMESPACE
+    #define MSXML2_IXMLDOMNode      void *
+    #define MSXML2_IXMLDOMNodePtr   void *
+    #define MSXML2_IXMLDOMDocument2 void *
+    #define MSXML2_IXMLDOMElement   void *
+
+SchemaWriteStatus ECSchema::WriteToXmlString(WString&)const{return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
+SchemaReadStatus ECSchema::ReadFromXmlFile(ECSchemaP&,WCharCP,ECSchemaReadContextR){return SCHEMA_READ_STATUS_FailedToParseXml;}
+
+END_BENTLEY_EC_NAMESPACE
+#endif // defined (__unix__)
