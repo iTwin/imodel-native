@@ -68,7 +68,6 @@ struct MemoryCallbackData
 // Declare an unmanaged function prototype 
 // Note the use of __stdcall for compatibility with managed code
 typedef int (__stdcall *EmbeddedInstanceCallbackP)(MemoryCallbackData* callbackData);
-typedef int (__stdcall *PropertyCollectionCallbackP)(byte* & layoutBufferAddress, unsigned int requiredSize);
 //! @endcond
 
 //////////////////////////////////////////////////////////////////////////////////

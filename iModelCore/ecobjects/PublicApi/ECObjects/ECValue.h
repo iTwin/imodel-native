@@ -365,17 +365,6 @@ public:
 struct ECValuesCollection;
 struct ECValuesCollectionIterator;
 
-struct ECStructArrayMemberAccessor
-    {
-    ECValueAccessor  m_accessor;
-    WString          m_schemaName;
-    WString          m_className;
-
-    ECStructArrayMemberAccessor ();
-
-    ECStructArrayMemberAccessor (ECValueAccessorCR accessor, WCharCP schemaName, WCharCP className);
-    }; 
-
 /*__PUBLISH_SECTION_START__*/
 
 //=======================================================================================  

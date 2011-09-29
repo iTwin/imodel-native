@@ -23,14 +23,6 @@ DebugInstanceLeakMap    g_debugInstanceLeakMap;
 //WIP_FUSION:  This should use EC::LeakDetector  (see ecschema.cpp)
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  09/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECStructArrayMemberAccessor::ECStructArrayMemberAccessor (ECValueAccessorCR accessor, WCharCP schemaName, WCharCP className) 
-    : m_accessor(accessor), m_schemaName(schemaName), m_className(className)
-        {
-        }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  09/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 CustomStructSerializerManager::CustomStructSerializerManager ()
