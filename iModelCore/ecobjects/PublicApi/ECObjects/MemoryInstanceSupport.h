@@ -38,7 +38,7 @@ struct  InstanceHeader
     InstanceFlags   m_instanceFlags;
     };
 
-enum PropertyLayoutModifierFlags : UInt32
+enum ArrayModifierFlags ENUM_UNDERLYING_TYPE (UInt32)
     {
     PROPERTYLAYOUTMODIFIERFLAGS_None              = 0x00,
     PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount = 0x01,

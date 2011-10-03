@@ -3755,11 +3755,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
     #define MSXML2_IXMLDOMElement   void *
 
 InstanceWriteStatus     IECInstance::WriteToXmlString (WString & ecInstanceXml, bool isStandAlone, bool writeInstanceId) {return INSTANCE_WRITE_STATUS_CantCreateXmlWriter;}
-InstanceWriteStatus     IECInstance::WriteToXmlStream (IStreamP stream, bool isStandAlone, bool writeInstanceId){return INSTANCE_WRITE_STATUS_CantCreateXmlWriter;}
-InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool isStandAlone, bool writeInstanceId){return INSTANCE_WRITE_STATUS_CantCreateXmlWriter;}
-InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr& ecInstance, WCharCP xmlString, ECInstanceDeserializationContextR context){return INSTANCE_READ_STATUS_CantCreateXmlReader;}
-InstanceReadStatus   IECInstance::ReadFromXmlStream (IECInstancePtr& ecInstance, IStreamP stream, ECInstanceDeserializationContextR context){return INSTANCE_READ_STATUS_CantCreateXmlReader;}
-InstanceReadStatus   IECInstance::ReadFromXmlFile (IECInstancePtr& ecInstance, WCharCP fileName, ECInstanceDeserializationContextR context){return INSTANCE_READ_STATUS_CantCreateXmlReader;}
+InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr&, WCharCP, ECInstanceReadContextR){return INSTANCE_READ_STATUS_CantCreateXmlReader;}
 
 END_BENTLEY_EC_NAMESPACE
 #endif // defined (__unix__)

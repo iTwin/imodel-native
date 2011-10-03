@@ -180,9 +180,9 @@ static ECOBJECTS_EXPORT void Write (BeXmlWriterR dest, CurveVectorCR curves, boo
 
 
 //! @param [in] dest xml receiver
-static ECOBJECTS_EXPORT void BeXmlCGWriter::Write (BeXmlWriterR dest, ISolidPrimitiveR data);
+static ECOBJECTS_EXPORT void Write (BeXmlWriterR dest, ISolidPrimitiveR data);
 //! @param [in] dest xml receiver
-static ECOBJECTS_EXPORT void BeXmlCGWriter::Write (BeXmlWriterR dest, IGeometryPtr data);
+static ECOBJECTS_EXPORT void Write (BeXmlWriterR dest, IGeometryPtr data);
 
 };
 

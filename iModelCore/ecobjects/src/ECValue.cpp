@@ -728,7 +728,7 @@ BentleyStatus       ECValue::SetDateTimeTicks (Int64 value)
 //              of 100-nanosecond  intervals that have elapsed since 00:00:00 01/01/01 
 //////////////////////////////////////////////////////////////////////////////////////////
 
-static const Int64 TICKADJUSTMENT = 504911232000000000;     // ticks between 01/01/01 and 01/01/1601
+static const Int64 TICKADJUSTMENT = 504911232000000000LL;     // ticks between 01/01/01 and 01/01/1601
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010

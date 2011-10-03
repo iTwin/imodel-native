@@ -10,7 +10,7 @@
 
 #include "ECObjects.h"
 #include <Geom/GeomApi.h>
-#include <ECObjects\StandaloneECInstance.h>
+#include <ECObjects/StandaloneECInstance.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
