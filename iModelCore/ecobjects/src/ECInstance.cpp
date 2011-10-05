@@ -3447,8 +3447,8 @@ static InstanceReadStatus   ReportStatus (InstanceReadStatus status, WCharCP xml
     {
     if (INSTANCE_READ_STATUS_Success != status)
         ECObjectsLogger::Log()->errorv (L"Failed to deserialize instance from XML string. Status %d, string %s", status, xmlString);
-    else
-        ECObjectsLogger::Log()->tracev (L"Native ECInstance of type %s deserialized from string", ecInstance.IsValid() ? ecInstance->GetClass().GetName() : L"Null");
+    //else //This logging becomes overwhelmingly excessive when dealing with large ECSchemas with many ECCustomAttributes... turn it on on-demand
+    //    ECObjectsLogger::Log()->tracev (L"Native ECInstance of type %s deserialized from string", ecInstance.IsValid() ? ecInstance->GetClass().GetName() : L"Null");
     return status;
     }
         
