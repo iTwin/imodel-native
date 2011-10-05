@@ -588,10 +588,10 @@ WCharCP  versionString
 bool            ECSchema::SchemasMatch
 (
 SchemaMatchType matchType,
-WCharCP soughtName,
+WCharCP         soughtName,
 UInt32          soughtMajor,
 UInt32          soughtMinor,
-WCharCP candidateName,
+WCharCP         candidateName,
 UInt32          candidateMajor,
 UInt32          candidateMinor
 )

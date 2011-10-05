@@ -374,6 +374,9 @@ void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 byt
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ClassLayout::IsCompatible (ClassLayoutCR classLayout) const
     {
+    if (this == &classLayout)
+        return true;
+
     if (0 != _wcsicmp (GetECClassName().c_str(), classLayout.GetECClassName().c_str()))
         return false;
 
