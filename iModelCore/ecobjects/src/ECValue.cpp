@@ -728,7 +728,7 @@ BentleyStatus       ECValue::SetDateTimeTicks (Int64 value)
 //              of 100-nanosecond  intervals that have elapsed since 00:00:00 01/01/01 
 //////////////////////////////////////////////////////////////////////////////////////////
 
-static const Int64 TICKADJUSTMENT = 504911232000000000;     // ticks between 01/01/01 and 01/01/1601
+static const Int64 TICKADJUSTMENT = 504911232000000000LL;     // ticks between 01/01/01 and 01/01/1601
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
@@ -1232,6 +1232,26 @@ ECValueAccessor::ECValueAccessor (ECValueAccessorCR accessor)
     : m_locationVector (accessor.GetLocationVector())
     {
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECValueAccessor::Clone (ECValueAccessorCR accessor)
+    {
+    m_locationVector.clear();
+
+    FOR_EACH (ECValueAccessor::Location const & location, accessor.GetLocationVectorCR())
+        PushLocation (*location.enabler, location.propertyIndex, location.arrayIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValueAccessor::LocationVector const &   ECValueAccessor::GetLocationVectorCR() const
+    {
+    return m_locationVector;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1323,6 +1343,14 @@ void                                            ECValueAccessor::Clear ()
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValueAccessor::Location&                      ECValueAccessor::DeepestLocation()
+    {
+    return m_locationVector.back();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValueAccessor::Location const&  ECValueAccessor::DeepestLocationCR () const
     {
     return m_locationVector.back();
     }

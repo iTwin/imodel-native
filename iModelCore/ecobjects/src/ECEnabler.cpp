@@ -13,7 +13,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECEnabler::ECEnabler(ECClassCR ecClass, IStandaloneEnablerLocaterR childECEnablerLocater) : m_ecClass (ecClass), m_standaloneInstanceEnablerLocater (childECEnablerLocater)
+ECEnabler::ECEnabler(ECClassCR ecClass, IStandaloneEnablerLocaterP structStandaloneEnablerLocater) : m_ecClass (ecClass), m_standaloneInstanceEnablerLocater (structStandaloneEnablerLocater)
     {
     };
 
@@ -30,7 +30,19 @@ ECEnabler::~ECEnabler()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StandaloneECEnablerPtr          ECEnabler::_LocateStandaloneEnabler (WCharCP schemaName, WCharCP className)  
     {
-    return m_standaloneInstanceEnablerLocater.LocateStandaloneEnabler (schemaName, className); 
+    if (NULL != m_standaloneInstanceEnablerLocater)
+        return m_standaloneInstanceEnablerLocater->LocateStandaloneEnabler (schemaName, className);
+    
+    
+    ECSchemaCP schema = m_ecClass.GetSchema().FindSchema(schemaName);
+    if (NULL == schema)
+        return NULL;
+
+    ECClassP ecClass = schema->GetClassP(className);
+    if (NULL == ecClass)
+        return NULL;
+    
+    return ecClass->GetDefaultStandaloneEnabler();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -52,6 +64,7 @@ ECObjectsStatus     ECEnabler::GetAccessString  (WCharCP& accessString, UInt32 p
 UInt32              ECEnabler::GetPropertyCount () const { return _GetPropertyCount (); }
 UInt32              ECEnabler::GetFirstPropertyIndex (UInt32 parentIndex) const { return _GetFirstPropertyIndex (parentIndex); }
 UInt32              ECEnabler::GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const { return _GetNextPropertyIndex (parentIndex, inputIndex); }
+ECObjectsStatus     ECEnabler::GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const{ return _GetPropertyIndices (indices, parentIndex); };
 
 #if defined (EXPERIMENTAL_TEXT_FILTER)
 /*---------------------------------------------------------------------------------**//**

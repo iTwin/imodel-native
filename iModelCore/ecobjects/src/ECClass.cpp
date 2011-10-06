@@ -47,6 +47,8 @@ ECClass::~ECClass ()
         delete entry->second;
     
     m_propertyMap.clear();
+    
+    m_defaultStandaloneEnabler = NULL;
 
     if ( ! m_hideFromLeakDetection)
         g_leakDetector.ObjectDestroyed(*this);
@@ -227,6 +229,21 @@ ECSchemaCR ECClass::GetSchema () const
 ECRelationshipClassCP ECClass::GetRelationshipClassCP() const
     {
     return _GetRelationshipClassCP();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+StandaloneECEnablerP ECClass::GetDefaultStandaloneEnabler() const
+    {
+    if (!m_defaultStandaloneEnabler.IsValid())
+        {
+        ClassLayoutP classLayout   = ClassLayout::BuildFromClass (*this, 0, 0, m_hideFromLeakDetection);
+        m_defaultStandaloneEnabler = StandaloneECEnabler::CreateEnabler (*this, *classLayout, NULL, true);
+        }
+
+    assert(m_defaultStandaloneEnabler.IsValid());
+    return m_defaultStandaloneEnabler.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -749,7 +766,7 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode, IStandaloneE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode,IStandaloneEnablerLocaterR  standaloneEnablerLocater)
+SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode,IStandaloneEnablerLocaterP  standaloneEnablerLocater)
     {            
     // Get the BaseClass child nodes.
     BeXmlDom::IterableNodeSet childNodes;
@@ -813,14 +830,14 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode,IStandaloneEnab
         SchemaReadStatus status = ecProperty->_ReadXml (*childNode, standaloneEnablerLocater);
         if (status != SCHEMA_READ_STATUS_Success)
             {
-            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to deserialize properties of ECClass '%ls' in the ECSchema '%ls'", this->GetName().c_str(), this->GetSchema().GetName().c_str());                
+            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to read properties of ECClass '%ls' in the ECSchema '%ls'", this->GetName().c_str(), this->GetSchema().GetName().c_str());                
             delete ecProperty;
             return status;
             }
         
         if (ECOBJECTS_STATUS_Success != this->AddProperty (ecProperty))
             {
-            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to deserialize ECClass '%ls' in the ECSchema '%ls' because a problem occurred while adding ECProperty '%s'", 
+            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to read ECClass '%ls' in the ECSchema '%ls' because a problem occurred while adding ECProperty '%s'", 
                 this->GetName().c_str(), this->GetSchema().GetName().c_str(), ecProperty->GetName().c_str());
             delete ecProperty;
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
@@ -1227,7 +1244,7 @@ ECSchemaCP ECRelationshipConstraint::_GetContainerSchema() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, IStandaloneEnablerLocaterR  standaloneEnablerLocater)
+SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, IStandaloneEnablerLocaterP  standaloneEnablerLocater)
     {
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
     
@@ -1619,7 +1636,7 @@ bool ECRelationshipClass::GetIsOrdered () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipClass::GetOrderedRelationshipPropertyName (WString& propertyName, ECRelationshipEnd end) const
     {
-    // see if the struct has a custom attribute to custom serialize itself
+    // see if the struct has a custom attribute to custom persist itself
     IECInstancePtr caInstance = GetCustomAttribute(L"SupportsOrderedRelationships");
     if (caInstance.IsValid())
         {
@@ -1667,10 +1684,10 @@ SchemaWriteStatus ECRelationshipClass::_WriteXml (BeXmlNodeP& classNode, BeXmlNo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECRelationshipClass::_ReadXmlAttributes (BeXmlNodeR classNode, IStandaloneEnablerLocaterR  standaloneEnablerLocater)
+SchemaReadStatus ECRelationshipClass::_ReadXmlAttributes (BeXmlNodeR classNode)
     {
     SchemaReadStatus status;
-    if (SCHEMA_READ_STATUS_Success != (status = __super::_ReadXmlAttributes (classNode, standaloneEnablerLocater)))
+    if (SCHEMA_READ_STATUS_Success != (status = __super::_ReadXmlAttributes (classNode)))
         return status;
         
     
@@ -1684,7 +1701,7 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlAttributes (BeXmlNodeR classNode, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, IStandaloneEnablerLocaterR standaloneEnablerLocater)
+SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, IStandaloneEnablerLocaterP standaloneEnablerLocater)
     {
     SchemaReadStatus status = __super::_ReadXmlContents (classNode, standaloneEnablerLocater);
     if (status != SCHEMA_READ_STATUS_Success)

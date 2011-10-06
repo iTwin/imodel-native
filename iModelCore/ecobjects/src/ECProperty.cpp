@@ -252,7 +252,7 @@ ECSchemaCP ECProperty::_GetContainerSchema () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, IStandaloneEnablerLocaterR standaloneEnablerLocater)
+SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, IStandaloneEnablerLocaterP standaloneEnablerLocater)
     {  
     WString value;
     READ_REQUIRED_XML_ATTRIBUTE (propertyNode, PROPERTY_NAME_ATTRIBUTE, this, Name, propertyNode.GetName())        
@@ -302,7 +302,7 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNodeR pa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, IStandaloneEnablerLocaterR standaloneEnablerLocater)
+SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, IStandaloneEnablerLocaterP standaloneEnablerLocater)
     {  
     SchemaReadStatus status = __super::_ReadXml (propertyNode, standaloneEnablerLocater);
     if (status != SCHEMA_READ_STATUS_Success)
@@ -403,7 +403,7 @@ ECObjectsStatus PrimitiveECProperty::SetType (PrimitiveType primitiveType)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus StructECProperty::_ReadXml (BeXmlNodeR propertyNode, IStandaloneEnablerLocaterR standaloneEnablerLocater)
+SchemaReadStatus StructECProperty::_ReadXml (BeXmlNodeR propertyNode, IStandaloneEnablerLocaterP standaloneEnablerLocater)
     {  
     SchemaReadStatus status = __super::_ReadXml (propertyNode, standaloneEnablerLocater);
     if (status != SCHEMA_READ_STATUS_Success)
@@ -534,7 +534,7 @@ ECObjectsStatus StructECProperty::SetType (ECClassCR structType)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ArrayECProperty::_ReadXml (BeXmlNodeR propertyNode, IStandaloneEnablerLocaterR standaloneEnablerLocater)
+SchemaReadStatus ArrayECProperty::_ReadXml (BeXmlNodeR propertyNode, IStandaloneEnablerLocaterP standaloneEnablerLocater)
     {  
     SchemaReadStatus status = __super::_ReadXml (propertyNode, standaloneEnablerLocater);
     if (status != SCHEMA_READ_STATUS_Success)
@@ -686,7 +686,11 @@ ECClassCP ArrayECProperty::GetStructElementType () const
 ECObjectsStatus ArrayECProperty::SetStructElementType (ECClassCP structType)
     {        
     PRECONDITION (NULL != structType, ECOBJECTS_STATUS_PreconditionViolated);
-    PRECONDITION (structType->GetIsStruct(), ECOBJECTS_STATUS_PreconditionViolated);
+    if (!structType->GetIsStruct())
+        {
+        ECObjectsLogger::Log()->errorv (L"ECArrayProperty '%s' uses ECClass '%s', but isStructClass='false' on '%s'", GetName().c_str(), structType->GetName().c_str(), structType->GetName().c_str());
+        return ECOBJECTS_STATUS_ParseError;
+        }
 
     if (&(structType->GetSchema()) != &(this->GetClass().GetSchema()))
         {

@@ -109,6 +109,7 @@ struct ECCustomAttributeInstanceIterable;
 //=======================================================================================
 struct IECCustomAttributeContainer /*__PUBLISH_ABSTRACT__*/  
 {
+/*__PUBLISH_CLASS_VIRTUAL__*/
 /*__PUBLISH_SECTION_END__*/
 private:
     friend struct ECCustomAttributeInstanceIterable;
@@ -450,6 +451,13 @@ typedef bvector<ECClassP> ECConstraintClassesList;
 typedef bool (*TraversalDelegate) (ECClassCP, const void *);
 /*__PUBLISH_SECTION_START__*/
 
+struct StandaloneECEnabler;
+struct SearchPathSchemaFileLocater;
+typedef RefCountedPtr<StandaloneECEnabler>  StandaloneECEnablerPtr;
+typedef StandaloneECEnabler*                StandaloneECEnablerP;
+typedef RefCountedPtr<ECSchemaCache>        ECSchemaCachePtr;
+typedef RefCountedPtr<SearchPathSchemaFileLocater> SearchPathSchemaFileLocaterPtr;
+
 //=======================================================================================
 //! @ingroup ECObjectsGroup
 //! The in-memory representation of an ECClass as defined by ECSchemaXML
@@ -474,7 +482,8 @@ private:
     bool                            m_hideFromLeakDetection;
 
     PropertyMap                     m_propertyMap;
-    PropertyList                    m_propertyList;    
+    PropertyList                    m_propertyList;
+    mutable StandaloneECEnablerPtr  m_defaultStandaloneEnabler;
     
     ECObjectsStatus AddProperty (ECPropertyP& pProperty);
     ECObjectsStatus AddProperty (ECPropertyP pProperty, WStringCR name);
@@ -520,6 +529,7 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
 public:    
+    ECOBJECTS_EXPORT StandaloneECEnablerP  GetDefaultStandaloneEnabler() const;
     ECOBJECTS_EXPORT ECRelationshipClassCP GetRelationshipClassCP() const;
     ECOBJECTS_EXPORT ECSchemaCR         GetSchema() const;                
     // schemas index class by name so publicly name can not be reset
@@ -940,12 +950,8 @@ public:
 /*__PUBLISH_SECTION_START__*/
 };
 
-struct StandaloneECEnabler;
-typedef RefCountedPtr<StandaloneECEnabler>    StandaloneECEnablerPtr;
-typedef RefCountedPtr<ECSchemaCache>        ECSchemaCachePtr;
-
 //=======================================================================================
-//! Interface to find a standalone enabler for a child class of an ECInstance.</summary>
+//! Interface to find a standalone enabler, typically for an embedded ECStruct in an ECInstance.</summary>
 //=======================================================================================
 struct IStandaloneEnablerLocater
 {
@@ -990,7 +996,7 @@ public:
 //! An object that controls the lifetime of a set of ECSchemas.  When the schema
 //! owner is destroyed, so are the schemas that it owns.</summary>
 //=======================================================================================
-struct ECSchemaCache /*__PUBLISH_ABSTRACT__*/ :  RefCountedBase, IECSchemaOwner, IStandaloneEnablerLocater
+struct ECSchemaCache /*__PUBLISH_ABSTRACT__*/ :  RefCountedBase, IECSchemaOwner
 {
 /*__PUBLISH_SECTION_END__*/
 protected:
@@ -1003,9 +1009,6 @@ protected:
     ECOBJECTS_EXPORT virtual ECSchemaP       _GetSchema   (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor);
     ECOBJECTS_EXPORT virtual ECSchemaP       _LocateSchema (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType);
     
-    // IStandaloneEnablerLocater
-    ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr _LocateStandaloneEnabler (WCharCP schemaName, WCharCP className);
-
 /*__PUBLISH_SECTION_START__*/
 public:
     ECOBJECTS_EXPORT virtual ~ECSchemaCache ();
@@ -1020,10 +1023,27 @@ public:
 struct IECSchemaLocater
 {
 protected:
-    virtual ECSchemaP _LocateSchema(WCharCP name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaDeserializationContextR schemaContext) = 0;
+    virtual ECSchemaP _LocateSchema(WCharCP name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) = 0;
 
 public:
-    ECOBJECTS_EXPORT ECSchemaP LocateSchema(WCharCP name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaDeserializationContextR schemaContext);
+    ECOBJECTS_EXPORT ECSchemaP LocateSchema(WCharCP name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaReadContextR schemaContext);
+};
+
+//=======================================================================================
+//! Locates schemas by looking in a given set of file system folder for ECSchemaXml files
+//=======================================================================================
+struct SearchPathSchemaFileLocater : IECSchemaLocater, RefCountedBase, NonCopyableClass
+{
+/*__PUBLISH_SECTION_END__*/
+private:
+    bvector<WString> m_searchPaths;
+    SearchPathSchemaFileLocater (bvector<WString>& searchPaths);
+    virtual ~SearchPathSchemaFileLocater();
+protected:
+    virtual ECSchemaP _LocateSchema(WCharCP name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
+/*__PUBLISH_SECTION_START__*/
+public:
+    ECOBJECTS_EXPORT static SearchPathSchemaFileLocaterPtr CreateSearchPathSchemaFileLocater(bvector<WString>& searchPaths);
 };
 
 //=======================================================================================
@@ -1033,7 +1053,7 @@ public:
 struct ECSchema /*__PUBLISH_ABSTRACT__*/ : public IECCustomAttributeContainer
 {
 /*__PUBLISH_SECTION_END__*/
-
+friend struct SearchPathSchemaFileLocater;
 // Schemas are RefCounted but none of the constructs held by schemas (classes, properties, etc.) are.
 // They are freed when the schema is freed.
 
@@ -1071,9 +1091,9 @@ private:
     static ECSchemaP                    LocateSchemaByPath (WStringCR name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR context);
     static ECSchemaP                    LocateSchemaByStandardPaths (WStringCR name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR context);
     static ECSchemaP                    FindMatchingSchema (bool& foundImperfectLegacyMatch, WStringCR schemaMatchExpression, WStringCR name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR schemaContext, bool useLatestCompatibleMatch, bool acceptImperfectLegacyMatch);
-    struct  ECSchemaSerializationContext
+    struct  ECSchemaWriteContext
         {
-        bset<WCharCP> m_alreadySerializedClasses;
+        bset<WCharCP> m_alreadyWrittenClasses;
         };
 
     SchemaWriteStatus                   WriteSchemaReferences (BeXmlNodeR parentNode) const;
@@ -1082,7 +1102,7 @@ private:
     SchemaWriteStatus                   WritePropertyDependencies (BeXmlNodeR parentNode, ECClassCR ecClass, ECSchemaSerializationContext&) const;
 
 protected:
-    virtual ECSchemaCP                  _GetContainerSchema() const override;
+    virtual ECSchemaCP              _GetContainerSchema() const override;
 
 public:    
     ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();
@@ -1112,9 +1132,9 @@ public:
     ECOBJECTS_EXPORT bool               IsStandardSchema() const;
 
     //! Returns true if and only if the full schema name (including version) represents a standard schema that should never
-    //! be imported into a repository.
+    //! be stored persistently in a repository (we expect it to be found elsewhere)
     //@return True if this version of the schema is one that should never be imported into a repository
-    ECOBJECTS_EXPORT bool               ShouldSchemaNotBeImported() const;
+    ECOBJECTS_EXPORT bool               ShouldNotBeStored() const;
 
     //! If the class name is valid, will create an ECClass object and add the new class to the schema
     //! @param[out] ecClass If successful, will contain a new ECClass object
@@ -1156,6 +1176,13 @@ public:
     //! @param[in]  refSchema   The schema to add as a referenced schema
     ECOBJECTS_EXPORT ECObjectsStatus            AddReferencedSchema(ECSchemaR refSchema);
     
+    //! Adds an ECSchema as a referenced schema in this schema.
+    //! It is necessary to add any ECSchema as a referenced schema that will be used when adding a base
+    //! class from a different schema, or custom attributes from a different schema.
+    //! @param[in]  refSchema   The schema to add as a referenced schema
+    //! @param[in]  prefix      The prefix to use within the context of this schema for referencing the referenced schema
+    ECOBJECTS_EXPORT ECObjectsStatus            AddReferencedSchema(ECSchemaR refSchema, WStringCR prefix);
+
     //! Removes an ECSchema from the list of referenced schemas
     //! @param[in]  refSchema   The schema that should be removed from the list of referenced schemas
     ECOBJECTS_EXPORT ECObjectsStatus            RemoveReferencedSchema(ECSchemaR refSchema);
@@ -1173,7 +1200,7 @@ public:
     ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlFile (WCharCP ecSchemaXmlFile);
     
     
-    //! Serializes an ECXML schema to an IStream
+    //! Writes an ECXML schema to an IStream
     //! @param[in]  ecSchemaXmlStream   The IStream to write the serialized XML to
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the IStream
     //! will contain the serialized schema.
@@ -1262,27 +1289,27 @@ public:
     //! @param[out]   thatSchema           Pointer to schema
     ECOBJECTS_EXPORT static bool                        SchemasAreEqualByName (ECSchemaCP thisSchema, ECSchemaCP thatSchema);
 
-    //! Deserializes an ECSchema from an ECSchemaXML-formatted file
+    //! Writes an ECSchema from an ECSchemaXML-formatted file
     //! @code
     //! // The IECSchemaOwner determines the lifespan of any ECSchema objects that are created using it.
-    //! // ECSchemaCache also caches ECSchemas and implements IStandaloneEnablerLocater for use by ECSchemaDeserializationContext
+    //! // ECSchemaCache also caches ECSchemas and implements IStandaloneEnablerLocater for use by ECSchemaReadContext
     //! ECSchemaCachePtr                  schemaOwner = ECSchemaCache::Create();
     //! 
-    //! // The schemaContext supplies an IECSchemaOwner to control the lifetime of deserialized ECSchemas and a 
+    //! // The schemaContext supplies an IECSchemaOwner to control the lifetime of read ECSchemas and a 
     //! // IStandaloneEnablerLocater to locate enablers for ECCustomAttributes in the ECSchema
-    //! ECSchemaDeserializationContextPtr schemaContext = ECSchemaDeserializationContext::CreateContext(*schemaOwner);
+    //! ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
     //! 
     //! ECSchemaP schema;
     //! SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ecSchemaFilename, *schemaContext);
     //! if (SCHEMA_READ_STATUS_Success != status)
     //!     return ERROR;
     //! @endcode
-    //! @param[out]   schemaOut           The deserialized schema
-    //! @param[in]    ecSchemaXmlFile     The absolute path of the file to deserialize.
+    //! @param[out]   schemaOut           The read schema
+    //! @param[in]    ecSchemaXmlFile     The absolute path of the file to write.
     //! @param[in]    schemaContext       Required to create schemas
-    //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
-    //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
-    ECOBJECTS_EXPORT static SchemaReadStatus ReadFromXmlFile (ECSchemaP& schemaOut, WCharCP ecSchemaXmlFile, ECSchemaDeserializationContextR schemaContext);
+    //! @return   A status code indicating whether the schema was successfully read.  If SUCCESS is returned then schemaOut will
+    //!           contain the read schema.  Otherwise schemaOut will be unmodified.
+    ECOBJECTS_EXPORT static SchemaReadStatus ReadFromXmlFile (ECSchemaP& schemaOut, WCharCP ecSchemaXmlFile, ECSchemaReadContextR schemaContext);
 
     //! Locate a schema using the provided schema locators and paths. If not found in those by either of those parameters standard schema pathes 
     //! relative to the executing dll will be searched.
@@ -1293,30 +1320,30 @@ public:
      ECOBJECTS_EXPORT static ECSchemaP                   LocateSchema (WStringCR name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaDeserializationContextR schemaContext);
     
     //! 
-    //! Deserializes an ECSchema from an ECSchemaXML-formatted string.
+    //! Writes an ECSchema from an ECSchemaXML-formatted string.
     //! @code
     //! // The IECSchemaOwner determines the lifespan of any ECSchema objects that are created using it.
     //! ECSchemaCachePtr                  schemaOwner = ECSchemaCache::Create();
     //! 
-    //! // The schemaContext supplies an IECSchemaOwner to control the lifetime of deserialized ECSchemas and a 
+    //! // The schemaContext supplies an IECSchemaOwner to control the lifetime of read ECSchemas and a 
     //! 
     //! ECSchemaP schema;
     //! SchemaReadStatus status = ECSchema::ReadFromXmlString (schema, ecSchemaAsString, *schemaContext);
     //! if (SCHEMA_READ_STATUS_Success != status)
     //!     return ERROR;
     //! @endcode
-    //! @param[out]   schemaOut           The deserialized schema
-    //! @param[in]    ecSchemaXml         The string containing ECSchemaXML to deserialize
+    //! @param[out]   schemaOut           The read schema
+    //! @param[in]    ecSchemaXml         The string containing ECSchemaXML to write
     //! @param[in]    schemaContext       Required to create schemas
-    //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
-    //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
-    ECOBJECTS_EXPORT static SchemaReadStatus ReadFromXmlString (ECSchemaP& schemaOut, WCharCP ecSchemaXml, ECSchemaDeserializationContextR schemaContext);
+    //! @return   A status code indicating whether the schema was successfully read.  If SUCCESS is returned then schemaOut will
+    //!           contain the read schema.  Otherwise schemaOut will be unmodified.
+    ECOBJECTS_EXPORT static SchemaReadStatus ReadFromXmlString (ECSchemaP& schemaOut, WCharCP ecSchemaXml, ECSchemaReadContextR schemaContext);
 
     //! 
-    //! Deserializes an ECSchema from an ECSchemaXML-formatted string.
+    //! Writes an ECSchema from an ECSchemaXML-formatted string.
     //! @code
     //! // The IECSchemaOwner determines the lifespan of any ECSchema objects that are created using it.
-    //! // ECSchemaCache also caches ECSchemas and implements IStandaloneEnablerLocater for use by ECSchemaDeserializationContext
+    //! // ECSchemaCache also caches ECSchemas and implements IStandaloneEnablerLocater for use by ECSchemaReadContext
     //! ECSchemaCachePtr                  schemaOwner = ECSchemaCache::Create();
     //! 
     //! ECSchemaP schema;
@@ -1324,26 +1351,31 @@ public:
     //! if (SCHEMA_READ_STATUS_Success != status)
     //!     return ERROR;
     //! @endcode
-    //! @param[out]   schemaOut           The deserialized schema
-    //! @param[in]    ecSchemaXml         The string containing ECSchemaXML to deserialize
-    //! @param[in]    schemaCache         Will own the deserialized ECSchema and referenced ECSchemas.
-    //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
-    //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
+    //! @param[out]   schemaOut           The read schema
+    //! @param[in]    ecSchemaXml         The string containing ECSchemaXML to write
+    //! @param[in]    schemaCache         Will own the read ECSchema and referenced ECSchemas.
+    //! @return   A status code indicating whether the schema was successfully read.  If SUCCESS is returned then schemaOut will
+    //!           contain the read schema.  Otherwise schemaOut will be unmodified.
     ECOBJECTS_EXPORT static SchemaReadStatus ReadFromXmlString (ECSchemaP& schemaOut, WCharCP ecSchemaXml, ECSchemaCacheR schemaCache);
 
-    //! Deserializes an ECSchema from an ECSchemaXML-formatted string in an IStream.
-    //! @param[out]   schemaOut           The deserialized schema
-    //! @param[in]    ecSchemaXmlStream   The IStream containing ECSchemaXML to deserialize
+    //! Writes an ECSchema from an ECSchemaXML-formatted string in an IStream.
+    //! @param[out]   schemaOut           The read schema
+    //! @param[in]    ecSchemaXmlStream   The IStream containing ECSchemaXML to write
     //! @param[in]    schemaContext       Required to create schemas
-    //! @return   A status code indicating whether the schema was successfully deserialized.  If SUCCESS is returned then schemaOut will
-    //!           contain the deserialized schema.  Otherwise schemaOut will be unmodified.
-    ECOBJECTS_EXPORT static SchemaReadStatus ReadFromXmlStream (ECSchemaP& schemaOut, IStreamP ecSchemaXmlStream, ECSchemaDeserializationContextR schemaContext);
+    //! @return   A status code indicating whether the schema was successfully read.  If SUCCESS is returned then schemaOut will
+    //!           contain the read schema.  Otherwise schemaOut will be unmodified.
+    ECOBJECTS_EXPORT static SchemaReadStatus ReadFromXmlStream (ECSchemaP& schemaOut, IStreamP ecSchemaXmlStream, ECSchemaReadContextR schemaContext);
 
     //! Find all ECSchemas in the schema graph, avoiding duplicates and any cycles.
     //! @param[out]   allSchemas            Vector of schemas including rootSchema.
     //! @param[in]    rootSchema            This schema and it reference schemas will be added to the vector of allSchemas.
     //! @param[in]    includeRootSchema     If true then root schema is added to the vector of allSchemas. Defaults to true.
     ECOBJECTS_EXPORT static void FindAllSchemasInGraph (bvector<EC::ECSchemaCP>& allSchemas, EC::ECSchemaCR rootSchema, bool includeRootSchema=true);
+    
+    //! Returns this if the name matches, otherwise searches referenced ECSchemas for one whose name matches schemaName
+    ECOBJECTS_EXPORT ECSchemaCP FindSchema (WCharCP schemaName) const;
+
+    
 }; // ECSchema
 
 END_BENTLEY_EC_NAMESPACE
