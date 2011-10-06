@@ -7,12 +7,15 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <ECObjects/ECObjectsAPI.h>
 #if defined (_WIN32) // WIP_NONPORT
     #include <sstream>
+    #include <atlbase.h>
+    #include <windows.h>
 #elif defined (__unix__)
     // *** NEEDS WORK: iostreams not supported on Android
 #endif
+
+#include <ECObjects/ECObjectsAPI.h>
 #include <assert.h>
 #include <boost/foreach.hpp>
 #include <Bentley/BeStringUtilities.h>

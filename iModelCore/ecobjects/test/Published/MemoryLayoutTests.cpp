@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
-#include <comdef.h>
 #include "StopWatch.h"
 #include "TestFixture.h"
 
@@ -439,14 +438,10 @@ ECSchemaP       CreateTestSchema (ECSchemaCacheR schemaOwner)
     {
     WString schemaXMLString = GetTestSchemaXMLString (L"TestSchema", 0, 0, L"TestClass");
 
-    EXPECT_EQ (S_OK, CoInitialize(NULL));  
-
     ECSchemaDeserializationContextPtr  schemaContext = ECSchemaDeserializationContext::CreateContext(schemaOwner);
 
     ECSchemaP schema;        
     EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (schema, schemaXMLString.c_str(), *schemaContext));  
-
-    CoUninitialize();
     return schema;
     }
     
@@ -458,8 +453,6 @@ static std::vector<WString> s_propertyNames;
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP       CreateProfilingSchema (int nStrings, ECSchemaCacheR schemaOwner)
     {
-    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
-
     s_propertyNames.clear();
     
     WString schemaXml = 
@@ -486,8 +479,6 @@ ECSchemaP       CreateProfilingSchema (int nStrings, ECSchemaCacheR schemaOwner)
 
     ECSchemaP schema;        
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlString (schema, schemaXml.c_str(), *schemaContext));
-
-    CoUninitialize ();
     return schema;
     }
     
@@ -795,8 +786,6 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper)
     {
-    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
-
     ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
     ECSchemaP        schema = CreateTestSchema(*schemaOwner);
     ASSERT_TRUE (schema != NULL);
@@ -839,8 +828,6 @@ TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper)
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, L"ManufacturerArray[0].Name", testString2.c_str()));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetString (*instance, stringValueP, L"ManufacturerArray[0].Name"));
     EXPECT_STREQ (testString2.c_str(), stringValueP);
-
-    CoUninitialize();
     };
 #endif
 

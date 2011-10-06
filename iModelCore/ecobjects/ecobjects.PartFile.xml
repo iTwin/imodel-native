@@ -8,15 +8,13 @@
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 
     <Part Name="ECObjectsNative" BMakeFile="src\ecobjects.mke" ApiNumber="4">
-        <RequiredRepository>Libsrc-Msxml6</RequiredRepository>
-        <SubPart PartName="msxml6"          PartFile="msxml6"       Repository="Libsrc-Msxml6"/>
         <SubPart PartName="BoostHeaders"    PartFile="${SrcBsiCommon}CvsPartFiles\bsibin"           Repository="bsibin-boostheaders" />
         <SubPart PartName="HeaderFiles" />
         <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="Logging8.11"     PartFile="${SrcBsiCommon}CvsPartFiles\bsibin"           Repository="bsibin-loggingsdk" />
         <SubPart PartName="GeomDlls"        PartFile="geomlibs"     Repository="GeomLibs" />
         <SubPart PartName="BeXmlDll"        PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
-        <SubPart PartName="StandardSchemas" PartFile="ECStandards" Repository="ECStandards"/>
+        <SubPart PartName="StandardSchemas" PartFile="ECStandards"  Repository="ECStandards"/>
         <Bindings>
             <Libs ProductDirectoryName="ECObjectsLibs" Required="false">Delivery\$(libprefix)ECObjects$(libext)</Libs>
             <Files ProductDirectoryName="ECObjectsNativeAssemblies">Delivery\$(shlibprefix)ECObjects$(ApiNumber)$(shlibext)</Files>
