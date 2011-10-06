@@ -1172,6 +1172,13 @@ public:
     //! @param[in]  refSchema   The schema to add as a referenced schema
     ECOBJECTS_EXPORT ECObjectsStatus            AddReferencedSchema(ECSchemaR refSchema);
     
+    //! Adds an ECSchema as a referenced schema in this schema.
+    //! It is necessary to add any ECSchema as a referenced schema that will be used when adding a base
+    //! class from a different schema, or custom attributes from a different schema.
+    //! @param[in]  refSchema   The schema to add as a referenced schema
+    //! @param[in]  prefix      The prefix to use within the context of this schema for referencing the referenced schema
+    ECOBJECTS_EXPORT ECObjectsStatus            AddReferencedSchema(ECSchemaR refSchema, WStringCR prefix);
+
     //! Removes an ECSchema from the list of referenced schemas
     //! @param[in]  refSchema   The schema that should be removed from the list of referenced schemas
     ECOBJECTS_EXPORT ECObjectsStatus            RemoveReferencedSchema(ECSchemaR refSchema);

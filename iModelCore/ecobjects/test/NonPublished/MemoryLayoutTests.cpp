@@ -769,7 +769,6 @@ TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetIntegerValue (*instance, L"ReadOnlyInt", (int)(50)));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetInteger  (*instance, intVal, L"ReadOnlyInt"));
     EXPECT_TRUE ((int)(50) == intVal);
-    EXPECT_TRUE (ECOBJECTS_STATUS_UnableToSetReadOnlyProperty == ECInstanceInteropHelper::SetIntegerValue (*instance, L"ReadOnlyInt", (int)(50)));
 
     WCharCP   stringVal;
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, L"AString", L"TEST123"));

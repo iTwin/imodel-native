@@ -269,6 +269,9 @@ public:
 
     typedef bvector<Location> LocationVector;
 
+public:
+    LocationVector const &   GetLocationVectorCR() const;
+
 private:
     //"BACK" OF VECTOR IS DEEPEST ELEMENT
     LocationVector          m_locationVector;
@@ -294,6 +297,10 @@ public:
     ECOBJECTS_EXPORT ECValueAccessor (ECEnablerCR enabler, 
                                       int newPropertyIndex, 
                                       int newArrayIndex=INDEX_ROOT);
+
+    //! Clone an existing ECValueAccessor. Any existing locations are clear so the resulting accessor refers to the same property.
+    //! @param[in]      accessor          The accessor to clone.
+    ECOBJECTS_EXPORT void Clone (ECValueAccessorCR accessor);
 
     //! For use by the iterator.  Does not make valid accessors.
     ECOBJECTS_EXPORT ECValueAccessor (IECInstanceCR instance);
@@ -328,6 +335,7 @@ public:
 
     ECOBJECTS_EXPORT void       PopLocation ();
     ECOBJECTS_EXPORT Location&  DeepestLocation ();
+    ECOBJECTS_EXPORT Location const&  DeepestLocationCR () const;
 
     ECOBJECTS_EXPORT void  Clear ();
 
@@ -356,17 +364,6 @@ public:
 /*__PUBLISH_SECTION_END__*/
 struct ECValuesCollection;
 struct ECValuesCollectionIterator;
-
-struct ECStructArrayMemberAccessor
-    {
-    ECValueAccessor  m_accessor;
-    WString          m_schemaName;
-    WString          m_className;
-
-    ECStructArrayMemberAccessor ();
-
-    ECStructArrayMemberAccessor (ECValueAccessorCR accessor, WCharCP schemaName, WCharCP className);
-    }; 
 
 /*__PUBLISH_SECTION_START__*/
 

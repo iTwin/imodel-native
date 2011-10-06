@@ -23,14 +23,6 @@ DebugInstanceLeakMap    g_debugInstanceLeakMap;
 //WIP_FUSION:  This should use EC::LeakDetector  (see ecschema.cpp)
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  09/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECStructArrayMemberAccessor::ECStructArrayMemberAccessor (ECValueAccessorCR accessor, WCharCP schemaName, WCharCP className) 
-    : m_accessor(accessor), m_schemaName(schemaName), m_className(className)
-        {
-        }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  09/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 CustomStructSerializerManager::CustomStructSerializerManager ()
@@ -509,19 +501,19 @@ static ECObjectsStatus          setValueHelper (IECInstanceR instance, ECValueAc
         {
         UInt32 propertyIndex = (UInt32)accessor[depth].propertyIndex;
 
-#ifdef NOT_YET
+#ifdef NOT_YET  // Casey decided that the ReadOnlyProperty setting was for GUI use only
         bool readonlyProperty = instance.IsPropertyReadOnly (propertyIndex);
 #endif
 
         if(arrayIndex < 0)
             {
-#ifdef NOT_YET
+#ifdef NOT_YET  // Casey decided that the ReadOnlyProperty setting was for GUI use only
             if (readonlyProperty && !instance.IsNullValue(propertyIndex))
                 return ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
 #endif
             return instance.SetValue(propertyIndex, value);
             }
-#ifdef NOT_YET
+#ifdef NOT_YET  // Casey decided that the ReadOnlyProperty setting was for GUI use only
         if (readonlyProperty && !instance.IsNullValue (propertyIndex, (UInt32)arrayIndex))
             return ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
 #endif
@@ -1360,188 +1352,125 @@ EC::ECEnablerP                  ECInstanceInteropHelper::GetEnablerForStructArra
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  09/2011
+* This method is called from derived class so the rootInstance was pinned if necessary
+* before calling this method.
+* @bsimethod                                    Bill.Steinbock                  06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<EC::ECValueAccessor> ECInstanceInteropHelper::GetChildValueAccessors (IECInstanceCR instance, EC::ECValueAccessor parentAccessor, bool includeNullValues)
+/* static */ EC::IECInstancePtr getParentNativeInstance (EC::IECInstanceCP rootInstance, EC::ECValueAccessorCR structValueAccessor)
     {
-    bvector<EC::ECValueAccessor> childAccessors;
-    EC::ECValue                  parentValue;
-    EC::ECValue                  v;
-
-    EC::ECEnablerCP     enabler        = parentAccessor.DeepestLocation().enabler;            // this will be overridden is struct array entry
-    ::UInt32            parentIndex    = parentAccessor.DeepestLocation().propertyIndex;      // this will be overridden is struct array entry
-
-    // get the parent value, if it a struct array entry we will need to get the instance for the value, 
-    // if it is an array we will need to get the array count
-    if (SUCCESS != instance.GetValueUsingAccessor (parentValue, parentAccessor))
-        return childAccessors;
-
-    // container must either be a struct or an array
-    if (parentValue.IsStruct())
+    // if not a top level property, get the native instance that will contain this struct array
+    if (structValueAccessor.GetDepth () > 1)
         {
-        // If the parent is a struct array entry then use the enabler from its instance. 
-        // If the parent is an embedded struct then we do not need to override the default values set above.
-        EC::IECInstancePtr structInstance = parentValue.GetStruct();
+        EC::ECValue parentStructValue;
+
+        EC::ECValueAccessor parentInstanceAccessor (structValueAccessor);
+        parentInstanceAccessor.PopLocation ();   // remove one level to get to the parent instance
+
+        rootInstance->GetValueUsingAccessor (parentStructValue, parentInstanceAccessor);
+        if (!parentStructValue.IsStruct ())
+            return NULL;
+
+        EC::IECInstancePtr structInstance = parentStructValue.GetStruct ();
         if (structInstance.IsValid())
-            {
-            parentIndex = 0;
-            enabler = &structInstance->GetEnablerR();
-            }
+            return structInstance;
 
-        bvector< ::UInt32>   propertyIndices;
-
-        if (EC::ECOBJECTS_STATUS_Success != enabler->GetPropertyIndices (propertyIndices, parentIndex))
-            return childAccessors;
-   
-        // loop through all the properties of the struct and create a managed PropertyValue
-        FOR_EACH (::UInt32 propertyIndex, propertyIndices)
-            {
-            EC::ECValueAccessor valueAccessor (parentAccessor);
-            valueAccessor.PushLocation (*enabler, propertyIndex, -1); 
-
-            if (!includeNullValues)
-                {
-                if (SUCCESS != instance.GetValueUsingAccessor (v, valueAccessor))
-                    continue;
-
-                if (v.IsPrimitive() &&  v.IsNull())
-                    continue;
-                }
-
-            childAccessors.push_back (valueAccessor);
-            }
-
-        return childAccessors;
+        // we may be processing a member of an embedded struct so we need to check the next level up
+        return getParentNativeInstance (rootInstance, parentInstanceAccessor);
         }
 
-    if (!parentValue.IsArray())
-        return childAccessors;  // return empty property list
+    return const_cast<EC::IECInstanceP>(rootInstance);
+    }
 
-    // if we get here we have an array
-    ArrayInfo   arrayInfo  = parentValue.GetArrayInfo();
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  06/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (EC::ECValueAccessorR structArrayEntryValueAccessor, IECInstanceR instance, UInt32 index, EC::ECValueAccessorCR structArrayValueAccessor, 
+                                                             bool createPropertyIfNotFound, WCharCP wcharAccessString, 
+                                                             WCharCP schemaName, WCharCP className)
+    {
+    EC::ECEnablerR structArrayEnabler = *(const_cast<EC::ECEnablerP>(structArrayValueAccessor.DeepestLocationCR().enabler));
+    EC::StandaloneECEnablerPtr standaloneEnabler = structArrayEnabler.GetEnablerForStructArrayMember (schemaName, className);
+    if (standaloneEnabler.IsNull())
+        {
+        ECObjectsLogger::Log()->errorv (L"Unable to locate a standalone enabler for class \" %s \"", className);
+        return ECOBJECTS_STATUS_EnablerNotFound;
+        }
+
+    EC::ECValue  arrayVal;
+    instance.GetValueUsingAccessor (arrayVal, structArrayValueAccessor);
+
+    ArrayInfo   arrayInfo  = arrayVal.GetArrayInfo();
     UInt32      arrayCount = arrayInfo.GetCount();
 
-    if (0 == arrayCount)
-        return childAccessors;  // return empty property list
+    // adjust the ECVAlueAccessor to include the array index
+    EC::ECValueAccessor arrayEntryValueAccessor (structArrayValueAccessor);
+    arrayEntryValueAccessor.DeepestLocation ().arrayIndex = index;
 
-    // see if it is a struct array or a primitive array
-    if (arrayInfo.IsPrimitiveArray()) 
+    if (arrayCount <= index)
         {
-        // container is a struct array, add each struct array entry.
-        for (::UInt32 i=0; i<arrayCount; i++)
+        // see if we are allowed to add a new strct array instance
+        if (!createPropertyIfNotFound)
+            return ECOBJECTS_STATUS_Error;
+
+        // only proceed if not read only instance
+        if (instance.IsReadOnly())
+            return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
+
+        EC::IECInstancePtr parentNativeInstance = getParentNativeInstance (&instance, structArrayValueAccessor);
+        if (parentNativeInstance.IsNull())
             {
-            EC::ECValueAccessor valueAccessor (parentAccessor);
-            valueAccessor.DeepestLocation().arrayIndex = i;
+            ECObjectsLogger::Log()->error (L"Unable to get native instance when processing ECInstanceInteropHelper::GetStructArrayEntry");
+            return ECOBJECTS_STATUS_Error;
+            }
 
-            if (!includeNullValues)
+        ::UInt32 numToInsert = (index + 1) - arrayCount;
+        if (EC::ECOBJECTS_STATUS_Success != parentNativeInstance->AddArrayElements (wcharAccessString, numToInsert))
+            {
+            ECObjectsLogger::Log()->errorv(L"Unable to add array element(s) to native instance - access string \"%s\"", structArrayValueAccessor.GetManagedAccessString().c_str());
+            return ECOBJECTS_STATUS_UnableToAddStructArrayMember;
+            }
+
+        EC::ECValue  arrayEntryVal;
+        for (::UInt32 i=0; i<numToInsert; i++)
+            {
+            arrayEntryVal.SetStruct (standaloneEnabler->CreateInstance().get());
+            if (SUCCESS != parentNativeInstance->SetValue (wcharAccessString, arrayEntryVal, arrayCount+i))
+                return ECOBJECTS_STATUS_UnableToSetStructArrayMemberInstance;
+            }
+        }
+    else
+        {
+        // make sure the struct instance is not null
+        EC::ECValue arrayEntryVal;
+
+        instance.GetValueUsingAccessor (arrayEntryVal, arrayEntryValueAccessor);
+        if (arrayEntryVal.IsNull())
+            {
+            // see if we are allowed to add a new strct array instance
+            if (!createPropertyIfNotFound)
+                return ECOBJECTS_STATUS_Error;
+
+            // only proceed if not read only instance
+            if (instance.IsReadOnly())
+                return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
+
+            arrayEntryVal.SetStruct (standaloneEnabler->CreateInstance().get());
+
+            EC::IECInstancePtr parentNativeInstance = getParentNativeInstance (&instance, structArrayValueAccessor);
+            if (parentNativeInstance.IsNull())
                 {
-                if (SUCCESS != instance.GetValueUsingAccessor (v, valueAccessor))
-                    continue;
-
-                if (v.IsPrimitive() &&  v.IsNull())
-                    continue;
+                ECObjectsLogger::Log()->error (L"Unable to get native instance when processing ECInstanceInteropHelper::GetStructArrayEntry");
+                return ECOBJECTS_STATUS_Error;
                 }
 
-            childAccessors.push_back (valueAccessor);
+            if (SUCCESS != parentNativeInstance->SetValue (wcharAccessString, arrayEntryVal, index))
+                return ECOBJECTS_STATUS_UnableToSetStructArrayMemberInstance;
             }
-
-        return childAccessors;
         }
 
-    // container is a primitive array, add each primitive PropertyValue.
-    for (::UInt32 i=0; i<arrayCount; i++)
-        {
-        EC::ECValueAccessor valueAccessor (parentAccessor);
-        valueAccessor.DeepestLocation().arrayIndex = i;
-
-        if (!includeNullValues)
-            {
-            if (SUCCESS != instance.GetValueUsingAccessor (v, valueAccessor))
-                continue;
-
-            if (v.IsNull())
-                continue;
-            }
-
-        childAccessors.push_back (valueAccessor);
-        }
-
-    return childAccessors;
+    structArrayEntryValueAccessor.Clone (arrayEntryValueAccessor);
+    return ECOBJECTS_STATUS_Success;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  09/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<EC::ECStructArrayMemberAccessor> ECInstanceInteropHelper::GetStructArrayMemberAccessors (IECInstanceCR instance, EC::ECValueAccessor parentAccessor, bool includeNullValues)
-    {
-    bvector<EC::ECStructArrayMemberAccessor> childAccessors;
-    EC::ECValue                  parentValue;
-    EC::ECValue                  v;
-
-    // get the parent value, if it a struct array entry we will need to get the instance for the value, 
-    // if it is an array we will need to get the array count
-    if (SUCCESS != instance.GetValueUsingAccessor (parentValue, parentAccessor))
-        return childAccessors;
-
-    if (!parentValue.IsArray())
-        return childAccessors;  // return empty property list
-
-    // if we get here we have an array
-    ArrayInfo   arrayInfo  = parentValue.GetArrayInfo();
-    UInt32      arrayCount = arrayInfo.GetCount();
-
-    if (0 == arrayCount)
-        return childAccessors;  // return empty property list
-
-    // see if it is a struct array or a primitive array
-    if (!arrayInfo.IsStructArray()) 
-        return childAccessors;  // return empty property list
-
-    // container is a primitive array, add each primitive PropertyValue.
-    for (::UInt32 i=0; i<arrayCount; i++)
-        {
-        EC::ECValueAccessor valueAccessor (parentAccessor);
-        valueAccessor.DeepestLocation().arrayIndex = i;
-
-        if (SUCCESS != instance.GetValueUsingAccessor (v, valueAccessor))
-            continue;
-        
-        if (!includeNullValues)
-            {
-            if (v.IsNull())
-                continue;
-            }
-
-        IECInstancePtr  structInstance = v.GetStruct();
-        if (!structInstance.IsValid())
-            continue;
-
-        ECClassCR structClass = structInstance->GetClass(); 
-        
-        childAccessors.push_back (ECStructArrayMemberAccessor(valueAccessor, structClass.GetSchema().GetName().c_str(), structClass.GetName().c_str()));
-        }
-
-    return childAccessors;
-    }
-
-#ifdef NOT_USED
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Dylan.Rush                      1/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-ValueKind  ECInstanceInteropHelper::GetValueKind  (IECInstanceCR instance, int propertyIndex)
-    {
-    return getTypeDescriptor (instance, propertyIndex).GetTypeKind();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Dylan.Rush                      1/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-ArrayKind  ECInstanceInteropHelper::GetArrayKind  (IECInstanceCR instance, int propertyIndex)
-    {
-    return getTypeDescriptor (instance, propertyIndex).GetArrayKind();
-    }
-
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Dylan.Rush                      1/11
