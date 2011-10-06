@@ -137,7 +137,7 @@ WString    PropertyLayout::ToString ()
         typeName = L"struct";
 
     if (m_typeDescriptor.IsArray())
-        typeName += L"[]";
+        typeName.append(L"[]");
     
     wchar_t line[1024];
     swprintf (line, _countof(line), L"%-32s %-16s offset=%3i nullflagsOffset=%3i, nullflagsBitmask=0x%08.X", m_accessString.c_str(), typeName.c_str(), m_offset, m_nullflagsOffset, m_nullflagsBitmask);
@@ -543,7 +543,7 @@ void            ClassLayout::Factory::AddProperty (WCharCP accessString, ECTypeD
     // then you do not specify an index.  I'd like to consider an update to this so if an access string does not include the [] then we always return the ArrayInfo value.
     WString tempAccessString = accessString;
     if (typeDescriptor.IsArray())
-        tempAccessString += L"[]";
+        tempAccessString.append (L"[]");
 
     UInt32          parentStructIndex = GetParentStructIndex(accessString);
     PropertyLayoutP propertyLayout = new PropertyLayout (tempAccessString.c_str(), parentStructIndex, typeDescriptor, m_offset, m_nullflagsOffset, nullflagsBitmask, modifierFlags, modifierData);
@@ -645,7 +645,7 @@ void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, WCharCP 
         WString    propName = property->GetName();
         
         if (NULL != nameRoot)
-            propName = WString (nameRoot) + L"." + propName;
+            propName = WString (nameRoot).append (L".") + propName;
 
         if (property->GetIsPrimitive())
             {
