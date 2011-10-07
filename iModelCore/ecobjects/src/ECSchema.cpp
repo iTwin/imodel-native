@@ -975,7 +975,7 @@ ECSchemaP       ECSchema::LocateSchema (WStringCR name, UInt32& versionMajor, UI
         }
 
     // Step 3: look in the paths provided by the context
-    schema = LocateSchemaByPath(name, versionMajor, versionMinor, schemaContext, true, NULL);
+    schema = LocateSchemaByPath (name, versionMajor, versionMinor, schemaContext, true, NULL);
     if (NULL != schema)
         return schema;
 
@@ -1027,7 +1027,7 @@ WStringCR                       schemaMatchExpression,
 WStringCR                       name,
 UInt32&                         versionMajor,
 UInt32&                         versionMinor,
-ECSchemaReadContextR schemaContext,
+ECSchemaReadContextR            schemaContext,
 bool                            useLatestCompatibleMatch,
 bool                            acceptImperfectLegacyMatch,
 bvector<WString>*               searchPaths
@@ -1088,7 +1088,7 @@ bvector<WString>*               searchPaths
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP       ECSchema::LocateSchemaByPath (WStringCR name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaReadContextR schemaContext, bool useLatestCompatibleMatch)
+ECSchemaP       ECSchema::LocateSchemaByPath (WStringCR name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaReadContextR schemaContext, bool useLatestCompatibleMatch, bvector<WString>* searchPaths)
     {
     wchar_t versionString[24];
     if (useLatestCompatibleMatch)
@@ -1431,12 +1431,22 @@ SchemaWriteStatus ECSchema::WriteXml (BeXmlDomR xmlDom) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                               
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus LogXmlLoadError ()
+BentleyStatus LogXmlLoadError (BeXmlDomP xmlDom)
     {        
     WString     errorString;
-    BeXmlDom::GetLastErrorString (errorString);
+    int         line = 0, linePos = 0;
+    if (NULL == xmlDom)
+        {
+        BeXmlDom::GetLastErrorString (errorString);
+        }
+    else
+        {
+        xmlDom->GetErrorMessage (errorString);
+        xmlDom->GetErrorLocation (line, linePos);
+        }
+
     ECObjectsLogger::Log()->errorv (errorString.c_str());
-            ECObjectsLogger::Log()->errorv (L"line %d, position %d parsing ECSchema file %s. %s", line, linePos, file.c_str(), reason.c_str());            
+    ECObjectsLogger::Log()->errorv (L"line %d, position %d", line, linePos);
 
     return SUCCESS;
     }
@@ -1463,7 +1473,6 @@ void AddFilePathToSchemaPaths  (ECSchemaReadContextR schemaContext, T_WStringVec
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaP& schemaOut, WCharCP ecSchemaXmlFile, ECSchemaReadContextR schemaContext)
-ECSchemaDeserializationContextR schemaContext
     {                  
     schemaOut = NULL;
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
@@ -1473,7 +1482,7 @@ ECSchemaDeserializationContextR schemaContext
     if ((xmlStatus != BEXML_Success) || !xmlDom.IsValid())
         {
         assert (false);
-        LogXmlLoadError ();
+        LogXmlLoadError (xmlDom.get());
         return SCHEMA_READ_STATUS_FailedToParseXml;
         }
 
@@ -1506,7 +1515,7 @@ SchemaReadStatus     ECSchema::ReadFromXmlString (ECSchemaP& schemaOut, WCharCP 
     if (BEXML_Success != xmlStatus)
         {
         assert (false);
-        LogXmlLoadError ();
+        LogXmlLoadError (xmlDom.get());
         return SCHEMA_READ_STATUS_FailedToParseXml;
         }
 
@@ -1580,7 +1589,7 @@ ECSchemaReadContextR schemaContext
     VARIANT_BOOL returnCode = xmlDocPtr->load(ecSchemaXmlStream);
     if (returnCode != VARIANT_TRUE)
         {
-        LogXmlLoadError ();
+        LogXmlLoadError (xmlDom.get());
         return SCHEMA_READ_STATUS_FailedToParseXml;
         }
 

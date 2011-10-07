@@ -2104,12 +2104,12 @@ static const wchar_t XSI_NIL_ATTRIBUTE[]            = L"nil";
 struct  InstanceXmlReader
 {
 private:
-    WString                             m_fileName;
-    CComPtr <IStream>                   m_stream;
-    CComPtr <IXmlReader>                m_xmlReader;
-    WString                             m_fullSchemaName;
-    ECSchemaCP                          m_schema;
-    ECInstanceReadContextR   m_context;
+    WString                 m_fileName;
+    CComPtr <IStream>       m_stream;
+    CComPtr <IXmlReader>    m_xmlReader;
+    WString                 m_fullSchemaName;
+    ECSchemaCP              m_schema;
+    ECInstanceReadContextR  m_context;
 
 
 public:
@@ -3675,16 +3675,16 @@ static BentleyStatus    LogXmlLoadError ()
 struct  InstanceXmlReader
 {
 private:
-    WString                             m_fullSchemaName;
-    BeXmlNodeR                          m_xmlNode;
-    ECSchemaCP                          m_schema;
-    ECInstanceDeserializationContextR   m_context;
+    WString                 m_fullSchemaName;
+    BeXmlNodeR              m_xmlNode;
+    ECSchemaCP              m_schema;
+    ECInstanceReadContextR  m_context;
 
 public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceXmlReader (ECInstanceDeserializationContextR context, BeXmlNodeR xmlNode)
+InstanceXmlReader (ECInstanceReadContextR context, BeXmlNodeR xmlNode)
     : m_context (context), m_schema (NULL), m_xmlNode (xmlNode)
     {
     }
@@ -3704,7 +3704,7 @@ ECSchemaCP       GetSchema()
     if (NULL != m_schema)
         return m_schema;
 
-    ECSchemaDeserializationContextPtr schemaContext = m_context.GetSchemaContextPtr();
+    ECSchemaReadContextPtr schemaContext = m_context.GetSchemaContextPtr();
 
     if (schemaContext.IsValid())
         {
@@ -3782,13 +3782,8 @@ InstanceReadStatus      GetInstance (ECClassCP& ecClass, IECInstancePtr& ecInsta
 
     ecClass = foundClass;
 
-    // create a StandAloneECInstance instance of the class
-    ClassLayoutP                classLayout         = ClassLayout::BuildFromClass (*foundClass, 0, 0);
-    StandaloneECEnablerPtr      standaloneEnabler   = StandaloneECEnabler::CreateEnabler (*foundClass, *classLayout, m_context.GetStandaloneEnablerLocater(), true);
-
-    // create the instance.
-    ecInstance                                      = standaloneEnabler->CreateInstance().get();
-
+    ecInstance = m_context.CreateStandaloneInstance (*foundClass).get();
+    
     IECRelationshipInstance*    relationshipInstance = dynamic_cast <IECRelationshipInstance*> (ecInstance.get());
 
     // if relationship, need the attributes used in relationships.
@@ -4068,17 +4063,9 @@ InstanceReadStatus   ReadCustomSerializedStruct (StructECPropertyP structPropert
 InstanceReadStatus   ReadStructArrayMember (ECClassCR structClass, IECInstanceP owningInstance, WString& accessString, UInt32 index, BeXmlNodeR arrayMemberValue)
     {
     // On entry, arrayMemberValue is an XML Node for the element that starts the struct.
-    // we have to create an IECInstance for the array member.
-    ClassLayoutP                    classLayout         = ClassLayout::BuildFromClass (structClass, 0, 0);
-    StandaloneECEnablerPtr          standaloneEnabler   = StandaloneECEnabler::CreateEnabler (structClass, *classLayout, owningInstance->GetEnablerR(), true);
 
-    // The following way causes an assert in ECPerSchemaCache::LoadSchema processing SetSchemaPtr (schemaP) because the schemacache's ptr was set recursively when processing struct arrays
-    //StandaloneECEnablerPtr standaloneEnabler = owningInstance->GetEnablerR().ObtainStandaloneInstanceEnabler (structClass.GetSchema().GetName().c_str(), structClass.GetName().c_str());
-    if (standaloneEnabler.IsNull())
-        return INSTANCE_READ_STATUS_UnableToGetStandaloneEnabler;
-
-    // create the instance.
-    IECInstancePtr                  structInstance      = standaloneEnabler->CreateInstance().get();
+    // Create an IECInstance for the array member.
+    IECInstancePtr      structInstance = m_context.CreateStandaloneInstance (structClass).get();
 
     InstanceReadStatus   ixrStatus;
     if (INSTANCE_READ_STATUS_Success != (ixrStatus = ReadInstanceOrStructMembers (structClass, structInstance.get(), NULL, arrayMemberValue)))
@@ -4593,7 +4580,7 @@ InstanceWriteStatus     WriteEmbeddedStructPropertyValue (StructECPropertyR stru
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceReadStatus   IECInstance::ReadFromXmlFile (IECInstancePtr& ecInstance, WCharCP ecInstanceFile, ECInstanceDeserializationContextR context)
+InstanceReadStatus   IECInstance::ReadFromXmlFile (IECInstancePtr& ecInstance, WCharCP ecInstanceFile, ECInstanceReadContextR context)
     {
     ecInstance = NULL;
 
@@ -4612,7 +4599,7 @@ InstanceReadStatus   IECInstance::ReadFromXmlFile (IECInstancePtr& ecInstance, W
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr& ecInstance, WCharCP ecInstanceXml, ECInstanceDeserializationContextR context)
+InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr& ecInstance, WCharCP ecInstanceXml, ECInstanceReadContextR context)
     {
     ecInstance = NULL;
 
@@ -4632,7 +4619,7 @@ InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr& ecInstance,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceReadStatus  IECInstance::ReadFromBeXmlDom (IECInstancePtr& ecInstance, BeXmlDomR xmlDom, ECInstanceDeserializationContextR context)
+InstanceReadStatus  IECInstance::ReadFromBeXmlDom (IECInstancePtr& ecInstance, BeXmlDomR xmlDom, ECInstanceReadContextR context)
     {
     ecInstance = NULL;
 
@@ -4660,7 +4647,7 @@ InstanceReadStatus  IECInstance::ReadFromBeXmlDom (IECInstancePtr& ecInstance, B
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceReadStatus   IECInstance::ReadFromBeXmlNode (IECInstancePtr& ecInstance, BeXmlNodeR instanceNode, ECInstanceDeserializationContextR context)
+InstanceReadStatus   IECInstance::ReadFromBeXmlNode (IECInstancePtr& ecInstance, BeXmlNodeR instanceNode, ECInstanceReadContextR context)
     {
     InstanceXmlReader   reader (context, instanceNode);
     return reader.ReadInstance (ecInstance);

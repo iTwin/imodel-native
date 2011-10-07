@@ -737,7 +737,7 @@ bool ECClass::TraverseBaseClasses (TraversalDelegate traverseMethod, bool recurs
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode, IStandaloneEnablerLocaterR standaloneEnablerLocater)
+SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
     {                
     WString value;      // used by the macros.
     if (m_name.length() == 0)
