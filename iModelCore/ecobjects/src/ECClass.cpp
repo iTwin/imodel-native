@@ -853,7 +853,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode,IStandaloneEnab
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECClass::_WriteXml (BeXmlNodeP& classNode, BeXmlNodeR &parentNode, Utf8CP elementName) const
+SchemaWriteStatus ECClass::_WriteXml (BeXmlNodeP& classNode, BeXmlNodeR parentNode, Utf8CP elementName) const
     {
     SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
 
