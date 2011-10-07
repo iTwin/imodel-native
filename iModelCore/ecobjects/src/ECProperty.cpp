@@ -16,9 +16,9 @@ BEGIN_BENTLEY_EC_NAMESPACE
 
 //#define DEBUG_PROPERTY_LEAKS
 #ifdef DEBUG_PROPERTY_LEAKS
-LeakDetector<ECProperty> g_leakDetector (L"ECProperty", L"ECProperties", true);
+static LeakDetector<ECProperty> g_leakDetector (L"ECProperty", L"ECProperties", true);
 #else
-LeakDetector<ECProperty> g_leakDetector (L"ECProperty", L"ECProperties", false);
+static LeakDetector<ECProperty> g_leakDetector (L"ECProperty", L"ECProperties", false);
 #endif
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
@@ -303,6 +303,7 @@ ECSchemaCP ECProperty::_GetContainerSchema
     return &(m_class.GetSchema());
     }
 
+#if defined (_WIN32) // WIP_NONPORT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -408,6 +409,8 @@ MSXML2::IXMLDOMElement& parentNode
     return __super::_WriteXml(parentNode, EC_PROPERTY_ELEMENT);
     }
 
+#endif //defined (_WIN32) // WIP_NONPORT
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -493,6 +496,7 @@ PrimitiveType primitiveType
     return ECOBJECTS_STATUS_Success;
     }
 
+#if defined (_WIN32) // WIP_NONPORT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -524,6 +528,7 @@ MSXML2::IXMLDOMElement& parentNode
     {
     return __super::_WriteXml(parentNode, EC_STRUCTPROPERTY_ELEMENT);
     }
+#endif // defined (_WIN32) // WIP_NONPORT
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
@@ -652,6 +657,7 @@ ECClassCR structType
     return ECOBJECTS_STATUS_Success;
     }
 
+#if defined (_WIN32) // WIP_NONPORT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -729,6 +735,9 @@ MSXML2::IXMLDOMElement& parentNode
         
     return status;
     }
+
+#endif // defined (_WIN32) // WIP_NONPORT
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -945,3 +954,22 @@ WStringCR maxOccurs
     }
 
 END_BENTLEY_EC_NAMESPACE
+
+#if defined (__unix__)
+BEGIN_BENTLEY_EC_NAMESPACE
+    #define MSXML2_IXMLDOMNode      void *
+    #define MSXML2_IXMLDOMNodePtr   void *
+    #define MSXML2_IXMLDOMDocument2 void *
+    #define MSXML2_IXMLDOMElement   void *
+SchemaReadStatus ECProperty::_ReadXml(MSXML2_IXMLDOMNode&,IStandaloneEnablerLocaterR){return SCHEMA_READ_STATUS_FailedToParseXml;}
+SchemaWriteStatus ECProperty::_WriteXml(MSXML2_IXMLDOMElement&){return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
+SchemaWriteStatus ECProperty::_WriteXml(MSXML2_IXMLDOMElement&,WCharCP){return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
+SchemaReadStatus PrimitiveECProperty::_ReadXml(MSXML2_IXMLDOMNode&,IStandaloneEnablerLocaterR){return SCHEMA_READ_STATUS_FailedToParseXml;}
+SchemaWriteStatus PrimitiveECProperty::_WriteXml(MSXML2_IXMLDOMElement&){return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
+SchemaReadStatus StructECProperty::_ReadXml(MSXML2_IXMLDOMNode&,IStandaloneEnablerLocaterR){return SCHEMA_READ_STATUS_FailedToParseXml;}
+SchemaWriteStatus StructECProperty::_WriteXml(MSXML2_IXMLDOMElement&){return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
+SchemaReadStatus ArrayECProperty::_ReadXml(MSXML2_IXMLDOMNode&,IStandaloneEnablerLocaterR){return SCHEMA_READ_STATUS_FailedToParseXml;}
+SchemaWriteStatus ArrayECProperty::_WriteXml(MSXML2_IXMLDOMElement&){return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
+
+END_BENTLEY_EC_NAMESPACE
+#endif // defined (__unix__)

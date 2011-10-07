@@ -7,8 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <ECObjects\ECObjects.h>
-
+#include <ECObjects/ECObjects.h>
 #include <string>
 
 #define ECXML_URI_2_0 L"http://www.bentley.com/schemas/Bentley.ECXML.2.0"
@@ -146,7 +145,7 @@ static const WString ECXML_DIRECTION_BACKWARD          = L"backward";
         { \
         WRITE_XML_ATTRIBUTE(_xmlAttributeName, L"True", _parent); \
         }
-    
+
 BEGIN_BENTLEY_EC_NAMESPACE
 
 struct ECXml /*abstract*/
@@ -161,7 +160,9 @@ public:
     static WStringCR DirectionToString (ECRelatedInstanceDirection direction);
     static ECObjectsStatus ParseDirectionString (ECRelatedInstanceDirection& direction, WStringCR directionString);
     static ECObjectsStatus ParseCardinalityString (UInt32& lowerLimit, UInt32& upperLimit, WStringCR cardinalityString);
+#if defined (_WIN32)
     static void FormatXml(MSXML2::IXMLDOMDocument2* pXmlDoc);
+#endif
 };
 
 END_BENTLEY_EC_NAMESPACE

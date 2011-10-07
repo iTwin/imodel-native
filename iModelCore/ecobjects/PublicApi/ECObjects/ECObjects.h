@@ -12,7 +12,7 @@
 
 /*__PUBLISH_SECTION_START__*/
 
-#include <Bentley\Bentley.h>
+#include <Bentley/Bentley.h>
 
 // In many of the DgnPlatform libraries we redefine the below macros based on __cplusplus.  This is because there
 // are existing C callers that we can not get rid of.  I've spoken to Sam and he recommends that for any new libraries we
@@ -42,7 +42,7 @@
 /*__PUBLISH_SECTION_END__*/
 // These BENTLEY_EXCLUDE_WINDOWS_HEADERS shenanigans are necessary to allow ECObjects headers to be included without sucking in conflicting windows headers
 // and to help us split off the non-portable code and to move to a different XML parser
-#ifdef BENTLEY_EXCLUDE_WINDOWS_HEADERS
+#if !defined (_WIN32) || defined (BENTLEY_EXCLUDE_WINDOWS_HEADERS) || defined(BENTLEY_EXCLUDE_MSXML)
 /*__PUBLISH_SECTION_START__*/        
     #define MSXML2_IXMLDOMNode      void *
     #define MSXML2_IXMLDOMNodePtr   void *
@@ -158,6 +158,7 @@ enum ECObjectsStatus
     ECOBJECTS_STATUS_MemoryAllocationCallbackRequired                   = ECOBJECTS_ERROR_BASE + 0x1F,
     ECOBJECTS_STATUS_UnableToAddStructArrayMember                       = ECOBJECTS_ERROR_BASE + 0x20,
     ECOBJECTS_STATUS_UnableToSetStructArrayMemberInstance               = ECOBJECTS_ERROR_BASE + 0x21,
+    ECOBJECTS_STATUS_InvalidIndexForPerPropertFlag                      = ECOBJECTS_ERROR_BASE + 0x22,
     ECOBJECTS_STATUS_Error                                              = ECOBJECTS_ERROR_BASE + 0xFFF,
     }; 
 

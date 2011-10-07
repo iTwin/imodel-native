@@ -11,7 +11,12 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "ECObjectsPch.h"
+#if defined (_WIN32) // WIP_NONPORT - iostreams not support on Android
 #include <iomanip>
+#endif
+#include <list>
+#include <Bentley/BeFileName.h>
+#include <list>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -19,9 +24,9 @@ extern ECObjectsStatus GetSchemaFileName (WString& fullFileName, UInt32& foundVe
 
 //#define DEBUG_SCHEMA_LEAKS
 #ifdef DEBUG_SCHEMA_LEAKS
-LeakDetector<ECSchema> g_leakDetector (L"ECSchema", L"ECSchemas", true);
+static LeakDetector<ECSchema> g_leakDetector (L"ECSchema", L"ECSchemas", true);
 #else
-LeakDetector<ECSchema> g_leakDetector (L"ECSchema", L"ECSchemas", false);
+static LeakDetector<ECSchema> g_leakDetector (L"ECSchema", L"ECSchemas", false);
 #endif
 
 /*---------------------------------------------------------------------------------**//**
@@ -259,7 +264,7 @@ bool ECSchema::ShouldNotBeStored
         return true;
 
     // We don't want to import any version of the Units_Schema
-    if (_wcsicmp(L"Units_Schema", m_name.c_str()) == 0)
+    if (BeStringUtilities::Wcsicmp(L"Units_Schema", m_name.c_str()) == 0)
         return true;
 
     return false;
@@ -338,7 +343,7 @@ void ECSchema::DebugDump()const
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::AddClass 
 (
@@ -417,7 +422,7 @@ ECOBJECTS_EXPORT WString ECSchema::GetFullSchemaName () const
     {
     wchar_t fullName[1024]; // we decided to use a large buffer instead of caculating the length and using _alloc to boost performance 
 
-    swprintf (fullName, L"%s.%02d.%02d", GetName().c_str(), GetVersionMajor(), GetVersionMinor());
+    BeStringUtilities::Snwprintf (fullName, L"%s.%02d.%02d", GetName().c_str(), GetVersionMajor(), GetVersionMinor());
     return fullName;
     }
 
@@ -496,7 +501,7 @@ WCharCP      fullName
 WString ECSchema::FormatSchemaVersion (UInt32& versionMajor, UInt32& versionMinor)
     {
     wchar_t versionString[80];
-    _snwprintf (versionString, _countof(versionString), L"%02d.%02d", versionMajor, versionMinor);
+    BeStringUtilities::Snwprintf (versionString, _countof(versionString), L"%02d.%02d", versionMajor, versionMinor);
     return WString (versionString);
     }
 
@@ -596,7 +601,7 @@ UInt32          candidateMajor,
 UInt32          candidateMinor
 )
     {
-    if (_wcsicmp (candidateName, soughtName))
+    if (BeStringUtilities::Wcsicmp (candidateName, soughtName))
         return false;
     
     return ((matchType == SCHEMAMATCHTYPE_Latest) ||
@@ -892,6 +897,7 @@ ECSchemaR       refSchema
     return ECOBJECTS_STATUS_Success;
     }
     
+#if defined (_WIN32) // WIP_NONPORT
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1054,6 +1060,7 @@ ECSchemaReadContextR schemaContext
 
     return status;
     }
+#endif //defined (_WIN32) // WIP_NONPORT
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
@@ -1123,11 +1130,13 @@ ECSchemaReadContextR schemaContext
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, WCharCP filePath)
     {
+#if defined (_WIN32) // WIP_NONPORT
     wchar_t  name[256];
 
     // only process the filename 
     ::_wsplitpath (filePath, NULL, NULL, name, NULL);
 
+// *** NEEDS WORK: _wsplitpath does not include the extension in name
     WCharCP firstDot = wcschr (name, L'.');
     if (NULL == firstDot)
         {
@@ -1150,6 +1159,9 @@ ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, WCharCP
 
     UInt32 versionMajor;
     return ECSchema::ParseVersionString (versionMajor, versionMinor, buffer);
+#else
+    return ECOBJECTS_STATUS_ParseError;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1311,6 +1323,7 @@ ECSchemaReadContextR schemaContext
     return LocateSchemaByPath (name, versionMajor, versionMinor, schemaContext, true, &searchPaths);
     }
 
+#if defined (_WIN32) // WIP_NONPORT
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1690,6 +1703,7 @@ ECSchemaReadContextR schemaContext
 
     return status;
     }
+#endif //defined (_WIN32) // WIP_NONPORT
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
@@ -1701,6 +1715,7 @@ WCharCP                         ecSchemaXml,
 ECSchemaReadContextR schemaContext
 )
     {                  
+#if defined (_WIN32) // WIP_NONPORT
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
 
     MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;        
@@ -1730,6 +1745,7 @@ ECSchemaReadContextR schemaContext
         ECObjectsLogger::Log()->infov (L"Native ECSchema read from string: schemaName='%s.%02d.%02d' classCount='%d' schemaAddress='0x%x' stringAddress='0x%x'", 
             schemaOut->GetName().c_str(), schemaOut->GetVersionMajor(), schemaOut->GetVersionMinor(), schemaOut->m_classMap.size(), schemaOut, ecSchemaXml);
     return status;
+#endif //defined (_WIN32) // WIP_NONPORT
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1774,6 +1790,7 @@ IStreamP                        ecSchemaXmlStream,
 ECSchemaReadContextR schemaContext
 )
     {                  
+#if defined (_WIN32) // WIP_NONPORT
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
 
     MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;        
@@ -1795,8 +1812,12 @@ ECSchemaReadContextR schemaContext
     if (ECOBJECTS_STATUS_Success != status)
         ECObjectsLogger::Log()->errorv (L"Failed to read XML from stream");
     return status;
+#else
+    return SCHEMA_READ_STATUS_FailedToParseXml;
+#endif //defined (_WIN32) // WIP_NONPORT
     }
 
+#if defined (_WIN32) // WIP_NONPORT
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1872,6 +1893,7 @@ IStreamP ecSchemaXmlStream
 
     return status;
     }
+#endif //defined (_WIN32) // WIP_NONPORT
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    07/10
@@ -2152,3 +2174,27 @@ const WString &name
     }
 
 END_BENTLEY_EC_NAMESPACE
+
+
+#if defined (__unix__)
+BEGIN_BENTLEY_EC_NAMESPACE
+    #define MSXML2_IXMLDOMNode      void *
+    #define MSXML2_IXMLDOMNodePtr   void *
+    #define MSXML2_IXMLDOMDocument2 void *
+    #define MSXML2_IXMLDOMElement   void *
+SchemaReadStatus ECSchema::ReadClassStubsFromXml(MSXML2_IXMLDOMNode&,ClassDeserializationVector&,ECSchemaDeserializationContextR){return SCHEMA_READ_STATUS_FailedToParseXml;}
+SchemaReadStatus ECSchema::ReadClassContentsFromXml(ClassDeserializationVector&,ECSchemaDeserializationContextR){return SCHEMA_READ_STATUS_FailedToParseXml;}
+SchemaReadStatus ECSchema::ReadSchemaReferencesFromXml(MSXML2_IXMLDOMNode&,ECSchemaDeserializationContextR){return SCHEMA_READ_STATUS_FailedToParseXml;}
+SchemaReadStatus ECSchema::ReadXml(ECSchemaP&,MSXML2_IXMLDOMDocument2&,ECSchemaDeserializationContextR){return SCHEMA_READ_STATUS_FailedToParseXml;}
+SchemaReadStatus ECSchema::ReadFromXmlFile(ECSchemaP&,WCharCP,ECSchemaDeserializationContextR){return SCHEMA_READ_STATUS_FailedToParseXml;}
+SchemaWriteStatus ECSchema::WriteSchemaReferences(MSXML2_IXMLDOMElement&)const{return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
+SchemaWriteStatus ECSchema::WriteCustomAttributeDependencies(MSXML2_IXMLDOMElement&,IECCustomAttributeContainerCR,ECSchemaSerializationContext&)const{return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
+SchemaWriteStatus ECSchema::WriteClass(MSXML2_IXMLDOMElement&,ECClassCR,ECSchemaSerializationContext&)const{return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
+SchemaWriteStatus ECSchema::WritePropertyDependencies(MSXML2_IXMLDOMElement&,ECClassCR,ECSchemaSerializationContext&)const{return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
+SchemaWriteStatus ECSchema::WriteXml(MSXML2_IXMLDOMDocument2*)const{return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
+SchemaWriteStatus ECSchema::WriteToXmlString(WString&)const{return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
+SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP){return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
+SchemaWriteStatus ECSchema::WriteToXmlStream(IStreamP){return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;}
+
+END_BENTLEY_EC_NAMESPACE
+#endif // defined (__unix__)
