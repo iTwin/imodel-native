@@ -378,8 +378,6 @@ MSXML2::IXMLDOMNode& newNode
         if (xmlNodePtr->nodeType != NODE_ELEMENT)
             continue;
 
-        WString nodeName = xmlNodePtr->baseName.GetBSTR(); //foo
-
         MSXML2::IXMLDOMNodePtr propertyPtr = newNode.ownerDocument->createNode(NODE_ELEMENT, xmlNodePtr->baseName, xmlNodePtr->namespaceURI);
         APPEND_CHILD_TO_PARENT(propertyPtr, (&newNode));
         WString basename = xmlNodePtr->baseName.GetBSTR();

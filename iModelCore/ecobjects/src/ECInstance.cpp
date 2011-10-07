@@ -2968,7 +2968,7 @@ InstanceXmlWriter (WString fileName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     Init ()
+InstanceWriteStatus     Init (bool utf16)
     {
     // different constructors set different members, according to the source of the stream and the writer.
     HRESULT     status;
@@ -2984,7 +2984,7 @@ InstanceWriteStatus     Init ()
             return INSTANCE_WRITE_STATUS_CantCreateXmlWriter;
 
 
-        if (FAILED (status = CreateXmlWriterOutputWithEncodingName(m_stream, 0, L"utf-16", &m_xmlOutput))) //NEEDSWORK: Don't force utf-16
+        if (FAILED (status = CreateXmlWriterOutputWithEncodingName(m_stream, 0, utf16 ? L"utf-16" : L"utf-8", &m_xmlOutput)))
             return INSTANCE_WRITE_STATUS_CantCreateXmlWriter;
 
         if (FAILED (status= m_xmlWriter->SetOutput (m_xmlOutput)))
@@ -3495,12 +3495,12 @@ InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr& ecInstance,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool isCompleteXmlDocument, bool writeInstanceId)
+InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool isCompleteXmlDocument, bool writeInstanceId, bool utf16)
     {
     InstanceXmlWriter writer (fileName);
 
     InstanceWriteStatus   status;
-    if (INSTANCE_WRITE_STATUS_Success != (status = writer.Init ()))
+    if (INSTANCE_WRITE_STATUS_Success != (status = writer.Init (utf16)))
         return status;
 
     return writer.WriteInstance (*this, isCompleteXmlDocument, writeInstanceId);
@@ -3509,12 +3509,12 @@ InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool isCo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     IECInstance::WriteToXmlStream (IStreamP stream, bool isCompleteXmlDocument, bool writeInstanceId)
+InstanceWriteStatus     IECInstance::WriteToXmlStream (IStreamP stream, bool isCompleteXmlDocument, bool writeInstanceId, bool utf16)
     {
     InstanceXmlWriter writer (stream);
 
     InstanceWriteStatus   status;
-    if (INSTANCE_WRITE_STATUS_Success != (status = writer.Init ()))
+    if (INSTANCE_WRITE_STATUS_Success != (status = writer.Init (utf16)))
         return status;
 
     return writer.WriteInstance (*this, isCompleteXmlDocument, writeInstanceId);
@@ -3532,7 +3532,7 @@ InstanceWriteStatus     IECInstance::WriteToXmlString (WString & ecInstanceXml, 
         return INSTANCE_WRITE_STATUS_CantCreateStream;
 
     InstanceXmlWriter writer (stream);
-    if (INSTANCE_WRITE_STATUS_Success != (status = writer.Init ()))
+    if (INSTANCE_WRITE_STATUS_Success != (status = writer.Init (true)))
         return status;
 
     if (INSTANCE_WRITE_STATUS_Success != (status = writer.WriteInstance(*this, isCompleteXmlDocument, writeInstanceId)))

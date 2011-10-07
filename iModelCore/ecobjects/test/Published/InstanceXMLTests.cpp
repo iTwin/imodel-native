@@ -450,7 +450,7 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     //HRESULT res = ::CreateStreamOnHGlobal(NULL,TRUE,&stream);
     ::CreateStreamOnHGlobal(NULL,TRUE,&stream);
 
-    InstanceWriteStatus status2 = testInstance->WriteToXmlStream(stream, true, false);
+    InstanceWriteStatus status2 = testInstance->WriteToXmlStream(stream, true, false, false);
     EXPECT_EQ(INSTANCE_WRITE_STATUS_Success, status2);
     
     LARGE_INTEGER liPos = {0};
