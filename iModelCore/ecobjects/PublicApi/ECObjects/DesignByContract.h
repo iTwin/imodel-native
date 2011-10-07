@@ -136,34 +136,6 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
             L"The following method postcondition check has failed:\n  postcondition: %S\n  method: %S\n  file: %S\n  line: %i\n",   \
             #_Expression, __FUNCTION__, __FILE__, __LINE__)
 
-#ifndef BENTLEY_EXCLUDE_WINDOWS_HEADERS            
-//! This macro should be utilized to enforce S_OK is returned by a method that returns an HRESULT.
-//! If _hr is not S_OK the macro will log the details of the HRESULT error, assert and return the specified _ErrorStatus.
-//! The assertion will only occur in debug builds.  Further, the assertion will only occur as long as they have not been disabled using the DISABLE_ASSERTS macros which allows
-//! for creation of tests to validate failure cases without being aborted by the standard assert behavior.
-//! Example:
-//! \code
-//! MyStatus LoadDataFromXmlFile (string file)
-//!      {
-//!      MSXML2::IXMLDOMDocument2Ptr pXmlDoc = NULL;
-//!      
-//!      HRSUCCESSCONDITION(pXmlDoc.CreateInstance(__uuidof(MSXML2::DOMDocument60)), ERROR_FailedToInitializeMsmxl);
-//!      
-//!      return SUCCESS;
-//!      }
-//! \endcode
-#define VERIFY_HRESULT_OK(_Expression, _ErrorStatus)       \
-    {                                               \
-    HRESULT hresult = _Expression ;                         \
-    if (hresult != S_OK)                            \
-        {                                           \
-        _com_error err(hresult);                    \
-        LOG_ASSERT_RETURN(_Expression != S_OK, _ErrorStatus,             \
-            L"The following HRESULT success check has failed:\n  result obtained from: %S\n  HRESULT Code: %x\n  HRESULT Message: %S\n  file: %S\n  line: %i\n",    \
-            #_Expression, hresult, err.ErrorMessage(), __FILE__, __LINE__);   \
-        }                                           \
-    }
-#endif
 
 //! This macro should be utilized to check that an expected condition is true.  If the condition evaluates to false the macro will log and assert leaving it to the caller
 //! to return an error code or take any additional action.
