@@ -293,6 +293,7 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingFaultyInstance
 
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.StringArray[]",0));
     EXPECT_STREQ (ecValue.GetString(), L"Test");
+
     // Testing a struct that misformatted values
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.BinaryArray[]",0));
 
@@ -321,7 +322,10 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingFaultyInstance
     EXPECT_EQ (0, ecValue.GetPoint3D().z);
 
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.StringArray[]",0));
+    EXPECT_STREQ (ecValue.GetString(), L"");
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.StringArray[]",6));
     EXPECT_STREQ (ecValue.GetString(), L"Test");
+
     //Testing a struct with few errors among entirely bad structs in the same array
     ECValue badStructArrayMember;
     EXPECT_EQ (SUCCESS, testInstance->GetValue (badStructArrayMember, L"ArrayOfBadStructs[]",2));

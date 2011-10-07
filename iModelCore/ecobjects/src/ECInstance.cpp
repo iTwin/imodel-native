@@ -4112,7 +4112,13 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
 
     // an empty string should not be parsed.
     if (0 == propertyValueString.length())
+        {
+        // set to an empty string. This matches what we did in the managed ECObjects.
+        if (PRIMITIVETYPE_String == propertyType)
+            ecValue.SetString (L"");
+
         return INSTANCE_READ_STATUS_Success;
+        }
 
     WCharCP     propertyValueWChar = propertyValueString.c_str();
     switch (propertyType)
