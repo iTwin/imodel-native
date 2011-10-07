@@ -1661,7 +1661,9 @@ ECSchemaP&                      schemaOut,
 WCharCP                         ecSchemaXmlFile, 
 ECSchemaReadContextR schemaContext
 )
-    {                  
+    {
+    ECObjectsLogger::Log()->debugv (L"About to read native ECSchema read from file: fileName='%s'", ecSchemaXmlFile);
+
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
 
     MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;        
@@ -1701,6 +1703,7 @@ WCharCP                         ecSchemaXml,
 ECSchemaReadContextR schemaContext
 )
     {                  
+    ECObjectsLogger::Log()->debugv (L"About to read native ECSchema read from string."); // mainly included for timing
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
 
     MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;        
@@ -1826,7 +1829,7 @@ SchemaWriteStatus ECSchema::WriteToXmlString (WString& ecSchemaXml) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus ECSchema::WriteToXmlFile
 (
-WCharCP ecSchemaXmlFile
+WCharCP ecSchemaXmlFile //add encoding parameter
 )
     {
     SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
@@ -1852,7 +1855,7 @@ WCharCP ecSchemaXmlFile
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus ECSchema::WriteToXmlStream
 (
-IStreamP ecSchemaXmlStream
+IStreamP ecSchemaXmlStream //add encoding parameter
 )
     {
     SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;

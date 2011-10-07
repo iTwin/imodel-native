@@ -475,9 +475,10 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithEmptyCustomAttribute)
 
     SchemaWriteStatus status2 = schema->WriteToXmlString(ecSchemaXmlString);
     EXPECT_EQ(SCHEMA_WRITE_STATUS_Success, status2);
+    
+    EXPECT_NE (WString::npos, ecSchemaXmlString.find(L"<Relationship/>"));
 
     CoUninitialize();
-
     }
 
 /*---------------------------------------------------------------------------------**//**

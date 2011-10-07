@@ -2612,6 +2612,9 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
 
     if (m_xmlReader->IsEmptyElement())
         {
+        if (PRIMITIVETYPE_String == propertyType)
+            ecValue.SetString(L""); // The .NET implementation interprets an empty element as "" when it represents a string property value, thus so do we.
+
         return INSTANCE_READ_STATUS_Success;
         }
 
@@ -2981,7 +2984,7 @@ InstanceWriteStatus     Init ()
             return INSTANCE_WRITE_STATUS_CantCreateXmlWriter;
 
 
-        if (FAILED (status = CreateXmlWriterOutputWithEncodingName(m_stream, 0, L"utf-16", &m_xmlOutput)))
+        if (FAILED (status = CreateXmlWriterOutputWithEncodingName(m_stream, 0, L"utf-16", &m_xmlOutput))) //NEEDSWORK: Don't force utf-16
             return INSTANCE_WRITE_STATUS_CantCreateXmlWriter;
 
         if (FAILED (status= m_xmlWriter->SetOutput (m_xmlOutput)))
