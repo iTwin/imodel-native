@@ -2441,11 +2441,6 @@ InstanceReadStatus   ReadArrayProperty (ArrayECPropertyP arrayProperty, IECInsta
                     ECValue                         ecValue;
                     if (INSTANCE_READ_STATUS_Success != (ixrStatus = ReadPrimitiveValue (ecValue, memberType)))
                         return ixrStatus;
-                    if(ecValue.IsUninitialized())
-                        {
-                        //A malformed value was found.  A warning was shown; just move on.
-                        continue;
-                        }
 
                     if ( ! isFixedSizeArray)
                         ecInstance->AddArrayElements (accessString.c_str(), 1);
@@ -2631,7 +2626,9 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
             case XmlNodeType_EndElement:
                 // we have encountered the end of the class or struct without getting a value from the element.
                 // we will break here to keep the ECValue null.
-                return INSTANCE_READ_STATUS_Success;
+                if (PRIMITIVETYPE_String == propertyType)
+                    ecValue.SetString(L""); // The .NET implementation interprets an empty element as "" when it represents a string property value, thus so do we.
+                 return INSTANCE_READ_STATUS_Success;
 
             case XmlNodeType_Text:
                 {
