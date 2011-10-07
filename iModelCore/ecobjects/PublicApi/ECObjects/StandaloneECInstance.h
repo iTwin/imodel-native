@@ -79,7 +79,7 @@ private:
     bool                    m_isInManagedInstance;
     StructValueIdentifier   m_structValueId;
     SupportingInstanceUnion m_structInstances;
-    
+
 //__PUBLISH_SECTION_END__
     IECInstancePtr          GetStructArrayInstance (StructValueIdentifier structValueId) const;
     StructArrayEntry const* GetAddressOfStructArrayEntry (StructValueIdentifier key) const;
