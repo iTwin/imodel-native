@@ -358,7 +358,12 @@ WCharCP elementName
     APPEND_CHILD_TO_PARENT(propertyPtr, (&parentNode));
     
     WRITE_XML_ATTRIBUTE(PROPERTY_NAME_ATTRIBUTE, this->GetName().c_str(), propertyPtr);
-    WRITE_XML_ATTRIBUTE(TYPE_NAME_ATTRIBUTE, this->GetTypeName().c_str(), propertyPtr);
+
+    if (m_originalTypeName.size() > 0)
+        WRITE_XML_ATTRIBUTE(TYPE_NAME_ATTRIBUTE, m_originalTypeName.c_str(), propertyPtr)
+    else
+        WRITE_XML_ATTRIBUTE(TYPE_NAME_ATTRIBUTE, this->GetTypeName().c_str(), propertyPtr)
+        
     WRITE_OPTIONAL_XML_ATTRIBUTE(DESCRIPTION_ATTRIBUTE, Description, propertyPtr);
     if (GetIsDisplayLabelDefined())
         WRITE_OPTIONAL_XML_ATTRIBUTE(DISPLAY_LABEL_ATTRIBUTE, DisplayLabel, propertyPtr);
@@ -387,12 +392,8 @@ IStandaloneEnablerLocaterP  standaloneEnablerLocater
     // typeName is a required attribute.  If it is missing, an error will be returned.
     // For Primitive & Array properties we ignore parse errors and default to string.  Struct properties will require a resolvable typename.
     READ_REQUIRED_XML_ATTRIBUTE_IGNORING_SET_ERRORS (TYPE_NAME_ATTRIBUTE,           this, TypeName, propertyNode.baseName)  
-
     if (SCHEMA_READ_STATUS_FailedToParseXml == status)
-        {
-        ECObjectsLogger::Log()->warningv (L"Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.", this->GetName().c_str(), this->GetTypeName().c_str());
-        return SCHEMA_READ_STATUS_Success;
-        }
+        return SCHEMA_READ_STATUS_Success; // This means we did not recognize the typeName, but we recorded it in m_originalTypeName and are using string instead. It has already been logged, so just move on.
 
     return status;
     }
@@ -460,6 +461,7 @@ WStringCR typeName
     ECObjectsStatus status = ECXml::ParsePrimitiveType (primitiveType, typeName);
     if (ECOBJECTS_STATUS_Success != status)
         {            
+        m_originalTypeName = typeName; // Remember this for when we serialize the ECSchema again, later.
         ECObjectsLogger::Log()->warningv (L"Unrecognized primitive typeName '%s' found in '%s:%s.%s'. A type of 'string' will be used.",
                                 typeName.c_str(),
                                 this->GetClass().GetSchema().GetName().c_str(),
@@ -579,14 +581,14 @@ ECPropertyCR ecProperty
     ECObjectsStatus status = ECClass::ParseClassName (namespacePrefix, className, typeName);
     if (ECOBJECTS_STATUS_Success != status)
         {
-        ECObjectsLogger::Log()->warningv (L"Can not resolve the type name '%s' as a struct type because the typeName could not be parsed.", typeName.c_str());
+        ECObjectsLogger::Log()->warningv (L"Cannot resolve the type name '%s' as a struct type because the typeName could not be parsed.", typeName.c_str());
         return status;
         }
     
     ECSchemaP resolvedSchema = ecProperty.GetClass().GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
     if (NULL == resolvedSchema)
         {
-        ECObjectsLogger::Log()->warningv (L"Can not resolve the type name '%s' as a struct type because the namespacePrefix '%s' can not be resolved to the primary or a referenced schema.", 
+        ECObjectsLogger::Log()->warningv (L"Cannot resolve the type name '%s' as a struct type because the namespacePrefix '%s' can not be resolved to the primary or a referenced schema.", 
             typeName.c_str(), namespacePrefix.c_str());
         return ECOBJECTS_STATUS_SchemaNotFound;
         }
@@ -594,7 +596,7 @@ ECPropertyCR ecProperty
     structClass = resolvedSchema->GetClassP (className.c_str());
     if (NULL == structClass)
         {
-        ECObjectsLogger::Log()->warningv (L"Can not resolve the type name '%s' as a struct type because ECClass '%s' does not exist in the schema '%s'.", 
+        ECObjectsLogger::Log()->warningv (L"Cannot resolve the type name '%s' as a struct type because ECClass '%s' does not exist in the schema '%s'.", 
             typeName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
         return ECOBJECTS_STATUS_ClassNotFound;
         }
@@ -776,7 +778,12 @@ WStringCR typeName
     if (ECOBJECTS_STATUS_Success == status)
         return SetStructElementType (structClass);
 
-    ECObjectsLogger::Log()->errorv (L"Failed ArrayECProperty::_SetTypeName for '%s'. '%s' is not a recognized type.", this->GetName().c_str(), typeName.c_str());        
+    m_originalTypeName = typeName;
+    ECObjectsLogger::Log()->warningv (L"TypeName '%s' of '%s.%s.%s' was not recognized. We will use 'string' intead.",
+                                    typeName.c_str(),
+                                    this->GetClass().GetSchema().GetName().c_str(),
+                                    this->GetClass().GetName().c_str(),
+                                    this->GetName().c_str() );
     return ECOBJECTS_STATUS_ParseError;
     }
 

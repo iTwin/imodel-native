@@ -957,22 +957,22 @@ IStandaloneEnablerLocaterP  standaloneEnablerLocater
             pProperty = new StructECProperty (*this, m_hideFromLeakDetection);
         else
             {
-            ECObjectsLogger::Log()->warningv (L"Invalid ECSchemaXML: Unknown property type '%s' of ECClass '%s' in the ECSchema '%s'", xmlNodePtr->baseName, this->GetName().c_str(), this->GetSchema().GetName().c_str());
+            ECObjectsLogger::Log()->warningv (L"Invalid ECSchemaXML: Unknown kind of property '%s' in ECClass '%s:%s'", xmlNodePtr->baseName, this->GetSchema().GetName().c_str(), this->GetName().c_str() );
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
 
         SchemaReadStatus status = pProperty->_ReadXml(xmlNodePtr, standaloneEnablerLocater);
         if (status != SCHEMA_READ_STATUS_Success)
             {
-            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to read properties of ECClass '%s' in the ECSchema '%s'", this->GetName().c_str(), this->GetSchema().GetName().c_str());                
+            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to read properties of ECClass '%s:%s'", this->GetSchema().GetName().c_str(), this->GetName().c_str());                
             delete pProperty;
             return status;
             }
         
         if (ECOBJECTS_STATUS_Success != this->AddProperty (pProperty))
             {
-            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to read ECClass '%s' in the ECSchema '%s' because a problem occurred while adding ECProperty '%s'", 
-                this->GetName().c_str(), this->GetSchema().GetName().c_str(), pProperty->GetName().c_str());
+            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to read ECClass '%s:%s' because a problem occurred while adding ECProperty '%s'", 
+                this->GetSchema().GetName().c_str(), this->GetName().c_str(), pProperty->GetName().c_str());
             delete pProperty;
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }

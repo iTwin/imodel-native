@@ -219,6 +219,7 @@ private:
     bool            m_hideFromLeakDetection;
 
 protected:
+    WString         m_originalTypeName; //Will be empty unless the typeName was unrecognized. Keep this so that we can re-write the ECSchema without changing the type to string
     ECProperty (ECClassCR ecClass, bool hideFromLeakDetection);
     virtual ~ECProperty();
 

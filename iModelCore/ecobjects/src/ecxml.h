@@ -114,16 +114,16 @@ static const WString ECXML_DIRECTION_BACKWARD          = L"backward";
         status = SCHEMA_READ_STATUS_FailedToParseXml;
             
 #define APPEND_CHILD_TO_PARENT(_child, _parent) \
-    if (NULL == _child)\
+    {if (NULL == _child)\
         return SCHEMA_WRITE_STATUS_FailedToCreateXml;\
     if (NULL == _parent->appendChild(_child))\
-        return SCHEMA_WRITE_STATUS_FailedToCreateXml; 
+        return SCHEMA_WRITE_STATUS_FailedToCreateXml;} 
 
 #define WRITE_XML_ATTRIBUTE(_xmlAttributeName, _value, _parent) \
-    if (NULL == (attributePtr = _parent->ownerDocument->createAttribute(_xmlAttributeName))) \
+    {if (NULL == (attributePtr = _parent->ownerDocument->createAttribute(_xmlAttributeName))) \
         return SCHEMA_WRITE_STATUS_FailedToCreateXml; \
     attributePtr->Putvalue(_value); \
-    _parent->setAttributeNode(attributePtr);
+    _parent->setAttributeNode(attributePtr);}
 
 #define WRITE_BOOL_XML_ATTRIBUTE(_xmlAttributeName, _getPropertyName, _parent) \
     if (this->Get##_getPropertyName() == true)\
