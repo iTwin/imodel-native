@@ -4690,7 +4690,12 @@ InstanceWriteStatus     IECInstance::WriteToXmlString (WString & ecInstanceXml, 
     if (INSTANCE_WRITE_STATUS_Success != (status = instanceWriter.WriteInstance (*this, writeInstanceId)))
         return status;
 
-    xmlDom->ToString (ecInstanceXml, BeXmlDom::TO_STRING_OPTION_Indent);
+    UInt64  opts = BeXmlDom::TO_STRING_OPTION_Indent | BeXmlDom::TO_STRING_OPTION_OmitByteOrderMark;
+
+    if ( ! isStandAlone)
+        opts |= BeXmlDom::TO_STRING_OPTION_OmitXmlDeclaration;
+
+    xmlDom->ToString (ecInstanceXml, (BeXmlDom::ToStringOption) opts);
 
     return INSTANCE_WRITE_STATUS_Success;
     }
