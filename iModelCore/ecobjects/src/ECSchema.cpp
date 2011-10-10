@@ -1156,12 +1156,6 @@ ECSchemaP SearchPathSchemaFileLocater::_LocateSchema(WCharCP name, UInt32& versi
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP       ECSchema::LocateSchemaByStandardPaths (WStringCR name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaReadContextR schemaContext)
     {
-    // Make a copy of the paths stored in schemaContext
-    T_WStringVector originalPaths = schemaContext.GetSchemaPaths();
-
-    // Clear out the stored paths and replace with the standard ones
-    schemaContext.ClearSchemaPaths();
-
     WString dllPath = ECFileUtilities::GetDllPath();
     if (0 == dllPath.length())
         return NULL;
