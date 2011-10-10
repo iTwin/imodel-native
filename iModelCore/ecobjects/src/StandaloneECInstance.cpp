@@ -540,7 +540,12 @@ void    MemoryECInstanceBase::UpdateStructArrayOffsets (byte const* gapAddress, 
     byte*   arrayCountAddress =  thisAddress + m_structInstances.offset;
     byte*   arrayAddress      =  arrayCountAddress + sizeof(UInt32) + sizeof(size_t);
     size_t* offsetToEndAddress = (size_t*)(arrayCountAddress + sizeof(UInt32));
-    byte*   endAddress        =  thisAddress + *offsetToEndAddress;
+    // byte*   endAddress        =  thisAddress + *offsetToEndAddress;
+
+    Int64   offsetToEndOfInstance = m_perPropertyFlagsHolder.perPropertyFlags.offset;
+    offsetToEndOfInstance += m_perPropertyFlagsHolder.numPerPropertyFlagsEntries * sizeof (UInt32);
+    thisAddress = (const_cast<byte*>(_GetData ()) - offsetToEndOfInstance);
+    byte *  endAddress = thisAddress + *offsetToEndAddress;
 
     // if this instance or supporting struct instance have changed size then update the offset to the end of the instance.
     if (gapAddress > thisAddress && gapAddress <= endAddress)
