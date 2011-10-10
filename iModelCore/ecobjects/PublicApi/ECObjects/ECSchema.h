@@ -1107,6 +1107,8 @@ protected:
 public:    
     ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();
 
+    ECOBJECTS_EXPORT static void        SetErrorHandling (bool showMessages, bool doAssert);
+
 /*__PUBLISH_SECTION_START__*/
 public:    
 
