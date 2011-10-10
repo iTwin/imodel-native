@@ -376,7 +376,11 @@ ECObjectsStatus PrimitiveECProperty::_SetTypeName (WStringCR typeName)
     ECObjectsStatus status = ECXml::ParsePrimitiveType (primitiveType, typeName);
     if (ECOBJECTS_STATUS_Success != status)
         {            
-        ECObjectsLogger::Log()->errorv (L"Failed to set the type name of ECProperty '%s' to '%s' because the typeName could not be parsed into a primitive type.", this->GetName().c_str(), typeName.c_str());        
+        ECObjectsLogger::Log()->warningv (L"Unrecognized primitive typeName '%s' found in '%s:%s.%s'. A type of 'string' will be used.",
+                                typeName.c_str(),
+                                this->GetClass().GetSchema().GetName().c_str(),
+                                this->GetClass().GetName().c_str(),
+                                this->GetName().c_str() );
         return status;
         }
 

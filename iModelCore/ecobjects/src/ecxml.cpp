@@ -87,6 +87,8 @@ ECObjectsStatus ECXml::ParsePrimitiveType (PrimitiveType& primitiveType, WString
         primitiveType = PRIMITIVETYPE_DateTime;
     else if (0 == typeName.compare (ECXML_TYPENAME_BINARY))
         primitiveType = PRIMITIVETYPE_Binary;
+//    else if (0 == typeName.compare (ECXML_TYPENAME_IGEOMETRY))
+//        primitiveType = PRIMITIVETYPE_String; // FUSION_WIP: for now we treat this as a string (it is XML) because we don't yet parse it into geometry objects
     else
         return ECOBJECTS_STATUS_ParseError;
 
