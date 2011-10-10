@@ -28,6 +28,12 @@ static LeakDetector<ECSchema> g_leakDetector (L"ECSchema", L"ECSchemas", true);
 static LeakDetector<ECSchema> g_leakDetector (L"ECSchema", L"ECSchemas", false);
 #endif
 
+
+// If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
+// Test programs generally want to get error status back and not assert, so they call ECSchema::AssertOnXmlError (false);
+static  bool        s_noAssert = false;
+
+
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -82,6 +88,15 @@ ECSchema::~ECSchema ()
 * @bsimethod                                                    JoshSchifter    09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 ILeakDetector&  ECSchema::Debug_GetLeakDetector() { return g_leakDetector; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    09/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECSchema::SetErrorHandling (bool showMessages, bool doAssert) 
+    { 
+    s_noAssert = !doAssert; 
+    BeXmlDom::SetErrorHandling (showMessages, doAssert);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
@@ -1007,7 +1022,7 @@ ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, WCharCP
     WString::size_type firstDot;
     if (WString::npos == (firstDot = name.find ('.')))
         {
-        assert (false);
+        assert (s_noAssert);
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchema FileName String: '%s' does not contain the suffix '.ecschema.xml'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, filePath);
         return ECOBJECTS_STATUS_ParseError;
         }
@@ -1180,7 +1195,7 @@ SchemaReadStatus ECSchema::ReadXml (ECSchemaP& schemaOut, BeXmlDomR xmlDom, ECSc
     BeXmlNodeP      schemaNode;
     if ( (BEXML_Success != xmlDom.SelectNode (schemaNode, "/" EC_NAMESPACE_PREFIX ":" EC_SCHEMA_ELEMENT, NULL, BeXmlDom::NODE_BIAS_First)) || (NULL == schemaNode) )
         {
-        assert (false);
+        assert (s_noAssert);
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: Missing a top-level %hs node in the %hs namespace", EC_SCHEMA_ELEMENT, ECXML_URI_2_0);
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
@@ -1189,7 +1204,7 @@ SchemaReadStatus ECSchema::ReadXml (ECSchemaP& schemaOut, BeXmlDomR xmlDom, ECSc
     WString schemaName;
     if (BEXML_Success != schemaNode->GetAttributeStringValue (schemaName, SCHEMA_NAME_ATTRIBUTE))
         {
-        assert (false);
+        assert (s_noAssert);
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %hs element must contain a schemaName attribute", EC_SCHEMA_ELEMENT);
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
@@ -1481,7 +1496,7 @@ SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaP& schemaOut, WCharCP ecSche
     BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromFile (xmlStatus, ecSchemaXmlFile);
     if ((xmlStatus != BEXML_Success) || !xmlDom.IsValid())
         {
-        assert (false);
+        assert (s_noAssert);
         LogXmlLoadError (xmlDom.get());
         return SCHEMA_READ_STATUS_FailedToParseXml;
         }
@@ -1514,7 +1529,7 @@ SchemaReadStatus     ECSchema::ReadFromXmlString (ECSchemaP& schemaOut, WCharCP 
     
     if (BEXML_Success != xmlStatus)
         {
-        assert (false);
+        assert (s_noAssert);
         LogXmlLoadError (xmlDom.get());
         return SCHEMA_READ_STATUS_FailedToParseXml;
         }
