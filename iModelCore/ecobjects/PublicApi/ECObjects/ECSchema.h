@@ -1107,12 +1107,12 @@ protected:
 public:    
     ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();
 
-    ECOBJECTS_EXPORT static void        SetErrorHandling (bool showMessages, bool doAssert);
-
 /*__PUBLISH_SECTION_START__*/
 public:    
 
     ECOBJECTS_EXPORT void               DebugDump() const;
+    ECOBJECTS_EXPORT static void        SetErrorHandling (bool showMessages, bool doAssert);
+
     ECOBJECTS_EXPORT ECObjectsStatus    SetName(WStringCR value);
     ECOBJECTS_EXPORT WStringCR          GetName() const;    
     ECOBJECTS_EXPORT ECObjectsStatus    SetNamespacePrefix(WStringCR value);

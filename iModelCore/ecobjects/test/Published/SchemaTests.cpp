@@ -199,6 +199,9 @@ TEST_F(SchemaNameParsingTest, ParseFullSchemaName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileDoesNotExist)
     {
+    // show error messages but do not assert.
+    ECSchema::SetErrorHandling (true, false);
+
     ECSchemaCachePtr         schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
 
@@ -213,6 +216,9 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileDoesNotExist)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNodes)
     {
+    // show error messages but do not assert.
+    ECSchema::SetErrorHandling (true, false);
+
     ECSchemaCachePtr         schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
 
@@ -227,6 +233,9 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNodes)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsIllFormed)
     {
+    // show error messages but do not assert.
+    ECSchema::SetErrorHandling (true, false);
+
     ECSchemaCachePtr         schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
 
@@ -241,6 +250,9 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsIllFormed)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingECSchemaNode)
     {
+    // show error messages but do not assert.
+    ECSchema::SetErrorHandling (true, false);
+
     ECSchemaCachePtr         schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
 
@@ -255,6 +267,9 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingECSchemaNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNamespace)
     {
+    // show error messages but do not assert.
+    ECSchema::SetErrorHandling (true, false);
+
     ECSchemaCachePtr         schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
 
@@ -269,6 +284,9 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNamespace)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasUnsupportedNamespace)
     {
+    // show error messages but do not assert.
+    ECSchema::SetErrorHandling (true, false);
+
     ECSchemaCachePtr         schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
 
@@ -283,6 +301,9 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasUnsupportedNamespace)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateNamespacePrefixes)
     {
+    // show error messages but do not assert.
+    ECSchema::SetErrorHandling (true, false);
+
     ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
 
@@ -298,6 +319,9 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateNamespacePrefixes)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingSchemaNameAttribute)
     {
+    // show error messages but do not assert.
+    ECSchema::SetErrorHandling (true, false);
+
     ECSchemaCachePtr         schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
 
@@ -312,6 +336,9 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingSchemaNameAttr
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingClassNameAttribute)
     {
+    // show error messages but do not assert.
+    ECSchema::SetErrorHandling (true, false);
+
     ECSchemaCachePtr         schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
 
@@ -326,6 +353,9 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingClassNameAttri
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectSuccessWhenXmlFileHasInvalidVersionString)
     {
+    // show error messages but do not assert.
+    ECSchema::SetErrorHandling (true, false);
+
     ECSchemaCachePtr         schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
 
@@ -342,6 +372,9 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenXmlFileHasInvalidVersionStrin
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectFailureWhenMissingTypeNameInProperty)
     {
+    // show error messages but do not assert.
+    ECSchema::SetErrorHandling (true, false);
+
     ECSchemaCachePtr         schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
 
@@ -428,6 +461,9 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingSchemaWithBaseCl
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectSuccessWhenECSchemaContainsOnlyRequiredAttributes)
     {                
+    // show error messages but do not assert.
+    ECSchema::SetErrorHandling (true, false);
+
     ECSchemaCachePtr         schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
 
@@ -785,6 +821,9 @@ TEST_F(SchemaReferenceTest, AddAndRemoveReferencedSchemas)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaReferenceTest, InvalidReference)
     {
+    // show error messages but do not assert.
+    ECSchema::SetErrorHandling (true, false);
+
     ECSchemaCachePtr         schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
     WString seedPath(ECTestFixture::GetTestDataPath(L"").c_str());

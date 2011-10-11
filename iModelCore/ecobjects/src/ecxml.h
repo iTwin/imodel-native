@@ -100,7 +100,6 @@ static const WString ECXML_DIRECTION_BACKWARD          = L"backward";
 #define READ_REQUIRED_XML_ATTRIBUTE(_nodeVar, _xmlAttributeName, _setInPointer, _setInPropertyName, _elementName)   \
     if (BEXML_Success != _nodeVar##.GetAttributeStringValue (value, _xmlAttributeName))   \
         {   \
-        assert (false); \
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %hs element must contain a %hs  attribute", _xmlAttributeName, _elementName);     \
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;        \
         }       \
@@ -110,7 +109,6 @@ static const WString ECXML_DIRECTION_BACKWARD          = L"backward";
 #define READ_REQUIRED_XML_ATTRIBUTE_IGNORING_SET_ERRORS(_nodeVar,_xmlAttributeName, _setInPointer, _setInPropertyName, _elementName)   \
     if (BEXML_Success != _nodeVar##.GetAttributeStringValue (value, _xmlAttributeName))     \
         {   \
-        assert (false); \
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %hs element must contain a %hs attribute",  _xmlAttributeName, _elementName);     \
         status = SCHEMA_READ_STATUS_InvalidECSchemaXml;        \
         }       \
