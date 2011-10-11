@@ -76,7 +76,7 @@ static const WString ECXML_TYPENAME_LONG               = L"long";
 static const WString ECXML_TYPENAME_POINT2D            = L"point2d";
 static const WString ECXML_TYPENAME_POINT3D            = L"point3d";
 static const WString ECXML_TYPENAME_STRING             = L"string";
-
+static const WString ECXML_TYPENAME_IGEOMETRY          = L"Bentley.Geometry.Common.IGeometry";
 static const WString EMPTY_STRING = L"";
 
 static const WString ECXML_STRENGTH_REFERENCING        = L"referencing";
