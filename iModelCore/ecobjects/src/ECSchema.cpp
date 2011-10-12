@@ -1626,7 +1626,7 @@ SchemaWriteStatus ECSchema::WriteToXmlString (WStringR ecSchemaXml) const
     if (SCHEMA_WRITE_STATUS_Success != (status = WriteXml (*xmlDom.get())))
         return status;
 
-    xmlDom->ToString (ecSchemaXml, BeXmlDom::TO_STRING_OPTION_Indent);
+    xmlDom->ToString (ecSchemaXml, BeXmlDom::TO_STRING_OPTION_OmitByteOrderMark);
     return SCHEMA_WRITE_STATUS_Success;
     }
    
