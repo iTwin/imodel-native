@@ -1626,7 +1626,8 @@ SchemaWriteStatus ECSchema::WriteToXmlString (WStringR ecSchemaXml) const
     if (SCHEMA_WRITE_STATUS_Success != (status = WriteXml (*xmlDom.get())))
         return status;
 
-    xmlDom->ToString (ecSchemaXml, BeXmlDom::TO_STRING_OPTION_Indent);
+    // NOTE: Byte order mark was causing xml to be rejected as invalid.
+    xmlDom->ToString (ecSchemaXml, (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Indent | BeXmlDom::TO_STRING_OPTION_OmitByteOrderMark));
     return SCHEMA_WRITE_STATUS_Success;
     }
    
