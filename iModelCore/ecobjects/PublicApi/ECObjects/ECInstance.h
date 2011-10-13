@@ -197,8 +197,8 @@ public:
     ECOBJECTS_EXPORT static InstanceReadStatus   ReadFromXmlStream (IECInstancePtr& ecInstance, IStreamP stream, ECInstanceReadContextR context);
     ECOBJECTS_EXPORT static InstanceReadStatus   ReadFromXmlString (IECInstancePtr& ecInstance, WCharCP xmlString, ECInstanceReadContextR context);
 
-    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlFile   (WCharCP fileName, bool isCompleteXmlDocument, bool writeInstanceId);
-    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlStream (IStreamP stream, bool isCompleteXmlDocument, bool writeInstanceId);
+    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlFile   (WCharCP fileName, bool isCompleteXmlDocument, bool writeInstanceId, bool utf16);
+    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlStream (IStreamP stream, bool isCompleteXmlDocument, bool writeInstanceId, bool utf16);
     ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlString (WStringR ecInstanceXml, bool isCompleteXmlDocument, bool writeInstanceId);
     };
     

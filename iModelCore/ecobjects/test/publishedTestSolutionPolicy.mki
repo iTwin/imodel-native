@@ -6,8 +6,6 @@
 #
 #----------------------------------------------------------------------------------------
 
-compileRulesPath=$(baseDir)publishedCompileRules.mki
-
 nameToDefine = COMPILING_PUBLISHED_TESTS
 %include cdefapnd.mki
 

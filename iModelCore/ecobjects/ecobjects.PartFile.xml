@@ -94,12 +94,25 @@
         </Bindings>
     </Part>
 
+    <Part Name="ECObjectsPerformanceTests" BMakeFile="test\PerformanceTests.mke">
+      <SubPart PartName="ECObjectsTestsDependencies"/>
+      <SubPart PartName="PublishedApi"/>
+      <Bindings>
+        <Files ProductDirectoryName="ECObjectsTestExe">Delivery\ECObjectsTest_Performance.exe</Files>
+      </Bindings>
+    </Part>
+
     <Part Name="Tests">
         <SubPart PartName="ECObjectsPublishedTests" />
         <SubPart PartName="ECObjectsNonPublishedTests" />
+        <SubPart PartName="ECObjectsPerformanceTests" />
     </Part>
 
     <Part Name="RunECObjectsTests" BMakeFile="test\ECObjectsNativeTest.run.mke">
+
+    </Part>
+
+    <Part Name="RunECObjectsPerformanceTests" BMakeFile="test\ECObjectsPerformanceTest.run.mke">
 
     </Part>
 

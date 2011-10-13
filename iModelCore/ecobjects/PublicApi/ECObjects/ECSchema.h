@@ -219,6 +219,7 @@ private:
     bool            m_hideFromLeakDetection;
 
 protected:
+    WString         m_originalTypeName; //Will be empty unless the typeName was unrecognized. Keep this so that we can re-write the ECSchema without changing the type to string
     ECProperty (ECClassCR ecClass, bool hideFromLeakDetection);
     virtual ~ECProperty();
 
@@ -1195,9 +1196,10 @@ public:
     //! Xml Serialization utilizes MSXML through COM. <b>Any thread calling this method must therefore be certain to initialize and
     //! uninitialize COM using CoInitialize/CoUninitialize</b>
     //! @param[in]  ecSchemaXmlFile  The absolute path of the file to write the schema to
+    //! @param[in]  utf16            'false' (the default) to use utf-8 encoding
     //! @return A Status code indicating whether the schema was successfully written.  If SUCCESS is returned, then the file pointed
     //          to by ecSchemaXmlFile will contain the written schema.  Otherwise, the file will be unmodified
-    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlFile (WCharCP ecSchemaXmlFile);
+    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlFile (WCharCP ecSchemaXmlFile, bool utf16 = false);
     
     
     //! Writes an ECXML schema to an IStream
@@ -1206,7 +1208,7 @@ public:
     //! @param[in]  ecSchemaXmlStream   The IStream to write the written XML to
     //! @return A Status code indicating whether the schema was successfully written.  If SUCCESS is returned, then the IStream
     //! will contain the written schema.
-    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlStream (IStreamP ecSchemaXmlStream);
+    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlStream (IStreamP ecSchemaXmlStream, bool utf16 = false);
     
     
     //! Return full schema name in format GetName().MM.mm where Name is the schema name, MM is major version and mm is minor version.

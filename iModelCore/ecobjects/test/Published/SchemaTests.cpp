@@ -415,12 +415,43 @@ TEST_F(SchemaDeserializationTest, ExpectFailureWhenMissingTypeNameInProperty)
         L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         L"<ECSchema schemaName=\"Widgets\" version=\"09.06\" displayLabel=\"Widgets Display Label\" description=\"Widgets Description\" nameSpacePrefix=\"wid\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
         L"    <ECClass typeName=\"ecProject\" description=\"Project ECClass\" displayLabel=\"Project\" isDomainClass=\"True\">"
-        L"       <ECProperty propertyName=\"Name\" typename=\"string\" displayLabel=\"Project Name\" />"
+        L"       <ECProperty propertyName=\"Name\" typename=\"string\" displayLabel=\"Project Name\" />" // typename is mis-capitalized
         L"    </ECClass>"
         L"</ECSchema>", *schemaContext);
 
     EXPECT_EQ (SCHEMA_READ_STATUS_InvalidECSchemaXml, status);
     
+    CoUninitialize();
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectUnrecognizedTypeNamesToSurviveRoundtrip)
+    {
+    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
+
+    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
+
+    ECSchemaP schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString (schema, 
+        L"<?xml version='1.0' encoding='UTF-8'?>"
+        L"<ECSchema schemaName='a' version='23.42' nameSpacePrefix='a' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        L"    <ECClass typeName='c'>"
+        L"       <ECProperty      propertyName='p' typeName='foobar'  />"
+        L"       <ECArrayProperty propertyName='q' typeName='barfood' minOccurs='0' maxOccurs='unbounded'/>"
+        L"    </ECClass>"
+        L"</ECSchema>", *schemaContext);
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
+
+    WString ecSchemaXml;
+    SchemaWriteStatus writeStatus = schema->WriteToXmlString(ecSchemaXml);
+    EXPECT_EQ (SCHEMA_WRITE_STATUS_Success, writeStatus);
+
+    EXPECT_NE (WString::npos, ecSchemaXml.find(L"typeName=\"foobar\""));
+    EXPECT_NE (WString::npos, ecSchemaXml.find(L"typeName=\"barfood\""));
+
     CoUninitialize();
     };
 
@@ -475,9 +506,10 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithEmptyCustomAttribute)
 
     SchemaWriteStatus status2 = schema->WriteToXmlString(ecSchemaXmlString);
     EXPECT_EQ(SCHEMA_WRITE_STATUS_Success, status2);
+    
+    EXPECT_NE (WString::npos, ecSchemaXmlString.find(L"<Relationship/>"));
 
     CoUninitialize();
-
     }
 
 /*---------------------------------------------------------------------------------**//**
