@@ -20,6 +20,29 @@ BEGIN_BENTLEY_EC_NAMESPACE
 const UInt32 BITS_PER_NULLFLAGSBITMASK = (sizeof(NullflagsBitmask) * 8);
 
 /*---------------------------------------------------------------------------------**//**
+* used in compatible class layout map
+* @bsimethod                                    Bill.Steinbock                  10/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+bool less_classLayout::operator()(ClassLayoutCP s1, ClassLayoutCP s2) const
+    {
+    return (s1->GetUniqueId() < s2->GetUniqueId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  10/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+static int      randomValue  ()
+    {
+    static const int     low  = 0x00000001;
+    static const int     high = 0x7fffffff;
+
+    // includes low, excludes high.
+    int     randomNum = rand();
+    int     range = high - low;
+    return  low + (int) ( (double) range * (double) randomNum / (double) (RAND_MAX + 1));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    08/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            appendFormattedString (wostringstream& outStream, WCharCP fmtStr, ...)
@@ -197,6 +220,8 @@ ClassLayout::ClassLayout(SchemaIndex schemaIndex, bool hideFromLeakDetection)
     m_sizeOfFixedSection(0), 
     m_isRelationshipClass(false), m_propertyIndexOfSourceECPointer(-1), m_propertyIndexOfTargetECPointer(-1)
     {
+    m_uniqueId = randomValue();
+
     if ( ! m_hideFromLeakDetection)
         g_classLayoutLeakDetector.ObjectCreated(*this);
     };
@@ -370,6 +395,55 @@ void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 byt
     }
   
 /*---------------------------------------------------------------------------------**//**
+* Checks testLayout layout to see if equal to or a  subset of classlayout
+* @bsimethod                                    Bill.Steinbock                  10/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool            areLayoutsCompatible (ClassLayoutCR testLayout, ClassLayoutCR classLayout) 
+    {
+    UInt32 nProperties = testLayout.GetPropertyCount ();
+
+    // see if every property in testLayout can be found in classLayout and is the same type
+    for (UInt32 i = 0; i < nProperties; i++)
+        {
+        PropertyLayoutCP testPropertyLayout;
+        ECObjectsStatus status = testLayout.GetPropertyLayoutByIndex (testPropertyLayout, i);
+        if (ECOBJECTS_STATUS_Success != status)
+            return false;
+
+        PropertyLayoutCP propertyLayout;
+        status = classLayout.GetPropertyLayout (propertyLayout, testPropertyLayout->GetAccessString());
+        if (ECOBJECTS_STATUS_Success != status)
+            return false;
+
+        if (testPropertyLayout->GetTypeDescriptor().GetTypeKind() != propertyLayout->GetTypeDescriptor().GetTypeKind())
+            return false;
+
+        if (testPropertyLayout->GetTypeDescriptor().IsStructArray() != propertyLayout->GetTypeDescriptor().IsStructArray())
+            return false;
+
+        if (testPropertyLayout->GetTypeDescriptor().IsPrimitiveArray())
+            {
+            if (!propertyLayout->GetTypeDescriptor().IsPrimitiveArray())
+                return false;
+
+            if (testPropertyLayout->GetTypeDescriptor().GetPrimitiveType() != propertyLayout->GetTypeDescriptor().GetPrimitiveType())
+                return false;
+            }
+
+        if (testPropertyLayout->GetTypeDescriptor().IsPrimitive())
+            {
+            if (!propertyLayout->GetTypeDescriptor().IsPrimitive())
+                return false;
+
+            if (testPropertyLayout->GetTypeDescriptor().GetPrimitiveType() != propertyLayout->GetTypeDescriptor().GetPrimitiveType())
+                return false;
+            }
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ClassLayout::IsCompatible (ClassLayoutCR classLayout) const
@@ -377,51 +451,25 @@ bool            ClassLayout::IsCompatible (ClassLayoutCR classLayout) const
     if (this == &classLayout)
         return true;
 
+    CompatibleClassLayoutsMap::const_iterator compatibeLayoutIter = m_compatibleClassLayouts.find(&classLayout);
+    if (m_compatibleClassLayouts.end() != compatibeLayoutIter)
+        return compatibeLayoutIter->second;
+
     if (0 != _wcsicmp (GetECClassName().c_str(), classLayout.GetECClassName().c_str()))
         return false;
 
-    UInt32 nProperties = GetPropertyCount ();
-    if (nProperties != classLayout.GetPropertyCount())
-        return false;
+    bool isCompatible = areLayoutsCompatible (*this, classLayout);
+    m_compatibleClassLayouts[&classLayout] = isCompatible;
 
-    for (UInt32 i = 0; i < nProperties; i++)
-        {
-        PropertyLayoutCP propertyLayout;
-        ECObjectsStatus status = GetPropertyLayoutByIndex (propertyLayout, i);
-        if (ECOBJECTS_STATUS_Success != status)
-            return false;
+    return isCompatible;
+    }
 
-        PropertyLayoutCP comparePropertyLayout;
-        status = classLayout.GetPropertyLayout (comparePropertyLayout, propertyLayout->GetAccessString());
-        if (ECOBJECTS_STATUS_Success != status)
-            return false;
-
-        if (comparePropertyLayout->GetTypeDescriptor().GetTypeKind() != propertyLayout->GetTypeDescriptor().GetTypeKind())
-            return false;
-
-        if (comparePropertyLayout->GetTypeDescriptor().IsStructArray() != propertyLayout->GetTypeDescriptor().IsStructArray())
-            return false;
-
-        if (propertyLayout->GetTypeDescriptor().IsPrimitiveArray())
-            {
-            if (!comparePropertyLayout->GetTypeDescriptor().IsPrimitiveArray())
-                return false;
-
-            if (comparePropertyLayout->GetTypeDescriptor().GetPrimitiveType() != propertyLayout->GetTypeDescriptor().GetPrimitiveType())
-                return false;
-            }
-
-        if (propertyLayout->GetTypeDescriptor().IsPrimitive())
-            {
-            if (!comparePropertyLayout->GetTypeDescriptor().IsPrimitive())
-                return false;
-
-            if (comparePropertyLayout->GetTypeDescriptor().GetPrimitiveType() != propertyLayout->GetTypeDescriptor().GetPrimitiveType())
-                return false;
-            }
-        }
-
-    return true;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  10/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+int                    ClassLayout:: GetUniqueId() const
+    {
+    return m_uniqueId;
     }
 
 /*---------------------------------------------------------------------------------**//**
