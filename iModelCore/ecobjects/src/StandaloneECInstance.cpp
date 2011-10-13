@@ -781,8 +781,10 @@ ECObjectsStatus           MemoryECInstanceBase::_GrowAllocation (UInt32 bytesNee
 
             // adjust offset stored in m_structInstances.vectorP by the delta between the old and new data addresses.
             offsetToStructArrayVector = m_structInstances.offset + deltaOffset;
-
             m_structInstances.offset = offsetToStructArrayVector;
+
+            // adjust offset to perPropertyFlags by delta, otherwise changes to flags after reallocation will not affect the resized instance
+            m_perPropertyFlagsHolder.perPropertyFlags.offset += deltaOffset;
 
             return ECOBJECTS_STATUS_Success;
             }
@@ -960,6 +962,9 @@ ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueC
 
             // load the new struct instance data into the reallocated buffer
             mbStructInstance->LoadDataIntoManagedInstance (newStructInstanceLocation, data.instanceGapSize);
+
+            // adjust offset to perPropertyFlags by delta, otherwise changes to flags after reallocation will not affect the resized instance
+            m_perPropertyFlagsHolder.perPropertyFlags.offset += deltaOffset;
 
             return ECOBJECTS_STATUS_Success;
             }
