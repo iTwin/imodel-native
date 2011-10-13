@@ -898,17 +898,7 @@ ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueC
         byte*   arrayAddress           =  arrayCountAddress + sizeof(UInt32) + sizeof(size_t);
         UInt32  arrayCount             = *arrayCountP;
         byte*   entryAddress           =  arrayAddress + sizeof(StructArrayEntry)*arrayCount;
-
-        // ###TODO: this is ugly, fix up.
-        // original code assumes we are working with the struct instances are stored in the same buffer that holds "this" instance
-        // but this instance's data may exist in an entirely separate buffer if we ever needed to resize this instance
-        // so we need the struct instance address to point into the current data buffer
-        // 1. get offset from baseAddress to just past the end of the instance. PerPropertyFlag data conveniently resides just past the end of the instance and never gets relocated
-        Int64   offsetToEndOfInstance = m_perPropertyFlagsHolder.perPropertyFlags.offset;
-        // 2. figure out how much space the flags occupy and adjust to account for that.
-        offsetToEndOfInstance += m_perPropertyFlagsHolder.numPerPropertyFlagsEntries * sizeof(UInt32);
-        // 3. adjust structInstanceAddress to point into *current* data buffer
-        byte*   structInstanceAddress = (dataAddress - offsetToEndOfInstance) + *endOffsetP;
+        byte*   structInstanceAddress  = baseAddress + *endOffsetP;
 
         MemoryCallbackData data;
         data.dataAddress        = dataAddress;
