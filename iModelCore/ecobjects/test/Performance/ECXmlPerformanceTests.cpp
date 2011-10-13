@@ -82,7 +82,7 @@ FILE* logFile
 
     StopWatch writingTimer(L"Serialization", false);
     writingTimer.Start();
-    InstanceWriteStatus status2 = testInstance->WriteToXmlStream(stream, true, true);
+    InstanceWriteStatus status2 = testInstance->WriteToXmlStream(stream, true, true, false);
     writingTimer.Stop();
     EXPECT_EQ (INSTANCE_WRITE_STATUS_Success, status2);  
 
