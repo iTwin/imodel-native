@@ -4410,7 +4410,7 @@ InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType pr
             if (NULL != (byteData = ecValue.GetBinary (numBytes)))
                 {
                 WString    byteString = ConvertByteArrayToString (byteData, numBytes);
-                propertyValueNode.SetContent (byteString.c_str());
+                propertyValueNode.SetContentFast (byteString.c_str());
                 }
             return INSTANCE_WRITE_STATUS_Success;
             break;
@@ -4462,6 +4462,7 @@ InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType pr
 
         case PRIMITIVETYPE_String:
             {
+            // we cant use SetContentFast here because we have no control over the content.
             propertyValueNode.SetContent (ecValue.GetString());
             return INSTANCE_WRITE_STATUS_Success;
             }
@@ -4473,7 +4474,7 @@ InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType pr
             }
         }
 
-    propertyValueNode.SetContent (outString);
+    propertyValueNode.SetContentFast (outString);
     return INSTANCE_WRITE_STATUS_Success;
     }
 
@@ -4690,7 +4691,7 @@ InstanceWriteStatus     IECInstance::WriteToXmlString (WString & ecInstanceXml, 
     if (INSTANCE_WRITE_STATUS_Success != (status = instanceWriter.WriteInstance (*this, writeInstanceId)))
         return status;
 
-    UInt64  opts = BeXmlDom::TO_STRING_OPTION_Indent | BeXmlDom::TO_STRING_OPTION_OmitByteOrderMark;
+    UInt64  opts = BeXmlDom::TO_STRING_OPTION_OmitByteOrderMark;
 
     if ( ! isStandAlone)
         opts |= BeXmlDom::TO_STRING_OPTION_OmitXmlDeclaration;
