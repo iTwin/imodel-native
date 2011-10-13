@@ -1548,17 +1548,8 @@ ECSchemaWriteContext&   context
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus ECSchema::WriteXml (MSXML2::IXMLDOMDocument2* pXmlDoc) const
     {
-    SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
-
-    ECSchemaWriteContext context;
-
-    MSXML2::IXMLDOMProcessingInstructionPtr piPtr = NULL;
     MSXML2::IXMLDOMTextPtr textPtr = NULL;
 
-    piPtr = pXmlDoc->createProcessingInstruction(L"xml", L"version='1.0'  encoding='UTF-8'");
-    APPEND_CHILD_TO_PARENT(piPtr, pXmlDoc);
-    //CREATE_AND_ADD_TEXT_NODE(L"\n", piPtr);
-    
     MSXML2::IXMLDOMElementPtr schemaElementPtr = pXmlDoc->createNode(NODE_ELEMENT, EC_SCHEMA_ELEMENT, ECXML_URI_2_0);
     APPEND_CHILD_TO_PARENT(schemaElementPtr, pXmlDoc);
     
@@ -1577,6 +1568,7 @@ SchemaWriteStatus ECSchema::WriteXml (MSXML2::IXMLDOMDocument2* pXmlDoc) const
     
     WriteSchemaReferences(schemaElementPtr);
     
+    ECSchemaWriteContext context;
     WriteCustomAttributeDependencies(schemaElementPtr, *this, context);
     WriteCustomAttributes(schemaElementPtr);
     
@@ -1593,7 +1585,7 @@ SchemaWriteStatus ECSchema::WriteXml (MSXML2::IXMLDOMDocument2* pXmlDoc) const
         }
         
     ECXml::FormatXml(pXmlDoc);
-    return status;
+    return SCHEMA_WRITE_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1803,16 +1795,36 @@ ECSchemaReadContextR schemaContext
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECSchema::WriteToXmlString (WString& ecSchemaXml) const
+SchemaWriteStatus ConstructMSXMLDocument (MSXML2::IXMLDOMDocument2Ptr& xmlDocPtr, bool utf16)
     {
-    SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
-
-    MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;        
     VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl);
     xmlDocPtr->put_validateOnParse(VARIANT_TRUE);
     xmlDocPtr->put_async(VARIANT_FALSE);
     xmlDocPtr->put_preserveWhiteSpace(VARIANT_TRUE);
     xmlDocPtr->put_resolveExternals(VARIANT_FALSE);
+    
+    MSXML2::IXMLDOMProcessingInstructionPtr piPtr = NULL;
+
+    if (utf16)
+        piPtr = xmlDocPtr->createProcessingInstruction(L"xml", L"version='1.0'  encoding='UTF-16'");
+    else
+        piPtr = xmlDocPtr->createProcessingInstruction(L"xml", L"version='1.0'  encoding='UTF-8'");
+        
+    APPEND_CHILD_TO_PARENT(piPtr, xmlDocPtr);
+    //CREATE_AND_ADD_TEXT_NODE(L"\n", piPtr);
+    
+    return SCHEMA_WRITE_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaWriteStatus ECSchema::WriteToXmlString (WString& ecSchemaXml) const
+    {
+    MSXML2::IXMLDOMDocument2Ptr xmlDocPtr;
+    SchemaWriteStatus status = ConstructMSXMLDocument (xmlDocPtr, false);
+    if (status != SCHEMA_WRITE_STATUS_Success)
+        return status;
     
     status = WriteXml(xmlDocPtr);
     
@@ -1829,17 +1841,14 @@ SchemaWriteStatus ECSchema::WriteToXmlString (WString& ecSchemaXml) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus ECSchema::WriteToXmlFile
 (
-WCharCP ecSchemaXmlFile //add encoding parameter
+WCharCP ecSchemaXmlFile,
+bool    utf16
 )
     {
-    SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
-
-    MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;        
-    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl);
-    xmlDocPtr->put_validateOnParse(VARIANT_TRUE);
-    xmlDocPtr->put_async(VARIANT_FALSE);
-    xmlDocPtr->put_preserveWhiteSpace(VARIANT_TRUE);
-    xmlDocPtr->put_resolveExternals(VARIANT_FALSE);
+    MSXML2::IXMLDOMDocument2Ptr xmlDocPtr;
+    SchemaWriteStatus status = ConstructMSXMLDocument (xmlDocPtr, utf16);
+    if (status != SCHEMA_WRITE_STATUS_Success)
+        return status;
     
     status = WriteXml(xmlDocPtr);
     if (status != SCHEMA_WRITE_STATUS_Success)
@@ -1855,17 +1864,14 @@ WCharCP ecSchemaXmlFile //add encoding parameter
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus ECSchema::WriteToXmlStream
 (
-IStreamP ecSchemaXmlStream //add encoding parameter
+IStreamP ecSchemaXmlStream,
+bool     utf16
 )
     {
-    SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
-
-    MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;        
-    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl);
-    xmlDocPtr->put_validateOnParse(VARIANT_TRUE);
-    xmlDocPtr->put_async(VARIANT_FALSE);
-    xmlDocPtr->put_preserveWhiteSpace(VARIANT_TRUE);
-    xmlDocPtr->put_resolveExternals(VARIANT_FALSE);
+    MSXML2::IXMLDOMDocument2Ptr xmlDocPtr;
+    SchemaWriteStatus status = ConstructMSXMLDocument (xmlDocPtr, utf16);
+    if (status != SCHEMA_WRITE_STATUS_Success)
+        return status;
     
     status = WriteXml(xmlDocPtr);
     if (status != SCHEMA_WRITE_STATUS_Success)
