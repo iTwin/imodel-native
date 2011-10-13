@@ -9,6 +9,9 @@
 
 # Wire in seed data
 always:
-   @CreateSymLinks.py -d"$(ContextDeliveryDir)SeedData=$(ecobjectsSrc)test/SeedData"
+    @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData=$(ecobjectsSrc)test/SeedData/*.xml"
+    $(unzipCmd) -n $(ecobjectsSrc)test/SeedData/performance.zip -d $(buildDir)ECObjectsTest_Data/
+    @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData/=$(buildDir)ECObjectsTest_Data/performance/*.xml"
+
    
 

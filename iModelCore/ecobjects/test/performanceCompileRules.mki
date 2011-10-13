@@ -1,0 +1,16 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: test/performanceCompileRules.mki $
+#
+#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+
+#########################################################################################
+# Compile the list of tests. 
+#########################################################################################
+$(o)StopWatch$(oext)          : $(baseDir)Performance/StopWatch.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
+
+$(o)ECXmlPerformanceTests$(oext)        : $(baseDir)Performance/ECXmlPerformanceTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
+
+$(o)TestFixture$(oext)        : $(baseDir)Performance/TestFixture.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
