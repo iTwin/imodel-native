@@ -2,31 +2,22 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\bsicommon\build\PartFile.xsd" >
 
-    <Part Name="ExportList" BMakeFile="mki\ecobjects.DeliveredDlls.mke">
-        <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley" />
-        <Bindings>
-            <Files Required="false" SubPartDirectory="mki" >ECObjectsDlls.mki</Files>
-        </Bindings>
-    </Part>
-
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 <!-- ///////////////////// Runtime Parts ///////////////////////////////////////////////// -->
 <!-- / This section contains parts that make the ECF Runtime ///////////////////////////// -->
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 
-    <Part Name="ECObjectsNative" BMakeFile="src\ecobjects.mke">
-        <RequiredRepository>Libsrc-Msxml6</RequiredRepository>
-        <SubPart PartName="ExportList" />
-        <SubPart PartName="msxml6"          PartFile="msxml6"       Repository="Libsrc-Msxml6"/>
-        <SubPart PartName="BoostHeaders"    PartFile="${SrcBsiCommon}CvsPartFiles\bsibin"           Repository="bsibin-boostheaders" />
+    <Part Name="ECObjectsNative" BMakeFile="src\ecobjects.mke" ApiNumber="4">
+        <SubPart PartName="BoostHeaders"    PartFile="${SrcBsiCommon}CvsPartfiles\bsibin"           Repository="bsibin-boostheaders" />
         <SubPart PartName="HeaderFiles" />
         <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley" />
-        <SubPart PartName="Logging8.11"     PartFile="${SrcBsiCommon}CvsPartFiles\bsibin"           Repository="bsibin-loggingsdk" />
-        <SubPart PartName="GeomDlls"        PartFile="geomlibs" Repository="GeomLibs" />
-        <SubPart PartName="StandardSchemas" PartFile="ECStandards" Repository="ECStandards"/>
+        <SubPart PartName="Logging8.11"     PartFile="${SrcBsiCommon}CvsPartfiles\bsibin"           Repository="bsibin-loggingsdk" />
+        <SubPart PartName="GeomDlls"        PartFile="geomlibs"     Repository="GeomLibs" />
+        <SubPart PartName="BeXmlDll"        PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
+        <SubPart PartName="StandardSchemas" PartFile="ECStandards"  Repository="ECStandards"/>
         <Bindings>
-            <Libs ProductDirectoryName="ECObjectsLibs" Required="false">Delivery\ECObjects4.lib</Libs>
-            <Assemblies ProductDirectoryName="ECObjectsNativeAssemblies">Delivery\ECObjects4.dll</Assemblies>
+            <Libs ProductDirectoryName="ECObjectsLibs" Required="false">Delivery\$(libprefix)ECObjects$(libext)</Libs>
+            <Files ProductDirectoryName="ECObjectsNativeAssemblies">Delivery\$(shlibprefix)ECObjects$(ApiNumber)$(shlibext)</Files>
         </Bindings>
     </Part>
 
@@ -65,14 +56,14 @@
 
     <Part Name="ECObjectsTestBackDoor" BMakeFile="test\BackDoor\BackDoor.mke">
         <Bindings>
-            <Libs>Delivery\ECObjectsTestBackDoor.lib</Libs>
+            <Libs>Delivery\$(libprefix)ECObjectsTestBackDoor$(libext)</Libs>
         </Bindings>
     </Part>
 
     <Part Name="ECObjectsTestsDependencies">
         <SubPart PartName="google_gtest"         PartFile="gtest"                   Repository="util-gtest" />
         <SubPart PartName="StandardSchemas"      PartFile="ecstandards"             Repository="ecstandards"/>
-        <SubPart PartName="Logging8.11"  PartFile="${SrcBsiCommon}CvsPartFiles\bsibin"               Repository="bsibin-loggingsdk" />
+        <SubPart PartName="Logging8.11"  PartFile="${SrcBsiCommon}CvsPartfiles\bsibin"               Repository="bsibin-loggingsdk" />
         <SubPart PartName="ECObjectsNative" />
         <SubPart PartName="ECObjectsTestsSeedData"/>
         <SubPart PartName="ECObjectsTestLoggingConfig"/>
@@ -105,7 +96,9 @@
     <Part Name="Tests">
         <SubPart PartName="ECObjectsPublishedTests" />
         <SubPart PartName="ECObjectsNonPublishedTests" />
+      <!--
         <SubPart PartName="ECObjectsPerformanceTests" />
+        -->
     </Part>
 
     <Part Name="RunECObjectsTests" BMakeFile="test\ECObjectsNativeTest.run.mke">
@@ -153,11 +146,11 @@
         <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
         <ProductDirectory Name="mergemodules"                       Deliver="false"/>
         <ProductDirectory Name="libs"                               Deliver="false"/>
-        <ProductDirectory Name="geomnativeassemblies"               Deliver="false"/>
 
         <ProductDirectory Name="ECObjectsTestSeedData"              Path="SeedData"/>
         <ProductDirectory Name="ECObjectsTestLoggingConfig"         Path=""/>
 
+        <ProductDirectory Name="geomnativeassemblies"               Path=""/>
         <ProductDirectory Name="loggingnativeassemblies"            Path=""/>
         <ProductDirectory Name="LoggingOptionalNativeAssemblies"    Path="" />
         <ProductDirectory Name="BentleyNativeAssemblies"            Path=""/>
