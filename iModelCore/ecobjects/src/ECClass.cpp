@@ -21,6 +21,18 @@ static LeakDetector<ECClass> g_leakDetector (L"ECClass", L"ECClasss", true);
 static LeakDetector<ECClass> g_leakDetector (L"ECClass", L"ECClasss", false);
 #endif
 
+// If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
+// Test programs generally want to get error status back and not assert, so they call ECSchema::AssertOnXmlError (false);
+static  bool        s_noAssert = false;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                10/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECClass::SetErrorHandling (bool doAssert) 
+    { 
+    s_noAssert = !doAssert; 
+    ECProperty::SetErrorHandling(doAssert);
+    }
+
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/

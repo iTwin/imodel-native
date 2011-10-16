@@ -219,7 +219,7 @@ private:
     ECClassCR       m_class;
     ECPropertyCP    m_baseProperty;    
     bool            m_hideFromLeakDetection;
-
+    static void     SetErrorHandling (bool doAssert);
 protected:
     WString         m_originalTypeName; //Will be empty unless the typeName was unrecognized. Keep this so that we can re-write the ECSchema without changing the type to string
     ECProperty (ECClassCR ecClass, bool hideFromLeakDetection);
@@ -497,6 +497,7 @@ private:
     ECObjectsStatus CanPropertyBeOverridden(ECPropertyCR baseProperty, ECPropertyCR newProperty) const;
     void            AddDerivedClass(ECClassCR baseClass) const;
     void            RemoveDerivedClass(ECClassCR baseClass) const;
+    static void     SetErrorHandling (bool doAssert);
 
 protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will

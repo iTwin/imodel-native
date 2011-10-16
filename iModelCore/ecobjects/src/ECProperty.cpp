@@ -20,6 +20,19 @@ static LeakDetector<ECProperty> g_leakDetector (L"ECProperty", L"ECProperties", 
 #else
 static LeakDetector<ECProperty> g_leakDetector (L"ECProperty", L"ECProperties", false);
 #endif
+
+// If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
+// Test programs generally want to get error status back and not assert, so they call ECSchema::AssertOnXmlError (false);
+static  bool        s_noAssert = false;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                10/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECProperty::SetErrorHandling (bool doAssert) 
+    { 
+    s_noAssert = !doAssert; 
+    }
+
+
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -318,7 +331,7 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, IStanda
     WString value;  // needed for macro.
     if (BEXML_Success != propertyNode.GetAttributeStringValue (value, TYPE_NAME_ATTRIBUTE))
         {
-        assert (false);
+        assert (s_noAssert);
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %hs element must contain a %hs attribute",  propertyNode.GetName(), TYPE_NAME_ATTRIBUTE);
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }

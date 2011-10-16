@@ -96,6 +96,7 @@ void            ECSchema::SetErrorHandling (bool showMessages, bool doAssert)
     { 
     s_noAssert = !doAssert; 
     BeXmlDom::SetErrorHandling (showMessages, doAssert);
+    ECClass::SetErrorHandling(doAssert);
     }
 
 /*---------------------------------------------------------------------------------**//**
