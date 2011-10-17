@@ -4673,7 +4673,7 @@ InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool isSt
     if (INSTANCE_WRITE_STATUS_Success != (status = instanceWriter.WriteInstance (*this, writeInstanceId)))
         return status;
 
-    return (BEXML_Success == xmlDom->ToFile (fileName, BeXmlDom::TO_STRING_OPTION_Indent)) ? INSTANCE_WRITE_STATUS_Success : INSTANCE_WRITE_STATUS_FailedToWriteFile;
+    return (BEXML_Success == xmlDom->ToFile (fileName, BeXmlDom::TO_STRING_OPTION_Indent, BeXmlDom::FILE_ENCODING_Utf16)) ? INSTANCE_WRITE_STATUS_Success : INSTANCE_WRITE_STATUS_FailedToWriteFile;
     }
 
 /*---------------------------------------------------------------------------------**//**
