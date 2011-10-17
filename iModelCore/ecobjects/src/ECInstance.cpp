@@ -2721,11 +2721,6 @@ InstanceReadStatus   ReadArrayProperty (ArrayECPropertyP arrayProperty, IECInsta
                     ECValue                         ecValue;
                     if (INSTANCE_READ_STATUS_Success != (ixrStatus = ReadPrimitiveValue (ecValue, memberType)))
                         return ixrStatus;
-                    if(ecValue.IsUninitialized())
-                        {
-                        //A malformed value was found.  A warning was shown; just move on.
-                        continue;
-                        }
 
                     if ( ! isFixedSizeArray)
                         ecInstance->AddArrayElements (accessString.c_str(), 1);
@@ -2892,6 +2887,9 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
 
     if (m_xmlReader->IsEmptyElement())
         {
+        if (PRIMITIVETYPE_String == propertyType)
+            ecValue.SetString(L""); // The .NET implementation interprets an empty element as "" when it represents a string property value, thus so do we.
+
         return INSTANCE_READ_STATUS_Success;
         }
 
@@ -2908,7 +2906,9 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
             case XmlNodeType_EndElement:
                 // we have encountered the end of the class or struct without getting a value from the element.
                 // we will break here to keep the ECValue null.
-                return INSTANCE_READ_STATUS_Success;
+                if (PRIMITIVETYPE_String == propertyType)
+                    ecValue.SetString(L""); // The .NET implementation interprets an empty element as "" when it represents a string property value, thus so do we.
+                 return INSTANCE_READ_STATUS_Success;
 
             case XmlNodeType_Text:
                 {
@@ -3189,7 +3189,7 @@ InstanceXmlWriter (WString fileName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     Init ()
+InstanceWriteStatus     Init (bool utf16)
     {
     // different constructors set different members, according to the source of the stream and the writer.
     HRESULT     status;
@@ -3205,7 +3205,7 @@ InstanceWriteStatus     Init ()
             return INSTANCE_WRITE_STATUS_CantCreateXmlWriter;
 
 
-        if (FAILED (status = CreateXmlWriterOutputWithEncodingName(m_stream, 0, L"utf-16", &m_xmlOutput)))
+        if (FAILED (status = CreateXmlWriterOutputWithEncodingName(m_stream, 0, utf16 ? L"utf-16" : L"utf-8", &m_xmlOutput)))
             return INSTANCE_WRITE_STATUS_CantCreateXmlWriter;
 
         if (FAILED (status= m_xmlWriter->SetOutput (m_xmlOutput)))
@@ -3967,17 +3967,11 @@ InstanceReadStatus   ReadArrayPropertyValue (ArrayECPropertyP arrayProperty, IEC
             if (INSTANCE_READ_STATUS_Success != (ixrStatus = ReadPrimitiveValue (ecValue, memberType, *arrayValueNode)))
                 continue;
 
-            if(ecValue.IsUninitialized())
-                {
-                //A malformed value was found.  A warning was shown; just move on.
-                continue;
-                }
-
             if ( !isFixedSizeArray)
                 ecInstance->AddArrayElements (accessString.c_str(), 1);
 
-            ECObjectsStatus   setStatus;
-            if (ECOBJECTS_STATUS_Success != (setStatus = ecInstance->SetValue (accessString.c_str(), ecValue, index)))
+            ECObjectsStatus   setStatus = ecInstance->SetValue (accessString.c_str(), ecValue, index);
+            if (ECOBJECTS_STATUS_Success != setStatus && ECOBJECTS_STATUS_PropertyValueMatchesNoChange != setStatus)   
                 {
                 assert (false);
                 return INSTANCE_READ_STATUS_CantSetValue;
@@ -4663,7 +4657,7 @@ InstanceReadStatus   IECInstance::ReadFromBeXmlNode (IECInstancePtr& ecInstance,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool isStandAlone, bool writeInstanceId)
+InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool isStandAlone, bool writeInstanceId, bool utf16)
     {
     BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();        
 
@@ -4716,12 +4710,12 @@ InstanceWriteStatus     IECInstance::WriteToBeXmlNode (BeXmlNodeR node)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     IECInstance::WriteToXmlStream (IStreamP stream, bool isCompleteXmlDocument, bool writeInstanceId)
+InstanceWriteStatus     IECInstance::WriteToXmlStream (IStreamP stream, bool isCompleteXmlDocument, bool writeInstanceId, bool utf16)
     {
     InstanceXmlWriter writer (stream);
 
     InstanceWriteStatus   status;
-    if (INSTANCE_WRITE_STATUS_Success != (status = writer.Init ()))
+    if (INSTANCE_WRITE_STATUS_Success != (status = writer.Init (utf16)))
         return status;
 
     return writer.WriteInstance (*this, isStandAlone, writeInstanceId);

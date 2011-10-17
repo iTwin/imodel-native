@@ -1,15 +1,15 @@
 #----------------------------------------------------------------------------------------
 #
-#  $Source: test/PublishedTests.mke $
+#  $Source: test/PerformanceTests.mke $
 #
 #  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 baseDir =   $(_MakeFilePath)
 
-programName = ECObjectsTest_Published
+programName = ECObjectsTest_Performance
 
-compileRulesPath=$(baseDir)publishedCompileRules.mki
+compileRulesPath=$(baseDir)performanceCompileRules.mki
 
 # Using this solution policy file ensures that published headers will be in the include path for
 # compiles within this mke file and within PreCompileHeader.mke which is used by this mke file.

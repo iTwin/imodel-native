@@ -21,6 +21,18 @@ static LeakDetector<ECClass> g_leakDetector (L"ECClass", L"ECClasss", true);
 static LeakDetector<ECClass> g_leakDetector (L"ECClass", L"ECClasss", false);
 #endif
 
+// If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
+// Test programs generally want to get error status back and not assert, so they call ECSchema::AssertOnXmlError (false);
+static  bool        s_noAssert = false;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                10/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECClass::SetErrorHandling (bool doAssert) 
+    { 
+    s_noAssert = !doAssert; 
+    ECProperty::SetErrorHandling(doAssert);
+    }
+
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -822,7 +834,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode,IStandaloneEnab
             ecProperty = new StructECProperty (*this, m_hideFromLeakDetection);
         else
             {
-            ECObjectsLogger::Log()->warningv (L"Invalid ECSchemaXML: Unknown property type '%hs' of ECClass '%ls' in the ECSchema '%ls'", childNodeName, this->GetName().c_str(), this->GetSchema().GetName().c_str());
+            ECObjectsLogger::Log()->warningv (L"Invalid ECSchemaXML: Unknown kind of property '%hs' in ECClass '%ls:%ls'", childNodeName, this->GetSchema().GetName().c_str(), this->GetName().c_str() );
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
 
@@ -830,15 +842,15 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode,IStandaloneEnab
         SchemaReadStatus status = ecProperty->_ReadXml (*childNode, standaloneEnablerLocater);
         if (status != SCHEMA_READ_STATUS_Success)
             {
-            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to read properties of ECClass '%ls' in the ECSchema '%ls'", this->GetName().c_str(), this->GetSchema().GetName().c_str());                
+            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to read properties of ECClass '%ls:%ls'", this->GetSchema().GetName().c_str(), this->GetName().c_str());                
             delete ecProperty;
             return status;
             }
         
         if (ECOBJECTS_STATUS_Success != this->AddProperty (ecProperty))
             {
-            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to read ECClass '%ls' in the ECSchema '%ls' because a problem occurred while adding ECProperty '%s'", 
-                this->GetName().c_str(), this->GetSchema().GetName().c_str(), ecProperty->GetName().c_str());
+            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to read ECClass '%ls:%ls' because a problem occurred while adding ECProperty '%hs'", 
+                this->GetName().c_str(), this->GetSchema().GetName().c_str(), childNodeName);
             delete ecProperty;
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }

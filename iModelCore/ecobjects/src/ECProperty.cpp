@@ -20,6 +20,19 @@ static LeakDetector<ECProperty> g_leakDetector (L"ECProperty", L"ECProperties", 
 #else
 static LeakDetector<ECProperty> g_leakDetector (L"ECProperty", L"ECProperties", false);
 #endif
+
+// If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
+// Test programs generally want to get error status back and not assert, so they call ECSchema::AssertOnXmlError (false);
+static  bool        s_noAssert = false;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                10/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECProperty::SetErrorHandling (bool doAssert) 
+    { 
+    s_noAssert = !doAssert; 
+    }
+
+
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -288,7 +301,12 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNodeR pa
     propertyNode = parentNode.AddEmptyElement (elementName);
 
     propertyNode->AddAttributeStringValue (PROPERTY_NAME_ATTRIBUTE, this->GetName().c_str());
-    propertyNode->AddAttributeStringValue (TYPE_NAME_ATTRIBUTE, this->GetTypeName().c_str());
+
+    if (m_originalTypeName.size() > 0)
+        propertyNode->AddAttributeStringValue (TYPE_NAME_ATTRIBUTE, m_originalTypeName.c_str());
+    else
+    	propertyNode->AddAttributeStringValue (TYPE_NAME_ATTRIBUTE, this->GetTypeName().c_str());
+        
     propertyNode->AddAttributeStringValue (DESCRIPTION_ATTRIBUTE, this->GetDescription().c_str());
     if (GetIsDisplayLabelDefined())
         propertyNode->AddAttributeStringValue (DISPLAY_LABEL_ATTRIBUTE, this->GetDisplayLabel().c_str());
@@ -313,14 +331,12 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, IStanda
     WString value;  // needed for macro.
     if (BEXML_Success != propertyNode.GetAttributeStringValue (value, TYPE_NAME_ATTRIBUTE))
         {
-        assert (false);
+        assert (s_noAssert);
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %hs element must contain a %hs attribute",  propertyNode.GetName(), TYPE_NAME_ATTRIBUTE);
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
     else if (ECOBJECTS_STATUS_ParseError == this->SetTypeName (value.c_str()))
-        {
-        ECObjectsLogger::Log()->warningv (L"Invalid Primitive type for ECProperty '%ls : '%ls', setting type to '%ls'.", this->GetName().c_str(), value.c_str(), this->GetTypeName().c_str());
-        }
+        ECObjectsLogger::Log()->warningv (L"Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.", this->GetName().c_str(), this->GetTypeName().c_str());
     return SCHEMA_READ_STATUS_Success;
     }
 
@@ -376,6 +392,7 @@ ECObjectsStatus PrimitiveECProperty::_SetTypeName (WStringCR typeName)
     ECObjectsStatus status = ECXml::ParsePrimitiveType (primitiveType, typeName);
     if (ECOBJECTS_STATUS_Success != status)
         {            
+        m_originalTypeName = typeName; // Remember this for when we serialize the ECSchema again, later.
         ECObjectsLogger::Log()->warningv (L"Unrecognized primitive typeName '%s' found in '%s:%s.%s'. A type of 'string' will be used.",
                                 typeName.c_str(),
                                 this->GetClass().GetSchema().GetName().c_str(),
@@ -470,14 +487,14 @@ ECObjectsStatus ResolveStructType (ECClassP& structClass, WStringCR typeName, EC
     ECObjectsStatus status = ECClass::ParseClassName (namespacePrefix, className, typeName);
     if (ECOBJECTS_STATUS_Success != status)
         {
-        ECObjectsLogger::Log()->warningv (L"Can not resolve the type name '%s' as a struct type because the typeName could not be parsed.", typeName.c_str());
+        ECObjectsLogger::Log()->warningv (L"Cannot resolve the type name '%s' as a struct type because the typeName could not be parsed.", typeName.c_str());
         return status;
         }
     
     ECSchemaP resolvedSchema = ecProperty.GetClass().GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
     if (NULL == resolvedSchema)
         {
-        ECObjectsLogger::Log()->warningv (L"Can not resolve the type name '%s' as a struct type because the namespacePrefix '%s' can not be resolved to the primary or a referenced schema.", 
+        ECObjectsLogger::Log()->warningv (L"Cannot resolve the type name '%s' as a struct type because the namespacePrefix '%s' can not be resolved to the primary or a referenced schema.", 
             typeName.c_str(), namespacePrefix.c_str());
         return ECOBJECTS_STATUS_SchemaNotFound;
         }
@@ -485,7 +502,7 @@ ECObjectsStatus ResolveStructType (ECClassP& structClass, WStringCR typeName, EC
     structClass = resolvedSchema->GetClassP (className.c_str());
     if (NULL == structClass)
         {
-        ECObjectsLogger::Log()->warningv (L"Can not resolve the type name '%s' as a struct type because ECClass '%s' does not exist in the schema '%s'.", 
+        ECObjectsLogger::Log()->warningv (L"Cannot resolve the type name '%s' as a struct type because ECClass '%s' does not exist in the schema '%s'.", 
             typeName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
         return ECOBJECTS_STATUS_ClassNotFound;
         }
@@ -643,7 +660,12 @@ ECObjectsStatus ArrayECProperty::_SetTypeName (WStringCR typeName)
     if (ECOBJECTS_STATUS_Success == status)
         return SetStructElementType (structClass);
 
-    ECObjectsLogger::Log()->errorv (L"Failed ArrayECProperty::_SetTypeName for '%s'. '%s' is not a recognized type.", this->GetName().c_str(), typeName.c_str());        
+    m_originalTypeName = typeName;
+    ECObjectsLogger::Log()->warningv (L"TypeName '%s' of '%s.%s.%s' was not recognized. We will use 'string' intead.",
+                                    typeName.c_str(),
+                                    this->GetClass().GetSchema().GetName().c_str(),
+                                    this->GetClass().GetName().c_str(),
+                                    this->GetName().c_str() );
     return ECOBJECTS_STATUS_ParseError;
     }
 
