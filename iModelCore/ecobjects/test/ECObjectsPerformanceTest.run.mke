@@ -1,0 +1,14 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: test/ECObjectsPerformanceTest.run.mke $
+#
+#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+always:
+    ~putenv TESTRESULTS_DIR=$(OutputRootDir)Product/ECObjectsTests/Results/
+     $(OutputRootDir)Product/ECObjectsTests/ECObjectsTest_Performance.exe
+
+
