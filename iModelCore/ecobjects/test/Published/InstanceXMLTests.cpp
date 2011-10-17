@@ -368,74 +368,74 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingFaultyInstance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-//TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingInstanceWithEmptyArrayMemebers)
-//    {
-//    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
-//    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
-//
-//    ECSchemaP   schema;
-//    SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(L"MismatchedSchema.01.00.ecschema.xml").c_str(), *schemaContext);
-//
-//    EXPECT_EQ (SCHEMA_READ_STATUS_Success, schemaStatus);
-//
-//    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext (*schema);
-//
-//    IECInstancePtr  testInstance;
-//    InstanceReadStatus instanceStatus;
-//
-//    instanceStatus = IECInstance::ReadFromXmlFile (testInstance, ECTestFixture::GetTestDataPath(L"EmptyArrayInstance.xml").c_str(), *instanceContext);
-//
-//    
-//    EXPECT_EQ (INSTANCE_READ_STATUS_Success, instanceStatus);
-//    //Testing a struct with type errors in its values
-//    ECValue ecValue;
-//    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.BinaryArray[]",0));
-//
-//    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.BooleanArray[]",1));
-//    EXPECT_EQ (true, ecValue.IsNull());
-//    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.BooleanArray[]",0));
-//    EXPECT_EQ (true, ecValue.GetBoolean());
-//
-//    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DateTimeArray[]",0));
-//    EXPECT_EQ (true, ecValue.IsNull());
-//    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DateTimeArray[]",1));
-//    EXPECT_EQ (633374681466664305, ecValue.GetDateTimeTicks());
-//
-//    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DoubleArray[]",0));
-//    EXPECT_EQ (true, ecValue.IsNull());
-//    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DoubleArray[]",1));
-//    EXPECT_EQ (1.2, ecValue.GetDouble());
-//
-//    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.IntArray[]",0));
-//    EXPECT_EQ (true, ecValue.IsNull());
-//    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.IntArray[]",1));
-//    EXPECT_EQ (7, ecValue.GetInteger());
-//
-//    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.LongArray[]",0));
-//    EXPECT_EQ (true, ecValue.IsNull());
-//    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.LongArray[]",1));
-//    EXPECT_EQ (300, ecValue.GetLong());
-//
-//    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point2DArray[]",0));
-//    EXPECT_EQ (true, ecValue.IsNull());
-//    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point2DArray[]",1));
-//    EXPECT_EQ (0, ecValue.GetPoint2D().x);
-//    EXPECT_EQ (1, ecValue.GetPoint2D().y);
-//
-//    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point3DArray[]",0));
-//    EXPECT_EQ (true, ecValue.IsNull());
-//    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point3DArray[]",1));
-//    EXPECT_EQ (0, ecValue.GetPoint3D().x);
-//    EXPECT_EQ (1, ecValue.GetPoint3D().y);
-//    EXPECT_EQ (0, ecValue.GetPoint3D().z);
-//
-//    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.StringArray[]",0));
-//    EXPECT_STREQ (ecValue.GetString(), L"");
-//    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.StringArray[]",6));
-//    EXPECT_STREQ (ecValue.GetString(), L"Test");
-//
-//    schemaOwner = NULL;
-//    };
+TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingInstanceWithEmptyArrayMemebers)
+    {
+    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
+
+    ECSchemaP   schema;
+    SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(L"MismatchedSchema.01.00.ecschema.xml").c_str(), *schemaContext);
+
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, schemaStatus);
+
+    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext (*schema);
+
+    IECInstancePtr  testInstance;
+    InstanceReadStatus instanceStatus;
+
+    instanceStatus = IECInstance::ReadFromXmlFile (testInstance, ECTestFixture::GetTestDataPath(L"EmptyArrayInstance.xml").c_str(), *instanceContext);
+
+    
+    EXPECT_EQ (INSTANCE_READ_STATUS_Success, instanceStatus);
+    //Testing a struct with type errors in its values
+    ECValue ecValue;
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.BinaryArray[]",0));
+
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.BooleanArray[]",1));
+    EXPECT_EQ (true, ecValue.IsNull());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.BooleanArray[]",0));
+    EXPECT_EQ (true, ecValue.GetBoolean());
+
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DateTimeArray[]",0));
+    EXPECT_EQ (true, ecValue.IsNull());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DateTimeArray[]",1));
+    EXPECT_EQ (633374681466664305, ecValue.GetDateTimeTicks());
+
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DoubleArray[]",0));
+    EXPECT_EQ (true, ecValue.IsNull());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DoubleArray[]",1));
+    EXPECT_EQ (1.2, ecValue.GetDouble());
+
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.IntArray[]",0));
+    EXPECT_EQ (true, ecValue.IsNull());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.IntArray[]",1));
+    EXPECT_EQ (7, ecValue.GetInteger());
+
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.LongArray[]",0));
+    EXPECT_EQ (true, ecValue.IsNull());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.LongArray[]",1));
+    EXPECT_EQ (300, ecValue.GetLong());
+
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point2DArray[]",0));
+    EXPECT_EQ (true, ecValue.IsNull());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point2DArray[]",1));
+    EXPECT_EQ (0, ecValue.GetPoint2D().x);
+    EXPECT_EQ (1, ecValue.GetPoint2D().y);
+
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point3DArray[]",0));
+    EXPECT_EQ (true, ecValue.IsNull());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point3DArray[]",1));
+    EXPECT_EQ (0, ecValue.GetPoint3D().x);
+    EXPECT_EQ (1, ecValue.GetPoint3D().y);
+    EXPECT_EQ (0, ecValue.GetPoint3D().z);
+
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.StringArray[]",0));
+    EXPECT_STREQ (ecValue.GetString(), L"");
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.StringArray[]",6));
+    EXPECT_STREQ (ecValue.GetString(), L"Test");
+
+    schemaOwner = NULL;
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    

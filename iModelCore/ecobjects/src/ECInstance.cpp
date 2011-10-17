@@ -3967,17 +3967,11 @@ InstanceReadStatus   ReadArrayPropertyValue (ArrayECPropertyP arrayProperty, IEC
             if (INSTANCE_READ_STATUS_Success != (ixrStatus = ReadPrimitiveValue (ecValue, memberType, *arrayValueNode)))
                 continue;
 
-            if(ecValue.IsUninitialized())
-                {
-                //A malformed value was found.  A warning was shown; just move on.
-                continue;
-                }
-
             if ( !isFixedSizeArray)
                 ecInstance->AddArrayElements (accessString.c_str(), 1);
 
-            ECObjectsStatus   setStatus;
-            if (ECOBJECTS_STATUS_Success != (setStatus = ecInstance->SetValue (accessString.c_str(), ecValue, index)))
+            ECObjectsStatus   setStatus = ecInstance->SetValue (accessString.c_str(), ecValue, index);
+            if (ECOBJECTS_STATUS_Success != setStatus && ECOBJECTS_STATUS_PropertyValueMatchesNoChange != setStatus)   
                 {
                 assert (false);
                 return INSTANCE_READ_STATUS_CantSetValue;
