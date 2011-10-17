@@ -27,24 +27,21 @@ FILE* logFile
 
     deserializationTimer.Stop();
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);  
-    LPSTREAM stream = NULL;
-    //HRESULT res = ::CreateStreamOnHGlobal(NULL,TRUE,&stream);
-    ::CreateStreamOnHGlobal(NULL,TRUE,&stream);
 
     StopWatch serializationTimer(L"Serialization", false);
-    serializationTimer.Start();
-    SchemaWriteStatus status2 = schema->WriteToXmlStream(stream);
-    serializationTimer.Stop();
-    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status2);  
+    WString ecSchemaXml;
 
-    STATSTG statInfo;
-    stream->Stat(&statInfo, STATFLAG_NONAME);
-    unsigned long filelength = statInfo.cbSize.LowPart;
+    serializationTimer.Start();
+    SchemaWriteStatus status2 = schema->WriteToXmlString(ecSchemaXml);
+    serializationTimer.Stop();
+    EXPECT_EQ (SCHEMA_WRITE_STATUS_Success, status2);  
+
+    size_t stringLength = ecSchemaXml.length();
 
     WString dateTime = ECTestFixture::GetDateTime ();
     ECSchemaReferenceList references = schema->GetReferencedSchemas();
     fwprintf (logFile, L"%s, De-serializing schema: %s (%d references), %.4f\n", dateTime.c_str(), schema->GetFullSchemaName(), references.size(), deserializationTimer.GetElapsedSeconds());
-    fwprintf (logFile, L"%s, Serializing schema: %s (%d bytes), %.4f\n",dateTime.c_str(), schema->GetFullSchemaName(), filelength, serializationTimer.GetElapsedSeconds());
+    fwprintf (logFile, L"%s, Serializing schema: %s (%d bytes), %.4f\n",dateTime.c_str(), schema->GetFullSchemaName(), stringLength, serializationTimer.GetElapsedSeconds());
 
     }
 
@@ -74,23 +71,18 @@ FILE* logFile
     readingTimer.Stop();
     EXPECT_EQ (INSTANCE_READ_STATUS_Success, instanceStatus);
 
-    LPSTREAM stream = NULL;
-    //HRESULT res = ::CreateStreamOnHGlobal(NULL,TRUE,&stream);
-    ::CreateStreamOnHGlobal(NULL,TRUE,&stream);
-
     StopWatch writingTimer(L"Serialization", false);
+    WString ecInstanceXml;
     writingTimer.Start();
-    InstanceWriteStatus status2 = testInstance->WriteToXmlStream(stream, true, true, false);
+    InstanceWriteStatus status2 = testInstance->WriteToXmlString(ecInstanceXml, true, true);
     writingTimer.Stop();
     EXPECT_EQ (INSTANCE_WRITE_STATUS_Success, status2);  
 
     WString dateTime = ECTestFixture::GetDateTime ();
-    STATSTG statInfo;
-    stream->Stat(&statInfo, STATFLAG_NONAME);
-    unsigned long filelength = statInfo.cbSize.LowPart;
+    size_t stringLength = ecInstanceXml.length();
 
     fwprintf (logFile, L"%s, Reading instance from class: %s:%s, %.4f\n", dateTime.c_str(), schema->GetFullSchemaName(), testInstance->GetClass().GetName(), readingTimer.GetElapsedSeconds());
-    fwprintf (logFile, L"%s, Writing instance from class: %s:%s (%d bytes), %.4f\n",dateTime.c_str(), schema->GetFullSchemaName(), testInstance->GetClass().GetName(), filelength, writingTimer.GetElapsedSeconds());
+    fwprintf (logFile, L"%s, Writing instance from class: %s:%s (%d bytes), %.4f\n",dateTime.c_str(), schema->GetFullSchemaName(), testInstance->GetClass().GetName(), stringLength, writingTimer.GetElapsedSeconds());
 
     }
 
