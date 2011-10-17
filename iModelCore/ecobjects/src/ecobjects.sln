@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ECObjectsNonPublishedTests"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ECObjectsPublishedTests", "..\test\PublishedTests.vcxproj", "{885B170C-2635-4A7D-9532-8A4AE95B2561}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ECObjectsPerformanceTests", "..\test\PerformanceTests.vcxproj", "{7AC30F13-7E43-4D7C-9BC7-3C7727FAF808}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -27,6 +29,10 @@ Global
 		{885B170C-2635-4A7D-9532-8A4AE95B2561}.Debug|Win32.Build.0 = Debug|Win32
 		{885B170C-2635-4A7D-9532-8A4AE95B2561}.Release|Win32.ActiveCfg = Release|Win32
 		{885B170C-2635-4A7D-9532-8A4AE95B2561}.Release|Win32.Build.0 = Release|Win32
+		{7AC30F13-7E43-4D7C-9BC7-3C7727FAF808}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7AC30F13-7E43-4D7C-9BC7-3C7727FAF808}.Debug|Win32.Build.0 = Debug|Win32
+		{7AC30F13-7E43-4D7C-9BC7-3C7727FAF808}.Release|Win32.ActiveCfg = Release|Win32
+		{7AC30F13-7E43-4D7C-9BC7-3C7727FAF808}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
