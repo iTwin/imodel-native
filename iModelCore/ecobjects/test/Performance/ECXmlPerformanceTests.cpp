@@ -38,7 +38,7 @@ FILE* logFile
     serializationTimer.Stop();
     EXPECT_EQ (SCHEMA_WRITE_STATUS_Success, status2);  
 
-    unsigned long stringLength = ecSchemaXml.length();
+    size_t stringLength = ecSchemaXml.length();
 
     WString dateTime = ECTestFixture::GetDateTime ();
     ECSchemaReferenceList references = schema->GetReferencedSchemas();
@@ -81,7 +81,7 @@ FILE* logFile
     EXPECT_EQ (INSTANCE_WRITE_STATUS_Success, status2);  
 
     WString dateTime = ECTestFixture::GetDateTime ();
-    unsigned long stringLength = ecInstanceXml.length();
+    size_t stringLength = ecInstanceXml.length();
 
     fwprintf (logFile, L"%s, Reading instance from class: %s:%s, %.4f\n", dateTime.c_str(), schema->GetFullSchemaName(), testInstance->GetClass().GetName(), readingTimer.GetElapsedSeconds());
     fwprintf (logFile, L"%s, Writing instance from class: %s:%s (%d bytes), %.4f\n",dateTime.c_str(), schema->GetFullSchemaName(), testInstance->GetClass().GetName(), stringLength, writingTimer.GetElapsedSeconds());
