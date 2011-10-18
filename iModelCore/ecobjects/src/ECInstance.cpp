@@ -895,9 +895,13 @@ static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar
 
             for (UInt32 i=0; i<numToInsert; i++)
                 {
-                arrayEntryVal.SetStruct (standaloneEnabler->CreateInstance().get());
-                if (SUCCESS != instance.SetValue (asBufferStr.c_str(), arrayEntryVal, size+i))
-                    return ECOBJECTS_STATUS_Error;
+                // only set new struct value if AddArrayElements did not already set it
+                if (ECOBJECTS_STATUS_Success != instance.GetValue (arrayEntryVal, asBufferStr.c_str (), size+i))\
+                    {
+                    arrayEntryVal.SetStruct (standaloneEnabler->CreateInstance().get());
+                    if (SUCCESS != instance.SetValue (asBufferStr.c_str(), arrayEntryVal, size+i))
+                        return ECOBJECTS_STATUS_Error;
+                    }
                 }
             }
         }
