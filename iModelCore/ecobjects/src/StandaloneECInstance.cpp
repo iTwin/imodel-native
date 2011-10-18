@@ -166,6 +166,14 @@ size_t                MemoryECInstanceBase::GetObjectSize () const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Paul.Connelly                   10/11
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t                MemoryECInstanceBase::GetBaseObjectSize () const
+    {
+    return _GetBaseObjectSize();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus          MemoryECInstanceBase::IsPerPropertyBitSet (bool& isSet, UInt8 bitIndex, UInt32 propertyIndex) const
@@ -900,7 +908,9 @@ ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueC
         byte*   arrayAddress           =  arrayCountAddress + sizeof(UInt32) + sizeof(size_t);
         UInt32  arrayCount             = *arrayCountP;
         byte*   entryAddress           =  arrayAddress + sizeof(StructArrayEntry)*arrayCount;
-        byte*   structInstanceAddress  = baseAddress + *endOffsetP;
+
+        // if we're in a managed instance, can't assume that (dataAddress - offsetToData) points to the instance containing the *current* buffer, need to calculate its address
+        byte* structInstanceAddress = (dataAddress - GetBaseObjectSize ()) + *endOffsetP;
 
         MemoryCallbackData data;
         data.dataAddress        = dataAddress;
@@ -1379,6 +1389,14 @@ size_t                StandaloneECInstance::_LoadObjectDataIntoManagedInstance (
     size_t size = sizeof(*this);
     memcpy (managedBuffer, this, size);
     return size;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Paul.Connelly                   10/11
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t                StandaloneECInstance::_GetBaseObjectSize () const
+    {
+    return sizeof (*this);
     }
 
 /*---------------------------------------------------------------------------------**//**

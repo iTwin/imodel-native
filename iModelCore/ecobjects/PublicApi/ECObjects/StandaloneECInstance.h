@@ -115,6 +115,7 @@ protected:
     virtual IECInstancePtr      _GetAsIECInstance () const = 0;
     virtual size_t              _GetObjectSize () const = 0;
     virtual size_t              _LoadObjectDataIntoManagedInstance (byte* managedBuffer) const = 0;
+    virtual size_t              _GetBaseObjectSize () const = 0;    // should be the same return value as _LoadObjectDataIntoManagedInstance
                              
 public: // These must be public so that ECXInstanceEnabler can get at the guts of StandaloneECInstance to copy it into an XAttribute
     ECOBJECTS_EXPORT void                     SetData (byte * data, UInt32 size, bool freeExisitingData); //The MemoryECInstanceBase will take ownership of the memory
@@ -126,6 +127,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT ClassLayoutCR            GetClassLayout() const;
     ECOBJECTS_EXPORT IECInstancePtr           GetAsIECInstance () const;
     ECOBJECTS_EXPORT size_t                   GetObjectSize () const;
+    ECOBJECTS_EXPORT size_t                   GetBaseObjectSize () const;
     ECOBJECTS_EXPORT size_t                   CalculateSupportingInstanceDataSize () const;
     ECOBJECTS_EXPORT size_t                   LoadDataIntoManagedInstance (byte* managedBuffer, size_t sizeOfManagedBuffer) const;
     ECOBJECTS_EXPORT void                     FixupStructArrayOffsets (int offsetToGap, size_t resizeAmount, bool removingGap);
@@ -175,6 +177,7 @@ protected:
     ECOBJECTS_EXPORT virtual ECEnablerCR         _GetEnabler() const override;
     ECOBJECTS_EXPORT virtual MemoryECInstanceBase* _GetAsMemoryECInstance () const override;
     ECOBJECTS_EXPORT virtual size_t              _GetObjectSize () const;
+    ECOBJECTS_EXPORT virtual size_t              _GetBaseObjectSize () const override;
     ECOBJECTS_EXPORT virtual size_t              _GetOffsetToIECInstance () const;
 
     // MemoryECInstanceBase
