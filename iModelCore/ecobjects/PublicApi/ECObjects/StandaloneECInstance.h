@@ -61,6 +61,12 @@ struct PerPropertyFlagsHolder
     PerPropertyFlagsUnion   perPropertyFlags;
     };
 
+struct ParentInstanceUnion
+    {
+    MemoryECInstanceBase const *    parentInstance;
+    Int64                           offset;
+    };
+
 /*=================================================================================**//**
 * EC::MemoryECInstanceBase is base class for ECInstances that holds its values in memory that it allocates. 
 * The memory is laid out according to the ClassLayout. The ClassLayout must be provided by classes that 
@@ -79,6 +85,7 @@ private:
     bool                    m_isInManagedInstance;
     StructValueIdentifier   m_structValueId;
     SupportingInstanceUnion m_structInstances;
+    ParentInstanceUnion     m_parentInstance;
 
 //__PUBLISH_SECTION_END__
     IECInstancePtr          GetStructArrayInstance (StructValueIdentifier structValueId) const;
@@ -95,8 +102,8 @@ private:
 
 protected:
     //! The MemoryECInstanceBase will take ownership of the memory
-    ECOBJECTS_EXPORT MemoryECInstanceBase (byte * data, UInt32 size,ClassLayoutCR classLayout, bool allowWritingDirectlyToInstanceMemory, UInt8 numBitsPerPropertyFlag=1);
-    ECOBJECTS_EXPORT MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory, UInt8 numBitsPerPropertyFlag=1);
+    ECOBJECTS_EXPORT MemoryECInstanceBase (byte * data, UInt32 size,ClassLayoutCR classLayout, bool allowWritingDirectlyToInstanceMemory, UInt8 numBitsPerPropertyFlag=1, MemoryECInstanceBase const * parentInstance=NULL);
+    ECOBJECTS_EXPORT MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory, UInt8 numBitsPerPropertyFlag=1, MemoryECInstanceBase const * parentInstance=NULL);
     ECOBJECTS_EXPORT virtual ~MemoryECInstanceBase ();
 
     ECOBJECTS_EXPORT virtual bool             _IsMemoryInitialized () const;
@@ -134,6 +141,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT ECObjectsStatus          SetPerPropertyBit (UInt8 bitIndex, UInt32 propertyIndex, bool setBit);
     ECOBJECTS_EXPORT void                     ClearAllPerPropertyFlags ();
     ECOBJECTS_EXPORT UInt8                    GetNumBitsInPerPropertyFlags ();
+    ECOBJECTS_EXPORT MemoryECInstanceBase const *   GetParentInstance () const;
 };
 
 /*=================================================================================**//**

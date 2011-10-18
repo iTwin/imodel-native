@@ -37,13 +37,14 @@ const UInt32 BITS_PER_FLAGSBITMASK = (sizeof(UInt32) * 8);
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-MemoryECInstanceBase::MemoryECInstanceBase (byte * data, UInt32 size, ClassLayoutCR classLayout, bool allowWritingDirectlyToInstanceMemory, UInt8 numBitsPerPropertyFlag) :
+MemoryECInstanceBase::MemoryECInstanceBase (byte * data, UInt32 size, ClassLayoutCR classLayout, bool allowWritingDirectlyToInstanceMemory, UInt8 numBitsPerPropertyFlag, MemoryECInstanceBase const* parentInstance) :
         MemoryInstanceSupport (allowWritingDirectlyToInstanceMemory),
         m_bytesAllocated(size), m_structValueId (0)
     {
     m_data.address = data;
     m_isInManagedInstance = false;
     m_structInstances.vectorP = NULL;
+    m_parentInstance.parentInstance = parentInstance;
 
     InitializePerPropertyFlags (classLayout, numBitsPerPropertyFlag);
     }
@@ -51,13 +52,14 @@ MemoryECInstanceBase::MemoryECInstanceBase (byte * data, UInt32 size, ClassLayou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory, UInt8 numBitsPerPropertyFlag) :
+MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory, UInt8 numBitsPerPropertyFlag, MemoryECInstanceBase const* parentInstance) :
         MemoryInstanceSupport (allowWritingDirectlyToInstanceMemory),
         m_bytesAllocated(0), m_structValueId (0)
     {
     m_isInManagedInstance = false;
     m_structInstances.vectorP = NULL;
     m_data.address = NULL;
+    m_parentInstance.parentInstance = parentInstance;
 
 #if defined (_WIN32) // WIP_NONPORT
     UInt32 size = MAX (minimumBufferSize, classLayout.GetSizeOfFixedSection());
@@ -1275,6 +1277,19 @@ ECObjectsStatus MemoryECInstanceBase::_RemoveStructArrayElementsFromMemory (Clas
        }   
 
     return RemoveArrayElementsFromMemory (classLayout, propertyLayout, removeIndex, removeCount);
+    }
+
+MemoryECInstanceBase const* MemoryECInstanceBase::GetParentInstance () const
+    {
+    if (!m_isInManagedInstance)
+        return m_parentInstance.parentInstance;
+    else if (0 != m_parentInstance.offset)
+        {
+        byte const * baseAddress = (byte const *)this;
+        return (MemoryECInstanceBase const *)(baseAddress + m_parentInstance.offset);
+        }
+    else
+        return NULL;
     }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
