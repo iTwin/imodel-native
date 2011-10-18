@@ -1,36 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\bsicommon\build\PartFile.xsd" >
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd" >
 
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 <!-- ///////////////////// Runtime Parts ///////////////////////////////////////////////// -->
 <!-- / This section contains parts that make the ECF Runtime ///////////////////////////// -->
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 
-    <Part Name="ECObjectsNative" BMakeFile="src\ecobjects.mke" ApiNumber="4">
+    <Part Name="ECObjectsNative" BentleyBuildMakeFile="src/ecobjects.mke" ApiNumber="4">
         <RequiredRepository>Libsrc-Msxml6</RequiredRepository>
         <SubPart PartName="msxml6"          PartFile="msxml6"       Repository="Libsrc-Msxml6"/>
-        <SubPart PartName="BoostHeaders"    PartFile="${SrcBsiCommon}CvsPartfiles\bsibin"           Repository="bsibin-boostheaders" />
+        <SubPart PartName="BoostHeaders"    PartFile="${SrcBsiCommon}CvsPartfiles/bsibin"           Repository="bsibin-boostheaders" />
         <SubPart PartName="HeaderFiles" />
         <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley" />
-        <SubPart PartName="Logging8.11"     PartFile="${SrcBsiCommon}CvsPartfiles\bsibin"           Repository="bsibin-loggingsdk" />
+        <SubPart PartName="Logging8.11"     PartFile="${SrcBsiCommon}CvsPartfiles/bsibin"           Repository="bsibin-loggingsdk" />
         <SubPart PartName="GeomDlls"        PartFile="geomlibs"     Repository="GeomLibs" />
         <SubPart PartName="BeXmlDll"        PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
         <SubPart PartName="StandardSchemas" PartFile="ECStandards" Repository="ECStandards"/>
         <Bindings>
-            <Libs ProductDirectoryName="ECObjectsLibs" Required="false">Delivery\$(libprefix)ECObjects$(libext)</Libs>
-            <Files ProductDirectoryName="ECObjectsNativeAssemblies">Delivery\$(shlibprefix)ECObjects$(ApiNumber)$(shlibext)</Files>
+            <Libs ProductDirectoryName="ECObjectsLibs" Required="false">Delivery/$(libprefix)ECObjects$(libext)</Libs>
+            <Files ProductDirectoryName="ECObjectsNativeAssemblies">Delivery/$(shlibprefix)ECObjects$(ApiNumber)$(shlibext)</Files>
         </Bindings>
     </Part>
 
-    <Part Name="PublishedApi" BMakeFile="PublicApi\PublishApi.mke">
+    <Part Name="PublishedApi" BentleyBuildMakeFile="PublicAPI/PublishApi.mke">
         <SubPart PartName="HeaderFiles" />
         <Bindings>
-            <Directory SubPartDirectory="PublishedAPI" SourceName="Delivery\PublishedAPI" ProductDirectoryName="PublishedAPI" Required="false"/>
+            <Directory SubPartDirectory="PublishedAPI" SourceName="Delivery/PublishedApi" ProductDirectoryName="PublishedAPI" Required="false"/>
         </Bindings>
     </Part>
 
-    <Part Name="PublishedApi_Doc" BMakeFile="PublicApi\BuildPublishedDoc.mke">
+    <Part Name="PublishedApi_Doc" BMakeFile="PublicAPI/BuildPublishedDoc.mke">
         <RequiredRepository>bsitools-doxygen</RequiredRepository>
         <SubPart PartName="PublishedApi" />
         <Bindings>
@@ -38,52 +38,52 @@
         </Bindings>
     </Part>   
 
-    <Part Name="HeaderFiles" BMakeFile="ecobjects.prewire.mke">
+    <Part Name="HeaderFiles" BentleyBuildMakeFile="ecobjects.prewire.mke">
         <Bindings>
             <PublicAPI Domain="ECObjects" />
         </Bindings>
     </Part>
 
-    <Part Name="ECObjectsTestsSeedData" BMakeFile="test\SeedData.prewire.mke">
+    <Part Name="ECObjectsTestsSeedData" BMakeFile="test/SeedData.prewire.mke" ExcludePlatforms="Android,Linux,iOS">
         <Bindings>
             <Files SubPartDirectory="SeedData" ProductDirectoryName="ECObjectsTestSeedData">Delivery/SeedData/*</Files>
         </Bindings>
     </Part>
 
-    <Part Name="ECObjectsTestLoggingConfig" BMakeFile="test\LoggingConfig.prewire.mke">
+    <Part Name="ECObjectsTestLoggingConfig" BMakeFile="test/LoggingConfig.prewire.mke" ExcludePlatforms="Android,Linux,iOS">
         <Bindings>
-            <Files ProductDirectoryName="ECObjectsTestExe">Delivery\logging.config.xml</Files>
+            <Files ProductDirectoryName="ECObjectsTestExe">Delivery/logging.config.xml</Files>
         </Bindings>
     </Part>
 
-    <Part Name="ECObjectsTestBackDoor" BMakeFile="test\BackDoor\BackDoor.mke">
+    <Part Name="ECObjectsTestBackDoor" BMakeFile="test/BackDoor/BackDoor.mke" ExcludePlatforms="Android,Linux,iOS">
         <Bindings>
-            <Libs>Delivery\$(libprefix)ECObjectsTestBackDoor$(libext)</Libs>
+            <Libs>Delivery/$(libprefix)ECObjectsTestBackDoor$(libext)</Libs>
         </Bindings>
     </Part>
 
     <Part Name="ECObjectsTestsDependencies">
         <SubPart PartName="google_gtest"         PartFile="gtest"                   Repository="util-gtest" />
         <SubPart PartName="StandardSchemas"      PartFile="ecstandards"             Repository="ecstandards"/>
-        <SubPart PartName="Logging8.11"  PartFile="${SrcBsiCommon}CvsPartfiles\bsibin"               Repository="bsibin-loggingsdk" />
+        <SubPart PartName="Logging8.11"  PartFile="${SrcBsiCommon}CvsPartfiles/bsibin"               Repository="bsibin-loggingsdk" />
         <SubPart PartName="ECObjectsNative" />
         <SubPart PartName="ECObjectsTestsSeedData"/>
         <SubPart PartName="ECObjectsTestLoggingConfig"/>
         <SubPart PartName="ECObjectsTestBackDoor"/>
     </Part>
 
-    <Part Name="ECObjectsPublishedTests" BMakeFile="test\PublishedTests.mke">
+    <Part Name="ECObjectsPublishedTests" BMakeFile="test/PublishedTests.mke" ExcludePlatforms="Android,Linux,iOS">
         <SubPart PartName="ECObjectsTestsDependencies"/>
         <SubPart PartName="PublishedApi"/>
         <Bindings>
-            <Files ProductDirectoryName="ECObjectsTestExe">Delivery\ECObjectsTest_Published.exe</Files>
+            <Files ProductDirectoryName="ECObjectsTestExe">Delivery/ECObjectsTest_Published.exe</Files>
         </Bindings>
     </Part>
 
-    <Part Name="ECObjectsNonPublishedTests" BMakeFile="test\NonPublishedTests.mke">
+    <Part Name="ECObjectsNonPublishedTests" BMakeFile="test/NonPublishedTests.mke" ExcludePlatforms="Android,Linux,iOS">
         <SubPart PartName="ECObjectsTestsDependencies"/>
         <Bindings>
-            <Files ProductDirectoryName="ECObjectsTestExe">Delivery\ECObjectsTest_NonPublished.exe</Files>
+            <Files ProductDirectoryName="ECObjectsTestExe">Delivery/ECObjectsTest_NonPublished.exe</Files>
         </Bindings>
     </Part>
 
@@ -92,7 +92,7 @@
         <SubPart PartName="ECObjectsNonPublishedTests" />
     </Part>
 
-    <Part Name="RunECObjectsTests" BMakeFile="test\ECObjectsNativeTest.run.mke">
+    <Part Name="RunECObjectsTests" BMakeFile="test/ECObjectsNativeTest.run.mke" ExcludePlatforms="Android,Linux,iOS">
 
     </Part>
 
