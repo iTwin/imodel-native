@@ -14,7 +14,7 @@
 <!-- / This section contains parts that make the ECF Runtime ///////////////////////////// -->
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 
-    <Part Name="ECObjectsNative" BMakeFile="src\ecobjects.mke">
+    <Part Name="ECObjectsNative" BMakeFile="src\ecobjects.mke" ApiNumber = "4">
         <RequiredRepository>Libsrc-Msxml6</RequiredRepository>
         <SubPart PartName="ExportList" />
         <SubPart PartName="msxml6"          PartFile="msxml6"       Repository="Libsrc-Msxml6"/>
@@ -25,8 +25,8 @@
         <SubPart PartName="GeomDlls"        PartFile="geomlibs" Repository="GeomLibs" />
         <SubPart PartName="StandardSchemas" PartFile="ECStandards" Repository="ECStandards"/>
         <Bindings>
-            <Libs ProductDirectoryName="ECObjectsLibs" Required="false">Delivery\ECObjects4.lib</Libs>
-            <Assemblies ProductDirectoryName="ECObjectsNativeAssemblies">Delivery\ECObjects4.dll</Assemblies>
+            <Libs ProductDirectoryName="ECObjectsLibs" Required="false">Delivery\ECObjects.lib</Libs>
+            <Assemblies ProductDirectoryName="ECObjectsNativeAssemblies">Delivery\ECObjects$(ApiNumber).dll</Assemblies>
         </Bindings>
     </Part>
 
