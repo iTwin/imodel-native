@@ -96,6 +96,7 @@ void            ECSchema::SetErrorHandling (bool showMessages, bool doAssert)
     { 
     s_noAssert = !doAssert; 
     BeXmlDom::SetErrorHandling (showMessages, doAssert);
+    ECClass::SetErrorHandling(doAssert);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1393,11 +1394,7 @@ SchemaWriteStatus ECSchema::WritePropertyDependencies (BeXmlNodeR parentNode, EC
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus ECSchema::WriteXml (BeXmlDomR xmlDom) const
     {
-    SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
-
     BeXmlNodeP  schemaNode = xmlDom.AddNewElement (EC_SCHEMA_ELEMENT, NULL, NULL);
-
-    ECSchemaWriteContext context;
 
     wchar_t versionString[8];
     BeStringUtilities::Snwprintf (versionString, _countof(versionString), L"%02d.%02d", m_versionMajor, m_versionMinor);
@@ -1418,6 +1415,7 @@ SchemaWriteStatus ECSchema::WriteXml (BeXmlDomR xmlDom) const
     
     WriteSchemaReferences (*schemaNode);
     
+    ECSchemaWriteContext context;
     WriteCustomAttributeDependencies (*schemaNode, *this, context);
     WriteCustomAttributes (*schemaNode);
     
@@ -1434,7 +1432,7 @@ SchemaWriteStatus ECSchema::WriteXml (BeXmlDomR xmlDom) const
         }
         
     ECXml::FormatXml (xmlDom);
-    return status;
+    return SCHEMA_WRITE_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1482,8 +1480,10 @@ void AddFilePathToSchemaPaths  (ECSchemaReadContextR schemaContext, T_WStringVec
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaP& schemaOut, WCharCP ecSchemaXmlFile, ECSchemaReadContextR schemaContext)
-    {                  
-    schemaOut = NULL;
+    {
+    ECObjectsLogger::Log()->debugv (L"About to read native ECSchema read from file: fileName='%s'", ecSchemaXmlFile);
+	schemaOut = NULL;
+	
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
 
     BeXmlStatus xmlStatus;
@@ -1513,9 +1513,15 @@ SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaP& schemaOut, WCharCP ecSche
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus     ECSchema::ReadFromXmlString (ECSchemaP& schemaOut, WCharCP ecSchemaXml, ECSchemaReadContextR schemaContext)
+SchemaReadStatus     ECSchema::ReadFromXmlString
+(
+ECSchemaP&                      schemaOut, 
+WCharCP                         ecSchemaXml,
+ECSchemaReadContextR schemaContext
+)
     {                  
-    schemaOut = NULL;
+    ECObjectsLogger::Log()->debugv (L"About to read native ECSchema read from string."); // mainly included for timing
+	schemaOut = NULL;
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
 
     BeXmlStatus xmlStatus;
@@ -1634,7 +1640,11 @@ SchemaWriteStatus ECSchema::WriteToXmlString (WStringR ecSchemaXml) const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECSchema::WriteToXmlFile (WCharCP ecSchemaXmlFile)
+SchemaWriteStatus ECSchema::WriteToXmlFile
+(
+WCharCP ecSchemaXmlFile,
+bool    utf16
+)
     {
     BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();        
 
@@ -1642,14 +1652,19 @@ SchemaWriteStatus ECSchema::WriteToXmlFile (WCharCP ecSchemaXmlFile)
     if (SCHEMA_WRITE_STATUS_Success != (status = WriteXml (*xmlDom.get())))
         return status;
 
-    return (BEXML_Success == xmlDom->ToFile (ecSchemaXmlFile, BeXmlDom::TO_STRING_OPTION_Indent)) ? SCHEMA_WRITE_STATUS_Success : SCHEMA_WRITE_STATUS_FailedToWriteFile;
+    return (BEXML_Success == xmlDom->ToFile (ecSchemaXmlFile, BeXmlDom::TO_STRING_OPTION_Indent, utf16 ? BeXmlDom::FILE_ENCODING_Utf16 : BeXmlDom::FILE_ENCODING_Utf8)) 
+        ? SCHEMA_WRITE_STATUS_Success : SCHEMA_WRITE_STATUS_FailedToWriteFile;
     }
    
 #if defined (NEEDSWORK_LIBXML)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECSchema::WriteToXmlStream (IStreamP ecSchemaXmlStream)
+SchemaWriteStatus ECSchema::WriteToXmlStream
+(
+IStreamP ecSchemaXmlStream,
+bool     utf16
+)
     {
     SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
 

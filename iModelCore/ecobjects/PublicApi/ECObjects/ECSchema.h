@@ -219,8 +219,9 @@ private:
     ECClassCR       m_class;
     ECPropertyCP    m_baseProperty;    
     bool            m_hideFromLeakDetection;
-
+    static void     SetErrorHandling (bool doAssert);
 protected:
+    WString         m_originalTypeName; //Will be empty unless the typeName was unrecognized. Keep this so that we can re-write the ECSchema without changing the type to string
     ECProperty (ECClassCR ecClass, bool hideFromLeakDetection);
     virtual ~ECProperty();
 
@@ -496,6 +497,7 @@ private:
     ECObjectsStatus CanPropertyBeOverridden(ECPropertyCR baseProperty, ECPropertyCR newProperty) const;
     void            AddDerivedClass(ECClassCR baseClass) const;
     void            RemoveDerivedClass(ECClassCR baseClass) const;
+    static void     SetErrorHandling (bool doAssert);
 
 protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
@@ -1197,16 +1199,17 @@ public:
     
     //! Serializes an ECXML schema to a file
     //! @param[in]  ecSchemaXmlFile  The absolute path of the file to serialize the schema to
+    //! @param[in]  utf16            'false' (the default) to use utf-8 encoding
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the file pointed
     //          to by ecSchemaXmlFile will contain the serialized schema.  Otherwise, the file will be unmodified
-    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlFile (WCharCP ecSchemaXmlFile);
+    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlFile (WCharCP ecSchemaXmlFile, bool utf16 = false);
     
     
     //! Writes an ECXML schema to an IStream
     //! @param[in]  ecSchemaXmlStream   The IStream to write the serialized XML to
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the IStream
     //! will contain the serialized schema.
-    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlStream (IStreamP ecSchemaXmlStream);
+    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlStream (IStreamP ecSchemaXmlStream, bool utf16 = false);
     
     
     //! Return full schema name in format GetName().MM.mm where Name is the schema name, MM is major version and mm is minor version.
