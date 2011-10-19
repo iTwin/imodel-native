@@ -61,7 +61,7 @@ struct PerPropertyFlagsHolder
     PerPropertyFlagsUnion   perPropertyFlags;
     };
 
-struct ParentInstanceUnion
+union ParentInstanceUnion
     {
     MemoryECInstanceBase const *    parentInstance;
     size_t                          offset;

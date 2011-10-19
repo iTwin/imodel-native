@@ -361,6 +361,11 @@ size_t          MemoryECInstanceBase::LoadDataIntoManagedInstance (byte* managed
 
     offset += currentBytesUsed;
 
+    // ensure parentInstance is zeroed out - if we are loading this instance into a parent its parent is responsible for setting the offset
+    size_t parentOffset = 0;
+    size_t offsetToParentInstance = (size_t)((byte const*)&m_parentInstance.offset - (byte const*)this);
+    memcpy (managedBuffer + offsetToParentInstance, &parentOffset, sizeof (parentOffset));
+
     // store the current offset in m_structInstances.vectorP - this points to the begining of the StructEntryArray data
     // number of entries
     // offset to end of supporting instances
