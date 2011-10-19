@@ -64,7 +64,7 @@ struct PerPropertyFlagsHolder
 struct ParentInstanceUnion
     {
     MemoryECInstanceBase const *    parentInstance;
-    Int64                           offset;
+    size_t                          offset;
     };
 
 /*=================================================================================**//**
