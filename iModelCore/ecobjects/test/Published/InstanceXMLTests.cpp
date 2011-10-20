@@ -537,7 +537,9 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     IECInstancePtr deserializedInstance;
     InstanceReadStatus status3 = IECInstance::ReadFromXmlStream(deserializedInstance, stream, *instanceContext);
     EXPECT_EQ (INSTANCE_READ_STATUS_Success, status3); 
+#ifdef DEBUG_PRINT
     wprintf(L"Verifying schema deserialized from stream.\n");
+#endif
     VerifyTestInstance (deserializedInstance.get(), false);
 
     CoUninitialize();
@@ -576,7 +578,9 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     IECInstancePtr deserializedInstance;
     InstanceReadStatus status3 = IECInstance::ReadFromXmlString(deserializedInstance, ecInstanceXml.c_str(), *instanceContext);
     EXPECT_EQ (INSTANCE_READ_STATUS_Success, status3); 
+#ifdef DEBUG_PRINT
     wprintf(L"Verifying schema deserialized from string.\n");
+#endif
     VerifyTestInstance (deserializedInstance.get(), false);
     CoUninitialize();
     };

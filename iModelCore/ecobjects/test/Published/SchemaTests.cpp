@@ -38,11 +38,13 @@ ECSchemaP   schema
     EXPECT_STREQ (L"Widgets Description", schema->GetDescription().c_str());
     EXPECT_EQ (9, schema->GetVersionMajor());
     EXPECT_EQ (6, schema->GetVersionMinor());        
-    
+ 
+#ifdef DEBUG_PRINT
     FOR_EACH (ECClassP pClass, schema->GetClasses())
         {
         wprintf (L"Widgets contains class: '%s' with display label '%s'\n", pClass->GetName().c_str(), pClass->GetDisplayLabel().c_str());
         }
+#endif
 
     ECClassP pClass = schema->GetClassP(L"ClassDoesNotExistInSchema");
     EXPECT_FALSE (pClass);
@@ -152,11 +154,12 @@ ECSchemaP   schema
     EXPECT_EQ (SUCCESS, instance->GetValue (ecValue, L"Writeable"));
     EXPECT_FALSE (ecValue.GetBoolean());
    
+#ifdef DEBUG_PRINT
     FOR_EACH (ECPropertyP pProperty, pClass->GetProperties())
         {
         wprintf (L"TestClass contains property: %s of type %s\n", pProperty->GetName().c_str(), pProperty->GetTypeName().c_str());
         }
-    
+#endif   
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -615,11 +618,12 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromStri
     EXPECT_EQ (9, schema->GetVersionMajor());
     EXPECT_EQ (6, schema->GetVersionMinor());        
     
+#ifdef DEBUG_PRINT
     FOR_EACH (ECClassP pClass, schema->GetClasses())
         {
         wprintf (L"Widgets contains class: '%s' with display label '%s'\n", pClass->GetName().c_str(), pClass->GetDisplayLabel().c_str());
         }
-
+#endif
     ECClassP pClass = schema->GetClassP(L"ClassDoesNotExistInSchema");
     EXPECT_FALSE (pClass);
 
@@ -665,7 +669,9 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
 
     ECSchemaP schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath( L"Widgets.01.00.ecschema.xml").c_str(), *schemaContext);
+#ifdef DEBUG_PRINT
     wprintf(L"Verifying original schema from file.\n"); 
+#endif
     VerifyWidgetsSchema(schema);
 
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
@@ -680,7 +686,9 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
     schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
     status = ECSchema::ReadFromXmlString(deserializedSchema, ecSchemaXmlString.c_str(), *schemaContext);
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, status); 
+#ifdef DEBUG_PRINT
     wprintf(L"Verifying schema deserialized from string.\n");
+#endif
     VerifyWidgetsSchema(deserializedSchema);
 
     CoUninitialize();
@@ -796,7 +804,9 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingStream)
 
     ECSchemaP schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath( L"Widgets.01.00.ecschema.xml").c_str(), *schemaContext);
-    wprintf(L"Verifying original schema from file.\n"); 
+#ifdef DEBUG_PRINT
+    wprintf(L"Verifying original schema from file.\n");
+#endif
     VerifyWidgetsSchema(schema);
 
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);    
@@ -815,7 +825,9 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingStream)
     schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
     status = ECSchema::ReadFromXmlStream(deserializedSchema, stream, *schemaContext);
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, status); 
+#ifdef DEBUG_PRINT
     wprintf(L"Verifying schema deserialized from stream.\n");
+#endif
     VerifyWidgetsSchema(deserializedSchema);
 
     CoUninitialize();
