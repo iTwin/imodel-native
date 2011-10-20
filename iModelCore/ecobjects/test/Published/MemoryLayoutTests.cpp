@@ -2212,7 +2212,7 @@ TEST_F (MemoryLayoutTests, IterateCompleClass)
 
     // ensure we can walk the properties
     ECValuesCollectionPtr   collection = ECValuesCollection::Create (*instance);
-    dumpPropertyValues (*collection, false, 0);
+    //dumpPropertyValues (*collection, false, 0);
     }
 
 
@@ -2264,7 +2264,7 @@ TEST_F (MemoryLayoutTests, ProfileSettingValues)
         instance->ClearValues();
         }
     
-    wprintf (L"  %d StandaloneECInstances with %d string properties initialized in %.4f seconds.\n", nInstances, nStrings, elapsedSeconds);
+    //wprintf (L"  %d StandaloneECInstances with %d string properties initialized in %.4f seconds.\n", nInstances, nStrings, elapsedSeconds);
     };
     
 
