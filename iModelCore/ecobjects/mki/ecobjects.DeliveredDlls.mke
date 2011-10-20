@@ -16,7 +16,7 @@ $(exportFile) : $(_MakeFilePath)$(partName).DeliveredDlls.mke
     !~mkdir $(buildDir)
     > $(exportFile)
     ECNativeObjectsDllBase  = $(ECNativeObjectsDllBase)
-    ECNativeObjectsLib      = $(ECNativeObjectsDllBase).lib
+    ECNativeObjectsLib      = $(partName).lib
     <
     ~time
 
