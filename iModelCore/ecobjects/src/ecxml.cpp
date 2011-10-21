@@ -17,15 +17,11 @@ BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECXml::ParseBooleanString
-(
-bool & booleanValue,
-WCharCP booleanString
-)
+ECObjectsStatus ECXml::ParseBooleanString (bool & booleanValue, WCharCP booleanString)
     {
-    if (0 == _wcsicmp (booleanString, ECXML_TRUE))
+    if (0 == BeStringUtilities::Wcsicmp (booleanString, ECXML_TRUE_W))
         booleanValue = true;
-    else if (0 == _wcsicmp (booleanString, ECXML_FALSE))
+    else if (0 == BeStringUtilities::Wcsicmp (booleanString, ECXML_FALSE_W))
         booleanValue = false;
     else
         return ECOBJECTS_STATUS_ParseError;
@@ -36,10 +32,7 @@ WCharCP booleanString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR ECXml::GetPrimitiveTypeName
-(
-PrimitiveType primitiveType
-)
+WStringCR ECXml::GetPrimitiveTypeName (PrimitiveType primitiveType)
     {
     switch (primitiveType)
         {
@@ -69,11 +62,7 @@ PrimitiveType primitiveType
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECXml::ParsePrimitiveType
-(
-PrimitiveType&          primitiveType,
-WStringCR     typeName
-)
+ECObjectsStatus ECXml::ParsePrimitiveType (PrimitiveType& primitiveType, WStringCR typeName)
     {
     if (0 == typeName.length())
         return ECOBJECTS_STATUS_ParseError;
@@ -109,10 +98,7 @@ WStringCR     typeName
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR ECXml::StrengthToString
-(
-StrengthType strength
-)
+WStringCR ECXml::StrengthToString (StrengthType strength)
     {
     switch (strength)
         {
@@ -131,11 +117,7 @@ StrengthType strength
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECXml::ParseStrengthType
-(
-StrengthType&          strength,
-WStringCR    strengthString
-)
+ECObjectsStatus ECXml::ParseStrengthType (StrengthType& strength, WStringCR strengthString)
     {
     if (0 == strengthString.length())
         return ECOBJECTS_STATUS_ParseError;
@@ -154,10 +136,7 @@ WStringCR    strengthString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR ECXml::DirectionToString
-(
-ECRelatedInstanceDirection direction
-)
+WStringCR ECXml::DirectionToString (ECRelatedInstanceDirection direction)
     {
     switch (direction)
         {
@@ -173,11 +152,7 @@ ECRelatedInstanceDirection direction
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECXml::ParseDirectionString
-(
-ECRelatedInstanceDirection& direction,
-WStringCR         directionString
-)
+ECObjectsStatus ECXml::ParseDirectionString (ECRelatedInstanceDirection& direction, WStringCR directionString)
     {
     if (0 == directionString.length())
         return ECOBJECTS_STATUS_ParseError;
@@ -194,12 +169,7 @@ WStringCR         directionString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECXml::ParseCardinalityString
-(
-UInt32 &lowerLimit, 
-UInt32 &upperLimit, 
-const WString &cardinalityString
-)
+ECObjectsStatus ECXml::ParseCardinalityString (UInt32 &lowerLimit, UInt32 &upperLimit, const WString &cardinalityString)
     {
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
     if (0 == cardinalityString.compare(L"1"))
@@ -252,12 +222,10 @@ const WString &cardinalityString
     upperLimit = UINT_MAX;
     return status;
     }
- 
-void FormatXmlNode
-(
-MSXML2::IXMLDOMNode& domNode,
-UInt32 indentLevel
-)
+
+#if defined (DONT_THINK_WE_NEED)
+
+void FormatXmlNode (MSXML2::IXMLDOMNode& domNode, UInt32 indentLevel)
     {
     MSXML2::IXMLDOMTextPtr textPtr = NULL;
     if (domNode.nodeType == NODE_TEXT)
@@ -321,12 +289,14 @@ UInt32 indentLevel
         }    
     }
     
-void ECXml::FormatXml
-(
-MSXML2::IXMLDOMDocument2 *pXmlDoc
-)
+#endif // defined (_WIN32) // WIP_NONPORT 
+
+
+void ECXml::FormatXml (BeXmlDomR pXmlDoc)
     {
-    FormatXmlNode(pXmlDoc->documentElement, 0);
+    // For now, do nothing. I think this can be controlled using xmlSaveCtxt
+    // FormatXmlNode(pXmlDoc->documentElement, 0);
     }
+
 
 END_BENTLEY_EC_NAMESPACE

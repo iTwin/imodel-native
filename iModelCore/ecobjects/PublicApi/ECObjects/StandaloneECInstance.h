@@ -8,8 +8,8 @@
 //__PUBLISH_SECTION_START__
 #pragma once
 
-#include <ECObjects\ECObjects.h>
-#include <ECObjects\MemoryInstanceSupport.h>
+#include <ECObjects/ECObjects.h>
+#include <ECObjects/MemoryInstanceSupport.h>
 
 EC_TYPEDEFS(StandaloneECEnabler);
 
@@ -36,6 +36,11 @@ struct StructArrayEntry
 
 typedef bvector<StructArrayEntry> StructInstanceVector;
 
+union PerPropertyFlagsUnion
+{
+    UInt32 *  address;
+    Int64     offset; 
+};
 
 union InstanceDataUnion
 {
@@ -49,6 +54,13 @@ union SupportingInstanceUnion
     Int64                   offset; 
 };
 
+struct PerPropertyFlagsHolder
+    {
+    UInt8                   numBitsPerProperty;
+    UInt32                  numPerPropertyFlagsEntries;
+    PerPropertyFlagsUnion   perPropertyFlags;
+    };
+
 /*=================================================================================**//**
 * EC::MemoryECInstanceBase is base class for ECInstances that holds its values in memory that it allocates. 
 * The memory is laid out according to the ClassLayout. The ClassLayout must be provided by classes that 
@@ -61,12 +73,13 @@ struct MemoryECInstanceBase : MemoryInstanceSupport
 friend struct IECInstance;
 
 private:
+    PerPropertyFlagsHolder  m_perPropertyFlagsHolder;
     InstanceDataUnion       m_data;
     UInt32                  m_bytesAllocated;
     bool                    m_isInManagedInstance;
     StructValueIdentifier   m_structValueId;
     SupportingInstanceUnion m_structInstances;
-    
+
 //__PUBLISH_SECTION_END__
     IECInstancePtr          GetStructArrayInstance (StructValueIdentifier structValueId) const;
     StructArrayEntry const* GetAddressOfStructArrayEntry (StructValueIdentifier key) const;
@@ -76,13 +89,14 @@ private:
     ECObjectsStatus         RemoveStructStructArrayEntry (StructValueIdentifier structValueId, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP);
     void                    RemoveGapFromStructArrayEntries (byte const* gapAddress, size_t resizeAmount);
     void                    WalkSupportingStructs (WStringR completeString, WCharCP prefix) const;
+    void                    InitializePerPropertyFlags (ClassLayoutCR classLayout, UInt8 numBitsPerProperty);
 
  //__PUBLISH_SECTION_START__
 
 protected:
     //! The MemoryECInstanceBase will take ownership of the memory
-    ECOBJECTS_EXPORT MemoryECInstanceBase (byte * data, UInt32 size, bool allowWritingDirectlyToInstanceMemory);
-    ECOBJECTS_EXPORT MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory);
+    ECOBJECTS_EXPORT MemoryECInstanceBase (byte * data, UInt32 size,ClassLayoutCR classLayout, bool allowWritingDirectlyToInstanceMemory, UInt8 numBitsPerPropertyFlag=1);
+    ECOBJECTS_EXPORT MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory, UInt8 numBitsPerPropertyFlag=1);
     ECOBJECTS_EXPORT virtual ~MemoryECInstanceBase ();
 
     ECOBJECTS_EXPORT virtual bool             _IsMemoryInitialized () const;
@@ -107,6 +121,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
 
     ECOBJECTS_EXPORT byte const *             GetData () const;
     ECOBJECTS_EXPORT UInt32                   GetBytesUsed () const;
+    ECOBJECTS_EXPORT UInt32                   GetPerPropertyFlagsSize () const;
     ECOBJECTS_EXPORT void                     ClearValues ();
     ECOBJECTS_EXPORT ClassLayoutCR            GetClassLayout() const;
     ECOBJECTS_EXPORT IECInstancePtr           GetAsIECInstance () const;
@@ -115,6 +130,10 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT size_t                   LoadDataIntoManagedInstance (byte* managedBuffer, size_t sizeOfManagedBuffer) const;
     ECOBJECTS_EXPORT void                     FixupStructArrayOffsets (int offsetToGap, size_t resizeAmount, bool removingGap);
     ECOBJECTS_EXPORT ECObjectsStatus          RemoveStructArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount, EmbeddedInstanceCallbackP memoryCallback);
+    ECOBJECTS_EXPORT ECObjectsStatus          IsPerPropertyBitSet (bool& isSet, UInt8 bitIndex, UInt32 propertyIndex) const;
+    ECOBJECTS_EXPORT ECObjectsStatus          SetPerPropertyBit (UInt8 bitIndex, UInt32 propertyIndex, bool setBit);
+    ECOBJECTS_EXPORT void                     ClearAllPerPropertyFlags ();
+    ECOBJECTS_EXPORT UInt8                    GetNumBitsInPerPropertyFlags ();
 };
 
 /*=================================================================================**//**
