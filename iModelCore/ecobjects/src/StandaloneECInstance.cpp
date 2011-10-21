@@ -362,8 +362,8 @@ size_t          MemoryECInstanceBase::LoadDataIntoManagedInstance (byte* managed
     offset += currentBytesUsed;
 
     // ensure parentInstance is zeroed out - if we are loading this instance into a parent its parent is responsible for setting the offset
-    size_t parentOffset = 0;
-    size_t offsetToParentInstance = (size_t)((byte const*)&m_parentInstance.offset - (byte const*)this);
+    Int64 parentOffset = 0;
+    Int64 offsetToParentInstance = (Int64)((byte const*)&m_parentInstance.offset - (byte const*)this);
     memcpy (managedBuffer + offsetToParentInstance, &parentOffset, sizeof (parentOffset));
 
     // store the current offset in m_structInstances.vectorP - this points to the begining of the StructEntryArray data
@@ -558,8 +558,7 @@ void    MemoryECInstanceBase::UpdateStructArrayOffsets (byte const* gapAddress, 
     byte*   arrayAddress      =  arrayCountAddress + sizeof(UInt32) + sizeof(size_t);
     size_t* offsetToEndAddress = (size_t*)(arrayCountAddress + sizeof(UInt32));
 
-    Int64   offsetToEndOfInstance = _GetBaseObjectSize ();
-    thisAddress = (const_cast<byte*>(_GetData ()) - offsetToEndOfInstance);
+    thisAddress = GetAddressOfInstanceFromAddressOfPropertyData ();
     byte *  endAddress = thisAddress + *offsetToEndAddress;
 
     // if this instance or supporting struct instance have changed size then update the offset to the end of the instance.
@@ -576,6 +575,9 @@ void    MemoryECInstanceBase::UpdateStructArrayOffsets (byte const* gapAddress, 
     size_t  newOffset;
     bool    updateOffset       = false;
 
+    // calculate address of parent instance so we can update offsets
+    Int64 parentBaseAddress = (Int64) GetAddressOfInstanceFromAddressOfPropertyData ();
+
     // find the entry that has changed size and update any subsequent StructArrayEntry offsets
     instanceArray = (StructArrayEntry*)(const_cast<byte*>(arrayAddress));
     for (size_t i = 0; i<numEntries; i++)
@@ -583,19 +585,22 @@ void    MemoryECInstanceBase::UpdateStructArrayOffsets (byte const* gapAddress, 
         StructArrayEntry* entry                 = &instanceArray[i];
         byte*             baseAddress           = (byte*)entry;
 
+        if (0 != *baseAddress)
+            {
+            // update the instance's offset to parent instance
+            byte* currentInstanceAddress = ((byte*)entry) + (size_t)(entry->structInstance.get ());
+            IECInstanceP iecInstanceP = (IECInstanceP) const_cast<byte*>(currentInstanceAddress);
+            MemoryECInstanceBase* mbInstance = iecInstanceP->GetAsMemoryECInstance ();
+            if (NULL != mbInstance && 0 != mbInstance->m_parentInstance.offset)
+                mbInstance->m_parentInstance.offset = parentBaseAddress - (Int64)mbInstance;
+            }
+
         if (updateOffset)
             {
             size_t   currentInstanceOffset = (size_t)(entry->structInstance.get());
 
             newOffset = currentInstanceOffset + resizeAmount;
             memcpy (&entry->structInstance, &newOffset, sizeof(newOffset));
-
-            // update the instance's offset to parent instance (this)
-            byte* currentInstanceAddress = ((byte*)entry) + currentInstanceOffset;
-            IECInstanceP iecInstanceP = (IECInstanceP) const_cast<byte*>(currentInstanceAddress);
-            MemoryECInstanceBase* mbInstance = iecInstanceP->GetAsMemoryECInstance ();
-            if (NULL != mbInstance)
-                mbInstance->m_parentInstance.offset += resizeAmount;
             
             continue;
             }
@@ -676,17 +681,20 @@ void    MemoryECInstanceBase::RemoveGapFromStructArrayEntries (byte const* gapAd
         byte*             baseAddress           = (byte*)entry;
         size_t            currentInstanceOffset = (size_t)(entry->structInstance.get());
 
+        if (0 != *baseAddress)
+            {
+            // update the instance's offset to parent instance
+            byte* currentInstanceAddress = ((byte*)entry) + (size_t)(entry->structInstance.get ());
+            IECInstanceP iecInstanceP = (IECInstanceP) const_cast<byte*>(currentInstanceAddress);
+            MemoryECInstanceBase* mbInstance = iecInstanceP->GetAsMemoryECInstance ();
+            if (NULL != mbInstance && 0 != mbInstance->m_parentInstance.offset)
+                mbInstance->m_parentInstance.offset = parentBaseAddress - (Int64)mbInstance;
+            }
+
         if (updateOffset)
             {
             newOffset = currentInstanceOffset - resizeAmount;
             memcpy (&entry->structInstance, &newOffset, sizeof(newOffset));
-
-            // update the instance's offset to parent instance (this)
-            byte* currentInstanceAddress = (byte*)entry + currentInstanceOffset;
-            IECInstanceP iecInstanceP = (IECInstanceP) const_cast<byte*>(currentInstanceAddress);
-            MemoryECInstanceBase* mbInstance = iecInstanceP->GetAsMemoryECInstance ();
-            if (NULL != mbInstance)
-                mbInstance->m_parentInstance.offset += resizeAmount;
 
             continue;
             }
@@ -798,6 +806,19 @@ ECObjectsStatus           MemoryECInstanceBase::_GrowAllocation (UInt32 bytesNee
         Int64 offsetToStructArrayVector = m_structInstances.offset + data.gapSize;
         m_structInstances.offset = offsetToStructArrayVector;
 
+        // Note the above only works if the managed buffer has not already been reallocated; otherwise it will copy from the reallocated instance, not 'this'
+        // so we must also update struct instances offset in reallocated instance if one exists...
+        MemoryECInstanceBase* currentInstance = (MemoryECInstanceBase*) GetAddressOfInstanceFromAddressOfPropertyData ();
+        if (this != currentInstance)
+            {
+            Int64 deltaFromDataToStructs = offsetToStructArrayVector - m_data.offset;
+            Int64 deltaFromBaseToData = _GetBaseObjectSize () + m_perPropertyFlagsHolder.numPerPropertyFlagsEntries*sizeof(UInt32);
+            currentInstance->m_structInstances.offset = deltaFromBaseToData + deltaFromDataToStructs;
+
+            // for the same reason, must update m_bytesAllocated before we invoke the callback in order for it to be correctly copied
+            currentInstance->m_bytesAllocated = m_bytesAllocated + (UInt32)data.gapSize;
+            }
+
         // update the byte allocated so it will be correct in the copied instance.
         m_bytesAllocated += (UInt32)data.gapSize;
 
@@ -879,6 +900,9 @@ ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueC
     IECInstancePtr p;
     ECValue binaryValue (PRIMITIVETYPE_Binary);
     m_structValueId++;
+
+    DEBUG_EXPECT (NULL == GetAddressOfStructArrayEntry (m_structValueId));
+
     if (v.IsNull())
         {
         p = NULL;
@@ -933,7 +957,7 @@ ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueC
         byte*   entryAddress           =  arrayAddress + sizeof(StructArrayEntry)*arrayCount;
 
         // if we're in a managed instance, can't assume that (dataAddress - offsetToData) points to the instance containing the *current* buffer, need to calculate its address
-        byte* structInstanceAddress = (dataAddress - GetBaseObjectSize ()) + *endOffsetP;
+        byte* structInstanceAddress = GetAddressOfInstanceFromAddressOfPropertyData () + *endOffsetP;
 
         MemoryCallbackData data;
         data.dataAddress        = dataAddress;
@@ -1000,9 +1024,9 @@ ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueC
             m_perPropertyFlagsHolder.perPropertyFlags.offset += deltaOffset;
 
             // set offset to parent instance in new struct instance data
-            mbStructInstance = (MemoryECInstanceBase*)newStructInstanceOffset;
-            size_t parentBaseAddress = (size_t)(data.newDataAddress - _GetBaseObjectSize ());
-            mbStructInstance->m_parentInstance.offset = newStructInstanceOffset - parentBaseAddress;
+            mbStructInstance = (MemoryECInstanceBase*)newStructInstanceLocation;
+            Int64 parentBaseAddress = (Int64) GetAddressOfInstanceFromAddressOfPropertyData ();
+            mbStructInstance->m_parentInstance.offset = parentBaseAddress - (Int64)newStructInstanceLocation;
 
             return ECOBJECTS_STATUS_Success;
             }
@@ -1124,6 +1148,19 @@ byte const *        MemoryECInstanceBase::GetData () const
 byte*        MemoryECInstanceBase::GetAddressOfPropertyData () const
     {
     return const_cast<byte*>(_GetData());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* When embedded in a managed instance, get the base address of the instance which holds
+* the property data. This may be different than the 'this' pointer if reallocation
+* has occurred.
+* @bsimethod                                                    Paul.Connelly   10/11
++---------------+---------------+---------------+---------------+---------------+------*/
+byte*       MemoryECInstanceBase::GetAddressOfInstanceFromAddressOfPropertyData () const
+    {
+    byte*   dataAddress = GetAddressOfPropertyData ();
+    Int64   offsetToData = GetBaseObjectSize () + (m_perPropertyFlagsHolder.numPerPropertyFlagsEntries * sizeof (UInt32));
+    return dataAddress - offsetToData;
     }
 
 /*---------------------------------------------------------------------------------**//**

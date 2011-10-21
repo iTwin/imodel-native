@@ -64,7 +64,7 @@ struct PerPropertyFlagsHolder
 union ParentInstanceUnion
     {
     MemoryECInstanceBase const *    parentInstance;
-    size_t                          offset;
+    Int64                           offset;
     };
 
 /*=================================================================================**//**
@@ -91,13 +91,14 @@ private:
     IECInstancePtr          GetStructArrayInstance (StructValueIdentifier structValueId) const;
     StructArrayEntry const* GetAddressOfStructArrayEntry (StructValueIdentifier key) const;
     byte*                   GetAddressOfPropertyData () const;
+    byte*                   GetAddressOfInstanceFromAddressOfPropertyData () const;
     //void                    UpdateStructArrayOffsets (byte const* gapAddress, bool& updateOffset, bool& updateOffsetToEnd, size_t resizeAmount);
     void                    UpdateStructArrayOffsets (byte const* gapAddress, size_t resizeAmount);
     ECObjectsStatus         RemoveStructStructArrayEntry (StructValueIdentifier structValueId, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP);
     void                    RemoveGapFromStructArrayEntries (byte const* gapAddress, size_t resizeAmount);
     void                    WalkSupportingStructs (WStringR completeString, WCharCP prefix) const;
     void                    InitializePerPropertyFlags (ClassLayoutCR classLayout, UInt8 numBitsPerProperty);
-
+ 
  //__PUBLISH_SECTION_START__
 
 protected:
