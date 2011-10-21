@@ -39,7 +39,7 @@ const UInt32 BITS_PER_FLAGSBITMASK = (sizeof(UInt32) * 8);
 +---------------+---------------+---------------+---------------+---------------+------*/
 MemoryECInstanceBase::MemoryECInstanceBase (byte * data, UInt32 size, ClassLayoutCR classLayout, bool allowWritingDirectlyToInstanceMemory, UInt8 numBitsPerPropertyFlag, MemoryECInstanceBase const* parentInstance) :
         MemoryInstanceSupport (allowWritingDirectlyToInstanceMemory),
-        m_bytesAllocated(size), m_structValueId (0)
+        m_bytesAllocated(size)
     {
     m_data.address = data;
     m_isInManagedInstance = false;
@@ -54,7 +54,7 @@ MemoryECInstanceBase::MemoryECInstanceBase (byte * data, UInt32 size, ClassLayou
 +---------------+---------------+---------------+---------------+---------------+------*/
 MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory, UInt8 numBitsPerPropertyFlag, MemoryECInstanceBase const* parentInstance) :
         MemoryInstanceSupport (allowWritingDirectlyToInstanceMemory),
-        m_bytesAllocated(0), m_structValueId (0)
+        m_bytesAllocated(0)
     {
     m_isInManagedInstance = false;
     m_structInstances.vectorP = NULL;
@@ -203,6 +203,37 @@ ECObjectsStatus          MemoryECInstanceBase::IsPerPropertyBitSet (bool& isSet,
     UInt32 bitValue = 1 << bit;
 
     isSet = (bitValue == (addressOfPerPropertyFlags[offset] & bitValue));
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Paul.Connelly                   10/11
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus         MemoryECInstanceBase::IsAnyPerPropertyBitSet (bool& isSet, UInt8 bitIndex) const
+    {
+    if (bitIndex >= m_perPropertyFlagsHolder.numBitsPerProperty)
+        return ECOBJECTS_STATUS_InvalidIndexForPerPropertFlag;
+
+    UInt32* addressOfPerPropertyFlags = m_perPropertyFlagsHolder.perPropertyFlags.address;
+    if (NULL == addressOfPerPropertyFlags)
+        return ECOBJECTS_STATUS_Error;
+
+    if (m_isInManagedInstance)
+        {
+        byte const* thisAddress = (byte const*)this;
+        addressOfPerPropertyFlags = (UInt32*)(thisAddress + m_perPropertyFlagsHolder.perPropertyFlags.offset);
+        }
+
+    isSet = false;
+    for (UInt32 i = 0; i < m_perPropertyFlagsHolder.numPerPropertyFlagsEntries; i++)
+        {
+        if (0 != addressOfPerPropertyFlags[i])
+            {
+            isSet = true;
+            break;
+            }
+        }
 
     return ECOBJECTS_STATUS_Success;
     }
@@ -673,6 +704,9 @@ void    MemoryECInstanceBase::RemoveGapFromStructArrayEntries (byte const* gapAd
     size_t  newOffset;
     bool    updateOffset       = false;
 
+    // calculate address of parent instance so we can update offsets
+    Int64 parentBaseAddress = (Int64) GetAddressOfInstanceFromAddressOfPropertyData ();
+
     // find the entry that has changed size and update any subsequent StructArrayEntry offsets
     instanceArray = (StructArrayEntry*)(const_cast<byte*>(arrayAddress));
     for (size_t i = 0; i<numEntries; i++)
@@ -899,9 +933,9 @@ ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueC
     {
     IECInstancePtr p;
     ECValue binaryValue (PRIMITIVETYPE_Binary);
-    m_structValueId++;
+    StructValueIdentifier structValueId = GetMaxStructValueIdentifier () + 1;
 
-    DEBUG_EXPECT (NULL == GetAddressOfStructArrayEntry (m_structValueId));
+    DEBUG_EXPECT (NULL == GetAddressOfStructArrayEntry (structValueId));
 
     if (v.IsNull())
         {
@@ -911,7 +945,7 @@ ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueC
     else
         {
         p = v.GetStruct();    
-        binaryValue.SetBinary ((const byte *)&(m_structValueId), sizeof (StructValueIdentifier));
+        binaryValue.SetBinary ((const byte *)&(structValueId), sizeof (StructValueIdentifier));
         }
    
     size_t offsetToData;
@@ -1011,7 +1045,7 @@ ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueC
             byte*             newStructInstanceLocation = newEntryAddress + newStructInstanceOffset;
                                                                          
             // set the new struct array entry structValueIdentifier into the reallocated buffer
-            newEntry->structValueIdentifier = m_structValueId;
+            newEntry->structValueIdentifier = structValueId;
 
             // set the new struct array entry instance offset into the reallocated buffer
             newStructInstanceOffset += offsetFromConcreteToIECInstance;
@@ -1051,12 +1085,51 @@ ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueC
         if (NULL == m_structInstances.vectorP)
             m_structInstances.vectorP = new StructInstanceVector ();
 
-        m_structInstances.vectorP->push_back (StructArrayEntry (m_structValueId, p));
+        m_structInstances.vectorP->push_back (StructArrayEntry (structValueId, p));
         }
 
     return ECOBJECTS_STATUS_Success; 
     }    
-    
+  
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Paul.Connelly                   10/11
++---------------+---------------+---------------+---------------+---------------+------*/
+StructValueIdentifier MemoryECInstanceBase::GetMaxStructValueIdentifier () const
+    {
+    if (!m_structInstances.vectorP)
+        return 0;
+
+    StructArrayEntry const* instanceArray = NULL;
+    size_t numEntries = 0;
+
+    if (!m_isInManagedInstance)
+        {
+        numEntries = m_structInstances.vectorP->size();
+        instanceArray = &(*m_structInstances.vectorP)[0];
+        }
+    else
+        {
+        byte const* baseAddress = (byte const*)this;
+        byte const* arrayCountAddress = baseAddress + m_structInstances.offset;
+        byte const* arrayAddress = arrayCountAddress + sizeof(UInt32) + sizeof(size_t);
+
+        UInt32 const* arrayCount = (UInt32 const*)arrayCountAddress;
+        numEntries = *arrayCount;
+        instanceArray = (StructArrayEntry const*)arrayAddress;
+        }
+
+    // we cannot simply use the size of the array because structs may have been removed at some point - so we must walk the array and find the highest ID
+    StructValueIdentifier maxId = 0;
+    for (size_t i = 0; i < numEntries; i++)
+        {
+        StructArrayEntry const& entry = instanceArray[i];
+        if (entry.structValueIdentifier > maxId)
+            maxId = entry.structValueIdentifier;
+        }
+
+    return maxId;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  12/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1352,6 +1425,9 @@ ECObjectsStatus MemoryECInstanceBase::_RemoveStructArrayElementsFromMemory (Clas
     return RemoveArrayElementsFromMemory (classLayout, propertyLayout, removeIndex, removeCount);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Paul.Connelly                   10/11
++---------------+---------------+---------------+---------------+---------------+------*/
 MemoryECInstanceBase const* MemoryECInstanceBase::GetParentInstance () const
     {
     if (!m_isInManagedInstance)

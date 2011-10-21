@@ -83,13 +83,13 @@ private:
     InstanceDataUnion       m_data;
     UInt32                  m_bytesAllocated;
     bool                    m_isInManagedInstance;
-    StructValueIdentifier   m_structValueId;
     SupportingInstanceUnion m_structInstances;
     ParentInstanceUnion     m_parentInstance;
 
 //__PUBLISH_SECTION_END__
     IECInstancePtr          GetStructArrayInstance (StructValueIdentifier structValueId) const;
     StructArrayEntry const* GetAddressOfStructArrayEntry (StructValueIdentifier key) const;
+    StructValueIdentifier   GetMaxStructValueIdentifier () const;
     byte*                   GetAddressOfPropertyData () const;
     byte*                   GetAddressOfInstanceFromAddressOfPropertyData () const;
     //void                    UpdateStructArrayOffsets (byte const* gapAddress, bool& updateOffset, bool& updateOffsetToEnd, size_t resizeAmount);
@@ -141,6 +141,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT void                     FixupStructArrayOffsets (int offsetToGap, size_t resizeAmount, bool removingGap);
     ECOBJECTS_EXPORT ECObjectsStatus          RemoveStructArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount, EmbeddedInstanceCallbackP memoryCallback);
     ECOBJECTS_EXPORT ECObjectsStatus          IsPerPropertyBitSet (bool& isSet, UInt8 bitIndex, UInt32 propertyIndex) const;
+    ECOBJECTS_EXPORT ECObjectsStatus          IsAnyPerPropertyBitSet (bool& isSet, UInt8 bitIndex) const;
     ECOBJECTS_EXPORT ECObjectsStatus          SetPerPropertyBit (UInt8 bitIndex, UInt32 propertyIndex, bool setBit);
     ECOBJECTS_EXPORT void                     ClearAllPerPropertyFlags ();
     ECOBJECTS_EXPORT UInt8                    GetNumBitsInPerPropertyFlags ();
