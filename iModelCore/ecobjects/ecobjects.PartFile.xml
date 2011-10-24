@@ -96,9 +96,7 @@
     <Part Name="Tests">
         <SubPart PartName="ECObjectsPublishedTests" />
         <SubPart PartName="ECObjectsNonPublishedTests" />
-      <!--
         <SubPart PartName="ECObjectsPerformanceTests" />
-        -->
     </Part>
 
     <Part Name="RunECObjectsTests" BMakeFile="test\ECObjectsNativeTest.run.mke">
