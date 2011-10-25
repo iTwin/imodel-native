@@ -157,7 +157,7 @@ void IECInstance::Debug_DumpAllocationStats(WCharCP prefix)
     if (!prefix)
         prefix = L"";
 
-    ECObjectsLogger::Log()->debugv (L"%s Live IECInstances: %d, Total Allocs: %d, TotalFrees: %d", prefix, g_currentLive, g_totalAllocs, g_totalFrees);
+    ECObjectsLogger::Log()->debugv (L"%ls Live IECInstances: %d, Total Allocs: %d, TotalFrees: %d", prefix, g_currentLive, g_totalAllocs, g_totalFrees);
 #ifdef DEBUG_INSTANCE_LEAKS
     FOR_EACH (DebugInstanceLeakMap::value_type leak, g_debugInstanceLeakMap)
         {
@@ -198,7 +198,7 @@ void IECInstance::Debug_ReportLeaks(bvector<WString>& classNamesToExclude)
         if (IsExcluded (className, classNamesToExclude))
             continue;
         
-        ECObjectsLogger::Log()->errorv (L"Leaked the %dth IECInstance that was allocated: ECClass=%s, InstanceId=%s", 
+        ECObjectsLogger::Log()->errorv (L"Leaked the %dth IECInstance that was allocated: ECClass=%ls, InstanceId=%ls", 
             orderOfAllocation, className.c_str(), leakedInstance->GetInstanceId().c_str());
         //leakedInstance->Dump();
         }
@@ -1347,7 +1347,7 @@ EC::ECEnablerP                  ECInstanceInteropHelper::GetEnablerForStructArra
     EC::StandaloneECEnablerPtr standaloneEnabler = structArrayEnabler->GetEnablerForStructArrayMember (schemaName, className);
     if (standaloneEnabler.IsNull())
         {
-        ECObjectsLogger::Log()->errorv (L"Unable to locate a standalone enabler for class %s", className);
+        ECObjectsLogger::Log()->errorv (L"Unable to locate a standalone enabler for class %ls", className);
         return NULL;
         }
 
@@ -1395,7 +1395,7 @@ ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (EC::ECValueAccess
     EC::StandaloneECEnablerPtr standaloneEnabler = structArrayEnabler.GetEnablerForStructArrayMember (schemaName, className);
     if (standaloneEnabler.IsNull())
         {
-        ECObjectsLogger::Log()->errorv (L"Unable to locate a standalone enabler for class \" %s \"", className);
+        ECObjectsLogger::Log()->errorv (L"Unable to locate a standalone enabler for class \" %ls \"", className);
         return ECOBJECTS_STATUS_EnablerNotFound;
         }
 
@@ -1429,7 +1429,7 @@ ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (EC::ECValueAccess
         ::UInt32 numToInsert = (index + 1) - arrayCount;
         if (EC::ECOBJECTS_STATUS_Success != parentNativeInstance->AddArrayElements (wcharAccessString, numToInsert))
             {
-            ECObjectsLogger::Log()->errorv(L"Unable to add array element(s) to native instance - access string \"%s\"", structArrayValueAccessor.GetManagedAccessString().c_str());
+            ECObjectsLogger::Log()->errorv(L"Unable to add array element(s) to native instance - access string \"%ls\"", structArrayValueAccessor.GetManagedAccessString().c_str());
             return ECOBJECTS_STATUS_UnableToAddStructArrayMember;
             }
 
@@ -2309,7 +2309,7 @@ InstanceReadStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr& ecInstance
     ECSchemaCP  schema = GetSchema();
     if (NULL == schema)
         {
-        ECObjectsLogger::Log()->errorv (L"Failed to locate ECSchema %s", m_fullSchemaName.c_str());
+        ECObjectsLogger::Log()->errorv (L"Failed to locate ECSchema %ls", m_fullSchemaName.c_str());
         return INSTANCE_READ_STATUS_ECSchemaNotFound;
         }
 
@@ -2337,14 +2337,14 @@ InstanceReadStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr& ecInstance
 
         if (!foundSchema)
             {
-            ECObjectsLogger::Log()->errorv (L"ECCustomAttribute '%s' is from ECSchema '%s', which either was not referenced from ECSchema '%s' or could not be found.", className, m_fullSchemaName.c_str(), schema->GetName().c_str());
+            ECObjectsLogger::Log()->errorv (L"ECCustomAttribute '%ls' is from ECSchema '%ls', which either was not referenced from ECSchema '%ls' or could not be found.", className, m_fullSchemaName.c_str(), schema->GetName().c_str());
             return INSTANCE_READ_STATUS_ECSchemaNotFound;
             }
         }
 
     if (NULL == foundClass)
         {
-        ECObjectsLogger::Log()->errorv (L"Failed to find ECClass %s in %s", className, m_fullSchemaName.c_str());
+        ECObjectsLogger::Log()->errorv (L"Failed to find ECClass %ls in %ls", className, m_fullSchemaName.c_str());
         return INSTANCE_READ_STATUS_ECClassNotFound;
         }
 
@@ -2434,13 +2434,13 @@ InstanceReadStatus   GetInstance (ECClassCP* ecClass, IECInstancePtr& ecInstance
                 return TranslateStatus (status);
             WCharCP  schemaName = foundClass->GetSchema().GetName().c_str();
             if (0 != wcsncmp (schemaName, nameSpace, wcslen (schemaName)))
-                ECObjectsLogger::Log()->warningv(L"ECInstance of (%s) has xmlns (%s) that disagrees with its ECSchemaName (%s)", 
+                ECObjectsLogger::Log()->warningv(L"ECInstance of (%ls) has xmlns (%ls) that disagrees with its ECSchemaName (%ls)", 
                     foundClass->GetName().c_str(), nameSpace, schemaName);
             }
 
         else
             {
-            ECObjectsLogger::Log()->warningv(L"ECInstance of (%s) has an unrecognized attribute (%s)", 
+            ECObjectsLogger::Log()->warningv(L"ECInstance of (%ls) has an unrecognized attribute (%ls)", 
                     foundClass->GetName().c_str(), attributeName);
             }
 
@@ -2517,7 +2517,7 @@ InstanceReadStatus   ReadProperty (ECClassCR ecClass, IECInstanceP ecInstance, W
     ECPropertyP ecProperty;
     if (NULL == (ecProperty = ecClass.GetPropertyP (propertyName)))
         {
-        ECObjectsLogger::Log()->warningv (L"No ECProperty '%s' found in ECClass '%s'. Value will be ignored.", propertyName, ecClass.GetName().c_str());
+        ECObjectsLogger::Log()->warningv (L"No ECProperty '%ls' found in ECClass '%ls'. Value will be ignored.", propertyName, ecClass.GetName().c_str());
         // couldn't find it, skip the rest of the property.
         return SkipToElementEnd ();
         }
@@ -3239,7 +3239,7 @@ InstanceWriteStatus     WriteInstance (IECInstanceCR instance, bool isCompleteXm
     // start by writing the name of the class as an element, with the schema name as the namespace.
     size_t size = wcslen(ecSchema.GetName().c_str()) + 8;
     WCharP fullSchemaName = (wchar_t*)malloc(size * sizeof(wchar_t));
-    swprintf(fullSchemaName, size, L"%s.%02d.%02d", ecSchema.GetName().c_str(), ecSchema.GetVersionMajor(), ecSchema.GetVersionMinor());
+    BeStringUtilities::Snwprintf(fullSchemaName, size, L"%ls.%02d.%02d", ecSchema.GetName().c_str(), ecSchema.GetVersionMajor(), ecSchema.GetVersionMinor());
     if (S_OK != (status = m_xmlWriter->WriteStartElement (NULL, ecClass.GetName().c_str(), fullSchemaName)))
         {
         free(fullSchemaName);
@@ -3400,39 +3400,39 @@ InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType pr
 
         case PRIMITIVETYPE_DateTime:
             {
-            swprintf (outString, L"%I64d", ecValue.GetDateTimeTicks());
+            BeStringUtilities::Snwprintf (outString, L"%I64d", ecValue.GetDateTimeTicks());
             break;
             }
 
         case PRIMITIVETYPE_Double:
             {
-            swprintf (outString, L"%.13g", ecValue.GetDouble());
+            BeStringUtilities::Snwprintf (outString, L"%.13g", ecValue.GetDouble());
             break;
             }
 
         case PRIMITIVETYPE_Integer:
             {
-            swprintf (outString, L"%d", ecValue.GetInteger());
+            BeStringUtilities::Snwprintf (outString, L"%d", ecValue.GetInteger());
             break;
             }
 
         case PRIMITIVETYPE_Long:
             {
-            swprintf (outString, L"%I64d", ecValue.GetLong());
+            BeStringUtilities::Snwprintf (outString, L"%I64d", ecValue.GetLong());
             break;
             }
 
         case PRIMITIVETYPE_Point2D:
             {
             DPoint2d    point2d = ecValue.GetPoint2D();
-            swprintf (outString, L"%.13g,%.13g", point2d.x, point2d.y);
+            BeStringUtilities::Snwprintf (outString, L"%.13g,%.13g", point2d.x, point2d.y);
             break;
             }
 
         case PRIMITIVETYPE_Point3D:
             {
             DPoint3d    point3d = ecValue.GetPoint3D();
-            swprintf (outString, L"%.13g,%.13g,%.13g", point3d.x, point3d.y, point3d.z);
+            BeStringUtilities::Snwprintf (outString, L"%.13g,%.13g,%.13g", point3d.x, point3d.y, point3d.z);
             break;
             }
 
@@ -3754,7 +3754,7 @@ InstanceReadStatus      GetInstance (ECClassCP& ecClass, IECInstancePtr& ecInsta
     ECSchemaCP  schema = GetSchema();
     if (NULL == schema)
         {
-        ECObjectsLogger::Log()->errorv (L"Failed to locate ECSchema %s", m_fullSchemaName.c_str());
+        ECObjectsLogger::Log()->errorv (L"Failed to locate ECSchema %ls", m_fullSchemaName.c_str());
         return INSTANCE_READ_STATUS_ECSchemaNotFound;
         }
 
@@ -3780,7 +3780,7 @@ InstanceReadStatus      GetInstance (ECClassCP& ecClass, IECInstancePtr& ecInsta
         }
     if (NULL == foundClass)
         {
-        ECObjectsLogger::Log()->errorv (L"Failed to find ECClass %s in %s", className, m_fullSchemaName.c_str());
+        ECObjectsLogger::Log()->errorv (L"Failed to find ECClass %ls in %ls", className.c_str(), m_fullSchemaName.c_str());
         return INSTANCE_READ_STATUS_ECClassNotFound;
         }
 
@@ -3867,7 +3867,7 @@ InstanceReadStatus   ReadPropertyValue (ECClassCR ecClass, IECInstanceP ecInstan
     ECPropertyP ecProperty;
     if (NULL == (ecProperty = ecClass.GetPropertyP (propertyName)))
         {
-        ECObjectsLogger::Log()->warningv (L"No ECProperty '%s' found in ECClass '%s'. Value will be ignored.", propertyName, ecClass.GetName().c_str());
+        ECObjectsLogger::Log()->warningv (L"No ECProperty '%ls' found in ECClass '%ls'. Value will be ignored.", propertyName.c_str(), ecClass.GetName().c_str());
         return INSTANCE_READ_STATUS_PropertyNotFound;
         }
 
@@ -3961,7 +3961,7 @@ InstanceReadStatus   ReadArrayPropertyValue (ArrayECPropertyP arrayProperty, IEC
             {
             if (!ValidateArrayPrimitiveType (arrayValueNode->GetName(), memberType))
                 {
-                ECObjectsLogger::Log()->warningv(L"Incorrectly formatted array element found in array %ls.  Expected: %hs  Found: %hs", accessString, GetPrimitiveTypeString (memberType), arrayValueNode->GetName());
+                ECObjectsLogger::Log()->warningv(L"Incorrectly formatted array element found in array %ls.  Expected: %hs  Found: %hs", accessString.c_str(), GetPrimitiveTypeString (memberType), arrayValueNode->GetName());
                 continue;
                 }
 
@@ -4301,7 +4301,7 @@ InstanceWriteStatus     WriteInstance (IECInstanceCR ecInstance, bool writeInsta
     size_t      size            = wcslen(ecSchema.GetName().c_str()) + 8;
     WCharP      fullSchemaName  = (wchar_t*)malloc(size * sizeof(wchar_t));
 
-    swprintf (fullSchemaName, size, L"%s.%02d.%02d", ecSchema.GetName().c_str(), ecSchema.GetVersionMajor(), ecSchema.GetVersionMinor());
+    BeStringUtilities::Snwprintf (fullSchemaName, size, L"%ls.%02d.%02d", ecSchema.GetName().c_str(), ecSchema.GetVersionMajor(), ecSchema.GetVersionMinor());
     Utf8String  utf8ClassName (className.c_str());
     BeXmlNodeP  instanceNode = m_xmlDom.AddNewElement (utf8ClassName.c_str(), NULL, m_rootNode);
     instanceNode->AddAttributeStringValue (XMLNS_ATTRIBUTE, fullSchemaName);
@@ -4422,39 +4422,39 @@ InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType pr
 
         case PRIMITIVETYPE_DateTime:
             {
-            swprintf (outString, L"%I64d", ecValue.GetDateTimeTicks());
+            BeStringUtilities::Snwprintf (outString, L"%I64d", ecValue.GetDateTimeTicks());
             break;
             }
 
         case PRIMITIVETYPE_Double:
             {
-            swprintf (outString, L"%.13g", ecValue.GetDouble());
+            BeStringUtilities::Snwprintf (outString, L"%.13g", ecValue.GetDouble());
             break;
             }
 
         case PRIMITIVETYPE_Integer:
             {
-            swprintf (outString, L"%d", ecValue.GetInteger());
+            BeStringUtilities::Snwprintf (outString, L"%d", ecValue.GetInteger());
             break;
             }
 
         case PRIMITIVETYPE_Long:
             {
-            swprintf (outString, L"%I64d", ecValue.GetLong());
+            BeStringUtilities::Snwprintf (outString, L"%I64d", ecValue.GetLong());
             break;
             }
 
         case PRIMITIVETYPE_Point2D:
             {
             DPoint2d    point2d = ecValue.GetPoint2D();
-            swprintf (outString, L"%.13g,%.13g", point2d.x, point2d.y);
+            BeStringUtilities::Snwprintf (outString, L"%.13g,%.13g", point2d.x, point2d.y);
             break;
             }
 
         case PRIMITIVETYPE_Point3D:
             {
             DPoint3d    point3d = ecValue.GetPoint3D();
-            swprintf (outString, L"%.13g,%.13g,%.13g", point3d.x, point3d.y, point3d.z);
+            BeStringUtilities::Snwprintf (outString, L"%.13g,%.13g,%.13g", point3d.x, point3d.y, point3d.z);
             break;
             }
 
