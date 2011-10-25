@@ -11,6 +11,9 @@
 #include "ECObjects.h"
 #include <Geom/GeomApi.h>
 
+BENTLEY_TYPEDEFS (BeXmlDom)
+BENTLEY_TYPEDEFS (BeXmlNode)
+
 BEGIN_BENTLEY_EC_NAMESPACE
 
 //! @addtogroup ECObjectsGroup
@@ -193,13 +196,16 @@ public:
     ECOBJECTS_EXPORT static void        Debug_GetAllocationStats (int* currentLive, int* totalAllocs, int* totalFrees);
     ECOBJECTS_EXPORT static void        Debug_ReportLeaks (bvector<WString>& classNamesToExclude);
 
-    ECOBJECTS_EXPORT static InstanceReadStatus   ReadFromXmlFile   (IECInstancePtr& ecInstance, WCharCP fileName, ECInstanceReadContextR context);
-    ECOBJECTS_EXPORT static InstanceReadStatus   ReadFromXmlStream (IECInstancePtr& ecInstance, IStreamP stream, ECInstanceReadContextR context);
-    ECOBJECTS_EXPORT static InstanceReadStatus   ReadFromXmlString (IECInstancePtr& ecInstance, WCharCP xmlString, ECInstanceReadContextR context);
+    ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromXmlFile   (IECInstancePtr& ecInstance, WCharCP fileName,   ECInstanceReadContextR context);
+    ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromXmlStream (IECInstancePtr& ecInstance, IStreamP stream,    ECInstanceReadContextR context);
+    ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromXmlString (IECInstancePtr& ecInstance, WCharCP xmlString,  ECInstanceReadContextR context);
+    ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromBeXmlDom  (IECInstancePtr& ecInstance, BeXmlDomR xmlNode,  ECInstanceReadContextR context);
+    ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromBeXmlNode (IECInstancePtr& ecInstance, BeXmlNodeR xmlNode, ECInstanceReadContextR context);
 
-    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlFile   (WCharCP fileName, bool isCompleteXmlDocument, bool writeInstanceId);
-    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlStream (IStreamP stream, bool isCompleteXmlDocument, bool writeInstanceId);
-    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlString (WStringR ecInstanceXml, bool isCompleteXmlDocument, bool writeInstanceId);
+    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlFile   (WCharCP fileName, bool isStandAlone, bool writeInstanceId, bool utf16);
+    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlStream (IStreamP stream, bool isStandAlone, bool writeInstanceId, bool utf16);
+    ECOBJECTS_EXPORT InstanceWriteStatus        WriteToXmlString (WString & ecInstanceXml, bool isStandAlone, bool writeInstanceId);
+    ECOBJECTS_EXPORT InstanceWriteStatus        WriteToBeXmlNode (BeXmlNodeR xmlNode);
     };
     
 //=======================================================================================    
@@ -285,14 +291,10 @@ struct ECInstanceInteropHelper
 
     ECOBJECTS_EXPORT static bool            IsPropertyReadOnly (IECInstanceCR, ECValueAccessorR);
     ECOBJECTS_EXPORT static EC::ECEnablerP  GetEnablerForStructArrayEntry (IECInstanceR instance, ECValueAccessorR arrayMemberAccessor, WCharCP schemaName, WCharCP className);
-    ECOBJECTS_EXPORT static bvector<EC::ECValueAccessor> GetChildValueAccessors (IECInstanceCR instance, EC::ECValueAccessor parentAccessor, bool includeNullValues);
-    ECOBJECTS_EXPORT static bvector<EC::ECStructArrayMemberAccessor> GetStructArrayMemberAccessors (IECInstanceCR instance, EC::ECValueAccessor parentAccessor, bool includeNullValues);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetStructArrayEntry (EC::ECValueAccessorR structArrayEntryValueAccessor, IECInstanceR instance, UInt32 index, EC::ECValueAccessorCR structArrayValueAccessor, 
+                                                                  bool createPropertyIfNotFound, WCharCP wcharAccessString, WCharCP schemaName, WCharCP className);
 
     ECOBJECTS_EXPORT static PrimitiveType   GetPrimitiveType       (IECInstanceCR instance, int propertyIndex);
-#ifdef NOT_USED
-    ECOBJECTS_EXPORT static ValueKind       GetValueKind           (IECInstanceCR instance, int propertyIndex);
-    ECOBJECTS_EXPORT static ArrayKind       GetArrayKind           (IECInstanceCR instance, int propertyIndex);
-#endif
     ECOBJECTS_EXPORT static bool            IsStructArray          (IECInstanceCR instance, int propertyIndex);
     ECOBJECTS_EXPORT static bool            IsArray                (IECInstanceCR instance, int propertyIndex);
     ECOBJECTS_EXPORT static bool            IsCalculatedECProperty (IECInstanceCR instance, int propertyIndex);

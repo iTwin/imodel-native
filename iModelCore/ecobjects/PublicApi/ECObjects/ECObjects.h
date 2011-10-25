@@ -39,24 +39,6 @@
             typedef _name_ const&    _name_##CR; \
         END_BENTLEY_EC_NAMESPACE
 
-/*__PUBLISH_SECTION_END__*/
-// These BENTLEY_EXCLUDE_WINDOWS_HEADERS shenanigans are necessary to allow ECObjects headers to be included without sucking in conflicting windows headers
-// and to help us split off the non-portable code and to move to a different XML parser
-#if !defined (_WIN32) || defined (BENTLEY_EXCLUDE_WINDOWS_HEADERS)
-/*__PUBLISH_SECTION_START__*/        
-    #define MSXML2_IXMLDOMNode      void *
-    #define MSXML2_IXMLDOMNodePtr   void *
-    #define MSXML2_IXMLDOMDocument2 void *
-    #define MSXML2_IXMLDOMElement   void *
-/*__PUBLISH_SECTION_END__*/
-#else
-    #define MSXML2_IXMLDOMNode      MSXML2::IXMLDOMNode
-    #define MSXML2_IXMLDOMNodePtr   MSXML2::IXMLDOMNodePtr
-    #define MSXML2_IXMLDOMDocument2 MSXML2::IXMLDOMDocument2
-    #define MSXML2_IXMLDOMElement   MSXML2::IXMLDOMElement
-#endif
-/*__PUBLISH_SECTION_START__*/
-
 EC_TYPEDEFS(ECValue);
 EC_TYPEDEFS(ECValueAccessor);
 EC_TYPEDEFS(ECValueAccessorPair);
@@ -153,7 +135,12 @@ enum ECObjectsStatus
     ECOBJECTS_STATUS_UnableToSetReadOnlyProperty                        = ECOBJECTS_ERROR_BASE + 0x1A,
     ECOBJECTS_STATUS_ArrayIndexDoesNotExist                             = ECOBJECTS_ERROR_BASE + 0x1B,
     ECOBJECTS_STATUS_PropertyValueMatchesNoChange                       = ECOBJECTS_ERROR_BASE + 0x1C,
-    ECOBJECTS_STATUS_InvalidIndexForPerPropertFlag                      = ECOBJECTS_ERROR_BASE + 0x19,
+    ECOBJECTS_STATUS_NoChildProperties                                  = ECOBJECTS_ERROR_BASE + 0x1D,
+    ECOBJECTS_STATUS_UnableToAllocateManagedMemory                      = ECOBJECTS_ERROR_BASE + 0x1E,
+    ECOBJECTS_STATUS_MemoryAllocationCallbackRequired                   = ECOBJECTS_ERROR_BASE + 0x1F,
+    ECOBJECTS_STATUS_UnableToAddStructArrayMember                       = ECOBJECTS_ERROR_BASE + 0x20,
+    ECOBJECTS_STATUS_UnableToSetStructArrayMemberInstance               = ECOBJECTS_ERROR_BASE + 0x21,
+    ECOBJECTS_STATUS_InvalidIndexForPerPropertFlag                      = ECOBJECTS_ERROR_BASE + 0x22,
     ECOBJECTS_STATUS_Error                                              = ECOBJECTS_ERROR_BASE + 0xFFF,
     }; 
 
@@ -163,11 +150,11 @@ enum ECObjectsStatus
 enum SchemaReadStatus
     {
     SCHEMA_READ_STATUS_Success                               = SUCCESS,
-    SCHEMA_READ_STATUS_FailedToInitializeMsmxl               = SCHEMA_READ_STATUS_BASE + 0x01,
     SCHEMA_READ_STATUS_FailedToParseXml                      = SCHEMA_READ_STATUS_BASE + 0x02,
     SCHEMA_READ_STATUS_InvalidECSchemaXml                    = SCHEMA_READ_STATUS_BASE + 0x03,
     SCHEMA_READ_STATUS_ReferencedSchemaNotFound              = SCHEMA_READ_STATUS_BASE + 0x04,
     SCHEMA_READ_STATUS_DuplicateSchema                       = SCHEMA_READ_STATUS_BASE + 0x05,
+    SCHEMA_READ_STATUS_InvalidPrimitiveType                  = SCHEMA_READ_STATUS_BASE + 0x06,
     };
 
 /*=================================================================================**//**
@@ -176,9 +163,9 @@ enum SchemaReadStatus
 enum SchemaWriteStatus
     {
     SCHEMA_WRITE_STATUS_Success                                 = SUCCESS,
-    SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl                 = SCHEMA_WRITE_STATUS_BASE + 0x01,
-    SCHEMA_WRITE_STATUS_FailedToSaveXml                         = SCHEMA_WRITE_STATUS_BASE + 0x02,
-    SCHEMA_WRITE_STATUS_FailedToCreateXml                       = SCHEMA_WRITE_STATUS_BASE + 0x03
+    SCHEMA_WRITE_STATUS_FailedToSaveXml                         = SCHEMA_WRITE_STATUS_BASE + 0x01,
+    SCHEMA_WRITE_STATUS_FailedToCreateXml                       = SCHEMA_WRITE_STATUS_BASE + 0x02,
+    SCHEMA_WRITE_STATUS_FailedToWriteFile                       = SCHEMA_WRITE_STATUS_BASE + 0x03,
     };
 
 /*=================================================================================**//**
@@ -210,10 +197,12 @@ enum InstanceReadStatus
     INSTANCE_READ_STATUS_BadPoint2dValue                     = INSTANCE_READ_STATUS_BASE + 38,
     INSTANCE_READ_STATUS_BadPoint3dValue                     = INSTANCE_READ_STATUS_BASE + 39,
     INSTANCE_READ_STATUS_BadArrayElement                     = INSTANCE_READ_STATUS_BASE + 40,
-    INSTANCE_READ_STATUS_CantSetValue                        = INSTANCE_READ_STATUS_BASE + 41,
-    INSTANCE_READ_STATUS_ECSchemaNotFound                    = INSTANCE_READ_STATUS_BASE + 42,
-    INSTANCE_READ_STATUS_UnableToGetStandaloneEnabler        = INSTANCE_READ_STATUS_BASE + 43,
-    INSTANCE_READ_STATUS_CommentOnly                         = INSTANCE_READ_STATUS_BASE + 44,
+    INSTANCE_READ_STATUS_TypeMismatch                        = INSTANCE_READ_STATUS_BASE + 41,
+    INSTANCE_READ_STATUS_CantSetValue                        = INSTANCE_READ_STATUS_BASE + 42,
+    INSTANCE_READ_STATUS_ECSchemaNotFound                    = INSTANCE_READ_STATUS_BASE + 43,
+    INSTANCE_READ_STATUS_UnableToGetStandaloneEnabler        = INSTANCE_READ_STATUS_BASE + 44,
+    INSTANCE_READ_STATUS_CommentOnly                         = INSTANCE_READ_STATUS_BASE + 45,
+    INSTANCE_READ_STATUS_PropertyNotFound                    = INSTANCE_READ_STATUS_BASE + 46,
     };
     
 /*=================================================================================**//**
@@ -227,6 +216,7 @@ enum InstanceWriteStatus
     INSTANCE_WRITE_STATUS_CantSetStream                         = INSTANCE_WRITE_STATUS_BASE + 4,
     INSTANCE_WRITE_STATUS_XmlWriteError                         = INSTANCE_WRITE_STATUS_BASE + 5,
     INSTANCE_WRITE_STATUS_CantReadFromStream                    = INSTANCE_WRITE_STATUS_BASE + 6,
+    INSTANCE_WRITE_STATUS_FailedToWriteFile                     = INSTANCE_WRITE_STATUS_BASE + 7,
 
     INSTANCE_WRITE_STATUS_BadPrimitivePropertyType              = INSTANCE_WRITE_STATUS_BASE + 30,
     };

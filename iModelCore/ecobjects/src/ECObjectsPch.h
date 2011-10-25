@@ -7,21 +7,29 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <ECObjects/ECObjectsAPI.h>
 #if defined (_WIN32) // WIP_NONPORT
     #include <sstream>
+    #include <atlbase.h>
+    #include <windows.h>
 #elif defined (__unix__)
     // *** NEEDS WORK: iostreams not supported on Android
 #endif
+
+#include <ECObjects/ECObjectsAPI.h>
 #include <assert.h>
 #include <boost/foreach.hpp>
 #include <Bentley/BeStringUtilities.h>
 #include "ecxml.h"
 #include "Logger.h"
 #include "FileUtilities.h"
-#include <Logging/bentleylogging.h>
 #include <Bentley/BeFileName.h>
 #include <ECObjects/BeXmlCommonGeometry.h>
+#if defined (ANDROID) && defined (NDK_BUILD)
+    #include <bentleylogging.h>
+#else
+    #include <Logging/bentleylogging.h>
+#endif
+
 #include "LeakDetector.h"
 
 BEGIN_BENTLEY_EC_NAMESPACE
@@ -29,6 +37,3 @@ extern ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, 
 END_BENTLEY_EC_NAMESPACE
 
 
-
-
-  

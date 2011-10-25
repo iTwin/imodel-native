@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
 
+#include <Bentley/CatchNonPortable.h>
+
 BEGIN_BENTLEY_EC_NAMESPACE
 static double s_nearZero = 9.0e-16;
 static size_t s_maxIndexPerLine = 5;

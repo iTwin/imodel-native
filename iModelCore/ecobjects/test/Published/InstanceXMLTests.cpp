@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
-#include <objbase.h>
 #include "TestFixture.h"
 
 BEGIN_BENTLEY_EC_NAMESPACE
@@ -240,15 +239,13 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
             EXPECT_EQ (testBinaryData[index], byteData[index]);
         }
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
+    /*
 TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingFaultyInstance)
     {
     //This test will verify that the xml deserializer will not fail on mismatched or malformed properties.
-    // must call CoInitialize - schema deserialization requires it.
-    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
 
     ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
@@ -265,8 +262,6 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingFaultyInstance
 
     instanceStatus = IECInstance::ReadFromXmlFile (testInstance, ECTestFixture::GetTestDataPath(L"MismatchedInstance.xml").c_str(), *instanceContext);
 
-    CoUninitialize();
-
     EXPECT_EQ (INSTANCE_READ_STATUS_Success, instanceStatus);
     //Testing a struct with type errors in its values
     ECValue ecValue;
@@ -281,7 +276,7 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingFaultyInstance
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.DoubleArray[]",0));
     EXPECT_EQ (1.2, ecValue.GetDouble());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.IntArray[]",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.IntArray[]",1));
     EXPECT_EQ (7, ecValue.GetInteger());
 
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.LongArray[]",0));
@@ -298,6 +293,7 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingFaultyInstance
 
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.StringArray[]",0));
     EXPECT_STREQ (ecValue.GetString(), L"Test");
+
     // Testing a struct that misformatted values
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.BinaryArray[]",0));
 
@@ -326,7 +322,10 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingFaultyInstance
     EXPECT_EQ (0, ecValue.GetPoint3D().z);
 
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.StringArray[]",0));
+    EXPECT_STREQ (ecValue.GetString(), L"");
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.StringArray[]",6));
     EXPECT_STREQ (ecValue.GetString(), L"Test");
+
     //Testing a struct with few errors among entirely bad structs in the same array
     ECValue badStructArrayMember;
     EXPECT_EQ (SUCCESS, testInstance->GetValue (badStructArrayMember, L"ArrayOfBadStructs[]",2));
@@ -364,15 +363,85 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingFaultyInstance
 
     schemaOwner = NULL;
     };
+    */
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                10/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingInstanceWithEmptyArrayMemebers)
+    {
+    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
+
+    ECSchemaP   schema;
+    SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(L"MismatchedSchema.01.00.ecschema.xml").c_str(), *schemaContext);
+
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, schemaStatus);
+
+    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext (*schema);
+
+    IECInstancePtr  testInstance;
+    InstanceReadStatus instanceStatus;
+
+    instanceStatus = IECInstance::ReadFromXmlFile (testInstance, ECTestFixture::GetTestDataPath(L"EmptyArrayInstance.xml").c_str(), *instanceContext);
+
+    
+    EXPECT_EQ (INSTANCE_READ_STATUS_Success, instanceStatus);
+    //Testing a struct with type errors in its values
+    ECValue ecValue;
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.BinaryArray[]",0));
+
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.BooleanArray[]",1));
+    EXPECT_EQ (true, ecValue.IsNull());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.BooleanArray[]",0));
+    EXPECT_EQ (true, ecValue.GetBoolean());
+
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DateTimeArray[]",0));
+    EXPECT_EQ (true, ecValue.IsNull());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DateTimeArray[]",1));
+    EXPECT_EQ (633374681466664305, ecValue.GetDateTimeTicks());
+
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DoubleArray[]",0));
+    EXPECT_EQ (true, ecValue.IsNull());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DoubleArray[]",1));
+    EXPECT_EQ (1.2, ecValue.GetDouble());
+
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.IntArray[]",0));
+    EXPECT_EQ (true, ecValue.IsNull());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.IntArray[]",1));
+    EXPECT_EQ (7, ecValue.GetInteger());
+
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.LongArray[]",0));
+    EXPECT_EQ (true, ecValue.IsNull());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.LongArray[]",1));
+    EXPECT_EQ (300, ecValue.GetLong());
+
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point2DArray[]",0));
+    EXPECT_EQ (true, ecValue.IsNull());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point2DArray[]",1));
+    EXPECT_EQ (0, ecValue.GetPoint2D().x);
+    EXPECT_EQ (1, ecValue.GetPoint2D().y);
+
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point3DArray[]",0));
+    EXPECT_EQ (true, ecValue.IsNull());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point3DArray[]",1));
+    EXPECT_EQ (0, ecValue.GetPoint3D().x);
+    EXPECT_EQ (1, ecValue.GetPoint3D().y);
+    EXPECT_EQ (0, ecValue.GetPoint3D().z);
+
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.StringArray[]",0));
+    EXPECT_STREQ (ecValue.GetString(), L"");
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.StringArray[]",6));
+    EXPECT_STREQ (ecValue.GetString(), L"Test");
+
+    schemaOwner = NULL;
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingSimpleInstance)
     {
-    // must call CoInitialize - schema deserialization requires it.
-    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
-
     ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
 
@@ -386,8 +455,6 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingSimpleInstance
     IECInstancePtr  testInstance;
     InstanceReadStatus instanceStatus = IECInstance::ReadFromXmlFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), *instanceContext);
 
-    CoUninitialize();
-
     EXPECT_EQ (INSTANCE_READ_STATUS_Success, instanceStatus);
 
     // WIP_FUSION: should pass the string to the logger via a backdoor
@@ -400,9 +467,6 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingSimpleInstance
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingEmptyInstance)
     {
-    // must call CoInitialize - schema deserialization requires it.
-    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
-
     ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
 
@@ -416,11 +480,10 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingEmptyInstance)
     IECInstancePtr  testInstance;
     InstanceReadStatus instanceStatus = IECInstance::ReadFromXmlFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_EmptyInstance.xml").c_str(), *instanceContext);
 
-    CoUninitialize();
-
     EXPECT_EQ (INSTANCE_READ_STATUS_Success, instanceStatus);
     };
 
+#if defined (NEEDSWORK_XML)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -450,7 +513,7 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     //HRESULT res = ::CreateStreamOnHGlobal(NULL,TRUE,&stream);
     ::CreateStreamOnHGlobal(NULL,TRUE,&stream);
 
-    InstanceWriteStatus status2 = testInstance->WriteToXmlStream(stream, true, false);
+    InstanceWriteStatus status2 = testInstance->WriteToXmlStream(stream, true, false, false);
     EXPECT_EQ(INSTANCE_WRITE_STATUS_Success, status2);
     
     LARGE_INTEGER liPos = {0};
@@ -459,20 +522,20 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     IECInstancePtr deserializedInstance;
     InstanceReadStatus status3 = IECInstance::ReadFromXmlStream(deserializedInstance, stream, *instanceContext);
     EXPECT_EQ (INSTANCE_READ_STATUS_Success, status3); 
+#ifdef DEBUG_PRINT
     wprintf(L"Verifying schema deserialized from stream.\n");
+#endif
     VerifyTestInstance (deserializedInstance.get(), false);
 
     CoUninitialize();
     };
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstanceFromString)
     {
-    // must call CoInitialize - schema deserialization requires it.
-    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
-
     ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
 
@@ -498,9 +561,10 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     IECInstancePtr deserializedInstance;
     InstanceReadStatus status3 = IECInstance::ReadFromXmlString(deserializedInstance, ecInstanceXml.c_str(), *instanceContext);
     EXPECT_EQ (INSTANCE_READ_STATUS_Success, status3); 
+#ifdef DEBUG_PRINT
     wprintf(L"Verifying schema deserialized from string.\n");
+#endif
     VerifyTestInstance (deserializedInstance.get(), false);
-    CoUninitialize();
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -557,9 +621,6 @@ void    VerifyPolymorphismInstance (IECInstanceCP testInstance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PolymorphismDeserializationTest, ExpectSuccessWhenDeserializingPolymorphismInstance)
     {
-    // must call CoInitialize - schema deserialization requires it.
-    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
-
     ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
 
@@ -578,8 +639,6 @@ TEST_F(PolymorphismDeserializationTest, ExpectSuccessWhenDeserializingPolymorphi
     // WIP_FUSION: should pass the string to the logger via a backdoor
     testInstance->ToString(L"").c_str();
     VerifyPolymorphismInstance (testInstance.get());
-
-    CoUninitialize();
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -587,9 +646,6 @@ TEST_F(PolymorphismDeserializationTest, ExpectSuccessWhenDeserializingPolymorphi
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(InstanceSerializationTest, ExpectSuccessWhenSerializingInstance)
     {
-    // must call CoInitialize - schema deserialization requires it.
-    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
-
     ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
 
@@ -630,8 +686,6 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWhenSerializingInstance)
     //
     //EXPECT_EQ (INSTANCE_READ_STATUS_Success, instanceStatus);
     //VerifyTestInstance (readbackInstance.get(), true);
-
-    CoUninitialize();
     };
 
 

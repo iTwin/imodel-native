@@ -1,4 +1,4 @@
-
+/*---------------------------------------------------------------------------------**//**
 |
 |     $Source: src/MemoryInstanceSupport.cpp $
 |
@@ -22,6 +22,29 @@ BEGIN_BENTLEY_EC_NAMESPACE
 const UInt32 BITS_PER_NULLFLAGSBITMASK = (sizeof(NullflagsBitmask) * 8);
 
 #if defined (_WIN32) // WIP_NONPORT
+
+/*---------------------------------------------------------------------------------**//**
+* used in compatible class layout map
+* @bsimethod                                    Bill.Steinbock                  10/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+bool less_classLayout::operator()(ClassLayoutCP s1, ClassLayoutCP s2) const
+    {
+    return (s1->GetUniqueId() < s2->GetUniqueId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  10/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+static int      randomValue  ()
+    {
+    static const int     low  = 0x00000001;
+    static const int     high = 0x7fffffff;
+
+    // includes low, excludes high.
+    int     randomNum = rand();
+    int     range = high - low;
+    return  low + (int) ( (double) range * (double) randomNum / (double) (RAND_MAX + 1));
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    08/10
@@ -144,7 +167,7 @@ WString    PropertyLayout::ToString ()
         typeName = L"struct";
 
     if (m_typeDescriptor.IsArray())
-        typeName += L"[]";
+        typeName.append(L"[]");
     
     wchar_t line[1024];
     swprintf (line, _countof(line), L"%-32s %-16s offset=%3i nullflagsOffset=%3i, nullflagsBitmask=0x%08.X", m_accessString.c_str(), typeName.c_str(), m_offset, m_nullflagsOffset, m_nullflagsBitmask);
@@ -204,6 +227,8 @@ ClassLayout::ClassLayout(SchemaIndex schemaIndex, bool hideFromLeakDetection)
     m_sizeOfFixedSection(0), 
     m_isRelationshipClass(false), m_propertyIndexOfSourceECPointer(-1), m_propertyIndexOfTargetECPointer(-1)
     {
+    m_uniqueId = randomValue();
+
     if ( ! m_hideFromLeakDetection)
         g_classLayoutLeakDetector.ObjectCreated(*this);
     };
@@ -385,55 +410,81 @@ void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 byt
     }
   
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  03/2010
+* Checks testLayout layout to see if equal to or a  subset of classlayout
+* @bsimethod                                    Bill.Steinbock                  10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            ClassLayout::IsCompatible (ClassLayoutCR classLayout) const
+static bool            areLayoutsCompatible (ClassLayoutCR testLayout, ClassLayoutCR classLayout) 
     {
-    if (0 != BeStringUtilities::Wcsicmp (GetECClassName().c_str(), classLayout.GetECClassName().c_str()))
-        return false;
+    UInt32 nProperties = testLayout.GetPropertyCount ();
 
-    UInt32 nProperties = GetPropertyCount ();
-    if (nProperties != classLayout.GetPropertyCount())
-        return false;
-
+    // see if every property in testLayout can be found in classLayout and is the same type
     for (UInt32 i = 0; i < nProperties; i++)
         {
+        PropertyLayoutCP testPropertyLayout;
+        ECObjectsStatus status = testLayout.GetPropertyLayoutByIndex (testPropertyLayout, i);
+        if (ECOBJECTS_STATUS_Success != status)
+            return false;
+
         PropertyLayoutCP propertyLayout;
-        ECObjectsStatus status = GetPropertyLayoutByIndex (propertyLayout, i);
+        status = classLayout.GetPropertyLayout (propertyLayout, testPropertyLayout->GetAccessString());
         if (ECOBJECTS_STATUS_Success != status)
             return false;
 
-        PropertyLayoutCP comparePropertyLayout;
-        status = classLayout.GetPropertyLayout (comparePropertyLayout, propertyLayout->GetAccessString());
-        if (ECOBJECTS_STATUS_Success != status)
+        if (testPropertyLayout->GetTypeDescriptor().GetTypeKind() != propertyLayout->GetTypeDescriptor().GetTypeKind())
             return false;
 
-        if (comparePropertyLayout->GetTypeDescriptor().GetTypeKind() != propertyLayout->GetTypeDescriptor().GetTypeKind())
+        if (testPropertyLayout->GetTypeDescriptor().IsStructArray() != propertyLayout->GetTypeDescriptor().IsStructArray())
             return false;
 
-        if (comparePropertyLayout->GetTypeDescriptor().IsStructArray() != propertyLayout->GetTypeDescriptor().IsStructArray())
-            return false;
-
-        if (propertyLayout->GetTypeDescriptor().IsPrimitiveArray())
+        if (testPropertyLayout->GetTypeDescriptor().IsPrimitiveArray())
             {
-            if (!comparePropertyLayout->GetTypeDescriptor().IsPrimitiveArray())
+            if (!propertyLayout->GetTypeDescriptor().IsPrimitiveArray())
                 return false;
 
-            if (comparePropertyLayout->GetTypeDescriptor().GetPrimitiveType() != propertyLayout->GetTypeDescriptor().GetPrimitiveType())
+            if (testPropertyLayout->GetTypeDescriptor().GetPrimitiveType() != propertyLayout->GetTypeDescriptor().GetPrimitiveType())
                 return false;
             }
 
-        if (propertyLayout->GetTypeDescriptor().IsPrimitive())
+        if (testPropertyLayout->GetTypeDescriptor().IsPrimitive())
             {
-            if (!comparePropertyLayout->GetTypeDescriptor().IsPrimitive())
+            if (!propertyLayout->GetTypeDescriptor().IsPrimitive())
                 return false;
 
-            if (comparePropertyLayout->GetTypeDescriptor().GetPrimitiveType() != propertyLayout->GetTypeDescriptor().GetPrimitiveType())
+            if (testPropertyLayout->GetTypeDescriptor().GetPrimitiveType() != propertyLayout->GetTypeDescriptor().GetPrimitiveType())
                 return false;
             }
         }
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            ClassLayout::IsCompatible (ClassLayoutCR classLayout) const
+    {
+    if (this == &classLayout)
+        return true;
+
+    CompatibleClassLayoutsMap::const_iterator compatibeLayoutIter = m_compatibleClassLayouts.find(&classLayout);
+    if (m_compatibleClassLayouts.end() != compatibeLayoutIter)
+        return compatibeLayoutIter->second;
+
+    if (0 != _wcsicmp (GetECClassName().c_str(), classLayout.GetECClassName().c_str()))
+        return false;
+
+    bool isCompatible = areLayoutsCompatible (*this, classLayout);
+    m_compatibleClassLayouts[&classLayout] = isCompatible;
+
+    return isCompatible;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  10/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+int                    ClassLayout:: GetUniqueId() const
+    {
+    return m_uniqueId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -555,7 +606,7 @@ void            ClassLayout::Factory::AddProperty (WCharCP accessString, ECTypeD
     // then you do not specify an index.  I'd like to consider an update to this so if an access string does not include the [] then we always return the ArrayInfo value.
     WString tempAccessString = accessString;
     if (typeDescriptor.IsArray())
-        tempAccessString += L"[]";
+        tempAccessString.append (L"[]");
 
     UInt32          parentStructIndex = GetParentStructIndex(accessString);
     PropertyLayoutP propertyLayout = new PropertyLayout (tempAccessString.c_str(), parentStructIndex, typeDescriptor, m_offset, m_nullflagsOffset, nullflagsBitmask, modifierFlags, modifierData);
@@ -657,7 +708,7 @@ void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, WCharCP 
         WString    propName = property->GetName();
         
         if (NULL != nameRoot)
-            propName = WString (nameRoot) + L"." + propName;
+            propName = WString (nameRoot).append (L".") + propName;
 
         if (property->GetIsPrimitive())
             {
@@ -1069,7 +1120,7 @@ UInt32  ClassLayout::GetFirstChildPropertyIndex (UInt32 parentIndex) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ClassLayout::GetPropertyIndices (bvector<UInt32>& properties, UInt32 parentIndex) const
     {
-    bmap<UInt32, bvector<UInt32>>::const_iterator mapIterator = m_logicalStructureMap.find (parentIndex);
+    bmap<UInt32, bvector<UInt32> >::const_iterator mapIterator = m_logicalStructureMap.find (parentIndex);
     if ( ! EXPECTED_CONDITION (m_logicalStructureMap.end() != mapIterator))
         return ECOBJECTS_STATUS_Error;
 
@@ -2175,14 +2226,16 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
         return ECOBJECTS_STATUS_Success;
-        }   
+        } 
+#ifdef REMOVE // Casey decided that the ReadOnlyProperty setting was for GUI use only and that it should not be enforced at the API level  9/11
     else
         {
         // to match ECF, if the property is marked as read only then we only allow setting the value if the current value is NULL
         if (!isOriginalValueNull && propertyLayout.IsReadOnlyProperty())
             return ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
         }
-             
+#endif
+
     if (isInUninitializedFixedCountArray)
         {
         ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, 0, GetReservedArrayCount (propertyLayout));

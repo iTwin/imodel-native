@@ -10,7 +10,7 @@
 
 #include "ECObjects.h"
 #include <Geom/GeomApi.h>
-#include <ECObjects\StandaloneECInstance.h>
+#include <ECObjects/StandaloneECInstance.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -82,10 +82,10 @@ struct ECInstanceReadContext /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
 {
 /*__PUBLISH_SECTION_END__*/
 private:
-    ECSchemaCP                              m_schema;
-    EC::ECSchemaReadContextPtr   m_schemaContext;
-    IStandaloneEnablerLocaterP              m_standaloneEnablerLocater;
-    StandaloneECInstancePtr m_dummy;
+    ECSchemaCP                          m_schema;
+    EC::ECSchemaReadContextPtr          m_schemaContext;
+    IStandaloneEnablerLocaterP          m_standaloneEnablerLocater;
+    StandaloneECInstancePtr             m_dummy;
 
 protected:
     ECInstanceReadContext(ECSchemaCP schema, ECSchemaReadContextP context, IStandaloneEnablerLocaterP standaloneEnablerLocater = NULL) 
@@ -102,10 +102,10 @@ protected:
     ECOBJECTS_EXPORT virtual IECInstancePtr _CreateStandaloneInstance (ECClassCR ecClass);
     
 public:
-    ECSchemaCP                          GetSchemaCP()  { return m_schema; }
+    ECSchemaCP               GetSchemaCP()  { return m_schema; }
     ECSchemaReadContextPtr   GetSchemaContextPtr()  { return m_schemaContext; }
 
-    IECInstancePtr CreateStandaloneInstance (ECClassCR ecClass);
+    IECInstancePtr           CreateStandaloneInstance (ECClassCR ecClass);
 
 /*__PUBLISH_SECTION_START__*/
 

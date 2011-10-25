@@ -38,7 +38,7 @@ struct  InstanceHeader
     InstanceFlags   m_instanceFlags;
     };
 
-enum PropertyLayoutModifierFlags : UInt32
+enum ArrayModifierFlags ENUM_UNDERLYING_TYPE (UInt32)
     {
     PROPERTYLAYOUTMODIFIERFLAGS_None              = 0x00,
     PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount = 0x01,
@@ -88,7 +88,13 @@ public:
     WString                            ToString();
     };
 
-//#define USE_HASHMAP_IN_CLASSLAYOUT    
+struct less_classLayout
+{
+bool operator()(ClassLayoutCP s1, ClassLayoutCP s2) const;
+};
+
+ typedef bmap<ClassLayoutCP, bool, less_classLayout>   CompatibleClassLayoutsMap;
+
 /*=================================================================================**//**
 * @bsistruct
 +===============+===============+===============+===============+===============+======*/      
@@ -114,21 +120,24 @@ private:
     
     // These members are expected to be persisted  
     ClassIndex              m_classIndex; // Unique per some context, e.g. per DgnFile
-    WString                m_className;
+    WString                 m_className;
     
     PropertyLayoutVector    m_propertyLayouts; // This is the primary collection, there is a secondary map for lookup by name, below.
     PropertyLayoutMap       m_propertyLayoutMap;
     LogicalStructureMap     m_logicalStructureMap;
     
     // These members are transient
-    bool                    m_hideFromLeakDetection;
-    SchemaIndex             m_schemaIndex;
-    UInt32                  m_sizeOfFixedSection;
-    bool                    m_isRelationshipClass;
-    int                     m_propertyIndexOfSourceECPointer;
-    int                     m_propertyIndexOfTargetECPointer;
+    bool                        m_hideFromLeakDetection;
+    SchemaIndex                 m_schemaIndex;
+    UInt32                      m_sizeOfFixedSection;
+    bool                        m_isRelationshipClass;
+    int                         m_propertyIndexOfSourceECPointer;
+    int                         m_propertyIndexOfTargetECPointer;
+    int                         m_uniqueId;
+    mutable CompatibleClassLayoutsMap m_compatibleClassLayouts;
+
     void                    CheckForECPointers (WCharCP accessString);
-    
+
     struct  Factory
     {
     friend struct ClassLayout;
@@ -165,6 +174,7 @@ private:
 /*__PUBLISH_SECTION_END__*/
 public:    
     WString                 GetName() const;
+    int                     GetUniqueId() const;
     void                    AddPropertyLayout (WCharCP accessString, PropertyLayoutR);
     void                    AddToLogicalStructureMap (PropertyLayoutR propertyLayout, UInt32 propertyIndex);
 

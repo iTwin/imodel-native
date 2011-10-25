@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
-#include <comdef.h>
 #include "StopWatch.h"
 #include "TestFixture.h"
 
@@ -389,14 +388,11 @@ ECSchemaP       CreateTestSchema (ECSchemaCacheR schemaOwner)
     {
     WString schemaXMLString = GetTestSchemaXMLString (L"TestSchema", 0, 0, L"TestClass");
 
-    EXPECT_EQ (S_OK, CoInitialize(NULL));  
-
     ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext(schemaOwner);
 
     ECSchemaP schema;        
     EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (schema, schemaXMLString.c_str(), *schemaContext));  
 
-    CoUninitialize();
     return schema;
     }
     
@@ -408,7 +404,6 @@ static std::vector<WString> s_propertyNames;
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP       CreateProfilingSchema (int nStrings, ECSchemaCacheR schemaOwner)
     {
-    EXPECT_EQ (S_OK, CoInitialize(NULL));  
     s_propertyNames.clear();
     
     WString schemaXml = 
@@ -436,7 +431,6 @@ ECSchemaP       CreateProfilingSchema (int nStrings, ECSchemaCacheR schemaOwner)
     ECSchemaP schema;        
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlString (schema, schemaXml.c_str(), *schemaContext));
 
-    CoUninitialize();
     return schema;
     }
     
@@ -769,7 +763,6 @@ TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetIntegerValue (*instance, L"ReadOnlyInt", (int)(50)));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetInteger  (*instance, intVal, L"ReadOnlyInt"));
     EXPECT_TRUE ((int)(50) == intVal);
-    EXPECT_TRUE (ECOBJECTS_STATUS_UnableToSetReadOnlyProperty == ECInstanceInteropHelper::SetIntegerValue (*instance, L"ReadOnlyInt", (int)(50)));
 
     WCharCP   stringVal;
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, L"AString", L"TEST123"));
@@ -1153,7 +1146,7 @@ TEST_F(MemoryLayoutTests, CheckPerPropertyFlags)
     ECClassP ecClass = schema->GetClassP (L"CadData");
     ASSERT_TRUE (NULL != ecClass);
     
-    StandaloneECEnablerPtr enabler = schemaOwner->LocateStandaloneEnabler (ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
+    StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     UInt8  numBitPerProperty =  instance->GetNumBitsInPerPropertyFlags ();
