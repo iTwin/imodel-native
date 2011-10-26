@@ -87,18 +87,18 @@ static const WString ECXML_DIRECTION_FORWARD           = L"forward";
 static const WString ECXML_DIRECTION_BACKWARD          = L"backward";
 
 #define READ_OPTIONAL_XML_ATTRIBUTE(_nodeVar, _xmlAttributeName, _setInPointer, _setInPropertyName)   \
-    if ((BEXML_Success == _nodeVar##.GetAttributeStringValue (value, _xmlAttributeName)) &&   \
+    if ((BEXML_Success == _nodeVar.GetAttributeStringValue (value, _xmlAttributeName)) &&   \
         (ECOBJECTS_STATUS_Success != _setInPointer->Set##_setInPropertyName (value.c_str()))) \
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
 
 #define READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS(_nodeVar, _xmlAttributeName, _setInPointer, _setInPropertyName)   \
-    if (BEXML_Success == _nodeVar##.GetAttributeStringValue (value, _xmlAttributeName))   \
+    if (BEXML_Success == _nodeVar.GetAttributeStringValue (value, _xmlAttributeName))   \
         setterStatus = _setInPointer->Set##_setInPropertyName (value.c_str()); \
     else \
         setterStatus = ECOBJECTS_STATUS_Success;
 
 #define READ_REQUIRED_XML_ATTRIBUTE(_nodeVar, _xmlAttributeName, _setInPointer, _setInPropertyName, _elementName)   \
-    if (BEXML_Success != _nodeVar##.GetAttributeStringValue (value, _xmlAttributeName))   \
+    if (BEXML_Success != _nodeVar.GetAttributeStringValue (value, _xmlAttributeName))   \
         {   \
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %hs element must contain a %hs  attribute", _xmlAttributeName, _elementName);     \
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;        \
@@ -107,7 +107,7 @@ static const WString ECXML_DIRECTION_BACKWARD          = L"backward";
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
 
 #define READ_REQUIRED_XML_ATTRIBUTE_IGNORING_SET_ERRORS(_nodeVar,_xmlAttributeName, _setInPointer, _setInPropertyName, _elementName)   \
-    if (BEXML_Success != _nodeVar##.GetAttributeStringValue (value, _xmlAttributeName))     \
+    if (BEXML_Success != _nodeVar.GetAttributeStringValue (value, _xmlAttributeName))     \
         {   \
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %hs element must contain a %hs attribute",  _xmlAttributeName, _elementName);     \
         status = SCHEMA_READ_STATUS_InvalidECSchemaXml;        \
@@ -129,9 +129,7 @@ public:
     static WStringCR DirectionToString (ECRelatedInstanceDirection direction);
     static ECObjectsStatus ParseDirectionString (ECRelatedInstanceDirection& direction, WStringCR directionString);
     static ECObjectsStatus ParseCardinalityString (UInt32& lowerLimit, UInt32& upperLimit, WStringCR cardinalityString);
-#if defined (_WIN32)
     static void FormatXml(BeXmlDomR xmlDom);
-#endif
 };
 
 END_BENTLEY_EC_NAMESPACE

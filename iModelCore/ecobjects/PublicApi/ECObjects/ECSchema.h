@@ -291,6 +291,7 @@ public:
 //=======================================================================================
 struct PrimitiveECProperty /*__PUBLISH_ABSTRACT__*/ : public ECProperty
 {
+    DEFINE_T_SUPER(ECProperty)
 /*__PUBLISH_SECTION_END__*/
 friend struct ECClass;
 private:
@@ -318,6 +319,7 @@ public:
 //=======================================================================================
 struct StructECProperty /*__PUBLISH_ABSTRACT__*/ : public ECProperty
 {
+    DEFINE_T_SUPER(ECProperty)
 /*__PUBLISH_SECTION_END__*/
 friend struct ECClass;
 private:
@@ -346,6 +348,7 @@ public:
 //=======================================================================================
 struct ArrayECProperty /*__PUBLISH_ABSTRACT__*/ : public ECProperty
 {
+    DEFINE_T_SUPER(ECProperty)
 /*__PUBLISH_SECTION_END__*/
 friend struct ECClass;
 
@@ -810,6 +813,7 @@ public:
 //=======================================================================================
 struct ECRelationshipClass /*__PUBLISH_ABSTRACT__*/ : public ECClass
 {
+    DEFINE_T_SUPER(ECClass)
 /*__PUBLISH_SECTION_END__*/
 friend struct ECSchema;
 

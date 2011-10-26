@@ -21,8 +21,6 @@ BEGIN_BENTLEY_EC_NAMESPACE
 
 const UInt32 BITS_PER_NULLFLAGSBITMASK = (sizeof(NullflagsBitmask) * 8);
 
-#if defined (_WIN32) // WIP_NONPORT
-
 /*---------------------------------------------------------------------------------**//**
 * used in compatible class layout map
 * @bsimethod                                    Bill.Steinbock                  10/2011
@@ -46,6 +44,7 @@ static int      randomValue  ()
     return  low + (int) ( (double) range * (double) randomNum / (double) (RAND_MAX + 1));
     }
 
+#if defined (_WIN32) // WIP_NONPORT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    08/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -470,7 +469,7 @@ bool            ClassLayout::IsCompatible (ClassLayoutCR classLayout) const
     if (m_compatibleClassLayouts.end() != compatibeLayoutIter)
         return compatibeLayoutIter->second;
 
-    if (0 != _wcsicmp (GetECClassName().c_str(), classLayout.GetECClassName().c_str()))
+    if (0 != BeStringUtilities::Wcsicmp (GetECClassName().c_str(), classLayout.GetECClassName().c_str()))
         return false;
 
     bool isCompatible = areLayoutsCompatible (*this, classLayout);

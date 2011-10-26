@@ -1674,7 +1674,7 @@ ECObjectsStatus ECRelationshipClass::GetOrderedRelationshipPropertyName (WString
 SchemaWriteStatus ECRelationshipClass::_WriteXml (BeXmlNodeP& classNode, BeXmlNodeR parentNode) const
     {
     SchemaWriteStatus   status;
-    if (SCHEMA_WRITE_STATUS_Success != (status = __super::_WriteXml (classNode, parentNode, EC_RELATIONSHIP_CLASS_ELEMENT)))
+    if (SCHEMA_WRITE_STATUS_Success != (status = T_Super::_WriteXml (classNode, parentNode, EC_RELATIONSHIP_CLASS_ELEMENT)))
         return status;
         
     // verify that this really is the current relationship class element
@@ -1699,7 +1699,7 @@ SchemaWriteStatus ECRelationshipClass::_WriteXml (BeXmlNodeP& classNode, BeXmlNo
 SchemaReadStatus ECRelationshipClass::_ReadXmlAttributes (BeXmlNodeR classNode)
     {
     SchemaReadStatus status;
-    if (SCHEMA_READ_STATUS_Success != (status = __super::_ReadXmlAttributes (classNode)))
+    if (SCHEMA_READ_STATUS_Success != (status = T_Super::_ReadXmlAttributes (classNode)))
         return status;
         
     
@@ -1715,7 +1715,7 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlAttributes (BeXmlNodeR classNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, IStandaloneEnablerLocaterP standaloneEnablerLocater)
     {
-    SchemaReadStatus status = __super::_ReadXmlContents (classNode, standaloneEnablerLocater);
+    SchemaReadStatus status = T_Super::_ReadXmlContents (classNode, standaloneEnablerLocater);
     if (status != SCHEMA_READ_STATUS_Success)
         return status;
         
