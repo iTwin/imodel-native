@@ -31,6 +31,7 @@ unsigned short milliseconds
     wMinute = (minute >= 0 && minute < 60) ? minute : 0;
     wSecond = (second >= 0 && second < 60) ? second : 0;
     wMilliseconds = (milliseconds >= 0 && milliseconds < 1000) ? milliseconds : 0;
+    wDayOfWeek = 0; // this value is not currently being used
     }
 
 /*---------------------------------------------------------------------------------**//**
