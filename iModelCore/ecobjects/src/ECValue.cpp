@@ -11,6 +11,33 @@
 BEGIN_BENTLEY_EC_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+static unsigned short  getMaxDay (unsigned short year, unsigned short month)
+    {
+    static unsigned short monthDays [] = {31,28,31,30,31,30,31,31,30,31,30,31};
+
+    bool isLeap = (0 == year%4) && ((0 != year%100) || (0 == year%400));
+
+    if (isLeap && (2==month))
+        return monthDays[month-1]+1;
+
+    return monthDays[month];
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Day of week 0=Sunday
+* @bsimethod                                    Bill.Steinbock                  11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+static unsigned short  getDayOfWeek (unsigned short year, unsigned short month, unsigned short day)
+    {
+    int a = (14 - month) / 12;  // 1 for Jan and Feb else 0
+    int y = year - a;
+    int m = month + (12 * a) - 2;
+    return (unsigned short) (day + y + (y / 4.0) - (y / 100) + (y / 400) + ((31 * m) / 12))  % 7;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 SystemTime::SystemTime
@@ -26,11 +53,12 @@ unsigned short milliseconds
     {
     wYear =  (year >= 1601 && year < 9999) ? year : 1601;
     wMonth = (month > 0 && month <= 12)? month : 1;
-    wDay = (day > 0 && day <= 31) ? day : 1; // TODO: need better validation
+    wDay = (day > 0 && day <= getMaxDay(wYear, wMonth)) ? day : 1;
     wHour = (hour >= 0 && hour < 24) ? hour : 0;
     wMinute = (minute >= 0 && minute < 60) ? minute : 0;
     wSecond = (second >= 0 && second < 60) ? second : 0;
     wMilliseconds = (milliseconds >= 0 && milliseconds < 1000) ? milliseconds : 0;
+    wDayOfWeek = getDayOfWeek (wYear, wMonth, wDay);
     }
 
 /*---------------------------------------------------------------------------------**//**
