@@ -355,6 +355,52 @@ WStringCR propertyName
     return  GetPropertyP (propertyName.c_str());
     }
 
+static bvector<WString> s_schemasThatAllowOverridingArrays;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void initSchemasThatAllowOverridingArrays ()
+    {
+    if (!s_schemasThatAllowOverridingArrays.empty())
+        return;
+    s_schemasThatAllowOverridingArrays.push_back (L"jclass.01");
+    s_schemasThatAllowOverridingArrays.push_back (L"jclass.02");
+    s_schemasThatAllowOverridingArrays.push_back (L"ECXA_ams.01");
+    s_schemasThatAllowOverridingArrays.push_back (L"ECXA_ams_user.01");
+    s_schemasThatAllowOverridingArrays.push_back (L"ams.01");
+    s_schemasThatAllowOverridingArrays.push_back (L"ams_user.01");
+    s_schemasThatAllowOverridingArrays.push_back (L"Bentley_JSpace_CustomAttributes.02");
+    s_schemasThatAllowOverridingArrays.push_back (L"Bentley_Plant.06");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+From .NET implementation:
+///<summary>
+///     Fixing defect D-33626 (Overriding a array property with a non-array property of the same type is allowed)
+///     caused application breaks because some delivered schemas contained errors (non-array types were overriding
+///     array types or vice-versa). So these schemas are included in an exception list and the
+///     exception for overriding non-array type with array types is not thrown for these schemas.
+///     Schemas that are part of this list are hard-coded
+///
+* @bsimethod                                    Carole.MacDonald                11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECClass::SchemaAllowsOverridingArrays
+(
+ECSchemaCP schema
+)
+    {
+    initSchemasThatAllowOverridingArrays();
+    wchar_t buf[1024]; 
+
+    swprintf (buf, L"%s.%02d", schema->GetName().c_str(), schema->GetVersionMajor());
+    WString nameAndVersion(buf);
+    bvector<WString>::iterator iter = std::find(s_schemasThatAllowOverridingArrays.begin(), s_schemasThatAllowOverridingArrays.end(), nameAndVersion);
+    return (iter != s_schemasThatAllowOverridingArrays.end());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::CanPropertyBeOverridden
 (
 ECPropertyCR baseProperty,
@@ -367,8 +413,8 @@ ECPropertyCR newProperty
     // of override.  So need to check if this is one of those schemas before returning an error
     if ((baseProperty.GetIsArray() && !newProperty.GetIsArray()) || (!baseProperty.GetIsArray() && newProperty.GetIsArray()))
         {
-        //if (!EC::ECSchema::SchemaAllowsOverridingArrays(this->GetSchema()))
-        //    return ECOBJECTS_STATUS_DataTypeMismatch;
+        if (!SchemaAllowsOverridingArrays(&this->GetSchema()))
+            return ECOBJECTS_STATUS_DataTypeMismatch;
         }
     
     if (!newProperty._CanOverride(baseProperty))
