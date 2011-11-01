@@ -314,4 +314,58 @@ TEST_F(CustomAttributeTest, ExpectFailureWithUnreferencedCustomAttribute)
     }
 #endif
 
+#ifdef TEST_DEFECT_D_88458 
+// This is a nonsensical scenario, so the defect is being deferred.  But the code is
+// here if the defect ever gets reopened 
+TEST_F(CustomAttributeTest, ExpectSuccessWhenAddingCircularStructPropertiesToCustomAttributeClass)
+    {
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create(); 
+    ECSchemaP schema;    
+
+    //ECObjectsStatus structStatus;
+    ECClassP struct1;
+    ECClassP struct2;
+    ECClassP customAttributeClass;
+    ECClassP testClass;
+
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
+    ASSERT_TRUE(schema!=NULL);
+
+    schema->CreateClass(struct1,L"Struct1");
+    ASSERT_TRUE(struct1!=NULL);
+    schema->CreateClass(struct2,L"Struct2");
+    ASSERT_TRUE(struct2!=NULL);
+    struct1->SetIsStruct(true);
+    struct2->SetIsStruct(true);
+
+    StructECPropertyP P1;
+    StructECPropertyP P2;
+
+    struct1->CreateStructProperty(P1, L"P1",*struct2);
+    ASSERT_TRUE(P1!=NULL);
+    struct2->CreateStructProperty(P2,L"P2",*struct1);
+    ASSERT_TRUE(P2!=NULL);
+
+    StructECPropertyP PropertyOfCustomAttribute;
+
+    schema->CreateClass(customAttributeClass,L"MyCustomAttribute");
+    ASSERT_TRUE(customAttributeClass!=NULL);
+    customAttributeClass->SetIsCustomAttributeClass(true);
+
+
+    customAttributeClass->CreateStructProperty(PropertyOfCustomAttribute, L"PropertyOfCustomAttribute",*struct1);
+    ASSERT_TRUE(PropertyOfCustomAttribute!=NULL);
+    //If we comment out the struct property added to custom attribute. It works fine.
+    IECInstancePtr instance = GetInstanceForClass(L"MyCustomAttribute", *schema, *schemaOwner);
+    ASSERT_TRUE(instance.get()!=NULL);
+
+    schema->CreateClass(testClass,L"TestClass");
+    ASSERT_TRUE(testClass!=NULL);
+
+    ECClassP tempClass = schema->GetClassP(L"TestClass");
+    ASSERT_TRUE(tempClass!=NULL);
+    ECObjectsStatus status =tempClass->SetCustomAttribute(*instance);
+    ASSERT_EQ(ECOBJECTS_STATUS_Success,status);
+    }
+#endif
 END_BENTLEY_EC_NAMESPACE
