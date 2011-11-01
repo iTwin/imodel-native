@@ -1300,6 +1300,14 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     WString dateStr = fixedDate.ToString();
     EXPECT_TRUE (0 == dateStr.compare (L"#2010/2/25-16:28:27:91#"));
 
+    // test operator ==
+    SystemTime specificTime (now.wYear, now.wMonth, now.wDay, now.wHour, now.wMinute, now.wSecond, now.wMilliseconds);
+    EXPECT_TRUE (specificTime == now);
+
+    SystemTime defaultTime1;
+    SystemTime defaultTime2;
+    EXPECT_TRUE (defaultTime1 == defaultTime2);
+
     // WIP_FUSION - test array values
     };
   
