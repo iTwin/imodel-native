@@ -224,7 +224,7 @@ void BeXmlCGWriter::WriteArc (BeXmlWriterR dest, DEllipse3dCR arc)
         {
         DEllipse3d majorMinorArc = DEllipse3d::FromPerpendicularAxes (arc);
         dest.WriteElementStart ("CircularArc");
-        WritePlacementZX (dest,  majorMinorArc.center, majorMinorArc.vector0, majorMinorArc.vector90);
+        WritePlacementXY (dest,  majorMinorArc.center, majorMinorArc.vector0, majorMinorArc.vector90);
         WriteDouble (dest, "radius",     majorMinorArc.vector0.Magnitude ());
         WriteDouble (dest, "startAngle",  Angle::RadiansToDegrees (majorMinorArc.start));
         WriteDouble (dest, "sweepAngle",    Angle::RadiansToDegrees (majorMinorArc.sweep));
@@ -234,7 +234,7 @@ void BeXmlCGWriter::WriteArc (BeXmlWriterR dest, DEllipse3dCR arc)
         {
         DEllipse3d majorMinorArc = DEllipse3d::FromPerpendicularAxes (arc);
         dest.WriteElementStart ("EllipticArc");
-        WritePlacementZX (dest,  majorMinorArc.center, majorMinorArc.vector0, majorMinorArc.vector90);
+        WritePlacementXY (dest,  majorMinorArc.center, majorMinorArc.vector0, majorMinorArc.vector90);
         WriteDouble (dest, "radiusA",     majorMinorArc.vector0.Magnitude ());
         WriteDouble (dest, "radiusB",     majorMinorArc.vector90.Magnitude ());
         WriteDouble (dest, "startAngle",  Angle::RadiansToDegrees (majorMinorArc.start));
@@ -249,7 +249,7 @@ void BeXmlCGWriter::WriteDisk (BeXmlWriterR dest, DEllipse3dCR arc)
         {
         DEllipse3d majorMinorArc = DEllipse3d::FromPerpendicularAxes (arc);
         dest.WriteElementStart ("CircularDisk");
-        WritePlacementZX (dest, majorMinorArc.center, majorMinorArc.vector0, majorMinorArc.vector90);
+        WritePlacementXY (dest, majorMinorArc.center, majorMinorArc.vector0, majorMinorArc.vector90);
         WriteDouble (dest, "radius",     majorMinorArc.vector0.Magnitude ());
         dest.WriteElementEnd ();
         }
@@ -257,7 +257,7 @@ void BeXmlCGWriter::WriteDisk (BeXmlWriterR dest, DEllipse3dCR arc)
         {
         DEllipse3d majorMinorArc = DEllipse3d::FromPerpendicularAxes (arc);
         dest.WriteElementStart ("EllipticDisk");
-        WritePlacementZX (dest, majorMinorArc.center, majorMinorArc.vector0, majorMinorArc.vector90);
+        WritePlacementXY (dest, majorMinorArc.center, majorMinorArc.vector0, majorMinorArc.vector90);
         WriteDouble (dest, "radiusA",     majorMinorArc.vector0.Magnitude ());
         WriteDouble (dest, "radiusB",     majorMinorArc.vector90.Magnitude ());
         dest.WriteElementEnd ();
