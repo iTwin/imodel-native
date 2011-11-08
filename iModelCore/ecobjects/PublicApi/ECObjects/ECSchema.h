@@ -492,6 +492,8 @@ private:
     ECObjectsStatus AddProperty (ECPropertyP& pProperty);
     ECObjectsStatus AddProperty (ECPropertyP pProperty, WStringCR name);
     
+    static bool     SchemaAllowsOverridingArrays(ECSchemaCP schema);
+
     static bool     CheckBaseClassCycles(ECClassCP currentBaseClass, const void * arg);
     static bool     AddUniquePropertiesToList(ECClassCP crrentBaseClass, const void * arg);
     bool            TraverseBaseClasses(TraversalDelegate traverseMethod, bool recursive, const void * arg) const;
