@@ -1426,7 +1426,7 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
 
     // Primitives overriding arrays
     EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreatePrimitiveProperty(longProperty, L"StringArrayProperty", PRIMITIVETYPE_Long));
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreatePrimitiveProperty(stringProperty, L"StringArrayProperty", PRIMITIVETYPE_String));
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreatePrimitiveProperty(stringProperty, L"StringArrayProperty", PRIMITIVETYPE_String));
     class1->RemoveProperty(L"StringArrayProperty");
 
     StructECPropertyP structProperty;
@@ -1442,10 +1442,8 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     // Structs overriding arrays
     EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateStructProperty(structProperty, L"StringArrayProperty"));
     EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateStructProperty(structProperty, L"StringArrayProperty", *structClass));
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateStructProperty(structProperty, L"StructArrayProperty"));
-    class1->RemoveProperty(L"StructArrayProperty");
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateStructProperty(structProperty, L"StructArrayProperty", *structClass));
-    class1->RemoveProperty(L"StructArrayProperty");
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateStructProperty(structProperty, L"StructArrayProperty"));
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateStructProperty(structProperty, L"StructArrayProperty", *structClass));
     EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateStructProperty(structProperty, L"StructArrayProperty", *structClass2));
 
     ArrayECPropertyP stringArrayProperty;
@@ -1454,14 +1452,12 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     ArrayECPropertyP structArrayProperty2;
     // Arrays overriding primitives
     EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateArrayProperty(stringArrayProperty, L"IntegerProperty", PRIMITIVETYPE_Long));
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateArrayProperty(stringArrayProperty, L"StringProperty", PRIMITIVETYPE_String));
-    class1->RemoveProperty(L"StringProperty");
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateArrayProperty(stringArrayProperty2, L"StringProperty"));
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateArrayProperty(stringArrayProperty, L"StringProperty", PRIMITIVETYPE_String));
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateArrayProperty(stringArrayProperty2, L"StringProperty"));
 
     // Arrays overriding structs
     EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateArrayProperty(structArrayProperty, L"StructProperty", structClass2));
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->CreateArrayProperty(structArrayProperty, L"StructProperty", structClass));
-    class1->RemoveProperty(L"StructProperty");
+    EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateArrayProperty(structArrayProperty, L"StructProperty", structClass));
 
     // the default array type is string if none is passed in
     EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateArrayProperty(structArrayProperty2, L"StructProperty"));
@@ -1862,6 +1858,93 @@ TEST_F(ClassTest, ExpectReadOnlyFromBaseClass)
     ECPropertyP ecProp = child->GetPropertyP(L"readOnlyProp");
     ASSERT_EQ(true, ecProp->GetIsReadOnly());
 
+    }
+
+void TestOverriding
+(
+WCharCP schemaName,
+int majorVersion,
+bool allowOverriding
+)
+    {
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
+
+    ECSchemaP schema;
+    ECClassP base;
+    ECClassP child;
+
+    ECSchema::CreateSchema(schema, schemaName, majorVersion, 5, *schemaOwner);
+    schema->CreateClass(base, L"base");
+    schema->CreateClass(child, L"child");
+
+    PrimitiveECPropertyP baseIntProp;
+    ArrayECPropertyP baseIntArrayProperty;
+    ArrayECPropertyP baseStringArrayProperty;
+    ArrayECPropertyP baseBoolArrayProperty;
+
+    base->CreatePrimitiveProperty(baseIntProp, L"IntegerProperty", PRIMITIVETYPE_Integer);
+    base->CreateArrayProperty(baseIntArrayProperty, L"IntArrayProperty", PRIMITIVETYPE_Integer);
+    base->CreateArrayProperty(baseStringArrayProperty, L"StringArrayProperty", PRIMITIVETYPE_String);
+    base->CreateArrayProperty(baseBoolArrayProperty, L"BoolArrayProperty", PRIMITIVETYPE_Boolean);
+
+    PrimitiveECPropertyP childIntProperty;
+    ArrayECPropertyP childIntArrayProperty;
+    ArrayECPropertyP childStringArrayProperty;
+    ArrayECPropertyP childBoolArrayProperty;
+
+    child->AddBaseClass(*base);
+    // Override an integer property with an array of ints
+    ECObjectsStatus status = child->CreateArrayProperty(childIntArrayProperty, L"IntegerProperty", PRIMITIVETYPE_Integer);
+    if (allowOverriding)
+        {
+        ASSERT_EQ(ECOBJECTS_STATUS_Success, status);
+        child->RemoveProperty(L"IntegerProperty");
+        }
+    else
+        ASSERT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, status);
+
+    // Override an integer property with an array of strings
+    status = child->CreateArrayProperty(childStringArrayProperty, L"IntegerProperty", PRIMITIVETYPE_String);
+    ASSERT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, status);
+
+    // Override an integer array with an integer
+    status = child->CreatePrimitiveProperty(childIntProperty, L"IntArrayProperty", PRIMITIVETYPE_Integer);
+    if (allowOverriding)
+        {
+        ASSERT_EQ(ECOBJECTS_STATUS_Success, status);
+        child->RemoveProperty(L"IntArrayProperty");
+        }
+    else
+        ASSERT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, status);
+
+    // Override an array of strings with an integer
+    status = child->CreatePrimitiveProperty(childIntProperty, L"StringArrayProperty", PRIMITIVETYPE_Integer);
+    ASSERT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, status);
+
+    // Override an array of boolean with an array of integers
+    status = child->CreateArrayProperty(childIntArrayProperty, L"BoolArrayProperty", PRIMITIVETYPE_Integer);
+    ASSERT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, status);
+
+    // Override an array of integers with an array of boolean
+    status = child->CreateArrayProperty(childBoolArrayProperty, L"IntArrayProperty", PRIMITIVETYPE_Boolean);
+    ASSERT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, status);
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassTest, TestOverridingArrayPropertyWithNonArray)
+    {
+    TestOverriding(L"TestSchema", 5, false);
+    TestOverriding(L"jclass", 1, true);
+    TestOverriding(L"jclass", 2, true);
+    TestOverriding(L"ECXA_ams", 1, true);
+    TestOverriding(L"ECXA_ams_user", 1, true);
+    TestOverriding(L"ams", 1, true);
+    TestOverriding(L"ams_user", 1, true);
+    TestOverriding(L"Bentley_JSpace_CustomAttributes", 2, true);
+    TestOverriding(L"Bentley_Plant", 6, true);
     }
 
 END_BENTLEY_EC_NAMESPACE
