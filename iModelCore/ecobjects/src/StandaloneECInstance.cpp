@@ -42,6 +42,7 @@ MemoryECInstanceBase::MemoryECInstanceBase (byte * data, UInt32 size, bool allow
     m_data.address = data;
     m_isInManagedInstance = false;
     m_structInstances.vectorP = NULL;
+    m_usingSharedMemory = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -54,12 +55,21 @@ MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 mi
     m_isInManagedInstance = false;
     m_structInstances.vectorP = NULL;
     m_data.address = NULL;
+    m_usingSharedMemory = false;
 
     UInt32 size = max (minimumBufferSize, classLayout.GetSizeOfFixedSection());
     m_data.address = (byte*)malloc (size);
     m_bytesAllocated = size;
 
     InitializeMemory (classLayout, m_data.address, m_bytesAllocated);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void    MemoryECInstanceBase::SetUsingSharedMemory () 
+    {
+    m_usingSharedMemory = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -307,7 +317,9 @@ void                MemoryECInstanceBase::_FreeAllocation ()
     if (m_isInManagedInstance)
         return;
 
-    free (m_data.address); 
+    if (!m_usingSharedMemory)
+        free (m_data.address); 
+
     m_data.address = NULL;
 
     if (m_structInstances.vectorP)
@@ -873,6 +885,44 @@ StructArrayEntry const* MemoryECInstanceBase::GetAddressOfStructArrayEntry (Stru
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus           MemoryECInstanceBase::SetStructArrayInstance (MemoryECInstanceBaseCR instance, StructValueIdentifier structValueId)
+    {
+    if (m_isInManagedInstance)  // this check should eventually go away unless we keep support for embedding
+        return ECOBJECTS_STATUS_Error;
+
+    if (NULL == m_structInstances.vectorP)
+        m_structInstances.vectorP = new StructInstanceVector ();
+
+    IECInstancePtr instancePtr = instance.GetAsIECInstance();
+    m_structInstances.vectorP->push_back (StructArrayEntry (structValueId, instancePtr));
+    if (m_structValueId < structValueId)
+        m_structValueId = structValueId;
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr           MemoryECInstanceBase::GetStructArrayInstanceByIndex (UInt32 index, StructValueIdentifier& structValueId) const
+    {
+    if (m_isInManagedInstance)  // this check should eventually go away unless we keep support for embedding
+        return NULL;
+
+    if (NULL == m_structInstances.vectorP)  // no struct instances exist
+        return NULL;
+
+    if (index >= m_structInstances.vectorP->size())
+        return NULL;
+
+    StructArrayEntry& arrayEntry = (*m_structInstances.vectorP)[index];
+    structValueId = arrayEntry.structValueIdentifier;
+    return arrayEntry.structInstance.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  12/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstancePtr  MemoryECInstanceBase::GetStructArrayInstance (StructValueIdentifier structValueId) const
@@ -1423,6 +1473,18 @@ ECObjectsStatus StandaloneECEnabler::_GetPropertyIndices (bvector<UInt32>& indic
     return instance;
     }*/
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/        
+StandaloneECInstanceP   StandaloneECEnabler::CreateSharedInstance (byte * data, UInt32 size)
+    {
+    StandaloneECInstanceP instance = new StandaloneECInstance (*this, data, size);
+    instance->SetUsingSharedMemory ();
+
+    return instance;
+    }
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        

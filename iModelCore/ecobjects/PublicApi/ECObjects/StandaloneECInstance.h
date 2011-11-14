@@ -66,7 +66,8 @@ private:
     bool                    m_isInManagedInstance;
     StructValueIdentifier   m_structValueId;
     SupportingInstanceUnion m_structInstances;
-    
+    bool                    m_usingSharedMemory;
+
 //__PUBLISH_SECTION_END__
     IECInstancePtr          GetStructArrayInstance (StructValueIdentifier structValueId) const;
     StructArrayEntry const* GetAddressOfStructArrayEntry (StructValueIdentifier key) const;
@@ -115,6 +116,10 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT size_t                   LoadDataIntoManagedInstance (byte* managedBuffer, size_t sizeOfManagedBuffer) const;
     ECOBJECTS_EXPORT void                     FixupStructArrayOffsets (int offsetToGap, size_t resizeAmount, bool removingGap);
     ECOBJECTS_EXPORT ECObjectsStatus          RemoveStructArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount, EmbeddedInstanceCallbackP memoryCallback);
+
+    ECOBJECTS_EXPORT IECInstancePtr           GetStructArrayInstanceByIndex (UInt32 index, StructValueIdentifier& structValueId) const;
+    ECOBJECTS_EXPORT ECObjectsStatus          SetStructArrayInstance (MemoryECInstanceBaseCR instance, StructValueIdentifier structValueId);
+    ECOBJECTS_EXPORT void                     SetUsingSharedMemory ();
 };
 
 /*=================================================================================**//**
@@ -214,9 +219,12 @@ public:
     ECOBJECTS_EXPORT static StandaloneECEnablerPtr CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater, bool ownsClassLayout);
     ECOBJECTS_EXPORT StandaloneECInstancePtr       CreateInstance (UInt32 minimumInitialSize = 0) const;
     //ECOBJECTS_EXPORT StandaloneECInstanceP         CreateInstanceFromUninitializedMemory (byte * data, UInt32 size);
+
     //! Used to construct from another memory source like ECXData. The caller is claiming that the memory
     //! has been properly initialized with the classLayout that was passed in
     //ECOBJECTS_EXPORT StandaloneECInstanceP         CreateInstanceFromInitializedMemory (ClassLayoutCR classLayout, byte * data, UInt32 size);
+    
+    ECOBJECTS_EXPORT StandaloneECInstanceP         CreateSharedInstance (byte * data, UInt32 size);
     };
 END_BENTLEY_EC_NAMESPACE
 
