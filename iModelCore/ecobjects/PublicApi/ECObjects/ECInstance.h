@@ -164,7 +164,15 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex);
     ECOBJECTS_EXPORT ECObjectsStatus    GetValueUsingAccessor (ECValueR v, ECValueAccessorCR accessor) const;
     ECOBJECTS_EXPORT ECObjectsStatus    SetValueUsingAccessor (ECValueAccessorCR accessor, ECValueCR v);
-    
+
+/*__PUBLISH_SECTION_END__*/
+    ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex); 
+    ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (UInt32 propertyIndex, ECValueCR v); 
+    ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValueUsingAccessor (ECValueAccessorCR accessor, ECValueCR valueToSet);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (WCharCP propertyAccessString, ECValueCR v); 
+    ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (WCharCP propertyAccessString, ECValueCR v, UInt32 arrayIndex); 
+/*__PUBLISH_SECTION_START__*/
+
     ECOBJECTS_EXPORT static bool        IsFixedArrayProperty (EC::IECInstanceR instance, WCharCP accessString);
 
     ECOBJECTS_EXPORT bool               IsPropertyReadOnly (WCharCP accessString) const;
