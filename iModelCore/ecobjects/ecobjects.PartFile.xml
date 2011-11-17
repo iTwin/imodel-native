@@ -141,7 +141,7 @@
 
     <Product Name="ECObjects">
         <SubPart PartName="ECObjectsNative"/>
-
+        <SubPart PartName="PublishedApi_Doc" />
         <Directories DirectoryListName="ECObjects"/>
     </Product>
 
