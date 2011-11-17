@@ -338,11 +338,21 @@ ECObjectsStatus     IECInstance::GetValue (ECValueR v, WCharCP propertyAccessStr
 ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex) const { return _GetValue (v, propertyIndex, false, 0); }
 ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex, UInt32 arrayIndex) const { return _GetValue (v, propertyIndex, true, arrayIndex); }
 
+ECObjectsStatus     IECInstance::SetInternalValue (WCharCP propertyAccessString, ECValueCR v) 
+    {
+    return _SetValue (propertyAccessString, v, false, 0); 
+    }
+
 ECObjectsStatus     IECInstance::SetValue (WCharCP propertyAccessString, ECValueCR v) 
     {
     if (IsReadOnly())
         return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
     return _SetValue (propertyAccessString, v, false, 0); 
+    }
+
+ECObjectsStatus     IECInstance::SetInternalValue (WCharCP propertyAccessString, ECValueCR v, UInt32 arrayIndex) 
+    {
+    return _SetValue (propertyAccessString, v, true, arrayIndex); 
     }
 
 ECObjectsStatus     IECInstance::SetValue (WCharCP propertyAccessString, ECValueCR v, UInt32 arrayIndex) 
@@ -353,12 +363,22 @@ ECObjectsStatus     IECInstance::SetValue (WCharCP propertyAccessString, ECValue
     return _SetValue (propertyAccessString, v, true, arrayIndex); 
     }
 
+ECObjectsStatus     IECInstance::SetInternalValue (UInt32 propertyIndex, ECValueCR v) 
+    {
+    return _SetValue (propertyIndex, v, false, 0); 
+    }
+
 ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v) 
     {
     if (IsReadOnly())
         return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
 
     return _SetValue (propertyIndex, v, false, 0); 
+    }
+
+ECObjectsStatus     IECInstance::SetInternalValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) 
+    { 
+    return _SetValue (propertyIndex, v, true, arrayIndex); 
     }
 
 ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) 
@@ -533,6 +553,35 @@ static ECObjectsStatus          setValueHelper (IECInstanceR instance, ECValueAc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan.Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/ 
+static ECObjectsStatus          setInternalValueHelper (IECInstanceR instance, ECValueAccessorCR accessor, UInt32 depth, bool compatible, ECValueCR value)
+    {
+    int arrayIndex = accessor[depth].arrayIndex;
+    if (compatible)
+        {
+        UInt32 propertyIndex = (UInt32)accessor[depth].propertyIndex;
+
+        if(arrayIndex < 0)
+            {
+            return instance.SetInternalValue(propertyIndex, value);
+            }
+
+        return instance.SetInternalValue (propertyIndex, value, (UInt32)arrayIndex);
+        }
+
+    // not the same enabler between accessor and instance so use access string to set value
+    WCharCP accessString = accessor.GetAccessString(depth);
+    if (NULL == accessString)
+        return ECOBJECTS_STATUS_Error;
+
+    if (arrayIndex < 0)
+        return instance.SetInternalValue (accessString, value);
+
+    return instance.SetInternalValue (accessString, value, (UInt32)arrayIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan.Rush      11/10
++---------------+---------------+---------------+---------------+---------------+------*/ 
 ECObjectsStatus           IECInstance::GetValueUsingAccessor (ECValueR v, ECValueAccessorCR accessor) const
     {
     ECObjectsStatus status            = ECOBJECTS_STATUS_Success;
@@ -562,11 +611,8 @@ ECObjectsStatus           IECInstance::GetValueUsingAccessor (ECValueR v, ECValu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan.Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/ 
-ECObjectsStatus           IECInstance::SetValueUsingAccessor (ECValueAccessorCR accessor, ECValueCR valueToSet)
+ECObjectsStatus           IECInstance::SetInternalValueUsingAccessor (ECValueAccessorCR accessor, ECValueCR valueToSet)
     {
-    if (IsReadOnly())
-        return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
-
     ECObjectsStatus status          = ECOBJECTS_STATUS_Success;
     IECInstancePtr  currentInstance = this;
 
@@ -615,7 +661,7 @@ ECObjectsStatus           IECInstance::SetValueUsingAccessor (ECValueAccessorCR 
 
         // if we are processing the deepest location then set the value
         if (depth == (accessor.GetDepth()-1))
-            return setValueHelper (*currentInstance, accessor, depth, compatible, valueToSet);
+            return setInternalValueHelper (*currentInstance, accessor, depth, compatible, valueToSet);
 
         // if we are not inside an array this is an embedded struct, go into it.
         if (0 > arrayIndex)
@@ -653,6 +699,17 @@ ECObjectsStatus           IECInstance::SetValueUsingAccessor (ECValueAccessorCR 
         } 
 
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus           IECInstance::SetValueUsingAccessor (ECValueAccessorCR accessor, ECValueCR valueToSet)
+    {
+    if (IsReadOnly())
+        return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
+
+    return  SetInternalValueUsingAccessor (accessor, valueToSet);
     }
 
 /////////////////////////////////////////////////////////////////////////////////////////
