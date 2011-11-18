@@ -517,9 +517,11 @@ void                MemoryECInstanceBase::_FreeAllocation ()
         m_perPropertyFlagsHolder.perPropertyFlags.address = NULL;
         }
 
-    free (m_data.address); 
     if (!m_usingSharedMemory)
-        free (m_data.address); 
+        {
+        if (m_data.address)
+            free (m_data.address); 
+        }
 
     m_data.address = NULL;
 
