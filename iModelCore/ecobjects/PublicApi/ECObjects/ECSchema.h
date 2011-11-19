@@ -117,6 +117,9 @@ private:
 
     SchemaWriteStatus                   AddCustomAttributeProperties (BeXmlNodeR oldNode, BeXmlNodeR newNode) const;
 
+    IECInstancePtr                      GetCustomAttributeInternal(WStringCR className, bool includeBaseClasses) const;
+    IECInstancePtr                      GetCustomAttributeInternal(ECClassCR ecClass, bool includeBaseClasses) const;
+
 protected:
     InstanceReadStatus                  ReadCustomAttributes (BeXmlNodeR containerNode, ECSchemaCR schema, IStandaloneEnablerLocaterP standaloneEnablerLocater);
     SchemaWriteStatus                   WriteCustomAttributes(BeXmlNodeR parentNode) const;
@@ -129,15 +132,23 @@ protected:
 
 /*__PUBLISH_SECTION_START__*/
 public:
-    //! Returns true if the conainer has a custom attribute of a class of the specified name
+    //! Returns true if the container has a custom attribute of a class of the specified name
     ECOBJECTS_EXPORT bool               IsDefined(WStringCR className) ;
-    //! Returns true if the conainer has a custom attribute of a class of the specified class definition
+    //! Returns true if the container has a custom attribute of a class of the specified class definition
     ECOBJECTS_EXPORT bool               IsDefined(ECClassCR classDefinition) ;
 
     //! Retrieves the custom attribute matching the class name.  Includes looking on base containers
     ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttribute(WStringCR className) const;
+
+    //! Retrieves the custom attribute matching the class name.  Does not look on base containers
+    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttributeLocal(WStringCR className) const;
+
     //! Retrieves the custom attribute matching the class definition.  Includes looking on base containers
     ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttribute(ECClassCR classDefinition) const;
+
+    //! Retrieves the custom attribute matching the class definition.  Includes looking on base containers
+    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttributeLocal(ECClassCR classDefinition) const;
+
     //! Retrieves all custom attributes from the container
     //! @param[in]  includeBase  Whether to include custom attributes from the base containers 
     ECOBJECTS_EXPORT ECCustomAttributeInstanceIterable GetCustomAttributes(bool includeBase) const; 
