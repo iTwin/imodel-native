@@ -72,16 +72,26 @@ WStringCR ECClass::GetName
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::SetName
-(
-WStringCR name
-)
+WCharCP ECClass::GetFullName () const
+    {
+    if (m_fullName.size() == 0)
+        m_fullName = GetSchema().GetName() + L":" + GetName();
+        
+    return m_fullName.c_str();
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::SetName (WStringCR name)
     {
     
     if (!NameValidator::Validate(name))
         return ECOBJECTS_STATUS_InvalidName;
         
-    m_name = name;        
+    m_name = name;
+    m_fullName = GetSchema().GetName() + L":" + GetName();
+    
     return ECOBJECTS_STATUS_Success;
     }
 
