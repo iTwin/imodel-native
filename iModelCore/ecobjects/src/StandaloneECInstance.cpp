@@ -44,6 +44,7 @@ MemoryECInstanceBase::MemoryECInstanceBase (byte * data, UInt32 size, ClassLayou
     m_data.address = data;
     m_isInManagedInstance = false;
     m_structInstances.vectorP = NULL;
+    m_usingSharedMemory = false;
     m_parentInstance.parentInstance = parentInstance;
 
     InitializePerPropertyFlags (classLayout, numBitsPerPropertyFlag);
@@ -59,6 +60,8 @@ MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 mi
     m_isInManagedInstance = false;
     m_structInstances.vectorP = NULL;
     m_data.address = NULL;
+    m_usingSharedMemory = false;
+
     m_parentInstance.parentInstance = parentInstance;
 
 #if defined (_WIN32) // WIP_NONPORT
@@ -74,6 +77,14 @@ MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 mi
     InitializePerPropertyFlags (classLayout, numBitsPerPropertyFlag);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void    MemoryECInstanceBase::SetUsingSharedMemory () 
+    {
+    m_usingSharedMemory = true;
+	}
+	
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -181,7 +192,7 @@ size_t                MemoryECInstanceBase::GetBaseObjectSize () const
 ECObjectsStatus          MemoryECInstanceBase::IsPerPropertyBitSet (bool& isSet, UInt8 bitIndex, UInt32 propertyIndex) const
     {
     if (bitIndex >= m_perPropertyFlagsHolder.numBitsPerProperty)
-        return ECOBJECTS_STATUS_InvalidIndexForPerPropertFlag;
+        return ECOBJECTS_STATUS_InvalidIndexForPerPropertyFlag;
 
     if (propertyIndex >= GetClassLayout().GetPropertyCount ())
         return ECOBJECTS_STATUS_IndexOutOfRange;
@@ -213,7 +224,7 @@ ECObjectsStatus          MemoryECInstanceBase::IsPerPropertyBitSet (bool& isSet,
 ECObjectsStatus         MemoryECInstanceBase::IsAnyPerPropertyBitSet (bool& isSet, UInt8 bitIndex) const
     {
     if (bitIndex >= m_perPropertyFlagsHolder.numBitsPerProperty)
-        return ECOBJECTS_STATUS_InvalidIndexForPerPropertFlag;
+        return ECOBJECTS_STATUS_InvalidIndexForPerPropertyFlag;
 
     UInt32* addressOfPerPropertyFlags = m_perPropertyFlagsHolder.perPropertyFlags.address;
     if (NULL == addressOfPerPropertyFlags)
@@ -244,7 +255,7 @@ ECObjectsStatus         MemoryECInstanceBase::IsAnyPerPropertyBitSet (bool& isSe
 ECObjectsStatus          MemoryECInstanceBase::SetPerPropertyBit (UInt8 bitIndex, UInt32 propertyIndex, bool setBit)
     {
     if (bitIndex >= m_perPropertyFlagsHolder.numBitsPerProperty)
-        return ECOBJECTS_STATUS_InvalidIndexForPerPropertFlag;
+        return ECOBJECTS_STATUS_InvalidIndexForPerPropertyFlag;
 
     if (propertyIndex >= GetClassLayout().GetPropertyCount ())
         return ECOBJECTS_STATUS_IndexOutOfRange;
@@ -252,7 +263,7 @@ ECObjectsStatus          MemoryECInstanceBase::SetPerPropertyBit (UInt8 bitIndex
     UInt32* addressOfPerPropertyFlags = m_perPropertyFlagsHolder.perPropertyFlags.address;
 
     if (!addressOfPerPropertyFlags)
-        return ECOBJECTS_STATUS_InvalidIndexForPerPropertFlag;
+        return ECOBJECTS_STATUS_InvalidIndexForPerPropertyFlag;
 
     if (m_isInManagedInstance)
         {
@@ -506,7 +517,12 @@ void                MemoryECInstanceBase::_FreeAllocation ()
         m_perPropertyFlagsHolder.perPropertyFlags.address = NULL;
         }
 
-    free (m_data.address); 
+    if (!m_usingSharedMemory)
+        {
+        if (m_data.address)
+            free (m_data.address); 
+        }
+
     m_data.address = NULL;
 
     if (m_structInstances.vectorP)
@@ -1169,6 +1185,44 @@ StructArrayEntry const* MemoryECInstanceBase::GetAddressOfStructArrayEntry (Stru
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus           MemoryECInstanceBase::SetStructArrayInstance (MemoryECInstanceBaseCR instance, StructValueIdentifier structValueId)
+    {
+    if (m_isInManagedInstance)  // this check should eventually go away unless we keep support for embedding
+        return ECOBJECTS_STATUS_Error;
+
+    if (NULL == m_structInstances.vectorP)
+        m_structInstances.vectorP = new StructInstanceVector ();
+
+    IECInstancePtr instancePtr = instance.GetAsIECInstance();
+    m_structInstances.vectorP->push_back (StructArrayEntry (structValueId, instancePtr));
+    if (m_structValueId < structValueId)
+        m_structValueId = structValueId;
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr           MemoryECInstanceBase::GetStructArrayInstanceByIndex (UInt32 index, StructValueIdentifier& structValueId) const
+    {
+    if (m_isInManagedInstance)  // this check should eventually go away unless we keep support for embedding
+        return NULL;
+
+    if (NULL == m_structInstances.vectorP)  // no struct instances exist
+        return NULL;
+
+    if (index >= m_structInstances.vectorP->size())
+        return NULL;
+
+    StructArrayEntry& arrayEntry = (*m_structInstances.vectorP)[index];
+    structValueId = arrayEntry.structValueIdentifier;
+    return arrayEntry.structInstance.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  12/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstancePtr  MemoryECInstanceBase::GetStructArrayInstance (StructValueIdentifier structValueId) const
@@ -1759,6 +1813,18 @@ ECObjectsStatus StandaloneECEnabler::_GetPropertyIndices (bvector<UInt32>& indic
     return instance;
     }*/
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/        
+StandaloneECInstanceP   StandaloneECEnabler::CreateSharedInstance (byte * data, UInt32 size)
+    {
+    StandaloneECInstanceP instance = new StandaloneECInstance (*this, data, size);
+    instance->SetUsingSharedMemory ();
+
+    return instance;
+    }
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
