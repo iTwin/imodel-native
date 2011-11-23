@@ -354,7 +354,7 @@ ECSchemaCP schema
     initSchemasThatAllowOverridingArrays();
     wchar_t buf[1024]; 
 
-    swprintf (buf, L"%s.%02d", schema->GetName().c_str(), schema->GetVersionMajor());
+    BeStringUtilities::Snwprintf (buf, L"%s.%02d", schema->GetName().c_str(), schema->GetVersionMajor());
     WString nameAndVersion(buf);
     bvector<WString>::iterator iter = std::find(s_schemasThatAllowOverridingArrays.begin(), s_schemasThatAllowOverridingArrays.end(), nameAndVersion);
     return (iter != s_schemasThatAllowOverridingArrays.end());
