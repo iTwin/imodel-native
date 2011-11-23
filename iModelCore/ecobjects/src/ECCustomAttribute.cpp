@@ -127,9 +127,10 @@ ECClassCR classDefinition
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr IECCustomAttributeContainer::GetCustomAttribute
+IECInstancePtr IECCustomAttributeContainer::GetCustomAttributeInternal
 (
-WStringCR className
+WStringCR className,
+bool      includeBaseClasses
 ) const
     {
     IECInstancePtr result;
@@ -142,6 +143,9 @@ WStringCR className
             return *iter;
             }
         }
+
+    if (!includeBaseClasses)
+        return NULL;
     bvector<IECCustomAttributeContainerP> baseContainers;
     _GetBaseContainers(baseContainers);
     FOR_EACH (IECCustomAttributeContainerP container, baseContainers)
@@ -158,7 +162,41 @@ WStringCR className
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstancePtr IECCustomAttributeContainer::GetCustomAttribute
 (
-ECClassCR classDefinition
+WStringCR className
+) const
+    {
+    return GetCustomAttributeInternal (className, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Casey.Mullen      11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr IECCustomAttributeContainer::GetCustomAttributeLocal
+(
+WStringCR className
+) const
+    {
+    return GetCustomAttributeInternal(className, false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Casey.Mullen      11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr IECCustomAttributeContainer::GetCustomAttributeLocal
+(
+ECClassCR   ecClass
+) const
+    {
+    return GetCustomAttributeInternal(ecClass, false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr IECCustomAttributeContainer::GetCustomAttributeInternal
+(
+ECClassCR classDefinition,
+bool      includeBaseClasses
 ) const
     {
     IECInstancePtr result;
@@ -171,6 +209,10 @@ ECClassCR classDefinition
             return *iter;
             }
         }
+
+    if (!includeBaseClasses)
+        return NULL;
+
     bvector<IECCustomAttributeContainerP> baseContainers;
     _GetBaseContainers(baseContainers);
     FOR_EACH (IECCustomAttributeContainerP container, baseContainers)
@@ -182,6 +224,16 @@ ECClassCR classDefinition
     return result;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr IECCustomAttributeContainer::GetCustomAttribute
+(
+ECClassCR classDefinition
+) const
+    {
+    return GetCustomAttributeInternal (classDefinition, true);
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/

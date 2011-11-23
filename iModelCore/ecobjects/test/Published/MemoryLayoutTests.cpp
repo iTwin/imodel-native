@@ -2197,9 +2197,6 @@ TEST_F (MemoryLayoutTests, IterateCompleClass)
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
-    StandaloneECEnablerPtr structArrayEnabler = schema->GetClassP(L"StructClass")->GetDefaultStandaloneEnabler ();
-    EC::StandaloneECInstancePtr structInstance = structArrayEnabler->CreateInstance();
-
     ECValue b(true);
     ECValue s1(L"719372644");
     ECValue s2(L"asasdasd");
@@ -2212,6 +2209,12 @@ TEST_F (MemoryLayoutTests, IterateCompleClass)
     ECValue i3((int)32323);
     ECValue d1(0.71266461290077521);
 
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"StringProperty", s4));
+    EXPECT_TRUE (SUCCESS == instance->SetValue (L"IntProperty", i2));
+
+    StandaloneECEnablerPtr structArrayEnabler = schema->GetClassP(L"StructClass")->GetDefaultStandaloneEnabler ();
+    EC::StandaloneECInstancePtr structInstance = structArrayEnabler->CreateInstance();
+
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"BooleanProperty", b));
     EXPECT_TRUE (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == instance->SetValue (L"BooleanProperty", b));
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"SimpleArrayProperty[]", s1, 0));
@@ -2220,8 +2223,6 @@ TEST_F (MemoryLayoutTests, IterateCompleClass)
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"StructProperty.IntProperty", i1));
     EXPECT_TRUE (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == instance->SetValue (L"StructProperty.IntProperty", i1));
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"StructProperty.ArrayProperty[]", s3, 0));
-    EXPECT_TRUE (SUCCESS == instance->SetValue (L"StringProperty", s4));
-    EXPECT_TRUE (SUCCESS == instance->SetValue (L"IntProperty", i2));
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"DoubleProperty", d1));
     EXPECT_TRUE (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == instance->SetValue (L"DoubleProperty", d1));
 

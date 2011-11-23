@@ -1558,8 +1558,6 @@ ECObjectsStatus       MemoryInstanceSupport::EnsureSpaceIsAvailable (UInt32& off
     return GrowPropertyValue (classLayout, propertyLayout, additionalBytesNeeded, callbackP);
     }        
         
-#define DEBUGGING_ARRAYENTRY_REMOVAL   
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/

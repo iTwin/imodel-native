@@ -1087,7 +1087,11 @@ bvector<WString>*               searchPaths
                     return schemaOut;
                 }
             else
+                {
+                ECObjectsLogger::Log()->warningv (L"Located %s, but it does not meet 'latest compatible' criteria to match %s.%02d.%02d. Caller can use acceptImperfectLegacyMatch to cause it to be accepted.", 
+                                                  fullFileName.c_str(), name.c_str(), versionMajor, versionMinor);
                 continue;
+                }
             }
 
         if (SCHEMA_READ_STATUS_Success != ECSchema::ReadFromXmlFile (schemaOut, fullFileName.c_str(), schemaContext))
