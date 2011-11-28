@@ -2501,7 +2501,11 @@ WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, Clas
 
         if (propertyLayout->GetTypeDescriptor().IsStruct())
             {
-            appendFormattedString (oss, L"%s  Struct %s\n", indent, propertyLayout->GetAccessString());
+            WCharCP accessStringP = propertyLayout->GetAccessString();
+            // skip outputting "Struct" for struct that represents the root instance 
+            if (NULL != accessStringP && 0 != *accessStringP)
+                appendFormattedString (oss, L"%s  Struct %s\n", indent, propertyLayout->GetAccessString());
+
             continue;
             }
 
