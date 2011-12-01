@@ -5,51 +5,14 @@
 |  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
-#include <windows.h>
 #include "ECObjectsPch.h"
+#include <Bentley/BeFileListIterator.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-struct ECFileNameIterator
-    {
-    WIN32_FIND_DATAW m_findData;
-    HANDLE           m_findHandle;
-    bool             m_valid;
-    wchar_t          m_deviceName[_MAX_DRIVE];
-    wchar_t          m_dirName[_MAX_DIR];
+#if defined (_WIN32) // WIP_NONPORT *** rewrite this entire file in terms of BeFileName, BeFileListIterator, etc.
+#include <windows.h>
 
-public:
-    ECFileNameIterator (WCharCP path);
-    ~ECFileNameIterator ();
-    BentleyStatus GetNextFileName (WCharP name);
-     };
-
-ECFileNameIterator::ECFileNameIterator (WCharCP path)
-    {
-    m_valid = true;
-    m_findHandle = ::FindFirstFileW (path, &m_findData);
-    _wsplitpath(path, m_deviceName, m_dirName, NULL, NULL);
-    }
-    
-ECFileNameIterator::~ECFileNameIterator ()
-    {
-    if (INVALID_HANDLE_VALUE != m_findHandle)
-        ::FindClose (m_findHandle);
-    }
-    
-BentleyStatus ECFileNameIterator::GetNextFileName (WCharP name)
-    {
-    if (INVALID_HANDLE_VALUE == m_findHandle || !m_valid)
-        return  ERROR;
-
-    _wmakepath (name, m_deviceName, m_dirName, m_findData.cFileName, NULL);
-    m_valid = 0 != ::FindNextFileW (m_findHandle, &m_findData);
-    return  SUCCESS;
-    }
- 
-
-   
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/03
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -63,7 +26,7 @@ static void*    getDLLInstance ()
     }
  
 WString ECFileUtilities::s_dllPath = L"";
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Carole.MacDonald 02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -87,40 +50,47 @@ WString ECFileUtilities::GetDllPath()
     
     }     
 
+#elif defined (__unix__)
+WString ECFileUtilities::GetDllPath(){return L"";}
+
+#endif    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  11/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus GetSchemaFileName (WString& fullFileName, UInt32& foundMinorVersion, WCharCP schemaPath, bool useLatestCompatibleMatch)
     {
-    ECFileNameIterator fileList (schemaPath);
-    wchar_t filePath[MAX_PATH];
+    WString     schemaPathWithWildcard = schemaPath;
+    schemaPathWithWildcard += L"*";
+
+    BeFileListIterator  fileList (schemaPathWithWildcard.c_str(), false);
+    BeFileName          filePath;
     UInt32 currentMinorVersion=0;
 
-    while (true)
+    while (SUCCESS == fileList.GetNextFileName (filePath))
         {
-        if (SUCCESS != fileList.GetNextFileName(filePath))
-            break;
+        WCharCP     fileName = filePath.GetName();
 
         if (!useLatestCompatibleMatch)
             {
-            fullFileName = filePath;
+            fullFileName = fileName;
             return ECOBJECTS_STATUS_Success;
             }
 
         if (fullFileName.empty())
             {
-            fullFileName = filePath;
-            GetMinorVersionFromSchemaFileName (foundMinorVersion, filePath);
+            fullFileName = fileName;
+            GetMinorVersionFromSchemaFileName (foundMinorVersion, fileName);
             continue;
             }
 
-        if (ECOBJECTS_STATUS_Success != GetMinorVersionFromSchemaFileName (currentMinorVersion, filePath))
+        if (ECOBJECTS_STATUS_Success != GetMinorVersionFromSchemaFileName (currentMinorVersion, fileName))
             continue;
 
         if (currentMinorVersion > foundMinorVersion)
             {
             foundMinorVersion = currentMinorVersion;
-            fullFileName = filePath;
+            fullFileName = fileName;
             }
         }
 
@@ -131,3 +101,5 @@ ECObjectsStatus GetSchemaFileName (WString& fullFileName, UInt32& foundMinorVers
     }
 
 END_BENTLEY_EC_NAMESPACE
+
+
