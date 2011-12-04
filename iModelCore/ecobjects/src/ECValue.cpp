@@ -1035,6 +1035,14 @@ WString    ECValue::ToString () const
                 SystemTime timeDate = GetDateTime();
                 return timeDate.ToString();
                 }
+            case PRIMITIVETYPE_Binary:
+                {
+                size_t size;
+                GetBinary(size);
+                valueAsString << "Blob(" << size << ")";
+                break;
+                }
+                
             default:
                 {
                 return L"EC::ECValue::ToString needs work... unsupported data type";
