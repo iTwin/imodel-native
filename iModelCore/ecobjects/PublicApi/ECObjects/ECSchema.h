@@ -1091,7 +1091,6 @@ private:
 
     // maps class name -> class pointer    
     ClassMap                m_classMap;
-
     ECSchemaReferenceList   m_refSchemaList;
     
     bmap<ECSchemaP, const WString> m_referencedSchemaNamespaceMap;
@@ -1147,8 +1146,10 @@ public:
     ECOBJECTS_EXPORT UInt32             GetVersionMajor() const;
     ECOBJECTS_EXPORT ECObjectsStatus    SetVersionMinor(UInt32 value);
     ECOBJECTS_EXPORT UInt32             GetVersionMinor() const;
-
+    //! Returns an iterable container of ECClasses sorted by name. For unsorted called overload.
     ECOBJECTS_EXPORT ECClassContainerCR GetClasses() const;
+    //! Fills a vector will the ECClasses of the ECSchema in the original order in which they were added.
+    ECOBJECTS_EXPORT void               GetClasses(bvector<ECClassP>& classes) const;
     ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
 
     //! Returns true if the schema is an ECStandard schema
