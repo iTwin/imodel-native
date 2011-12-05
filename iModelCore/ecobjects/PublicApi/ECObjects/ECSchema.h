@@ -1408,7 +1408,8 @@ public:
     //! Returns this if the name matches, otherwise searches referenced ECSchemas for one whose name matches schemaName
     ECOBJECTS_EXPORT ECSchemaCP FindSchema (WCharCP schemaName) const;
 
-    
+    ECOBJECTS_EXPORT static Int64 GenerateHashcodeFromECName(WCharCP name);
+
 }; // ECSchema
 
 END_BENTLEY_EC_NAMESPACE

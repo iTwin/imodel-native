@@ -1729,6 +1729,46 @@ void            ECSchema::FindAllSchemasInGraph (bvector<EC::ECSchemaCP>& allSch
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Casey.Mullen      12/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+Int64 ECSchema::GenerateHashcodeFromECName(WCharCP name)
+    {
+    // There are only 64 possible characters in a valid EC name (if we include ':' from ECClass::GetFullName(),
+    // and thus they call all be represented in 6 bits.
+    // We map the possible characters to numbers from 0 to 63
+    // We add one number to the hashcode, shift everything up by 6 bits, then add the next.
+    // If bits start rolling off the top, we recycle them at the bottom... exclusive-or-ing them with the lowest bits.
+    // Thus for names of 10 or fewer characters, the hash is always unique (and actually loses no information)
+    // For longer names, duplication is possible.
+    if (NULL == name)
+        return 0;
+
+    UInt64 id = 0;
+    for (int i = 0; i < wcslen(name); i++)
+        {
+        unsigned char high6bits = id >> 58; // Get the 6 bits that we are going to roll off the top, and recycle them into the low bits
+        char w = (char)name[i];
+        char d;
+        if (w == 95)                  // _
+            d = 1;
+        else if (w >= 48 && w <= 57)  // 0 - 9
+            d = w - 46;
+        else if (w >= 65 && w <= 90)  // A - Z
+            d = w - 53;
+        else if (w >= 97 && w <= 122) // a - z
+            d = w - 59;
+        else if (w == 85)             // :
+            d = 0;
+        else
+            d = 0; // illegal char... this should not happen. Log it.
+
+        id = id << 6 ^ d ^ high6bits;
+        }
+
+    return id;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCP ECSchema::FindSchema (WCharCP schemaName) const
