@@ -1218,6 +1218,12 @@ public:
     //          will contain the serialized schema.  Otherwise, ecSchemaXml will be unmodified
     ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlString (WStringR ecSchemaXml) const;
     
+    //! Serializes an ECXML schema to a string
+    //! @param[out] ecSchemaXml     The string containing the Xml of the serialized schema
+    //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml
+    //          will contain the serialized schema.  Otherwise, ecSchemaXml will be unmodified
+    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlString (Utf8StringR ecSchemaXml) const;
+
     //! Serializes an ECXML schema to a file
     //! @param[in]  ecSchemaXmlFile  The absolute path of the file to serialize the schema to
     //! @param[in]  utf16            'false' (the default) to use utf-8 encoding
