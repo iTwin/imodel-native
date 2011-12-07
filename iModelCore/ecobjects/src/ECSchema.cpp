@@ -1744,7 +1744,7 @@ Int64 ECSchema::GenerateHashcodeFromECName(WCharCP name)
         return 0;
 
     UInt64 id = 0;
-    for (int i = 0; i < wcslen(name); i++)
+    for (size_t i = 0; i < wcslen(name); ++i)
         {
         unsigned char high6bits = id >> 58; // Get the 6 bits that we are going to roll off the top, and recycle them into the low bits
         char w = (char)name[i];
