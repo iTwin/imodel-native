@@ -491,16 +491,16 @@ void                MemoryECInstanceBase::_FreeAllocation ()
     if (m_isInManagedInstance)
         return;
 
-    if (m_perPropertyFlagsHolder.perPropertyFlags.address)
-        {
-        free (m_perPropertyFlagsHolder.perPropertyFlags.address); 
-        m_perPropertyFlagsHolder.perPropertyFlags.address = NULL;
-        }
-
     if (!m_usingSharedMemory)
         {
         if (m_data.address)
             free (m_data.address); 
+
+        if (m_perPropertyFlagsHolder.perPropertyFlags.address)
+            {
+            free (m_perPropertyFlagsHolder.perPropertyFlags.address); 
+            m_perPropertyFlagsHolder.perPropertyFlags.address = NULL;
+            }
         }
 
     m_data.address = NULL;
@@ -1352,6 +1352,30 @@ ECObjectsStatus MemoryECInstanceBase::_RemoveStructArrayElementsFromMemory (Clas
     return RemoveArrayElementsFromMemory (classLayout, propertyLayout, removeIndex, removeCount);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  12/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+byte const *             MemoryECInstanceBase::GetPerPropertyFlagsData () const
+    {
+    return (byte const *)m_perPropertyFlagsHolder.perPropertyFlags.address;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  12/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt8                    MemoryECInstanceBase::GetNumBitsPerProperty () const
+    {
+    return m_perPropertyFlagsHolder.numBitsPerProperty;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  12/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32                   MemoryECInstanceBase::GetPerPropertyFlagsDataLength () const
+    {
+    return m_perPropertyFlagsHolder.numPerPropertyFlagsEntries;
+    }
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 //  StandaloneECInstance
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -1538,8 +1562,21 @@ ECObjectsStatus           StandaloneECInstance::_GetValue (ECValueR v, UInt32 pr
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECInstance::_SetValue (WCharCP propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
     {
+
+    PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
+                
     ClassLayoutCR classLayout = GetClassLayout();
-    return SetValueToMemory (classLayout, propertyAccessString, v, useArrayIndex, arrayIndex);
+    PropertyLayoutCP propertyLayout = NULL;
+    ECObjectsStatus status = classLayout.GetPropertyLayout (propertyLayout, propertyAccessString);
+    if (ECOBJECTS_STATUS_Success != status || NULL == propertyLayout)
+        return ECOBJECTS_STATUS_PropertyNotFound;       
+
+    UInt32 propertyIndex = 0;
+    GetEnabler().GetPropertyIndex(propertyIndex, propertyAccessString);
+
+    SetPerPropertyBit ((UInt8) PROPERTYFLAGINDEX_IsLoaded, propertyIndex, true);
+
+    return SetValueToMemory (classLayout, propertyIndex, v, useArrayIndex, arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1548,6 +1585,9 @@ ECObjectsStatus           StandaloneECInstance::_SetValue (WCharCP propertyAcces
 ECObjectsStatus           StandaloneECInstance::_SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
     {
     ClassLayoutCR classLayout = GetClassLayout();
+
+    SetPerPropertyBit ((UInt8) PROPERTYFLAGINDEX_IsLoaded, propertyIndex, true);
+
     return SetValueToMemory (classLayout, propertyIndex, v, useArrayIndex, arrayIndex);
     }
 

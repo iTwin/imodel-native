@@ -452,10 +452,14 @@ protected:
     //! Free any allocated memory
     virtual void                _FreeAllocation () = 0;
     
+    virtual void                _SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable) {};
+
 public:
     ECOBJECTS_EXPORT static InstanceHeader const&   PeekInstanceHeader (void const* data);
 
     ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP=NULL);
+   
+    ECOBJECTS_EXPORT void SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable);
     };    
 
 

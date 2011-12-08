@@ -22,6 +22,12 @@ typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
 
 typedef int StructValueIdentifier;
 
+enum PropertyFlagIndex : UInt8
+    {
+    PROPERTYFLAGINDEX_IsLoaded = 0,
+    PROPERTYFLAGINDEX_IsDirty  = 1
+    };
+
 struct StructArrayEntry
     {
     StructArrayEntry (StructValueIdentifier structValueId, IECInstancePtr& instancePtr)
@@ -141,6 +147,10 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT IECInstancePtr           GetStructArrayInstanceByIndex (UInt32 index, StructValueIdentifier& structValueId) const;
     ECOBJECTS_EXPORT ECObjectsStatus          SetStructArrayInstance (MemoryECInstanceBaseCR instance, StructValueIdentifier structValueId);
     ECOBJECTS_EXPORT void                     SetUsingSharedMemory ();
+
+    ECOBJECTS_EXPORT byte const *             GetPerPropertyFlagsData () const;
+    ECOBJECTS_EXPORT UInt8                    GetNumBitsPerProperty () const;
+    ECOBJECTS_EXPORT UInt32                   GetPerPropertyFlagsDataLength () const;
 };
 
 /*=================================================================================**//**
