@@ -2193,22 +2193,12 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
 
         return ECOBJECTS_STATUS_Success;
         } 
-#ifdef REMOVE // Casey decided that the ReadOnlyProperty setting was for GUI use only and that it should not be enforced at the API level  9/11
-    else
-        {
-        // to match ECF, if the property is marked as read only then we only allow setting the value if the current value is NULL
-        if (!isOriginalValueNull && propertyLayout.IsReadOnlyProperty())
-            return ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
-        }
-#endif
 
     if (isInUninitializedFixedCountArray)
         {
         ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, 0, GetReservedArrayCount (propertyLayout));
         }   
 
-    SetPropertyValueNull (propertyLayout, useIndex, index, false);            
-    
     UInt32 offset = GetOffsetOfPropertyValue (propertyLayout, useIndex, index);
 
 #ifdef EC_TRACE_MEMORY 
@@ -2220,7 +2210,9 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
         primitiveType = typeDescriptor.GetPrimitiveType();
     else
         primitiveType = PRIMITIVETYPE_Binary;
-        
+    
+    ECObjectsStatus result = ECOBJECTS_STATUS_Error;
+
     switch (primitiveType)
         {
         case PRIMITIVETYPE_Integer:
@@ -2234,7 +2226,8 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
             // WIP_FUSION: would it speed things up to poke directly when m_allowWritingDirectlyToInstanceMemory is true?
-            return _ModifyData (offset, &value, sizeof(value));
+            result = _ModifyData (offset, &value, sizeof(value));
+            break;
             }
         case PRIMITIVETYPE_Long:
             {
@@ -2246,7 +2239,8 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, &value, sizeof(value)))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
-            return _ModifyData (offset, &value, sizeof(value));
+            result = _ModifyData (offset, &value, sizeof(value));
+            break;
             }
         case PRIMITIVETYPE_Double:
             {
@@ -2258,7 +2252,8 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, &value, sizeof(value)))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
-            return _ModifyData (offset, &value, sizeof(value));
+            result = _ModifyData (offset, &value, sizeof(value));
+            break;
             }       
         case PRIMITIVETYPE_String:
             {
@@ -2287,7 +2282,8 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
                 return status;
 
             // WIP_FUSION: would it speed things up to poke directly when m_allowWritingDirectlyToInstanceMemory is true?
-            return _ModifyData (offset, value, bytesNeeded);
+            result = _ModifyData (offset, value, bytesNeeded);
+            break;
             }
 
         case PRIMITIVETYPE_Binary:
@@ -2331,9 +2327,9 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
                 return ECOBJECTS_STATUS_Success;
             
             // WIP_FUSION: would it speed things up to poke directly when m_allowWritingDirectlyToInstanceMemory is true?    
-            ECObjectsStatus result = _ModifyData (offset, dataBuffer, bytesNeeded);
+            result = _ModifyData (offset, dataBuffer, bytesNeeded);
             free (dataBuffer);
-            return result;
+            break;
             }
         case PRIMITIVETYPE_Boolean:
             {
@@ -2345,7 +2341,8 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, &value, sizeof(value)))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
-            return _ModifyData (offset, &value, sizeof(value));
+            result = _ModifyData (offset, &value, sizeof(value));
+            break;
             }       
         case PRIMITIVETYPE_Point2D:
             {
@@ -2357,7 +2354,8 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, &value, sizeof(value)))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
-            return _ModifyData (offset, &value, sizeof(value));
+            result = _ModifyData (offset, &value, sizeof(value));
+            break;
             }       
         case PRIMITIVETYPE_Point3D:
             {
@@ -2369,7 +2367,8 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, &value, sizeof(value)))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
-            return _ModifyData (offset, &value, sizeof(value));
+            result = _ModifyData (offset, &value, sizeof(value));
+            break;
             } 
         case PRIMITIVETYPE_DateTime:      // stored as long
             {
@@ -2381,8 +2380,15 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, &value, sizeof(value)))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
-            return _ModifyData (offset, &value, sizeof(value));
+            result = _ModifyData (offset, &value, sizeof(value));
+            break;
             }
+        }
+
+    if (ECOBJECTS_STATUS_Success == result)
+        {
+        SetPropertyValueNull (propertyLayout, useIndex, index, false);
+        return result; 
         }
 
     POSTCONDITION (false && "datatype not implemented", ECOBJECTS_STATUS_DataTypeNotSupported);
