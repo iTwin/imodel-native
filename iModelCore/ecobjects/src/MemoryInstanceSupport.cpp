@@ -2238,8 +2238,6 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
         ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, 0, GetReservedArrayCount (propertyLayout));
         }   
 
-    SetPropertyValueNull (propertyLayout, useIndex, index, false);            
-    
     UInt32 offset = GetOffsetOfPropertyValue (propertyLayout, useIndex, index);
 
 #ifdef EC_TRACE_MEMORY 
@@ -2265,7 +2263,9 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
             // WIP_FUSION: would it speed things up to poke directly when m_allowWritingDirectlyToInstanceMemory is true?
-            return _ModifyData (offset, &value, sizeof(value));
+            ECObjectsStatus result = _ModifyData (offset, &value, sizeof(value));
+            SetPropertyValueNull (propertyLayout, useIndex, index, false);
+            return result;
             }
         case PRIMITIVETYPE_Long:
             {
@@ -2277,7 +2277,9 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, &value, sizeof(value)))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
-            return _ModifyData (offset, &value, sizeof(value));
+            ECObjectsStatus result = _ModifyData (offset, &value, sizeof(value));
+            SetPropertyValueNull (propertyLayout, useIndex, index, false);
+            return result;
             }
         case PRIMITIVETYPE_Double:
             {
@@ -2289,7 +2291,9 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, &value, sizeof(value)))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
-            return _ModifyData (offset, &value, sizeof(value));
+            ECObjectsStatus result = _ModifyData (offset, &value, sizeof(value));
+            SetPropertyValueNull (propertyLayout, useIndex, index, false);
+            return result;
             }       
         case PRIMITIVETYPE_String:
             {
@@ -2318,7 +2322,9 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
                 return status;
 
             // WIP_FUSION: would it speed things up to poke directly when m_allowWritingDirectlyToInstanceMemory is true?
-            return _ModifyData (offset, value, bytesNeeded);
+            ECObjectsStatus result = _ModifyData (offset, value, bytesNeeded);
+            SetPropertyValueNull (propertyLayout, useIndex, index, false);
+            return result;
             }
 
         case PRIMITIVETYPE_Binary:
@@ -2364,8 +2370,10 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             // WIP_FUSION: would it speed things up to poke directly when m_allowWritingDirectlyToInstanceMemory is true?    
             ECObjectsStatus result = _ModifyData (offset, dataBuffer, bytesNeeded);
             free (dataBuffer);
+            SetPropertyValueNull (propertyLayout, useIndex, index, false);
             return result;
             }
+
         case PRIMITIVETYPE_Boolean:
             {
             if (!v.IsBoolean ())
@@ -2376,8 +2384,11 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, &value, sizeof(value)))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
-            return _ModifyData (offset, &value, sizeof(value));
-            }       
+            ECObjectsStatus result =  _ModifyData (offset, &value, sizeof(value));
+            SetPropertyValueNull (propertyLayout, useIndex, index, false);
+            return result;
+            }
+
         case PRIMITIVETYPE_Point2D:
             {
             if (!v.IsPoint2D ())
@@ -2388,8 +2399,11 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, &value, sizeof(value)))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
-            return _ModifyData (offset, &value, sizeof(value));
-            }       
+            ECObjectsStatus result = _ModifyData (offset, &value, sizeof(value));
+            SetPropertyValueNull (propertyLayout, useIndex, index, false);
+            return result;
+            }   
+
         case PRIMITIVETYPE_Point3D:
             {
             if (!v.IsPoint3D ())
@@ -2400,8 +2414,11 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, &value, sizeof(value)))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
-            return _ModifyData (offset, &value, sizeof(value));
-            } 
+            ECObjectsStatus result =  _ModifyData (offset, &value, sizeof(value));
+            SetPropertyValueNull (propertyLayout, useIndex, index, false);
+            return result;
+            }
+
         case PRIMITIVETYPE_DateTime:      // stored as long
             {
             if (!v.IsDateTime ())
@@ -2412,7 +2429,9 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, &value, sizeof(value)))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
-            return _ModifyData (offset, &value, sizeof(value));
+            ECObjectsStatus result =  _ModifyData (offset, &value, sizeof(value));
+            SetPropertyValueNull (propertyLayout, useIndex, index, false);
+            return result;
             }
         }
 

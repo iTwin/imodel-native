@@ -1763,7 +1763,7 @@ Int64 ECSchema::GenerateHashcodeFromECName(WCharCP name)
             d = 0; // illegal char... this should not happen. Log it.
 
         id = (id << 6) ^ d ^ high6bits;
-        //wprintf(L"name=%ls, i=%2d, id=%llx\n", name, i, id);
+        //wprintf(L"name=%ls, i=%2d, id=%I64x\n", name, i, id);
         }
 
     return id;
