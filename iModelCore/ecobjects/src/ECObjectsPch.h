@@ -15,6 +15,7 @@
 #include "ecxml.h"
 #include "Logger.h"
 #include "FileUtilities.h"
+#include "StopWatch.h"
 #include <Logging\bentleylogging.h>
 #include <Bentley/BeStringUtilities.h>
 #include "LeakDetector.h"

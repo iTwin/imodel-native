@@ -1326,6 +1326,7 @@ ECSchemaReadContextR     schemaContext
 )
     {            
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
+    StopWatch overallTimer(L"Overall schema de-serialization timer", true);
     
     pXmlDoc.setProperty("SelectionNamespaces", L"xmlns:" EC_NAMESPACE_PREFIX L"='" ECXML_URI_2_0 L"'");
     MSXML2::IXMLDOMNodePtr xmlNodePtr = pXmlDoc.selectSingleNode (L"/" EC_NAMESPACE_PREFIX L":" EC_SCHEMA_ELEMENT);
@@ -1376,30 +1377,45 @@ ECSchemaReadContextR     schemaContext
     READ_OPTIONAL_XML_ATTRIBUTE (DESCRIPTION_ATTRIBUTE,                     schemaOut, Description)
     READ_OPTIONAL_XML_ATTRIBUTE (DISPLAY_LABEL_ATTRIBUTE,                   schemaOut, DisplayLabel)
 
+    StopWatch readingSchemaReferences(L"Reading Schema References", true);
     if (SCHEMA_READ_STATUS_Success != (status = schemaOut->ReadSchemaReferencesFromXml(schemaNodePtr, schemaContext)))
         {
         schemaOwner.DropSchema (*schemaOut);
         schemaOut = NULL;
         return status;
         }
+    readingSchemaReferences.Stop();
+    ECObjectsLogger::Log()->tracev(L"Reading schema references for %ls took %.4lf seconds\n", schemaOut->GetFullSchemaName(), readingSchemaReferences.GetElapsedSeconds());
 
     ClassDeserializationVector classes;
+    StopWatch readingClassStubs(L"Reading class stubs", true);
     if (SCHEMA_READ_STATUS_Success != (status = schemaOut->ReadClassStubsFromXml (schemaNodePtr, classes, schemaContext)))
         {
         schemaOwner.DropSchema (*schemaOut);
         schemaOut = NULL;
         return status;
         }
+    readingClassStubs.Stop();
+    ECObjectsLogger::Log()->tracev(L"Reading class stubs for %ls took %.4lf seconds\n", schemaOut->GetFullSchemaName(), readingClassStubs.GetElapsedSeconds());
 
     // NEEDSWORK ECClass inheritance (base classes, properties & relationship endpoints)
+    StopWatch readingClassContents(L"Reading class contents", true);
     if (SCHEMA_READ_STATUS_Success != (status = schemaOut->ReadClassContentsFromXml (classes, schemaContext)))
         {
         schemaOwner.DropSchema (*schemaOut);
         schemaOut = NULL;
         return status;
         }
+    readingClassContents.Stop();
+    ECObjectsLogger::Log()->tracev(L"Reading class contents for %ls took %.4lf seconds\n", schemaOut->GetFullSchemaName(), readingClassContents.GetElapsedSeconds());
 
+    StopWatch readingCustomAttributes(L"Reading custom attributes", true);
     schemaOut->ReadCustomAttributes(schemaNodePtr, *schemaOut, schemaContext.GetStandaloneEnablerLocater());
+    readingCustomAttributes.Stop();
+    ECObjectsLogger::Log()->tracev(L"Reading custom attributes for %ls took %.4lf seconds\n", schemaOut->GetFullSchemaName(), readingCustomAttributes.GetElapsedSeconds());
+
+    overallTimer.Stop();
+    ECObjectsLogger::Log()->debugv(L"Overall schema de-serialization for %ls took %.4lf seconds\n", schemaOut->GetFullSchemaName(), overallTimer.GetElapsedSeconds());
 
     return SCHEMA_READ_STATUS_Success;
     }
