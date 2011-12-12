@@ -322,7 +322,7 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNodeR pa
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, IStandaloneEnablerLocaterP standaloneEnablerLocater)
     {  
-    SchemaReadStatus status = __super::_ReadXml (propertyNode, standaloneEnablerLocater);
+    SchemaReadStatus status = T_Super::_ReadXml (propertyNode, standaloneEnablerLocater);
     if (status != SCHEMA_READ_STATUS_Success)
         return status;
 
@@ -345,7 +345,7 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, IStanda
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus PrimitiveECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNodeR parentNode)
     {
-    return __super::_WriteXml (propertyNode, parentNode, EC_PROPERTY_ELEMENT);
+    return T_Super::_WriteXml (propertyNode, parentNode, EC_PROPERTY_ELEMENT);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -426,7 +426,7 @@ ECObjectsStatus PrimitiveECProperty::SetType (PrimitiveType primitiveType)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus StructECProperty::_ReadXml (BeXmlNodeR propertyNode, IStandaloneEnablerLocaterP standaloneEnablerLocater)
     {  
-    SchemaReadStatus status = __super::_ReadXml (propertyNode, standaloneEnablerLocater);
+    SchemaReadStatus status = T_Super::_ReadXml (propertyNode, standaloneEnablerLocater);
     if (status != SCHEMA_READ_STATUS_Success)
         return status;
 
@@ -441,7 +441,7 @@ SchemaReadStatus StructECProperty::_ReadXml (BeXmlNodeR propertyNode, IStandalon
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus StructECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNodeR parentNode)
     {
-    return __super::_WriteXml (propertyNode, parentNode, EC_STRUCTPROPERTY_ELEMENT);
+    return T_Super::_WriteXml (propertyNode, parentNode, EC_STRUCTPROPERTY_ELEMENT);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -557,7 +557,7 @@ ECObjectsStatus StructECProperty::SetType (ECClassCR structType)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus ArrayECProperty::_ReadXml (BeXmlNodeR propertyNode, IStandaloneEnablerLocaterP standaloneEnablerLocater)
     {  
-    SchemaReadStatus status = __super::_ReadXml (propertyNode, standaloneEnablerLocater);
+    SchemaReadStatus status = T_Super::_ReadXml (propertyNode, standaloneEnablerLocater);
     if (status != SCHEMA_READ_STATUS_Success)
         return status;
 
@@ -585,7 +585,7 @@ SchemaReadStatus ArrayECProperty::_ReadXml (BeXmlNodeR propertyNode, IStandalone
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNodeR parentNode)
     {
-    SchemaWriteStatus status = __super::_WriteXml (propertyNode, parentNode, EC_ARRAYPROPERTY_ELEMENT);
+    SchemaWriteStatus status = T_Super::_WriteXml (propertyNode, parentNode, EC_ARRAYPROPERTY_ELEMENT);
     if (status != SCHEMA_WRITE_STATUS_Success)
         return status;
         

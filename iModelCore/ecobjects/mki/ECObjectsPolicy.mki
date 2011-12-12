@@ -19,12 +19,14 @@ buildDir            = $(OutECObjects)
 #-----------------------------------------------------------
 # BuildContext
 #-----------------------------------------------------------
-BuildContext   = $(OutBuildContexts)ECObjects/
+%if !defined (BuildContext)
+BuildContext   = $(OutBuildContexts)ecobjects/
+%endif
 ContextDeliveryDir         = $(BuildContext)Delivery/
 
 # Give a name to some common locations in the BuildContext
-BuildContextPublicApiDir = $(BuildContext)PublicApi/
-BuildContextPublishedApiDir            = $(BuildContext)Delivery/PublishedAPI/
+BuildContextPublicApiDir = $(BuildContext)PublicAPI/
+BuildContextPublishedApiDir = $(BuildContext)Delivery/PublishedAPI/
 
 %if !defined (programName)
     programName     = $(ASSEMBLY_NAME)
@@ -59,7 +61,6 @@ GUnitTestDir        = $(BuildContext)SubParts/google_gtest/
 # Configure includes
 #-----------------------------------------------------------------------
 %include $(SharedMki)DefinePublicApiIncludes.mki
-#_PublicApiIncludes =% $(PublicApiIncludes)
-PublicApiIncludes = -I$(ecPublicAPISrc) -I${BuildContext}/PublicApi/ -I${BuildContext}/VendorAPI/
+PublicApiIncludes + -I$(ecPublicAPISrc)
 
 certDir = $(bsiCerts)

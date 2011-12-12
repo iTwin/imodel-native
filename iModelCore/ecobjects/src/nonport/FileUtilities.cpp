@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
-#include <Bentley\BeFileListIterator.h>
+#include <Bentley/BeFileListIterator.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 

@@ -2,9 +2,10 @@
 #
 #     $Source: PublicApi/PublishAPI.mke $
 #
-#  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
+PolicyFile = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
 %include mdl.mki
 
 genDir       = $(buildDir)PublishedAPI

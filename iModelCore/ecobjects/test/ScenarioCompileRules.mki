@@ -1,0 +1,19 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: test/ScenarioCompileRules.mki $
+#
+#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+
+#########################################################################################
+# Compile the list of tests. 
+#########################################################################################
+$(o)StopWatch$(oext)          : $(baseDir)scenario/StopWatch.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
+
+$(o)TestFixture$(oext)        : $(baseDir)NonPublished/TestFixture.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
+
+#$(o)MemoryLayoutTests$(oext)  : $(baseDir)NonPublished/MemoryLayoutTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
+
+$(o)ScenarioSchemaTests$(oext)  : $(baseDir)scenario/SchemaTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
+
