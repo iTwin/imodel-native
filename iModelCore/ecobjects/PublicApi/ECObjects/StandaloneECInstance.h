@@ -8,8 +8,8 @@
 //__PUBLISH_SECTION_START__
 #pragma once
 
-#include <ECObjects\ECObjects.h>
-#include <ECObjects\MemoryInstanceSupport.h>
+#include <ECObjects/ECObjects.h>
+#include <ECObjects/MemoryInstanceSupport.h>
 
 EC_TYPEDEFS(StandaloneECEnabler);
 
@@ -67,6 +67,11 @@ struct PerPropertyFlagsHolder
     PerPropertyFlagsUnion   perPropertyFlags;
     };
 
+union ParentInstanceUnion
+    {
+    MemoryECInstanceBase const *    parentInstance;
+    Int64                           offset;
+    };
 
 /*=================================================================================**//**
 * EC::MemoryECInstanceBase is base class for ECInstances that holds its values in memory that it allocates. 
@@ -84,14 +89,17 @@ private:
     InstanceDataUnion       m_data;
     UInt32                  m_bytesAllocated;
     bool                    m_isInManagedInstance;
-    StructValueIdentifier   m_structValueId;
     SupportingInstanceUnion m_structInstances;
+    ParentInstanceUnion     m_parentInstance;
+    StructValueIdentifier   m_structValueId;
     bool                    m_usingSharedMemory;
 
 //__PUBLISH_SECTION_END__
     IECInstancePtr          GetStructArrayInstance (StructValueIdentifier structValueId) const;
     StructArrayEntry const* GetAddressOfStructArrayEntry (StructValueIdentifier key) const;
+    StructValueIdentifier   GetMaxStructValueIdentifier () const;
     byte*                   GetAddressOfPropertyData () const;
+    byte*                   GetAddressOfInstanceFromAddressOfPropertyData () const;
     //void                    UpdateStructArrayOffsets (byte const* gapAddress, bool& updateOffset, bool& updateOffsetToEnd, size_t resizeAmount);
     void                    UpdateStructArrayOffsets (byte const* gapAddress, size_t resizeAmount);
     ECObjectsStatus         RemoveStructStructArrayEntry (StructValueIdentifier structValueId, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP);
@@ -103,8 +111,8 @@ private:
 
 protected:
     //! The MemoryECInstanceBase will take ownership of the memory
-    ECOBJECTS_EXPORT MemoryECInstanceBase (byte * data, UInt32 size, ClassLayoutCR classLayout, bool allowWritingDirectlyToInstanceMemory);
-    ECOBJECTS_EXPORT MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory);
+    ECOBJECTS_EXPORT MemoryECInstanceBase (byte * data, UInt32 size, ClassLayoutCR classLayout, bool allowWritingDirectlyToInstanceMemory, UInt8 numBitsPerPropertyFlag=1, MemoryECInstanceBase const * parentInstance=NULL);
+    ECOBJECTS_EXPORT MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory, UInt8 numBitsPerPropertyFlag=1, MemoryECInstanceBase const * parentInstance=NULL);
     ECOBJECTS_EXPORT virtual ~MemoryECInstanceBase ();
 
     ECOBJECTS_EXPORT virtual bool             _IsMemoryInitialized () const;
@@ -123,6 +131,7 @@ protected:
     virtual IECInstancePtr      _GetAsIECInstance () const = 0;
     virtual size_t              _GetObjectSize () const = 0;
     virtual size_t              _LoadObjectDataIntoManagedInstance (byte* managedBuffer) const = 0;
+    virtual size_t              _GetBaseObjectSize () const = 0;    // should be the same return value as _LoadObjectDataIntoManagedInstance
                              
 public: // These must be public so that ECXInstanceEnabler can get at the guts of StandaloneECInstance to copy it into an XAttribute
     ECOBJECTS_EXPORT void                     SetData (byte * data, UInt32 size, bool freeExisitingData); //The MemoryECInstanceBase will take ownership of the memory
@@ -134,6 +143,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT ClassLayoutCR            GetClassLayout() const;
     ECOBJECTS_EXPORT IECInstancePtr           GetAsIECInstance () const;
     ECOBJECTS_EXPORT size_t                   GetObjectSize () const;
+    ECOBJECTS_EXPORT size_t                   GetBaseObjectSize () const;
     ECOBJECTS_EXPORT size_t                   CalculateSupportingInstanceDataSize () const;
     ECOBJECTS_EXPORT size_t                   LoadDataIntoManagedInstance (byte* managedBuffer, size_t sizeOfManagedBuffer) const;
     ECOBJECTS_EXPORT void                     FixupStructArrayOffsets (int offsetToGap, size_t resizeAmount, bool removingGap);
@@ -143,6 +153,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT ECObjectsStatus          SetPerPropertyBit (UInt8 bitIndex, UInt32 propertyIndex, bool setBit);
     ECOBJECTS_EXPORT void                     ClearAllPerPropertyFlags ();
     ECOBJECTS_EXPORT UInt8                    GetNumBitsInPerPropertyFlags ();
+    ECOBJECTS_EXPORT MemoryECInstanceBase const *   GetParentInstance () const;
 
     ECOBJECTS_EXPORT IECInstancePtr           GetStructArrayInstanceByIndex (UInt32 index, StructValueIdentifier& structValueId) const;
     ECOBJECTS_EXPORT ECObjectsStatus          SetStructArrayInstance (MemoryECInstanceBaseCR instance, StructValueIdentifier structValueId);
@@ -192,6 +203,7 @@ protected:
     ECOBJECTS_EXPORT virtual ECEnablerCR         _GetEnabler() const override;
     ECOBJECTS_EXPORT virtual MemoryECInstanceBase* _GetAsMemoryECInstance () const override;
     ECOBJECTS_EXPORT virtual size_t              _GetObjectSize () const;
+    ECOBJECTS_EXPORT virtual size_t              _GetBaseObjectSize () const override;
     ECOBJECTS_EXPORT virtual size_t              _GetOffsetToIECInstance () const;
 
     // MemoryECInstanceBase

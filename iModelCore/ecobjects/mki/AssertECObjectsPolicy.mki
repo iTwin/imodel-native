@@ -11,6 +11,6 @@ SrcECObjects=$(SrcRoot)ecobjects/
 ##
 ## Specify a policy layer for things built via bmake
 ##
-SystemPolicyMki         = $(srcBsiCommon)sharedmki/InternalSystemPolicy.mki
+SystemPolicyMki         = $(SrcRoot)bsicommon/sharedmki/InternalSystemPolicy.mki
 FoundationPolicyMki     = $(SrcRoot)ecobjects/mki/ECObjectsPolicy.mki
 
