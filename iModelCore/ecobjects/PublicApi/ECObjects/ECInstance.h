@@ -9,10 +9,7 @@
 /*__PUBLISH_SECTION_START__*/
 
 #include "ECObjects.h"
-#include <Geom/GeomApi.h>
-
-BENTLEY_TYPEDEFS (BeXmlDom)
-BENTLEY_TYPEDEFS (BeXmlNode)
+#include <Geom\GeomApi.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -70,7 +67,7 @@ struct MemoryCallbackData
 
 // Declare an unmanaged function prototype 
 // Note the use of __stdcall for compatibility with managed code
-typedef int (STDCALL_ATTRIBUTE *EmbeddedInstanceCallbackP)(MemoryCallbackData* callbackData);
+typedef int (__stdcall *EmbeddedInstanceCallbackP)(MemoryCallbackData* callbackData);
 //! @endcond
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -204,16 +201,13 @@ public:
     ECOBJECTS_EXPORT static void        Debug_GetAllocationStats (int* currentLive, int* totalAllocs, int* totalFrees);
     ECOBJECTS_EXPORT static void        Debug_ReportLeaks (bvector<WString>& classNamesToExclude);
 
-    ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromXmlFile   (IECInstancePtr& ecInstance, WCharCP fileName,   ECInstanceReadContextR context);
-    ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromXmlStream (IECInstancePtr& ecInstance, IStreamP stream,    ECInstanceReadContextR context);
-    ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromXmlString (IECInstancePtr& ecInstance, WCharCP xmlString,  ECInstanceReadContextR context);
-    ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromBeXmlDom  (IECInstancePtr& ecInstance, BeXmlDomR xmlNode,  ECInstanceReadContextR context);
-    ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromBeXmlNode (IECInstancePtr& ecInstance, BeXmlNodeR xmlNode, ECInstanceReadContextR context);
+    ECOBJECTS_EXPORT static InstanceReadStatus   ReadFromXmlFile   (IECInstancePtr& ecInstance, WCharCP fileName, ECInstanceReadContextR context);
+    ECOBJECTS_EXPORT static InstanceReadStatus   ReadFromXmlStream (IECInstancePtr& ecInstance, IStreamP stream, ECInstanceReadContextR context);
+    ECOBJECTS_EXPORT static InstanceReadStatus   ReadFromXmlString (IECInstancePtr& ecInstance, WCharCP xmlString, ECInstanceReadContextR context);
 
-    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlFile   (WCharCP fileName, bool isStandAlone, bool writeInstanceId, bool utf16);
-    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlStream (IStreamP stream, bool isStandAlone, bool writeInstanceId, bool utf16);
-    ECOBJECTS_EXPORT InstanceWriteStatus        WriteToXmlString (WString & ecInstanceXml, bool isStandAlone, bool writeInstanceId);
-    ECOBJECTS_EXPORT InstanceWriteStatus        WriteToBeXmlNode (BeXmlNodeR xmlNode);
+    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlFile   (WCharCP fileName, bool isCompleteXmlDocument, bool writeInstanceId, bool utf16);
+    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlStream (IStreamP stream, bool isCompleteXmlDocument, bool writeInstanceId, bool utf16);
+    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlString (WStringR ecInstanceXml, bool isCompleteXmlDocument, bool writeInstanceId);
     };
     
 //=======================================================================================    

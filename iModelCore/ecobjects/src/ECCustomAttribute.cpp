@@ -11,10 +11,8 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "ECObjectsPch.h"
-#if defined (_WIN32) // WIP_NONPORT
 #include <objbase.h>
 #include <comdef.h>
-#endif //defined (_WIN32) // WIP_NONPORT
 
 BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
@@ -333,28 +331,33 @@ ECClassCR classDefinition
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeXmlNodeR containerNode, ECSchemaCR schema, IStandaloneEnablerLocaterP standaloneEnablerLocater)
+InstanceReadStatus IECCustomAttributeContainer::ReadCustomAttributes
+(
+MSXML2::IXMLDOMNode&       containerNode,
+ECSchemaCR                 schema,
+IStandaloneEnablerLocaterP standaloneEnablerLocater
+)
     {
     InstanceReadStatus status = INSTANCE_READ_STATUS_Success;
+    MSXML2::IXMLDOMNodeListPtr xmlNodeListPtr;
+    MSXML2::IXMLDOMNodePtr xmlNodePtr;
+    MSXML2::IXMLDOMNodeListPtr attributeInstances;
+    MSXML2::IXMLDOMNodePtr instancePtr;
 
-    // allow for multiple <ECCustomAttributes> nodes, even though we only ever write one.
-    BeXmlDom::IterableNodeSet customAttributeNodes;
-    containerNode.SelectChildNodes (customAttributeNodes, EC_NAMESPACE_PREFIX ":" EC_CUSTOM_ATTRIBUTES_ELEMENT);
-    FOR_EACH (BeXmlNodeP& customAttributeNode, customAttributeNodes)
+    xmlNodeListPtr = containerNode.selectNodes (EC_NAMESPACE_PREFIX L":" EC_CUSTOM_ATTRIBUTES_ELEMENT);
+    while (NULL != (xmlNodePtr = xmlNodeListPtr->nextNode()))
         {
-        for (BeXmlNodeP customAttributeClassNode = customAttributeNode->GetFirstChild(); NULL != customAttributeClassNode; customAttributeClassNode = customAttributeClassNode->GetNextSibling())
+        MSXML2::IXMLDOMNodeListPtr attributeInstances = xmlNodePtr->childNodes;
+        while (NULL != (instancePtr = attributeInstances->nextNode()))
             {
             ECInstanceReadContextPtr context = ECInstanceReadContext::CreateContext (schema, standaloneEnablerLocater);
 
-            IECInstancePtr  customAttributeInstance;
-            WString         customAttributeXmlString;
-            customAttributeClassNode->GetXmlString (customAttributeXmlString);
-            status = IECInstance::ReadFromBeXmlNode (customAttributeInstance, *customAttributeClassNode, *context);
+            IECInstancePtr ptr;
+            status = IECInstance::ReadFromXmlString(ptr, (WCharCP) instancePtr->Getxml(), *context);
             if ( (INSTANCE_READ_STATUS_Success != status) && (INSTANCE_READ_STATUS_CommentOnly != status) )
                 return status;
-
-            if (customAttributeInstance.IsValid())
-                SetCustomAttribute (*customAttributeInstance);
+            if (ptr.IsValid())
+                SetCustomAttribute(*ptr);
             }
         }
     return status;
@@ -363,26 +366,87 @@ InstanceReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeXmlNodeR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus IECCustomAttributeContainer::WriteCustomAttributes (BeXmlNodeR containerNode) const
+SchemaWriteStatus IECCustomAttributeContainer::WriteCustomAttributes
+(
+MSXML2::IXMLDOMNode& propertyNode
+) const
     {
+    SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
+    WString customAttributeXml;
+    MSXML2::IXMLDOMAttributePtr attributePtr;
     if (m_customAttributes.size() < 1)
-        return SCHEMA_WRITE_STATUS_Success;
-
-    SchemaWriteStatus   status = SCHEMA_WRITE_STATUS_Success;
-    WString             customAttributeXml;
+        return status;
 
     ECCustomAttributeCollection::const_iterator iter;
-    // Add the <ECCustomAttributes> node.
-    BeXmlNodeP          customAttributeNode = containerNode.AddEmptyElement (EC_CUSTOM_ATTRIBUTES_ELEMENT);
+    MSXML2::IXMLDOMNodePtr customAttributesNodePtr = propertyNode.ownerDocument->createNode(NODE_ELEMENT, EC_CUSTOM_ATTRIBUTES_ELEMENT, ECXML_URI_2_0);
     for (iter = m_customAttributes.begin(); iter != m_customAttributes.end(); iter++)
         {
-        (*iter)->WriteToBeXmlNode (*customAttributeNode);
+        (*iter)->WriteToXmlString(customAttributeXml, false, false);
+        MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;        
+        if (S_OK != xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)))
+            return SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl;
+
+        xmlDocPtr->loadXML(customAttributeXml.c_str());
+        MSXML2::IXMLDOMNodeListPtr xmlNodeListPtr = xmlDocPtr->childNodes;
+        MSXML2::IXMLDOMNodePtr xmlNodePtr;
+        _bstr_t baseName;
+        while (NULL != (xmlNodePtr = xmlNodeListPtr->nextNode()))
+            {
+            if (xmlNodePtr->nodeType != NODE_ELEMENT)
+                continue;
+
+            MSXML2::IXMLDOMElementPtr caPtr = customAttributesNodePtr->ownerDocument->createNode(NODE_ELEMENT, xmlNodePtr->baseName, ECXML_URI_2_0);
+            APPEND_CHILD_TO_PARENT(caPtr, customAttributesNodePtr);
+            MSXML2::IXMLDOMNamedNodeMapPtr attributes = xmlNodePtr->attributes;
+            long numAttributes;
+            attributes->get_length(&numAttributes);
+            for (int index = 0; index < numAttributes; index++)
+                {
+                MSXML2::IXMLDOMNodePtr attrib;
+                attributes->get_item(index, &attrib);
+                WRITE_XML_ATTRIBUTE(attrib->nodeName, attrib->nodeValue, caPtr);
+                }
+            AddCustomAttributeProperties(xmlNodePtr, caPtr);
+            }
+        }
+    if (customAttributesNodePtr->hasChildNodes())
+        APPEND_CHILD_TO_PARENT(customAttributesNodePtr, (&propertyNode));
+    return status;
+    }
+
+SchemaWriteStatus IECCustomAttributeContainer::AddCustomAttributeProperties
+(
+MSXML2::IXMLDOMNode& oldNode, 
+MSXML2::IXMLDOMNode& newNode
+) const
+    {
+    if (!oldNode.hasChildNodes())
+        return SCHEMA_WRITE_STATUS_Success;
+
+    MSXML2::IXMLDOMNodeListPtr xmlNodeListPtr = oldNode.childNodes;
+    MSXML2::IXMLDOMNodePtr xmlNodePtr;
+    while (NULL != (xmlNodePtr = xmlNodeListPtr->nextNode()))
+        {
+        if (xmlNodePtr->nodeType != NODE_ELEMENT)
+            continue;
+
+        MSXML2::IXMLDOMNodePtr propertyPtr = newNode.ownerDocument->createNode(NODE_ELEMENT, xmlNodePtr->baseName, xmlNodePtr->namespaceURI);
+        APPEND_CHILD_TO_PARENT(propertyPtr, (&newNode));
+        WString basename = xmlNodePtr->baseName.GetBSTR();
+
+        // If the custom property is a struct class, it gets serialized as an empty element.  So need to check if it is empty
+        if (!xmlNodePtr->hasChildNodes())
+            continue;
+
+        MSXML2::IXMLDOMNodePtr childTextNodePtr = xmlNodePtr->firstChild;
+        WString nodeType = childTextNodePtr->nodeTypeString.GetBSTR();
+        if (0 == nodeType.compare(L"text"))
+            propertyPtr->text = childTextNodePtr->text;
+
+        AddCustomAttributeProperties(xmlNodePtr, propertyPtr);
         }
 
-    if (NULL == customAttributeNode->GetFirstChild())
-        containerNode.RemoveChildNode (customAttributeNode);
-
-    return status;
+    return SCHEMA_WRITE_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

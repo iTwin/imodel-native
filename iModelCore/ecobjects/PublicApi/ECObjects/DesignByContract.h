@@ -10,7 +10,7 @@
 #include <assert.h>
 #include <stdarg.h>
 /*__PUBLISH_SECTION_START__*/
-#include <ECObjects/ECObjects.h>
+#include <ECObjects\ECObjects.h>
 
 //! This class is utilzed by the macros defined in this header file.  No calling code should typically ever need to use this class directly.
 struct AssertDisabler
@@ -58,20 +58,13 @@ public:
 /*__PUBLISH_SECTION_END__*/
 
 #ifdef  NDEBUG
-#if defined (_WIN32) // WIP_NONPORT -- we don't really need to use _noop here, right?
     #define ASSERT_FALSE_IF_NOT_DISABLED    __noop
-#elif defined (__unix__) // WIP_NONPORT - this implementation should be good for both platforms??
-    #define ASSERT_FALSE_IF_NOT_DISABLED(_Message)  (void)0
-#endif
+
 #else
         
     //! Avoid direct use of this macro.  It is only intended for use by other macros defined in this file.
     // Forces an assert with the specified message as long as asserts are enabled.  No expression is evaluated.
-#if defined (_WIN32) // WIP_NONPORT -- we should move BeAssert into Bentley
     #define ASSERT_FALSE_IF_NOT_DISABLED(_Message)    (void)((AssertDisabler::AreAssertsDisabled()) || (_wassert(_CRT_WIDE(#_Message), _CRT_WIDE(__FILE__), __LINE__), 0))
-#elif defined (__unix__)
-    #define ASSERT_FALSE_IF_NOT_DISABLED(_Message)    (void)((AssertDisabler::AreAssertsDisabled()) || (assert(0),0))
-#endif
 #endif    
 
 //! Avoid direct use of this function.  It is only intended for use by macros defined in this file.
@@ -136,6 +129,34 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
             L"The following method postcondition check has failed:\n  postcondition: %S\n  method: %S\n  file: %S\n  line: %i\n",   \
             #_Expression, __FUNCTION__, __FILE__, __LINE__)
 
+#ifndef BENTLEY_EXCLUDE_WINDOWS_HEADERS            
+//! This macro should be utilized to enforce S_OK is returned by a method that returns an HRESULT.
+//! If _hr is not S_OK the macro will log the details of the HRESULT error, assert and return the specified _ErrorStatus.
+//! The assertion will only occur in debug builds.  Further, the assertion will only occur as long as they have not been disabled using the DISABLE_ASSERTS macros which allows
+//! for creation of tests to validate failure cases without being aborted by the standard assert behavior.
+//! Example:
+//! \code
+//! MyStatus LoadDataFromXmlFile (string file)
+//!      {
+//!      MSXML2::IXMLDOMDocument2Ptr pXmlDoc = NULL;
+//!      
+//!      HRSUCCESSCONDITION(pXmlDoc.CreateInstance(__uuidof(MSXML2::DOMDocument60)), ERROR_FailedToInitializeMsmxl);
+//!      
+//!      return SUCCESS;
+//!      }
+//! \endcode
+#define VERIFY_HRESULT_OK(_Expression, _ErrorStatus)       \
+    {                                               \
+    HRESULT hresult = _Expression ;                         \
+    if (hresult != S_OK)                            \
+        {                                           \
+        _com_error err(hresult);                    \
+        LOG_ASSERT_RETURN(_Expression != S_OK, _ErrorStatus,             \
+            L"The following HRESULT success check has failed:\n  result obtained from: %S\n  HRESULT Code: %x\n  HRESULT Message: %S\n  file: %S\n  line: %i\n",    \
+            #_Expression, hresult, err.ErrorMessage(), __FILE__, __LINE__, hresult);   \
+        }                                           \
+    }
+#endif
 
 //! This macro should be utilized to check that an expected condition is true.  If the condition evaluates to false the macro will log and assert leaving it to the caller
 //! to return an error code or take any additional action.
@@ -155,13 +176,8 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
     || (ASSERT_FALSE_IF_NOT_DISABLED (_Expression), 0) )
     
 #ifdef NDEBUG
-#if defined (_WIN32) // WIP_NONPORT -- we don't really need to use _noop here, right?
     #define DEBUG_EXPECT(_Expression)    __noop
     #define DEBUG_FAIL(_Message)         __noop
-#elif defined (__unix__) // WIP_NONPORT - this implementation should be good for both platforms??
-    #define DEBUG_EXPECT(_Expression)    
-    #define DEBUG_FAIL(_Message)         
-#endif
 #else
     #define DEBUG_EXPECT(_Expression)    EXPECTED_CONDITION(_Expression)
     #define DEBUG_FAIL(_Message)         EXPECTED_CONDITION(false && _Message)

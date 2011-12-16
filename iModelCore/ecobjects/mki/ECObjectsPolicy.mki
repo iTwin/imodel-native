@@ -19,14 +19,12 @@ buildDir            = $(OutECObjects)
 #-----------------------------------------------------------
 # BuildContext
 #-----------------------------------------------------------
-%if !defined (BuildContext)
-BuildContext   = $(OutBuildContexts)ecobjects/
-%endif
+BuildContext   = $(OutBuildContexts)ECObjects/
 ContextDeliveryDir         = $(BuildContext)Delivery/
 
 # Give a name to some common locations in the BuildContext
 BuildContextPublicApiDir = $(BuildContext)PublicAPI/
-BuildContextPublishedApiDir = $(BuildContext)Delivery/PublishedAPI/
+BuildContextPublishedApiDir            = $(BuildContext)Delivery/PublishedAPI/
 
 %if !defined (programName)
     programName     = $(ASSEMBLY_NAME)
@@ -44,10 +42,15 @@ always:
 # All warnings on
 WARNINGS_UP=1
 
+%include $(BuildContext)SubParts/mki/BentleyDlls.mki
+
+ECNativeObjectsDllBase = ECObjects4
+ECNativeObjectsDllName = $(ECNativeObjectsDllBase).dll
+
 #-----------------------------------------------------------------------
 #       Source directories
 #-----------------------------------------------------------------------
-ecPublicAPISrc      = $(SrcRoot)ecobjects/PublicApi/
+ecPublicAPISrc      = $(SrcRoot)ecobjects/PublicAPI/
 ecobjectsPublicAPISrc = $(ecPublicAPISrc)ECObjects/
 ecobjectsSrc        = $(SrcRoot)ecobjects/
 
@@ -61,6 +64,7 @@ GUnitTestDir        = $(BuildContext)SubParts/google_gtest/
 # Configure includes
 #-----------------------------------------------------------------------
 %include $(SharedMki)DefinePublicApiIncludes.mki
-PublicApiIncludes + -I$(ecPublicAPISrc)
+#_PublicApiIncludes =% $(PublicApiIncludes)
+PublicApiIncludes = -I$(ecPublicAPISrc) -I${BuildContext}/PublicAPI/ -I${BuildContext}/VendorAPI/
 
 certDir = $(bsiCerts)

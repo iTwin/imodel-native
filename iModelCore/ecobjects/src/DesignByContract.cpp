@@ -39,10 +39,18 @@ AssertDisabler::~AssertDisabler ()
 void LogFailureMessage (WCharCP message, ...)
     {
     va_list arguments;
-    WString msg;
+    int len;
+    WCharP buffer;
     va_start (arguments, message);              
-    WString::VSprintf (msg, message, arguments);
-    Bentley::EC::ECObjectsLogger::Log()->warning(msg.c_str());
+
+    len = _vscwprintf( message, arguments ) // _vscprintf doesn't count
+                                + 1; // terminating '\0'
+    
+    buffer = (wchar_t*)malloc( len * sizeof(wchar_t) );
+
+    _vsnwprintf( buffer, len, message, arguments ); // C4996
+    Bentley::EC::ECObjectsLogger::Log()->warning(buffer );
+    free( buffer );
     }
 
 

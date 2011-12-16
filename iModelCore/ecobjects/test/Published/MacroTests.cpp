@@ -164,6 +164,33 @@ TEST(AssertTest, ExpectSuccessForPostConditionCheck)
     EXPECT_EQ (0, UtilizePostConditionMacroWithSuccess (5));
     }
 
+/********* VERIFY_HRESULT_OK check **********/
+
+int UtilizeVerifyHResultOkWithError ()
+    {
+    HRESULT hr = E_FAIL;
+    VERIFY_HRESULT_OK (hr, -1);
+    return 0;
+    }
+
+TEST(AssertTest, ExpectErrorForHRSuccessCheck)
+    {    
+    DISABLE_ASSERTS
+    EXPECT_EQ (-1, UtilizeVerifyHResultOkWithError ());
+    }
+
+int UtilizeVerifyHResultOkWithSuccess ()
+    {
+    HRESULT hr = S_OK;
+    VERIFY_HRESULT_OK (hr, -1);
+    return 0;
+    }
+
+TEST(AssertTest, ExpectSuccessForHRSuccessCheck)
+    {    
+    EXPECT_EQ (0, UtilizeVerifyHResultOkWithSuccess ());
+    }
+
 
 /********* EXPECTED_CONDITION check **********/
 
