@@ -1135,81 +1135,81 @@ static void  setValue (WCharCP accessString, ECValueCR value, EC::StandaloneECIn
     EXPECT_TRUE (SUCCESS  == instance->SetPerPropertyBit (1, propertyIndex, 0==propertyIndex%2));
     }
 
- /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryLayoutTests, CheckPerPropertyFlags)
-    {
-    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
-    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
-    ASSERT_TRUE (schema != NULL);
-    ECClassP ecClass = schema->GetClassP (L"CadData");
-    ASSERT_TRUE (NULL != ecClass);
-    
-    StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
-    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
-
-    UInt8  numBitPerProperty =  instance->GetNumBitsInPerPropertyFlags ();
-    EXPECT_TRUE (numBitPerProperty == 2);
-
-    DPoint2d   inSize = {10.5, 22.3};
-    DPoint3d   inPoint1 = {10.10, 11.11, 12.12};
-    DPoint3d   inPoint2 ={100.100, 110.110, 120.120};
-    SystemTime inTime = SystemTime::GetLocalTime();
-    int        inCount = 100;
-    double     inLength = 432.178;
-    bool       inTest = true;
-    Int64      inTicks = 634027121070910000;
-
-    ECValue ecValue;
-    ecValue.SetDateTimeTicks(inTicks);
-
-    setValue (L"Count",        ECValue (inCount), instance);
-    setValue (L"Name",         ECValue (L"Test"), instance);
-    setValue (L"Length",       ECValue (inLength), instance);
-    setValue (L"Field_Tested", ECValue (inTest), instance);
-    setValue (L"Size",         ECValue (inSize), instance);
-    setValue (L"StartPoint",   ECValue (inPoint1), instance);
-    setValue (L"EndPoint",     ECValue (inPoint2), instance);
-    setValue (L"Service_Date", ECValue (inTime), instance);
-    setValue (L"Install_Date", ecValue, instance);
-
-    checkValue (L"Count",        ECValue (inCount), instance);
-    checkValue (L"Name",         ECValue (L"Test"), instance);
-    checkValue (L"Length",       ECValue (inLength), instance);
-    checkValue (L"Field_Tested", ECValue (inTest), instance);
-    checkValue (L"Size",         ECValue (inSize), instance);
-    checkValue (L"StartPoint",   ECValue (inPoint1), instance);
-    checkValue (L"EndPoint",     ECValue (inPoint2), instance);
-    checkValue (L"Service_Date", ECValue (inTime), instance);
-    checkValue (L"Install_Date", ecValue, instance);
-
-    bool isSet, lastPropertyEncountered=false;
-    UInt32  propertyIndex=0;
-    instance->ClearAllPerPropertyFlags ();
-    ECObjectsStatus status;
-
-    while (!lastPropertyEncountered)
-        {
-        for (UInt8 i=0; i<numBitPerProperty; i++)
-            {
-            status = instance->IsPerPropertyBitSet (isSet, i, propertyIndex);
-            // break when property index exceeds actual property count
-            if (ECOBJECTS_STATUS_Success == status)
-                {
-                EXPECT_TRUE (false == isSet);
-                }
-            else
-                {
-                lastPropertyEncountered = true;
-                break;
-                }
-            }
-
-        propertyIndex++;
-        }
-    };
-
+// /*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                                    
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//TEST_F(MemoryLayoutTests, CheckPerPropertyFlags)
+//    {
+//    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
+//    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+//    ASSERT_TRUE (schema != NULL);
+//    ECClassP ecClass = schema->GetClassP (L"CadData");
+//    ASSERT_TRUE (NULL != ecClass);
+//    
+//    StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
+//    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+//
+//    UInt8  numBitPerProperty =  instance->GetNumBitsInPerPropertyFlags ();
+//    EXPECT_TRUE (numBitPerProperty == 2);
+//
+//    DPoint2d   inSize = {10.5, 22.3};
+//    DPoint3d   inPoint1 = {10.10, 11.11, 12.12};
+//    DPoint3d   inPoint2 ={100.100, 110.110, 120.120};
+//    SystemTime inTime = SystemTime::GetLocalTime();
+//    int        inCount = 100;
+//    double     inLength = 432.178;
+//    bool       inTest = true;
+//    Int64      inTicks = 634027121070910000;
+//
+//    ECValue ecValue;
+//    ecValue.SetDateTimeTicks(inTicks);
+//
+//    setValue (L"Count",        ECValue (inCount), instance);
+//    setValue (L"Name",         ECValue (L"Test"), instance);
+//    setValue (L"Length",       ECValue (inLength), instance);
+//    setValue (L"Field_Tested", ECValue (inTest), instance);
+//    setValue (L"Size",         ECValue (inSize), instance);
+//    setValue (L"StartPoint",   ECValue (inPoint1), instance);
+//    setValue (L"EndPoint",     ECValue (inPoint2), instance);
+//    setValue (L"Service_Date", ECValue (inTime), instance);
+//    setValue (L"Install_Date", ecValue, instance);
+//
+//    checkValue (L"Count",        ECValue (inCount), instance);
+//    checkValue (L"Name",         ECValue (L"Test"), instance);
+//    checkValue (L"Length",       ECValue (inLength), instance);
+//    checkValue (L"Field_Tested", ECValue (inTest), instance);
+//    checkValue (L"Size",         ECValue (inSize), instance);
+//    checkValue (L"StartPoint",   ECValue (inPoint1), instance);
+//    checkValue (L"EndPoint",     ECValue (inPoint2), instance);
+//    checkValue (L"Service_Date", ECValue (inTime), instance);
+//    checkValue (L"Install_Date", ecValue, instance);
+//
+//    bool isSet, lastPropertyEncountered=false;
+//    UInt32  propertyIndex=0;
+//    instance->ClearAllPerPropertyFlags ();
+//    ECObjectsStatus status;
+//
+//    while (!lastPropertyEncountered)
+//        {
+//        for (UInt8 i=0; i<numBitPerProperty; i++)
+//            {
+//            status = instance->IsPerPropertyBitSet (isSet, i, propertyIndex);
+//            // break when property index exceeds actual property count
+//            if (ECOBJECTS_STATUS_Success == status)
+//                {
+//                EXPECT_TRUE (false == isSet);
+//                }
+//            else
+//                {
+//                lastPropertyEncountered = true;
+//                break;
+//                }
+//            }
+//
+//        propertyIndex++;
+//        }
+//    };
+//
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
