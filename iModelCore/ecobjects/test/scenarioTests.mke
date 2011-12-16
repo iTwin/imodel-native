@@ -1,0 +1,17 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: test/scenarioTests.mke $
+#
+#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+PolicyFile = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
+baseDir =   $(_MakeFilePath)
+
+programName = ECObjectsTest_scenario
+
+# Using this solution policy file ensures that scenario headers will be in the include path for
+# compiles within this mke file and within PreCompileHeader.mke which is used by this mke file.
+SolutionPolicyMki=$(baseDir)scenarioTestSolutionPolicy.mki
+
+%include buildTestFixture.mki
