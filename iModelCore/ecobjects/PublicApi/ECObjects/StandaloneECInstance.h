@@ -22,6 +22,8 @@ typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
 
 typedef int StructValueIdentifier;
 
+#define DEFAULT_NUMBITSPERPROPERTY  2
+
 enum PropertyFlagIndex : UInt8
     {
     PROPERTYFLAGINDEX_IsLoaded = 0,

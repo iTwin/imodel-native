@@ -46,8 +46,7 @@ MemoryECInstanceBase::MemoryECInstanceBase (byte * data, UInt32 size, ClassLayou
     m_structInstances.vectorP = NULL;
     m_usingSharedMemory = false;
 
-    static UInt8 numBitsPerPropertyFlag = 2;  // isLoaded, isDirty
-    InitializePerPropertyFlags (classLayout, numBitsPerPropertyFlag);
+    InitializePerPropertyFlags (classLayout, DEFAULT_NUMBITSPERPROPERTY);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -68,8 +67,7 @@ MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 mi
 
     InitializeMemory (classLayout, m_data.address, m_bytesAllocated);
     
-    UInt8 numBitsPerPropertyFlag = 2;  // isLoaded, isDirty
-    InitializePerPropertyFlags (classLayout, numBitsPerPropertyFlag);
+    InitializePerPropertyFlags (classLayout, DEFAULT_NUMBITSPERPROPERTY);
     }
 
 /*---------------------------------------------------------------------------------**//**
