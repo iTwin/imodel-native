@@ -486,6 +486,7 @@ friend struct ECPropertyIterable::IteratorState;
 
 private:
     WString                         m_name;
+    mutable WString                 m_fullName;
     WString                         m_displayLabel;
     WString                         m_description;
     bool                            m_isStruct;
@@ -551,7 +552,9 @@ public:
     ECOBJECTS_EXPORT ECRelationshipClassCP GetRelationshipClassCP() const;
     ECOBJECTS_EXPORT ECSchemaCR         GetSchema() const;                
     // schemas index class by name so publicly name can not be reset
-    ECOBJECTS_EXPORT WStringCR          GetName() const;        
+    ECOBJECTS_EXPORT WStringCR          GetName() const;
+    //! {SchemaName}:{ClassName} The pointer will remain valid as long as the ECClass exists.
+    ECOBJECTS_EXPORT WCharCP            GetFullName() const;        
     ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
     ECOBJECTS_EXPORT ECPropertyIterable GetProperties() const; 
     ECOBJECTS_EXPORT const ECBaseClassesList& GetBaseClasses() const;   
