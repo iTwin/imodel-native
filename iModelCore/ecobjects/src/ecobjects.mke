@@ -43,7 +43,7 @@ MultiCompileDepends=$(_MakeFileSpec)
 #----------------------------------------------------------------------
 #   Objects that go into the ECObjects library
 #----------------------------------------------------------------------
-ECObjectsHeaders = $(ecobjectsPublicAPISrc)ECObjects.h $(ecobjectsPublicAPISrc)ECSchema.h $(ecobjectsPublicAPISrc)ECValue.h $(ecobjectsPublicAPISrc)ECInstance.h $(ecobjectsPublicAPISrc)ECEnabler.h $(ecobjectsPublicAPISrc)DesignByContract.h $(baseDir)ecxml.h $(baseDir)Logger.h $(baseDir)FileUtilities.h
+ECObjectsHeaders = $(ecobjectsPublicAPISrc)ECObjects.h $(ecobjectsPublicAPISrc)ECSchema.h $(ecobjectsPublicAPISrc)ECValue.h $(ecobjectsPublicAPISrc)ECInstance.h $(ecobjectsPublicAPISrc)ECEnabler.h $(ecobjectsPublicAPISrc)DesignByContract.h $(baseDir)ecxml.h $(baseDir)Logger.h $(baseDir)FileUtilities.h $(baseDir)StopWatch.h
 
 $(o)ecxml$(oext)           : $(baseDir)ecxml.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 

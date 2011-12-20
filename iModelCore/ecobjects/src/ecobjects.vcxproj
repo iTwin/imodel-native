@@ -71,9 +71,10 @@
     <ClCompile Include="ECType.cpp" />
     <ClCompile Include="ECValue.cpp" />
     <ClCompile Include="ecxml.cpp" />
-    <ClCompile Include="FileUtilities.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="MemoryInstanceSupport.cpp" />
+    <ClCompile Include="nonport\FileUtilities.cpp" />
+    <ClCompile Include="nonport\StopWatch.cpp" />
     <ClCompile Include="StandaloneECInstance.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -90,13 +91,11 @@
     <ClInclude Include="Logger.h" />
     <ClInclude Include="..\PublicApi\ECObjects\MemoryInstanceSupport.h" />
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECInstance.h" />
+    <ClInclude Include="StopWatch.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\ecf.PartFile.xml">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="native.mke" />
-    <None Include="native.mki" />
+    <None Include="ecobjects.mke" />
+    <None Include="ecobjects.mki" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
