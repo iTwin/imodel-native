@@ -386,7 +386,7 @@ ECObjectsStatus ECSchema::CreateRelationshipClass (ECRelationshipClassP& pClass,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  11/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECOBJECTS_EXPORT WString ECSchema::GetFullSchemaName () const
+WString ECSchema::GetFullSchemaName () const
     {
     wchar_t fullName[1024]; // we decided to use a large buffer instead of caculating the length and using _alloc to boost performance 
 
@@ -1188,6 +1188,7 @@ ECSchemaP       ECSchema::LocateSchemaByStandardPaths (WStringCR name, UInt32& v
 SchemaReadStatus ECSchema::ReadXml (ECSchemaP& schemaOut, BeXmlDomR xmlDom, ECSchemaReadContextR schemaContext)
     {            
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
+    StopWatch overallTimer(L"Overall schema de-serialization timer", true);
     
     xmlDom.RegisterNamespace (EC_NAMESPACE_PREFIX, ECXML_URI_2_0);
 
@@ -1239,30 +1240,45 @@ SchemaReadStatus ECSchema::ReadXml (ECSchemaP& schemaOut, BeXmlDomR xmlDom, ECSc
     READ_OPTIONAL_XML_ATTRIBUTE ((*schemaNode), DESCRIPTION_ATTRIBUTE,                     schemaOut, Description)
     READ_OPTIONAL_XML_ATTRIBUTE ((*schemaNode), DISPLAY_LABEL_ATTRIBUTE,                   schemaOut, DisplayLabel)
 
+    StopWatch readingSchemaReferences(L"Reading Schema References", true);
     if (SCHEMA_READ_STATUS_Success != (status = schemaOut->ReadSchemaReferencesFromXml (*schemaNode, schemaContext)))
         {
         schemaOwner.DropSchema (*schemaOut);
         schemaOut = NULL;
         return status;
         }
+    readingSchemaReferences.Stop();
+    ECObjectsLogger::Log()->tracev(L"Reading schema references for %ls took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingSchemaReferences.GetElapsedSeconds());
 
     ClassDeserializationVector classes;
+    StopWatch readingClassStubs(L"Reading class stubs", true);
     if (SCHEMA_READ_STATUS_Success != (status = schemaOut->ReadClassStubsFromXml (*schemaNode, classes, schemaContext)))
         {
         schemaOwner.DropSchema (*schemaOut);
         schemaOut = NULL;
         return status;
         }
+    readingClassStubs.Stop();
+    ECObjectsLogger::Log()->tracev(L"Reading class stubs for %ls took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingClassStubs.GetElapsedSeconds());
 
     // NEEDSWORK ECClass inheritance (base classes, properties & relationship endpoints)
+    StopWatch readingClassContents(L"Reading class contents", true);
     if (SCHEMA_READ_STATUS_Success != (status = schemaOut->ReadClassContentsFromXml (classes, schemaContext)))
         {
         schemaOwner.DropSchema (*schemaOut);
         schemaOut = NULL;
         return status;
         }
+    readingClassContents.Stop();
+    ECObjectsLogger::Log()->tracev(L"Reading class contents for %ls took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingClassContents.GetElapsedSeconds());
 
+    StopWatch readingCustomAttributes(L"Reading custom attributes", true);
     schemaOut->ReadCustomAttributes(*schemaNode, *schemaOut, schemaContext.GetStandaloneEnablerLocater());
+    readingCustomAttributes.Stop();
+    ECObjectsLogger::Log()->tracev(L"Reading custom attributes for %ls took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingCustomAttributes.GetElapsedSeconds());
+
+    overallTimer.Stop();
+    ECObjectsLogger::Log()->debugv(L"Overall schema de-serialization for %ls took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), overallTimer.GetElapsedSeconds());
 
     return SCHEMA_READ_STATUS_Success;
     }
@@ -1486,8 +1502,8 @@ void AddFilePathToSchemaPaths  (ECSchemaReadContextR schemaContext, T_WStringVec
 SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaP& schemaOut, WCharCP ecSchemaXmlFile, ECSchemaReadContextR schemaContext)
     {
     ECObjectsLogger::Log()->debugv (L"About to read native ECSchema read from file: fileName='%s'", ecSchemaXmlFile);
-	schemaOut = NULL;
-	
+        schemaOut = NULL;
+        
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
 
     BeXmlStatus xmlStatus;
@@ -1525,7 +1541,7 @@ ECSchemaReadContextR schemaContext
 )
     {                  
     ECObjectsLogger::Log()->debugv (L"About to read native ECSchema read from string."); // mainly included for timing
-	schemaOut = NULL;
+        schemaOut = NULL;
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
 
     BeXmlStatus xmlStatus;

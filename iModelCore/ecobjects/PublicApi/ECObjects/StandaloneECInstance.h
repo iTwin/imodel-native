@@ -22,6 +22,14 @@ typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
 
 typedef int StructValueIdentifier;
 
+#define DEFAULT_NUMBITSPERPROPERTY  2
+
+enum PropertyFlagIndex : UInt8
+    {
+    PROPERTYFLAGINDEX_IsLoaded = 0,
+    PROPERTYFLAGINDEX_IsDirty  = 1
+    };
+
 struct StructArrayEntry
     {
     StructArrayEntry (StructValueIdentifier structValueId, IECInstancePtr& instancePtr)
@@ -105,8 +113,8 @@ private:
 
 protected:
     //! The MemoryECInstanceBase will take ownership of the memory
-    ECOBJECTS_EXPORT MemoryECInstanceBase (byte * data, UInt32 size,ClassLayoutCR classLayout, bool allowWritingDirectlyToInstanceMemory, UInt8 numBitsPerPropertyFlag=1, MemoryECInstanceBase const * parentInstance=NULL);
-    ECOBJECTS_EXPORT MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory, UInt8 numBitsPerPropertyFlag=1, MemoryECInstanceBase const * parentInstance=NULL);
+    ECOBJECTS_EXPORT MemoryECInstanceBase (byte * data, UInt32 size, ClassLayoutCR classLayout, bool allowWritingDirectlyToInstanceMemory, MemoryECInstanceBase const * parentInstance=NULL);
+    ECOBJECTS_EXPORT MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory, MemoryECInstanceBase const * parentInstance=NULL);
     ECOBJECTS_EXPORT virtual ~MemoryECInstanceBase ();
 
     ECOBJECTS_EXPORT virtual bool             _IsMemoryInitialized () const;
@@ -152,6 +160,10 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT IECInstancePtr           GetStructArrayInstanceByIndex (UInt32 index, StructValueIdentifier& structValueId) const;
     ECOBJECTS_EXPORT ECObjectsStatus          SetStructArrayInstance (MemoryECInstanceBaseCR instance, StructValueIdentifier structValueId);
     ECOBJECTS_EXPORT void                     SetUsingSharedMemory ();
+
+    ECOBJECTS_EXPORT byte const *             GetPerPropertyFlagsData () const;
+    ECOBJECTS_EXPORT UInt8                    GetNumBitsPerProperty () const;
+    ECOBJECTS_EXPORT UInt32                   GetPerPropertyFlagsDataLength () const;
 };
 
 /*=================================================================================**//**

@@ -45,9 +45,6 @@
     <ClCompile Include="ecxml.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="FileUtilities.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Logger.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -58,6 +55,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ECCustomAttribute.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="nonport\StopWatch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="nonport\FileUtilities.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -101,10 +104,12 @@
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECInstance.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="StopWatch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\ecf.PartFile.xml" />
-    <None Include="native.mke" />
-    <None Include="native.mki" />
+    <None Include="ecobjects.mke" />
+    <None Include="ecobjects.mki" />
   </ItemGroup>
 </Project>
