@@ -1520,7 +1520,7 @@ WCharCP                         ecSchemaXml,
 ECSchemaReadContextR schemaContext
 )
     {                  
-    ECObjectsLogger::Log()->debugv (L"About to read native ECSchema read from string."); // mainly included for timing
+    ECObjectsLogger::Log()->debugv (L"About to read native ECSchema from string."); // mainly included for timing
 	schemaOut = NULL;
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
 
