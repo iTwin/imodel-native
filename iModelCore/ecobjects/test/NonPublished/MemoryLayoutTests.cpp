@@ -1112,9 +1112,9 @@ static void  checkValue (WCharCP accessString, ECValueCR value, EC::StandaloneEC
     EXPECT_TRUE (SUCCESS  == instance->GetValue (ecValue, propertyIndex));
     EXPECT_TRUE (ecValue.Equals(value));
 
-    EXPECT_TRUE (SUCCESS  == instance->IsPerPropertyBitSet (isSet, 0, propertyIndex));
+    EXPECT_TRUE (SUCCESS  == instance->IsPerPropertyBitSet (isSet, (UInt8) PROPERTYFLAGINDEX_IsLoaded, propertyIndex));
     EXPECT_TRUE (true == isSet);
-    EXPECT_TRUE (SUCCESS  == instance->IsPerPropertyBitSet (isSet, 1, propertyIndex));
+    EXPECT_TRUE (SUCCESS  == instance->IsPerPropertyBitSet (isSet, (UInt8) PROPERTYFLAGINDEX_IsDirty, propertyIndex));
     EXPECT_TRUE ((0==propertyIndex%2) == isSet);
     }
 
@@ -1129,10 +1129,9 @@ static void  setValue (WCharCP accessString, ECValueCR value, EC::StandaloneECIn
     EXPECT_TRUE (SUCCESS  == instance->GetEnabler().GetPropertyIndex (propertyIndex, accessString));
     EXPECT_TRUE (SUCCESS  == instance->SetValue (propertyIndex, value));
 
-    EXPECT_TRUE (SUCCESS  == instance->IsPerPropertyBitSet (isSet, 0, propertyIndex));
-    EXPECT_TRUE (false  == isSet);
-    EXPECT_TRUE (SUCCESS  == instance->SetPerPropertyBit (0, propertyIndex, true));
-    EXPECT_TRUE (SUCCESS  == instance->SetPerPropertyBit (1, propertyIndex, 0==propertyIndex%2));
+    EXPECT_TRUE (SUCCESS  == instance->IsPerPropertyBitSet (isSet, (UInt8) PROPERTYFLAGINDEX_IsLoaded, propertyIndex));
+    EXPECT_TRUE (true  == isSet);
+    EXPECT_TRUE (SUCCESS  == instance->SetPerPropertyBit ((UInt8) PROPERTYFLAGINDEX_IsDirty, propertyIndex, 0==propertyIndex%2));
     }
 
  /*---------------------------------------------------------------------------------**//**

@@ -110,7 +110,7 @@ typedef RefCountedPtr<IECInstance> IECInstancePtr;
 //! Unlike IECInstance, it is not a pure interface, but is a concrete struct.
 //! Whereas in .NET, one might implement IECInstance, or use the "Lightweight" system
 //! in Bentley.ECObjects.Lightweight, in native "ECObjects" you write a class that implements
-//! the DgnECInstanceEnabler interface and one or more related interfaces to supply functionality 
+//! the DgnElementECInstanceEnabler interface and one or more related interfaces to supply functionality 
 //! to the EC::IECInstance.
 //! We could call these "enabled" instances as opposed to "lightweight".
 //! @see ECEnabler
