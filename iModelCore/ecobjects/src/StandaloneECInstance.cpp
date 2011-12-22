@@ -281,6 +281,24 @@ ECObjectsStatus          MemoryECInstanceBase::SetPerPropertyBit (UInt8 bitIndex
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus    MemoryECInstanceBase::SetBitForAllProperties (UInt8 bitIndex, bool setBit)
+    {
+    ECObjectsStatus status;
+    int numProperties = GetClassLayout().GetPropertyCount ();
+
+    for (UInt32 propertyIndex=0; propertyIndex<(UInt32)numProperties; propertyIndex++)
+        {
+        status = SetPerPropertyBit (bitIndex, propertyIndex, setBit);
+        if (ECOBJECTS_STATUS_Success != status)
+            return status;
+        }
+    
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
 void    MemoryECInstanceBase::ClearAllPerPropertyFlags ()
     {
     UInt32* addressOfPerPropertyFlags = m_perPropertyFlagsHolder.perPropertyFlags.address;
