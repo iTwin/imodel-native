@@ -208,8 +208,17 @@ ECObjectsStatus          MemoryECInstanceBase::IsPerPropertyBitSet (bool& isSet,
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus         MemoryECInstanceBase::IsAnyPerPropertyBitSet (bool& isSet, UInt8 bitIndex) const
     {
-    if (bitIndex >= m_perPropertyFlagsHolder.numBitsPerProperty)
+    static const ::UInt32     s_maskFor2Bits[2] = { 0x55555555, 0xAAAAAAAA };
+    
+    if (2 >= m_perPropertyFlagsHolder.numBitsPerProperty)
+        {
+        DEBUG_FAIL ("PerPropertyFlagsHolder presently supports maximum 2 bits");
+        return ECOBJECTS_STATUS_Error;
+        }
+    else if (bitIndex >= m_perPropertyFlagsHolder.numBitsPerProperty)
         return ECOBJECTS_STATUS_InvalidIndexForPerPropertyFlag;
+
+    ::UInt32 mask = m_perPropertyFlagsHolder.numBitsPerProperty == 2 ? s_maskFor2Bits[(int)bitIndex] : 0xFFFFFFFF;
 
     UInt32* addressOfPerPropertyFlags = m_perPropertyFlagsHolder.perPropertyFlags.address;
     if (NULL == addressOfPerPropertyFlags)
@@ -224,7 +233,7 @@ ECObjectsStatus         MemoryECInstanceBase::IsAnyPerPropertyBitSet (bool& isSe
     isSet = false;
     for (UInt32 i = 0; i < m_perPropertyFlagsHolder.numPerPropertyFlagsEntries; i++)
         {
-        if (0 != addressOfPerPropertyFlags[i])
+        if (0 != (mask & (addressOfPerPropertyFlags[i])))
             {
             isSet = true;
             break;
