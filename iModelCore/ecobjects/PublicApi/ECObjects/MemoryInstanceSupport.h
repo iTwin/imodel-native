@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/MemoryInstanceSupport.h $
 |
-|   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__PUBLISH_SECTION_START__*/
@@ -428,6 +428,8 @@ protected:
     //! externally.
     virtual ECObjectsStatus           _SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index) = 0;
     virtual ECObjectsStatus           _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const = 0;
+    virtual EC::PrimitiveType         _GetStructArrayPrimitiveType () const = 0;
+
     virtual ECObjectsStatus           _RemoveStructArrayElementsFromMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP) = 0;
 
     virtual bool                _IsMemoryInitialized () const = 0;    
@@ -460,6 +462,8 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP=NULL);
    
     ECOBJECTS_EXPORT void SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable);
+
+    ECOBJECTS_EXPORT EC::PrimitiveType         GetStructArrayPrimitiveType () const;
     };    
 
 

@@ -2,7 +2,7 @@
 |
 |     $Source: src/MemoryInstanceSupport.cpp $
 |
-|   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "ECObjectsPch.h"
@@ -1268,6 +1268,10 @@ UInt32          MemoryInstanceSupport::GetPropertyValueSize (PropertyLayoutCR pr
         {
         return ECValue::GetFixedPrimitiveValueSize (propertyLayout.GetTypeDescriptor().GetPrimitiveType());
         }
+    else if (PRIMITIVETYPE_Integer == GetStructArrayPrimitiveType () && propertyLayout.GetTypeDescriptor().IsStructArray())
+        {
+        return ECValue::GetFixedPrimitiveValueSize (PRIMITIVETYPE_Integer);
+        }
     else
         {                            
         UInt32 arrayOffset = GetOffsetOfPropertyValue (propertyLayout);   
@@ -1477,6 +1481,8 @@ UInt32          MemoryInstanceSupport::GetOffsetOfArrayIndex (UInt32 arrayOffset
 
     if (IsArrayOfFixedSizeElements (propertyLayout))
         primaryOffset += (index * ECValue::GetFixedPrimitiveValueSize (propertyLayout.GetTypeDescriptor().GetPrimitiveType()));
+    else if (PRIMITIVETYPE_Integer == GetStructArrayPrimitiveType () && propertyLayout.GetTypeDescriptor().IsStructArray())
+        primaryOffset += (index * ECValue::GetFixedPrimitiveValueSize (EC::PRIMITIVETYPE_Integer));
     else
         primaryOffset += index * sizeof (SecondaryOffset);
 
@@ -1490,9 +1496,9 @@ UInt32          MemoryInstanceSupport::GetOffsetOfArrayIndexValue (UInt32 arrayO
     {    
     UInt32 arrayIndexOffset = GetOffsetOfArrayIndex (arrayOffset, propertyLayout, index);
 
-    if (IsArrayOfFixedSizeElements (propertyLayout))
+    if (IsArrayOfFixedSizeElements (propertyLayout) || (PRIMITIVETYPE_Integer == GetStructArrayPrimitiveType () && propertyLayout.GetTypeDescriptor().IsStructArray()))
         return arrayIndexOffset;
-    
+
     byte const * data = _GetData();
     SecondaryOffset const * pSecondaryOffset = (SecondaryOffset const *)(data + arrayIndexOffset);
 
@@ -1565,7 +1571,7 @@ ECObjectsStatus MemoryInstanceSupport::RemoveArrayElementsFromMemory (ClassLayou
     byte*   data = scoped.GetData();
     memcpy (data, currentData, (size_t)bytesAllocated);
 
-    bool    hasFixedSizedElements = IsArrayOfFixedSizeElements (propertyLayout);
+    bool    hasFixedSizedElements = IsArrayOfFixedSizeElements (propertyLayout) || ((PRIMITIVETYPE_Integer == GetStructArrayPrimitiveType () && propertyLayout.GetTypeDescriptor().IsStructArray()));
     UInt32  arrayOffset           = GetOffsetOfPropertyValue (propertyLayout);   
     byte   *arrayAddress          = data + arrayOffset;
 
@@ -1981,16 +1987,30 @@ void            MemoryInstanceSupport::InitializeMemory(ClassLayoutCR classLayou
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  01/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+EC::PrimitiveType         MemoryInstanceSupport::GetStructArrayPrimitiveType () const
+    {
+    return _GetStructArrayPrimitiveType();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index) const
     {
-    DEBUG_EXPECT (propertyLayout.GetTypeDescriptor().IsArray() == useIndex);   
+    ECTypeDescriptor typeDescriptor = propertyLayout.GetTypeDescriptor();
+
+    DEBUG_EXPECT (typeDescriptor.IsArray() == useIndex);   
 
     bool isInUninitializedFixedCountArray = ((useIndex) && (propertyLayout.GetModifierFlags() & PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount) && (GetAllocatedArrayCount (propertyLayout) == 0));    
     if (isInUninitializedFixedCountArray || (IsPropertyValueNull(propertyLayout, useIndex, index)))
         {
-        v.SetPrimitiveType (propertyLayout.GetTypeDescriptor().GetPrimitiveType());
+        if (typeDescriptor.IsPrimitiveArray())
+            v.SetPrimitiveType (typeDescriptor.GetPrimitiveType());
+        else
+            v.SetPrimitiveType (GetStructArrayPrimitiveType ());
+
         v.SetToNull();
         return ECOBJECTS_STATUS_Success;
         }    
@@ -2001,12 +2021,11 @@ ECObjectsStatus       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValu
     else
         pValue = GetAddressOfPropertyValue (propertyLayout);
 
-    ECTypeDescriptor typeDescriptor = propertyLayout.GetTypeDescriptor();
     PrimitiveType primitiveType;
     if (typeDescriptor.IsPrimitive() || (typeDescriptor.IsPrimitiveArray()))
         primitiveType = typeDescriptor.GetPrimitiveType();
     else
-        primitiveType = PRIMITIVETYPE_Binary;
+        primitiveType = GetStructArrayPrimitiveType ();
         
     switch (primitiveType)       
         {
@@ -2209,8 +2228,8 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
     if (typeDescriptor.IsPrimitive() || (typeDescriptor.IsPrimitiveArray()))
         primitiveType = typeDescriptor.GetPrimitiveType();
     else
-        primitiveType = PRIMITIVETYPE_Binary;
-    
+        primitiveType = GetStructArrayPrimitiveType ();
+
     ECObjectsStatus result = ECOBJECTS_STATUS_Error;
 
     switch (primitiveType)
@@ -2615,8 +2634,9 @@ ArrayResizer::ArrayResizer (ClassLayoutCR classLayout, PropertyLayoutCR property
     if (typeDescriptor.IsPrimitiveArray())
         m_elementType = typeDescriptor.GetPrimitiveType();
     else
-        m_elementType = PRIMITIVETYPE_Binary;
-    m_elementTypeIsFixedSize = IsArrayOfFixedSizeElements (propertyLayout);
+        m_elementType = instance.GetStructArrayPrimitiveType ();
+
+    m_elementTypeIsFixedSize = IsArrayOfFixedSizeElements (propertyLayout) || (PRIMITIVETYPE_Integer == instance.GetStructArrayPrimitiveType () && propertyLayout.GetTypeDescriptor().IsStructArray());
     if (m_elementTypeIsFixedSize)
         m_elementSizeInFixedSection = ECValue::GetFixedPrimitiveValueSize (m_elementType);
     else

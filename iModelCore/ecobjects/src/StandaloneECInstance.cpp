@@ -2,7 +2,7 @@
 |
 |     $Source: src/StandaloneECInstance.cpp $
 |
-|   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -911,17 +911,17 @@ UInt32              MemoryECInstanceBase::_GetBytesAllocated () const
 ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index)
     {
     IECInstancePtr p;
-    ECValue binaryValue (PRIMITIVETYPE_Binary);
+    ECValue structValueIdValue (PRIMITIVETYPE_Integer);
     m_structValueId++;
     if (v.IsNull())
         {
         p = NULL;
-        binaryValue.SetToNull();
+        structValueIdValue.SetInteger (0);
         }
     else
         {
         p = v.GetStruct();    
-        binaryValue.SetBinary ((const byte *)&(m_structValueId), sizeof (StructValueIdentifier));
+        structValueIdValue.SetInteger (m_structValueId);
         }
    
     size_t offsetToData;
@@ -935,10 +935,10 @@ ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueC
         bytesAllocated = (size_t)m_bytesAllocated;
 
         // set up memory allocation callback in case memory needs to grow to set the structValueId value
-        binaryValue.SetMemoryCallback(v.GetMemoryCallback());
+        structValueIdValue.SetMemoryCallback(v.GetMemoryCallback());
         }
 
-    ECObjectsStatus status = SetPrimitiveValueToMemory (binaryValue, classLayout, propertyLayout, true, index);      
+    ECObjectsStatus status = SetPrimitiveValueToMemory (structValueIdValue, classLayout, propertyLayout, true, index);      
     if (status != ECOBJECTS_STATUS_Success)
         return status;
                  
@@ -1150,19 +1150,19 @@ IECInstancePtr  MemoryECInstanceBase::GetStructArrayInstance (StructValueIdentif
 +---------------+---------------+---------------+---------------+---------------+------*/    
 ECObjectsStatus           MemoryECInstanceBase::_GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const
     {
-    ECValue binaryValue;
-    ECObjectsStatus status = GetPrimitiveValueFromMemory (binaryValue, propertyLayout, true, index);      
+    ECValue structValueIdValue;
+    ECObjectsStatus status = GetPrimitiveValueFromMemory (structValueIdValue, propertyLayout, true, index);      
     if (status != ECOBJECTS_STATUS_Success)
         return status;
         
-    if (binaryValue.IsNull())
+    // A structValueId of 0 means the instance is null
+    if (structValueIdValue.IsNull() || 0 == structValueIdValue.GetInteger())
         {
         v.SetStruct(NULL);
         return ECOBJECTS_STATUS_Success;
         }        
                     
-    size_t size;
-    StructValueIdentifier structValueId = *(StructValueIdentifier*)binaryValue.GetBinary (size);    
+    StructValueIdentifier structValueId = structValueIdValue.GetInteger();
 
     IECInstancePtr instancePtr = GetStructArrayInstance (structValueId);
     v.SetStruct (instancePtr.get());
@@ -1366,8 +1366,7 @@ ECObjectsStatus MemoryECInstanceBase::_RemoveStructArrayElementsFromMemory (Clas
             return status;
 
         // get struct value id from ecValue
-        size_t size;
-        StructValueIdentifier structValueId = *(StructValueIdentifier*)v.GetBinary (size);    
+        StructValueIdentifier structValueId = v.GetInteger ();    
 
         status = RemoveStructStructArrayEntry (structValueId, memoryReallocationCallbackP);       
         if (status != ECOBJECTS_STATUS_Success)
