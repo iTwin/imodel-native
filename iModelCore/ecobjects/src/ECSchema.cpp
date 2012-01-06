@@ -6,7 +6,7 @@
 |       $Date: 2005/11/07 15:38:45 $
 |     $Author: EarlinLutz $
 |
-|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1059,16 +1059,15 @@ bvector<WString>*               searchPaths
     if (NULL == searchPaths)
         searchPaths = &schemaContext.GetSchemaPaths();
         
-    FOR_EACH (WString schemaPath, *searchPaths)
+    FOR_EACH (WString schemaPathStr, *searchPaths)
         {
-        if (schemaPath[schemaPath.length() - 1] != '\\')
-            schemaPath += '\\';
-        schemaPath += schemaMatchExpression;
-        ECObjectsLogger::Log()->debugv (L"Checking for existence of %s...", schemaPath.c_str());
+        BeFileName schemaPath (schemaPathStr.c_str());
+        schemaPath.AppendToPath (schemaMatchExpression.c_str());
+        ECObjectsLogger::Log()->debugv (L"Checking for existence of %s...", schemaPath.GetName());
 
         //Finds latest
         UInt32 foundVersionMinor;
-        if (SUCCESS != GetSchemaFileName (fullFileName, foundVersionMinor, schemaPath.c_str(), useLatestCompatibleMatch))
+        if (SUCCESS != GetSchemaFileName (fullFileName, foundVersionMinor, schemaPath, useLatestCompatibleMatch))
             continue;
 
         //Check if schema is compatible before reading, as reading it would add the schema to the cache.
@@ -1161,23 +1160,26 @@ ECSchemaP SearchPathSchemaFileLocater::_LocateSchema(WCharCP name, UInt32& versi
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP       ECSchema::LocateSchemaByStandardPaths (WStringCR name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaReadContextR schemaContext)
     {
-    WString dllPath = ECFileUtilities::GetDllPath();
-    if (0 == dllPath.length())
+    BeFileName dllPath (ECFileUtilities::GetDllPath().c_str());
+    if (0 == *dllPath.GetName())
         return NULL;
     
     bvector<WString> searchPaths;
-    searchPaths.push_back (dllPath);    
+    searchPaths.push_back (dllPath.GetName());    
     
-    wchar_t schemaPath[MAX_PATH];
-    wchar_t generalPath[MAX_PATH];
-    wchar_t libraryPath[MAX_PATH];
-    
-    swprintf(schemaPath, MAX_PATH, L"%sECSchemas\\Standard", dllPath.c_str());
-    swprintf(generalPath, MAX_PATH, L"%sECSchemas\\Standard\\General", dllPath.c_str());
-    swprintf(libraryPath, MAX_PATH, L"%sECSchemas\\Standard\\LibraryUnits", dllPath.c_str());
-    searchPaths.push_back (schemaPath);
-    searchPaths.push_back (generalPath);
-    searchPaths.push_back (libraryPath);
+    dllPath.AppendToPath (L"ECSchemas");
+
+    BeFileName standardPath = dllPath;
+    standardPath.AppendToPath (L"Standard");
+    searchPaths.push_back (standardPath.GetName());
+
+    BeFileName generalPath = standardPath;
+    generalPath.AppendToPath (L"General");
+    searchPaths.push_back (generalPath.GetName());
+
+    BeFileName libraryPath = standardPath;
+    libraryPath.AppendToPath (L"LibraryUnits");
+    searchPaths.push_back (libraryPath.GetName());
     
     return LocateSchemaByPath (name, versionMajor, versionMinor, schemaContext, true, &searchPaths);
     }
