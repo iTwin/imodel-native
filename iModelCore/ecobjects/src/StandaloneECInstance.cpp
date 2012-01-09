@@ -37,7 +37,7 @@ const UInt32 BITS_PER_FLAGSBITMASK = (sizeof(UInt32) * 8);
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-MemoryECInstanceBase::MemoryECInstanceBase (byte * data, UInt32 size, ClassLayoutCR classLayout, bool allowWritingDirectlyToInstanceMemory, UInt8 numBitsPerPropertyFlag, MemoryECInstanceBase const* parentInstance) :
+MemoryECInstanceBase::MemoryECInstanceBase (byte * data, UInt32 size, ClassLayoutCR classLayout, bool allowWritingDirectlyToInstanceMemory, MemoryECInstanceBase const* parentInstance) :
         MemoryInstanceSupport (allowWritingDirectlyToInstanceMemory),
         m_bytesAllocated(size)
     {
@@ -53,7 +53,7 @@ MemoryECInstanceBase::MemoryECInstanceBase (byte * data, UInt32 size, ClassLayou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory, UInt8 numBitsPerPropertyFlag, MemoryECInstanceBase const* parentInstance) :
+MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory, MemoryECInstanceBase const* parentInstance) :
         MemoryInstanceSupport (allowWritingDirectlyToInstanceMemory),
         m_bytesAllocated(0)
     {
@@ -1574,7 +1574,7 @@ size_t                StandaloneECInstance::_GetOffsetToIECInstance () const
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
 StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, byte * data, UInt32 size) :
-        MemoryECInstanceBase (data, size, enabler.GetClassLayout(), true, 2),
+        MemoryECInstanceBase (data, size, enabler.GetClassLayout(), true),
         m_sharedWipEnabler(const_cast<StandaloneECEnablerP>(&enabler)) // WIP_FUSION: can we get rid of the const cast?
     {
     m_sharedWipEnabler->AddRef ();
@@ -1584,7 +1584,7 @@ StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, byte 
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/        
 StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, UInt32 minimumBufferSize) :
-        MemoryECInstanceBase (enabler.GetClassLayout(), minimumBufferSize, true, 2),
+        MemoryECInstanceBase (enabler.GetClassLayout(), minimumBufferSize, true),
         m_sharedWipEnabler(const_cast<StandaloneECEnablerP>(&enabler)) // WIP_FUSION: can we get rid of the const cast?
     {
     m_sharedWipEnabler->AddRef ();
