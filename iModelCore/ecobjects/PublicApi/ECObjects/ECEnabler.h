@@ -2,17 +2,17 @@
 |
 |     $Source: PublicApi/ECObjects/ECEnabler.h $
 |
-|   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include <ECObjects\ECObjects.h>
-#include <ECObjects\ECInstance.h>
-#include <ECObjects\ECSchema.h>
-#include <Bentley\RefCounted.h>
-#include <Bentley\bset.h>
+#include <ECObjects/ECObjects.h>
+#include <ECObjects/ECInstance.h>
+#include <ECObjects/ECSchema.h>
+#include <Bentley/RefCounted.h>
+#include <Bentley/bset.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 

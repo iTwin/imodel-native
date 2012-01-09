@@ -1,4 +1,4 @@
-
+/*---------------------------------------------------------------------------------**//**
 |
 |     $Source: src/MemoryInstanceSupport.cpp $
 |
@@ -7,7 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include    "ECObjectsPch.h"
 #include    <algorithm>
+#if defined (_WIN32) // WIP_NONPORT - iostreams not support on Android
 #include    <iomanip>
+#endif
 
 // SHRINK_TO_FIT will cause space reserved for variable-sized values to be reduced to the minimum upon every set operation.
 // SHRINK_TO_FIT is not recommended and is mainly for testing. It it better to "compact" everything at once
@@ -42,6 +44,7 @@ static int      randomValue  ()
     return  low + (int) ( (double) range * (double) randomNum / (double) (RAND_MAX + 1));
     }
 
+#if defined (_WIN32) // WIP_NONPORT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    08/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -59,6 +62,9 @@ void            appendFormattedString (wostringstream& outStream, WCharCP fmtStr
 
     outStream << line;
     }
+#elif defined (__unix__)
+    // *** NEEDS WORK: iostreams not supported on Android
+#endif 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/09
@@ -204,9 +210,9 @@ UInt32          PropertyLayout::GetSizeInFixedSection () const
 
 #define DEBUG_CLASSLAYOUT_LEAKS
 #ifdef DEBUG_CLASSLAYOUT_LEAKS
-LeakDetector<ClassLayout> g_classLayoutLeakDetector (L"ClassLayout", L"ClassLayouts", true);
+static LeakDetector<ClassLayout> g_classLayoutLeakDetector (L"ClassLayout", L"ClassLayouts", true);
 #else
-LeakDetector<ClassLayout> g_classLayoutLeakDetector (L"ClassLayout", L"ClassLayouts", false);
+static LeakDetector<ClassLayout> g_classLayoutLeakDetector (L"ClassLayout", L"ClassLayouts", false);
 #endif
 
 /*---------------------------------------------------------------------------------**//**
@@ -267,6 +273,7 @@ WString        ClassLayout::GetName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString        ClassLayout::LogicalStructureToString (UInt32 parentStuctIndex, UInt32 indentLevel) const
     {
+#if defined (_WIN32) // WIP_NONPORT
     LogicalStructureMap::const_iterator it = m_logicalStructureMap.find(parentStuctIndex);
 
     if ( ! EXPECTED_CONDITION (it != m_logicalStructureMap.end()))
@@ -300,6 +307,9 @@ WString        ClassLayout::LogicalStructureToString (UInt32 parentStuctIndex, U
         }
     
     return oss.str().c_str();
+#elif defined (__unix__)
+    // *** NEEDS WORK: iostreams not supported on Android
+#endif 
     }    
 
 /*---------------------------------------------------------------------------------**//**
@@ -307,6 +317,7 @@ WString        ClassLayout::LogicalStructureToString (UInt32 parentStuctIndex, U
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString        ClassLayout::ToString () const
     {
+#if defined (_WIN32) // WIP_NONPORT
     wostringstream oss;
 
     oss << GetShortDescription() << endl;
@@ -326,6 +337,9 @@ WString        ClassLayout::ToString () const
     oss << LogicalStructureToString ();
 
     return oss.str().c_str();
+#elif defined (__unix__)
+    // *** NEEDS WORK: iostreams not supported on Android
+#endif 
     }
         
 /*---------------------------------------------------------------------------------**//**
@@ -455,7 +469,7 @@ bool            ClassLayout::IsCompatible (ClassLayoutCR classLayout) const
     if (m_compatibleClassLayouts.end() != compatibeLayoutIter)
         return compatibeLayoutIter->second;
 
-    if (0 != _wcsicmp (GetECClassName().c_str(), classLayout.GetECClassName().c_str()))
+    if (0 != BeStringUtilities::Wcsicmp (GetECClassName().c_str(), classLayout.GetECClassName().c_str()))
         return false;
 
     bool isCompatible = areLayoutsCompatible (*this, classLayout);
@@ -571,7 +585,7 @@ void            ClassLayout::Factory::AddStructProperty (WCharCP accessString, E
 +---------------+---------------+---------------+---------------+---------------+------*/    
 void            ClassLayout::Factory::AddProperty (WCharCP accessString, ECTypeDescriptor typeDescriptor, UInt32 size, UInt32 modifierFlags, UInt32 modifierData)
     {
-    UInt32  positionInCurrentNullFlags = m_nonStructPropertyCount % 32;
+    UInt32  positionInCurrentNullFlags = m_nonStructPropertyCount % /*32*/ BITS_PER_NULLFLAGSBITMASK;
     NullflagsBitmask  nullflagsBitmask = 0x01 << positionInCurrentNullFlags;
     
     if (0 == positionInCurrentNullFlags && 0 != m_nonStructPropertyCount)
@@ -1089,7 +1103,7 @@ ECObjectsStatus         ClassLayout::GetAccessStringByIndex(WCharCP& accessStrin
 UInt32  ClassLayout::GetFirstChildPropertyIndex (UInt32 parentIndex) const
     {
     // Find the parent in the map
-    bmap<UInt32, bvector<UInt32>>::const_iterator mapIterator = m_logicalStructureMap.find (parentIndex);
+    bmap<UInt32, bvector<UInt32> >::const_iterator mapIterator = m_logicalStructureMap.find (parentIndex);
 
     if ( ! EXPECTED_CONDITION (m_logicalStructureMap.end() != mapIterator))
         return 0;
@@ -1105,7 +1119,7 @@ UInt32  ClassLayout::GetFirstChildPropertyIndex (UInt32 parentIndex) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ClassLayout::GetPropertyIndices (bvector<UInt32>& properties, UInt32 parentIndex) const
     {
-    bmap<UInt32, bvector<UInt32>>::const_iterator mapIterator = m_logicalStructureMap.find (parentIndex);
+    bmap<UInt32, bvector<UInt32> >::const_iterator mapIterator = m_logicalStructureMap.find (parentIndex);
     if ( ! EXPECTED_CONDITION (m_logicalStructureMap.end() != mapIterator))
         return ECOBJECTS_STATUS_Error;
 
@@ -1124,7 +1138,7 @@ ECObjectsStatus ClassLayout::GetPropertyIndices (bvector<UInt32>& properties, UI
 UInt32  ClassLayout::GetNextChildPropertyIndex (UInt32 parentIndex, UInt32 childIndex) const
     {
     // Find the parent in the map
-    bmap<UInt32, bvector<UInt32>>::const_iterator mapIterator = m_logicalStructureMap.find (parentIndex);
+    bmap<UInt32, bvector<UInt32> >::const_iterator mapIterator = m_logicalStructureMap.find (parentIndex);
 
     if ( ! EXPECTED_CONDITION (m_logicalStructureMap.end() != mapIterator))
         return 0;
@@ -1179,7 +1193,7 @@ ClassLayoutCP   SchemaLayout::FindClassLayout (WCharCP className)
         if (NULL == classLayout)
             continue;
 
-        if (0 == _wcsicmp (classLayout->GetECClassName().c_str(), className))
+        if (0 == BeStringUtilities::Wcsicmp (classLayout->GetECClassName().c_str(), className))
             return classLayout;
         }
 
@@ -1716,6 +1730,9 @@ ECObjectsStatus MemoryInstanceSupport::RemoveArrayElementsFromMemory (ClassLayou
     // replace all property data for the instance
     status = _ModifyData (0, data, bytesAllocated);
 
+    if (ECOBJECTS_STATUS_Success == status)
+        _HandleArrayResize (&propertyLayout, removeIndex, -1 * removeCount);
+
 #ifdef DEBUGGING_ARRAYENTRY_REMOVAL           
     WString postDeleteLayout = InstanceDataToString (L"", classLayout);
     if (postDeleteLayout.empty())
@@ -1748,8 +1765,13 @@ ECObjectsStatus MemoryInstanceSupport::RemoveArrayElements (ClassLayoutCR classL
 
     if (typeDescriptor.IsPrimitiveArray())
         return RemoveArrayElementsFromMemory (classLayout, propertyLayout, removeIndex, removeCount);
-    else if (typeDescriptor.IsStructArray())              
-        return _RemoveStructArrayElementsFromMemory (classLayout, propertyLayout, removeIndex, removeCount, memoryReallocationCallbackP);       
+    else if (typeDescriptor.IsStructArray())    
+        {
+        ECObjectsStatus result = _RemoveStructArrayElementsFromMemory (classLayout, propertyLayout, removeIndex, removeCount, memoryReallocationCallbackP);       
+        if (ECOBJECTS_STATUS_Success == result)
+            _HandleArrayResize (&propertyLayout, removeIndex, -1 * removeCount);
+        return result;
+        }
 
     POSTCONDITION (false && "Can not set the value to memory using the specified property layout because it is an unsupported datatype", ECOBJECTS_STATUS_DataTypeNotSupported);
     }
@@ -1788,7 +1810,11 @@ ECObjectsStatus MemoryInstanceSupport::InsertNullArrayElementsAt (ClassLayoutCR 
     
     PRECONDITION (insertCount > 0, ECOBJECTS_STATUS_IndexOutOfRange)        
     
-    return ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, insertIndex, insertCount, memoryReallocationCallbackP);
+    status = ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, insertIndex, insertCount, memoryReallocationCallbackP);
+    if (ECOBJECTS_STATUS_Success == status)
+        _HandleArrayResize (pPropertyLayout, insertIndex, insertCount);
+
+    return status;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -1810,7 +1836,12 @@ ECObjectsStatus       MemoryInstanceSupport::AddNullArrayElementsAt (ClassLayout
     
     PRECONDITION (count > 0, ECOBJECTS_STATUS_IndexOutOfRange)        
     
-    return ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, GetAllocatedArrayCount (propertyLayout), count, memoryReallocationCallbackP);
+    ArrayCount index = GetAllocatedArrayCount (propertyLayout);
+    status = ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, index, count, memoryReallocationCallbackP);
+    if (ECOBJECTS_STATUS_Success == status)
+        _HandleArrayResize (pPropertyLayout, index, count);
+
+    return status;
     }         
 
 /*---------------------------------------------------------------------------------**//**
@@ -1882,7 +1913,7 @@ ECObjectsStatus       MemoryInstanceSupport::GrowPropertyValue (ClassLayoutCR cl
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 MemoryInstanceSupport::MemoryInstanceSupport (bool allowWritingDirectlyToInstanceMemory) :
-    m_allowWritingDirectlyToInstanceMemory (allowWritingDirectlyToInstanceMemory) 
+    m_allowWritingDirectlyToInstanceMemory (allowWritingDirectlyToInstanceMemory)
     {
     }
         
@@ -2485,6 +2516,7 @@ ECObjectsStatus       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR cla
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, ClassLayoutCR classLayout) const
     {
+#if defined (_WIN32) // WIP_NONPORT
     static bool s_skipDump = false;
     static int s_dumpCount = 0;
     s_dumpCount++;
@@ -2620,8 +2652,12 @@ WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, Clas
     appendFormattedString (oss, L"%s  [0x%x][%4.d] Offset of TheEnd = %d\n", indent, pLast, offsetOfLast, *pLast);
 
     return oss.str().c_str();
+#elif defined (__unix__)
+    // *** NEEDS WORK: iostreams not supported on Android
+    return L"";
+#endif 
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/

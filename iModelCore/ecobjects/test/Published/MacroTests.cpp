@@ -3,7 +3,7 @@
 |
 |     $Source: test/Published/MacroTests.cpp $
 |
-|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -162,33 +162,6 @@ int UtilizePostConditionMacroWithSuccess (int number)
 TEST(AssertTest, ExpectSuccessForPostConditionCheck)
     {    
     EXPECT_EQ (0, UtilizePostConditionMacroWithSuccess (5));
-    }
-
-/********* VERIFY_HRESULT_OK check **********/
-
-int UtilizeVerifyHResultOkWithError ()
-    {
-    HRESULT hr = E_FAIL;
-    VERIFY_HRESULT_OK (hr, -1);
-    return 0;
-    }
-
-TEST(AssertTest, ExpectErrorForHRSuccessCheck)
-    {    
-    DISABLE_ASSERTS
-    EXPECT_EQ (-1, UtilizeVerifyHResultOkWithError ());
-    }
-
-int UtilizeVerifyHResultOkWithSuccess ()
-    {
-    HRESULT hr = S_OK;
-    VERIFY_HRESULT_OK (hr, -1);
-    return 0;
-    }
-
-TEST(AssertTest, ExpectSuccessForHRSuccessCheck)
-    {    
-    EXPECT_EQ (0, UtilizeVerifyHResultOkWithSuccess ());
     }
 
 
