@@ -1879,6 +1879,15 @@ UInt32          StandaloneECEnabler::_GetNextPropertyIndex (UInt32 parentIndex, 
 ECObjectsStatus StandaloneECEnabler::_GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const { return GetClassLayout().GetPropertyIndices (indices, parentIndex);  }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Paul.Connelly                   12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            StandaloneECEnabler::_HasChildProperties (UInt32 parentIndex) const
+    {
+    PropertyLayoutCP propertyLayout;
+    return ECOBJECTS_STATUS_Success == GetClassLayout().GetPropertyLayoutByIndex (propertyLayout, parentIndex) && propertyLayout->GetTypeDescriptor().IsStruct();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
 /*StandaloneECInstanceP   StandaloneECEnabler::CreateInstanceFromUninitializedMemory (byte * data, UInt32 size)

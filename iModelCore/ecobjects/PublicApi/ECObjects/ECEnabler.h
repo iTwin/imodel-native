@@ -74,6 +74,7 @@ protected:
 #if defined (EXPERIMENTAL_TEXT_FILTER)
     ECOBJECTS_EXPORT virtual PropertyProcessingResult   _ProcessPrimitiveProperties (bset<ECClassCP>& failedClasses, IECInstanceCR, EC::PrimitiveType, IPropertyProcessor const&, PropertyProcessingOptions) const;
 #endif
+    virtual bool                    _HasChildProperties (UInt32 parentIndex) const = 0;
 
     ECOBJECTS_EXPORT         bool                       ProcessStructProperty (bset<ECClassCP>& failedClasses, bool& allStructsFailed, ECValueCR propValue, EC::PrimitiveType primitiveType, IPropertyProcessor const& proc, PropertyProcessingOptions opts) const;
 
@@ -95,6 +96,9 @@ public:
     
     //! Get the next (after inputIndex) propertyIndex (used in conjunction with GetNeGetFirstPropertyIndexxtPropertyIndex for efficiently looping over property values.)
     ECOBJECTS_EXPORT UInt32                     GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const;
+
+    //! Return true if the property associated with parentIndex has child properties
+    ECOBJECTS_EXPORT bool                       HasChildProperties (UInt32 parentIndex) const;
 
     //! Get vector of all property indices for property defined by parent index. An index of 0 means root properties.
     ECOBJECTS_EXPORT ECObjectsStatus         GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const;
