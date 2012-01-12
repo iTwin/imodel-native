@@ -110,5 +110,5 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 #----------------------------------------------------------------------
 #   NEEDSWORK : Temporary settings
 #----------------------------------------------------------------------
-%include dlmLink.mki
+%include dlmlink.mki
 

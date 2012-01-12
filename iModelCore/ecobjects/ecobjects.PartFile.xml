@@ -85,7 +85,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="ECObjectsScenarioTests" BentleyBuildMakeFile="test\scenarioTests.mke">
+    <Part Name="ECObjectsScenarioTests" BentleyBuildMakeFile="test\scenarioTests.mke" ExcludePlatforms="Android,Linux,iOS">
         <SubPart PartName="ECObjectsTestsDependencies"/>
         <Bindings>
             <Files ProductDirectoryName="ECObjectsTestExe">Delivery\ECObjectsTest_scenario.exe</Files>
@@ -93,7 +93,7 @@
     </Part>
 
 
-    <Part Name="ECObjectsPerformanceTests" BentleyBuildMakeFile="test\PerformanceTests.mke">
+    <Part Name="ECObjectsPerformanceTests" BentleyBuildMakeFile="test\PerformanceTests.mke" ExcludePlatforms="Android,Linux,iOS">
       <SubPart PartName="ECObjectsTestsDependencies"/>
       <SubPart PartName="PublishedApi"/>
       <Bindings>
