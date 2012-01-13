@@ -396,6 +396,45 @@ bool                IECInstance::IsPropertyReadOnly (WCharCP accessString) const
 #define NUM_ACCESSSTRING_BUFFER_CHARS 1023
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Dylan.Rush                      1/11
++---------------+---------------+---------------+---------------+---------------+------*/
+static ECPropertyP getProperty  (ECClassCR ecClass, WCharCP accessor, wchar_t* buffer)
+    {
+    //Gets the ECProperty for a full native accessor.
+    //For example, the full native accessor could be "GrandfatherStruct.ParentStruct.StringMember"
+    //In this case, passing this accessor to this function will give you the
+    //ECProperty for StringMember.
+    //WIP_FUSION this leaves the [] appended at the end of arrays.
+   
+    WCharCP dotPos = wcschr (accessor, L'.');
+    if (NULL != dotPos)
+        {
+        size_t dotIndex  = dotPos - accessor;
+        buffer[dotIndex] = '\0';
+
+        ECPropertyP prop = ecClass.GetPropertyP (buffer);
+
+        if (NULL == prop)
+            return NULL;
+
+        StructECPropertyP structProperty = prop->GetAsStructProperty();
+
+        if (NULL == structProperty)
+            return NULL;
+
+        return getProperty (structProperty->GetType(), &dotPos[1], &buffer[dotIndex+1]);
+        }
+
+    WCharCP bracketPos = wcschr (accessor, L'[');
+    if (NULL != bracketPos)
+        {
+        size_t bracketIndex = bracketPos - accessor;
+        buffer[bracketIndex] = '\0';
+        }
+    return ecClass.GetPropertyP (buffer);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 static ECObjectsStatus getECValueUsingFullAccessString (wchar_t* asBuffer, wchar_t* indexBuffer, ECValueR v, IECInstanceCR instance, WCharCP managedPropertyAccessor)
@@ -934,7 +973,11 @@ static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar
             {
             ECClassCR    ecClass     = instance.GetClass();
 
-            ECPropertyP  prop = ecClass.GetPropertyP (asBuffer);
+            //ECPropertyP  prop = ecClass.GetPropertyP (asBuffer);
+            wchar_t buffer [NUM_INDEX_BUFFER_CHARS+1];
+            wcsncpy(buffer, asBufferStr.c_str(), NUM_INDEX_BUFFER_CHARS);
+            ECPropertyP prop = getProperty (ecClass, asBufferStr.c_str(), buffer);
+            
             if (!prop->GetIsArray())
                 return ECOBJECTS_STATUS_Error;
 
@@ -1623,45 +1666,6 @@ bool  ECInstanceInteropHelper::IsStructArray  (IECInstanceCR instance, int prope
 bool  ECInstanceInteropHelper::IsArray  (IECInstanceCR instance, int propertyIndex)
     {
     return getTypeDescriptor (instance, propertyIndex).IsArray();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Dylan.Rush                      1/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-static ECPropertyP getProperty  (ECClassCR ecClass, WCharCP accessor, wchar_t* buffer)
-    {
-    //Gets the ECProperty for a full native accessor.
-    //For example, the full native accessor could be "GrandfatherStruct.ParentStruct.StringMember"
-    //In this case, passing this accessor to this function will give you the
-    //ECProperty for StringMember.
-    //WIP_FUSION this leaves the [] appended at the end of arrays.
-   
-    WCharCP dotPos = wcschr (accessor, L'.');
-    if (NULL != dotPos)
-        {
-        size_t dotIndex  = dotPos - accessor;
-        buffer[dotIndex] = '\0';
-
-        ECPropertyP prop = ecClass.GetPropertyP (buffer);
-
-        if (NULL == prop)
-            return NULL;
-
-        StructECPropertyP structProperty = prop->GetAsStructProperty();
-
-        if (NULL == structProperty)
-            return NULL;
-
-        return getProperty (structProperty->GetType(), &dotPos[1], &buffer[dotIndex+1]);
-        }
-
-    WCharCP bracketPos = wcschr (accessor, L'[');
-    if (NULL != bracketPos)
-        {
-        size_t bracketIndex = bracketPos - accessor;
-        buffer[bracketIndex] = '\0';
-        }
-    return ecClass.GetPropertyP (buffer);
     }
 
 /*---------------------------------------------------------------------------------**//**
