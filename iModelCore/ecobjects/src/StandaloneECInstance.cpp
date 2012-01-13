@@ -33,6 +33,7 @@ static IECInstanceP    getEmbeddedSupportingStructInstance (StructArrayEntry con
 //  MemoryECInstanceBase
 ///////////////////////////////////////////////////////////////////////////////////////////
 const UInt32 BITS_PER_FLAGSBITMASK = (sizeof(UInt32) * 8);
+const UInt32 BITS_TO_SHIFT_FOR_FLAGSBITMASK = 5;            // bitToCheck >> BITS_TO_SHIFT_FOR_FLAGSBITMASK equiv. to bitToCheck / BITS_PER_FLAGSBITMASK
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2010
@@ -194,7 +195,7 @@ ECObjectsStatus          MemoryECInstanceBase::IsPerPropertyBitSet (bool& isSet,
         }
 
     UInt32 bitToCheck = (propertyIndex * m_perPropertyFlagsHolder.numBitsPerProperty) + bitIndex;
-    UInt32 offset = bitToCheck / BITS_PER_FLAGSBITMASK;
+    UInt32 offset = bitToCheck >> BITS_TO_SHIFT_FOR_FLAGSBITMASK;
     UInt32 bit    = bitToCheck % BITS_PER_FLAGSBITMASK;
     UInt32 bitValue = 1 << bit;
 
@@ -266,7 +267,7 @@ ECObjectsStatus          MemoryECInstanceBase::SetPerPropertyBit (UInt8 bitIndex
         }
 
     UInt32 bitToSet = (propertyIndex * m_perPropertyFlagsHolder.numBitsPerProperty) + bitIndex;
-    UInt32 offset = bitToSet / BITS_PER_FLAGSBITMASK;
+    UInt32 offset = bitToSet >> BITS_TO_SHIFT_FOR_FLAGSBITMASK;
     UInt32 bit    = bitToSet % BITS_PER_FLAGSBITMASK;
     UInt32 bitValue = 1 << bit;
 
