@@ -1415,7 +1415,13 @@ bool            MemoryInstanceSupport::IsPropertyValueNull (PropertyLayoutCR pro
     UInt32 nullflagsBitmask;
     byte const * data = _GetData();
     if (useIndex)
-        PrepareToAccessNullFlags (nullflagsOffset, nullflagsBitmask, data, propertyLayout, index);    
+        {
+        // see if we have an UninitializedFixedCountArray
+        if ((propertyLayout.GetModifierFlags() & PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount) && (GetAllocatedArrayCount (propertyLayout) == 0))    
+            return true;
+
+        PrepareToAccessNullFlags (nullflagsOffset, nullflagsBitmask, data, propertyLayout, index); 
+        }
     else
         PrepareToAccessNullFlags (nullflagsOffset, nullflagsBitmask, data, propertyLayout);
 
