@@ -1417,7 +1417,7 @@ bool            MemoryInstanceSupport::IsPropertyValueNull (PropertyLayoutCR pro
     if (useIndex)
         {
         // see if we have an UninitializedFixedCountArray
-        if (propertyLayout->IsFixedCountArray && (GetAllocatedArrayCount (propertyLayout) == 0))
+        if ((propertyLayout.GetModifierFlags() & PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount) && (GetAllocatedArrayCount (propertyLayout) == 0))    
             return true;
 
         PrepareToAccessNullFlags (nullflagsOffset, nullflagsBitmask, data, propertyLayout, index); 
