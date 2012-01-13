@@ -1589,19 +1589,12 @@ ECObjectsStatus           StandaloneECInstance::_SetValue (WCharCP propertyAcces
     {
 
     PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
-                
-    ClassLayoutCR classLayout = GetClassLayout();
-    PropertyLayoutCP propertyLayout = NULL;
-    ECObjectsStatus status = classLayout.GetPropertyLayout (propertyLayout, propertyAccessString);
-    if (ECOBJECTS_STATUS_Success != status || NULL == propertyLayout)
-        return ECOBJECTS_STATUS_PropertyNotFound;       
 
     UInt32 propertyIndex = 0;
-    GetEnabler().GetPropertyIndex(propertyIndex, propertyAccessString);
+    if (ECOBJECTS_STATUS_Success != GetEnabler().GetPropertyIndex(propertyIndex, propertyAccessString))
+        return ECOBJECTS_STATUS_PropertyNotFound;
 
-    SetPerPropertyBit ((UInt8) PROPERTYFLAGINDEX_IsLoaded, propertyIndex, true);
-
-    return SetValueToMemory (classLayout, propertyIndex, v, useArrayIndex, arrayIndex);
+    return _SetValue (propertyIndex, v, useArrayIndex, arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**

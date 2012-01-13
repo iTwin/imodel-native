@@ -93,6 +93,7 @@ bool operator()(ClassLayoutCP s1, ClassLayoutCP s2) const;
 
  typedef bmap<ClassLayoutCP, bool, less_classLayout>   CompatibleClassLayoutsMap;
 
+#define USE_HASHMAP_IN_CLASSLAYOUT
 /*=================================================================================**//**
 * @bsistruct
 +===============+===============+===============+===============+===============+======*/      
