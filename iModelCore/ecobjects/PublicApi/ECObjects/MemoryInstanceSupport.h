@@ -93,7 +93,6 @@ bool operator()(ClassLayoutCP s1, ClassLayoutCP s2) const;
 
  typedef bmap<ClassLayoutCP, bool, less_classLayout>   CompatibleClassLayoutsMap;
 
-#define USE_HASHMAP_IN_CLASSLAYOUT
 /*=================================================================================**//**
 * @bsistruct
 +===============+===============+===============+===============+===============+======*/      
@@ -101,12 +100,12 @@ struct ClassLayout
     {
     friend struct MemoryInstanceSupport;
 private:
-    struct StringComparer {bool operator()(WCharCP s1, WCharCP s2) const   {return wcscmp (s1, s2) < 0;}};
-#ifdef USE_HASHMAP_IN_CLASSLAYOUT    
-    typedef stdext::hash_map<WCharCP, PropertyLayoutCP, stdext::hash_compare<WCharCP, StringComparer>>   PropertyLayoutMap;
-#else
-    typedef bmap<WCharCP, PropertyLayoutCP, StringComparer> PropertyLayoutMap;
-#endif    
+    struct AccessStringIndexPair : bpair<WCharCP, UInt32>
+        {
+        AccessStringIndexPair (WCharCP accessor, UInt32 index) : bpair<WCharCP, UInt32> (accessor, index) { }
+        };
+
+    typedef bvector<AccessStringIndexPair>                          IndicesByAccessString;
     typedef bvector<PropertyLayoutP>                                PropertyLayoutVector;
     typedef bmap<UInt32, bvector<UInt32>>                           LogicalStructureMap;
     
@@ -121,8 +120,8 @@ private:
     ClassIndex              m_classIndex; // Unique per some context, e.g. per DgnFile
     WString                 m_className;
     
-    PropertyLayoutVector    m_propertyLayouts; // This is the primary collection, there is a secondary map for lookup by name, below.
-    PropertyLayoutMap       m_propertyLayoutMap;
+    PropertyLayoutVector    m_propertyLayouts;      // This is the primary collection, there is a secondary map for lookup by name, below.    
+    IndicesByAccessString   m_indicesByAccessString; // Always sorted; maps access strings to indices which can be used to index into PropertyLayoutVector
     LogicalStructureMap     m_logicalStructureMap;
     
     // These members are transient
@@ -135,7 +134,10 @@ private:
     int                         m_uniqueId;
     mutable CompatibleClassLayoutsMap m_compatibleClassLayouts;
 
-    void                    CheckForECPointers (WCharCP accessString);
+    void                            CheckForECPointers (WCharCP accessString);
+
+    // returns an iterator into m_indicesByAccessStrings at which accessString exists (if forCreate=false), or would be inserted (if forCreate=true)
+    IndicesByAccessString::const_iterator GetPropertyIndexPosition (WCharCP accessString, bool forCreate) const;
 
     struct  Factory
     {

@@ -852,7 +852,7 @@ ECObjectsStatus       ClassLayout::FinishLayout ()
         }
 
 #ifndef NDEBUG
-    DEBUG_EXPECT (m_propertyLayoutMap.size() == m_propertyLayouts.size());
+    DEBUG_EXPECT (m_indicesByAccessString.size() == m_propertyLayouts.size());
 
     UInt32  nNullflagsBitmasks  = CalculateNumberNullFlagsBitmasks (GetPropertyCountExcludingEmbeddedStructs());
     UInt32  nonStructPropIndex  = 0;
@@ -932,14 +932,64 @@ void            ClassLayout::AddToLogicalStructureMap (PropertyLayoutR propertyL
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/12
++---------------+---------------+---------------+---------------+---------------+------*/ 
+ClassLayout::IndicesByAccessString::const_iterator ClassLayout::GetPropertyIndexPosition (WCharCP accessString, bool forCreate) const
+    {
+    // this vector is always sorted, so we can do binary search
+    IndicesByAccessString::const_iterator begin   = m_indicesByAccessString.begin(),
+                                    end           = m_indicesByAccessString.end(),
+                                    it;
+    size_t count = m_indicesByAccessString.size(), step;
+    while (count > 0)
+        {
+        it = begin;
+        step = count >> 1;
+        it += step;
+        int cmp = wcscmp (it->first, accessString);
+        if (cmp == 0)           // easy out, avoiding redundant wcscmp() below
+            {
+            if (forCreate)
+                DEBUG_FAIL ("Attempting to add a PropertyLayout with a duplicate name");
+            else
+                return it;
+            }
+        else if (cmp < 0)
+            {
+            begin = ++it;
+            count -= step+1;
+            }
+        else
+            count = step;
+        }
+    it = begin;
+
+    if (forCreate)
+        {
+        if (it != end)
+            DEBUG_EXPECT (0 != wcscmp (accessString, it->first) && "Cannot create a PropertyLayout with the same access string as an existing layout");
+        return it;
+        }
+    else
+        return (it != end && 0 == wcscmp (accessString, it->first)) ? it : end;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
 void            ClassLayout::AddPropertyLayout (WCharCP accessString, PropertyLayoutR propertyLayout)
     {
     m_propertyLayouts.push_back(&propertyLayout);
-    m_propertyLayoutMap[propertyLayout.GetAccessString()] = m_propertyLayouts.back();
 
-    AddToLogicalStructureMap (propertyLayout, (UInt32) m_propertyLayouts.size() - 1);
+    // if we knew no new PropertyLayouts could be added after construction, we could delay sorting the list until FinishLayout()
+    // since AddPropertyLayout() is public we can't know that, so we need to insert in sorted order
+    UInt32 index = (UInt32)(m_propertyLayouts.size() - 1);
+    AccessStringIndexPair newPair (propertyLayout.GetAccessString(), index);
+    IndicesByAccessString::iterator begin = m_indicesByAccessString.begin();
+    IndicesByAccessString::iterator insertPos = begin + (GetPropertyIndexPosition (accessString, true) - begin);    // because constness...
+    m_indicesByAccessString.insert (insertPos, newPair);
+
+    AddToLogicalStructureMap (propertyLayout, index);
     CheckForECPointers (accessString);
     }
 
@@ -1015,15 +1065,13 @@ bool            ClassLayout::SetPropertyReadOnly (UInt32 propertyIndex,  bool re
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus       ClassLayout::GetPropertyLayout (PropertyLayoutCP & propertyLayout, WCharCP accessString) const
     {
-    PropertyLayoutMap::const_iterator it = m_propertyLayoutMap.find(accessString);
-    
-    if (it == m_propertyLayoutMap.end())
-        {
+    IndicesByAccessString::const_iterator pos = GetPropertyIndexPosition (accessString, false);
+
+    if (pos == m_indicesByAccessString.end())
         return ECOBJECTS_STATUS_PropertyNotFound;
-        }
     else
         {
-        propertyLayout = it->second;
+        propertyLayout = m_propertyLayouts[pos->second];
         return ECOBJECTS_STATUS_Success;
         }
     }
@@ -1033,24 +1081,11 @@ ECObjectsStatus       ClassLayout::GetPropertyLayout (PropertyLayoutCP & propert
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus     ClassLayout::GetPropertyIndex (UInt32& propertyIndex, WCharCP accessString) const
     {
-    PropertyLayoutCP    propertyLayout;
+    IndicesByAccessString::const_iterator pos = GetPropertyIndexPosition (accessString, false);
+    if (pos == m_indicesByAccessString.end())
+        return ECOBJECTS_STATUS_PropertyNotFound;
 
-    ECObjectsStatus status = GetPropertyLayout (propertyLayout, accessString);
-    if (ECOBJECTS_STATUS_Success != status)
-        return status;
-
-    for (UInt32 i = 0; i < m_propertyLayouts.size(); i++)
-        {
-        PropertyLayoutCP candidate = m_propertyLayouts[i];
-
-        if (propertyLayout == candidate)
-            {
-            propertyIndex = i;
-            return ECOBJECTS_STATUS_Success;
-            }
-        }
-
-    assert (false && "Property present in map but not in vector"); 
+    propertyIndex = pos->second;
     return ECOBJECTS_STATUS_Success;
     }
 
