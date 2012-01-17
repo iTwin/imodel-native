@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/StandaloneECInstance.h $
 |
-|   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -24,7 +24,7 @@ typedef int StructValueIdentifier;
 
 #define DEFAULT_NUMBITSPERPROPERTY  2
 
-enum PropertyFlagIndex : UInt8
+enum PropertyFlagIndex ENUM_UNDERLYING_TYPE(UInt8)
     {
     PROPERTYFLAGINDEX_IsLoaded = 0,
     PROPERTYFLAGINDEX_IsDirty  = 1
