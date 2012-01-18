@@ -6,7 +6,7 @@
 |       $Date: 2005/11/07 15:38:45 $
 |     $Author: EarlinLutz $
 |
-|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -984,6 +984,24 @@ ECSchemaReadContextR     schemaContext
     }
 
 /*---------------------------------------------------------------------------------**//**
+* - OpenPlant shipped a malformed schema that has a circular reference through supplementation.
+* - Therefore a special case had to be created so that we do not try to de-serialize this
+* - schema
+* @bsimethod                                    Carole.MacDonald                01/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool  ECSchema::IsOpenPlantPidCircularReferenceSpecialCase
+(
+WString& referencedECSchemaName
+)
+    {
+    if (0 != referencedECSchemaName.CompareTo(L"OpenPlant_PID"))
+        return false;
+
+    WString fullName = GetFullSchemaName();
+    return (0 == fullName.CompareTo(L"OpenPlant_Supplemental_Mapping_OPPID.01.01") || 0 == fullName.CompareTo(L"OpenPlant_Supplemental_Mapping_OPPID.01.02"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus ECSchema::ReadSchemaReferencesFromXml
@@ -1036,6 +1054,9 @@ ECSchemaReadContextR schemaContext
             
         // If the schema (uselessly) references itself, just skip it
         if (m_name.compare(schemaName) == 0)
+            continue;
+
+        if (IsOpenPlantPidCircularReferenceSpecialCase(schemaName))
             continue;
 
         ECObjectsLogger::Log()->debugv (L"About to locate referenced ECSchema %s.%02d.%02d", schemaName, versionMajor, versionMinor);

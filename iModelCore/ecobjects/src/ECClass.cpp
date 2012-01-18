@@ -6,7 +6,7 @@
 |       $Date: 2005/11/07 15:38:45 $
 |     $Author: EarlinLutz $
 |
-|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1953,6 +1953,10 @@ IStandaloneEnablerLocaterP  standaloneEnablerLocater
     SchemaReadStatus status = __super::ReadXmlContents(classNode, standaloneEnablerLocater);
     if (status != SCHEMA_READ_STATUS_Success)
         return status;
+
+    // skip relationship constraint classes for all supplemental schemas because they should never exist
+    if (WString::npos != GetSchema().GetName().find(L"_Supplemental"))  
+        return SCHEMA_READ_STATUS_Success;
         
     MSXML2::IXMLDOMNodePtr xmlNodePtr = classNode.selectSingleNode (EC_NAMESPACE_PREFIX L":" EC_SOURCECONSTRAINT_ELEMENT);
     if (NULL != xmlNodePtr)
