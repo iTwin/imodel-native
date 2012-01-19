@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECSchema.h $
 |
-|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -1090,6 +1090,7 @@ private:
     ECSchema (bool hideFromLeakDetection);
     virtual ~ECSchema();
 
+    bool IsOpenPlantPidCircularReferenceSpecialCase(WString& referencedECSchemaName);
     static SchemaReadStatus  ReadXml (ECSchemaP& schemaOut, MSXML2_IXMLDOMDocument2& pXmlDoc, ECSchemaReadContextR context);
     SchemaWriteStatus           WriteXml (MSXML2_IXMLDOMDocument2* pXmlDoc) const;
 
