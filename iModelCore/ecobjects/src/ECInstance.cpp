@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECInstance.cpp $
 |
-|   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -3502,7 +3502,7 @@ InstanceReadStatus   IECInstance::ReadFromXmlStream (IECInstancePtr& ecInstance,
 +---------------+---------------+---------------+---------------+---------------+------*/
 static InstanceReadStatus   ReportStatus (InstanceReadStatus status, WCharCP xmlString, IECInstancePtr& ecInstance)
     {
-    if (INSTANCE_READ_STATUS_Success != status)
+    if ((INSTANCE_READ_STATUS_Success != status) && (INSTANCE_READ_STATUS_CommentOnly != status) )
         ECObjectsLogger::Log()->errorv (L"Failed to deserialize instance from XML string. Status %d, string %s", status, xmlString);
     //else //This logging becomes overwhelmingly excessive when dealing with large ECSchemas with many ECCustomAttributes... turn it on on-demand
     //    ECObjectsLogger::Log()->tracev (L"Native ECInstance of type %s deserialized from string", ecInstance.IsValid() ? ecInstance->GetClass().GetName() : L"Null");
