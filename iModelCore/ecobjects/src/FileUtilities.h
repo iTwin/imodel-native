@@ -2,12 +2,12 @@
 |
 |     $Source: src/FileUtilities.h $
 |
-|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <ECObjects\ECObjects.h>
+#include <ECObjects/ECObjects.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 

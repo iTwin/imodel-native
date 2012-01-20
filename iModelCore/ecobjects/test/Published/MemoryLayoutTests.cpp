@@ -2,11 +2,10 @@
 |
 |     $Source: test/Published/MemoryLayoutTests.cpp $
 |
-|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
-#include <comdef.h>
 #include "StopWatch.h"
 #include "TestFixture.h"
 
@@ -410,6 +409,10 @@ WString    GetTestSchemaXMLString (WCharCP schemaName, UInt32 versionMajor, UInt
                     L"    <ECClass typeName=\"EmployeeDirectory\" isDomainClass=\"True\">"
                     L"        <ECArrayProperty propertyName=\"Employees\" typeName=\"Employee\"  minOccurs=\"0\" maxOccurs=\"unbounded\" />"
                     L"    </ECClass>"
+                    L"    <ECClass typeName=\"Car\" isStruct=\"True\" isDomainClass=\"True\">"
+                    L"        <ECProperty       propertyName=\"Name\"       typeName=\"string\"/>"
+                    L"        <ECProperty       propertyName=\"Wheels\"     typeName=\"int\"  readOnly=\"True\"/>"
+                    L"    </ECClass>"
                     L"  <ECClass typeName=\"StructClass\" isStruct=\"True\" isDomainClass=\"False\">"
                     L"    <ECProperty propertyName=\"StringProperty\" typeName=\"string\" /> "
                     L"    <ECProperty propertyName=\"IntProperty\" typeName=\"int\" /> "
@@ -441,14 +444,10 @@ ECSchemaP       CreateTestSchema (ECSchemaCacheR schemaOwner)
     {
     WString schemaXMLString = GetTestSchemaXMLString (L"TestSchema", 0, 0, L"TestClass");
 
-    EXPECT_EQ (S_OK, CoInitialize(NULL));  
-
     ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext(schemaOwner);
 
     ECSchemaP schema;        
     EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (schema, schemaXMLString.c_str(), *schemaContext));  
-
-    CoUninitialize();
     return schema;
     }
     
@@ -460,8 +459,6 @@ static std::vector<WString> s_propertyNames;
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP       CreateProfilingSchema (int nStrings, ECSchemaCacheR schemaOwner)
     {
-    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
-
     s_propertyNames.clear();
     
     WString schemaXml = 
@@ -488,8 +485,6 @@ ECSchemaP       CreateProfilingSchema (int nStrings, ECSchemaCacheR schemaOwner)
 
     ECSchemaP schema;        
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlString (schema, schemaXml.c_str(), *schemaContext));
-
-    CoUninitialize ();
     return schema;
     }
     
@@ -796,8 +791,6 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper)
     {
-    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
-
     ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
     ECSchemaP        schema = CreateTestSchema(*schemaOwner);
     ASSERT_TRUE (schema != NULL);
@@ -840,8 +833,6 @@ TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper)
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, L"ManufacturerArray[0].Name", testString2.c_str()));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetString (*instance, stringValueP, L"ManufacturerArray[0].Name"));
     EXPECT_STREQ (testString2.c_str(), stringValueP);
-
-    CoUninitialize();
     };
 #endif
 
@@ -1993,7 +1984,40 @@ TEST_F (MemoryLayoutTests, TestSetGetNull)
     
     // WIP_FUSION test arrays
     };
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan.Rush      08/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (MemoryLayoutTests, TestPropertyReadOnly)
+    {
+    //L"    <ECClass typeName=\"Car\" isStruct=\"True\" isDomainClass=\"True\">"
+    //L"        <ECProperty       propertyName=\"Name\"       typeName=\"string\"/>"
+    //L"        <ECProperty       propertyName=\"Wheels\"     typeName=\"int\"  readOnly=\"True\"/>"
+    //L"    </ECClass>"
+
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();;
+    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    ASSERT_TRUE (schema != NULL);
+    ECClassP ecClass = schema->GetClassP (L"Car");
+    ASSERT_TRUE (NULL != ecClass);
+        
+    StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
+    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     
+    WCharCP nameAccessString = L"Name";
+    WCharCP wheelsAccessString = L"Wheels";
+    UInt32  namePropertyIndex = 9999;
+    UInt32  wheelsPropertyIndex = 9998;
+    EXPECT_TRUE (SUCCESS == enabler->GetPropertyIndex (namePropertyIndex, nameAccessString));
+    EXPECT_TRUE (SUCCESS == enabler->GetPropertyIndex (wheelsPropertyIndex, wheelsAccessString));
+
+    EXPECT_FALSE (instance->IsPropertyReadOnly (nameAccessString));
+    EXPECT_FALSE (instance->IsPropertyReadOnly (namePropertyIndex));
+
+    EXPECT_TRUE  (instance->IsPropertyReadOnly (wheelsAccessString));
+    EXPECT_TRUE  (instance->IsPropertyReadOnly (wheelsPropertyIndex));   
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
