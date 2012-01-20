@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECObjects.h $
 |
-|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,10 +18,15 @@
 // are existing C callers that we can not get rid of.  I've spoken to Sam and he recommends that for any new libraries we
 // ONLY support cpp callers and therefore do not repeat this pattern.
 
-#ifdef __ECOBJECTS_BUILD__
-#define ECOBJECTS_EXPORT EXPORT_ATTRIBUTE
+#ifndef ECOBJECTS_EXPORT
+    #ifdef __ECOBJECTS_BUILD__
+        #define ECOBJECTS_EXPORT EXPORT_ATTRIBUTE
+    #else
+        #define ECOBJECTS_EXPORT IMPORT_ATTRIBUTE
+    #endif
 #else
-#define ECOBJECTS_EXPORT IMPORT_ATTRIBUTE
+    #undef ECOBJECTS_EXPORT    /* When we build the static library and clients of the static library, we define ECOBJECTS_EXPORT on the command line. */
+    #define ECOBJECTS_EXPORT   /* for the static library, there must be no __declspec(import) on the functions. */
 #endif
 
 #define BEGIN_BENTLEY_EC_NAMESPACE  BEGIN_BENTLEY_NAMESPACE namespace EC {

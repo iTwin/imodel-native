@@ -2,7 +2,7 @@
 #
 #     $Source: src/ecobjects.mki $
 #
-#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 OPTIMIZE_FOR_SPEED=1
@@ -10,3 +10,7 @@ OPTIMIZE_FOR_SPEED=1
 nameToDefine=__ECOBJECTS_BUILD__
 %include cdefapnd.mki
 
+%if defined (__ECOBJECTS_STATIC__)
+    nameToDefine = ECOBJECTS_EXPORT
+    %include cdefapnd.mki
+%endif
