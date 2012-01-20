@@ -18,15 +18,10 @@
 // are existing C callers that we can not get rid of.  I've spoken to Sam and he recommends that for any new libraries we
 // ONLY support cpp callers and therefore do not repeat this pattern.
 
-#ifndef ECOBJECTS_EXPORT
-    #ifdef __ECOBJECTS_BUILD__
-        #define ECOBJECTS_EXPORT EXPORT_ATTRIBUTE
-    #else
-        #define ECOBJECTS_EXPORT IMPORT_ATTRIBUTE
-    #endif
+#ifdef __ECOBJECTS_BUILD__
+    #define ECOBJECTS_EXPORT EXPORT_ATTRIBUTE
 #else
-    #undef ECOBJECTS_EXPORT    /* When we build the static library and clients of the static library, we define ECOBJECTS_EXPORT on the command line. */
-    #define ECOBJECTS_EXPORT   /* for the static library, there must be no __declspec(import) on the functions. */
+    #define ECOBJECTS_EXPORT IMPORT_ATTRIBUTE
 #endif
 
 #define BEGIN_BENTLEY_EC_NAMESPACE  BEGIN_BENTLEY_NAMESPACE namespace EC {

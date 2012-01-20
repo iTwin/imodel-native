@@ -13,10 +13,9 @@ programName = ECObjects
 
 %include    mdl.mki
 
-%if defined (__ECOBJECTS_STATIC__)
-    # The overriding of the export macro is in the MKI file so the PCH also gets it.
-
-    o = $(OutECObjects)$(programName)Static/
+%if defined (__CREATE_STATIC_LIBRARIES__)
+    oBase   =% ${o}
+    o       = $(oBase)Static/
 %endif
 
 #----------------------------------------------------------------------
@@ -89,44 +88,42 @@ cppObjects=%$(MultiCompileObjectList)
 CCPchOpts =
 CPchOpts =
 
-%if !defined (__ECOBJECTS_STATIC__)
+#----------------------------------------------------------------------
+#   dependencies of the subsystem.
+#----------------------------------------------------------------------
+DLM_NO_DLS                  = 1
+DLM_NO_DEF                  = 1
+DLM_NAME                    = ECObjects
+DLM_DEST                    = $(o)
+DLM_OBJECT_DEST             = $(o)
+DLM_OBJECT_FILES            = $(cppObjects)
+DLM_OBJECT_PCH              = $(o)ECObjectsPch$(oext)
+DLM_EXPORT_OBJS             = $(cppObjects)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOINITFUNC              = 1
+DLM_NOMSBUILTINS            = 1
+DLM_NOENTRY                 = 1
+%if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT
+LINKER__LIBRARIES           = $(BuildContext)SubParts/Libs/bentleylogging-2.0$(libext) xmllite$(libext)
+%endif
+LINKER__LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
+LINKER__LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext)
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
 
-    #----------------------------------------------------------------------
-    #   dependencies of the subsystem.
-    #----------------------------------------------------------------------
-    DLM_NO_DLS                  = 1
-    DLM_NO_DEF                  = 1
-    DLM_NAME                    = ECObjects
-    DLM_DEST                    = $(o)
-    DLM_OBJECT_DEST             = $(o)
-    DLM_OBJECT_FILES            = $(cppObjects)
-    DLM_OBJECT_PCH              = $(o)ECObjectsPch$(oext)
-    DLM_EXPORT_OBJS             = $(cppObjects)
-    DLM_EXPORT_DEST             = $(o)
-    DLM_NOINITFUNC              = 1
-    DLM_NOMSBUILTINS            = 1
-    DLM_NOENTRY                 = 1
-    %if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT
-    LINKER__LIBRARIES           = $(BuildContext)SubParts/Libs/bentleylogging-2.0$(libext) xmllite$(libext)
-    %endif
-    LINKER__LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
-    LINKER__LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext)
-    DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
-    DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
-    DLM_CREATE_LIB_CONTEXT_LINK = 1
+%if !defined (__CREATE_STATIC_LIBRARIES__)
 
-    #----------------------------------------------------------------------
-    #   NEEDSWORK : Temporary settings
-    #----------------------------------------------------------------------
     %include dlmlink.mki
 
 %else
 
-    LIB_NAME                = ECObjects
-    LIB_DEST                = $(o)
-    LIB_TMP_DIR             = $(o)
-    LIB_OBJS                = $(cppObjects)
-    LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+    LIB_NAME                = $(DLM_NAME)
+    LIB_DEST                = $(DLM_DEST)
+    LIB_TMP_DIR             = $(DLM_DEST)
+    LIB_OBJS                = $(DLM_OBJECT_FILES)
+    LIB_LST_NAME            = $(LIB_TMP_DIR)$(LIB_NAME).lst
+    LIB_CONTEXT_LOCATION    = $(DLM_CONTEXT_LOCATION)
 
     %include creatlib.mki
 

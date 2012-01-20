@@ -9,8 +9,3 @@ OPTIMIZE_FOR_SPEED=1
 
 nameToDefine=__ECOBJECTS_BUILD__
 %include cdefapnd.mki
-
-%if defined (__ECOBJECTS_STATIC__)
-    nameToDefine = ECOBJECTS_EXPORT
-    %include cdefapnd.mki
-%endif

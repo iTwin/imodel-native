@@ -21,11 +21,11 @@
         </Bindings>
     </Part>
 
-    <Part Name="ECObjectsNativeStatic" BMakeOptions="+d__ECOBJECTS_STATIC__" BentleyBuildMakeFile="src/ecobjects.mke" ApiNumber="4">
+    <Part Name="ECObjectsNativeStatic" BMakeOptions="+d__CREATE_STATIC_LIBRARIES__" BentleyBuildMakeFile="src/ecobjects.mke" ApiNumber="4">
         <SubPart PartName="BoostHeaders"        PartFile="${SrcBsiCommon}CvsPartfiles/bsibin"   Repository="bsibin-boostheaders" />
         <SubPart PartName="HeaderFiles" />
         <SubPart PartName="BentleyStaticLib"    PartFile="Bentley"                              Repository="Bentley" />
-        <SubPart PartName="Logging8.11"         PartFile="${SrcBsiCommon}CvsPartfiles/bsibin"   Repository="bsibin-loggingsdk" />
+        <SubPart PartName="Logging8.11Static"   PartFile="${SrcBsiCommon}CvsPartfiles/bsibin"   Repository="bsibin-loggingsdk" />
         <SubPart PartName="GeomStatic"          PartFile="geomlibs"                             Repository="GeomLibs" />
         <SubPart PartName="BeXmlStaticLib"      PartFile="BeLibxml2"                            Repository="libsrc-libxml2" />
         <SubPart PartName="StandardSchemas"     PartFile="ECStandards"                          Repository="ECStandards"/>
