@@ -133,6 +133,19 @@ static inline UInt32    CalculateFixedArrayPropertySize (UInt32 fixedCount, Prim
         (fixedCount *ECValue::GetFixedPrimitiveValueSize(primitiveType));
     }  
            
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//  PropertyLayout inline methods
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+inline WCharCP                     PropertyLayout::GetAccessString() const     { return m_accessString.c_str(); }
+inline UInt32                      PropertyLayout::GetParentStructIndex() const{ return m_parentStructIndex; }
+inline UInt32                      PropertyLayout::GetOffset() const           { assert ( ! m_typeDescriptor.IsStruct()); return m_offset; }
+inline UInt32                      PropertyLayout::GetNullflagsOffset() const  { assert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsOffset; }
+inline NullflagsBitmask            PropertyLayout::GetNullflagsBitmask() const { assert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsBitmask; }
+inline ECTypeDescriptor            PropertyLayout::GetTypeDescriptor() const   { return m_typeDescriptor; }
+inline UInt32                      PropertyLayout::GetModifierFlags() const    { return m_modifierFlags; }
+inline UInt32                      PropertyLayout::GetModifierData() const     { return m_modifierData; }    
+inline bool                        PropertyLayout::IsReadOnlyProperty () const {return PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly == (m_modifierFlags & PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly);}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1176,6 +1189,22 @@ UInt32  ClassLayout::GetNextChildPropertyIndex (UInt32 parentIndex, UInt32 child
         return *it;
 
     return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  01/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+/*static*/ SchemaLayoutP   SchemaLayout::Create (SchemaIndex index)
+    {
+    return new  SchemaLayout (index);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  01/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaIndex      SchemaLayout::GetSchemaIndex() const 
+    {
+    return m_schemaIndex; 
     }
 
 /*---------------------------------------------------------------------------------**//**
