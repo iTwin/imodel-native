@@ -101,7 +101,6 @@ private:
     void                    WalkSupportingStructs (WStringR completeString, WCharCP prefix) const;
     void                    InitializePerPropertyFlags (ClassLayoutCR classLayout, UInt8 numBitsPerProperty);
  
-
 protected:
     //! The MemoryECInstanceBase will take ownership of the memory
     ECOBJECTS_EXPORT MemoryECInstanceBase (byte * data, UInt32 size, ClassLayoutCR classLayout, bool allowWritingDirectlyToInstanceMemory);
@@ -158,7 +157,6 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
 };
 
 //__PUBLISH_SECTION_START__
-
 /*=================================================================================**//**
 //! @ingroup ECObjectsGroup
 * EC::StandaloneECInstance is the native equivalent of a .NET "Heavyweight" ECInstance.
@@ -231,8 +229,9 @@ struct IECWipRelationshipInstance : StandaloneECInstance
         ECOBJECTS_EXPORT virtual BentleyStatus  _SetName (WCharCP name) = 0;
         ECOBJECTS_EXPORT virtual BentleyStatus  _SetSourceOrderId (Int64 sourceOrderId) = 0;
         ECOBJECTS_EXPORT virtual BentleyStatus  _SetTargetOrderId (Int64 targetOrderId) = 0;
-//__PUBLISH_SECTION_START__
 
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
     public:
         ECOBJECTS_EXPORT BentleyStatus  SetName (WCharCP name);
         ECOBJECTS_EXPORT BentleyStatus  SetSourceOrderId (Int64 sourceOrderId);
@@ -248,6 +247,7 @@ struct StandaloneECEnabler : public ECEnabler
     ,public ClassLayoutHolder
 //__PUBLISH_SECTION_START__
    {
+//__PUBLISH_SECTION_END__
 private:
     bool    m_ownsClassLayout;
 
@@ -263,16 +263,12 @@ protected:
     virtual UInt32                      _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const override;
     virtual ECObjectsStatus             _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const override;
 
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
 public: 
     //! if structStandaloneEnablerLocater is NULL, we'll use GetDefaultStandaloneEnabler for embedded structs
     ECOBJECTS_EXPORT static StandaloneECEnablerPtr CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater, bool ownsClassLayout);
     ECOBJECTS_EXPORT StandaloneECInstancePtr       CreateInstance (UInt32 minimumInitialSize = 0) const;
-    //ECOBJECTS_EXPORT StandaloneECInstanceP         CreateInstanceFromUninitializedMemory (byte * data, UInt32 size);
-
-    //! Used to construct from another memory source like ECXData. The caller is claiming that the memory
-    //! has been properly initialized with the classLayout that was passed in
-    //ECOBJECTS_EXPORT StandaloneECInstanceP         CreateInstanceFromInitializedMemory (ClassLayoutCR classLayout, byte * data, UInt32 size);
-    
     ECOBJECTS_EXPORT StandaloneECInstanceP         CreateSharedInstance (byte * data, UInt32 size);
     };
 END_BENTLEY_EC_NAMESPACE
