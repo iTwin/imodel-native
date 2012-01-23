@@ -81,13 +81,13 @@ public:
     ECOBJECTS_EXPORT UInt32                      GetModifierData() const;
     ECOBJECTS_EXPORT bool                        IsReadOnlyProperty () const;
 
-    ECOBJECTS_EXPORT bool                               SetReadOnlyMask (bool readOnly);
-    ECOBJECTS_EXPORT bool                               IsFixedSized() const;
+    ECOBJECTS_EXPORT bool                        SetReadOnlyMask (bool readOnly);
+    ECOBJECTS_EXPORT bool                        IsFixedSized() const;
     //! Gets the size required for this PropertyValue in the fixed Section of the IECInstance's memory
     //! Variable-sized types will have 4 byte SecondaryOffset stored in the fixed Section.
-    ECOBJECTS_EXPORT UInt32                             GetSizeInFixedSection() const;
+    ECOBJECTS_EXPORT UInt32                       GetSizeInFixedSection() const;
     
-    ECOBJECTS_EXPORT WString                            ToString();
+    ECOBJECTS_EXPORT WString                      ToString();
     };
 
 struct less_classLayout
@@ -130,13 +130,13 @@ private:
     LogicalStructureMap     m_logicalStructureMap;
     
     // These members are transient
-    bool                        m_hideFromLeakDetection;
-    SchemaIndex                 m_schemaIndex;
-    UInt32                      m_sizeOfFixedSection;
-    bool                        m_isRelationshipClass;
-    int                         m_propertyIndexOfSourceECPointer;
-    int                         m_propertyIndexOfTargetECPointer;
-    int                         m_uniqueId;
+    bool                              m_hideFromLeakDetection;
+    SchemaIndex                       m_schemaIndex;
+    UInt32                            m_sizeOfFixedSection;
+    bool                              m_isRelationshipClass;
+    int                               m_propertyIndexOfSourceECPointer;
+    int                               m_propertyIndexOfTargetECPointer;
+    int                               m_uniqueId;
     mutable CompatibleClassLayoutsMap m_compatibleClassLayouts;
 
     void                            CheckForECPointers (WCharCP accessString);
@@ -318,7 +318,9 @@ private:
         
     static ECObjectsStatus    CreateNullArrayElementsAt (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, MemoryInstanceSupportR instance, UInt32 insertIndex, UInt32 insertCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP=NULL);
     };
-/*__PUBLISH_SECTION_START__*/    
+/*__PUBLISH_SECTION_START__*/  
+
+/*__PUBLISH_SECTION_END__*/    
 
 //=======================================================================================    
 //! Base class for EC::IECInstance implementations that get/set values from a block of memory, 
@@ -326,9 +328,7 @@ private:
 //=======================================================================================    
 struct MemoryInstanceSupport
     {
-/*__PUBLISH_SECTION_END__*/    
     friend  struct ArrayResizer;
-/*__PUBLISH_SECTION_START__*/    
     
 private:    
     bool                        m_allowWritingDirectlyToInstanceMemory;
@@ -471,7 +471,9 @@ public:
     ECOBJECTS_EXPORT void SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable);
 
     ECOBJECTS_EXPORT EC::PrimitiveType         GetStructArrayPrimitiveType () const;
-    };    
+    };   
+
+/*__PUBLISH_SECTION_START__*/  
 
 
 END_BENTLEY_EC_NAMESPACE

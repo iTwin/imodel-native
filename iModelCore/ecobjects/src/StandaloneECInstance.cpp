@@ -891,7 +891,7 @@ byte const *        MemoryECInstanceBase::_GetData () const
     if (m_isInManagedInstance)
         {
         byte const* baseAddress = (byte const*)this;
-        byte const* dataAddress =  baseAddress + (size_t)m_data.address;     // m_data.address need to be signed
+        byte const* dataAddress =  baseAddress + (size_t)m_data.offset;     // m_data.address need to be signed
         return dataAddress;
         }
 
@@ -931,7 +931,7 @@ ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueC
 
     if (m_isInManagedInstance)
         {
-        offsetToData = (size_t)m_data.address;
+        offsetToData = (size_t)m_data.offset;
         offsetToArrayCount = m_structInstances.offset;
         bytesAllocated = (size_t)m_bytesAllocated;
 
@@ -1409,7 +1409,7 @@ UInt32                   MemoryECInstanceBase::GetPerPropertyFlagsDataLength () 
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t                StandaloneECInstance::_GetOffsetToIECInstance () const
     {
-    EC::IECInstanceP iecInstanceP   = (EC::IECInstanceP)this;
+    EC::IECInstanceCP iecInstanceP   = dynamic_cast<EC::IECInstanceCP>(this);
     byte const* baseAddressOfIECInstance = (byte const *)iecInstanceP;
     byte const* baseAddressOfConcrete = (byte const *)this;
 

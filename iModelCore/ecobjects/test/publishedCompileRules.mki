@@ -1,8 +1,8 @@
 #----------------------------------------------------------------------------------------
 #
-#  $Source: ecobjects/nativeatp/publishedCompileRules.mki $
+#  $Source: test/publishedCompileRules.mki $
 #
-#  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -15,7 +15,7 @@ $(o)SchemaTests$(oext)        : $(baseDir)Published/SchemaTests.cpp   $(PCHHeade
 
 $(o)MacroTests$(oext)         : $(baseDir)Published/MacroTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
 
-$(o)MemoryLayoutTests$(oext)  : $(baseDir)Published/MemoryLayoutTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
+#$(o)MemoryLayoutTests$(oext)  : $(baseDir)Published/MemoryLayoutTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
 
 $(o)InstanceXMLTests$(oext)   : $(baseDir)Published/InstanceXMLTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
 

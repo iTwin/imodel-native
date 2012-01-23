@@ -20,7 +20,6 @@ typedef RefCountedPtr<StandaloneECEnabler>  StandaloneECEnablerPtr;
 typedef RefCountedPtr<StandaloneECInstance> StandaloneECInstancePtr;
 typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
 
-typedef int StructValueIdentifier;
 
 #define DEFAULT_NUMBITSPERPROPERTY  2
 
@@ -29,6 +28,9 @@ enum PropertyFlagIndex : UInt8
     PROPERTYFLAGINDEX_IsLoaded = 0,
     PROPERTYFLAGINDEX_IsDirty  = 1
     };
+
+//__PUBLISH_SECTION_END__
+typedef int StructValueIdentifier;
 
 struct StructArrayEntry
     {
@@ -69,7 +71,6 @@ struct PerPropertyFlagsHolder
     PerPropertyFlagsUnion   perPropertyFlags;
     };
 
-
 /*=================================================================================**//**
 * EC::MemoryECInstanceBase is base class for ECInstances that holds its values in memory that it allocates. 
 * The memory is laid out according to the ClassLayout. The ClassLayout must be provided by classes that 
@@ -90,7 +91,6 @@ private:
     SupportingInstanceUnion m_structInstances;
     bool                    m_usingSharedMemory;
 
-//__PUBLISH_SECTION_END__
     IECInstancePtr          GetStructArrayInstance (StructValueIdentifier structValueId) const;
     StructArrayEntry const* GetAddressOfStructArrayEntry (StructValueIdentifier key) const;
     byte*                   GetAddressOfPropertyData () const;
@@ -101,7 +101,6 @@ private:
     void                    WalkSupportingStructs (WStringR completeString, WCharCP prefix) const;
     void                    InitializePerPropertyFlags (ClassLayoutCR classLayout, UInt8 numBitsPerProperty);
  
- //__PUBLISH_SECTION_START__
 
 protected:
     //! The MemoryECInstanceBase will take ownership of the memory
@@ -158,6 +157,8 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT UInt32                   GetPerPropertyFlagsDataLength () const;
 };
 
+//__PUBLISH_SECTION_START__
+
 /*=================================================================================**//**
 //! @ingroup ECObjectsGroup
 * EC::StandaloneECInstance is the native equivalent of a .NET "Heavyweight" ECInstance.
@@ -165,8 +166,13 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
 * @see ClassLayoutHolder, IECInstance
 * @bsiclass 
 +===============+===============+===============+===============+===============+======*/
-struct StandaloneECInstance : MemoryECInstanceBase, IECInstance
+struct StandaloneECInstance : 
+//__PUBLISH_SECTION_END__
+    MemoryECInstanceBase,
+//__PUBLISH_SECTION_START__
+    IECInstance
     {
+//__PUBLISH_SECTION_END__
 friend struct StandaloneECEnabler;
 private:
     WString              m_instanceId;
@@ -203,6 +209,8 @@ protected:
     ECOBJECTS_EXPORT virtual IECInstancePtr      _GetAsIECInstance () const;
     ECOBJECTS_EXPORT virtual size_t              _LoadObjectDataIntoManagedInstance (byte* managedBuffer) const;
 
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
 public:
     //! Creates an in-memory duplicate of an instance, making deep copies of its ECValues.
     //! @param[in]  instance    The instance to be duplicated.
@@ -216,12 +224,14 @@ public:
 //=======================================================================================
 struct IECWipRelationshipInstance : StandaloneECInstance
     {
+//__PUBLISH_SECTION_END__
     protected:
         ECOBJECTS_EXPORT IECWipRelationshipInstance (StandaloneECEnablerCR enabler) : StandaloneECInstance (enabler, 0){}
 
         ECOBJECTS_EXPORT virtual BentleyStatus  _SetName (WCharCP name) = 0;
         ECOBJECTS_EXPORT virtual BentleyStatus  _SetSourceOrderId (Int64 sourceOrderId) = 0;
         ECOBJECTS_EXPORT virtual BentleyStatus  _SetTargetOrderId (Int64 targetOrderId) = 0;
+//__PUBLISH_SECTION_START__
 
     public:
         ECOBJECTS_EXPORT BentleyStatus  SetName (WCharCP name);
@@ -233,8 +243,11 @@ struct IECWipRelationshipInstance : StandaloneECInstance
 //! @ingroup ECObjectsGroup
 //! ECEnabler for Standalone ECInstances (IECInstances not tied to a specific persistent store)
 //=======================================================================================
-struct StandaloneECEnabler : public ClassLayoutHolder, public ECEnabler
-    {
+struct StandaloneECEnabler : public ECEnabler
+//__PUBLISH_SECTION_END__
+    ,public ClassLayoutHolder
+//__PUBLISH_SECTION_START__
+   {
 private:
     bool    m_ownsClassLayout;
 
