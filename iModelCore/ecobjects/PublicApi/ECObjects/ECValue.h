@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECValue.h $
 |
-|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -392,8 +392,8 @@ public:
 
     ECValueAccessorR    GetValueAccessorR ();
     ECObjectsStatus     EvaluateValue ();
-/*__PUBLISH_SECTION_START__*/
 
+/*__PUBLISH_SECTION_START__*/
 public:
     ECOBJECTS_EXPORT IECInstanceCR          GetInstance () const;
 

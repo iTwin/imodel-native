@@ -9,11 +9,13 @@
 #pragma once
 
 #include "ECObjects.h"
-#include <hash_map>
 
+/*__PUBLISH_SECTION_END__*/
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
 #define PROPERTYLAYOUT_Source_ECPointer L"Source ECPointer"
 #define PROPERTYLAYOUT_Target_ECPointer L"Target ECPointer"
+/*__PUBLISH_SECTION_START__*/
+
 EC_TYPEDEFS(MemoryInstanceSupport);
 
 BEGIN_BENTLEY_EC_NAMESPACE
@@ -22,6 +24,9 @@ typedef UInt16 ClassIndex;
 typedef UInt16 SchemaIndex;
 
 typedef UInt32 NullflagsBitmask;
+
+/*__PUBLISH_SECTION_END__*/
+
 typedef UInt32 InstanceFlags;
 typedef UInt32 SecondaryOffset;
 typedef UInt32 ArrayCount;
@@ -35,6 +40,7 @@ struct  InstanceHeader
 
     InstanceFlags   m_instanceFlags;
     };
+/*__PUBLISH_SECTION_START__*/
 
 enum PropertyLayoutModifierFlags : UInt32
     {
@@ -68,8 +74,8 @@ public:
         m_accessString(accessString), m_parentStructIndex (psi), m_typeDescriptor(typeDescriptor), m_offset(offset), m_nullflagsOffset(nullflagsOffset), 
         m_nullflagsBitmask (nullflagsBitmask), m_modifierFlags (modifierFlags), m_modifierData (modifierData) { }; //, m_property(property) {};
 
+//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
-
 public:
     ECOBJECTS_EXPORT WCharCP                     GetAccessString() const;
     ECOBJECTS_EXPORT UInt32                      GetParentStructIndex() const;
@@ -90,6 +96,7 @@ public:
     ECOBJECTS_EXPORT WString                      ToString();
     };
 
+/*__PUBLISH_SECTION_END__*/
 struct less_classLayout
 {
 bool operator()(ClassLayoutCP s1, ClassLayoutCP s2) const;
@@ -97,13 +104,14 @@ bool operator()(ClassLayoutCP s1, ClassLayoutCP s2) const;
 
  typedef bmap<ClassLayoutCP, bool, less_classLayout>   CompatibleClassLayoutsMap;
 
-/*=================================================================================**//**
+ /*__PUBLISH_SECTION_START__*/
+ /*=================================================================================**//**
 * @bsistruct
 +===============+===============+===============+===============+===============+======*/      
 struct ClassLayout
     {
-    friend struct MemoryInstanceSupport;
 /*__PUBLISH_SECTION_END__*/
+    friend struct MemoryInstanceSupport;
 private:
     struct AccessStringIndexPair : bpair<WCharCP, UInt32>
         {
@@ -194,6 +202,7 @@ public:
     ECOBJECTS_EXPORT void            AddPropertyDirect (WCharCP accessString, UInt32 parentStructIndex, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask);
     ECOBJECTS_EXPORT ECObjectsStatus FinishLayout ();
 
+//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
 public:
     ECOBJECTS_EXPORT static ClassLayoutP BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex, bool hideFromLeakDetection=false);
@@ -236,6 +245,7 @@ private:
 public:
     SchemaLayout(SchemaIndex index) : m_schemaIndex(index) {}
 
+//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
 public:
     ECOBJECTS_EXPORT SchemaIndex            GetSchemaIndex() const;
@@ -262,6 +272,7 @@ private:
 protected:
     ECOBJECTS_EXPORT                ClassLayoutHolder (ClassLayoutCR classLayout);
 
+//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/    
 public:    
     ECOBJECTS_EXPORT ClassLayoutCR  GetClassLayout() const;
