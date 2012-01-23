@@ -30,8 +30,8 @@
         <SubPart PartName="BeXmlStaticLib"      PartFile="BeLibxml2"                            Repository="libsrc-libxml2" />
         <SubPart PartName="StandardSchemas"     PartFile="ECStandards"                          Repository="ECStandards"/>
         <Bindings>
-            <Libs>Delivery/$(stlibprefix)ECObjects$(stlibext)</Libs>
-            <Libs>Delivery/$(stlibprefix)ECObjects$(stlibdebugext)</Libs>
+            <Libs>Delivery/$(stlibprefix)ECObjectsStatic$(stlibext)</Libs>
+            <Libs>Delivery/$(stlibprefix)ECObjectsStatic$(stlibdebugext)</Libs>
         </Bindings>
     </Part>
 
