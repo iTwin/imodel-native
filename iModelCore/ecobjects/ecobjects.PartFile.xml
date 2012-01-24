@@ -14,7 +14,7 @@
 <!-- / This section contains parts that make the ECF Runtime ///////////////////////////// -->
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 
-    <Part Name="ECObjectsNative" BMakeFile="src\ecobjects.mke" ApiNumber = "4">
+    <Part Name="ECObjectsNative" BMakeFile="src\ecobjects.mke" ApiNumber = "5">
         <RequiredRepository>Libsrc-Msxml6</RequiredRepository>
         <SubPart PartName="ExportList" />
         <SubPart PartName="msxml6"          PartFile="msxml6"       Repository="Libsrc-Msxml6"/>
