@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/MemoryLayoutTests.cpp $
 |
-|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -13,6 +13,7 @@
 #include <ECObjects\ECInstance.h>
 #include <ECObjects\StandaloneECInstance.h>
 #include <ECObjects\ECValue.h>
+#define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -704,7 +705,6 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
         wcscat (largeString, L"S2345678901234567890123456789012");
     
     SetAndVerifyString (instance, v, L"S", largeString);
-    
     for (int i = 0; i < N_FINAL_STRING_PROPS_IN_FAKE_CLASS; i++)
         {
         wchar_t propertyName[66];
@@ -1686,8 +1686,9 @@ TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     WString instanceId = instance->GetInstanceId();
-    UInt32 size = instance->GetBytesUsed ();
-    EXPECT_EQ (size, UInt32(sizeof(InstanceHeader)));
+    // move to non-published tests
+    //UInt32 size = instance->GetBytesUsed ();
+    //EXPECT_EQ (size, UInt32(sizeof(InstanceHeader)));
 
     // WIP_FUSION: should pass the string to the logger via a backdoor
     instance->ToString(L"").c_str();
