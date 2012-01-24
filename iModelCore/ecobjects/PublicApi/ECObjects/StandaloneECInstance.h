@@ -29,7 +29,6 @@ enum PropertyFlagIndex : UInt8
     PROPERTYFLAGINDEX_IsDirty  = 1
     };
 
-//__PUBLISH_SECTION_END__
 typedef int StructValueIdentifier;
 
 struct StructArrayEntry
@@ -80,8 +79,14 @@ struct PerPropertyFlagsHolder
 +===============+===============+===============+===============+===============+======*/
 struct MemoryECInstanceBase : MemoryInstanceSupport
 {
-friend struct IECInstance;
+//__PUBLISH_SECTION_END__
 
+// Per John Gooding, "when you provide any sort of multiple inheritance you can’t hide any data members" Since 
+// StandaloneECInstance uses multiple inheritance from MemoryECInstanceBase and IECInstance none of the data
+// members of MemoryECInstanceBase or its base class MemoryInstanceSupport can be hidden from the published API.
+
+friend struct IECInstance;
+//__PUBLISH_SECTION_START__
 private:
     PerPropertyFlagsHolder  m_perPropertyFlagsHolder;
     InstanceDataUnion       m_data;
@@ -100,7 +105,8 @@ private:
     void                    RemoveGapFromStructArrayEntries (byte const* gapAddress, size_t resizeAmount);
     void                    WalkSupportingStructs (WStringR completeString, WCharCP prefix) const;
     void                    InitializePerPropertyFlags (ClassLayoutCR classLayout, UInt8 numBitsPerProperty);
- 
+//__PUBLISH_SECTION_END__
+
 protected:
     //! The MemoryECInstanceBase will take ownership of the memory
     ECOBJECTS_EXPORT MemoryECInstanceBase (byte * data, UInt32 size, ClassLayoutCR classLayout, bool allowWritingDirectlyToInstanceMemory);
@@ -125,6 +131,8 @@ protected:
     virtual size_t              _GetObjectSize () const = 0;
     virtual size_t              _LoadObjectDataIntoManagedInstance (byte* managedBuffer) const = 0;
                              
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
 public: // These must be public so that ECXInstanceEnabler can get at the guts of StandaloneECInstance to copy it into an XAttribute
     ECOBJECTS_EXPORT void                     SetData (byte * data, UInt32 size, bool freeExisitingData); //The MemoryECInstanceBase will take ownership of the memory
 
@@ -156,7 +164,6 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT UInt32                   GetPerPropertyFlagsDataLength () const;
 };
 
-//__PUBLISH_SECTION_START__
 /*=================================================================================**//**
 //! @ingroup ECObjectsGroup
 * EC::StandaloneECInstance is the native equivalent of a .NET "Heavyweight" ECInstance.
@@ -164,11 +171,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
 * @see ClassLayoutHolder, IECInstance
 * @bsiclass 
 +===============+===============+===============+===============+===============+======*/
-struct StandaloneECInstance : 
-//__PUBLISH_SECTION_END__
-    MemoryECInstanceBase,
-//__PUBLISH_SECTION_START__
-    IECInstance
+struct StandaloneECInstance : MemoryECInstanceBase, IECInstance
     {
 //__PUBLISH_SECTION_END__
 friend struct StandaloneECEnabler;

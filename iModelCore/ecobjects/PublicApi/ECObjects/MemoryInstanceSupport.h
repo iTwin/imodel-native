@@ -74,8 +74,10 @@ public:
         m_accessString(accessString), m_parentStructIndex (psi), m_typeDescriptor(typeDescriptor), m_offset(offset), m_nullflagsOffset(nullflagsOffset), 
         m_nullflagsBitmask (nullflagsBitmask), m_modifierFlags (modifierFlags), m_modifierData (modifierData) { }; //, m_property(property) {};
 
-//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
+private:
+    PropertyLayout (){}
+
 public:
     ECOBJECTS_EXPORT WCharCP                     GetAccessString() const;
     ECOBJECTS_EXPORT UInt32                      GetParentStructIndex() const;
@@ -202,8 +204,10 @@ public:
     ECOBJECTS_EXPORT void            AddPropertyDirect (WCharCP accessString, UInt32 parentStructIndex, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask);
     ECOBJECTS_EXPORT ECObjectsStatus FinishLayout ();
 
-//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
+private:
+    ClassLayout (){}
+
 public:
     ECOBJECTS_EXPORT static ClassLayoutP BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex, bool hideFromLeakDetection=false);
     ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (WCharCP  className, ClassIndex classIndex, SchemaIndex schemaIndex, bool hideFromLeakDetection=false);
@@ -245,8 +249,10 @@ private:
 public:
     SchemaLayout(SchemaIndex index) : m_schemaIndex(index) {}
 
-//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
+private:
+    SchemaLayout (){}
+
 public:
     ECOBJECTS_EXPORT SchemaIndex            GetSchemaIndex() const;
     ECOBJECTS_EXPORT BentleyStatus          AddClassLayout (ClassLayoutCR, ClassIndex);
@@ -259,26 +265,24 @@ public:
     ECOBJECTS_EXPORT static SchemaLayoutP   Create (SchemaIndex index);
 };
 
+/*__PUBLISH_SECTION_END__*/
+
 //=======================================================================================    
 //! Holds a ClassLayoutCR and provides a public method by which to access it.
 //! Used by StandaloneECEnabler and ECXInstanceEnabler
 //=======================================================================================    
 struct ClassLayoutHolder
     {
-/*__PUBLISH_SECTION_END__*/    
 private:
     ClassLayoutCR                   m_classLayout;
         
 protected:
     ECOBJECTS_EXPORT                ClassLayoutHolder (ClassLayoutCR classLayout);
 
-//__PUBLISH_CLASS_VIRTUAL__
-/*__PUBLISH_SECTION_START__*/    
 public:    
     ECOBJECTS_EXPORT ClassLayoutCR  GetClassLayout() const;
     };
 
-/*__PUBLISH_SECTION_END__*/    
 //! An internal helper used by MemoryInstanceSupport to resize (add/remove elements) array property values
 struct      ArrayResizer
     {
@@ -329,10 +333,8 @@ private:
         
     static ECObjectsStatus    CreateNullArrayElementsAt (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, MemoryInstanceSupportR instance, UInt32 insertIndex, UInt32 insertCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP=NULL);
     };
+
 /*__PUBLISH_SECTION_START__*/  
-
-/*__PUBLISH_SECTION_END__*/    
-
 //=======================================================================================    
 //! Base class for EC::IECInstance implementations that get/set values from a block of memory, 
 //! e.g. StandaloneECInstance and ECXInstance
@@ -340,9 +342,13 @@ private:
 struct MemoryInstanceSupport
     {
     friend  struct ArrayResizer;
+/*__PUBLISH_SECTION_END__*/    
     
+/*__PUBLISH_SECTION_START__*/  
 private:    
     bool                        m_allowWritingDirectlyToInstanceMemory;
+//__PUBLISH_CLASS_VIRTUAL__
+/*__PUBLISH_SECTION_END__*/    
        
     //! Returns the offset of the property value relative to the start of the instance data.
     //! If useIndex is true then the offset of the array element value at the specified index is returned.
@@ -482,9 +488,9 @@ public:
     ECOBJECTS_EXPORT void SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable);
 
     ECOBJECTS_EXPORT EC::PrimitiveType         GetStructArrayPrimitiveType () const;
+/*__PUBLISH_SECTION_START__*/  
     };   
 
-/*__PUBLISH_SECTION_START__*/  
 
 
 END_BENTLEY_EC_NAMESPACE
