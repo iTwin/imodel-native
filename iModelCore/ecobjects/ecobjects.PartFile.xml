@@ -7,7 +7,7 @@
 <!-- / This section contains parts that make the ECF Runtime ///////////////////////////// -->
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 
-    <Part Name="ECObjectsNative" BentleyBuildMakeFile="src/ecobjects.mke" ApiNumber="4">
+    <Part Name="ECObjectsNative" BentleyBuildMakeFile="src/ecobjects.mke" ApiNumber="6">
         <SubPart PartName="BoostHeaders"    PartFile="${SrcBsiCommon}CvsPartfiles/bsibin"           Repository="bsibin-boostheaders" />
         <SubPart PartName="HeaderFiles" />
         <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley" />
