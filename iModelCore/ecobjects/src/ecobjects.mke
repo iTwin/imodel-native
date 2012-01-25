@@ -113,19 +113,5 @@ DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
-%if !defined (__CREATE_STATIC_LIBRARIES__)
-
-    %include dlmlink.mki
-
-%else
-
-    LIB_NAME                = $(DLM_NAME)Static
-    LIB_DEST                = $(DLM_DEST)
-    LIB_TMP_DIR             = $(DLM_DEST)
-    LIB_OBJS                = $(DLM_OBJECT_FILES)
-    LIB_LST_NAME            = $(LIB_TMP_DIR)$(LIB_NAME).lst
-    LIB_CONTEXT_LOCATION    = $(DLM_CONTEXT_LOCATION)
-
-    %include creatlib.mki
-
-%endif
+# We support shared or static linking.
+%include linkLibrary.mki
