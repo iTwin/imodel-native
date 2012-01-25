@@ -13,7 +13,7 @@ programName = ECObjects
 
 %include    mdl.mki
 
-%if defined (__CREATE_STATIC_LIBRARIES__)
+%if defined (CREATE_STATIC_LIBRARIES)
     oBase           =% ${o}
     o               = $(oBase)Static/
     CCompPDBName    = ECObjectsStatic
