@@ -8,10 +8,10 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include <Bentley\VirtualCollectionIterator.h>
-#include <ECObjects\ECInstance.h>
-#include <ECObjects\ECObjects.h>
-#include <Geom\GeomApi.h>
+#include <Bentley/VirtualCollectionIterator.h>
+#include <ECObjects/ECInstance.h>
+#include <ECObjects/ECObjects.h>
+#include <Geom/GeomApi.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 

@@ -2,11 +2,13 @@
 |
 |     $Source: src/ECValue.cpp $
 |
-|   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
+#if defined (_WIN32) // WIP_NONPORT
 #include <windows.h>
+#endif //defined (_WIN32) // WIP_NONPORT
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -76,9 +78,13 @@ WString SystemTime::ToString
 (
 )
     {
+#if defined (_WIN32) // WIP_NONPORT
     std::wostringstream valueAsString;
     valueAsString << "#" << wYear << "/" << wMonth << "/" << wDay << "-" << wHour << ":" << wMinute << ":" << wSecond << ":" << wMilliseconds << "#";
     return valueAsString.str().c_str();
+#else
+    return L"";
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -87,11 +93,17 @@ WString SystemTime::ToString
 +---------------+---------------+---------------+---------------+---------------+------*/
 SystemTime SystemTime::GetLocalTime()
     {
+#if defined (_WIN32) // WIP_NONPORT
     SYSTEMTIME wtime;
     ::GetLocalTime(&wtime);
     SystemTime time;
     memcpy (&time, &wtime, sizeof(time));
     return time;
+#elif defined (__unix__)
+    // *** NEEDS WORK: Change SystemTime to use a portable time concept such as what's offered in BeTimeUtilities
+    SystemTime time;
+    return time;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -100,11 +112,17 @@ SystemTime SystemTime::GetLocalTime()
 +---------------+---------------+---------------+---------------+---------------+------*/
 SystemTime SystemTime::GetSystemTime()
     {
+#if defined (_WIN32) // WIP_NONPORT
     SYSTEMTIME wtime;
     ::GetSystemTime(&wtime);
     SystemTime time;
     memcpy (&time, &wtime, sizeof(time));
     return time;
+#elif defined (__unix__)
+    // *** NEEDS WORK: Change SystemTime to use a portable time concept such as what's offered in BeTimeUtilities
+    SystemTime time;
+    return time;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -738,7 +756,7 @@ BentleyStatus       ECValue::SetDateTimeTicks (Int64 value)
 //              of 100-nanosecond  intervals that have elapsed since 00:00:00 01/01/01 
 //////////////////////////////////////////////////////////////////////////////////////////
 
-static const Int64 TICKADJUSTMENT = 504911232000000000;     // ticks between 01/01/01 and 01/01/1601
+static const Int64 TICKADJUSTMENT = 504911232000000000LL;     // ticks between 01/01/01 and 01/01/1601
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
@@ -750,6 +768,7 @@ SystemTime          ECValue::GetDateTime () const
 
     memset (&systemTime, 0, sizeof(systemTime));
 
+#if defined (_WIN32) // WIP_NONPORT
     // m_dateTime is number of ticks since 00:00:00 01/01/01 - Fileticks are relative to 00:00:00 01/01/1601
     systemDateTicks -= TICKADJUSTMENT; 
     FILETIME fileTime;
@@ -758,6 +777,9 @@ SystemTime          ECValue::GetDateTime () const
     SYSTEMTIME  tempTime;
     if (FileTimeToSystemTime (&fileTime, &tempTime))
         memcpy (&systemTime, &tempTime, sizeof(systemTime));
+#elif defined (__unix__)
+    // *** NEEDS WORK: Change SystemTime to use a portable time concept such as what's offered in BeTimeUtilities
+#endif
 
     return systemTime;
     }
@@ -767,6 +789,7 @@ SystemTime          ECValue::GetDateTime () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus          ECValue::SetDateTime (SystemTime& systemTime) 
     {
+#if defined (_WIN32) // WIP_NONPORT
     Clear();
     FILETIME fileTime;
     SYSTEMTIME wtime;
@@ -779,6 +802,9 @@ BentleyStatus          ECValue::SetDateTime (SystemTime& systemTime)
         systemDateTicks += TICKADJUSTMENT; 
         return SetDateTimeTicks (systemDateTicks);
         }
+#elif defined (__unix__)
+    // *** NEEDS WORK: Change SystemTime to use a portable time concept such as what's offered in BeTimeUtilities
+#endif
 
     return ERROR;
     }
@@ -862,7 +888,7 @@ BentleyStatus ECValue::SetString (WCharCP string, bool holdADuplicate)
     m_isNull = false;
 
     if (holdADuplicate)    
-        m_stringInfo.m_string = _wcsdup (string);
+        m_stringInfo.m_string = BeStringUtilities::Wcsdup (string);
     else
         m_stringInfo.m_string = string;
             
@@ -949,6 +975,8 @@ BentleyStatus       ECValue::SetStruct (IECInstanceP structInstance)
 +---------------+---------------+---------------+---------------+---------------+------*/    
 WString    ECValue::ToString () const
     {
+#if defined (_WIN32) // WIP_NONPORT
+
     if (IsNull())
         return L"<null>";
         
@@ -1015,6 +1043,11 @@ WString    ECValue::ToString () const
         }
         
     return valueAsString.str().c_str();
+
+#elif defined (__unix__) // WIP_NONPORT
+        // *** NEEDS WORK: iostreams not supported on Android
+    return L"";
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1419,6 +1452,7 @@ WString                                        ECValueAccessor::GetPropertyName(
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString                                        ECValueAccessor::GetDebugAccessString() const
     {
+#if defined (_WIN32) // WIP_NONPORT
     std::wstringstream temp;
     for(UInt32 depth = 0; depth < GetDepth(); depth++)
         {
@@ -1430,6 +1464,10 @@ WString                                        ECValueAccessor::GetDebugAccessSt
         temp << "}" << GetAccessString (depth);
         }
     return temp.str().c_str();
+#elif defined (__unix__) // WIP_NONPORT
+    // *** NEEDS WORK: iostreams not supported on Android
+    return L"";
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1437,6 +1475,7 @@ WString                                        ECValueAccessor::GetDebugAccessSt
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString                                        ECValueAccessor::GetManagedAccessString() const
     {
+#if defined (_WIN32) // WIP_NONPORT
     std::wstringstream temp;
     for(UInt32 depth = 0; depth < GetDepth(); depth++)
         {
@@ -1461,6 +1500,10 @@ WString                                        ECValueAccessor::GetManagedAccess
             }
         }
     return temp.str().c_str();
+#elif defined (__unix__) // WIP_NONPORT
+    // *** NEEDS WORK: iostreams not supported on Android
+    return L"";
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
