@@ -1014,7 +1014,9 @@ TEST_F(MemoryLayoutTests, InstantiateStandaloneInstance)
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     WString instanceId = instance->GetInstanceId();
     // WIP_FUSION: should pass the string to the logger via a backdoor
-    instance->ToString(L"").c_str();
+    WString instanceString = instance->ToString(L"").c_str();
+    EXPECT_TRUE (instanceString.length() > 0);
+
     ExerciseInstance (*instance, L"Test");
 
     // instance.Compact()... then check values again

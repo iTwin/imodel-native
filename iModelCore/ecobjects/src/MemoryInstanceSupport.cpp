@@ -223,6 +223,71 @@ LeakDetector<ClassLayout> g_classLayoutLeakDetector (L"ClassLayout", L"ClassLayo
 #endif
 
 /*---------------------------------------------------------------------------------**//**
+* stolen from Dan East code mdlDialog_getHashCodeFromToolPath
+* @bsimethod                                    Bill.Steinbock                  01/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+static UInt32     getHashCodeForString
+(
+WCharCP        pString
+)
+    {
+    UInt32        hashCode = 0;
+    WCharCP    pChar;
+    int         index = 1;
+    
+    pChar = pString;
+    
+    while (pChar != NULL && 0 != *pChar)
+        {
+        hashCode += (index * (*pChar));
+        pChar++;
+        index++;
+        }
+
+    return hashCode;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  01/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32  ClassLayout::ComputeCheckSum () const
+    {
+    UInt32 checkSum = (((UInt32)m_propertyLayouts.size()) & 0xffff);
+
+    FOR_EACH (PropertyLayoutP propertyP, m_propertyLayouts)
+        {
+        checkSum = ((checkSum + (UInt32)propertyP->GetParentStructIndex()) & 0xffff);
+        checkSum = ((checkSum + (UInt32)propertyP->GetModifierFlags()) & 0xffff);
+        checkSum = ((checkSum + (UInt32)propertyP->GetModifierData()) & 0xffff);
+
+        EC::ECTypeDescriptor typeDescr = propertyP->GetTypeDescriptor();
+        checkSum = ((checkSum + (UInt32)typeDescr.GetTypeKind()) & 0xffff);
+        checkSum = ((checkSum + (UInt32)typeDescr.GetPrimitiveType()) & 0xffff);    // since we are in a union Primitive Type includes Array Type
+
+        if (!propertyP->GetTypeDescriptor().IsStruct())
+            {
+            checkSum = ((checkSum + (UInt32)propertyP->GetOffset()) & 0xffff);
+            checkSum = ((checkSum + (UInt32)propertyP->GetNullflagsOffset()) & 0xffff);
+            }
+
+        checkSum = ((checkSum + getHashCodeForString(propertyP->GetAccessString())) & 0xffff);
+        }
+
+    return checkSum;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  01/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32          ClassLayout::GetChecksum () const
+    {
+    if (0 == m_checkSum)
+        m_checkSum = ComputeCheckSum ();
+
+    return  m_checkSum;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassLayout::ClassLayout(SchemaIndex schemaIndex, bool hideFromLeakDetection)
@@ -234,7 +299,7 @@ ClassLayout::ClassLayout(SchemaIndex schemaIndex, bool hideFromLeakDetection)
     m_isRelationshipClass(false), m_propertyIndexOfSourceECPointer(-1), m_propertyIndexOfTargetECPointer(-1)
     {
     m_uniqueId = randomValue();
-
+    m_checkSum = 0;
     if ( ! m_hideFromLeakDetection)
         g_classLayoutLeakDetector.ObjectCreated(*this);
     };
@@ -776,7 +841,8 @@ ClassLayoutP    ClassLayout::Factory::DoBuildClassLayout ()
         }
 
     m_underConstruction.FinishLayout ();
-    
+    m_underConstruction.m_checkSum = m_underConstruction.ComputeCheckSum ();
+
     return &m_underConstruction;
     }
 

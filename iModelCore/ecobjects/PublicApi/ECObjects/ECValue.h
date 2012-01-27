@@ -201,7 +201,9 @@ public:
     ECOBJECTS_EXPORT BentleyStatus  SetDouble (double value);  
         
     ECOBJECTS_EXPORT WCharCP        GetString () const;
+/*__PUBLISH_SECTION_END__*/
                      WCharCP        GetString0 () const {return m_stringInfo.m_string;}
+/*__PUBLISH_SECTION_START__*/
     ECOBJECTS_EXPORT BentleyStatus  SetString (WCharCP string, bool holdADuplicate = true);
 
     ECOBJECTS_EXPORT const byte *   GetBinary (size_t& size) const;

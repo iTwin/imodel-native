@@ -1401,6 +1401,14 @@ UInt32                   MemoryECInstanceBase::GetPerPropertyFlagsDataLength () 
     return m_perPropertyFlagsHolder.numPerPropertyFlagsEntries;
     }
 
+ /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  01/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus      MemoryECInstanceBase::AddNullArrayElements (WCharCP propertyAccessString, UInt32 insertCount)
+    {
+    return AddNullArrayElementsAt (GetClassLayout(), propertyAccessString, insertCount, NULL);
+    }
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 //  StandaloneECInstance
 ///////////////////////////////////////////////////////////////////////////////////////////
