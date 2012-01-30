@@ -24,7 +24,7 @@ static unsigned short  getMaxDay (unsigned short year, unsigned short month)
     if (isLeap && (2==month))
         return monthDays[month-1]+1;
 
-    return monthDays[month];
+    return monthDays[month-1];
     }
 
 /*---------------------------------------------------------------------------------**//**
