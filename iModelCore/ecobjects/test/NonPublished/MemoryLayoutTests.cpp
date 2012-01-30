@@ -1418,6 +1418,13 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     SystemTime specificTime (now.wYear, now.wMonth, now.wDay, now.wHour, now.wMinute, now.wSecond, now.wMilliseconds);
     EXPECT_TRUE (specificTime == now);
 
+    // check to make sure leap year 
+    // check to make sure leap year 
+    SystemTime lastOfFebLeapYear (2012, 2, 29, 10, 10, 10, 10);
+    EXPECT_TRUE (lastOfFebLeapYear.wDayOfWeek == 3);
+    SystemTime marchFirstLeapYear (2012, 3, 1, 10, 10, 10, 10);
+    EXPECT_TRUE (marchFirstLeapYear.wDayOfWeek == 4);
+
     SystemTime defaultTime1;
     SystemTime defaultTime2;
     EXPECT_TRUE (defaultTime1 == defaultTime2);
