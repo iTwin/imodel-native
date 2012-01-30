@@ -540,12 +540,6 @@ void                MemoryECInstanceBase::_FreeAllocation ()
     if (m_isInManagedInstance)
         return;
 
-    if (m_perPropertyFlagsHolder.perPropertyFlags.address)
-        {
-        free (m_perPropertyFlagsHolder.perPropertyFlags.address); 
-        m_perPropertyFlagsHolder.perPropertyFlags.address = NULL;
-        }
-
     if (!m_usingSharedMemory)
         {
         if (m_data.address)
