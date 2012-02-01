@@ -1124,30 +1124,6 @@ ECObjectsStatus ECInstanceInteropHelper::SetDateTimeTicks (IECInstanceR instance
     return setECValueInInstance (v, instance, managedPropertyAccessor);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Dylan.Rush                      1/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-static ECTypeDescriptor getTypeDescriptor  (IECInstanceCR instance, int propertyIndex)
-    {
-    //GetTypeDescriptor (int) would be another candidate to add to the ECEnabler API
-    ECObjectsStatus status;
-    ECEnablerCP enabler = & instance.GetEnabler();
-    ClassLayoutHolderCP layoutHolder = dynamic_cast<ClassLayoutHolderCP> (enabler);
-    if (NULL == layoutHolder)
-        {
-        ECTypeDescriptor d;
-        return d;
-        }
-    PropertyLayoutCP propLayout;
-    status = layoutHolder->GetClassLayout().GetPropertyLayoutByIndex (propLayout, propertyIndex);
-    if (ECOBJECTS_STATUS_Success != status)
-        {
-        ECTypeDescriptor d;
-        return d;
-        }
-    return propLayout->GetTypeDescriptor();
-    }
-
 ///////////////////////////////////////////////////////////////////////////////
 // Get Using ECValueAccessor
 ///////////////////////////////////////////////////////////////////////////////
@@ -1578,14 +1554,6 @@ ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (EC::ECValueAccess
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Dylan.Rush                      1/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-PrimitiveType  ECInstanceInteropHelper::GetPrimitiveType  (IECInstanceCR instance, int propertyIndex)
-    {
-    return getTypeDescriptor (instance, propertyIndex).GetPrimitiveType();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Dylan.Rush                      1/11
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool            ECInstanceInteropHelper::GetNextInteropProperty 
 (
 int& propertyIndex, 
@@ -1650,22 +1618,6 @@ bool firstRunInStruct
             }
         } while ( ! includeNulls && thisValueIsNull);
     return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Dylan.Rush                      1/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool  ECInstanceInteropHelper::IsStructArray  (IECInstanceCR instance, int propertyIndex)
-    {
-    return getTypeDescriptor (instance, propertyIndex).IsStructArray();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Dylan.Rush                      1/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool  ECInstanceInteropHelper::IsArray  (IECInstanceCR instance, int propertyIndex)
-    {
-    return getTypeDescriptor (instance, propertyIndex).IsArray();
     }
 
 /*---------------------------------------------------------------------------------**//**
