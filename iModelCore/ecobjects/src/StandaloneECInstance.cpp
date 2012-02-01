@@ -1871,8 +1871,7 @@ ECObjectsStatus StandaloneECEnabler::_GetPropertyIndices (bvector<UInt32>& indic
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            StandaloneECEnabler::_HasChildProperties (UInt32 parentIndex) const
     {
-    PropertyLayoutCP propertyLayout;
-    return ECOBJECTS_STATUS_Success == GetClassLayout().GetPropertyLayoutByIndex (propertyLayout, parentIndex) && propertyLayout->GetTypeDescriptor().IsStruct();
+    return GetClassLayout().HasChildProperties (parentIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**

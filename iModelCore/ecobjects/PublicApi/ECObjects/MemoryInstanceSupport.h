@@ -198,6 +198,7 @@ public:
     ECOBJECTS_EXPORT UInt32                  GetNextChildPropertyIndex (UInt32 parentIndex, UInt32 childIndex) const;
     ECOBJECTS_EXPORT ECObjectsStatus         GetAccessStringByIndex (WCharCP& accessString, UInt32 propertyIndex) const;
     ECOBJECTS_EXPORT ECObjectsStatus         GetPropertyIndices (bvector<UInt32>& properties, UInt32 parentIndex) const;
+    ECOBJECTS_EXPORT bool                    HasChildProperties (UInt32 parentIndex) const;
 
     ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();
     ECOBJECTS_EXPORT ~ClassLayout();

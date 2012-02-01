@@ -1146,6 +1146,15 @@ ECObjectsStatus         ClassLayout::GetAccessStringByIndex(WCharCP& accessStrin
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ClassLayout::HasChildProperties (UInt32 parentIndex) const
+    {
+    PropertyLayoutCP propertyLayout;
+    return ECOBJECTS_STATUS_Success == GetPropertyLayoutByIndex (propertyLayout, parentIndex) && propertyLayout->GetTypeDescriptor().IsStruct();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 UInt32  ClassLayout::GetFirstChildPropertyIndex (UInt32 parentIndex) const
