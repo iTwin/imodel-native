@@ -2,7 +2,7 @@
 |
 |     $Source: src/MemoryInstanceSupport.cpp $
 |
-|   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "ECObjectsPch.h"
@@ -139,6 +139,19 @@ static inline UInt32    CalculateFixedArrayPropertySize (UInt32 fixedCount, Prim
         (fixedCount *ECValue::GetFixedPrimitiveValueSize(primitiveType));
     }  
            
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//  PropertyLayout inline methods
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+inline WCharCP                     PropertyLayout::GetAccessString() const     { return m_accessString.c_str(); }
+inline UInt32                      PropertyLayout::GetParentStructIndex() const{ return m_parentStructIndex; }
+inline UInt32                      PropertyLayout::GetOffset() const           { assert ( ! m_typeDescriptor.IsStruct()); return m_offset; }
+inline UInt32                      PropertyLayout::GetNullflagsOffset() const  { assert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsOffset; }
+inline NullflagsBitmask            PropertyLayout::GetNullflagsBitmask() const { assert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsBitmask; }
+inline ECTypeDescriptor            PropertyLayout::GetTypeDescriptor() const   { return m_typeDescriptor; }
+inline UInt32                      PropertyLayout::GetModifierFlags() const    { return m_modifierFlags; }
+inline UInt32                      PropertyLayout::GetModifierData() const     { return m_modifierData; }    
+inline bool                        PropertyLayout::IsReadOnlyProperty () const {return PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly == (m_modifierFlags & PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly);}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -866,7 +879,7 @@ ECObjectsStatus       ClassLayout::FinishLayout ()
         }
 
 #ifndef NDEBUG
-    DEBUG_EXPECT (m_propertyLayoutMap.size() == m_propertyLayouts.size());
+    DEBUG_EXPECT (m_indicesByAccessString.size() == m_propertyLayouts.size());
 
     UInt32  nNullflagsBitmasks  = CalculateNumberNullFlagsBitmasks (GetPropertyCountExcludingEmbeddedStructs());
     UInt32  nonStructPropIndex  = 0;
@@ -946,14 +959,64 @@ void            ClassLayout::AddToLogicalStructureMap (PropertyLayoutR propertyL
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/12
++---------------+---------------+---------------+---------------+---------------+------*/ 
+ClassLayout::IndicesByAccessString::const_iterator ClassLayout::GetPropertyIndexPosition (WCharCP accessString, bool forCreate) const
+    {
+    // this vector is always sorted, so we can do binary search
+    IndicesByAccessString::const_iterator begin   = m_indicesByAccessString.begin(),
+                                    end           = m_indicesByAccessString.end(),
+                                    it;
+    size_t count = m_indicesByAccessString.size(), step;
+    while (count > 0)
+        {
+        it = begin;
+        step = count >> 1;
+        it += step;
+        int cmp = wcscmp (it->first, accessString);
+        if (cmp == 0)           // easy out, avoiding redundant wcscmp() below
+            {
+            if (forCreate)
+                DEBUG_FAIL ("Attempting to add a PropertyLayout with a duplicate name");
+            else
+                return it;
+            }
+        else if (cmp < 0)
+            {
+            begin = ++it;
+            count -= step+1;
+            }
+        else
+            count = step;
+        }
+    it = begin;
+
+    if (forCreate)
+        {
+        if (it != end)
+            DEBUG_EXPECT (0 != wcscmp (accessString, it->first) && "Cannot create a PropertyLayout with the same access string as an existing layout");
+        return it;
+        }
+    else
+        return (it != end && 0 == wcscmp (accessString, it->first)) ? it : end;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
 void            ClassLayout::AddPropertyLayout (WCharCP accessString, PropertyLayoutR propertyLayout)
     {
     m_propertyLayouts.push_back(&propertyLayout);
-    m_propertyLayoutMap[propertyLayout.GetAccessString()] = m_propertyLayouts.back();
 
-    AddToLogicalStructureMap (propertyLayout, (UInt32) m_propertyLayouts.size() - 1);
+    // if we knew no new PropertyLayouts could be added after construction, we could delay sorting the list until FinishLayout()
+    // since AddPropertyLayout() is public we can't know that, so we need to insert in sorted order
+    UInt32 index = (UInt32)(m_propertyLayouts.size() - 1);
+    AccessStringIndexPair newPair (propertyLayout.GetAccessString(), index);
+    IndicesByAccessString::iterator begin = m_indicesByAccessString.begin();
+    IndicesByAccessString::iterator insertPos = begin + (GetPropertyIndexPosition (accessString, true) - begin);    // because constness...
+    m_indicesByAccessString.insert (insertPos, newPair);
+
+    AddToLogicalStructureMap (propertyLayout, index);
     CheckForECPointers (accessString);
     }
 
@@ -1029,15 +1092,13 @@ bool            ClassLayout::SetPropertyReadOnly (UInt32 propertyIndex,  bool re
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus       ClassLayout::GetPropertyLayout (PropertyLayoutCP & propertyLayout, WCharCP accessString) const
     {
-    PropertyLayoutMap::const_iterator it = m_propertyLayoutMap.find(accessString);
-    
-    if (it == m_propertyLayoutMap.end())
-        {
+    IndicesByAccessString::const_iterator pos = GetPropertyIndexPosition (accessString, false);
+
+    if (pos == m_indicesByAccessString.end())
         return ECOBJECTS_STATUS_PropertyNotFound;
-        }
     else
         {
-        propertyLayout = it->second;
+        propertyLayout = m_propertyLayouts[pos->second];
         return ECOBJECTS_STATUS_Success;
         }
     }
@@ -1047,24 +1108,11 @@ ECObjectsStatus       ClassLayout::GetPropertyLayout (PropertyLayoutCP & propert
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus     ClassLayout::GetPropertyIndex (UInt32& propertyIndex, WCharCP accessString) const
     {
-    PropertyLayoutCP    propertyLayout;
+    IndicesByAccessString::const_iterator pos = GetPropertyIndexPosition (accessString, false);
+    if (pos == m_indicesByAccessString.end())
+        return ECOBJECTS_STATUS_PropertyNotFound;
 
-    ECObjectsStatus status = GetPropertyLayout (propertyLayout, accessString);
-    if (ECOBJECTS_STATUS_Success != status)
-        return status;
-
-    for (UInt32 i = 0; i < m_propertyLayouts.size(); i++)
-        {
-        PropertyLayoutCP candidate = m_propertyLayouts[i];
-
-        if (propertyLayout == candidate)
-            {
-            propertyIndex = i;
-            return ECOBJECTS_STATUS_Success;
-            }
-        }
-
-    assert (false && "Property present in map but not in vector"); 
+    propertyIndex = pos->second;
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -1155,6 +1203,22 @@ UInt32  ClassLayout::GetNextChildPropertyIndex (UInt32 parentIndex, UInt32 child
         return *it;
 
     return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  01/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+/*static*/ SchemaLayoutP   SchemaLayout::Create (SchemaIndex index)
+    {
+    return new  SchemaLayout (index);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  01/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaIndex      SchemaLayout::GetSchemaIndex() const 
+    {
+    return m_schemaIndex; 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1281,6 +1345,10 @@ UInt32          MemoryInstanceSupport::GetPropertyValueSize (PropertyLayoutCR pr
     if (IsArrayOfFixedSizeElements (propertyLayout))
         {
         return ECValue::GetFixedPrimitiveValueSize (propertyLayout.GetTypeDescriptor().GetPrimitiveType());
+        }
+    else if (PRIMITIVETYPE_Integer == GetStructArrayPrimitiveType () && propertyLayout.GetTypeDescriptor().IsStructArray())
+        {
+        return ECValue::GetFixedPrimitiveValueSize (PRIMITIVETYPE_Integer);
         }
     else
         {                            
@@ -1425,7 +1493,13 @@ bool            MemoryInstanceSupport::IsPropertyValueNull (PropertyLayoutCR pro
     UInt32 nullflagsBitmask;
     byte const * data = _GetData();
     if (useIndex)
-        PrepareToAccessNullFlags (nullflagsOffset, nullflagsBitmask, data, propertyLayout, index);    
+        {
+        // see if we have an UninitializedFixedCountArray
+        if ((propertyLayout.GetModifierFlags() & PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount) && (GetAllocatedArrayCount (propertyLayout) == 0))    
+            return true;
+
+        PrepareToAccessNullFlags (nullflagsOffset, nullflagsBitmask, data, propertyLayout, index); 
+        }
     else
         PrepareToAccessNullFlags (nullflagsOffset, nullflagsBitmask, data, propertyLayout);
 
@@ -1491,6 +1565,8 @@ UInt32          MemoryInstanceSupport::GetOffsetOfArrayIndex (UInt32 arrayOffset
 
     if (IsArrayOfFixedSizeElements (propertyLayout))
         primaryOffset += (index * ECValue::GetFixedPrimitiveValueSize (propertyLayout.GetTypeDescriptor().GetPrimitiveType()));
+    else if (PRIMITIVETYPE_Integer == GetStructArrayPrimitiveType () && propertyLayout.GetTypeDescriptor().IsStructArray())
+        primaryOffset += (index * ECValue::GetFixedPrimitiveValueSize (EC::PRIMITIVETYPE_Integer));
     else
         primaryOffset += index * sizeof (SecondaryOffset);
 
@@ -1504,9 +1580,9 @@ UInt32          MemoryInstanceSupport::GetOffsetOfArrayIndexValue (UInt32 arrayO
     {    
     UInt32 arrayIndexOffset = GetOffsetOfArrayIndex (arrayOffset, propertyLayout, index);
 
-    if (IsArrayOfFixedSizeElements (propertyLayout))
+    if (IsArrayOfFixedSizeElements (propertyLayout) || (PRIMITIVETYPE_Integer == GetStructArrayPrimitiveType () && propertyLayout.GetTypeDescriptor().IsStructArray()))
         return arrayIndexOffset;
-    
+
     byte const * data = _GetData();
     SecondaryOffset const * pSecondaryOffset = (SecondaryOffset const *)(data + arrayIndexOffset);
 
@@ -1579,7 +1655,7 @@ ECObjectsStatus MemoryInstanceSupport::RemoveArrayElementsFromMemory (ClassLayou
     byte*   data = scoped.GetData();
     memcpy (data, currentData, (size_t)bytesAllocated);
 
-    bool    hasFixedSizedElements = IsArrayOfFixedSizeElements (propertyLayout);
+    bool    hasFixedSizedElements = IsArrayOfFixedSizeElements (propertyLayout) || ((PRIMITIVETYPE_Integer == GetStructArrayPrimitiveType () && propertyLayout.GetTypeDescriptor().IsStructArray()));
     UInt32  arrayOffset           = GetOffsetOfPropertyValue (propertyLayout);   
     byte   *arrayAddress          = data + arrayOffset;
 
@@ -2012,16 +2088,30 @@ void            MemoryInstanceSupport::InitializeMemory(ClassLayoutCR classLayou
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  01/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+EC::PrimitiveType         MemoryInstanceSupport::GetStructArrayPrimitiveType () const
+    {
+    return _GetStructArrayPrimitiveType();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index) const
     {
-    DEBUG_EXPECT (propertyLayout.GetTypeDescriptor().IsArray() == useIndex);   
+    ECTypeDescriptor typeDescriptor = propertyLayout.GetTypeDescriptor();
+
+    DEBUG_EXPECT (typeDescriptor.IsArray() == useIndex);   
 
     bool isInUninitializedFixedCountArray = ((useIndex) && (propertyLayout.GetModifierFlags() & PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount) && (GetAllocatedArrayCount (propertyLayout) == 0));    
     if (isInUninitializedFixedCountArray || (IsPropertyValueNull(propertyLayout, useIndex, index)))
         {
-        v.SetPrimitiveType (propertyLayout.GetTypeDescriptor().GetPrimitiveType());
+        if (typeDescriptor.IsPrimitiveArray())
+            v.SetPrimitiveType (typeDescriptor.GetPrimitiveType());
+        else
+            v.SetPrimitiveType (GetStructArrayPrimitiveType ());
+
         v.SetToNull();
         return ECOBJECTS_STATUS_Success;
         }    
@@ -2032,12 +2122,11 @@ ECObjectsStatus       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValu
     else
         pValue = GetAddressOfPropertyValue (propertyLayout);
 
-    ECTypeDescriptor typeDescriptor = propertyLayout.GetTypeDescriptor();
     PrimitiveType primitiveType;
     if (typeDescriptor.IsPrimitive() || (typeDescriptor.IsPrimitiveArray()))
         primitiveType = typeDescriptor.GetPrimitiveType();
     else
-        primitiveType = PRIMITIVETYPE_Binary;
+        primitiveType = GetStructArrayPrimitiveType ();
         
     switch (primitiveType)       
         {
@@ -2240,8 +2329,8 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
     if (typeDescriptor.IsPrimitive() || (typeDescriptor.IsPrimitiveArray()))
         primitiveType = typeDescriptor.GetPrimitiveType();
     else
-        primitiveType = PRIMITIVETYPE_Binary;
-    
+        primitiveType = GetStructArrayPrimitiveType ();
+
     ECObjectsStatus result = ECOBJECTS_STATUS_Error;
 
     switch (primitiveType)
@@ -2652,8 +2741,9 @@ ArrayResizer::ArrayResizer (ClassLayoutCR classLayout, PropertyLayoutCR property
     if (typeDescriptor.IsPrimitiveArray())
         m_elementType = typeDescriptor.GetPrimitiveType();
     else
-        m_elementType = PRIMITIVETYPE_Binary;
-    m_elementTypeIsFixedSize = IsArrayOfFixedSizeElements (propertyLayout);
+        m_elementType = instance.GetStructArrayPrimitiveType ();
+
+    m_elementTypeIsFixedSize = IsArrayOfFixedSizeElements (propertyLayout) || (PRIMITIVETYPE_Integer == instance.GetStructArrayPrimitiveType () && propertyLayout.GetTypeDescriptor().IsStructArray());
     if (m_elementTypeIsFixedSize)
         m_elementSizeInFixedSection = ECValue::GetFixedPrimitiveValueSize (m_elementType);
     else

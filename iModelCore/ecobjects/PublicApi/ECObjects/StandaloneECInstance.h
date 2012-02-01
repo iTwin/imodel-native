@@ -20,7 +20,6 @@ typedef RefCountedPtr<StandaloneECEnabler>  StandaloneECEnablerPtr;
 typedef RefCountedPtr<StandaloneECInstance> StandaloneECInstancePtr;
 typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
 
-typedef int StructValueIdentifier;
 
 #define DEFAULT_NUMBITSPERPROPERTY  2
 
@@ -29,6 +28,8 @@ enum PropertyFlagIndex ENUM_UNDERLYING_TYPE(UInt8)
     PROPERTYFLAGINDEX_IsLoaded = 0,
     PROPERTYFLAGINDEX_IsDirty  = 1
     };
+
+typedef int StructValueIdentifier;
 
 struct StructArrayEntry
     {
@@ -74,7 +75,6 @@ union ParentInstanceUnion
     MemoryECInstanceBase const *    parentInstance;
     Int64                           offset;
     };
-
 /*=================================================================================**//**
 * EC::MemoryECInstanceBase is base class for ECInstances that holds its values in memory that it allocates. 
 * The memory is laid out according to the ClassLayout. The ClassLayout must be provided by classes that 
@@ -84,8 +84,14 @@ union ParentInstanceUnion
 +===============+===============+===============+===============+===============+======*/
 struct MemoryECInstanceBase : MemoryInstanceSupport
 {
-friend struct IECInstance;
+//__PUBLISH_SECTION_END__
 
+// Per John Gooding, "when you provide any sort of multiple inheritance you can’t hide any data members" Since 
+// StandaloneECInstance uses multiple inheritance from MemoryECInstanceBase and IECInstance none of the data
+// members of MemoryECInstanceBase or its base class MemoryInstanceSupport can be hidden from the published API.
+
+friend struct IECInstance;
+//__PUBLISH_SECTION_START__
 private:
     PerPropertyFlagsHolder  m_perPropertyFlagsHolder;
     InstanceDataUnion       m_data;
@@ -96,7 +102,6 @@ private:
     StructValueIdentifier   m_structValueId;
     bool                    m_usingSharedMemory;
 
-//__PUBLISH_SECTION_END__
     IECInstancePtr          GetStructArrayInstance (StructValueIdentifier structValueId) const;
     StructArrayEntry const* GetAddressOfStructArrayEntry (StructValueIdentifier key) const;
     StructValueIdentifier   GetMaxStructValueIdentifier () const;
@@ -108,8 +113,7 @@ private:
     void                    RemoveGapFromStructArrayEntries (byte const* gapAddress, size_t resizeAmount);
     void                    WalkSupportingStructs (WStringR completeString, WCharCP prefix) const;
     void                    InitializePerPropertyFlags (ClassLayoutCR classLayout, UInt8 numBitsPerProperty);
- 
- //__PUBLISH_SECTION_START__
+//__PUBLISH_SECTION_END__
 
 protected:
     //! The MemoryECInstanceBase will take ownership of the memory
@@ -128,6 +132,7 @@ protected:
     ECOBJECTS_EXPORT virtual ECObjectsStatus  _SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index) override;    
     ECOBJECTS_EXPORT virtual ECObjectsStatus  _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const override;  
     ECOBJECTS_EXPORT virtual ECObjectsStatus  _RemoveStructArrayElementsFromMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount, EmbeddedInstanceCallbackP memoryCallback) override;
+    ECOBJECTS_EXPORT virtual EC::PrimitiveType _GetStructArrayPrimitiveType () const {return PRIMITIVETYPE_Integer;}
 
     virtual ClassLayoutCR       _GetClassLayout () const = 0;
     virtual IECInstancePtr      _GetAsIECInstance () const = 0;
@@ -135,6 +140,8 @@ protected:
     virtual size_t              _LoadObjectDataIntoManagedInstance (byte* managedBuffer) const = 0;
     virtual size_t              _GetBaseObjectSize () const = 0;    // should be the same return value as _LoadObjectDataIntoManagedInstance
                              
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
 public: // These must be public so that ECXInstanceEnabler can get at the guts of StandaloneECInstance to copy it into an XAttribute
     ECOBJECTS_EXPORT void                     SetData (byte * data, UInt32 size, bool freeExisitingData); //The MemoryECInstanceBase will take ownership of the memory
 
@@ -153,6 +160,8 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT ECObjectsStatus          IsPerPropertyBitSet (bool& isSet, UInt8 bitIndex, UInt32 propertyIndex) const;
     ECOBJECTS_EXPORT ECObjectsStatus          IsAnyPerPropertyBitSet (bool& isSet, UInt8 bitIndex) const;
     ECOBJECTS_EXPORT ECObjectsStatus          SetPerPropertyBit (UInt8 bitIndex, UInt32 propertyIndex, bool setBit);
+    ECOBJECTS_EXPORT ECObjectsStatus          SetBitForAllProperties (UInt8 bitIndex, bool setBit);
+
     ECOBJECTS_EXPORT void                     ClearAllPerPropertyFlags ();
     ECOBJECTS_EXPORT UInt8                    GetNumBitsInPerPropertyFlags ();
     ECOBJECTS_EXPORT MemoryECInstanceBase const *   GetParentInstance () const;
@@ -175,6 +184,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
 +===============+===============+===============+===============+===============+======*/
 struct StandaloneECInstance : MemoryECInstanceBase, IECInstance
     {
+//__PUBLISH_SECTION_END__
 friend struct StandaloneECEnabler;
 private:
     WString              m_instanceId;
@@ -212,6 +222,8 @@ protected:
     ECOBJECTS_EXPORT virtual IECInstancePtr      _GetAsIECInstance () const;
     ECOBJECTS_EXPORT virtual size_t              _LoadObjectDataIntoManagedInstance (byte* managedBuffer) const;
 
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
 public:
     //! Creates an in-memory duplicate of an instance, making deep copies of its ECValues.
     //! @param[in]  instance    The instance to be duplicated.
@@ -225,6 +237,7 @@ public:
 //=======================================================================================
 struct IECWipRelationshipInstance : StandaloneECInstance
     {
+//__PUBLISH_SECTION_END__
     protected:
         ECOBJECTS_EXPORT IECWipRelationshipInstance (StandaloneECEnablerCR enabler) : StandaloneECInstance (enabler, 0){}
 
@@ -232,6 +245,8 @@ struct IECWipRelationshipInstance : StandaloneECInstance
         ECOBJECTS_EXPORT virtual BentleyStatus  _SetSourceOrderId (Int64 sourceOrderId) = 0;
         ECOBJECTS_EXPORT virtual BentleyStatus  _SetTargetOrderId (Int64 targetOrderId) = 0;
 
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
     public:
         ECOBJECTS_EXPORT BentleyStatus  SetName (WCharCP name);
         ECOBJECTS_EXPORT BentleyStatus  SetSourceOrderId (Int64 sourceOrderId);
@@ -242,8 +257,12 @@ struct IECWipRelationshipInstance : StandaloneECInstance
 //! @ingroup ECObjectsGroup
 //! ECEnabler for Standalone ECInstances (IECInstances not tied to a specific persistent store)
 //=======================================================================================
-struct StandaloneECEnabler : public ClassLayoutHolder, public ECEnabler
-    {
+struct StandaloneECEnabler : public ECEnabler
+//__PUBLISH_SECTION_END__
+    ,public ClassLayoutHolder
+//__PUBLISH_SECTION_START__
+   {
+//__PUBLISH_SECTION_END__
 private:
     bool    m_ownsClassLayout;
 
@@ -257,18 +276,15 @@ protected:
     virtual UInt32                      _GetPropertyCount () const override;
     virtual UInt32                      _GetFirstPropertyIndex (UInt32 parentIndex) const override;
     virtual UInt32                      _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const override;
+    virtual bool                        _HasChildProperties (UInt32 parentIndex) const override;
     virtual ECObjectsStatus             _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const override;
 
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
 public: 
     //! if structStandaloneEnablerLocater is NULL, we'll use GetDefaultStandaloneEnabler for embedded structs
     ECOBJECTS_EXPORT static StandaloneECEnablerPtr CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater, bool ownsClassLayout);
     ECOBJECTS_EXPORT StandaloneECInstancePtr       CreateInstance (UInt32 minimumInitialSize = 0) const;
-    //ECOBJECTS_EXPORT StandaloneECInstanceP         CreateInstanceFromUninitializedMemory (byte * data, UInt32 size);
-
-    //! Used to construct from another memory source like ECXData. The caller is claiming that the memory
-    //! has been properly initialized with the classLayout that was passed in
-    //ECOBJECTS_EXPORT StandaloneECInstanceP         CreateInstanceFromInitializedMemory (ClassLayoutCR classLayout, byte * data, UInt32 size);
-    
     ECOBJECTS_EXPORT StandaloneECInstanceP         CreateSharedInstance (byte * data, UInt32 size);
     };
 END_BENTLEY_EC_NAMESPACE

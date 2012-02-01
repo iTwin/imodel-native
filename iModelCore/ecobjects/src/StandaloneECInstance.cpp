@@ -2,7 +2,7 @@
 |
 |     $Source: src/StandaloneECInstance.cpp $
 |
-|   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -33,6 +33,7 @@ static IECInstanceP    getEmbeddedSupportingStructInstance (StructArrayEntry con
 //  MemoryECInstanceBase
 ///////////////////////////////////////////////////////////////////////////////////////////
 const UInt32 BITS_PER_FLAGSBITMASK = (sizeof(UInt32) * 8);
+const UInt32 BITS_TO_SHIFT_FOR_FLAGSBITMASK = 5;            // bitToCheck >> BITS_TO_SHIFT_FOR_FLAGSBITMASK equiv. to bitToCheck / BITS_PER_FLAGSBITMASK
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2010
@@ -210,7 +211,7 @@ ECObjectsStatus          MemoryECInstanceBase::IsPerPropertyBitSet (bool& isSet,
         }
 
     UInt32 bitToCheck = (propertyIndex * m_perPropertyFlagsHolder.numBitsPerProperty) + bitIndex;
-    UInt32 offset = bitToCheck / BITS_PER_FLAGSBITMASK;
+    UInt32 offset = bitToCheck >> BITS_TO_SHIFT_FOR_FLAGSBITMASK;
     UInt32 bit    = bitToCheck % BITS_PER_FLAGSBITMASK;
     UInt32 bitValue = 1 << bit;
 
@@ -224,8 +225,17 @@ ECObjectsStatus          MemoryECInstanceBase::IsPerPropertyBitSet (bool& isSet,
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus         MemoryECInstanceBase::IsAnyPerPropertyBitSet (bool& isSet, UInt8 bitIndex) const
     {
-    if (bitIndex >= m_perPropertyFlagsHolder.numBitsPerProperty)
+    static const ::UInt32     s_maskFor2Bits[2] = { 0x55555555, 0xAAAAAAAA };
+    
+    if (2 >= m_perPropertyFlagsHolder.numBitsPerProperty)
+        {
+        DEBUG_FAIL ("PerPropertyFlagsHolder presently supports maximum 2 bits");
+        return ECOBJECTS_STATUS_Error;
+        }
+    else if (bitIndex >= m_perPropertyFlagsHolder.numBitsPerProperty)
         return ECOBJECTS_STATUS_InvalidIndexForPerPropertyFlag;
+
+    ::UInt32 mask = m_perPropertyFlagsHolder.numBitsPerProperty == 2 ? s_maskFor2Bits[(int)bitIndex] : 0xFFFFFFFF;
 
     UInt32* addressOfPerPropertyFlags = m_perPropertyFlagsHolder.perPropertyFlags.address;
     if (NULL == addressOfPerPropertyFlags)
@@ -240,7 +250,7 @@ ECObjectsStatus         MemoryECInstanceBase::IsAnyPerPropertyBitSet (bool& isSe
     isSet = false;
     for (UInt32 i = 0; i < m_perPropertyFlagsHolder.numPerPropertyFlagsEntries; i++)
         {
-        if (0 != addressOfPerPropertyFlags[i])
+        if (0 != (mask & (addressOfPerPropertyFlags[i])))
             {
             isSet = true;
             break;
@@ -273,7 +283,7 @@ ECObjectsStatus          MemoryECInstanceBase::SetPerPropertyBit (UInt8 bitIndex
         }
 
     UInt32 bitToSet = (propertyIndex * m_perPropertyFlagsHolder.numBitsPerProperty) + bitIndex;
-    UInt32 offset = bitToSet / BITS_PER_FLAGSBITMASK;
+    UInt32 offset = bitToSet >> BITS_TO_SHIFT_FOR_FLAGSBITMASK;
     UInt32 bit    = bitToSet % BITS_PER_FLAGSBITMASK;
     UInt32 bitValue = 1 << bit;
 
@@ -282,6 +292,24 @@ ECObjectsStatus          MemoryECInstanceBase::SetPerPropertyBit (UInt8 bitIndex
     else
         addressOfPerPropertyFlags[offset] &= ~bitValue;
 
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus    MemoryECInstanceBase::SetBitForAllProperties (UInt8 bitIndex, bool setBit)
+    {
+    ECObjectsStatus status;
+    int numProperties = GetClassLayout().GetPropertyCount ();
+
+    for (UInt32 propertyIndex=0; propertyIndex<(UInt32)numProperties; propertyIndex++)
+        {
+        status = SetPerPropertyBit (bitIndex, propertyIndex, setBit);
+        if (ECOBJECTS_STATUS_Success != status)
+            return status;
+        }
+    
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -511,12 +539,6 @@ void                MemoryECInstanceBase::_FreeAllocation ()
     {
     if (m_isInManagedInstance)
         return;
-
-    if (m_perPropertyFlagsHolder.perPropertyFlags.address)
-        {
-        free (m_perPropertyFlagsHolder.perPropertyFlags.address); 
-        m_perPropertyFlagsHolder.perPropertyFlags.address = NULL;
-        }
 
     if (!m_usingSharedMemory)
         {
@@ -937,7 +959,7 @@ byte const *        MemoryECInstanceBase::_GetData () const
     if (m_isInManagedInstance)
         {
         byte const* baseAddress = (byte const*)this;
-        byte const* dataAddress =  baseAddress + (size_t)m_data.address;     // m_data.address need to be signed
+        byte const* dataAddress =  baseAddress + (size_t)m_data.offset;     // m_data.address need to be signed
         return dataAddress;
         }
 
@@ -958,7 +980,7 @@ UInt32              MemoryECInstanceBase::_GetBytesAllocated () const
 ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index)
     {
     IECInstancePtr p;
-    ECValue binaryValue (PRIMITIVETYPE_Binary);
+    ECValue structValueIdValue (PRIMITIVETYPE_Integer);
     StructValueIdentifier structValueId = GetMaxStructValueIdentifier () + 1;
 
     DEBUG_EXPECT (NULL == GetAddressOfStructArrayEntry (structValueId));
@@ -966,12 +988,12 @@ ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueC
     if (v.IsNull())
         {
         p = NULL;
-        binaryValue.SetToNull();
+        structValueIdValue.SetInteger (0);
         }
     else
         {
         p = v.GetStruct();    
-        binaryValue.SetBinary ((const byte *)&(structValueId), sizeof (StructValueIdentifier));
+        structValueIdValue.SetInteger (structValueId);
         }
    
     size_t offsetToData;
@@ -980,15 +1002,15 @@ ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueC
 
     if (m_isInManagedInstance)
         {
-        offsetToData = (size_t)m_data.address;
+        offsetToData = (size_t)m_data.offset;
         offsetToArrayCount = m_structInstances.offset;
         bytesAllocated = (size_t)m_bytesAllocated;
 
         // set up memory allocation callback in case memory needs to grow to set the structValueId value
-        binaryValue.SetMemoryCallback(v.GetMemoryCallback());
+        structValueIdValue.SetMemoryCallback(v.GetMemoryCallback());
         }
 
-    ECObjectsStatus status = SetPrimitiveValueToMemory (binaryValue, classLayout, propertyLayout, true, index);      
+    ECObjectsStatus status = SetPrimitiveValueToMemory (structValueIdValue, classLayout, propertyLayout, true, index);      
     if (status != ECOBJECTS_STATUS_Success)
         return status;
                  
@@ -1249,19 +1271,19 @@ IECInstancePtr  MemoryECInstanceBase::GetStructArrayInstance (StructValueIdentif
 +---------------+---------------+---------------+---------------+---------------+------*/    
 ECObjectsStatus           MemoryECInstanceBase::_GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const
     {
-    ECValue binaryValue;
-    ECObjectsStatus status = GetPrimitiveValueFromMemory (binaryValue, propertyLayout, true, index);      
+    ECValue structValueIdValue;
+    ECObjectsStatus status = GetPrimitiveValueFromMemory (structValueIdValue, propertyLayout, true, index);      
     if (status != ECOBJECTS_STATUS_Success)
         return status;
         
-    if (binaryValue.IsNull())
+    // A structValueId of 0 means the instance is null
+    if (structValueIdValue.IsNull() || 0 == structValueIdValue.GetInteger())
         {
         v.SetStruct(NULL);
         return ECOBJECTS_STATUS_Success;
         }        
                     
-    size_t size;
-    StructValueIdentifier structValueId = *(StructValueIdentifier*)binaryValue.GetBinary (size);    
+    StructValueIdentifier structValueId = structValueIdValue.GetInteger();
 
     IECInstancePtr instancePtr = GetStructArrayInstance (structValueId);
     v.SetStruct (instancePtr.get());
@@ -1478,8 +1500,7 @@ ECObjectsStatus MemoryECInstanceBase::_RemoveStructArrayElementsFromMemory (Clas
             return status;
 
         // get struct value id from ecValue
-        size_t size;
-        StructValueIdentifier structValueId = *(StructValueIdentifier*)v.GetBinary (size);    
+        StructValueIdentifier structValueId = v.GetInteger ();    
 
         status = RemoveStructStructArrayEntry (structValueId, memoryReallocationCallbackP);       
         if (status != ECOBJECTS_STATUS_Success)
@@ -1537,7 +1558,7 @@ MemoryECInstanceBase const* MemoryECInstanceBase::GetParentInstance () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t                StandaloneECInstance::_GetOffsetToIECInstance () const
     {
-    EC::IECInstanceP iecInstanceP   = (EC::IECInstanceP)this;
+    EC::IECInstanceCP iecInstanceP   = dynamic_cast<EC::IECInstanceCP>(this);
     byte const* baseAddressOfIECInstance = (byte const *)iecInstanceP;
     byte const* baseAddressOfConcrete = (byte const *)this;
 
@@ -1725,19 +1746,12 @@ ECObjectsStatus           StandaloneECInstance::_SetValue (WCharCP propertyAcces
     {
 
     PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
-                
-    ClassLayoutCR classLayout = GetClassLayout();
-    PropertyLayoutCP propertyLayout = NULL;
-    ECObjectsStatus status = classLayout.GetPropertyLayout (propertyLayout, propertyAccessString);
-    if (ECOBJECTS_STATUS_Success != status || NULL == propertyLayout)
-        return ECOBJECTS_STATUS_PropertyNotFound;       
 
     UInt32 propertyIndex = 0;
-    GetEnabler().GetPropertyIndex(propertyIndex, propertyAccessString);
+    if (ECOBJECTS_STATUS_Success != GetEnabler().GetPropertyIndex(propertyIndex, propertyAccessString))
+        return ECOBJECTS_STATUS_PropertyNotFound;
 
-    SetPerPropertyBit ((UInt8) PROPERTYFLAGINDEX_IsLoaded, propertyIndex, true);
-
-    return SetValueToMemory (classLayout, propertyIndex, v, useArrayIndex, arrayIndex);
+    return _SetValue (propertyIndex, v, useArrayIndex, arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1851,6 +1865,15 @@ UInt32          StandaloneECEnabler::_GetPropertyCount() const    { return GetCl
 UInt32          StandaloneECEnabler::_GetFirstPropertyIndex (UInt32 parentIndex) const {  return GetClassLayout().GetFirstChildPropertyIndex (parentIndex); }
 UInt32          StandaloneECEnabler::_GetNextPropertyIndex (UInt32 parentIndex, UInt32 inputIndex) const { return GetClassLayout().GetNextChildPropertyIndex (parentIndex, inputIndex);  }
 ECObjectsStatus StandaloneECEnabler::_GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const { return GetClassLayout().GetPropertyIndices (indices, parentIndex);  }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Paul.Connelly                   12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            StandaloneECEnabler::_HasChildProperties (UInt32 parentIndex) const
+    {
+    PropertyLayoutCP propertyLayout;
+    return ECOBJECTS_STATUS_Success == GetClassLayout().GetPropertyLayoutByIndex (propertyLayout, parentIndex) && propertyLayout->GetTypeDescriptor().IsStruct();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09

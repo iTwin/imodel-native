@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECValue.cpp $
 |
-|   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -24,7 +24,7 @@ static unsigned short  getMaxDay (unsigned short year, unsigned short month)
     if (isLeap && (2==month))
         return monthDays[month-1]+1;
 
-    return monthDays[month];
+    return monthDays[month-1];
     }
 
 /*---------------------------------------------------------------------------------**//**

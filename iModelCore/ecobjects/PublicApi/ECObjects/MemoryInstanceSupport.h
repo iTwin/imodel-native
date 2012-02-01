@@ -2,20 +2,20 @@
 |
 |     $Source: PublicApi/ECObjects/MemoryInstanceSupport.h $
 |
-|   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__PUBLISH_SECTION_START__*/
 #pragma once
 
 #include "ECObjects.h"
-#ifdef USE_HASHMAP_IN_CLASSLAYOUT // WIP_NONPORT - No hashmap on Android
-#include <hash_map>
-#endif
 
+/*__PUBLISH_SECTION_END__*/
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
 #define PROPERTYLAYOUT_Source_ECPointer L"Source ECPointer"
 #define PROPERTYLAYOUT_Target_ECPointer L"Target ECPointer"
+/*__PUBLISH_SECTION_START__*/
+
 EC_TYPEDEFS(MemoryInstanceSupport);
 
 BEGIN_BENTLEY_EC_NAMESPACE
@@ -24,6 +24,9 @@ typedef UInt16 ClassIndex;
 typedef UInt16 SchemaIndex;
 
 typedef UInt32 NullflagsBitmask;
+
+/*__PUBLISH_SECTION_END__*/
+
 typedef UInt32 InstanceFlags;
 typedef UInt32 SecondaryOffset;
 typedef UInt32 ArrayCount;
@@ -37,6 +40,7 @@ struct  InstanceHeader
 
     InstanceFlags   m_instanceFlags;
     };
+/*__PUBLISH_SECTION_START__*/
 
 enum ArrayModifierFlags ENUM_UNDERLYING_TYPE (UInt32)
     {
@@ -50,6 +54,7 @@ enum ArrayModifierFlags ENUM_UNDERLYING_TYPE (UInt32)
 +===============+===============+===============+===============+===============+======*/      
 struct PropertyLayout
     {
+/*__PUBLISH_SECTION_END__*/
 friend struct ClassLayout;    
 private:
     WString                 m_accessString;        
@@ -69,25 +74,31 @@ public:
         m_accessString(accessString), m_parentStructIndex (psi), m_typeDescriptor(typeDescriptor), m_offset(offset), m_nullflagsOffset(nullflagsOffset), 
         m_nullflagsBitmask (nullflagsBitmask), m_modifierFlags (modifierFlags), m_modifierData (modifierData) { }; //, m_property(property) {};
 
-    inline WCharCP                     GetAccessString() const     { return m_accessString.c_str(); }
-    inline UInt32                      GetParentStructIndex() const{ return m_parentStructIndex; }
-    inline UInt32                      GetOffset() const           { assert ( ! m_typeDescriptor.IsStruct()); return m_offset; }
-    inline UInt32                      GetNullflagsOffset() const  { assert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsOffset; }
-    inline NullflagsBitmask            GetNullflagsBitmask() const { assert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsBitmask; }
-    inline ECTypeDescriptor            GetTypeDescriptor() const   { return m_typeDescriptor; }
-    inline UInt32                      GetModifierFlags() const    { return m_modifierFlags; }
-    inline UInt32                      GetModifierData() const     { return m_modifierData; }    
-    inline bool                        IsReadOnlyProperty () const {return PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly == (m_modifierFlags & PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly);}
+/*__PUBLISH_SECTION_START__*/
+private:
+    PropertyLayout (){}
 
-    bool                               SetReadOnlyMask (bool readOnly);
-    bool                               IsFixedSized() const;
+public:
+    ECOBJECTS_EXPORT WCharCP                     GetAccessString() const;
+    ECOBJECTS_EXPORT UInt32                      GetParentStructIndex() const;
+    ECOBJECTS_EXPORT UInt32                      GetOffset() const;
+    ECOBJECTS_EXPORT UInt32                      GetNullflagsOffset() const;
+    ECOBJECTS_EXPORT NullflagsBitmask            GetNullflagsBitmask() const;
+    ECOBJECTS_EXPORT ECTypeDescriptor            GetTypeDescriptor() const;
+    ECOBJECTS_EXPORT UInt32                      GetModifierFlags() const;
+    ECOBJECTS_EXPORT UInt32                      GetModifierData() const;
+    ECOBJECTS_EXPORT bool                        IsReadOnlyProperty () const;
+
+    ECOBJECTS_EXPORT bool                        SetReadOnlyMask (bool readOnly);
+    ECOBJECTS_EXPORT bool                        IsFixedSized() const;
     //! Gets the size required for this PropertyValue in the fixed Section of the IECInstance's memory
     //! Variable-sized types will have 4 byte SecondaryOffset stored in the fixed Section.
-    UInt32                             GetSizeInFixedSection() const;
+    ECOBJECTS_EXPORT UInt32                       GetSizeInFixedSection() const;
     
-    WString                            ToString();
+    ECOBJECTS_EXPORT WString                      ToString();
     };
 
+/*__PUBLISH_SECTION_END__*/
 struct less_classLayout
 {
 bool operator()(ClassLayoutCP s1, ClassLayoutCP s2) const;
@@ -95,19 +106,21 @@ bool operator()(ClassLayoutCP s1, ClassLayoutCP s2) const;
 
  typedef bmap<ClassLayoutCP, bool, less_classLayout>   CompatibleClassLayoutsMap;
 
-/*=================================================================================**//**
+ /*__PUBLISH_SECTION_START__*/
+ /*=================================================================================**//**
 * @bsistruct
 +===============+===============+===============+===============+===============+======*/      
 struct ClassLayout
     {
+/*__PUBLISH_SECTION_END__*/
     friend struct MemoryInstanceSupport;
 private:
-    struct StringComparer {bool operator()(WCharCP s1, WCharCP s2) const   {return wcscmp (s1, s2) < 0;}};
-#ifdef USE_HASHMAP_IN_CLASSLAYOUT    
-    typedef stdext::hash_map<WCharCP, PropertyLayoutCP, stdext::hash_compare<WCharCP, StringComparer>>   PropertyLayoutMap;
-#else
-    typedef bmap<WCharCP, PropertyLayoutCP, StringComparer> PropertyLayoutMap;
-#endif    
+    struct AccessStringIndexPair : bpair<WCharCP, UInt32>
+        {
+        AccessStringIndexPair (WCharCP accessor, UInt32 index) : bpair<WCharCP, UInt32> (accessor, index) { }
+        };
+
+    typedef bvector<AccessStringIndexPair>                          IndicesByAccessString;
     typedef bvector<PropertyLayoutP>                                PropertyLayoutVector;
     typedef bmap<UInt32, bvector<UInt32> >                          LogicalStructureMap;
     
@@ -122,21 +135,24 @@ private:
     ClassIndex              m_classIndex; // Unique per some context, e.g. per DgnFile
     WString                 m_className;
     
-    PropertyLayoutVector    m_propertyLayouts; // This is the primary collection, there is a secondary map for lookup by name, below.
-    PropertyLayoutMap       m_propertyLayoutMap;
+    PropertyLayoutVector    m_propertyLayouts;      // This is the primary collection, there is a secondary map for lookup by name, below.    
+    IndicesByAccessString   m_indicesByAccessString; // Always sorted; maps access strings to indices which can be used to index into PropertyLayoutVector
     LogicalStructureMap     m_logicalStructureMap;
     
     // These members are transient
-    bool                        m_hideFromLeakDetection;
-    SchemaIndex                 m_schemaIndex;
-    UInt32                      m_sizeOfFixedSection;
-    bool                        m_isRelationshipClass;
-    int                         m_propertyIndexOfSourceECPointer;
-    int                         m_propertyIndexOfTargetECPointer;
-    int                         m_uniqueId;
+    bool                              m_hideFromLeakDetection;
+    SchemaIndex                       m_schemaIndex;
+    UInt32                            m_sizeOfFixedSection;
+    bool                              m_isRelationshipClass;
+    int                               m_propertyIndexOfSourceECPointer;
+    int                               m_propertyIndexOfTargetECPointer;
+    int                               m_uniqueId;
     mutable CompatibleClassLayoutsMap m_compatibleClassLayouts;
 
-    void                    CheckForECPointers (WCharCP accessString);
+    void                            CheckForECPointers (WCharCP accessString);
+
+    // returns an iterator into m_indicesByAccessStrings at which accessString exists (if forCreate=false), or would be inserted (if forCreate=true)
+    IndicesByAccessString::const_iterator GetPropertyIndexPosition (WCharCP accessString, bool forCreate) const;
 
     struct  Factory
     {
@@ -164,19 +180,19 @@ private:
         ClassLayoutP DoBuildClassLayout ();
     };
 
-    BentleyStatus           SetClass (WCharCP  className, UInt16 classIndex);
-
     ClassLayout(SchemaIndex schemaIndex, bool hideFromLeakDetection);
 
     WString                GetShortDescription() const;
     WString                LogicalStructureToString (UInt32 parentStructIndex = 0, UInt32 indentLevel = 0) const;
+    BentleyStatus          SetClass (WCharCP  className, UInt16 classIndex);
 
-/*__PUBLISH_SECTION_END__*/
 public:    
     WString                 GetName() const;
     int                     GetUniqueId() const;
     void                    AddPropertyLayout (WCharCP accessString, PropertyLayoutR);
     void                    AddToLogicalStructureMap (PropertyLayoutR propertyLayout, UInt32 propertyIndex);
+    void                    InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const;
+    UInt32                  GetSizeOfFixedSection() const;
 
     ECOBJECTS_EXPORT UInt32                  GetFirstChildPropertyIndex (UInt32 parentIndex) const;
     ECOBJECTS_EXPORT UInt32                  GetNextChildPropertyIndex (UInt32 parentIndex, UInt32 childIndex) const;
@@ -184,11 +200,15 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus         GetPropertyIndices (bvector<UInt32>& properties, UInt32 parentIndex) const;
 
     ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();
+    ECOBJECTS_EXPORT ~ClassLayout();
+    ECOBJECTS_EXPORT void            AddPropertyDirect (WCharCP accessString, UInt32 parentStructIndex, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask);
+    ECOBJECTS_EXPORT ECObjectsStatus FinishLayout ();
 
 /*__PUBLISH_SECTION_START__*/
-public:
-    ECOBJECTS_EXPORT ~ClassLayout();
+private:
+    ClassLayout (){}
 
+public:
     ECOBJECTS_EXPORT static ClassLayoutP BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex, bool hideFromLeakDetection=false);
     ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (WCharCP  className, ClassIndex classIndex, SchemaIndex schemaIndex, bool hideFromLeakDetection=false);
 
@@ -206,14 +226,6 @@ public:
     ECOBJECTS_EXPORT bool            IsPropertyReadOnly (UInt32 propertyIndex) const;
     ECOBJECTS_EXPORT bool            SetPropertyReadOnly (UInt32 propertyIndex, bool readOnly) const;
     
-/*__PUBLISH_SECTION_END__*/
-    ECOBJECTS_EXPORT void            AddPropertyDirect (WCharCP accessString, UInt32 parentStructIndex, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask);
-    ECOBJECTS_EXPORT ECObjectsStatus FinishLayout ();
-/*__PUBLISH_SECTION_START__*/
-    
-    void                            InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const;
-    
-    UInt32                          GetSizeOfFixedSection() const;
     
     //! Determines the number of bytes used, so far
     ECOBJECTS_EXPORT UInt32         CalculateBytesUsed(byte const * data) const;
@@ -229,14 +241,20 @@ typedef bvector<ClassLayoutCP>  ClassLayoutVector;
 +===============+===============+===============+===============+===============+======*/      
 struct SchemaLayout
 {
+/*__PUBLISH_SECTION_END__*/
 private:
     SchemaIndex             m_schemaIndex;
     ClassLayoutVector       m_classLayouts;
 
 public:
-    ECOBJECTS_EXPORT SchemaLayout(SchemaIndex index) : m_schemaIndex(index) {}
+    SchemaLayout(SchemaIndex index) : m_schemaIndex(index) {}
 
-    ECOBJECTS_EXPORT SchemaIndex            GetSchemaIndex() const { return m_schemaIndex; }
+/*__PUBLISH_SECTION_START__*/
+private:
+    SchemaLayout (){}
+
+public:
+    ECOBJECTS_EXPORT SchemaIndex            GetSchemaIndex() const;
     ECOBJECTS_EXPORT BentleyStatus          AddClassLayout (ClassLayoutCR, ClassIndex);
     ECOBJECTS_EXPORT ClassLayoutCP          GetClassLayout (ClassIndex classIndex);
     ECOBJECTS_EXPORT ClassLayoutCP          FindClassLayout (WCharCP className);
@@ -244,7 +262,10 @@ public:
     // This may often correspond to "number of ClassLayouts - 1", but not necessarily, because there can be gaps
     // so when you call GetClassLayout (index) you might get NULLs. Even the last one could be NULL.
     ECOBJECTS_EXPORT UInt32                 GetMaxIndex ();
+    ECOBJECTS_EXPORT static SchemaLayoutP   Create (SchemaIndex index);
 };
+
+/*__PUBLISH_SECTION_END__*/
 
 //=======================================================================================    
 //! Holds a ClassLayoutCR and provides a public method by which to access it.
@@ -262,7 +283,6 @@ public:
     ECOBJECTS_EXPORT ClassLayoutCR  GetClassLayout() const;
     };
 
-/*__PUBLISH_SECTION_END__*/    
 //! An internal helper used by MemoryInstanceSupport to resize (add/remove elements) array property values
 struct      ArrayResizer
     {
@@ -314,20 +334,21 @@ private:
     static ECObjectsStatus    CreateNullArrayElementsAt (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, MemoryInstanceSupportR instance, UInt32 insertIndex, UInt32 insertCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP=NULL);
     };
 
-/*__PUBLISH_SECTION_START__*/    
-
+/*__PUBLISH_SECTION_START__*/  
 //=======================================================================================    
 //! Base class for EC::IECInstance implementations that get/set values from a block of memory, 
 //! e.g. StandaloneECInstance and ECXInstance
 //=======================================================================================    
 struct MemoryInstanceSupport
     {
-/*__PUBLISH_SECTION_END__*/    
     friend  struct ArrayResizer;
-/*__PUBLISH_SECTION_START__*/    
+/*__PUBLISH_SECTION_END__*/    
     
+/*__PUBLISH_SECTION_START__*/  
 private:    
     bool                        m_allowWritingDirectlyToInstanceMemory;
+//__PUBLISH_CLASS_VIRTUAL__
+/*__PUBLISH_SECTION_END__*/    
 
     //! Returns the offset of the property value relative to the start of the instance data.
     //! If useIndex is true then the offset of the array element value at the specified index is returned.
@@ -430,6 +451,8 @@ protected:
     //! externally.
     virtual ECObjectsStatus           _SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index) = 0;
     virtual ECObjectsStatus           _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const = 0;
+    virtual EC::PrimitiveType         _GetStructArrayPrimitiveType () const = 0;
+
     virtual ECObjectsStatus           _RemoveStructArrayElementsFromMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP) = 0;
 
     //! Invoked after a variable-sized array is successfully resized, to allow derived classes to adjust their internal state in response if necessary.
@@ -465,7 +488,11 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP=NULL);
    
     ECOBJECTS_EXPORT void SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable);
-    };    
+
+    ECOBJECTS_EXPORT EC::PrimitiveType         GetStructArrayPrimitiveType () const;
+/*__PUBLISH_SECTION_START__*/  
+    };   
+
 
 
 END_BENTLEY_EC_NAMESPACE

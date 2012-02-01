@@ -2,7 +2,7 @@
 #
 #     $Source: mki/ECObjectsPolicy.mki $
 #
-#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %if defined (__ECObjectsPolicy_mki__)
