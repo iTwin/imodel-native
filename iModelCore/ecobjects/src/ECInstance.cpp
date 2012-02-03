@@ -3801,19 +3801,19 @@ InstanceReadStatus      GetInstance (ECClassCP& ecClass, IECInstancePtr& ecInsta
 
     ecInstance = m_context.CreateStandaloneInstance (*foundClass).get();
     
+    WString instanceId;
+    if (BEXML_Success == m_xmlNode.GetAttributeStringValue (instanceId, INSTANCEID_ATTRIBUTE))
+        {
+        ecInstance->SetInstanceId (instanceId.c_str());
+        }
+
     IECRelationshipInstance*    relationshipInstance = dynamic_cast <IECRelationshipInstance*> (ecInstance.get());
 
     // if relationship, need the attributes used in relationships.
     if (NULL != relationshipInstance)
         {
         // see if we can find the attributes corresponding to the relationship instance ids.
-        WString instanceId;
         WString relationshipClassName;
-        if (BEXML_Success == m_xmlNode.GetAttributeStringValue (instanceId, INSTANCEID_ATTRIBUTE))
-            {
-            ecInstance->SetInstanceId (instanceId.c_str());
-            }
-
         if (BEXML_Success == m_xmlNode.GetAttributeStringValue (instanceId, SOURCEINSTANCEID_ATTRIBUTE))
             {
 #if defined (NEEDSWORK_RELATIONSHIP)
