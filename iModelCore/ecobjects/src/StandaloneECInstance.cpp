@@ -227,7 +227,7 @@ ECObjectsStatus         MemoryECInstanceBase::IsAnyPerPropertyBitSet (bool& isSe
     {
     static const ::UInt32     s_maskFor2Bits[2] = { 0x55555555, 0xAAAAAAAA };
     
-    if (2 >= m_perPropertyFlagsHolder.numBitsPerProperty)
+    if (2 > m_perPropertyFlagsHolder.numBitsPerProperty)
         {
         DEBUG_FAIL ("PerPropertyFlagsHolder presently supports maximum 2 bits");
         return ECOBJECTS_STATUS_Error;
