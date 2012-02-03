@@ -12,6 +12,7 @@
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECObjects.h>
 #include <Geom/GeomApi.h>
+struct _FILETIME;
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -23,6 +24,7 @@ typedef RefCountedPtr<ECValuesCollection> ECValuesCollectionPtr;
 //! @group "ECInstance"
 //! @see ECValue
 //=======================================================================================    
+
 struct SystemTime
 {
 public:
@@ -40,6 +42,8 @@ public:
     ECOBJECTS_EXPORT static SystemTime GetSystemTime();
     ECOBJECTS_EXPORT WString      ToString ();
     ECOBJECTS_EXPORT bool          operator== (const SystemTime&) const;
+
+    ECOBJECTS_EXPORT BentleyStatus InitFromFileTime (_FILETIME const& fileTime);
     };
 
 //=======================================================================================    

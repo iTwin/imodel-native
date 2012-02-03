@@ -2071,4 +2071,28 @@ ECValuesCollection::const_iterator ECValuesCollection::end () const
     return const_iterator ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  01/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   SystemTime::InitFromFileTime (_FILETIME const& fileTime)
+    {
+    #if defined (_WIN32)
+         return 0 == FileTimeToSystemTime(&fileTime, (LPSYSTEMTIME) this) ? ERROR : SUCCESS;
+    #else
+        UInt64 unixMills = BeTimeUtilities::ConvertFiletimeToUnixMillis(fileTime);
+        time_t timeVal = (time_t) (unixMills/1000.0);
+        struct tm timeinfo;
+        localtime_r (&timeVal, &timeinfo);
+
+        this->wYear = timeinfo.tm_year;
+        this->wMonth = timeinfo.tm_mon;
+        this->wDayOfWeek = timeinfo.tm_wday;
+        this->wDay = timeinfo.tm_mday;
+        this->wHour = timeinfo.tm_hour;
+        this->wMinute = timeinfo.tm_min;
+        this->wSecond = timeinfo.tm_sec;
+        this->wMilliseconds = 0;
+    #endif
+    }
+
 END_BENTLEY_EC_NAMESPACE
