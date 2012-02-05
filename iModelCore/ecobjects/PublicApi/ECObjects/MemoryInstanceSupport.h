@@ -67,8 +67,9 @@ private:
     UInt32              m_modifierData;  //! Data used with the modifier flag, like the length of a fixed-sized string.
     UInt32              m_nullflagsOffset;
     NullflagsBitmask    m_nullflagsBitmask;
+
   //ECPropertyCP        m_property; // WIP_FUSION: optional? YAGNI?
-    
+
 public:
     PropertyLayout (WCharCP accessString, UInt32 psi, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask, UInt32 modifierFlags = 0,  UInt32 modifierData = 0) : //, ECPropertyCP property) :
         m_accessString(accessString), m_parentStructIndex (psi), m_typeDescriptor(typeDescriptor), m_offset(offset), m_nullflagsOffset(nullflagsOffset), 
@@ -148,11 +149,13 @@ private:
     int                               m_propertyIndexOfTargetECPointer;
     int                               m_uniqueId;
     mutable CompatibleClassLayoutsMap m_compatibleClassLayouts;
+    mutable UInt32                    m_checkSum;
 
     void                            CheckForECPointers (WCharCP accessString);
 
     // returns an iterator into m_indicesByAccessStrings at which accessString exists (if forCreate=false), or would be inserted (if forCreate=true)
     IndicesByAccessString::const_iterator GetPropertyIndexPosition (WCharCP accessString, bool forCreate) const;
+    UInt32  ComputeCheckSum () const;
 
     struct  Factory
     {
@@ -219,6 +222,7 @@ public:
     ECOBJECTS_EXPORT SchemaIndex    GetSchemaIndex () const;
     ECOBJECTS_EXPORT int            GetECPointerIndex (ECRelationshipEnd end) const;
     
+    ECOBJECTS_EXPORT UInt32          GetChecksum () const;
     ECOBJECTS_EXPORT UInt32          GetPropertyCount () const;
     ECOBJECTS_EXPORT UInt32          GetPropertyCountExcludingEmbeddedStructs () const;
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyLayout (PropertyLayoutCP & propertyLayout, WCharCP accessString) const;
@@ -491,9 +495,8 @@ public:
     ECOBJECTS_EXPORT void SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable);
 
     ECOBJECTS_EXPORT EC::PrimitiveType         GetStructArrayPrimitiveType () const;
+
 /*__PUBLISH_SECTION_START__*/  
     };   
-
-
 
 END_BENTLEY_EC_NAMESPACE

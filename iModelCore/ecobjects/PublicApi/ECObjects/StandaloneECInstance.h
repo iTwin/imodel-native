@@ -173,6 +173,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT byte const *             GetPerPropertyFlagsData () const;
     ECOBJECTS_EXPORT UInt8                    GetNumBitsPerProperty () const;
     ECOBJECTS_EXPORT UInt32                   GetPerPropertyFlagsDataLength () const;
+    ECOBJECTS_EXPORT ECObjectsStatus          AddNullArrayElements (WCharCP propertyAccessString, UInt32 insertCount);
 };
 
 /*=================================================================================**//**
