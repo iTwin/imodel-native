@@ -676,15 +676,10 @@ ECObjectsStatus           IECInstance::SetInternalValueUsingAccessor (ECValueAcc
 
             UInt32 arraySize = arrayInfoPlaceholder.GetArrayInfo().GetCount();
 
-            //Expand array if necessary. -- this should never be called for a native instance embedded in a managed instance
             if ((UInt32)arrayIndex >= arraySize)
                 {
                 if (arrayInfoPlaceholder.GetArrayInfo().IsFixedCount())
                     return ECOBJECTS_STATUS_IndexOutOfRange;
-
-                 MemoryECInstanceBase* mbInstance = GetAsMemoryECInstance();
-                 if (NULL != mbInstance && mbInstance->m_isInManagedInstance)
-                     return ECOBJECTS_STATUS_ArrayIndexDoesNotExist;
 
                 UInt32 numToInsert = 1 + (UInt32)arrayIndex - arraySize;
 
@@ -1710,17 +1705,17 @@ ECObjectsStatus ECInstanceInteropHelper::GetValueByIndex (ECValueR value, IECIns
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus                 IECInstance::InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP)
+ECObjectsStatus                 IECInstance::InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size)
     {
-    return _InsertArrayElements (propertyAccessString, index, size, memoryReallocationCallbackP);
+    return _InsertArrayElements (propertyAccessString, index, size);
     } 
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus                 IECInstance::AddArrayElements (WCharCP propertyAccessString, UInt32 size, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP)
+ECObjectsStatus                 IECInstance::AddArrayElements (WCharCP propertyAccessString, UInt32 size)
     {
-    return _AddArrayElements (propertyAccessString, size, memoryReallocationCallbackP);
+    return _AddArrayElements (propertyAccessString, size);
     }        
 
 /*---------------------------------------------------------------------------------**//**
