@@ -1,0 +1,16 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: src/ecobjectsStatic.mki $
+#
+#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+OPTIMIZE_FOR_SPEED=1
+
+nameToDefine=__ECOBJECTS_BUILD__
+%include cdefapnd.mki
+
+oBase       =% ${o}
+o           = $(oBase)Static/
+
+CCompPDBName = ECObjectsStatic

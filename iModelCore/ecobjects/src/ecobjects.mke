@@ -7,17 +7,17 @@
 #--------------------------------------------------------------------------------------
 PolicyFile      = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
 baseDir         = $(_MakeFilePath)
-SolutionPolicyMki=$(baseDir)ecobjects.mki
+
+# Must use different policy file for static library, so that pch and compilands below both see the same definition of CCompPDBName and $(o)
+%if defined (CREATE_STATIC_LIBRARIES)
+    SolutionPolicyMki=$(baseDir)ecobjectsStatic.mki
+%else
+    SolutionPolicyMki=$(baseDir)ecobjects.mki
+%endif
 
 programName = ECObjects
 
 %include    mdl.mki
-
-%if defined (CREATE_STATIC_LIBRARIES)
-    oBase           =% ${o}
-    o               = $(oBase)Static/
-    CCompPDBName    = ECObjectsStatic
-%endif
 
 #----------------------------------------------------------------------
 #       Create output directories
@@ -105,7 +105,7 @@ DLM_NOINITFUNC              = 1
 DLM_NOMSBUILTINS            = 1
 DLM_NOENTRY                 = 1
 %if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT
-LINKER__LIBRARIES           = $(BuildContext)SubParts/Libs/bentleylogging-2.0$(libext) xmllite$(libext)
+LINKER__LIBRARIES           = xmllite$(libext)
 %endif
 LINKER__LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
 LINKER__LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext)

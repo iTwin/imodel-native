@@ -11,7 +11,6 @@
         <SubPart PartName="BoostHeaders"    PartFile="${SrcBsiCommon}CvsPartfiles/bsibin"           Repository="bsibin-boostheaders" />
         <SubPart PartName="HeaderFiles" />
         <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley" />
-        <SubPart PartName="Logging8.11"     PartFile="${SrcBsiCommon}CvsPartfiles/bsibin"           Repository="bsibin-loggingsdk" />
         <SubPart PartName="GeomDlls"        PartFile="geomlibs"     Repository="GeomLibs" />
         <SubPart PartName="BeXmlDll"        PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
         <SubPart PartName="StandardSchemas" PartFile="ECStandards"  Repository="ECStandards"/>
@@ -25,7 +24,6 @@
         <SubPart PartName="BoostHeaders"        PartFile="${SrcBsiCommon}CvsPartfiles/bsibin"   Repository="bsibin-boostheaders" />
         <SubPart PartName="HeaderFiles" />
         <SubPart PartName="BentleyStaticLib"    PartFile="Bentley"                              Repository="Bentley" />
-        <SubPart PartName="Logging8.11Static"   PartFile="${SrcBsiCommon}CvsPartfiles/bsibin"   Repository="bsibin-loggingsdk" />
         <SubPart PartName="GeomStatic"          PartFile="geomlibs"                             Repository="GeomLibs" />
         <SubPart PartName="BeXmlStaticLib"      PartFile="BeLibxml2"                            Repository="libsrc-libxml2" />
         <SubPart PartName="StandardSchemas"     PartFile="ECStandards"                          Repository="ECStandards"/>
@@ -77,7 +75,6 @@
     <Part Name="ECObjectsTestsDependencies">
         <SubPart PartName="google_gtest"         PartFile="gtest"                   Repository="util-gtest" />
         <SubPart PartName="StandardSchemas"      PartFile="ecstandards"             Repository="ecstandards"/>
-        <SubPart PartName="Logging8.11"  PartFile="${SrcBsiCommon}CvsPartfiles/bsibin"               Repository="bsibin-loggingsdk" />
         <SubPart PartName="ECObjectsNative" />
         <SubPart PartName="ECObjectsTestsSeedData"/>
         <SubPart PartName="ECObjectsTestLoggingConfig"/>
