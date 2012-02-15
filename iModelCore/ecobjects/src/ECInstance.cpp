@@ -676,15 +676,10 @@ ECObjectsStatus           IECInstance::SetInternalValueUsingAccessor (ECValueAcc
 
             UInt32 arraySize = arrayInfoPlaceholder.GetArrayInfo().GetCount();
 
-            //Expand array if necessary. -- this should never be called for a native instance embedded in a managed instance
             if ((UInt32)arrayIndex >= arraySize)
                 {
                 if (arrayInfoPlaceholder.GetArrayInfo().IsFixedCount())
                     return ECOBJECTS_STATUS_IndexOutOfRange;
-
-                 MemoryECInstanceBase* mbInstance = GetAsMemoryECInstance();
-                 if (NULL != mbInstance && mbInstance->m_isInManagedInstance)
-                     return ECOBJECTS_STATUS_ArrayIndexDoesNotExist;
 
                 UInt32 numToInsert = 1 + (UInt32)arrayIndex - arraySize;
 
@@ -1124,30 +1119,6 @@ ECObjectsStatus ECInstanceInteropHelper::SetDateTimeTicks (IECInstanceR instance
     return setECValueInInstance (v, instance, managedPropertyAccessor);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Dylan.Rush                      1/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-static ECTypeDescriptor getTypeDescriptor  (IECInstanceCR instance, int propertyIndex)
-    {
-    //GetTypeDescriptor (int) would be another candidate to add to the ECEnabler API
-    ECObjectsStatus status;
-    ECEnablerCP enabler = & instance.GetEnabler();
-    ClassLayoutHolderCP layoutHolder = dynamic_cast<ClassLayoutHolderCP> (enabler);
-    if (NULL == layoutHolder)
-        {
-        ECTypeDescriptor d;
-        return d;
-        }
-    PropertyLayoutCP propLayout;
-    status = layoutHolder->GetClassLayout().GetPropertyLayoutByIndex (propLayout, propertyIndex);
-    if (ECOBJECTS_STATUS_Success != status)
-        {
-        ECTypeDescriptor d;
-        return d;
-        }
-    return propLayout->GetTypeDescriptor();
-    }
-
 ///////////////////////////////////////////////////////////////////////////////
 // Get Using ECValueAccessor
 ///////////////////////////////////////////////////////////////////////////////
@@ -1578,14 +1549,6 @@ ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (EC::ECValueAccess
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Dylan.Rush                      1/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-PrimitiveType  ECInstanceInteropHelper::GetPrimitiveType  (IECInstanceCR instance, int propertyIndex)
-    {
-    return getTypeDescriptor (instance, propertyIndex).GetPrimitiveType();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Dylan.Rush                      1/11
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool            ECInstanceInteropHelper::GetNextInteropProperty 
 (
 int& propertyIndex, 
@@ -1650,22 +1613,6 @@ bool firstRunInStruct
             }
         } while ( ! includeNulls && thisValueIsNull);
     return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Dylan.Rush                      1/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool  ECInstanceInteropHelper::IsStructArray  (IECInstanceCR instance, int propertyIndex)
-    {
-    return getTypeDescriptor (instance, propertyIndex).IsStructArray();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Dylan.Rush                      1/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool  ECInstanceInteropHelper::IsArray  (IECInstanceCR instance, int propertyIndex)
-    {
-    return getTypeDescriptor (instance, propertyIndex).IsArray();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1758,17 +1705,17 @@ ECObjectsStatus ECInstanceInteropHelper::GetValueByIndex (ECValueR value, IECIns
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus                 IECInstance::InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP)
+ECObjectsStatus                 IECInstance::InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size)
     {
-    return _InsertArrayElements (propertyAccessString, index, size, memoryReallocationCallbackP);
+    return _InsertArrayElements (propertyAccessString, index, size);
     } 
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus                 IECInstance::AddArrayElements (WCharCP propertyAccessString, UInt32 size, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP)
+ECObjectsStatus                 IECInstance::AddArrayElements (WCharCP propertyAccessString, UInt32 size)
     {
-    return _AddArrayElements (propertyAccessString, size, memoryReallocationCallbackP);
+    return _AddArrayElements (propertyAccessString, size);
     }        
 
 /*---------------------------------------------------------------------------------**//**
@@ -3849,19 +3796,19 @@ InstanceReadStatus      GetInstance (ECClassCP& ecClass, IECInstancePtr& ecInsta
 
     ecInstance = m_context.CreateStandaloneInstance (*foundClass).get();
     
+    WString instanceId;
+    if (BEXML_Success == m_xmlNode.GetAttributeStringValue (instanceId, INSTANCEID_ATTRIBUTE))
+        {
+        ecInstance->SetInstanceId (instanceId.c_str());
+        }
+
     IECRelationshipInstance*    relationshipInstance = dynamic_cast <IECRelationshipInstance*> (ecInstance.get());
 
     // if relationship, need the attributes used in relationships.
     if (NULL != relationshipInstance)
         {
         // see if we can find the attributes corresponding to the relationship instance ids.
-        WString instanceId;
         WString relationshipClassName;
-        if (BEXML_Success == m_xmlNode.GetAttributeStringValue (instanceId, INSTANCEID_ATTRIBUTE))
-            {
-            ecInstance->SetInstanceId (instanceId.c_str());
-            }
-
         if (BEXML_Success == m_xmlNode.GetAttributeStringValue (instanceId, SOURCEINSTANCEID_ATTRIBUTE))
             {
 #if defined (NEEDSWORK_RELATIONSHIP)

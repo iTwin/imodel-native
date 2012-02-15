@@ -45,36 +45,13 @@ struct StructArrayEntry
 
 typedef bvector<StructArrayEntry> StructInstanceVector;
 
-union PerPropertyFlagsUnion
-{
-    UInt32 *  address;
-    Int64     offset; 
-};
-
-union InstanceDataUnion
-{
-    byte *  address;
-    Int64   offset; 
-};
-
-union SupportingInstanceUnion
-{
-    StructInstanceVector *  vectorP;
-    Int64                   offset; 
-};
-
 struct PerPropertyFlagsHolder
     {
     UInt8                   numBitsPerProperty;
     UInt32                  numPerPropertyFlagsEntries;
-    PerPropertyFlagsUnion   perPropertyFlags;
+    UInt32 *                perPropertyFlags;
     };
 
-union ParentInstanceUnion
-    {
-    MemoryECInstanceBase const *    parentInstance;
-    Int64                           offset;
-    };
 /*=================================================================================**//**
 * EC::MemoryECInstanceBase is base class for ECInstances that holds its values in memory that it allocates. 
 * The memory is laid out according to the ClassLayout. The ClassLayout must be provided by classes that 
@@ -94,11 +71,10 @@ friend struct IECInstance;
 //__PUBLISH_SECTION_START__
 private:
     PerPropertyFlagsHolder  m_perPropertyFlagsHolder;
-    InstanceDataUnion       m_data;
+    byte *                  m_data;
     UInt32                  m_bytesAllocated;
-    bool                    m_isInManagedInstance;
-    SupportingInstanceUnion m_structInstances;
-    ParentInstanceUnion     m_parentInstance;
+    StructInstanceVector*   m_structInstances;
+    MemoryECInstanceBase const* m_parentInstance;
     StructValueIdentifier   m_structValueId;
     bool                    m_usingSharedMemory;
 
@@ -106,12 +82,7 @@ private:
     StructArrayEntry const* GetAddressOfStructArrayEntry (StructValueIdentifier key) const;
     StructValueIdentifier   GetMaxStructValueIdentifier () const;
     byte*                   GetAddressOfPropertyData () const;
-    byte*                   GetAddressOfInstanceFromAddressOfPropertyData () const;
-    //void                    UpdateStructArrayOffsets (byte const* gapAddress, bool& updateOffset, bool& updateOffsetToEnd, size_t resizeAmount);
-    void                    UpdateStructArrayOffsets (byte const* gapAddress, size_t resizeAmount);
-    ECObjectsStatus         RemoveStructStructArrayEntry (StructValueIdentifier structValueId, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP);
-    void                    RemoveGapFromStructArrayEntries (byte const* gapAddress, size_t resizeAmount);
-    void                    WalkSupportingStructs (WStringR completeString, WCharCP prefix) const;
+    ECObjectsStatus         RemoveStructStructArrayEntry (StructValueIdentifier structValueId);
     void                    InitializePerPropertyFlags (ClassLayoutCR classLayout, UInt8 numBitsPerProperty);
 //__PUBLISH_SECTION_END__
 
@@ -125,20 +96,17 @@ protected:
     ECOBJECTS_EXPORT virtual ECObjectsStatus  _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength);    
     ECOBJECTS_EXPORT virtual void             _ShrinkAllocation (UInt32 newAllocation);
     ECOBJECTS_EXPORT virtual void             _FreeAllocation ();
-    ECOBJECTS_EXPORT virtual ECObjectsStatus  _GrowAllocation (UInt32 bytesNeeded, EmbeddedInstanceCallbackP memoryCallback);        
+    ECOBJECTS_EXPORT virtual ECObjectsStatus  _GrowAllocation (UInt32 bytesNeeded);        
 
     ECOBJECTS_EXPORT virtual byte const *     _GetData () const override;
     ECOBJECTS_EXPORT virtual UInt32           _GetBytesAllocated () const override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus  _SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index) override;    
     ECOBJECTS_EXPORT virtual ECObjectsStatus  _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const override;  
-    ECOBJECTS_EXPORT virtual ECObjectsStatus  _RemoveStructArrayElementsFromMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount, EmbeddedInstanceCallbackP memoryCallback) override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus  _RemoveStructArrayElementsFromMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount) override;
     ECOBJECTS_EXPORT virtual EC::PrimitiveType _GetStructArrayPrimitiveType () const {return PRIMITIVETYPE_Integer;}
 
     virtual ClassLayoutCR       _GetClassLayout () const = 0;
     virtual IECInstancePtr      _GetAsIECInstance () const = 0;
-    virtual size_t              _GetObjectSize () const = 0;
-    virtual size_t              _LoadObjectDataIntoManagedInstance (byte* managedBuffer) const = 0;
-    virtual size_t              _GetBaseObjectSize () const = 0;    // should be the same return value as _LoadObjectDataIntoManagedInstance
                              
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
@@ -151,12 +119,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT void                     ClearValues ();
     ECOBJECTS_EXPORT ClassLayoutCR            GetClassLayout() const;
     ECOBJECTS_EXPORT IECInstancePtr           GetAsIECInstance () const;
-    ECOBJECTS_EXPORT size_t                   GetObjectSize () const;
-    ECOBJECTS_EXPORT size_t                   GetBaseObjectSize () const;
-    ECOBJECTS_EXPORT size_t                   CalculateSupportingInstanceDataSize () const;
-    ECOBJECTS_EXPORT size_t                   LoadDataIntoManagedInstance (byte* managedBuffer, size_t sizeOfManagedBuffer) const;
-    ECOBJECTS_EXPORT void                     FixupStructArrayOffsets (int offsetToGap, size_t resizeAmount, bool removingGap);
-    ECOBJECTS_EXPORT ECObjectsStatus          RemoveStructArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount, EmbeddedInstanceCallbackP memoryCallback);
+    ECOBJECTS_EXPORT ECObjectsStatus          RemoveStructArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
     ECOBJECTS_EXPORT ECObjectsStatus          IsPerPropertyBitSet (bool& isSet, UInt8 bitIndex, UInt32 propertyIndex) const;
     ECOBJECTS_EXPORT ECObjectsStatus          IsAnyPerPropertyBitSet (bool& isSet, UInt8 bitIndex) const;
     ECOBJECTS_EXPORT ECObjectsStatus          SetPerPropertyBit (UInt8 bitIndex, UInt32 propertyIndex, bool setBit);
@@ -173,6 +136,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT byte const *             GetPerPropertyFlagsData () const;
     ECOBJECTS_EXPORT UInt8                    GetNumBitsPerProperty () const;
     ECOBJECTS_EXPORT UInt32                   GetPerPropertyFlagsDataLength () const;
+    ECOBJECTS_EXPORT ECObjectsStatus          AddNullArrayElements (WCharCP propertyAccessString, UInt32 insertCount);
 };
 
 /*=================================================================================**//**
@@ -206,21 +170,18 @@ protected:
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetValue (WCharCP propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
 
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP) override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _AddArrayElements (WCharCP propertyAccessString, UInt32 size, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP) override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size) override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _AddArrayElements (WCharCP propertyAccessString, UInt32 size) override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _RemoveArrayElement (WCharCP propertyAccessString, UInt32 index) override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _ClearArray (WCharCP propertyAccessString) override;    
     ECOBJECTS_EXPORT virtual WString             _ToString (WCharCP indent) const override;
     ECOBJECTS_EXPORT virtual ClassLayoutCR       _GetClassLayout () const;
     ECOBJECTS_EXPORT virtual ECEnablerCR         _GetEnabler() const override;
     ECOBJECTS_EXPORT virtual MemoryECInstanceBase* _GetAsMemoryECInstance () const override;
-    ECOBJECTS_EXPORT virtual size_t              _GetObjectSize () const;
-    ECOBJECTS_EXPORT virtual size_t              _GetBaseObjectSize () const override;
     ECOBJECTS_EXPORT virtual size_t              _GetOffsetToIECInstance () const;
 
     // MemoryECInstanceBase
     ECOBJECTS_EXPORT virtual IECInstancePtr      _GetAsIECInstance () const;
-    ECOBJECTS_EXPORT virtual size_t              _LoadObjectDataIntoManagedInstance (byte* managedBuffer) const;
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__

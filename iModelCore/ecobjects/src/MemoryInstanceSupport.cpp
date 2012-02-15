@@ -142,15 +142,15 @@ static inline UInt32    CalculateFixedArrayPropertySize (UInt32 fixedCount, Prim
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //  PropertyLayout inline methods
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-inline WCharCP                     PropertyLayout::GetAccessString() const     { return m_accessString.c_str(); }
-inline UInt32                      PropertyLayout::GetParentStructIndex() const{ return m_parentStructIndex; }
-inline UInt32                      PropertyLayout::GetOffset() const           { assert ( ! m_typeDescriptor.IsStruct()); return m_offset; }
-inline UInt32                      PropertyLayout::GetNullflagsOffset() const  { assert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsOffset; }
-inline NullflagsBitmask            PropertyLayout::GetNullflagsBitmask() const { assert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsBitmask; }
-inline ECTypeDescriptor            PropertyLayout::GetTypeDescriptor() const   { return m_typeDescriptor; }
-inline UInt32                      PropertyLayout::GetModifierFlags() const    { return m_modifierFlags; }
-inline UInt32                      PropertyLayout::GetModifierData() const     { return m_modifierData; }    
-inline bool                        PropertyLayout::IsReadOnlyProperty () const {return PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly == (m_modifierFlags & PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly);}
+WCharCP                     PropertyLayout::GetAccessString() const     { return m_accessString.c_str(); }
+UInt32                      PropertyLayout::GetParentStructIndex() const{ return m_parentStructIndex; }
+UInt32                      PropertyLayout::GetOffset() const           { assert ( ! m_typeDescriptor.IsStruct()); return m_offset; }
+UInt32                      PropertyLayout::GetNullflagsOffset() const  { assert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsOffset; }
+NullflagsBitmask            PropertyLayout::GetNullflagsBitmask() const { assert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsBitmask; }
+ECTypeDescriptor            PropertyLayout::GetTypeDescriptor() const   { return m_typeDescriptor; }
+UInt32                      PropertyLayout::GetModifierFlags() const    { return m_modifierFlags; }
+UInt32                      PropertyLayout::GetModifierData() const     { return m_modifierData; }    
+bool                        PropertyLayout::IsReadOnlyProperty () const {return PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly == (m_modifierFlags & PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  09/2011
@@ -229,6 +229,71 @@ static LeakDetector<ClassLayout> g_classLayoutLeakDetector (L"ClassLayout", L"Cl
 #endif
 
 /*---------------------------------------------------------------------------------**//**
+* stolen from Dan East code mdlDialog_getHashCodeFromToolPath
+* @bsimethod                                    Bill.Steinbock                  01/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+static UInt32     getHashCodeForString
+(
+WCharCP        pString
+)
+    {
+    UInt32        hashCode = 0;
+    WCharCP    pChar;
+    int         index = 1;
+    
+    pChar = pString;
+    
+    while (pChar != NULL && 0 != *pChar)
+        {
+        hashCode += (index * (*pChar));
+        pChar++;
+        index++;
+        }
+
+    return hashCode;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  01/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32  ClassLayout::ComputeCheckSum () const
+    {
+    UInt32 checkSum = (((UInt32)m_propertyLayouts.size()) & 0xffff);
+
+    FOR_EACH (PropertyLayoutP propertyP, m_propertyLayouts)
+        {
+        checkSum = ((checkSum + (UInt32)propertyP->GetParentStructIndex()) & 0xffff);
+        checkSum = ((checkSum + (UInt32)propertyP->GetModifierFlags()) & 0xffff);
+        checkSum = ((checkSum + (UInt32)propertyP->GetModifierData()) & 0xffff);
+
+        EC::ECTypeDescriptor typeDescr = propertyP->GetTypeDescriptor();
+        checkSum = ((checkSum + (UInt32)typeDescr.GetTypeKind()) & 0xffff);
+        checkSum = ((checkSum + (UInt32)typeDescr.GetPrimitiveType()) & 0xffff);    // since we are in a union Primitive Type includes Array Type
+
+        if (!propertyP->GetTypeDescriptor().IsStruct())
+            {
+            checkSum = ((checkSum + (UInt32)propertyP->GetOffset()) & 0xffff);
+            checkSum = ((checkSum + (UInt32)propertyP->GetNullflagsOffset()) & 0xffff);
+            }
+
+        checkSum = ((checkSum + getHashCodeForString(propertyP->GetAccessString())) & 0xffff);
+        }
+
+    return checkSum;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  01/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32          ClassLayout::GetChecksum () const
+    {
+    if (0 == m_checkSum)
+        m_checkSum = ComputeCheckSum ();
+
+    return  m_checkSum;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassLayout::ClassLayout(SchemaIndex schemaIndex, bool hideFromLeakDetection)
@@ -240,7 +305,7 @@ ClassLayout::ClassLayout(SchemaIndex schemaIndex, bool hideFromLeakDetection)
     m_isRelationshipClass(false), m_propertyIndexOfSourceECPointer(-1), m_propertyIndexOfTargetECPointer(-1)
     {
     m_uniqueId = randomValue();
-
+    m_checkSum = 0;
     if ( ! m_hideFromLeakDetection)
         g_classLayoutLeakDetector.ObjectCreated(*this);
     };
@@ -790,7 +855,8 @@ ClassLayoutP    ClassLayout::Factory::DoBuildClassLayout ()
         }
 
     m_underConstruction.FinishLayout ();
-    
+    m_underConstruction.m_checkSum = m_underConstruction.ComputeCheckSum ();
+
     return &m_underConstruction;
     }
 
@@ -1143,6 +1209,15 @@ ECObjectsStatus         ClassLayout::GetAccessStringByIndex(WCharCP& accessStrin
     accessString = propertyLayout->GetAccessString();
 
     return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ClassLayout::HasChildProperties (UInt32 parentIndex) const
+    {
+    PropertyLayoutCP propertyLayout;
+    return ECOBJECTS_STATUS_Success == GetPropertyLayoutByIndex (propertyLayout, parentIndex) && propertyLayout->GetTypeDescriptor().IsStruct();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1597,7 +1672,7 @@ UInt32          MemoryInstanceSupport::GetOffsetOfArrayIndexValue (UInt32 arrayO
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus       MemoryInstanceSupport::EnsureSpaceIsAvailable (UInt32& offset, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded, EmbeddedInstanceCallbackP callbackP)
+ECObjectsStatus       MemoryInstanceSupport::EnsureSpaceIsAvailable (UInt32& offset, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded)
     {
     byte const *             data = _GetData();
     SecondaryOffset*         pSecondaryOffset = (SecondaryOffset*)(data + propertyLayout.GetOffset());
@@ -1631,7 +1706,7 @@ ECObjectsStatus       MemoryInstanceSupport::EnsureSpaceIsAvailable (UInt32& off
     if (additionalBytesNeeded <= 0)
         return ECOBJECTS_STATUS_Success;
         
-    return GrowPropertyValue (classLayout, propertyLayout, additionalBytesNeeded, callbackP);
+    return GrowPropertyValue (classLayout, propertyLayout, additionalBytesNeeded);
     }        
         
 /*---------------------------------------------------------------------------------**//**
@@ -1815,7 +1890,7 @@ ECObjectsStatus MemoryInstanceSupport::RemoveArrayElementsFromMemory (ClassLayou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus MemoryInstanceSupport::RemoveArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP)
+ECObjectsStatus MemoryInstanceSupport::RemoveArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount)
     {
     ECTypeDescriptor typeDescriptor = propertyLayout.GetTypeDescriptor();
     PRECONDITION (typeDescriptor.IsArray() && 
@@ -1837,7 +1912,7 @@ ECObjectsStatus MemoryInstanceSupport::RemoveArrayElements (ClassLayoutCR classL
         return RemoveArrayElementsFromMemory (classLayout, propertyLayout, removeIndex, removeCount);
     else if (typeDescriptor.IsStructArray())    
         {
-        ECObjectsStatus result = _RemoveStructArrayElementsFromMemory (classLayout, propertyLayout, removeIndex, removeCount, memoryReallocationCallbackP);       
+        ECObjectsStatus result = _RemoveStructArrayElementsFromMemory (classLayout, propertyLayout, removeIndex, removeCount);       
         if (ECOBJECTS_STATUS_Success == result)
             _HandleArrayResize (&propertyLayout, removeIndex, -1 * removeCount);
         return result;
@@ -1864,7 +1939,7 @@ ECObjectsStatus MemoryInstanceSupport::RemoveArrayElementsAt (ClassLayoutCR clas
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus MemoryInstanceSupport::InsertNullArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 insertIndex, UInt32 insertCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP)
+ECObjectsStatus MemoryInstanceSupport::InsertNullArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 insertIndex, UInt32 insertCount)
     {        
     PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
                 
@@ -1880,7 +1955,7 @@ ECObjectsStatus MemoryInstanceSupport::InsertNullArrayElementsAt (ClassLayoutCR 
     
     PRECONDITION (insertCount > 0, ECOBJECTS_STATUS_IndexOutOfRange)        
     
-    status = ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, insertIndex, insertCount, memoryReallocationCallbackP);
+    status = ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, insertIndex, insertCount);
     if (ECOBJECTS_STATUS_Success == status)
         _HandleArrayResize (pPropertyLayout, insertIndex, insertCount);
 
@@ -1890,7 +1965,7 @@ ECObjectsStatus MemoryInstanceSupport::InsertNullArrayElementsAt (ClassLayoutCR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus       MemoryInstanceSupport::AddNullArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 count, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP)
+ECObjectsStatus       MemoryInstanceSupport::AddNullArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 count)
     {        
     PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
                 
@@ -1907,7 +1982,7 @@ ECObjectsStatus       MemoryInstanceSupport::AddNullArrayElementsAt (ClassLayout
     PRECONDITION (count > 0, ECOBJECTS_STATUS_IndexOutOfRange)        
     
     ArrayCount index = GetAllocatedArrayCount (propertyLayout);
-    status = ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, index, count, memoryReallocationCallbackP);
+    status = ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, index, count);
     if (ECOBJECTS_STATUS_Success == status)
         _HandleArrayResize (pPropertyLayout, index, count);
 
@@ -1917,7 +1992,7 @@ ECObjectsStatus       MemoryInstanceSupport::AddNullArrayElementsAt (ClassLayout
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus       MemoryInstanceSupport::EnsureSpaceIsAvailableForArrayIndexValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 bytesNeeded, EmbeddedInstanceCallbackP callbackP)
+ECObjectsStatus       MemoryInstanceSupport::EnsureSpaceIsAvailableForArrayIndexValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 bytesNeeded)
     {    
     UInt32 availableBytes = GetPropertyValueSize (propertyLayout, arrayIndex);
     
@@ -1933,7 +2008,7 @@ ECObjectsStatus       MemoryInstanceSupport::EnsureSpaceIsAvailableForArrayIndex
     UInt32 arrayCount = GetAllocatedArrayCount (propertyLayout);
     
     UInt32 endOfValueDataPreGrow = *((SecondaryOffset*)(_GetData() + propertyLayout.GetOffset()) + 1);
-    ECObjectsStatus status = GrowPropertyValue (classLayout, propertyLayout, additionalBytesNeeded, callbackP);
+    ECObjectsStatus status = GrowPropertyValue (classLayout, propertyLayout, additionalBytesNeeded);
 
     if (ECOBJECTS_STATUS_Success != status)
         return status;
@@ -1947,7 +2022,7 @@ ECObjectsStatus       MemoryInstanceSupport::EnsureSpaceIsAvailableForArrayIndex
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus       MemoryInstanceSupport::GrowPropertyValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 additionalBytesNeeded, EmbeddedInstanceCallbackP callbackP)
+ECObjectsStatus       MemoryInstanceSupport::GrowPropertyValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 additionalBytesNeeded)
     {
     byte const * data = _GetData();
     UInt32 bytesUsed = classLayout.CalculateBytesUsed(data);
@@ -1959,7 +2034,7 @@ ECObjectsStatus       MemoryInstanceSupport::GrowPropertyValue (ClassLayoutCR cl
     if (additionalBytesNeeded > additionalBytesAvailable)
         {
         UInt32 growBy = additionalBytesNeeded - additionalBytesAvailable;
-        status = _GrowAllocation (growBy, callbackP);
+        status = _GrowAllocation (growBy);
         UInt32 newBytesAllocated = _GetBytesAllocated();
         DEBUG_EXPECT (newBytesAllocated >= bytesAllocated + growBy);
         bytesAllocated = newBytesAllocated;
@@ -2395,9 +2470,9 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             ECObjectsStatus status;
 
             if (useIndex)
-                status = EnsureSpaceIsAvailableForArrayIndexValue (classLayout, propertyLayout, index, bytesNeeded, v.GetMemoryCallback());
+                status = EnsureSpaceIsAvailableForArrayIndexValue (classLayout, propertyLayout, index, bytesNeeded);
             else
-                status = EnsureSpaceIsAvailable (offset, classLayout, propertyLayout, bytesNeeded, v.GetMemoryCallback());
+                status = EnsureSpaceIsAvailable (offset, classLayout, propertyLayout, bytesNeeded);
             if (ECOBJECTS_STATUS_Success != status)
                 return status;
 
@@ -2434,9 +2509,9 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
 
             ECObjectsStatus status;
             if (useIndex)
-                status = EnsureSpaceIsAvailableForArrayIndexValue (classLayout, propertyLayout, index, bytesNeeded, v.GetMemoryCallback());
+                status = EnsureSpaceIsAvailableForArrayIndexValue (classLayout, propertyLayout, index, bytesNeeded);
             else
-                status = EnsureSpaceIsAvailable (offset, classLayout, propertyLayout, bytesNeeded, v.GetMemoryCallback());
+                status = EnsureSpaceIsAvailable (offset, classLayout, propertyLayout, bytesNeeded);
             if (ECOBJECTS_STATUS_Success != status)
                 return status;
                 
@@ -2978,12 +3053,12 @@ ECObjectsStatus            ArrayResizer::WriteArrayHeader ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus       ArrayResizer::CreateNullArrayElementsAt (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, MemoryInstanceSupportR instance, UInt32 insertIndex, UInt32 insertCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP)
+ECObjectsStatus       ArrayResizer::CreateNullArrayElementsAt (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, MemoryInstanceSupportR instance, UInt32 insertIndex, UInt32 insertCount)
     {                        
     ArrayResizer resizer (classLayout, propertyLayout, instance, insertIndex, insertCount);
     PRECONDITION (resizer.m_resizeIndex <= resizer.m_preAllocatedArrayCount, ECOBJECTS_STATUS_IndexOutOfRange);        
     
-    ECObjectsStatus status = instance.EnsureSpaceIsAvailable (resizer.m_arrayOffset, classLayout, propertyLayout, resizer.m_preArrayByteCount + resizer.m_resizeFixedSectionByteCount, memoryReallocationCallbackP);
+    ECObjectsStatus status = instance.EnsureSpaceIsAvailable (resizer.m_arrayOffset, classLayout, propertyLayout, resizer.m_preArrayByteCount + resizer.m_resizeFixedSectionByteCount);
     if (ECOBJECTS_STATUS_Success != status)
         return status;       
         
