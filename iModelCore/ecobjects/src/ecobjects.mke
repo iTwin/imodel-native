@@ -102,6 +102,7 @@ DLM_NOENTRY                 = 1
 LINKER__LIBRARIES           = $(BuildContext)SubParts/Libs/bentleylogging-2.0$(libext) xmllite$(libext)
 %endif
 LINKER__LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
+LINKER__LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
 LINKER__LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext)
 DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
