@@ -267,14 +267,13 @@ bool            ECValue::IsPrimitive () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECValue::ConstructUninitialized()
     {
-    int size = sizeof (ECValue); // currently 32 bytes
+    int size = sizeof (ECValue);
 #ifndef NDEBUG
     memset (this, 0xBAADF00D, size); // avoid accidental misinterpretation of uninitialized data
 #endif
     m_valueKind         = VALUEKIND_Uninitialized;
     m_isNull            = true;
     m_isReadOnly        = false;
-    m_memoryCallback    = NULL;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -496,7 +495,7 @@ ECValue::ECValue (ECValueCR v, bool doDeepCopy)
 *  Construct a Null EC::ECValue (of a specific type, but with IsNull = true)
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (ValueKind classification) : m_valueKind(classification), m_isNull(true), m_memoryCallback(NULL)
+ECValue::ECValue (ValueKind classification) : m_valueKind(classification), m_isNull(true)
     {
     }       
 
@@ -504,7 +503,7 @@ ECValue::ECValue (ValueKind classification) : m_valueKind(classification), m_isN
 *  Construct a Null EC::ECValue (of a specific type, but with IsNull = true)
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (PrimitiveType primitiveType) : m_primitiveType(primitiveType), m_isNull(true), m_memoryCallback(NULL)
+ECValue::ECValue (PrimitiveType primitiveType) : m_primitiveType(primitiveType), m_isNull(true)
     {
     }
     
@@ -2077,6 +2076,30 @@ ECValuesCollection::const_iterator ECValuesCollection::begin () const
 ECValuesCollection::const_iterator ECValuesCollection::end () const
     {
     return const_iterator ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  01/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   SystemTime::InitFromFileTime (_FILETIME const& fileTime)
+    {
+    #if defined (_WIN32)
+         return 0 == FileTimeToSystemTime(&fileTime, (LPSYSTEMTIME) this) ? ERROR : SUCCESS;
+    #else
+        UInt64 unixMills = BeTimeUtilities::ConvertFiletimeToUnixMillis(fileTime);
+        time_t timeVal = (time_t) (unixMills/1000.0);
+        struct tm timeinfo;
+        localtime_r (&timeVal, &timeinfo);
+
+        this->wYear = timeinfo.tm_year;
+        this->wMonth = timeinfo.tm_mon;
+        this->wDayOfWeek = timeinfo.tm_wday;
+        this->wDay = timeinfo.tm_mday;
+        this->wHour = timeinfo.tm_hour;
+        this->wMinute = timeinfo.tm_min;
+        this->wSecond = timeinfo.tm_sec;
+        this->wMilliseconds = 0;
+    #endif
     }
 
 END_BENTLEY_EC_NAMESPACE
