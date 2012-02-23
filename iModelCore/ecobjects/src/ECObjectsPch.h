@@ -25,12 +25,7 @@
 #include "StopWatch.h"
 #include <Bentley/BeFileName.h>
 #include <ECObjects/BeXmlCommonGeometry.h>
-#if defined (ANDROID) && defined (NDK_BUILD)
-    #include <bentleylogging.h>
-#else
-    #include <Logging/bentleylogging.h>
-#endif
-
+#include <Logging/bentleylogging.h>
 #include "LeakDetector.h"
 
 BEGIN_BENTLEY_EC_NAMESPACE

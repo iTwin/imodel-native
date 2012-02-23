@@ -9,13 +9,7 @@
 
 #include <ECObjects/ECObjects.h>
 #include <boost/foreach.hpp>
-
-#if defined (ANDROID) && defined (NDK_BUILD)
-    // symbolic links are not used with NDK_BUILD
-    #include <bentleylogging.h>
-#else
-    #include <Logging/bentleylogging.h>
-#endif
+#include <Logging/bentleylogging.h>
 
 USING_NAMESPACE_BENTLEY_LOGGING
 BEGIN_BENTLEY_EC_NAMESPACE
