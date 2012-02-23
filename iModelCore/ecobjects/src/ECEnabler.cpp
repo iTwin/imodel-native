@@ -2,10 +2,11 @@
 |
 |     $Source: src/ECEnabler.cpp $
 |
-|   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
+#include <typeinfo>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -63,6 +64,7 @@ ECObjectsStatus     ECEnabler::GetAccessString  (WCharCP& accessString, UInt32 p
 UInt32              ECEnabler::GetPropertyCount () const { return _GetPropertyCount (); }
 UInt32              ECEnabler::GetFirstPropertyIndex (UInt32 parentIndex) const { return _GetFirstPropertyIndex (parentIndex); }
 UInt32              ECEnabler::GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const { return _GetNextPropertyIndex (parentIndex, inputIndex); }
+bool                ECEnabler::HasChildProperties (UInt32 parentIndex) const { return _HasChildProperties (parentIndex); }
 ECObjectsStatus     ECEnabler::GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const{ return _GetPropertyIndices (indices, parentIndex); };
 
 #if defined (EXPERIMENTAL_TEXT_FILTER)
