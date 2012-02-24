@@ -9,7 +9,6 @@
 
 #include <ECObjects/ECObjects.h>
 #include <boost/foreach.hpp>
-
 #include <Logging/bentleylogging.h>
 
 USING_NAMESPACE_BENTLEY_LOGGING

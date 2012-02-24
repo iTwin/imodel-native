@@ -141,16 +141,21 @@ static inline UInt32    CalculateFixedArrayPropertySize (UInt32 fixedCount, Prim
            
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //  PropertyLayout inline methods
+//
+//  NONPORT_WIP - Removed inline from the methods below because with GCC it is not valid to call methods
+//                that have been inlined in one CPP file from another CPP file.  This needs to change to a 
+//                portable way of inlining.
+//
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-WCharCP                     PropertyLayout::GetAccessString() const     { return m_accessString.c_str(); }
-UInt32                      PropertyLayout::GetParentStructIndex() const{ return m_parentStructIndex; }
-UInt32                      PropertyLayout::GetOffset() const           { assert ( ! m_typeDescriptor.IsStruct()); return m_offset; }
-UInt32                      PropertyLayout::GetNullflagsOffset() const  { assert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsOffset; }
-NullflagsBitmask            PropertyLayout::GetNullflagsBitmask() const { assert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsBitmask; }
-ECTypeDescriptor            PropertyLayout::GetTypeDescriptor() const   { return m_typeDescriptor; }
-UInt32                      PropertyLayout::GetModifierFlags() const    { return m_modifierFlags; }
-UInt32                      PropertyLayout::GetModifierData() const     { return m_modifierData; }    
-bool                        PropertyLayout::IsReadOnlyProperty () const {return PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly == (m_modifierFlags & PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly);}
+WCharCP             PropertyLayout::GetAccessString() const     { return m_accessString.c_str(); }
+UInt32              PropertyLayout::GetParentStructIndex() const{ return m_parentStructIndex; }
+UInt32              PropertyLayout::GetOffset() const           { assert ( ! m_typeDescriptor.IsStruct()); return m_offset; }
+UInt32              PropertyLayout::GetNullflagsOffset() const  { assert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsOffset; }
+NullflagsBitmask    PropertyLayout::GetNullflagsBitmask() const { assert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsBitmask; }
+ECTypeDescriptor    PropertyLayout::GetTypeDescriptor() const   { return m_typeDescriptor; }
+UInt32              PropertyLayout::GetModifierFlags() const    { return m_modifierFlags; }
+UInt32              PropertyLayout::GetModifierData() const     { return m_modifierData; }    
+bool                PropertyLayout::IsReadOnlyProperty () const {return PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly == (m_modifierFlags & PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  09/2011

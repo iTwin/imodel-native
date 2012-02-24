@@ -8,7 +8,6 @@
 #pragma once
 
 #include <ECObjects/ECObjects.h>
-
 #include <Logging/bentleylogging.h>
 
 USING_NAMESPACE_BENTLEY_LOGGING
