@@ -9,15 +9,11 @@ PolicyFile      = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
 baseDir         = $(_MakeFilePath)
 SolutionPolicyMki=$(baseDir)ecobjects.mki
 
-programName = ECObjects
-
 %include    mdl.mki
 
-%if defined (CREATE_STATIC_LIBRARIES)
-    oBase           =% ${o}
-    o               = $(oBase)Static/
-    CCompPDBName    = ECObjectsStatic
-%endif
+# DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
+# If we define appName and use it for DLM_NAME, MultiCppCompileRule.mki will use it for CCompPDBName, and linkLibrary.mki will use DLM_NAME for LIB_NAME.
+appName = ECObjects
 
 #----------------------------------------------------------------------
 #       Create output directories
@@ -94,7 +90,7 @@ CPchOpts =
 #----------------------------------------------------------------------
 DLM_NO_DLS                  = 1
 DLM_NO_DEF                  = 1
-DLM_NAME                    = ECObjects
+DLM_NAME                    = $(appName)
 DLM_DEST                    = $(o)
 DLM_OBJECT_DEST             = $(o)
 DLM_OBJECT_FILES            = $(cppObjects)
