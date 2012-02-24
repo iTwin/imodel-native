@@ -115,4 +115,4 @@ DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
 # We support shared or static linking.
-%include linkLibrary.mki
+%include $(sharedMki)linkLibrary.mki

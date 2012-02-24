@@ -20,19 +20,6 @@
         </Bindings>
     </Part>
 
-    <Part Name="ECObjectsNativeStatic" BMakeOptions="+dCREATE_STATIC_LIBRARIES" BentleyBuildMakeFile="src/ecobjects.mke" ApiNumber="4">
-        <SubPart PartName="BoostHeaders"        PartFile="${SrcBsiCommon}CvsPartfiles/bsibin"   Repository="bsibin-boostheaders" />
-        <SubPart PartName="HeaderFiles" />
-        <SubPart PartName="BentleyStaticLib"    PartFile="Bentley"                              Repository="Bentley" />
-        <SubPart PartName="GeomStatic"          PartFile="geomlibs"                             Repository="GeomLibs" />
-        <SubPart PartName="BeXmlStaticLib"      PartFile="BeLibxml2"                            Repository="libsrc-libxml2" />
-        <SubPart PartName="StandardSchemas"     PartFile="ECStandards"                          Repository="ECStandards"/>
-        <Bindings>
-            <Libs>Delivery/$(stlibprefix)ECObjectsStatic$(stlibext)</Libs>
-            <Libs>Delivery/$(stlibprefix)ECObjectsStatic$(stlibdebugext)</Libs>
-        </Bindings>
-    </Part>
-
     <Part Name="PublishedApi" BentleyBuildMakeFile="PublicAPI/PublishApi.mke">
         <SubPart PartName="HeaderFiles" />
         <Bindings>
