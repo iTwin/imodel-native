@@ -7,7 +7,13 @@
 #--------------------------------------------------------------------------------------
 PolicyFile      = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
 baseDir         = $(_MakeFilePath)
-SolutionPolicyMki=$(baseDir)ecobjects.mki
+
+# Must use different policy file for static library, so that pch and compilands below both see the same definition of CCompPDBName and $(o)
+%if defined (CREATE_STATIC_LIBRARIES)
+    SolutionPolicyMki=$(baseDir)ecobjectsStatic.mki
+%else
+    SolutionPolicyMki=$(baseDir)ecobjects.mki
+%endif
 
 %include    mdl.mki
 
@@ -101,7 +107,7 @@ DLM_NOINITFUNC              = 1
 DLM_NOMSBUILTINS            = 1
 DLM_NOENTRY                 = 1
 %if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT
-LINKER__LIBRARIES           = $(BuildContext)SubParts/Libs/bentleylogging-2.0$(libext) xmllite$(libext)
+LINKER__LIBRARIES           = xmllite$(libext)
 %endif
 LINKER__LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
 LINKER__LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
@@ -111,4 +117,4 @@ DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
 # We support shared or static linking.
-%include linkLibrary.mki
+%include $(sharedMki)linkLibrary.mki
