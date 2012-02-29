@@ -22,3 +22,5 @@ $(o)InstanceXMLTests$(oext)   : $(baseDir)Published/InstanceXMLTests.cpp   $(PCH
 $(o)CustomAttributeTests$(oext) : $(baseDir)Published/CustomAttributeTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
 
 $(o)TestFixture$(oext)        : $(baseDir)Published/TestFixture.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
+
+$(o)BuildInstanceAndSerializeToXML$(oext)  : $(baseDir)Published/BuildInstanceAndSerializeToXML.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
