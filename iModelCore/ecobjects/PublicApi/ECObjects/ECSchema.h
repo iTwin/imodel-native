@@ -1037,6 +1037,8 @@ public:
     ECOBJECTS_EXPORT static  ECSchemaCachePtr Create ();
     ECOBJECTS_EXPORT int     GetCount();
     ECOBJECTS_EXPORT void    Clear();
+    //! Removes ECSchema from the ownership of this ECSchemaCache (so that its ownership can be transferred to another)
+    ECOBJECTS_EXPORT ECObjectsStatus RemoveOwnership(ECSchemaCR);
 };
 
 //=======================================================================================

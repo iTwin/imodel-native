@@ -1916,7 +1916,22 @@ int                             ECSchemaCache::GetCount ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchemaCache::_AddSchema   (ECSchemaR ecSchema)
     {
+    RemoveOwnership(ecSchema); // Ensure that it does not appear in our list twice... we would end up trying to free it twice
     m_schemas.push_back (&ecSchema);
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Casey.Mullen      03/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchemaCache::RemoveOwnership(ECSchemaCR ecSchema)
+    {
+    bvector<ECSchemaP>::iterator iter = std::find(m_schemas.begin(), m_schemas.end(), &ecSchema);
+    if (iter == m_schemas.end())
+        return ECOBJECTS_STATUS_SchemaNotFound;
+
+    m_schemas.erase(iter);
 
     return ECOBJECTS_STATUS_Success;
     }
@@ -1926,15 +1941,14 @@ ECObjectsStatus ECSchemaCache::_AddSchema   (ECSchemaR ecSchema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchemaCache::_DropSchema  (ECSchemaR ecSchema)
     {
-    bvector<ECSchemaP>::iterator iter = std::find(m_schemas.begin(), m_schemas.end(), &ecSchema);
-    if (iter == m_schemas.end())
-        return ECOBJECTS_STATUS_SchemaNotFound;
+    ECObjectsStatus status = RemoveOwnership(ecSchema);
+    if (ECOBJECTS_STATUS_Success == status)
+        {
+        ECSchemaP pECSchema = &ecSchema;
+        ECSchema::DestroySchema (pECSchema);
+        }
 
-    ECSchema::DestroySchema (*iter);
-
-    m_schemas.erase(iter);
-
-    return ECOBJECTS_STATUS_Success;
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
