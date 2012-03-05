@@ -83,13 +83,21 @@ public:
     ECTypeDescriptor (ValueKind valueKind, short valueKindQualifier) : m_typeKind (valueKind), m_primitiveType ((PrimitiveType)valueKindQualifier) { };
 /*__PUBLISH_SECTION_START__*/    
 
+    //! Returns the ValueKind of the ECProperty
     inline ValueKind            GetTypeKind() const         { return m_typeKind; }
-    inline ArrayKind            GetArrayKind() const        { return (ArrayKind)(m_arrayKind & 0xFF); }    
+    //! Returns the ArrayKind of the ECProperty, if the ECProperty is an array property
+    inline ArrayKind            GetArrayKind() const        { return (ArrayKind)(m_arrayKind & 0xFF); }
+    //! Returns true if the ECProperty is a Primitive property
     inline bool                 IsPrimitive() const         { return (GetTypeKind() == VALUEKIND_Primitive ); }
+    //! Returns true if the ECProperty is a Struct property
     inline bool                 IsStruct() const            { return (GetTypeKind() == VALUEKIND_Struct ); }
+    //! Returns true if the ECProperty is an Array property
     inline bool                 IsArray() const             { return (GetTypeKind() == VALUEKIND_Array ); }
+    //! Returns true if the ECProperty is an Array property, and the array elements are Primitives
     inline bool                 IsPrimitiveArray() const    { return (GetTypeKind() == VALUEKIND_Array ) && (GetArrayKind() == ARRAYKIND_Primitive); }
+    //! Returns true if the ECProperty is an Array property, and the array elements are Structs
     inline bool                 IsStructArray() const       { return (GetTypeKind() == VALUEKIND_Array ) && (GetArrayKind() == ARRAYKIND_Struct); }
+    //! Returns the primitive type of the ECProperty, if the property is a Primitive type
     inline PrimitiveType        GetPrimitiveType() const    { return m_primitiveType; }
 /*__PUBLISH_SECTION_END__*/
     inline short                GetTypeKindQualifier() const   { return m_primitiveType; }
@@ -151,8 +159,15 @@ public:
     //! @param[in]  includeBase  Whether to include custom attributes from the base containers 
     ECOBJECTS_EXPORT ECCustomAttributeInstanceIterable GetCustomAttributes(bool includeBase) const; 
 
+    //! Adds a custom attribute to the container
     ECOBJECTS_EXPORT ECObjectsStatus    SetCustomAttribute(IECInstanceR customAttributeInstance);
+
+    //! Removes a custom attribute from the container
+    //! @param[in]  className   Name of the class of the custom attribute to remove
     ECOBJECTS_EXPORT bool               RemoveCustomAttribute(WStringCR className);
+
+    //! Removes a custom attribute from the container
+    //! @param[in]  classDefinition ECClass of the custom attribute to remove
     ECOBJECTS_EXPORT bool               RemoveCustomAttribute(ECClassCR classDefinition);
 };
 
@@ -260,31 +275,48 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
 public:    
+    //! Returns the name of the ECClass that this property is contained within
     ECOBJECTS_EXPORT ECClassCR          GetClass() const;   
     // ECClass implementation will index property by name so publicly name can not be reset
+    //! Gets the name of the ECProperty
     ECOBJECTS_EXPORT WStringCR          GetName() const;        
+    //! Returns whether the DisplayLabel is explicitly set
     ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;    
+    //! Returns whether this property is a Struct property
     ECOBJECTS_EXPORT bool               GetIsStruct() const;    
-    ECOBJECTS_EXPORT bool               GetIsArray() const;    
+    //! Returns whether this property is an Array property
+    ECOBJECTS_EXPORT bool               GetIsArray() const;
+    //! Returns whether this property is a Primitive property    
     ECOBJECTS_EXPORT bool               GetIsPrimitive() const;    
 
+    //! Sets the ECXML typename for the property.  @see GetTypeName()
+    ECOBJECTS_EXPORT ECObjectsStatus    SetTypeName(WString value);
     //! The ECXML typename for the property.  
     //! The TypeName for struct properties will be the ECClass name of the struct.  It may be qualified with a namespacePrefix if 
     //! the struct belongs to a schema that is referenced by the schema actually containing this property.
     //! The TypeName for array properties will be the type of the elements the array contains.
     //! This method returns a wstring by value because it may be a computed string.  For instance struct properties may return a qualified typename with a namespace
     //! prefix relative to the containing schema.
-    ECOBJECTS_EXPORT ECObjectsStatus    SetTypeName(WString value);
-    ECOBJECTS_EXPORT WString            GetTypeName() const;        
+    ECOBJECTS_EXPORT WString            GetTypeName() const;      
+    //! Sets the description for this ECProperty  
     ECOBJECTS_EXPORT ECObjectsStatus    SetDescription(WStringCR value);
+    //! The Description of this ECProperty. 
     ECOBJECTS_EXPORT WStringCR          GetDescription() const;
+    //! Sets the Display Label for this ECProperty
     ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel(WStringCR value);
+    //! Gets the Display Label for this ECProperty.  If no label has been set explicitly, it will return the Name of the property
     ECOBJECTS_EXPORT WStringCR          GetDisplayLabel() const;    
+    //! Sets whether this ECProperty's value is read only
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly(bool value);
+    //! Gets whether this ECProperty's value is read only
     ECOBJECTS_EXPORT bool               GetIsReadOnly() const;
+    //! Sets the base property that this ECProperty inherits from
     ECOBJECTS_EXPORT ECObjectsStatus    SetBaseProperty(ECPropertyCP value);
+    //! Gets the base property, if any, that this ECProperty inherits from
     ECOBJECTS_EXPORT ECPropertyCP       GetBaseProperty() const;    
 
+    //! Sets whether this ECProperty's value is read only
+    //@param[in]    isReadOnly  Valid values are 'True' and 'False' (case insensitive)
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly (WCharCP isReadOnly);
 
     // NEEDSWORK, don't necessarily like this pattern but it will suffice for now.  Necessary since you can't dynamic_cast when using the published headers.  How
@@ -318,7 +350,9 @@ protected:
 
 /*__PUBLISH_SECTION_START__*/
 public:    
+    //! Sets the PrimitiveType of this ECProperty.  The default type is PRIMITIVETYPE_String
     ECOBJECTS_EXPORT ECObjectsStatus SetType(PrimitiveType value);
+    //! Gets the PrimitiveType of this ECProperty
     ECOBJECTS_EXPORT PrimitiveType GetType() const;    
 };
 
@@ -386,15 +420,24 @@ protected:
 
 /*__PUBLISH_SECTION_START__*/
 public:      
+    //! The ArrayKind of this ECProperty
     ECOBJECTS_EXPORT ArrayKind GetKind() const;        
 
+    //! Sets the PrimitiveType if this ArrayProperty contains PrimitiveType elements
     ECOBJECTS_EXPORT ECObjectsStatus    SetPrimitiveElementType(PrimitiveType value);
+    //! Gets the PrimitiveType if this ArrayProperty contains PrimitiveType elements
     ECOBJECTS_EXPORT PrimitiveType      GetPrimitiveElementType() const;        
+    //! Sets the ECClass to be used for the array's struct elements
     ECOBJECTS_EXPORT ECObjectsStatus    SetStructElementType(ECClassCP value);
+    //! Gets the ECClass of the array's struct elements
     ECOBJECTS_EXPORT ECClassCP          GetStructElementType() const;    
+    //! Sets the Minimum number of array members.
     ECOBJECTS_EXPORT ECObjectsStatus    SetMinOccurs(UInt32 value);
+    //! Gets the Minimum number of array members.
     ECOBJECTS_EXPORT UInt32             GetMinOccurs() const;  
+    //! Sets the Maximum number of array members.
     ECOBJECTS_EXPORT ECObjectsStatus    SetMaxOccurs(UInt32 value);
+    //! Gets the Maximum number of array members.
     ECOBJECTS_EXPORT UInt32             GetMaxOccurs() const;     
 };
 
@@ -544,27 +587,31 @@ public:
 public:    
     ECOBJECTS_EXPORT StandaloneECEnablerP  GetDefaultStandaloneEnabler() const;
     ECOBJECTS_EXPORT ECRelationshipClassCP GetRelationshipClassCP() const;
+    //! The ECSchema that this class is defined in
     ECOBJECTS_EXPORT ECSchemaCR         GetSchema() const;                
     // schemas index class by name so publicly name can not be reset
+    //! The name of this ECClass
     ECOBJECTS_EXPORT WStringCR          GetName() const;
     //! {SchemaName}:{ClassName} The pointer will remain valid as long as the ECClass exists.
     ECOBJECTS_EXPORT WCharCP            GetFullName() const;        
+    //! Whether the display label is explicitly defined or not
     ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
+    //! Returns an iterable of all the ECProperties defined on this class
     ECOBJECTS_EXPORT ECPropertyIterable GetProperties() const; 
+    //! Returns a list of the classes this ECClass is derived from
     ECOBJECTS_EXPORT const ECBaseClassesList& GetBaseClasses() const;   
+    //! Returns a list of the classes that derive from this class.
     ECOBJECTS_EXPORT const ECDerivedClassesList& GetDerivedClasses() const;   
 
+    //! Sets the description of this ECClass
     ECOBJECTS_EXPORT ECObjectsStatus    SetDescription(WStringCR value);
+    //! Gets the description of this ECClass.
     ECOBJECTS_EXPORT WStringCR          GetDescription() const;
+    //! Sets the display label of this ECClass
     ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel(WStringCR value);
+    //! Gets the display label of this ECClass.  If no display label has been set explicitly, it will return the name of the ECClass
     ECOBJECTS_EXPORT WStringCR          GetDisplayLabel() const;
-    ECOBJECTS_EXPORT ECObjectsStatus    SetIsStruct(bool value);
-    ECOBJECTS_EXPORT bool               GetIsStruct() const;    
-    ECOBJECTS_EXPORT ECObjectsStatus    SetIsCustomAttributeClass(bool value);
-    ECOBJECTS_EXPORT bool               GetIsCustomAttributeClass() const;    
-    ECOBJECTS_EXPORT ECObjectsStatus    SetIsDomainClass(bool value);
-    ECOBJECTS_EXPORT bool               GetIsDomainClass() const;    
-    
+
     //! Returns a list of properties for this class.
     //! @param[in]  includeBaseProperties If true, then will return properties that are contained in this class's base class(es)
     //! @return     An iterable container of ECProperties
@@ -573,17 +620,30 @@ public:
     //! Sets the bool value of whether this class can be used as a struct
     //! @param[in] isStruct String representation of true/false
     //! @return    Success if the string is parsed into a bool
-    ECOBJECTS_EXPORT ECObjectsStatus SetIsStruct (WCharCP isStruct);
-    
-    //! Sets the bool value of whether this class can be used as a custom attribte
+    ECOBJECTS_EXPORT ECObjectsStatus    SetIsStruct (WCharCP isStruct);
+    //! Sets the bool value of whether this class can be used as a struct
+    ECOBJECTS_EXPORT ECObjectsStatus    SetIsStruct(bool value);
+    //! Returns whether this class can be used as a struct
+    ECOBJECTS_EXPORT bool               GetIsStruct() const; 
+        
+    //! Sets the bool value of whether this class can be used as a custom attribute
     //! @param[in] isCustomAttribute String representation of true/false
     //! @return    Success if the string is parsed into a bool
-    ECOBJECTS_EXPORT ECObjectsStatus SetIsCustomAttributeClass (WCharCP isCustomAttribute);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetIsCustomAttributeClass (WCharCP isCustomAttribute);
+    //! Sets the bool value of whether this class can be used as a custom attribute
+    ECOBJECTS_EXPORT ECObjectsStatus    SetIsCustomAttributeClass(bool value);
+    //! Returns whether this class can be used as a custom attribute
+    ECOBJECTS_EXPORT bool               GetIsCustomAttributeClass() const;    
     
     //! Sets the bool value of whether this class can be used as a domain object
     //! @param[in] isDomainClass String representation of true/false
     //! @return    Success if the string is parsed into a bool
-    ECOBJECTS_EXPORT ECObjectsStatus SetIsDomainClass (WCharCP isDomainClass);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetIsDomainClass (WCharCP isDomainClass);
+    //! Sets the bool value of whether this class can be used as a domain object
+    ECOBJECTS_EXPORT ECObjectsStatus    SetIsDomainClass(bool value);
+    //! Gets whether this class can be used as a domain object
+    ECOBJECTS_EXPORT bool               GetIsDomainClass() const;    
+
     
     //! Adds a base class
     //! You cannot add a base class if it creates a cycle. For example, if A is a base class
@@ -633,6 +693,11 @@ public:
     //! @return   A pointer to an EC::ECProperty if the named property exists within the current class; otherwise, NULL
     ECOBJECTS_EXPORT ECPropertyP     GetPropertyP (WCharCP name) const;
 
+    //! Get a property by name within the context of this class and its base classes.
+    //! The pointer returned by this method is valid until the ECClass containing the property is destroyed or the property
+    //! is removed from the class.
+    //! @param[in]  name     The name of the property to lookup.
+    //! @return   A pointer to an EC::ECProperty if the named property exists within the current class; otherwise, NULL
     ECOBJECTS_EXPORT ECPropertyP     GetPropertyP (WStringCR name) const;
 
     // ************************************************************************************************************************
@@ -729,9 +794,21 @@ public:
     // ************************************  STATIC METHODS *******************************************************************
     // ************************************************************************************************************************
     
+    //!     Returns the shared static RelationshipCardinality object that represents the
+    //!     (0,1) cardinality. This static property can be used instead of a standard
+    //!     constructor of RelationshipCardinality to reduce memory usage.
     ECOBJECTS_EXPORT static RelationshipCardinalityCR ZeroOne();
+    //!     Returns the shared static RelationshipCardinality object that represents the
+    //!     (0,n) cardinality. This static property can be used instead of a standard
+    //!     constructor of RelationshipCardinality to reduce memory usage.
     ECOBJECTS_EXPORT static RelationshipCardinalityCR ZeroMany();
+    //!     Returns the shared static RelationshipCardinality object that represents the
+    //!     (1,1) cardinality. This static property can be used instead of a standard
+    //!     constructor of RelationshipCardinality to reduce memory usage.
     ECOBJECTS_EXPORT static RelationshipCardinalityCR OneOne();
+    //!     Returns the shared static RelationshipCardinality object that represents the
+    //!     (1,n) cardinality. This static property can be used instead of a standard
+    //!     constructor of RelationshipCardinality to reduce memory usage.
     ECOBJECTS_EXPORT static RelationshipCardinalityCR OneMany();
 };
    
@@ -781,16 +858,19 @@ public:
     //! Returns true if the constraint allows for a variable number of classes
     ECOBJECTS_EXPORT bool                       GetIsMultiple() const;
     
-    //! Gets or sets the label of the constraint role in the relationship.
-    //! If the role label is not defined, the display label of the relationship class is returned
+    //! Sets the label of the constraint role in the relationship.
     ECOBJECTS_EXPORT ECObjectsStatus            SetRoleLabel(WString const value);
+    //! Gets the label of the constraint role in the relationship.
+    //! If the role label is not defined, the display label of the relationship class is returned
     ECOBJECTS_EXPORT WString const              GetRoleLabel() const;
     
+    //! Returns whether the RoleLabel has been set explicitly
     ECOBJECTS_EXPORT bool                       IsRoleLabelDefined() const;
-    
+
+    //! Sets whether this constraint can also relate to instances of subclasses of classes applied to the constraint.    
+    ECOBJECTS_EXPORT ECObjectsStatus            SetIsPolymorphic(bool value);
     //! Returns true if this constraint can also relate to instances of subclasses of classes
     //! applied to the constraint.
-    ECOBJECTS_EXPORT ECObjectsStatus            SetIsPolymorphic(bool value);
     ECOBJECTS_EXPORT bool                       GetIsPolymorphic() const;
     
     //! Sets the bool value of whether this constraint can also relate to instances of subclasses of classes applied to the constraint.
@@ -798,8 +878,9 @@ public:
     //! @return    Success if the string is parsed into a bool
     ECOBJECTS_EXPORT ECObjectsStatus            SetIsPolymorphic(WCharCP isPolymorphic);
     
-    //! Gets the cardinality of the constraint in the relationship
+    //! Sets the cardinality of the constraint in the relationship
     ECOBJECTS_EXPORT ECObjectsStatus            SetCardinality(RelationshipCardinalityCR value);
+    //! Gets the cardinality of the constraint in the relationship
     ECOBJECTS_EXPORT RelationshipCardinalityCR  GetCardinality() const;
     
     //! Adds the specified class to the constraint.
@@ -853,15 +934,22 @@ public:
     //! Returns pointer to ECRelationshipClassP,  used to avoid dynamic_cast.
     //! @return     Returns NULL if not an ECRelationshipClass
     ECOBJECTS_EXPORT ECObjectsStatus            GetOrderedRelationshipPropertyName (WString& propertyName, ECRelationshipEnd end)  const;
+    //! Sets the StrengthType of this constraint.
     ECOBJECTS_EXPORT ECObjectsStatus            SetStrength(StrengthType value);
+    //! Gets the StrengthType of this constraint
     ECOBJECTS_EXPORT StrengthType               GetStrength() const;                
+    //! Sets the StrengthDirection (either Forward or Backward) of this constraint
     ECOBJECTS_EXPORT ECObjectsStatus            SetStrengthDirection(ECRelatedInstanceDirection value);
+    //! Gets the StrengthDirection (either Forward or Backward) of this constraint
     ECOBJECTS_EXPORT ECRelatedInstanceDirection GetStrengthDirection() const;
     //! Gets the constraint at the target end of the relationship
     ECOBJECTS_EXPORT ECRelationshipConstraintR  GetTarget() const;
     //! Gets the constraint at the source end of the relationship
     ECOBJECTS_EXPORT ECRelationshipConstraintR  GetSource() const;
+
+    //! Returns true if the constraint is explicit
     ECOBJECTS_EXPORT bool                       GetIsExplicit() const;
+    //! Returns true if the constraint is ordered.  This is determined by seeing if the custom attribute signifying a Ordered relationship is defined
     ECOBJECTS_EXPORT bool                       GetIsOrdered () const;
 
 }; // ECRelationshipClass
@@ -930,9 +1018,7 @@ public:
 
 }; 
 
-/*---------------------------------------------------------------------------------**//**
-* @bsistruct
-+---------------+---------------+---------------+---------------+---------------+------*/
+//! Enumeration of the match types for IECSchemaLocater.
 enum SchemaMatchType
     {
     //! Find exact VersionMajor, VersionMinor match.
@@ -1124,22 +1210,37 @@ public:
 public:    
 
     ECOBJECTS_EXPORT void    DebugDump() const;
+    //! Sets the name of this schema
+    //! @param[in]  value   The name of the ECSchema
+    //! @returns Success if the name passes validation and is set, ECOBJECTS_STATUS_InvalidName otherwise
     ECOBJECTS_EXPORT ECObjectsStatus    SetName(WStringCR value);
+    //! Returns the name of this ECSchema
     ECOBJECTS_EXPORT WStringCR          GetName() const;    
+    //! Sets the namespace prefix for this ECSchema
     ECOBJECTS_EXPORT ECObjectsStatus    SetNamespacePrefix(WStringCR value);
+    //! Gets the namespace prefix for this ECSchema
     ECOBJECTS_EXPORT WStringCR          GetNamespacePrefix() const;
+    //! Sets the description for this ECSchema
     ECOBJECTS_EXPORT ECObjectsStatus    SetDescription(WStringCR value);
+    //! Gets the description for this ECSchema
     ECOBJECTS_EXPORT WStringCR          GetDescription() const;
+    //! Sets the display label for this ECSchema
     ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel(WStringCR value);
+    //! Gets the DisplayLabel for this ECSchema.  If no DisplayLabel has been set explicitly, returns the name of the schema
     ECOBJECTS_EXPORT WStringCR          GetDisplayLabel() const;
+    //! Sets the major version of this schema
     ECOBJECTS_EXPORT ECObjectsStatus    SetVersionMajor(UInt32 value);
+    //! Gets the major version of this schema
     ECOBJECTS_EXPORT UInt32             GetVersionMajor() const;
+    //! Sets the minor version of this schema
     ECOBJECTS_EXPORT ECObjectsStatus    SetVersionMinor(UInt32 value);
+    //! Gets the minor version of this schema
     ECOBJECTS_EXPORT UInt32             GetVersionMinor() const;
     //! Returns an iterable container of ECClasses sorted by name. For unsorted called overload.
     ECOBJECTS_EXPORT ECClassContainerCR GetClasses() const;
     //! Fills a vector will the ECClasses of the ECSchema in the original order in which they were added.
     ECOBJECTS_EXPORT void               GetClasses(bvector<ECClassP>& classes) const;
+    //! Returns true if the display label has been set explicitly for this schema or not
     ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
 
     //! Returns true if the schema is an ECStandard schema
