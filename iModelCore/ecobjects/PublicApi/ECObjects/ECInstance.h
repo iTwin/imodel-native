@@ -176,7 +176,7 @@ public:
     //! Gets the value stored in the specified ECProperty
     //! @param[out] v   If successful, will contain the value of the property
     //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
-    //! @param[in]  arryIndex   The array index, if this is an ArrayProperty
+    //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, UInt32 propertyIndex, UInt32 arrayIndex) const;
     //! Sets the value for the specified property
