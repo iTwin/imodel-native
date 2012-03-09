@@ -2,12 +2,10 @@
 |
 |     $Source: test/Performance/ECXmlPerformanceTests.cpp $
 |
-|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
-#include <objbase.h>
-#include <comdef.h>
 #include "TestFixture.h"
 #include "StopWatch.h"
 
@@ -93,8 +91,6 @@ FILE* logFile
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECXmlPerformanceTest, ReadingAndWritingSchema)
     {
-    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
-
     ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
 
@@ -116,15 +112,10 @@ TEST_F(ECXmlPerformanceTest, ReadingAndWritingSchema)
     TimeSchema(L"Bentley_Plant.06.00.ecschema.xml", schemaContext, logFile);
 
     fclose(logFile);
-    CoUninitialize();
     };
 
 TEST_F(ECXmlPerformanceTest, ReadingAndWritingInstance)
     {
-    //This test will verify that the xml deserializer will not fail on mismatched or malformed properties.
-    // must call CoInitialize - schema deserialization requires it.
-    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
-
     ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
 
@@ -143,7 +134,5 @@ TEST_F(ECXmlPerformanceTest, ReadingAndWritingInstance)
     TimeInstance(L"ECRules.01.00.ecschema.xml", L"RuleSet.xml", schemaContext, logFile);
     TimeInstance(L"OpenPlant_3D.01.02.ecschema.xml", L"OpenPlant_3D_Instance.xml", schemaContext, logFile);
     fclose(logFile);
-
-    CoUninitialize();
     };
 END_BENTLEY_EC_NAMESPACE

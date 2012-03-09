@@ -6,7 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
+#if defined (_WIN32) // WIP_NONPORT
 #include <windows.h>
+#endif //defined (_WIN32) // WIP_NONPORT
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -76,9 +78,13 @@ WString SystemTime::ToString
 (
 )
     {
+#if defined (_WIN32) // WIP_NONPORT
     std::wostringstream valueAsString;
     valueAsString << "#" << wYear << "/" << wMonth << "/" << wDay << "-" << wHour << ":" << wMinute << ":" << wSecond << ":" << wMilliseconds << "#";
     return valueAsString.str().c_str();
+#else
+    return L"";
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -87,11 +93,17 @@ WString SystemTime::ToString
 +---------------+---------------+---------------+---------------+---------------+------*/
 SystemTime SystemTime::GetLocalTime()
     {
+#if defined (_WIN32) // WIP_NONPORT
     SYSTEMTIME wtime;
     ::GetLocalTime(&wtime);
     SystemTime time;
     memcpy (&time, &wtime, sizeof(time));
     return time;
+#elif defined (__unix__)
+    // *** NEEDS WORK: Change SystemTime to use a portable time concept such as what's offered in BeTimeUtilities
+    SystemTime time;
+    return time;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -100,11 +112,17 @@ SystemTime SystemTime::GetLocalTime()
 +---------------+---------------+---------------+---------------+---------------+------*/
 SystemTime SystemTime::GetSystemTime()
     {
+#if defined (_WIN32) // WIP_NONPORT
     SYSTEMTIME wtime;
     ::GetSystemTime(&wtime);
     SystemTime time;
     memcpy (&time, &wtime, sizeof(time));
     return time;
+#elif defined (__unix__)
+    // *** NEEDS WORK: Change SystemTime to use a portable time concept such as what's offered in BeTimeUtilities
+    SystemTime time;
+    return time;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -249,14 +267,13 @@ bool            ECValue::IsPrimitive () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECValue::ConstructUninitialized()
     {
-    int size = sizeof (ECValue); // currently 32 bytes
+    int size = sizeof (ECValue);
 #ifndef NDEBUG
     memset (this, 0xBAADF00D, size); // avoid accidental misinterpretation of uninitialized data
 #endif
     m_valueKind         = VALUEKIND_Uninitialized;
     m_isNull            = true;
     m_isReadOnly        = false;
-    m_memoryCallback    = NULL;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -478,7 +495,7 @@ ECValue::ECValue (ECValueCR v, bool doDeepCopy)
 *  Construct a Null EC::ECValue (of a specific type, but with IsNull = true)
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (ValueKind classification) : m_valueKind(classification), m_isNull(true), m_memoryCallback(NULL)
+ECValue::ECValue (ValueKind classification) : m_valueKind(classification), m_isNull(true)
     {
     }       
 
@@ -486,7 +503,7 @@ ECValue::ECValue (ValueKind classification) : m_valueKind(classification), m_isN
 *  Construct a Null EC::ECValue (of a specific type, but with IsNull = true)
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (PrimitiveType primitiveType) : m_primitiveType(primitiveType), m_isNull(true), m_memoryCallback(NULL)
+ECValue::ECValue (PrimitiveType primitiveType) : m_primitiveType(primitiveType), m_isNull(true)
     {
     }
     
@@ -738,7 +755,7 @@ BentleyStatus       ECValue::SetDateTimeTicks (Int64 value)
 //              of 100-nanosecond  intervals that have elapsed since 00:00:00 01/01/01 
 //////////////////////////////////////////////////////////////////////////////////////////
 
-static const Int64 TICKADJUSTMENT = 504911232000000000;     // ticks between 01/01/01 and 01/01/1601
+static const Int64 TICKADJUSTMENT = 504911232000000000LL;     // ticks between 01/01/01 and 01/01/1601
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
@@ -750,6 +767,7 @@ SystemTime          ECValue::GetDateTime () const
 
     memset (&systemTime, 0, sizeof(systemTime));
 
+#if defined (_WIN32) // WIP_NONPORT
     // m_dateTime is number of ticks since 00:00:00 01/01/01 - Fileticks are relative to 00:00:00 01/01/1601
     systemDateTicks -= TICKADJUSTMENT; 
     FILETIME fileTime;
@@ -758,6 +776,9 @@ SystemTime          ECValue::GetDateTime () const
     SYSTEMTIME  tempTime;
     if (FileTimeToSystemTime (&fileTime, &tempTime))
         memcpy (&systemTime, &tempTime, sizeof(systemTime));
+#elif defined (__unix__)
+    // *** NEEDS WORK: Change SystemTime to use a portable time concept such as what's offered in BeTimeUtilities
+#endif
 
     return systemTime;
     }
@@ -767,6 +788,7 @@ SystemTime          ECValue::GetDateTime () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus          ECValue::SetDateTime (SystemTime& systemTime) 
     {
+#if defined (_WIN32) // WIP_NONPORT
     Clear();
     FILETIME fileTime;
     SYSTEMTIME wtime;
@@ -779,6 +801,9 @@ BentleyStatus          ECValue::SetDateTime (SystemTime& systemTime)
         systemDateTicks += TICKADJUSTMENT; 
         return SetDateTimeTicks (systemDateTicks);
         }
+#elif defined (__unix__)
+    // *** NEEDS WORK: Change SystemTime to use a portable time concept such as what's offered in BeTimeUtilities
+#endif
 
     return ERROR;
     }
@@ -862,7 +887,7 @@ BentleyStatus ECValue::SetString (WCharCP string, bool holdADuplicate)
     m_isNull = false;
 
     if (holdADuplicate)    
-        m_stringInfo.m_string = _wcsdup (string);
+        m_stringInfo.m_string = BeStringUtilities::Wcsdup (string);
     else
         m_stringInfo.m_string = string;
             
@@ -949,6 +974,8 @@ BentleyStatus       ECValue::SetStruct (IECInstanceP structInstance)
 +---------------+---------------+---------------+---------------+---------------+------*/    
 WString    ECValue::ToString () const
     {
+#if defined (_WIN32) // WIP_NONPORT
+
     if (IsNull())
         return L"<null>";
         
@@ -1015,6 +1042,11 @@ WString    ECValue::ToString () const
         }
         
     return valueAsString.str().c_str();
+
+#elif defined (__unix__) // WIP_NONPORT
+        // *** NEEDS WORK: iostreams not supported on Android
+    return L"";
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1419,6 +1451,7 @@ WString                                        ECValueAccessor::GetPropertyName(
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString                                        ECValueAccessor::GetDebugAccessString() const
     {
+#if defined (_WIN32) // WIP_NONPORT
     std::wstringstream temp;
     for(UInt32 depth = 0; depth < GetDepth(); depth++)
         {
@@ -1430,6 +1463,10 @@ WString                                        ECValueAccessor::GetDebugAccessSt
         temp << "}" << GetAccessString (depth);
         }
     return temp.str().c_str();
+#elif defined (__unix__) // WIP_NONPORT
+    // *** NEEDS WORK: iostreams not supported on Android
+    return L"";
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1437,6 +1474,7 @@ WString                                        ECValueAccessor::GetDebugAccessSt
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString                                        ECValueAccessor::GetManagedAccessString() const
     {
+#if defined (_WIN32) // WIP_NONPORT
     std::wstringstream temp;
     for(UInt32 depth = 0; depth < GetDepth(); depth++)
         {
@@ -1461,6 +1499,10 @@ WString                                        ECValueAccessor::GetManagedAccess
             }
         }
     return temp.str().c_str();
+#elif defined (__unix__) // WIP_NONPORT
+    // *** NEEDS WORK: iostreams not supported on Android
+    return L"";
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2026,6 +2068,30 @@ ECValuesCollection::const_iterator ECValuesCollection::begin () const
 ECValuesCollection::const_iterator ECValuesCollection::end () const
     {
     return const_iterator ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  01/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   SystemTime::InitFromFileTime (_FILETIME const& fileTime)
+    {
+    #if defined (_WIN32)
+         return 0 == FileTimeToSystemTime(&fileTime, (LPSYSTEMTIME) this) ? ERROR : SUCCESS;
+    #else
+        UInt64 unixMills = BeTimeUtilities::ConvertFiletimeToUnixMillis(fileTime);
+        time_t timeVal = (time_t) (unixMills/1000.0);
+        struct tm timeinfo;
+        localtime_r (&timeVal, &timeinfo);
+
+        this->wYear = timeinfo.tm_year;
+        this->wMonth = timeinfo.tm_mon;
+        this->wDayOfWeek = timeinfo.tm_wday;
+        this->wDay = timeinfo.tm_mday;
+        this->wHour = timeinfo.tm_hour;
+        this->wMinute = timeinfo.tm_min;
+        this->wSecond = timeinfo.tm_sec;
+        this->wMilliseconds = 0;
+    #endif
     }
 
 END_BENTLEY_EC_NAMESPACE
