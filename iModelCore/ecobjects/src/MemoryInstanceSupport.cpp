@@ -1063,9 +1063,10 @@ void            ClassLayout::AddPropertyLayout (WCharCP accessString, PropertyLa
     // if we knew no new PropertyLayouts could be added after construction, we could delay sorting the list until FinishLayout()
     // since AddPropertyLayout() is public we can't know that, so we need to insert in sorted order
     UInt32 index = (UInt32)(m_propertyLayouts.size() - 1);
-    AccessStringIndexPair newPair (propertyLayout.GetAccessString(), index);
+    WCharCP plAccessString = propertyLayout.GetAccessString();
+    AccessStringIndexPair newPair (plAccessString, index);
     IndicesByAccessString::iterator begin = m_indicesByAccessString.begin();
-    IndicesByAccessString::iterator insertPos = begin + (GetPropertyIndexPosition (accessString, true) - begin);    // because constness...
+    IndicesByAccessString::iterator insertPos = begin + (GetPropertyIndexPosition (plAccessString, true) - begin);    // because constness...
     m_indicesByAccessString.insert (insertPos, newPair);
 
     AddToLogicalStructureMap (propertyLayout, index);
