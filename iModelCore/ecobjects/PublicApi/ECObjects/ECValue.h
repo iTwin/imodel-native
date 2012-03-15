@@ -8,10 +8,11 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include <Bentley\VirtualCollectionIterator.h>
-#include <ECObjects\ECInstance.h>
-#include <ECObjects\ECObjects.h>
-#include <Geom\GeomApi.h>
+#include <Bentley/VirtualCollectionIterator.h>
+#include <ECObjects/ECInstance.h>
+#include <ECObjects/ECObjects.h>
+#include <Geom/GeomApi.h>
+struct _FILETIME;
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -23,6 +24,7 @@ typedef RefCountedPtr<ECValuesCollection> ECValuesCollectionPtr;
 //! @group "ECInstance"
 //! @see ECValue
 //=======================================================================================    
+
 struct SystemTime
 {
 public:
@@ -40,6 +42,8 @@ public:
     ECOBJECTS_EXPORT static SystemTime GetSystemTime();
     ECOBJECTS_EXPORT WString      ToString ();
     ECOBJECTS_EXPORT bool          operator== (const SystemTime&) const;
+
+    ECOBJECTS_EXPORT BentleyStatus InitFromFileTime (_FILETIME const& fileTime);
     };
 
 //=======================================================================================    
@@ -89,8 +93,6 @@ private:
         };
     bool                m_isNull;     
     bool                m_isReadOnly; // Really indicates that the property from which this came is readonly... not the value itself.
-
-    EmbeddedInstanceCallbackP m_memoryCallback;  // used when managed code is setting value of a non-fixed size property
 
 protected:    
     typedef bvector<ECValue>  ValuesVector;
@@ -151,11 +153,6 @@ public:
     ECOBJECTS_EXPORT explicit ECValue (SystemTime& time);
 
     ECOBJECTS_EXPORT void           SetReadOnly(bool isReadOnly);
-
-/*__PUBLISH_SECTION_END__*/
-    ECOBJECTS_EXPORT void                        SetMemoryCallback(EmbeddedInstanceCallbackP memoryCallback) {m_memoryCallback = memoryCallback;}
-    ECOBJECTS_EXPORT EmbeddedInstanceCallbackP   GetMemoryCallback() const {return m_memoryCallback;}
-/*__PUBLISH_SECTION_START__*/
 
     ECOBJECTS_EXPORT bool           IsReadOnly() const;
     ECOBJECTS_EXPORT bool           IsNull() const;

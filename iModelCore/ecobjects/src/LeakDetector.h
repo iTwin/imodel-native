@@ -2,14 +2,14 @@
 |
 |     $Source: src/LeakDetector.h $
 |
-|   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <ECObjects\ECObjects.h>
-#include <Logging\bentleylogging.h>
-#include <boost\foreach.hpp>
+#include <ECObjects/ECObjects.h>
+#include <boost/foreach.hpp>
+#include <Logging/bentleylogging.h>
 
 USING_NAMESPACE_BENTLEY_LOGGING
 BEGIN_BENTLEY_EC_NAMESPACE
