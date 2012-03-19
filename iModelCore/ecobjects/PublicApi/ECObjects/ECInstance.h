@@ -77,7 +77,7 @@ typedef RefCountedPtr<IECInstance> IECInstancePtr;
 //! We could call these "enabled" instances as opposed to "lightweight".
 //! @see ECEnabler
 //=======================================================================================    
-struct IECInstance : RefCountedBase
+struct DLLPUBLIC_ATTRIBUTE IECInstance : RefCountedBase
     {
 private:
     WCharCP GetInstanceLabelPropertyName () const;
@@ -183,7 +183,7 @@ public:
 //! EC::IECRelationshipInstance is the native equivalent of a .NET IECRelationshipInstance.
 //! @see IECInstance, ECRelationshipClass
 //=======================================================================================    
-struct IECRelationshipInstance : virtual IECInstance
+struct DLLPUBLIC_ATTRIBUTE IECRelationshipInstance : virtual IECInstance
     {
     private:
         virtual void            _SetSource (IECInstanceP instance) = 0;

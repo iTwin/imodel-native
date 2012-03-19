@@ -59,7 +59,7 @@ struct PerPropertyFlagsHolder
 * @see ClassLayoutHolder, IECInstance
 * @bsiclass 
 +===============+===============+===============+===============+===============+======*/
-struct MemoryECInstanceBase : MemoryInstanceSupport
+struct DLLPUBLIC_ATTRIBUTE MemoryECInstanceBase : MemoryInstanceSupport
 {
 //__PUBLISH_SECTION_END__
 
@@ -146,7 +146,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
 * @see ClassLayoutHolder, IECInstance
 * @bsiclass 
 +===============+===============+===============+===============+===============+======*/
-struct StandaloneECInstance : MemoryECInstanceBase, IECInstance
+struct DLLPUBLIC_ATTRIBUTE StandaloneECInstance : MemoryECInstanceBase, IECInstance
     {
 //__PUBLISH_SECTION_END__
 friend struct StandaloneECEnabler;

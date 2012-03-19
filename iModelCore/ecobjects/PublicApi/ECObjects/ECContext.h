@@ -78,7 +78,7 @@ typedef RefCountedPtr<ECInstanceReadContext>      ECInstanceReadContextPtr;
 //=======================================================================================
 //! Context object used for instance creation and deserialization.</summary>
 //=======================================================================================
-struct ECInstanceReadContext /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
+struct DLLPUBLIC_ATTRIBUTE ECInstanceReadContext /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
 {
 /*__PUBLISH_SECTION_END__*/
 private:

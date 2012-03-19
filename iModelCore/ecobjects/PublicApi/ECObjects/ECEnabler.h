@@ -23,7 +23,7 @@ typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
 //=======================================================================================    
 //! base class ensuring that all enablers are refcounted
 //=======================================================================================    
-struct ECEnabler : RefCountedBase, IStandaloneEnablerLocater
+struct DLLPUBLIC_ATTRIBUTE ECEnabler : RefCountedBase, IStandaloneEnablerLocater
     {
     //! Interface of functor that wants to process text-valued properties
     struct IPropertyProcessor 
