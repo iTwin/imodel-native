@@ -1398,22 +1398,10 @@ ECObjectsStatus ECRelationshipConstraint::AddClass (ECClassCR classConstraint)
     {
     if (&(classConstraint.GetSchema()) != &(m_relClass->GetSchema()))
         {
-        bool foundRefSchema = false;
-        ECSchemaReferenceList referencedSchemas = m_relClass->GetSchema().GetReferencedSchemas();
-        ECSchemaReferenceList::const_iterator schemaIterator;
-        for (schemaIterator = referencedSchemas.begin(); schemaIterator != referencedSchemas.end(); schemaIterator++)
-            {
-            ECSchemaP refSchema = *schemaIterator;
-            if (refSchema == &(classConstraint.GetSchema()))
-                {
-                foundRefSchema = true;
-                break;
-                }
-            }
-        if (foundRefSchema == false)
-            {
+        ECSchemaReferenceListCR referencedSchemas = m_relClass->GetSchema().GetReferencedSchemas();
+        ECSchemaReferenceList::const_iterator schemaIterator = referencedSchemas.find (classConstraint.GetSchema().GetSchemaKey());
+        if (schemaIterator == referencedSchemas.end())
             return ECOBJECTS_STATUS_SchemaNotFound;
-            }
         }
 
     if (!m_isMultiple)

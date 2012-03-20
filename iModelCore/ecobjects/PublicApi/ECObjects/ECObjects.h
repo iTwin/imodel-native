@@ -47,6 +47,7 @@ EC_TYPEDEFS(ECValueAccessorPairCollectionOptions);
 EC_TYPEDEFS(ECValuesCollection);
 EC_TYPEDEFS(ArrayInfo);
 EC_TYPEDEFS(ECSchema);
+EC_TYPEDEFS (SchemaKey);
 EC_TYPEDEFS(ECSchemaReadContext);
 EC_TYPEDEFS(ECProperty);
 EC_TYPEDEFS(PrimitiveECProperty);

@@ -53,7 +53,6 @@ public:
 typedef bvector<ECPropertyP> PropertyList;
 typedef bmap<WCharCP , ECPropertyP, less_str> PropertyMap;
 typedef bmap<WCharCP , ECClassP,    less_str> ClassMap;
-typedef bmap<WCharCP , ECSchemaP,   less_str> SchemaMap;
 
 /*__PUBLISH_SECTION_START__*/
 
@@ -470,7 +469,7 @@ struct StandaloneECEnabler;
 struct SearchPathSchemaFileLocater;
 typedef RefCountedPtr<StandaloneECEnabler>  StandaloneECEnablerPtr;
 typedef StandaloneECEnabler*                StandaloneECEnablerP;
-typedef RefCountedPtr<ECSchemaCache>        ECSchemaCachePtr;
+typedef RefCountedPtr<ECSchema>             ECSchemaPtr;
 typedef RefCountedPtr<SearchPathSchemaFileLocater> SearchPathSchemaFileLocaterPtr;
 
 //=======================================================================================
@@ -875,8 +874,97 @@ public:
 
 typedef RefCountedPtr<ECRelationshipClass>      ECRelationshipClassPtr;
 
-typedef bvector<ECSchemaP> ECSchemaReferenceList;
-typedef const bvector<ECSchemaP>& ECSchemaReferenceListCR;
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct
++---------------+---------------+---------------+---------------+---------------+------*/
+enum SchemaMatchType
+    {
+    //! Find exact VersionMajor, VersionMinor match.
+    SCHEMAMATCHTYPE_Exact               =   0,
+    //! Find latest version with matching VersionMajor and VersionMinor that is equal or greater.
+    SCHEMAMATCHTYPE_LatestCompatible    =   1,
+    //! Find latest version.
+    SCHEMAMATCHTYPE_Latest              =   2,
+    };
+
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct SchemaKey
+    {
+    WString       m_schemaName;
+    UInt32        m_versionMajor;
+    UInt32        m_versionMinor;
+    
+    SchemaKey (WCharCP name, UInt32 major, UInt32 minor) : m_schemaName(name), m_versionMajor(major), m_versionMinor(minor){}
+    SchemaKey () : m_versionMajor(DEFAULT_VERSION_MAJOR), m_versionMinor(DEFAULT_VERSION_MINOR) {}
+    
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseSchemaFullName (SchemaKey& key, WCharCP schemaFullName);
+    
+    bool operator == (SchemaKeyCR rhs) const
+        {
+        return m_versionMajor == rhs.m_versionMajor && m_versionMinor == rhs.m_versionMinor &&
+                0 == wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str());
+        }
+    
+    bool operator != (SchemaKeyCR rhs) const
+        {
+        return !(*this == rhs);
+        }
+
+    bool operator < (SchemaKeyCR rhs) const
+        {
+        int nameCompare = wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str());
+
+        if (nameCompare != 0)
+            return nameCompare < 0;
+
+        if (m_versionMajor != rhs.m_versionMajor)
+            return m_versionMajor < rhs.m_versionMajor;
+
+        return m_versionMinor < rhs.m_versionMinor;
+        }
+
+    bool Matches (SchemaKeyCR rhs, SchemaMatchType matchType) const
+        {
+        switch (matchType)
+            {
+            case SCHEMAMATCHTYPE_Exact:
+                return rhs == *this;
+            case SCHEMAMATCHTYPE_Latest:
+                return 0 == wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str());
+            case SCHEMAMATCHTYPE_LatestCompatible:
+                return 0 == wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str()) && m_versionMajor == rhs.m_versionMajor && m_versionMinor >= rhs.m_versionMinor;
+            default:
+                return false;
+            }
+        }
+    };
+
+
+typedef bmap<SchemaKey , ECSchemaPtr> SchemaMap;
+typedef SchemaMap ECSchemaReferenceList;
+typedef const ECSchemaReferenceList& ECSchemaReferenceListCR;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  03/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct SchemaKeyMatchPredicate
+    {
+    SchemaKeyCR     m_key;
+    SchemaMatchType m_matchType;
+
+    SchemaKeyMatchPredicate(SchemaKeyCR key, SchemaMatchType matchType)
+        :m_key(key), m_matchType(matchType)
+        {}
+
+    typedef bpair<SchemaKey, bpair<ECSchemaPtr, bool>> ReadContextMapVal;
+    bool operator () (ReadContextMapVal const& rhs)
+        {
+        return m_key.Matches (rhs.first, m_matchType);
+        }
+    };
+
 //=======================================================================================
 //! Supports STL like iterator of classes in a schema
 //=======================================================================================
@@ -937,19 +1025,6 @@ public:
 
 }; 
 
-/*---------------------------------------------------------------------------------**//**
-* @bsistruct
-+---------------+---------------+---------------+---------------+---------------+------*/
-enum SchemaMatchType
-    {
-    //! Find exact VersionMajor, VersionMinor match.
-    SCHEMAMATCHTYPE_Exact               =   0,
-    //! Find latest version with matching VersionMajor and VersionMinor that is equal or greater.
-    SCHEMAMATCHTYPE_LatestCompatible    =   1,
-    //! Find latest version.
-    SCHEMAMATCHTYPE_Latest              =   2,
-    };
-   
 //=======================================================================================
 //! Interface implemented by class that provides schema ownership services.</summary>
 //=======================================================================================
@@ -961,14 +1036,11 @@ protected:
     virtual ECObjectsStatus _AddSchema   (ECSchemaR) = 0;
     virtual ECObjectsStatus _DropSchema  (ECSchemaR) = 0;
     virtual ECSchemaP       _GetSchema   (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor) = 0;
-    virtual ECSchemaP       _LocateSchema (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType) = 0;
-
+    
 public:
     ECOBJECTS_EXPORT ECObjectsStatus         AddSchema   (ECSchemaR);
     ECOBJECTS_EXPORT ECObjectsStatus         DropSchema  (ECSchemaR);
     ECOBJECTS_EXPORT ECSchemaP               GetSchema   (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor);
-    ECOBJECTS_EXPORT ECSchemaP               LocateSchema (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType);
-
 /*__PUBLISH_SECTION_START__*/
 };
 
@@ -980,12 +1052,12 @@ struct IStandaloneEnablerLocater
 /*__PUBLISH_CLASS_VIRTUAL__*/
 /*__PUBLISH_SECTION_END__*/
 protected:
-    virtual    StandaloneECEnablerPtr  _LocateStandaloneEnabler (WCharCP schemaName, WCharCP className) = 0;
+    virtual    StandaloneECEnablerPtr  _LocateStandaloneEnabler (SchemaKeyCR schemaKey, WCharCP className) = 0;
 
 /*__PUBLISH_SECTION_START__*/
 
 public:
-    ECOBJECTS_EXPORT StandaloneECEnablerPtr  LocateStandaloneEnabler (WCharCP schemaName, WCharCP className);
+    ECOBJECTS_EXPORT StandaloneECEnablerPtr  LocateStandaloneEnabler (SchemaKeyCR schemaKey, WCharCP className);
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1013,23 +1085,34 @@ public:
         };
 };
 
+//=======================================================================================
+//! Interface implemented by class that provides schema location services.</summary>
+//=======================================================================================
+struct IECSchemaLocater
+{
+protected:
+    virtual ECSchemaPtr _LocateSchema(WCharCP name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaReadContextP schemaContext) = 0;
 
+public:
+    ECOBJECTS_EXPORT ECSchemaPtr LocateSchema(WCharCP name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaReadContextP schemaContext);
+};
+
+typedef RefCountedPtr<ECSchemaCache>        ECSchemaCachePtr;
 //=======================================================================================
 //! An object that controls the lifetime of a set of ECSchemas.  When the schema
 //! owner is destroyed, so are the schemas that it owns.</summary>
 //=======================================================================================
-struct ECSchemaCache /*__PUBLISH_ABSTRACT__*/ :  RefCountedBase, IECSchemaOwner
+struct ECSchemaCache /*__PUBLISH_ABSTRACT__*/ :  public IECSchemaOwner, public IECSchemaLocater,  public RefCountedBase
 {
 /*__PUBLISH_SECTION_END__*/
 protected:
-    bvector<ECSchemaP>                                     m_schemas;
-    bmap<SchemaNameClassNamePair, StandaloneECEnablerPtr>  m_ecEnablerMap;
+    bvector<ECSchemaPtr>                                     m_schemas;
     
     // IECSchemaOwner
     ECOBJECTS_EXPORT virtual ECObjectsStatus _AddSchema   (ECSchemaR) override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus _DropSchema  (ECSchemaR) override;
     ECOBJECTS_EXPORT virtual ECSchemaP       _GetSchema   (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor);
-    ECOBJECTS_EXPORT virtual ECSchemaP       _LocateSchema (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor, SchemaMatchType matchType);
+    ECOBJECTS_EXPORT virtual ECSchemaPtr     _LocateSchema (WCharCP schemaName, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaReadContextP schemaContext) override;
     
 /*__PUBLISH_SECTION_START__*/
 public:
@@ -1039,17 +1122,7 @@ public:
     ECOBJECTS_EXPORT void    Clear();
 };
 
-//=======================================================================================
-//! Interface implemented by class that provides schema location services.</summary>
-//=======================================================================================
-struct IECSchemaLocater
-{
-protected:
-    virtual ECSchemaP _LocateSchema(WCharCP name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) = 0;
 
-public:
-    ECOBJECTS_EXPORT ECSchemaP LocateSchema(WCharCP name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaReadContextR schemaContext);
-};
 
 //=======================================================================================
 //! Locates schemas by looking in a given set of file system folder for ECSchemaXml files
@@ -1062,7 +1135,7 @@ private:
     SearchPathSchemaFileLocater (bvector<WString>& searchPaths);
     virtual ~SearchPathSchemaFileLocater();
 protected:
-    virtual ECSchemaP _LocateSchema(WCharCP name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
+    virtual ECSchemaPtr _LocateSchema(WCharCP name, UInt32& versionMajor, UInt32& versionMinor, SchemaMatchType matchType, ECSchemaReadContextP schemaContext) override;
 /*__PUBLISH_SECTION_START__*/
 public:
     ECOBJECTS_EXPORT static SearchPathSchemaFileLocaterPtr CreateSearchPathSchemaFileLocater(bvector<WString>& searchPaths);
@@ -1072,20 +1145,19 @@ public:
 //! @ingroup ECObjectsGroup
 //! The in-memory representation of a schema as defined by ECSchemaXML
 //=======================================================================================
-struct ECSchema /*__PUBLISH_ABSTRACT__*/ : public IECCustomAttributeContainer
+struct ECSchema /*__PUBLISH_ABSTRACT__*/ :RefCountedBase, IECCustomAttributeContainer, NonCopyableClass
 {
+/*__PUBLISH_CLASS_VIRTUAL__*/
 /*__PUBLISH_SECTION_END__*/
 friend struct SearchPathSchemaFileLocater;
 // Schemas are RefCounted but none of the constructs held by schemas (classes, properties, etc.) are.
 // They are freed when the schema is freed.
 
 private:
-    WString                 m_name;
+    SchemaKey               m_key;
     WString                 m_namespacePrefix;
     WString                 m_displayLabel;
     WString                 m_description;
-    UInt32                  m_versionMajor;
-    UInt32                  m_versionMinor;    
     ECClassContainer        m_classContainer;
     bool                    m_hideFromLeakDetection;
 
@@ -1098,8 +1170,9 @@ private:
     ECSchema (bool hideFromLeakDetection);
     virtual ~ECSchema();
 
+    bool                                IsSchemaOwned (ECSchemaCR schema) const;
     bool                                IsOpenPlantPidCircularReferenceSpecialCase(WString& referencedECSchemaName);
-    static SchemaReadStatus             ReadXml (ECSchemaP& schemaOut, BeXmlDomR xmlDom, ECSchemaReadContextR context);
+    static SchemaReadStatus             ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, ECSchemaReadContextR context);
     SchemaWriteStatus                   WriteXml (BeXmlDomR xmlDoc) const;
 
     ECObjectsStatus                     AddClass (ECClassP& pClass);
@@ -1109,10 +1182,12 @@ private:
     SchemaReadStatus                    ReadClassStubsFromXml (BeXmlNodeR schemaNode, ClassDeserializationVector& classes, ECSchemaReadContextR context);
     SchemaReadStatus                    ReadClassContentsFromXml (ClassDeserializationVector&  classes, ECSchemaReadContextR context);
     SchemaReadStatus                    ReadSchemaReferencesFromXml (BeXmlNodeR schemaNode, ECSchemaReadContextR context);
-    static ECSchemaP                    LocateSchemaByPath (WStringCR name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaReadContextR context, bool useLatestCompatibleMatch, bvector<WString>* searchPaths);
-    static ECSchemaP                    LocateSchemaByPath (WStringCR name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaReadContextR context);
-    static ECSchemaP                    LocateSchemaByStandardPaths (WStringCR name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaReadContextR context);
-    static ECSchemaP                    FindMatchingSchema (bool& foundImperfectLegacyMatch, WStringCR schemaMatchExpression, WStringCR name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaReadContextR schemaContext, bool useLatestCompatibleMatch, bool acceptImperfectLegacyMatch, bvector<WString>* searchPaths);
+    ECObjectsStatus                     AddReferencedSchema(ECSchemaR refSchema, WStringCR prefix, ECSchemaReadContextP readContext);
+
+    static ECSchemaPtr                  LocateSchemaByPath (WStringCR name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaReadContextR context, bool useLatestCompatibleMatch, bvector<WString>* searchPaths);
+    static ECSchemaPtr                  LocateSchemaByPath (WStringCR name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaReadContextR context);
+    static ECSchemaPtr                  LocateSchemaByStandardPaths (WStringCR name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaReadContextR context);
+    static ECSchemaPtr                  FindMatchingSchema (bool& foundImperfectLegacyMatch, WStringCR schemaMatchExpression, WStringCR name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaReadContextR schemaContext, bool useLatestCompatibleMatch, bool acceptImperfectLegacyMatch, bvector<WString>* searchPaths);
     struct  ECSchemaWriteContext
         {
         bset<WCharCP> m_alreadyWrittenClasses;
@@ -1122,16 +1197,17 @@ private:
     SchemaWriteStatus                   WriteClass (BeXmlNodeR parentNode, ECClassCR ecClass, ECSchemaWriteContext&) const;
     SchemaWriteStatus                   WriteCustomAttributeDependencies (BeXmlNodeR parentNode, IECCustomAttributeContainerCR container, ECSchemaWriteContext&) const;
     SchemaWriteStatus                   WritePropertyDependencies (BeXmlNodeR parentNode, ECClassCR ecClass, ECSchemaWriteContext&) const;
-
+    
 protected:
     virtual ECSchemaCP                  _GetContainerSchema() const override;
 
 public:    
     ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();
+    
 
 /*__PUBLISH_SECTION_START__*/
 public:    
-
+    ECOBJECTS_EXPORT SchemaKeyCR        GetSchemaKey() const;
     ECOBJECTS_EXPORT void               DebugDump() const;
     ECOBJECTS_EXPORT static void        SetErrorHandling (bool showMessages, bool doAssert);
 
@@ -1194,7 +1270,7 @@ public:
     //! Gets the other schemas that are used by classes within this schema.
     //! Referenced schemas are the schemas that contain definitions of base classes,
     //! embedded structures, and custom attributes of classes within this schema.
-    ECOBJECTS_EXPORT const ECSchemaReferenceList& GetReferencedSchemas() const;
+    ECOBJECTS_EXPORT ECSchemaReferenceListCR GetReferencedSchemas() const;
     
     //! Adds an ECSchema as a referenced schema in this schema.
     //! It is necessary to add any ECSchema as a referenced schema that will be used when adding a base
@@ -1247,20 +1323,17 @@ public:
     //! @param[in]  schemaName  Name of the schema to be created.
     //! @param[in]  versionMajor The major version number.
     //! @param[in]  versionMinor The minor version number.
-    //! @param[in]  owner        An object that will control the lifecycle of the newly created schema object.
+    //! @param[in]  owner        An object that can control the lifecycle of the newly created schema object.
     //! @return A status code indicating whether the call was succesfull or not
-    ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema (ECSchemaP& schemaOut, WStringCR schemaName, 
-                                                          UInt32 versionMajor, UInt32 versionMinor, IECSchemaOwnerR owner);
+    ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema (ECSchemaPtr& schemaOut, WStringCR schemaName, 
+                                                          UInt32 versionMajor, UInt32 versionMinor);
 
 /*__PUBLISH_SECTION_END__*/
-    // Should only be called by SchemaOwners.  Since IECSchemaOwner is not published, neither should this method be published
-    ECOBJECTS_EXPORT static void            DestroySchema (ECSchemaP& schema);
-
     // This method is intended for use by internal code that needs to manage the schema's lifespan internally.
     // For example one ECXLayout schema is created for each session and never freed.  Obviously care should be
     // taken that Schema's allocated this way are not actually leaked.       
-    ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema (ECSchemaP& schemaOut, WStringCR schemaName, 
-                                                          UInt32 versionMajor, UInt32 versionMinor, IECSchemaOwnerR owner,
+    ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema (ECSchemaPtr& schemaOut, WStringCR schemaName, 
+                                                          UInt32 versionMajor, UInt32 versionMinor,
                                                           bool hideFromLeakDetection);
 /*__PUBLISH_SECTION_START__*/
 
@@ -1337,7 +1410,7 @@ public:
     //! @param[in]    schemaContext       Required to create schemas
     //! @return   A status code indicating whether the schema was successfully read.  If SUCCESS is returned then schemaOut will
     //!           contain the read schema.  Otherwise schemaOut will be unmodified.
-    ECOBJECTS_EXPORT static SchemaReadStatus ReadFromXmlFile (ECSchemaP& schemaOut, WCharCP ecSchemaXmlFile, ECSchemaReadContextR schemaContext);
+    ECOBJECTS_EXPORT static SchemaReadStatus ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSchemaXmlFile, ECSchemaReadContextR schemaContext);
 
     //! Locate a schema using the provided schema locators and paths. If not found in those by either of those parameters standard schema pathes 
     //! relative to the executing dll will be searched.
@@ -1345,7 +1418,7 @@ public:
     //! @param[in]    versionMajor        The major version number of the schema to locate.
     //! @param[in]    versionMinor        The minor version number of the schema to locate.
     //! @param[in]    schemaContext       Required to create schemas
-     ECOBJECTS_EXPORT static ECSchemaP                   LocateSchema (WStringCR name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaReadContextR schemaContext);
+     ECOBJECTS_EXPORT static ECSchemaPtr  LocateSchema (WStringCR name, UInt32& versionMajor, UInt32& versionMinor, ECSchemaReadContextR schemaContext);
     
     //! 
     //! Writes an ECSchema from an ECSchemaXML-formatted string.
@@ -1365,7 +1438,7 @@ public:
     //! @param[in]    schemaContext       Required to create schemas
     //! @return   A status code indicating whether the schema was successfully read.  If SUCCESS is returned then schemaOut will
     //!           contain the read schema.  Otherwise schemaOut will be unmodified.
-    ECOBJECTS_EXPORT static SchemaReadStatus ReadFromXmlString (ECSchemaP& schemaOut, WCharCP ecSchemaXml, ECSchemaReadContextR schemaContext);
+    ECOBJECTS_EXPORT static SchemaReadStatus ReadFromXmlString (ECSchemaPtr& schemaOut, WCharCP ecSchemaXml, ECSchemaReadContextR schemaContext);
 
     //! 
     //! Writes an ECSchema from an ECSchemaXML-formatted string.
@@ -1384,7 +1457,7 @@ public:
     //! @param[in]    schemaCache         Will own the read ECSchema and referenced ECSchemas.
     //! @return   A status code indicating whether the schema was successfully read.  If SUCCESS is returned then schemaOut will
     //!           contain the read schema.  Otherwise schemaOut will be unmodified.
-    ECOBJECTS_EXPORT static SchemaReadStatus ReadFromXmlString (ECSchemaP& schemaOut, WCharCP ecSchemaXml, ECSchemaCacheR schemaCache);
+    ECOBJECTS_EXPORT static SchemaReadStatus ReadFromXmlString (ECSchemaPtr& schemaOut, WCharCP ecSchemaXml, ECSchemaCacheR schemaCache);
 
     //! Writes an ECSchema from an ECSchemaXML-formatted string in an IStream.
     //! @param[out]   schemaOut           The read schema
@@ -1392,7 +1465,7 @@ public:
     //! @param[in]    schemaContext       Required to create schemas
     //! @return   A status code indicating whether the schema was successfully read.  If SUCCESS is returned then schemaOut will
     //!           contain the read schema.  Otherwise schemaOut will be unmodified.
-    ECOBJECTS_EXPORT static SchemaReadStatus ReadFromXmlStream (ECSchemaP& schemaOut, IStreamP ecSchemaXmlStream, ECSchemaReadContextR schemaContext);
+    ECOBJECTS_EXPORT static SchemaReadStatus ReadFromXmlStream (ECSchemaPtr& schemaOut, IStreamP ecSchemaXmlStream, ECSchemaReadContextR schemaContext);
 
     //! Find all ECSchemas in the schema graph, avoiding duplicates and any cycles.
     //! @param[out]   allSchemas            Vector of schemas including rootSchema.
@@ -1401,8 +1474,10 @@ public:
     ECOBJECTS_EXPORT static void FindAllSchemasInGraph (bvector<EC::ECSchemaCP>& allSchemas, EC::ECSchemaCR rootSchema, bool includeRootSchema=true);
     
     //! Returns this if the name matches, otherwise searches referenced ECSchemas for one whose name matches schemaName
-    ECOBJECTS_EXPORT ECSchemaCP FindSchema (WCharCP schemaName) const;
+    ECOBJECTS_EXPORT ECSchemaCP FindSchema (SchemaKeyCR schema, SchemaMatchType matchType) const;
 
+    //! Returns this if the name matches, otherwise searches referenced ECSchemas for one whose name matches schemaName
+    ECOBJECTS_EXPORT ECSchemaP FindSchemaP (SchemaKeyCR schema, SchemaMatchType matchType);
     
 }; // ECSchema
 
