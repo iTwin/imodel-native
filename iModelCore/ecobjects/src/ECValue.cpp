@@ -1654,7 +1654,7 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBu
     indexBuffer[numChars]=0;
 
     UInt32 indexValue = -1;
-    swscanf (indexBuffer, L"%ud", &indexValue);
+    BeStringUtilities::Swscanf (indexBuffer, L"%ud", &indexValue);
 
     ECValue  arrayVal;
 

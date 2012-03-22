@@ -461,7 +461,7 @@ static ECObjectsStatus getECValueUsingFullAccessString (wchar_t* asBuffer, wchar
     indexBuffer[numChars]=0;
 
     UInt32 indexValue = -1;
-    swscanf (indexBuffer, L"%ud", &indexValue);
+    BeStringUtilities::Swscanf (indexBuffer, L"%ud", &indexValue);
 
     ECValue         arrayVal;
     ECObjectsStatus status;
@@ -939,7 +939,7 @@ static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar
     indexBuffer[numChars]=0;
 
     UInt32 indexValue = 0;
-    if (1 != swscanf (indexBuffer, L"%ud", &indexValue))
+    if (1 != BeStringUtilities::Swscanf (indexBuffer, L"%ud", &indexValue))
         return ECOBJECTS_STATUS_Error;
 
     ECValue         arrayVal;
@@ -2970,7 +2970,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
         case PRIMITIVETYPE_DateTime:
             {
             Int64   ticks;
-            if (1 != swscanf (propertyValueString, L"%I64d", &ticks))
+            if (1 != BeStringUtilities::Swscanf (propertyValueString, L"%I64d", &ticks))
                 {
                 ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not DateTime", propertyValueString);
                 return SkipToElementEnd();
@@ -2983,7 +2983,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
         case PRIMITIVETYPE_Double:
             {
             double  doubleValue;
-            if (1 != swscanf (propertyValueString, L"%lg", &doubleValue))
+            if (1 != BeStringUtilities::Swscanf (propertyValueString, L"%lg", &doubleValue))
                 {
                 ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Double", propertyValueString);
                 return SkipToElementEnd();
@@ -2995,7 +2995,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
         case PRIMITIVETYPE_Integer:
             {
             Int32   intValue;
-            if (1 != swscanf (propertyValueString, L"%d", &intValue))
+            if (1 != BeStringUtilities::Swscanf (propertyValueString, L"%d", &intValue))
                 {
                 ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Integer", propertyValueString);
                 return SkipToElementEnd();
@@ -3007,7 +3007,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
         case PRIMITIVETYPE_Long:
             {
             Int64   longValue;
-            if (1 != swscanf (propertyValueString, L"%I64d", &longValue))
+            if (1 != BeStringUtilities::Swscanf (propertyValueString, L"%I64d", &longValue))
                 {
                 ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Long", propertyValueString);
                 return SkipToElementEnd();
@@ -3019,7 +3019,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
         case PRIMITIVETYPE_Point2D:
             {
             DPoint2d point2d;
-            if (2 != swscanf (propertyValueString, L"%lg,%lg", &point2d.x, &point2d.y))
+            if (2 != BeStringUtilities::Swscanf (propertyValueString, L"%lg,%lg", &point2d.x, &point2d.y))
                 {
                 ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Point2D", propertyValueString);
                 return SkipToElementEnd();
@@ -3031,7 +3031,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
         case PRIMITIVETYPE_Point3D:
             {
             DPoint3d point3d;
-            if (3 != swscanf (propertyValueString, L"%lg,%lg,%lg", &point3d.x, &point3d.y, &point3d.z))
+            if (3 != BeStringUtilities::Swscanf (propertyValueString, L"%lg,%lg,%lg", &point3d.x, &point3d.y, &point3d.z))
                 {
                 ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Point3D", propertyValueString);
                 return SkipToElementEnd();
@@ -4152,7 +4152,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
         case PRIMITIVETYPE_DateTime:
             {
             Int64   ticks;
-            if (1 != swscanf (propertyValueWChar, L"%I64d", &ticks))
+            if (1 != BeStringUtilities::Swscanf (propertyValueWChar, L"%I64d", &ticks))
                 {
                 ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not DateTime", propertyValueWChar);
                 return INSTANCE_READ_STATUS_TypeMismatch;
@@ -4165,7 +4165,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
         case PRIMITIVETYPE_Double:
             {
             double  doubleValue;
-            if (1 != swscanf (propertyValueWChar, L"%lg", &doubleValue))
+            if (1 != BeStringUtilities::Swscanf (propertyValueWChar, L"%lg", &doubleValue))
                 {
                 ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Double", propertyValueWChar);
                 return INSTANCE_READ_STATUS_TypeMismatch;
@@ -4177,7 +4177,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
         case PRIMITIVETYPE_Integer:
             {
             Int32   intValue;
-            if (1 != swscanf (propertyValueWChar, L"%d", &intValue))
+            if (1 != BeStringUtilities::Swscanf (propertyValueWChar, L"%d", &intValue))
                 {
                 ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Integer", propertyValueWChar);
                 return INSTANCE_READ_STATUS_TypeMismatch;
@@ -4189,7 +4189,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
         case PRIMITIVETYPE_Long:
             {
             Int64   longValue;
-            if (1 != swscanf (propertyValueWChar, L"%I64d", &longValue))
+            if (1 != BeStringUtilities::Swscanf (propertyValueWChar, L"%I64d", &longValue))
                 {
                 ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Long", propertyValueWChar);
                 return INSTANCE_READ_STATUS_TypeMismatch;
@@ -4201,7 +4201,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
         case PRIMITIVETYPE_Point2D:
             {
             DPoint2d point2d;
-            if (2 != swscanf (propertyValueWChar, L"%lg,%lg", &point2d.x, &point2d.y))
+            if (2 != BeStringUtilities::Swscanf (propertyValueWChar, L"%lg,%lg", &point2d.x, &point2d.y))
                 {
                 ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Point2D", propertyValueWChar);
                 return INSTANCE_READ_STATUS_TypeMismatch;
@@ -4213,7 +4213,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
         case PRIMITIVETYPE_Point3D:
             {
             DPoint3d point3d;
-            if (3 != swscanf (propertyValueWChar, L"%lg,%lg,%lg", &point3d.x, &point3d.y, &point3d.z))
+            if (3 != BeStringUtilities::Swscanf (propertyValueWChar, L"%lg,%lg,%lg", &point3d.x, &point3d.y, &point3d.z))
                 {
                 ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Point3D", propertyValueWChar);
                 return INSTANCE_READ_STATUS_TypeMismatch;
