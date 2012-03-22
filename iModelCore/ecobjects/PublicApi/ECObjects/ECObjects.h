@@ -143,6 +143,7 @@ enum ECObjectsStatus
     ECOBJECTS_STATUS_UnableToSetStructArrayMemberInstance               = ECOBJECTS_ERROR_BASE + 0x21,
     ECOBJECTS_STATUS_UnableToGetStructArrayMemberInstance               = ECOBJECTS_ERROR_BASE + 0x22,
     ECOBJECTS_STATUS_InvalidIndexForPerPropertyFlag                     = ECOBJECTS_ERROR_BASE + 0x23,
+    ECOBJECTS_STATUS_SchemaHasReferenceCycle                            = ECOBJECTS_ERROR_BASE + 0x24,
     ECOBJECTS_STATUS_Error                                              = ECOBJECTS_ERROR_BASE + 0xFFF,
     }; 
 
@@ -157,6 +158,7 @@ enum SchemaReadStatus
     SCHEMA_READ_STATUS_ReferencedSchemaNotFound              = SCHEMA_READ_STATUS_BASE + 0x04,
     SCHEMA_READ_STATUS_DuplicateSchema                       = SCHEMA_READ_STATUS_BASE + 0x05,
     SCHEMA_READ_STATUS_InvalidPrimitiveType                  = SCHEMA_READ_STATUS_BASE + 0x06,
+    SCHEMA_READ_STATUS_HasReferenceCycle                     = SCHEMA_READ_STATUS_BASE + 0x07,
     };
 
 /*=================================================================================**//**

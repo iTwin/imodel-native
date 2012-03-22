@@ -1901,9 +1901,9 @@ struct ECSchemaBackedInstanceReadContext: public ECInstanceReadContext
         {
         }
     
-    virtual ECSchemaCP               _GetSchemaCP(SchemaKeyCR key) const override
+    virtual ECSchemaCP               _FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType) const override
         {
-        return (m_key == key) ? &m_schema : NULL;
+        return key.Matches(m_key, matchType) ? &m_schema : NULL;
         }
 
     };
@@ -1933,15 +1933,18 @@ struct ECSchemaReadContextBackedInstanceReadContext: public ECInstanceReadContex
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    10/10
     +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual ECSchemaCP               _GetSchemaCP(SchemaKeyCR keyIn) const
+    virtual ECSchemaCP               _FindSchemaCP(SchemaKeyCR keyIn, SchemaMatchType matchType) const
         {
             //WIP_FUSION: Do we want to check for mismatches between the supplied schema name/version and m_fullSchemaName from the instance
         if (m_foundSchema.IsValid())
             return m_foundSchema.get();
         
         SchemaKey key(keyIn);
-        ECSchemaPtr schema = ECSchema::LocateSchema (key.m_schemaName.c_str(), key.m_versionMajor, key.m_versionMinor, m_schemaReadContext);
-        if (key != keyIn)
+        ECSchemaPtr schema = ECSchema::LocateSchema (key, m_schemaReadContext);
+        if (schema.IsNull())
+            return NULL;
+
+        if (!keyIn.Matches(schema->GetSchemaKey(), matchType))
             return NULL;
 
         m_foundSchema = schema;
@@ -2164,7 +2167,7 @@ ECSchemaCP       GetSchema()
     if (ECOBJECTS_STATUS_Success != SchemaKey::ParseSchemaFullName(key, m_fullSchemaName.c_str()))
         return NULL;
     
-    m_schema = m_context.GetSchemaCP(key);
+    m_schema = m_context.FindSchemaCP(key, SCHEMAMATCHTYPE_Exact);
     return m_schema; 
     }
 
@@ -3177,8 +3180,8 @@ InstanceWriteStatus     IECInstance::WriteToXmlStream (IStreamP stream, bool isC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP ECInstanceReadContext::GetSchemaCP(SchemaKeyCR key) const
+ECSchemaCP ECInstanceReadContext::FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType) const
     {
-    return _GetSchemaCP(key);
+    return _FindSchemaCP(key, matchType);
     }
 END_BENTLEY_EC_NAMESPACE

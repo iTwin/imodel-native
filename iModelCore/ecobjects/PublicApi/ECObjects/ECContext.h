@@ -23,7 +23,8 @@ struct ECSchemaReadContext /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
 /*__PUBLISH_SECTION_END__*/
 friend struct ECSchema;
 
-    typedef bpair<ECSchemaPtr, bool>  ReadSchemaInfo;
+    typedef ECSchemaPtr ReadSchemaInfo;
+
 private:
     IStandaloneEnablerLocaterP      m_standaloneEnablerLocater;
     
@@ -51,6 +52,7 @@ protected:
     
 public:
     void               AddSchema(ECSchemaR schema, bool owned);
+    void               RemoveSchema(ECSchemaR schema, bool owned);
     ReadSchemaInfo*    GetSchema (SchemaKeyCR key, SchemaMatchType matchType);
 
     ECOBJECTS_EXPORT void HideSchemasFromLeakDetection();
@@ -82,8 +84,6 @@ struct ECInstanceReadContext /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
 {
 /*__PUBLISH_SECTION_END__*/
 private:
-    
-    EC::ECSchemaReadContextPtr          m_schemaContext;
     IStandaloneEnablerLocaterP          m_standaloneEnablerLocater;
     StandaloneECInstancePtr             m_dummy;
 
@@ -97,10 +97,10 @@ protected:
     //! The default implementation calls GetDefaultStandaloneEnabler() on the ecClass
     ECOBJECTS_EXPORT virtual IECInstancePtr _CreateStandaloneInstance (ECClassCR ecClass);
     
-    virtual ECSchemaCP  _GetSchemaCP(SchemaKeyCR key) const = 0;
+    virtual ECSchemaCP  _FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType) const = 0;
 
 public:
-    ECSchemaCP  GetSchemaCP(SchemaKeyCR key) const;
+    ECSchemaCP  FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType) const;
 
     IECInstancePtr           CreateStandaloneInstance (ECClassCR ecClass);
 

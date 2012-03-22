@@ -814,8 +814,6 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaReferenceTest, AddAndRemoveReferencedSchemas)
     {
-    
-
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, L"TestSchema", 5, 5);
     
@@ -823,6 +821,7 @@ TEST_F(SchemaReferenceTest, AddAndRemoveReferencedSchemas)
     ECSchema::CreateSchema(refSchema, L"RefSchema", 5, 5);
     
     EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(*refSchema));
+
     EXPECT_EQ(ECOBJECTS_STATUS_NamedItemAlreadyExists, schema->AddReferencedSchema(*refSchema));
     
     ECSchemaReferenceListCR refList = schema->GetReferencedSchemas();
@@ -911,7 +910,7 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
     EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->RemoveReferencedSchema(*refSchema));
     
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -923,7 +922,7 @@ TEST_F(SchemaReferenceTest, ExpectSuccessWithCircularReferences)
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath( L"CircleSchema.01.00.ecschema.xml").c_str(), *schemaContext);
-    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
+    EXPECT_FALSE (SCHEMA_READ_STATUS_Success == status);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -970,11 +969,10 @@ TEST_F(SchemaLocateTest, ExpectSuccessWhenLocatingStandardSchema)
     for (bmap<WString, WCharCP>::const_iterator it = standardSchemaNames.begin(); it != standardSchemaNames.end(); ++it)
         {
         bpair<WString, WCharCP>const& entry = *it;
-
-        UInt32 versionMajor;
-        UInt32 versionMinor;
-        ECSchema::ParseVersionString(versionMajor, versionMinor, entry.second);
-        schema = ECSchema::LocateSchema(entry.first, versionMajor, versionMinor, *schemaContext);
+        
+        SchemaKey key (entry.first.c_str(), 1, 0);
+        ECSchema::ParseVersionString(key.m_versionMajor, key.m_versionMinor, entry.second);
+        schema = ECSchema::LocateSchema(key, *schemaContext);
         EXPECT_TRUE(schema.IsValid());
         EXPECT_TRUE(schema->IsStandardSchema());
         }
@@ -993,10 +991,10 @@ TEST_F(SchemaLocateTest, ExpectFailureWithNonStandardSchema)
 TEST_F(SchemaLocateTest, DetermineWhetherSchemaCanBeImported)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    UInt32 versionMajor = 1;
-    UInt32 versionMinor = 4;
-    schema = ECSchema::LocateSchema(L"Bentley_Standard_CustomAttributes", versionMajor, versionMinor, *schemaContext);
+     
+    SchemaKey key(L"Bentley_Standard_CustomAttributes", 1, 4);
+    
+    ECSchemaPtr schema = ECSchema::LocateSchema(key, *schemaContext);
     EXPECT_TRUE(schema.IsValid());
     EXPECT_FALSE(schema->ShouldNotBeStored());
 
