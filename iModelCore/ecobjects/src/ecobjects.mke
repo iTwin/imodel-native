@@ -59,6 +59,8 @@ $(o)ECInstance$(oext)      : $(baseDir)ECInstance.cpp $(ECObjectsHeaders) ${Mult
 
 $(o)ECCustomAttribute$(oext)         : $(baseDir)ECCustomAttribute.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
+$(o)ECcontext$(oext)         : $(baseDir)ECcontext.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+
 $(o)ECValue$(oext)         : $(baseDir)ECValue.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
 $(o)ECEnabler$(oext)       : $(baseDir)ECEnabler.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 

@@ -1164,7 +1164,6 @@ public:
 
 typedef RefCountedPtr<ECSchemaCache>        ECSchemaCachePtr;
 //=======================================================================================
-//WIP: Get rid to these.
 //! An object that controls the lifetime of a set of ECSchemas.  When the schema
 //! owner is destroyed, so are the schemas that it owns.</summary>
 //=======================================================================================
@@ -1172,7 +1171,7 @@ struct ECSchemaCache /*__PUBLISH_ABSTRACT__*/ :  public IECSchemaOwner, public I
 {
 /*__PUBLISH_SECTION_END__*/
 protected:
-    bvector<ECSchemaPtr>                                     m_schemas;
+    SchemaMap   m_schemas;
     
     // IECSchemaOwner
     ECOBJECTS_EXPORT virtual ECObjectsStatus _AddSchema   (ECSchemaR) override;
@@ -1198,13 +1197,20 @@ struct SearchPathSchemaFileLocater : IECSchemaLocater, RefCountedBase, NonCopyab
 /*__PUBLISH_SECTION_END__*/
 private:
     bvector<WString> m_searchPaths;
-    SearchPathSchemaFileLocater (bvector<WString>& searchPaths);
+    SearchPathSchemaFileLocater (bvector<WString> const& searchPaths);
     virtual ~SearchPathSchemaFileLocater();
+    static ECSchemaPtr                  LocateSchemaByPath (SchemaKeyR key, ECSchemaReadContextR context, SchemaMatchType matchType, bvector<WString>& searchPaths);
+    
+    static ECSchemaPtr                  FindMatchingSchema (WStringCR schemaMatchExpression, SchemaKeyR key, ECSchemaReadContextR schemaContext, SchemaMatchType matchType, bvector<WString>& searchPaths);
+
 protected:
     virtual ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextP schemaContext) override;
+
+public:
+    bvector<WString>const& GetSearchPath () const {return m_searchPaths;}
 /*__PUBLISH_SECTION_START__*/
 public:
-    ECOBJECTS_EXPORT static SearchPathSchemaFileLocaterPtr CreateSearchPathSchemaFileLocater(bvector<WString>& searchPaths);
+    ECOBJECTS_EXPORT static SearchPathSchemaFileLocaterPtr CreateSearchPathSchemaFileLocater(bvector<WString> const& searchPaths);
 };
 
 //=======================================================================================
@@ -1250,10 +1256,6 @@ private:
     SchemaReadStatus                    ReadSchemaReferencesFromXml (BeXmlNodeR schemaNode, ECSchemaReadContextR context);
     ECObjectsStatus                     AddReferencedSchema(ECSchemaR refSchema, WStringCR prefix, ECSchemaReadContextP readContext);
 
-    static ECSchemaPtr                  LocateSchemaByPath (SchemaKeyR key, ECSchemaReadContextR context, bool useLatestCompatibleMatch, bvector<WString>* searchPaths);
-    static ECSchemaPtr                  LocateSchemaByPath (SchemaKeyR key, ECSchemaReadContextR context);
-    static ECSchemaPtr                  LocateSchemaByStandardPaths (SchemaKeyR key, ECSchemaReadContextR context);
-    static ECSchemaPtr                  FindMatchingSchema (bool& foundImperfectLegacyMatch, WStringCR schemaMatchExpression, SchemaKeyR key, ECSchemaReadContextR schemaContext, bool useLatestCompatibleMatch, bool acceptImperfectLegacyMatch, bvector<WString>* searchPaths);
     struct  ECSchemaWriteContext
         {
         bset<WCharCP> m_alreadyWrittenClasses;

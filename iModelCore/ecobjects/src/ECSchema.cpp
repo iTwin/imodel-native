@@ -956,46 +956,10 @@ ECSchemaPtr IECSchemaLocater::LocateSchema(SchemaKeyR key, SchemaMatchType match
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaPtr     ECSchema::LocateSchema (SchemaKeyR key, ECSchemaReadContextR schemaContext)
     {
-    // Step 1: First check if the owner already owns a copy of the schema.
-    //         This will catch schema referencing cycles since the schemas are
-    //         added to the owner as they are constructed. 
-    // try exact match first
-    ECSchemaReadContext::ReadSchemaInfo* schemaOut = schemaContext.GetSchema(key, SCHEMAMATCHTYPE_Exact);
-    if (NULL != schemaOut)
-        return *schemaOut;
-    
-    // allow latest compatible
-    if (NULL != (schemaOut = schemaContext.GetSchema(key, SCHEMAMATCHTYPE_LatestCompatible)))
-        return *schemaOut;
-  
-    // Step 2: ask the schemaLocaters
-    FOR_EACH (IECSchemaLocaterP schemaLocater, schemaContext.GetSchemaLocaters())
-        {
-        if ( ! EXPECTED_CONDITION (NULL != schemaLocater))
-            continue;
-
-        ECSchemaPtr schema = schemaLocater->LocateSchema(key, SCHEMAMATCHTYPE_LatestCompatible, &schemaContext);
-        if (schema.IsValid())
-            return schema;
-        }
-
-    // Step 3: look in the paths provided by the context
-    ECSchemaPtr schema = LocateSchemaByPath (key, schemaContext, true, NULL);
-    if (schema.IsValid())
-        return schema;
-
-    // Step 4: look in a set of standard paths
-    schema = LocateSchemaByStandardPaths (key, schemaContext);
-    if (schema.IsValid())
-        return schema;
-
-    // Step 5: the final locator... this should be a managed locator from the interop layer, if it is present
-    IECSchemaLocaterP schemaLocater = schemaContext.GetFinalSchemaLocater();
-    if (NULL == schemaLocater)
-        return NULL;
-
-    schema = schemaLocater->LocateSchema(key, SCHEMAMATCHTYPE_LatestCompatible, &schemaContext);
-    return schema;
+     bset<SchemaMatchType> matches;
+     matches.insert(SCHEMAMATCHTYPE_Exact);
+     matches.insert(SCHEMAMATCHTYPE_LatestCompatible);
+    return schemaContext.LocateSchema(key, matches);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1025,27 +989,17 @@ ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, WCharCP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr       ECSchema::FindMatchingSchema
+ECSchemaPtr       SearchPathSchemaFileLocater::FindMatchingSchema
 (
-bool&                           foundImperfectLegacyMatch,
 WStringCR                       schemaMatchExpression,
 SchemaKeyR                      key,
 ECSchemaReadContextR            schemaContext,
-bool                            useLatestCompatibleMatch,
-bool                            acceptImperfectLegacyMatch,
-bvector<WString>*               searchPaths
+SchemaMatchType                 matchType,
+bvector<WString>&               searchPaths
 )
     {
-    foundImperfectLegacyMatch = false;
-    if (!useLatestCompatibleMatch)
-        acceptImperfectLegacyMatch = false;
-
     WString fullFileName;
-
-    if (NULL == searchPaths)
-        searchPaths = &schemaContext.GetSchemaPaths();
-        
-    FOR_EACH (WString schemaPathStr, *searchPaths)
+    FOR_EACH (WString schemaPathStr, searchPaths)
         {
         BeFileName schemaPath (schemaPathStr.c_str());
         schemaPath.AppendToPath (schemaMatchExpression.c_str());
@@ -1053,24 +1007,29 @@ bvector<WString>*               searchPaths
 
         //Finds latest
         SchemaKey foundKey(key);
-        if (SUCCESS != GetSchemaFileName (fullFileName, foundKey.m_versionMinor, schemaPath, useLatestCompatibleMatch))
+        if (SUCCESS != GetSchemaFileName (fullFileName, foundKey.m_versionMinor, schemaPath,  matchType == SCHEMAMATCHTYPE_LatestCompatible))
             continue;
 
+        ECSchemaPtr schemaOut = NULL;
+
+        
         //Check if schema is compatible before reading, as reading it would add the schema to the cache.
-        if (foundKey.Matches(key, useLatestCompatibleMatch ? SCHEMAMATCHTYPE_LatestCompatible : SCHEMAMATCHTYPE_Exact))
+        if (foundKey.Matches(key, matchType))
             {
-            foundImperfectLegacyMatch = true;
-            if (acceptImperfectLegacyMatch)
+            if (schemaContext.m_acceptLegacyImperfectLatestCompatibleMatch)
                 {
                 ECObjectsLogger::Log()->warningv (L"Located %s, which does not meet 'latest compatible' criteria to match %s.%02d.%02d, but is being accepted because some legacy schemas are known to require this", 
                                                   fullFileName.c_str(), key.m_schemaName.c_str(),   key.m_versionMajor,   key.m_versionMinor);
                 // See if this imperfect match ECSchema has is already cached (so we can avoid loading it, below)
             
-                ECSchemaReadContext::ReadSchemaInfo* schemaOut = schemaContext.GetSchema(foundKey, SCHEMAMATCHTYPE_Exact);
-                if (NULL != schemaOut)
+                //We found a different key;
+                if (!foundKey.Matches(key, SCHEMAMATCHTYPE_Exact) && matchType != SCHEMAMATCHTYPE_Exact)
+                    schemaOut = schemaContext.GetFoundSchema(foundKey, SCHEMAMATCHTYPE_Exact);
+                
+                if (schemaOut.IsValid())
                     {
                     key.m_versionMinor = foundKey.m_versionMinor;
-                    return *schemaOut;
+                    return schemaOut;
                     }
                 }
             else
@@ -1081,7 +1040,6 @@ bvector<WString>*               searchPaths
                 }
             }
 
-        ECSchemaPtr schemaOut = NULL;
         if (SCHEMA_READ_STATUS_Success != ECSchema::ReadFromXmlFile (schemaOut, fullFileName.c_str(), schemaContext))
             continue;
 
@@ -1096,10 +1054,10 @@ bvector<WString>*               searchPaths
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr     ECSchema::LocateSchemaByPath (SchemaKeyR key, ECSchemaReadContextR schemaContext, bool useLatestCompatibleMatch, bvector<WString>* searchPaths)
+ECSchemaPtr     SearchPathSchemaFileLocater::LocateSchemaByPath (SchemaKeyR key, ECSchemaReadContextR schemaContext, SchemaMatchType matchType, bvector<WString>& searchPaths)
     {
     wchar_t versionString[24];
-    if (useLatestCompatibleMatch)
+    if (matchType == SCHEMAMATCHTYPE_LatestCompatible)
         swprintf(versionString, 24, L".%02d.*.ecschema.xml", key.m_versionMajor);
     else
         swprintf(versionString, 24, L".%02d.%02d.ecschema.xml", key.m_versionMajor, key.m_versionMinor);
@@ -1108,18 +1066,14 @@ ECSchemaPtr     ECSchema::LocateSchemaByPath (SchemaKeyR key, ECSchemaReadContex
     schemaMatchExpression += versionString;
     WString fullFileName;
 
-    bool foundImperfectLegacyMatch;
-    ECSchemaPtr   schemaOut = FindMatchingSchema (foundImperfectLegacyMatch, schemaMatchExpression, key, schemaContext, useLatestCompatibleMatch, false, searchPaths);
-    if (schemaContext.m_acceptLegacyImperfectLatestCompatibleMatch && schemaOut.IsNull() && foundImperfectLegacyMatch && useLatestCompatibleMatch)
-        schemaOut = FindMatchingSchema (foundImperfectLegacyMatch, schemaMatchExpression, key, schemaContext, useLatestCompatibleMatch, true, searchPaths);
-
+    ECSchemaPtr   schemaOut = FindMatchingSchema (schemaMatchExpression, key, schemaContext, matchType, searchPaths);
     return schemaOut;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Casey.Mullen                09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-SearchPathSchemaFileLocater::SearchPathSchemaFileLocater (bvector<WString>& searchPaths) : m_searchPaths(searchPaths) {};
+SearchPathSchemaFileLocater::SearchPathSchemaFileLocater (bvector<WString> const& searchPaths) : m_searchPaths(searchPaths) {};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Casey.Mullen                09/2011
@@ -1129,7 +1083,7 @@ SearchPathSchemaFileLocater::~SearchPathSchemaFileLocater () {};
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Casey.Mullen                09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-SearchPathSchemaFileLocaterPtr SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(bvector<WString>& searchPaths)
+SearchPathSchemaFileLocaterPtr SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(bvector<WString> const& searchPaths)
     {
     return new SearchPathSchemaFileLocater(searchPaths);
     }
@@ -1139,39 +1093,9 @@ SearchPathSchemaFileLocaterPtr SearchPathSchemaFileLocater::CreateSearchPathSche
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextP schemaContext)
     {
-    bool useLatestCompatibleMatch = matchType != SCHEMAMATCHTYPE_Exact;
-    return ECSchema::LocateSchemaByPath (key, *schemaContext, useLatestCompatibleMatch, &m_searchPaths);
+    return LocateSchemaByPath (key, *schemaContext, matchType, m_searchPaths);
     }
     
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    06/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr     ECSchema::LocateSchemaByStandardPaths (SchemaKeyR key, ECSchemaReadContextR schemaContext)
-    {
-    BeFileName dllPath (ECFileUtilities::GetDllPath().c_str());
-    if (0 == *dllPath.GetName())
-        return NULL;
-    
-    bvector<WString> searchPaths;
-    searchPaths.push_back (dllPath.GetName());    
-    
-    dllPath.AppendToPath (L"ECSchemas");
-
-    BeFileName standardPath = dllPath;
-    standardPath.AppendToPath (L"Standard");
-    searchPaths.push_back (standardPath.GetName());
-
-    BeFileName generalPath = standardPath;
-    generalPath.AppendToPath (L"General");
-    searchPaths.push_back (generalPath.GetName());
-
-    BeFileName libraryPath = standardPath;
-    libraryPath.AppendToPath (L"LibraryUnits");
-    searchPaths.push_back (libraryPath.GetName());
-    
-    return LocateSchemaByPath (key, schemaContext, true, &searchPaths);
-    }
-
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1223,7 +1147,7 @@ SchemaReadStatus ECSchema::ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, EC
     if (ECOBJECTS_STATUS_Success != createStatus)
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
     
-    schemaContext.AddSchema (*schemaOut, false);
+    schemaContext.AddSchema (*schemaOut);
 
     // OPTIONAL attributes - If these attributes exist they MUST be valid        
     WString value;  // used by macro.
@@ -1471,18 +1395,11 @@ BentleyStatus LogXmlLoadError (BeXmlDomP xmlDom)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AddFilePathToSchemaPaths  (ECSchemaReadContextR schemaContext, T_WStringVectorR schemaPaths, WCharCP ecSchemaXmlFile)
+static void AddFilePathToSchemaPaths  (ECSchemaReadContextR schemaContext, WCharCP ecSchemaXmlFile)
     {
     WString dev, dir;
     BeFileName::ParseName (&dev, &dir, NULL, NULL, ecSchemaXmlFile);
     WString pathToThisSchema = dev + WCSDIR_DEV_SEPARATOR_CHAR + dir;
-    FOR_EACH(WStringCR schemaPath, schemaPaths)
-        {
-        BeFileName::ParseName (&dev, &dir, NULL, NULL, schemaPath.c_str());
-        WString normalizedPath = dev + WCSDIR_DEV_SEPARATOR_CHAR + dir;
-        if (0 == normalizedPath.CompareToI(pathToThisSchema))
-            return; // it's already there
-        }
     schemaContext.AddSchemaPath(pathToThisSchema.c_str());
     }
 
@@ -1627,7 +1544,7 @@ SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSc
         return SCHEMA_READ_STATUS_FailedToParseXml;
         }
 
-    AddFilePathToSchemaPaths(schemaContext, schemaContext.GetSchemaPaths(), ecSchemaXmlFile);
+    AddFilePathToSchemaPaths(schemaContext, ecSchemaXmlFile);
 
     status = ReadXml (schemaOut, *xmlDom.get(), schemaContext);
     if (SCHEMA_READ_STATUS_DuplicateSchema == status)
@@ -1863,38 +1780,6 @@ ECSchemaP ECSchema::FindSchemaP (SchemaKeyCR schemaKey, SchemaMatchType matchTyp
     return const_cast<ECSchemaP> (FindSchema(schemaKey, matchType));
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    06/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaReadContext::ECSchemaReadContext(IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch)
-    :
-    m_standaloneEnablerLocater(enablerLocater), m_hideSchemasFromLeakDetection (false), 
-    m_acceptLegacyImperfectLatestCompatibleMatch(acceptLegacyImperfectLatestCompatibleMatch),
-    m_finalSchemaLocater (NULL)
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    06/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaReadContextPtr  ECSchemaReadContext::CreateContext (IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch)   
-                                                                                        { return new ECSchemaReadContext(enablerLocater, acceptLegacyImperfectLatestCompatibleMatch); }
-ECSchemaReadContextPtr  ECSchemaReadContext::CreateContext (bool acceptLegacyImperfectLatestCompatibleMatch) 
-    { 
-    return CreateContext (NULL, acceptLegacyImperfectLatestCompatibleMatch); 
-    }
-void  ECSchemaReadContext::AddSchemaLocaters (bvector<EC::IECSchemaLocaterP>& locators) { m_locators.insert (m_locators.begin(), locators.begin(), locators.end());  }
-void  ECSchemaReadContext::AddSchemaLocater (IECSchemaLocaterR locater)      { m_locators.push_back (&locater);  }
-void  ECSchemaReadContext::AddSchemaPath (WCharCP path)               { m_searchPaths.push_back (WString(path));   }
-void  ECSchemaReadContext::HideSchemasFromLeakDetection ()                   { m_hideSchemasFromLeakDetection = true; }
-bvector<IECSchemaLocaterP>& ECSchemaReadContext::GetSchemaLocaters ()                { return m_locators;    }
-void                        ECSchemaReadContext::SetFinalSchemaLocater (IECSchemaLocaterR locater) { m_finalSchemaLocater = &locater;  }
-IECSchemaLocaterP           ECSchemaReadContext::GetFinalSchemaLocater ()                { return m_finalSchemaLocater; }
-T_WStringVectorR            ECSchemaReadContext::GetSchemaPaths ()                   { return m_searchPaths; }
-void                        ECSchemaReadContext::ClearSchemaPaths ()                 { m_searchPaths.clear();    }
-IStandaloneEnablerLocaterP  ECSchemaReadContext::GetStandaloneEnablerLocater()       { return m_standaloneEnablerLocater;  }
-bool                        ECSchemaReadContext::GetHideSchemasFromLeakDetection()   { return m_hideSchemasFromLeakDetection;  }
-
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // IECSchemaOwner
@@ -1941,8 +1826,8 @@ int                             ECSchemaCache::GetCount ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchemaCache::_AddSchema   (ECSchemaR ecSchema)
     {
-    m_schemas.push_back (&ecSchema);
-
+    m_schemas[ecSchema.GetSchemaKey()] = &ecSchema;
+    
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -1951,15 +1836,12 @@ ECObjectsStatus ECSchemaCache::_AddSchema   (ECSchemaR ecSchema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchemaCache::_DropSchema  (ECSchemaR ecSchema)
     {
-    for (bvector<ECSchemaPtr>::iterator iter = m_schemas.begin(); iter != m_schemas.end(); ++iter)
-        {
-        if ((*iter).get() == &ecSchema)
-            {
-            m_schemas.erase(iter);
-            return ECOBJECTS_STATUS_Success;
-            }
-        }
-    return ECOBJECTS_STATUS_SchemaNotFound;
+    SchemaMap::iterator iter = m_schemas.find (ecSchema.GetSchemaKey());
+    if (iter == m_schemas.end())
+        return ECOBJECTS_STATUS_SchemaNotFound;
+
+    m_schemas.erase(iter);
+    return ECOBJECTS_STATUS_Success;;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1975,8 +1857,8 @@ void                             ECSchemaCache::Clear ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP       ECSchemaCache::_GetSchema   (SchemaKeyCR keyIn)
     {
-    SchemaKey key(keyIn);
-    return _LocateSchema (key, SCHEMAMATCHTYPE_Exact, NULL).get();
+    SchemaMap::const_iterator iter = m_schemas.find (keyIn);
+    return (iter == m_schemas.end()) ? NULL : iter->second.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1984,13 +1866,25 @@ ECSchemaP       ECSchemaCache::_GetSchema   (SchemaKeyCR keyIn)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaPtr     ECSchemaCache::_LocateSchema (SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextP schemaContext)
     {
-    for (bvector<ECSchemaPtr>::iterator iter = m_schemas.begin(); iter != m_schemas.end(); ++iter)
+    SchemaMap::iterator iter;
+    switch (matchType)
         {
-        if ((*iter)->GetSchemaKey().Matches (key, matchType))
-            return iter->get();
+        case SCHEMAMATCHTYPE_Identical:
+            {
+            iter = m_schemas.find (key);
+            break;
+            }
+        default:
+            {
+            iter = std::find_if(m_schemas.begin(), m_schemas.end(), SchemaKeyMatchPredicate(key, matchType));
+            break;
+            }
         }
+    
+    if (iter == m_schemas.end())
+        return NULL;
 
-    return NULL;
+    return iter->second;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2100,48 +1994,6 @@ ECObjectsStatus SchemaKey::ParseSchemaFullName (SchemaKeyR key, WCharCP schemaFu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaReadContext::ReadSchemaInfo* ECSchemaReadContext::GetSchema (SchemaKeyCR key, SchemaMatchType matchType)
-    {
-    bmap<SchemaKey, ReadSchemaInfo>::iterator iter;
-    switch (matchType)
-        {
-        case SCHEMAMATCHTYPE_Identical:
-            {
-            iter = m_knownSchemas.find (key);
-            break;
-            }
-        default:
-            {
-            iter = std::find_if(m_knownSchemas.begin(), m_knownSchemas.end(), SchemaKeyMatchPredicate(key, matchType));
-            break;
-            }
-        }
-    
-    if (iter == m_knownSchemas.end())
-        return NULL;
-
-    return &iter->second;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            ECSchemaReadContext::AddSchema(ECSchemaR schema, bool isOwned)
-    {
-    SchemaKeyCR key = schema.GetSchemaKey();
-    if (m_knownSchemas.empty())
-        isOwned = true;
-
-    bmap<SchemaKey, ReadSchemaInfo>::iterator iter = m_knownSchemas.find (key);
-    if (iter == m_knownSchemas.end())
-        {
-        m_knownSchemas[key] = ReadSchemaInfo (&schema) ;
-        return;
-        }
-    
-    assert(false);
-    }
-
 struct ECGetChildFunctor
     {
     typedef bvector<ECSchemaCP> ChildCollection;

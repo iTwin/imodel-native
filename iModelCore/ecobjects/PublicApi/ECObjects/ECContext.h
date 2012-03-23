@@ -22,26 +22,50 @@ struct ECSchemaReadContext /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
 {
 /*__PUBLISH_SECTION_END__*/
 friend struct ECSchema;
+friend struct SearchPathSchemaFileLocater;
+    static const int CATEGORY_PARTITION_SIZE = 5000;
+    enum PriorityPartiion
+        {
+        ReaderContext   = -1* CATEGORY_PARTITION_SIZE, //Whatever we found is off highest priority
+        UserSpace       = 0*  CATEGORY_PARTITION_SIZE,
+        External        = 1*  CATEGORY_PARTITION_SIZE,
+        StandardPaths   = 2*  CATEGORY_PARTITION_SIZE,
+        Final           = 3*  CATEGORY_PARTITION_SIZE,
+        };
 
-    typedef ECSchemaPtr ReadSchemaInfo;
+    struct SchemaLocatorKey
+        {
+        int                 m_priority;
+        IECSchemaLocaterP   m_locator;
 
+        bool operator < (SchemaLocatorKey const & rhs) const 
+            {
+            if (m_priority != rhs.m_priority)
+                return m_priority < rhs.m_priority;//Order the higher priority ones first
+
+            return m_locator < rhs.m_locator;
+            }
+
+        SchemaLocatorKey (IECSchemaLocaterP locator, int priority)
+            :m_locator(locator), m_priority(priority)
+            {}
+        };
 private:
     IStandaloneEnablerLocaterP      m_standaloneEnablerLocater;
+    ECSchemaCache                   m_knownSchemas;
     
-    bmap<SchemaKey, ReadSchemaInfo> m_knownSchemas;
-    bvector<IECSchemaLocaterP>      m_locators;
-    IECSchemaLocaterP               m_finalSchemaLocater;
-    T_WStringVector                 m_searchPaths;
+    typedef bset<SchemaLocatorKey>                          SchemaLocatorSet;
+    SchemaLocatorSet                                        m_locators;
+    typedef bmap<WString, SearchPathSchemaFileLocaterPtr>   SearchPathLocatorList;
+    SearchPathLocatorList                                   m_searchPathLocators;
+
     bool                            m_hideSchemasFromLeakDetection;
     bool                            m_acceptLegacyImperfectLatestCompatibleMatch;
 
-    bvector<IECSchemaLocaterP>& GetSchemaLocaters ();
-    IECSchemaLocaterP           GetFinalSchemaLocater ();
-    T_WStringVector&            GetSchemaPaths ();
     IStandaloneEnablerLocaterP  GetStandaloneEnablerLocater();
     bool                        GetHideSchemasFromLeakDetection();
-
-    void                        ClearSchemaPaths();
+    SchemaLocatorSet::iterator  GetHighestLocatorInRange (UInt32& prioirty);
+    bool                        GetStandardPaths (bvector<WString>& standardPaths);
 
 protected:
     //! Constructs a context for deserializing ECSchemas
@@ -51,12 +75,16 @@ protected:
 
     
 public:
-    void               AddSchema(ECSchemaR schema, bool owned);
-    void               RemoveSchema(ECSchemaR schema, bool owned);
-    ReadSchemaInfo*    GetSchema (SchemaKeyCR key, SchemaMatchType matchType);
+    
+    void                AddSchema(ECSchemaR schema);
+    void                RemoveSchema(ECSchemaR schema);
+    ECSchemaPtr         GetFoundSchema (SchemaKeyR key, SchemaMatchType matchType);
 
+    ECSchemaPtr         LocateSchema (SchemaKeyR key, SchemaMatchType matchType);
+    ECSchemaPtr         LocateSchema (SchemaKeyR key, bset<SchemaMatchType> const& matches);
     ECOBJECTS_EXPORT void HideSchemasFromLeakDetection();
 
+    ECOBJECTS_EXPORT void AddExternalSchemaLocaters (bvector<EC::IECSchemaLocaterP> const& schemaLocators);
 /*__PUBLISH_SECTION_START__*/
 
     //! Creates a context for deserializing ECSchemas
@@ -68,8 +96,6 @@ public:
     //! Creates a context for deserializing ECSchemas
     //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestCompatible only checks that the major version matches. A warning will be logged if minor version is too low, but the ECSchema will be accepted
     ECOBJECTS_EXPORT static ECSchemaReadContextPtr CreateContext (bool acceptLegacyImperfectLatestCompatibleMatch = false);
-
-    ECOBJECTS_EXPORT void AddSchemaLocaters (bvector<EC::IECSchemaLocaterP>&);
 
     ECOBJECTS_EXPORT void AddSchemaLocater (IECSchemaLocaterR);
     ECOBJECTS_EXPORT void AddSchemaPath (WCharCP);
