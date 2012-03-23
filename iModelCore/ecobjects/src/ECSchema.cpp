@@ -1011,10 +1011,8 @@ bvector<WString>&               searchPaths
             continue;
 
         ECSchemaPtr schemaOut = NULL;
-
-        
         //Check if schema is compatible before reading, as reading it would add the schema to the cache.
-        if (foundKey.Matches(key, matchType))
+        if (!foundKey.Matches(key, matchType))
             {
             if (schemaContext.m_acceptLegacyImperfectLatestCompatibleMatch)
                 {
@@ -1023,7 +1021,7 @@ bvector<WString>&               searchPaths
                 // See if this imperfect match ECSchema has is already cached (so we can avoid loading it, below)
             
                 //We found a different key;
-                if (!foundKey.Matches(key, SCHEMAMATCHTYPE_Exact) && matchType != SCHEMAMATCHTYPE_Exact)
+                if (matchType != SCHEMAMATCHTYPE_Exact)
                     schemaOut = schemaContext.GetFoundSchema(foundKey, SCHEMAMATCHTYPE_Exact);
                 
                 if (schemaOut.IsValid())
@@ -1780,17 +1778,6 @@ ECSchemaP ECSchema::FindSchemaP (SchemaKeyCR schemaKey, SchemaMatchType matchTyp
     return const_cast<ECSchemaP> (FindSchema(schemaKey, matchType));
     }
 
-
-/////////////////////////////////////////////////////////////////////////////////////////
-// IECSchemaOwner
-/////////////////////////////////////////////////////////////////////////////////////////
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    07/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus IECSchemaOwner::AddSchema  (ECSchemaR schema) { return _AddSchema (schema); }
-ECObjectsStatus IECSchemaOwner::DropSchema (ECSchemaR schema) { return _DropSchema (schema); }
-ECSchemaP       IECSchemaOwner::GetSchema  (SchemaKeyCR key) { return _GetSchema (key); }
-
 /////////////////////////////////////////////////////////////////////////////////////////
 // IStandaloneEnablerLocater
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -1824,7 +1811,7 @@ int                             ECSchemaCache::GetCount ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchemaCache::_AddSchema   (ECSchemaR ecSchema)
+ECObjectsStatus ECSchemaCache::AddSchema   (ECSchemaR ecSchema)
     {
     m_schemas[ecSchema.GetSchemaKey()] = &ecSchema;
     
@@ -1834,7 +1821,7 @@ ECObjectsStatus ECSchemaCache::_AddSchema   (ECSchemaR ecSchema)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchemaCache::_DropSchema  (ECSchemaR ecSchema)
+ECObjectsStatus ECSchemaCache::DropSchema  (ECSchemaR ecSchema)
     {
     SchemaMap::iterator iter = m_schemas.find (ecSchema.GetSchemaKey());
     if (iter == m_schemas.end())
@@ -1855,7 +1842,7 @@ void                             ECSchemaCache::Clear ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP       ECSchemaCache::_GetSchema   (SchemaKeyCR keyIn)
+ECSchemaP       ECSchemaCache::GetSchema   (SchemaKeyCR keyIn)
     {
     SchemaMap::const_iterator iter = m_schemas.find (keyIn);
     return (iter == m_schemas.end()) ? NULL : iter->second.get();

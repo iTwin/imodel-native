@@ -1090,24 +1090,6 @@ public:
 
 }; 
 
-//=======================================================================================
-//! Interface implemented by class that provides schema ownership services.</summary>
-//=======================================================================================
-struct IECSchemaOwner //WIP: Get rid of this. Abeesh
-{
-/*__PUBLISH_CLASS_VIRTUAL__*/
-/*__PUBLISH_SECTION_END__*/
-protected:
-    virtual ECObjectsStatus _AddSchema   (ECSchemaR) = 0;
-    virtual ECObjectsStatus _DropSchema  (ECSchemaR) = 0;
-    virtual ECSchemaP       _GetSchema   (SchemaKeyCR key) = 0;
-    
-public:
-    ECOBJECTS_EXPORT ECObjectsStatus         AddSchema   (ECSchemaR);
-    ECOBJECTS_EXPORT ECObjectsStatus         DropSchema  (ECSchemaR);
-    ECOBJECTS_EXPORT ECSchemaP               GetSchema   (SchemaKeyCR key);
-/*__PUBLISH_SECTION_START__*/
-};
 
 //=======================================================================================
 //! Interface to find a standalone enabler, typically for an embedded ECStruct in an ECInstance.</summary>
@@ -1167,20 +1149,19 @@ typedef RefCountedPtr<ECSchemaCache>        ECSchemaCachePtr;
 //! An object that controls the lifetime of a set of ECSchemas.  When the schema
 //! owner is destroyed, so are the schemas that it owns.</summary>
 //=======================================================================================
-struct ECSchemaCache /*__PUBLISH_ABSTRACT__*/ :  public IECSchemaOwner, public IECSchemaLocater,  public RefCountedBase
+struct ECSchemaCache /*__PUBLISH_ABSTRACT__*/ : public IECSchemaLocater,  public RefCountedBase
 {
 /*__PUBLISH_SECTION_END__*/
 protected:
     SchemaMap   m_schemas;
     
-    // IECSchemaOwner
-    ECOBJECTS_EXPORT virtual ECObjectsStatus _AddSchema   (ECSchemaR) override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus _DropSchema  (ECSchemaR) override;
-    ECOBJECTS_EXPORT virtual ECSchemaP       _GetSchema   (SchemaKeyCR key);
     ECOBJECTS_EXPORT virtual ECSchemaPtr     _LocateSchema (SchemaKeyR schema, SchemaMatchType matchType, ECSchemaReadContextP schemaContext) override;
     
 /*__PUBLISH_SECTION_START__*/
 public:
+    ECOBJECTS_EXPORT ECObjectsStatus AddSchema   (ECSchemaR);
+    ECOBJECTS_EXPORT ECObjectsStatus DropSchema  (ECSchemaR);
+    ECOBJECTS_EXPORT ECSchemaP       GetSchema   (SchemaKeyCR key);
     ECOBJECTS_EXPORT virtual ~ECSchemaCache ();
     ECOBJECTS_EXPORT static  ECSchemaCachePtr Create ();
     ECOBJECTS_EXPORT int     GetCount();
@@ -1493,11 +1474,7 @@ public:
     //! 
     //! Writes an ECSchema from an ECSchemaXML-formatted string.
     //! @code
-    //! // The IECSchemaOwner determines the lifespan of any ECSchema objects that are created using it.
-    //! // ECSchemaCache also caches ECSchemas and implements IStandaloneEnablerLocater for use by ECSchemaReadContext
-    //! ECSchemaCachePtr                  schemaOwner = ECSchemaCache::Create();
-    //! 
-    //! ECSchemaP schema;
+    //! ECSchemaPtr schema;
     //! SchemaReadStatus status = ECSchema::ReadFromXmlString (schema, ecSchemaAsString, *schemaOwner);
     //! if (SCHEMA_READ_STATUS_Success != status)
     //!     return ERROR;

@@ -87,7 +87,7 @@ ECSchemaReadContext::SchemaLocatorSet::iterator  ECSchemaReadContext::GetHighest
     
     //Find the last insertion point of external schema
     SchemaLocatorSet::iterator iter = std::upper_bound (m_locators.begin(), m_locators.end(), dummy);
-    if (iter != m_locators.end())
+    if (iter != m_locators.end() && iter->m_priority < dummy.m_priority)
         priority = iter->m_priority + 1;
     else
         {
@@ -186,7 +186,7 @@ ECSchemaPtr     ECSchemaReadContext::LocateSchema (SchemaKeyR key, bset<SchemaMa
 
         for (bset<SchemaMatchType>::const_iterator matchIter = matches.begin(); matchIter != matches.end(); ++matchIter)
             {
-            ECSchemaPtr schema = iter->m_locator->LocateSchema(key, *matchIter, NULL);
+            ECSchemaPtr schema = iter->m_locator->LocateSchema(key, *matchIter, this);
             if (schema.IsValid())
                 return schema;
             }
