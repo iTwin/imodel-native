@@ -1023,8 +1023,8 @@ struct SchemaKeyMatchPredicate
         :m_key(key), m_matchType(matchType)
         {}
 
-    typedef bpair<SchemaKey, ECSchemaPtr> ReadContextMapVal;
-    bool operator () (ReadContextMapVal const& rhs)
+    typedef bpair<SchemaKey, ECSchemaPtr> MapVal;
+    bool operator () (MapVal const& rhs)
         {
         return m_key.Matches (rhs.first, m_matchType);
         }
@@ -1257,6 +1257,7 @@ public:
 /*__PUBLISH_SECTION_START__*/
 public:    
     ECOBJECTS_EXPORT SchemaKeyCR        GetSchemaKey() const;
+    ECOBJECTS_EXPORT SchemaKeyR         GetSchemaKeyR() const;
     ECOBJECTS_EXPORT void               DebugDump() const;
     ECOBJECTS_EXPORT static void        SetErrorHandling (bool showMessages, bool doAssert);
 
@@ -1499,6 +1500,7 @@ public:
     //! @param[in]    rootSchema            This schema and it reference schemas will be added to the vector of allSchemas.
     //! @param[in]    includeRootSchema     If true then root schema is added to the vector of allSchemas. Defaults to true.
     ECOBJECTS_EXPORT static void FindAllSchemasInGraph (bvector<EC::ECSchemaCP>& allSchemas, EC::ECSchemaCR rootSchema, bool includeRootSchema=true);
+    ECOBJECTS_EXPORT static void FindAllSchemasInGraph (bvector<EC::ECSchemaP>& allSchemas, EC::ECSchemaR rootSchema, bool includeRootSchema=true);
     
     //! Returns this if the name matches, otherwise searches referenced ECSchemas for one whose name matches schemaName
     ECOBJECTS_EXPORT ECSchemaCP FindSchema (SchemaKeyCR schema, SchemaMatchType matchType) const;

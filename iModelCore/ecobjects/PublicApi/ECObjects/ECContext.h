@@ -80,7 +80,7 @@ public:
     void                RemoveSchema(ECSchemaR schema);
     ECSchemaPtr         GetFoundSchema (SchemaKeyR key, SchemaMatchType matchType);
 
-    ECSchemaPtr         LocateSchema (SchemaKeyR key, SchemaMatchType matchType);
+    
     ECSchemaPtr         LocateSchema (SchemaKeyR key, bset<SchemaMatchType> const& matches);
     ECOBJECTS_EXPORT void HideSchemasFromLeakDetection();
 
@@ -100,6 +100,9 @@ public:
     ECOBJECTS_EXPORT void AddSchemaLocater (IECSchemaLocaterR);
     ECOBJECTS_EXPORT void AddSchemaPath (WCharCP);
     ECOBJECTS_EXPORT void SetFinalSchemaLocater (IECSchemaLocaterR);
+
+    //Find the schema matching the schema key and using matchType as the match criteria. This uses the prioritized list of locators to find the schema.
+    ECOBJECTS_EXPORT ECSchemaPtr         LocateSchema (SchemaKeyR key, SchemaMatchType matchType);
 };
 
 typedef RefCountedPtr<ECInstanceReadContext>      ECInstanceReadContextPtr;

@@ -1726,6 +1726,14 @@ bool     utf16
 #endif //defined (NEEDSWORK_LIBXML)
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  03/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECSchema::FindAllSchemasInGraph (bvector<EC::ECSchemaP>& allSchemas, ECSchemaR rootSchema, bool includeRootSchema)
+    {
+    FindAllSchemasInGraph ((bvector<EC::ECSchemaCP>&)allSchemas, rootSchema, includeRootSchema);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    07/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECSchema::FindAllSchemasInGraph (bvector<EC::ECSchemaCP>& allSchemas, ECSchemaCR rootSchema, bool includeRootSchema)
@@ -1863,6 +1871,7 @@ ECSchemaPtr     ECSchemaCache::_LocateSchema (SchemaKeyR key, SchemaMatchType ma
             }
         default:
             {
+            //Other cases the container is not sorted by the match type.
             iter = std::find_if(m_schemas.begin(), m_schemas.end(), SchemaKeyMatchPredicate(key, matchType));
             break;
             }
