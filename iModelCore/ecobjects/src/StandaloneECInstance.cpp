@@ -114,7 +114,7 @@ MemoryECInstanceBase::~MemoryECInstanceBase ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MemoryECInstanceBase::SetData (byte * data, UInt32 size, bool freeExisitingData) //The MemoryECInstanceBase will take ownership of the memory
+void MemoryECInstanceBase::SetData (const byte * data, UInt32 size, bool freeExisitingData) //The MemoryECInstanceBase will take ownership of the memory
     {
     if (freeExisitingData)
         {
@@ -136,7 +136,7 @@ void MemoryECInstanceBase::SetData (byte * data, UInt32 size, bool freeExisiting
         }
     else
         {
-        m_data = data;
+        m_data = const_cast<byte *>(data);
         }
 
     m_bytesAllocated = size;
@@ -654,6 +654,86 @@ MemoryECInstanceBase const* MemoryECInstanceBase::GetParentInstance () const
     return m_parentInstance;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    03/11
++---------------+---------------+---------------+---------------+---------------+------*/ 
+static void     duplicateProperties (IECInstanceR target, ECValuesCollectionCR source)
+    {
+    for (ECValuesCollection::const_iterator it=source.begin(); it != source.end(); ++it)
+        {
+        ECPropertyValue const& prop = *it;
+        if (prop.HasChildValues())
+            {
+            duplicateProperties (target, *prop.GetChildValues());
+            continue;
+            }
+
+        target.SetValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus MemoryECInstanceBase::CopyInstanceProperties
+(
+EC::IECInstanceCR     fromNativeInstance
+)
+    {
+    IECInstancePtr  thisAsIECInstance = GetAsIECInstance ();
+
+    if (!thisAsIECInstance->GetClass().GetName().Equals (fromNativeInstance.GetClass().GetName().c_str()))
+        return ECOBJECTS_STATUS_Error;
+
+    MemoryECInstanceBase* fromMemoryInstance = fromNativeInstance.GetAsMemoryECInstance ();
+    if (fromMemoryInstance != NULL)
+        {
+        ClassLayoutCR classLayout = GetClassLayout();
+
+        if (classLayout.GetChecksum() == fromMemoryInstance->GetClassLayout().GetChecksum())
+            {
+            SetData (fromMemoryInstance->GetData (), fromMemoryInstance->GetBytesUsed (), true); // if true is last argument memory is copied
+
+            // copy the perProperty flags
+            memcpy (m_perPropertyFlagsHolder.perPropertyFlags, fromMemoryInstance->GetPerPropertyFlagsData(), m_perPropertyFlagsHolder.numPerPropertyFlagsEntries * sizeof(UInt32));
+
+            if (fromMemoryInstance->m_structInstances && fromMemoryInstance->m_structInstances)
+                {
+                for (size_t i = 0; i<fromMemoryInstance->m_structInstances->size(); i++)
+                    {
+                    StructArrayEntry const& entry = (*fromMemoryInstance->m_structInstances)[i];
+                    
+                    MemoryECInstanceBase* structMbInstance = entry.structInstance->GetAsMemoryECInstance();
+                    if (!structMbInstance)
+                        continue;
+
+                    ECClassCR structClass = entry.structInstance->GetClass();
+                    StandaloneECEnablerPtr standaloneEnabler = entry.structInstance->GetEnablerR().GetEnablerForStructArrayMember (structClass.GetSchema().GetName().c_str(), structClass.GetName().c_str());
+                    if (standaloneEnabler.IsNull())
+                        continue;
+
+                    StandaloneECInstancePtr copiedStructInstance = standaloneEnabler->CreateInstance();
+                    copiedStructInstance->CopyInstanceProperties (*entry.structInstance);
+
+                    if (NULL == m_structInstances)
+                        m_structInstances = new StructInstanceVector ();
+
+                    StructArrayEntry newEntry (entry.structValueIdentifier, copiedStructInstance->GetAsIECInstance ());
+                    m_structInstances->push_back (newEntry);
+                    }
+                }
+            
+            return ECOBJECTS_STATUS_Success;
+            }
+        }
+
+    // copy properties individually
+    ECValuesCollectionPtr   properties = ECValuesCollection::Create (fromNativeInstance);
+    duplicateProperties (*thisAsIECInstance, *properties);
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 //  StandaloneECInstance
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -700,24 +780,6 @@ StandaloneECInstance::~StandaloneECInstance ()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    03/11
-+---------------+---------------+---------------+---------------+---------------+------*/ 
-static void     duplicateProperties (IECInstanceR target, ECValuesCollectionCR source)
-    {
-    for (ECValuesCollection::const_iterator it=source.begin(); it != source.end(); ++it)
-        {
-        ECPropertyValue const& prop = *it;
-        if (prop.HasChildValues())
-            {
-            duplicateProperties (target, *prop.GetChildValues());
-            continue;
-            }
-
-        target.SetValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue());
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan.Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 StandaloneECInstancePtr         StandaloneECInstance::Duplicate(IECInstanceCR instance)
@@ -729,9 +791,7 @@ StandaloneECInstancePtr         StandaloneECInstance::Duplicate(IECInstanceCR in
 
     StandaloneECInstancePtr newInstance = standaloneEnabler->CreateInstance();
 
-    ECValuesCollectionPtr   properties = ECValuesCollection::Create (instance);
-    duplicateProperties (*newInstance, *properties);
-
+    newInstance->CopyInstanceProperties (instance);
     return newInstance;
     }
 
