@@ -65,6 +65,12 @@ $(o)ECValue$(oext)         : $(baseDir)ECValue.cpp $(ECObjectsHeaders) ${MultiCo
 
 $(o)ECEnabler$(oext)       : $(baseDir)ECEnabler.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
+$(o)ExpressionNode$(oext)  : $(baseDir)ExpressionNode.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+
+$(o)ExpressionContext$(oext) : $(baseDir)ExpressionContext.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+
+$(o)ExpressionHandler$(oext) : $(baseDir)ExpressionHandler.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+
 $(o)MemoryInstanceSupport$(oext) : $(baseDir)MemoryInstanceSupport.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)MemoryInstanceSupport.h
 
 $(o)StandaloneECInstance$(oext)    : $(baseDir)StandaloneECInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)StandaloneECInstance.h $(ecobjectsPublicAPISrc)MemoryInstanceSupport.h

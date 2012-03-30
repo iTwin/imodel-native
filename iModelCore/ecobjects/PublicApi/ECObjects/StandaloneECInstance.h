@@ -33,7 +33,7 @@ typedef int StructValueIdentifier;
 
 struct StructArrayEntry
     {
-    StructArrayEntry (StructValueIdentifier structValueId, IECInstancePtr& instancePtr)
+    StructArrayEntry (StructValueIdentifier structValueId, IECInstancePtr const& instancePtr)
         {
         structValueIdentifier = structValueId;
         structInstance        = instancePtr;

@@ -62,6 +62,7 @@
 #include <ECObjects/ECSchema.h>
 #include <ECObjects/ECContext.h>
 #include <ECObjects/ECValue.h>
+#include <ECObjects/ECExpressions.h>
 #include <ECObjects/MemoryInstanceSupport.h>
 #include <ECObjects/StandaloneECInstance.h>
 #include <Bentley/ScopedArray.h>

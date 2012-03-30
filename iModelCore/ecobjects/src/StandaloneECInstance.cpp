@@ -718,7 +718,8 @@ EC::IECInstanceCR     fromNativeInstance
                     if (NULL == m_structInstances)
                         m_structInstances = new StructInstanceVector ();
 
-                    StructArrayEntry newEntry (entry.structValueIdentifier, copiedStructInstance->GetAsIECInstance ());
+                    IECInstancePtr p = copiedStructInstance->GetAsIECInstance ();
+                    StructArrayEntry newEntry (entry.structValueIdentifier, p);
                     m_structInstances->push_back (newEntry);
                     }
                 }
