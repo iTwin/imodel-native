@@ -63,18 +63,18 @@ ExpressionStatus Operations::ConvertToString(EvaluationResultR evalResult)
     switch(ecValue.GetPrimitiveType())
         {
         case PRIMITIVETYPE_Integer:
-            _itow_s(ecValue.GetInteger(), buffer, _countof(buffer), 10);
+            BeStringUtilities::Snwprintf(buffer, _countof(buffer), L"%d", ecValue.GetInteger());
             break;
         case PRIMITIVETYPE_Boolean:
             //  TODO -- should this be locale specific?
             wcscpy (buffer, ecValue.GetBoolean() ?  L"true"  : L"false");
             break;
         case PRIMITIVETYPE_Long:
-            _i64tow_s(ecValue.GetLong(), buffer, _countof(buffer), 10);
+            BeStringUtilities::Snwprintf(buffer, _countof(buffer), L"%ld", ecValue.GetLong());
             break;
         case PRIMITIVETYPE_Double:
             //  TODO -- needs locale, extended type.
-            _snwprintf(buffer, _countof(buffer), L"%f", ecValue.GetDouble());
+            BeStringUtilities::Snwprintf(buffer, _countof(buffer), L"%f", ecValue.GetDouble());
             break;
         default:
             return ExprStatus_NotImpl;
@@ -107,7 +107,7 @@ ExpressionStatus Operations::ConvertToInt64(EvaluationResultR evalResult)
             return ExprStatus_Success;
 
         case PRIMITIVETYPE_Double:
-            ecValue.SetLong((__int64)ecValue.GetDouble());
+            ecValue.SetLong((Int64)ecValue.GetDouble());
             return ExprStatus_Success;
 
         case PRIMITIVETYPE_String:
@@ -442,7 +442,7 @@ ExpressionStatus Operations::PerformArithmeticPromotion(EvaluationResult& leftRe
         EC::PrimitiveType   targetCode = PRIMITIVETYPE_Long == leftCode ? rightCode : leftCode;
         if (PRIMITIVETYPE_Double == targetCode)
             {
-            target.SetLong((__int64)target.GetDouble());
+            target.SetLong((Int64)target.GetDouble());
             return ExprStatus_Success;
             }
 
@@ -670,7 +670,7 @@ EvaluationResultR         right
 
         case PRIMITIVETYPE_Long:
             {
-            __int64         value = left.GetECValue().GetInteger();
+            Int64         value = left.GetECValue().GetInteger();
             if (shiftOp == TOKEN_ShiftLeft)
                 {
                 resultOut.GetECValueR().SetLong(value << count);
@@ -684,7 +684,7 @@ EvaluationResultR         right
             else if (shiftOp == TOKEN_UnsignedShiftRight)
                 {
                 UInt64  uvalue = (UInt64)value;
-                resultOut.GetECValueR().SetLong((__int64)(uvalue >> count));
+                resultOut.GetECValueR().SetLong((Int64)(uvalue >> count));
                 return ExprStatus_Success;
                 }
             }
@@ -778,7 +778,7 @@ EvaluationResultR           right
 
         case PRIMITIVETYPE_Long:
             {
-            __int64     divisor = right.GetECValue().GetLong();
+            Int64     divisor = right.GetECValue().GetLong();
             if (0 == divisor)
                 return ExprStatus_DivideByZero;
 
@@ -858,7 +858,7 @@ EvaluationResultR            right
 
         case PRIMITIVETYPE_Long:
             {
-            __int64     divisor = right.GetECValue().GetLong();
+            Int64     divisor = right.GetECValue().GetLong();
             if (0 == divisor)
                 return ExprStatus_DivideByZero;
 
@@ -1352,7 +1352,7 @@ NodePtr         Node::CreateIntegerLiteral (int value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodePtr         Node::CreateInt64Literal(__int64 value)
+NodePtr         Node::CreateInt64Literal(Int64 value)
     {
     return new Int64LiteralNode(value);
     }
@@ -2118,7 +2118,7 @@ ExpressionStatus BinaryNode::PromoteCommon(EvaluationResult& leftResult, Evaluat
         EC::PrimitiveType   targetCode = PRIMITIVETYPE_Long == leftCode ? rightCode : leftCode;
         if (PRIMITIVETYPE_Double == targetCode)
             {
-            target.SetLong((__int64)target.GetDouble());
+            target.SetLong((Int64)target.GetDouble());
             return ExprStatus_Success;
             }
 

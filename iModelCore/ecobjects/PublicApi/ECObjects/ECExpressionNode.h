@@ -229,7 +229,7 @@ protected:
     virtual WString     _ToString() const override 
         { 
         wchar_t     buffer [256];
-        wsprintfW(buffer, L"%d", m_value);
+        BeStringUtilities::Snwprintf(buffer, _countof (buffer), L"%d", m_value);
         return buffer; 
         }
 
@@ -258,7 +258,7 @@ public:
 struct          Int64LiteralNode : Node
 {
 private:
-    __int64     m_value;
+    Int64     m_value;
 
 protected:
     virtual WString     _ToString() const override 
@@ -280,8 +280,8 @@ protected:
     virtual ExpressionToken _GetOperation () const override { return TOKEN_IntegerConstant; }
 
 public:
-                Int64LiteralNode (__int64 literalValue) : m_value(literalValue) {}
-    __int64     GetInternalValue () {return m_value;}
+                Int64LiteralNode (Int64 literalValue) : m_value(literalValue) {}
+    Int64     GetInternalValue () {return m_value;}
 
 }; // End of struct Int64LiteralNode
 
@@ -418,7 +418,7 @@ private:
     WString     m_value;
 
                 IdentNode(wchar_t const* name) : m_value(name) {}
-    friend      DotNode;
+    friend      struct DotNode;
 protected:
     virtual WString     _ToString() const override { return m_value; }
 

@@ -676,7 +676,7 @@ public:
     static NodePtr          CreateBooleanLiteral(bool literalValue);
     static NodePtr          CreateStringLiteral (wchar_t const* value);
     static NodePtr          CreateIntegerLiteral (int value);
-    static NodePtr          CreateInt64Literal(__int64 value);
+    static NodePtr          CreateInt64Literal(Int64 value);
     static NodePtr          CreateFloatLiteral(double value);
     static NodePtr          CreateUnaryArithmetic(ExpressionToken tokenId, NodeR left);
     static NodePtr          CreateArithmetic(ExpressionToken  tokenID, NodeR left, NodeR right);

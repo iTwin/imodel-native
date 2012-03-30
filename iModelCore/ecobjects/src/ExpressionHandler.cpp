@@ -893,7 +893,7 @@ NodePtr         ECEvaluator::ParsePrimary
             //  May want to have these parse the strings immediately and convert to constants
             case TOKEN_IntegerConstant:
                 {
-                __int64     value = _wtoi64 (m_lexer->GetTokenStringCP ());
+                Int64     value = _wtoi64 (m_lexer->GetTokenStringCP ());
                 if (value >= INT_MIN && value <= INT_MAX)
                     {
                     int  intValue = (int)value;
@@ -907,8 +907,12 @@ NodePtr         ECEvaluator::ParsePrimary
                 break;
 
             case TOKEN_FloatConst:
-                result = Node::CreateFloatLiteral (_wtof (m_lexer->GetTokenStringCP ()));
+                {
+                double d;
+                swscanf(m_lexer->GetTokenStringCP (), L"%lg", &d);
+                result = Node::CreateFloatLiteral (d);
                 m_lexer->Advance ();
+                }
                 break;
 
             case TOKEN_LParen:
