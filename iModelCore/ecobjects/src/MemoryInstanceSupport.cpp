@@ -338,7 +338,7 @@ ILeakDetector&  ClassLayout::Debug_GetLeakDetector() { return g_classLayoutLeakD
 WString        ClassLayout::GetShortDescription () const
     {
     wchar_t line[1024];
-    swprintf (line, _countof(line), L"ClassLayout for ECClassIndex=%i, ECClass.GetName()=%s", m_classIndex, m_className.c_str());
+    swprintf (line, _countof(line), L"ClassLayout for ECClassIndex=%i, ECClass.GetName()=%ls", m_classIndex, m_className.c_str());
 
     return line;
     }
@@ -846,7 +846,7 @@ void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, WCharCP 
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassLayoutP    ClassLayout::Factory::DoBuildClassLayout ()
-    { //ECLogger::Log->debugv (L"Building ClassLayout for ECClass %s", m_ecClass->GetName().c_str());
+    { //ECLogger::Log->debugv (L"Building ClassLayout for ECClass %ls", m_ecClass->GetName().c_str());
     m_underConstruction.m_isRelationshipClass = (dynamic_cast<ECRelationshipClassCP>(&m_ecClass) != NULL);
 
     // Iterate through the ECProperties of the ECClass and build the layout
@@ -2402,7 +2402,7 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
     UInt32 offset = GetOffsetOfPropertyValue (propertyLayout, useIndex, index);
 
 #ifdef EC_TRACE_MEMORY 
-    wprintf (L"SetValue %s of 0x%x at offset=%d to %s.\n", propertyAccessString, this, offset, v.ToString().c_str());
+    wprintf (L"SetValue %ls of 0x%x at offset=%d to %ls.\n", propertyAccessString, this, offset, v.ToString().c_str());
 #endif    
     ECTypeDescriptor typeDescriptor = propertyLayout.GetTypeDescriptor();
     PrimitiveType primitiveType;
@@ -2674,18 +2674,18 @@ WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, Clas
     
     wostringstream oss;
 
-    appendFormattedString (oss, L"%s================== ECInstance Dump #%d =============================\n", indent, s_dumpCount);
+    appendFormattedString (oss, L"%ls================== ECInstance Dump #%d =============================\n", indent, s_dumpCount);
     if (s_skipDump)
         return oss.str().c_str();
   
     byte const * data = _GetData();
 
-    appendFormattedString (oss, L"%sECClass=%s at address = 0x%0x\n", indent, classLayout.GetECClassName().c_str(), data);
+    appendFormattedString (oss, L"%lsECClass=%ls at address = 0x%0x\n", indent, classLayout.GetECClassName().c_str(), data);
     InstanceHeader& header = *(InstanceHeader*)data;
 
-    appendFormattedString (oss, L"%s  [0x%0x][%4.d] SchemaIndex = %d\n", indent,        &header.m_schemaIndex,  (byte*)&header.m_schemaIndex   - data, header.m_schemaIndex);
-    appendFormattedString (oss, L"%s  [0x%0x][%4.d] ClassIndex  = %d\n", indent,        &header.m_classIndex,   (byte*)&header.m_classIndex    - data, header.m_classIndex);
-    appendFormattedString (oss, L"%s  [0x%0x][%4.d] InstanceFlags = 0x%08.x\n", indent, &header.m_instanceFlags,(byte*)&header.m_instanceFlags - data, header.m_instanceFlags);
+    appendFormattedString (oss, L"%ls  [0x%0x][%4.d] SchemaIndex = %d\n", indent,        &header.m_schemaIndex,  (byte*)&header.m_schemaIndex   - data, header.m_schemaIndex);
+    appendFormattedString (oss, L"%ls  [0x%0x][%4.d] ClassIndex  = %d\n", indent,        &header.m_classIndex,   (byte*)&header.m_classIndex    - data, header.m_classIndex);
+    appendFormattedString (oss, L"%ls  [0x%0x][%4.d] InstanceFlags = 0x%08.x\n", indent, &header.m_instanceFlags,(byte*)&header.m_instanceFlags - data, header.m_instanceFlags);
     
     UInt32 nProperties = classLayout.GetPropertyCount ();
     UInt32 nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks (nProperties);
@@ -2694,7 +2694,7 @@ WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, Clas
         {
         UInt32 offset = sizeof(InstanceHeader) + i * sizeof(NullflagsBitmask);
         byte const * address = offset + data;
-        appendFormattedString (oss, L"%s  [0x%x][%4.d] Nullflags[%d] = 0x%x\n", indent, address, offset, i, *(NullflagsBitmask*)(data + offset));
+        appendFormattedString (oss, L"%ls  [0x%x][%4.d] Nullflags[%d] = 0x%x\n", indent, address, offset, i, *(NullflagsBitmask*)(data + offset));
         }
     
     for (UInt32 i = 0; i < nProperties; i++)
@@ -2703,7 +2703,7 @@ WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, Clas
         ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (propertyLayout, i);
         if (ECOBJECTS_STATUS_Success != status)
             {
-            appendFormattedString (oss, L"%sError (%d) returned while getting PropertyLayout #%d", indent, status, i);
+            appendFormattedString (oss, L"%lsError (%d) returned while getting PropertyLayout #%d", indent, status, i);
             return oss.str().c_str();
             }
 
@@ -2712,7 +2712,7 @@ WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, Clas
             WCharCP accessStringP = propertyLayout->GetAccessString();
             // skip outputting "Struct" for struct that represents the root instance 
             if (NULL != accessStringP && 0 != *accessStringP)
-                appendFormattedString (oss, L"%s  Struct %s\n", indent, propertyLayout->GetAccessString());
+                appendFormattedString (oss, L"%ls  Struct %ls\n", indent, propertyLayout->GetAccessString());
 
             continue;
             }
@@ -2725,13 +2725,13 @@ WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, Clas
         WString valueAsString = v.ToString();
            
         if (propertyLayout->IsFixedSized())            
-            appendFormattedString (oss, L"%s  [0x%x][%4.d] %s = %s\n", indent, address, offset, propertyLayout->GetAccessString(), valueAsString.c_str());
+            appendFormattedString (oss, L"%ls  [0x%x][%4.d] %ls = %ls\n", indent, address, offset, propertyLayout->GetAccessString(), valueAsString.c_str());
         else
             {
             SecondaryOffset secondaryOffset = *(SecondaryOffset*)address;
             byte const * realAddress = data + secondaryOffset;
             
-            appendFormattedString (oss, L"%s  [0x%x][%4.d] -> [0x%x][%4.d] %s = %s\n", indent, address, offset, realAddress, secondaryOffset, propertyLayout->GetAccessString(), valueAsString.c_str());
+            appendFormattedString (oss, L"%ls  [0x%x][%4.d] -> [0x%x][%4.d] %ls = %ls\n", indent, address, offset, realAddress, secondaryOffset, propertyLayout->GetAccessString(), valueAsString.c_str());
             }
             
         if (propertyLayout->GetTypeDescriptor().IsArray())
@@ -2755,7 +2755,7 @@ WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, Clas
                         {
                         byte const * bitAddress = nullflagsOffset + data;
 
-                        appendFormattedString (oss, L"%s  [0x%x][%4.d] Nullflags[%d] = 0x%x\n", indent, bitAddress, nullflagsOffset, i, *(NullflagsBitmask*)(bitAddress));
+                        appendFormattedString (oss, L"%ls  [0x%x][%4.d] Nullflags[%d] = 0x%x\n", indent, bitAddress, nullflagsOffset, i, *(NullflagsBitmask*)(bitAddress));
                         nullflagsOffset += sizeof(NullflagsBitmask);
                         }
                     }
@@ -2775,13 +2775,13 @@ WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, Clas
                         }
 
                     if (IsArrayOfFixedSizeElements (*propertyLayout))
-                        appendFormattedString (oss, L"%s      [0x%x][%4.d] %d = %s\n", indent, address, offset, i, valueAsString.c_str());
+                        appendFormattedString (oss, L"%ls      [0x%x][%4.d] %d = %ls\n", indent, address, offset, i, valueAsString.c_str());
                     else
                         {
                         SecondaryOffset secondaryOffset = GetOffsetOfArrayIndexValue (GetOffsetOfPropertyValue (*propertyLayout), *propertyLayout, i);
                         byte const * realAddress = data + secondaryOffset;
                         
-                        appendFormattedString (oss, L"%s      [0x%x][%4.d] -> [0x%x][%4.d] %d = %s\n", indent, address, offset, realAddress, secondaryOffset, i, valueAsString.c_str());                    
+                        appendFormattedString (oss, L"%ls      [0x%x][%4.d] -> [0x%x][%4.d] %d = %ls\n", indent, address, offset, realAddress, secondaryOffset, i, valueAsString.c_str());                    
                         }     
                     if ((ECOBJECTS_STATUS_Success == status) && (!v.IsNull()) && (v.IsStruct()))
                         {
@@ -2791,7 +2791,7 @@ WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, Clas
                         WString structString = v.GetStruct()->ToString(structIndent.c_str());
                         oss << structString;
 
-                        appendFormattedString (oss, L"%s=================== END Struct Instance ===========================\n", structIndent);
+                        appendFormattedString (oss, L"%ls=================== END Struct Instance ===========================\n", structIndent);
                         }         
                     }
                 }
@@ -2800,7 +2800,7 @@ WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, Clas
         
     UInt32 offsetOfLast = classLayout.GetSizeOfFixedSection() - sizeof(SecondaryOffset);
     SecondaryOffset * pLast = (SecondaryOffset*)(data + offsetOfLast);
-    appendFormattedString (oss, L"%s  [0x%x][%4.d] Offset of TheEnd = %d\n", indent, pLast, offsetOfLast, *pLast);
+    appendFormattedString (oss, L"%ls  [0x%x][%4.d] Offset of TheEnd = %d\n", indent, pLast, offsetOfLast, *pLast);
 
     return oss.str().c_str();
 #elif defined (__unix__)

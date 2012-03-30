@@ -101,7 +101,7 @@ virtual void    ReportStats (WCharCP prefix) const override
     if (!prefix)
         prefix = L"";
 
-    ECObjectsLogger::Log()->debugv (L"%s Live %s: %d, Total Allocs: %d, TotalFrees: %d", prefix, m_pluralTypeName.c_str(), m_currentLive, m_totalAllocs, m_totalFrees);
+    ECObjectsLogger::Log()->debugv (L"%ls Live %ls: %d, Total Allocs: %d, TotalFrees: %d", prefix, m_pluralTypeName.c_str(), m_currentLive, m_totalAllocs, m_totalFrees);
 
     CheckForLeaks();
     }
@@ -121,7 +121,7 @@ virtual Int32   CheckForLeaks () const override
         
         WString name = leakedObject->GetName();
         
-        ECObjectsLogger::Log()->errorv (L"Leaked the %dth %s that was allocated: %s", orderOfAllocation, m_singularTypeName.c_str(), name.c_str());
+        ECObjectsLogger::Log()->errorv (L"Leaked the %dth %ls that was allocated: %ls", orderOfAllocation, m_singularTypeName.c_str(), name.c_str());
         }
 
     return m_currentLive;

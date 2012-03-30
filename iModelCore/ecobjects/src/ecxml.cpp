@@ -184,7 +184,7 @@ ECObjectsStatus ECXml::ParseCardinalityString (UInt32 &lowerLimit, UInt32 &upper
              (0 == cardinalityString.compare(L"unbounded")) || (0 == cardinalityString.compare(L"n")) ||
              (0 == cardinalityString.compare(L"N")))
         {
-        ECObjectsLogger::Log()->debugv(L"Legacy cardinality of '%s' interpreted as '(0,n)'", cardinalityString.c_str());
+        ECObjectsLogger::Log()->debugv(L"Legacy cardinality of '%ls' interpreted as '(0,n)'", cardinalityString.c_str());
         lowerLimit = 0;
         upperLimit = UINT_MAX;
         return status;
@@ -204,7 +204,7 @@ ECObjectsStatus ECXml::ParseCardinalityString (UInt32 &lowerLimit, UInt32 &upper
         
     if (openParenIndex != 0 && cardinalityWithoutSpaces.find(')') != cardinalityWithoutSpaces.length() - 1)
         {
-        ECObjectsLogger::Log()->warningv(L"Cardinality string '%s' is invalid.", cardinalityString.c_str());
+        ECObjectsLogger::Log()->warningv(L"Cardinality string '%ls' is invalid.", cardinalityString.c_str());
         return ECOBJECTS_STATUS_ParseError;
         }
      
@@ -214,7 +214,7 @@ ECObjectsStatus ECXml::ParseCardinalityString (UInt32 &lowerLimit, UInt32 &upper
         
     if (0 == scanned)
         {
-        ECObjectsLogger::Log()->warningv(L"Cardinality string '%s' is invalid.", cardinalityString.c_str());
+        ECObjectsLogger::Log()->warningv(L"Cardinality string '%ls' is invalid.", cardinalityString.c_str());
         return ECOBJECTS_STATUS_ParseError;
         }
     
