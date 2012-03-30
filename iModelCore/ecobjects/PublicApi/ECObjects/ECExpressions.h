@@ -220,7 +220,8 @@ protected:
                                 ExpressionContext(ExpressionContextP outer) : m_outer(outer) {}
     virtual ExpressionStatus    _ResolveMethod(MethodReferencePtr& result, wchar_t const* ident, bool useOuterIfNecessary) { return ExprStatus_UnknownSymbol; }
     virtual bool                _IsNamespace() const { return false; }
-    virtual ExpressionStatus    _GetReference(PrimaryListNodeR primaryList, bool useOuterIfNecessary) const { return ExprStatus_NotImpl; }
+    //  If we provide this it must be implemented in every class that implements the _GetReference that uses more arguments.
+    //  virtual ExpressionStatus    _GetReference(PrimaryListNodeR primaryList, bool useOuterIfNecessary) const { return ExprStatus_NotImpl; }
     //  The globalContext may be used to find instance methods
     virtual ExpressionStatus    _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) = 0;
     virtual ExpressionStatus    _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) { return ExprStatus_NotImpl; }
@@ -236,6 +237,7 @@ public:
                                     { return _GetValue(evalResult, primaryList, globalContext, startIndex); }
 
     ExpressionStatus            GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex = 0)
+
                                     { return _GetReference(evalResult, refResult, primaryList, globalContext, startIndex); }
 
 /*__PUBLISH_SECTION_START__*/
