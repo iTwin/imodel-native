@@ -708,7 +708,7 @@ EC::IECInstanceCR     fromNativeInstance
                         continue;
 
                     ECClassCR structClass = entry.structInstance->GetClass();
-                    StandaloneECEnablerPtr standaloneEnabler = entry.structInstance->GetEnablerR().GetEnablerForStructArrayMember (structClass.GetSchema().GetName().c_str(), structClass.GetName().c_str());
+                    StandaloneECEnablerPtr standaloneEnabler = entry.structInstance->GetEnablerR().GetEnablerForStructArrayMember (structClass.GetSchema().GetSchemaKey(), structClass.GetName().c_str());
                     if (standaloneEnabler.IsNull())
                         continue;
 
@@ -752,21 +752,19 @@ size_t                StandaloneECInstance::_GetOffsetToIECInstance () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
-StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, byte * data, UInt32 size) :
+StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerR enabler, byte * data, UInt32 size) :
         MemoryECInstanceBase (data, size, enabler.GetClassLayout(), true),
-        m_sharedWipEnabler(const_cast<StandaloneECEnablerP>(&enabler)) // WIP_FUSION: can we get rid of the const cast?
+        m_sharedWipEnabler(&enabler)
     {
-    m_sharedWipEnabler->AddRef ();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/        
-StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, UInt32 minimumBufferSize) :
+StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerR enabler, UInt32 minimumBufferSize) :
         MemoryECInstanceBase (enabler.GetClassLayout(), minimumBufferSize, true),
-        m_sharedWipEnabler(const_cast<StandaloneECEnablerP>(&enabler)) // WIP_FUSION: can we get rid of the const cast?
+        m_sharedWipEnabler(&enabler)
     {
-    m_sharedWipEnabler->AddRef ();
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -774,8 +772,6 @@ StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, UInt3
 +---------------+---------------+---------------+---------------+---------------+------*/        
 StandaloneECInstance::~StandaloneECInstance ()
     {
-    m_sharedWipEnabler->Release ();
-
     //ECObjectsLogger::Log()->tracev (L"StandaloneECInstance at 0x%x is being destructed. It references enabler 0x%x", this, m_sharedWipEnabler);
     }
 
@@ -816,6 +812,7 @@ MemoryECInstanceBase* StandaloneECInstance::_GetAsMemoryECInstance () const
 +---------------+---------------+---------------+---------------+---------------+------*/    
 ECEnablerCR         StandaloneECInstance::_GetEnabler() const
     {
+    assert (m_sharedWipEnabler.IsValid());
     return *m_sharedWipEnabler;
     }
 
@@ -959,6 +956,7 @@ StandaloneECEnabler::StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR class
     ClassLayoutHolder (classLayout),
     m_ownsClassLayout (ownsClassLayout)
     {
+    assert (NULL != &ecClass);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1033,7 +1031,7 @@ StandaloneECInstanceP   StandaloneECEnabler::CreateSharedInstance (byte * data, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
-StandaloneECInstancePtr   StandaloneECEnabler::CreateInstance (UInt32 minimumBufferSize) const
+StandaloneECInstancePtr   StandaloneECEnabler::CreateInstance (UInt32 minimumBufferSize)
     {
     return new StandaloneECInstance (*this, minimumBufferSize);
     }    

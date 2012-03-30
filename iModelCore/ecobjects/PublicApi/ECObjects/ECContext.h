@@ -50,19 +50,27 @@ friend struct SearchPathSchemaFileLocater;
             :m_locator(locator), m_priority(priority)
             {}
         };
+
+    struct WStringComparer : public std::binary_function<WString, WString, bool>
+        {
+        bool operator()(WStringCR s1, WStringCR s2) const
+            {
+            return s1.CompareTo(s2) < 0;
+            }
+        };
 private:
-    IStandaloneEnablerLocaterP      m_standaloneEnablerLocater;
-    ECSchemaCache                   m_knownSchemas;
-    
+    IStandaloneEnablerLocaterP                              m_standaloneEnablerLocater;
+    ECSchemaCache                                           m_knownSchemas;
+    bvector<bool>                                           m_knownSchemaDirtyStack;
     typedef bset<SchemaLocatorKey>                          SchemaLocatorSet;
     SchemaLocatorSet                                        m_locators;
-    typedef bmap<WString, SearchPathSchemaFileLocaterPtr>   SearchPathLocatorList;
-    SearchPathLocatorList                                   m_searchPathLocators;
-
+    typedef bset<WString, WStringComparer>                  SearchPathList;
+    SearchPathList                                          m_searchPaths;
+    bvector<SearchPathSchemaFileLocaterPtr>                 m_ownedLocators;
     bool                            m_hideSchemasFromLeakDetection;
     bool                            m_acceptLegacyImperfectLatestCompatibleMatch;
 
-    IStandaloneEnablerLocaterP  GetStandaloneEnablerLocater();
+    
     bool                        GetHideSchemasFromLeakDetection();
     SchemaLocatorSet::iterator  GetHighestLocatorInRange (UInt32& prioirty);
     bool                        GetStandardPaths (bvector<WString>& standardPaths);
@@ -75,7 +83,7 @@ protected:
 
     
 public:
-    
+    IStandaloneEnablerLocaterP  GetStandaloneEnablerLocater();
     void                AddSchema(ECSchemaR schema);
     void                RemoveSchema(ECSchemaR schema);
     ECSchemaPtr         GetFoundSchema (SchemaKeyR key, SchemaMatchType matchType);
@@ -98,6 +106,7 @@ public:
     ECOBJECTS_EXPORT static ECSchemaReadContextPtr CreateContext (bool acceptLegacyImperfectLatestCompatibleMatch = false);
 
     ECOBJECTS_EXPORT void AddSchemaLocater (IECSchemaLocaterR);
+    ECOBJECTS_EXPORT void RemoveSchemaLocater (IECSchemaLocaterR);
     ECOBJECTS_EXPORT void AddSchemaPath (WCharCP);
     ECOBJECTS_EXPORT void SetFinalSchemaLocater (IECSchemaLocaterR);
 
@@ -139,7 +148,7 @@ public:
     ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext (ECSchemaCR, IStandaloneEnablerLocaterP = NULL);
 
     //! - For use when the caller does not know the schema of the instance he is deserializing.
-    ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext (ECSchemaReadContextR, ECSchemaPtr& foundSchema, IStandaloneEnablerLocaterP = NULL);
+    ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext (ECSchemaReadContextR, ECSchemaPtr* foundSchema);
 };
 
 END_BENTLEY_EC_NAMESPACE

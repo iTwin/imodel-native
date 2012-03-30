@@ -152,14 +152,14 @@ struct StandaloneECInstance : MemoryECInstanceBase, IECInstance
 //__PUBLISH_SECTION_END__
 friend struct StandaloneECEnabler;
 private:
-    WString              m_instanceId;
-    StandaloneECEnablerP m_sharedWipEnabler; 
+    WString                 m_instanceId;
+    StandaloneECEnablerPtr  m_sharedWipEnabler;
 
     //! The StandaloneECInstance will take ownership of the memory
-    StandaloneECInstance (StandaloneECEnablerCR enabler, byte * data, UInt32 size);
+    StandaloneECInstance (StandaloneECEnablerR enabler, byte * data, UInt32 size);
     
 protected:  
-    ECOBJECTS_EXPORT StandaloneECInstance (StandaloneECEnablerCR enabler, UInt32 minimumBufferSize);
+    ECOBJECTS_EXPORT StandaloneECInstance (StandaloneECEnablerR enabler, UInt32 minimumBufferSize);
     ECOBJECTS_EXPORT ~StandaloneECInstance ();
 
     // IECInstance
@@ -201,7 +201,7 @@ struct IECWipRelationshipInstance : StandaloneECInstance
     {
 //__PUBLISH_SECTION_END__
     protected:
-        ECOBJECTS_EXPORT IECWipRelationshipInstance (StandaloneECEnablerCR enabler) : StandaloneECInstance (enabler, 0){}
+        ECOBJECTS_EXPORT IECWipRelationshipInstance (StandaloneECEnablerR enabler) : StandaloneECInstance (enabler, 0){}
 
         ECOBJECTS_EXPORT virtual BentleyStatus  _SetName (WCharCP name) = 0;
         ECOBJECTS_EXPORT virtual BentleyStatus  _SetSourceOrderId (Int64 sourceOrderId) = 0;
@@ -246,7 +246,7 @@ protected:
 public: 
     //! if structStandaloneEnablerLocater is NULL, we'll use GetDefaultStandaloneEnabler for embedded structs
     ECOBJECTS_EXPORT static StandaloneECEnablerPtr CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater, bool ownsClassLayout);
-    ECOBJECTS_EXPORT StandaloneECInstancePtr       CreateInstance (UInt32 minimumInitialSize = 0) const;
+    ECOBJECTS_EXPORT StandaloneECInstancePtr       CreateInstance (UInt32 minimumInitialSize = 0);
     ECOBJECTS_EXPORT StandaloneECInstanceP         CreateSharedInstance (byte * data, UInt32 size);
     };
 END_BENTLEY_EC_NAMESPACE

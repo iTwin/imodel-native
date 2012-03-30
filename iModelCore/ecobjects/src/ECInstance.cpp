@@ -2076,7 +2076,7 @@ ECSchemaCP       GetSchema()
     if (ECOBJECTS_STATUS_Success != SchemaKey::ParseSchemaFullName(key, m_fullSchemaName.c_str()))
         return NULL;
     
-    m_schema = m_context.FindSchemaCP(key, SCHEMAMATCHTYPE_Exact);
+    m_schema = m_context.FindSchemaCP(key, SCHEMAMATCHTYPE_LatestCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact 
     return m_schema; 
     }
 

@@ -23,20 +23,24 @@ bool            ECSchemaReadContext::GetStandardPaths (bvector<WString>& searchP
     if (0 == *dllPath.GetName())
         return false;
     
+    dllPath.AppendSeparator();
     searchPaths.push_back (dllPath.GetName());
     
     dllPath.AppendToPath (L"ECSchemas");
 
     BeFileName standardPath = dllPath;
     standardPath.AppendToPath (L"Standard");
+    standardPath.AppendSeparator();
     searchPaths.push_back (standardPath.GetName());
 
     BeFileName generalPath = standardPath;
     generalPath.AppendToPath (L"General");
+    generalPath.AppendSeparator();
     searchPaths.push_back (generalPath.GetName());
 
     BeFileName libraryPath = standardPath;
     libraryPath.AppendToPath (L"LibraryUnits");
+    libraryPath.AppendSeparator();
     searchPaths.push_back (libraryPath.GetName());
     return true;
     }
@@ -57,13 +61,11 @@ ECSchemaReadContext::ECSchemaReadContext(IStandaloneEnablerLocaterP enablerLocat
         SchemaLocatorSet::iterator insertionPoint = m_locators.begin();
         int priority = StandardPaths;
         for (bvector<WString>::const_iterator iter = searchPaths.begin(); iter != searchPaths.end(); ++iter)
-            {
-            bvector<WString> path; 
-            path.push_back(*iter);
-            SearchPathSchemaFileLocaterPtr locator = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater (path);
-            m_searchPathLocators[*iter] = locator;
-            insertionPoint= m_locators.insert(insertionPoint, SchemaLocatorKey (locator.get(), ++priority));
-            }
+            m_searchPaths.insert(*iter);
+        
+        SearchPathSchemaFileLocaterPtr locator = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater (searchPaths);
+        m_locators.insert(insertionPoint, SchemaLocatorKey (locator.get(), ++priority));
+        m_ownedLocators.push_back(locator);
         }
     }
 
@@ -123,22 +125,38 @@ void  ECSchemaReadContext::AddSchemaLocater (IECSchemaLocaterR locater)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+void    ECSchemaReadContext::RemoveSchemaLocater (IECSchemaLocaterR locator)
+    {
+    for (SchemaLocatorSet::iterator iter = m_locators.begin(); iter != m_locators.end();)
+        {
+        if (iter->m_locator == &locator)
+            iter = m_locators.erase(iter);
+        else
+            ++iter;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  03/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 void  ECSchemaReadContext::AddSchemaPath (WCharCP path) 
     {
-    WString pathStr(path);
-    if (m_searchPathLocators.end() != m_searchPathLocators.find (pathStr))
+    BeFileName pathStr(path);
+    pathStr.AppendSeparator();
+    
+    if (m_searchPaths.end() != m_searchPaths.find (pathStr.GetName()))
         return;
 
     UInt32 priority = UserSpace;
     SchemaLocatorSet::iterator iter = GetHighestLocatorInRange (priority);
 
     bvector<WString> pathVector;
-    pathVector.push_back(pathStr);
+    pathVector.push_back(pathStr.GetName());
     SearchPathSchemaFileLocaterPtr locator = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater (pathVector);
 
-    m_searchPathLocators[pathStr] = locator;
-
+    m_searchPaths.insert(pathStr.GetName());
     m_locators.insert (iter, SchemaLocatorKey (locator.get(), priority));
+    m_ownedLocators.push_back(locator);
     }
 
 void  ECSchemaReadContext::HideSchemasFromLeakDetection ()                   { m_hideSchemasFromLeakDetection = true; }
@@ -161,17 +179,30 @@ bool                        ECSchemaReadContext::GetHideSchemasFromLeakDetection
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaPtr     ECSchemaReadContext::LocateSchema (SchemaKeyR key, SchemaMatchType matchType)
     {
+    m_knownSchemaDirtyStack.push_back(false);
+    
+    ECSchemaPtr schema;
     for (SchemaLocatorSet::const_iterator iter = m_locators.begin(); iter != m_locators.end(); ++iter)
         {
         if ( ! EXPECTED_CONDITION (NULL != iter->m_locator))
             continue;
 
-        ECSchemaPtr schema = iter->m_locator->LocateSchema(key, matchType, NULL);
+        schema = iter->m_locator->LocateSchema(key, matchType, *this);
         if (schema.IsValid())
-            return schema;
+            break;
+
+        if (m_knownSchemaDirtyStack.back())
+            {
+            schema = m_knownSchemas.LocateSchema (key, matchType, *this);
+            m_knownSchemaDirtyStack.back() = false;
+            }
+        
+        if (schema.IsValid())
+            break;
         }
 
-    return NULL;
+    m_knownSchemaDirtyStack.pop_back();
+    return schema;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -179,6 +210,9 @@ ECSchemaPtr     ECSchemaReadContext::LocateSchema (SchemaKeyR key, SchemaMatchTy
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaPtr     ECSchemaReadContext::LocateSchema (SchemaKeyR key, bset<SchemaMatchType> const& matches)
     {
+    m_knownSchemaDirtyStack.push_back(false);
+    
+    ECSchemaPtr schema;
     for (SchemaLocatorSet::const_iterator iter = m_locators.begin(); iter != m_locators.end(); ++iter)
         {
         if ( ! EXPECTED_CONDITION (NULL != iter->m_locator))
@@ -186,13 +220,31 @@ ECSchemaPtr     ECSchemaReadContext::LocateSchema (SchemaKeyR key, bset<SchemaMa
 
         for (bset<SchemaMatchType>::const_iterator matchIter = matches.begin(); matchIter != matches.end(); ++matchIter)
             {
-            ECSchemaPtr schema = iter->m_locator->LocateSchema(key, *matchIter, this);
+            schema = iter->m_locator->LocateSchema(key, *matchIter, *this); //Doing this will change m_knownSchemas
             if (schema.IsValid())
-                return schema;
+                break;
+
+            if (m_knownSchemaDirtyStack.back())
+                {
+                for (bset<SchemaMatchType>::const_iterator kmatchIter = matches.begin(); matchIter != matches.end(); ++matchIter)
+                    {
+                    schema = m_knownSchemas.LocateSchema (key, *kmatchIter, *this);
+                    if (schema.IsValid())
+                        break;
+                    }
+                m_knownSchemaDirtyStack.back() = false;
+                }
+            
+            if (schema.IsValid())
+                break;
             }
+
+        if (schema.IsValid())
+            break;
         }
     
-    return NULL;
+    m_knownSchemaDirtyStack.pop_back();
+    return schema;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -231,10 +283,10 @@ struct ECSchemaReadContextBackedInstanceReadContext: public ECInstanceReadContex
     {
     private:
     ECSchemaReadContextR    m_schemaReadContext;
-    ECSchemaPtr&            m_foundSchema;
+    ECSchemaPtr*            m_foundSchema;
     public:
-    ECSchemaReadContextBackedInstanceReadContext(ECSchemaReadContextR schemaReadContext,  ECSchemaPtr& foundSchema, IStandaloneEnablerLocaterP standaloneEnablerLocater)
-        :m_schemaReadContext(schemaReadContext), m_foundSchema (foundSchema), ECInstanceReadContext(standaloneEnablerLocater)
+    ECSchemaReadContextBackedInstanceReadContext(ECSchemaReadContextR schemaReadContext,  ECSchemaPtr* foundSchema)
+        :m_schemaReadContext(schemaReadContext), m_foundSchema (foundSchema), ECInstanceReadContext(schemaReadContext.GetStandaloneEnablerLocater())
         {
         }
     
@@ -243,27 +295,24 @@ struct ECSchemaReadContextBackedInstanceReadContext: public ECInstanceReadContex
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual ECSchemaCP               _FindSchemaCP(SchemaKeyCR keyIn, SchemaMatchType matchType) const
         {
-            //WIP_FUSION: Do we want to check for mismatches between the supplied schema name/version and m_fullSchemaName from the instance
-        if (m_foundSchema.IsValid())
-            return m_foundSchema.get();
-        
-        
         SchemaKey key(keyIn);
         ECSchemaPtr schema = m_schemaReadContext.LocateSchema (key, matchType);
         if (schema.IsNull())
             return NULL;
 
-        m_foundSchema = schema;
-        return m_foundSchema.get();
+        if (NULL != m_foundSchema)
+            (*m_foundSchema) = schema;
+
+        return schema.get();
         }
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceReadContextPtr ECInstanceReadContext::CreateContext (ECSchemaReadContextR context, ECSchemaPtr& foundSchema, IStandaloneEnablerLocaterP standaloneEnablerLocater)
+ECInstanceReadContextPtr ECInstanceReadContext::CreateContext (ECSchemaReadContextR context, ECSchemaPtr* foundSchema)
     {
-    return new ECSchemaReadContextBackedInstanceReadContext (context, foundSchema, standaloneEnablerLocater);
+    return new ECSchemaReadContextBackedInstanceReadContext (context, foundSchema);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -289,7 +338,7 @@ IECInstancePtr ECInstanceReadContext::CreateStandaloneInstance (ECClassCR ecClas
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaPtr     ECSchemaReadContext::GetFoundSchema (SchemaKeyR key, SchemaMatchType matchType)
     {
-    return m_knownSchemas.LocateSchema(key, matchType, NULL);
+    return m_knownSchemas.GetSchema(key, matchType);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -297,7 +346,11 @@ ECSchemaPtr     ECSchemaReadContext::GetFoundSchema (SchemaKeyR key, SchemaMatch
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECSchemaReadContext::AddSchema(ECSchemaR schema)
     {
-    m_knownSchemas.AddSchema(schema);
+    if (ECOBJECTS_STATUS_Success != m_knownSchemas.AddSchema(schema))
+        return;
+
+    for (bvector<bool>::iterator iter = m_knownSchemaDirtyStack.begin(); iter != m_knownSchemaDirtyStack.end(); ++iter)
+        (*iter) = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
