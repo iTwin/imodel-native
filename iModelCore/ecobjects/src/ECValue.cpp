@@ -786,7 +786,7 @@ SystemTime          ECValue::GetDateTime () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus          ECValue::SetDateTime (SystemTime& systemTime) 
+BentleyStatus          ECValue::SetDateTime (SystemTime const& systemTime) 
     {
 #if defined (_WIN32) // WIP_NONPORT
     Clear();
