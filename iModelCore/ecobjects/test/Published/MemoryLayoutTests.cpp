@@ -1191,9 +1191,8 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_PrimitiveProperties)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, CopyInstanceProperties)
     {
-    ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
-    ECSchemaP        schema = CreateTestSchema(*schemaCache);
-    ASSERT_TRUE (schema != NULL);
+    ECSchemaPtr        schema = CreateTestSchema();
+    ASSERT_TRUE (schema.get() != NULL);
 
     StandaloneECEnablerPtr enabler = schema->GetClassP(L"CadData")->GetDefaultStandaloneEnabler ();
     ASSERT_TRUE (enabler.IsValid());
