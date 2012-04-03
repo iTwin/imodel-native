@@ -296,7 +296,7 @@ TEST_F(CustomAttributeTest, ExpectFailureWithUnreferencedCustomAttribute)
     
     ECSchemaPtr         schema = CreateCustomAttributeTestSchema();
 
-    ECSchemaP refSchema;
+    ECSchemaPtr refSchema;
     ECSchema::CreateSchema(refSchema, L"RefSchema", 5, 5);
 
     ECClassP refClass;

@@ -1830,8 +1830,20 @@ int                             ECSchemaCache::GetCount ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchemaCache::AddSchema   (ECSchemaR ecSchema)
     {
-    bpair<SchemaMap::iterator, bool> result = m_schemas.insert(SchemaMap::value_type(ecSchema.GetSchemaKey(), &ecSchema));
-    return result.second ? ECOBJECTS_STATUS_Success : ECOBJECTS_STATUS_DuplicateSchema;
+    if (m_schemas.end() != m_schemas.find (ecSchema.GetSchemaKey()))
+        return ECOBJECTS_STATUS_DuplicateSchema;
+
+    bvector<ECSchemaP> schemas;
+    ecSchema.FindAllSchemasInGraph(schemas, true);
+    bool inserted = false;
+
+    for (bvector<ECSchemaP>::const_iterator iter = schemas.begin(); iter != schemas.end(); ++iter)
+        {
+        bpair<SchemaMap::iterator, bool> result = m_schemas.insert(SchemaMap::value_type((*iter)->GetSchemaKey(), *iter));
+        inserted |= result.second;
+        }
+
+    return inserted ? ECOBJECTS_STATUS_Success : ECOBJECTS_STATUS_DuplicateSchema;
     }
 
 /*---------------------------------------------------------------------------------**//**

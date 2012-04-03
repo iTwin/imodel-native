@@ -342,9 +342,17 @@ ECSchemaPtr     ECSchemaReadContext::GetFoundSchema (SchemaKeyR key, SchemaMatch
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECSchemaReadContext::AddSchema(ECSchemaR schema) 
+    {
+    return _AddSchema(schema);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ECSchemaReadContext::AddSchema(ECSchemaR schema)
+void            ECSchemaReadContext::_AddSchema(ECSchemaR schema)
     {
     if (ECOBJECTS_STATUS_Success != m_knownSchemas.AddSchema(schema))
         return;

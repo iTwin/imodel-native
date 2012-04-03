@@ -81,7 +81,7 @@ protected:
     //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestCompatible only checks that the major version matches. A warning will be logged if minor version is too low, but the ECSchema will be accepted
     ECOBJECTS_EXPORT ECSchemaReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch);
 
-    
+    ECOBJECTS_EXPORT virtual void       _AddSchema (ECSchemaR schema);
 public:
     IStandaloneEnablerLocaterP  GetStandaloneEnablerLocater();
     void                AddSchema(ECSchemaR schema);
