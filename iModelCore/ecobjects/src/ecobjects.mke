@@ -2,7 +2,7 @@
 #
 #     $Source: src/ecobjects.mke $
 #
-#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 baseDir         = $(_MakeFilePath)
@@ -66,6 +66,8 @@ $(o)ecenabler$(oext)       : $(baseDir)ecenabler.cpp $(ECObjectsHeaders) ${Multi
 $(o)MemoryInstanceSupport$(oext) : $(baseDir)MemoryInstanceSupport.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)MemoryInstanceSupport.h
 
 $(o)StandaloneECInstance$(oext)    : $(baseDir)StandaloneECInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)StandaloneECInstance.h $(ecobjectsPublicAPISrc)MemoryInstanceSupport.h
+
+$(o)StandaloneECRelationshipInstance$(oext)    : $(baseDir)StandaloneECRelationshipInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)StandaloneECRelationshipInstance.h  $(ecobjectsPublicAPISrc)StandaloneECInstance.h $(ecobjectsPublicAPISrc)MemoryInstanceSupport.h
 
 $(o)designbycontract$(oext)        : $(baseDir)designbycontract.cpp $(ecobjectsPublicAPISrc)designbycontract.h ${MultiCompileDepends} 
 

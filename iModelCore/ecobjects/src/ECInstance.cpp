@@ -3082,6 +3082,50 @@ InstanceWriteStatus     WriteInstance (IECInstanceCR instance, bool isCompleteXm
             return TranslateStatus (status);
         }
 
+    IECRelationshipInstanceCP relationshipInstance = dynamic_cast<IECRelationshipInstanceCP>(&instance);
+    if (NULL != relationshipInstance)
+        {
+        IECInstancePtr source = relationshipInstance->GetSource();
+        WString   instanceSchemaName  = instance.GetClass().GetSchema().GetFullSchemaName();
+
+        if (source.IsValid())
+            {
+            ECClassCR sourceClass = source->GetClass();
+            WString   schemaName  = sourceClass.GetSchema().GetFullSchemaName();
+            WString   str;
+
+            if (!schemaName.EqualsI (instanceSchemaName))
+                str = schemaName + L":" + sourceClass.GetName();
+            else
+                str = sourceClass.GetName();
+
+            if (S_OK != (status = m_xmlWriter->WriteAttributeString (NULL, SOURCECLASS_ATTRIBUTE, NULL, str.c_str())))
+                return TranslateStatus (status);
+
+            if (S_OK != (status = m_xmlWriter->WriteAttributeString (NULL, SOURCEINSTANCEID_ATTRIBUTE, NULL, source->GetInstanceId().c_str())))
+                return TranslateStatus (status);
+            }
+
+        IECInstancePtr target = relationshipInstance->GetTarget();
+        if (target.IsValid())
+            {
+            ECClassCR targetClass = target->GetClass();
+            WString   schemaName  = targetClass.GetSchema().GetFullSchemaName();
+            WString   str;
+
+            if (!schemaName.EqualsI (instanceSchemaName))
+                str = schemaName + L":" + targetClass.GetName();
+            else
+                str = targetClass.GetName();
+
+            if (S_OK != (status = m_xmlWriter->WriteAttributeString (NULL, TARGETCLASS_ATTRIBUTE, NULL, str.c_str())))
+                return TranslateStatus (status);
+
+            if (S_OK != (status = m_xmlWriter->WriteAttributeString (NULL, TARGETINSTANCEID_ATTRIBUTE, NULL, target->GetInstanceId().c_str())))
+                return TranslateStatus (status);
+            }
+        }
+
     WritePropertiesOfClassOrStructArrayMember (ecClass, instance, NULL);
 
     if (S_OK != (status = m_xmlWriter->WriteEndElement ()))
