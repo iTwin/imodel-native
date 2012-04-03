@@ -1156,13 +1156,13 @@ ExpressionStatus EvaluationResult::GetBoolean(bool& result, bool requireBoolean)
         case PRIMITIVETYPE_String:
             {
             wchar_t const* value = m_ecValue.GetString();
-            if (!wcscmp(L"1", value) || !wcsicmp(L"true", value))
+            if (!wcscmp(L"1", value) || !BeStringUtilities::Wcsicmp(L"true", value))
                 {
                 result = true;
                 return ExprStatus_Success;
                 }
 
-            if (!wcscmp(L"0", value) || !wcsicmp(L"false", value))
+            if (!wcscmp(L"0", value) || !BeStringUtilities::Wcsicmp(L"false", value))
                 {
                 result = false;
                 return ExprStatus_Success;
@@ -1335,7 +1335,7 @@ NodePtr         Node::CreateStringLiteral (wchar_t const* value)
     assert(origLen > 1);
     wchar_t*    buffer = (wchar_t*)_alloca(2 *(origLen+1));
 
-    wcscpy_s(buffer, origLen, value+1);
+    BeStringUtilities::Wcsncpy(buffer, origLen, value+1);
     buffer[origLen-2] = 0;
 
     return new StringLiteralNode(buffer);
