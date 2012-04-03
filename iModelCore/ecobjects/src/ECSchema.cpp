@@ -2060,9 +2060,9 @@ WString         SchemaKey::GetNameString () const
 struct ECClassFinder
     {
     EC::SchemaNameClassNamePair const& m_key;
-    ECClassP                           m_class;
-    ECClassFinder (EC::SchemaNameClassNamePair const& key)
-        :m_key(key)
+    ECClassP&                          m_class;
+    ECClassFinder (EC::SchemaNameClassNamePair const& key, ECClassP& foundClass)
+        :m_key(key), m_class(foundClass)
         {}
 
     bool operator () (ECSchemaCR val)
@@ -2094,9 +2094,11 @@ struct ECClassFinder
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassP        SchemaMapExact::FindClassP (EC::SchemaNameClassNamePair const& classNamePair) const
     {
-    ECClassFinder classFinder(classNamePair);
+    ECClassP classInstance = NULL;
+    ECClassFinder classFinder(classNamePair, classInstance);
+    
     SchemaMapExact::const_iterator iter = std::find_if (begin(), end(), classFinder);
-    return iter == end() ? NULL : classFinder.m_class;
+    return iter == end() ? NULL : classInstance;
     }
 
 END_BENTLEY_EC_NAMESPACE

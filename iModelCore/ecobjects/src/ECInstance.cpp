@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
+#include <ECObjects/ecschema.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
     
@@ -161,7 +162,7 @@ void IECInstance::Debug_DumpAllocationStats(WCharCP prefix)
 #ifdef DEBUG_INSTANCE_LEAKS
     FOR_EACH (DebugInstanceLeakMap::value_type leak, g_debugInstanceLeakMap)
         {
-        IECInstance* leakedInstance = leak.first;
+        //IECInstance* leakedInstance = leak.first;
         UInt32    orderOfAllocation = leak.second;
         ECObjectsLogger::Log()->debugv (L"Leaked the %dth IECInstance that was allocated.", orderOfAllocation);
         //leakedInstance->Dump();
@@ -197,9 +198,9 @@ void IECInstance::Debug_ReportLeaks(bvector<WString>& classNamesToExclude)
         WString className = leakedInstance->GetClass().GetName();
         if (IsExcluded (className, classNamesToExclude))
             continue;
-        
-        ECObjectsLogger::Log()->errorv (L"Leaked the %dth IECInstance that was allocated: ECClass=%ls, InstanceId=%ls", 
-            orderOfAllocation, className.c_str(), leakedInstance->GetInstanceId().c_str());
+        WString schemaName = leakedInstance->GetClass().GetSchema().GetName();
+        ECObjectsLogger::Log()->errorv (L"Leaked the %dth IECInstance that was allocated: ECSchema=%ls, ECClass=%ls, InstanceId=%ls", 
+            orderOfAllocation, schemaName.c_str(), className.c_str(), leakedInstance->GetInstanceId().c_str());
         //leakedInstance->Dump();
         }
 #endif
