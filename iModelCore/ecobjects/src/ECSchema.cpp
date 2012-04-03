@@ -2037,6 +2037,15 @@ bool            ECSchema::AddingSchemaCausedCycles () const
         if (1 != iter->size())
             {
             hasCycles = true;
+            WString cycleString;
+            for (SchemaGraph::NodeVector::const_iterator cycleIter = iter->begin(); cycleIter != iter->end(); ++cycleIter)
+                {
+                cycleString.append((*cycleIter)->m_node->m_key.GetNameString());
+                cycleString.append(L"-->");
+                }
+            cycleString.append( (*iter->begin())->m_node->m_key.GetNameString());
+            ECObjectsLogger::Log()->errorv (L"ECSchema '%s' contains cycles %s", m_key.GetNameString().c_str(), cycleString.c_str());
+            
             break;
             }
         }
