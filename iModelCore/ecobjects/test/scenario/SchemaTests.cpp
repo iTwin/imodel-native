@@ -2,7 +2,7 @@
 |
 |     $Source: test/scenario/SchemaTests.cpp $
 |
-|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -28,15 +28,14 @@ struct SchemaTest : ECTestFixture {
 };
 TEST_F(SchemaTest,ExpectReadOnly)
 {
-    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
-    ECSchemaP schema;   
+    ECSchemaPtr schema;   
  
     ECClassP domainClass;
     ECClassP derivedClass;
     ECClassP structClass;
     ECClassP customAttributeClass;
  
-    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5);
     ASSERT_TRUE(schema!=NULL);
  
     //Create Domain Class
@@ -83,13 +82,11 @@ TEST_F(SchemaTest,ExpectReadOnly)
 }
 TEST_F(SchemaTest, ShouldBeAbleToIterateOverECClassContainer)
     {
-    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
-
-    ECSchemaP schema;
+    ECSchemaPtr schema;
     ECClassP foo;
     ECClassP bar;
     
-    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5, *schemaOwner);
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5);
     schema->CreateClass(foo, L"foo");
     schema->CreateClass(bar, L"bar");
 

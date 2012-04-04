@@ -834,7 +834,7 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode,IStandaloneEnablerLocaterP  standaloneEnablerLocater)
+SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context)
     {            
     // Get the BaseClass child nodes.
     BeXmlDom::IterableNodeSet childNodes;
@@ -895,7 +895,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode,IStandaloneEnab
             }
 
         // read the property data.
-        SchemaReadStatus status = ecProperty->_ReadXml (*childNode, standaloneEnablerLocater);
+        SchemaReadStatus status = ecProperty->_ReadXml (*childNode, context);
         if (status != SCHEMA_READ_STATUS_Success)
             {
             ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to read properties of ECClass '%ls:%ls'", this->GetSchema().GetName().c_str(), this->GetName().c_str());                
@@ -913,7 +913,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode,IStandaloneEnab
         }
 
     // Add Custom Attributes
-    ReadCustomAttributes (classNode, m_schema, standaloneEnablerLocater);
+    ReadCustomAttributes (classNode, context);
 
     return SCHEMA_READ_STATUS_Success;
     }
@@ -1312,7 +1312,7 @@ ECSchemaCP ECRelationshipConstraint::_GetContainerSchema() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, IStandaloneEnablerLocaterP  standaloneEnablerLocater)
+SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext)
     {
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
     
@@ -1360,7 +1360,7 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, I
         }
 
     // Add Custom Attributes
-    ReadCustomAttributes (constraintNode, m_relClass->GetSchema(), standaloneEnablerLocater);
+    ReadCustomAttributes (constraintNode, schemaContext);
 
     return status;
     }
@@ -1398,22 +1398,10 @@ ECObjectsStatus ECRelationshipConstraint::AddClass (ECClassCR classConstraint)
     {
     if (&(classConstraint.GetSchema()) != &(m_relClass->GetSchema()))
         {
-        bool foundRefSchema = false;
-        ECSchemaReferenceList referencedSchemas = m_relClass->GetSchema().GetReferencedSchemas();
-        ECSchemaReferenceList::const_iterator schemaIterator;
-        for (schemaIterator = referencedSchemas.begin(); schemaIterator != referencedSchemas.end(); schemaIterator++)
-            {
-            ECSchemaP refSchema = *schemaIterator;
-            if (refSchema == &(classConstraint.GetSchema()))
-                {
-                foundRefSchema = true;
-                break;
-                }
-            }
-        if (foundRefSchema == false)
-            {
+        ECSchemaReferenceListCR referencedSchemas = m_relClass->GetSchema().GetReferencedSchemas();
+        ECSchemaReferenceList::const_iterator schemaIterator = referencedSchemas.find (classConstraint.GetSchema().GetSchemaKey());
+        if (schemaIterator == referencedSchemas.end())
             return ECOBJECTS_STATUS_SchemaNotFound;
-            }
         }
 
     if (!m_isMultiple)
@@ -1769,9 +1757,9 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlAttributes (BeXmlNodeR classNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, IStandaloneEnablerLocaterP standaloneEnablerLocater)
+SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context)
     {
-    SchemaReadStatus status = T_Super::_ReadXmlContents (classNode, standaloneEnablerLocater);
+    SchemaReadStatus status = T_Super::_ReadXmlContents (classNode, context);
     if (status != SCHEMA_READ_STATUS_Success)
         return status;
 
@@ -1781,11 +1769,11 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, IS
         
     BeXmlNodeP sourceNode = classNode.SelectSingleNode (EC_NAMESPACE_PREFIX ":" EC_SOURCECONSTRAINT_ELEMENT);
     if (NULL != sourceNode)
-        m_source->ReadXml (*sourceNode, standaloneEnablerLocater);
+        m_source->ReadXml (*sourceNode, context);
     
     BeXmlNodeP  targetNode = classNode.SelectSingleNode (EC_NAMESPACE_PREFIX ":" EC_TARGETCONSTRAINT_ELEMENT);
     if (NULL != targetNode)
-        m_target->ReadXml (*targetNode, standaloneEnablerLocater);
+        m_target->ReadXml (*targetNode, context);
         
     return SCHEMA_READ_STATUS_Success;
     }
