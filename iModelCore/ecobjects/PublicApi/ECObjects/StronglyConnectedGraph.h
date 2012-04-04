@@ -10,6 +10,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 /*__BENTLEY_INTERNAL_ONLY__*/
+#pragma once
+#pragma push_macro("max")
+#pragma push_macro("min")
+#undef max
+#undef min
 
 /*---------------------------------------------------------------------------------**//**
 Adapted Tarjan's Strongly connected graph algorithm to determine cycles in the graph.
@@ -51,7 +56,7 @@ struct SCCGraph
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-    SCCGraph::SCCGraph (GetChildrenFunctor const& fnCtor)
+   SCCGraph (GetChildrenFunctor const& fnCtor)
         :m_currentIndex(0), m_getChildren(fnCtor)
         {}
 
@@ -61,7 +66,7 @@ struct SCCGraph
     SCCGraphNode*   StronglyConnect (NodeType inNode , SCCContext& context)
         {
         SCCGraphNode* node = new SCCGraphNode(inNode, m_currentIndex);
-        bpair<Vertices::iterator, bool> insertionPoint =  m_vertices.insert(Vertices::value_type(inNode, node));
+        bpair<typename Vertices::iterator, bool> insertionPoint =  m_vertices.insert(typename Vertices::value_type(inNode, node));
         if(!insertionPoint.second)
             {
             delete node;
@@ -74,19 +79,19 @@ struct SCCGraph
         ChildNodeCollection childList = m_getChildren (inNode);
         for (typename ChildNodeCollection::const_iterator iter = childList.begin(); iter != childList.end(); ++iter)
             {
-            Vertices::iterator childIter = m_vertices.find (*iter);
+            typename Vertices::iterator childIter = m_vertices.find (*iter);
             
             SCCGraphNode* refNode = NULL;
             if (m_vertices.end() == childIter)
                 {
                 refNode = StronglyConnect (*iter, context);
-                node->m_lowIndex = min (node->m_lowIndex, refNode->m_lowIndex);
+                node->m_lowIndex = std::min (node->m_lowIndex, refNode->m_lowIndex);
                 }
             else
                 {
                 refNode = childIter->second;
                 if (context.m_stack.end() != std::find_if (context.m_stack.begin(), context.m_stack.end(), std::bind1st (std::equal_to<SCCGraphNode*>(), refNode)))
-                    node->m_lowIndex = min (node->m_lowIndex, refNode->m_index);
+                    node->m_lowIndex = std::min (node->m_lowIndex, refNode->m_index);
                 }
             }
         
@@ -114,8 +119,11 @@ struct SCCGraph
 +---------------+---------------+---------------+---------------+---------------+------*/
     ~SCCGraph ()
         {
-        for (Vertices::iterator iter = m_vertices.begin(); iter != m_vertices.end(); ++iter)
+        for (typename Vertices::iterator iter = m_vertices.begin(); iter != m_vertices.end(); ++iter)
             delete iter->second;
         m_vertices.clear();
         }
     };
+    
+#pragma pop_macro("max")
+#pragma pop_macro("min")

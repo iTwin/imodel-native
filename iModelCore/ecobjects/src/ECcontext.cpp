@@ -346,6 +346,9 @@ ECSchemaPtr     ECSchemaReadContext::GetFoundSchema (SchemaKeyR key, SchemaMatch
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECSchemaReadContext::AddSchema(ECSchemaR schema) 
     {
+    if (NULL != m_knownSchemas.GetSchema(schema.GetSchemaKey()))
+        return;
+
     return _AddSchema(schema);
     }
 

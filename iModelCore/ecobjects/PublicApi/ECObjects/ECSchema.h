@@ -1144,7 +1144,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct SchemaMapExact:bmap<SchemaKey , ECSchemaPtr, SchemaKeyLessThan<SCHEMAMATCHTYPE_Exact>>
+struct SchemaMapExact:bmap<SchemaKey, ECSchemaPtr, SchemaKeyLessThan <SCHEMAMATCHTYPE_Exact> >
     {
     SchemaMapExact::const_iterator Find (SchemaKeyCR key, SchemaMatchType matchType)
         {
