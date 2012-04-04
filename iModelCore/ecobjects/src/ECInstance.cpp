@@ -4306,13 +4306,12 @@ InstanceWriteStatus     WriteInstance (IECInstanceCR ecInstance, bool writeInsta
     ECClassCR   ecClass         = ecInstance.GetClass();
     ECSchemaCR  ecSchema        = ecClass.GetSchema();
     WString     className       = ecClass.GetName();
-    size_t      size            = wcslen(ecSchema.GetName().c_str()) + 8;
-    WCharP      fullSchemaName  = (wchar_t*)malloc(size * sizeof(wchar_t));
+    WString     fullSchemaName;
 
-    BeStringUtilities::Snwprintf (fullSchemaName, size, L"%ls.%02d.%02d", ecSchema.GetName().c_str(), ecSchema.GetVersionMajor(), ecSchema.GetVersionMinor());
+    fullSchemaName.Sprintf (L"%ls.%02d.%02d", ecSchema.GetName().c_str(), ecSchema.GetVersionMajor(), ecSchema.GetVersionMinor());
     Utf8String  utf8ClassName (className.c_str());
     BeXmlNodeP  instanceNode = m_xmlDom.AddNewElement (utf8ClassName.c_str(), NULL, m_rootNode);
-    instanceNode->AddAttributeStringValue (XMLNS_ATTRIBUTE, fullSchemaName);
+    instanceNode->AddAttributeStringValue (XMLNS_ATTRIBUTE, fullSchemaName.c_str());
 
     if (writeInstanceId)
         instanceNode->AddAttributeStringValue (INSTANCEID_ATTRIBUTE, ecInstance.GetInstanceId().c_str());
