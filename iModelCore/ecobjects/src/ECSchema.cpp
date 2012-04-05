@@ -1097,7 +1097,7 @@ ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMat
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECSchema::ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, ECSchemaReadContextR schemaContext)
+SchemaReadStatus ECSchema::ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, UInt32 checkSum, ECSchemaReadContextR schemaContext)
     {            
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
     StopWatch overallTimer(L"Overall schema de-serialization timer", true);
@@ -1145,6 +1145,7 @@ SchemaReadStatus ECSchema::ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, EC
     if (ECOBJECTS_STATUS_Success != createStatus)
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
     
+    schemaOut->m_key.m_checkSum = checkSum;
     schemaContext.AddSchema (*schemaOut);
 
     // OPTIONAL attributes - If these attributes exist they MUST be valid        
@@ -1543,8 +1544,9 @@ SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSc
         }
     
     AddFilePathToSchemaPaths(schemaContext, ecSchemaXmlFile);
+    UInt32 checkSum = CheckSumHelper::ComputeCheckSumForFile(ecSchemaXmlFile);
 
-    status = ReadXml (schemaOut, *xmlDom.get(), schemaContext);
+    status = ReadXml (schemaOut, *xmlDom.get(), checkSum, schemaContext);
     if (SCHEMA_READ_STATUS_DuplicateSchema == status)
         return status; // already logged
 
@@ -1553,9 +1555,6 @@ SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSc
     else
         {
         //We have serialized a schema and its valid. Add its checksum
-
-        schemaOut->m_key.m_checkSum = CheckSumHelper::ComputeCheckSumForFile(ecSchemaXmlFile);
-
         ECObjectsLogger::Log()->infov (L"Native ECSchema read from file: fileName='%s', schemaName='%s.%02d.%02d' classCount='%d' address='0x%x'", 
             ecSchemaXmlFile, schemaOut->GetName().c_str(), schemaOut->GetVersionMajor(), schemaOut->GetVersionMinor(), schemaOut->m_classMap.size(), schemaOut);
         }
@@ -1588,8 +1587,9 @@ ECSchemaReadContextR schemaContext
         LogXmlLoadError (xmlDom.get());
         return SCHEMA_READ_STATUS_FailedToParseXml;
         }
-
-    status = ReadXml (schemaOut, *xmlDom.get(), schemaContext);
+    
+    UInt32 checkSum = CheckSumHelper::ComputeCheckSumForString(ecSchemaXml, stringSize);
+    status = ReadXml (schemaOut, *xmlDom.get(), checkSum, schemaContext);
     if (SCHEMA_READ_STATUS_DuplicateSchema == status)
         return status; // already logged
 
@@ -1602,7 +1602,6 @@ ECSchemaReadContextR schemaContext
         }
     else
         {
-        schemaOut->m_key.m_checkSum = CheckSumHelper::ComputeCheckSumForString(ecSchemaXml, stringSize);
         ECObjectsLogger::Log()->infov (L"Native ECSchema read from string: schemaName='%s' classCount='%d' schemaAddress='0x%x' stringAddress='0x%x'", 
             schemaOut->GetSchemaKey().GetNameString().c_str(), schemaOut->m_classMap.size(), schemaOut.get(), ecSchemaXml);
         }
@@ -2122,6 +2121,25 @@ ECClassP        SchemaMapExact::FindClassP (EC::SchemaNameClassNamePair const& c
     return iter == end() ? NULL : classInstance;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32          ECSchema::ComputeSchemaXmlStringCheckSum(WCharCP str, size_t len)
+    {
+    return CheckSumHelper::ComputeCheckSumForString (str, len);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECSchema::ReComputeCheckSum ()
+    {
+    WString xmlStr;
+    if (SCHEMA_WRITE_STATUS_Success != WriteToXmlString (xmlStr))
+        return;
+
+    m_key.m_checkSum = CheckSumHelper::ComputeCheckSumForString (xmlStr.c_str(), sizeof(WChar)* xmlStr.length());
+    }
 END_BENTLEY_EC_NAMESPACE
 
 

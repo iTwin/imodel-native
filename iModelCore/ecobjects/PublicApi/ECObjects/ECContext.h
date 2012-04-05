@@ -88,7 +88,8 @@ public:
     void                RemoveSchema(ECSchemaR schema);
     ECSchemaPtr         GetFoundSchema (SchemaKeyR key, SchemaMatchType matchType);
 
-    
+    ECOBJECTS_EXPORT ECSchemaCacheR GetKnownSchemas ();
+
     ECSchemaPtr         LocateSchema (SchemaKeyR key, bset<SchemaMatchType> const& matches);
     ECOBJECTS_EXPORT void HideSchemasFromLeakDetection();
 

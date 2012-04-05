@@ -1339,7 +1339,7 @@ private:
 
     bool                                AddingSchemaCausedCycles () const;
     bool                                IsOpenPlantPidCircularReferenceSpecialCase(WString& referencedECSchemaName);
-    static SchemaReadStatus             ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, ECSchemaReadContextR context);
+    static SchemaReadStatus             ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, UInt32 checkSum, ECSchemaReadContextR context);
     SchemaWriteStatus                   WriteXml (BeXmlDomR xmlDoc) const;
 
     ECObjectsStatus                     AddClass (ECClassP& pClass);
@@ -1371,7 +1371,6 @@ public:
 /*__PUBLISH_SECTION_START__*/
 public:    
     ECOBJECTS_EXPORT SchemaKeyCR        GetSchemaKey() const;
-    ECOBJECTS_EXPORT SchemaKeyR         GetSchemaKeyR() const;
     ECOBJECTS_EXPORT void               DebugDump() const;
     ECOBJECTS_EXPORT static void        SetErrorHandling (bool showMessages, bool doAssert);
 
@@ -1496,6 +1495,7 @@ public:
     // ************************************************************************************************************************
     // ************************************  STATIC METHODS *******************************************************************
     // ************************************************************************************************************************
+    ECOBJECTS_EXPORT static UInt32          ComputeSchemaXmlStringCheckSum(WCharCP str, size_t len);
 
     //! If the given schemaName is valid, this will create a new schema object
     //! @param[out] schemaOut   if successful, will contain a new schema object
@@ -1513,6 +1513,9 @@ public:
     ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema (ECSchemaPtr& schemaOut, WStringCR schemaName, 
                                                           UInt32 versionMajor, UInt32 versionMinor,
                                                           bool hideFromLeakDetection);
+
+
+    ECOBJECTS_EXPORT void   ReComputeCheckSum ();
 /*__PUBLISH_SECTION_START__*/
 
     //! Generate a schema version string given the major and minor version values.
