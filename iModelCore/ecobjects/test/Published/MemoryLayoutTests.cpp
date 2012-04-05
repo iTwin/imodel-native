@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
-#include <comdef.h>
 #include "StopWatch.h"
 #include "TestFixture.h"
 
@@ -411,6 +410,10 @@ WString    GetTestSchemaXMLString (WCharCP schemaName, UInt32 versionMajor, UInt
                     L"    <ECClass typeName=\"EmployeeDirectory\" isDomainClass=\"True\">"
                     L"        <ECArrayProperty propertyName=\"Employees\" typeName=\"Employee\"  minOccurs=\"0\" maxOccurs=\"unbounded\" />"
                     L"    </ECClass>"
+                    L"    <ECClass typeName=\"Car\" isStruct=\"True\" isDomainClass=\"True\">"
+                    L"        <ECProperty       propertyName=\"Name\"       typeName=\"string\"/>"
+                    L"        <ECProperty       propertyName=\"Wheels\"     typeName=\"int\"  readOnly=\"True\"/>"
+                    L"    </ECClass>"
                     L"  <ECClass typeName=\"StructClass\" isStruct=\"True\" isDomainClass=\"False\">"
                     L"    <ECProperty propertyName=\"StringProperty\" typeName=\"string\" /> "
                     L"    <ECProperty propertyName=\"IntProperty\" typeName=\"int\" /> "
@@ -442,14 +445,10 @@ ECSchemaP       CreateTestSchema (ECSchemaCacheR schemaOwner)
     {
     WString schemaXMLString = GetTestSchemaXMLString (L"TestSchema", 0, 0, L"TestClass");
 
-    EXPECT_EQ (S_OK, CoInitialize(NULL));  
-
     ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext(schemaOwner);
 
     ECSchemaP schema;        
     EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (schema, schemaXMLString.c_str(), *schemaContext));  
-
-    CoUninitialize();
     return schema;
     }
     
@@ -461,8 +460,6 @@ static std::vector<WString> s_propertyNames;
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP       CreateProfilingSchema (int nStrings, ECSchemaCacheR schemaOwner)
     {
-    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
-
     s_propertyNames.clear();
     
     WString schemaXml = 
@@ -489,8 +486,6 @@ ECSchemaP       CreateProfilingSchema (int nStrings, ECSchemaCacheR schemaOwner)
 
     ECSchemaP schema;        
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlString (schema, schemaXml.c_str(), *schemaContext));
-
-    CoUninitialize ();
     return schema;
     }
     
@@ -796,8 +791,6 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper)
     {
-    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
-
     ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
     ECSchemaP        schema = CreateTestSchema(*schemaOwner);
     ASSERT_TRUE (schema != NULL);
@@ -840,8 +833,6 @@ TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper)
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, L"ManufacturerArray[0].Name", testString2.c_str()));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetString (*instance, stringValueP, L"ManufacturerArray[0].Name"));
     EXPECT_STREQ (testString2.c_str(), stringValueP);
-
-    CoUninitialize();
     };
 #endif
 
@@ -1137,6 +1128,7 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmptyInstance)
     EXPECT_TRUE (0 == foundValues);
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1192,6 +1184,71 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_PrimitiveProperties)
     StandaloneECInstancePtr standAloneInstance = StandaloneECInstance::Duplicate(*instance);
 
     collection = ECValuesCollection::Create (*standAloneInstance);
+    iValue = 0;
+    verifyECValueEnumeration (*collection, expectedValues, iValue, true);
+    //dumpPropertyValues (*collection, false, 0);
+
+    EXPECT_TRUE (expectedValues.size() == iValue);
+    }
+
+ /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/11
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MemoryLayoutTests, CopyInstanceProperties)
+    {
+    ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
+    ECSchemaP        schema = CreateTestSchema(*schemaCache);
+    ASSERT_TRUE (schema != NULL);
+
+    StandaloneECEnablerPtr enabler = schema->GetClassP(L"CadData")->GetDefaultStandaloneEnabler ();
+    ASSERT_TRUE (enabler.IsValid());
+
+    /*--------------------------------------------------------------------------
+        Build the instance
+    --------------------------------------------------------------------------*/
+    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+
+    instance->SetValue(L"Name",         ECValue (L"My Name"));
+    instance->SetValue(L"Count",        ECValue (14));
+    instance->SetValue(L"Length",       ECValue (142.5));
+    instance->SetValue(L"Field_Tested", ECValue (true));
+
+    /*--------------------------------------------------------------------------
+        Build the vector of expected values.
+        Note: The order does not match the class it matches the classLayout
+    --------------------------------------------------------------------------*/
+    bvector <AccessStringValuePair> expectedValues;
+
+    expectedValues.push_back (AccessStringValuePair (L"Count",          ECValue(14)));
+    expectedValues.push_back (AccessStringValuePair (L"StartPoint",     ECValue ()));
+    expectedValues.push_back (AccessStringValuePair (L"EndPoint",       ECValue ()));
+    expectedValues.push_back (AccessStringValuePair (L"Size",           ECValue ()));
+    expectedValues.push_back (AccessStringValuePair (L"Length",         ECValue (142.5)));
+    expectedValues.push_back (AccessStringValuePair (L"Install_Date",   ECValue ()));
+    expectedValues.push_back (AccessStringValuePair (L"Service_Date",   ECValue ()));
+    expectedValues.push_back (AccessStringValuePair (L"Field_Tested",   ECValue (true)));
+    expectedValues.push_back (AccessStringValuePair (L"Name",           ECValue (L"My Name")));
+
+    /*--------------------------------------------------------------------------
+        Verify that the values returned from the instance match the expected ones.
+    --------------------------------------------------------------------------*/
+    ECValuesCollectionPtr   collection = ECValuesCollection::Create (*instance);
+    UInt32                  iValue = 0;
+
+    verifyECValueEnumeration (*collection, expectedValues, iValue, false);
+    //dumpPropertyValues (*collection, false, 0);
+
+    EXPECT_TRUE (expectedValues.size() == iValue);
+
+    /*--------------------------------------------------------------------------
+        Duplicate the instance and verify the duplicate.
+    --------------------------------------------------------------------------*/
+    EC::StandaloneECInstancePtr duplicateInstance = enabler->CreateInstance();
+
+    ECObjectsStatus copyStatus = duplicateInstance->CopyInstanceProperties (*instance);
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success == copyStatus);
+
+    collection = ECValuesCollection::Create (*duplicateInstance);
     iValue = 0;
     verifyECValueEnumeration (*collection, expectedValues, iValue, true);
     //dumpPropertyValues (*collection, false, 0);
@@ -1994,7 +2051,40 @@ TEST_F (MemoryLayoutTests, TestSetGetNull)
     
     // WIP_FUSION test arrays
     };
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dylan.Rush      08/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (MemoryLayoutTests, TestPropertyReadOnly)
+    {
+    //L"    <ECClass typeName=\"Car\" isStruct=\"True\" isDomainClass=\"True\">"
+    //L"        <ECProperty       propertyName=\"Name\"       typeName=\"string\"/>"
+    //L"        <ECProperty       propertyName=\"Wheels\"     typeName=\"int\"  readOnly=\"True\"/>"
+    //L"    </ECClass>"
+
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();;
+    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    ASSERT_TRUE (schema != NULL);
+    ECClassP ecClass = schema->GetClassP (L"Car");
+    ASSERT_TRUE (NULL != ecClass);
+        
+    StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
+    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     
+    WCharCP nameAccessString = L"Name";
+    WCharCP wheelsAccessString = L"Wheels";
+    UInt32  namePropertyIndex = 9999;
+    UInt32  wheelsPropertyIndex = 9998;
+    EXPECT_TRUE (SUCCESS == enabler->GetPropertyIndex (namePropertyIndex, nameAccessString));
+    EXPECT_TRUE (SUCCESS == enabler->GetPropertyIndex (wheelsPropertyIndex, wheelsAccessString));
+
+    EXPECT_FALSE (instance->IsPropertyReadOnly (nameAccessString));
+    EXPECT_FALSE (instance->IsPropertyReadOnly (namePropertyIndex));
+
+    EXPECT_TRUE  (instance->IsPropertyReadOnly (wheelsAccessString));
+    EXPECT_TRUE  (instance->IsPropertyReadOnly (wheelsPropertyIndex));   
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/

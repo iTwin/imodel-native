@@ -5,8 +5,8 @@
 #  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
+PolicyFile      = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
 baseDir         = $(_MakeFilePath)
-
 SolutionPolicyMki=$(baseDir)ecobjects.mki
 
 programName = ECObjects
@@ -43,25 +43,31 @@ MultiCompileDepends=$(_MakeFileSpec)
 #----------------------------------------------------------------------
 #   Objects that go into the ECObjects library
 #----------------------------------------------------------------------
-ECObjectsHeaders = $(ecobjectsPublicAPISrc)ECObjects.h $(ecobjectsPublicAPISrc)ECSchema.h $(ecobjectsPublicAPISrc)ECValue.h $(ecobjectsPublicAPISrc)ECInstance.h $(ecobjectsPublicAPISrc)ECEnabler.h $(ecobjectsPublicAPISrc)designbycontract.h $(baseDir)ecxml.h $(baseDir)Logger.h $(baseDir)FileUtilities.h $(baseDir)StopWatch.h
+ECObjectsHeaders = $(ecobjectsPublicAPISrc)ECObjects.h $(ecobjectsPublicAPISrc)ECSchema.h $(ecobjectsPublicAPISrc)ECValue.h $(ecobjectsPublicAPISrc)ECInstance.h $(ecobjectsPublicAPISrc)ECEnabler.h $(ecobjectsPublicAPISrc)DesignByContract.h $(baseDir)ecxml.h $(baseDir)Logger.h $(baseDir)FileUtilities.h $(baseDir)StopWatch.h
 
 $(o)ecxml$(oext)           : $(baseDir)ecxml.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)ecschema$(oext)        : $(baseDir)ecschema.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ECSchema$(oext)        : $(baseDir)ECSchema.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)ectype$(oext)          : $(baseDir)ectype.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ECType$(oext)          : $(baseDir)ECType.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)ecclass$(oext)         : $(baseDir)ecclass.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+$(o)ECClass$(oext)         : $(baseDir)ECClass.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)ecproperty$(oext)      : $(baseDir)ecproperty.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ECProperty$(oext)      : $(baseDir)ECProperty.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)ecinstance$(oext)      : $(baseDir)ecinstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ECInstance$(oext)      : $(baseDir)ECInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)eccustomattribute$(oext)         : $(baseDir)eccustomattribute.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ECCustomAttribute$(oext)         : $(baseDir)ECCustomAttribute.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)ecvalue$(oext)         : $(baseDir)ecvalue.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ECValue$(oext)         : $(baseDir)ECValue.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)ecenabler$(oext)       : $(baseDir)ecenabler.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ECEnabler$(oext)       : $(baseDir)ECEnabler.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+
+$(o)ExpressionNode$(oext)  : $(baseDir)ExpressionNode.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+
+$(o)ExpressionContext$(oext) : $(baseDir)ExpressionContext.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+
+$(o)ExpressionHandler$(oext) : $(baseDir)ExpressionHandler.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
 $(o)MemoryInstanceSupport$(oext) : $(baseDir)MemoryInstanceSupport.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)MemoryInstanceSupport.h
 
@@ -69,13 +75,16 @@ $(o)StandaloneECInstance$(oext)    : $(baseDir)StandaloneECInstance.cpp $(ECObje
 
 $(o)StandaloneECRelationshipInstance$(oext)    : $(baseDir)StandaloneECRelationshipInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)StandaloneECRelationshipInstance.h  $(ecobjectsPublicAPISrc)StandaloneECInstance.h $(ecobjectsPublicAPISrc)MemoryInstanceSupport.h
 
-$(o)designbycontract$(oext)        : $(baseDir)designbycontract.cpp $(ecobjectsPublicAPISrc)designbycontract.h ${MultiCompileDepends} 
+$(o)DesignByContract$(oext)        : $(baseDir)DesignByContract.cpp $(ecobjectsPublicAPISrc)DesignByContract.h ${MultiCompileDepends} 
 
-$(o)logger$(oext)          : $(baseDir)Logger.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+$(o)Logger$(oext)          : $(baseDir)Logger.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)FileUtilities$(oext)   : $(baseDir)nonport/FileUtilities.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)StopWatch$(oext)        : $(baseDir)nonport/StopWatch.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+$(o)BeXmlCGReader$(oext)         : $(baseDir)BeXmlCGReader.cpp $(ecobjectsPublicAPISrc)BeXmlCommonGeometry.h ${MultiCompileDepends} 
+
+$(o)BeXmlCGWriter$(oext)         : $(baseDir)BeXmlCGWriter.cpp $(ecobjectsPublicAPISrc)BeXmlCommonGeometry.h ${MultiCompileDepends} 
+
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)
@@ -90,13 +99,19 @@ DLM_NO_DEF                  = 1
 DLM_NAME                    = ECObjects
 DLM_DEST                    = $(o)
 DLM_OBJECT_DEST             = $(o)
-DLM_OBJECT_FILES            = $(cppObjects) $(o)ECObjectsPch$(oext)
+DLM_OBJECT_FILES            = $(cppObjects)
+DLM_OBJECT_PCH              = $(o)ECObjectsPch$(oext)
 DLM_EXPORT_OBJS             = $(cppObjects)
 DLM_EXPORT_DEST             = $(o)
 DLM_NOINITFUNC              = 1
 DLM_NOMSBUILTINS            = 1
 DLM_NOENTRY                 = 1
-LINKER__LIBRARIES           = $(BuildContext)SubParts/Libs/bentleylogging-2.0$(libext) xmllite$(libext) $(BuildContext)SubParts/Libs/bentley$(libext)
+%if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT
+LINKER__LIBRARIES           = $(BuildContext)SubParts/Libs/bentleylogging-2.0$(libext) xmllite$(libext)
+%endif
+LINKER__LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
+LINKER__LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
+LINKER__LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext)
 DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
@@ -104,5 +119,5 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 #----------------------------------------------------------------------
 #   NEEDSWORK : Temporary settings
 #----------------------------------------------------------------------
-%include dlmLink.mki
+%include dlmlink.mki
 

@@ -42,7 +42,7 @@ struct  InstanceHeader
     };
 /*__PUBLISH_SECTION_START__*/
 
-enum PropertyLayoutModifierFlags : UInt32
+enum ArrayModifierFlags ENUM_UNDERLYING_TYPE (UInt32)
     {
     PROPERTYLAYOUTMODIFIERFLAGS_None              = 0x00,
     PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount = 0x01,
@@ -123,7 +123,7 @@ private:
 
     typedef bvector<AccessStringIndexPair>                          IndicesByAccessString;
     typedef bvector<PropertyLayoutP>                                PropertyLayoutVector;
-    typedef bmap<UInt32, bvector<UInt32>>                           LogicalStructureMap;
+    typedef bmap<UInt32, bvector<UInt32> >                          LogicalStructureMap;
     
     enum State
         {
@@ -201,6 +201,7 @@ public:
     ECOBJECTS_EXPORT UInt32                  GetNextChildPropertyIndex (UInt32 parentIndex, UInt32 childIndex) const;
     ECOBJECTS_EXPORT ECObjectsStatus         GetAccessStringByIndex (WCharCP& accessString, UInt32 propertyIndex) const;
     ECOBJECTS_EXPORT ECObjectsStatus         GetPropertyIndices (bvector<UInt32>& properties, UInt32 parentIndex) const;
+    ECOBJECTS_EXPORT bool                    HasChildProperties (UInt32 parentIndex) const;
 
     ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();
     ECOBJECTS_EXPORT ~ClassLayout();
@@ -335,7 +336,7 @@ private:
     ECObjectsStatus       SetSecondaryOffsetsPreceedingResizeIndex (SecondaryOffset* pSecondaryOffset, UInt32 byteCountToSet);    
     ECObjectsStatus       WriteArrayHeader ();
         
-    static ECObjectsStatus    CreateNullArrayElementsAt (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, MemoryInstanceSupportR instance, UInt32 insertIndex, UInt32 insertCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP=NULL);
+    static ECObjectsStatus    CreateNullArrayElementsAt (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, MemoryInstanceSupportR instance, UInt32 insertIndex, UInt32 insertCount);
     };
 
 /*__PUBLISH_SECTION_START__*/  
@@ -353,7 +354,7 @@ private:
     bool                        m_allowWritingDirectlyToInstanceMemory;
 //__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_END__*/    
-       
+
     //! Returns the offset of the property value relative to the start of the instance data.
     //! If useIndex is true then the offset of the array element value at the specified index is returned.
     UInt32              GetOffsetOfPropertyValue (PropertyLayoutCR propertyLayout, bool useIndex = false, UInt32 index = 0) const;
@@ -387,7 +388,7 @@ private:
     //! Sets the null bit of the specified property to the value indicated by isNull
     //! If nIndices is > 0 then the null bit is set for the array element at the specified index    
     void                SetPropertyValueNull (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, bool isNull);    
-    
+
     //! Returns the number of elements in the specfieid array that are currently reserved but not necessarily allocated.
     //! This is important when an array has a minimum size but has not yet been initialized.  We delay initializing the memory for the minimum # of elements until
     //! the first value is set.  If an array does not have a minimum element count then GetReservedArrayCount will always equal GetAllocatedArrayCount
@@ -400,7 +401,6 @@ private:
     //! See the description of GetReservedArrayCount for explanation about the differences between the two.
     ArrayCount          GetAllocatedArrayCount (PropertyLayoutCR propertyLayout) const;
     
-    
     //! Shifts the values' data and adjusts SecondaryOffsets for all variable-sized property values 
     //! AFTER the given one, to make room for additional bytes needed for the property value of the given PropertyLayout
     //! or to "compact" to reclaim unused space.
@@ -411,9 +411,9 @@ private:
     ECObjectsStatus                   ShiftValueData(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated, PropertyLayoutCR propertyLayout, Int32 shiftBy);
     ECObjectsStatus                   ShiftArrayIndexValueData(PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 arrayCount,  UInt32 endOfValueDataOffset, Int32 shiftBy);
         
-    ECObjectsStatus                   EnsureSpaceIsAvailable (UInt32& offset, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded, EmbeddedInstanceCallbackP callbackP=NULL);
-    ECObjectsStatus                   EnsureSpaceIsAvailableForArrayIndexValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 bytesNeeded, EmbeddedInstanceCallbackP callbackP=NULL);
-    ECObjectsStatus                   GrowPropertyValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 additionalbytesNeeded, EmbeddedInstanceCallbackP callbackP=NULL);           
+    ECObjectsStatus                   EnsureSpaceIsAvailable (UInt32& offset, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded);
+    ECObjectsStatus                   EnsureSpaceIsAvailableForArrayIndexValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 bytesNeeded);
+    ECObjectsStatus                   GrowPropertyValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 additionalbytesNeeded);           
          
 protected:
     //! Constructor used by subclasses
@@ -440,12 +440,12 @@ protected:
     ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index);              
     ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ClassLayoutCR classLayout, WCharCP propertyAccessString, ECValueCR v,  bool useIndex = false, UInt32 index = 0);      
     ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ClassLayoutCR classLayout, UInt32 propertyIndex, ECValueCR v, bool useArrayIndex = false, UInt32 arrayIndex = 0);      
-    ECOBJECTS_EXPORT ECObjectsStatus  InsertNullArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 insertIndex, UInt32 insertCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP=NULL);
-    ECOBJECTS_EXPORT ECObjectsStatus  AddNullArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 insertCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP=NULL);
+    ECOBJECTS_EXPORT ECObjectsStatus  InsertNullArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 insertIndex, UInt32 insertCount);
+    ECOBJECTS_EXPORT ECObjectsStatus  AddNullArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 insertCount);
     ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElementsFromMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
     ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 removeIndex, UInt32 removeCount);
     ECOBJECTS_EXPORT WString          InstanceDataToString (WCharCP indent, ClassLayoutCR classLayout) const;
-    
+
     virtual ~MemoryInstanceSupport () {}
 
     //! Sets the in-memory value of the array index of the specified property to be the struct value as held by v
@@ -458,7 +458,10 @@ protected:
     virtual ECObjectsStatus           _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const = 0;
     virtual EC::PrimitiveType         _GetStructArrayPrimitiveType () const = 0;
 
-    virtual ECObjectsStatus           _RemoveStructArrayElementsFromMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP) = 0;
+    virtual ECObjectsStatus           _RemoveStructArrayElementsFromMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount) = 0;
+
+    //! Invoked after a variable-sized array is successfully resized, to allow derived classes to adjust their internal state in response if necessary.
+    virtual void                      _HandleArrayResize (PropertyLayoutCP propertyLayout, UInt32 atIndex, Int32 countDelta) { };
 
     virtual bool                _IsMemoryInitialized () const = 0;    
     
@@ -470,8 +473,7 @@ protected:
     //! Reallocates memory for the IECInstance and copies the old IECInstance data into the new memory
     //! You might get more memory than used asked for, but you won't get less
     //! @param additionalBytesNeeded  Additional bytes of memory needed above current allocation
-    //! @param memoryCallback         Callback used only when setting resizeable property values from Manage IECInstance that embeds a native instance.
-    virtual ECObjectsStatus    _GrowAllocation (UInt32 additionalBytesNeeded, EmbeddedInstanceCallbackP memoryCallback) = 0;
+    virtual ECObjectsStatus    _GrowAllocation (UInt32 additionalBytesNeeded) = 0;
     
     //! Reallocates memory for the IECInstance and copies the old IECInstance data into the new memory
     //! This is not guaranteed to do anything or to change to precisely the allocation you request
@@ -487,7 +489,7 @@ protected:
 public:
     ECOBJECTS_EXPORT static InstanceHeader const&   PeekInstanceHeader (void const* data);
 
-    ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP=NULL);
+    ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
    
     ECOBJECTS_EXPORT void SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable);
 

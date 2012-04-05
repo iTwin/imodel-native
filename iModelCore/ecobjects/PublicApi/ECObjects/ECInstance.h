@@ -9,7 +9,10 @@
 /*__PUBLISH_SECTION_START__*/
 
 #include "ECObjects.h"
-#include <Geom\GeomApi.h>
+#include <Geom/GeomApi.h>
+
+BENTLEY_TYPEDEFS (BeXmlDom)
+BENTLEY_TYPEDEFS (BeXmlNode)
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -31,44 +34,6 @@ BEGIN_BENTLEY_EC_NAMESPACE
 //!
 //! There are also ECRelationshipClasses that are ECClasses that also define "RelationshipConstraints" indicating what ECClasses they relate. ECRelationshipInstances represent the relationships between the ECinstances (defined/constrainted by their ECRelationshipClass) ECRelationships work more like database foreign key constraint that C++ pointers or .NET object references.
 //! @see Bentley::EC
-
-//! @cond DONTINCLUDEINDOC
-// Define structure used to pass data to/from callback that is used to allocate memory in a native IECInstance.
-// This is needed to support embedding a native instance in a managed instance without requiring the managed
-// instance to be Disposed.
-
-enum  UseFlags
-    {
-    USE_FLAG_ADDGAPS    = 0x0000,
-    USE_FLAG_REMOVEGAPS = 0x0001,
-    };
-
-struct MemoryCallbackData
-    {
-    byte*   dataAddress;
-    size_t  gapSize;
-    byte*   gapAddress;
-    size_t  instanceGapSize;
-    byte*   instanceGapAddress;
-    byte*   newDataAddress;
-    UInt16  useFlags;
-
-    MemoryCallbackData ()
-        {
-        dataAddress = NULL;
-        gapSize = 0;
-        gapAddress = NULL;
-        instanceGapSize = 0;
-        instanceGapAddress = NULL;
-        newDataAddress = NULL;
-        useFlags = USE_FLAG_ADDGAPS;
-        }
-    };
-
-// Declare an unmanaged function prototype 
-// Note the use of __stdcall for compatibility with managed code
-typedef int (__stdcall *EmbeddedInstanceCallbackP)(MemoryCallbackData* callbackData);
-//! @endcond
 
 //////////////////////////////////////////////////////////////////////////////////
 //  The following definitions are used to allow a struct property to generate a
@@ -107,7 +72,7 @@ typedef RefCountedPtr<IECInstance> IECInstancePtr;
 //! Unlike IECInstance, it is not a pure interface, but is a concrete struct.
 //! Whereas in .NET, one might implement IECInstance, or use the "Lightweight" system
 //! in Bentley.ECObjects.Lightweight, in native "ECObjects" you write a class that implements
-//! the DgnECInstanceEnabler interface and one or more related interfaces to supply functionality 
+//! the DgnElementECInstanceEnabler interface and one or more related interfaces to supply functionality 
 //! to the EC::IECInstance.
 //! We could call these "enabled" instances as opposed to "lightweight".
 //! @see ECEnabler
@@ -128,8 +93,8 @@ public:
     virtual ECObjectsStatus     _SetValue (WCharCP managedPropertyAccessor, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) = 0;
 protected:
     virtual ECObjectsStatus     _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) = 0;
-    virtual ECObjectsStatus     _InsertArrayElements (WCharCP managedPropertyAccessor, UInt32 index, UInt32 size, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP) = 0;
-    virtual ECObjectsStatus     _AddArrayElements (WCharCP managedPropertyAccessor, UInt32 size, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP) = 0;
+    virtual ECObjectsStatus     _InsertArrayElements (WCharCP managedPropertyAccessor, UInt32 index, UInt32 size) = 0;
+    virtual ECObjectsStatus     _AddArrayElements (WCharCP managedPropertyAccessor, UInt32 size) = 0;
     virtual ECObjectsStatus     _RemoveArrayElement (WCharCP managedPropertyAccessor, UInt32 index) = 0;
     virtual ECObjectsStatus     _ClearArray (WCharCP managedPropertyAccessor) = 0;    
     virtual ECEnablerCR         _GetEnabler() const = 0;
@@ -222,8 +187,8 @@ public:
     //! Contract:
     //! - For all of the methods, the managedPropertyAccessor should be in the "array element" form, 
     //!   e.g. "Aliases[]" instead of "Aliases"         
-    ECOBJECTS_EXPORT ECObjectsStatus      InsertArrayElements (WCharCP managedPropertyAccessor, UInt32 index, UInt32 size, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP=NULL); //WIP_FUSION Return the new count?   
-    ECOBJECTS_EXPORT ECObjectsStatus      AddArrayElements (WCharCP managedPropertyAccessor, UInt32 size, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP=NULL); //WIP_FUSION Return the new count?
+    ECOBJECTS_EXPORT ECObjectsStatus      InsertArrayElements (WCharCP managedPropertyAccessor, UInt32 index, UInt32 size); //WIP_FUSION Return the new count?   
+    ECOBJECTS_EXPORT ECObjectsStatus      AddArrayElements (WCharCP managedPropertyAccessor, UInt32 size); //WIP_FUSION Return the new count?
     ECOBJECTS_EXPORT ECObjectsStatus      RemoveArrayElement (WCharCP managedPropertyAccessor, UInt32 index); //WIP_FUSION return the removed one? YAGNI? Return the new count?
     ECOBJECTS_EXPORT ECObjectsStatus      ClearArray (WCharCP managedPropertyAccessor);    
     ECOBJECTS_EXPORT ECObjectsStatus      GetDisplayLabel (WString& displayLabel) const;    
@@ -242,13 +207,16 @@ public:
     ECOBJECTS_EXPORT static void        Debug_GetAllocationStats (int* currentLive, int* totalAllocs, int* totalFrees);
     ECOBJECTS_EXPORT static void        Debug_ReportLeaks (bvector<WString>& classNamesToExclude);
 
-    ECOBJECTS_EXPORT static InstanceReadStatus   ReadFromXmlFile   (IECInstancePtr& ecInstance, WCharCP fileName, ECInstanceReadContextR context);
-    ECOBJECTS_EXPORT static InstanceReadStatus   ReadFromXmlStream (IECInstancePtr& ecInstance, IStreamP stream, ECInstanceReadContextR context);
-    ECOBJECTS_EXPORT static InstanceReadStatus   ReadFromXmlString (IECInstancePtr& ecInstance, WCharCP xmlString, ECInstanceReadContextR context);
+    ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromXmlFile   (IECInstancePtr& ecInstance, WCharCP fileName,   ECInstanceReadContextR context);
+    ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromXmlStream (IECInstancePtr& ecInstance, IStreamP stream,    ECInstanceReadContextR context);
+    ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromXmlString (IECInstancePtr& ecInstance, WCharCP xmlString,  ECInstanceReadContextR context);
+    ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromBeXmlDom  (IECInstancePtr& ecInstance, BeXmlDomR xmlNode,  ECInstanceReadContextR context);
+    ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromBeXmlNode (IECInstancePtr& ecInstance, BeXmlNodeR xmlNode, ECInstanceReadContextR context);
 
-    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlFile   (WCharCP fileName, bool isCompleteXmlDocument, bool writeInstanceId, bool utf16);
-    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlStream (IStreamP stream, bool isCompleteXmlDocument, bool writeInstanceId, bool utf16);
-    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlString (WStringR ecInstanceXml, bool isCompleteXmlDocument, bool writeInstanceId);
+    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlFile   (WCharCP fileName, bool isStandAlone, bool writeInstanceId, bool utf16);
+    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlStream (IStreamP stream, bool isStandAlone, bool writeInstanceId, bool utf16);
+    ECOBJECTS_EXPORT InstanceWriteStatus        WriteToXmlString (WString & ecInstanceXml, bool isStandAlone, bool writeInstanceId);
+    ECOBJECTS_EXPORT InstanceWriteStatus        WriteToBeXmlNode (BeXmlNodeR xmlNode);
     };
     
 //=======================================================================================    
@@ -337,9 +305,6 @@ struct ECInstanceInteropHelper
     ECOBJECTS_EXPORT static ECObjectsStatus GetStructArrayEntry (EC::ECValueAccessorR structArrayEntryValueAccessor, IECInstanceR instance, UInt32 index, EC::ECValueAccessorCR structArrayValueAccessor, 
                                                                   bool createPropertyIfNotFound, WCharCP wcharAccessString, WCharCP schemaName, WCharCP className);
 
-    ECOBJECTS_EXPORT static PrimitiveType   GetPrimitiveType       (IECInstanceCR instance, int propertyIndex);
-    ECOBJECTS_EXPORT static bool            IsStructArray          (IECInstanceCR instance, int propertyIndex);
-    ECOBJECTS_EXPORT static bool            IsArray                (IECInstanceCR instance, int propertyIndex);
     ECOBJECTS_EXPORT static bool            IsCalculatedECProperty (IECInstanceCR instance, int propertyIndex);
 
     //! Gets the next property index in the instance or struct that is being enumerated.
