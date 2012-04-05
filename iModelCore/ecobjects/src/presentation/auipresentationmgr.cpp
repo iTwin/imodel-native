@@ -323,3 +323,16 @@ void            ECPresentationManager::TriggerSelectionEvent (ECSelectionEventCR
             (*iter)->_OnSelection(selectionEvent);
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  07/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECPresentationManager::TriggerSubSelectionEvent (ECSelectionEventCR selectionEvent)
+    {
+    void const* eventHub = selectionEvent.GetEventHub();
+    for (T_SelectionListeners::const_iterator iter = m_selecitonListeners.begin(); iter != m_selecitonListeners.end(); ++iter)
+        {
+        if (NULL == eventHub || (*iter)->GeteventHub() == eventHub)
+            (*iter)->_OnSubSelection(selectionEvent);
+        }
+    }
