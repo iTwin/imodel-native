@@ -57,7 +57,7 @@ size_t                StandaloneECRelationshipInstance::_GetObjectSize () const
     size_t objectSize = sizeof(*this);
     size_t primaryInstanceDataSize = (size_t)_GetBytesAllocated(); //GetBytesUsed();
     size_t perPropertyDataSize = sizeof(UInt32) * GetPerPropertyFlagsSize();
-    size_t supportingInstanceDataSize = CalculateSupportingInstanceDataSize ();
+    size_t supportingInstanceDataSize = 0; // CalculateSupportingInstanceDataSize ();
 
     return objectSize+primaryInstanceDataSize+perPropertyDataSize+supportingInstanceDataSize;
     }
@@ -179,10 +179,10 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_SetValue (UInt32 pr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECRelationshipInstance::_InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP)
+ECObjectsStatus           StandaloneECRelationshipInstance::_InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size)
     {
     ClassLayoutCR classLayout = GetClassLayout();
-    ECObjectsStatus status = InsertNullArrayElementsAt (classLayout, propertyAccessString, index, size, memoryReallocationCallbackP);
+    ECObjectsStatus status = InsertNullArrayElementsAt (classLayout, propertyAccessString, index, size);
     
     return status;
     } 
@@ -190,10 +190,10 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_InsertArrayElements
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECRelationshipInstance::_AddArrayElements (WCharCP propertyAccessString, UInt32 size, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP)
+ECObjectsStatus           StandaloneECRelationshipInstance::_AddArrayElements (WCharCP propertyAccessString, UInt32 size)
     {
     ClassLayoutCR classLayout = GetClassLayout();    
-    ECObjectsStatus status = AddNullArrayElementsAt (classLayout, propertyAccessString, size, memoryReallocationCallbackP);
+    ECObjectsStatus status = AddNullArrayElementsAt (classLayout, propertyAccessString, size);
     
     return status;
     }        
@@ -372,6 +372,14 @@ UInt32          StandaloneECRelationshipEnabler::_GetPropertyCount() const    { 
 UInt32          StandaloneECRelationshipEnabler::_GetFirstPropertyIndex (UInt32 parentIndex) const {  return GetClassLayout().GetFirstChildPropertyIndex (parentIndex); }
 UInt32          StandaloneECRelationshipEnabler::_GetNextPropertyIndex (UInt32 parentIndex, UInt32 inputIndex) const { return GetClassLayout().GetNextChildPropertyIndex (parentIndex, inputIndex);  }
 ECObjectsStatus StandaloneECRelationshipEnabler::_GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const { return GetClassLayout().GetPropertyIndices (indices, parentIndex);  }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Paul.Connelly                   12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            StandaloneECRelationshipEnabler::_HasChildProperties (UInt32 parentIndex) const
+    {
+    return GetClassLayout().HasChildProperties (parentIndex);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2012

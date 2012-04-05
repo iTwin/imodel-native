@@ -59,8 +59,8 @@ protected:
     virtual ECObjectsStatus     _SetValue (WCharCP propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
     virtual ECObjectsStatus     _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
 
-    virtual ECObjectsStatus     _InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP) override;
-    virtual ECObjectsStatus     _AddArrayElements (WCharCP propertyAccessString, UInt32 size, EC::EmbeddedInstanceCallbackP memoryReallocationCallbackP) override;
+    virtual ECObjectsStatus     _InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size) override;
+    virtual ECObjectsStatus     _AddArrayElements (WCharCP propertyAccessString, UInt32 size) override;
     virtual ECObjectsStatus     _RemoveArrayElement (WCharCP propertyAccessString, UInt32 index) override;
     virtual ECObjectsStatus     _ClearArray (WCharCP propertyAccessString) override;    
     virtual WString             _ToString (WCharCP indent) const override;
@@ -106,6 +106,7 @@ protected:
     virtual UInt32                      _GetPropertyCount () const override;
     virtual UInt32                      _GetFirstPropertyIndex (UInt32 parentIndex) const override;
     virtual UInt32                      _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const override;
+    virtual bool                        _HasChildProperties (UInt32 parentIndex) const override;
     virtual ECObjectsStatus             _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const override;
 
     virtual IECWipRelationshipInstancePtr _CreateWipRelationshipInstance () const;
