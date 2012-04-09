@@ -76,6 +76,7 @@
     <ClCompile Include="nonport\FileUtilities.cpp" />
     <ClCompile Include="nonport\StopWatch.cpp" />
     <ClCompile Include="StandaloneECInstance.cpp" />
+    <ClCompile Include="StandaloneECRelationshipInstance.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\PublicApi\ECObjects\DesignByContract.h" />
