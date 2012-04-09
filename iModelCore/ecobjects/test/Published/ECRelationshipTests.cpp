@@ -56,13 +56,13 @@ static ECSchemaP       CreateTestSchema (ECSchemaCacheR schemaOwner)
 
     EXPECT_EQ (S_OK, CoInitialize(NULL));  
 
-    ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext(schemaOwner);
+    ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
 
-    ECSchemaP schema;        
+    ECSchemaPtr schema;        
     EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (schema, schemaXMLString.c_str(), *schemaContext));  
 
     CoUninitialize();
-    return schema;
+    return schema.get();
     }
     
 /*---------------------------------------------------------------------------------**//**
