@@ -39,6 +39,9 @@
     <Part Name="HeaderFiles" BentleyBuildMakeFile="ecobjects.prewire.mke">
         <Bindings>
             <PublicAPI Domain="ECObjects" />
+            <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/ECPresentation" SubPartDirectory="ECSchemas/ECPresentation">
+                PublicAPI/ECPresentation/schema/*.xml
+            </Files>
         </Bindings>
     </Part>
 

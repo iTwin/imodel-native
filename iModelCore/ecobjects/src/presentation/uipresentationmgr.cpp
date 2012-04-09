@@ -1,0 +1,184 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: src/presentation/uipresentationmgr.cpp $
+|
+|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#include "ECObjectsPch.h"
+
+#include <EcPresentation/uipresentationmgr.h>
+
+USING_NAMESPACE_EC
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+UIPresentationManagerR   UIPresentationManager::GetManager()
+    {
+    static UIPresentationManagerP mgr = new UIPresentationManager();
+    return *mgr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            UIPresentationManager::InitSchema() 
+    {
+    if (m_schema.IsValid())
+        return true;
+
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext(NULL, false);
+    SchemaKey key(L"BeUISchema", 1, 0);
+    m_schema = context->LocateSchema(key, SCHEMAMATCHTYPE_LatestCompatible);
+    return m_schema.IsValid();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            UIPresentationManager::AddProvider (IJournalProviderR provider)
+    {
+    m_journalProviders.insert(&provider);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            UIPresentationManager::RemoveProvider (IJournalProviderR provider)
+    {
+    m_journalProviders.erase(&provider);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            UIPresentationManager::AddProvider (IUIDisplayProviderCR provider)
+    {
+    m_displayProviders.insert(&provider);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            UIPresentationManager::RemoveProvider (IUIDisplayProviderCR provider)
+    {
+    m_displayProviders.erase(&provider);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            UIPresentationManager::AddProvider (IUICommandProviderCR provider)
+    {
+    m_cmdProviders.insert(&provider);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            UIPresentationManager::RemoveProvider (IUICommandProviderCR provider)
+    {
+    m_cmdProviders.erase(&provider);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+IUIItemPtr      UIPresentationManager::GetUIItem (UIECClassCR itemType, IECInstanceP instanceData) const
+    {
+    for (T_DisplayProviderSet::const_iterator iter = m_displayProviders.begin(); iter != m_displayProviders.end(); ++iter)
+        {
+        IUIItemPtr item = (*iter)->GetUIItem (itemType, instanceData);
+        if (item.IsValid())
+            return item;
+        }
+
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+UICommandPtr    UIPresentationManager::GetCommand (IECInstanceCR instance) const
+    {
+    for (T_CmdProviderSet::const_iterator iter = m_cmdProviders.begin(); iter != m_cmdProviders.end(); ++iter)
+        {
+        UICommandPtr command = (*iter)->GetCommand(instance);
+        if (command.IsValid())
+            return command;
+        }
+
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+template <typename ProviderType>
+class ProviderSingletonPattern : public NonCopyableClass
+    {
+    public:
+    static ProviderType& GetProvider ()
+        {
+        ProviderType* provider = new ProviderType();
+        return *provider;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct BaseDisplayProvider : public IUIDisplayProvider, public ProviderSingletonPattern<BaseDisplayProvider>
+    {
+    virtual IUIItemPtr   GetUIItem (UIECClassCR itemType, IECInstanceP instanceData) const override
+        {
+        return NULL;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct BaseCommandProvider : public IUICommandProvider, public ProviderSingletonPattern<BaseCommandProvider>
+    {
+    virtual UICommandPtr GetCommand (IECInstanceCR instance) const override
+        {
+        return NULL;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct LoggingJournalProvider : public IJournalProvider, public ProviderSingletonPattern<LoggingJournalProvider>
+    {
+    virtual void    JournalCmd (IUICommandCR cmd, IECInstanceCP instanceData) override
+        {
+        
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+UIPresentationManager::UIPresentationManager ()
+    :m_schema(NULL)
+    {
+    AddProvider (BaseDisplayProvider::GetProvider());
+    AddProvider (BaseCommandProvider::GetProvider());
+    AddProvider (LoggingJournalProvider::GetProvider());
+    
+    bool initDone = InitSchema();
+    assert(initDone);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            UIPresentationManager::JournalCmd (IUICommandCR cmd, IECInstanceCP instanceData)
+    {
+    for (T_JournalProviderSet::iterator iter = m_journalProviders.begin(); iter != m_journalProviders.end(); ++iter)
+        (*iter)->JournalCmd(cmd, instanceData);
+    }

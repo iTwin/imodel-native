@@ -42,6 +42,12 @@ bool            ECSchemaReadContext::GetStandardPaths (bvector<WString>& searchP
     libraryPath.AppendToPath (L"LibraryUnits");
     libraryPath.AppendSeparator();
     searchPaths.push_back (libraryPath.GetName());
+
+    BeFileName presentationPath = standardPath;
+    presentationPath.AppendToPath (L"ECPresentation");
+    presentationPath.AppendSeparator();
+    searchPaths.push_back (presentationPath.GetName());
+
     return true;
     }
 
