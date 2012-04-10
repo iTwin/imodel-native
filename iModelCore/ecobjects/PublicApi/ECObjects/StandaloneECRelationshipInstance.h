@@ -8,8 +8,8 @@
 //__PUBLISH_SECTION_START__
 #pragma once
 
-#include <ECObjects\ECObjects.h>
-#include <ECObjects\MemoryInstanceSupport.h>
+#include <ECObjects/ECObjects.h>
+#include <ECObjects/MemoryInstanceSupport.h>
 
 EC_TYPEDEFS(StandaloneECRelationshipEnabler);
 EC_TYPEDEFS(StandaloneECRelationshipInstance);
@@ -18,6 +18,8 @@ BEGIN_BENTLEY_EC_NAMESPACE
 
 typedef RefCountedPtr<StandaloneECRelationshipEnabler>  StandaloneECRelationshipEnablerPtr;
 typedef RefCountedPtr<StandaloneECRelationshipInstance> StandaloneECRelationshipInstancePtr;
+
+struct StandaloneECRelationshipEnabler;
 
 //=======================================================================================
 //! @ingroup ECObjectsGroup
