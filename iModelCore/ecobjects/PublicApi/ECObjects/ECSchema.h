@@ -1039,6 +1039,7 @@ public:
     ECOBJECTS_EXPORT void    Clear();
     //! Removes ECSchema from the ownership of this ECSchemaCache (so that its ownership can be transferred to another)
     ECOBJECTS_EXPORT ECObjectsStatus RemoveOwnership(ECSchemaCR);
+    ECOBJECTS_EXPORT size_t  GetSchemas (bvector<ECSchemaP>& schemas);
 };
 
 //=======================================================================================

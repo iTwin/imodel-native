@@ -1992,6 +1992,16 @@ ECSchemaCachePtr    ECSchemaCache::Create ()
     return new ECSchemaCache;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Ramanujam.Raman                03/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t ECSchemaCache::GetSchemas (bvector<ECSchemaP>& schemas)
+    {
+    schemas.resize (m_schemas.size());
+    std::copy (m_schemas.begin(), m_schemas.end(), schemas.begin());
+    return schemas.size();
+    }
+
 /////////////////////////////////////////////////////////////////////////////////////////
 // ECClassContainer
 /////////////////////////////////////////////////////////////////////////////////////////
