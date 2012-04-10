@@ -14,7 +14,7 @@ EC_TYPEDEFS (UIPresentationManager)
 EC_TYPEDEFS (IUICommandProvider)
 EC_TYPEDEFS (IUIDisplayProvider)
 EC_TYPEDEFS (IJournalProvider)
-EC_TYPEDEFS (UIECEnabler);
+
 BEGIN_BENTLEY_EC_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**

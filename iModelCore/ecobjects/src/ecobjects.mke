@@ -85,11 +85,13 @@ $(o)BeXmlCGReader$(oext)         : $(baseDir)BeXmlCGReader.cpp $(ecobjectsPublic
 
 $(o)BeXmlCGWriter$(oext)         : $(baseDir)BeXmlCGWriter.cpp $(ecobjectsPublicAPISrc)BeXmlCommonGeometry.h ${MultiCompileDepends} 
 
-$(o)uipresentationmgr$(oext) : $(baseDir)presentation/uipresentationmgr.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ecprovider$(oext)       : $(baseDir)ecprovider.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)uicommand$(oext)    : $(baseDir)presentation/uicommand.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)uipresentationmgr$(oext): $(baseDir)presentation/uipresentationmgr.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)uiitem$(oext)    : $(baseDir)presentation/uiitem.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)uicommand$(oext)        : $(baseDir)presentation/uicommand.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+
+$(o)uiitem$(oext)           : $(baseDir)presentation/uiitem.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
 
 %include MultiCppCompileGo.mki
