@@ -19,8 +19,6 @@ BEGIN_BENTLEY_EC_NAMESPACE
 typedef RefCountedPtr<StandaloneECRelationshipEnabler>  StandaloneECRelationshipEnablerPtr;
 typedef RefCountedPtr<StandaloneECRelationshipInstance> StandaloneECRelationshipInstancePtr;
 
-struct StandaloneECRelationshipEnabler;
-
 //=======================================================================================
 //! @ingroup ECObjectsGroup
 //! StandaloneECRelationshipInstance is used to represent a relationship between
@@ -29,7 +27,7 @@ struct StandaloneECRelationshipEnabler;
 struct StandaloneECRelationshipInstance : IECRelationshipInstance, MemoryECInstanceBase
     {
 //__PUBLISH_SECTION_END__
-    friend StandaloneECRelationshipEnabler;
+    friend struct StandaloneECRelationshipEnabler;
 
 private:
     IECInstancePtr                    m_source;
