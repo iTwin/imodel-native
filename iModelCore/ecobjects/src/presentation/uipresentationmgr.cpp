@@ -86,11 +86,11 @@ void            UIPresentationManager::RemoveProvider (IUICommandProviderCR prov
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IUIItemPtr      UIPresentationManager::GetUIItem (UIECClassCR itemType, IECInstanceP instanceData) const
+IAUIItemPtr      UIPresentationManager::GetUIItem (UIECClassCR itemType, IECInstanceP instanceData) const
     {
     for (T_DisplayProviderSet::const_iterator iter = m_displayProviders.begin(); iter != m_displayProviders.end(); ++iter)
         {
-        IUIItemPtr item = (*iter)->GetUIItem (itemType, instanceData);
+        IAUIItemPtr item = (*iter)->GetUIItem (itemType, instanceData);
         if (item.IsValid())
             return item;
         }
@@ -132,7 +132,7 @@ class ProviderSingletonPattern : public NonCopyableClass
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct BaseDisplayProvider : public IUIDisplayProvider, public ProviderSingletonPattern<BaseDisplayProvider>
     {
-    virtual IUIItemPtr   GetUIItem (UIECClassCR itemType, IECInstanceP instanceData) const override
+    virtual IAUIItemPtr   GetUIItem (UIECClassCR itemType, IECInstanceP instanceData) const override
         {
         return NULL;
         }

@@ -31,7 +31,7 @@ struct IUICommandProvider
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct IUIDisplayProvider
     {
-    virtual IUIItemPtr   GetUIItem (UIECClassCR itemType, IECInstanceP instanceData) const = 0;
+    virtual IAUIItemPtr   GetUIItem (UIECClassCR itemType, IECInstanceP instanceData) const = 0;
     virtual ~IUIDisplayProvider() {}
     };
 
@@ -73,7 +73,7 @@ struct  UIPresentationManager: public NonCopyableClass
     ECOBJECTS_EXPORT void                           AddProvider (IUIDisplayProviderCR provider);
     ECOBJECTS_EXPORT void                           RemoveProvider (IUIDisplayProviderCR provider);
 
-    ECOBJECTS_EXPORT IUIItemPtr                     GetUIItem (UIECClassCR itemType, IECInstanceP instanceData) const;
+    ECOBJECTS_EXPORT IAUIItemPtr                     GetUIItem (UIECClassCR itemType, IECInstanceP instanceData) const;
 
     ECOBJECTS_EXPORT UICommandPtr                   GetCommand (IECInstanceCR instance) const;
 

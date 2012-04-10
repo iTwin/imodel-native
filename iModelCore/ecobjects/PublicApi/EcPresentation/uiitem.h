@@ -10,9 +10,9 @@
 
 #include <ECObjects/ECObjects.h>
 
-EC_TYPEDEFS (IUIItem);
+EC_TYPEDEFS (IAUIItem);
 EC_TYPEDEFS (UIECClass);
-EC_TYPEDEFS (IUICommandItem);
+EC_TYPEDEFS (IAUICommandItem);
 EC_TYPEDEFS (IUICommand);
 EC_TYPEDEFS (UICommand);
 
@@ -20,23 +20,23 @@ BEGIN_BENTLEY_EC_NAMESPACE
 
 typedef ECClass UIClass;
 
-typedef RefCountedPtr<IUIItem> IUIItemPtr;
+typedef RefCountedPtr<IAUIItem> IAUIItemPtr;
 
 /*---------------------------------------------------------------------------------**//**
 A Uiitem is an instance of the BE Display Schema. It has utility functions that helps with ease of use
 by having schema specific functions. eg it has methods that allows you to evaluate relationships faster.
 * @bsiclass                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct IUIItem : public IECInstance
+struct IAUIItem : public IECInstance
     {
-        virtual IUICommandItemCP    _GetAsCommandItem () const;
+        virtual IAUICommandItemCP    _GetAsCommandItem () const;
 
     public:
         //! Get the instance as a Command Item. NULL if the instance cannot be cast as one.
-        ECOBJECTS_EXPORT IUICommandItemCP GetAsCommandItem () const;
+        ECOBJECTS_EXPORT IAUICommandItemCP GetAsCommandItem () const;
         
         //! Get the parent instance associated with this instance.
-        ECOBJECTS_EXPORT IUIItemCP        GetParent () const;
+        ECOBJECTS_EXPORT IAUIItemCP        GetParent () const;
 
         //! Utility function to evaluate whether the given control is visible.
         //ECOBJECTS_EXPORT bool             IsVisible () const;
@@ -49,11 +49,11 @@ struct IUIItem : public IECInstance
 //! A specialized UIitem that has a command action associated with it.
 * @bsiclass                                     Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct IUICommandItem: public IUIItem
+struct IAUICommandItem: public IAUIItem
     {
     protected:
         
-        virtual IUICommandItemCP    _GetAsCommandItem () const override;
+        virtual IAUICommandItemCP    _GetAsCommandItem () const override;
         virtual UICommandCR         _GetCommand () const = 0;
 
     public:

@@ -14,7 +14,7 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UICommandCR     IUICommandItem::GetCommand() const
+UICommandCR     IAUICommandItem::GetCommand() const
     {
     return _GetCommand();
     }
@@ -22,7 +22,7 @@ UICommandCR     IUICommandItem::GetCommand() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IUICommandItemCP    IUIItem::_GetAsCommandItem () const
+IAUICommandItemCP    IAUIItem::_GetAsCommandItem () const
     {
     return NULL;
     }
@@ -30,7 +30,7 @@ IUICommandItemCP    IUIItem::_GetAsCommandItem () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IUICommandItemCP    IUICommandItem::_GetAsCommandItem() const
+IAUICommandItemCP    IAUICommandItem::_GetAsCommandItem() const
     {
     return this;
     }
@@ -38,7 +38,7 @@ IUICommandItemCP    IUICommandItem::_GetAsCommandItem() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IUICommandItemCP    IUIItem::GetAsCommandItem () const
+IAUICommandItemCP    IAUIItem::GetAsCommandItem () const
     {
     return _GetAsCommandItem();
     }
@@ -46,7 +46,7 @@ IUICommandItemCP    IUIItem::GetAsCommandItem () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   IUICommandItem::ExecuteAction () const
+BentleyStatus   IAUICommandItem::ExecuteAction () const
     {
     IECInstancePtr instance = GetDataInstance();
     return GetCommand().Execute (instance.get());
@@ -55,7 +55,7 @@ BentleyStatus   IUICommandItem::ExecuteAction () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr    IUIItem::GetDataInstance() const
+IECInstancePtr    IAUIItem::GetDataInstance() const
     {
     ECValue val;
     if (ECOBJECTS_STATUS_Success != GetValue (val, L"Data"))

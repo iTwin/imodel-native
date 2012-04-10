@@ -22,7 +22,7 @@ struct IUICommand
 
         virtual BentleyStatus   _ExecuteCmd(IECInstanceCP instance) const = 0;
 
-        virtual void        _Journal (IJournalItemR journalEntry) const = 0;
+        virtual void            _Journal (IJournalItemR journalEntry) const = 0;
 
     };
 

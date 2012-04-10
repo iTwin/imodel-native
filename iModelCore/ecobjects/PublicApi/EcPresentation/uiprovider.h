@@ -14,7 +14,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct  UIProvider: public ECProvider
+struct  AUIProvider: public ECProvider
     {
 
     };
