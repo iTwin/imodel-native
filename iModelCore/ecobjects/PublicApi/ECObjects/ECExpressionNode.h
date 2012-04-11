@@ -264,7 +264,7 @@ protected:
     virtual WString     _ToString() const override 
         { 
         wchar_t     buffer [256];
-        swprintf(buffer, _countof(buffer), L"%I64d", m_value);
+        BeStringUtilities::Snwprintf(buffer, _countof(buffer), L"%I64d", m_value);
         return buffer; 
         }
 
@@ -300,7 +300,7 @@ protected:
     virtual WString     _ToString() const override 
         { 
         wchar_t     buffer [256];
-        swprintf(buffer, _countof(buffer), L"%f", m_value);
+        BeStringUtilities::Snwprintf(buffer, _countof(buffer), L"%f", m_value);
         return buffer; 
         }
 

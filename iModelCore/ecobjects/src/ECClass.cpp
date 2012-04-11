@@ -1211,10 +1211,10 @@ WString RelationshipCardinality::ToString
     
     if (UINT_MAX == m_upperLimit)
         {
-        swprintf(cardinalityString, 32, L"(%d,N)", m_lowerLimit);
+        BeStringUtilities::Snwprintf(cardinalityString, 32, L"(%d,N)", m_lowerLimit);
         }
     else
-        swprintf(cardinalityString, 32, L"(%d,%d)", m_lowerLimit, m_upperLimit);
+        BeStringUtilities::Snwprintf(cardinalityString, 32, L"(%d,%d)", m_lowerLimit, m_upperLimit);
         
     return cardinalityString;
         
