@@ -491,7 +491,7 @@ ECObjectsStatus ECSchema::ParseVersionString (UInt32& versionMajor, UInt32& vers
         }
 
     WCharP end = NULL;    
-    UInt32    localMajor = wcstoul (versionString, &end, 10);
+    UInt32    localMajor = BeStringUtilities::Wcstoul (versionString, &end, 10);
     if (versionString == end)
         {
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%ls' The characters before the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
@@ -502,7 +502,7 @@ ECObjectsStatus ECSchema::ParseVersionString (UInt32& versionMajor, UInt32& vers
         versionMajor = localMajor;
         }
 
-    UInt32 localMinor = wcstoul (&theDot[1], &end, 10);
+    UInt32 localMinor = BeStringUtilities::Wcstoul (&theDot[1], &end, 10);
     if (&theDot[1] == end)
         {
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%ls' The characters after the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
@@ -696,7 +696,7 @@ ECObjectsStatus ECSchema::AddReferencedSchema (ECSchemaR refSchema, WStringCR na
         for (subScript = 1; subScript < 500; subScript++)
             {
             wchar_t temp[256];
-            swprintf(temp, 256, L"%ls%d", prefix.c_str(), subScript);
+            BeStringUtilities::Snwprintf(temp, 256, L"%ls%d", prefix.c_str(), subScript);
             WString tryPrefix(temp);
             for (namespaceIterator = m_referencedSchemaNamespaceMap.begin(); namespaceIterator != m_referencedSchemaNamespaceMap.end(); namespaceIterator++)
                 {
@@ -1128,9 +1128,9 @@ ECSchemaP       ECSchema::LocateSchemaByPath (WStringCR name, UInt32& versionMaj
     {
     wchar_t versionString[24];
     if (useLatestCompatibleMatch)
-        swprintf(versionString, 24, L".%02d.*.ecschema.xml", versionMajor);
+        BeStringUtilities::Snwprintf(versionString, 24, L".%02d.*.ecschema.xml", versionMajor);
     else
-        swprintf(versionString, 24, L".%02d.%02d.ecschema.xml", versionMajor, versionMinor);
+        BeStringUtilities::Snwprintf(versionString, 24, L".%02d.%02d.ecschema.xml", versionMajor, versionMinor);
 
     WString schemaMatchExpression = name;
     schemaMatchExpression += versionString;
@@ -1332,7 +1332,7 @@ SchemaWriteStatus ECSchema::WriteSchemaReferences (BeXmlNodeR parentNode) const
         schemaReferenceNode->AddAttributeStringValue (SCHEMAREF_NAME_ATTRIBUTE, refSchema->GetName().c_str());
         
         wchar_t versionString[8];
-        swprintf(versionString, 8, L"%02d.%02d", refSchema->GetVersionMajor(), refSchema->GetVersionMinor());
+        BeStringUtilities::Snwprintf(versionString, 8, L"%02d.%02d", refSchema->GetVersionMajor(), refSchema->GetVersionMinor());
         schemaReferenceNode->AddAttributeStringValue (SCHEMAREF_VERSION_ATTRIBUTE, versionString);
 
         const WString prefix = mapPair.second;
@@ -1502,17 +1502,14 @@ BentleyStatus LogXmlLoadError (BeXmlDomP xmlDom)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AddFilePathToSchemaPaths  (ECSchemaReadContextR schemaContext, T_WStringVectorR schemaPaths, WCharCP ecSchemaXmlFile)
     {
-    WString dev, dir;
-    BeFileName::ParseName (&dev, &dir, NULL, NULL, ecSchemaXmlFile);
-    WString pathToThisSchema = dev + WCSDIR_DEV_SEPARATOR_CHAR + dir;
+    BeFileName pathToThisSchema (BeFileName::DevAndDir, ecSchemaXmlFile);
     FOR_EACH(WStringCR schemaPath, schemaPaths)
         {
-        BeFileName::ParseName (&dev, &dir, NULL, NULL, schemaPath.c_str());
-        WString normalizedPath = dev + WCSDIR_DEV_SEPARATOR_CHAR + dir;
-        if (0 == normalizedPath.CompareToI(pathToThisSchema))
+        BeFileName normalizedPath (BeFileName::DevAndDir, schemaPath.c_str());
+        if (0 == BeStringUtilities::Wcsicmp (pathToThisSchema, normalizedPath))
             return; // it's already there
         }
-    schemaContext.AddSchemaPath(pathToThisSchema.c_str());
+    schemaContext.AddSchemaPath(pathToThisSchema);
     }
 
 /*---------------------------------------------------------------------------------**//**
