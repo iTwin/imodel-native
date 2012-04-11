@@ -247,10 +247,10 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingFaultyInstance
     {
     //This test will verify that the xml deserializer will not fail on mismatched or malformed properties.
 
-    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
+    
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
-    ECSchemaP   schema;
+    ECSchemaPtr schema;
     SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(L"MismatchedSchema.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, schemaStatus);
@@ -370,10 +370,9 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingFaultyInstance
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingInstanceWithEmptyArrayMemebers)
     {
-    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
-    ECSchemaP   schema;
+    ECSchemaPtr schema;
     SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(L"MismatchedSchema.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, schemaStatus);
@@ -433,8 +432,6 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingInstanceWithEm
     EXPECT_STREQ (ecValue.GetString(), L"");
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.StringArray[]",6));
     EXPECT_STREQ (ecValue.GetString(), L"Test");
-
-    schemaOwner = NULL;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -442,10 +439,10 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingInstanceWithEm
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingSimpleInstance)
     {
-    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
+    
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
-    ECSchemaP   schema;
+    ECSchemaPtr schema;
     SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, schemaStatus);
@@ -467,10 +464,10 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingSimpleInstance
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingEmptyInstance)
     {
-    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
+    
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
-    ECSchemaP   schema;
+    ECSchemaPtr schema;
     SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
         
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, schemaStatus);
@@ -492,10 +489,10 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     // must call CoInitialize - schema deserialization requires it.
     EXPECT_EQ (S_OK, CoInitialize(NULL)); 
 
-    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
+    
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
-    ECSchemaP   schema;
+    ECSchemaPtr schema;
     SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, schemaStatus);
 
@@ -536,10 +533,10 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstanceFromString)
     {
-    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
+    
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
-    ECSchemaP   schema;
+    ECSchemaPtr schema;
     SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, schemaStatus);
 
@@ -621,10 +618,10 @@ void    VerifyPolymorphismInstance (IECInstanceCP testInstance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PolymorphismDeserializationTest, ExpectSuccessWhenDeserializingPolymorphismInstance)
     {
-    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
+    
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
-    ECSchemaP   schema;
+    ECSchemaPtr schema;
     SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(L"Polymorphism.01.00.ecschema.xml").c_str(), *schemaContext);
         
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, schemaStatus);
@@ -646,11 +643,11 @@ TEST_F(PolymorphismDeserializationTest, ExpectSuccessWhenDeserializingPolymorphi
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(InstanceSerializationTest, ExpectSuccessWhenSerializingInstance)
     {
-    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
+    
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
     // we get the instance we want to serialize by reading the instance from XML.
-    ECSchemaP   schema;
+    ECSchemaPtr schema;
     SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
         
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, schemaStatus);

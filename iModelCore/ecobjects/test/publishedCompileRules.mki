@@ -17,6 +17,8 @@ $(o)MacroTests$(oext)         : $(baseDir)Published/MacroTests.cpp   $(PCHHeader
 
 $(o)MemoryLayoutTests$(oext)  : $(baseDir)Published/MemoryLayoutTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
 
+$(o)ECRelationshipTests$(oext)  : $(baseDir)Published/ECRelationshipTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
+
 $(o)InstanceXMLTests$(oext)   : $(baseDir)Published/InstanceXMLTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
 
 $(o)CustomAttributeTests$(oext) : $(baseDir)Published/CustomAttributeTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}

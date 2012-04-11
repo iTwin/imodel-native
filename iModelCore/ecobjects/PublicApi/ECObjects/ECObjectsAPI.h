@@ -56,7 +56,6 @@
 #include <hash_map>
 #endif
 #include <limits>
-#include <set>  // WIP_EC - don't use std::set in a published API
 
 #include <ECObjects/ECEnabler.h>
 #include <ECObjects/ECInstance.h>
@@ -66,6 +65,7 @@
 #include <ECObjects/ECExpressions.h>
 #include <ECObjects/MemoryInstanceSupport.h>
 #include <ECObjects/StandaloneECInstance.h>
+#include <ECObjects\StandaloneECRelationshipInstance.h>
 #include <Bentley/ScopedArray.h>
 
 

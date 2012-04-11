@@ -69,7 +69,7 @@ protected:
     virtual ECObjectsStatus         _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const = 0;
 
     // IStandaloneEnablerLocater
-    ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr  _LocateStandaloneEnabler (WCharCP schemaName, WCharCP className);
+    ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr  _LocateStandaloneEnabler (SchemaKeyCR schemaKey, WCharCP className);
 
 #if defined (EXPERIMENTAL_TEXT_FILTER)
     ECOBJECTS_EXPORT virtual PropertyProcessingResult   _ProcessPrimitiveProperties (bset<ECClassCP>& failedClasses, IECInstanceCR, EC::PrimitiveType, IPropertyProcessor const&, PropertyProcessingOptions) const;
@@ -106,7 +106,7 @@ public:
 //    ECOBJECTS_EXPORT bool                       HasChildValues (ECValueAccessorCR, IECInstanceCR) const;
 //    ECOBJECTS_EXPORT ECValuesCollection         GetChildValues (ECValueAccessorCR, IECInstanceCR) const;
     ECOBJECTS_EXPORT UInt32                     GetPropertyCount () const;
-    ECOBJECTS_EXPORT StandaloneECEnablerPtr     GetEnablerForStructArrayMember (WCharCP schemaName, WCharCP className); 
+    ECOBJECTS_EXPORT StandaloneECEnablerPtr     GetEnablerForStructArrayMember (SchemaKeyCR schemaKey, WCharCP className); 
 
 #if defined (EXPERIMENTAL_TEXT_FILTER)
     //! Call processor on all primitive-valued properties of specified type(s) on this instance. 

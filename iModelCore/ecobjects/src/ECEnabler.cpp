@@ -28,13 +28,12 @@ ECEnabler::~ECEnabler()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneECEnablerPtr          ECEnabler::_LocateStandaloneEnabler (WCharCP schemaName, WCharCP className)  
+StandaloneECEnablerPtr          ECEnabler::_LocateStandaloneEnabler (SchemaKeyCR schemaKey, WCharCP className)  
     {
     if (NULL != m_standaloneInstanceEnablerLocater)
-        return m_standaloneInstanceEnablerLocater->LocateStandaloneEnabler (schemaName, className);
+        return m_standaloneInstanceEnablerLocater->LocateStandaloneEnabler (schemaKey, className);
     
-    
-    ECSchemaCP schema = m_ecClass.GetSchema().FindSchema(schemaName);
+    ECSchemaCP schema = m_ecClass.GetSchema().FindSchema(schemaKey, SCHEMAMATCHTYPE_Exact);//TODO: Test change of behavior we need to match schemas exactly:Abeesh
     if (NULL == schema)
         return NULL;
 
@@ -48,7 +47,7 @@ StandaloneECEnablerPtr          ECEnabler::_LocateStandaloneEnabler (WCharCP sch
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneECEnablerPtr          ECEnabler::GetEnablerForStructArrayMember (WCharCP schemaName, WCharCP className)  
+StandaloneECEnablerPtr          ECEnabler::GetEnablerForStructArrayMember (SchemaKeyCR schemaName, WCharCP className)  
     {
     return _LocateStandaloneEnabler (schemaName, className); 
     }
