@@ -9,31 +9,13 @@
 /*__BENTLEY_INTERNAL_ONLY__*/
 
 #include <EcPresentation/uicommand.h>
+#include <EcPresentation/uiprovider.h>
 
 EC_TYPEDEFS (UIPresentationManager)
 EC_TYPEDEFS (IUICommandProvider)
-EC_TYPEDEFS (IUIDisplayProvider)
 EC_TYPEDEFS (IJournalProvider)
 
 BEGIN_BENTLEY_EC_NAMESPACE
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct IUICommandProvider
-    {
-    virtual UICommandPtr GetCommand (IECInstanceCR instance) const = 0;
-    virtual ~IUICommandProvider() {}
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct IUIDisplayProvider
-    {
-    virtual IAUIItemPtr   GetUIItem (UIECClassCR itemType, IECInstanceP instanceData) const = 0;
-    virtual ~IUIDisplayProvider() {}
-    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
@@ -50,9 +32,9 @@ struct  IJournalProvider
 struct  UIPresentationManager: public NonCopyableClass
     {
     private:
-        typedef bset<IUICommandProviderCP> T_CmdProviderSet;
-        typedef bset<IUIDisplayProviderCP> T_DisplayProviderSet;
-        typedef bset<IJournalProviderP>    T_JournalProviderSet;
+        typedef bset<IUICommandProviderCP>  T_CmdProviderSet;
+        typedef bset<IAUIProviderP>         T_DisplayProviderSet;
+        typedef bset<IJournalProviderP>     T_JournalProviderSet;
 
         T_CmdProviderSet        m_cmdProviders;
         T_DisplayProviderSet    m_displayProviders;
@@ -61,7 +43,11 @@ struct  UIPresentationManager: public NonCopyableClass
 
         UIPresentationManager ();
         bool                    InitSchema();
+
     public:
+    
+    ECOBJECTS_EXPORT static const WCharCP    MenuCommandItemClassName;
+
                      void                           JournalCmd (IUICommandCR cmd, IECInstanceCP instanceData);
 
     ECOBJECTS_EXPORT void                           AddProvider (IJournalProviderR provider);
@@ -70,14 +56,17 @@ struct  UIPresentationManager: public NonCopyableClass
     ECOBJECTS_EXPORT void                           AddProvider (IUICommandProviderCR provider);
     ECOBJECTS_EXPORT void                           RemoveProvider (IUICommandProviderCR provider);
     
-    ECOBJECTS_EXPORT void                           AddProvider (IUIDisplayProviderCR provider);
-    ECOBJECTS_EXPORT void                           RemoveProvider (IUIDisplayProviderCR provider);
+    ECOBJECTS_EXPORT void                           AddProvider (IAUIProviderR provider);
+    ECOBJECTS_EXPORT void                           RemoveProvider (IAUIProviderR provider);
 
-    ECOBJECTS_EXPORT IAUIItemPtr                     GetUIItem (UIECClassCR itemType, IECInstanceP instanceData) const;
+    ECOBJECTS_EXPORT IAUIItemPtr                    GetUIItem (UIECClassCR itemType, IECInstanceP instanceData) const;
 
     ECOBJECTS_EXPORT UICommandPtr                   GetCommand (IECInstanceCR instance) const;
 
     ECOBJECTS_EXPORT static UIPresentationManagerR  GetManager();
+
+    ECOBJECTS_EXPORT ECSchemaCR                     GetAUISchema();
+
     };
 
 END_BENTLEY_EC_NAMESPACE

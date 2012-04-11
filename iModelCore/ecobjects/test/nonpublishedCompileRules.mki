@@ -2,7 +2,7 @@
 #
 #  $Source: test/nonpublishedCompileRules.mki $
 #
-#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -17,3 +17,4 @@ $(o)MemoryLayoutTests$(oext)  : $(baseDir)NonPublished/MemoryLayoutTests.cpp   $
 
 $(o)NonPublishedSchemaTests$(oext)  : $(baseDir)NonPublished/NonPublishedSchemaTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
 
+$(o)AUIProviderTests$(oext)       : $(baseDir)NonPublished/AUIProviderTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}

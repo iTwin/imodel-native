@@ -24,6 +24,10 @@ struct IUICommand
 
         virtual void            _Journal (IJournalItemR journalEntry) const = 0;
 
+    public:
+        virtual ~IUICommand ()
+            {}
+
     };
 
 typedef RefCountedPtr<UICommand> UICommandPtr;
@@ -41,5 +45,21 @@ struct UICommand : public IUICommand, public RefCountedBase
         //! the call results in the creation of the corresponding journal entry.
         ECOBJECTS_EXPORT BentleyStatus  Execute (IECInstanceCP instance) const;
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct IUICommandProvider
+    {
+    protected:
+        virtual UICommandPtr _GetCommand (IECInstanceCR instance) const = 0;
+    
+    public:
+
+        virtual ~IUICommandProvider() {}
+
+        ECOBJECTS_EXPORT UICommandPtr GetCommand (IECInstanceCR instance) const;
+    };
+
 
 END_BENTLEY_EC_NAMESPACE

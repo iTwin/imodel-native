@@ -8,6 +8,7 @@
 #include "ECObjectsPch.h"
 
 #include <EcPresentation/uipresentationmgr.h>
+#include <EcPresentation/uiprovider.h>
 
 USING_NAMESPACE_EC
 
@@ -53,7 +54,7 @@ void            UIPresentationManager::RemoveProvider (IJournalProviderR provide
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            UIPresentationManager::AddProvider (IUIDisplayProviderCR provider)
+void            UIPresentationManager::AddProvider (IAUIProviderR provider)
     {
     m_displayProviders.insert(&provider);
     }
@@ -61,7 +62,7 @@ void            UIPresentationManager::AddProvider (IUIDisplayProviderCR provide
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            UIPresentationManager::RemoveProvider (IUIDisplayProviderCR provider)
+void            UIPresentationManager::RemoveProvider (IAUIProviderR provider)
     {
     m_displayProviders.erase(&provider);
     }
@@ -90,7 +91,11 @@ IAUIItemPtr      UIPresentationManager::GetUIItem (UIECClassCR itemType, IECInst
     {
     for (T_DisplayProviderSet::const_iterator iter = m_displayProviders.begin(); iter != m_displayProviders.end(); ++iter)
         {
-        IAUIItemPtr item = (*iter)->GetUIItem (itemType, instanceData);
+        UIECEnablerPtr enabler = (*iter)->GetUIEnabler (itemType);
+        if (enabler.IsNull())
+            continue;
+
+        IAUIItemPtr item = enabler->GetUIItem(instanceData);
         if (item.IsValid())
             return item;
         }
@@ -130,9 +135,9 @@ class ProviderSingletonPattern : public NonCopyableClass
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct BaseDisplayProvider : public IUIDisplayProvider, public ProviderSingletonPattern<BaseDisplayProvider>
+struct BaseDisplayProvider : public IAUIProvider, public ProviderSingletonPattern<BaseDisplayProvider>
     {
-    virtual IAUIItemPtr   GetUIItem (UIECClassCR itemType, IECInstanceP instanceData) const override
+    virtual UIECEnablerPtr  _GetUIEnabler (ECClassCR classInstance) override
         {
         return NULL;
         }
@@ -143,7 +148,7 @@ struct BaseDisplayProvider : public IUIDisplayProvider, public ProviderSingleton
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct BaseCommandProvider : public IUICommandProvider, public ProviderSingletonPattern<BaseCommandProvider>
     {
-    virtual UICommandPtr GetCommand (IECInstanceCR instance) const override
+    virtual UICommandPtr _GetCommand (IECInstanceCR instance) const override
         {
         return NULL;
         }
@@ -166,7 +171,7 @@ struct LoggingJournalProvider : public IJournalProvider, public ProviderSingleto
 UIPresentationManager::UIPresentationManager ()
     :m_schema(NULL)
     {
-    AddProvider (BaseDisplayProvider::GetProvider());
+    //AddProvider (BaseDisplayProvider::GetProvider());
     AddProvider (BaseCommandProvider::GetProvider());
     AddProvider (LoggingJournalProvider::GetProvider());
     
@@ -182,3 +187,17 @@ void            UIPresentationManager::JournalCmd (IUICommandCR cmd, IECInstance
     for (T_JournalProviderSet::iterator iter = m_journalProviders.begin(); iter != m_journalProviders.end(); ++iter)
         (*iter)->JournalCmd(cmd, instanceData);
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaCR      UIPresentationManager::GetAUISchema()
+    {
+    return *m_schema;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+const WCharCP   UIPresentationManager::MenuCommandItemClassName = L"MenuCommandItem";

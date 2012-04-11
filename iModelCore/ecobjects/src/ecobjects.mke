@@ -93,6 +93,10 @@ $(o)uicommand$(oext)        : $(baseDir)presentation/uicommand.cpp $(ECObjectsHe
 
 $(o)uiitem$(oext)           : $(baseDir)presentation/uiitem.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
+$(o)auienabler$(oext)       : $(baseDir)presentation/auienabler.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+
+$(o)auiprovider$(oext)      : $(baseDir)presentation/auiprovider.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)

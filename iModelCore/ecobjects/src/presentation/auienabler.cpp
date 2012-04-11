@@ -1,35 +1,32 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/ecprovider.cpp $
+|     $Source: src/presentation/auienabler.cpp $
 |
 |   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
-#include <ECObjects/ecprovider.h>
 
+#include <EcPresentation/uienabler.h>
+#include <EcPresentation/UIPresentationMgr.h>
 USING_NAMESPACE_EC
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  05/2011
+* @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt16          IECProvider::GetProviderId () const
+ECClassCR       UIECEnabler::GetUIClass (WCharCP className)
     {
-    return _GetProviderId ();
-    }
+    ECSchemaCR displaySchema = UIPresentationManager::GetManager().GetAUISchema();
+    ECClassP classInstance   =  displaySchema.GetClassP(className);
+    assert (NULL != classInstance);
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  05/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP         IECProvider::GetProviderName () const
-    {
-    return _GetProviderName ();
+    return *classInstance;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECEnablerPtr    IECProvider::GetEnabler (ECClassCR classInstance)
+IAUIItemPtr     UIECEnabler::GetUIItem (IECInstanceP instanceData)
     {
-    return _GetEnabler(classInstance);
+    return _GetUIItem(instanceData);
     }

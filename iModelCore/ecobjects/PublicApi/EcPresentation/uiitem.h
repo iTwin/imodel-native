@@ -18,7 +18,9 @@ EC_TYPEDEFS (UICommand);
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-typedef ECClass UIClass;
+struct UIECClass : ECClass
+    {
+    };
 
 typedef RefCountedPtr<IAUIItem> IAUIItemPtr;
 
@@ -29,7 +31,7 @@ by having schema specific functions. eg it has methods that allows you to evalua
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct IAUIItem : public IECInstance
     {
-        virtual IAUICommandItemCP    _GetAsCommandItem () const;
+        ECOBJECTS_EXPORT virtual IAUICommandItemCP    _GetAsCommandItem () const;
 
     public:
         //! Get the instance as a Command Item. NULL if the instance cannot be cast as one.
@@ -53,7 +55,7 @@ struct IAUICommandItem: public IAUIItem
     {
     protected:
         
-        virtual IAUICommandItemCP    _GetAsCommandItem () const override;
+        ECOBJECTS_EXPORT virtual IAUICommandItemCP   _GetAsCommandItem () const override;
         virtual UICommandCR         _GetCommand () const = 0;
 
     public:

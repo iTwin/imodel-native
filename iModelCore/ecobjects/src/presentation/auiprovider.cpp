@@ -1,35 +1,37 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/ecprovider.cpp $
+|     $Source: src/presentation/auiprovider.cpp $
 |
 |   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
-#include <ECObjects/ecprovider.h>
+
+#include <EcPresentation/uipresentationmgr.h>
+#include <EcPresentation/uiprovider.h>
 
 USING_NAMESPACE_EC
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  05/2011
+* @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt16          IECProvider::GetProviderId () const
+UICommandPtr    IUICommandProvider::GetCommand (IECInstanceCR instance) const
     {
-    return _GetProviderId ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  05/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP         IECProvider::GetProviderName () const
-    {
-    return _GetProviderName ();
+    return _GetCommand(instance);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECEnablerPtr    IECProvider::GetEnabler (ECClassCR classInstance)
+ECEnablerPtr    IAUIProvider::_GetEnabler (ECClassCR classInstance)
     {
-    return _GetEnabler(classInstance);
+    return _GetUIEnabler (classInstance).get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+UIECEnablerPtr  IAUIProvider::GetUIEnabler (ECClassCR classInstance)
+    {
+    return _GetUIEnabler(classInstance);
     }
