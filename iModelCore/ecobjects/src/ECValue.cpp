@@ -8,9 +8,49 @@
 #include "ECObjectsPch.h"
 #if defined (_WIN32) // WIP_NONPORT
 #include <windows.h>
+#else
+#include <Bentley/IStorage.h>   // for _FILETIME
 #endif //defined (_WIN32) // WIP_NONPORT
 
 BEGIN_BENTLEY_EC_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+static void unixMillisToSystemTime (SystemTime& systemTime, UInt64 umillis)
+    {
+    struct tm tm;
+    BeTimeUtilities::ConvertUnixMillisToTm (tm, umillis);
+    systemTime.wYear        = (UInt16)tm.tm_year + 1900;
+    systemTime.wMonth       = (UInt16)tm.tm_mon + 1;
+    systemTime.wDayOfWeek   = (UInt16)tm.tm_wday;
+    systemTime.wDay         = (UInt16)tm.tm_mday;
+    systemTime.wHour        = (UInt16)tm.tm_hour;
+    systemTime.wMinute      = (UInt16)tm.tm_min;
+    systemTime.wSecond      = (UInt16)tm.tm_sec;
+    systemTime.wMilliseconds = umillis % 1000LL;
+
+    UInt64 umillisCheck = BeTimeUtilities::ConvertTmToUnixMillis(tm);
+    BeAssert (umillisCheck + systemTime.wMilliseconds == umillis);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+static UInt64 systemTimeToUnixMillis (SystemTime const& systemTime)
+    {
+    struct tm tm;
+    memset (&tm, 0, sizeof(tm));
+    tm.tm_year              = systemTime.wYear - 1900;
+    tm.tm_mon               = systemTime.wMonth - 1;     
+    tm.tm_mday              = systemTime.wDay;
+    tm.tm_hour              = systemTime.wHour;        
+    tm.tm_min               = systemTime.wMinute;      
+    tm.tm_sec               = systemTime.wSecond;     
+    UInt64 umillis          = BeTimeUtilities::ConvertTmToUnixMillis (tm);
+    umillis                += systemTime.wMilliseconds;
+    return umillis;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  11/2011
@@ -78,13 +118,9 @@ WString SystemTime::ToString
 (
 )
     {
-#if defined (_WIN32) // WIP_NONPORT
-    std::wostringstream valueAsString;
-    valueAsString << "#" << wYear << "/" << wMonth << "/" << wDay << "-" << wHour << ":" << wMinute << ":" << wSecond << ":" << wMilliseconds << "#";
-    return valueAsString.str().c_str();
-#else
-    return L"";
-#endif
+    WString str;
+    str.Sprintf (L"#%d/%d/%d-%d:%d:%d:%d#", wYear, wMonth, wDay, wHour, wMinute, wSecond, wMilliseconds);
+    return str;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -100,9 +136,8 @@ SystemTime SystemTime::GetLocalTime()
     memcpy (&time, &wtime, sizeof(time));
     return time;
 #elif defined (__unix__)
-    // *** NEEDS WORK: Change SystemTime to use a portable time concept such as what's offered in BeTimeUtilities
-    SystemTime time;
-    return time;
+    BeAssert (false && "*** TBD - convert UTC to local time");
+    return GetSystemTime();
 #endif
     }
 
@@ -112,17 +147,9 @@ SystemTime SystemTime::GetLocalTime()
 +---------------+---------------+---------------+---------------+---------------+------*/
 SystemTime SystemTime::GetSystemTime()
     {
-#if defined (_WIN32) // WIP_NONPORT
-    SYSTEMTIME wtime;
-    ::GetSystemTime(&wtime);
     SystemTime time;
-    memcpy (&time, &wtime, sizeof(time));
+    unixMillisToSystemTime (time, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
     return time;
-#elif defined (__unix__)
-    // *** NEEDS WORK: Change SystemTime to use a portable time concept such as what's offered in BeTimeUtilities
-    SystemTime time;
-    return time;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -767,17 +794,26 @@ SystemTime          ECValue::GetDateTime () const
 
     memset (&systemTime, 0, sizeof(systemTime));
 
-#if defined (_WIN32) // WIP_NONPORT
     // m_dateTime is number of ticks since 00:00:00 01/01/01 - Fileticks are relative to 00:00:00 01/01/1601
     systemDateTicks -= TICKADJUSTMENT; 
-    FILETIME fileTime;
+    _FILETIME fileTime;
     fileTime.dwLowDateTime  = systemDateTicks & 0xffffffff;
     fileTime.dwHighDateTime = systemDateTicks >> 32;
-    SYSTEMTIME  tempTime;
-    if (FileTimeToSystemTime (&fileTime, &tempTime))
-        memcpy (&systemTime, &tempTime, sizeof(systemTime));
-#elif defined (__unix__)
-    // *** NEEDS WORK: Change SystemTime to use a portable time concept such as what's offered in BeTimeUtilities
+
+    UInt64 umillis = BeTimeUtilities::ConvertFiletimeToUnixMillis(fileTime);
+
+    unixMillisToSystemTime (systemTime, umillis);
+
+#if defined (_WIN32) // do a cross-check to verify that our portable logic gives the same result as calling Win32 functions directly
+    #ifndef NDEBUG
+        {
+        SYSTEMTIME  tempTime;
+        FileTimeToSystemTime (&fileTime, &tempTime);
+        SystemTime systemTimeCheck;
+        memcpy (&systemTimeCheck, &tempTime, sizeof(systemTimeCheck));
+        BeAssert (0==memcmp(&systemTimeCheck, &systemTime, sizeof(systemTimeCheck)));
+        }
+    #endif
 #endif
 
     return systemTime;
@@ -788,24 +824,32 @@ SystemTime          ECValue::GetDateTime () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus          ECValue::SetDateTime (SystemTime const& systemTime) 
     {
-#if defined (_WIN32) // WIP_NONPORT
     Clear();
-    FILETIME fileTime;
-    SYSTEMTIME wtime;
-    memcpy (&wtime, &systemTime, sizeof(wtime));
 
-    // m_dateTime is number of ticks since 00:00:00 01/01/01 - Fileticks are relative to 00:00:00 01/01/1601
-    if (SystemTimeToFileTime (&wtime, &fileTime))
+    UInt64 umillis = systemTimeToUnixMillis (systemTime);
+
+    _FILETIME fileTime;
+    BeTimeUtilities::ConvertUnixMillisToFiletime (fileTime, umillis);
+
+#if defined (_WIN32) // do a cross-check to verify that our portable logic gives the same result as calling Win32 functions directly
+    #ifndef NDEBUG
         {
-        Int64 systemDateTicks = (Int64)fileTime.dwLowDateTime | ((Int64)fileTime.dwHighDateTime << 32);
-        systemDateTicks += TICKADJUSTMENT; 
-        return SetDateTimeTicks (systemDateTicks);
+        FILETIME xfileTime;
+        SYSTEMTIME wtime;
+        memcpy (&wtime, &systemTime, sizeof(wtime));
+
+        // m_dateTime is number of ticks since 00:00:00 01/01/01 - Fileticks are relative to 00:00:00 01/01/1601
+        BeAssert (SystemTimeToFileTime (&wtime, &xfileTime));
+        BeAssert (xfileTime.dwHighDateTime == fileTime.dwHighDateTime);
+        BeAssert (xfileTime.dwLowDateTime == fileTime.dwLowDateTime);
         }
-#elif defined (__unix__)
-    // *** NEEDS WORK: Change SystemTime to use a portable time concept such as what's offered in BeTimeUtilities
+    #endif
 #endif
 
-    return ERROR;
+    // m_dateTime is number of ticks since 00:00:00 01/01/01 - Fileticks are relative to 00:00:00 01/01/1601
+    Int64 systemDateTicks = (Int64)fileTime.dwLowDateTime | ((Int64)fileTime.dwHighDateTime << 32);
+    systemDateTicks += TICKADJUSTMENT; 
+    return SetDateTimeTicks (systemDateTicks);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -974,17 +1018,15 @@ BentleyStatus       ECValue::SetStruct (IECInstanceP structInstance)
 +---------------+---------------+---------------+---------------+---------------+------*/    
 WString    ECValue::ToString () const
     {
-#if defined (_WIN32) // WIP_NONPORT
-
     if (IsNull())
         return L"<null>";
         
-    std::wostringstream valueAsString; // Not used in all cases, but avoid predicting buffer size when it is used.
+    WString str;
     
     if (IsArray())
         {
         ArrayInfo arrayInfo = GetArrayInfo();
-        valueAsString << "Count: " << arrayInfo.GetCount() << " IsFixedSize: " << arrayInfo.IsFixedCount();
+        str.Sprintf (L"Count: %d IsFixedSize: %d", arrayInfo.GetCount(), arrayInfo.IsFixedCount());
         }
     else if (IsStruct())
         {
@@ -996,17 +1038,17 @@ WString    ECValue::ToString () const
             {
             case PRIMITIVETYPE_Integer:
                 {
-                valueAsString << GetInteger();
+                str.Sprintf (L"%d", GetInteger());
                 break;
                 }
             case PRIMITIVETYPE_Long:
                 {
-                valueAsString << GetLong();
+                str.Sprintf (L"ld", GetLong());
                 break;
                 }            
             case PRIMITIVETYPE_Double:
                 {
-                valueAsString << GetDouble();
+                str.Sprintf (L"lf", GetDouble());
                 break;
                 }            
             case PRIMITIVETYPE_String:
@@ -1020,13 +1062,13 @@ WString    ECValue::ToString () const
             case PRIMITIVETYPE_Point2D:
                 {
                 DPoint2d point = GetPoint2D();
-                valueAsString << "{" << point.x << "," << point.y << "}";
+                str.Sprintf (L"{%lf,%lf}", point.x, point.y);
                 break;          
                 }
             case PRIMITIVETYPE_Point3D:
                 {
                 DPoint3d point = GetPoint3D();
-                valueAsString << "{" << point.x << "," << point.y << ","<< point.z << "}";
+                str.Sprintf (L"{%lf,%lf,%lf}", point.x, point.y, point.z);
                 break;          
                 }
             case PRIMITIVETYPE_DateTime:
@@ -1038,7 +1080,7 @@ WString    ECValue::ToString () const
                 {
                 size_t size;
                 GetBinary(size);
-                valueAsString << "Blob(" << size << ")";
+                str.Sprintf (L"Blob(%d)", size);
                 break;
                 }
                 
@@ -1049,12 +1091,7 @@ WString    ECValue::ToString () const
             }
         }
         
-    return valueAsString.str().c_str();
-
-#elif defined (__unix__) // WIP_NONPORT
-        // *** NEEDS WORK: iostreams not supported on Android
-    return L"";
-#endif
+    return str;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2083,23 +2120,8 @@ ECValuesCollection::const_iterator ECValuesCollection::end () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   SystemTime::InitFromFileTime (_FILETIME const& fileTime)
     {
-    #if defined (_WIN32)
-         return 0 == FileTimeToSystemTime(&fileTime, (LPSYSTEMTIME) this) ? ERROR : SUCCESS;
-    #else
-        UInt64 unixMills = BeTimeUtilities::ConvertFiletimeToUnixMillis(fileTime);
-        time_t timeVal = (time_t) (unixMills/1000.0);
-        struct tm timeinfo;
-        localtime_r (&timeVal, &timeinfo);
-
-        this->wYear = timeinfo.tm_year;
-        this->wMonth = timeinfo.tm_mon;
-        this->wDayOfWeek = timeinfo.tm_wday;
-        this->wDay = timeinfo.tm_mday;
-        this->wHour = timeinfo.tm_hour;
-        this->wMinute = timeinfo.tm_min;
-        this->wSecond = timeinfo.tm_sec;
-        this->wMilliseconds = 0;
-    #endif
+    unixMillisToSystemTime (*this, BeTimeUtilities::ConvertFiletimeToUnixMillis(fileTime));
+    return SUCCESS;
     }
 
 END_BENTLEY_EC_NAMESPACE
