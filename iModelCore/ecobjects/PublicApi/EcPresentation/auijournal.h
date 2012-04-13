@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/EcPresentation/journal.h $
+|     $Source: PublicApi/EcPresentation/auijournal.h $
 |
 |  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,9 +8,6 @@
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
 
-#include <ECObjects/ECObjects.h>
-
-EC_TYPEDEFS (IJournalItem);
 
 BEGIN_BENTLEY_EC_NAMESPACE
 

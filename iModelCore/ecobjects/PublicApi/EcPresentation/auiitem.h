@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/EcPresentation/uiitem.h $
+|     $Source: PublicApi/EcPresentation/auiitem.h $
 |
 |  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,21 +8,7 @@
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
 
-namespace Bentley { namespace DgnPlatform {
-    struct ECQuery;
-    typedef ECQuery const*      ECQueryCP;
-    }}
-
-#include <ECObjects/ECObjects.h>
-
-
-EC_TYPEDEFS (IAUIItem);
-EC_TYPEDEFS (IAUIItemInfo);
-EC_TYPEDEFS (IAUIDataContext);
-
 BEGIN_BENTLEY_EC_NAMESPACE
-
-typedef RefCountedPtr<IAUIItem>         IAUIItemPtr;
 
 /*---------------------------------------------------------------------------------**//**
 A Uiitem is an instance of the BE Display Schema. 
@@ -105,7 +91,7 @@ struct  IAUIDataContext
     virtual IECInstanceP            GetInstance () const {return NULL;}
     virtual DgnPlatform::ECQueryCP  GetQuery () const {return NULL;}
     virtual void*                   GetCustomData() const {return NULL;}
-
+    virtual ~IAUIDataContext () {}
     };
 
 /*---------------------------------------------------------------------------------**//**

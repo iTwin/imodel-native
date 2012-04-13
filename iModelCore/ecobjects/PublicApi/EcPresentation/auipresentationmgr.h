@@ -1,19 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/EcPresentation/uipresentationmgr.h $
+|     $Source: PublicApi/EcPresentation/auipresentationmgr.h $
 |
 |  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
-
-#include <EcPresentation/uicommand.h>
-#include <EcPresentation/uiprovider.h>
-
-EC_TYPEDEFS (UIPresentationManager)
-EC_TYPEDEFS (IUICommandProvider)
-EC_TYPEDEFS (IJournalProvider)
 
 BEGIN_BENTLEY_EC_NAMESPACE
 

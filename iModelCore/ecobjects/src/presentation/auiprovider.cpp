@@ -7,8 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
 
-#include <EcPresentation/uipresentationmgr.h>
-#include <EcPresentation/uiprovider.h>
+#include <EcPresentation/auipresentationapi.h>
 
 USING_NAMESPACE_EC
 

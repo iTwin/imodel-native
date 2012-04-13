@@ -1,18 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/EcPresentation/uicommand.h $
+|     $Source: PublicApi/EcPresentation/auicommand.h $
 |
 |  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
-
-EC_TYPEDEFS (IUICommand);
-EC_TYPEDEFS (UICommand);
-EC_TYPEDEFS (IAUIDataContext);
-EC_TYPEDEFS (IJournalItem);
-
 
 BEGIN_BENTLEY_EC_NAMESPACE
 

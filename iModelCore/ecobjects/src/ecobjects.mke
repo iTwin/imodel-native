@@ -45,6 +45,8 @@ MultiCompileDepends=$(_MakeFileSpec)
 #----------------------------------------------------------------------
 ECObjectsHeaders = $(ecobjectsPublicAPISrc)ECObjects.h $(ecobjectsPublicAPISrc)ECSchema.h $(ecobjectsPublicAPISrc)ECValue.h $(ecobjectsPublicAPISrc)ECInstance.h $(ecobjectsPublicAPISrc)ECEnabler.h $(ecobjectsPublicAPISrc)DesignByContract.h $(baseDir)ecxml.h $(baseDir)Logger.h $(baseDir)FileUtilities.h $(baseDir)StopWatch.h
 
+ECPresentationHeaders = $(ecpresentationPublicAPISrc)auicommand.h $(ecpresentationPublicAPISrc)auiitem.h $(ecpresentationPublicAPISrc)auijournal.h $(ecpresentationPublicAPISrc)auipresentationmgr.h $(ecpresentationPublicAPISrc)auiprovider.h $(ECObjectsHeaders) $(ecpresentationPublicAPISrc)auipresentationapi.h
+
 $(o)ecxml$(oext)           : $(baseDir)ecxml.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
 $(o)ECSchema$(oext)        : $(baseDir)ECSchema.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
@@ -87,13 +89,13 @@ $(o)BeXmlCGWriter$(oext)         : $(baseDir)BeXmlCGWriter.cpp $(ecobjectsPublic
 
 $(o)ecprovider$(oext)       : $(baseDir)ecprovider.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)uipresentationmgr$(oext): $(baseDir)presentation/uipresentationmgr.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)auipresentationmgr$(oext): $(baseDir)presentation/auipresentationmgr.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
 
-$(o)uicommand$(oext)        : $(baseDir)presentation/uicommand.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)auicommand$(oext)        : $(baseDir)presentation/auicommand.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
 
-$(o)uiitem$(oext)           : $(baseDir)presentation/uiitem.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+$(o)auiitem$(oext)           : $(baseDir)presentation/auiitem.cpp $(ECPresentationHeaders) ${MultiCompileDepends}
 
-$(o)auiprovider$(oext)      : $(baseDir)presentation/auiprovider.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)auiprovider$(oext)      : $(baseDir)presentation/auiprovider.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
 
 
 %include MultiCppCompileGo.mki
