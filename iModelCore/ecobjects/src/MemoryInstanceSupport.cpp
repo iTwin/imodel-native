@@ -58,7 +58,7 @@ void            appendFormattedString (wostringstream& outStream, WCharCP fmtStr
     va_end(argList);
 
     // in case we use up the local buffer, truncate with a newline
-    swprintf (&line[_countof(line) - 2], 2, L"\n");;
+    BeStringUtilities::Snwprintf (&line[_countof(line) - 2], 2, L"\n");;
 
     outStream << line;
     }
@@ -182,7 +182,7 @@ WString    PropertyLayout::ToString ()
         typeName.append(L"[]");
     
     wchar_t line[1024];
-    swprintf (line, _countof(line), L"%-32s %-16s offset=%3i nullflagsOffset=%3i, nullflagsBitmask=0x%08.X", m_accessString.c_str(), typeName.c_str(), m_offset, m_nullflagsOffset, m_nullflagsBitmask);
+    BeStringUtilities::Snwprintf (line, _countof(line), L"%-32s %-16s offset=%3i nullflagsOffset=%3i, nullflagsBitmask=0x%08.X", m_accessString.c_str(), typeName.c_str(), m_offset, m_nullflagsOffset, m_nullflagsBitmask);
         
     return line;
     }
@@ -333,7 +333,7 @@ ILeakDetector&  ClassLayout::Debug_GetLeakDetector() { return g_classLayoutLeakD
 WString        ClassLayout::GetShortDescription () const
     {
     wchar_t line[1024];
-    swprintf (line, _countof(line), L"ClassLayout for ECClassIndex=%i, ECClass.GetName()=%s", m_classIndex, m_className.c_str());
+    BeStringUtilities::Snwprintf (line, _countof(line), L"ClassLayout for ECClassIndex=%i, ECClass.GetName()=%s", m_classIndex, m_className.c_str());
 
     return line;
     }
@@ -2765,7 +2765,7 @@ WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, Clas
                     else
                         {
                         wchar_t temp[1024];
-                        swprintf(temp, 1024, L"Error (%d) returned while obtaining array index value", status, i);
+                        BeStringUtilities::Snwprintf(temp, 1024, L"Error (%d) returned while obtaining array index value", status, i);
                         valueAsString = WString (temp);
                         }
 
