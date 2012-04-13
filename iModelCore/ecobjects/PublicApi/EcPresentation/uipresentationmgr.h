@@ -22,7 +22,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct  IJournalProvider
     {
-    virtual void    JournalCmd (IUICommandCR cmd, IECInstanceCP instanceData) = 0;
+    virtual void    JournalCmd (IUICommandCR cmd, IAUIDataContextCP instanceData) = 0;
     virtual ~IJournalProvider() {}
     };
 
@@ -46,9 +46,9 @@ struct  UIPresentationManager: public NonCopyableClass
 
     public:
     
-    ECOBJECTS_EXPORT static const WCharCP    MenuCommandItemClassName;
+    ECOBJECTS_EXPORT static const WCharCP    MenuItemClassName;
 
-                     void                           JournalCmd (IUICommandCR cmd, IECInstanceCP instanceData);
+                     void                           JournalCmd (IUICommandCR cmd, IAUIDataContextCP instanceData);
 
     ECOBJECTS_EXPORT void                           AddProvider (IJournalProviderR provider);
     ECOBJECTS_EXPORT void                           RemoveProvider (IJournalProviderR provider);
@@ -59,9 +59,9 @@ struct  UIPresentationManager: public NonCopyableClass
     ECOBJECTS_EXPORT void                           AddProvider (IAUIProviderR provider);
     ECOBJECTS_EXPORT void                           RemoveProvider (IAUIProviderR provider);
 
-    ECOBJECTS_EXPORT IAUIItemPtr                    GetUIItem (UIECClassCR itemType, IECInstanceP instanceData) const;
+    ECOBJECTS_EXPORT IAUIItemPtr                    GetUIItem (IAUIItemInfoCR itemInfo, IAUIDataContextCP instanceData) const;
 
-    ECOBJECTS_EXPORT UICommandPtr                   GetCommand (IECInstanceCR instance) const;
+    ECOBJECTS_EXPORT UICommandPtr                   GetCommand (IAUIDataContextCR instance) const;
 
     ECOBJECTS_EXPORT static UIPresentationManagerR  GetManager();
 

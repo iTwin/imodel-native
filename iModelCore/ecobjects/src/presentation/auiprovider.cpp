@@ -12,26 +12,11 @@
 
 USING_NAMESPACE_EC
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-UICommandPtr    IUICommandProvider::GetCommand (IECInstanceCR instance) const
-    {
-    return _GetCommand(instance);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECEnablerPtr    IAUIProvider::_GetEnabler (ECClassCR classInstance)
+IAUIItemPtr     IAUIProvider::GetUIItem (IAUIItemInfoCR itemInfo, IAUIDataContextCP instanceData)
     {
-    return _GetUIEnabler (classInstance).get();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-UIECEnablerPtr  IAUIProvider::GetUIEnabler (ECClassCR classInstance)
-    {
-    return _GetUIEnabler(classInstance);
+    return _GetUIItem(itemInfo, instanceData);
     }

@@ -8,8 +8,11 @@
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
 
-#include <EcPresentation/uiitem.h>
-#include <EcPresentation/journal.h>
+EC_TYPEDEFS (IUICommand);
+EC_TYPEDEFS (UICommand);
+EC_TYPEDEFS (IAUIDataContext);
+EC_TYPEDEFS (IJournalItem);
+
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -20,7 +23,7 @@ struct IUICommand
     {
     protected:
 
-        virtual BentleyStatus   _ExecuteCmd(IECInstanceCP instance) const = 0;
+        virtual BentleyStatus   _ExecuteCmd(IAUIDataContextCP instance) const = 0;
 
         virtual void            _Journal (IJournalItemR journalEntry) const = 0;
 
@@ -43,7 +46,7 @@ struct UICommand : public IUICommand, public RefCountedBase
     public:
         //! Execute the action associated with this command. If a journal provider is registered 
         //! the call results in the creation of the corresponding journal entry.
-        ECOBJECTS_EXPORT BentleyStatus  Execute (IECInstanceCP instance) const;
+        ECOBJECTS_EXPORT BentleyStatus  Execute (IAUIDataContextCP instance) const;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -52,13 +55,13 @@ struct UICommand : public IUICommand, public RefCountedBase
 struct IUICommandProvider
     {
     protected:
-        virtual UICommandPtr _GetCommand (IECInstanceCR instance) const = 0;
+        virtual UICommandPtr _GetCommand (IAUIDataContextCR instance) const = 0;
     
     public:
 
         virtual ~IUICommandProvider() {}
 
-        ECOBJECTS_EXPORT UICommandPtr GetCommand (IECInstanceCR instance) const;
+        ECOBJECTS_EXPORT UICommandPtr GetCommand (IAUIDataContextCR instance) const;
     };
 
 

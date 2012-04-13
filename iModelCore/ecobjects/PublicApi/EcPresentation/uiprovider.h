@@ -9,7 +9,7 @@
 /*__BENTLEY_INTERNAL_ONLY__*/
 
 #include <ECObjects/ecprovider.h>
-#include <EcPresentation/uienabler.h>
+#include <EcPresentation/uiitem.h>
 
 EC_TYPEDEFS (UIECEnabler);
 EC_TYPEDEFS (IAUIProvider);
@@ -20,17 +20,11 @@ BEGIN_BENTLEY_EC_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct  IAUIProvider: public IECProvider
     {
-    private:
-        //!Get the enabler for the classInstance
-        ECOBJECTS_EXPORT virtual ECEnablerPtr    _GetEnabler (ECClassCR classInstance) override;
-
     protected:
+        virtual IAUIItemPtr     _GetUIItem (IAUIItemInfoCR itemInfo, IAUIDataContextCP instanceData) = 0;
         
-        virtual UIECEnablerPtr  _GetUIEnabler (ECClassCR classInstance) = 0;
     public:
-        
-        
-        ECOBJECTS_EXPORT UIECEnablerPtr GetUIEnabler (ECClassCR classInstance);
+        ECOBJECTS_EXPORT IAUIItemPtr     GetUIItem (IAUIItemInfoCR itemInfo, IAUIDataContextCP instanceData);
     };
 
 END_BENTLEY_EC_NAMESPACE

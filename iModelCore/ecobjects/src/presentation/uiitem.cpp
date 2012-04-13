@@ -14,52 +14,40 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UICommandCR     IAUICommandItem::GetCommand() const
+UICommandPtr    IAUIItem::GetCommand() const
     {
-    return _GetCommand();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-IAUICommandItemCP    IAUIItem::_GetAsCommandItem () const
-    {
-    return NULL;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-IAUICommandItemCP    IAUICommandItem::_GetAsCommandItem() const
-    {
-    return this;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-IAUICommandItemCP    IAUIItem::GetAsCommandItem () const
-    {
-    return _GetAsCommandItem();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   IAUICommandItem::ExecuteAction () const
-    {
-    IECInstancePtr instance = GetDataInstance();
-    return GetCommand().Execute (instance.get());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr    IAUIItem::GetDataInstance() const
-    {
-    ECValue val;
-    if (ECOBJECTS_STATUS_Success != GetValue (val, L"Data"))
+    IAUIDataContextCP instance = GetDataInstance();
+    if (NULL == instance)
         return NULL;
 
-    return val.GetStruct();
+    return UIPresentationManager::GetManager().GetCommand(*instance);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   IAUIItem::ExecuteAction () const
+    {
+    UICommandPtr cmd = GetCommand();
+    if (cmd.IsNull())
+        return ERROR;
+    
+    return cmd->Execute (GetDataInstance());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+IAUIDataContextCP    IAUIItem::GetDataInstance() const
+    {
+    return _GetDataInstance();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+IAUIItemCP      IAUIItem::GetParent () const
+    {
+    return _GetParent();
     }

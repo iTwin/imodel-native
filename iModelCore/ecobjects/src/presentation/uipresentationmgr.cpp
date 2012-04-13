@@ -87,15 +87,11 @@ void            UIPresentationManager::RemoveProvider (IUICommandProviderCR prov
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IAUIItemPtr      UIPresentationManager::GetUIItem (UIECClassCR itemType, IECInstanceP instanceData) const
+IAUIItemPtr      UIPresentationManager::GetUIItem (IAUIItemInfoCR itemType, IAUIDataContextCP instanceData) const
     {
     for (T_DisplayProviderSet::const_iterator iter = m_displayProviders.begin(); iter != m_displayProviders.end(); ++iter)
         {
-        UIECEnablerPtr enabler = (*iter)->GetUIEnabler (itemType);
-        if (enabler.IsNull())
-            continue;
-
-        IAUIItemPtr item = enabler->GetUIItem(instanceData);
+        IAUIItemPtr item  = (*iter)->GetUIItem (itemType, instanceData);
         if (item.IsValid())
             return item;
         }
@@ -106,7 +102,7 @@ IAUIItemPtr      UIPresentationManager::GetUIItem (UIECClassCR itemType, IECInst
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UICommandPtr    UIPresentationManager::GetCommand (IECInstanceCR instance) const
+UICommandPtr    UIPresentationManager::GetCommand (IAUIDataContextCR instance) const
     {
     for (T_CmdProviderSet::const_iterator iter = m_cmdProviders.begin(); iter != m_cmdProviders.end(); ++iter)
         {
@@ -135,20 +131,9 @@ class ProviderSingletonPattern : public NonCopyableClass
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct BaseDisplayProvider : public IAUIProvider, public ProviderSingletonPattern<BaseDisplayProvider>
-    {
-    virtual UIECEnablerPtr  _GetUIEnabler (ECClassCR classInstance) override
-        {
-        return NULL;
-        }
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
 struct BaseCommandProvider : public IUICommandProvider, public ProviderSingletonPattern<BaseCommandProvider>
     {
-    virtual UICommandPtr _GetCommand (IECInstanceCR instance) const override
+    virtual UICommandPtr _GetCommand (IAUIDataContextCR instance) const override
         {
         return NULL;
         }
@@ -159,7 +144,7 @@ struct BaseCommandProvider : public IUICommandProvider, public ProviderSingleton
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct LoggingJournalProvider : public IJournalProvider, public ProviderSingletonPattern<LoggingJournalProvider>
     {
-    virtual void    JournalCmd (IUICommandCR cmd, IECInstanceCP instanceData) override
+    virtual void    JournalCmd (IUICommandCR cmd, IAUIDataContextCP instanceData) override
         {
         
         }
@@ -182,7 +167,7 @@ UIPresentationManager::UIPresentationManager ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            UIPresentationManager::JournalCmd (IUICommandCR cmd, IECInstanceCP instanceData)
+void            UIPresentationManager::JournalCmd (IUICommandCR cmd, IAUIDataContextCP instanceData)
     {
     for (T_JournalProviderSet::iterator iter = m_journalProviders.begin(); iter != m_journalProviders.end(); ++iter)
         (*iter)->JournalCmd(cmd, instanceData);
@@ -200,4 +185,4 @@ ECSchemaCR      UIPresentationManager::GetAUISchema()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-const WCharCP   UIPresentationManager::MenuCommandItemClassName = L"MenuCommandItem";
+const WCharCP   UIPresentationManager::MenuItemClassName = L"MenuItem";

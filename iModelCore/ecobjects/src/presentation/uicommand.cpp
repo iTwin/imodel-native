@@ -14,8 +14,16 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   UICommand::Execute (IECInstanceCP instance) const
+BentleyStatus   UICommand::Execute (IAUIDataContextCP instance) const
     {
     UIPresentationManager::GetManager().JournalCmd (*this, instance);
     return _ExecuteCmd(instance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+UICommandPtr    IUICommandProvider::GetCommand (IAUIDataContextCR instance) const
+    {
+    return _GetCommand(instance);
     }
