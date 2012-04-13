@@ -21,10 +21,6 @@ struct IECProvider
         //!Get the provider name
         virtual WCharCP     _GetProviderName () const = 0;
 
-        //!Get the enabler for the classInstance
-        virtual ECEnablerPtr  _GetEnabler (ECClassCR classInstance) = 0;
-
-
     public:
         //! This should be an ID obtained from http://toolsnet.bentley.com/Signature, like ElementHandlerIds and XAttributeHandlerIds. It
         //! won't necessarily match an existing ElementHandler or XAttributeHandler Id because most providers should handle
@@ -33,9 +29,6 @@ struct IECProvider
 
         //! This should be the name of the provider that will be written to the schema.
         ECOBJECTS_EXPORT WCharCP        GetProviderName () const;
-
-        //!Get the instance enabler associated with this class instance.
-        ECOBJECTS_EXPORT ECEnablerPtr   GetEnabler (ECClassCR classInstance);
 
         virtual ~IECProvider ()
             {}

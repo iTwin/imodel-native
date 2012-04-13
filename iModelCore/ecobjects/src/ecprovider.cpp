@@ -25,11 +25,3 @@ WCharCP         IECProvider::GetProviderName () const
     {
     return _GetProviderName ();
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECEnablerPtr    IECProvider::GetEnabler (ECClassCR classInstance)
-    {
-    return _GetEnabler(classInstance);
-    }
