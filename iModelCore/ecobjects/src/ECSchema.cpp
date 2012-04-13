@@ -502,7 +502,7 @@ ECObjectsStatus ECSchema::ParseVersionString (UInt32& versionMajor, UInt32& vers
         }
 
     WCharP end = NULL;    
-    UInt32    localMajor = wcstoul (versionString, &end, 10);
+    UInt32    localMajor = BeStringUtilities::Wcstoul (versionString, &end, 10);
     if (versionString == end)
         {
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%s' The characters before the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
@@ -513,7 +513,7 @@ ECObjectsStatus ECSchema::ParseVersionString (UInt32& versionMajor, UInt32& vers
         versionMajor = localMajor;
         }
 
-    UInt32 localMinor = wcstoul (&theDot[1], &end, 10);
+    UInt32 localMinor = BeStringUtilities::Wcstoul (&theDot[1], &end, 10);
     if (&theDot[1] == end)
         {
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%s' The characters after the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);

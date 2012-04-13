@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+#include <Bentley/Bentley.h>
+#include <Bentley/CatchNonPortable.h>
 #include <ECObjects/ECObjectsAPI.h>
 #include <assert.h>
 #include <boost/foreach.hpp>
