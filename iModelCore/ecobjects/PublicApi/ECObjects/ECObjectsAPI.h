@@ -66,6 +66,7 @@
 #include <ECObjects/MemoryInstanceSupport.h>
 #include <ECObjects/StandaloneECInstance.h>
 #include <ECObjects/StandaloneECRelationshipInstance.h>
+#include <ECObjects/ecprovider.h>
 #include <Bentley/ScopedArray.h>
 
 
