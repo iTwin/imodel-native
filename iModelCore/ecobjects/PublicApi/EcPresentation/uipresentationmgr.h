@@ -39,15 +39,11 @@ struct  UIPresentationManager: public NonCopyableClass
         T_CmdProviderSet        m_cmdProviders;
         T_DisplayProviderSet    m_displayProviders;
         T_JournalProviderSet    m_journalProviders;
-        ECSchemaPtr             m_schema;
-
+        
         UIPresentationManager ();
-        bool                    InitSchema();
-
+        
     public:
     
-    ECOBJECTS_EXPORT static const WCharCP    MenuItemClassName;
-
                      void                           JournalCmd (IUICommandCR cmd, IAUIDataContextCP instanceData);
 
     ECOBJECTS_EXPORT void                           AddProvider (IJournalProviderR provider);
@@ -64,9 +60,6 @@ struct  UIPresentationManager: public NonCopyableClass
     ECOBJECTS_EXPORT UICommandPtr                   GetCommand (IAUIDataContextCR instance) const;
 
     ECOBJECTS_EXPORT static UIPresentationManagerR  GetManager();
-
-    ECOBJECTS_EXPORT ECSchemaCR                     GetAUISchema();
-
     };
 
 END_BENTLEY_EC_NAMESPACE

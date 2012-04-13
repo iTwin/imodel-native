@@ -24,20 +24,6 @@ UIPresentationManagerR   UIPresentationManager::GetManager()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            UIPresentationManager::InitSchema() 
-    {
-    if (m_schema.IsValid())
-        return true;
-
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext(NULL, false);
-    SchemaKey key(L"BeUISchema", 1, 0);
-    m_schema = context->LocateSchema(key, SCHEMAMATCHTYPE_LatestCompatible);
-    return m_schema.IsValid();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
 void            UIPresentationManager::AddProvider (IJournalProviderR provider)
     {
     m_journalProviders.insert(&provider);
@@ -154,14 +140,10 @@ struct LoggingJournalProvider : public IJournalProvider, public ProviderSingleto
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 UIPresentationManager::UIPresentationManager ()
-    :m_schema(NULL)
     {
     //AddProvider (BaseDisplayProvider::GetProvider());
     AddProvider (BaseCommandProvider::GetProvider());
     AddProvider (LoggingJournalProvider::GetProvider());
-    
-    bool initDone = InitSchema();
-    assert(initDone);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -172,17 +154,3 @@ void            UIPresentationManager::JournalCmd (IUICommandCR cmd, IAUIDataCon
     for (T_JournalProviderSet::iterator iter = m_journalProviders.begin(); iter != m_journalProviders.end(); ++iter)
         (*iter)->JournalCmd(cmd, instanceData);
     }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCR      UIPresentationManager::GetAUISchema()
-    {
-    return *m_schema;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-const WCharCP   UIPresentationManager::MenuItemClassName = L"MenuItem";

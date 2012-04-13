@@ -25,8 +25,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 typedef RefCountedPtr<IAUIItem>         IAUIItemPtr;
 
 /*---------------------------------------------------------------------------------**//**
-A Uiitem is an instance of the BE Display Schema. It has utility functions that helps with ease of use
-by having schema specific functions. eg it has methods that allows you to evaluate relationships faster.
+A Uiitem is an instance of the BE Display Schema. 
 * @bsiclass                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct IAUIItem : public RefCountedBase
@@ -61,9 +60,33 @@ struct IAUIItem : public RefCountedBase
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+template <typename PlatformImplType>
+struct UIItem: public IAUIItem
+    {
+    private:
+    PlatformImplType*   m_implType;
+
+    protected:
+        virtual IAUIItemCP          _GetParent () const override {return m_implType->GetParent();}
+        virtual IAUIDataContextCP   _GetDataInstance() const override {return m_implType->GetDataInstance();}
+
+    public:
+        UIItem (PlatformImplType& impl)
+            :m_implType(&impl)
+            {}
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 struct  IAUIItemInfo
     {
     IAUIItem::ItemType  m_itemType;
+
+    IAUIItemInfo (IAUIItem::ItemType itemType)
+        :m_itemType (itemType)
+        {}
+
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -78,10 +101,28 @@ struct  IAUIDataContext
         Custom,
         };
 
-    virtual ContextType             GetContextType() = 0;
-    virtual IECInstancePtr          GetInstance () {return NULL;}
-    virtual DgnPlatform::ECQueryCP  GetQuery () {return NULL;}
-    virtual void*                   GetCustomData() {return NULL;}
+    virtual ContextType             GetContextType() const = 0;
+    virtual IECInstanceP            GetInstance () const {return NULL;}
+    virtual DgnPlatform::ECQueryCP  GetQuery () const {return NULL;}
+    virtual void*                   GetCustomData() const {return NULL;}
+
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct  AUIInstanceDataContext : public IAUIDataContext
+    {
+    private:
+        IECInstancePtr m_instance;
+        
+    public:
+        AUIInstanceDataContext (IECInstanceR instance)
+            :m_instance(&instance)
+            {}
+        
+        virtual ContextType GetContextType() const override {return IAUIDataContext::Instance;}
+        virtual IECInstanceP GetInstance () const override {return m_instance.get();}
     };
 
 END_BENTLEY_EC_NAMESPACE
