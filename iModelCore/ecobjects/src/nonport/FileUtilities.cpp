@@ -5,12 +5,17 @@
 |  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsPch.h"
-#include <Bentley/BeFileListIterator.h>
+#if defined (_WIN32) // WIP_NONPORT
+#include <Windows.h>
+#endif
+#include <ECObjects/ECObjectsAPI.h>
+#include "../FileUtilities.h"
+#include <ECObjects/ECValue.h>
+#include <Bentley/BeFileName.h>
 
-BEGIN_BENTLEY_EC_NAMESPACE
+USING_NAMESPACE_EC
 
-#if defined (_WIN32) // WIP_NONPORT *** rewrite this entire file in terms of BeFileName, BeFileListIterator, etc.
+#if defined (_WIN32) // WIP_NONPORT
 
 WString ECFileUtilities::s_dllPath;
 
@@ -38,50 +43,21 @@ WString ECFileUtilities::GetDllPath() {return WString(getenv("BeGTest_HomeDirect
 #endif    
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  11/2010
+* Time in local time zone
+* @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus GetSchemaFileName (WString& fullFileName, UInt32& foundMinorVersion, WCharCP schemaPath, bool useLatestCompatibleMatch)
+SystemTime SystemTime::GetLocalTime()
     {
-    WString     schemaPathWithWildcard = schemaPath;
-    schemaPathWithWildcard += L"*";
-
-    BeFileListIterator  fileList (schemaPathWithWildcard.c_str(), false);
-    BeFileName          filePath;
-    UInt32 currentMinorVersion=0;
-
-    while (SUCCESS == fileList.GetNextFileName (filePath))
-        {
-        WCharCP     fileName = filePath.GetName();
-
-        if (!useLatestCompatibleMatch)
-            {
-            fullFileName = fileName;
-            return ECOBJECTS_STATUS_Success;
-            }
-
-        if (fullFileName.empty())
-            {
-            fullFileName = fileName;
-            GetMinorVersionFromSchemaFileName (foundMinorVersion, fileName);
-            continue;
-            }
-
-        if (ECOBJECTS_STATUS_Success != GetMinorVersionFromSchemaFileName (currentMinorVersion, fileName))
-            continue;
-
-        if (currentMinorVersion > foundMinorVersion)
-            {
-            foundMinorVersion = currentMinorVersion;
-            fullFileName = fileName;
-            }
-        }
-
-    if (fullFileName.empty())
-        return ECOBJECTS_STATUS_Error;
-
-    return ECOBJECTS_STATUS_Success;
+#if defined (_WIN32) // WIP_NONPORT
+    SYSTEMTIME wtime;
+    ::GetLocalTime(&wtime);
+    SystemTime time;
+    memcpy (&time, &wtime, sizeof(time));
+    return time;
+#elif defined (__unix__)
+    BeAssert (false && "*** TBD - convert UTC to local time");
+    return GetSystemTime();
+#endif
     }
-
-END_BENTLEY_EC_NAMESPACE
 
 

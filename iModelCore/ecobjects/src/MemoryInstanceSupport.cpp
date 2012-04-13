@@ -44,27 +44,18 @@ static int      randomValue  ()
     return  low + (int) ( (double) range * (double) randomNum / (double) (RAND_MAX + 1));
     }
 
-#if defined (_WIN32) // WIP_NONPORT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    08/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            appendFormattedString (wostringstream& outStream, WCharCP fmtStr, ...)
+void            appendFormattedString (WString& outStream, WCharCP fmtStr, ...)
     {
-    wchar_t line[1024];
-
+    WString line;
     va_list argList;
     va_start(argList, fmtStr /* the last fixed argument */);
-    vswprintf(line, _countof(line), fmtStr, argList);
+    line.VSprintf (fmtStr, argList);
     va_end(argList);
-
-    // in case we use up the local buffer, truncate with a newline
-    BeStringUtilities::Snwprintf (&line[_countof(line) - 2], 2, L"\n");;
-
-    outStream << line;
+    outStream.append (line);
     }
-#elif defined (__unix__)
-    // *** NEEDS WORK: iostreams not supported on Android
-#endif 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/09
@@ -346,48 +337,48 @@ WString        ClassLayout::GetName () const
     return GetShortDescription();
     }
 
+static WString  getIndentedFmt (int indentLevel)
+    {
+    return WPrintfString (L"%%-%dd", 12 - 3 * indentLevel);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString        ClassLayout::LogicalStructureToString (UInt32 parentStuctIndex, UInt32 indentLevel) const
     {
-#if defined (_WIN32) // WIP_NONPORT
     LogicalStructureMap::const_iterator it = m_logicalStructureMap.find(parentStuctIndex);
 
     if ( ! EXPECTED_CONDITION (it != m_logicalStructureMap.end()))
         return L"";
 
     WCharCP indentStr = L"|--";
-    wostringstream oss;
-    oss << setiosflags (ios::left);
+    WString oss;
 
     FOR_EACH (UInt32 propIndex, it->second)
         {
         for (UInt32 i = 0; i < indentLevel; i++)
-            oss << indentStr;
+            oss += indentStr;
 
-        oss << setw(12 - 3 * indentLevel) << propIndex;
+        oss += WPrintfString(getIndentedFmt(indentLevel).c_str(), propIndex);
 
         PropertyLayoutCP    propertyLayout = NULL;
         ECObjectsStatus     status = GetPropertyLayoutByIndex (propertyLayout, propIndex);
 
         if (SUCCESS != status || NULL == propertyLayout)
             {
-            oss << L"  *** ERROR finding PropertyLayout ***" << endl;
+            oss += L"  *** ERROR finding PropertyLayout ***\n";
             continue;
             }
 
         WCharCP  accessString = propertyLayout->GetAccessString();
-        oss << setw(40) << accessString << setw(10) << L"  Parent: " << propertyLayout->GetParentStructIndex() << endl;
+        oss += WPrintfString (L"%-40ls  Parent: %-10d\n", accessString, propertyLayout->GetParentStructIndex());
 
         if (propertyLayout->GetTypeDescriptor().IsStruct())
-            oss << LogicalStructureToString (propIndex, indentLevel+1); 
+            oss += LogicalStructureToString (propIndex, indentLevel+1); 
         }
     
-    return oss.str().c_str();
-#elif defined (__unix__)
-    // *** NEEDS WORK: iostreams not supported on Android
-#endif 
+    return oss;
     }    
 
 /*---------------------------------------------------------------------------------**//**
@@ -395,29 +386,25 @@ WString        ClassLayout::LogicalStructureToString (UInt32 parentStuctIndex, U
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString        ClassLayout::ToString () const
     {
-#if defined (_WIN32) // WIP_NONPORT
-    wostringstream oss;
+    WString oss;
 
-    oss << GetShortDescription() << endl;
+    oss += GetShortDescription() += L"\n";
 
     UInt32 propIndex = 0;
 
     FOR_EACH (PropertyLayoutP layout, m_propertyLayouts)
         {
-        oss << setiosflags( ios::left ) << setw(4) << propIndex;
-        oss << layout->ToString();
-        oss << endl;
+        oss += WPrintfString(L"%-4d", propIndex);
+        oss += layout->ToString();
+        oss += L"\n";
 
         propIndex++;
         }
 
-    oss << L"Logical Structure:" << endl;
-    oss << LogicalStructureToString ();
+    oss += L"Logical Structure:\n";
+    oss += LogicalStructureToString ();
 
-    return oss.str().c_str();
-#elif defined (__unix__)
-    // *** NEEDS WORK: iostreams not supported on Android
-#endif 
+    return oss;
     }
         
 /*---------------------------------------------------------------------------------**//**
@@ -2662,16 +2649,15 @@ ECObjectsStatus       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR cla
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, ClassLayoutCR classLayout) const
     {
-#if defined (_WIN32) // WIP_NONPORT
     static bool s_skipDump = false;
     static int s_dumpCount = 0;
     s_dumpCount++;
     
-    wostringstream oss;
+    WString oss;
 
     appendFormattedString (oss, L"%s================== ECInstance Dump #%d =============================\n", indent, s_dumpCount);
     if (s_skipDump)
-        return oss.str().c_str();
+        return oss;
   
     byte const * data = _GetData();
 
@@ -2699,7 +2685,7 @@ WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, Clas
         if (ECOBJECTS_STATUS_Success != status)
             {
             appendFormattedString (oss, L"%sError (%d) returned while getting PropertyLayout #%d", indent, status, i);
-            return oss.str().c_str();
+            return oss;
             }
 
         if (propertyLayout->GetTypeDescriptor().IsStruct())
@@ -2784,7 +2770,7 @@ WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, Clas
                         structIndent.append (L"      ");
 
                         WString structString = v.GetStruct()->ToString(structIndent.c_str());
-                        oss << structString;
+                        oss += structString;
 
                         appendFormattedString (oss, L"%s=================== END Struct Instance ===========================\n", structIndent);
                         }         
@@ -2797,11 +2783,7 @@ WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, Clas
     SecondaryOffset * pLast = (SecondaryOffset*)(data + offsetOfLast);
     appendFormattedString (oss, L"%s  [0x%x][%4.d] Offset of TheEnd = %d\n", indent, pLast, offsetOfLast, *pLast);
 
-    return oss.str().c_str();
-#elif defined (__unix__)
-    // *** NEEDS WORK: iostreams not supported on Android
-    return L"";
-#endif 
+    return oss;
     }
 
 /*---------------------------------------------------------------------------------**//**
