@@ -1062,13 +1062,13 @@ WString    ECValue::ToString () const
             case PRIMITIVETYPE_Point2D:
                 {
                 DPoint2d point = GetPoint2D();
-                str.Sprintf (L"{%lf,%lf}", point.x, point.y);
+                str.Sprintf (L"{%lg,%lg}", point.x, point.y);
                 break;          
                 }
             case PRIMITIVETYPE_Point3D:
                 {
                 DPoint3d point = GetPoint3D();
-                str.Sprintf (L"{%lf,%lf,%lf}", point.x, point.y, point.z);
+                str.Sprintf (L"{%lg,%lg,%lg}", point.x, point.y, point.z);
                 break;          
                 }
             case PRIMITIVETYPE_DateTime:
