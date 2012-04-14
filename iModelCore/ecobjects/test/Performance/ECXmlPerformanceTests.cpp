@@ -20,10 +20,10 @@ ECSchemaReadContextPtr   schemaContext,
 FILE* logFile
 )
     {
-    ECSchemaP schema;
+    ECSchemaPtr schema;
     StopWatch deserializationTimer(L"Deserialization", false);
     deserializationTimer.Start();
-    SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath( schemaName).c_str(), *schemaContext);
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(schemaName).c_str(), *schemaContext);
 
     deserializationTimer.Stop();
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);  
@@ -53,7 +53,7 @@ ECSchemaReadContextPtr   schemaContext,
 FILE* logFile
 )
     {
-    ECSchemaP   schema;
+    ECSchemaPtr   schema;
     //    SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(L"MismatchedSchema.01.00.ecschema.xml").c_str(), *schemaContext);
     //    SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, L"c:\\temp\\data\\ECXA\\Dataset for D-84244\\Schemas\\OpenPlant_3D.01.02.ecschema.xml", *schemaContext);
     SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(schemaName).c_str(), *schemaContext);
@@ -92,7 +92,7 @@ FILE* logFile
 TEST_F(ECXmlPerformanceTest, ReadingAndWritingSchema)
     {
     ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
     FILE* logFile=NULL;
 
@@ -117,7 +117,7 @@ TEST_F(ECXmlPerformanceTest, ReadingAndWritingSchema)
 TEST_F(ECXmlPerformanceTest, ReadingAndWritingInstance)
     {
     ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
     FILE* logFile=NULL;
 

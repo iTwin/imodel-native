@@ -893,7 +893,10 @@ NodePtr         ECEvaluator::ParsePrimary
             //  May want to have these parse the strings immediately and convert to constants
             case TOKEN_IntegerConstant:
                 {
-                Int64     value = _wtoi64 (m_lexer->GetTokenStringCP ());
+                Int64     value;
+                
+                swscanf(m_lexer->GetTokenStringCP (), L"%lld", &value);
+
                 if (value >= INT_MIN && value <= INT_MAX)
                     {
                     int  intValue = (int)value;

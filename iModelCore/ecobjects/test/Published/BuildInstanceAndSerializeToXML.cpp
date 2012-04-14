@@ -25,7 +25,7 @@ struct BasicTest : ECTestFixture {};
 * Specify the ECSchema that contains all the class/struct definitions
 * @bsimethod                                                    BillSteinbock   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECSchemaP       CreateTestSchema (ECSchemaCacheR schemaOwner)
+static ECSchemaPtr       CreateTestSchema ()
     {
     wchar_t schemaXML[] = L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                     L"<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
@@ -41,11 +41,12 @@ static ECSchemaP       CreateTestSchema (ECSchemaCacheR schemaOwner)
                     L"    </ECClass>"
                     L"</ECSchema>";
 
-    ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext(schemaOwner);
+    ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
 
-    ECSchemaP schema;        
-    EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (schema, schemaXML, *schemaContext));  
-
+    ECSchemaPtr schema; 
+    SchemaReadStatus status = ECSchema::ReadFromXmlString (schema, schemaXML, *schemaContext);
+    EXPECT_EQ (SUCCESS, status);  
+    
     return schema;
     }
 
@@ -116,16 +117,12 @@ struct  SampleDataInstanceManager
     {
     // Instance support
     StandaloneECEnablerPtr   m_enabler;
-    ECSchemaCachePtr         m_schemaOwner;
-    ECSchemaP                m_schema;
+    ECSchemaPtr              m_schema;
 
     SampleDataInstanceManager ()
         {
-        // build a local cache that will hold all the schema that we will need
-        m_schemaOwner = ECSchemaCache::Create();
-
         // create the test schema (the created schema is added to the schema cache m_schemaOwner
-        m_schema = CreateTestSchema(*m_schemaOwner);
+        m_schema = CreateTestSchema();
 
         // get the class that represents the native SampleData stuct and get the enabler that will be used to create instances
         ECClassP ecClass = m_schema->GetClassP (L"SampleDataClass");

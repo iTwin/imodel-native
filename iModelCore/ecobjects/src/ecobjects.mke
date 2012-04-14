@@ -59,6 +59,8 @@ $(o)ECInstance$(oext)      : $(baseDir)ECInstance.cpp $(ECObjectsHeaders) ${Mult
 
 $(o)ECCustomAttribute$(oext)         : $(baseDir)ECCustomAttribute.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
+$(o)ECcontext$(oext)         : $(baseDir)ECcontext.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+
 $(o)ECValue$(oext)         : $(baseDir)ECValue.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
 $(o)ECEnabler$(oext)       : $(baseDir)ECEnabler.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
@@ -72,6 +74,8 @@ $(o)ExpressionHandler$(oext) : $(baseDir)ExpressionHandler.cpp $(ECObjectsHeader
 $(o)MemoryInstanceSupport$(oext) : $(baseDir)MemoryInstanceSupport.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)MemoryInstanceSupport.h
 
 $(o)StandaloneECInstance$(oext)    : $(baseDir)StandaloneECInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)StandaloneECInstance.h $(ecobjectsPublicAPISrc)MemoryInstanceSupport.h
+
+$(o)StandaloneECRelationshipInstance$(oext)    : $(baseDir)StandaloneECRelationshipInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)StandaloneECRelationshipInstance.h  $(ecobjectsPublicAPISrc)StandaloneECInstance.h $(ecobjectsPublicAPISrc)MemoryInstanceSupport.h
 
 $(o)DesignByContract$(oext)        : $(baseDir)DesignByContract.cpp $(ecobjectsPublicAPISrc)DesignByContract.h ${MultiCompileDepends} 
 
