@@ -1553,7 +1553,8 @@ TEST_F(ClassTest, ExpectPropertiesInOrder)
     class1->CreatePrimitiveProperty(property4, L"alpha");
     
     int i = 0;
-    FOR_EACH (ECPropertyP prop, class1->GetProperties(false))
+    ECPropertyIterable  iterable = class1->GetProperties (false);
+    FOR_EACH (ECPropertyP prop, iterable)
         {
         EXPECT_EQ(0, prop->GetName().compare(propertyNames[i]));
         i++;
@@ -1671,8 +1672,9 @@ TEST_F(ClassTest, ExpectPropertiesFromBaseClass)
     mn->AddBaseClass(*ef);
     mn->AddBaseClass(*kl);
     
+    ECPropertyIterable  iterable1 = mn->GetProperties (true);
     std::vector<ECPropertyP> testVector;
-    FOR_EACH (ECPropertyP prop, mn->GetProperties(true))
+    FOR_EACH (ECPropertyP prop, iterable1)
         testVector.push_back(prop);
         
     EXPECT_EQ(14, testVector.size());
@@ -1706,8 +1708,9 @@ TEST_F(ClassTest, ExpectPropertiesFromBaseClass)
     mn->CreatePrimitiveProperty(j2, L"j");
     mn->CreatePrimitiveProperty(k2, L"k");
 
+    ECPropertyIterable  iterable2 = mn->GetProperties (true);
     testVector.clear();
-    FOR_EACH (ECPropertyP prop, mn->GetProperties(true))
+    FOR_EACH (ECPropertyP prop, iterable2)
         testVector.push_back(prop);
         
     EXPECT_EQ(14, testVector.size());
@@ -1754,8 +1757,9 @@ TEST_F(ClassTest, ExpectPropertiesFromBaseClass)
     ab->CreatePrimitiveProperty(g4, L"g");
     ab->CreatePrimitiveProperty(h3, L"h");
 
+    ECPropertyIterable  iterable3 = mn->GetProperties (true);
     testVector.clear();
-    FOR_EACH (ECPropertyP prop, mn->GetProperties(true))
+    FOR_EACH (ECPropertyP prop, iterable3)
         testVector.push_back(prop);
         
     EXPECT_EQ(14, testVector.size());

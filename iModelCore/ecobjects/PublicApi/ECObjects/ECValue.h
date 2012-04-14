@@ -150,7 +150,7 @@ public:
     ECOBJECTS_EXPORT explicit ECValue (DPoint2dCR point2d);
     ECOBJECTS_EXPORT explicit ECValue (DPoint3dCR point3d);
     ECOBJECTS_EXPORT explicit ECValue (bool value);
-    ECOBJECTS_EXPORT explicit ECValue (SystemTime& time);
+    ECOBJECTS_EXPORT explicit ECValue (SystemTime const& time);
 
     ECOBJECTS_EXPORT void           SetReadOnly(bool isReadOnly);
 
@@ -210,7 +210,7 @@ public:
     ECOBJECTS_EXPORT BentleyStatus  SetStruct (IECInstanceP structInstance);
         
     ECOBJECTS_EXPORT SystemTime     GetDateTime() const;
-    ECOBJECTS_EXPORT BentleyStatus  SetDateTime (SystemTime& systemTime); 
+    ECOBJECTS_EXPORT BentleyStatus  SetDateTime (SystemTime const& systemTime); 
 
     ECOBJECTS_EXPORT Int64          GetDateTimeTicks() const;
     ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 value);

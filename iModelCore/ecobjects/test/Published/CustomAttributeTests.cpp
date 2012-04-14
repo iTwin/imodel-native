@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/CustomAttributeTests.cpp $
 |
-|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -231,7 +231,8 @@ TEST_F(CustomAttributeTest, ExpectCanGetAllCustomAttributes)
     bool foundCustomAttrib = false;
     bool foundCustomAttrib2 = false;
     bool foundCustomAttrib3 = false;
-    FOR_EACH (IECInstancePtr testInstance, containerClass->GetCustomAttributes(false))
+    ECCustomAttributeInstanceIterable  iterableFalse = containerClass->GetCustomAttributes (false);
+    FOR_EACH (IECInstancePtr testInstance, iterableFalse)
         {
         if (testInstance->GetClass().GetName().compare(L"CustomAttribClass") == 0)
             foundCustomAttrib = true;
@@ -247,7 +248,9 @@ TEST_F(CustomAttributeTest, ExpectCanGetAllCustomAttributes)
     foundCustomAttrib = false;
     foundCustomAttrib2 = false;
     foundCustomAttrib3 = false;
-    FOR_EACH (IECInstancePtr testInstance, containerClass->GetCustomAttributes(true))
+
+    ECCustomAttributeInstanceIterable  iterableTrue = containerClass->GetCustomAttributes (true);
+    FOR_EACH (IECInstancePtr testInstance, iterableTrue)
         {
         if (testInstance->GetClass().GetName().compare(L"CustomAttribClass") == 0)
             foundCustomAttrib = true;

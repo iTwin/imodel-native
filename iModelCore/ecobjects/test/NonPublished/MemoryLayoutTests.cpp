@@ -1087,13 +1087,16 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"Field_Tested"));
     EXPECT_TRUE (ecValue.GetBoolean() == inTest);
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"Size"));
-    EXPECT_TRUE (SUCCESS == memcmp (&inSize, &ecValue.GetPoint2D(), sizeof(inSize)));
+    DPoint2d    point2d = ecValue.GetPoint2D ();
+    EXPECT_TRUE (SUCCESS == memcmp (&inSize, &point2d, sizeof(DPoint2d)));
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"StartPoint"));
-    EXPECT_TRUE (SUCCESS == memcmp (&inPoint1, &ecValue.GetPoint3D(), sizeof(inPoint1)));
+    DPoint3d    point3d = ecValue.GetPoint3D ();
+    EXPECT_TRUE (SUCCESS == memcmp (&inPoint1, &point3d, sizeof(DPoint3d)));
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"EndPoint"));
-    EXPECT_TRUE (SUCCESS == memcmp (&inPoint2, &ecValue.GetPoint3D(), sizeof(inPoint2)));
+    EXPECT_TRUE (SUCCESS == memcmp (&inPoint2, &point3d, sizeof(DPoint3d)));
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"Service_Date"));
-    EXPECT_TRUE (SUCCESS == memcmp (&inTime, &ecValue.GetDateTime(), sizeof(inTime)));
+    SystemTime  sysTime = ecValue.GetDateTime ();
+    EXPECT_TRUE (SUCCESS == memcmp (&inTime, &sysTime, sizeof(SystemTime)));
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"Install_Date"));
     EXPECT_TRUE (ecValue.GetDateTimeTicks() == inTicks);
 
