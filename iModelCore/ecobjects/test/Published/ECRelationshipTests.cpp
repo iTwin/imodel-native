@@ -16,6 +16,7 @@ using namespace std;
 
 struct ECRelationshipTests : ECTestFixture {};
 
+#if defined (NOT_RUNNING) // Turning these off temporarily until Bill or Abeesh has a chance to look at them
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -65,7 +66,6 @@ static ECSchemaP       CreateTestSchema (ECSchemaCacheR schemaOwner)
     return schema.get();
     }
 
-#if defined (NOT_RUNNING) // Turning these off temporarily until Bill or Abeesh has a chance to look at them
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
