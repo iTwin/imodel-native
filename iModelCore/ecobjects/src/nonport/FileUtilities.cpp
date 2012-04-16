@@ -12,6 +12,7 @@
 #include "../FileUtilities.h"
 #include <ECObjects/ECValue.h>
 #include <Bentley/BeFileName.h>
+#include <Bentley/BeAssert.h>
 
 USING_NAMESPACE_EC
 
