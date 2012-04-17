@@ -17,6 +17,7 @@
 #include <list>
 #include <Bentley/BeFileName.h>
 #include <Bentley/BeFile.h>
+#include <Bentley/BeFileListIterator.h>
 
 #include <ECObjects/StronglyConnectedGraph.h>
 #include <boost/iterator/iterator_adaptor.hpp>
@@ -501,7 +502,7 @@ ECObjectsStatus ECSchema::ParseVersionString (UInt32& versionMajor, UInt32& vers
         }
 
     WCharP end = NULL;    
-    UInt32    localMajor = wcstoul (versionString, &end, 10);
+    UInt32    localMajor = BeStringUtilities::Wcstoul (versionString, &end, 10);
     if (versionString == end)
         {
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%s' The characters before the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
@@ -512,7 +513,7 @@ ECObjectsStatus ECSchema::ParseVersionString (UInt32& versionMajor, UInt32& vers
         versionMajor = localMajor;
         }
 
-    UInt32 localMinor = wcstoul (&theDot[1], &end, 10);
+    UInt32 localMinor = BeStringUtilities::Wcstoul (&theDot[1], &end, 10);
     if (&theDot[1] == end)
         {
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%s' The characters after the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
@@ -674,7 +675,7 @@ ECObjectsStatus ECSchema::AddReferencedSchema (ECSchemaR refSchema, WStringCR na
         for (subScript = 1; subScript < 500; subScript++)
             {
             wchar_t temp[256];
-            swprintf(temp, 256, L"%s%d", prefix.c_str(), subScript);
+            BeStringUtilities::Snwprintf(temp, 256, L"%s%d", prefix.c_str(), subScript);
             WString tryPrefix(temp);
             for (namespaceIterator = m_referencedSchemaNamespaceMap.begin(); namespaceIterator != m_referencedSchemaNamespaceMap.end(); namespaceIterator++)
                 {
@@ -986,6 +987,50 @@ ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, WCharCP
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  11/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus GetSchemaFileName (WString& fullFileName, UInt32& foundMinorVersion, WCharCP schemaPath, bool useLatestCompatibleMatch)
+    {
+    WString     schemaPathWithWildcard = schemaPath;
+    schemaPathWithWildcard += L"*";
+
+    BeFileListIterator  fileList (schemaPathWithWildcard.c_str(), false);
+    BeFileName          filePath;
+    UInt32 currentMinorVersion=0;
+
+    while (SUCCESS == fileList.GetNextFileName (filePath))
+        {
+        WCharCP     fileName = filePath.GetName();
+
+        if (!useLatestCompatibleMatch)
+            {
+            fullFileName = fileName;
+            return ECOBJECTS_STATUS_Success;
+            }
+
+        if (fullFileName.empty())
+            {
+            fullFileName = fileName;
+            GetMinorVersionFromSchemaFileName (foundMinorVersion, fileName);
+            continue;
+            }
+
+        if (ECOBJECTS_STATUS_Success != GetMinorVersionFromSchemaFileName (currentMinorVersion, fileName))
+            continue;
+
+        if (currentMinorVersion > foundMinorVersion)
+            {
+            foundMinorVersion = currentMinorVersion;
+            fullFileName = fileName;
+            }
+        }
+
+    if (fullFileName.empty())
+        return ECOBJECTS_STATUS_Error;
+
+    return ECOBJECTS_STATUS_Success;
+    }
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaPtr       SearchPathSchemaFileLocater::FindMatchingSchema
@@ -1056,9 +1101,9 @@ ECSchemaPtr     SearchPathSchemaFileLocater::LocateSchemaByPath (SchemaKeyR key,
     {
     wchar_t versionString[24];
     if (matchType == SCHEMAMATCHTYPE_LatestCompatible)
-        swprintf(versionString, 24, L".%02d.*.ecschema.xml", key.m_versionMajor);
+        BeStringUtilities::Snwprintf(versionString, 24, L".%02d.*.ecschema.xml", key.m_versionMajor);
     else
-        swprintf(versionString, 24, L".%02d.%02d.ecschema.xml", key.m_versionMajor, key.m_versionMinor);
+        BeStringUtilities::Snwprintf(versionString, 24, L".%02d.%02d.ecschema.xml", key.m_versionMajor, key.m_versionMinor);
 
     WString schemaMatchExpression(key.m_schemaName);
     schemaMatchExpression += versionString;
@@ -1226,7 +1271,7 @@ SchemaWriteStatus ECSchema::WriteSchemaReferences (BeXmlNodeR parentNode) const
         schemaReferenceNode->AddAttributeStringValue (SCHEMAREF_NAME_ATTRIBUTE, refSchema->GetName().c_str());
         
         wchar_t versionString[8];
-        swprintf(versionString, 8, L"%02d.%02d", refSchema->GetVersionMajor(), refSchema->GetVersionMinor());
+        BeStringUtilities::Snwprintf(versionString, 8, L"%02d.%02d", refSchema->GetVersionMajor(), refSchema->GetVersionMinor());
         schemaReferenceNode->AddAttributeStringValue (SCHEMAREF_VERSION_ATTRIBUTE, versionString);
 
         const WString prefix = mapPair.second;
@@ -1396,10 +1441,8 @@ BentleyStatus LogXmlLoadError (BeXmlDomP xmlDom)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void AddFilePathToSchemaPaths  (ECSchemaReadContextR schemaContext, WCharCP ecSchemaXmlFile)
     {
-    WString dev, dir;
-    BeFileName::ParseName (&dev, &dir, NULL, NULL, ecSchemaXmlFile);
-    WString pathToThisSchema = dev + WCSDIR_DEV_SEPARATOR_CHAR + dir;
-    schemaContext.AddSchemaPath(pathToThisSchema.c_str());
+    BeFileName pathToThisSchema (BeFileName::DevAndDir, ecSchemaXmlFile);
+    schemaContext.AddSchemaPath(pathToThisSchema);
     }
 
 /*---------------------------------------------------------------------------------**//**

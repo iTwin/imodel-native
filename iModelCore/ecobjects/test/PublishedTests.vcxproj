@@ -64,6 +64,7 @@
     <ClCompile Include="ECObjectsTestPCH.cpp" />
     <ClCompile Include="Published\BuildInstanceAndSerializeToXML.cpp" />
     <ClCompile Include="Published\CustomAttributeTests.cpp" />
+    <ClCompile Include="Published\ECRelationshipTests.cpp" />
     <ClCompile Include="Published\InstanceXMLTests.cpp" />
     <ClCompile Include="Published\MacroTests.cpp" />
     <ClCompile Include="Published\MemoryLayoutTests.cpp" />
