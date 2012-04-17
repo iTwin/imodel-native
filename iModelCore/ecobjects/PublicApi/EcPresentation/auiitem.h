@@ -14,7 +14,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 A Uiitem is an instance of the BE Display Schema. 
 * @bsiclass                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct IAUIItem : public RefCountedBase
+struct IAUIItem : public RefCountedBase // Content Service Element
     {
     protected:
         
@@ -22,10 +22,6 @@ struct IAUIItem : public RefCountedBase
         virtual IAUIDataContextCP   _GetDataInstance() const = 0;
 
     public:
-        enum ItemType
-            {
-            MenuItem,
-            };
 
         //! Get the parent instance associated with this instance.
         ECOBJECTS_EXPORT IAUIItemCP        GetParent () const;
@@ -46,30 +42,20 @@ struct IAUIItem : public RefCountedBase
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <typename PlatformImplType>
-struct UIItem: public IAUIItem
+struct  IAUIItemInfo // View
     {
-    private:
-    PlatformImplType*   m_implType;
+    enum ItemType
+        {
+        MenuItem,
+        DataGrid,
+        TreeView,
+        ListView,
+        Panel,
+        DgnViewPort,
+        };
+    ItemType  m_itemType;
 
-    protected:
-        virtual IAUIItemCP          _GetParent () const override {return m_implType->GetParent();}
-        virtual IAUIDataContextCP   _GetDataInstance() const override {return m_implType->GetDataInstance();}
-
-    public:
-        UIItem (PlatformImplType& impl)
-            :m_implType(&impl)
-            {}
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct  IAUIItemInfo
-    {
-    IAUIItem::ItemType  m_itemType;
-
-    IAUIItemInfo (IAUIItem::ItemType itemType)
+    IAUIItemInfo (ItemType itemType)
         :m_itemType (itemType)
         {}
 
@@ -78,7 +64,7 @@ struct  IAUIItemInfo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct  IAUIDataContext
+struct  IAUIDataContext // Query
     {
     enum ContextType
         {
