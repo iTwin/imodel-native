@@ -1043,12 +1043,12 @@ WString    ECValue::ToString () const
                 }
             case PRIMITIVETYPE_Long:
                 {
-                str.Sprintf (L"ld", GetLong());
+                str.Sprintf (L"%ld", GetLong());
                 break;
                 }            
             case PRIMITIVETYPE_Double:
                 {
-                str.Sprintf (L"lf", GetDouble());
+                str.Sprintf (L"%lf", GetDouble());
                 break;
                 }            
             case PRIMITIVETYPE_String:
