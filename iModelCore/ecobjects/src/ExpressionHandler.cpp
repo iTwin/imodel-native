@@ -895,7 +895,7 @@ NodePtr         ECEvaluator::ParsePrimary
                 {
                 Int64     value;
                 
-                swscanf(m_lexer->GetTokenStringCP (), L"%lld", &value);
+                BeStringUtilities::Swscanf(m_lexer->GetTokenStringCP (), L"%lld", &value);
 
                 if (value >= INT_MIN && value <= INT_MAX)
                     {
@@ -912,7 +912,7 @@ NodePtr         ECEvaluator::ParsePrimary
             case TOKEN_FloatConst:
                 {
                 double d;
-                swscanf(m_lexer->GetTokenStringCP (), L"%lg", &d);
+                BeStringUtilities::Swscanf(m_lexer->GetTokenStringCP (), L"%lg", &d);
                 result = Node::CreateFloatLiteral (d);
                 m_lexer->Advance ();
                 }

@@ -83,8 +83,6 @@ $(o)DesignByContract$(oext)        : $(baseDir)DesignByContract.cpp $(ecobjectsP
 
 $(o)Logger$(oext)          : $(baseDir)Logger.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)FileUtilities$(oext)   : $(baseDir)nonport/FileUtilities.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
-
 $(o)BeXmlCGReader$(oext)         : $(baseDir)BeXmlCGReader.cpp $(ecobjectsPublicAPISrc)BeXmlCommonGeometry.h ${MultiCompileDepends} 
 
 $(o)BeXmlCGWriter$(oext)         : $(baseDir)BeXmlCGWriter.cpp $(ecobjectsPublicAPISrc)BeXmlCommonGeometry.h ${MultiCompileDepends} 
@@ -104,6 +102,13 @@ $(o)auiprovider$(oext)      : $(baseDir)presentation/auiprovider.cpp $(ECPresent
 cppObjects=%$(MultiCompileObjectList)
 CCPchOpts =
 CPchOpts =
+
+#----------------------------------------------------------------------
+#   Non-portable code - cannot use PCH
+#----------------------------------------------------------------------
+$(o)FileUtilities$(oext)   : $(baseDir)nonport/FileUtilities.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+
+cppObjects +$(o)FileUtilities$(oext)
 
 #----------------------------------------------------------------------
 #   dependencies of the subsystem.

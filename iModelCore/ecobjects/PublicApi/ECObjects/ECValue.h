@@ -210,7 +210,7 @@ public:
     ECOBJECTS_EXPORT BentleyStatus  SetStruct (IECInstanceP structInstance);
         
     ECOBJECTS_EXPORT SystemTime     GetDateTime() const;
-    ECOBJECTS_EXPORT BentleyStatus  SetDateTime (SystemTime& systemTime); 
+    ECOBJECTS_EXPORT BentleyStatus  SetDateTime (SystemTime const& systemTime); 
 
     ECOBJECTS_EXPORT Int64          GetDateTimeTicks() const;
     ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 value);

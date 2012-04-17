@@ -8,8 +8,6 @@
 
 #include "ECObjectsPch.h"
 
-#include <Bentley/CatchNonPortable.h>
-
 BEGIN_BENTLEY_EC_NAMESPACE
 // If primitve has a child curve vector, just extract it.
 // Otherwise put the primitive in a new curve vector.
