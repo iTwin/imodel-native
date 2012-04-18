@@ -333,7 +333,7 @@ ECClassCR classDefinition
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeXmlNodeR containerNode, ECSchemaReadContextR schemaContext)
+InstanceReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeXmlNodeR containerNode, ECSchemaReadContextR schemaContext, ECSchemaCR fallBackSchema)
     {
     InstanceReadStatus status = INSTANCE_READ_STATUS_Success;
 
@@ -344,7 +344,8 @@ InstanceReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeXmlNodeR
         {
         for (BeXmlNodeP customAttributeClassNode = customAttributeNode->GetFirstChild(); NULL != customAttributeClassNode; customAttributeClassNode = customAttributeClassNode->GetNextSibling())
             {
-            ECInstanceReadContextPtr context = ECInstanceReadContext::CreateContext (schemaContext, NULL);
+            
+            ECInstanceReadContextPtr context = ECInstanceReadContext::CreateContext (schemaContext, fallBackSchema, NULL);
 
             IECInstancePtr  customAttributeInstance;
             WString         customAttributeXmlString;

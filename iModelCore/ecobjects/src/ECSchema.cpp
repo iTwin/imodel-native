@@ -1229,7 +1229,7 @@ SchemaReadStatus ECSchema::ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, UI
     ECObjectsLogger::Log()->tracev(L"Reading class contents for %ls took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingClassContents.GetElapsedSeconds());
 
     StopWatch readingCustomAttributes(L"Reading custom attributes", true);
-    schemaOut->ReadCustomAttributes(*schemaNode, schemaContext);
+    schemaOut->ReadCustomAttributes(*schemaNode, schemaContext, *schemaOut);
     readingCustomAttributes.Stop();
     ECObjectsLogger::Log()->tracev(L"Reading custom attributes for %ls took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingCustomAttributes.GetElapsedSeconds());
 

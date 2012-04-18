@@ -258,7 +258,7 @@ struct ECSchemaBackedInstanceReadContext: public ECInstanceReadContext
     SchemaKey                           m_key;
     public:
     ECSchemaBackedInstanceReadContext(ECSchemaCR schema, IStandaloneEnablerLocaterP standaloneEnablerLocater)
-        :m_schema(schema), ECInstanceReadContext(standaloneEnablerLocater), m_key(schema.GetSchemaKey())
+        :m_schema(schema), ECInstanceReadContext(standaloneEnablerLocater, schema), m_key(schema.GetSchemaKey())
         {
         }
     
@@ -266,7 +266,6 @@ struct ECSchemaBackedInstanceReadContext: public ECInstanceReadContext
         {
         return key.Matches(m_key, matchType) ? &m_schema : NULL;
         }
-
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -286,8 +285,8 @@ struct ECSchemaReadContextBackedInstanceReadContext: public ECInstanceReadContex
     ECSchemaReadContextR    m_schemaReadContext;
     ECSchemaPtr*            m_foundSchema;
     public:
-    ECSchemaReadContextBackedInstanceReadContext(ECSchemaReadContextR schemaReadContext,  ECSchemaPtr* foundSchema)
-        :m_schemaReadContext(schemaReadContext), m_foundSchema (foundSchema), ECInstanceReadContext(schemaReadContext.GetStandaloneEnablerLocater())
+    ECSchemaReadContextBackedInstanceReadContext(ECSchemaReadContextR schemaReadContext,  ECSchemaCR fallBackSchema, ECSchemaPtr* foundSchema)
+        :m_schemaReadContext(schemaReadContext), m_foundSchema (foundSchema), ECInstanceReadContext(schemaReadContext.GetStandaloneEnablerLocater(), fallBackSchema)
         {
         }
     
@@ -311,9 +310,9 @@ struct ECSchemaReadContextBackedInstanceReadContext: public ECInstanceReadContex
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceReadContextPtr ECInstanceReadContext::CreateContext (ECSchemaReadContextR context, ECSchemaPtr* foundSchema)
+ECInstanceReadContextPtr ECInstanceReadContext::CreateContext (ECSchemaReadContextR context, ECSchemaCR fallBackSchema, ECSchemaPtr* foundSchema)
     {
-    return new ECSchemaReadContextBackedInstanceReadContext (context, foundSchema);
+    return new ECSchemaReadContextBackedInstanceReadContext (context, fallBackSchema, foundSchema);
     }
 
 /*---------------------------------------------------------------------------------**//**

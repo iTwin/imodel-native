@@ -913,7 +913,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
         }
 
     // Add Custom Attributes
-    ReadCustomAttributes (classNode, context);
+    ReadCustomAttributes (classNode, context, GetSchema());
 
     return SCHEMA_READ_STATUS_Success;
     }
@@ -1360,7 +1360,7 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
         }
 
     // Add Custom Attributes
-    ReadCustomAttributes (constraintNode, schemaContext);
+    ReadCustomAttributes (constraintNode, schemaContext, m_relClass->GetSchema());
 
     return status;
     }

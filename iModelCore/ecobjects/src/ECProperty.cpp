@@ -279,7 +279,7 @@ SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadCont
     ECObjectsStatus setterStatus;
     READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (propertyNode, READONLY_ATTRIBUTE,            this, IsReadOnly)
 
-    ReadCustomAttributes (propertyNode, context);
+    ReadCustomAttributes (propertyNode, context, GetClass().GetSchema());
     return SCHEMA_READ_STATUS_Success;
     }
 

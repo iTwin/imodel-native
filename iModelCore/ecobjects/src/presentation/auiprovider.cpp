@@ -15,10 +15,10 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IAUIItemPtr     IAUIProvider::GetUIItem (IAUIItemInfoCR itemInfo, IAUIDataContextCP instanceData)
-    {
-    return _GetUIItem(itemInfo, instanceData);
-    }
+//IAUIItemPtr     IAUIProvider::GetUIItem (IAUIItemInfoCR itemInfo, IAUIDataContextCP instanceData)
+//    {
+//    return _GetUIItem(itemInfo, instanceData);
+//    }
 
 
 /*---------------------------------------------------------------------------------**//**

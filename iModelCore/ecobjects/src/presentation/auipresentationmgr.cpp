@@ -72,17 +72,17 @@ void            UIPresentationManager::RemoveProvider (IUICommandProviderCR prov
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IAUIItemPtr      UIPresentationManager::GetUIItem (IAUIItemInfoCR itemType, IAUIDataContextCP instanceData) const
-    {
-    for (T_DisplayProviderSet::const_iterator iter = m_displayProviders.begin(); iter != m_displayProviders.end(); ++iter)
-        {
-        IAUIItemPtr item  = (*iter)->GetUIItem (itemType, instanceData);
-        if (item.IsValid())
-            return item;
-        }
-
-    return NULL;
-    }
+//IAUIItemPtr      UIPresentationManager::GetUIItem (IAUIItemInfoCR itemType, IAUIDataContextCP instanceData) const
+//    {
+//    for (T_DisplayProviderSet::const_iterator iter = m_displayProviders.begin(); iter != m_displayProviders.end(); ++iter)
+//        {
+//        IAUIItemPtr item  = (*iter)->GetUIItem (itemType, instanceData);
+//        if (item.IsValid())
+//            return item;
+//        }
+//
+//    return NULL;
+//    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012

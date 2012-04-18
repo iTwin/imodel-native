@@ -3091,6 +3091,10 @@ InstanceWriteStatus     IECInstance::WriteToXmlStream (IStreamP stream, bool isC
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCP ECInstanceReadContext::FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType) const
     {
-    return _FindSchemaCP(key, matchType);
+    ECSchemaCP schema = _FindSchemaCP(key, matchType);
+    if (NULL != schema)
+        return schema;
+
+    return &m_fallBackSchema;
     }
 END_BENTLEY_EC_NAMESPACE

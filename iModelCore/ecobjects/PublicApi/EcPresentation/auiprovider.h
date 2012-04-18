@@ -23,4 +23,11 @@ struct          IAUIProvider
         ECOBJECTS_EXPORT    WCharCP GetProviderName () const;
     };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct          IAUIContentServiceProvider
+    {
+
+    };
 END_BENTLEY_EC_NAMESPACE
