@@ -25,9 +25,9 @@ struct  IJournalProvider
 struct  UIPresentationManager: public NonCopyableClass
     {
     private:
-        typedef bset<IUICommandProviderCP>  T_CmdProviderSet;
-        typedef bset<IAUIProviderP>         T_DisplayProviderSet;
-        typedef bset<IJournalProviderP>     T_JournalProviderSet;
+        typedef bset<IUICommandProviderCP>          T_CmdProviderSet;
+        typedef bset<IECViewDefinitionProviderP>    T_DisplayProviderSet;
+        typedef bset<IJournalProviderP>             T_JournalProviderSet;
 
         T_CmdProviderSet        m_cmdProviders;
         T_DisplayProviderSet    m_displayProviders;
@@ -45,10 +45,10 @@ struct  UIPresentationManager: public NonCopyableClass
     ECOBJECTS_EXPORT void                           AddProvider (IUICommandProviderCR provider);
     ECOBJECTS_EXPORT void                           RemoveProvider (IUICommandProviderCR provider);
     
-    ECOBJECTS_EXPORT void                           AddProvider (IAUIProviderR provider);
-    ECOBJECTS_EXPORT void                           RemoveProvider (IAUIProviderR provider);
+    ECOBJECTS_EXPORT void                           AddProvider (IECViewDefinitionProviderR provider);
+    ECOBJECTS_EXPORT void                           RemoveProvider (IECViewDefinitionProviderR provider);
 
-    ECOBJECTS_EXPORT IAUIItemPtr                    GetUIItem (IAUIItemInfoCR itemInfo, IAUIDataContextCP instanceData) const;
+    ECOBJECTS_EXPORT IECViewDefinitionPtr           GetViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCP instanceData) const;
 
     ECOBJECTS_EXPORT UICommandPtr                   GetCommand (IAUIDataContextCR instance) const;
 

@@ -53,8 +53,12 @@ struct  IAUIItemInfo // View
         Panel,
         DgnViewPort,
         };
-    ItemType  m_itemType;
+    
+    private:
+        
+        ItemType  m_itemType;
 
+    public:
     IAUIItemInfo (ItemType itemType)
         :m_itemType (itemType)
         {}

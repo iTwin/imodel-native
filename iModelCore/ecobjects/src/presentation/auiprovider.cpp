@@ -19,3 +19,21 @@ IAUIItemPtr     IAUIProvider::GetUIItem (IAUIItemInfoCR itemInfo, IAUIDataContex
     {
     return _GetUIItem(itemInfo, instanceData);
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt16          IAUIProvider::GetProviderId () const
+    {
+    return _GetProviderId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP         IAUIProvider::GetProviderName () const
+    {
+    return _GetProviderName();
+    }
+

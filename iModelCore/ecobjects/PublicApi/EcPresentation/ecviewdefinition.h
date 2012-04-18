@@ -34,5 +34,19 @@ struct          IECViewDefinition : public RefCountedBase
 
     };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct          IECViewDefinitionProvider : public IAUIProvider
+    {
+    protected:
+        virtual             IECViewDefinitionPtr _GetViewDefinition () = 0;
+
+    public:
+
+        ECOBJECTS_EXPORT    IECViewDefinitionPtr GetViewDefinition ();
+
+    };
+
 
 END_BENTLEY_EC_NAMESPACE

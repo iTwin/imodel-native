@@ -21,6 +21,7 @@ EC_TYPEDEFS (IUICommandProvider);
 EC_TYPEDEFS (IJournalProvider);
 EC_TYPEDEFS (UIPresentationManager);
 EC_TYPEDEFS (IECViewDefinition);
+EC_TYPEDEFS (IECViewDefinitionProvider)
 
 namespace Bentley { namespace DgnPlatform {
     struct ECQuery;

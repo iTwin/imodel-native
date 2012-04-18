@@ -39,7 +39,7 @@ void            UIPresentationManager::RemoveProvider (IJournalProviderR provide
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            UIPresentationManager::AddProvider (IAUIProviderR provider)
+void            UIPresentationManager::AddProvider (IECViewDefinitionProviderR provider)
     {
     m_displayProviders.insert(&provider);
     }
@@ -47,7 +47,7 @@ void            UIPresentationManager::AddProvider (IAUIProviderR provider)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            UIPresentationManager::RemoveProvider (IAUIProviderR provider)
+void            UIPresentationManager::RemoveProvider (IECViewDefinitionProviderR provider)
     {
     m_displayProviders.erase(&provider);
     }
