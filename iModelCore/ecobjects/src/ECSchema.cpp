@@ -926,7 +926,7 @@ SchemaReadStatus ECSchema::ReadSchemaReferencesFromXml (BeXmlNodeR schemaNode, E
         if (IsOpenPlantPidCircularReferenceSpecialCase(key.m_schemaName))
             continue;
 
-        ECObjectsLogger::Log()->debugv (L"About to locate referenced ECSchema %s", key.GetNameString().c_str());
+        ECObjectsLogger::Log()->debugv (L"About to locate referenced ECSchema %s", key.GetFullSchemaName().c_str());
         
         ECSchemaPtr referencedSchema = LocateSchema (key, schemaContext);
 
@@ -938,7 +938,7 @@ SchemaReadStatus ECSchema::ReadSchemaReferencesFromXml (BeXmlNodeR schemaNode, E
             }
         else
             {
-            ECObjectsLogger::Log()->errorv(L"Unable to locate referenced schema %s", key.GetNameString().c_str());
+            ECObjectsLogger::Log()->errorv(L"Unable to locate referenced schema %s", key.GetFullSchemaName().c_str());
             return SCHEMA_READ_STATUS_ReferencedSchemaNotFound;
             }
         }
@@ -1062,7 +1062,7 @@ bvector<WString>&               searchPaths
                 0 == foundKey.m_schemaName.CompareTo(key.m_schemaName) && foundKey.m_versionMajor == key.m_versionMajor)
                 {
                 ECObjectsLogger::Log()->warningv (L"Located %s, which does not meet 'latest compatible' criteria to match %s, but is being accepted because some legacy schemas are known to require this", 
-                                                  fullFileName.c_str(), key.GetNameString());
+                                                  fullFileName.c_str(), key.GetFullSchemaName());
                 // See if this imperfect match ECSchema has is already cached (so we can avoid loading it, below)
             
                 //We found a different key;
@@ -1646,7 +1646,7 @@ ECSchemaReadContextR schemaContext
     else
         {
         ECObjectsLogger::Log()->infov (L"Native ECSchema read from string: schemaName='%s' classCount='%d' schemaAddress='0x%x' stringAddress='0x%x'", 
-            schemaOut->GetSchemaKey().GetNameString().c_str(), schemaOut->m_classMap.size(), schemaOut.get(), ecSchemaXml);
+            schemaOut->GetSchemaKey().GetFullSchemaName().c_str(), schemaOut->m_classMap.size(), schemaOut.get(), ecSchemaXml);
         }
     return status;
     }
@@ -2094,11 +2094,11 @@ bool            ECSchema::AddingSchemaCausedCycles () const
             WString cycleString;
             for (SchemaGraph::NodeVector::const_iterator cycleIter = iter->begin(); cycleIter != iter->end(); ++cycleIter)
                 {
-                cycleString.append((*cycleIter)->m_node->m_key.GetNameString());
+                cycleString.append((*cycleIter)->m_node->m_key.GetFullSchemaName());
                 cycleString.append(L"-->");
                 }
-            cycleString.append( (*iter->begin())->m_node->m_key.GetNameString());
-            ECObjectsLogger::Log()->errorv (L"ECSchema '%s' contains cycles %s", m_key.GetNameString().c_str(), cycleString.c_str());
+            cycleString.append( (*iter->begin())->m_node->m_key.GetFullSchemaName());
+            ECObjectsLogger::Log()->errorv (L"ECSchema '%s' contains cycles %s", m_key.GetFullSchemaName().c_str(), cycleString.c_str());
             
             break;
             }
@@ -2110,7 +2110,7 @@ bool            ECSchema::AddingSchemaCausedCycles () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString         SchemaKey::GetNameString () const
+WString         SchemaKey::GetFullSchemaName () const
     {
     WChar schemaName[512] = {0};
     BeStringUtilities::Snwprintf(schemaName, L"%s.%02d.%02d", m_schemaName.c_str(), m_versionMajor, m_versionMinor);
