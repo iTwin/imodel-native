@@ -40,11 +40,14 @@ struct          IECViewDefinition : public RefCountedBase
 struct          IECViewDefinitionProvider : public IAUIProvider
     {
     protected:
-        virtual             IECViewDefinitionPtr _GetViewDefinition () = 0;
+        virtual             IECViewDefinitionPtr _GetViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR dataContext) = 0;
 
     public:
-
-        ECOBJECTS_EXPORT    IECViewDefinitionPtr GetViewDefinition ();
+        
+        //!Get the view definition associated with a particular data context.
+        //!@param[in] itemInfo      A hint to provide the context in which the view definition will be used. eg. MenuItem
+        //!@param[in] dataContext   The data context for which the view definition is requested.
+        ECOBJECTS_EXPORT    IECViewDefinitionPtr GetViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR dataContext);
 
     };
 

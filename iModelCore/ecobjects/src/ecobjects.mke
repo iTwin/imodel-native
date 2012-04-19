@@ -97,6 +97,11 @@ $(o)auiitem$(oext)           : $(baseDir)presentation/auiitem.cpp $(ECPresentati
 
 $(o)auiprovider$(oext)      : $(baseDir)presentation/auiprovider.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
 
+$(o)ecviewdefinition$(oext)      : $(baseDir)presentation/ecviewdefinition.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
+
+$(o)eccontentdefinition$(oext)      : $(baseDir)presentation/eccontentdefinition.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
+
+$(o)auijournal$(oext)      : $(baseDir)presentation/auijournal.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)

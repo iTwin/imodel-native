@@ -16,12 +16,16 @@ BEGIN_BENTLEY_EC_NAMESPACE
 struct IUICommand
     {
     protected:
-
+        
+        //!Execute the action that this command supports.
         virtual BentleyStatus   _ExecuteCmd(IAUIDataContextCP instance) const = 0;
 
+        //!Describe how you want to journal your command by calling methods on journal item
+        //! entry.
         virtual void            _Journal (IJournalItemR journalEntry) const = 0;
 
     public:
+        //!virtual destructor.
         virtual ~IUICommand ()
             {}
 
@@ -30,7 +34,7 @@ struct IUICommand
 typedef RefCountedPtr<UICommand> UICommandPtr;
 
 /*---------------------------------------------------------------------------------**//**
-//! A UIcommand represents 
+//! A UIcommand represents an action that can be applied on a data context. (Usually an ecinstnace)
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct UICommand : public IUICommand, public RefCountedBase
@@ -44,6 +48,8 @@ struct UICommand : public IUICommand, public RefCountedBase
     };
 
 /*---------------------------------------------------------------------------------**//**
+//! A provider that registers with the presentation manager to provide actions for specific 
+//! data contexts. The presentation manager providers a union.
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct IUICommandProvider

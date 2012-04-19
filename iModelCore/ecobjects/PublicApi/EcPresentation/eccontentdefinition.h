@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/EcPresentation/auiprovider.h $
+|     $Source: PublicApi/EcPresentation/eccontentdefinition.h $
 |
 |  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,21 +9,28 @@
 /*__BENTLEY_INTERNAL_ONLY__*/
 
 BEGIN_BENTLEY_EC_NAMESPACE
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct          IAUIProvider
+struct IECViewContentDefinition: public IAUIItem
+    {
+
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct          IAUIContentServiceProvider : public IAUIProvider
     {
     protected:
-        virtual UInt16          _GetProviderId(void) const = 0;
-        virtual WCharCP         _GetProviderName () const = 0;
         
-    public:
-        //! Get a unique identifier associated with this  UI Provider
-        ECOBJECTS_EXPORT    UInt16  GetProviderId () const;
+        virtual IECViewContentDefinitionPtr _GetContent (IECViewDefinitionCR viewDef) const = 0;
 
-        //! Get a unique name associated with this  UI Provider
-        ECOBJECTS_EXPORT    WCharCP GetProviderName () const;
+    public:
+
+        ECOBJECTS_EXPORT IECViewContentDefinitionPtr GetContent (IECViewDefinitionCR viewDef) const;
+
     };
 
 END_BENTLEY_EC_NAMESPACE

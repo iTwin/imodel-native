@@ -19,4 +19,22 @@ struct IJournalItem
 
     };
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct  IJournalProvider
+    {
+    protected:
+        virtual void    _JournalCmd (IUICommandCR cmd, IAUIDataContextCP instanceData) = 0;
+    
+    public:
+        
+        ECOBJECTS_EXPORT void    JournalCmd (IUICommandCR cmd, IAUIDataContextCP instanceData);
+        
+        virtual ~IJournalProvider() {}
+
+
+    };
+
 END_BENTLEY_EC_NAMESPACE

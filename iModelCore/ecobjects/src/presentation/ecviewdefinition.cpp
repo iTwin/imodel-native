@@ -30,7 +30,7 @@ IAUIDataContextP IECViewDefinition::GetDataContext()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChildDefinitions IECViewDefinition::GetChildDefinitions()
+IECViewDefinition::ChildDefinitions IECViewDefinition::GetChildDefinitions()
     {
     return _GetChildDefinitions();
     }
@@ -38,7 +38,7 @@ ChildDefinitions IECViewDefinition::GetChildDefinitions()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECViewDefinitionPtr    IECViewDefinitionProvider::GetViewDefinition ()
+IECViewDefinitionPtr    IECViewDefinitionProvider::GetViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR dataContext)
     {
-    return _GetViewDefinition();
+    return _GetViewDefinition(itemInfo, dataContext);
     }

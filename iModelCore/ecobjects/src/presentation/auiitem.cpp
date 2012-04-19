@@ -14,26 +14,21 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UICommandPtr    IAUIItem::GetCommand() const
+BentleyStatus   IAUIItem::ExecuteActions () const
     {
     IAUIDataContextCP instance = GetDataInstance();
     if (NULL == instance)
-        return NULL;
-
-    return UIPresentationManager::GetManager().GetCommand(*instance);
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   IAUIItem::ExecuteAction () const
-    {
-    UICommandPtr cmd = GetCommand();
-    if (cmd.IsNull())
         return ERROR;
+
+    bvector<UICommandPtr> cmds = UIPresentationManager::GetManager().GetCommands(*instance);
+    for (bvector<UICommandPtr>::const_iterator iter = cmds.begin(); iter != cmds.end(); ++iter)
+        {
+        BentleyStatus status = (*iter)->Execute (instance);
+        if (SUCCESS != status)
+            return status;
+        }
     
-    return cmd->Execute (GetDataInstance());
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -50,4 +45,12 @@ IAUIDataContextCP    IAUIItem::GetDataInstance() const
 IAUIItemCP      IAUIItem::GetParent () const
     {
     return _GetParent();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+IAUIItemInfoCR  IAUIItem::GetUIItemInfo () const
+    {
+    return _GetUIItemInfo ();
     }
