@@ -1177,6 +1177,12 @@ public:
     //! @return A status code indicating whether or not the class was successfully created and added to the schema
     ECOBJECTS_EXPORT ECObjectsStatus    CreateRelationshipClass (ECRelationshipClassP& relationshipClass, WStringCR name);
 
+    //! Removes a class from the schema
+    //! @param[in] ecClass  Class to be removed from the schema
+    //! @param[in] schemaCache Universe of schemas that could potentially reference the class
+    //! @return Error if the class is not part of the schema, or if it's referenced elsewhere.
+    ECOBJECTS_EXPORT ECObjectsStatus    RemoveClass (ECClassP &ecClass, ECSchemaCacheCR schemaCache);
+
     //! Get a schema by namespace prefix within the context of this schema and its referenced schemas.
     //! @param[in]  namespacePrefix     The prefix of the schema to lookup in the context of this schema and it's references.
     //!                                 Passing an empty namespacePrefix will return a pointer to the current schema.
@@ -1233,7 +1239,7 @@ public:
     //! @param[in]  utf16            'false' (the default) to use utf-8 encoding
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the file pointed
     //          to by ecSchemaXmlFile will contain the serialized schema.  Otherwise, the file will be unmodified
-    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlFile (WCharCP ecSchemaXmlFile, bool utf16 = false);
+    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlFile (WCharCP ecSchemaXmlFile, bool utf16 = false) const;
     
     
     //! Writes an ECXML schema to an IStream

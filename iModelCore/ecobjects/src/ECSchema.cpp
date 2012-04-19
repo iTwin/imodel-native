@@ -338,6 +338,33 @@ ECObjectsStatus ECSchema::AddClass (ECClassP& pClass)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::RemoveClass (ECClassP& ecClass, ECSchemaCacheCR schemaCache)
+    {
+    if (this != &ecClass->GetSchema())
+        {
+        ECObjectsLogger::Log()->warningv (L"Can not remove class '%ls' because it already exists in the schema", ecClass->GetName().c_str());
+        return ECOBJECTS_STATUS_Error;
+        }
+    
+    // TODO: Add error checks if the class is referenced elsewhere
+    // Gather a list of schemas to check for references including this one
+    //     Skip schemas that don't reference the supplied class's schema
+    // Check every schema for references to the supplied class
+    //     Check custom attribute instances that reference it. (if it's a custom attr class)
+    //     Check for any derived classes that reference it.
+    //     Check if there are relationships that reference it. 
+    //     Check if there are properties that use it as type.
+
+    ClassMap::iterator classIterator = m_classMap.find (ecClass->GetName().c_str());
+    m_classMap.erase(classIterator);
+    delete ecClass;
+    ecClass = NULL;
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::CreateClass (ECClassP& pClass, WStringCR name)
     {
     pClass = new ECClass(*this, m_hideFromLeakDetection);
@@ -1698,7 +1725,7 @@ SchemaWriteStatus ECSchema::WriteToXmlFile
 (
 WCharCP ecSchemaXmlFile,
 bool    utf16
-)
+) const
     {
     BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();        
 
