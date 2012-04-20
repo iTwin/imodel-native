@@ -1066,7 +1066,7 @@ struct SchemaKey
         return LessThan (rhs, SCHEMAMATCHTYPE_Identical);
         }
 /*__PUBLISH_SECTION_END__*/
-    ECOBJECTS_EXPORT WString GetNameString() const; // Rename to Full schema name
+    ECOBJECTS_EXPORT WString GetFullSchemaName() const;
 /*__PUBLISH_SECTION_START__*/
     };
 
