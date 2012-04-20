@@ -94,7 +94,8 @@ public:
     //! Get the first propertyIndex (used in conjunction with GetNextPropertyIndex for efficiently looping over property values.)
     ECOBJECTS_EXPORT UInt32                     GetFirstPropertyIndex (UInt32 parentIndex) const;
     
-    //! Get the next (after inputIndex) propertyIndex (used in conjunction with GetNeGetFirstPropertyIndexxtPropertyIndex for efficiently looping over property values.)
+    //! Get the next (after inputIndex) propertyIndex (used in conjunction with GetFirstPropertyIndex for efficiently looping over property values.)
+    //! @return 0 if there are no more
     ECOBJECTS_EXPORT UInt32                     GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const;
 
     //! Return true if the property associated with parentIndex has child properties
