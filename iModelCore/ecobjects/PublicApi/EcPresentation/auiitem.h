@@ -94,18 +94,20 @@ struct  IAUIDataContext // Query
 //! A class which describes the data that is backed by a single ECInstance in the UI.
 * @bsiclass                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+template<typename InstanceType>
 struct  AUIInstanceDataContext : public IAUIDataContext
     {
     private:
-        IECInstancePtr m_instance;
+        RefCountedPtr<typename InstanceType> m_instancePtr;
         
     public:
-        AUIInstanceDataContext (IECInstanceR instance)
-            :m_instance(&instance)
+        AUIInstanceDataContext (InstanceType& instance)
+            :m_instancePtr(&instance)
             {}
         
         virtual ContextType GetContextType() const override {return IAUIDataContext::Instance;}
-        virtual IECInstanceP GetInstance () const override {return m_instance.get();}
+        virtual IECInstanceP    GetInstance () const override {return m_instancePtr.get();}
+        typename InstanceType*  GetDataInstnce () const {return m_instancePtr.get();}
     };
 
 END_BENTLEY_EC_NAMESPACE
