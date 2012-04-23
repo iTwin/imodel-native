@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECObjects.h $
 |
-|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -102,6 +102,8 @@ EC_TYPEDEFS(SystemTime);
 EC_TYPEDEFS(ICustomECStructSerializer);
 EC_TYPEDEFS(CustomStructSerializerManager);
 
+EC_TYPEDEFS(SupplementalSchemaMetaData);
+
 typedef struct IStream* IStreamP;
 
 BEGIN_BENTLEY_EC_NAMESPACE
@@ -116,6 +118,7 @@ typedef enum ECErrorCategories
     SCHEMA_WRITE_STATUS_BASE        = 0x33000,
     INSTANCE_READ_STATUS_BASE    = 0x34000,
     INSTANCE_WRITE_STATUS_BASE      = 0x35000,
+    SUPPLEMENTED_SCHEMA_STATUS_BASE = 0x36000,
     } ECErrorCategories;
 
 
@@ -237,6 +240,17 @@ enum InstanceWriteStatus
     INSTANCE_WRITE_STATUS_BadPrimitivePropertyType              = INSTANCE_WRITE_STATUS_BASE + 30,
     };
     
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                    Carole.MacDonald                04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+enum SupplementedSchemaStatus
+    {
+    SUPPLEMENTED_SCHEMA_STATUS_Success                          = 0,
+    SUPPLEMENTED_SCHEMA_STATUS_Metadata_Missing                 = SUPPLEMENTED_SCHEMA_STATUS_BASE + 1,
+    SUPPLEMENTED_SCHEMA_STATUS_Duplicate_Precedence_Error       = SUPPLEMENTED_SCHEMA_STATUS_BASE + 2,
+    SUPPLEMENTED_SCHEMA_STATUS_IECRelationship_Not_Allowed      = SUPPLEMENTED_SCHEMA_STATUS_BASE + 3,
+    };
+
 /*__PUBLISH_SECTION_END__*/
 /*---------------------------------------------------------------------------------**//**
  @bsiclass
