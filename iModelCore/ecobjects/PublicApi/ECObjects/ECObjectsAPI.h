@@ -62,7 +62,6 @@
 #include <ECObjects\ECEnabler.h>
 #include <ECObjects\ECInstance.h>
 #include <ECObjects\ECSchema.h>
-#include <ECObjects\SupplementalSchema.h>
 #include <ECObjects\ECContext.h>
 #include <ECObjects\ECValue.h>
 #include <ECObjects\MemoryInstanceSupport.h>
