@@ -11,7 +11,7 @@
 BEGIN_BENTLEY_EC_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
+* @bsiclass                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct IUICommand
     {
@@ -35,7 +35,7 @@ typedef RefCountedPtr<UICommand> UICommandPtr;
 
 /*---------------------------------------------------------------------------------**//**
 //! A UIcommand represents an action that can be applied on a data context. (Usually an ecinstnace)
-* @bsimethod                                    Abeesh.Basheer                  04/2012
+* @bsiclass                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct UICommand : public IUICommand, public RefCountedBase
     {
@@ -50,7 +50,7 @@ struct UICommand : public IUICommand, public RefCountedBase
 /*---------------------------------------------------------------------------------**//**
 //! A provider that registers with the presentation manager to provide actions for specific 
 //! data contexts. The presentation manager providers a union.
-* @bsimethod                                    Abeesh.Basheer                  04/2012
+* @bsiclass                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct IUICommandProvider
     {
