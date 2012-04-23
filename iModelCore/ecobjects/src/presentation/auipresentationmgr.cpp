@@ -76,9 +76,8 @@ bvector<UICommandPtr>    UIPresentationManager::GetCommands (IAUIDataContextCR i
     bvector<UICommandPtr> commands;
     for (T_CmdProviderSet::const_iterator iter = m_cmdProviders.begin(); iter != m_cmdProviders.end(); ++iter)
         {
-        UICommandPtr command = (*iter)->GetCommand(instance);
-        if (command.IsValid())
-            commands.push_back(command);
+        bvector<UICommandPtr> commandList = (*iter)->GetCommand(instance);
+        std::copy (commandList.begin(), commandList.end(), std::back_inserter(commands));
         }
 
     return commands;
@@ -101,17 +100,6 @@ class ProviderSingletonPattern : public NonCopyableClass
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct BaseCommandProvider : public IUICommandProvider, public ProviderSingletonPattern<BaseCommandProvider>
-    {
-    virtual UICommandPtr _GetCommand (IAUIDataContextCR instance) const override
-        {
-        return NULL;
-        }
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
 struct LoggingJournalProvider : public IJournalProvider, public ProviderSingletonPattern<LoggingJournalProvider>
     {
     virtual void    _JournalCmd (IUICommandCR cmd, IAUIDataContextCP instanceData) override
@@ -125,8 +113,6 @@ struct LoggingJournalProvider : public IJournalProvider, public ProviderSingleto
 +---------------+---------------+---------------+---------------+---------------+------*/
 UIPresentationManager::UIPresentationManager ()
     {
-    //AddProvider (BaseDisplayProvider::GetProvider());
-    AddProvider (BaseCommandProvider::GetProvider());
     AddProvider (LoggingJournalProvider::GetProvider());
     }
 

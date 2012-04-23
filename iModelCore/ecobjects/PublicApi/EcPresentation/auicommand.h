@@ -55,13 +55,13 @@ struct UICommand : public IUICommand, public RefCountedBase
 struct IUICommandProvider
     {
     protected:
-        virtual UICommandPtr _GetCommand (IAUIDataContextCR instance) const = 0;
+        virtual bvector<UICommandPtr> _GetCommand (IAUIDataContextCR instance) const = 0;
     
     public:
 
         virtual ~IUICommandProvider() {}
 
-        ECOBJECTS_EXPORT UICommandPtr GetCommand (IAUIDataContextCR instance) const;
+        ECOBJECTS_EXPORT bvector<UICommandPtr> GetCommand (IAUIDataContextCR instance) const;
     };
 
 
