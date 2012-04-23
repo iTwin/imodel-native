@@ -98,7 +98,7 @@ template<typename InstanceType>
 struct  AUIInstanceDataContext : public IAUIDataContext
     {
     private:
-        RefCountedPtr<typename InstanceType> m_instancePtr;
+        RefCountedPtr<InstanceType> m_instancePtr;
         
     public:
         AUIInstanceDataContext (InstanceType& instance)
@@ -107,7 +107,7 @@ struct  AUIInstanceDataContext : public IAUIDataContext
         
         virtual ContextType GetContextType() const override {return IAUIDataContext::Instance;}
         virtual IECInstanceP    GetInstance () const override {return m_instancePtr.get();}
-        typename InstanceType*  GetDataInstnce () const {return m_instancePtr.get();}
+        InstanceType*  GetDataInstnce () const {return m_instancePtr.get();}
     };
 
 END_BENTLEY_EC_NAMESPACE

@@ -8,7 +8,7 @@
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
 
-#include <ECObjects/ECObjects.h>
+#include <ECObjects/ECObjectsAPI.h>
 
 EC_TYPEDEFS (IAUIItem);
 EC_TYPEDEFS (IAUIItemInfo);
