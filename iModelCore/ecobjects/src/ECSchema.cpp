@@ -42,10 +42,8 @@ ECSchema::ECSchema (bool hideFromLeakDetection)
 ECSchema::~ECSchema ()
     {
     // NEEDSWORK make sure everything is destroyed
-    ECObjectsLogger::Log()->debugv (L"~~~~ Destroying ECSchema: %s", GetName().c_str());
     ClassMap::iterator          classIterator = m_classMap.begin();
     ClassMap::const_iterator    classEnd = m_classMap.end();        
-    ECObjectsLogger::Log()->debugv(L"     Freeing memory for %d classes", m_classMap.size());
     while (classIterator != classEnd)
         {
         ECClassP ecClass = classIterator->second;

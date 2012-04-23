@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECEnabler.cpp $
 |
-|   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -21,7 +21,6 @@ ECEnabler::ECEnabler(ECClassCR ecClass, IStandaloneEnablerLocaterP structStandal
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECEnabler::~ECEnabler() 
     {
-    ECObjectsLogger::Log()->tracev (L"%S at 0x%x is being destructed.", typeid(*this).name(), this);
     }
 
 /*---------------------------------------------------------------------------------**//**

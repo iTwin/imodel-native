@@ -38,9 +38,6 @@ ECClass::ECClass (ECSchemaCR schema, bool hideFromLeakDetection)
 ECClass::~ECClass ()
     {
     // NEEDSWORK make sure everything is destroyed
-    ECObjectsLogger::Log()->tracev (L"~~~~ Destroying ECClass %s", this->GetName().c_str());
-    ECObjectsLogger::Log()->tracev  (L"     Freeing memory for %d properties", m_propertyMap.size());
-    
     m_propertyList.clear();
     
     for (PropertyMap::iterator entry=m_propertyMap.begin(); entry != m_propertyMap.end(); ++entry)
