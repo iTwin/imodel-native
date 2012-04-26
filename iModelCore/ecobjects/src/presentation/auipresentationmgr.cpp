@@ -55,6 +55,22 @@ void            UIPresentationManager::RemoveProvider (IECViewDefinitionProvider
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+void            UIPresentationManager::AddProvider (IAUIContentServiceProviderR provider)
+    {
+    m_contentProviders.insert(&provider);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            UIPresentationManager::RemoveProvider (IAUIContentServiceProviderR provider)
+    {
+    m_contentProviders.erase(&provider);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 void            UIPresentationManager::AddProvider (IUICommandProviderCR provider)
     {
     m_cmdProviders.insert(&provider);
@@ -131,6 +147,9 @@ void            UIPresentationManager::JournalCmd (IUICommandCR cmd, IAUIDataCon
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECViewDefinitionPtr    UIPresentationManager::GetViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR instanceData) const
     {
+    if (itemInfo.IsAggregatable())
+        return AggregateViewDefinition (itemInfo, instanceData);
+
     for (T_ViewProviderSet::const_iterator iter = m_viewProviders.begin(); iter != m_viewProviders.end(); ++iter)
         {
         IECViewDefinitionPtr viewDef = (*iter)->GetViewDefinition(itemInfo, instanceData);
@@ -139,4 +158,43 @@ IECViewDefinitionPtr    UIPresentationManager::GetViewDefinition (IAUIItemInfoCR
         }
 
     return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+IECContentDefinitionPtr UIPresentationManager::GetContentDefinition (IECViewDefinitionCR viewDef) const
+    {
+    for (T_ContentProviderSet::const_iterator iter = m_contentProviders.begin(); iter != m_contentProviders.end(); ++iter)
+        {
+        IECContentDefinitionPtr contentDef = (*iter)->GetContent(viewDef);
+        if (contentDef.IsValid())
+            return contentDef;
+        }
+
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+IECViewDefinitionPtr UIPresentationManager::AggregateViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR instanceData) const
+    {
+    if (!itemInfo.IsAggregatable())
+        {
+        BeAssert(false);
+        return NULL;
+        }
+
+    bvector<IECViewDefinitionPtr> viewDefs;
+    for (T_ViewProviderSet::const_iterator iter = m_viewProviders.begin(); iter != m_viewProviders.end(); ++iter)
+        {
+        IECViewDefinitionPtr viewDef = (*iter)->GetViewDefinition(itemInfo, instanceData);
+        if (viewDef.IsNull())
+            continue;
+
+        viewDefs.push_back(viewDef);
+        }
+
+    return IECViewDefinition::CreateCompositeViewDef(viewDefs);
     }

@@ -54,3 +54,34 @@ IAUIItemInfoCR  IAUIItem::GetUIItemInfo () const
     {
     return _GetUIItemInfo ();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+IAUIItemInfo::ItemType  IAUIItemInfo::GetItemType() const
+    {
+    return m_itemType;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            IAUIItemInfo::IsAggregatable () const
+    {
+    return _IsAggregatable();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            IAUIItemInfo::_IsAggregatable () const
+    {
+    switch (GetItemType())
+        {
+        case Menu:
+        case ToolBar:
+            return true;
+        default:
+            return false;
+        }
+    }

@@ -32,6 +32,7 @@ struct          IECViewDefinition : public RefCountedBase
         //Get the child view definitions if there any. Its used by composite controls.
         ECOBJECTS_EXPORT ChildDefinitions GetChildDefinitions();
 
+        static IECViewDefinitionPtr CreateCompositeViewDef (bvector<IECViewDefinitionPtr> const& viewDefs);
     };
 
 /*---------------------------------------------------------------------------------**//**

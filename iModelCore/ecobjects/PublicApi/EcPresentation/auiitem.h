@@ -44,7 +44,8 @@ struct  IAUIItemInfo
     //! Describes the primitive UI type an item info represents.
     enum ItemType
         {
-        MenuItem,
+        Menu,
+        ToolBar,
         DataGrid,
         TreeView,
         ListView,
@@ -55,11 +56,17 @@ struct  IAUIItemInfo
     private:
         ItemType  m_itemType;
 
+    protected:
+        virtual bool    _IsAggregatable () const;
+
     public:
     //Constructor that initializes an item from a primitive type.
     IAUIItemInfo (ItemType itemType)
         :m_itemType (itemType)
         {}
+
+    ECOBJECTS_EXPORT bool IsAggregatable() const;
+    ECOBJECTS_EXPORT ItemType GetItemType () const;
 
     };
 

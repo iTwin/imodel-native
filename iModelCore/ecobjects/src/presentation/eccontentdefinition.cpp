@@ -14,7 +14,7 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECViewContentDefinitionPtr     IAUIContentServiceProvider::GetContent (IECViewDefinitionCR viewDef) const
+IECContentDefinitionPtr     IAUIContentServiceProvider::GetContent (IECViewDefinitionCR viewDef) const
     {
     return _GetContent(viewDef);
     }

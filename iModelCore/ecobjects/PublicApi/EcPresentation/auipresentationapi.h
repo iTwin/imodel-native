@@ -22,7 +22,7 @@ EC_TYPEDEFS (IJournalProvider);
 EC_TYPEDEFS (UIPresentationManager);
 EC_TYPEDEFS (IECViewDefinition);
 EC_TYPEDEFS (IECViewDefinitionProvider);
-EC_TYPEDEFS (IECViewContentDefinition);
+EC_TYPEDEFS (IECContentDefinition);
 EC_TYPEDEFS (IAUIContentServiceProvider);
 
 namespace Bentley { namespace DgnPlatform {
@@ -33,7 +33,7 @@ namespace Bentley { namespace DgnPlatform {
 BEGIN_BENTLEY_EC_NAMESPACE
 typedef RefCountedPtr<IAUIItem>                 IAUIItemPtr;
 typedef RefCountedPtr<IECViewDefinition>        IECViewDefinitionPtr;
-typedef RefCountedPtr<IECViewContentDefinition> IECViewContentDefinitionPtr;
+typedef RefCountedPtr<IECContentDefinition> IECContentDefinitionPtr;
 END_BENTLEY_EC_NAMESPACE
 
 #include <EcPresentation/auicommand.h>

@@ -13,7 +13,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct IECViewContentDefinition: public IAUIItem
+struct IECContentDefinition: public IAUIItem
     {
 
     };
@@ -25,11 +25,11 @@ struct          IAUIContentServiceProvider : public IAUIProvider
     {
     protected:
         
-        virtual IECViewContentDefinitionPtr _GetContent (IECViewDefinitionCR viewDef) const = 0;
+        virtual IECContentDefinitionPtr _GetContent (IECViewDefinitionCR viewDef) const = 0;
 
     public:
 
-        ECOBJECTS_EXPORT IECViewContentDefinitionPtr GetContent (IECViewDefinitionCR viewDef) const;
+        ECOBJECTS_EXPORT IECContentDefinitionPtr GetContent (IECViewDefinitionCR viewDef) const;
 
     };
 
