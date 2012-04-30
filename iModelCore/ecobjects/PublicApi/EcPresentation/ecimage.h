@@ -70,10 +70,13 @@ struct IECNativeImage : public RefCountedBase
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct  ECNativeImage :public IECNativeImage
     {
-    ECNativeImage (ECImageKeyCR key, NativeImageR image, DPoint2dCR imageSize)
+    private:
+        ECNativeImage (ECImageKeyCR key, NativeImageR image, DPoint2dCR imageSize)
         :IECNativeImage (key, image, imageSize)
         {}
     
+    public:
+
     static IECNativeImagePtr CreateNativeImage(ECImageKeyCR key, NativeImageR image, DPoint2d imageSize)
         {
         return new ECNativeImage(key, image, imageSize);
