@@ -1570,6 +1570,17 @@ static ECClassP getClassFromSchema (ECSchemaCR rootSchema, WCharCP className)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static ECClassP getPropertyFromClass (ECClassCR enablerClass, WCharCP propertyName)
     {
+    WCharCP dotPos = wcschr (propertyName, '.');
+    if (NULL != dotPos)
+        {
+        WString structName (propertyName, dotPos);
+        ECClassP structClass = getPropertyFromClass (enablerClass, structName.c_str());
+        if (NULL == structClass)
+            { BeAssert (false); return NULL; }
+
+        return getPropertyFromClass (*structClass, dotPos+1);
+        }
+
     ECPropertyP propertyP = enablerClass.GetPropertyP (propertyName);
     if (!propertyP)
         return NULL;
