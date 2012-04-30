@@ -57,7 +57,7 @@ struct  IAUIItemInfo
         ItemType  m_itemType;
 
     protected:
-        virtual bool    _IsAggregatable () const;
+        ECOBJECTS_EXPORT virtual bool    _IsAggregatable () const;
 
     public:
     //Constructor that initializes an item from a primitive type.

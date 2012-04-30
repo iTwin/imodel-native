@@ -14,16 +14,16 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UIPresentationManagerR   UIPresentationManager::GetManager()
+ECPresentationManagerR   ECPresentationManager::GetManager()
     {
-    static UIPresentationManagerP mgr = new UIPresentationManager();
+    static ECPresentationManagerP mgr = new ECPresentationManager();
     return *mgr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            UIPresentationManager::AddProvider (IJournalProviderR provider)
+void            ECPresentationManager::AddProvider (IJournalProviderR provider)
     {
     m_journalProviders.insert(&provider);
     }
@@ -31,7 +31,7 @@ void            UIPresentationManager::AddProvider (IJournalProviderR provider)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            UIPresentationManager::RemoveProvider (IJournalProviderR provider)
+void            ECPresentationManager::RemoveProvider (IJournalProviderR provider)
     {
     m_journalProviders.erase(&provider);
     }
@@ -39,7 +39,7 @@ void            UIPresentationManager::RemoveProvider (IJournalProviderR provide
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            UIPresentationManager::AddProvider (IECViewDefinitionProviderR provider)
+void            ECPresentationManager::AddProvider (IECViewDefinitionProviderR provider)
     {
     m_viewProviders.insert(&provider);
     }
@@ -47,7 +47,7 @@ void            UIPresentationManager::AddProvider (IECViewDefinitionProviderR p
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            UIPresentationManager::RemoveProvider (IECViewDefinitionProviderR provider)
+void            ECPresentationManager::RemoveProvider (IECViewDefinitionProviderR provider)
     {
     m_viewProviders.erase(&provider);
     }
@@ -55,7 +55,7 @@ void            UIPresentationManager::RemoveProvider (IECViewDefinitionProvider
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            UIPresentationManager::AddProvider (IAUIContentServiceProviderR provider)
+void            ECPresentationManager::AddProvider (IAUIContentServiceProviderR provider)
     {
     m_contentProviders.insert(&provider);
     }
@@ -63,7 +63,7 @@ void            UIPresentationManager::AddProvider (IAUIContentServiceProviderR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            UIPresentationManager::RemoveProvider (IAUIContentServiceProviderR provider)
+void            ECPresentationManager::RemoveProvider (IAUIContentServiceProviderR provider)
     {
     m_contentProviders.erase(&provider);
     }
@@ -71,7 +71,7 @@ void            UIPresentationManager::RemoveProvider (IAUIContentServiceProvide
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            UIPresentationManager::AddProvider (IUICommandProviderCR provider)
+void            ECPresentationManager::AddProvider (ECPresentationCommandProviderCR provider)
     {
     m_cmdProviders.insert(&provider);
     }
@@ -79,7 +79,7 @@ void            UIPresentationManager::AddProvider (IUICommandProviderCR provide
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            UIPresentationManager::RemoveProvider (IUICommandProviderCR provider)
+void            ECPresentationManager::RemoveProvider (ECPresentationCommandProviderCR provider)
     {
     m_cmdProviders.erase(&provider);
     }
@@ -87,7 +87,23 @@ void            UIPresentationManager::RemoveProvider (IUICommandProviderCR prov
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<UICommandPtr>    UIPresentationManager::GetCommands (IAUIDataContextCR instance) const
+void            ECPresentationManager::AddProvider (ECPresentationImageProviderR provider)
+    {
+    m_imageProviders.insert(&provider);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECPresentationManager::RemoveProvider (ECPresentationImageProviderR provider)
+    {
+    m_imageProviders.erase(&provider);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<UICommandPtr>    ECPresentationManager::GetCommands (IAUIDataContextCR instance) const
     {
     bvector<UICommandPtr> commands;
     for (T_CmdProviderSet::const_iterator iter = m_cmdProviders.begin(); iter != m_cmdProviders.end(); ++iter)
@@ -127,7 +143,7 @@ struct LoggingJournalProvider : public IJournalProvider, public ProviderSingleto
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UIPresentationManager::UIPresentationManager ()
+ECPresentationManager::ECPresentationManager ()
     {
     AddProvider (LoggingJournalProvider::GetProvider());
     }
@@ -135,7 +151,7 @@ UIPresentationManager::UIPresentationManager ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            UIPresentationManager::JournalCmd (IUICommandCR cmd, IAUIDataContextCP instanceData)
+void            ECPresentationManager::JournalCmd (IUICommandCR cmd, IAUIDataContextCP instanceData)
     {
     for (T_JournalProviderSet::iterator iter = m_journalProviders.begin(); iter != m_journalProviders.end(); ++iter)
         (*iter)->JournalCmd(cmd, instanceData);
@@ -145,7 +161,7 @@ void            UIPresentationManager::JournalCmd (IUICommandCR cmd, IAUIDataCon
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECViewDefinitionPtr    UIPresentationManager::GetViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR instanceData) const
+IECViewDefinitionPtr    ECPresentationManager::GetViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR instanceData) const
     {
     if (itemInfo.IsAggregatable())
         return AggregateViewDefinition (itemInfo, instanceData);
@@ -163,7 +179,7 @@ IECViewDefinitionPtr    UIPresentationManager::GetViewDefinition (IAUIItemInfoCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECContentDefinitionPtr UIPresentationManager::GetContentDefinition (IECViewDefinitionCR viewDef) const
+IECContentDefinitionPtr ECPresentationManager::GetContentDefinition (IECViewDefinitionCR viewDef) const
     {
     for (T_ContentProviderSet::const_iterator iter = m_contentProviders.begin(); iter != m_contentProviders.end(); ++iter)
         {
@@ -178,7 +194,7 @@ IECContentDefinitionPtr UIPresentationManager::GetContentDefinition (IECViewDefi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECViewDefinitionPtr UIPresentationManager::AggregateViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR instanceData) const
+IECViewDefinitionPtr ECPresentationManager::AggregateViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR instanceData) const
     {
     if (!itemInfo.IsAggregatable())
         {
@@ -197,4 +213,20 @@ IECViewDefinitionPtr UIPresentationManager::AggregateViewDefinition (IAUIItemInf
         }
 
     return IECViewDefinition::CreateCompositeViewDef(viewDefs);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+IECNativeImagePtr ECPresentationManager::GetImage (ECImageKeyCR imageKey, DPoint2dCR size)
+    {
+    for (T_ImageProviderSet::const_iterator iter = m_imageProviders.begin(); iter != m_imageProviders.end(); ++iter)
+        {
+        IECNativeImagePtr nativeImage = (*iter)->GetImage(imageKey, size);
+        if (nativeImage.IsNull())
+            continue;
+
+        return nativeImage;
+        }
+    return NULL;
     }

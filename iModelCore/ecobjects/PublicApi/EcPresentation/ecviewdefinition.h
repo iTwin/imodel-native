@@ -38,11 +38,11 @@ struct          IECViewDefinition : public RefCountedBase
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct          IECViewDefinitionProvider : public IAUIProvider
+struct          IECViewDefinitionProvider : public ECPresentationProvider
     {
     protected:
-        virtual             IECViewDefinitionPtr _GetViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR dataContext) = 0;
-
+        virtual IECViewDefinitionPtr _GetViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR dataContext) = 0;
+        virtual ProviderType        _GetProviderType() const override {return ViewService;}
     public:
         
         //!Get the view definition associated with a particular data context.

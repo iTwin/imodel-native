@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/presentation/auicommand.cpp $
+|     $Source: src/presentation/ecimage.cpp $
 |
 |   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -14,16 +14,8 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   UICommand::Execute (IAUIDataContextCP instance) const
+IECNativeImagePtr     ECPresentationImageProvider::GetImage (ECImageKeyCR imageKey, DPoint2dCR size)
     {
-    ECPresentationManager::GetManager().JournalCmd (*this, instance);
-    return _ExecuteCmd(instance);
+    return _GetImage(imageKey, size);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<UICommandPtr>   ECPresentationCommandProvider::GetCommand (IAUIDataContextCR instance) const
-    {
-    return _GetCommand(instance);
-    }

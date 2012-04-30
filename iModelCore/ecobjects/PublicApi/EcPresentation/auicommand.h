@@ -52,14 +52,14 @@ struct UICommand : public IUICommand, public RefCountedBase
 //! data contexts. The presentation manager providers a union.
 * @bsiclass                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct IUICommandProvider
+struct ECPresentationCommandProvider
     {
     protected:
         virtual bvector<UICommandPtr> _GetCommand (IAUIDataContextCR instance) const = 0;
     
     public:
 
-        virtual ~IUICommandProvider() {}
+        virtual ~ECPresentationCommandProvider() {}
 
         ECOBJECTS_EXPORT bvector<UICommandPtr> GetCommand (IAUIDataContextCR instance) const;
     };

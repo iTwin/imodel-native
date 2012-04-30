@@ -21,12 +21,12 @@ struct IECContentDefinition: public IAUIItem
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct          IAUIContentServiceProvider : public IAUIProvider
+struct          IAUIContentServiceProvider : public ECPresentationProvider
     {
     protected:
         
         virtual IECContentDefinitionPtr _GetContent (IECViewDefinitionCR viewDef) const = 0;
-
+        virtual ProviderType    _GetProviderType() const override {return ContentService;}
     public:
 
         ECOBJECTS_EXPORT IECContentDefinitionPtr GetContent (IECViewDefinitionCR viewDef) const;

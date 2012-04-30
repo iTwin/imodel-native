@@ -16,14 +16,18 @@ EC_TYPEDEFS (IAUIDataContext);
 EC_TYPEDEFS (IUICommand);
 EC_TYPEDEFS (UICommand);
 EC_TYPEDEFS (IJournalItem);
-EC_TYPEDEFS (IAUIProvider);
-EC_TYPEDEFS (IUICommandProvider);
+EC_TYPEDEFS (ECPresentationProvider);
+EC_TYPEDEFS (ECPresentationCommandProvider);
 EC_TYPEDEFS (IJournalProvider);
-EC_TYPEDEFS (UIPresentationManager);
+EC_TYPEDEFS (ECPresentationManager);
 EC_TYPEDEFS (IECViewDefinition);
 EC_TYPEDEFS (IECViewDefinitionProvider);
 EC_TYPEDEFS (IECContentDefinition);
 EC_TYPEDEFS (IAUIContentServiceProvider);
+EC_TYPEDEFS (ECImageKey);
+EC_TYPEDEFS (IECNativeImage);
+EC_TYPEDEFS (ECNativeImage);
+EC_TYPEDEFS (ECPresentationImageProvider);
 
 namespace Bentley { namespace DgnPlatform {
     struct ECQuery;
@@ -31,9 +35,10 @@ namespace Bentley { namespace DgnPlatform {
     }}
 
 BEGIN_BENTLEY_EC_NAMESPACE
-typedef RefCountedPtr<IAUIItem>                 IAUIItemPtr;
-typedef RefCountedPtr<IECViewDefinition>        IECViewDefinitionPtr;
+typedef RefCountedPtr<IAUIItem>             IAUIItemPtr;
+typedef RefCountedPtr<IECViewDefinition>    IECViewDefinitionPtr;
 typedef RefCountedPtr<IECContentDefinition> IECContentDefinitionPtr;
+typedef RefCountedPtr<IECNativeImage>       IECNativeImagePtr;
 END_BENTLEY_EC_NAMESPACE
 
 #include <EcPresentation/auicommand.h>
@@ -43,3 +48,4 @@ END_BENTLEY_EC_NAMESPACE
 #include <EcPresentation/auipresentationmgr.h>
 #include <EcPresentation/ecviewdefinition.h>
 #include <EcPresentation/eccontentdefinition.h>
+#include <EcPresentation/ecimage.h>
