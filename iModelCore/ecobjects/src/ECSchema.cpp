@@ -55,7 +55,7 @@ ECSchema::ECSchema (bool hideFromLeakDetection)
 ECSchema::~ECSchema ()
     {
     // NEEDSWORK make sure everything is destroyed
-    ECObjectsLogger::Log()->debugv (L"~~~~ Destroying ECSchema: %s", GetName().c_str());
+    ECObjectsLogger::Log()->debugv (L"~~~~ Destroying ECSchema: %ls", GetName().c_str());
     ClassMap::iterator          classIterator = m_classMap.begin();
     ClassMap::const_iterator    classEnd = m_classMap.end();        
     ECObjectsLogger::Log()->debugv(L"     Freeing memory for %d classes", m_classMap.size());
@@ -319,12 +319,12 @@ ECClassP ECSchema::GetClassP (WCharCP name) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECSchema::DebugDump()const
     {
-    wprintf(L"ECSchema: this=0x%x  %s.%02d.%02d, nClasses=%d\n", this, m_key.m_schemaName.c_str(), m_key.m_versionMajor, m_key.m_versionMinor, m_classMap.size());
+    wprintf(L"ECSchema: this=0x%x  %ls.%02d.%02d, nClasses=%d\n", this, m_key.m_schemaName.c_str(), m_key.m_versionMajor, m_key.m_versionMinor, m_classMap.size());
     for (ClassMap::const_iterator it = m_classMap.begin(); it != m_classMap.end(); ++it)
         {
         bpair<WCharCP, ECClassP>const& entry = *it;
         ECClassCP ecClass = entry.second;
-        wprintf(L"    ECClass: 0x%x, %s\n", ecClass, ecClass->GetName().c_str());
+        wprintf(L"    ECClass: 0x%x, %ls\n", ecClass, ecClass->GetName().c_str());
         }
     }
 
@@ -337,7 +337,7 @@ ECObjectsStatus ECSchema::AddClass (ECClassP& pClass)
     resultPair = m_classMap.insert (bpair<WCharCP, ECClassP> (pClass->GetName().c_str(), pClass));
     if (resultPair.second == false)
         {
-        ECObjectsLogger::Log()->warningv (L"Can not create class '%s' because it already exists in the schema", pClass->GetName().c_str());
+        ECObjectsLogger::Log()->warningv (L"Can not create class '%ls' because it already exists in the schema", pClass->GetName().c_str());
         delete pClass;
         pClass = NULL;        
         return ECOBJECTS_STATUS_NamedItemAlreadyExists;
@@ -383,7 +383,7 @@ ECObjectsStatus ECSchema::CreateRelationshipClass (ECRelationshipClassP& pClass,
         {
         delete pClass;
         pClass = NULL;
-        ECObjectsLogger::Log()->warningv (L"Can not create relationship class '%s' because it already exists in the schema", name.c_str());
+        ECObjectsLogger::Log()->warningv (L"Can not create relationship class '%ls' because it already exists in the schema", name.c_str());
         return ECOBJECTS_STATUS_NamedItemAlreadyExists;
         }
 
@@ -397,7 +397,7 @@ WString ECSchema::GetFullSchemaName () const
     {
     wchar_t fullName[1024]; // we decided to use a large buffer instead of caculating the length and using _alloc to boost performance 
 
-    BeStringUtilities::Snwprintf (fullName, L"%s.%02d.%02d", GetName().c_str(), GetVersionMajor(), GetVersionMinor());
+    BeStringUtilities::Snwprintf (fullName, L"%ls.%02d.%02d", GetName().c_str(), GetVersionMajor(), GetVersionMinor());
     return fullName;
     }
 
@@ -414,14 +414,14 @@ ECObjectsStatus ECSchema::ParseSchemaFullName (WStringR schemaName, UInt32& vers
     WCharCP firstDot = wcschr (fullNameCP, L'.');
     if (NULL == firstDot)
         {
-        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema FullName String: '%s' does not contain a '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName.c_str());
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema FullName String: '%ls' does not contain a '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName.c_str());
         return ECOBJECTS_STATUS_ParseError;
         }
 
     size_t nameLen = firstDot - fullNameCP;
     if (nameLen < 1)
         {
-        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema FullName String: '%s' does not have any characters before the '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName.c_str());
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema FullName String: '%ls' does not have any characters before the '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName.c_str());
         return ECOBJECTS_STATUS_ParseError;
         }
 
@@ -442,14 +442,14 @@ ECObjectsStatus ECSchema::ParseSchemaFullName (WStringR schemaName, UInt32& vers
     WCharCP firstDot = wcschr (fullName, L'.');
     if (NULL == firstDot)
         {
-        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema FullName String: '%s' does not contain a '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName);
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema FullName String: '%ls' does not contain a '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName);
         return ECOBJECTS_STATUS_ParseError;
         }
 
     size_t nameLen = firstDot - fullName;
     if (nameLen < 1)
         {
-        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema FullName String: '%s' does not have any characters before the '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName);
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema FullName String: '%ls' does not have any characters before the '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName);
         return ECOBJECTS_STATUS_ParseError;
         }
 
@@ -482,14 +482,14 @@ ECObjectsStatus ECSchema::ParseVersionString (UInt32& versionMajor, UInt32& vers
     WCharCP theDot = wcschr (versionString, L'.');
     if (NULL == theDot)
         {
-        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%s' does not contain a '.'!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%ls' does not contain a '.'!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
         return ECOBJECTS_STATUS_ParseError;
         }
 
     size_t majorLen = theDot - versionString;
     if (majorLen < 1 || majorLen > 3)
         {
-        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%s' does not have 1-3 numbers before the '.'!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%ls' does not have 1-3 numbers before the '.'!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
         return ECOBJECTS_STATUS_ParseError;
         }
 
@@ -497,7 +497,7 @@ ECObjectsStatus ECSchema::ParseVersionString (UInt32& versionMajor, UInt32& vers
     size_t minorLen = (NULL != endDot) ? (endDot - theDot) - 1 : wcslen (theDot) - 1;
     if (minorLen < 1 || minorLen > 3)
         {
-        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%s' does not have 1-3 numbers after the '.'!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%ls' does not have 1-3 numbers after the '.'!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
         return ECOBJECTS_STATUS_ParseError;
         }
 
@@ -505,7 +505,7 @@ ECObjectsStatus ECSchema::ParseVersionString (UInt32& versionMajor, UInt32& vers
     UInt32    localMajor = BeStringUtilities::Wcstoul (versionString, &end, 10);
     if (versionString == end)
         {
-        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%s' The characters before the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%ls' The characters before the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
         return ECOBJECTS_STATUS_ParseError;
         }
     else
@@ -516,7 +516,7 @@ ECObjectsStatus ECSchema::ParseVersionString (UInt32& versionMajor, UInt32& vers
     UInt32 localMinor = BeStringUtilities::Wcstoul (&theDot[1], &end, 10);
     if (&theDot[1] == end)
         {
-        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%s' The characters after the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%ls' The characters after the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
         return ECOBJECTS_STATUS_ParseError;
         }
     else
@@ -675,7 +675,7 @@ ECObjectsStatus ECSchema::AddReferencedSchema (ECSchemaR refSchema, WStringCR na
         for (subScript = 1; subScript < 500; subScript++)
             {
             wchar_t temp[256];
-            BeStringUtilities::Snwprintf(temp, 256, L"%s%d", prefix.c_str(), subScript);
+            BeStringUtilities::Snwprintf(temp, 256, L"%ls%d", prefix.c_str(), subScript);
             WString tryPrefix(temp);
             for (namespaceIterator = m_referencedSchemaNamespaceMap.begin(); namespaceIterator != m_referencedSchemaNamespaceMap.end(); namespaceIterator++)
                 {
@@ -825,9 +825,9 @@ SchemaReadStatus ECSchema::ReadClassStubsFromXml (BeXmlNodeR schemaNode, ClassDe
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
 
         if (NULL == ecRelationshipClass)
-            ECObjectsLogger::Log()->tracev (L"    Created ECClass Stub: %s", ecClass->GetName().c_str());
+            ECObjectsLogger::Log()->tracev (L"    Created ECClass Stub: %ls", ecClass->GetName().c_str());
         else
-            ECObjectsLogger::Log()->tracev (L"    Created Relationship ECClass Stub: %s", ecClass->GetName().c_str());
+            ECObjectsLogger::Log()->tracev (L"    Created Relationship ECClass Stub: %ls", ecClass->GetName().c_str());
 
         classes.push_back (make_bpair (ecClass, classNode));
         }
@@ -915,7 +915,7 @@ SchemaReadStatus ECSchema::ReadSchemaReferencesFromXml (BeXmlNodeR schemaNode, E
 
         if (ECOBJECTS_STATUS_Success != ParseVersionString (key.m_versionMajor, key.m_versionMinor, versionString.c_str()))
             {
-            ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: unable to parse version string for referenced schema %s.", key.m_schemaName.c_str());
+            ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: unable to parse version string for referenced schema %ls.", key.m_schemaName.c_str());
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
             
@@ -926,7 +926,7 @@ SchemaReadStatus ECSchema::ReadSchemaReferencesFromXml (BeXmlNodeR schemaNode, E
         if (IsOpenPlantPidCircularReferenceSpecialCase(key.m_schemaName))
             continue;
 
-        ECObjectsLogger::Log()->debugv (L"About to locate referenced ECSchema %s", key.GetFullSchemaName().c_str());
+        ECObjectsLogger::Log()->debugv (L"About to locate referenced ECSchema %ls", key.GetFullSchemaName().c_str());
         
         ECSchemaPtr referencedSchema = LocateSchema (key, schemaContext);
 
@@ -938,7 +938,7 @@ SchemaReadStatus ECSchema::ReadSchemaReferencesFromXml (BeXmlNodeR schemaNode, E
             }
         else
             {
-            ECObjectsLogger::Log()->errorv(L"Unable to locate referenced schema %s", key.GetFullSchemaName().c_str());
+            ECObjectsLogger::Log()->errorv(L"Unable to locate referenced schema %ls", key.GetFullSchemaName().c_str());
             return SCHEMA_READ_STATUS_ReferencedSchemaNotFound;
             }
         }
@@ -977,7 +977,7 @@ ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, WCharCP
     if (WString::npos == (firstDot = name.find ('.')))
         {
         assert (s_noAssert);
-        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema FileName String: '%s' does not contain the suffix '.ecschema.xml'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, filePath);
+        ECObjectsLogger::Log()->errorv (L"Invalid ECSchema FileName String: '%ls' does not contain the suffix '.ecschema.xml'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, filePath);
         return ECOBJECTS_STATUS_ParseError;
         }
 
@@ -1047,7 +1047,7 @@ bvector<WString>&               searchPaths
         {
         BeFileName schemaPath (schemaPathStr.c_str());
         schemaPath.AppendToPath (schemaMatchExpression.c_str());
-        ECObjectsLogger::Log()->debugv (L"Checking for existence of %s...", schemaPath.GetName());
+        ECObjectsLogger::Log()->debugv (L"Checking for existence of %ls...", schemaPath.GetName());
 
         //Finds latest
         SchemaKey foundKey(key);
@@ -1061,7 +1061,7 @@ bvector<WString>&               searchPaths
             if (schemaContext.m_acceptLegacyImperfectLatestCompatibleMatch && matchType == SCHEMAMATCHTYPE_LatestCompatible && 
                 0 == foundKey.m_schemaName.CompareTo(key.m_schemaName) && foundKey.m_versionMajor == key.m_versionMajor)
                 {
-                ECObjectsLogger::Log()->warningv (L"Located %s, which does not meet 'latest compatible' criteria to match %s, but is being accepted because some legacy schemas are known to require this", 
+                ECObjectsLogger::Log()->warningv (L"Located %ls, which does not meet 'latest compatible' criteria to match %ls, but is being accepted because some legacy schemas are known to require this", 
                                                   fullFileName.c_str(), key.GetFullSchemaName());
                 // See if this imperfect match ECSchema has is already cached (so we can avoid loading it, below)
             
@@ -1077,7 +1077,7 @@ bvector<WString>&               searchPaths
                 }
             else
                 {
-                ECObjectsLogger::Log()->warningv (L"Located %s, but it does not meet 'latest compatible' criteria to match %s.%02d.%02d. Caller can use acceptImperfectLegacyMatch to cause it to be accepted.", 
+                ECObjectsLogger::Log()->warningv (L"Located %ls, but it does not meet 'latest compatible' criteria to match %ls.%02d.%02d. Caller can use acceptImperfectLegacyMatch to cause it to be accepted.", 
                                                   fullFileName.c_str(), key.m_schemaName.c_str(),   key.m_versionMajor,   key.m_versionMinor);
                 continue;
                 }
@@ -1086,7 +1086,7 @@ bvector<WString>&               searchPaths
         if (SCHEMA_READ_STATUS_Success != ECSchema::ReadFromXmlFile (schemaOut, fullFileName.c_str(), schemaContext))
             continue;
 
-        ECObjectsLogger::Log()->debugv (L"Located %s...", fullFileName.c_str());
+        ECObjectsLogger::Log()->debugv (L"Located %ls...", fullFileName.c_str());
 
         return schemaOut;
         }
@@ -1175,11 +1175,11 @@ SchemaReadStatus ECSchema::ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, UI
     if ( (BEXML_Success != schemaNode->GetAttributeStringValue (versionString, SCHEMA_VERSION_ATTRIBUTE)) || 
          (SUCCESS != ParseVersionString (versionMajor, versionMinor, versionString.c_str())) )
         {
-        ECObjectsLogger::Log()->warningv (L"Invalid version attribute has been ignored while reading ECSchema '%s'.  The default version number %02d.%02d has been applied.", 
+        ECObjectsLogger::Log()->warningv (L"Invalid version attribute has been ignored while reading ECSchema '%ls'.  The default version number %02d.%02d has been applied.", 
             schemaName.c_str(), versionMajor, versionMinor);
         }
 
-    ECObjectsLogger::Log()->debugv (L"Reading ECSchema %s.%02d.%02d", (WCharCP)schemaName.c_str(), versionMajor, versionMinor);
+    ECObjectsLogger::Log()->debugv (L"Reading ECSchema %ls.%02d.%02d", (WCharCP)schemaName.c_str(), versionMajor, versionMinor);
 
     bool            hideFromLeakDetection = schemaContext.GetHideSchemasFromLeakDetection();
     
@@ -1572,7 +1572,7 @@ UInt32          CheckSumHelper::ComputeCheckSumForFile (WCharCP schemaFile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSchemaXmlFile, ECSchemaReadContextR schemaContext)
     {
-    ECObjectsLogger::Log()->debugv (L"About to read native ECSchema read from file: fileName='%s'", ecSchemaXmlFile);
+    ECObjectsLogger::Log()->debugv (L"About to read native ECSchema read from file: fileName='%ls'", ecSchemaXmlFile);
         schemaOut = NULL;
         
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
@@ -1594,11 +1594,11 @@ SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSc
         return status; // already logged
 
     if (ECOBJECTS_STATUS_Success != status)
-        ECObjectsLogger::Log()->errorv (L"Failed to read XML file: %s", ecSchemaXmlFile);
+        ECObjectsLogger::Log()->errorv (L"Failed to read XML file: %ls", ecSchemaXmlFile);
     else
         {
         //We have serialized a schema and its valid. Add its checksum
-        ECObjectsLogger::Log()->infov (L"Native ECSchema read from file: fileName='%s', schemaName='%s.%02d.%02d' classCount='%d' address='0x%x'", 
+        ECObjectsLogger::Log()->infov (L"Native ECSchema read from file: fileName='%ls', schemaName='%ls.%02d.%02d' classCount='%d' address='0x%x'", 
             ecSchemaXmlFile, schemaOut->GetName().c_str(), schemaOut->GetVersionMajor(), schemaOut->GetVersionMinor(), schemaOut->m_classMap.size(), schemaOut);
         }
 
@@ -1641,11 +1641,11 @@ ECSchemaReadContextR schemaContext
         WChar first200Characters[201];
         wcsncpy (first200Characters, ecSchemaXml, 200);
         first200Characters[200] = L'\0';
-        ECObjectsLogger::Log()->errorv (L"Failed to read XML from string (1st 200 characters): %s", first200Characters);
+        ECObjectsLogger::Log()->errorv (L"Failed to read XML from string (1st 200 characters): %ls", first200Characters);
         }
     else
         {
-        ECObjectsLogger::Log()->infov (L"Native ECSchema read from string: schemaName='%s' classCount='%d' schemaAddress='0x%x' stringAddress='0x%x'", 
+        ECObjectsLogger::Log()->infov (L"Native ECSchema read from string: schemaName='%ls' classCount='%d' schemaAddress='0x%x' stringAddress='0x%x'", 
             schemaOut->GetSchemaKey().GetFullSchemaName().c_str(), schemaOut->m_classMap.size(), schemaOut.get(), ecSchemaXml);
         }
     return status;
@@ -2098,7 +2098,7 @@ bool            ECSchema::AddingSchemaCausedCycles () const
                 cycleString.append(L"-->");
                 }
             cycleString.append( (*iter->begin())->m_node->m_key.GetFullSchemaName());
-            ECObjectsLogger::Log()->errorv (L"ECSchema '%s' contains cycles %s", m_key.GetFullSchemaName().c_str(), cycleString.c_str());
+            ECObjectsLogger::Log()->errorv (L"ECSchema '%ls' contains cycles %ls", m_key.GetFullSchemaName().c_str(), cycleString.c_str());
             
             break;
             }
@@ -2113,7 +2113,7 @@ bool            ECSchema::AddingSchemaCausedCycles () const
 WString         SchemaKey::GetFullSchemaName () const
     {
     WChar schemaName[512] = {0};
-    BeStringUtilities::Snwprintf(schemaName, L"%s.%02d.%02d", m_schemaName.c_str(), m_versionMajor, m_versionMinor);
+    BeStringUtilities::Snwprintf(schemaName, L"%ls.%02d.%02d", m_schemaName.c_str(), m_versionMajor, m_versionMinor);
     return schemaName;
     }
 
