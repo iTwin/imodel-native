@@ -125,10 +125,10 @@ struct ECInstanceReadContext /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
 private:
     IStandaloneEnablerLocaterP          m_standaloneEnablerLocater;
     StandaloneECInstancePtr             m_dummy;
-
+    ECSchemaCR                          m_fallBackSchema;
 protected:
-    ECInstanceReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater = NULL) 
-        : m_standaloneEnablerLocater (standaloneEnablerLocater)
+    ECInstanceReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, ECSchemaCR fallBackSchema) 
+        : m_standaloneEnablerLocater (standaloneEnablerLocater), m_fallBackSchema (fallBackSchema)
         {
         }
 
@@ -139,6 +139,7 @@ protected:
     virtual ECSchemaCP  _FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType) const = 0;
 
 public:
+
     ECSchemaCP  FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType) const;
 
     IECInstancePtr           CreateStandaloneInstance (ECClassCR ecClass);
@@ -149,7 +150,7 @@ public:
     ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext (ECSchemaCR, IStandaloneEnablerLocaterP = NULL);
 
     //! - For use when the caller does not know the schema of the instance he is deserializing.
-    ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext (ECSchemaReadContextR, ECSchemaPtr* foundSchema);
+    ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext (ECSchemaReadContextR, ECSchemaCR fallBackSchema, ECSchemaPtr* foundSchema);
 };
 
 END_BENTLEY_EC_NAMESPACE

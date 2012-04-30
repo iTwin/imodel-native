@@ -17,7 +17,7 @@
 BEGIN_BENTLEY_EC_NAMESPACE
 
 typedef RefCountedPtr<StandaloneECEnabler>        StandaloneECEnablerPtr;
-typedef RefCountedPtr<ECEnabler>                  EnablerPtr;
+typedef RefCountedPtr<ECEnabler>                  ECEnablerPtr;
 typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
 
 //=======================================================================================    
@@ -138,5 +138,65 @@ protected:
     ECOBJECTS_EXPORT IECWipRelationshipInstancePtr  CreateWipRelationshipInstance() const;
     ECOBJECTS_EXPORT EC::ECRelationshipClassCR      GetRelationshipClass() const;
  };
+
+ /*__PUBLISH_SECTION_END__*/
+/*---------------------------------------------------------------------------------**//**
+//! A derived helper enabler that allows you to generates property indices based on a array of 
+//! property strings. This will only work on simple instances with no embedded structs.
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ template <typename DerivedClass, typename BaseEnablerClass>
+ struct          PropertyIndexedEnabler  : BaseEnablerClass
+    {
+    private:
+        virtual ECObjectsStatus _GetPropertyIndex (UInt32& propertyIndex, WCharCP propertyAccessString) const override
+            {
+            for (UInt32 index = 0; index < DerivedClass::MAX_PROPERTY_COUNT; ++index)
+                {
+                if (0 == BeStringUtilities::Wcsicmp (propertyAccessString, DerivedClass::PropertyNameList[index]))
+                    {
+                    propertyIndex = index + 1;
+                    return ECOBJECTS_STATUS_Success;
+                    }
+                }
+            return ECOBJECTS_STATUS_InvalidPropertyAccessString;
+            }
+        
+        virtual ECObjectsStatus _GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const override
+            {
+            if (propertyIndex > DerivedClass::MAX_PROPERTY_COUNT || propertyIndex <= 0)
+                return ECOBJECTS_STATUS_IndexOutOfRange;
+
+            propertyAccessString = DerivedClass::PropertyNameList[propertyIndex -1];
+            return ECOBJECTS_STATUS_Success;
+            }
+
+        virtual UInt32          _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const override
+            {
+            if (inputIndex> 0 && inputIndex <= DerivedClass::MAX_PROPERTY_COUNT)
+                return ++inputIndex;
+            return 0;
+            }
+        
+        virtual UInt32          _GetPropertyCount () const override {return DerivedClass::MAX_PROPERTY_COUNT;}
+        
+        virtual ECObjectsStatus _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const override
+            {
+            for (UInt32 index = 0; index < DerivedClass::MAX_PROPERTY_COUNT; ++index)
+                indices.push_back(index + 1);
+            return ECOBJECTS_STATUS_Success;
+
+            }
+        virtual UInt32          _GetFirstPropertyIndex (UInt32 parentIndex) const override {return 1;}
+        
+        virtual bool            _HasChildProperties (UInt32 parentIndex) const override {return false;}
+
+    protected:
+        PropertyIndexedEnabler (ECClassCR ecClass, IStandaloneEnablerLocaterP structStandaloneEnablerLocater)
+            :BaseEnablerClass(ecClass, structStandaloneEnablerLocater)
+            {}
+    };
+ 
+ /*__PUBLISH_SECTION_START__*/
 
 END_BENTLEY_EC_NAMESPACE

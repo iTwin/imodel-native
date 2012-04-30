@@ -17,6 +17,7 @@
 #include <list>
 #include <Bentley/BeFileName.h>
 #include <Bentley/BeFile.h>
+#include <Bentley/BeFileListIterator.h>
 
 #include <ECObjects/StronglyConnectedGraph.h>
 #include <boost/iterator/iterator_adaptor.hpp>
@@ -501,7 +502,7 @@ ECObjectsStatus ECSchema::ParseVersionString (UInt32& versionMajor, UInt32& vers
         }
 
     WCharP end = NULL;    
-    UInt32    localMajor = wcstoul (versionString, &end, 10);
+    UInt32    localMajor = BeStringUtilities::Wcstoul (versionString, &end, 10);
     if (versionString == end)
         {
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%s' The characters before the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
@@ -512,7 +513,7 @@ ECObjectsStatus ECSchema::ParseVersionString (UInt32& versionMajor, UInt32& vers
         versionMajor = localMajor;
         }
 
-    UInt32 localMinor = wcstoul (&theDot[1], &end, 10);
+    UInt32 localMinor = BeStringUtilities::Wcstoul (&theDot[1], &end, 10);
     if (&theDot[1] == end)
         {
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchema Version String: '%s' The characters after the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
@@ -925,7 +926,7 @@ SchemaReadStatus ECSchema::ReadSchemaReferencesFromXml (BeXmlNodeR schemaNode, E
         if (IsOpenPlantPidCircularReferenceSpecialCase(key.m_schemaName))
             continue;
 
-        ECObjectsLogger::Log()->debugv (L"About to locate referenced ECSchema %s", key.GetNameString().c_str());
+        ECObjectsLogger::Log()->debugv (L"About to locate referenced ECSchema %s", key.GetFullSchemaName().c_str());
         
         ECSchemaPtr referencedSchema = LocateSchema (key, schemaContext);
 
@@ -937,7 +938,7 @@ SchemaReadStatus ECSchema::ReadSchemaReferencesFromXml (BeXmlNodeR schemaNode, E
             }
         else
             {
-            ECObjectsLogger::Log()->errorv(L"Unable to locate referenced schema %s", key.GetNameString().c_str());
+            ECObjectsLogger::Log()->errorv(L"Unable to locate referenced schema %s", key.GetFullSchemaName().c_str());
             return SCHEMA_READ_STATUS_ReferencedSchemaNotFound;
             }
         }
@@ -986,6 +987,50 @@ ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, WCharCP
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  11/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus GetSchemaFileName (WString& fullFileName, UInt32& foundMinorVersion, WCharCP schemaPath, bool useLatestCompatibleMatch)
+    {
+    WString     schemaPathWithWildcard = schemaPath;
+    schemaPathWithWildcard += L"*";
+
+    BeFileListIterator  fileList (schemaPathWithWildcard.c_str(), false);
+    BeFileName          filePath;
+    UInt32 currentMinorVersion=0;
+
+    while (SUCCESS == fileList.GetNextFileName (filePath))
+        {
+        WCharCP     fileName = filePath.GetName();
+
+        if (!useLatestCompatibleMatch)
+            {
+            fullFileName = fileName;
+            return ECOBJECTS_STATUS_Success;
+            }
+
+        if (fullFileName.empty())
+            {
+            fullFileName = fileName;
+            GetMinorVersionFromSchemaFileName (foundMinorVersion, fileName);
+            continue;
+            }
+
+        if (ECOBJECTS_STATUS_Success != GetMinorVersionFromSchemaFileName (currentMinorVersion, fileName))
+            continue;
+
+        if (currentMinorVersion > foundMinorVersion)
+            {
+            foundMinorVersion = currentMinorVersion;
+            fullFileName = fileName;
+            }
+        }
+
+    if (fullFileName.empty())
+        return ECOBJECTS_STATUS_Error;
+
+    return ECOBJECTS_STATUS_Success;
+    }
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaPtr       SearchPathSchemaFileLocater::FindMatchingSchema
@@ -1017,7 +1062,7 @@ bvector<WString>&               searchPaths
                 0 == foundKey.m_schemaName.CompareTo(key.m_schemaName) && foundKey.m_versionMajor == key.m_versionMajor)
                 {
                 ECObjectsLogger::Log()->warningv (L"Located %s, which does not meet 'latest compatible' criteria to match %s, but is being accepted because some legacy schemas are known to require this", 
-                                                  fullFileName.c_str(), key.GetNameString());
+                                                  fullFileName.c_str(), key.GetFullSchemaName());
                 // See if this imperfect match ECSchema has is already cached (so we can avoid loading it, below)
             
                 //We found a different key;
@@ -1184,7 +1229,7 @@ SchemaReadStatus ECSchema::ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, UI
     ECObjectsLogger::Log()->tracev(L"Reading class contents for %ls took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingClassContents.GetElapsedSeconds());
 
     StopWatch readingCustomAttributes(L"Reading custom attributes", true);
-    schemaOut->ReadCustomAttributes(*schemaNode, schemaContext);
+    schemaOut->ReadCustomAttributes(*schemaNode, schemaContext, *schemaOut);
     readingCustomAttributes.Stop();
     ECObjectsLogger::Log()->tracev(L"Reading custom attributes for %ls took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingCustomAttributes.GetElapsedSeconds());
 
@@ -1601,7 +1646,7 @@ ECSchemaReadContextR schemaContext
     else
         {
         ECObjectsLogger::Log()->infov (L"Native ECSchema read from string: schemaName='%s' classCount='%d' schemaAddress='0x%x' stringAddress='0x%x'", 
-            schemaOut->GetSchemaKey().GetNameString().c_str(), schemaOut->m_classMap.size(), schemaOut.get(), ecSchemaXml);
+            schemaOut->GetSchemaKey().GetFullSchemaName().c_str(), schemaOut->m_classMap.size(), schemaOut.get(), ecSchemaXml);
         }
     return status;
     }
@@ -2049,11 +2094,11 @@ bool            ECSchema::AddingSchemaCausedCycles () const
             WString cycleString;
             for (SchemaGraph::NodeVector::const_iterator cycleIter = iter->begin(); cycleIter != iter->end(); ++cycleIter)
                 {
-                cycleString.append((*cycleIter)->m_node->m_key.GetNameString());
+                cycleString.append((*cycleIter)->m_node->m_key.GetFullSchemaName());
                 cycleString.append(L"-->");
                 }
-            cycleString.append( (*iter->begin())->m_node->m_key.GetNameString());
-            ECObjectsLogger::Log()->errorv (L"ECSchema '%s' contains cycles %s", m_key.GetNameString().c_str(), cycleString.c_str());
+            cycleString.append( (*iter->begin())->m_node->m_key.GetFullSchemaName());
+            ECObjectsLogger::Log()->errorv (L"ECSchema '%s' contains cycles %s", m_key.GetFullSchemaName().c_str(), cycleString.c_str());
             
             break;
             }
@@ -2065,7 +2110,7 @@ bool            ECSchema::AddingSchemaCausedCycles () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString         SchemaKey::GetNameString () const
+WString         SchemaKey::GetFullSchemaName () const
     {
     WChar schemaName[512] = {0};
     BeStringUtilities::Snwprintf(schemaName, L"%s.%02d.%02d", m_schemaName.c_str(), m_versionMajor, m_versionMinor);

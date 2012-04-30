@@ -186,6 +186,80 @@ EC::ECRelationshipClassCR       IECRelationshipEnabler::GetRelationshipClass() c
     }
 
 #pragma endregion //IECRelationshipEnabler
+//
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                    Abeesh.Basheer                  04/2012
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//ECObjectsStatus PropertyIndexedEnabler::_GetPropertyIndex (UInt32& propertyIndex, WCharCP propertyAccessString) const
+//    {
+//    for (UInt32 index = 0; index < m_propertyCount; ++index)
+//        {
+//        if (0 == BeStringUtilities::Wcsicmp (propertyAccessString, m_propertyNameList[index]))
+//            {
+//            propertyIndex = index + 1;
+//            return ECOBJECTS_STATUS_Success;
+//            }
+//        }
+//    return ECOBJECTS_STATUS_InvalidPropertyAccessString;
+//    }
+//
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                    Abeesh.Basheer                  04/2012
+//+---------------+---------------+---------------+---------------+---------------+------*/
+// ECObjectsStatus PropertyIndexedEnabler::_GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const
+//    {
+//    if (propertyIndex > m_propertyCount || propertyIndex <= 0)
+//        return ECOBJECTS_STATUS_IndexOutOfRange;
+//
+//    propertyAccessString = m_propertyNameList[propertyIndex -1];
+//    return ECOBJECTS_STATUS_Success;
+//    }
+// 
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                    Abeesh.Basheer                  04/2012
+//+---------------+---------------+---------------+---------------+---------------+------*/
+// UInt32         PropertyIndexedEnabler::_GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const 
+//    {
+//    if (inputIndex> 0 && inputIndex <= m_propertyCount)
+//        return ++inputIndex;
+//            
+//    return 0;
+//    }
+//
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                    Abeesh.Basheer                  04/2012
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//UInt32          PropertyIndexedEnabler::_GetPropertyCount () const
+//    {
+//    return m_propertyCount;
+//    }
+//
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                    Abeesh.Basheer                  04/2012
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//ECObjectsStatus PropertyIndexedEnabler::_GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const
+//    {
+//    for (UInt32 index = 0; index < m_propertyCount; ++index)
+//        indices.push_back(index + 1);
+//    return ECOBJECTS_STATUS_Success;
+//    }
+//
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                    Abeesh.Basheer                  04/2012
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//UInt32          PropertyIndexedEnabler::_GetFirstPropertyIndex (UInt32 parentIndex) const
+//    {
+//    return 1;
+//    }
+//
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                    Abeesh.Basheer                  04/2012
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//bool            PropertyIndexedEnabler::_HasChildProperties (UInt32 parentIndex) const
+//    {
+//    return false;
+//    }
+
 
 END_BENTLEY_EC_NAMESPACE
     
