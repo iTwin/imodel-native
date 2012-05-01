@@ -20,7 +20,7 @@ BentleyStatus   IAUIItem::ExecuteActions () const
     if (NULL == instance)
         return ERROR;
 
-    bvector<UICommandPtr> cmds = UIPresentationManager::GetManager().GetCommands(*instance);
+    bvector<UICommandPtr> cmds = ECPresentationManager::GetManager().GetCommands(*instance);
     for (bvector<UICommandPtr>::const_iterator iter = cmds.begin(); iter != cmds.end(); ++iter)
         {
         BentleyStatus status = (*iter)->Execute (instance);
@@ -53,4 +53,35 @@ IAUIItemCP      IAUIItem::GetParent () const
 IAUIItemInfoCR  IAUIItem::GetUIItemInfo () const
     {
     return _GetUIItemInfo ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+IAUIItemInfo::ItemType  IAUIItemInfo::GetItemType() const
+    {
+    return m_itemType;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            IAUIItemInfo::IsAggregatable () const
+    {
+    return _IsAggregatable();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            IAUIItemInfo::_IsAggregatable () const
+    {
+    switch (GetItemType())
+        {
+        case Menu:
+        case ToolBar:
+            return true;
+        default:
+            return false;
+        }
     }

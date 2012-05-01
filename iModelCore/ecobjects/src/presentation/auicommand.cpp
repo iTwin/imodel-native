@@ -16,14 +16,14 @@ USING_NAMESPACE_EC
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   UICommand::Execute (IAUIDataContextCP instance) const
     {
-    UIPresentationManager::GetManager().JournalCmd (*this, instance);
+    ECPresentationManager::GetManager().JournalCmd (*this, instance);
     return _ExecuteCmd(instance);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UICommandPtr    IUICommandProvider::GetCommand (IAUIDataContextCR instance) const
+bvector<UICommandPtr>   ECPresentationCommandProvider::GetCommand (IAUIDataContextCR instance) const
     {
     return _GetCommand(instance);
     }

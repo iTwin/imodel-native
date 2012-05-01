@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/presentation/eccontentdefinition.cpp $
+|     $Source: src/presentation/ecimage.cpp $
 |
 |   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -14,7 +14,8 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECContentDefinitionPtr     IAUIContentServiceProvider::GetContent (IECViewDefinitionCR viewDef) const
+IECNativeImagePtr     ECPresentationImageProvider::GetImage (ECImageKeyCR imageKey, DPoint2dCR size)
     {
-    return _GetContent(viewDef);
+    return _GetImage(imageKey, size);
     }
+

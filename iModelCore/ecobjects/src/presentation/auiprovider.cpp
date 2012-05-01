@@ -11,20 +11,10 @@
 
 USING_NAMESPACE_EC
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-//IAUIItemPtr     IAUIProvider::GetUIItem (IAUIItemInfoCR itemInfo, IAUIDataContextCP instanceData)
-//    {
-//    return _GetUIItem(itemInfo, instanceData);
-//    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-UInt16          IAUIProvider::GetProviderId () const
+UInt16          ECPresentationProvider::GetProviderId () const
     {
     return _GetProviderId();
     }
@@ -32,8 +22,15 @@ UInt16          IAUIProvider::GetProviderId () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP         IAUIProvider::GetProviderName () const
+WCharCP         ECPresentationProvider::GetProviderName () const
     {
     return _GetProviderName();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPresentationProvider::ProviderType    ECPresentationProvider::GetProviderType () const
+    {
+    return _GetProviderType();
+    }
