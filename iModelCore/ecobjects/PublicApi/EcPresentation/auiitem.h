@@ -32,7 +32,7 @@ struct IAUIItem : public RefCountedBase // Content Service Element
         ECOBJECTS_EXPORT BentleyStatus ExecuteActions() const;
 
         //! Get the parent instance associated with this instance.
-        ECOBJECTS_EXPORT IAUIItemCP        GetParent () const;
+        ECOBJECTS_EXPORT IAUIItemCP     GetParent () const;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -45,7 +45,9 @@ struct  IAUIItemInfo
     enum ItemType
         {
         Menu,
+        MenuItem,
         ToolBar,
+        ToolBarItem,
         DataGrid,
         TreeView,
         ListView,
@@ -53,16 +55,13 @@ struct  IAUIItemInfo
         DgnViewPort,
         };
     
-    private:
-        ItemType  m_itemType;
-
     protected:
-        ECOBJECTS_EXPORT virtual bool    _IsAggregatable () const;
+        virtual bool        _IsAggregatable () const = 0;
+        virtual ItemType    _GetItemType() const = 0;
 
     public:
     //Constructor that initializes an item from a primitive type.
-    IAUIItemInfo (ItemType itemType)
-        :m_itemType (itemType)
+    virtual ~IAUIItemInfo ()
         {}
 
     ECOBJECTS_EXPORT bool IsAggregatable() const;

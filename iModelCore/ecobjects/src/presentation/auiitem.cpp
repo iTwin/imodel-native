@@ -60,7 +60,7 @@ IAUIItemInfoCR  IAUIItem::GetUIItemInfo () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 IAUIItemInfo::ItemType  IAUIItemInfo::GetItemType() const
     {
-    return m_itemType;
+    return _GetItemType();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -69,19 +69,4 @@ IAUIItemInfo::ItemType  IAUIItemInfo::GetItemType() const
 bool            IAUIItemInfo::IsAggregatable () const
     {
     return _IsAggregatable();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            IAUIItemInfo::_IsAggregatable () const
-    {
-    switch (GetItemType())
-        {
-        case Menu:
-        case ToolBar:
-            return true;
-        default:
-            return false;
-        }
     }

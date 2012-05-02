@@ -14,17 +14,9 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IAUIItemCR      IECPresentationViewDefinition::GetUIItem()
+IECPresentationUIItemCR IECPresentationViewDefinition::GetUIItem()
     {
     return _GetUIItem ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-IAUIDataContextP IECPresentationViewDefinition::GetDataContext()
-    {
-    return _GetDataContext();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -50,18 +42,15 @@ struct CompositeViewDefinition : public IECPresentationViewDefinition
     {
     private:
     bvector<IECPresentationViewDefinitionPtr>   m_childDefs;
+    IECPresentationViewTransform                m_viewDefTransform;
 
     CompositeViewDefinition (bvector<IECPresentationViewDefinitionPtr> const& childDefs)
         :m_childDefs (childDefs)
         {}
 
-    virtual IAUIItemCR          _GetUIItem () override;
-    virtual IAUIDataContextP    _GetDataContext () override
-        {
-        return NULL;
-        }
-
-    virtual ChildDefinitions    _GetChildDefinitions () override;
+    virtual IECPresentationUIItemCR         _GetUIItem () override;
+    virtual ChildDefinitions                _GetChildDefinitions () override;
+    virtual IECPresentationViewTransformCR  _GetViewTransform () override {return m_viewDefTransform;}
 
     public:
     static IECPresentationViewDefinitionPtr CreateViewDefs (bvector<IECPresentationViewDefinitionPtr> const& viewDefs)
@@ -81,7 +70,7 @@ IECPresentationViewDefinition::ChildDefinitions CompositeViewDefinition::_GetChi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IAUIItemCR  CompositeViewDefinition::_GetUIItem () 
+IECPresentationUIItemCR  CompositeViewDefinition::_GetUIItem () 
     {
     return m_childDefs.front()->GetUIItem ();
     }
@@ -95,8 +84,40 @@ IECPresentationViewDefinitionPtr IECPresentationViewDefinition::CreateCompositeV
         return NULL;
 
     IAUIItemInfoCR beginVal (viewDefs.front()->GetUIItem().GetUIItemInfo());
-    if (viewDefs.end() != std::find_if(viewDefs.begin(), viewDefs.end(), [&] (IECPresentationViewDefinitionPtr const &x) {return beginVal.GetItemType() != x->GetUIItem().GetUIItemInfo().GetItemType();}))
-        return NULL;
+    for (bvector<IECPresentationViewDefinitionPtr>::const_iterator iter = viewDefs.begin(); iter != viewDefs.end(); ++iter)
+        {
+        if (beginVal.GetItemType() != (*iter)->GetUIItem().GetUIItemInfo().GetItemType())
+            return (*iter);
+        }
 
     return CompositeViewDefinition::CreateViewDefs(viewDefs);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+IECPresentationViewTransformCR  IECPresentationViewDefinition::GetViewTransform ()
+    {
+    return _GetViewTransform();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP         ECPresentationMenuItem::GetToolTip() const
+    {
+    return _GetToolTip();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP         ECPresentationMenuItem::GetLabel() const
+    {
+    return _GetLabel();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPresentationMenuItemInfo ECPresentationMenuItem::m_itemInfo;

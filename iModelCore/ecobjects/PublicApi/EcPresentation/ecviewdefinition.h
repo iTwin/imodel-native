@@ -9,28 +9,81 @@
 /*__BENTLEY_INTERNAL_ONLY__*/
 
 BEGIN_BENTLEY_EC_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                     Abeesh.Basheer                  05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct IECPresentationViewTransform
+    {
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct IECPresentationUIItem: public IAUIItem
+    {
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct IECPresentationUIItemInfo: public IAUIItemInfo
+    {
+
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct  ECPresentationMenuItemInfo : public IAUIItemInfo
+    {
+    protected:
+        virtual ItemType    _GetItemType() const override {return Menu;}
+        virtual bool        _IsAggregatable () const override {return true;}
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct  ECPresentationMenuItem : public IECPresentationUIItem
+    {
+    private:
+        static ECPresentationMenuItemInfo m_itemInfo;
+
+    protected:
+        
+        virtual WCharCP         _GetLabel() const = 0;
+        virtual WCharCP         _GetToolTip() const = 0;
+        virtual IAUIItemInfoCR  _GetUIItemInfo () const {return m_itemInfo;}
+
+    public:
+        //! Get the label
+        ECOBJECTS_EXPORT    WCharCP GetLabel() const;
+        //! Get the description
+        ECOBJECTS_EXPORT    WCharCP GetToolTip() const;
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct          IECPresentationViewDefinition : public RefCountedBase
+struct  IECPresentationViewDefinition : public RefCountedBase
     {
     typedef bvector <IECPresentationViewDefinitionPtr>  ChildDefinitions;
     
     protected:
-        virtual IAUIItemCR          _GetUIItem () = 0;
-        virtual IAUIDataContextP    _GetDataContext () = 0;
-        virtual ChildDefinitions    _GetChildDefinitions () = 0;
+        virtual IECPresentationUIItemCR         _GetUIItem () = 0;
+        virtual ChildDefinitions                _GetChildDefinitions () = 0;
+        virtual IECPresentationViewTransformCR  _GetViewTransform () = 0;
 
     public:
         //! The UI information associated with this view. It describes the control that needs to 
         //! to be instantiated to represent the data.
-        ECOBJECTS_EXPORT IAUIItemCR GetUIItem();
+        ECOBJECTS_EXPORT IECPresentationUIItemCR GetUIItem();
 
-        //!Get the data context relevant for the control represented in IAUIItemInfo
-        ECOBJECTS_EXPORT IAUIDataContextP GetDataContext();
-
-        //Get the child view definitions if there any. Its used by composite controls.
+        //! Get the child view definitions if there any. Its used by composite controls.
         ECOBJECTS_EXPORT ChildDefinitions GetChildDefinitions();
+        
+        ECOBJECTS_EXPORT IECPresentationViewTransformCR GetViewTransform ();
 
         static IECPresentationViewDefinitionPtr CreateCompositeViewDef (bvector<IECPresentationViewDefinitionPtr> const& viewDefs);
     };
@@ -38,7 +91,7 @@ struct          IECPresentationViewDefinition : public RefCountedBase
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct          IECPresentationViewProvider : public IECPresentationProvider
+struct  IECPresentationViewProvider : public IECPresentationProvider
     {
     protected:
         virtual IECPresentationViewDefinitionPtr    _GetViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR dataContext) = 0;

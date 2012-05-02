@@ -28,6 +28,8 @@ EC_TYPEDEFS (ECImageKey);
 EC_TYPEDEFS (IECNativeImage);
 EC_TYPEDEFS (ECNativeImage);
 EC_TYPEDEFS (ECPresentationImageProvider);
+EC_TYPEDEFS (IECPresentationViewTransform);
+EC_TYPEDEFS (IECPresentationUIItem);
 
 namespace Bentley { namespace DgnPlatform {
     struct ECQuery;
