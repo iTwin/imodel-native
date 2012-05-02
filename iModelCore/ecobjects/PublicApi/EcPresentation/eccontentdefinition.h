@@ -21,7 +21,7 @@ struct IECContentDefinition: public IAUIItem
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct          IAUIContentServiceProvider : public ECPresentationProvider
+struct          IAUIContentServiceProvider : public IECPresentationProvider
     {
     protected:
         

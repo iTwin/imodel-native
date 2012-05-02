@@ -92,7 +92,7 @@ struct  ECNativeImage :public IECNativeImage
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ECPresentationImageProvider : public ECPresentationProvider
+struct ECPresentationImageProvider : public IECPresentationProvider
     {
     protected:
         virtual ProviderType    _GetProviderType() const override {return ImageService;}

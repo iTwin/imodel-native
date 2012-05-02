@@ -12,7 +12,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct          ECPresentationProvider
+struct          IECPresentationProvider
     {
     enum ProviderType
         {

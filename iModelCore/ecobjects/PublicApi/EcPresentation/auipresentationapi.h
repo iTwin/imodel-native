@@ -16,7 +16,7 @@ EC_TYPEDEFS (IAUIDataContext);
 EC_TYPEDEFS (IUICommand);
 EC_TYPEDEFS (UICommand);
 EC_TYPEDEFS (IJournalItem);
-EC_TYPEDEFS (ECPresentationProvider);
+EC_TYPEDEFS (IECPresentationProvider);
 EC_TYPEDEFS (ECPresentationCommandProvider);
 EC_TYPEDEFS (IJournalProvider);
 EC_TYPEDEFS (ECPresentationManager);

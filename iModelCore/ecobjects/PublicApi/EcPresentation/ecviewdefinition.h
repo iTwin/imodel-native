@@ -38,13 +38,13 @@ struct          IECPresentationViewDefinition : public RefCountedBase
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct          IECPresentationViewProvider : public ECPresentationProvider
+struct          IECPresentationViewProvider : public IECPresentationProvider
     {
     protected:
         virtual IECPresentationViewDefinitionPtr    _GetViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR dataContext) = 0;
-        virtual ProviderType            _GetProviderType() const override {return ViewService;}
+        virtual ProviderType                        _GetProviderType() const override {return ViewService;}
+
     public:
-        
         //!Get the view definition associated with a particular data context.
         //!@param[in] itemInfo      A hint to provide the context in which the view definition will be used. eg. MenuItem
         //!@param[in] dataContext   The data context for which the view definition is requested.

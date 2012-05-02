@@ -14,7 +14,7 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt16          ECPresentationProvider::GetProviderId () const
+UInt16          IECPresentationProvider::GetProviderId () const
     {
     return _GetProviderId();
     }
@@ -22,7 +22,7 @@ UInt16          ECPresentationProvider::GetProviderId () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP         ECPresentationProvider::GetProviderName () const
+WCharCP         IECPresentationProvider::GetProviderName () const
     {
     return _GetProviderName();
     }
@@ -30,7 +30,7 @@ WCharCP         ECPresentationProvider::GetProviderName () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationProvider::ProviderType    ECPresentationProvider::GetProviderType () const
+IECPresentationProvider::ProviderType    IECPresentationProvider::GetProviderType () const
     {
     return _GetProviderType();
     }

@@ -59,16 +59,16 @@ struct  ECPresentationManager: public NonCopyableClass
     //!Get the view definition associated with a particular data context.
     //!@param[in] itemInfo      A hint to provide the context in which the view definition will be used. eg. MenuItem
     //!@param[in] dataContext   The data context for which the view definition is requested.
-    ECOBJECTS_EXPORT IECPresentationViewDefinitionPtr           GetViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR instanceData) const;
+    ECOBJECTS_EXPORT IECPresentationViewDefinitionPtr   GetViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR instanceData) const;
 
     //!Get the view definition associated with a particular data context.
     //!@param[in] itemInfo      A hint to provide the context in which the view definition will be used. eg. MenuItem
     //!@param[in] dataContext   The data context for which the view definition is requested.
-    ECOBJECTS_EXPORT IECContentDefinitionPtr        GetContentDefinition (IECPresentationViewDefinitionCR viewDef) const;
+    ECOBJECTS_EXPORT IECContentDefinitionPtr            GetContentDefinition (IECPresentationViewDefinitionCR viewDef) const;
 
     //! Get the list of commands that is associated with this data context. Its a union of all commands provided by 
     //! different command providers.
-    ECOBJECTS_EXPORT bvector<UICommandPtr>          GetCommands (IAUIDataContextCR instance) const;
+    ECOBJECTS_EXPORT bvector<UICommandPtr>              GetCommands (IAUIDataContextCR instance) const;
 
     //! Fetch an image of the specified size and name from the image providers.
     ECOBJECTS_EXPORT IECNativeImagePtr GetImage (ECImageKeyCR imageKey, DPoint2dCR size);
