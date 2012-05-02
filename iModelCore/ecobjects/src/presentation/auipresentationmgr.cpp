@@ -39,7 +39,7 @@ void            ECPresentationManager::RemoveProvider (IJournalProviderR provide
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ECPresentationManager::AddProvider (IECViewDefinitionProviderR provider)
+void            ECPresentationManager::AddProvider (IECPresentationViewProviderR provider)
     {
     m_viewProviders.insert(&provider);
     }
@@ -47,7 +47,7 @@ void            ECPresentationManager::AddProvider (IECViewDefinitionProviderR p
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ECPresentationManager::RemoveProvider (IECViewDefinitionProviderR provider)
+void            ECPresentationManager::RemoveProvider (IECPresentationViewProviderR provider)
     {
     m_viewProviders.erase(&provider);
     }
@@ -161,14 +161,14 @@ void            ECPresentationManager::JournalCmd (IUICommandCR cmd, IAUIDataCon
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECViewDefinitionPtr    ECPresentationManager::GetViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR instanceData) const
+IECPresentationViewDefinitionPtr    ECPresentationManager::GetViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR instanceData) const
     {
     if (itemInfo.IsAggregatable())
         return AggregateViewDefinition (itemInfo, instanceData);
 
     for (T_ViewProviderSet::const_iterator iter = m_viewProviders.begin(); iter != m_viewProviders.end(); ++iter)
         {
-        IECViewDefinitionPtr viewDef = (*iter)->GetViewDefinition(itemInfo, instanceData);
+        IECPresentationViewDefinitionPtr viewDef = (*iter)->GetViewDefinition(itemInfo, instanceData);
         if (viewDef.IsValid())
             return viewDef;
         }
@@ -179,7 +179,7 @@ IECViewDefinitionPtr    ECPresentationManager::GetViewDefinition (IAUIItemInfoCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECContentDefinitionPtr ECPresentationManager::GetContentDefinition (IECViewDefinitionCR viewDef) const
+IECContentDefinitionPtr ECPresentationManager::GetContentDefinition (IECPresentationViewDefinitionCR viewDef) const
     {
     for (T_ContentProviderSet::const_iterator iter = m_contentProviders.begin(); iter != m_contentProviders.end(); ++iter)
         {
@@ -194,7 +194,7 @@ IECContentDefinitionPtr ECPresentationManager::GetContentDefinition (IECViewDefi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECViewDefinitionPtr ECPresentationManager::AggregateViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR instanceData) const
+IECPresentationViewDefinitionPtr ECPresentationManager::AggregateViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR instanceData) const
     {
     if (!itemInfo.IsAggregatable())
         {
@@ -202,17 +202,17 @@ IECViewDefinitionPtr ECPresentationManager::AggregateViewDefinition (IAUIItemInf
         return NULL;
         }
 
-    bvector<IECViewDefinitionPtr> viewDefs;
+    bvector<IECPresentationViewDefinitionPtr> viewDefs;
     for (T_ViewProviderSet::const_iterator iter = m_viewProviders.begin(); iter != m_viewProviders.end(); ++iter)
         {
-        IECViewDefinitionPtr viewDef = (*iter)->GetViewDefinition(itemInfo, instanceData);
+        IECPresentationViewDefinitionPtr viewDef = (*iter)->GetViewDefinition(itemInfo, instanceData);
         if (viewDef.IsNull())
             continue;
 
         viewDefs.push_back(viewDef);
         }
 
-    return IECViewDefinition::CreateCompositeViewDef(viewDefs);
+    return IECPresentationViewDefinition::CreateCompositeViewDef(viewDefs);
     }
 
 /*---------------------------------------------------------------------------------**//**

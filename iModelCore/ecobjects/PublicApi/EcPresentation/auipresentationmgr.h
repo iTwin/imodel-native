@@ -17,7 +17,7 @@ struct  ECPresentationManager: public NonCopyableClass
     {
     private:
         typedef bset<ECPresentationCommandProviderCP>   T_CmdProviderSet;
-        typedef bset<IECViewDefinitionProviderP>        T_ViewProviderSet;
+        typedef bset<IECPresentationViewProviderP>        T_ViewProviderSet;
         typedef bset<IJournalProviderP>                 T_JournalProviderSet;
         typedef bset<IAUIContentServiceProviderP>       T_ContentProviderSet;
         typedef bset<ECPresentationImageProviderP>      T_ImageProviderSet;
@@ -30,7 +30,7 @@ struct  ECPresentationManager: public NonCopyableClass
 
         ECPresentationManager ();
         
-        IECViewDefinitionPtr AggregateViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR instanceData) const;
+        IECPresentationViewDefinitionPtr AggregateViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR instanceData) const;
 
     public:
     //! Get the presentation manager.
@@ -45,8 +45,8 @@ struct  ECPresentationManager: public NonCopyableClass
     ECOBJECTS_EXPORT void                           RemoveProvider (ECPresentationCommandProviderCR provider);
     
     //! Add or remove the view definition provider
-    ECOBJECTS_EXPORT void                           AddProvider (IECViewDefinitionProviderR provider);
-    ECOBJECTS_EXPORT void                           RemoveProvider (IECViewDefinitionProviderR provider);
+    ECOBJECTS_EXPORT void                           AddProvider (IECPresentationViewProviderR provider);
+    ECOBJECTS_EXPORT void                           RemoveProvider (IECPresentationViewProviderR provider);
 
     //! Add or remove the view definition provider
     ECOBJECTS_EXPORT void                           AddProvider (IAUIContentServiceProviderR provider);
@@ -59,12 +59,12 @@ struct  ECPresentationManager: public NonCopyableClass
     //!Get the view definition associated with a particular data context.
     //!@param[in] itemInfo      A hint to provide the context in which the view definition will be used. eg. MenuItem
     //!@param[in] dataContext   The data context for which the view definition is requested.
-    ECOBJECTS_EXPORT IECViewDefinitionPtr           GetViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR instanceData) const;
+    ECOBJECTS_EXPORT IECPresentationViewDefinitionPtr           GetViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR instanceData) const;
 
     //!Get the view definition associated with a particular data context.
     //!@param[in] itemInfo      A hint to provide the context in which the view definition will be used. eg. MenuItem
     //!@param[in] dataContext   The data context for which the view definition is requested.
-    ECOBJECTS_EXPORT IECContentDefinitionPtr        GetContentDefinition (IECViewDefinitionCR viewDef) const;
+    ECOBJECTS_EXPORT IECContentDefinitionPtr        GetContentDefinition (IECPresentationViewDefinitionCR viewDef) const;
 
     //! Get the list of commands that is associated with this data context. Its a union of all commands provided by 
     //! different command providers.

@@ -25,11 +25,11 @@ struct          IAUIContentServiceProvider : public ECPresentationProvider
     {
     protected:
         
-        virtual IECContentDefinitionPtr _GetContent (IECViewDefinitionCR viewDef) const = 0;
+        virtual IECContentDefinitionPtr _GetContent (IECPresentationViewDefinitionCR viewDef) const = 0;
         virtual ProviderType    _GetProviderType() const override {return ContentService;}
     public:
 
-        ECOBJECTS_EXPORT IECContentDefinitionPtr GetContent (IECViewDefinitionCR viewDef) const;
+        ECOBJECTS_EXPORT IECContentDefinitionPtr GetContent (IECPresentationViewDefinitionCR viewDef) const;
 
     };
 
