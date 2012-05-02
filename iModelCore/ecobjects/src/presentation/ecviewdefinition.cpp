@@ -87,7 +87,7 @@ IECPresentationViewDefinitionPtr IECPresentationViewDefinition::CreateCompositeV
     for (bvector<IECPresentationViewDefinitionPtr>::const_iterator iter = viewDefs.begin(); iter != viewDefs.end(); ++iter)
         {
         if (beginVal.GetItemType() != (*iter)->GetUIItem().GetUIItemInfo().GetItemType())
-            return (*iter);
+            return NULL;
         }
 
     return CompositeViewDefinition::CreateViewDefs(viewDefs);
@@ -121,3 +121,30 @@ WCharCP         ECPresentationMenuItem::GetLabel() const
 * @bsimethod                                    Abeesh.Basheer                  05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPresentationMenuItemInfo ECPresentationMenuItem::m_itemInfo;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ECPresentationMenuItemSeperator : public ECPresentationMenuItem
+    {
+    virtual WCharCP             _GetLabel() const {return NULL;}
+    virtual WCharCP             _GetToolTip() const {return NULL;}
+    virtual IAUIDataContextCP   _GetDataInstance() const {return NULL;}
+    virtual bool                _IsSeperator () const {return true;}
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPresentationMenuItem* ECPresentationMenuItem::CreateSeperator()
+    {
+    return new ECPresentationMenuItemSeperator();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    ECPresentationMenuItem::IsSeperator () const
+    {
+    return _IsSeperator();
+    }
