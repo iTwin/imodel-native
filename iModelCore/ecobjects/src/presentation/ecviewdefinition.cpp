@@ -14,23 +14,15 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IAUIItemInfoCR  IECViewDefinition::GetUIInfo()
+IECPresentationUIItemCR IECPresentationViewDefinition::GetUIItem()
     {
-    return _GetUIInfo ();
+    return _GetUIItem ();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IAUIDataContextP IECViewDefinition::GetDataContext()
-    {
-    return _GetDataContext();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-IECViewDefinition::ChildDefinitions IECViewDefinition::GetChildDefinitions()
+IECPresentationViewDefinition::ChildDefinitions IECPresentationViewDefinition::GetChildDefinitions()
     {
     return _GetChildDefinitions();
     }
@@ -38,7 +30,7 @@ IECViewDefinition::ChildDefinitions IECViewDefinition::GetChildDefinitions()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECViewDefinitionPtr    IECViewDefinitionProvider::GetViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR dataContext)
+IECPresentationViewDefinitionPtr    IECPresentationViewProvider::GetViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR dataContext)
     {
     return _GetViewDefinition(itemInfo, dataContext);
     }
@@ -46,25 +38,22 @@ IECViewDefinitionPtr    IECViewDefinitionProvider::GetViewDefinition (IAUIItemIn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct CompositeViewDefinition : public IECViewDefinition
+struct CompositeViewDefinition : public IECPresentationViewDefinition
     {
     private:
-    bvector<IECViewDefinitionPtr>   m_childDefs;
+    bvector<IECPresentationViewDefinitionPtr>   m_childDefs;
+    IECPresentationViewTransform                m_viewDefTransform;
 
-    CompositeViewDefinition (bvector<IECViewDefinitionPtr> const& childDefs)
+    CompositeViewDefinition (bvector<IECPresentationViewDefinitionPtr> const& childDefs)
         :m_childDefs (childDefs)
         {}
 
-    virtual IAUIItemInfoCR      _GetUIInfo () override;
-    virtual IAUIDataContextP    _GetDataContext () override
-        {
-        return NULL;
-        }
-
-    virtual ChildDefinitions    _GetChildDefinitions () override;
+    virtual IECPresentationUIItemCR         _GetUIItem () override;
+    virtual ChildDefinitions                _GetChildDefinitions () override;
+    virtual IECPresentationViewTransformCR  _GetViewTransform () override {return m_viewDefTransform;}
 
     public:
-    static IECViewDefinitionPtr CreateViewDefs (bvector<IECViewDefinitionPtr> const& viewDefs)
+    static IECPresentationViewDefinitionPtr CreateViewDefs (bvector<IECPresentationViewDefinitionPtr> const& viewDefs)
         {
         return new CompositeViewDefinition(viewDefs);
         }
@@ -73,7 +62,7 @@ struct CompositeViewDefinition : public IECViewDefinition
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECViewDefinition::ChildDefinitions CompositeViewDefinition::_GetChildDefinitions ()
+IECPresentationViewDefinition::ChildDefinitions CompositeViewDefinition::_GetChildDefinitions ()
     {
     return m_childDefs;
     }
@@ -81,22 +70,81 @@ IECViewDefinition::ChildDefinitions CompositeViewDefinition::_GetChildDefinition
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IAUIItemInfoCR  CompositeViewDefinition::_GetUIInfo () 
+IECPresentationUIItemCR  CompositeViewDefinition::_GetUIItem () 
     {
-    return m_childDefs.front()->GetUIInfo ();
+    return m_childDefs.front()->GetUIItem ();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECViewDefinitionPtr IECViewDefinition::CreateCompositeViewDef (bvector<IECViewDefinitionPtr> const& viewDefs)
+IECPresentationViewDefinitionPtr IECPresentationViewDefinition::CreateCompositeViewDef (bvector<IECPresentationViewDefinitionPtr> const& viewDefs)
     {
     if (viewDefs.empty())
         return NULL;
 
-    IAUIItemInfoCR beginVal (viewDefs.front()->GetUIInfo());
-    if (viewDefs.end() != std::find_if(viewDefs.begin(), viewDefs.end(), [&] (IECViewDefinitionPtr const &x) {return beginVal.GetItemType() != x->GetUIInfo().GetItemType();}))
-        return NULL;
+    IAUIItemInfoCR beginVal (viewDefs.front()->GetUIItem().GetUIItemInfo());
+    for (bvector<IECPresentationViewDefinitionPtr>::const_iterator iter = viewDefs.begin(); iter != viewDefs.end(); ++iter)
+        {
+        if (beginVal.GetItemType() != (*iter)->GetUIItem().GetUIItemInfo().GetItemType())
+            return NULL;
+        }
 
     return CompositeViewDefinition::CreateViewDefs(viewDefs);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+IECPresentationViewTransformCR  IECPresentationViewDefinition::GetViewTransform ()
+    {
+    return _GetViewTransform();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP         ECPresentationMenuItem::GetToolTip() const
+    {
+    return _GetToolTip();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP         ECPresentationMenuItem::GetLabel() const
+    {
+    return _GetLabel();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPresentationMenuItemInfo ECPresentationMenuItem::m_itemInfo;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ECPresentationMenuItemSeperator : public ECPresentationMenuItem
+    {
+    virtual WCharCP             _GetLabel() const {return NULL;}
+    virtual WCharCP             _GetToolTip() const {return NULL;}
+    virtual IAUIDataContextCP   _GetDataInstance() const {return NULL;}
+    virtual bool                _IsSeperator () const {return true;}
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPresentationMenuItem* ECPresentationMenuItem::CreateSeperator()
+    {
+    return new ECPresentationMenuItemSeperator();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    ECPresentationMenuItem::IsSeperator () const
+    {
+    return _IsSeperator();
     }

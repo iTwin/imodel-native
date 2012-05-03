@@ -16,18 +16,23 @@ EC_TYPEDEFS (IAUIDataContext);
 EC_TYPEDEFS (IUICommand);
 EC_TYPEDEFS (UICommand);
 EC_TYPEDEFS (IJournalItem);
-EC_TYPEDEFS (ECPresentationProvider);
+EC_TYPEDEFS (IECPresentationProvider);
 EC_TYPEDEFS (ECPresentationCommandProvider);
 EC_TYPEDEFS (IJournalProvider);
 EC_TYPEDEFS (ECPresentationManager);
-EC_TYPEDEFS (IECViewDefinition);
-EC_TYPEDEFS (IECViewDefinitionProvider);
+EC_TYPEDEFS (IECPresentationViewDefinition);
+EC_TYPEDEFS (IECPresentationViewProvider);
 EC_TYPEDEFS (IECContentDefinition);
 EC_TYPEDEFS (IAUIContentServiceProvider);
 EC_TYPEDEFS (ECImageKey);
 EC_TYPEDEFS (IECNativeImage);
 EC_TYPEDEFS (ECNativeImage);
 EC_TYPEDEFS (ECPresentationImageProvider);
+EC_TYPEDEFS (IECPresentationViewTransform);
+EC_TYPEDEFS (IECPresentationUIItem);
+EC_TYPEDEFS (IECPresentationUIItemInfo);
+EC_TYPEDEFS (ECPresentationMenuItem);
+EC_TYPEDEFS (ECPresentationMenuItemInfo);
 
 namespace Bentley { namespace DgnPlatform {
     struct ECQuery;
@@ -36,7 +41,7 @@ namespace Bentley { namespace DgnPlatform {
 
 BEGIN_BENTLEY_EC_NAMESPACE
 typedef RefCountedPtr<IAUIItem>             IAUIItemPtr;
-typedef RefCountedPtr<IECViewDefinition>    IECViewDefinitionPtr;
+typedef RefCountedPtr<IECPresentationViewDefinition>    IECPresentationViewDefinitionPtr;
 typedef RefCountedPtr<IECContentDefinition> IECContentDefinitionPtr;
 typedef RefCountedPtr<IECNativeImage>       IECNativeImagePtr;
 END_BENTLEY_EC_NAMESPACE
