@@ -20,26 +20,30 @@ struct IECPresentationViewTransform
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct IECPresentationUIItem: public IAUIItem
-    {
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
 struct IECPresentationUIItemInfo: public IAUIItemInfo
     {
-
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct  ECPresentationMenuItemInfo : public IAUIItemInfo
+struct IECPresentationUIItem: public IAUIItem
+    {
+    protected:
+        virtual IAUIItemInfoCR              _GetUIItemInfo () const {return _GetViewItemInfo();}
+        virtual IECPresentationUIItemInfoCR _GetViewItemInfo () const = 0;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct  ECPresentationMenuItemInfo : public IECPresentationUIItemInfo
     {
     protected:
         virtual ItemType    _GetItemType() const override {return Menu;}
         virtual bool        _IsAggregatable () const override {return true;}
+    public:
+        typedef ECPresentationMenuItem  T_ItemType;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -52,10 +56,10 @@ struct  ECPresentationMenuItem : public IECPresentationUIItem
 
     protected:
         
-        virtual WCharCP         _GetLabel() const = 0;
-        virtual WCharCP         _GetToolTip() const = 0;
-        virtual bool            _IsSeperator () const {return false;}
-        virtual IAUIItemInfoCR  _GetUIItemInfo () const {return m_itemInfo;}
+        virtual WCharCP                     _GetLabel() const = 0;
+        virtual WCharCP                     _GetToolTip() const = 0;
+        virtual bool                        _IsSeperator () const {return false;}
+        virtual IECPresentationUIItemInfoCR _GetViewItemInfo () const {return m_itemInfo;}
 
     public:
         //! Get the label
