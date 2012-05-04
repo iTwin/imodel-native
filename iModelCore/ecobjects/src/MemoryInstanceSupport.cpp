@@ -2661,7 +2661,7 @@ WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, Clas
   
     byte const * data = _GetData();
 
-    appendFormattedString (oss, L"%sECClass=%ls at address = 0x%0x\n", indent, classLayout.GetECClassName().c_str(), data);
+    appendFormattedString (oss, L"%lsECClass=%ls at address = 0x%0x\n", indent, classLayout.GetECClassName().c_str(), data);
     InstanceHeader& header = *(InstanceHeader*)data;
 
     appendFormattedString (oss, L"%ls  [0x%0x][%4.d] SchemaIndex = %d\n", indent,        &header.m_schemaIndex,  (byte*)&header.m_schemaIndex   - data, header.m_schemaIndex);
@@ -2684,7 +2684,7 @@ WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, Clas
         ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (propertyLayout, i);
         if (ECOBJECTS_STATUS_Success != status)
             {
-            appendFormattedString (oss, L"%sError (%d) returned while getting PropertyLayout #%d", indent, status, i);
+            appendFormattedString (oss, L"%lsError (%d) returned while getting PropertyLayout #%d", indent, status, i);
             return oss;
             }
 
