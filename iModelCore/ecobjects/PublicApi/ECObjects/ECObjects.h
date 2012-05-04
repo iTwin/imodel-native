@@ -326,7 +326,8 @@ enum PrimitiveType ENUM_UNDERLYING_TYPE(unsigned short)
     PRIMITIVETYPE_Long                      = 0x601,
     PRIMITIVETYPE_Point2D                   = 0x701,
     PRIMITIVETYPE_Point3D                   = 0x801,
-    PRIMITIVETYPE_String                    = 0x901
+    PRIMITIVETYPE_String                    = 0x901,
+    PRIMITIVETYPE_IGeometry                 = 0xa01,
     };
 
 END_BENTLEY_EC_NAMESPACE

@@ -77,6 +77,7 @@ static bool     PrimitiveTypeIsFixedSize (PrimitiveType primitiveType)
             return true;
         case PRIMITIVETYPE_String:
         case PRIMITIVETYPE_Binary:
+        case PRIMITIVETYPE_IGeometry:
             return false;
         default:
             DEBUG_FAIL("Unsupported data type");
@@ -2188,6 +2189,7 @@ ECObjectsStatus       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValu
             return ECOBJECTS_STATUS_Success;
             }
         case PRIMITIVETYPE_Binary:
+        case PRIMITIVETYPE_IGeometry:
             {
             UInt32 size;
             if (useIndex)
@@ -2442,6 +2444,7 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             break;
             }
 
+        case PRIMITIVETYPE_IGeometry:
         case PRIMITIVETYPE_Binary:
             {
             if (!v.IsBinary ())
