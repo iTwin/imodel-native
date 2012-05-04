@@ -6,7 +6,7 @@
 |       $Date: 2005/11/07 15:38:45 $
 |     $Author: EarlinLutz $
 |
-|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -61,6 +61,8 @@ PrimitiveType primitiveType
             return ECXML_TYPENAME_POINT3D;
         case PRIMITIVETYPE_String:
             return ECXML_TYPENAME_STRING;
+        case PRIMITIVETYPE_IGeometry:
+            return ECXML_TYPENAME_IGEOMETRY;
         default:
             return EMPTY_STRING;
         }
@@ -98,8 +100,8 @@ WStringCR     typeName
         primitiveType = PRIMITIVETYPE_DateTime;
     else if (0 == typeName.compare (ECXML_TYPENAME_BINARY))
         primitiveType = PRIMITIVETYPE_Binary;
-//    else if (0 == typeName.compare (ECXML_TYPENAME_IGEOMETRY))
-//        primitiveType = PRIMITIVETYPE_String; // FUSION_WIP: for now we treat this as a string (it is XML) because we don't yet parse it into geometry objects
+    else if (0 == typeName.compare (ECXML_TYPENAME_IGEOMETRY))
+        primitiveType = PRIMITIVETYPE_IGeometry; 
     else
         return ECOBJECTS_STATUS_ParseError;
 

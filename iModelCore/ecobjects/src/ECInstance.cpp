@@ -1858,6 +1858,9 @@ static WCharCP                  GetPrimitiveTypeString (PrimitiveType primitiveT
 
         case PRIMITIVETYPE_String:
             return L"string";
+
+        case PRIMITIVETYPE_IGeometry:
+            return L"igeometry";
         }
 
     assert (false);

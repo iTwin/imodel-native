@@ -175,6 +175,7 @@ public:
     ECOBJECTS_EXPORT bool           IsPoint2D () const; 
     ECOBJECTS_EXPORT bool           IsPoint3D () const; 
     ECOBJECTS_EXPORT bool           IsDateTime () const; 
+    ECOBJECTS_EXPORT bool           IsIGeometry() const;
 
     ECOBJECTS_EXPORT bool           IsArray () const;
     ECOBJECTS_EXPORT bool           IsStruct () const;
