@@ -52,7 +52,7 @@ struct  ECPresentationMenuItemInfo : public IECPresentationUIItemInfo
 struct  ECPresentationMenuItem : public IECPresentationUIItem
     {
     private:
-        static ECPresentationMenuItemInfo m_itemInfo;
+        ECOBJECTS_EXPORT static ECPresentationMenuItemInfo m_itemInfo;
 
     protected:
         
