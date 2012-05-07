@@ -267,7 +267,7 @@ StandaloneECEnablerP ECClass::GetDefaultStandaloneEnabler() const
         m_defaultStandaloneEnabler = StandaloneECEnabler::CreateEnabler (*this, *classLayout, NULL, true);
         }
 
-    assert(m_defaultStandaloneEnabler.IsValid());
+    BeAssert(m_defaultStandaloneEnabler.IsValid());
     return m_defaultStandaloneEnabler.get();
     }
 
@@ -1736,7 +1736,7 @@ SchemaWriteStatus ECRelationshipClass::_WriteXml (BeXmlNodeP& classNode, BeXmlNo
     // verify that this really is the current relationship class element
     if (0 != strcmp (classNode->GetName(), EC_RELATIONSHIP_CLASS_ELEMENT))
         {
-        assert (false);
+        BeAssert (false);
         return SCHEMA_WRITE_STATUS_FailedToCreateXml;
         }
         

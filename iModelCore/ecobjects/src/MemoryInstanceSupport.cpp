@@ -149,9 +149,9 @@ static inline UInt32    CalculateFixedArrayPropertySize (UInt32 fixedCount, Prim
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 WCharCP             PropertyLayout::GetAccessString() const     { return m_accessString.c_str(); }
 UInt32              PropertyLayout::GetParentStructIndex() const{ return m_parentStructIndex; }
-UInt32              PropertyLayout::GetOffset() const           { assert ( ! m_typeDescriptor.IsStruct()); return m_offset; }
-UInt32              PropertyLayout::GetNullflagsOffset() const  { assert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsOffset; }
-NullflagsBitmask    PropertyLayout::GetNullflagsBitmask() const { assert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsBitmask; }
+UInt32              PropertyLayout::GetOffset() const           { BeAssert ( ! m_typeDescriptor.IsStruct()); return m_offset; }
+UInt32              PropertyLayout::GetNullflagsOffset() const  { BeAssert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsOffset; }
+NullflagsBitmask    PropertyLayout::GetNullflagsBitmask() const { BeAssert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsBitmask; }
 ECTypeDescriptor    PropertyLayout::GetTypeDescriptor() const   { return m_typeDescriptor; }
 UInt32              PropertyLayout::GetModifierFlags() const    { return m_modifierFlags; }
 UInt32              PropertyLayout::GetModifierData() const     { return m_modifierData; }    
@@ -639,7 +639,7 @@ UInt32          ClassLayout::Factory::GetParentStructIndex (WCharCP accessString
         WString         parentAccessString (accessString, pLastDot - accessString);
         ECObjectsStatus status = m_underConstruction.GetPropertyIndex (parentStructIndex, parentAccessString.c_str());
 
-        assert (SUCCESS == status);
+        BeAssert (SUCCESS == status);
         }
     
     return parentStructIndex;
@@ -1139,7 +1139,7 @@ UInt32          ClassLayout::GetPropertyCountExcludingEmbeddedStructs () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ClassLayout::IsPropertyReadOnly (UInt32 propertyIndex) const
     {
-    assert (propertyIndex < m_propertyLayouts.size());
+    BeAssert (propertyIndex < m_propertyLayouts.size());
     if (propertyIndex >= m_propertyLayouts.size())
         return true; 
         
@@ -1151,7 +1151,7 @@ bool            ClassLayout::IsPropertyReadOnly (UInt32 propertyIndex) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ClassLayout::SetPropertyReadOnly (UInt32 propertyIndex,  bool readOnly) const
     {
-    assert (propertyIndex < m_propertyLayouts.size());
+    BeAssert (propertyIndex < m_propertyLayouts.size());
     if (propertyIndex >= m_propertyLayouts.size())
         return false; 
         
@@ -1192,7 +1192,7 @@ ECObjectsStatus     ClassLayout::GetPropertyIndex (UInt32& propertyIndex, WCharC
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus       ClassLayout::GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const
     {
-    assert (propertyIndex < m_propertyLayouts.size());
+    BeAssert (propertyIndex < m_propertyLayouts.size());
     if (propertyIndex >= m_propertyLayouts.size())
         return ECOBJECTS_STATUS_IndexOutOfRange; 
         
@@ -1309,7 +1309,7 @@ BentleyStatus   SchemaLayout::AddClassLayout (ClassLayoutCR classLayout, ClassIn
     if (m_classLayouts.size() <= classIndex)
         m_classLayouts.resize (20 + classIndex, NULL); 
 
-    assert (NULL == m_classLayouts[classIndex] && "ClassIndex is already in use");
+    BeAssert (NULL == m_classLayouts[classIndex] && "ClassIndex is already in use");
 
     m_classLayouts[classIndex] = &classLayout;
     
@@ -1370,7 +1370,7 @@ BentleyStatus   SchemaLayout::FindAvailableClassIndex(ClassIndex& classIndex)
 
     // The max size for classIndex is 0xffff, but if we reach that limit,
     // most likely something else has gone wrong.
-    assert(false);
+    BeAssert(false);
     return ERROR;
     }
 
