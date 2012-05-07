@@ -221,8 +221,8 @@ void            Lexer::PushBack ()
     {
     //  Unlike our other tokenizers, this does not allow the caller to specify
     //  the character to push back.  Instead, it just backs up.
-    assert (m_inputIndex >= 0);
-    assert (m_outputIndex >= 0);
+    BeAssert (m_inputIndex >= 0);
+    BeAssert (m_outputIndex >= 0);
 
     m_inputIndex--;
     m_outputIndex--;

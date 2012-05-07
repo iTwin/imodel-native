@@ -70,7 +70,7 @@ ECSchema::~ECSchema ()
             delete ecClass;
         }
 
-    assert (m_classMap.empty());
+    BeAssert (m_classMap.empty());
 
     /*
     for (ECSchemaReferenceVector::iterator sit = m_referencedSchemas.begin(); sit != m_referencedSchemas.end(); sit++)
@@ -976,7 +976,7 @@ ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, WCharCP
     WString::size_type firstDot;
     if (WString::npos == (firstDot = name.find ('.')))
         {
-        assert (s_noAssert);
+        BeAssert (s_noAssert);
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchema FileName String: '%ls' does not contain the suffix '.ecschema.xml'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, filePath);
         return ECOBJECTS_STATUS_ParseError;
         }
@@ -1152,7 +1152,7 @@ SchemaReadStatus ECSchema::ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, UI
     BeXmlNodeP      schemaNode;
     if ( (BEXML_Success != xmlDom.SelectNode (schemaNode, "/" EC_NAMESPACE_PREFIX ":" EC_SCHEMA_ELEMENT, NULL, BeXmlDom::NODE_BIAS_First)) || (NULL == schemaNode) )
         {
-        assert (s_noAssert);
+        BeAssert (s_noAssert);
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: Missing a top-level %hs node in the %hs namespace", EC_SCHEMA_ELEMENT, ECXML_URI_2_0);
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
@@ -1161,7 +1161,7 @@ SchemaReadStatus ECSchema::ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, UI
     WString schemaName;
     if (BEXML_Success != schemaNode->GetAttributeStringValue (schemaName, SCHEMA_NAME_ATTRIBUTE))
         {
-        assert (s_noAssert);
+        BeAssert (s_noAssert);
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %hs element must contain a schemaName attribute", EC_SCHEMA_ELEMENT);
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
@@ -1548,7 +1548,7 @@ UInt32          CheckSumHelper::ComputeCheckSumForFile (WCharCP schemaFile)
     BeFile file;
     if (BE_FILE_STATUS_Success != file.Open (schemaFile, BE_FILE_ACCESS_Read, BE_FILE_SHARE_ReadWrite))
         {
-        assert(false);
+        BeAssert(false);
         return checkSum;
         }
             
@@ -1581,7 +1581,7 @@ SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSc
     BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromFile (xmlStatus, ecSchemaXmlFile);
     if ((xmlStatus != BEXML_Success) || !xmlDom.IsValid())
         {
-        assert (s_noAssert);
+        BeAssert (s_noAssert);
         LogXmlLoadError (xmlDom.get());
         return SCHEMA_READ_STATUS_FailedToParseXml;
         }
@@ -1626,7 +1626,7 @@ ECSchemaReadContextR schemaContext
     
     if (BEXML_Success != xmlStatus)
         {
-        assert (s_noAssert);
+        BeAssert (s_noAssert);
         LogXmlLoadError (xmlDom.get());
         return SCHEMA_READ_STATUS_FailedToParseXml;
         }

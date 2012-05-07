@@ -17,7 +17,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 ExpressionStatus Operations::ConvertToInt32(EvaluationResultR evalResult) 
     {
     EC::ECValueR    ecValue = evalResult.GetECValueR();
-    assert (!ecValue.IsUninitialized() && ecValue.IsPrimitive());
+    BeAssert (!ecValue.IsUninitialized() && ecValue.IsPrimitive());
 
     EC::PrimitiveType  primType = ecValue.GetPrimitiveType();
     switch(primType)
@@ -50,7 +50,7 @@ ExpressionStatus Operations::ConvertToInt32(EvaluationResultR evalResult)
 ExpressionStatus Operations::ConvertToString(EvaluationResultR evalResult) 
     {
     EC::ECValueR    ecValue = evalResult.GetECValueR();
-    assert (!ecValue.IsUninitialized());
+    BeAssert (!ecValue.IsUninitialized());
         
     if (!ecValue.IsPrimitive())
         return ExprStatus_WrongType;
@@ -90,7 +90,7 @@ ExpressionStatus Operations::ConvertToString(EvaluationResultR evalResult)
 ExpressionStatus Operations::ConvertToInt64(EvaluationResultR evalResult) 
     {
     EC::ECValueR    ecValue = evalResult.GetECValueR();
-    assert (!ecValue.IsUninitialized() && ecValue.IsPrimitive());
+    BeAssert (!ecValue.IsUninitialized() && ecValue.IsPrimitive());
 
     EC::PrimitiveType  primType = ecValue.GetPrimitiveType();
     switch(primType)
@@ -123,7 +123,7 @@ ExpressionStatus Operations::ConvertToInt64(EvaluationResultR evalResult)
 ExpressionStatus Operations::ConvertToDouble(EvaluationResultR evalResult) 
     {
     EC::ECValueR    ecValue = evalResult.GetECValueR();
-    assert (!ecValue.IsUninitialized() && ecValue.IsPrimitive());
+    BeAssert (!ecValue.IsUninitialized() && ecValue.IsPrimitive());
 
     EC::PrimitiveType  primType = ecValue.GetPrimitiveType();
     switch(primType)
@@ -228,9 +228,9 @@ ExpressionStatus Operations::ConvertToBooleanOperand (EvaluationResultR evalResu
     {
     ECValueR    ecValue = evalResult.GetECValueR();
 
-    assert(!ecValue.IsUninitialized());
-    assert(!ecValue.IsNull());
-    assert(ecValue.IsPrimitive());
+    BeAssert(!ecValue.IsUninitialized());
+    BeAssert(!ecValue.IsNull());
+    BeAssert(ecValue.IsPrimitive());
 
     if (ecValue.IsBoolean())
         return ExprStatus_Success;
@@ -1204,10 +1204,10 @@ ValueResultPtr  ValueResult::Create(EvaluationResultR result)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            NodeHelpers::GetAdditiveNodes(NodeVector& nodes, NodeR rightMost)
     {
-    assert (rightMost.IsAdditive());
+    BeAssert (rightMost.IsAdditive());
 
     BinaryNodeCP    current = dynamic_cast<BinaryNodeCP>(&rightMost);
-    assert(NULL != current);
+    BeAssert(NULL != current);
 
     NodeP   left = current->GetLeftP();
     if (left->IsAdditive())
@@ -1332,7 +1332,7 @@ NodePtr         Node::CreateBooleanLiteral(bool literalValue)
 NodePtr         Node::CreateStringLiteral (wchar_t const* value)
     {
     size_t      origLen = wcslen(value);
-    assert(origLen > 1);
+    BeAssert(origLen > 1);
     wchar_t*    buffer = (wchar_t*)_alloca(2 *(origLen+1));
 
     BeStringUtilities::Wcsncpy(buffer, origLen, value+1);
@@ -1399,7 +1399,7 @@ NodePtr         Node::CreateArithmetic(ExpressionToken  tokenId, NodeR left, Nod
             return new ConcatenateNode(left, right);
         }
 
-    assert (false && L"invalid arithmetic token");
+    BeAssert (false && L"invalid arithmetic token");
 
     return ErrorNode::Create(L"internal error: unexpected arithmetic token", NULL, NULL).get();
     }
@@ -1516,7 +1516,7 @@ wchar_t const*  PrimaryListNode::GetName(size_t index) const
         return identNode->GetName();
         }
 
-    assert(TOKEN_LParen == nodeId);
+    BeAssert(TOKEN_LParen == nodeId);
 
     CallNodeP   callNode = static_cast<CallNodeP>(node);
     return callNode->GetMethodName();
@@ -1670,7 +1670,7 @@ ExpressionStatus AssignmentNode::_GetValue(EvaluationResult& evalResult, Express
                                         bool allowUnknown, bool allowOverrides)
     {
     // Modifiers not implemented
-    assert (_GetOperation() == TOKEN_None);
+    BeAssert (_GetOperation() == TOKEN_None);
 
 #if defined (NOTNOW)
     ExpressionToken    operation = _GetOperation();
@@ -1746,7 +1746,7 @@ ExpressionStatus AssignmentNode::_GetValue(EvaluationResult& evalResult, Express
 ExpressionStatus ArgumentTreeNode::EvaluateArguments(EvaluationResultVector& results, ExpressionContextR context)
     {
     ExpressionStatus    status = ExprStatus_Success;
-    assert (results.size() == 0);
+    BeAssert (results.size() == 0);
     results.reserve(m_arguments.size());
 
     for (NodePtrVectorIterator curr = m_arguments.begin(); curr != m_arguments.end(); ++curr)
@@ -1837,7 +1837,7 @@ UnitsTypeCR     requiredType
             return;
             }
 
-        assert (diff > 0);
+        BeAssert (diff > 0);
         if (!leftUnits.m_powerCanIncrease)
             {
             leftUnits.m_unitsOrder = (UnitsOrder)(leftUnits.m_unitsOrder*UO_Linear);
@@ -1889,7 +1889,7 @@ UnitsTypeCR     requiredType
             return;
             }
 
-        assert (diff > 0);
+        BeAssert (diff > 0);
         if (!leftUnits.m_powerCanIncrease)
             {
             leftUnits.m_unitsOrder = (UnitsOrder)(leftUnits.m_unitsOrder*UO_Linear);
@@ -2024,7 +2024,7 @@ ExpressionStatus  LogicalNode::_GetValue(EvaluationResult& evalResult, Expressio
             return Operations::PerformLogicalOr(evalResult, leftResult, rightResult);
         }
 
-    assert(false && L"bad LogicalNode operator");
+    BeAssert(false && L"bad LogicalNode operator");
 
     return ExprStatus_UnknownError;
     }
@@ -2224,7 +2224,7 @@ ExpressionStatus DivideNode::_GetValue(EvaluationResult& evalResult, ExpressionC
             return Operations::PerformMod(evalResult, left, right);
         }
 
-    assert (false && L"bad divide operator");
+    BeAssert (false && L"bad divide operator");
     return ExprStatus_UnknownError;
     }
 
@@ -2250,7 +2250,7 @@ ExpressionStatus PlusMinusNode::_PerformOperation(EvaluationResultR evalResult, 
         switch(left.GetPrimitiveType())
             {
             case PRIMITIVETYPE_String:
-                assert (false && L"Implement string concat");
+                BeAssert (false && L"Implement string concat");
                 return ExprStatus_UnknownError;
 
             case PRIMITIVETYPE_Long:
@@ -2265,7 +2265,7 @@ ExpressionStatus PlusMinusNode::_PerformOperation(EvaluationResultR evalResult, 
                 result.SetDouble(left.GetDouble() + right.GetDouble());
                 return ExprStatus_Success;
             }
-        assert (false && L"unexpected types for addition");
+        BeAssert (false && L"unexpected types for addition");
         return ExprStatus_UnknownError;
         }
 
@@ -2284,7 +2284,7 @@ ExpressionStatus PlusMinusNode::_PerformOperation(EvaluationResultR evalResult, 
             return ExprStatus_Success;
         }
 
-    assert (false && L"unexpected types for subtraction");
+    BeAssert (false && L"unexpected types for subtraction");
 
     return ExprStatus_UnknownError;
     }
@@ -2306,7 +2306,7 @@ static bool     PerformCompare (T l, ExpressionToken op, T r)
         }
 
     //  Does not handle string equality or Like operator
-    assert (false);
+    BeAssert (false);
     return false;    
     }
 

@@ -808,7 +808,7 @@ MemoryECInstanceBase* StandaloneECInstance::_GetAsMemoryECInstance () const
 +---------------+---------------+---------------+---------------+---------------+------*/    
 ECEnablerCR         StandaloneECInstance::_GetEnabler() const
     {
-    assert (m_sharedWipEnabler.IsValid());
+    BeAssert (m_sharedWipEnabler.IsValid());
     return *m_sharedWipEnabler;
     }
 
@@ -952,7 +952,7 @@ StandaloneECEnabler::StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR class
     ClassLayoutHolder (classLayout),
     m_ownsClassLayout (ownsClassLayout)
     {
-    assert (NULL != &ecClass);
+    BeAssert (NULL != &ecClass);
     }
 
 /*---------------------------------------------------------------------------------**//**

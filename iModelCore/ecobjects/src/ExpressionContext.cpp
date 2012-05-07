@@ -50,7 +50,7 @@ ExpressionStatus InstanceExpressionContext::_GetReference(EvaluationResultR eval
         {
         while (TOKEN_Dot == nextOperation || TOKEN_Ident == nextOperation)
             {
-            assert(NULL != dynamic_cast<IdentNodeCP>(primaryList.GetOperatorNode(index)));
+            BeAssert(NULL != dynamic_cast<IdentNodeCP>(primaryList.GetOperatorNode(index)));
 
             IdentNodeCP       identNode = static_cast<IdentNodeCP>(primaryList.GetOperatorNode(index++));
             
@@ -86,7 +86,7 @@ ExpressionStatus InstanceExpressionContext::_GetReference(EvaluationResultR eval
                 }
 
             EC::StructECPropertyCP  structProperty = currentProperty->GetAsStructProperty();
-            assert (NULL != structProperty);
+            BeAssert (NULL != structProperty);
 
             ecClass = &structProperty->GetType();
             }
@@ -170,7 +170,7 @@ ExpressionStatus InstanceExpressionContext::_GetReference(EvaluationResultR eval
                 return ExprStatus_Success;
                 }
 
-            assert(EC::ARRAYKIND_Struct == arrayProp->GetKind());
+            BeAssert(EC::ARRAYKIND_Struct == arrayProp->GetKind());
 
             accessString.append(L"[]");
             ::UInt32     propertyIndex;
@@ -246,7 +246,7 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
 
         while (TOKEN_Dot == nextOperation || TOKEN_Ident == nextOperation)
             {
-            assert(NULL != dynamic_cast<IdentNodeCP>(primaryList.GetOperatorNode(index)));
+            BeAssert(NULL != dynamic_cast<IdentNodeCP>(primaryList.GetOperatorNode(index)));
 
             IdentNodeCP       identNode = static_cast<IdentNodeCP>(primaryList.GetOperatorNode(index++));
             
@@ -282,7 +282,7 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
                 }
 
             EC::StructECPropertyCP  structProperty = currentProperty->GetAsStructProperty();
-            assert (NULL != structProperty);
+            BeAssert (NULL != structProperty);
 
             ecClass = &structProperty->GetType();
             }
@@ -309,7 +309,7 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
             EC::ECValue         ecValue;
             EC::ECObjectsStatus  status = instance->GetValue(ecValue, propertyIndex);
 
-            assert (EC::ECOBJECTS_STATUS_Success == status);
+            BeAssert (EC::ECOBJECTS_STATUS_Success == status);
 
             if (EC::ECOBJECTS_STATUS_Success != status)
                 {
@@ -433,7 +433,7 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
                 EC::ECValue         ecValue;
                 EC::ECObjectsStatus  ecStatus = instance->GetValue(ecValue, propertyIndex, arrayIndex);
 
-                assert (EC::ECOBJECTS_STATUS_Success == ecStatus);
+                BeAssert (EC::ECOBJECTS_STATUS_Success == ecStatus);
 
                 if (EC::ECOBJECTS_STATUS_Success != ecStatus)
                     {
@@ -445,7 +445,7 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
                 return ExprStatus_Success;
                 }
 
-            assert(EC::ARRAYKIND_Struct == arrayProp->GetKind());
+            BeAssert(EC::ARRAYKIND_Struct == arrayProp->GetKind());
 
             accessString.append(L"[]");
             ::UInt32     propertyIndex;
@@ -572,7 +572,7 @@ ExpressionStatus MethodSymbol::_GetValue(EvaluationResultR evalResult, PrimaryLi
     //  For now assuming this has to be a static method; may want to support having a MethodSymbol in a context. That would require that this
     //  method receive a pointer to the context used to invoke it.
 
-    assert(1 <= startIndex);
+    BeAssert(1 <= startIndex);
     ::UInt32        callNodeIndex = startIndex - 1;
 
     if (primaryList.GetOperation(callNodeIndex) != TOKEN_LParen)
