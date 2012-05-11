@@ -59,9 +59,10 @@ struct  ECPresentationMenuItem : public IECPresentationUIItem
         virtual WCharCP                     _GetLabel() const = 0;
         virtual WCharCP                     _GetToolTip() const = 0;
         virtual bool                        _IsSeperator () const {return false;}
-        virtual IECPresentationUIItemInfoCR _GetViewItemInfo () const {return m_itemInfo;}
+        virtual IECPresentationUIItemInfoCR _GetViewItemInfo () const {return GetItemInfo();}
 
     public:
+        ECOBJECTS_EXPORT    static ECPresentationMenuItemInfoCR GetItemInfo();
         //! Get the label
         ECOBJECTS_EXPORT    WCharCP     GetLabel() const;
         //! Get the description

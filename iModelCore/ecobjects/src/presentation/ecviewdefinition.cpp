@@ -122,6 +122,11 @@ WCharCP         ECPresentationMenuItem::GetLabel() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPresentationMenuItemInfo ECPresentationMenuItem::m_itemInfo;
 
+ECPresentationMenuItemInfoCR ECPresentationMenuItem::GetItemInfo()
+    {
+    return m_itemInfo;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
