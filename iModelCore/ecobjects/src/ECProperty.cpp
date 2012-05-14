@@ -6,7 +6,7 @@
 |       $Date: 2005/11/07 15:38:45 $
 |     $Author: EarlinLutz $
 |
-|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -350,6 +350,10 @@ WCharCP elementName
 )
     {
     SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
+
+    // If this property was created during supplementation as a local property on the class, then don't serialize it
+    if (m_forSupplementation)
+        return status;
 
     MSXML2::IXMLDOMTextPtr textPtr = NULL;
     MSXML2::IXMLDOMAttributePtr attributePtr;

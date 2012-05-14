@@ -329,17 +329,74 @@ ECPropertyP&                 pProperty
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::CopyProperty
+(
+ECPropertyP& destProperty, 
+ECPropertyP sourceProperty
+)
+    {
+    if (sourceProperty->GetIsPrimitive())
+        {
+        PrimitiveECPropertyP destPrimitive;
+        PrimitiveECPropertyP sourcePrimitive = sourceProperty->GetAsPrimitiveProperty();
+        destPrimitive = new PrimitiveECProperty(*this, m_hideFromLeakDetection);
+        destPrimitive->SetType(sourcePrimitive->GetType());
+
+        destProperty = destPrimitive;
+        }
+    else if (sourceProperty->GetIsArray())
+        {
+        ArrayECPropertyP destArray;
+        ArrayECPropertyP sourceArray = sourceProperty->GetAsArrayProperty();
+        destArray = new ArrayECProperty (*this, m_hideFromLeakDetection);
+        if (NULL != sourceArray->GetStructElementType())
+            destArray->SetStructElementType(sourceArray->GetStructElementType());
+        else
+            destArray->SetPrimitiveElementType(sourceArray->GetPrimitiveElementType());
+
+        destArray->SetMaxOccurs(sourceArray->GetMaxOccurs());
+        destArray->SetMinOccurs(sourceArray->GetMinOccurs());
+
+        destProperty = destArray;
+        }
+    else if (sourceProperty->GetIsStruct())
+        {
+        StructECPropertyP destStruct;
+        StructECPropertyP sourceStruct = sourceProperty->GetAsStructProperty();
+        destStruct = new StructECProperty (*this, m_hideFromLeakDetection);
+        destStruct->SetType(sourceStruct->GetType());
+
+        destProperty = destStruct;
+        }
+
+    destProperty->SetDescription(sourceProperty->GetDescription());
+    if (sourceProperty->GetIsDisplayLabelDefined())
+        destProperty->SetDisplayLabel(sourceProperty->GetDisplayLabel());
+    destProperty->SetName(sourceProperty->GetName());
+    destProperty->SetIsReadOnly(sourceProperty->GetIsReadOnly());
+    destProperty->m_forSupplementation = true;
+    return AddProperty(destProperty, sourceProperty->GetName());
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyP ECClass::GetPropertyP
 (
-WCharCP propertyName
+WCharCP propertyName,
+bool includeBaseClasses
 ) const
     {
     PropertyMap::const_iterator  propertyIterator = m_propertyMap.find (propertyName);
     
     if ( propertyIterator != m_propertyMap.end() )
         return propertyIterator->second;
+
+    if (!includeBaseClasses)
+        return NULL;
 
     // not found yet, search the inheritence hierarchy
     FOR_EACH (const ECClassP& baseClass, m_baseClasses)
@@ -356,10 +413,11 @@ WCharCP propertyName
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyP ECClass::GetPropertyP
 (
-WStringCR propertyName
+WStringCR propertyName,
+bool includeBaseClasses
 ) const
     {
-    return  GetPropertyP (propertyName.c_str());
+    return  GetPropertyP (propertyName.c_str(), includeBaseClasses);
     }
 
 static bvector<WString> s_schemasThatAllowOverridingArrays;

@@ -110,6 +110,7 @@ public:
 
 typedef bvector<IECInstancePtr> ECCustomAttributeCollection;
 struct ECCustomAttributeInstanceIterable;
+struct SupplementedSchemaBuilder;
 
 //=======================================================================================
 //
@@ -120,15 +121,20 @@ struct IECCustomAttributeContainer /*__PUBLISH_ABSTRACT__*/
 /*__PUBLISH_SECTION_END__*/
 private:
     friend struct ECCustomAttributeInstanceIterable;
-    ECCustomAttributeCollection         m_customAttributes;
-    SchemaWriteStatus           AddCustomAttributeProperties(MSXML2_IXMLDOMNode& oldNode, MSXML2_IXMLDOMNode& newNode) const;
+    friend struct SupplementedSchemaBuilder;
+    ECCustomAttributeCollection         m_primaryCustomAttributes;
+    ECCustomAttributeCollection         m_consolidatedCustomAttributes;
+    SchemaWriteStatus                   AddCustomAttributeProperties(MSXML2_IXMLDOMNode& oldNode, MSXML2_IXMLDOMNode& newNode) const;
 
-    IECInstancePtr                      GetCustomAttributeInternal(WStringCR className, bool includeBaseClasses) const;
-    IECInstancePtr                      GetCustomAttributeInternal(ECClassCR ecClass, bool includeBaseClasses) const;
+    IECInstancePtr                      GetCustomAttributeInternal(WStringCR className, bool includeBaseClasses, bool includeSupplementalAttributes) const;
+    IECInstancePtr                      GetCustomAttributeInternal(ECClassCR ecClass, bool includeBaseClasses, bool includeSupplementalAttributes) const;
+
+    ECObjectsStatus                     SetCustomAttributeInternal(ECCustomAttributeCollection& customAttributeCollection, IECInstanceR customAttributeInstance);
+    ECObjectsStatus                     SetConsolidatedCustomAttribute(IECInstanceR customAttributeInstance);
 
 protected:
-    InstanceReadStatus       ReadCustomAttributes(MSXML2_IXMLDOMNode& containerNode, ECSchemaCR schema, IStandaloneEnablerLocaterP standaloneEnablerLocater);
-    SchemaWriteStatus           WriteCustomAttributes(MSXML2_IXMLDOMNode& parentNode) const;
+    InstanceReadStatus                  ReadCustomAttributes(MSXML2_IXMLDOMNode& containerNode, ECSchemaCR schema, IStandaloneEnablerLocaterP standaloneEnablerLocater);
+    SchemaWriteStatus                   WriteCustomAttributes(MSXML2_IXMLDOMNode& parentNode) const;
 
     void                                AddUniqueCustomAttributesToList(ECCustomAttributeCollection& returnList);
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const;
@@ -143,21 +149,55 @@ public:
     //! Returns true if the container has a custom attribute of a class of the specified class definition
     ECOBJECTS_EXPORT bool               IsDefined(ECClassCR classDefinition) ;
 
-    //! Retrieves the custom attribute matching the class name.  Includes looking on base containers
+    //! Retrieves the custom attribute matching the class name.  Includes supplemental custom attributes
+    //! and custom attributes from the base containers
+    //! @param[in]  className   The name of the CustomAttribute Class to look for an instance of
+    //! @returns An IECInstancePtr.  If IsValid(), will be the matching custom attribute.  Otherwise, no instance of
+    //! the custom attribute was found on the container.
     ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttribute(WStringCR className) const;
 
-    //! Retrieves the custom attribute matching the class name.  Does not look on base containers
-    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttributeLocal(WStringCR className) const;
-
-    //! Retrieves the custom attribute matching the class definition.  Includes looking on base containers
+    //! Retrieves the custom attribute matching the class definition.  Includes supplemental custom attributes
+    //! and custom attributes from the base containers
+    //! @param[in]  classDefinition   The ECClass to look for an instance of
+    //! @returns An IECInstancePtr.  If IsValid(), will be the matching custom attribute.  Otherwise, no instance of
+    //! the custom attribute was found on the container.
     ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttribute(ECClassCR classDefinition) const;
 
-    //! Retrieves the custom attribute matching the class definition.  Includes looking on base containers
+    //! Retrieves the custom attribute matching the class name.  Includes supplemental custom attributes
+    //! but not base containers
+    //! @param[in]  className   The name of the CustomAttribute Class to look for an instance of
+    //! @returns An IECInstancePtr.  If IsValid(), will be the matching custom attribute.  Otherwise, no instance of
+    //! the custom attribute was found on the container.
+    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttributeLocal(WStringCR className) const;
+
+    //! Retrieves the custom attribute matching the class definition.  Includes supplemental custom attributes
+    //! but not base containers
+    //! @param[in]  classDefinition   The ECClass to look for an instance of
+    //! @returns An IECInstancePtr.  If IsValid(), will be the matching custom attribute.  Otherwise, no instance of
+    //! the custom attribute was found on the container.
     ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttributeLocal(ECClassCR classDefinition) const;
 
-    //! Retrieves all custom attributes from the container
+    //! Retrieves the custom attribute matching the class name.  Includes custom attributes from base containers
+    //! but not supplemental custom attributes
+    //! @param[in]  className   The name of the CustomAttribute Class to look for an instance of
+    //! @returns An IECInstancePtr.  If IsValid(), will be the matching custom attribute.  Otherwise, no instance of
+    //! the custom attribute was found on the container.
+    ECOBJECTS_EXPORT IECInstancePtr     GetPrimaryCustomAttribute(WStringCR className) const;
+
+    //! Retrieves the custom attribute matching the class definition.  Includes custom attributes from base containers
+    //! but not supplemental custom attributes
+    //! @param[in]  classDefinition   The ECClass to look for an instance of
+    //! @returns An IECInstancePtr.  If IsValid(), will be the matching custom attribute.  Otherwise, no instance of
+    //! the custom attribute was found on the container.
+    ECOBJECTS_EXPORT IECInstancePtr     GetPrimaryCustomAttribute(ECClassCR classDefinition) const;
+
+    //! Retrieves all custom attributes from the container including supplemental custom attributes
     //! @param[in]  includeBase  Whether to include custom attributes from the base containers 
     ECOBJECTS_EXPORT ECCustomAttributeInstanceIterable GetCustomAttributes(bool includeBase) const; 
+
+    //! Retrieves all custom attributes from the container NOT including supplemental custom attributes
+    //! @param[in]  includeBase  Whether to include custom attributes from the base containers 
+    ECOBJECTS_EXPORT ECCustomAttributeInstanceIterable GetPrimaryCustomAttributes(bool includeBase) const; 
 
     //! Adds a custom attribute to the container
     ECOBJECTS_EXPORT ECObjectsStatus    SetCustomAttribute(IECInstanceR customAttributeInstance);
@@ -181,8 +221,10 @@ private:
 
     IECCustomAttributeContainerCR m_container;
     bool                        m_includeBaseContainers;
+    bool                        m_includeSupplementalAttributes;
  /*__PUBLISH_SECTION_END__*/
-   ECCustomAttributeInstanceIterable( IECCustomAttributeContainerCR container, bool includeBase) : m_container(container), m_includeBaseContainers(includeBase) {};
+   ECCustomAttributeInstanceIterable( IECCustomAttributeContainerCR container, bool includeBase, bool includeSupplementalAttributes) : m_container(container), m_includeBaseContainers(includeBase),
+    m_includeSupplementalAttributes(includeSupplementalAttributes) {};
 /*__PUBLISH_SECTION_START__*/
 public:
     struct IteratorState /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
@@ -193,11 +235,11 @@ public:
         ECCustomAttributeCollection* m_customAttributes;
         ECCustomAttributeCollection::const_iterator m_customAttributesIterator;
 
-        IteratorState(IECCustomAttributeContainerCR container, bool includeBase);
+        IteratorState(IECCustomAttributeContainerCR container, bool includeBase, bool includeSupplementalAttributes);
         ~IteratorState();
 
-        static RefCountedPtr<IteratorState> Create (IECCustomAttributeContainerCR container, bool includeBase)
-            { return new IteratorState(container, includeBase); } ;
+        static RefCountedPtr<IteratorState> Create (IECCustomAttributeContainerCR container, bool includeBase, bool includeSupplementalAttributes)
+            { return new IteratorState(container, includeBase, includeSupplementalAttributes); } ;
 /*__PUBLISH_SECTION_START__*/                        
         };
 
@@ -208,7 +250,7 @@ public:
             RefCountedPtr<IteratorState> m_state;
             bool m_isEnd;
 /*__PUBLISH_SECTION_END__*/
-            const_iterator (IECCustomAttributeContainerCR container, bool includeBase);
+            const_iterator (IECCustomAttributeContainerCR container, bool includeBase, bool includeSupplementalAttributes);
             const_iterator () : m_isEnd(true) {};
 /*__PUBLISH_SECTION_START__*/                        
            
@@ -243,6 +285,7 @@ private:
     ECClassCR       m_class;
     ECPropertyCP    m_baseProperty;    
     bool            m_hideFromLeakDetection;
+    bool            m_forSupplementation;   // If when supplementing the schema, a local property had to be created, then don't serialize this property
 
 protected:
     WString         m_originalTypeName; //Will be empty unless the typeName was unrecognized. Keep this so that we can re-write the ECSchema without changing the type to string
@@ -521,6 +564,7 @@ struct ECClass /*__PUBLISH_ABSTRACT__*/ : IECCustomAttributeContainer
 
 friend struct ECSchema;
 friend struct ECPropertyIterable::IteratorState;
+friend struct SupplementedSchemaBuilder;
 
 private:
     WString                         m_name;
@@ -552,6 +596,8 @@ private:
     ECObjectsStatus CanPropertyBeOverridden(ECPropertyCR baseProperty, ECPropertyCR newProperty) const;
     void            AddDerivedClass(ECClassCR baseClass) const;
     void            RemoveDerivedClass(ECClassCR baseClass) const;
+
+    ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyP sourceProperty);
 
 protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
@@ -691,14 +737,15 @@ public:
     //! is removed from the class.
     //! @param[in]  name     The name of the property to lookup.
     //! @return   A pointer to an EC::ECProperty if the named property exists within the current class; otherwise, NULL
-    ECOBJECTS_EXPORT ECPropertyP     GetPropertyP (WCharCP name) const;
+    ECOBJECTS_EXPORT ECPropertyP     GetPropertyP (WCharCP name, bool includeBaseClasses=true) const;
 
     //! Get a property by name within the context of this class and its base classes.
     //! The pointer returned by this method is valid until the ECClass containing the property is destroyed or the property
     //! is removed from the class.
     //! @param[in]  name     The name of the property to lookup.
     //! @return   A pointer to an EC::ECProperty if the named property exists within the current class; otherwise, NULL
-    ECOBJECTS_EXPORT ECPropertyP     GetPropertyP (WStringCR name) const;
+    ECOBJECTS_EXPORT ECPropertyP     GetPropertyP (WStringCR name, bool includeBaseClasses=true) const;
+
 
     // ************************************************************************************************************************
     // ************************************  STATIC METHODS *******************************************************************
@@ -1170,6 +1217,7 @@ private:
     // maps class name -> class pointer    
     ClassMap                m_classMap;
     ECSchemaReferenceList   m_refSchemaList;
+    bool                m_isSupplemented;
     
     bmap<ECSchemaP, const WString> m_referencedSchemaNamespaceMap;
 
@@ -1246,6 +1294,10 @@ public:
     //! Returns true if the schema is an ECStandard schema
     //! @return True if a standard schema, false otherwise
     ECOBJECTS_EXPORT bool               IsStandardSchema() const;
+
+    //! Returns true if the schema is a supplemented schema
+    //! @return True if the schema is a supplemented schema
+    ECOBJECTS_EXPORT bool               IsSupplemented() const;
 
     //! Returns true if and only if the full schema name (including version) represents a standard schema that should never
     //! be stored persistently in a repository (we expect it to be found elsewhere)

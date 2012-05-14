@@ -233,27 +233,89 @@ public:
 //=======================================================================================
 struct SupplementedSchemaBuilder
 {
-private:
-    WString m_primarySchemaName;
-
-    SupplementedSchemaStatus OrderSupplementalSchemas( ECSchemaR primarySchema, const bvector<ECSchemaR>& supplementalSchemaList, bmap<UInt32, ECSchemaP> schemasByPrecedence, bvector<ECSchemaP> localizationSchemas );
-
 public:
-    //! Gets the primary schema name
-    ECOBJECTS_EXPORT WStringCR GetPrimarySchemaName() const;
-
     //! An enumeration used to pass precedence information around.  It provides enough information
     //! to merge the supplemental schemas into the primary schema so long as the supplemental schemas
     //! are properly ordered by precedence.
     enum SchemaPrecedence
         {
         //! The supplemental schema has lower precedence than the consolidated schema
-        Lower,  
+        SCHEMA_PRECEDENCE_Lower,  
         //! The supplemental schema has the same precedence as the consolidated schema. This is a special case where two schemas have the same precedence value.
-        Equal,  
+        SCHEMA_PRECEDENCE_Equal,  
         //! The supplemental schema has greater precedence than the consolidated schema.
-        Greater 
+        SCHEMA_PRECEDENCE_Greater 
         };
+
+private:
+    WString m_primarySchemaName;
+
+    static const int PRECEDENCE_THRESHOLD = 199;
+
+    SupplementedSchemaStatus OrderSupplementalSchemas( ECSchemaR primarySchema, const bvector<ECSchemaP>& supplementalSchemaList, bmap<UInt32, ECSchemaP> schemasByPrecedence, bvector<ECSchemaP> localizationSchemas );
+
+    //! Takes a map of supplemental schemas sorted by precedence and merges them one by one to create the consolidated schema
+    //! @param[in,out]  primarySchema   The schema to merge the supplemental schemas into
+    //! @param[in]      schemasByPrecedence A map of supplemental schemas sorted by precedence
+    SupplementedSchemaStatus MergeSchemasIntoSupplementedSchema (ECSchemaR primarySchema, bmap<UInt32, ECSchemaP> schemasByPrecedence);
+    
+    //! Merges a supplemental schema into the consolidated schema
+    //! @param[in,out]  primarySchema   The consolidated schema that will get supplemented
+    //! @param[in]      supplemental    The supplemental schema being merged
+    //! @param[in]      precedence      The SchemaPrecedence relative to the consolidated schema.  Because the schemas are passed in the correct order, the actual value of precedence is no longer needed.
+    SupplementedSchemaStatus MergeIntoSupplementedSchema(ECSchemaR primarySchema, ECSchemaP supplementalSchema, SchemaPrecedence precedence);
+
+    //! Takes a list of the custom attributes that need to be consolidated to a specific IECCustomAttributeContainer,
+    //! determines if each custom attribute has a class specific delegate to merge it.  Then it calls either the standard or specific delegate
+    //! @param[in,out]  consolidatedCustomAttributeContainer    The ECSchema, ECClass, or ECProperty that holds the consolidated custom attributes
+    //! @param[in]      supplementalCustomAttributes            The custom attributes from the supplemental schema currently being merged
+    //! @param[in]      precedence                              Determines if the precedence is greater, lower, or equal to the consolidated schema
+    //! @param[in]      supplementalSchemaFullName              The name of the schema the supplemental custom attributes come from.  This parameter should be null
+    //!                                                         unless this method is being called in the context of an UpdateSchema call
+    //! @param[in]      consolidatedSchemaFullName              The name of the schema that the consolidated custom attributes come from.  This parameter should
+    //!                                                         be null unless this method is being called in the context of merging schemas of equal precedence during an UpdateSchema call
+    SupplementedSchemaStatus MergeCustomAttributeClasses(IECCustomAttributeContainerR consolidatedCustomAttributeContainer, ECCustomAttributeInstanceIterable supplementalCustomAttributes, SchemaPrecedence precedence, WStringCP supplementalSchemaFullName, WStringCP consolidatedSchemaFullName);
+
+    //! Merges the source and target constraints of an ECRelationshipClass
+    //! @param[in,out]  consolidatedECClass The consolidated class we are going to merge the custom attributes into
+    //! @param[in]      supplementalECClass The supplemental class we are going to get the custom attributes from
+    //! @param[in]      precedence          The precedence relative to the consolidated schema.h  Because the schemas are passed in the correct order, the actual value of precedence is no longer needed
+    SupplementedSchemaStatus MergeRelationshipClassConstraints(ECClassP consolidatedECClass, ECRelationshipClassP supplementalECRelationshipClass, SchemaPrecedence precedence);
+
+    //! Merges the custom attributes for each property in a class
+    //! @param[in,out]  consolidatedECClass The consolidated class we are going to merge the custom attributes into
+    //! @param[in]      supplementalECClass The supplemental class we are going to get the custom attributes from
+    //! @param[in]      precedence          The precedence relative to the consolidated schema.h  Because the schemas are passed in the correct order, the actual value of precedence is no longer needed
+    SupplementedSchemaStatus MergePropertyCustomAttributes(ECClassP consolidatedECClass, ECClassP supplementalECClass, SchemaPrecedence precedence);
+
+    SupplementedSchemaStatus SupplementClass(ECSchemaR primarySchema, ECSchemaP supplementalSchema, ECClassP supplementalECClass, SchemaPrecedence precedence, WStringCP supplementalSchemaFullName);
+
+    //! The default merging "delegate"
+    //! @param[in,out] consolidatedCustomAttributeContainer The ECSchema, ECClass, or ECProperty that holds the consolidation custom attributes
+    //! @param[in]  consolidatedCustomAttribute The custom attribute from the consolidated schema
+    //! @param[in]  supplementalCustomAttribute The custom attribute from the supplemental schema
+    //! @param[in]  precedence  Determines if the precedence is greater, lower, or equal to the consolidated schema
+    SupplementedSchemaStatus MergeStandardCustomAttribute(IECCustomAttributeContainerR consolidatedCustomAttributeContainer, IECInstancePtr supplementalCustomAttribute, IECInstancePtr consolidatedCustomAttribute, SchemaPrecedence precedence);
+
+    //! The merging "delegate" for merging the UnitSpecification custom attribute
+    //! @param[in,out] consolidatedCustomAttributeContainer The ECSchema, ECClass, or ECProperty that holds the consolidation custom attributes
+    //! @param[in]  consolidatedCustomAttribute The custom attribute from the consolidated schema
+    //! @param[in]  supplementalCustomAttribute The custom attribute from the supplemental schema
+    //! @param[in]  precedence  Determines if the precedence is greater, lower, or equal to the consolidated schema
+    SupplementedSchemaStatus MergeUnitSpecificationCustomAttribute(IECCustomAttributeContainerR consolidatedCustomAttributeContainer, IECInstancePtr supplementalCustomAttribute, IECInstancePtr consolidatedCustomAttribute, SchemaPrecedence precedence);
+
+    //! The merging "delegate" for merging the UnitSpecifications custom attribute
+    //! @param[in,out] consolidatedCustomAttributeContainer The ECSchema, ECClass, or ECProperty that holds the consolidation custom attributes
+    //! @param[in]  consolidatedCustomAttribute The custom attribute from the consolidated schema
+    //! @param[in]  supplementalCustomAttribute The custom attribute from the supplemental schema
+    //! @param[in]  precedence  Determines if the precedence is greater, lower, or equal to the consolidated schema
+    SupplementedSchemaStatus MergeUnitSpecificationsCustomAttribute(IECCustomAttributeContainerR consolidatedCustomAttributeContainer, IECInstancePtr supplementalCustomAttribute, IECInstancePtr consolidatedCustomAttribute, SchemaPrecedence precedence);
+
+public:
+    //! Gets the primary schema name
+    ECOBJECTS_EXPORT WStringCR GetPrimarySchemaName() const;
+
+
 
     //! Calling this method supplements the custom attributes of the primarySchema and all sub-containers, and applies the
     //! supplemented custom attributes back to the primarySchema
@@ -263,7 +325,7 @@ public:
     //! @param[in]  supplementalSchemaList  A list of schemas that contain a skeleton structure containing only the classes
     //! and properties needed to hold the supplementary custom attributes
     //! @returns A status code indicating whether the primarySchema was successfully supplemented
-    ECOBJECTS_EXPORT SupplementedSchemaStatus UpdateSchema(ECSchemaR primarySchema, const bvector<ECSchemaR>& supplementalSchemaList); 
+    ECOBJECTS_EXPORT SupplementedSchemaStatus UpdateSchema(ECSchemaR primarySchema, const bvector<ECSchemaP>& supplementalSchemaList); 
     }; // SupplementalSchemaBuilder
 
 END_BENTLEY_EC_NAMESPACE
