@@ -68,7 +68,7 @@ public:
     //! Avoid direct use of this macro.  It is only intended for use by other macros defined in this file.
     // Forces an assert with the specified message as long as asserts are enabled.  No expression is evaluated.
 #if defined (_WIN32) // WIP_NONPORT -- we should move BeAssert into Bentley
-    #define ASSERT_FALSE_IF_NOT_DISABLED(_Message)    (void)((AssertDisabler::AreAssertsDisabled()) || (_wassert(_CRT_WIDE(#_Message), _CRT_WIDE(__FILE__), __LINE__), 0))
+    #define ASSERT_FALSE_IF_NOT_DISABLED(_Message) (void)(AssertDisabler::AreAssertsDisabled() || (!!(_Message)) || (BeAssertFunctions::PerformBeAssert(_CRT_WIDE(#_Message), _CRT_WIDE(__FILE__), __LINE__), 0) )
 #elif defined (__unix__)
     #define ASSERT_FALSE_IF_NOT_DISABLED(_Message)    (void)((AssertDisabler::AreAssertsDisabled()) || (assert(0),0))
 #endif
@@ -108,7 +108,7 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
 //! \endcode
 #define PRECONDITION(_Expression, _ErrorStatus)             \
         EXPECT_CONDITION_LOG_ASSERT_RETURN(_Expression, _ErrorStatus, \
-        L"The following method precondition check has failed:\n  precondition: %S\n  method: %S\n  file: %S\n  line: %i\n", \
+        L"The following method precondition check has failed:\n  precondition: %ls\n  method: %ls\n  file: %ls\n  line: %i\n", \
         #_Expression, __FUNCTION__, __FILE__, __LINE__)
 
     
