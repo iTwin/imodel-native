@@ -303,21 +303,21 @@ void            ECValue::DeepCopy (ECValueCR v)
         case VALUEKIND_Struct:
             {
             //WIP_FUSION 
-            assert (false && "Needs work: copy the struct value");
+            BeAssert (false && "Needs work: copy the struct value");
             break;
             }
 
         case VALUEKIND_Array:
             {
             //WIP_FUSION 
-            assert (false && "It's impossible to 'copy' an array -- the data is not here");
+            BeAssert (false && "It's impossible to 'copy' an array -- the data is not here");
             break;
             }
 
         case PRIMITIVETYPE_Binary:
             {
             //WIP_FUSION 
-            assert (false && "Needs work: can we copy a binary value? BinaryInfo::m_data is a pointer into somebody's storage container?!");
+            BeAssert (false && "Needs work: can we copy a binary value? BinaryInfo::m_data is a pointer into somebody's storage container?!");
             break;
             }
 
@@ -337,7 +337,7 @@ void            ECValue::DeepCopy (ECValueCR v)
             break;
                         
         default:
-            assert (false); // type not handled
+            BeAssert (false); // type not handled
         }
     };
     
@@ -368,7 +368,7 @@ void            ECValue::ShallowCopy (ECValueCR v)
         case PRIMITIVETYPE_Binary:
             {
             //WIP_FUSION 
-            assert (false && "Needs work: can we copy a binary value? BinaryInfo::m_data is a pointer into somebody's storage container?!");
+            BeAssert (false && "Needs work: can we copy a binary value? BinaryInfo::m_data is a pointer into somebody's storage container?!");
             break;
             }
 
@@ -396,7 +396,7 @@ void            ECValue::ShallowCopy (ECValueCR v)
             break;
                         
         default:
-            assert (false); // type not handled
+            BeAssert (false); // type not handled
         }
     }
 
@@ -1128,7 +1128,7 @@ ECObjectsStatus       ECValue::SetPrimitiveArrayInfo (PrimitiveType primitiveEle
 +---------------+---------------+---------------+---------------+---------------+------*/
 ArrayInfo       ECValue::GetArrayInfo() const
     {
-    assert (IsArray());
+    BeAssert (IsArray());
     
     return m_arrayInfo;
     }
@@ -1329,7 +1329,7 @@ void                                            ECValueAccessor::PushLocation (E
     ECObjectsStatus status = newEnabler.GetPropertyIndex(propertyIndex, accessString);
     if (ECOBJECTS_STATUS_Success != status)
         {
-        assert (false && "Could not resolve property index for this access string");
+        BeAssert (false && "Could not resolve property index for this access string");
         return;
         }
     PushLocation (newEnabler, (int)propertyIndex, newArrayIndex);

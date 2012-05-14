@@ -164,7 +164,7 @@ ECObjectsStatus ECProperty::SetIsReadOnly (WCharCP isReadOnly)
     bool bReadOnly;
     ECObjectsStatus status = ECXml::ParseBooleanString (bReadOnly, isReadOnly);
     if (ECOBJECTS_STATUS_Success != status)
-        ECObjectsLogger::Log()->errorv (L"Failed to parse the isReadOnly string '%s' for ECProperty '%s'.", isReadOnly, this->GetName().c_str());
+        ECObjectsLogger::Log()->errorv (L"Failed to parse the isReadOnly string '%ls' for ECProperty '%ls'.", isReadOnly, this->GetName().c_str());
     else
         SetIsReadOnly (bReadOnly);
         
@@ -209,7 +209,7 @@ bool ECProperty::GetIsPrimitive () const
 PrimitiveECPropertyP ECProperty::GetAsPrimitiveProperty () const
     {
     // virtual get method is significantly faster than dynamic_cast
-    assert (dynamic_cast<PrimitiveECPropertyP>(const_cast<ECPropertyP>(this)) == const_cast<ECPropertyP>(this)->_GetAsPrimitiveECProperty());
+    BeAssert (dynamic_cast<PrimitiveECPropertyP>(const_cast<ECPropertyP>(this)) == const_cast<ECPropertyP>(this)->_GetAsPrimitiveECProperty());
     return const_cast<ECPropertyP>(this)->_GetAsPrimitiveECProperty();
     }
 
@@ -331,12 +331,12 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchem
     WString value;  // needed for macro.
     if (BEXML_Success != propertyNode.GetAttributeStringValue (value, TYPE_NAME_ATTRIBUTE))
         {
-        assert (s_noAssert);
+        BeAssert (s_noAssert);
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %hs element must contain a %hs attribute",  propertyNode.GetName(), TYPE_NAME_ATTRIBUTE);
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
     else if (ECOBJECTS_STATUS_ParseError == this->SetTypeName (value.c_str()))
-        ECObjectsLogger::Log()->warningv (L"Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.", this->GetName().c_str(), this->GetTypeName().c_str());
+        ECObjectsLogger::Log()->warningv (L"Defaulting the type of ECProperty '%ls' to '%ls' in reaction to non-fatal parse error.", this->GetName().c_str(), this->GetTypeName().c_str());
     return SCHEMA_READ_STATUS_Success;
     }
 
@@ -393,7 +393,7 @@ ECObjectsStatus PrimitiveECProperty::_SetTypeName (WStringCR typeName)
     if (ECOBJECTS_STATUS_Success != status)
         {            
         m_originalTypeName = typeName; // Remember this for when we serialize the ECSchema again, later.
-        ECObjectsLogger::Log()->warningv (L"Unrecognized primitive typeName '%s' found in '%s:%s.%s'. A type of 'string' will be used.",
+        ECObjectsLogger::Log()->warningv (L"Unrecognized primitive typeName '%ls' found in '%ls:%ls.%ls'. A type of 'string' will be used.",
                                 typeName.c_str(),
                                 this->GetClass().GetSchema().GetName().c_str(),
                                 this->GetClass().GetName().c_str(),
@@ -487,14 +487,14 @@ ECObjectsStatus ResolveStructType (ECClassP& structClass, WStringCR typeName, EC
     ECObjectsStatus status = ECClass::ParseClassName (namespacePrefix, className, typeName);
     if (ECOBJECTS_STATUS_Success != status)
         {
-        ECObjectsLogger::Log()->warningv (L"Cannot resolve the type name '%s' as a struct type because the typeName could not be parsed.", typeName.c_str());
+        ECObjectsLogger::Log()->warningv (L"Cannot resolve the type name '%ls' as a struct type because the typeName could not be parsed.", typeName.c_str());
         return status;
         }
     
     ECSchemaP resolvedSchema = ecProperty.GetClass().GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
     if (NULL == resolvedSchema)
         {
-        ECObjectsLogger::Log()->warningv (L"Cannot resolve the type name '%s' as a struct type because the namespacePrefix '%s' can not be resolved to the primary or a referenced schema.", 
+        ECObjectsLogger::Log()->warningv (L"Cannot resolve the type name '%ls' as a struct type because the namespacePrefix '%ls' can not be resolved to the primary or a referenced schema.", 
             typeName.c_str(), namespacePrefix.c_str());
         return ECOBJECTS_STATUS_SchemaNotFound;
         }
@@ -502,7 +502,7 @@ ECObjectsStatus ResolveStructType (ECClassP& structClass, WStringCR typeName, EC
     structClass = resolvedSchema->GetClassP (className.c_str());
     if (NULL == structClass)
         {
-        ECObjectsLogger::Log()->warningv (L"Cannot resolve the type name '%s' as a struct type because ECClass '%s' does not exist in the schema '%s'.", 
+        ECObjectsLogger::Log()->warningv (L"Cannot resolve the type name '%ls' as a struct type because ECClass '%ls' does not exist in the schema '%ls'.", 
             typeName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
         return ECOBJECTS_STATUS_ClassNotFound;
         }
@@ -519,7 +519,7 @@ ECObjectsStatus StructECProperty::_SetTypeName (WStringCR typeName)
     ECObjectsStatus status = ResolveStructType (structClass, typeName, *this);
     if (ECOBJECTS_STATUS_Success != status)
         {
-        ECObjectsLogger::Log()->errorv (L"Failed to set the type name of ECStructProperty '%s' to '%s' because the typeName could not be parsed into a resolvable ECClass.", this->GetName().c_str(), typeName.c_str());        
+        ECObjectsLogger::Log()->errorv (L"Failed to set the type name of ECStructProperty '%ls' to '%ls' because the typeName could not be parsed into a resolvable ECClass.", this->GetName().c_str(), typeName.c_str());        
         return status;
         }
     else
@@ -591,14 +591,14 @@ SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNod
         
     if (NULL == propertyNode)
         {
-        assert (false);
+        BeAssert (false);
         return SCHEMA_WRITE_STATUS_FailedToCreateXml;
         }
         
     // verify that this really is the current array property element
     if (0 != strcmp (propertyNode->GetName(), EC_ARRAYPROPERTY_ELEMENT))
         {
-        assert (false);
+        BeAssert (false);
         return SCHEMA_WRITE_STATUS_FailedToCreateXml;
         }
 
@@ -661,7 +661,7 @@ ECObjectsStatus ArrayECProperty::_SetTypeName (WStringCR typeName)
         return SetStructElementType (structClass);
 
     m_originalTypeName = typeName;
-    ECObjectsLogger::Log()->warningv (L"TypeName '%s' of '%s.%s.%s' was not recognized. We will use 'string' intead.",
+    ECObjectsLogger::Log()->warningv (L"TypeName '%ls' of '%ls.%ls.%ls' was not recognized. We will use 'string' intead.",
                                     typeName.c_str(),
                                     this->GetClass().GetSchema().GetName().c_str(),
                                     this->GetClass().GetName().c_str(),
@@ -714,7 +714,7 @@ ECObjectsStatus ArrayECProperty::SetStructElementType (ECClassCP structType)
     PRECONDITION (NULL != structType, ECOBJECTS_STATUS_PreconditionViolated);
     if (!structType->GetIsStruct())
         {
-        ECObjectsLogger::Log()->errorv (L"ECArrayProperty '%s' uses ECClass '%s', but isStructClass='false' on '%s'", GetName().c_str(), structType->GetName().c_str(), structType->GetName().c_str());
+        ECObjectsLogger::Log()->errorv (L"ECArrayProperty '%ls' uses ECClass '%ls', but isStructClass='false' on '%ls'", GetName().c_str(), structType->GetName().c_str(), structType->GetName().c_str());
         return ECOBJECTS_STATUS_ParseError;
         }
 
@@ -756,7 +756,7 @@ ECObjectsStatus ArrayECProperty::SetMinOccurs (WStringCR minOccurs)
     int count = BeStringUtilities::Swscanf (minOccurs.c_str(), L"%u", &iMinOccurs);
     if (count != 1)
         {
-        ECObjectsLogger::Log()->errorv (L"Failed to set MinOccurs of ECProperty '%s' to '%s' because the value could not be parsed.  It must be a valid unsigned integer.",
+        ECObjectsLogger::Log()->errorv (L"Failed to set MinOccurs of ECProperty '%ls' to '%ls' because the value could not be parsed.  It must be a valid unsigned integer.",
                  this->GetName().c_str(), minOccurs.c_str());        
         return ECOBJECTS_STATUS_ParseError;
         }    
@@ -796,7 +796,7 @@ ECObjectsStatus ArrayECProperty::SetMaxOccurs (WStringCR maxOccurs)
             iMaxOccurs = UINT_MAX;
         else
             {
-            ECObjectsLogger::Log()->errorv (L"Failed to set MaxOccurs of ECProperty '%s' to '%s' because the value could not be parsed.  It must be a valid unsigned integer or the string 'unbounded'.",
+            ECObjectsLogger::Log()->errorv (L"Failed to set MaxOccurs of ECProperty '%ls' to '%ls' because the value could not be parsed.  It must be a valid unsigned integer or the string 'unbounded'.",
                      this->GetName().c_str(), maxOccurs.c_str());        
             return ECOBJECTS_STATUS_ParseError;
             }

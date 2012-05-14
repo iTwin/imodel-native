@@ -242,8 +242,8 @@ void            StandaloneECRelationshipInstance::_SetSource (IECInstanceP insta
             }
         }
 
-    assert(false && "Invalid source instance");
-    ECObjectsLogger::Log()->warningv (L"Invalid source instance of class '%s' for relationship class %s", instance->GetClass().GetName().c_str(), GetRelationshipClass().GetName().c_str());
+    BeAssert(false && "Invalid source instance");
+    ECObjectsLogger::Log()->warningv (L"Invalid source instance of class '%ls' for relationship class %ls", instance->GetClass().GetName().c_str(), GetRelationshipClass().GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -296,8 +296,8 @@ void            StandaloneECRelationshipInstance::_SetTarget (IECInstanceP insta
             }
         }
 
-    assert(false && "Invalid target instance");
-    ECObjectsLogger::Log()->warningv (L"Invalid target instance of class '%s' for relationship class %s", instance->GetClass().GetName().c_str(), GetRelationshipClass().GetName().c_str());
+    BeAssert(false && "Invalid target instance");
+    ECObjectsLogger::Log()->warningv (L"Invalid target instance of class '%ls' for relationship class %ls", instance->GetClass().GetName().c_str(), GetRelationshipClass().GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
