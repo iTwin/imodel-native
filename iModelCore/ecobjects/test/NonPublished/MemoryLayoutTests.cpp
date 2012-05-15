@@ -1523,5 +1523,46 @@ TEST_F (MemoryLayoutTests, ProfileSettingValues)
     wprintf (L"  %d StandaloneECInstances with %d string properties initialized in %.4f seconds.\n", nInstances, nStrings, elapsedSeconds);
     }
     
+TEST_F (MemoryLayoutTests, PropertyLayoutBracketsTest)
+    {
+    // ClassLayout maintains a vector of PropertyLayouts sorted by access string.
+    // We discovered a defect in which the access string used for sorting did not include the brackets[] for array properties, causing lookup to fail.
+    // This test confirms that defect is corrected.
+    wchar_t schemaXml[] = 
+        L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        L"<ECSchema schemaName=\"BracketTestSchema\" nameSpacePrefix=\"bts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+            L"<ECClass typeName=\"BracketTestClass\" isDomainClass=\"True\">"
+            L"<ECProperty propertyName=\"B0\" typeName=\"string\" />"
+                L"<ECProperty propertyName=\"B1\" typeName=\"string\" />"
+                L"<ECProperty propertyName=\"B2\" typeName=\"string\" />"
+                L"<ECProperty propertyName=\"B3\" typeName=\"string\" />"
+                L"<ECProperty propertyName=\"B4\" typeName=\"string\" />"
+                L"<ECProperty propertyName=\"B5\" typeName=\"string\" />"
+                L"<ECArrayProperty propertyName=\"B\" typeName=\"string\" minOccurs=\"0\" maxOccurs=\"unbounded\" />"
+            L"</ECClass>"
+        L"</ECSchema>";
+
+    // If brackets are omitted, then "B" precedes "B0"
+    // Else, "B0" preceds "B[]"
+    // The order of declaration of properties in the schema matters here.
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
+    EXPECT_EQ (S_OK, CoInitialize (NULL));
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext (*schemaOwner);
+    ECSchemaP schema;
+    EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (schema, schemaXml, *schemaContext));
+    CoUninitialize();
+
+    ECClassP ecClass = schema->GetClassP (L"BracketTestClass");
+    ASSERT_TRUE (NULL != ecClass);
+
+    ClassLayoutP layout = ClassLayout::BuildFromClass (*ecClass, 0, 0);
+    ASSERT_TRUE (NULL != layout);
+
+    PropertyLayoutCP propLayout;
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, layout->GetPropertyLayout (propLayout, L"B[]"));   // would have failed prior to bug fix
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, layout->GetPropertyLayout (propLayout, L"B0"));
+
+    delete layout;
+    }
 
 END_BENTLEY_EC_NAMESPACE
