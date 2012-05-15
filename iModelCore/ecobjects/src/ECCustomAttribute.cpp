@@ -11,10 +11,6 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "ECObjectsPch.h"
-#if defined (_WIN32) // WIP_NONPORT
-#include <objbase.h>
-#include <comdef.h>
-#endif //defined (_WIN32) // WIP_NONPORT
 
 BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
