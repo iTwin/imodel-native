@@ -108,7 +108,7 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
 //! \endcode
 #define PRECONDITION(_Expression, _ErrorStatus)             \
         EXPECT_CONDITION_LOG_ASSERT_RETURN(_Expression, _ErrorStatus, \
-        L"The following method precondition check has failed:\n  precondition: %S\n  method: %S\n  file: %S\n  line: %i\n", \
+        L"The following method precondition check has failed:\n  precondition: %hs\n  method: %hs\n  file: %hs\n  line: %i\n", \
         #_Expression, __FUNCTION__, __FILE__, __LINE__)
 
     
@@ -133,7 +133,7 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
 //! \endcode
 #define POSTCONDITION(_Expression, _ErrorStatus)            \
         EXPECT_CONDITION_LOG_ASSERT_RETURN(_Expression, _ErrorStatus, \
-            L"The following method postcondition check has failed:\n  postcondition: %S\n  method: %S\n  file: %S\n  line: %i\n",   \
+            L"The following method postcondition check has failed:\n  postcondition: %hs\n  method: %hs\n  file: %hs\n  line: %i\n",   \
             #_Expression, __FUNCTION__, __FILE__, __LINE__)
 
 
@@ -151,7 +151,7 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
 //!         }
 //! \endcode
 #define EXPECTED_CONDITION(_Expression)     ( (_Expression) \
-    || (LogFailureMessage(L"The following expected condition has failed:\n  expected condition: %S\n  method: %S\n  file: %S\n  line: %i\n", #_Expression, __FUNCTION__, __FILE__, __LINE__), 0) \
+    || (LogFailureMessage(L"The following expected condition has failed:\n  expected condition: %hs\n  method: %hs\n  file: %hs\n  line: %i\n", #_Expression, __FUNCTION__, __FILE__, __LINE__), 0) \
     || (ASSERT_FALSE_IF_NOT_DISABLED (_Expression), 0) )
     
 #ifdef NDEBUG
