@@ -20,6 +20,8 @@ typedef RefCountedPtr<StandaloneECEnabler>        StandaloneECEnablerPtr;
 typedef RefCountedPtr<ECEnabler>                  ECEnablerPtr;
 typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
 
+#define INVALID_PROPERTY_INDEX  0;
+
 //=======================================================================================    
 //! base class ensuring that all enablers are refcounted
 //=======================================================================================    
