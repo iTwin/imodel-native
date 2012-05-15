@@ -1158,7 +1158,7 @@ struct SchemaMapExact:bmap<SchemaKey, ECSchemaPtr, SchemaKeyLessThan <SCHEMAMATC
         }
     
     //! Get a class by name within the context of this list.
-    //! @param[in]  name     The name of the class and schema to lookup.  This must be an unqualified (short) class name.    
+    //! @param[in]  classNamePair     The name of the class and schema to lookup.  This must be an unqualified (short) class name.    
     //! @return   A pointer to an EC::ECClass if the named class exists in within the current list; otherwise, NULL
     ECOBJECTS_EXPORT ECClassP  FindClassP (EC::SchemaNameClassNamePair const& classNamePair) const;
     };
@@ -1578,7 +1578,7 @@ public:
 
     //! Locate a schema using the provided schema locators and paths. If not found in those by either of those parameters standard schema pathes 
     //! relative to the executing dll will be searched.
-    //! @param[in]    name                The schema key containing the identifying information for the schema.
+    //! @param[in]    schema              Key describing the schema to be located
     //! @param[in]    schemaContext       Required to create schemas
      ECOBJECTS_EXPORT static ECSchemaPtr  LocateSchema (SchemaKeyR schema, ECSchemaReadContextR schemaContext);
     
