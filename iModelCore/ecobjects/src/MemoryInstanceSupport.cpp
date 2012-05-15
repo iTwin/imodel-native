@@ -1074,6 +1074,7 @@ ClassLayout::IndicesByAccessString::const_iterator ClassLayout::GetPropertyIndex
         return (it != end && 0 == wcscmp (accessString, it->first)) ? it : end;
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
