@@ -22,7 +22,7 @@ static LeakDetector<ECProperty> g_leakDetector (L"ECProperty", L"ECProperties", 
 #endif
 
 // If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
-// Test programs generally want to get error status back and not assert, so they call ECSchema::AssertOnXmlError (false);
+// Test programs generally want to get error status back and not BeAssert, so they call ECSchema::AssertOnXmlError (false);
 static  bool        s_noAssert = false;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                10/2011
@@ -209,7 +209,7 @@ bool ECProperty::GetIsPrimitive () const
 PrimitiveECPropertyP ECProperty::GetAsPrimitiveProperty () const
     {
     // virtual get method is significantly faster than dynamic_cast
-    assert (dynamic_cast<PrimitiveECPropertyP>(const_cast<ECPropertyP>(this)) == const_cast<ECPropertyP>(this)->_GetAsPrimitiveECProperty());
+    BeAssert (dynamic_cast<PrimitiveECPropertyP>(const_cast<ECPropertyP>(this)) == const_cast<ECPropertyP>(this)->_GetAsPrimitiveECProperty());
     return const_cast<ECPropertyP>(this)->_GetAsPrimitiveECProperty();
     }
 
@@ -331,7 +331,7 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, IStanda
     WString value;  // needed for macro.
     if (BEXML_Success != propertyNode.GetAttributeStringValue (value, TYPE_NAME_ATTRIBUTE))
         {
-        assert (s_noAssert);
+        BeAssert (s_noAssert);
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %hs element must contain a %hs attribute",  propertyNode.GetName(), TYPE_NAME_ATTRIBUTE);
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
@@ -591,14 +591,14 @@ SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNod
         
     if (NULL == propertyNode)
         {
-        assert (false);
+        BeAssert (false);
         return SCHEMA_WRITE_STATUS_FailedToCreateXml;
         }
         
     // verify that this really is the current array property element
     if (0 != strcmp (propertyNode->GetName(), EC_ARRAYPROPERTY_ELEMENT))
         {
-        assert (false);
+        BeAssert (false);
         return SCHEMA_WRITE_STATUS_FailedToCreateXml;
         }
 
