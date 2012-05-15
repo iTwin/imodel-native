@@ -115,6 +115,7 @@ struct ClassLayout
     {
 /*__PUBLISH_SECTION_END__*/
     friend struct MemoryInstanceSupport;
+    friend struct less_AccessStringIndexPair;
 private:
     struct AccessStringIndexPair : bpair<WCharCP, UInt32>
         {
