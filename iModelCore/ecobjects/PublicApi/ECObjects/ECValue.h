@@ -258,6 +258,7 @@ public:
             {
             }
         Location ()
+            :arrayIndex(INDEX_ROOT),enabler(NULL), propertyIndex(0)
             {
             }
         Location (const Location& loc)

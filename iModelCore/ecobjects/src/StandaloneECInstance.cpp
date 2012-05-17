@@ -782,8 +782,9 @@ StandaloneECInstancePtr         StandaloneECInstance::Duplicate(IECInstanceCR in
         return NULL;
 
     StandaloneECInstancePtr newInstance = standaloneEnabler->CreateInstance();
+    if (ECOBJECTS_STATUS_Success != newInstance->CopyInstanceProperties (instance))
+        return NULL;
 
-    newInstance->CopyInstanceProperties (instance);
     return newInstance;
     }
 
