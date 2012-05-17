@@ -133,7 +133,7 @@ IECInstance::IECInstance()
     //size_t sizeofInstance = sizeof(IECInstance);
     //size_t sizeofVoid = sizeof (void*);
     
-    assert (sizeof(IECInstance) == sizeof (RefCountedBase) && L"Increasing the size or memory layout of the base EC::IECInstance will adversely affect subclasses. Think of this as a pure interface... to which you would never be able to add (additional) data, either");
+    BeAssert (sizeof(IECInstance) == sizeof (RefCountedBase) && L"Increasing the size or memory layout of the base EC::IECInstance will adversely affect subclasses. Think of this as a pure interface... to which you would never be able to add (additional) data, either");
     };    
 
 /*---------------------------------------------------------------------------------**//**
@@ -453,7 +453,7 @@ static ECObjectsStatus getECValueUsingFullAccessString (wchar_t* asBuffer, wchar
 
     WCharCP pos2 = wcschr (pos1+1, L']');
 
-    assert (pos2 != NULL);
+    BeAssert (pos2 != NULL);
 
     numChars = pos2 - pos1 - 1;
 
@@ -708,7 +708,7 @@ ECObjectsStatus           IECInstance::SetInternalValueUsingAccessor (ECValueAcc
         if (ECOBJECTS_STATUS_Success != status)
             return status;
 
-        assert (structPlaceholder.IsStruct() && "Accessor depth is greater than expected.");
+        BeAssert (structPlaceholder.IsStruct() && "Accessor depth is greater than expected.");
 
         IECInstancePtr newInstance = structPlaceholder.GetStruct();
 
@@ -931,7 +931,7 @@ static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar
 
     WCharCP pos2 = wcschr (pos1+1, L']');
 
-    assert (pos2 != NULL);
+    BeAssert (pos2 != NULL);
 
     numChars = pos2 - pos1 - 1;
 
@@ -2098,7 +2098,7 @@ static WCharCP                  GetPrimitiveTypeString (PrimitiveType primitiveT
             return L"string";
         }
 
-    assert (false);
+    BeAssert (false);
     return L"";
     }
 
@@ -2209,7 +2209,7 @@ InstanceReadStatus   ReadInstance (IECInstancePtr& ecInstance)
             case XmlNodeType_EndElement:
                 {
                 // we should not hit this.
-                assert (false);
+                BeAssert (false);
                 return INSTANCE_READ_STATUS_Success;
                 }
 
@@ -2493,7 +2493,7 @@ InstanceReadStatus   ReadInstanceOrStructMembers (ECClassCR ecClass, IECInstance
             case XmlNodeType_Text:
                 {
                 // we do not expect there to be any "value" in a struct of class, only property nodes.
-                assert (false);
+                BeAssert (false);
                 break;
                 }
 
@@ -2505,7 +2505,7 @@ InstanceReadStatus   ReadInstanceOrStructMembers (ECClassCR ecClass, IECInstance
             }
         }
     // shouldn't get here.
-    assert (false);
+    BeAssert (false);
     return TranslateStatus (status);
     }
 
@@ -2542,7 +2542,7 @@ InstanceReadStatus   ReadProperty (ECClassCR ecClass, IECInstanceP ecInstance, W
         return ReadEmbeddedStructProperty (structProperty, ecInstance, baseAccessString);
 
     // should be one of those!
-    assert (false);
+    BeAssert (false);
     return INSTANCE_READ_STATUS_BadECProperty;
     }
 
@@ -2567,7 +2567,7 @@ InstanceReadStatus   ReadCustomSerializedStruct (StructECPropertyP structPropert
             {
             case XmlNodeType_Element:
                 // a custom serializer should only allow a single text value.
-                assert (false);
+                BeAssert (false);
                 break;
 
             case XmlNodeType_EndElement:
@@ -2666,7 +2666,7 @@ InstanceReadStatus   ReadPrimitiveProperty (PrimitiveECPropertyP primitiveProper
             ECObjectsLogger::Log()->warningv(L"Unable to set value for property %ls", compoundAccessString.c_str());
         }
 
-    assert (ECOBJECTS_STATUS_Success == setStatus);
+    BeAssert (ECOBJECTS_STATUS_Success == setStatus);
 
     return INSTANCE_READ_STATUS_Success;
     }
@@ -2740,7 +2740,7 @@ InstanceReadStatus   ReadArrayProperty (ArrayECPropertyP arrayProperty, IECInsta
                     ECObjectsStatus   setStatus = ecInstance->SetValue (accessString.c_str(), ecValue, index);
                     if (ECOBJECTS_STATUS_Success != setStatus && ECOBJECTS_STATUS_PropertyValueMatchesNoChange != setStatus)       
                         {
-                        assert (false);
+                        BeAssert (false);
                         return INSTANCE_READ_STATUS_CantSetValue;
                         }
 
@@ -2753,7 +2753,7 @@ InstanceReadStatus   ReadArrayProperty (ArrayECPropertyP arrayProperty, IECInsta
                 case XmlNodeType_Text:
                     {
                     // we don't expend that there is any text in an array element, just child elements.
-                    assert (false);
+                    BeAssert (false);
                     break;
                     }
 
@@ -2850,7 +2850,7 @@ InstanceReadStatus   ReadStructArrayMember (ECClassCR structClass, IECInstanceP 
         }
 
     ECObjectsStatus setStatus = owningInstance->SetValue (accessString.c_str(), structValue, index);
-    assert (ECOBJECTS_STATUS_Success == setStatus);
+    BeAssert (ECOBJECTS_STATUS_Success == setStatus);
 
     return INSTANCE_READ_STATUS_Success;
     }
@@ -2912,7 +2912,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
         switch (nodeType) 
             {
             case XmlNodeType_Element:
-                assert (false);
+                BeAssert (false);
                 return INSTANCE_READ_STATUS_UnexpectedElement;
 
             case XmlNodeType_EndElement:
@@ -3048,7 +3048,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
 
         default:
             {
-            assert (false);
+            BeAssert (false);
             return INSTANCE_READ_STATUS_BadPrimitivePropertyType;
             }
         }
@@ -3074,7 +3074,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
         }
 
     // shouldn't get here.
-    assert (false);
+    BeAssert (false);
     return TranslateStatus (status);
     }
 
@@ -3103,12 +3103,12 @@ ECClassCP                       ValidateArrayStructType (WCharCP typeFound, ECCl
     ECClassCP    classFound;
     if (NULL == (classFound = schema->GetClassP (typeFound)))
         {
-        assert (false);
+        BeAssert (false);
         return NULL;
         }
     if (!classFound->Is (expectedType))
         {
-        assert (false);
+        BeAssert (false);
         return NULL;
         }
 
@@ -3325,7 +3325,7 @@ InstanceWriteStatus     WritePropertiesOfClassOrStructArrayMember (ECClassCR ecC
 
         if (INSTANCE_WRITE_STATUS_Success != ixwStatus)
             {
-            assert (false);
+            BeAssert (false);
             return ixwStatus;
             }
         }
@@ -3455,7 +3455,7 @@ InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType pr
 
         default:
             {
-            assert (false);
+            BeAssert (false);
             return INSTANCE_WRITE_STATUS_BadPrimitivePropertyType;
             }
         }
@@ -3509,7 +3509,7 @@ InstanceWriteStatus     WriteArrayProperty (ArrayECPropertyR arrayProperty, IECI
             // write the primitve value
             if (INSTANCE_WRITE_STATUS_Success != (ixwStatus = WritePrimitiveValue (ecValue, memberType)))
                 {
-                assert (false);
+                BeAssert (false);
                 return ixwStatus;
                 }
 
@@ -3526,17 +3526,17 @@ InstanceWriteStatus     WriteArrayProperty (ArrayECPropertyR arrayProperty, IECI
                 break;
 
             // the XML element tag is the struct type.
-            assert (ecValue.IsStruct());
+            BeAssert (ecValue.IsStruct());
 
             IECInstancePtr  structInstance = ecValue.GetStruct();
             if (!structInstance.IsValid())
                 {
-                assert (false);
+                BeAssert (false);
                 break;
                 }
 
             ECClassCR   structClass = structInstance->GetClass();
-            assert (structClass.Is (memberClass));
+            BeAssert (structClass.Is (memberClass));
 
             if (S_OK != (status = m_xmlWriter->WriteStartElement (NULL, structClass.GetName().c_str(), NULL)))
                 return TranslateStatus (status);
@@ -3550,7 +3550,7 @@ InstanceWriteStatus     WriteArrayProperty (ArrayECPropertyR arrayProperty, IECI
     else
         {
         // unexpected arrayKind - should never happen.
-        assert (false);
+        BeAssert (false);
         }
 
 
@@ -3665,7 +3665,7 @@ static Utf8CP                   GetPrimitiveTypeString (PrimitiveType primitiveT
             return "string";
         }
 
-    assert (false);
+    BeAssert (false);
     return "";
     }
 
@@ -3891,7 +3891,7 @@ InstanceReadStatus   ReadPropertyValue (ECClassCR ecClass, IECInstanceP ecInstan
         return ReadEmbeddedStructPropertyValue (structProperty, ecInstance, baseAccessString, propertyValueNode);
 
     // should be one of those!
-    assert (false);
+    BeAssert (false);
     return INSTANCE_READ_STATUS_BadECProperty;
     }
 
@@ -3931,7 +3931,7 @@ InstanceReadStatus   ReadPrimitivePropertyValue (PrimitiveECPropertyP primitiveP
             ECObjectsLogger::Log()->warningv(L"Unable to set value for property %ls", compoundAccessString.c_str());
         }
 
-    assert (ECOBJECTS_STATUS_Success == setStatus);
+    BeAssert (ECOBJECTS_STATUS_Success == setStatus);
 
     return INSTANCE_READ_STATUS_Success;
     }
@@ -3985,7 +3985,7 @@ InstanceReadStatus   ReadArrayPropertyValue (ArrayECPropertyP arrayProperty, IEC
             ECObjectsStatus   setStatus = ecInstance->SetValue (accessString.c_str(), ecValue, index);
             if (ECOBJECTS_STATUS_Success != setStatus && ECOBJECTS_STATUS_PropertyValueMatchesNoChange != setStatus)   
                 {
-                assert (false);
+                BeAssert (false);
                 return INSTANCE_READ_STATUS_CantSetValue;
                 }
 
@@ -4089,7 +4089,7 @@ InstanceReadStatus   ReadStructArrayMember (ECClassCR structClass, IECInstanceP 
         }
 
     ECObjectsStatus setStatus = owningInstance->SetValue (accessString.c_str(), structValue, index);
-    assert (ECOBJECTS_STATUS_Success == setStatus);
+    BeAssert (ECOBJECTS_STATUS_Success == setStatus);
 
     return INSTANCE_READ_STATUS_Success;
     }
@@ -4230,7 +4230,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
 
         default:
             {
-            assert (false);
+            BeAssert (false);
             return INSTANCE_READ_STATUS_BadPrimitivePropertyType;
             }
         }
@@ -4264,12 +4264,12 @@ ECClassCP                       ValidateArrayStructType (WCharCP typeFound, ECCl
     ECClassCP    classFound;
     if (NULL == (classFound = schema->GetClassP (typeFound)))
         {
-        assert (false);
+        BeAssert (false);
         return NULL;
         }
     if (!classFound->Is (expectedType))
         {
-        assert (false);
+        BeAssert (false);
         return NULL;
         }
 
@@ -4360,7 +4360,7 @@ InstanceWriteStatus     WritePropertyValuesOfClassOrStructArrayMember (ECClassCR
 
         if (INSTANCE_WRITE_STATUS_Success != ixwStatus)
             {
-            assert (false);
+            BeAssert (false);
             return ixwStatus;
             }
         }
@@ -4474,7 +4474,7 @@ InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType pr
 
         default:
             {
-            assert (false);
+            BeAssert (false);
             return INSTANCE_WRITE_STATUS_BadPrimitivePropertyType;
             }
         }
@@ -4520,7 +4520,7 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
             // write the primitve value
             if (INSTANCE_WRITE_STATUS_Success != (ixwStatus = WritePrimitiveValue (ecValue, memberType, *memberNode)))
                 {
-                assert (false);
+                BeAssert (false);
                 return ixwStatus;
                 }
             }
@@ -4534,24 +4534,24 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
                 break;
 
             // the XML element tag is the struct type.
-            assert (ecValue.IsStruct());
+            BeAssert (ecValue.IsStruct());
 
             IECInstancePtr  structInstance = ecValue.GetStruct();
             if (!structInstance.IsValid())
                 {
-                assert (false);
+                BeAssert (false);
                 break;
                 }
 
             ECClassCR   structClass = structInstance->GetClass();
-            assert (structClass.Is (memberClass));
+            BeAssert (structClass.Is (memberClass));
 
             BeXmlNodeP memberNode = arrayNode->AddEmptyElement (structClass.GetName().c_str());
 
             InstanceWriteStatus iwxStatus;
             if (INSTANCE_WRITE_STATUS_Success != (iwxStatus = WritePropertyValuesOfClassOrStructArrayMember (structClass, *structInstance.get(), NULL, *memberNode)))
                 {
-                assert (false);
+                BeAssert (false);
                 return iwxStatus;
                 }
             }
@@ -4559,7 +4559,7 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
     else
         {
         // unexpected arrayKind - should never happen.
-        assert (false);
+        BeAssert (false);
         }
 
     return INSTANCE_WRITE_STATUS_Success;
@@ -4600,7 +4600,7 @@ InstanceReadStatus   IECInstance::ReadFromXmlFile (IECInstancePtr& ecInstance, W
     BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromFile (xmlStatus, ecInstanceFile);
     if ((xmlStatus != BEXML_Success) || !xmlDom.IsValid())
         {
-        assert (false);
+        BeAssert (false);
         LogXmlLoadError ();
         return INSTANCE_READ_STATUS_XmlParseError;
         }
@@ -4620,7 +4620,7 @@ InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr& ecInstance,
 
     if (!xmlDom.IsValid())
         {
-        assert (false);
+        BeAssert (false);
         LogXmlLoadError ();
         return INSTANCE_READ_STATUS_XmlParseError;
         }
@@ -4638,7 +4638,7 @@ InstanceReadStatus  IECInstance::ReadFromBeXmlDom (IECInstancePtr& ecInstance, B
     BeXmlNodeP      instanceNode;
     if ( (BEXML_Success != xmlDom.SelectNode (instanceNode, "/", NULL, BeXmlDom::NODE_BIAS_First)) || (NULL == instanceNode) )
         {
-        assert (false);
+        BeAssert (false);
         ECObjectsLogger::Log()->errorv (L"Invalid ECInstanceXML: Missing a top-level instance node");
         return INSTANCE_READ_STATUS_BadElement;
         }
@@ -4648,7 +4648,7 @@ InstanceReadStatus  IECInstance::ReadFromBeXmlDom (IECInstancePtr& ecInstance, B
 
     if (NULL == instanceNode)
         {
-        assert (false);
+        BeAssert (false);
         ECObjectsLogger::Log()->errorv (L"Invalid ECInstanceXML: Missing a top-level instance node");
         return INSTANCE_READ_STATUS_BadElement;
         }

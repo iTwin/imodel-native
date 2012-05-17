@@ -140,9 +140,9 @@ static inline UInt32    CalculateFixedArrayPropertySize (UInt32 fixedCount, Prim
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 WCharCP             PropertyLayout::GetAccessString() const     { return m_accessString.c_str(); }
 UInt32              PropertyLayout::GetParentStructIndex() const{ return m_parentStructIndex; }
-UInt32              PropertyLayout::GetOffset() const           { assert ( ! m_typeDescriptor.IsStruct()); return m_offset; }
-UInt32              PropertyLayout::GetNullflagsOffset() const  { assert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsOffset; }
-NullflagsBitmask    PropertyLayout::GetNullflagsBitmask() const { assert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsBitmask; }
+UInt32              PropertyLayout::GetOffset() const           { BeAssert ( ! m_typeDescriptor.IsStruct()); return m_offset; }
+UInt32              PropertyLayout::GetNullflagsOffset() const  { BeAssert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsOffset; }
+NullflagsBitmask    PropertyLayout::GetNullflagsBitmask() const { BeAssert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsBitmask; }
 ECTypeDescriptor    PropertyLayout::GetTypeDescriptor() const   { return m_typeDescriptor; }
 UInt32              PropertyLayout::GetModifierFlags() const    { return m_modifierFlags; }
 UInt32              PropertyLayout::GetModifierData() const     { return m_modifierData; }    
@@ -626,7 +626,7 @@ UInt32          ClassLayout::Factory::GetParentStructIndex (WCharCP accessString
         WString         parentAccessString (accessString, pLastDot - accessString);
         ECObjectsStatus status = m_underConstruction.GetPropertyIndex (parentStructIndex, parentAccessString.c_str());
 
-        assert (SUCCESS == status);
+        BeAssert (SUCCESS == status);
         }
     
     return parentStructIndex;
@@ -1022,6 +1022,8 @@ void            ClassLayout::AddToLogicalStructureMap (PropertyLayoutR propertyL
 ClassLayout::IndicesByAccessString::const_iterator ClassLayout::GetPropertyIndexPosition (WCharCP accessString, bool forCreate) const
     {
     // this vector is always sorted, so we can do binary search
+    // Explicitly implemented binary search (instead of using stl::lower_bound) in order to save one call to wcscmp in the case where we have
+    // a match. Also experiments showed that the stl algorithm was not being inlined, and this is a very performance critical part of our code
     IndicesByAccessString::const_iterator begin   = m_indicesByAccessString.begin(),
                                     end           = m_indicesByAccessString.end(),
                                     it;
@@ -1059,6 +1061,7 @@ ClassLayout::IndicesByAccessString::const_iterator ClassLayout::GetPropertyIndex
         return (it != end && 0 == wcscmp (accessString, it->first)) ? it : end;
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
@@ -1069,10 +1072,9 @@ void            ClassLayout::AddPropertyLayout (WCharCP accessString, PropertyLa
     // if we knew no new PropertyLayouts could be added after construction, we could delay sorting the list until FinishLayout()
     // since AddPropertyLayout() is public we can't know that, so we need to insert in sorted order
     UInt32 index = (UInt32)(m_propertyLayouts.size() - 1);
-    WCharCP plAccessString = propertyLayout.GetAccessString();
-    AccessStringIndexPair newPair (plAccessString, index);
+    AccessStringIndexPair newPair (propertyLayout.GetAccessString(), index);
     IndicesByAccessString::iterator begin = m_indicesByAccessString.begin();
-    IndicesByAccessString::iterator insertPos = begin + (GetPropertyIndexPosition (plAccessString, true) - begin);    // because constness...
+    IndicesByAccessString::iterator insertPos = begin + (GetPropertyIndexPosition (propertyLayout.GetAccessString(), true) - begin);    // because constness...
     m_indicesByAccessString.insert (insertPos, newPair);
 
     AddToLogicalStructureMap (propertyLayout, index);
@@ -1127,7 +1129,7 @@ UInt32          ClassLayout::GetPropertyCountExcludingEmbeddedStructs () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ClassLayout::IsPropertyReadOnly (UInt32 propertyIndex) const
     {
-    assert (propertyIndex < m_propertyLayouts.size());
+    BeAssert (propertyIndex < m_propertyLayouts.size());
     if (propertyIndex >= m_propertyLayouts.size())
         return true; 
         
@@ -1139,7 +1141,7 @@ bool            ClassLayout::IsPropertyReadOnly (UInt32 propertyIndex) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ClassLayout::SetPropertyReadOnly (UInt32 propertyIndex,  bool readOnly) const
     {
-    assert (propertyIndex < m_propertyLayouts.size());
+    BeAssert (propertyIndex < m_propertyLayouts.size());
     if (propertyIndex >= m_propertyLayouts.size())
         return false; 
         
@@ -1180,7 +1182,7 @@ ECObjectsStatus     ClassLayout::GetPropertyIndex (UInt32& propertyIndex, WCharC
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus       ClassLayout::GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const
     {
-    assert (propertyIndex < m_propertyLayouts.size());
+    BeAssert (propertyIndex < m_propertyLayouts.size());
     if (propertyIndex >= m_propertyLayouts.size())
         return ECOBJECTS_STATUS_IndexOutOfRange; 
         
@@ -1297,7 +1299,7 @@ BentleyStatus   SchemaLayout::AddClassLayout (ClassLayoutCR classLayout, ClassIn
     if (m_classLayouts.size() <= classIndex)
         m_classLayouts.resize (20 + classIndex, NULL); 
 
-    assert (NULL == m_classLayouts[classIndex] && "ClassIndex is already in use");
+    BeAssert (NULL == m_classLayouts[classIndex] && "ClassIndex is already in use");
 
     m_classLayouts[classIndex] = &classLayout;
     
@@ -1358,7 +1360,7 @@ BentleyStatus   SchemaLayout::FindAvailableClassIndex(ClassIndex& classIndex)
 
     // The max size for classIndex is 0xffff, but if we reach that limit,
     // most likely something else has gone wrong.
-    assert(false);
+    BeAssert(false);
     return ERROR;
     }
 

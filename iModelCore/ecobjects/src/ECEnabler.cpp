@@ -124,7 +124,7 @@ ECEnabler::PropertyProcessingResult ECEnabler::_ProcessPrimitiveProperties (bset
             }
         else
             {
-            assert (v.IsArray());
+            BeAssert (v.IsArray());
             ArrayInfo ai = v.GetArrayInfo ();
             bool isStructArray = ai.IsStructArray();
 
