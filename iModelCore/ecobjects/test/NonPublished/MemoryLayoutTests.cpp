@@ -1534,12 +1534,9 @@ TEST_F (MemoryLayoutTests, PropertyLayoutBracketsTest)
     // If brackets are omitted, then "B" precedes "B0"
     // Else, "B0" preceds "B[]"
     // The order of declaration of properties in the schema matters here.
-    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
-    EXPECT_EQ (S_OK, CoInitialize (NULL));
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext (*schemaOwner);
-    ECSchemaP schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext ();
+    ECSchemaPtr schema;
     EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (schema, schemaXml, *schemaContext));
-    CoUninitialize();
 
     ECClassP ecClass = schema->GetClassP (L"BracketTestClass");
     ASSERT_TRUE (NULL != ecClass);
