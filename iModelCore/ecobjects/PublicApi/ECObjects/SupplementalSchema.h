@@ -224,8 +224,8 @@ public:
 //! UpdateSchema method
 //!
 //! <b>Constructing a supplemented schema</b>
-//! @li <b>Constructing</b>:\t There is one constructor.  It takes no arguments.
-//! @li <b>Adding schemas and consolidating them</b>:\t Once the manager has been constructed, the
+//! @li <b>Constructing</b>: There is one constructor.  It takes no arguments.
+//! @li <b>Adding schemas and consolidating them</b>: Once the manager has been constructed, the
 //! UpdateSchema method is used to add the primary and supplemental schemas.  Once called, the SupplementedSchemaBuilder
 //! will run through the supplementation routine and turn the input primary schema into a supplemented schema.
 

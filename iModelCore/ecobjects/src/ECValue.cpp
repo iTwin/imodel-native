@@ -244,6 +244,14 @@ bool            ECValue::IsDateTime () const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            ECValue::IsIGeometry() const
+    {
+    return m_primitiveType == PRIMITIVETYPE_IGeometry;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ECValue::IsArray () const 
@@ -417,6 +425,7 @@ void            ECValue::FreeMemory ()
             return;
 
         case PRIMITIVETYPE_Binary:
+        case PRIMITIVETYPE_IGeometry:
             if ((m_binaryInfo.m_data != NULL) && (m_binaryInfo.m_freeWhenDone))
                 free ((void*)m_binaryInfo.m_data);
             return;
