@@ -1748,6 +1748,7 @@ ECValueAccessorR    ECPropertyValue::GetValueAccessorR ()            { return m_
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECPropertyValue::EvaluateValue ()
     {
+    m_ecValue.Clear();
     return m_instance->GetValueUsingAccessor (m_ecValue, m_accessor);
     }
 

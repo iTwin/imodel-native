@@ -629,6 +629,7 @@ ECObjectsStatus           IECInstance::GetValueUsingAccessor (ECValueR v, ECValu
 
     for (UInt32 depth = 0; depth < accessor.GetDepth(); depth ++)
         {
+        v.Clear();
         bool compatible = (accessor[depth].enabler == &currentInstance->GetEnabler()); // if same enabler then use property index to set value else use access string
 
         status = getValueHelper (v, *currentInstance, accessor, depth, compatible);
