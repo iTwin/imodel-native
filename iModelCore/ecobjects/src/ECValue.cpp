@@ -1525,6 +1525,7 @@ bool ECValueAccessor::operator==(ECValueAccessorCR accessor) const
 #define NUM_INDEX_BUFFER_CHARS 63
 #define NUM_ACCESSSTRING_BUFFER_CHARS 1023
 
+#ifdef UNUSED_FUNCTION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1548,6 +1549,7 @@ static void tokenize(const WString& str, bvector<WString>& tokens, const WString
         pos = str.find_first_of(delimiters, lastPos);
         }
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2010
