@@ -12,6 +12,7 @@
 #endif
 #include <list>
 #include <Bentley/BeFileName.h>
+#include <Bentley/BeFileListIterator.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -26,7 +27,7 @@ static LeakDetector<ECSchema> g_leakDetector (L"ECSchema", L"ECSchemas", false);
 
 
 // If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
-// Test programs generally want to get error status back and not assert, so they call ECSchema::AssertOnXmlError (false);
+// Test programs generally want to get error status back and not BeAssert, so they call ECSchema::AssertOnXmlError (false);
 static  bool        s_noAssert = false;
 
 
@@ -1077,6 +1078,50 @@ ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, WCharCP
     return ECSchema::ParseVersionString (versionMajor, versionMinor, versionString.c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  11/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus GetSchemaFileName (WString& fullFileName, UInt32& foundMinorVersion, WCharCP schemaPath, bool useLatestCompatibleMatch)
+    {
+    WString     schemaPathWithWildcard = schemaPath;
+    schemaPathWithWildcard += L"*";
+
+    BeFileListIterator  fileList (schemaPathWithWildcard.c_str(), false);
+    BeFileName          filePath;
+    UInt32 currentMinorVersion=0;
+
+    while (SUCCESS == fileList.GetNextFileName (filePath))
+        {
+        WCharCP     fileName = filePath.GetName();
+
+        if (!useLatestCompatibleMatch)
+            {
+            fullFileName = fileName;
+            return ECOBJECTS_STATUS_Success;
+            }
+
+        if (fullFileName.empty())
+            {
+            fullFileName = fileName;
+            GetMinorVersionFromSchemaFileName (foundMinorVersion, fileName);
+            continue;
+            }
+
+        if (ECOBJECTS_STATUS_Success != GetMinorVersionFromSchemaFileName (currentMinorVersion, fileName))
+            continue;
+
+        if (currentMinorVersion > foundMinorVersion)
+            {
+            foundMinorVersion = currentMinorVersion;
+            fullFileName = fileName;
+            }
+        }
+
+    if (fullFileName.empty())
+        return ECOBJECTS_STATUS_Error;
+
+    return ECOBJECTS_STATUS_Success;
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
