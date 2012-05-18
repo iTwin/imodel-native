@@ -2780,7 +2780,7 @@ WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, Clas
                         WString structString = v.GetStruct()->ToString(structIndent.c_str());
                         oss += structString;
 
-                        appendFormattedString (oss, L"%ls=================== END Struct Instance ===========================\n", structIndent);
+                        appendFormattedString (oss, L"%ls=================== END Struct Instance ===========================\n", structIndent.c_str());
                         }         
                     }
                 }
