@@ -91,7 +91,7 @@ protected:
     ECInstanceReadContext(ECSchemaCP schema, ECSchemaReadContextP context, IStandaloneEnablerLocaterP standaloneEnablerLocater = NULL) 
         : m_standaloneEnablerLocater (standaloneEnablerLocater)
         {
-        assert (NULL == schema || NULL == context && L"Either schema or context should be NULL");
+        BeAssert (NULL == schema || NULL == context && L"Either schema or context should be NULL");
 
         m_schema = schema;
         m_schemaContext = context;
