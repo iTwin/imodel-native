@@ -2,7 +2,7 @@
 #
 #  $Source: test/nonpublishedCompileRules.mki $
 #
-#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -16,4 +16,3 @@ $(o)TestFixture$(oext)        : $(baseDir)NonPublished/TestFixture.cpp $(PCHHead
 $(o)MemoryLayoutTests$(oext)  : $(baseDir)NonPublished/MemoryLayoutTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
 
 $(o)NonPublishedSchemaTests$(oext)  : $(baseDir)NonPublished/NonPublishedSchemaTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
-

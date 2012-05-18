@@ -22,56 +22,97 @@ struct ECSchemaReadContext /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
 {
 /*__PUBLISH_SECTION_END__*/
 friend struct ECSchema;
+friend struct SearchPathSchemaFileLocater;
+    static const int CATEGORY_PARTITION_SIZE = 5000;
+    enum PriorityPartiion
+        {
+        ReaderContext   = -1* CATEGORY_PARTITION_SIZE, //Whatever we found is off highest priority
+        UserSpace       = 0*  CATEGORY_PARTITION_SIZE,
+        External        = 1*  CATEGORY_PARTITION_SIZE,
+        StandardPaths   = 2*  CATEGORY_PARTITION_SIZE,
+        Final           = 3*  CATEGORY_PARTITION_SIZE,
+        };
 
+    struct SchemaLocatorKey
+        {
+        int                 m_priority;
+        IECSchemaLocaterP   m_locator;
+
+        bool operator < (SchemaLocatorKey const & rhs) const 
+            {
+            if (m_priority != rhs.m_priority)
+                return m_priority < rhs.m_priority;//Order the higher priority ones first
+
+            return m_locator < rhs.m_locator;
+            }
+
+        SchemaLocatorKey (IECSchemaLocaterP locator, int priority)
+            :m_locator(locator), m_priority(priority)
+            {}
+        };
+
+    struct WStringComparer : public std::binary_function<WString, WString, bool>
+        {
+        bool operator()(WStringCR s1, WStringCR s2) const
+            {
+            return s1.CompareTo(s2) < 0;
+            }
+        };
 private:
-    IECSchemaOwnerR                 m_schemaOwner;
-    IStandaloneEnablerLocaterP      m_standaloneEnablerLocater;
-
-    bvector<IECSchemaLocaterP>      m_locators;
-    IECSchemaLocaterP               m_finalSchemaLocater;
-    T_WStringVector                 m_searchPaths;
+    IStandaloneEnablerLocaterP                              m_standaloneEnablerLocater;
+    ECSchemaCache                                           m_knownSchemas;
+    bvector<bool>                                           m_knownSchemaDirtyStack;
+    typedef bset<SchemaLocatorKey>                          SchemaLocatorSet;
+    SchemaLocatorSet                                        m_locators;
+    typedef bset<WString, WStringComparer>                  SearchPathList;
+    SearchPathList                                          m_searchPaths;
+    bvector<SearchPathSchemaFileLocaterPtr>                 m_ownedLocators;
     bool                            m_hideSchemasFromLeakDetection;
     bool                            m_acceptLegacyImperfectLatestCompatibleMatch;
 
-    bvector<IECSchemaLocaterP>& GetSchemaLocaters ();
-    IECSchemaLocaterP           GetFinalSchemaLocater ();
-    T_WStringVector&            GetSchemaPaths ();
-    IECSchemaOwnerR             GetSchemaOwner();
-    IStandaloneEnablerLocaterP  GetStandaloneEnablerLocater();
+    
     bool                        GetHideSchemasFromLeakDetection();
-
-    void                        ClearSchemaPaths();
+    SchemaLocatorSet::iterator  GetHighestLocatorInRange (UInt32& prioirty);
+    bool                        GetStandardPaths (bvector<WString>& standardPaths);
 
 protected:
     //! Constructs a context for deserializing ECSchemas
-    //! @param[in] schemaOwner  This object will control the lifetime of any ECSchemas read with this context
     //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the read ECSchema
     //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestCompatible only checks that the major version matches. A warning will be logged if minor version is too low, but the ECSchema will be accepted
-    ECOBJECTS_EXPORT ECSchemaReadContext(IECSchemaOwnerR schemaOwner, IStandaloneEnablerLocaterP standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch);
+    ECOBJECTS_EXPORT ECSchemaReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch);
 
-    
+    ECOBJECTS_EXPORT virtual void       _AddSchema (ECSchemaR schema);
 public:
+    IStandaloneEnablerLocaterP  GetStandaloneEnablerLocater();
+    void                AddSchema(ECSchemaR schema);
+    void                RemoveSchema(ECSchemaR schema);
+    ECSchemaPtr         GetFoundSchema (SchemaKeyR key, SchemaMatchType matchType);
+
+    ECOBJECTS_EXPORT ECSchemaCacheR GetKnownSchemas ();
+
+    ECSchemaPtr         LocateSchema (SchemaKeyR key, bset<SchemaMatchType> const& matches);
     ECOBJECTS_EXPORT void HideSchemasFromLeakDetection();
 
+    ECOBJECTS_EXPORT void AddExternalSchemaLocaters (bvector<EC::IECSchemaLocaterP> const& schemaLocators);
 /*__PUBLISH_SECTION_START__*/
 
     //! Creates a context for deserializing ECSchemas
-    //! @param[in] schemaOwner  This object will control the lifetime of any ECSchemas read with this context
     //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the read ECSchema
     //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestCompatible only checks that the major version matches. A warning will be logged if minor version is too low, but the ECSchema will be accepted
     //! @remarks This more-flexible override is primarily for internal use
-    ECOBJECTS_EXPORT static ECSchemaReadContextPtr CreateContext (IECSchemaOwnerR schemaOwner, IStandaloneEnablerLocaterP standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch = false);
+    ECOBJECTS_EXPORT static ECSchemaReadContextPtr CreateContext (IStandaloneEnablerLocaterP standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch = false);
     
     //! Creates a context for deserializing ECSchemas
-    //! @param[in] schemaOwner  This object will control the lifetime of any ECSchemas read with this context
     //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestCompatible only checks that the major version matches. A warning will be logged if minor version is too low, but the ECSchema will be accepted
-    ECOBJECTS_EXPORT static ECSchemaReadContextPtr CreateContext (IECSchemaOwnerR schemaOwner, bool acceptLegacyImperfectLatestCompatibleMatch = false);
-
-    ECOBJECTS_EXPORT void AddSchemaLocaters (bvector<EC::IECSchemaLocaterP>&);
+    ECOBJECTS_EXPORT static ECSchemaReadContextPtr CreateContext (bool acceptLegacyImperfectLatestCompatibleMatch = false);
 
     ECOBJECTS_EXPORT void AddSchemaLocater (IECSchemaLocaterR);
+    ECOBJECTS_EXPORT void RemoveSchemaLocater (IECSchemaLocaterR);
     ECOBJECTS_EXPORT void AddSchemaPath (WCharCP);
     ECOBJECTS_EXPORT void SetFinalSchemaLocater (IECSchemaLocaterR);
+
+    //Find the schema matching the schema key and using matchType as the match criteria. This uses the prioritized list of locators to find the schema.
+    ECOBJECTS_EXPORT ECSchemaPtr         LocateSchema (SchemaKeyR key, SchemaMatchType matchType);
 };
 
 typedef RefCountedPtr<ECInstanceReadContext>      ECInstanceReadContextPtr;
@@ -82,28 +123,24 @@ struct DLLPUBLIC_ATTRIBUTE ECInstanceReadContext /*__PUBLISH_ABSTRACT__*/ : RefC
 {
 /*__PUBLISH_SECTION_END__*/
 private:
-    ECSchemaCP                          m_schema;
-    EC::ECSchemaReadContextPtr          m_schemaContext;
     IStandaloneEnablerLocaterP          m_standaloneEnablerLocater;
     StandaloneECInstancePtr             m_dummy;
-
+    ECSchemaCR                          m_fallBackSchema;
 protected:
-    ECInstanceReadContext(ECSchemaCP schema, ECSchemaReadContextP context, IStandaloneEnablerLocaterP standaloneEnablerLocater = NULL) 
-        : m_standaloneEnablerLocater (standaloneEnablerLocater)
+    ECInstanceReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, ECSchemaCR fallBackSchema) 
+        : m_standaloneEnablerLocater (standaloneEnablerLocater), m_fallBackSchema (fallBackSchema)
         {
-        BeAssert (NULL == schema || NULL == context && L"Either schema or context should be NULL");
-
-        m_schema = schema;
-        m_schemaContext = context;
         }
 
     //! Will be called by ECInstance deserialization to create the ECInstances that it returns.
     //! The default implementation calls GetDefaultStandaloneEnabler() on the ecClass
     ECOBJECTS_EXPORT virtual IECInstancePtr _CreateStandaloneInstance (ECClassCR ecClass);
     
+    virtual ECSchemaCP  _FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType) const = 0;
+
 public:
-    ECSchemaCP               GetSchemaCP()  { return m_schema; }
-    ECSchemaReadContextPtr   GetSchemaContextPtr()  { return m_schemaContext; }
+
+    ECSchemaCP  FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType) const;
 
     IECInstancePtr           CreateStandaloneInstance (ECClassCR ecClass);
 
@@ -113,7 +150,7 @@ public:
     ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext (ECSchemaCR, IStandaloneEnablerLocaterP = NULL);
 
     //! - For use when the caller does not know the schema of the instance he is deserializing.
-    ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext (ECSchemaReadContextR, IStandaloneEnablerLocaterP = NULL);
+    ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext (ECSchemaReadContextR, ECSchemaCR fallBackSchema, ECSchemaPtr* foundSchema);
 };
 
 END_BENTLEY_EC_NAMESPACE

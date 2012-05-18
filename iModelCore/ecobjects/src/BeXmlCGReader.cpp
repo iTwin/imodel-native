@@ -172,7 +172,8 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, MSBsplineSurfacePtr &result)
         if (SUCCESS == surface->Populate (points,
                 weights.size () > 0 ? &weights : NULL,
                 knotsU.size () > 0 ? &knotsU : NULL, orderU, numPolesU, closedU,
-                knotsV.size () > 0 ? &knotsV : NULL, orderV, numPolesV, closedV
+                knotsV.size () > 0 ? &knotsV : NULL, orderV, numPolesV, closedV,
+                true
                 ))
             {
             result = surface;
@@ -373,7 +374,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ICurvePrimitivePtr &result)
             bcurve->Populate (points,
                             weights.size () > 0 ? &weights : NULL,
                             knots.size () > 0 ? &knots : NULL,
-                            order, closed);
+                            order, closed, true);
             result = ICurvePrimitive::CreateBsplineCurve (*bcurve);
             return true;
             }

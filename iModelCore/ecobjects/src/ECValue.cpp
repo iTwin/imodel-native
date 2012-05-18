@@ -244,6 +244,14 @@ bool            ECValue::IsDateTime () const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            ECValue::IsIGeometry() const
+    {
+    return m_primitiveType == PRIMITIVETYPE_IGeometry;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ECValue::IsArray () const 
@@ -414,6 +422,7 @@ void            ECValue::FreeMemory ()
             return;
 
         case PRIMITIVETYPE_Binary:
+        case PRIMITIVETYPE_IGeometry:
             if ((m_binaryInfo.m_data != NULL) && (m_binaryInfo.m_freeWhenDone))
                 free ((void*)m_binaryInfo.m_data);
             return;
@@ -1562,9 +1571,10 @@ static ECClassP getClassFromSchema (ECSchemaCR rootSchema, WCharCP className)
     if (classP)
         return classP;
 
-    FOR_EACH (ECSchemaCP refSchema, rootSchema.GetReferencedSchemas())
+    ECSchemaReferenceListCR referencedScheams = rootSchema.GetReferencedSchemas();
+    for (ECSchemaReferenceList::const_iterator iter = referencedScheams.begin(); iter != referencedScheams.end(); ++iter) 
         {
-        classP = getClassFromSchema (*refSchema, className);
+        classP = getClassFromSchema (*iter->second, className);        
         if (classP)
             return classP;
         }
@@ -1577,6 +1587,17 @@ static ECClassP getClassFromSchema (ECSchemaCR rootSchema, WCharCP className)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static ECClassP getPropertyFromClass (ECClassCR enablerClass, WCharCP propertyName)
     {
+    WCharCP dotPos = wcschr (propertyName, '.');
+    if (NULL != dotPos)
+        {
+        WString structName (propertyName, dotPos);
+        ECClassP structClass = getPropertyFromClass (enablerClass, structName.c_str());
+        if (NULL == structClass)
+            { BeAssert (false); return NULL; }
+
+        return getPropertyFromClass (*structClass, dotPos+1);
+        }
+
     ECPropertyP propertyP = enablerClass.GetPropertyP (propertyName);
     if (!propertyP)
         return NULL;
@@ -1658,7 +1679,7 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBu
         return ECOBJECTS_STATUS_Error;
 
     EC::ECEnablerP enablerP = const_cast<EC::ECEnablerP>(&enabler);
-    StandaloneECEnablerPtr structEnabler = dynamic_cast<StandaloneECEnablerP>(enablerP->GetEnablerForStructArrayMember (structClass->GetSchema().GetName().c_str(), structClass->GetName().c_str()).get());
+    StandaloneECEnablerPtr structEnabler = dynamic_cast<StandaloneECEnablerP>(enablerP->GetEnablerForStructArrayMember (structClass->GetSchema().GetSchemaKey(), structClass->GetName().c_str()).get());
     if (structEnabler.IsNull())
         return ECOBJECTS_STATUS_Error;
 
@@ -1735,6 +1756,7 @@ ECValueAccessorR    ECPropertyValue::GetValueAccessorR ()            { return m_
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECPropertyValue::EvaluateValue ()
     {
+    m_ecValue.Clear();
     return m_instance->GetValueUsingAccessor (m_ecValue, m_accessor);
     }
 

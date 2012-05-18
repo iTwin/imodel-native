@@ -33,7 +33,7 @@ typedef int StructValueIdentifier;
 
 struct StructArrayEntry
     {
-    StructArrayEntry (StructValueIdentifier structValueId, IECInstancePtr& instancePtr)
+    StructArrayEntry (StructValueIdentifier structValueId, IECInstancePtr const& instancePtr)
         {
         structValueIdentifier = structValueId;
         structInstance        = instancePtr;
@@ -111,7 +111,7 @@ protected:
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public: // These must be public so that ECXInstanceEnabler can get at the guts of StandaloneECInstance to copy it into an XAttribute
-    ECOBJECTS_EXPORT void                     SetData (byte * data, UInt32 size, bool freeExisitingData); //The MemoryECInstanceBase will take ownership of the memory
+    ECOBJECTS_EXPORT void                     SetData (const byte * data, UInt32 size, bool freeExisitingData); //The MemoryECInstanceBase will take ownership of the memory
 
     ECOBJECTS_EXPORT byte const *             GetData () const;
     ECOBJECTS_EXPORT UInt32                   GetBytesUsed () const;
@@ -137,6 +137,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT UInt8                    GetNumBitsPerProperty () const;
     ECOBJECTS_EXPORT UInt32                   GetPerPropertyFlagsDataLength () const;
     ECOBJECTS_EXPORT ECObjectsStatus          AddNullArrayElements (WCharCP propertyAccessString, UInt32 insertCount);
+    ECOBJECTS_EXPORT ECObjectsStatus          CopyInstanceProperties (EC::IECInstanceCR fromNativeInstance);
 };
 
 /*=================================================================================**//**
@@ -151,14 +152,14 @@ struct DLLPUBLIC_ATTRIBUTE StandaloneECInstance : MemoryECInstanceBase, IECInsta
 //__PUBLISH_SECTION_END__
 friend struct StandaloneECEnabler;
 private:
-    WString              m_instanceId;
-    StandaloneECEnablerP m_sharedWipEnabler; 
+    WString                 m_instanceId;
+    StandaloneECEnablerPtr  m_sharedWipEnabler;
 
     //! The StandaloneECInstance will take ownership of the memory
-    StandaloneECInstance (StandaloneECEnablerCR enabler, byte * data, UInt32 size);
+    StandaloneECInstance (StandaloneECEnablerR enabler, byte * data, UInt32 size);
     
 protected:  
-    ECOBJECTS_EXPORT StandaloneECInstance (StandaloneECEnablerCR enabler, UInt32 minimumBufferSize);
+    ECOBJECTS_EXPORT StandaloneECInstance (StandaloneECEnablerR enabler, UInt32 minimumBufferSize);
     ECOBJECTS_EXPORT ~StandaloneECInstance ();
 
     // IECInstance
@@ -200,7 +201,7 @@ struct IECWipRelationshipInstance : StandaloneECInstance
     {
 //__PUBLISH_SECTION_END__
     protected:
-        ECOBJECTS_EXPORT IECWipRelationshipInstance (StandaloneECEnablerCR enabler) : StandaloneECInstance (enabler, 0){}
+        ECOBJECTS_EXPORT IECWipRelationshipInstance (StandaloneECEnablerR enabler) : StandaloneECInstance (enabler, 0){}
 
         ECOBJECTS_EXPORT virtual BentleyStatus  _SetName (WCharCP name) = 0;
         ECOBJECTS_EXPORT virtual BentleyStatus  _SetSourceOrderId (Int64 sourceOrderId) = 0;
@@ -245,7 +246,7 @@ protected:
 public: 
     //! if structStandaloneEnablerLocater is NULL, we'll use GetDefaultStandaloneEnabler for embedded structs
     ECOBJECTS_EXPORT static StandaloneECEnablerPtr CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater, bool ownsClassLayout);
-    ECOBJECTS_EXPORT StandaloneECInstancePtr       CreateInstance (UInt32 minimumInitialSize = 0) const;
+    ECOBJECTS_EXPORT StandaloneECInstancePtr       CreateInstance (UInt32 minimumInitialSize = 0);
     ECOBJECTS_EXPORT StandaloneECInstanceP         CreateSharedInstance (byte * data, UInt32 size);
     };
 END_BENTLEY_EC_NAMESPACE

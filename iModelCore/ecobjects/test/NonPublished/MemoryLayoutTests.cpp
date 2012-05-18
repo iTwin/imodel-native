@@ -385,13 +385,13 @@ WString    GetTestSchemaXMLString (WCharCP schemaName, UInt32 versionMajor, UInt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP       CreateTestSchema (ECSchemaCacheR schemaOwner)
+ECSchemaPtr     CreateTestSchema ()
     {
     WString schemaXMLString = GetTestSchemaXMLString (L"TestSchema", 0, 0, L"TestClass");
 
-    ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext(schemaOwner);
+    ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
 
-    ECSchemaP schema;        
+    ECSchemaPtr schema;
     EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (schema, schemaXMLString.c_str(), *schemaContext));  
 
     return schema;
@@ -403,7 +403,7 @@ static std::vector<WString> s_propertyNames;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP       CreateProfilingSchema (int nStrings, ECSchemaCacheR schemaOwner)
+ECSchemaPtr     CreateProfilingSchema (int nStrings)
     {
     s_propertyNames.clear();
     
@@ -427,9 +427,9 @@ ECSchemaP       CreateProfilingSchema (int nStrings, ECSchemaCacheR schemaOwner)
     schemaXml +=    L"    </ECClass>"
                     L"</ECSchema>";
 
-    ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext(schemaOwner);
+    ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
 
-    ECSchemaP schema;        
+    ECSchemaPtr schema;
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlString (schema, schemaXml.c_str(), *schemaContext));
 
     return schema;
@@ -737,8 +737,7 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
     {
-    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
-    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    ECSchemaPtr      schema = CreateTestSchema();
     ASSERT_TRUE (schema != NULL);
 
     ECClassP ecClass = schema->GetClassP (L"AllPrimitives");
@@ -847,8 +846,7 @@ TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
     {
-    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
-    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    ECSchemaPtr      schema = CreateTestSchema();
     ASSERT_TRUE (schema != NULL);
 
     ECClassP ecClass = schema->GetClassP (L"ClassWithStructArray");
@@ -895,8 +893,7 @@ TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
     {
-    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();;
-    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    ECSchemaPtr      schema = CreateTestSchema();
     ASSERT_TRUE (schema != NULL);
 
     ECClassP ecClass = schema->GetClassP (L"ClassWithStructArray");
@@ -950,8 +947,7 @@ TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper)
     {
-    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();;
-    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    ECSchemaPtr      schema = CreateTestSchema();
     ASSERT_TRUE (schema != NULL);
 
     ECClassP ecClass = schema->GetClassP (L"TestClass");
@@ -997,8 +993,8 @@ TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, InstantiateStandaloneInstance)
     {
-    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();;
-    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    ;
+    ECSchemaPtr      schema = CreateTestSchema();
     ASSERT_TRUE (schema != NULL);
 
     ECClassP ecClass = schema->GetClassP (L"TestClass");
@@ -1022,8 +1018,8 @@ TEST_F(MemoryLayoutTests, InstantiateStandaloneInstance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
     {
-    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();;
-    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    ;
+    ECSchemaPtr      schema = CreateTestSchema();
     ASSERT_TRUE (schema != NULL);
 
     ECClassP ecClass = schema->GetClassP (L"EmptyClass");
@@ -1047,8 +1043,8 @@ TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     {
-    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
-    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    
+    ECSchemaPtr      schema = CreateTestSchema();
     ASSERT_TRUE (schema != NULL);
     ECClassP ecClass = schema->GetClassP (L"CadData");
     ASSERT_TRUE (NULL != ecClass);
@@ -1142,8 +1138,8 @@ static void  setValue (WCharCP accessString, ECValueCR value, EC::StandaloneECIn
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, CheckPerPropertyFlags)
     {
-    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
-    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    
+    ECSchemaPtr      schema = CreateTestSchema();
     ASSERT_TRUE (schema != NULL);
     ECClassP ecClass = schema->GetClassP (L"CadData");
     ASSERT_TRUE (NULL != ecClass);
@@ -1217,8 +1213,8 @@ TEST_F(MemoryLayoutTests, CheckPerPropertyFlags)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
     {
-    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();;
-    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    ;
+    ECSchemaPtr      schema = CreateTestSchema();
     ASSERT_TRUE (schema != NULL);
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (NULL != ecClass);
@@ -1281,8 +1277,8 @@ TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, ExpectErrorsWhenViolatingArrayConstraints)
     {
-    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
-    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    
+    ECSchemaPtr      schema = CreateTestSchema();
     ASSERT_TRUE (schema != NULL);
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (NULL != ecClass);    
@@ -1431,8 +1427,8 @@ TEST_F (MemoryLayoutTests, Values) // move it!
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (MemoryLayoutTests, TestSetGetNull)
     {
-    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();;
-    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    ;
+    ECSchemaPtr      schema = CreateTestSchema();
     ASSERT_TRUE (schema != NULL);
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (NULL != ecClass);
@@ -1494,8 +1490,7 @@ TEST_F (MemoryLayoutTests, ProfileSettingValues)
     int nStrings = 100;
     int nInstances = 1000;
 
-    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();;
-    ECSchemaP          schema      = CreateProfilingSchema(nStrings, *schemaOwner);
+    ECSchemaPtr        schema      = CreateProfilingSchema(nStrings);
     ECClassP           ecClass     = schema->GetClassP (L"Pidget");
     ASSERT_TRUE (NULL != ecClass);
         

@@ -114,20 +114,61 @@ public:
     ECOBJECTS_EXPORT ECEnablerCR        GetEnabler() const;
     ECOBJECTS_EXPORT ECEnablerR         GetEnablerR() const;      // use when enabler.ObtainStandaloneEnabler is called since a new enabler may be created.
 
+    //! Gets the unique ID for this instance
     ECOBJECTS_EXPORT WString            GetInstanceId() const;
+    //! Sets the unique id for this instance
     ECOBJECTS_EXPORT ECObjectsStatus    SetInstanceId(WCharCP instanceId);
+    //! Returns whether the ECInstance as a whole is ReadOnly
     ECOBJECTS_EXPORT bool               IsReadOnly() const;
-    
+    //! Returns the ECClass that defines this ECInstance
     ECOBJECTS_EXPORT ECClassCR          GetClass() const;
+    //! Gets the value stored in the specified ECProperty
+    //! @param[out] v   If successful, will contain the value of the property
+    //! @param[in]  managedPropertyAccessor Name of the property to retrieve
+    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, WCharCP managedPropertyAccessor) const;    
+    //! Gets the value stored in the specified ECProperty
+    //! @param[out] v   If successful, will contain the value of the property
+    //! @param[in]  managedPropertyAccessor Name of the property to retrieve
+    //! @param[in]  index   The array index, if this is an ArrayProperty
+    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, WCharCP managedPropertyAccessor, UInt32 index) const;
+    //! Gets the value stored in the specified ECProperty
+    //! @param[out] v   If successful, will contain the value of the property
+    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
+    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, UInt32 propertyIndex) const;
+    //! Gets the value stored in the specified ECProperty
+    //! @param[out] v   If successful, will contain the value of the property
+    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
+    //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty
+    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, UInt32 propertyIndex, UInt32 arrayIndex) const;
+    //! Sets the value for the specified property
+    //! @param[in]  managedPropertyAccessor The name of the property to set the value of
+    //! @param[in]  v   The value to set onto the property
+    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (WCharCP managedPropertyAccessor, ECValueCR v);    
+    //! Sets the value for the specified property
+    //! @param[in]  managedPropertyAccessor The name of the property to set the value of
+    //! @param[in]  v   The value to set onto the property
+    //! @param[in]  index   The array index, if this is an ArrayProperty
+    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (WCharCP managedPropertyAccessor, ECValueCR v, UInt32 index);
+    //! Sets the value for the specified property
+    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
+    //! @param[in]  v   The value to set onto the property
+    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (UInt32 propertyIndex, ECValueCR v);
+    //! Sets the value for the specified property
+    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
+    //! @param[in]  v   The value to set onto the property
+    //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty
+    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex);
+    //! Gets the value of the ECProperty specified by the ECValueAccessor
     ECOBJECTS_EXPORT ECObjectsStatus    GetValueUsingAccessor (ECValueR v, ECValueAccessorCR accessor) const;
+    //! Sets the value of the ECProperty specified by the ECValueAccessor
     ECOBJECTS_EXPORT ECObjectsStatus    SetValueUsingAccessor (ECValueAccessorCR accessor, ECValueCR v);
 
 /*__PUBLISH_SECTION_END__*/
@@ -260,9 +301,9 @@ struct ECInstanceInteropHelper
     ECOBJECTS_EXPORT static void            SetToNull (IECInstanceR, ECValueAccessorCR);
 
     ECOBJECTS_EXPORT static bool            IsPropertyReadOnly (IECInstanceCR, ECValueAccessorR);
-    ECOBJECTS_EXPORT static EC::ECEnablerP  GetEnablerForStructArrayEntry (IECInstanceR instance, ECValueAccessorR arrayMemberAccessor, WCharCP schemaName, WCharCP className);
+    ECOBJECTS_EXPORT static EC::ECEnablerP  GetEnablerForStructArrayEntry (IECInstanceR instance, ECValueAccessorR arrayMemberAccessor, SchemaKeyCR schemaKey, WCharCP className);
     ECOBJECTS_EXPORT static ECObjectsStatus GetStructArrayEntry (EC::ECValueAccessorR structArrayEntryValueAccessor, IECInstanceR instance, UInt32 index, EC::ECValueAccessorCR structArrayValueAccessor, 
-                                                                  bool createPropertyIfNotFound, WCharCP wcharAccessString, WCharCP schemaName, WCharCP className);
+                                                                  bool createPropertyIfNotFound, WCharCP wcharAccessString, SchemaKeyCR schemaKey, WCharCP className);
 
     ECOBJECTS_EXPORT static bool            IsCalculatedECProperty (IECInstanceCR instance, int propertyIndex);
 

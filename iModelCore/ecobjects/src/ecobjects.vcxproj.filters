@@ -63,6 +63,12 @@
     <ClCompile Include="nonport\FileUtilities.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="StandaloneECRelationshipInstance.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SupplementalSchema.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsPch.h">
@@ -105,6 +111,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="StopWatch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\SupplementalSchema.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

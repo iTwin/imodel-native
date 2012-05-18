@@ -48,6 +48,7 @@ EC_TYPEDEFS(ECValueAccessorPairCollectionOptions);
 EC_TYPEDEFS(ECValuesCollection);
 EC_TYPEDEFS(ArrayInfo);
 EC_TYPEDEFS(ECSchema);
+EC_TYPEDEFS (SchemaKey);
 EC_TYPEDEFS(ECSchemaReadContext);
 EC_TYPEDEFS(ECProperty);
 EC_TYPEDEFS(PrimitiveECProperty);
@@ -61,7 +62,6 @@ EC_TYPEDEFS(ECRelationshipConstraint);
 EC_TYPEDEFS(RelationshipCardinality);
 EC_TYPEDEFS(IECInstance);
 EC_TYPEDEFS(IECRelationshipInstance);
-EC_TYPEDEFS(IECSchemaOwner);
 EC_TYPEDEFS(IECSchemaLocater);
 EC_TYPEDEFS(IECCustomAttributeContainer);
 EC_TYPEDEFS(ECInstanceReadContext);
@@ -85,6 +85,8 @@ EC_TYPEDEFS(SystemTime);
 EC_TYPEDEFS(ICustomECStructSerializer);
 EC_TYPEDEFS(CustomStructSerializerManager);
 
+//EC_TYPEDEFS(SupplementalSchemaMetaData);
+
 typedef struct IStream* IStreamP;
 
 BEGIN_BENTLEY_EC_NAMESPACE
@@ -99,6 +101,7 @@ typedef enum ECErrorCategories
     SCHEMA_WRITE_STATUS_BASE        = 0x33000,
     INSTANCE_READ_STATUS_BASE    = 0x34000,
     INSTANCE_WRITE_STATUS_BASE      = 0x35000,
+    SUPPLEMENTED_SCHEMA_STATUS_BASE = 0x36000,
     } ECErrorCategories;
 
 
@@ -143,6 +146,7 @@ enum ECObjectsStatus
     ECOBJECTS_STATUS_UnableToSetStructArrayMemberInstance               = ECOBJECTS_ERROR_BASE + 0x21,
     ECOBJECTS_STATUS_UnableToGetStructArrayMemberInstance               = ECOBJECTS_ERROR_BASE + 0x22,
     ECOBJECTS_STATUS_InvalidIndexForPerPropertyFlag                     = ECOBJECTS_ERROR_BASE + 0x23,
+    ECOBJECTS_STATUS_SchemaHasReferenceCycle                            = ECOBJECTS_ERROR_BASE + 0x24,
     ECOBJECTS_STATUS_Error                                              = ECOBJECTS_ERROR_BASE + 0xFFF,
     }; 
 
@@ -157,6 +161,7 @@ enum SchemaReadStatus
     SCHEMA_READ_STATUS_ReferencedSchemaNotFound              = SCHEMA_READ_STATUS_BASE + 0x04,
     SCHEMA_READ_STATUS_DuplicateSchema                       = SCHEMA_READ_STATUS_BASE + 0x05,
     SCHEMA_READ_STATUS_InvalidPrimitiveType                  = SCHEMA_READ_STATUS_BASE + 0x06,
+    SCHEMA_READ_STATUS_HasReferenceCycle                     = SCHEMA_READ_STATUS_BASE + 0x07,
     };
 
 /*=================================================================================**//**
@@ -223,6 +228,17 @@ enum InstanceWriteStatus
     INSTANCE_WRITE_STATUS_BadPrimitivePropertyType              = INSTANCE_WRITE_STATUS_BASE + 30,
     };
     
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                    Carole.MacDonald                04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+enum SupplementedSchemaStatus
+    {
+    SUPPLEMENTED_SCHEMA_STATUS_Success                          = 0,
+    SUPPLEMENTED_SCHEMA_STATUS_Metadata_Missing                 = SUPPLEMENTED_SCHEMA_STATUS_BASE + 1,
+    SUPPLEMENTED_SCHEMA_STATUS_Duplicate_Precedence_Error       = SUPPLEMENTED_SCHEMA_STATUS_BASE + 2,
+    SUPPLEMENTED_SCHEMA_STATUS_IECRelationship_Not_Allowed      = SUPPLEMENTED_SCHEMA_STATUS_BASE + 3,
+    };
+
 /*__PUBLISH_SECTION_END__*/
 /*---------------------------------------------------------------------------------**//**
  @bsiclass
@@ -298,7 +314,8 @@ enum PrimitiveType ENUM_UNDERLYING_TYPE(unsigned short)
     PRIMITIVETYPE_Long                      = 0x601,
     PRIMITIVETYPE_Point2D                   = 0x701,
     PRIMITIVETYPE_Point3D                   = 0x801,
-    PRIMITIVETYPE_String                    = 0x901
+    PRIMITIVETYPE_String                    = 0x901,
+    PRIMITIVETYPE_IGeometry                 = 0xa01,
     };
 
 END_BENTLEY_EC_NAMESPACE

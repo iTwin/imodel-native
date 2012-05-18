@@ -66,11 +66,11 @@ public:
 #else
         
     //! Avoid direct use of this macro.  It is only intended for use by other macros defined in this file.
-    // Forces an BeAssert with the specified message as long as asserts are enabled.  No expression is evaluated.
+    // Forces an assert with the specified message as long as asserts are enabled.  No expression is evaluated.
 #if defined (_WIN32) // WIP_NONPORT -- we should move BeAssert into Bentley
-    #define ASSERT_FALSE_IF_NOT_DISABLED(_Message) (void)(AssertDisabler::AreAssertsDisabled() || (!!(_Message)) || (BeAssertFunctions::PerformBeAssert(_CRT_WIDE(#_Message), _CRT_WIDE(__FILE__), __LINE__), 0) )
+    #define ASSERT_FALSE_IF_NOT_DISABLED(_Message)    (void)((AssertDisabler::AreAssertsDisabled()) || (BeAssert(_CRT_WIDE(#_Message)), 0))
 #elif defined (__unix__)
-    #define ASSERT_FALSE_IF_NOT_DISABLED(_Message)    (void)((AssertDisabler::AreAssertsDisabled()) || (assert(0),0))
+    #define ASSERT_FALSE_IF_NOT_DISABLED(_Message)    (void)((AssertDisabler::AreAssertsDisabled()) || (BeAssert(0),0))
 #endif
 #endif    
 
@@ -108,7 +108,7 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
 //! \endcode
 #define PRECONDITION(_Expression, _ErrorStatus)             \
         EXPECT_CONDITION_LOG_ASSERT_RETURN(_Expression, _ErrorStatus, \
-        L"The following method precondition check has failed:\n  precondition: %ls\n  method: %ls\n  file: %ls\n  line: %i\n", \
+        L"The following method precondition check has failed:\n  precondition: %hs\n  method: %hs\n  file: %hs\n  line: %i\n", \
         #_Expression, __FUNCTION__, __FILE__, __LINE__)
 
     
@@ -133,7 +133,7 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
 //! \endcode
 #define POSTCONDITION(_Expression, _ErrorStatus)            \
         EXPECT_CONDITION_LOG_ASSERT_RETURN(_Expression, _ErrorStatus, \
-            L"The following method postcondition check has failed:\n  postcondition: %ls\n  method: %ls\n  file: %ls\n  line: %i\n",   \
+            L"The following method postcondition check has failed:\n  postcondition: %hs\n  method: %hs\n  file: %hs\n  line: %i\n",   \
             #_Expression, __FUNCTION__, __FILE__, __LINE__)
 
 
@@ -151,7 +151,7 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
 //!         }
 //! \endcode
 #define EXPECTED_CONDITION(_Expression)     ( (_Expression) \
-    || (LogFailureMessage(L"The following expected condition has failed:\n  expected condition: %ls\n  method: %ls\n  file: %ls\n  line: %i\n", #_Expression, __FUNCTION__, __FILE__, __LINE__), 0) \
+    || (LogFailureMessage(L"The following expected condition has failed:\n  expected condition: %hs\n  method: %hs\n  file: %hs\n  line: %i\n", #_Expression, __FUNCTION__, __FILE__, __LINE__), 0) \
     || (ASSERT_FALSE_IF_NOT_DISABLED (_Expression), 0) )
     
 #ifdef NDEBUG

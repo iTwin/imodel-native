@@ -109,7 +109,7 @@ MemoryECInstanceBase::~MemoryECInstanceBase ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MemoryECInstanceBase::SetData (byte * data, UInt32 size, bool freeExisitingData) //The MemoryECInstanceBase will take ownership of the memory
+void MemoryECInstanceBase::SetData (const byte * data, UInt32 size, bool freeExisitingData) //The MemoryECInstanceBase will take ownership of the memory
     {
     if (freeExisitingData)
         {
@@ -131,7 +131,7 @@ void MemoryECInstanceBase::SetData (byte * data, UInt32 size, bool freeExisiting
         }
     else
         {
-        m_data = data;
+        m_data = const_cast<byte *>(data);
         }
 
     m_bytesAllocated = size;
@@ -649,51 +649,6 @@ MemoryECInstanceBase const* MemoryECInstanceBase::GetParentInstance () const
     return m_parentInstance;
     }
 
-///////////////////////////////////////////////////////////////////////////////////////////
-//  StandaloneECInstance
-///////////////////////////////////////////////////////////////////////////////////////////
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  12/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-size_t                StandaloneECInstance::_GetOffsetToIECInstance () const
-    {
-    EC::IECInstanceCP iecInstanceP   = dynamic_cast<EC::IECInstanceCP>(this);
-    byte const* baseAddressOfIECInstance = (byte const *)iecInstanceP;
-    byte const* baseAddressOfConcrete = (byte const *)this;
-
-    return (size_t)(baseAddressOfIECInstance - baseAddressOfConcrete);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/        
-StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, byte * data, UInt32 size) :
-        MemoryECInstanceBase (data, size, enabler.GetClassLayout(), true),
-        m_sharedWipEnabler(const_cast<StandaloneECEnablerP>(&enabler)) // WIP_FUSION: can we get rid of the const cast?
-    {
-    m_sharedWipEnabler->AddRef ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     01/10
-+---------------+---------------+---------------+---------------+---------------+------*/        
-StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerCR enabler, UInt32 minimumBufferSize) :
-        MemoryECInstanceBase (enabler.GetClassLayout(), minimumBufferSize, true),
-        m_sharedWipEnabler(const_cast<StandaloneECEnablerP>(&enabler)) // WIP_FUSION: can we get rid of the const cast?
-    {
-    m_sharedWipEnabler->AddRef ();
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     01/10
-+---------------+---------------+---------------+---------------+---------------+------*/        
-StandaloneECInstance::~StandaloneECInstance ()
-    {
-    m_sharedWipEnabler->Release ();
-
-    //ECObjectsLogger::Log()->tracev (L"StandaloneECInstance at 0x%x is being destructed. It references enabler 0x%x", this, m_sharedWipEnabler);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/11
 +---------------+---------------+---------------+---------------+---------------+------*/ 
@@ -713,20 +668,122 @@ static void     duplicateProperties (IECInstanceR target, ECValuesCollectionCR s
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus MemoryECInstanceBase::CopyInstanceProperties
+(
+EC::IECInstanceCR     fromNativeInstance
+)
+    {
+    IECInstancePtr  thisAsIECInstance = GetAsIECInstance ();
+
+    if (!thisAsIECInstance->GetClass().GetName().Equals (fromNativeInstance.GetClass().GetName().c_str()))
+        return ECOBJECTS_STATUS_Error;
+
+    MemoryECInstanceBase* fromMemoryInstance = fromNativeInstance.GetAsMemoryECInstance ();
+    if (fromMemoryInstance != NULL)
+        {
+        ClassLayoutCR classLayout = GetClassLayout();
+
+        if (classLayout.GetChecksum() == fromMemoryInstance->GetClassLayout().GetChecksum())
+            {
+            SetData (fromMemoryInstance->GetData (), fromMemoryInstance->GetBytesUsed (), true); // if true is last argument memory is copied
+
+            // copy the perProperty flags
+            memcpy (m_perPropertyFlagsHolder.perPropertyFlags, fromMemoryInstance->GetPerPropertyFlagsData(), m_perPropertyFlagsHolder.numPerPropertyFlagsEntries * sizeof(UInt32));
+
+            if (fromMemoryInstance->m_structInstances && fromMemoryInstance->m_structInstances)
+                {
+                for (size_t i = 0; i<fromMemoryInstance->m_structInstances->size(); i++)
+                    {
+                    StructArrayEntry const& entry = (*fromMemoryInstance->m_structInstances)[i];
+                    
+                    MemoryECInstanceBase* structMbInstance = entry.structInstance->GetAsMemoryECInstance();
+                    if (!structMbInstance)
+                        continue;
+
+                    ECClassCR structClass = entry.structInstance->GetClass();
+                    StandaloneECEnablerPtr standaloneEnabler = entry.structInstance->GetEnablerR().GetEnablerForStructArrayMember (structClass.GetSchema().GetSchemaKey(), structClass.GetName().c_str());
+                    if (standaloneEnabler.IsNull())
+                        continue;
+
+                    StandaloneECInstancePtr copiedStructInstance = standaloneEnabler->CreateInstance();
+                    copiedStructInstance->CopyInstanceProperties (*entry.structInstance);
+
+                    if (NULL == m_structInstances)
+                        m_structInstances = new StructInstanceVector ();
+
+                    IECInstancePtr p = copiedStructInstance->GetAsIECInstance ();
+                    StructArrayEntry newEntry (entry.structValueIdentifier, p);
+                    m_structInstances->push_back (newEntry);
+                    }
+                }
+            
+            return ECOBJECTS_STATUS_Success;
+            }
+        }
+
+    // copy properties individually
+    ECValuesCollectionPtr   properties = ECValuesCollection::Create (fromNativeInstance);
+    duplicateProperties (*thisAsIECInstance, *properties);
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//  StandaloneECInstance
+///////////////////////////////////////////////////////////////////////////////////////////
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  12/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t                StandaloneECInstance::_GetOffsetToIECInstance () const
+    {
+    EC::IECInstanceCP iecInstanceP   = dynamic_cast<EC::IECInstanceCP>(this);
+    byte const* baseAddressOfIECInstance = (byte const *)iecInstanceP;
+    byte const* baseAddressOfConcrete = (byte const *)this;
+
+    return (size_t)(baseAddressOfIECInstance - baseAddressOfConcrete);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/        
+StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerR enabler, byte * data, UInt32 size) :
+        MemoryECInstanceBase (data, size, enabler.GetClassLayout(), true),
+        m_sharedWipEnabler(&enabler)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     01/10
++---------------+---------------+---------------+---------------+---------------+------*/        
+StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerR enabler, UInt32 minimumBufferSize) :
+        MemoryECInstanceBase (enabler.GetClassLayout(), minimumBufferSize, true),
+        m_sharedWipEnabler(&enabler)
+    {
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     01/10
++---------------+---------------+---------------+---------------+---------------+------*/        
+StandaloneECInstance::~StandaloneECInstance ()
+    {
+    //ECObjectsLogger::Log()->tracev (L"StandaloneECInstance at 0x%x is being destructed. It references enabler 0x%x", this, m_sharedWipEnabler);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan.Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 StandaloneECInstancePtr         StandaloneECInstance::Duplicate(IECInstanceCR instance)
     {
     ECClassCR              ecClass           = instance.GetClass();
-    StandaloneECEnablerPtr standaloneEnabler = instance.GetEnablerR().GetEnablerForStructArrayMember (ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str());
+    StandaloneECEnablerPtr standaloneEnabler = instance.GetEnablerR().GetEnablerForStructArrayMember (ecClass.GetSchema().GetSchemaKey(), ecClass.GetName().c_str());
     if (standaloneEnabler.IsNull())
         return NULL;
 
     StandaloneECInstancePtr newInstance = standaloneEnabler->CreateInstance();
 
-    ECValuesCollectionPtr   properties = ECValuesCollection::Create (instance);
-    duplicateProperties (*newInstance, *properties);
-
+    newInstance->CopyInstanceProperties (instance);
     return newInstance;
     }
 
@@ -751,6 +808,7 @@ MemoryECInstanceBase* StandaloneECInstance::_GetAsMemoryECInstance () const
 +---------------+---------------+---------------+---------------+---------------+------*/    
 ECEnablerCR         StandaloneECInstance::_GetEnabler() const
     {
+    BeAssert (m_sharedWipEnabler.IsValid());
     return *m_sharedWipEnabler;
     }
 
@@ -894,6 +952,7 @@ StandaloneECEnabler::StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR class
     ClassLayoutHolder (classLayout),
     m_ownsClassLayout (ownsClassLayout)
     {
+    BeAssert (NULL != &ecClass);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -968,7 +1027,7 @@ StandaloneECInstanceP   StandaloneECEnabler::CreateSharedInstance (byte * data, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
-StandaloneECInstancePtr   StandaloneECEnabler::CreateInstance (UInt32 minimumBufferSize) const
+StandaloneECInstancePtr   StandaloneECEnabler::CreateInstance (UInt32 minimumBufferSize)
     {
     return new StandaloneECInstance (*this, minimumBufferSize);
     }    

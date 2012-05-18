@@ -76,6 +76,8 @@
     <ClCompile Include="nonport\FileUtilities.cpp" />
     <ClCompile Include="nonport\StopWatch.cpp" />
     <ClCompile Include="StandaloneECInstance.cpp" />
+    <ClCompile Include="StandaloneECRelationshipInstance.cpp" />
+    <ClCompile Include="SupplementalSchema.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\PublicApi\ECObjects\DesignByContract.h" />
@@ -83,6 +85,7 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECInstance.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjects.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPI.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\SupplementalSchema.h" />
     <ClInclude Include="ECObjectsPch.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECSchema.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECValue.h" />

@@ -43,7 +43,7 @@
 *   -# If the environment variable "BENTLEY_LOGGING_CONFIG" is set, it will use the file pointed
 *      to by this path as the configuration file.
 *   -# It will next look in the same directory as the ECObjects.dll for a file named "logging.config.xml"
-*   -# It will next look for $(OutRoot)WinX86(or 64)\Product\ECFrameworkNativeTest\Tests\logging.config.xml
+*   -# It will next look for $(OutRoot)WinX86(or 64)/Product/ECFrameworkNativeTest/Tests/logging.config.xml
 *   -# As a default, it will not configure any logger.
 *
 * @bsiclass
@@ -56,15 +56,17 @@
 #include <hash_map>
 #endif
 #include <limits>
-#include <set>  // WIP_EC - don't use std::set in a published API
 
 #include <ECObjects/ECEnabler.h>
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECSchema.h>
 #include <ECObjects/ECContext.h>
 #include <ECObjects/ECValue.h>
+#include <ECObjects/ECExpressions.h>
 #include <ECObjects/MemoryInstanceSupport.h>
 #include <ECObjects/StandaloneECInstance.h>
+#include <ECObjects/StandaloneECRelationshipInstance.h>
+#include <ECObjects/ecprovider.h>
 #include <Bentley/ScopedArray.h>
 
 

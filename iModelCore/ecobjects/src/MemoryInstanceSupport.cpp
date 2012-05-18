@@ -74,6 +74,7 @@ static bool     PrimitiveTypeIsFixedSize (PrimitiveType primitiveType)
             return true;
         case PRIMITIVETYPE_String:
         case PRIMITIVETYPE_Binary:
+        case PRIMITIVETYPE_IGeometry:
             return false;
         default:
             DEBUG_FAIL("Unsupported data type");
@@ -1072,9 +1073,10 @@ void            ClassLayout::AddPropertyLayout (WCharCP accessString, PropertyLa
     // if we knew no new PropertyLayouts could be added after construction, we could delay sorting the list until FinishLayout()
     // since AddPropertyLayout() is public we can't know that, so we need to insert in sorted order
     UInt32 index = (UInt32)(m_propertyLayouts.size() - 1);
-    AccessStringIndexPair newPair (propertyLayout.GetAccessString(), index);
+    WCharCP plAccessString = propertyLayout.GetAccessString();
+    AccessStringIndexPair newPair (plAccessString, index);
     IndicesByAccessString::iterator begin = m_indicesByAccessString.begin();
-    IndicesByAccessString::iterator insertPos = begin + (GetPropertyIndexPosition (propertyLayout.GetAccessString(), true) - begin);    // because constness...
+    IndicesByAccessString::iterator insertPos = begin + (GetPropertyIndexPosition (plAccessString, true) - begin);    // because constness...
     m_indicesByAccessString.insert (insertPos, newPair);
 
     AddToLogicalStructureMap (propertyLayout, index);
@@ -2222,6 +2224,7 @@ ECObjectsStatus       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValu
             return ECOBJECTS_STATUS_Success;
             }
         case PRIMITIVETYPE_Binary:
+        case PRIMITIVETYPE_IGeometry:
             {
             UInt32 size;
             if (useIndex)
@@ -2476,6 +2479,7 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             break;
             }
 
+        case PRIMITIVETYPE_IGeometry:
         case PRIMITIVETYPE_Binary:
             {
             if (!v.IsBinary ())
