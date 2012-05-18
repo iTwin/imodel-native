@@ -11,10 +11,6 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "ECObjectsPch.h"
-#if defined (_WIN32) // WIP_NONPORT
-#include <objbase.h>
-#include <comdef.h>
-#endif //defined (_WIN32) // WIP_NONPORT
 
 BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
@@ -256,7 +252,7 @@ IECInstanceR customAttributeInstance
     ECClassCR classDefinition = customAttributeInstance.GetClass();
     if (!classDefinition.GetIsCustomAttributeClass())
         {
-        assert (false);
+        BeAssert (false);
         return ECOBJECTS_STATUS_NotCustomAttributeClass;
         }
 
@@ -266,7 +262,7 @@ IECInstanceR customAttributeInstance
         {
         if (!ECSchema::IsSchemaReferenced(*containerSchema, classDefinition.GetSchema()))
             {
-            assert (false);
+            BeAssert (false);
             return ECOBJECTS_STATUS_SchemaNotFound;
             }
         }

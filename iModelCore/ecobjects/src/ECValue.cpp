@@ -6,11 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
-#if defined (_WIN32) // WIP_NONPORT
-#include <windows.h>
-#else
 #include <Bentley/IStorage.h>   // for _FILETIME
-#endif //defined (_WIN32) // WIP_NONPORT
+#include <Bentley/BeAssert.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -121,24 +118,6 @@ WString SystemTime::ToString
     WString str;
     str.Sprintf (L"#%d/%d/%d-%d:%d:%d:%d#", wYear, wMonth, wDay, wHour, wMinute, wSecond, wMilliseconds);
     return str;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Time in local time zone
-* @bsimethod                                    Bill.Steinbock                  02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-SystemTime SystemTime::GetLocalTime()
-    {
-#if defined (_WIN32) // WIP_NONPORT
-    SYSTEMTIME wtime;
-    ::GetLocalTime(&wtime);
-    SystemTime time;
-    memcpy (&time, &wtime, sizeof(time));
-    return time;
-#elif defined (__unix__)
-    BeAssert (false && "*** TBD - convert UTC to local time");
-    return GetSystemTime();
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -323,21 +302,21 @@ void            ECValue::DeepCopy (ECValueCR v)
         case VALUEKIND_Struct:
             {
             //WIP_FUSION 
-            assert (false && "Needs work: copy the struct value");
+            BeAssert (false && "Needs work: copy the struct value");
             break;
             }
 
         case VALUEKIND_Array:
             {
             //WIP_FUSION 
-            assert (false && "It's impossible to 'copy' an array -- the data is not here");
+            BeAssert (false && "It's impossible to 'copy' an array -- the data is not here");
             break;
             }
 
         case PRIMITIVETYPE_Binary:
             {
             //WIP_FUSION 
-            assert (false && "Needs work: can we copy a binary value? BinaryInfo::m_data is a pointer into somebody's storage container?!");
+            BeAssert (false && "Needs work: can we copy a binary value? BinaryInfo::m_data is a pointer into somebody's storage container?!");
             break;
             }
 
@@ -357,7 +336,7 @@ void            ECValue::DeepCopy (ECValueCR v)
             break;
                         
         default:
-            assert (false); // type not handled
+            BeAssert (false); // type not handled
         }
     };
     
@@ -387,7 +366,7 @@ void            ECValue::ShallowCopy (ECValueCR v)
         case PRIMITIVETYPE_Binary:
             {
             //WIP_FUSION 
-            assert (false && "Needs work: can we copy a binary value? BinaryInfo::m_data is a pointer into somebody's storage container?!");
+            BeAssert (false && "Needs work: can we copy a binary value? BinaryInfo::m_data is a pointer into somebody's storage container?!");
             break;
             }
 
@@ -415,7 +394,7 @@ void            ECValue::ShallowCopy (ECValueCR v)
             break;
                         
         default:
-            assert (false); // type not handled
+            BeAssert (false); // type not handled
         }
     }
 
@@ -804,18 +783,6 @@ SystemTime          ECValue::GetDateTime () const
 
     unixMillisToSystemTime (systemTime, umillis);
 
-#if defined (_WIN32) // do a cross-check to verify that our portable logic gives the same result as calling Win32 functions directly
-    #ifndef NDEBUG
-        {
-        SYSTEMTIME  tempTime;
-        FileTimeToSystemTime (&fileTime, &tempTime);
-        SystemTime systemTimeCheck;
-        memcpy (&systemTimeCheck, &tempTime, sizeof(systemTimeCheck));
-        BeAssert (0==memcmp(&systemTimeCheck, &systemTime, sizeof(systemTimeCheck)));
-        }
-    #endif
-#endif
-
     return systemTime;
     }
 
@@ -830,21 +797,6 @@ BentleyStatus          ECValue::SetDateTime (SystemTime const& systemTime)
 
     _FILETIME fileTime;
     BeTimeUtilities::ConvertUnixMillisToFiletime (fileTime, umillis);
-
-#if defined (_WIN32) // do a cross-check to verify that our portable logic gives the same result as calling Win32 functions directly
-    #ifndef NDEBUG
-        {
-        FILETIME xfileTime;
-        SYSTEMTIME wtime;
-        memcpy (&wtime, &systemTime, sizeof(wtime));
-
-        // m_dateTime is number of ticks since 00:00:00 01/01/01 - Fileticks are relative to 00:00:00 01/01/1601
-        BeAssert (SystemTimeToFileTime (&wtime, &xfileTime));
-        BeAssert (xfileTime.dwHighDateTime == fileTime.dwHighDateTime);
-        BeAssert (xfileTime.dwLowDateTime == fileTime.dwLowDateTime);
-        }
-    #endif
-#endif
 
     // m_dateTime is number of ticks since 00:00:00 01/01/01 - Fileticks are relative to 00:00:00 01/01/1601
     Int64 systemDateTicks = (Int64)fileTime.dwLowDateTime | ((Int64)fileTime.dwHighDateTime << 32);
@@ -1180,7 +1132,7 @@ ECObjectsStatus       ECValue::SetPrimitiveArrayInfo (PrimitiveType primitiveEle
 +---------------+---------------+---------------+---------------+---------------+------*/
 ArrayInfo       ECValue::GetArrayInfo() const
     {
-    assert (IsArray());
+    BeAssert (IsArray());
     
     return m_arrayInfo;
     }
@@ -1381,7 +1333,7 @@ void                                            ECValueAccessor::PushLocation (E
     ECObjectsStatus status = newEnabler.GetPropertyIndex(propertyIndex, accessString);
     if (ECOBJECTS_STATUS_Success != status)
         {
-        assert (false && "Could not resolve property index for this access string");
+        BeAssert (false && "Could not resolve property index for this access string");
         return;
         }
     PushLocation (newEnabler, (int)propertyIndex, newArrayIndex);
@@ -1496,22 +1448,18 @@ WString                                        ECValueAccessor::GetPropertyName(
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString                                        ECValueAccessor::GetDebugAccessString() const
     {
-#if defined (_WIN32) // WIP_NONPORT
-    std::wstringstream temp;
+    WString temp;
     for(UInt32 depth = 0; depth < GetDepth(); depth++)
         {
         if(depth > 0)
-            temp << " -> ";
-        temp << "{" << m_locationVector[depth].propertyIndex;
+            temp.append (L" -> ");
+        temp.append (WPrintfString(L"{%d", m_locationVector[depth].propertyIndex));
         if(m_locationVector[depth].arrayIndex > -1)
-            temp << "," << m_locationVector[depth].arrayIndex;
-        temp << "}" << GetAccessString (depth);
+            temp.append (WPrintfString(L",%d", m_locationVector[depth].arrayIndex));
+        temp.append (L"}");
+        temp.append (GetAccessString (depth));
         }
-    return temp.str().c_str();
-#elif defined (__unix__) // WIP_NONPORT
-    // *** NEEDS WORK: iostreams not supported on Android
-    return L"";
-#endif
+    return temp;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1519,12 +1467,11 @@ WString                                        ECValueAccessor::GetDebugAccessSt
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString                                        ECValueAccessor::GetManagedAccessString() const
     {
-#if defined (_WIN32) // WIP_NONPORT
-    std::wstringstream temp;
+    WString temp;
     for(UInt32 depth = 0; depth < GetDepth(); depth++)
         {
         if(depth > 0)
-            temp << ".";
+            temp.append (L".");
 
         WCharCP str = GetAccessString (depth);
         WCharCP lastDot = wcsrchr (str, L'.');
@@ -1532,22 +1479,17 @@ WString                                        ECValueAccessor::GetManagedAccess
         if (NULL != lastDot)
             str = lastDot+1;
 
-        temp << str;
+        temp.append (str);
         //If the current index is an array element,
         if(m_locationVector[depth].arrayIndex > -1)
             {
             //Delete the last ']' from the access string and write a number.
-            std::streamoff position = temp.tellp();
-            temp.seekp(position - 1);
-            temp << m_locationVector[depth].arrayIndex;
-            temp << "]";
+            temp.resize (temp.size()-1);
+            temp.append (WPrintfString(L"%d", m_locationVector[depth].arrayIndex));
+            temp.append (L"]");
             }
         }
-    return temp.str().c_str();
-#elif defined (__unix__) // WIP_NONPORT
-    // *** NEEDS WORK: iostreams not supported on Android
-    return L"";
-#endif
+    return temp;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -22,7 +22,7 @@ static LeakDetector<ECClass> g_leakDetector (L"ECClass", L"ECClasss", false);
 #endif
 
 // If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
-// Test programs generally want to get error status back and not assert, so they call ECSchema::AssertOnXmlError (false);
+// Test programs generally want to get error status back and not BeAssert, so they call ECSchema::AssertOnXmlError (false);
 static  bool        s_noAssert = false;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                10/2011
@@ -267,7 +267,7 @@ StandaloneECEnablerP ECClass::GetDefaultStandaloneEnabler() const
         m_defaultStandaloneEnabler = StandaloneECEnabler::CreateEnabler (*this, *classLayout, NULL, true);
         }
 
-    assert(m_defaultStandaloneEnabler.IsValid());
+    BeAssert(m_defaultStandaloneEnabler.IsValid());
     return m_defaultStandaloneEnabler.get();
     }
 
@@ -1736,7 +1736,7 @@ SchemaWriteStatus ECRelationshipClass::_WriteXml (BeXmlNodeP& classNode, BeXmlNo
     // verify that this really is the current relationship class element
     if (0 != strcmp (classNode->GetName(), EC_RELATIONSHIP_CLASS_ELEMENT))
         {
-        assert (false);
+        BeAssert (false);
         return SCHEMA_WRITE_STATUS_FailedToCreateXml;
         }
         

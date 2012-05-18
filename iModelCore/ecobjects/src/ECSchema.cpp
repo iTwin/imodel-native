@@ -12,6 +12,7 @@
 #endif
 #include <list>
 #include <Bentley/BeFileName.h>
+#include <Bentley/BeFileListIterator.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -26,7 +27,7 @@ static LeakDetector<ECSchema> g_leakDetector (L"ECSchema", L"ECSchemas", false);
 
 
 // If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
-// Test programs generally want to get error status back and not assert, so they call ECSchema::AssertOnXmlError (false);
+// Test programs generally want to get error status back and not BeAssert, so they call ECSchema::AssertOnXmlError (false);
 static  bool        s_noAssert = false;
 
 
@@ -63,7 +64,7 @@ ECSchema::~ECSchema ()
             delete ecClass;
         }
 
-    assert (m_classMap.empty());
+    BeAssert (m_classMap.empty());
 
     /*
     for (ECSchemaReferenceVector::iterator sit = m_referencedSchemas.begin(); sit != m_referencedSchemas.end(); sit++)
@@ -1067,7 +1068,7 @@ ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, WCharCP
     WString::size_type firstDot;
     if (WString::npos == (firstDot = name.find ('.')))
         {
-        assert (s_noAssert);
+        BeAssert (s_noAssert);
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchema FileName String: '%ls' does not contain the suffix '.ecschema.xml'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, filePath);
         return ECOBJECTS_STATUS_ParseError;
         }
@@ -1077,6 +1078,50 @@ ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, WCharCP
     return ECSchema::ParseVersionString (versionMajor, versionMinor, versionString.c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  11/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus GetSchemaFileName (WString& fullFileName, UInt32& foundMinorVersion, WCharCP schemaPath, bool useLatestCompatibleMatch)
+    {
+    WString     schemaPathWithWildcard = schemaPath;
+    schemaPathWithWildcard += L"*";
+
+    BeFileListIterator  fileList (schemaPathWithWildcard.c_str(), false);
+    BeFileName          filePath;
+    UInt32 currentMinorVersion=0;
+
+    while (SUCCESS == fileList.GetNextFileName (filePath))
+        {
+        WCharCP     fileName = filePath.GetName();
+
+        if (!useLatestCompatibleMatch)
+            {
+            fullFileName = fileName;
+            return ECOBJECTS_STATUS_Success;
+            }
+
+        if (fullFileName.empty())
+            {
+            fullFileName = fileName;
+            GetMinorVersionFromSchemaFileName (foundMinorVersion, fileName);
+            continue;
+            }
+
+        if (ECOBJECTS_STATUS_Success != GetMinorVersionFromSchemaFileName (currentMinorVersion, fileName))
+            continue;
+
+        if (currentMinorVersion > foundMinorVersion)
+            {
+            foundMinorVersion = currentMinorVersion;
+            fullFileName = fileName;
+            }
+        }
+
+    if (fullFileName.empty())
+        return ECOBJECTS_STATUS_Error;
+
+    return ECOBJECTS_STATUS_Success;
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1241,7 +1286,7 @@ SchemaReadStatus ECSchema::ReadXml (ECSchemaP& schemaOut, BeXmlDomR xmlDom, ECSc
     BeXmlNodeP      schemaNode;
     if ( (BEXML_Success != xmlDom.SelectNode (schemaNode, "/" EC_NAMESPACE_PREFIX ":" EC_SCHEMA_ELEMENT, NULL, BeXmlDom::NODE_BIAS_First)) || (NULL == schemaNode) )
         {
-        assert (s_noAssert);
+        BeAssert (s_noAssert);
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: Missing a top-level %hs node in the %hs namespace", EC_SCHEMA_ELEMENT, ECXML_URI_2_0);
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
@@ -1250,7 +1295,7 @@ SchemaReadStatus ECSchema::ReadXml (ECSchemaP& schemaOut, BeXmlDomR xmlDom, ECSc
     WString schemaName;
     if (BEXML_Success != schemaNode->GetAttributeStringValue (schemaName, SCHEMA_NAME_ATTRIBUTE))
         {
-        assert (s_noAssert);
+        BeAssert (s_noAssert);
         ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %hs element must contain a schemaName attribute", EC_SCHEMA_ELEMENT);
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
@@ -1553,7 +1598,7 @@ SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaP& schemaOut, WCharCP ecSche
     BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromFile (xmlStatus, ecSchemaXmlFile);
     if ((xmlStatus != BEXML_Success) || !xmlDom.IsValid())
         {
-        assert (s_noAssert);
+        BeAssert (s_noAssert);
         LogXmlLoadError (xmlDom.get());
         return SCHEMA_READ_STATUS_FailedToParseXml;
         }
@@ -1592,7 +1637,7 @@ ECSchemaReadContextR schemaContext
     
     if (BEXML_Success != xmlStatus)
         {
-        assert (s_noAssert);
+        BeAssert (s_noAssert);
         LogXmlLoadError (xmlDom.get());
         return SCHEMA_READ_STATUS_FailedToParseXml;
         }

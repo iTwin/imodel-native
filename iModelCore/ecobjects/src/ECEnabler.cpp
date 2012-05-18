@@ -22,7 +22,7 @@ ECEnabler::ECEnabler(ECClassCR ecClass, IStandaloneEnablerLocaterP structStandal
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECEnabler::~ECEnabler() 
     {
-    ECObjectsLogger::Log()->tracev (L"%S at 0x%x is being destructed.", typeid(*this).name(), this);
+    ECObjectsLogger::Log()->tracev (L"%hs at 0x%x is being destructed.", typeid(*this).name(), this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -124,7 +124,7 @@ ECEnabler::PropertyProcessingResult ECEnabler::_ProcessPrimitiveProperties (bset
             }
         else
             {
-            assert (v.IsArray());
+            BeAssert (v.IsArray());
             ArrayInfo ai = v.GetArrayInfo ();
             bool isStructArray = ai.IsStructArray();
 
