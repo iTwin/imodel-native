@@ -150,7 +150,7 @@ public:
     ECOBJECTS_EXPORT explicit ECValue (DPoint2dCR point2d);
     ECOBJECTS_EXPORT explicit ECValue (DPoint3dCR point3d);
     ECOBJECTS_EXPORT explicit ECValue (bool value);
-    ECOBJECTS_EXPORT explicit ECValue (SystemTime& time);
+    ECOBJECTS_EXPORT explicit ECValue (SystemTime const& time);
 
     ECOBJECTS_EXPORT void           SetReadOnly(bool isReadOnly);
 

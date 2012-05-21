@@ -2,10 +2,12 @@
 #
 #     $Source: src/ecobjects.mki $
 #
-#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 OPTIMIZE_FOR_SPEED=1
+
+# WE_NEED_TO_FIX_OUR_COMPILER_WARNINGS = 1
 
 nameToDefine=__ECOBJECTS_BUILD__
 %include cdefapnd.mki
