@@ -230,6 +230,7 @@ ECClassCR classDefinition
     {
     return GetCustomAttributeInternal (classDefinition, true);
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -239,6 +240,22 @@ bool includeBase
 ) const
     {
     return ECCustomAttributeInstanceIterable(*this, includeBase);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Deepak.Malkan                   04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyIterable::ECPropertyIterable(ECClassCR ecClass, bool includeBaseProperties)
+    : m_ecClass(ecClass), m_includeBaseProperties(includeBaseProperties)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Deepak.Malkan                   04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    ECPropertyIterable::const_iterator::operator==(const_iterator const& rhs) const
+    {
+    return !(*this != rhs);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -383,6 +400,17 @@ SchemaWriteStatus IECCustomAttributeContainer::WriteCustomAttributes (BeXmlNodeR
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Deepak.Malkan                   04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECCustomAttributeInstanceIterable::ECCustomAttributeInstanceIterable
+(
+IECCustomAttributeContainerCR   container,
+bool                            includeBase
+) : m_container(container), m_includeBaseContainers(includeBase)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECCustomAttributeInstanceIterable::const_iterator::const_iterator
@@ -438,6 +466,15 @@ bool ECCustomAttributeInstanceIterable::const_iterator::operator!= (const_iterat
         return true;
     return (m_state->m_customAttributesIterator != rhs.m_state->m_customAttributesIterator);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Deepak.Malkan                   04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    ECCustomAttributeInstanceIterable::const_iterator::operator==(const_iterator const& rhs) const
+    {
+    return !(*this != rhs);
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010

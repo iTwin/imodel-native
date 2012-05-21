@@ -304,8 +304,9 @@ void            ECValue::DeepCopy (ECValueCR v)
     
     if (IsNull())
         return;
-        
-    switch (m_valueKind)
+
+    UShort  valueKind = m_valueKind;
+    switch (valueKind)
         {            
         case VALUEKIND_Struct:
             {
@@ -363,7 +364,8 @@ void            ECValue::ShallowCopy (ECValueCR v)
     if (IsNull())
         return;
 
-    switch (m_valueKind)
+    UShort  valueKind = m_valueKind;
+    switch (valueKind)
         {            
         case VALUEKIND_Struct:
             {
@@ -414,7 +416,8 @@ void            ECValue::FreeMemory ()
     if (m_isNull)
         return;
 
-    switch (m_primitiveType)
+    UShort  primitiveType = m_primitiveType;
+    switch (primitiveType)
         {
         case PRIMITIVETYPE_String:
             if ((m_stringInfo.m_freeWhenDone) && (m_stringInfo.m_string != NULL))
@@ -427,7 +430,7 @@ void            ECValue::FreeMemory ()
                 free ((void*)m_binaryInfo.m_data);
             return;
 
-        case (PrimitiveType)VALUEKIND_Struct:
+        case VALUEKIND_Struct:
             if ((m_structInstance != NULL))
                 m_structInstance->Release();
             return;
@@ -579,7 +582,7 @@ ECValue::ECValue (bool value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (SystemTime& time)
+ECValue::ECValue (SystemTime const& time)
     {
     ConstructUninitialized();
     SetDateTime (time);
@@ -995,7 +998,8 @@ WString    ECValue::ToString () const
         }
     else
         {
-        switch (m_valueKind)
+        UShort  valueKind = m_valueKind;
+        switch (valueKind)
             {
             case PRIMITIVETYPE_Integer:
                 {
@@ -1538,6 +1542,7 @@ bool ECValueAccessor::operator==(ECValueAccessorCR accessor) const
 #define NUM_INDEX_BUFFER_CHARS 63
 #define NUM_ACCESSSTRING_BUFFER_CHARS 1023
 
+#ifdef UNUSED_FUNCTION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1561,6 +1566,7 @@ static void tokenize(const WString& str, bvector<WString>& tokens, const WString
         pos = str.find_first_of(delimiters, lastPos);
         }
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2010

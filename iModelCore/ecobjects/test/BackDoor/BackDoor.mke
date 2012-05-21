@@ -5,6 +5,8 @@
 #  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
+# WE_NEED_TO_FIX_OUR_COMPILER_WARNINGS = 1
+
 PolicyFile = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
 %include mdl.mki
 %include $(SharedMki)bsioutputdirs.mki

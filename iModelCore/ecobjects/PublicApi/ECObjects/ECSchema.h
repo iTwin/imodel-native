@@ -182,9 +182,7 @@ private:
 
     IECCustomAttributeContainerCR m_container;
     bool                        m_includeBaseContainers;
- /*__PUBLISH_SECTION_END__*/
-   ECCustomAttributeInstanceIterable( IECCustomAttributeContainerCR container, bool includeBase) : m_container(container), m_includeBaseContainers(includeBase) {};
-/*__PUBLISH_SECTION_START__*/
+   ECCustomAttributeInstanceIterable( IECCustomAttributeContainerCR container, bool includeBase);
 public:
     struct IteratorState /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
         {
@@ -216,7 +214,7 @@ public:
         public:
             ECOBJECTS_EXPORT const_iterator&     operator++();
             ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const;
-            ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const {return !(*this != rhs);}
+            ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const;
             ECOBJECTS_EXPORT IECInstancePtr const& operator* () const;
         };
 
@@ -456,9 +454,7 @@ private:
     ECClassCR       m_ecClass;
     bool            m_includeBaseProperties;
     
-/*__PUBLISH_SECTION_END__*/
-    ECPropertyIterable(ECClassCR ecClass, bool includeBaseProperties) : m_ecClass(ecClass), m_includeBaseProperties(includeBaseProperties) {};
-/*__PUBLISH_SECTION_START__*/
+    ECPropertyIterable(ECClassCR ecClass, bool includeBaseProperties);
 public:
 
     struct IteratorState /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
@@ -491,7 +487,7 @@ public:
         public:
             ECOBJECTS_EXPORT const_iterator&     operator++();
             ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const;
-            ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const {return !(*this != rhs);}
+            ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const;
             ECOBJECTS_EXPORT ECPropertyP const&  operator* () const;
         };
 

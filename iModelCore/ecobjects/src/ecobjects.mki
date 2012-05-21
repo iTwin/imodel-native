@@ -7,6 +7,8 @@
 #--------------------------------------------------------------------------------------
 OPTIMIZE_FOR_SPEED=1
 
+# WE_NEED_TO_FIX_OUR_COMPILER_WARNINGS = 1
+
 nameToDefine=__ECOBJECTS_BUILD__
 %include cdefapnd.mki
 
