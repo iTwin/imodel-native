@@ -88,7 +88,9 @@ TEST(AssertTest, VerifyAssertGuardScenarios)
     try
         {
         ExplicitlyDisableAssertsAndThrowException (true);
-        FAIL() << "ExplicitlyDisableAssertsAndThrowException should have thrown an exception";
+// ExplicitlyDisableAssertsAndThrowException currently always throws and we're not testing the compiler.
+//  Perhaps it should've done an assert to verify that it 
+//        FAIL() << "ExplicitlyDisableAssertsAndThrowException should have thrown an exception";
         }
     catch (...) {}
     EXPECT_TRUE (!AssertDisabler::AreAssertsDisabled());
@@ -100,7 +102,9 @@ TEST(AssertTest, VerifyAssertGuardScenarios)
         try
             {
             ExplicitlyDisableAssertsAndThrowException (false);
-            FAIL() << "ExplicitlyDisableAssertsAndThrowException should have thrown an exception";
+// ExplicitlyDisableAssertsAndThrowException currently always throws and we're not testing the compiler.
+//  Perhaps it should've done an assert to verify that it 
+//            FAIL() << "ExplicitlyDisableAssertsAndThrowException should have thrown an exception";
             }
         catch (...) {}
         EXPECT_FALSE (!AssertDisabler::AreAssertsDisabled());
