@@ -1054,7 +1054,7 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
 
     DPoint2d   inSize = {10.5, 22.3};
     DPoint3d   inPoint1 = {10.10, 11.11, 12.12};
-    DPoint3d   inPoint2 ={100.100, 110.110, 120.120};
+    DPoint3d   inPoint2 ={200.100, 210.110, 220.120};
     SystemTime inTime = SystemTime::GetLocalTime();
     int        inCount = 100;
     double     inLength = 432.178;
@@ -1089,6 +1089,7 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     DPoint3d    point3d = ecValue.GetPoint3D ();
     EXPECT_TRUE (SUCCESS == memcmp (&inPoint1, &point3d, sizeof(DPoint3d)));
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"EndPoint"));
+    point3d = ecValue.GetPoint3D ();
     EXPECT_TRUE (SUCCESS == memcmp (&inPoint2, &point3d, sizeof(DPoint3d)));
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"Service_Date"));
     SystemTime  sysTime = ecValue.GetDateTime ();
