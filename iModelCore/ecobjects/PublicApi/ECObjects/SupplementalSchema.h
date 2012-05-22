@@ -249,10 +249,21 @@ public:
 
 private:
     WString m_primarySchemaName;
+    ECSchemaCachePtr m_schemaCache;
 
     static const int PRECEDENCE_THRESHOLD = 199;
 
-    SupplementedSchemaStatus OrderSupplementalSchemas( ECSchemaR primarySchema, const bvector<ECSchemaP>& supplementalSchemaList, bmap<UInt32, ECSchemaP> schemasByPrecedence, bvector<ECSchemaP> localizationSchemas );
+    SupplementedSchemaStatus OrderSupplementalSchemas(bmap<UInt32, ECSchemaP>& schemasByPrecedence, ECSchemaR primarySchema, const bvector<ECSchemaP>& supplementalSchemaList, bvector<ECSchemaP> localizationSchemas );
+
+    //! Merges two schemas of the same precedence into one schema.
+    //! @remarks Used internally if two schemas are input that have the same precedence
+    //! @param[out] mergedSchema    The resulting merged schema between the two input schemas
+    //! @param[in]  schema1 A schema with equal precedence to the input schema2.  If one of the schemas may have already been copied,
+    //! it must be passed in as schema1
+    //! @param[in]  schema2 A schema with equal precedence to the input schema1
+    SupplementedSchemaStatus CreateMergedSchemaFromSchemasWithEqualPrecedence(ECSchemaP schema1, ECSchemaP schema2);
+
+    SupplementedSchemaStatus MergeClassesWithEqualPrecedence(ECSchemaP mergedSchema, ECClassP supplementalClass, WStringCR supplementalSchemaFullName, WStringCR mergedSchemaFullName);
 
     //! Takes a map of supplemental schemas sorted by precedence and merges them one by one to create the consolidated schema
     //! @param[in,out]  primarySchema   The schema to merge the supplemental schemas into
@@ -315,7 +326,7 @@ public:
     //! Gets the primary schema name
     ECOBJECTS_EXPORT WStringCR GetPrimarySchemaName() const;
 
-
+    SupplementedSchemaBuilder() { m_schemaCache = ECSchemaCache::Create(); }
 
     //! Calling this method supplements the custom attributes of the primarySchema and all sub-containers, and applies the
     //! supplemented custom attributes back to the primarySchema

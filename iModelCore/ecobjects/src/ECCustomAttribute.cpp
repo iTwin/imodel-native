@@ -535,6 +535,23 @@ MSXML2::IXMLDOMNode& newNode
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus IECCustomAttributeContainer::CopyCustomAttributesTo
+(
+IECCustomAttributeContainerR destContainer
+)
+    {
+    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+    FOR_EACH (IECInstancePtr customAttribute, GetPrimaryCustomAttributes(false))
+        {
+        status = destContainer.SetCustomAttribute(*(customAttribute->CreateCopyThroughSerialization()));
+        if (ECOBJECTS_STATUS_Success != status)
+            return status;
+        }
+    return status;
+    }
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECCustomAttributeInstanceIterable::const_iterator::const_iterator

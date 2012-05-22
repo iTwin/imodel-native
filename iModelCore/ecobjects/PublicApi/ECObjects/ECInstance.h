@@ -237,6 +237,8 @@ public:
     
     ECOBJECTS_EXPORT WString            ToString (WCharCP indent) const;
 
+    ECOBJECTS_EXPORT IECInstancePtr     CreateCopyThroughSerialization();
+
     ECOBJECTS_EXPORT static void        Debug_ResetAllocationStats ();
     ECOBJECTS_EXPORT static void        Debug_DumpAllocationStats (WCharCP prefix);
     ECOBJECTS_EXPORT static void        Debug_GetAllocationStats (int* currentLive, int* totalAllocs, int* totalFrees);

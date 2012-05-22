@@ -30,7 +30,7 @@ LeakDetector<ECSchema> g_leakDetector (L"ECSchema", L"ECSchemas", false);
 ECSchema::ECSchema (bool hideFromLeakDetection)
     :
     m_versionMajor (DEFAULT_VERSION_MAJOR), m_versionMinor (DEFAULT_VERSION_MINOR), m_classContainer(m_classMap),
-    m_hideFromLeakDetection(hideFromLeakDetection)
+    m_hideFromLeakDetection(hideFromLeakDetection), m_isSupplemented(false)
     {
     if ( ! m_hideFromLeakDetection)
         g_leakDetector.ObjectCreated(*this);
@@ -247,6 +247,23 @@ void initOriginalStandardSchemaNames()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchema::IsSamePrimarySchema
+(
+ECSchemaR primarySchema
+) const
+    {
+    if (0 != wcscmp(this->GetNamespacePrefix().c_str(), primarySchema.GetNamespacePrefix().c_str()))
+        return false;
+
+    if (0 != wcscmp(this->GetFullSchemaName().c_str(), primarySchema.GetFullSchemaName().c_str()))
+        return false;
+
+    return (GetClassCount() == primarySchema.GetClassCount());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 bool ECSchema::IsSupplemented
 (
 ) const
@@ -385,6 +402,86 @@ WStringCR     name
         }
 
     return AddClass (pClass);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::CopyClass
+(    
+ECClassP& targetClass, 
+ECClassR sourceClass
+)
+    {
+    // first make sure the class doesn't already exist in the schema
+    if (NULL != this->GetClassP(sourceClass.GetName().c_str()))
+        return ECOBJECTS_STATUS_NamedItemAlreadyExists;
+    
+    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+    ECRelationshipClassP sourceAsRelationshipClass = dynamic_cast<ECRelationshipClassP>(&sourceClass);
+    if (NULL != sourceAsRelationshipClass)
+        {
+        ECRelationshipClassP newRelationshipClass;
+        status = this->CreateRelationshipClass(newRelationshipClass, sourceClass.GetName());
+        if (ECOBJECTS_STATUS_Success != status)
+            return status;
+        newRelationshipClass->SetStrength(sourceAsRelationshipClass->GetStrength());
+        newRelationshipClass->SetStrengthDirection(sourceAsRelationshipClass->GetStrengthDirection());
+
+        CopyConstraints(newRelationshipClass->GetSource(), sourceAsRelationshipClass->GetSource());
+        CopyConstraints(newRelationshipClass->GetTarget(), sourceAsRelationshipClass->GetTarget());
+        targetClass = newRelationshipClass;
+        }
+    else
+        {
+        status = CreateClass(targetClass, sourceClass.GetName());
+        if (ECOBJECTS_STATUS_Success != status)
+            return status;
+        }
+
+    targetClass->SetIsCustomAttributeClass(sourceClass.GetIsCustomAttributeClass());
+    targetClass->SetIsDomainClass(sourceClass.GetIsDomainClass());
+    targetClass->SetIsStruct(sourceClass.GetIsStruct());
+    if (sourceClass.GetIsDisplayLabelDefined())
+        targetClass->SetDisplayLabel(sourceClass.GetDisplayLabel());
+    targetClass->SetDescription(sourceClass.GetDescription());
+
+    if (!sourceClass.GetSchema().IsSupplemented())
+        {
+        FOR_EACH(ECPropertyP sourceProperty, sourceClass.GetProperties(false))
+            {
+            ECPropertyP destProperty;
+            status = targetClass->CopyProperty(destProperty, sourceProperty);
+            if (ECOBJECTS_STATUS_Success != status)
+                return status;
+            }
+        }
+    return sourceClass.CopyCustomAttributesTo(*targetClass);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::CopyConstraints
+(
+ECRelationshipConstraintR toRelationshipConstraint, 
+ECRelationshipConstraintCR fromRelationshipConstraint
+)
+    {
+    if (fromRelationshipConstraint.IsRoleLabelDefined())
+        toRelationshipConstraint.SetRoleLabel(fromRelationshipConstraint.GetRoleLabel());
+
+    toRelationshipConstraint.SetCardinality(fromRelationshipConstraint.GetCardinality());
+    toRelationshipConstraint.SetIsPolymorphic(fromRelationshipConstraint.GetIsPolymorphic());
+
+    ECObjectsStatus status;
+    FOR_EACH(ECClassP constraintClass, fromRelationshipConstraint.GetClasses())
+        {
+        status = toRelationshipConstraint.AddClass(*constraintClass);
+        if (ECOBJECTS_STATUS_Success != status)
+            return status;
+        }
+    return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -675,6 +772,38 @@ void    ECSchema::DestroySchema (ECSchemaP& schema)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::CopySchema
+(
+ECSchemaP& schemaOut,
+IECSchemaOwnerR     schemaOwner
+)
+    {
+    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+    status = CreateSchema(schemaOut, m_name, m_versionMajor, m_versionMinor, schemaOwner, m_hideFromLeakDetection);
+    if (ECOBJECTS_STATUS_Success != status)
+        return status;
+
+    schemaOut->SetDescription(m_description);
+    if (GetIsDisplayLabelDefined())
+        schemaOut->SetDisplayLabel(GetDisplayLabel());
+
+    FOR_EACH(ECSchemaP referencedSchema, GetReferencedSchemas())
+        schemaOut->AddReferencedSchema(*referencedSchema);
+
+    FOR_EACH(ECClassP ecClass, m_classContainer)
+        {
+        ECClassP copyClass;
+        status = schemaOut->CopyClass(copyClass, *ecClass);
+        if (ECOBJECTS_STATUS_Success != status)
+            return status;
+        }
+
+    return CopyCustomAttributesTo(*schemaOut);
+    }
+
+/*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP ECSchema::GetSchemaByNamespacePrefixP
@@ -727,6 +856,16 @@ ECClassContainerCR ECSchema::GetClasses
 ) const
     {
     return m_classContainer;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32 ECSchema::GetClassCount
+(
+) const
+    {
+    return m_classMap.size();
     }
 
 /*---------------------------------------------------------------------------------**//**

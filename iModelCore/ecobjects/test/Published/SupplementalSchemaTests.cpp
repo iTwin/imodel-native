@@ -17,17 +17,519 @@ struct SupplementalSchemaMetaDataTests     : ECTestFixture
     virtual bool _WantInstanceLeakDetection () override { return false; }
     };
 
-ECSchemaP CreatePrimarySchema(IECSchemaOwnerR schemaOwner)
+struct SupplementedSchemaBuilderTests : ECTestFixture 
     {
-    ECSchemaP schema;
-    ECClassP widgetClass;
+    protected:
+        ECSchemaCachePtr m_schemaOwner;
+        ECSchemaP m_bscaSchema;
+        ECSchemaP m_customAttributeSchema;
+        StandaloneECEnablerPtr m_systemInfoCAEnabler;
+        StandaloneECEnablerPtr m_uselessInfoCAEnabler;
+        StandaloneECEnablerPtr m_otherInfoCAEnabler;
 
-    ECSchema::CreateSchema(schema, L"TestSchema", 1, 0, schemaOwner);
-    schema->CreateClass(widgetClass, L"Widget");
+        ECSchemaP m_primaryTestSchema;
+        ECSchemaP m_supplementalTestSchema1;
+        ECSchemaP m_supplementalTestSchema2;
+        ECSchemaP m_supplementalTestSchema3;
+        ECSchemaP m_supplementalTestSchema4;
 
-    return schema;
+        ECSchemaP m_primaryTestSchemaCopy;
+        ECSchemaP m_supplementalTestSchema1Copy;
+        ECSchemaP m_supplementalTestSchema2Copy;
+        ECSchemaP m_supplementalTestSchema3Copy;
+        ECSchemaP m_supplementalTestSchema4Copy;
 
-    }
+        void CreateCustomAttributeSchema()
+            {
+            ECSchema::CreateSchema(m_customAttributeSchema, L"Test_Custom_Attributes", 1, 0, *m_schemaOwner);
+            ECClassP customAttributeClass;
+            ECClassP customAttributeClass2;
+            ECClassP customAttributeClass3;
+
+            PrimitiveECPropertyP property1;
+            PrimitiveECPropertyP property2;
+            m_customAttributeSchema->CreateClass(customAttributeClass, L"SystemInfo");
+            customAttributeClass->SetIsCustomAttributeClass(true);
+            customAttributeClass->CreatePrimitiveProperty(property1, L"Data1");
+            customAttributeClass->CreatePrimitiveProperty(property2, L"Data2");
+            m_systemInfoCAEnabler = customAttributeClass->GetDefaultStandaloneEnabler();
+
+            PrimitiveECPropertyP property3;
+            PrimitiveECPropertyP property4;
+            m_customAttributeSchema->CreateClass(customAttributeClass2, L"UselessInfo");
+            customAttributeClass2->SetIsCustomAttributeClass(true);
+            customAttributeClass2->CreatePrimitiveProperty(property3, L"NothingImportant");
+            customAttributeClass2->CreatePrimitiveProperty(property4, L"NotImportant");
+            m_uselessInfoCAEnabler = customAttributeClass2->GetDefaultStandaloneEnabler();
+
+            PrimitiveECPropertyP property5;
+            PrimitiveECPropertyP property6;
+            m_customAttributeSchema->CreateClass(customAttributeClass3, L"OtherInformation");
+            customAttributeClass3->SetIsCustomAttributeClass(true);
+            customAttributeClass3->CreatePrimitiveProperty(property5, L"SomeOtherInformation");
+            customAttributeClass3->CreatePrimitiveProperty(property6, L"SomeInformation");
+            m_otherInfoCAEnabler = customAttributeClass3->GetDefaultStandaloneEnabler();
+            }
+
+        void SetCustomAttribute(IECCustomAttributeContainerP container, StandaloneECEnablerPtr enabler, WCharCP propertyName1, WCharCP propertyValue1, WCharCP propertyName2, WCharCP propertyValue2)
+            {
+            IECInstancePtr customAttribute = enabler->CreateInstance().get();
+            customAttribute->SetValue(propertyName1, ECValue(propertyValue1));
+            customAttribute->SetValue(propertyName2, ECValue(propertyValue2));
+            container->SetCustomAttribute(*customAttribute);            
+            }
+
+        void CreatePrimarySchema(ECSchemaP& primarySchema, IECSchemaOwnerR schemaOwner)
+            {
+            ECClassP fileClass;
+
+            PrimitiveECPropertyP fileSizeProperty;
+            PrimitiveECPropertyP creationDateProperty;
+            PrimitiveECPropertyP hiddenProperty;
+            ECSchema::CreateSchema(primarySchema, L"TestSchema", 1, 0, schemaOwner);
+            primarySchema->CreateClass(fileClass, L"File");
+            primarySchema->AddReferencedSchema(*m_customAttributeSchema);
+            primarySchema->AddReferencedSchema(*m_bscaSchema);
+            fileClass->CreatePrimitiveProperty(hiddenProperty, L"Hidden", PRIMITIVETYPE_Boolean);
+            fileClass->CreatePrimitiveProperty(creationDateProperty, L"CreationDate", PRIMITIVETYPE_DateTime);
+            fileClass->CreatePrimitiveProperty(fileSizeProperty, L"FileSize", PRIMITIVETYPE_Long);
+
+            SetCustomAttribute(fileClass, m_systemInfoCAEnabler, L"Data1", L"Data1 on File Class", L"Data2", L"Data2 on File Class");
+
+            SetCustomAttribute(hiddenProperty, m_systemInfoCAEnabler, L"Data1", L"Data1 on Hidden Property on File Class", L"Data2", L"Data2 on Hidden Property on File Class");
+
+            SetCustomAttribute(hiddenProperty, m_uselessInfoCAEnabler, L"NothingImportant", L"Nothing important on Hidden Property on File Class", L"NotImportant", L"Not important on Hidden Property on File Class");
+
+            ECClassP folderClass;
+            PrimitiveECPropertyP hiddenProperty2;
+            PrimitiveECPropertyP creationDateProperty2;
+            PrimitiveECPropertyP readOnlyProperty;
+            primarySchema->CreateClass(folderClass, L"Folder");
+            folderClass->CreatePrimitiveProperty(hiddenProperty2, L"Hidden", PRIMITIVETYPE_Boolean);
+            folderClass->CreatePrimitiveProperty(creationDateProperty2, L"CreationDate", PRIMITIVETYPE_DateTime);
+            folderClass->CreatePrimitiveProperty(readOnlyProperty, L"ReadOnly", PRIMITIVETYPE_Boolean);
+            SetCustomAttribute(folderClass, m_systemInfoCAEnabler, L"Data1", L"Data1 on Folder Class", L"Data2", L"Data2 on Folder Class");
+            SetCustomAttribute(hiddenProperty2, m_uselessInfoCAEnabler,  L"NothingImportant", L"Nothing important on Hidden Property on Folder Class", L"NotImportant", L"Not important on Hidden Property on Folder Class");
+
+            ECClassP imageClass;
+            primarySchema->CreateClass(imageClass, L"Image");
+            imageClass->AddBaseClass(*fileClass);
+            PrimitiveECPropertyP bitDepthProperty;
+            PrimitiveECPropertyP widthProperty;
+            PrimitiveECPropertyP heightProperty;
+            imageClass->CreatePrimitiveProperty(bitDepthProperty, L"BitDepth", PRIMITIVETYPE_Integer);
+            imageClass->CreatePrimitiveProperty(widthProperty, L"Width", PRIMITIVETYPE_Integer);
+            imageClass->CreatePrimitiveProperty(heightProperty, L"Height", PRIMITIVETYPE_Integer);
+            SetCustomAttribute(imageClass, m_systemInfoCAEnabler, L"Data1", L"Data1 on Image Class", L"Data2", L"Data2 on Image Class");
+            SetCustomAttribute(widthProperty, m_uselessInfoCAEnabler,  L"NothingImportant", L"Nothing important on Width Property on Image Class", L"NotImportant", L"Not important on Width Property on Image Class");
+            }
+
+        void CreateSupplementalSchema1(ECSchemaP& supplementalSchema, IECSchemaOwnerR schemaOwner)
+            {
+            ECSchema::CreateSchema(supplementalSchema, L"TestSchema_Supplemental_OverrideFiles", 1, 0, schemaOwner);
+            SupplementalSchemaMetaData metaData(L"TestSchema", 1, 0, 200, L"OverrideFiles", false);
+            supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
+            supplementalSchema->AddReferencedSchema(*m_bscaSchema);
+            supplementalSchema->SetCustomAttribute(*(metaData.CreateCustomAttribute()));
+
+            ECClassP fileClass;
+            PrimitiveECPropertyP hiddenProperty;
+            supplementalSchema->CreateClass(fileClass, L"File");
+            fileClass->CreatePrimitiveProperty(hiddenProperty, L"Hidden", PRIMITIVETYPE_Boolean);
+
+            SetCustomAttribute(fileClass, m_systemInfoCAEnabler, L"Data1", L"Data1 on File Class from SupplementalSchema1", L"Data2", L"Data2 on File Class from SupplementalSchema1");
+            SetCustomAttribute(hiddenProperty, m_uselessInfoCAEnabler, L"NothingImportant", L"Nothing important on Hidden Property on File Class from SupplementalSchema1", L"NotImportant", L"Not important on Hidden Property on File Class from SupplementalSchema1");
+            }
+
+        void CreateSupplementalSchema2(ECSchemaP& supplementalSchema, IECSchemaOwnerR schemaOwner)
+            {
+            ECSchema::CreateSchema(supplementalSchema, L"TestSchema_Supplemental_UnderrideFiles_ExtraText", 1, 0, schemaOwner);
+            SupplementalSchemaMetaData metaData(L"TestSchema", 1, 0, 199, L"UnderrideFiles", false);
+            supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
+            supplementalSchema->AddReferencedSchema(*m_bscaSchema);
+            supplementalSchema->SetCustomAttribute(*(metaData.CreateCustomAttribute()));
+
+            ECClassP folderClass;
+            PrimitiveECPropertyP creationDateProperty;
+            supplementalSchema->CreateClass(folderClass, L"Folder");
+            folderClass->CreatePrimitiveProperty(creationDateProperty, L"CreationDate", PRIMITIVETYPE_DateTime);
+
+            SetCustomAttribute(folderClass, m_uselessInfoCAEnabler, L"NothingImportant", L"Nothing important on Folder Class from SupplementalSchema2", L"NotImportant", L"Not important on Folder Class from SupplementalSchema2");
+            SetCustomAttribute(creationDateProperty, m_systemInfoCAEnabler, L"Data1", L"Data1 on CreationDate Property on Folder Class from SupplementalSchema2", L"Data2", L"Data2 on CreationDate Property on Folder Class from SupplementalSchema2");
+            }
+
+        void CreateSupplementalSchema3(ECSchemaP& supplementalSchema, IECSchemaOwnerR schemaOwner)
+            {
+            ECSchema::CreateSchema(supplementalSchema, L"TestSchema_Supplemental_FileAndImageInfo", 3, 33, schemaOwner);
+            SupplementalSchemaMetaData metaData(L"TestSchema", 1, 0, 200, L"FileAndImageInfo", false);
+            supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
+            supplementalSchema->AddReferencedSchema(*m_bscaSchema);
+            supplementalSchema->SetCustomAttribute(*(metaData.CreateCustomAttribute()));
+
+            ECClassP fileClass;
+            PrimitiveECPropertyP hiddenProperty;
+            PrimitiveECPropertyP creationDateProperty;
+            PrimitiveECPropertyP fileSizeProperty;
+            supplementalSchema->CreateClass(fileClass, L"File");
+            fileClass->CreatePrimitiveProperty(hiddenProperty, L"Hidden", PRIMITIVETYPE_Boolean);
+            fileClass->CreatePrimitiveProperty(creationDateProperty, L"CreationDate", PRIMITIVETYPE_DateTime);
+            fileClass->CreatePrimitiveProperty(fileSizeProperty, L"FileSize", PRIMITIVETYPE_Long);
+
+            SetCustomAttribute(fileClass, m_uselessInfoCAEnabler,  L"NothingImportant", L"Nothing important on File Class from Supplemental3", L"NotImportant", L"Not important on File Class from Supplemental3");
+
+            SetCustomAttribute(hiddenProperty, m_systemInfoCAEnabler, L"Data1", L"Data1 on Hidden Property on File Class from Supplemental3", L"Data2", L"Data2 on Hidden Property on File Class from Supplemental3");
+
+            SetCustomAttribute(creationDateProperty, m_uselessInfoCAEnabler, L"NothingImportant", L"Nothing important on CreationDate Property on File Class from Supplemental3", L"NotImportant", L"Not important on CreationDate Property on File Class from Supplemental3");
+
+            SetCustomAttribute(fileSizeProperty, m_systemInfoCAEnabler, L"Data1", L"Data1 on FileSize Property on File Class from Supplemental3", L"Data2", L"Data2 on FileSize Property on File Class from Supplemental3");
+
+            ECClassP imageClass;
+            supplementalSchema->CreateClass(imageClass, L"Image");
+            PrimitiveECPropertyP heightProperty;
+            PrimitiveECPropertyP hiddenProperty2;
+            imageClass->CreatePrimitiveProperty(heightProperty, L"Height", PRIMITIVETYPE_Integer);
+            imageClass->CreatePrimitiveProperty(hiddenProperty2, L"Hidden", PRIMITIVETYPE_Boolean);
+            SetCustomAttribute(imageClass, m_uselessInfoCAEnabler,  L"NothingImportant", L"Nothing important on Image Class from Supplemental3", L"NotImportant", L"Not important on Image Class from Supplemental3");
+            SetCustomAttribute(heightProperty, m_uselessInfoCAEnabler,  L"NothingImportant", L"Nothing important on Height Property on Image Class from Supplemental3", L"NotImportant", L"Not important on Height Property on Image Class from Supplemental3");
+            SetCustomAttribute(hiddenProperty2, m_uselessInfoCAEnabler,  L"NothingImportant", L"Nothing important on Hidden Property on Image Class from Supplemental3",  L"NotImportant", L"Not important on Hidden Property on Image Class from Supplemental3");
+            }
+
+        void CreateSupplementalSchema4(ECSchemaP& supplementalSchema, IECSchemaOwnerR schemaOwner)
+            {
+            ECSchema::CreateSchema(supplementalSchema, L"TestSchema_Supplemental_Conflict", 6, 66, schemaOwner);
+            SupplementalSchemaMetaData metaData(L"TestSchema", 1, 0, 199, L"Conflict", false);
+            supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
+            supplementalSchema->AddReferencedSchema(*m_bscaSchema);
+            supplementalSchema->SetCustomAttribute(*(metaData.CreateCustomAttribute()));
+
+            ECClassP folderClass;
+            PrimitiveECPropertyP creationDateProperty;
+            supplementalSchema->CreateClass(folderClass, L"Folder");
+            folderClass->CreatePrimitiveProperty(creationDateProperty, L"CreationDate", PRIMITIVETYPE_DateTime);
+
+            SetCustomAttribute(folderClass, m_uselessInfoCAEnabler, L"NothingImportant", L"Nothing important on Folder Class from SupplementalSchema4", L"NotImportant", L"Not important on Folder Class from SupplementalSchema4");
+            SetCustomAttribute(creationDateProperty, m_systemInfoCAEnabler, L"Data1", L"Data1 on CreationDate Property on Folder Class from SupplementalSchema4", L"Data2", L"Data2 on CreationDate Property on Folder Class from SupplementalSchema4");
+            }
+
+        void ValidatePropertyValuesAreEqual(IECInstancePtr instanceA, IECInstancePtr instanceB)
+            {
+            FOR_EACH(ECPropertyP propertyA, instanceA->GetClass().GetProperties(true))
+                {
+                ECValue valueA;
+                instanceA->GetValue(valueA, propertyA->GetName().c_str());
+                ECValue valueB;
+                instanceB->GetValue(valueB, propertyA->GetName().c_str());
+                if (valueA.IsPrimitive())
+                    {
+                    if (!valueB.IsPrimitive())
+                        FAIL() << L"valueA is a primitive but valueB is not";
+                    else
+                        {
+                        if (valueA.IsString())
+                            {
+                            if (valueB.IsString())
+                                {
+                                EXPECT_STREQ(valueA.GetString(), valueB.GetString());
+                                }
+                            else
+                                FAIL() << L"Values of different primitive types";
+                            }
+                        else if (valueA.IsInteger())
+                            {
+                            if (valueB.IsInteger())
+                                {
+                                EXPECT_EQ(valueA.GetInteger(), valueB.GetInteger());
+                                }
+                            else
+                                FAIL() << L"Values of different primitive types";
+                            }
+                        else if (valueA.IsBoolean())
+                            {
+                            if (valueB.IsBoolean())
+                                {
+                                EXPECT_EQ(valueA.GetBoolean(), valueB.GetBoolean());
+                                }
+                            else
+                                FAIL() << L"Values of different primitive types";
+                            }
+                        else if (valueA.IsLong())
+                            {
+                            if (valueB.IsLong())
+                                {
+                                EXPECT_EQ(valueA.GetLong(), valueB.GetLong());
+                                }
+                            else
+                                FAIL() << L"Values of different primitive types";
+                            }
+                        }
+                    }
+                else if (valueA.IsArray() && !valueB.IsArray())
+                    FAIL() << L"valueA is an array but valueB is not";
+                else if (valueA.IsStruct() && !valueB.IsStruct())
+                    FAIL() << L"valueA is a struct but valueB is not";
+                }
+            }
+
+        bool CustomAttributesAreEqual(ECCustomAttributeInstanceIterable customAttributesA, ECCustomAttributeInstanceIterable customAttributesB)
+            {
+            UInt32 countA = 0;
+            FOR_EACH(IECInstancePtr attributeA, customAttributesA)
+                {
+                countA++;
+                WStringCR className = attributeA->GetClass().GetName();
+                ECCustomAttributeCollection::const_iterator iter;
+                bool customAttributeFound = false;
+                FOR_EACH(IECInstancePtr attributeB, customAttributesB)
+                    {
+                    ECClassCR classB = attributeB->GetClass();
+                    if (0 == className.compare(classB.GetName()))
+                        {
+                        ValidatePropertyValuesAreEqual(attributeA, attributeB);
+                        customAttributeFound = true;
+                        break;
+                        }
+                    }
+                if (!customAttributeFound)
+                    return false;
+                }
+
+            UInt32 countB = 0;
+            FOR_EACH(IECInstancePtr attributeB, customAttributesB)
+                {
+                countB++;
+                }
+            EXPECT_EQ(countA, countB);
+
+            return true;
+            }
+
+        void ValidateAreClassesIdentical(ECClassP classA, ECClassP classB, bool compareCustomAttributes)
+            {
+            EXPECT_TRUE (ECClass::ClassesAreEqualByName(classA, classB));
+            EXPECT_TRUE(ECSchema::SchemasAreEqualByName(&classA->GetSchema(), &classB->GetSchema()));
+
+            EXPECT_EQ (classB->GetIsCustomAttributeClass(), classA->GetIsCustomAttributeClass());
+            EXPECT_EQ(classB->GetIsDomainClass(), classA->GetIsDomainClass());
+            EXPECT_EQ(classB->GetIsStruct(), classA->GetIsStruct());
+            if (compareCustomAttributes)
+                EXPECT_TRUE(CustomAttributesAreEqual(classA->GetCustomAttributes(true), classB->GetCustomAttributes(true)));
+
+            //Assert.IsFalse (TestHelpers.AreIdentical (supplementedClass, originalClass), "The Supplemented and Original classes are identical.");
+            //Assert.IsTrue  (TestHelpers.HasSameValues (originalClass.GetPrimaryCustomAttributes (SPECIES_SPECIFIC_CA),
+            //    supplementedClass.GetPrimaryCustomAttributes (SPECIES_SPECIFIC_CA)),
+            //    "The Supplemented and Original classes have different CustomAttributes even though they were accessed using 'GetPrimaryCustomAttributes'");
+
+            }
+
+        void ValidateSystemInfoCustomAttribute(IECCustomAttributeContainerP consolidatedContainer, WCharCP expectedValue1, WCharCP expectedValue2)
+            {
+            IECInstancePtr customAttribute = consolidatedContainer->GetCustomAttribute(L"SystemInfo");
+            ECValue ecValue;
+            customAttribute->GetValue(ecValue, L"Data1");
+            EXPECT_STREQ(expectedValue1, ecValue.GetString());
+
+            customAttribute->GetValue(ecValue, L"Data2");
+            EXPECT_STREQ(expectedValue2, ecValue.GetString());
+
+            }
+
+        void ValidateUselessInfoCustomAttribute(IECCustomAttributeContainerP consolidatedContainer, WCharCP expectedValue1, WCharCP expectedValue2)
+            {
+            IECInstancePtr customAttribute = consolidatedContainer->GetCustomAttribute(L"UselessInfo");
+            ECValue ecValue;
+            customAttribute->GetValue(ecValue, L"NothingImportant");
+            EXPECT_STREQ(expectedValue1, ecValue.GetString());
+
+            customAttribute->GetValue(ecValue, L"NotImportant");
+            EXPECT_STREQ(expectedValue2, ecValue.GetString());
+
+            }
+        void ValidateFolderClass(ECClassP consolidatedClass, ECClassP originalClass)
+            {
+            // Make sure it is equal to the original class, but not identical
+            ValidateAreClassesIdentical(consolidatedClass, originalClass, false);
+            
+            // Validate class level CAs
+            ValidateSystemInfoCustomAttribute (consolidatedClass, L"Data1 on Folder Class", L"Data2 on Folder Class");
+            ValidateUselessInfoCustomAttribute (consolidatedClass, L"Nothing important on Folder Class from SupplementalSchema2", L"Not important on Folder Class from SupplementalSchema2");
+
+            ECPropertyP propertyP = consolidatedClass->GetPropertyP(L"Hidden");
+            // Validate custom attributes on Hidden property
+            ValidateUselessInfoCustomAttribute(propertyP, L"Nothing important on Hidden Property on Folder Class", L"Not important on Hidden Property on Folder Class");
+
+            //Validate custom attributes on CreationDate property
+            propertyP = consolidatedClass->GetPropertyP(L"CreationDate");
+            ValidateSystemInfoCustomAttribute(propertyP, L"Data1 on CreationDate Property on Folder Class from SupplementalSchema2", L"Data2 on CreationDate Property on Folder Class from SupplementalSchema2");
+
+            // validate custom attributes on ReadOnly property
+            propertyP = consolidatedClass->GetPropertyP(L"ReadOnly");
+            ECCustomAttributeInstanceIterable attributes = propertyP->GetCustomAttributes(false);
+            UInt32 count = 0;
+            FOR_EACH(IECInstancePtr attribute, attributes)
+                {
+                count++;
+                }
+            EXPECT_EQ(0, count);
+
+            }
+
+        void ValidateFileClass(ECClassP consolidatedClass, ECClassP originalClass)
+            {
+            // Make sure it is equal to the original class, but not identical
+            ValidateAreClassesIdentical(consolidatedClass, originalClass, false);
+
+            // validate class level CAs
+            ValidateSystemInfoCustomAttribute(consolidatedClass, L"Data1 on File Class from SupplementalSchema1", L"Data2 on File Class from SupplementalSchema1");
+            ValidateUselessInfoCustomAttribute(consolidatedClass, L"Nothing important on File Class from Supplemental3", L"Not important on File Class from Supplemental3");
+            
+            //validate custom attributes on Hidden property
+            ECPropertyP propertyP = consolidatedClass->GetPropertyP(L"Hidden");
+            ValidateUselessInfoCustomAttribute(propertyP, L"Nothing important on Hidden Property on File Class from SupplementalSchema1", L"Not important on Hidden Property on File Class from SupplementalSchema1");
+            ValidateSystemInfoCustomAttribute(propertyP, L"Data1 on Hidden Property on File Class from Supplemental3", L"Data2 on Hidden Property on File Class from Supplemental3");
+
+            // validate custom attributes on CreationDate property
+            propertyP = consolidatedClass->GetPropertyP(L"CreationDate");
+            ValidateUselessInfoCustomAttribute(propertyP, L"Nothing important on CreationDate Property on File Class from Supplemental3", L"Not important on CreationDate Property on File Class from Supplemental3");
+
+            // validate custom attributes on FileSize property
+            propertyP = consolidatedClass->GetPropertyP(L"FileSize");
+            ValidateSystemInfoCustomAttribute(propertyP, L"Data1 on FileSize Property on File Class from Supplemental3", L"Data2 on FileSize Property on File Class from Supplemental3");
+
+            }
+
+        void ValidateImageClass(ECClassP consolidatedClass, ECClassP originalClass)
+            {
+            // Make sure it is equal to the original class, but not identical
+            ValidateAreClassesIdentical(consolidatedClass, originalClass, false);
+
+            // validate class level custom attributes
+            ValidateSystemInfoCustomAttribute(consolidatedClass, L"Data1 on Image Class", L"Data2 on Image Class");
+            ValidateUselessInfoCustomAttribute(consolidatedClass, L"Nothing important on Image Class from Supplemental3", L"Not important on Image Class from Supplemental3");
+
+            // validate custom attributes on BitDepth property
+            ECPropertyP propertyP = consolidatedClass->GetPropertyP(L"BitDepth");
+            ECCustomAttributeInstanceIterable attributes = propertyP->GetCustomAttributes(false);
+            UInt32 count = 0;
+            FOR_EACH(IECInstancePtr attribute, attributes)
+                {
+                count++;
+                }
+            EXPECT_EQ(0, count);
+
+            // validate custom attributes on Width property
+            propertyP = consolidatedClass->GetPropertyP(L"Width");
+            ValidateUselessInfoCustomAttribute(propertyP, L"Nothing important on Width Property on Image Class", L"Not important on Width Property on Image Class");
+
+            //validate custom attributes on height property
+            propertyP = consolidatedClass->GetPropertyP(L"Height");
+            ValidateUselessInfoCustomAttribute(propertyP, L"Nothing important on Height Property on Image Class from Supplemental3", L"Not important on Height Property on Image Class from Supplemental3");
+            }
+
+        void CompareSchemasPostSupplement(ECSchemaP schemaPostSupplement, ECSchemaP schemaPreSupplement)
+            {
+            // Test that the schemas have the same basic information and class count
+            EXPECT_TRUE(schemaPostSupplement->IsSamePrimarySchema(*schemaPreSupplement));
+
+            // Test custom attributes at the top level of the schema
+            ECCustomAttributeInstanceIterable postCustomAttributes = schemaPostSupplement->GetCustomAttributes(true);
+            ECCustomAttributeInstanceIterable preCustomAttributes = schemaPreSupplement->GetCustomAttributes(true);
+
+            EXPECT_TRUE(CustomAttributesAreEqual(preCustomAttributes, postCustomAttributes));
+
+            UInt32 preClassCount = 0;
+            FOR_EACH(ECClassP preSupplementClass, schemaPreSupplement->GetClasses())
+                {
+                EXPECT_TRUE(NULL != preSupplementClass);
+                preClassCount++;
+                ECClassP postClass = schemaPostSupplement->GetClassP(preSupplementClass->GetName().c_str());
+                EXPECT_TRUE(NULL != postClass);
+                ValidateAreClassesIdentical(preSupplementClass, postClass, true);
+                EXPECT_TRUE(ECClass::ClassesAreEqualByName(preSupplementClass, postClass));
+                }
+            EXPECT_TRUE(0 < preClassCount);
+
+            UInt32 postClassCount = 0;
+            FOR_EACH(ECClassP postSupplementClass, schemaPostSupplement->GetClasses())
+                {
+                EXPECT_TRUE(NULL != postSupplementClass);
+                postClassCount++;
+                }
+            EXPECT_EQ(preClassCount, postClassCount);
+            }
+
+        // Compare the copies and the original schemas to make sure they were not changed by the supplementing process
+        void VerifySchemasAreUnchanged()
+            {
+            CompareSchemasPostSupplement(m_supplementalTestSchema1, m_supplementalTestSchema1Copy);
+            CompareSchemasPostSupplement(m_supplementalTestSchema2, m_supplementalTestSchema2Copy);
+            CompareSchemasPostSupplement(m_supplementalTestSchema3, m_supplementalTestSchema3Copy);
+            CompareSchemasPostSupplement(m_supplementalTestSchema4, m_supplementalTestSchema4Copy);
+
+            }
+        void CompareSupplementedSchemaAndPrimary(ECSchemaP consolidatedSchema)
+            {
+            FOR_EACH(ECClassP consolidatedClass, consolidatedSchema->GetClasses())
+                {
+                if (0 == wcscmp(consolidatedClass->GetName().c_str(), L"Folder"))
+                    ValidateFolderClass(consolidatedClass, m_primaryTestSchema->GetClassP(L"Folder"));
+                else if (0 == wcscmp(consolidatedClass->GetName().c_str(), L"File"))
+                    ValidateFileClass(consolidatedClass, m_primaryTestSchema->GetClassP(L"File"));
+                else if (0 == wcscmp(consolidatedClass->GetName().c_str(), L"Image"))
+                    ValidateImageClass(consolidatedClass, m_primaryTestSchema->GetClassP(L"Image"));
+                else
+                    FAIL() << L"Unexpected class found in consolidated schema";
+                }
+
+            EXPECT_TRUE(m_primaryTestSchema->IsSamePrimarySchema(*consolidatedSchema));
+            EXPECT_TRUE(consolidatedSchema->IsSamePrimarySchema(*m_primaryTestSchema));
+
+            VerifySchemasAreUnchanged();
+            }
+
+    public:
+        virtual void            SetUp () override 
+            { 
+            EXPECT_EQ (S_OK, CoInitialize(NULL)); 
+
+            UInt32 majorVersion = 1;
+            UInt32 minorVersion = 4;
+            m_schemaOwner = ECSchemaCache::Create();
+            ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*m_schemaOwner);
+            m_bscaSchema = ECSchema::LocateSchema(L"Bentley_Standard_CustomAttributes", majorVersion, minorVersion, *schemaContext);
+
+            CreateCustomAttributeSchema();
+            CreatePrimarySchema(m_primaryTestSchema, *m_schemaOwner);
+            CreateSupplementalSchema1 (m_supplementalTestSchema1, *m_schemaOwner);
+            CreateSupplementalSchema2 (m_supplementalTestSchema2, *m_schemaOwner);
+            CreateSupplementalSchema3 (m_supplementalTestSchema3, *m_schemaOwner);
+            CreateSupplementalSchema4 (m_supplementalTestSchema4, *m_schemaOwner);
+
+            //m_customAttributeSchema->WriteToXmlFile(L"d:\\temp\\customAttribute.xml");
+
+            //m_primaryTestSchema->WriteToXmlFile(L"d:\\temp\\supplementalSchemas\\primarySchema.xml");
+            //m_supplementalTestSchema1->WriteToXmlFile(L"d:\\temp\\supplementalSchemas\\supplementalSchema1.xml");
+            //m_supplementalTestSchema2->WriteToXmlFile(L"d:\\temp\\supplementalSchemas\\supplementalSchema2.xml");
+            //m_supplementalTestSchema3->WriteToXmlFile(L"d:\\temp\\supplementalSchemas\\supplementalSchema3.xml");
+            //m_supplementalTestSchema4->WriteToXmlFile(L"d:\\temp\\supplementalSchemas\\supplementalSchema4.xml");
+
+            // Create duplicates so we can compare these schemas to the originals post supplementing the primary schema.
+            CreatePrimarySchema (m_primaryTestSchemaCopy, *m_schemaOwner);
+            CreateSupplementalSchema1 (m_supplementalTestSchema1Copy, *m_schemaOwner);
+            CreateSupplementalSchema2 (m_supplementalTestSchema2Copy, *m_schemaOwner);
+            CreateSupplementalSchema3 (m_supplementalTestSchema3Copy, *m_schemaOwner);
+            CreateSupplementalSchema4 (m_supplementalTestSchema4Copy, *m_schemaOwner);
+            __super::SetUp();
+            }
+
+        virtual void TearDown() override
+            {
+            CoUninitialize();
+            __super::TearDown();
+            }
+            
+        virtual bool _WantSchemaLeakDetection () override { return false; }
+        virtual bool _WantInstanceLeakDetection () override { return false; }
+    };
 
 ECSchemaP CreateSupplementalSchema(ECSchemaCachePtr schemaOwner)
     {
@@ -71,5 +573,49 @@ TEST_F(SupplementalSchemaMetaDataTests, CanRetrieveFromSchema)
     CoUninitialize();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* Test that tries to build a consolidated schema but there are two supplemental schemas that have
+* conflicting custom attributes
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SupplementedSchemaBuilderTests, BuildAConflictingConsolidatedSchema)
+    {
+    bvector<ECSchemaP> supplementalSchemas;
+    supplementalSchemas.push_back(m_supplementalTestSchema1);
+    supplementalSchemas.push_back(m_supplementalTestSchema2);
+    supplementalSchemas.push_back(m_supplementalTestSchema3);
+    supplementalSchemas.push_back(m_supplementalTestSchema4);
+
+    SupplementedSchemaBuilder builder;
+    ECSchemaP primaryTestSchema;
+    CreatePrimarySchema(primaryTestSchema, *m_schemaOwner);
+    EXPECT_EQ(SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException, builder.UpdateSchema(*primaryTestSchema, supplementalSchemas));
+    VerifySchemasAreUnchanged();
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Test that builds a consolidated schema that consists of a primary and 3 consolidated schemas.
+* One of the schemas has lower precedence than the primary, two have greater than the primary.
+* The two schemas that are greater have equal precedence
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SupplementedSchemaBuilderTests, BuildANonConflictingConsolidatedSchema)
+    {
+    bvector<ECSchemaP> supplementalSchemas;
+    supplementalSchemas.push_back(m_supplementalTestSchema1);
+    supplementalSchemas.push_back(m_supplementalTestSchema2);
+    supplementalSchemas.push_back(m_supplementalTestSchema3);
+
+    SupplementedSchemaBuilder builder;
+    ECSchemaP primaryTestSchema;
+    CreatePrimarySchema(primaryTestSchema, *m_schemaOwner);
+    EXPECT_EQ(SUPPLEMENTED_SCHEMA_STATUS_Success, builder.UpdateSchema(*primaryTestSchema, supplementalSchemas));
+    //m_supplementalTestSchema1->WriteToXmlFile(L"d:\\temp\\supplementalSchemas\\supplementalSchema1Post.xml");
+    //m_supplementalTestSchema2->WriteToXmlFile(L"d:\\temp\\supplementalSchemas\\supplementalSchema2Post.xml");
+    //m_supplementalTestSchema3->WriteToXmlFile(L"d:\\temp\\supplementalSchemas\\supplementalSchema3Post.xml");
+
+    CompareSupplementedSchemaAndPrimary(primaryTestSchema);
+    }
 
 END_BENTLEY_EC_NAMESPACE

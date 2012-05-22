@@ -445,7 +445,7 @@ const bvector<ECSchemaP>& supplementalSchemaList
     bvector<ECSchemaP> localizationSchemas;
     SupplementedSchemaStatus status = SUPPLEMENTED_SCHEMA_STATUS_Success;
 
-    status = OrderSupplementalSchemas(primarySchema, supplementalSchemaList, schemasByPrecedence, localizationSchemas);
+    status = OrderSupplementalSchemas(schemasByPrecedence, primarySchema, supplementalSchemaList, localizationSchemas);
     if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
         return status;
 
@@ -469,9 +469,9 @@ const bvector<ECSchemaP>& supplementalSchemaList
 +---------------+---------------+---------------+---------------+---------------+------*/
 SupplementedSchemaStatus SupplementedSchemaBuilder::OrderSupplementalSchemas
 (
+bmap<UInt32, ECSchemaP>& schemasByPrecedence, 
 ECSchemaR primarySchema, 
 const bvector<ECSchemaP>& supplementalSchemaList, 
-bmap<UInt32, ECSchemaP> schemasByPrecedence, 
 bvector<ECSchemaP> localizationSchemas 
 )
     {
@@ -494,10 +494,11 @@ bvector<ECSchemaP> localizationSchemas
         // If multiple schemas have the same precedence, they need to be merged into a single schema.  
         if (precedenceIterator != schemasByPrecedence.end())
             {
-            //ECSchema mergedSchema;
-            //status = CreateMergedSchemaFromSchemasWithEqualPrecedence(mergedSchema, iter->second, supplemental);
-            //if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
-            //    return status;
+            ECSchemaP schema1 = precedenceIterator->second;
+            status = CreateMergedSchemaFromSchemasWithEqualPrecedence(schema1, supplemental);
+            if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
+                return status;
+            schemasByPrecedence[precedence] = m_schemaCache->GetSchema(schema1->GetName().c_str(), schema1->GetVersionMajor(), schema1->GetVersionMinor());
             }
         else
             {
@@ -505,6 +506,78 @@ bvector<ECSchemaP> localizationSchemas
             }
         }
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+SupplementedSchemaStatus SupplementedSchemaBuilder::CreateMergedSchemaFromSchemasWithEqualPrecedence
+(
+ECSchemaP schema1, 
+ECSchemaP schema2
+)
+    {
+    ECSchemaP mergedSchema = NULL;
+    schema1->CopySchema(mergedSchema, *m_schemaCache);
+
+    WString supplementalSchemaFullName = schema2->GetFullSchemaName();
+    WString mergedSchemaFullName = schema1->GetFullSchemaName();
+    MergeCustomAttributeClasses(*mergedSchema, schema2->GetPrimaryCustomAttributes(false), SCHEMA_PRECEDENCE_Equal, &supplementalSchemaFullName, &mergedSchemaFullName);
+
+    SupplementedSchemaStatus status = SUPPLEMENTED_SCHEMA_STATUS_Success;
+    FOR_EACH(ECClassP supplementalClass, schema2->GetClasses())
+        {
+        status = MergeClassesWithEqualPrecedence(mergedSchema, supplementalClass, supplementalSchemaFullName, mergedSchemaFullName);
+        if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
+            return status;
+        }
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+SupplementedSchemaStatus SupplementedSchemaBuilder::MergeClassesWithEqualPrecedence
+(
+ECSchemaP mergedSchema, 
+ECClassP supplementalClass, 
+WStringCR supplementalSchemaFullName, 
+WStringCR mergedSchemaFullName
+)
+    {
+    ECClassP mergedClass = mergedSchema->GetClassP(supplementalClass->GetName().c_str());
+    // The class doesn't already exist, we need to create a new one
+    if (NULL == mergedClass)
+        {
+        if (ECOBJECTS_STATUS_Success != mergedSchema->CopyClass(mergedClass, *supplementalClass))
+            return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
+        return SUPPLEMENTED_SCHEMA_STATUS_Success;
+        }
+
+    // The class does exist, we need to do a merge
+    ECRelationshipClassP supplementalRelationship = dynamic_cast<ECRelationshipClassP>(supplementalClass);
+    if (NULL != supplementalRelationship)
+        MergeRelationshipClassConstraints(mergedClass, supplementalRelationship, SCHEMA_PRECEDENCE_Equal);
+
+    FOR_EACH(ECPropertyP supplementalProperty, supplementalClass->GetProperties(false))
+        {
+        ECPropertyP mergedProperty = mergedClass->GetPropertyP(supplementalProperty->GetName(), false);
+        // Class exists but this property does not
+        if (NULL == mergedProperty)
+            {
+            mergedClass->CopyProperty(mergedProperty, supplementalProperty);
+            }
+        // Class and property exist, merge property custom attributes
+        else
+            {
+            SupplementedSchemaStatus status = MergeCustomAttributeClasses(*mergedProperty, supplementalProperty->GetCustomAttributes(false), SCHEMA_PRECEDENCE_Equal, &supplementalSchemaFullName, &mergedSchemaFullName);
+            if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
+                return status;
+            }
+        }
+
+    // Merge class custom attributes
+    return MergeCustomAttributeClasses(*mergedClass, supplementalClass->GetCustomAttributes(false), SCHEMA_PRECEDENCE_Equal, &supplementalSchemaFullName, &mergedSchemaFullName);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -583,25 +656,6 @@ SchemaPrecedence precedence
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr CreateInstanceCopyThroughSerialization
-(
-IECInstancePtr instanceToCopy
-)
-    {
-    WString ecInstanceXml;
-    instanceToCopy->WriteToXmlString(ecInstanceXml, true, false);
-
-    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext (instanceToCopy->GetClass().GetSchema());
-
-    IECInstancePtr deserializedInstance;
-    IECInstance::ReadFromXmlString(deserializedInstance, ecInstanceXml.c_str(), *instanceContext);
-
-    return deserializedInstance;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
 Bentley::EC::SupplementedSchemaStatus SupplementedSchemaBuilder::MergeCustomAttributeClasses
 ( 
 IECCustomAttributeContainerR consolidatedCustomAttributeContainer, 
@@ -618,8 +672,12 @@ WStringCP consolidatedSchemaFullName
         if (0 == wcscmp(SupplementalSchemaMetaData::GetCustomAttributeAccessor(), className.c_str()))
             continue;
 
-        IECInstancePtr supplementalCustomAttribute = CreateInstanceCopyThroughSerialization(customAttribute);
-        IECInstancePtr consolidatedCustomAttribute = CreateInstanceCopyThroughSerialization(consolidatedCustomAttributeContainer.GetCustomAttributeLocal(customAttribute->GetClass()));
+        IECInstancePtr supplementalCustomAttribute = customAttribute->CreateCopyThroughSerialization();
+        IECInstancePtr localCustomAttribute = consolidatedCustomAttributeContainer.GetCustomAttributeLocal(customAttribute->GetClass());
+        IECInstancePtr consolidatedCustomAttribute;
+        
+        if (localCustomAttribute.IsValid())
+            consolidatedCustomAttribute = localCustomAttribute->CreateCopyThroughSerialization();
 
         // We don't use merging delegates like in the managed world, but Units custom attributes still need to be treated specially
         if (customAttribute->GetClass().GetSchema().GetName().EqualsI(L"Unit_Attributes.01.00"))
@@ -653,7 +711,7 @@ WStringCP supplementalSchemaFullName
 )
     {
     SupplementedSchemaStatus status = SUPPLEMENTED_SCHEMA_STATUS_Success;
-    ECClassP consolidatedECClass = primarySchema.GetClassP(supplementalSchema->GetName().c_str());
+    ECClassP consolidatedECClass = primarySchema.GetClassP(supplementalECClass->GetName().c_str());
     if (NULL == consolidatedECClass)
         return SUPPLEMENTED_SCHEMA_STATUS_Success;
 
@@ -766,9 +824,10 @@ SchemaPrecedence precedence
     {
     ECClassCR customAttributeClass = supplementalCustomAttribute->GetClass();
     if (SCHEMA_PRECEDENCE_Greater == precedence)
+        {
         if (ECOBJECTS_STATUS_Success != consolidatedCustomAttributeContainer.SetConsolidatedCustomAttribute(*supplementalCustomAttribute))
             return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
-
+        }
     // This case is ONLY for dealing with two supplemental schemas that have the same precedence.
     // A supplemental schema CAN NOT be a primary schema and hence can NOT be supplemented,
     // because of that we must work on the actual custom attributes.

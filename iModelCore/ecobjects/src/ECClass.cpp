@@ -377,6 +377,7 @@ ECPropertyP sourceProperty
     destProperty->SetName(sourceProperty->GetName());
     destProperty->SetIsReadOnly(sourceProperty->GetIsReadOnly());
     destProperty->m_forSupplementation = true;
+    sourceProperty->CopyCustomAttributesTo(*destProperty);
     return AddProperty(destProperty, sourceProperty->GetName());
 
     }

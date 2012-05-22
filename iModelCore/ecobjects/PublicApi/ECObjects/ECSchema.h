@@ -136,6 +136,8 @@ protected:
     InstanceReadStatus                  ReadCustomAttributes(MSXML2_IXMLDOMNode& containerNode, ECSchemaCR schema, IStandaloneEnablerLocaterP standaloneEnablerLocater);
     SchemaWriteStatus                   WriteCustomAttributes(MSXML2_IXMLDOMNode& parentNode) const;
 
+    ECObjectsStatus                     CopyCustomAttributesTo(IECCustomAttributeContainerR destContainer);
+
     void                                AddUniqueCustomAttributesToList(ECCustomAttributeCollection& returnList);
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const;
     virtual ECSchemaCP                  _GetContainerSchema() const = 0;// {return NULL;};
@@ -1230,6 +1232,7 @@ private:
 
     ECObjectsStatus                     AddClass (ECClassP& pClass);
     ECObjectsStatus                     SetVersionFromString (WCharCP versionString);
+    static ECObjectsStatus              CopyConstraints(ECRelationshipConstraintR toRelationshipConstraint, ECRelationshipConstraintCR fromRelationshipConstraint);
 
     typedef bvector<bpair<ECClassP, MSXML2_IXMLDOMNodePtr>>  ClassDeserializationVector;
     SchemaReadStatus ReadClassStubsFromXml(MSXML2_IXMLDOMNode& schemaNodePtr,ClassDeserializationVector& classes, ECSchemaReadContextR context);
@@ -1288,12 +1291,21 @@ public:
     ECOBJECTS_EXPORT ECClassContainerCR GetClasses() const;
     //! Fills a vector will the ECClasses of the ECSchema in the original order in which they were added.
     ECOBJECTS_EXPORT void               GetClasses(bvector<ECClassP>& classes) const;
+
+    //! Gets the number of classes in the schema
+    ECOBJECTS_EXPORT UInt32             GetClassCount() const;
+
     //! Returns true if the display label has been set explicitly for this schema or not
     ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
 
     //! Returns true if the schema is an ECStandard schema
     //! @return True if a standard schema, false otherwise
     ECOBJECTS_EXPORT bool               IsStandardSchema() const;
+
+    //! Returns true if the passed in schema is the same base schema as the current schema
+    //! @remarks FullName, NamespacePrefix, and ClassCount are checked
+    //! @return True    if the schemas are the same
+    ECOBJECTS_EXPORT bool               IsSamePrimarySchema(ECSchemaR primarySchema) const;
 
     //! Returns true if the schema is a supplemented schema
     //! @return True if the schema is a supplemented schema
@@ -1385,6 +1397,13 @@ public:
     
     //! Return full schema name in format GetName().MM.mm where Name is the schema name, MM is major version and mm is minor version.
     ECOBJECTS_EXPORT WString               GetFullSchemaName () const;
+
+    //! Given a source class, will copy that class into this schema if it does not already exist
+    //! @param[out] targetClass If successful, will contain a new ECClass object that is a copy of the sourceClass
+    //! @param[in]  sourceClass The class to copy
+    ECOBJECTS_EXPORT ECObjectsStatus        CopyClass(ECClassP& targetClass, ECClassR sourceClass);
+
+    ECOBJECTS_EXPORT ECObjectsStatus        CopySchema(ECSchemaP& schemaOut, IECSchemaOwnerR schemaOwner);
 
     // ************************************************************************************************************************
     // ************************************  STATIC METHODS *******************************************************************
