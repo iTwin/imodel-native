@@ -139,6 +139,7 @@ protected:
     ECObjectsStatus                     CopyCustomAttributesTo(IECCustomAttributeContainerR destContainer);
 
     void                                AddUniqueCustomAttributesToList(ECCustomAttributeCollection& returnList);
+    void                                AddUniquePrimaryCustomAttributesToList(ECCustomAttributeCollection& returnList);
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const;
     virtual ECSchemaCP                  _GetContainerSchema() const = 0;// {return NULL;};
 

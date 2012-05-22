@@ -70,6 +70,41 @@ ECCustomAttributeCollection& returnList
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void IECCustomAttributeContainer::AddUniquePrimaryCustomAttributesToList
+(
+ECCustomAttributeCollection& returnList
+) 
+    {
+    FOR_EACH (IECInstancePtr instance, GetPrimaryCustomAttributes(false))
+        {
+        bool alreadyFound = false;
+        ECClassCR classDefinition = instance->GetClass();
+
+        // only add the instance if there isn't already one with the same classDefinition in the list
+        FOR_EACH (IECInstancePtr testInstance, returnList)
+            {
+            ECClassCR testClass = testInstance->GetClass();
+            if (&classDefinition == &testClass || ECClass::ClassesAreEqualByName(&classDefinition, &testClass))
+                {
+                alreadyFound = true;
+                break;
+                }
+            }
+        if (!alreadyFound)
+            returnList.push_back(instance);
+        }
+
+    // do base containers
+    bvector<IECCustomAttributeContainerP> baseContainers;
+    _GetBaseContainers(baseContainers);
+    FOR_EACH (IECCustomAttributeContainerP container, baseContainers)
+        {
+        container->AddUniquePrimaryCustomAttributesToList(returnList);
+        }
+    }
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IECCustomAttributeContainer::IsDefined
@@ -646,7 +681,10 @@ bool includeSupplementalAttributes
         container._GetBaseContainers(baseContainers);
         FOR_EACH (IECCustomAttributeContainerP baseContainer, baseContainers)
             {
-            baseContainer->AddUniqueCustomAttributesToList(*m_customAttributes);
+            if (includeSupplementalAttributes)
+                baseContainer->AddUniqueCustomAttributesToList(*m_customAttributes);
+            else
+                baseContainer->AddUniquePrimaryCustomAttributesToList(*m_customAttributes);
             }
         }
     m_customAttributesIterator = m_customAttributes->begin();

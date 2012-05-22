@@ -211,6 +211,60 @@ struct SupplementedSchemaBuilderTests : ECTestFixture
             SetCustomAttribute(creationDateProperty, m_systemInfoCAEnabler, L"Data1", L"Data1 on CreationDate Property on Folder Class from SupplementalSchema4", L"Data2", L"Data2 on CreationDate Property on Folder Class from SupplementalSchema4");
             }
 
+        void BuildSupplementedSchemaForCustomAttributeTests(ECClassP& classA, ECClassP& classB, ECSchemaP& schema, ECSchemaCacheR schemaCache)
+            {
+            ECSchemaP customAttributeSchema = NULL;
+            ECSchema::CreateSchema(customAttributeSchema, L"CustomAttributes", (UInt32) 1, (UInt32) 0, schemaCache);
+            ECClassP customAttributeA = NULL;
+            customAttributeSchema->CreateClass(customAttributeA, L"CustomAttributeA");
+            customAttributeA->SetIsCustomAttributeClass(true);
+            ECClassP customAttributeB = NULL;
+            customAttributeSchema->CreateClass(customAttributeB, L"CustomAttributeB");
+            customAttributeB->SetIsCustomAttributeClass(true);
+            ECClassP customAttributeC = NULL;
+            customAttributeSchema->CreateClass(customAttributeC, L"CustomAttributeC");
+            customAttributeC->SetIsCustomAttributeClass(true);
+            ECClassP customAttributeD = NULL;
+            customAttributeSchema->CreateClass(customAttributeD, L"CustomAttributeD");
+            customAttributeD->SetIsCustomAttributeClass(true);
+
+            ECSchema::CreateSchema(schema, L"testPrimary", (UInt32) 1, (UInt32) 0, schemaCache);
+            schema->AddReferencedSchema(*customAttributeSchema, L"cas");
+
+            StandaloneECEnablerPtr customAttributeEnablerA = customAttributeA->GetDefaultStandaloneEnabler();
+            StandaloneECEnablerPtr customAttributeEnablerB = customAttributeB->GetDefaultStandaloneEnabler();
+            StandaloneECEnablerPtr customAttributeEnablerC = customAttributeC->GetDefaultStandaloneEnabler();
+            StandaloneECEnablerPtr customAttributeEnablerD = customAttributeD->GetDefaultStandaloneEnabler();
+
+            ECClassP primaryClassA = NULL;
+            schema->CreateClass(primaryClassA, L"A");
+            primaryClassA->SetCustomAttribute(*customAttributeEnablerA->CreateInstance());
+            ECClassP primaryClassB = NULL;
+            schema->CreateClass(primaryClassB, L"B");
+            primaryClassB->SetCustomAttribute(*customAttributeEnablerB->CreateInstance());
+            primaryClassB->AddBaseClass(*primaryClassA);
+
+            ECSchemaP supplementalSchema = NULL;
+            ECSchema::CreateSchema(supplementalSchema, L"testSupplemental", (UInt32) 1, (UInt32) 0, schemaCache);
+            SupplementalSchemaMetaData metaData(L"testPrimary", 1, 0, 354, L"None", false);
+            supplementalSchema->AddReferencedSchema(*customAttributeSchema);
+            supplementalSchema->AddReferencedSchema(*m_bscaSchema);
+            supplementalSchema->SetCustomAttribute(*(metaData.CreateCustomAttribute()));
+            ECClassP supplementalClassA = NULL;
+            supplementalSchema->CreateClass(supplementalClassA, L"A");
+            supplementalClassA->SetCustomAttribute(*customAttributeEnablerC->CreateInstance());
+            ECClassP supplementalClassB = NULL;
+            supplementalSchema->CreateClass(supplementalClassB, L"B");
+            supplementalClassB->SetCustomAttribute(*customAttributeEnablerD->CreateInstance());
+
+            bvector<ECSchemaP> supplementalSchemas;
+            supplementalSchemas.push_back(supplementalSchema);
+            SupplementedSchemaBuilder builder;
+            builder.UpdateSchema(*schema, supplementalSchemas);
+            classA = schema->GetClassP(L"A");
+            classB = schema->GetClassP(L"B");
+            }
+
         void ValidatePropertyValuesAreEqual(IECInstancePtr instanceA, IECInstancePtr instanceB)
             {
             FOR_EACH(ECPropertyP propertyA, instanceA->GetClass().GetProperties(true))
@@ -616,6 +670,94 @@ TEST_F(SupplementedSchemaBuilderTests, BuildANonConflictingConsolidatedSchema)
     //m_supplementalTestSchema3->WriteToXmlFile(L"d:\\temp\\supplementalSchemas\\supplementalSchema3Post.xml");
 
     CompareSupplementedSchemaAndPrimary(primaryTestSchema);
+    }
+
+void ValidateCustomAttributesOnDerivedClass(ECClassP supplementedClass)
+    {
+    ECCustomAttributeInstanceIterable localCustomAttributes = supplementedClass->GetCustomAttributes(false);
+    UInt32 localCustomAttributesCount = 0;
+    FOR_EACH(IECInstancePtr attribute, localCustomAttributes)
+        {
+        localCustomAttributesCount++;
+        }
+    EXPECT_EQ(2, localCustomAttributesCount);
+
+    ECCustomAttributeInstanceIterable allCustomAttributes = supplementedClass->GetCustomAttributes(true);
+    UInt32 allCustomAttributesCount = 0;
+    FOR_EACH(IECInstancePtr attribute, allCustomAttributes)
+        {
+        allCustomAttributesCount++;
+        }
+    EXPECT_EQ(4, allCustomAttributesCount);
+
+    ECCustomAttributeInstanceIterable localCustomAttributes2 = supplementedClass->GetCustomAttributes(false);
+    localCustomAttributesCount = 0;
+    FOR_EACH(IECInstancePtr attribute, localCustomAttributes2)
+        {
+        localCustomAttributesCount++;
+        }
+    EXPECT_EQ(2, localCustomAttributesCount);
+    }
+
+void ValidatePrimaryCustomAttributesOnDerivedClass(ECClassP supplementedClass)
+    {
+    ECCustomAttributeInstanceIterable localCustomAttributes = supplementedClass->GetPrimaryCustomAttributes(false);
+    UInt32 localCustomAttributesCount = 0;
+    FOR_EACH(IECInstancePtr attribute, localCustomAttributes)
+        {
+        localCustomAttributesCount++;
+        }
+    EXPECT_EQ(1, localCustomAttributesCount);
+
+    ECCustomAttributeInstanceIterable allCustomAttributes = supplementedClass->GetPrimaryCustomAttributes(true);
+    UInt32 allCustomAttributesCount = 0;
+    FOR_EACH(IECInstancePtr attribute, allCustomAttributes)
+        {
+        allCustomAttributesCount++;
+        }
+    EXPECT_EQ(2, allCustomAttributesCount);
+
+    ECCustomAttributeInstanceIterable localCustomAttributes2 = supplementedClass->GetPrimaryCustomAttributes(false);
+    localCustomAttributesCount = 0;
+    FOR_EACH(IECInstancePtr attribute, localCustomAttributes2)
+        {
+        localCustomAttributesCount++;
+        }
+    EXPECT_EQ(1, localCustomAttributesCount);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Test the GetCustomAttributes method on a derived class
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SupplementedSchemaBuilderTests, GetCustomAttributesOnDerivedClass)
+    {
+    ECClassP classA = NULL;
+    ECClassP classB = NULL;
+
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
+    ECSchemaP schema;
+
+    BuildSupplementedSchemaForCustomAttributeTests(classA, classB, schema, *schemaOwner);
+
+    ValidateCustomAttributesOnDerivedClass(classB);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Test the GetPrimaryCustomAttributes method on a derived class
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SupplementedSchemaBuilderTests, GetPrimaryCustomAttributesOnDerivedClass)
+    {
+    ECClassP classA = NULL;
+    ECClassP classB = NULL;
+
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
+    ECSchemaP schema;
+
+    BuildSupplementedSchemaForCustomAttributeTests(classA, classB, schema, *schemaOwner);
+
+    ValidatePrimaryCustomAttributesOnDerivedClass(classB);
     }
 
 END_BENTLEY_EC_NAMESPACE
