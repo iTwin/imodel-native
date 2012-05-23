@@ -611,7 +611,6 @@ int   ClassLayout::GetECPointerIndex (ECRelationshipEnd end) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/    
-#pragma warning(disable:4189) // status unused if NDEBUG set.
 UInt32          ClassLayout::Factory::GetParentStructIndex (WCharCP accessString) const
     {
     // The access string will contain a '.' only if the property is inside an embedded struct.
@@ -623,12 +622,11 @@ UInt32          ClassLayout::Factory::GetParentStructIndex (WCharCP accessString
         WString         parentAccessString (accessString, pLastDot - accessString);
         ECObjectsStatus status = m_underConstruction.GetPropertyIndex (parentStructIndex, parentAccessString.c_str());
         if (ECOBJECTS_STATUS_Success != status)
-            BeAssert (ECOBJECTS_STATUS_Success == status);
+            BeAssert (false);
         }
     
     return parentStructIndex;
     }
-#pragma warning(default:4189)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
@@ -2013,7 +2011,6 @@ ECObjectsStatus       MemoryInstanceSupport::EnsureSpaceIsAvailableForArrayIndex
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-#pragma warning(disable:4189) // revisedBytesUsed unused if NDEBUG set.
 ECObjectsStatus       MemoryInstanceSupport::GrowPropertyValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 additionalBytesNeeded)
     {
     byte const * data = _GetData();
@@ -2044,7 +2041,6 @@ ECObjectsStatus       MemoryInstanceSupport::GrowPropertyValue (ClassLayoutCR cl
     
     return status;
     }
-#pragma warning(default:4189)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
