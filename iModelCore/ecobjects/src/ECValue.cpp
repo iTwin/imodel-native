@@ -14,6 +14,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+#pragma warning(disable:4189) // umillisCheck unused if NDEBUG set.
 static void unixMillisToSystemTime (SystemTime& systemTime, UInt64 umillis)
     {
     struct tm tm;
@@ -29,6 +30,7 @@ static void unixMillisToSystemTime (SystemTime& systemTime, UInt64 umillis)
 
     BeAssert (BeTimeUtilities::ConvertTmToUnixMillis(tm) + systemTime.wMilliseconds == umillis);
     }
+#pragma warning(default:4189)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      04/2012

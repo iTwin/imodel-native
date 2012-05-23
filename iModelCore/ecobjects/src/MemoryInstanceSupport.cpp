@@ -622,7 +622,7 @@ UInt32          ClassLayout::Factory::GetParentStructIndex (WCharCP accessString
         WString         parentAccessString (accessString, pLastDot - accessString);
         ECObjectsStatus status = m_underConstruction.GetPropertyIndex (parentStructIndex, parentAccessString.c_str());
         if (ECOBJECTS_STATUS_Success != status)
-            BeAssert (ECOBJECTS_STATUS_Success == status);
+            BeAssert (false);
         }
     
     return parentStructIndex;
