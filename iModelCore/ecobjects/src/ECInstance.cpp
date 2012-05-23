@@ -2507,7 +2507,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
         case PRIMITIVETYPE_DateTime:
             {
             Int64   ticks;
-            if (1 != BeStringUtilities::Swscanf (propertyValueWChar, L"%I64d", &ticks))
+            if (1 != BeStringUtilities::Swscanf (propertyValueWChar, L"%lld", &ticks))
                 {
                 ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not DateTime", propertyValueWChar);
                 return INSTANCE_READ_STATUS_TypeMismatch;
@@ -2544,7 +2544,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
         case PRIMITIVETYPE_Long:
             {
             Int64   longValue;
-            if (1 != BeStringUtilities::Swscanf (propertyValueWChar, L"%I64d", &longValue))
+            if (1 != BeStringUtilities::Swscanf (propertyValueWChar, L"%lld", &longValue))
                 {
                 ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Long", propertyValueWChar);
                 return INSTANCE_READ_STATUS_TypeMismatch;
@@ -2784,7 +2784,7 @@ InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType pr
 
         case PRIMITIVETYPE_DateTime:
             {
-            BeStringUtilities::Snwprintf (outString, L"%I64d", ecValue.GetDateTimeTicks());
+            BeStringUtilities::Snwprintf (outString, L"%lld", ecValue.GetDateTimeTicks());
             break;
             }
 
@@ -2802,7 +2802,7 @@ InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType pr
 
         case PRIMITIVETYPE_Long:
             {
-            BeStringUtilities::Snwprintf (outString, L"%I64d", ecValue.GetLong());
+            BeStringUtilities::Snwprintf (outString, L"%lld", ecValue.GetLong());
             break;
             }
 

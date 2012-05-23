@@ -14,9 +14,14 @@
 #include <Bentley/BeFileName.h>
 #include <Bentley/BeAssert.h>
 
+extern "C"
+{
+ECOBJECTS_EXPORT WCharCP g_ECFileUtilities_homeDirectory;
+}
+
 USING_NAMESPACE_EC
 
-#if defined (_WIN32) // WIP_NONPORT
+#if defined (BENTLEY_WIN32) // WIP_NONPORT
 
 WString ECFileUtilities::s_dllPath;
 
@@ -36,6 +41,11 @@ WString ECFileUtilities::GetDllPath()
         }
     return s_dllPath;
     }     
+
+#elif defined (BENTLEY_WINRT)
+// *** WIP_WINRT
+
+WString ECFileUtilities::GetDllPath() {return g_ECFileUtilities_homeDirectory;}
 
 #elif defined (__unix__)
 // *** WIP_NONPORT -- we need to ask some kind of host for the "home directory"
