@@ -28,8 +28,7 @@ static void unixMillisToSystemTime (SystemTime& systemTime, UInt64 umillis)
     systemTime.wSecond      = (UInt16)tm.tm_sec;
     systemTime.wMilliseconds = umillis % 1000LL;
 
-    UInt64 umillisCheck = BeTimeUtilities::ConvertTmToUnixMillis(tm);
-    BeAssert (umillisCheck + systemTime.wMilliseconds == umillis);
+    BeAssert (BeTimeUtilities::ConvertTmToUnixMillis(tm) + systemTime.wMilliseconds == umillis);
     }
 #pragma warning(default:4189)
 

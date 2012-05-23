@@ -86,7 +86,8 @@ struct  ECNativeImage :public IECNativeImage
     ~ECNativeImage ()
         {
         BentleyStatus status = BeIconUtilities::DestroyIcon(GetImage());
-        BeAssert(SUCCESS == status);
+        if (SUCCESS != status)
+            BeAssert(SUCCESS == status);
         }
     };
 #pragma warning(default:4189)
