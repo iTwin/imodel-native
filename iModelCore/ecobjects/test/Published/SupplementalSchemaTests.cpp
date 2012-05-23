@@ -265,6 +265,78 @@ struct SupplementedSchemaBuilderTests : ECTestFixture
             classB = schema->GetClassP(L"B");
             }
 
+        void CreatePrimarySchemaForRelationshipTests(ECSchemaP& schema, ECSchemaCacheR schemaCache)
+            {
+            ECSchema::CreateSchema(schema, L"RelationshipTestSchema", (UInt32) 1, (UInt32) 2, schemaCache);
+            ECClassP targetClass = NULL;
+            schema->CreateClass(targetClass, L"TargetClass");
+            ECClassP sourceClass = NULL;
+            schema->CreateClass(sourceClass, L"SourceClass");
+
+            ECRelationshipClassP relClass = NULL;
+            schema->CreateRelationshipClass(relClass, L"RelationshipWithCustomAttributes");
+            relClass->GetSource().AddClass(*sourceClass);
+            relClass->GetTarget().AddClass(*targetClass);
+
+            ECRelationshipClassP relClass2 = NULL;
+            schema->CreateRelationshipClass(relClass2, L"RelClass2");
+            relClass2->GetSource().AddClass(*sourceClass);
+            relClass2->GetTarget().AddClass(*targetClass);
+            }
+
+        void CreateSupplementalSchema0ForRelationshipTests(ECSchemaP& supplementalSchema, ECSchemaCacheR schemaCache)
+            {
+            ECSchema::CreateSchema(supplementalSchema, L"RTS_Supplemental", (UInt32) 3, (UInt32) 4, schemaCache);
+            SupplementalSchemaMetaData metaData(L"RelationshipTestSchema", 1, 2, 200, L"Test", false);
+            supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
+            supplementalSchema->AddReferencedSchema(*m_bscaSchema);
+            supplementalSchema->SetCustomAttribute(*(metaData.CreateCustomAttribute()));
+
+            ECClassP targetClass_Sup = NULL;
+            supplementalSchema->CreateClass(targetClass_Sup, L"TargetClass");
+            ECClassP sourceClass_Sup = NULL;
+            supplementalSchema->CreateClass(sourceClass_Sup, L"SourceClass");
+
+            ECRelationshipClassP relClass_Sup = NULL;
+            supplementalSchema->CreateRelationshipClass(relClass_Sup, L"RelationshipWithCustomAttributes");
+            relClass_Sup->GetSource().AddClass(*sourceClass_Sup);
+            relClass_Sup->GetTarget().AddClass(*targetClass_Sup);
+
+            relClass_Sup->GetSource().SetCustomAttribute(*m_systemInfoCAEnabler->CreateInstance());
+            relClass_Sup->GetTarget().SetCustomAttribute(*m_systemInfoCAEnabler->CreateInstance());
+            }
+
+        void CreateSupplementalSchema1ForRelationshipTests(ECSchemaP& supplementalSchema, ECSchemaCacheR schemaCache)
+            {
+            ECSchema::CreateSchema(supplementalSchema, L"RTS_Supplemental2", (UInt32) 5, (UInt32) 6, schemaCache);
+            SupplementalSchemaMetaData metaData(L"RelationshipTestSchema", 1, 2, 200, L"Test", false);
+            supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
+            supplementalSchema->AddReferencedSchema(*m_bscaSchema);
+            supplementalSchema->SetCustomAttribute(*(metaData.CreateCustomAttribute()));
+
+            ECClassP targetClass_Sup = NULL;
+            supplementalSchema->CreateClass(targetClass_Sup, L"TargetClass");
+            ECClassP sourceClass_Sup = NULL;
+            supplementalSchema->CreateClass(sourceClass_Sup, L"SourceClass");
+
+            ECRelationshipClassP relClass_Sup = NULL;
+            supplementalSchema->CreateRelationshipClass(relClass_Sup, L"RelationshipWithCustomAttributes");
+            relClass_Sup->GetSource().AddClass(*sourceClass_Sup);
+            relClass_Sup->GetTarget().AddClass(*targetClass_Sup);
+
+            relClass_Sup->GetSource().SetCustomAttribute(*m_uselessInfoCAEnabler->CreateInstance());
+            relClass_Sup->GetTarget().SetCustomAttribute(*m_uselessInfoCAEnabler->CreateInstance());
+
+            ECRelationshipClassP relClass2_Sup = NULL;
+            supplementalSchema->CreateRelationshipClass(relClass2_Sup, L"RelClass2");
+            relClass2_Sup->GetSource().AddClass(*sourceClass_Sup);
+            relClass2_Sup->GetTarget().AddClass(*targetClass_Sup);
+
+            relClass2_Sup->GetSource().SetCustomAttribute(*m_otherInfoCAEnabler->CreateInstance());
+            relClass2_Sup->GetTarget().SetCustomAttribute(*m_otherInfoCAEnabler->CreateInstance());
+
+            }
+
         void ValidatePropertyValuesAreEqual(IECInstancePtr instanceA, IECInstancePtr instanceB)
             {
             FOR_EACH(ECPropertyP propertyA, instanceA->GetClass().GetProperties(true))
@@ -758,6 +830,70 @@ TEST_F(SupplementedSchemaBuilderTests, GetPrimaryCustomAttributesOnDerivedClass)
     BuildSupplementedSchemaForCustomAttributeTests(classA, classB, schema, *schemaOwner);
 
     ValidatePrimaryCustomAttributesOnDerivedClass(classB);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Tests supplementing relationship classes
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SupplementedSchemaBuilderTests, SupplementCustomAttributesOnRelationshipClasses)
+    {
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
+    ECSchemaP schema;
+
+    CreatePrimarySchemaForRelationshipTests(schema, *schemaOwner);
+
+    // Create first supplemental schema
+    ECSchemaP supplementalSchema0;
+    CreateSupplementalSchema0ForRelationshipTests(supplementalSchema0, *schemaOwner);
+
+    bvector<ECSchemaP> supplementalSchemas;
+    supplementalSchemas.push_back(supplementalSchema0);
+    SupplementedSchemaBuilder builder;
+    EXPECT_EQ(SUPPLEMENTED_SCHEMA_STATUS_Success, builder.UpdateSchema(*schema, supplementalSchemas));
+
+    ECClassP supplementedClass = schema->GetClassP(L"RelationshipWithCustomAttributes");
+    EXPECT_TRUE(NULL != supplementedClass);
+    ECRelationshipClassP supplementedRelClass = dynamic_cast<ECRelationshipClassP>(supplementedClass);
+    EXPECT_TRUE(NULL != supplementedRelClass);
+    IECInstancePtr targetCA = supplementedRelClass->GetTarget().GetCustomAttribute(m_systemInfoCAEnabler->GetClass());
+    EXPECT_TRUE(targetCA.IsValid());
+    IECInstancePtr sourceCA = supplementedRelClass->GetSource().GetCustomAttribute(m_systemInfoCAEnabler->GetClass());
+    EXPECT_TRUE(sourceCA.IsValid());
+
+    ECSchemaP supplementalSchema1 = NULL;
+    CreateSupplementalSchema1ForRelationshipTests(supplementalSchema1, *schemaOwner);
+    supplementalSchemas.push_back(supplementalSchema1);
+
+    ECSchemaP schema2;
+
+    CreatePrimarySchemaForRelationshipTests(schema2, *schemaOwner);
+    SupplementedSchemaBuilder builder2;
+    EXPECT_EQ(SUPPLEMENTED_SCHEMA_STATUS_Success, builder2.UpdateSchema(*schema2, supplementalSchemas));
+
+    supplementedClass = schema2->GetClassP(L"RelationshipWithCustomAttributes");
+    EXPECT_TRUE(NULL != supplementedClass);
+    supplementedRelClass = dynamic_cast<ECRelationshipClassP>(supplementedClass);
+    EXPECT_TRUE(NULL != supplementedRelClass);
+    targetCA = supplementedRelClass->GetTarget().GetCustomAttribute(m_systemInfoCAEnabler->GetClass());
+    EXPECT_TRUE(targetCA.IsValid());
+    sourceCA = supplementedRelClass->GetSource().GetCustomAttribute(m_systemInfoCAEnabler->GetClass());
+    EXPECT_TRUE(sourceCA.IsValid());
+
+    targetCA = supplementedRelClass->GetTarget().GetCustomAttribute(m_uselessInfoCAEnabler->GetClass());
+    EXPECT_TRUE(targetCA.IsValid());
+    sourceCA = supplementedRelClass->GetSource().GetCustomAttribute(m_uselessInfoCAEnabler->GetClass());
+    EXPECT_TRUE(sourceCA.IsValid());
+
+    supplementedClass = schema2->GetClassP(L"RelClass2");
+    EXPECT_TRUE(NULL != supplementedClass);
+    supplementedRelClass = dynamic_cast<ECRelationshipClassP>(supplementedClass);
+    EXPECT_TRUE(NULL != supplementedRelClass);
+    targetCA = supplementedRelClass->GetTarget().GetCustomAttribute(m_otherInfoCAEnabler->GetClass());
+    EXPECT_TRUE(targetCA.IsValid());
+    sourceCA = supplementedRelClass->GetSource().GetCustomAttribute(m_otherInfoCAEnabler->GetClass());
+    EXPECT_TRUE(sourceCA.IsValid());
+
     }
 
 END_BENTLEY_EC_NAMESPACE

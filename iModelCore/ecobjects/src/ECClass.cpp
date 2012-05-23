@@ -1833,7 +1833,39 @@ const WString value
     return ECOBJECTS_STATUS_Success;
     }
   
-     
+  /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipConstraint::CopyTo
+(
+ECRelationshipConstraintR toRelationshipConstraint
+)
+    {
+    if (IsRoleLabelDefined())
+        toRelationshipConstraint.SetRoleLabel(GetRoleLabel());
+
+    toRelationshipConstraint.SetCardinality(GetCardinality());
+    toRelationshipConstraint.SetIsPolymorphic(GetIsPolymorphic());
+
+    ECObjectsStatus status;
+    ECSchemaP destSchema = const_cast<ECSchemaP>(toRelationshipConstraint._GetContainerSchema());
+    FOR_EACH(ECClassP constraintClass, GetClasses())
+        {
+        ECClassP destConstraintClass = destSchema->GetClassP(constraintClass->GetName().c_str());
+        if (NULL == destConstraintClass)
+            {
+            status = destSchema->CopyClass(destConstraintClass, *constraintClass);
+            if (ECOBJECTS_STATUS_Success != status)
+                return status;
+            }
+
+        status = toRelationshipConstraint.AddClass(*destConstraintClass);
+        if (ECOBJECTS_STATUS_Success != status)
+            return status;
+        }
+    return CopyCustomAttributesTo(toRelationshipConstraint);
+    }
+       
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/

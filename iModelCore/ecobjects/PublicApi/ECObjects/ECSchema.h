@@ -945,6 +945,9 @@ public:
     
     //! Returns the classes applied to the constraint.
     ECOBJECTS_EXPORT const ECConstraintClassesList& GetClasses() const;
+
+    //! Copies this constraint to the destination
+    ECOBJECTS_EXPORT ECObjectsStatus            CopyTo(ECRelationshipConstraintR toRelationshipConstraint);
     
 };
 
@@ -1233,7 +1236,7 @@ private:
 
     ECObjectsStatus                     AddClass (ECClassP& pClass);
     ECObjectsStatus                     SetVersionFromString (WCharCP versionString);
-    static ECObjectsStatus              CopyConstraints(ECRelationshipConstraintR toRelationshipConstraint, ECRelationshipConstraintCR fromRelationshipConstraint);
+    ECObjectsStatus                     CopyConstraints(ECRelationshipConstraintR toRelationshipConstraint, ECRelationshipConstraintR fromRelationshipConstraint);
 
     typedef bvector<bpair<ECClassP, MSXML2_IXMLDOMNodePtr>>  ClassDeserializationVector;
     SchemaReadStatus ReadClassStubsFromXml(MSXML2_IXMLDOMNode& schemaNodePtr,ClassDeserializationVector& classes, ECSchemaReadContextR context);

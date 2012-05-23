@@ -362,8 +362,9 @@ IECInstanceR customAttributeInstance
         {
         if (!ECSchema::IsSchemaReferenced(*containerSchema, classDefinition.GetSchema()))
             {
-            assert (false);
-            return ECOBJECTS_STATUS_SchemaNotFound;
+            ECSchemaP nonConstContainerSchema = const_cast<ECSchemaP>(containerSchema);
+            ECSchemaP classDefinitionSchema = const_cast<ECSchemaP> (&classDefinition.GetSchema());
+            nonConstContainerSchema->AddReferencedSchema(*classDefinitionSchema, classDefinitionSchema->GetNamespacePrefix());
             }
         }
 

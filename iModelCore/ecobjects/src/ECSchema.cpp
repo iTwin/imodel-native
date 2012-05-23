@@ -428,8 +428,8 @@ ECClassR sourceClass
         newRelationshipClass->SetStrength(sourceAsRelationshipClass->GetStrength());
         newRelationshipClass->SetStrengthDirection(sourceAsRelationshipClass->GetStrengthDirection());
 
-        CopyConstraints(newRelationshipClass->GetSource(), sourceAsRelationshipClass->GetSource());
-        CopyConstraints(newRelationshipClass->GetTarget(), sourceAsRelationshipClass->GetTarget());
+        sourceAsRelationshipClass->GetSource().CopyTo(newRelationshipClass->GetSource());
+        sourceAsRelationshipClass->GetTarget().CopyTo(newRelationshipClass->GetTarget());
         targetClass = newRelationshipClass;
         }
     else
@@ -457,31 +457,6 @@ ECClassR sourceClass
             }
         }
     return sourceClass.CopyCustomAttributesTo(*targetClass);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::CopyConstraints
-(
-ECRelationshipConstraintR toRelationshipConstraint, 
-ECRelationshipConstraintCR fromRelationshipConstraint
-)
-    {
-    if (fromRelationshipConstraint.IsRoleLabelDefined())
-        toRelationshipConstraint.SetRoleLabel(fromRelationshipConstraint.GetRoleLabel());
-
-    toRelationshipConstraint.SetCardinality(fromRelationshipConstraint.GetCardinality());
-    toRelationshipConstraint.SetIsPolymorphic(fromRelationshipConstraint.GetIsPolymorphic());
-
-    ECObjectsStatus status;
-    FOR_EACH(ECClassP constraintClass, fromRelationshipConstraint.GetClasses())
-        {
-        status = toRelationshipConstraint.AddClass(*constraintClass);
-        if (ECOBJECTS_STATUS_Success != status)
-            return status;
-        }
-    return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
