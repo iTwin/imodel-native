@@ -82,12 +82,14 @@ struct  ECNativeImage :public IECNativeImage
         return new ECNativeImage(key, image, imageSize);
         }
     
+#pragma warning(disable:4189) // status unused if NDEBUG set.
     ~ECNativeImage ()
         {
         BentleyStatus status = BeIconUtilities::DestroyIcon(GetImage());
         BeAssert(SUCCESS == status);
         }
     };
+#pragma warning(default:4189)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                    Abeesh.Basheer                  04/2012

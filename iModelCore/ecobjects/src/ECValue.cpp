@@ -14,6 +14,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+#pragma warning(disable:4189) // umillisCheck unused if NDEBUG set.
 static void unixMillisToSystemTime (SystemTime& systemTime, UInt64 umillis)
     {
     struct tm tm;
@@ -30,6 +31,7 @@ static void unixMillisToSystemTime (SystemTime& systemTime, UInt64 umillis)
     UInt64 umillisCheck = BeTimeUtilities::ConvertTmToUnixMillis(tm);
     BeAssert (umillisCheck + systemTime.wMilliseconds == umillis);
     }
+#pragma warning(default:4189)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      04/2012
@@ -281,8 +283,8 @@ bool            ECValue::IsPrimitive () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECValue::ConstructUninitialized()
     {
-    int size = sizeof (ECValue);
 #ifndef NDEBUG
+    int size = sizeof (ECValue);
     memset (this, 0xBAADF00D, size); // avoid accidental misinterpretation of uninitialized data
 #endif
     m_valueKind         = VALUEKIND_Uninitialized;
