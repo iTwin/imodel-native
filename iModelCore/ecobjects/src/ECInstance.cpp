@@ -2441,7 +2441,8 @@ InstanceReadStatus   ReadStructArrayMember (ECClassCR structClass, IECInstanceP 
         }
 
     ECObjectsStatus setStatus = owningInstance->SetValue (accessString.c_str(), structValue, index);
-    BeAssert (ECOBJECTS_STATUS_Success == setStatus);
+    if (ECOBJECTS_STATUS_Success != setStatus)
+        BeAssert (ECOBJECTS_STATUS_Success == setStatus);
 
     return INSTANCE_READ_STATUS_Success;
     }
@@ -2879,7 +2880,6 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
         }
     else if (ARRAYKIND_Struct == arrayKind)
         {
-        ECClassCP   memberClass = arrayProperty.GetStructElementType();
         for (int index=0; ; index++)
             {
             if (SUCCESS != ecInstance.GetValue (ecValue, accessString.c_str(), index))
@@ -2896,7 +2896,7 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
                 }
 
             ECClassCR   structClass = structInstance->GetClass();
-            BeAssert (structClass.Is (memberClass));
+            BeAssert (structClass.Is (arrayProperty.GetStructElementType()));
 
             BeXmlNodeP memberNode = arrayNode->AddEmptyElement (structClass.GetName().c_str());
 
