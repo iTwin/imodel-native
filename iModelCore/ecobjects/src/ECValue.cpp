@@ -27,8 +27,7 @@ static void unixMillisToSystemTime (SystemTime& systemTime, UInt64 umillis)
     systemTime.wSecond      = (UInt16)tm.tm_sec;
     systemTime.wMilliseconds = umillis % 1000LL;
 
-    UInt64 umillisCheck = BeTimeUtilities::ConvertTmToUnixMillis(tm);
-    BeAssert (umillisCheck + systemTime.wMilliseconds == umillis);
+    BeAssert (BeTimeUtilities::ConvertTmToUnixMillis(tm) + systemTime.wMilliseconds == umillis);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -281,8 +280,8 @@ bool            ECValue::IsPrimitive () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECValue::ConstructUninitialized()
     {
-    int size = sizeof (ECValue);
 #ifndef NDEBUG
+    int size = sizeof (ECValue);
     memset (this, 0xBAADF00D, size); // avoid accidental misinterpretation of uninitialized data
 #endif
     m_valueKind         = VALUEKIND_Uninitialized;
