@@ -129,8 +129,9 @@ private:
     IECInstancePtr                      GetCustomAttributeInternal(WStringCR className, bool includeBaseClasses, bool includeSupplementalAttributes) const;
     IECInstancePtr                      GetCustomAttributeInternal(ECClassCR ecClass, bool includeBaseClasses, bool includeSupplementalAttributes) const;
 
-    ECObjectsStatus                     SetCustomAttributeInternal(ECCustomAttributeCollection& customAttributeCollection, IECInstanceR customAttributeInstance);
+    ECObjectsStatus                     SetCustomAttributeInternal(ECCustomAttributeCollection& customAttributeCollection, IECInstanceR customAttributeInstance, bool requireSchemaReference = false);
     ECObjectsStatus                     SetConsolidatedCustomAttribute(IECInstanceR customAttributeInstance);
+    ECObjectsStatus                     SetPrimaryCustomAttribute(IECInstanceR customAttributeInstance);
 
 protected:
     InstanceReadStatus                  ReadCustomAttributes(MSXML2_IXMLDOMNode& containerNode, ECSchemaCR schema, IStandaloneEnablerLocaterP standaloneEnablerLocater);

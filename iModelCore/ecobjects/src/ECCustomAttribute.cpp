@@ -346,7 +346,8 @@ bool includeBase
 ECObjectsStatus IECCustomAttributeContainer::SetCustomAttributeInternal
 (
 ECCustomAttributeCollection& customAttributeCollection,
-IECInstanceR customAttributeInstance
+IECInstanceR customAttributeInstance,
+bool requireSchemaReference
 )
     {
     ECClassCR classDefinition = customAttributeInstance.GetClass();
@@ -362,9 +363,11 @@ IECInstanceR customAttributeInstance
         {
         if (!ECSchema::IsSchemaReferenced(*containerSchema, classDefinition.GetSchema()))
             {
-            ECSchemaP nonConstContainerSchema = const_cast<ECSchemaP>(containerSchema);
-            ECSchemaP classDefinitionSchema = const_cast<ECSchemaP> (&classDefinition.GetSchema());
-            nonConstContainerSchema->AddReferencedSchema(*classDefinitionSchema, classDefinitionSchema->GetNamespacePrefix());
+            if (requireSchemaReference)
+                {
+                assert (false);
+                return ECOBJECTS_STATUS_SchemaNotFound;
+                }
             }
         }
 
@@ -392,7 +395,18 @@ ECObjectsStatus IECCustomAttributeContainer::SetCustomAttribute
 IECInstanceR customAttributeInstance
 )
     {
-    return SetCustomAttributeInternal(m_primaryCustomAttributes, customAttributeInstance);
+    return SetCustomAttributeInternal(m_primaryCustomAttributes, customAttributeInstance, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus IECCustomAttributeContainer::SetPrimaryCustomAttribute
+(
+IECInstanceR customAttributeInstance
+)
+    {
+    return SetCustomAttributeInternal(m_primaryCustomAttributes, customAttributeInstance, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -403,7 +417,7 @@ ECObjectsStatus IECCustomAttributeContainer::SetConsolidatedCustomAttribute
 IECInstanceR customAttributeInstance
 )
     {
-    return SetCustomAttributeInternal(m_consolidatedCustomAttributes, customAttributeInstance);
+    return SetCustomAttributeInternal(m_consolidatedCustomAttributes, customAttributeInstance, false);
     }
 
 /*---------------------------------------------------------------------------------**//**

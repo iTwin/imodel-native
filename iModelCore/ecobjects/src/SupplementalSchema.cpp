@@ -841,7 +841,7 @@ SchemaPrecedence precedence
             return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
             }
 
-        if (ECOBJECTS_STATUS_Success != consolidatedCustomAttributeContainer.SetCustomAttribute(*supplementalCustomAttribute))
+        if (ECOBJECTS_STATUS_Success != consolidatedCustomAttributeContainer.SetPrimaryCustomAttribute(*supplementalCustomAttribute))
             return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
         }
     else if (!consolidatedCustomAttribute.IsValid())
