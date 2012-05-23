@@ -1054,7 +1054,7 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
 
     DPoint2d   inSize = {10.5, 22.3};
     DPoint3d   inPoint1 = {10.10, 11.11, 12.12};
-    DPoint3d   inPoint2 ={100.100, 110.110, 120.120};
+    DPoint3d   inPoint2 ={200.100, 210.110, 220.120};
     SystemTime inTime = SystemTime::GetLocalTime();
     int        inCount = 100;
     double     inLength = 432.178;
@@ -1089,6 +1089,7 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     DPoint3d    point3d = ecValue.GetPoint3D ();
     EXPECT_TRUE (SUCCESS == memcmp (&inPoint1, &point3d, sizeof(DPoint3d)));
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"EndPoint"));
+    point3d = ecValue.GetPoint3D ();
     EXPECT_TRUE (SUCCESS == memcmp (&inPoint2, &point3d, sizeof(DPoint3d)));
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"Service_Date"));
     SystemTime  sysTime = ecValue.GetDateTime ();
@@ -1515,5 +1516,43 @@ TEST_F (MemoryLayoutTests, ProfileSettingValues)
     wprintf (L"  %d StandaloneECInstances with %d string properties initialized in %.4f seconds.\n", nInstances, nStrings, elapsedSeconds);
     }
     
+TEST_F (MemoryLayoutTests, PropertyLayoutBracketsTest)
+    {
+    // ClassLayout maintains a vector of PropertyLayouts sorted by access string.
+    // We discovered a defect in which the access string used for sorting did not include the brackets[] for array properties, causing lookup to fail.
+    // This test confirms that defect is corrected.
+    wchar_t schemaXml[] = 
+        L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        L"<ECSchema schemaName=\"BracketTestSchema\" nameSpacePrefix=\"bts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+            L"<ECClass typeName=\"BracketTestClass\" isDomainClass=\"True\">"
+            L"<ECProperty propertyName=\"B0\" typeName=\"string\" />"
+                L"<ECProperty propertyName=\"B1\" typeName=\"string\" />"
+                L"<ECProperty propertyName=\"B2\" typeName=\"string\" />"
+                L"<ECProperty propertyName=\"B3\" typeName=\"string\" />"
+                L"<ECProperty propertyName=\"B4\" typeName=\"string\" />"
+                L"<ECProperty propertyName=\"B5\" typeName=\"string\" />"
+                L"<ECArrayProperty propertyName=\"B\" typeName=\"string\" minOccurs=\"0\" maxOccurs=\"unbounded\" />"
+            L"</ECClass>"
+        L"</ECSchema>";
+
+    // If brackets are omitted, then "B" precedes "B0"
+    // Else, "B0" preceds "B[]"
+    // The order of declaration of properties in the schema matters here.
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext ();
+    ECSchemaPtr schema;
+    EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (schema, schemaXml, *schemaContext));
+
+    ECClassP ecClass = schema->GetClassP (L"BracketTestClass");
+    ASSERT_TRUE (NULL != ecClass);
+
+    ClassLayoutP layout = ClassLayout::BuildFromClass (*ecClass, 0, 0);
+    ASSERT_TRUE (NULL != layout);
+
+    PropertyLayoutCP propLayout;
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, layout->GetPropertyLayout (propLayout, L"B[]"));   // would have failed prior to bug fix
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, layout->GetPropertyLayout (propLayout, L"B0"));
+
+    delete layout;
+    }
 
 END_BENTLEY_EC_NAMESPACE

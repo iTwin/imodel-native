@@ -626,8 +626,8 @@ UInt32          ClassLayout::Factory::GetParentStructIndex (WCharCP accessString
         {
         WString         parentAccessString (accessString, pLastDot - accessString);
         ECObjectsStatus status = m_underConstruction.GetPropertyIndex (parentStructIndex, parentAccessString.c_str());
-
-        BeAssert (SUCCESS == status);
+        if (ECOBJECTS_STATUS_Success != status)
+            BeAssert (false);
         }
     
     return parentStructIndex;
@@ -2041,8 +2041,7 @@ ECObjectsStatus       MemoryInstanceSupport::GrowPropertyValue (ClassLayoutCR cl
         return status;
         
     byte * writeableData = (byte *)_GetData();
-    UInt32 revisedBytesUsed = classLayout.CalculateBytesUsed(writeableData);
-    DEBUG_EXPECT (bytesUsed == revisedBytesUsed);
+    DEBUG_EXPECT (bytesUsed == classLayout.CalculateBytesUsed(writeableData));
     
     status = ShiftValueData(classLayout, writeableData, bytesAllocated, propertyLayout, additionalBytesNeeded);
 
