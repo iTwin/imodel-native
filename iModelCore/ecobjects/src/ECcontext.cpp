@@ -49,12 +49,13 @@ bool            ECSchemaReadContext::GetStandardPaths (bvector<WString>& searchP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaReadContext::ECSchemaReadContext(IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch)
+ECSchemaReadContext::ECSchemaReadContext(ECSchemaCachePtr ecSchemaCache, IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch)
     :
+    m_knownSchemas (ecSchemaCache),
     m_standaloneEnablerLocater(enablerLocater), m_hideSchemasFromLeakDetection (false), 
     m_acceptLegacyImperfectLatestCompatibleMatch(acceptLegacyImperfectLatestCompatibleMatch)
     {
-    m_locators.insert(SchemaLocatorKey (&m_knownSchemas, ReaderContext));
+    m_locators.insert(SchemaLocatorKey (m_knownSchemas.get(), ReaderContext));
     
     bvector<WString> searchPaths;
     if (GetStandardPaths (searchPaths))
@@ -74,10 +75,18 @@ ECSchemaReadContext::ECSchemaReadContext(IStandaloneEnablerLocaterP enablerLocat
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaReadContextPtr  ECSchemaReadContext::CreateContext (IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch)   
-                                                                                        { return new ECSchemaReadContext(enablerLocater, acceptLegacyImperfectLatestCompatibleMatch); }
-ECSchemaReadContextPtr  ECSchemaReadContext::CreateContext (bool acceptLegacyImperfectLatestCompatibleMatch) 
     { 
-    return CreateContext (NULL, acceptLegacyImperfectLatestCompatibleMatch); 
+    return new ECSchemaReadContext(ECSchemaCache::Create(), enablerLocater, acceptLegacyImperfectLatestCompatibleMatch); 
+    }
+
+ECSchemaReadContextPtr  ECSchemaReadContext::CreateContext (bool acceptLegacyImperfectLatestCompatibleMatch) 
+    {
+    return new ECSchemaReadContext(ECSchemaCache::Create(), NULL, acceptLegacyImperfectLatestCompatibleMatch); 
+    }
+
+ECSchemaReadContextPtr ECSchemaReadContext::CreateContext (ECSchemaCachePtr ecSchemaCache, bool acceptLegacyImperfectLatestCompatibleMatch)
+    {
+    return new ECSchemaReadContext (ecSchemaCache, NULL, acceptLegacyImperfectLatestCompatibleMatch);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -194,7 +203,7 @@ ECSchemaPtr     ECSchemaReadContext::LocateSchema (SchemaKeyR key, SchemaMatchTy
 
         if (m_knownSchemaDirtyStack.back())
             {
-            schema = m_knownSchemas.LocateSchema (key, matchType, *this);
+            schema = m_knownSchemas->LocateSchema (key, matchType, *this);
             m_knownSchemaDirtyStack.back() = false;
             }
         
@@ -229,7 +238,7 @@ ECSchemaPtr     ECSchemaReadContext::LocateSchema (SchemaKeyR key, bset<SchemaMa
                 {
                 for (bset<SchemaMatchType>::const_iterator kmatchIter = matches.begin(); matchIter != matches.end(); ++matchIter)
                     {
-                    schema = m_knownSchemas.LocateSchema (key, *kmatchIter, *this);
+                    schema = m_knownSchemas->LocateSchema (key, *kmatchIter, *this);
                     if (schema.IsValid())
                         break;
                     }
@@ -338,7 +347,7 @@ IECInstancePtr ECInstanceReadContext::CreateStandaloneInstance (ECClassCR ecClas
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaPtr     ECSchemaReadContext::GetFoundSchema (SchemaKeyR key, SchemaMatchType matchType)
     {
-    return m_knownSchemas.GetSchema(key, matchType);
+    return m_knownSchemas->GetSchema(key, matchType);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -346,7 +355,7 @@ ECSchemaPtr     ECSchemaReadContext::GetFoundSchema (SchemaKeyR key, SchemaMatch
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECSchemaReadContext::AddSchema(ECSchemaR schema) 
     {
-    if (NULL != m_knownSchemas.GetSchema(schema.GetSchemaKey()))
+    if (NULL != m_knownSchemas->GetSchema(schema.GetSchemaKey()))
         return;
 
     return _AddSchema(schema);
@@ -357,7 +366,7 @@ void            ECSchemaReadContext::AddSchema(ECSchemaR schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECSchemaReadContext::_AddSchema(ECSchemaR schema)
     {
-    if (ECOBJECTS_STATUS_Success != m_knownSchemas.AddSchema(schema))
+    if (ECOBJECTS_STATUS_Success != m_knownSchemas->AddSchema(schema))
         return;
 
     for (bvector<bool>::iterator iter = m_knownSchemaDirtyStack.begin(); iter != m_knownSchemaDirtyStack.end(); ++iter)
@@ -369,7 +378,7 @@ void            ECSchemaReadContext::_AddSchema(ECSchemaR schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECSchemaReadContext::RemoveSchema(ECSchemaR schema)
     {
-    m_knownSchemas.DropSchema(schema);
+    m_knownSchemas->DropSchema(schema);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -377,5 +386,5 @@ void            ECSchemaReadContext::RemoveSchema(ECSchemaR schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCacheR  ECSchemaReadContext::GetKnownSchemas ()
     {
-    return m_knownSchemas;
+    return *m_knownSchemas;
     }

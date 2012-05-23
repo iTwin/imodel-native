@@ -1276,9 +1276,7 @@ public:
     ECOBJECTS_EXPORT static  ECSchemaCachePtr Create ();
     ECOBJECTS_EXPORT int     GetCount();
     ECOBJECTS_EXPORT void    Clear();
-    //! Removes ECSchema from the ownership of this ECSchemaCache (so that its ownership can be transferred to another)
-    ECOBJECTS_EXPORT ECObjectsStatus RemoveOwnership(ECSchemaCR);
-    ECOBJECTS_EXPORT size_t  GetSchemas (bvector<ECSchemaP>& schemas);
+    ECOBJECTS_EXPORT size_t  GetSchemas (bvector<ECSchemaPtr>& schemas);
 };
 
 
@@ -1643,7 +1641,7 @@ public:
     ECOBJECTS_EXPORT void FindAllSchemasInGraph (bvector<EC::ECSchemaP>& allSchemas, bool includeRootSchema=true);
     
     //! Returns this if the name matches, otherwise searches referenced ECSchemas for one whose name matches schemaName
-    ECOBJECTS_EXPORT ECSchemaCP FindSchema (WCharCP schemaName) const;
+    ECOBJECTS_EXPORT ECSchemaCP FindSchema (SchemaKeyCR schema, SchemaMatchType matchType) const;
 
     //! Returns this if the name matches, otherwise searches referenced ECSchemas for one whose name matches schemaName
     ECOBJECTS_EXPORT ECSchemaP FindSchemaP (SchemaKeyCR schema, SchemaMatchType matchType);
