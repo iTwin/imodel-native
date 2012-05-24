@@ -1544,8 +1544,7 @@ bool firstRunInStruct
         if (propertyIndex >= maxPropertyIndex)
             return false;
 
-        WCharCP currentAccessString;
-        WCharCP nextAccessString;
+        WCharCP currentAccessString = NULL;
 
         if (prefix > 0)
             {
@@ -1562,6 +1561,7 @@ bool firstRunInStruct
             }
         else
             {
+            WCharCP nextAccessString;
             do {
                 if (++propertyIndex >= maxPropertyIndex)
                     return false;
