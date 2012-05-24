@@ -1106,6 +1106,33 @@ ECSchemaReadContextR     schemaContext
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECSchema::SetIsSupplemented
+(
+bool isSupplemented
+)
+    {
+    m_isSupplemented = isSupplemented;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfo* info)
+    {
+    m_supplementalSchemaInfo = info;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+SupplementalSchemaInfo* const ECSchema::GetSupplementalInfo() const
+    {
+    return m_supplementalSchemaInfo;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * - OpenPlant shipped a malformed schema that has a circular reference through supplementation.
 * - Therefore a special case had to be created so that we do not try to de-serialize this
 * - schema

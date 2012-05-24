@@ -163,6 +163,7 @@ enum ECObjectsStatus
     ECOBJECTS_STATUS_UnableToSetStructArrayMemberInstance               = ECOBJECTS_ERROR_BASE + 0x21,
     ECOBJECTS_STATUS_UnableToGetStructArrayMemberInstance               = ECOBJECTS_ERROR_BASE + 0x22,
     ECOBJECTS_STATUS_InvalidIndexForPerPropertyFlag                     = ECOBJECTS_ERROR_BASE + 0x23,
+    ECOBJECTS_STATUS_SchemaNotSupplemented                              = ECOBJECTS_ERROR_BASE + 0x24,
     ECOBJECTS_STATUS_Error                                              = ECOBJECTS_ERROR_BASE + 0xFFF,
     }; 
 

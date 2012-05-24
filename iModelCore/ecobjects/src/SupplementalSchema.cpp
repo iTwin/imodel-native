@@ -460,6 +460,7 @@ const bvector<ECSchemaP>& supplementalSchemaList
         }
     
     status = MergeSchemasIntoSupplementedSchema(primarySchema, schemasByPrecedence);
+    primarySchema.SetIsSupplemented(true);
 
     return status;
     }
@@ -944,6 +945,127 @@ SchemaPrecedence precedence
     return SUPPLEMENTED_SCHEMA_STATUS_Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+SupplementalSchemaInfo::SupplementalSchemaInfo
+(
+WStringCR primarySchemaFullName, 
+SchemaNamePurposeMap& schemaFullNameToPurposeMapping
+) : m_primarySchemaFullName(primarySchemaFullName)
+    {
+    SchemaNamePurposeMap::const_iterator iter;
+    for (iter = schemaFullNameToPurposeMapping.begin(); iter != schemaFullNameToPurposeMapping.end(); iter++)
+        {
+        bpair<WString, WString>const& entry = *iter;
+        m_supplementalSchemaNamesAndPurpose[entry.first] = entry.second;
+        }
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus SupplementalSchemaInfo::GetSupplementalSchemaNames
+(
+bvector<WString>& supplementalSchemaNames
+) const
+    {
+    if (m_supplementalSchemaNamesAndPurpose.size() < 1)
+        return ECOBJECTS_STATUS_SchemaNotSupplemented;
+
+    // make sure the list starts out empty
+    supplementalSchemaNames.clear();
+    SchemaNamePurposeMap::const_iterator iter;
+    for (iter = m_supplementalSchemaNamesAndPurpose.begin(); iter != m_supplementalSchemaNamesAndPurpose.end(); iter++)
+        {
+        bpair<WString, WString>const& entry = *iter;
+        supplementalSchemaNames.push_back(entry.first);
+        }
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCP SupplementalSchemaInfo::GetPurposeOfSupplementalSchema
+(
+WStringCR fullSchemaName
+) const
+    {
+    SchemaNamePurposeMap::const_iterator iter;
+    iter = m_supplementalSchemaNamesAndPurpose.find(fullSchemaName);
+    if (m_supplementalSchemaNamesAndPurpose.end() == iter)
+        return NULL;
+    return &(iter->second);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus SupplementalSchemaInfo::GetSupplementalSchemasWithPurpose
+(
+bvector<WString>& supplementalSchemaNames, 
+WStringCR purpose
+) const
+    {
+    if (m_supplementalSchemaNamesAndPurpose.size() < 1)
+        return ECOBJECTS_STATUS_SchemaNotSupplemented;
+
+    // make sure the list starts out empty
+    supplementalSchemaNames.clear();
+    SchemaNamePurposeMap::const_iterator iter;
+    for (iter = m_supplementalSchemaNamesAndPurpose.begin(); iter != m_supplementalSchemaNamesAndPurpose.end(); iter++)
+        {
+        bpair<WString, WString>const& entry = *iter;
+        WString storedPurpose = entry.second;
+        if (0 == storedPurpose.CompareTo(purpose))
+            supplementalSchemaNames.push_back(entry.first);
+        }
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SupplementalSchemaInfo::HasSameSupplementalSchemasForPurpose
+(
+ECSchemaCR secondSchema, 
+WStringCR purpose
+) const
+    {
+    bvector<WString> supplementalSchemas;
+    bvector<WString> secondSupplementalSchemas;
+    GetSupplementalSchemasWithPurpose(supplementalSchemas, purpose);
+    SupplementalSchemaInfo *schemaInfo = secondSchema.GetSupplementalInfo();
+    if (NULL == schemaInfo)
+        return false;
+    schemaInfo->GetSupplementalSchemasWithPurpose(secondSupplementalSchemas, purpose);
+
+    if (supplementalSchemas.size() == 0 && secondSupplementalSchemas.size() == 0)
+        return true;
+
+    if (supplementalSchemas.size() != secondSupplementalSchemas.size())
+        return false;
+
+    bvector<WString>::const_iterator namesInSchema;
+    for (namesInSchema = supplementalSchemas.begin(); namesInSchema != supplementalSchemas.end(); ++namesInSchema)
+        {
+        WString name = *namesInSchema;
+        bool foundIt = false;
+        for (size_t i = 0; i < secondSupplementalSchemas.size(); i++)
+            {
+            if (0 == name.compare(secondSupplementalSchemas[i]))
+                {
+                foundIt = true;
+                break;
+                }
+            }
+        if (!foundIt)
+            return false;
+        }
+    return true;
+    }
 END_BENTLEY_EC_NAMESPACE
 

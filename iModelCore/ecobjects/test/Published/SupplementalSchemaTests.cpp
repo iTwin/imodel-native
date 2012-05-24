@@ -17,6 +17,8 @@ struct SupplementalSchemaMetaDataTests     : ECTestFixture
     virtual bool _WantInstanceLeakDetection () override { return false; }
     };
 
+struct SupplementalSchemaInfoTests     : ECTestFixture   {};
+
 struct SupplementedSchemaBuilderTests : ECTestFixture 
     {
     protected:
@@ -334,7 +336,160 @@ struct SupplementedSchemaBuilderTests : ECTestFixture
 
             relClass2_Sup->GetSource().SetCustomAttribute(*m_otherInfoCAEnabler->CreateInstance());
             relClass2_Sup->GetTarget().SetCustomAttribute(*m_otherInfoCAEnabler->CreateInstance());
+            }
 
+        void CreatePrimarySchemaForInheritTests(ECSchemaP& primarySchema, IECSchemaOwnerR schemaOwner)
+            {
+            ECSchema::CreateSchema(primarySchema, L"InheritTestSchema", 2, 34, schemaOwner);
+            primarySchema->AddReferencedSchema(*m_customAttributeSchema);
+            // BaseClass1
+                // BC1Prop1
+                    // SystemInfo
+                // BC1Prop2
+                // BC1Prop3
+
+            ECClassP baseClass1;
+            primarySchema->CreateClass(baseClass1, L"BaseClass1");
+            PrimitiveECPropertyP bc1Prop1;
+            baseClass1->CreatePrimitiveProperty(bc1Prop1, L"BC1Prop1", PRIMITIVETYPE_String);
+            SetCustomAttribute(bc1Prop1, m_systemInfoCAEnabler, L"Data1", L"InheritTestSchema.BaseClass1.BC1Prop1", L"Data2", L"InheritTestSchema.BaseClass1.BC1Prop1");
+            PrimitiveECPropertyP bc1Prop2;
+            baseClass1->CreatePrimitiveProperty(bc1Prop2, L"BC1Prop2", PRIMITIVETYPE_String);
+            PrimitiveECPropertyP bc1Prop3;
+            baseClass1->CreatePrimitiveProperty(bc1Prop3, L"BC1Prop3", PRIMITIVETYPE_String);
+
+            // BaseClass2
+                // BC2Prop1
+                // BC2Prop2
+            ECClassP baseClass2;
+            primarySchema->CreateClass(baseClass2, L"BaseClass2");
+            PrimitiveECPropertyP bc2Prop1;
+            baseClass2->CreatePrimitiveProperty(bc2Prop1, L"BC2Prop1", PRIMITIVETYPE_String);
+            PrimitiveECPropertyP bc2Prop2;
+            baseClass2->CreatePrimitiveProperty(bc2Prop2, L"BC2Prop2", PRIMITIVETYPE_String);
+
+            // DerivedClass1
+                // BaseClass1
+            ECClassP derivedClass1;
+            primarySchema->CreateClass(derivedClass1, L"DerivedClass1");
+            derivedClass1->AddBaseClass(*baseClass1);
+
+            // DerivedClass2
+                // BaseClass1
+                // BC1Prop2
+                    // UselessInfo
+            ECClassP derivedClass2;
+            primarySchema->CreateClass(derivedClass2, L"DerivedClass2");
+            derivedClass2->AddBaseClass(*baseClass1);
+            PrimitiveECPropertyP bc1Prop2DerivedClass2;
+            derivedClass2->CreatePrimitiveProperty(bc1Prop2DerivedClass2, L"BC1Prop2", PRIMITIVETYPE_String);
+            SetCustomAttribute(bc1Prop2DerivedClass2, m_uselessInfoCAEnabler, L"NothingImportant", L"InheritTestSchema.DerivedClass2.BC1Prop2", L"NotImportant", L"InheritTestSchema.DerivedClass2.BC1Prop2");
+
+            // DerivedClass3
+                // DerivedClass2
+                // BCProp1
+                    // SystemInfo
+            ECClassP derivedClass3;
+            primarySchema->CreateClass(derivedClass3, L"DerivedClass3");
+            derivedClass3->AddBaseClass(*derivedClass2);
+            //PrimitiveECPropertyP bc1Prop1DerivedClass3;
+            //derivedClass3->CreatePrimitiveProperty(bc1Prop1DerivedClass3, L"BC1Prop1", PRIMITIVETYPE_String);
+            //SetCustomAttribute(bc1Prop1DerivedClass3, m_systemInfoCAEnabler, L"Data1", L"InheritTestSchema.DerivedClass3.BC1Prop1 - Data1", L"Data2", L"InheritTestSchema.DerivedClass3.BC1Prop1 - Data2");
+
+            // DerivedClass4
+                // BaseClass2
+            ECClassP derivedClass4;
+            primarySchema->CreateClass(derivedClass4, L"DerivedClass4");
+            derivedClass4->AddBaseClass(*derivedClass2);
+            }
+
+        void CreateLowPrioritySchema1(ECSchemaP& supplementalSchema, IECSchemaOwnerR schemaOwner)
+            {
+            ECSchema::CreateSchema(supplementalSchema, L"LowPrioritySchema1", 4, 3, schemaOwner);
+            SupplementalSchemaMetaData metaData(L"InheritTest", 2, 34, 1, L"Test", false);
+            supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
+            supplementalSchema->AddReferencedSchema(*m_bscaSchema);
+            supplementalSchema->SetCustomAttribute(*(metaData.CreateCustomAttribute()));
+
+            // DerivedClass1
+                // BC1Prop1
+                    // SystemInfo
+            ECClassP derivedClass1;
+            supplementalSchema->CreateClass(derivedClass1, L"DerivedClass1");
+            PrimitiveECPropertyP bc1Prop1;
+            derivedClass1->CreatePrimitiveProperty(bc1Prop1, L"BC1Prop1", PRIMITIVETYPE_String);
+            SetCustomAttribute(bc1Prop1, m_systemInfoCAEnabler, L"Data1", L"LowPrioritySchema1.DerivedClass1.BC1Prop1", L"Data2", L"LowPrioritySchema1.DerivedClass1.BC1Prop1");
+
+            // DerivedClass2
+                // BC1Prop2
+                    // UselessInfo
+            ECClassP derivedClass2;
+            supplementalSchema->CreateClass(derivedClass2, L"DerivedClass2");
+            PrimitiveECPropertyP bc1Prop2;
+            derivedClass2->CreatePrimitiveProperty(bc1Prop2, L"BC1Prop2", PRIMITIVETYPE_String);
+            SetCustomAttribute(bc1Prop2, m_uselessInfoCAEnabler, L"Data1", L"LowPrioritySchema1.DerivedClass2.BC1Prop2", L"Data2", L"LowPrioritySchema1.DerivedClass2.BC1Prop2");
+
+            // DerivedClass4
+                // BC2Prop1
+                    // SystemInfo
+            ECClassP derivedClass4;
+            supplementalSchema->CreateClass(derivedClass4, L"DerivedClass4");
+            PrimitiveECPropertyP bc2Prop1DerivedClass4;
+            derivedClass4->CreatePrimitiveProperty(bc2Prop1DerivedClass4, L"BC2Prop1", PRIMITIVETYPE_String);
+            SetCustomAttribute(bc2Prop1DerivedClass4, m_systemInfoCAEnabler, L"Data1", L"LowPrioritySchema1.DerivedClass4.BC2Prop1", L"Data2", L"LowPrioritySchema1.DerivedClass4.BC2Prop1");
+            }
+
+        void CreateLowPrioritySchema199(ECSchemaP& supplementalSchema, IECSchemaOwnerR schemaOwner)
+            {
+            ECSchema::CreateSchema(supplementalSchema, L"LowPrioritySchema199", 4, 3, schemaOwner);
+            SupplementalSchemaMetaData metaData(L"InheritTest", 2, 34, 199, L"Test", false);
+            supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
+            supplementalSchema->AddReferencedSchema(*m_bscaSchema);
+            supplementalSchema->SetCustomAttribute(*(metaData.CreateCustomAttribute()));
+
+            // DerivedClass1
+                // BC1Prop1
+                    // SystemInfo
+            ECClassP derivedClass1;
+            supplementalSchema->CreateClass(derivedClass1, L"DerivedClass1");
+            PrimitiveECPropertyP bc1Prop1;
+            derivedClass1->CreatePrimitiveProperty(bc1Prop1, L"BC1Prop1", PRIMITIVETYPE_String);
+            SetCustomAttribute(bc1Prop1, m_systemInfoCAEnabler, L"Data1", L"LowPrioritySchema199.DerivedClass1.BC1Prop1", L"Data2", L"LowPrioritySchema199.DerivedClass1.BC1Prop1");
+
+            // DerivedClass2
+                // BC1Prop2
+                    // UselessInfo
+            ECClassP derivedClass2;
+            supplementalSchema->CreateClass(derivedClass2, L"DerivedClass2");
+            PrimitiveECPropertyP bc1Prop2;
+            derivedClass2->CreatePrimitiveProperty(bc1Prop2, L"BC1Prop2", PRIMITIVETYPE_String);
+            SetCustomAttribute(bc1Prop2, m_uselessInfoCAEnabler, L"Data1", L"LowPrioritySchema199.DerivedClass2.BC1Prop2", L"Data2", L"LowPrioritySchema199.DerivedClass2.BC1Prop2");
+
+            // DerivedClass3
+                // BC1Prop1
+                    // SystemInfo
+            ECClassP derivedClass3;
+            supplementalSchema->CreateClass(derivedClass3, L"DerivedClass3");
+            PrimitiveECPropertyP bc1Prop1DerivedClass3;
+            derivedClass3->CreatePrimitiveProperty(bc1Prop1DerivedClass3, L"BC1Prop1", PRIMITIVETYPE_String);
+            SetCustomAttribute(bc1Prop1DerivedClass3, m_systemInfoCAEnabler, L"Data1", L"LowPrioritySchema199.DerivedClass3.BC1Prop1", L"Data2", L"LowPrioritySchema199.DerivedClass3.BC1Prop1");
+            }
+
+        void CreateHighPrioritySchema200(ECSchemaP& supplementalSchema, IECSchemaOwnerR schemaOwner)
+            {
+            ECSchema::CreateSchema(supplementalSchema, L"HighPrioritySchema200", 4, 3, schemaOwner);
+            SupplementalSchemaMetaData metaData(L"InheritTest", 2, 34, 200, L"Test", false);
+            supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
+            supplementalSchema->AddReferencedSchema(*m_bscaSchema);
+            supplementalSchema->SetCustomAttribute(*(metaData.CreateCustomAttribute()));
+
+            // BaseClass2
+                // BC2Prop1
+            ECClassP baseClass2;
+            supplementalSchema->CreateClass(baseClass2, L"BaseClass2");
+            PrimitiveECPropertyP bc2Prop1;
+            baseClass2->CreatePrimitiveProperty(bc2Prop1, L"BC2Prop1", PRIMITIVETYPE_String);
+            SetCustomAttribute(bc2Prop1, m_systemInfoCAEnabler, L"Data1", L"HighPrioritySchema200.BaseClass2,BC2Prop1", L"Data2", L"HighPrioritySchema200.BaseClass2.BC2Prop1");
             }
 
         void ValidatePropertyValuesAreEqual(IECInstancePtr instanceA, IECInstancePtr instanceB)
@@ -450,26 +605,27 @@ struct SupplementedSchemaBuilderTests : ECTestFixture
         void ValidateSystemInfoCustomAttribute(IECCustomAttributeContainerP consolidatedContainer, WCharCP expectedValue1, WCharCP expectedValue2)
             {
             IECInstancePtr customAttribute = consolidatedContainer->GetCustomAttribute(L"SystemInfo");
+            EXPECT_TRUE(customAttribute.IsValid());
             ECValue ecValue;
             customAttribute->GetValue(ecValue, L"Data1");
             EXPECT_STREQ(expectedValue1, ecValue.GetString());
 
             customAttribute->GetValue(ecValue, L"Data2");
             EXPECT_STREQ(expectedValue2, ecValue.GetString());
-
             }
 
         void ValidateUselessInfoCustomAttribute(IECCustomAttributeContainerP consolidatedContainer, WCharCP expectedValue1, WCharCP expectedValue2)
             {
             IECInstancePtr customAttribute = consolidatedContainer->GetCustomAttribute(L"UselessInfo");
+            EXPECT_TRUE(customAttribute.IsValid());
             ECValue ecValue;
             customAttribute->GetValue(ecValue, L"NothingImportant");
             EXPECT_STREQ(expectedValue1, ecValue.GetString());
 
             customAttribute->GetValue(ecValue, L"NotImportant");
             EXPECT_STREQ(expectedValue2, ecValue.GetString());
-
             }
+
         void ValidateFolderClass(ECClassP consolidatedClass, ECClassP originalClass)
             {
             // Make sure it is equal to the original class, but not identical
@@ -610,6 +766,8 @@ struct SupplementedSchemaBuilderTests : ECTestFixture
             EXPECT_TRUE(consolidatedSchema->IsSamePrimarySchema(*m_primaryTestSchema));
 
             VerifySchemasAreUnchanged();
+
+            EXPECT_TRUE(consolidatedSchema->IsSupplemented());
             }
 
     public:
@@ -644,6 +802,7 @@ struct SupplementedSchemaBuilderTests : ECTestFixture
             CreateSupplementalSchema2 (m_supplementalTestSchema2Copy, *m_schemaOwner);
             CreateSupplementalSchema3 (m_supplementalTestSchema3Copy, *m_schemaOwner);
             CreateSupplementalSchema4 (m_supplementalTestSchema4Copy, *m_schemaOwner);
+
             __super::SetUp();
             }
 
@@ -677,6 +836,9 @@ ECSchemaP CreateSupplementalSchema(ECSchemaCachePtr schemaOwner)
     return schema;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SupplementalSchemaMetaDataTests, CanRetrieveFromSchema)
     {
     EXPECT_EQ (S_OK, CoInitialize(NULL)); 
@@ -697,6 +859,27 @@ TEST_F(SupplementalSchemaMetaDataTests, CanRetrieveFromSchema)
     EXPECT_FALSE(metaData->IsUserSpecific());
 
     CoUninitialize();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SupplementalSchemaInfoTests, CanSetAndRetrieveInfo)
+    {
+    bmap<WString, WString> schemaNamesAndPurposes1;
+    schemaNamesAndPurposes1[L"Schema1.01.00"] = L"Units";
+    schemaNamesAndPurposes1[L"Schema2.02.00"] = L"Units";
+    schemaNamesAndPurposes1[L"Schema2.01.01"] = L"Alpha";
+    schemaNamesAndPurposes1[L"Schema3.01.00"] = L"Beta";
+
+    WString primarySchemaFullName(L"PrimarySchema.08.02");
+
+    SupplementalSchemaInfo schemaInfo1(primarySchemaFullName, schemaNamesAndPurposes1);
+    
+    ECSchemaCachePtr  schemaOwner = ECSchemaCache::Create();
+    ECSchemaP schema1;
+    ECSchema::CreateSchema(schema1, L"PrimarySchema", 8, 2, *schemaOwner);
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -893,7 +1076,61 @@ TEST_F(SupplementedSchemaBuilderTests, SupplementCustomAttributesOnRelationshipC
     EXPECT_TRUE(targetCA.IsValid());
     sourceCA = supplementedRelClass->GetSource().GetCustomAttribute(m_otherInfoCAEnabler->GetClass());
     EXPECT_TRUE(sourceCA.IsValid());
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SupplementedSchemaBuilderTests, SupplementingWithInheritance)
+    {
+    ECSchemaP inheritPrimarySchema;
+    ECSchemaP lowPrioritySchema1;
+    ECSchemaP lowPrioritySchema199;
+    ECSchemaP highPrioritySchema200;
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
+
+    CreatePrimarySchemaForInheritTests(inheritPrimarySchema, *schemaOwner);
+    CreateLowPrioritySchema1(lowPrioritySchema1, *schemaOwner);
+    CreateLowPrioritySchema199(lowPrioritySchema199, *schemaOwner);
+    CreateHighPrioritySchema200(highPrioritySchema200, *schemaOwner);
+
+    bvector<ECSchemaP> supplementalSchemas;
+    supplementalSchemas.push_back(lowPrioritySchema1);
+    supplementalSchemas.push_back(lowPrioritySchema199);
+    supplementalSchemas.push_back(highPrioritySchema200);
+
+    SupplementedSchemaBuilder builder;
+    builder.UpdateSchema(*inheritPrimarySchema, supplementalSchemas);
+
+    EXPECT_TRUE(inheritPrimarySchema->IsSupplemented());
+
+    // DerivedClass1.BC1Prop1 should have its custom attribute applied by a low precedence supplemental schema
+    ECClassP derivedClass1 = inheritPrimarySchema->GetClassP(L"DerivedClass1");
+    EXPECT_TRUE(NULL != derivedClass1);
+    ECPropertyP bc1Prop1DerivedClass1 = derivedClass1->GetPropertyP(L"BC1Prop1");
+    EXPECT_TRUE(NULL != bc1Prop1DerivedClass1);
+    ValidateSystemInfoCustomAttribute(bc1Prop1DerivedClass1, L"LowPrioritySchema199.DerivedClass1.BC1Prop1", L"LowPrioritySchema199.DerivedClass1.BC1Prop1");
+
+    // DerivedClass2.BC1Prop2 should have its custom attribute applied by the primary schema
+    ECClassP derivedClass2 = inheritPrimarySchema->GetClassP(L"DerivedClass2");
+    EXPECT_TRUE(NULL != derivedClass2);
+    ECPropertyP bc1Prop2DerivedClass2 = derivedClass2->GetPropertyP(L"BC1Prop2");
+    EXPECT_TRUE(NULL != bc1Prop2DerivedClass2);
+    ValidateUselessInfoCustomAttribute(bc1Prop2DerivedClass2,  L"InheritTestSchema.DerivedClass2.BC1Prop2", L"InheritTestSchema.DerivedClass2.BC1Prop2");
+
+    // DerivedClass3.BC1Prop1 should have its custom attribute applied by a low precedence supplemental schema
+    ECClassP derivedClass3 = inheritPrimarySchema->GetClassP(L"DerivedClass3");
+    EXPECT_TRUE (NULL != derivedClass3);
+    ECPropertyP bc1Prop1DerivedClass3 = derivedClass3->GetPropertyP(L"BC1Prop1");
+    EXPECT_TRUE (NULL != bc1Prop1DerivedClass3);
+    ValidateSystemInfoCustomAttribute(bc1Prop1DerivedClass3, L"LowPrioritySchema199.DerivedClass3.BC1Prop1", L"LowPrioritySchema199.DerivedClass3.BC1Prop1");
+
+    // DerivedClass4.BC2Prop1 should have its custom attribute applied by a low precedence supplemental schema
+    ECClassP derivedClass4 = inheritPrimarySchema->GetClassP(L"DerivedClass4");
+    EXPECT_TRUE(NULL != derivedClass4);
+    ECPropertyP bc2Prop1DerivedClass4 = derivedClass4->GetPropertyP(L"BC2Prop1");
+    EXPECT_TRUE(NULL != bc2Prop1DerivedClass4);
+    ValidateSystemInfoCustomAttribute(bc2Prop1DerivedClass4, L"LowPrioritySchema1.DerivedClass4.BC2Prop1", L"LowPrioritySchema1.DerivedClass4.BC2Prop1");
     }
 
 END_BENTLEY_EC_NAMESPACE

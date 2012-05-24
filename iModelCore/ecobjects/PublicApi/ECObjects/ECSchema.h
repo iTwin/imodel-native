@@ -1201,6 +1201,7 @@ public:
     ECOBJECTS_EXPORT static SearchPathSchemaFileLocaterPtr CreateSearchPathSchemaFileLocater(bvector<WString>& searchPaths);
 };
 
+struct SupplementalSchemaInfo;
 //=======================================================================================
 //! @ingroup ECObjectsGroup
 //! The in-memory representation of a schema as defined by ECSchemaXML
@@ -1209,6 +1210,8 @@ struct ECSchema /*__PUBLISH_ABSTRACT__*/ : public IECCustomAttributeContainer
 {
 /*__PUBLISH_SECTION_END__*/
 friend SearchPathSchemaFileLocater;
+friend SupplementedSchemaBuilder;
+
 // Schemas are RefCounted but none of the constructs held by schemas (classes, properties, etc.) are.
 // They are freed when the schema is freed.
 
@@ -1225,12 +1228,14 @@ private:
     ClassMap                m_classMap;
     ECSchemaReferenceList   m_refSchemaList;
     bool                m_isSupplemented;
+    SupplementalSchemaInfo* m_supplementalSchemaInfo;
     
     bmap<ECSchemaP, const WString> m_referencedSchemaNamespaceMap;
 
     ECSchema (bool hideFromLeakDetection);
     virtual ~ECSchema();
 
+    void SetIsSupplemented(bool isSupplemented);
     bool IsOpenPlantPidCircularReferenceSpecialCase(WString& referencedECSchemaName);
     static SchemaReadStatus  ReadXml (ECSchemaP& schemaOut, MSXML2_IXMLDOMDocument2& pXmlDoc, ECSchemaReadContextR context);
     SchemaWriteStatus           WriteXml (MSXML2_IXMLDOMDocument2* pXmlDoc) const;
@@ -1238,6 +1243,8 @@ private:
     ECObjectsStatus                     AddClass (ECClassP& pClass);
     ECObjectsStatus                     SetVersionFromString (WCharCP versionString);
     ECObjectsStatus                     CopyConstraints(ECRelationshipConstraintR toRelationshipConstraint, ECRelationshipConstraintR fromRelationshipConstraint);
+    
+    void SetSupplementalSchemaInfo(SupplementalSchemaInfo info);
 
     typedef bvector<bpair<ECClassP, MSXML2_IXMLDOMNodePtr>>  ClassDeserializationVector;
     SchemaReadStatus ReadClassStubsFromXml(MSXML2_IXMLDOMNode& schemaNodePtr,ClassDeserializationVector& classes, ECSchemaReadContextR context);
@@ -1315,6 +1322,9 @@ public:
     //! Returns true if the schema is a supplemented schema
     //! @return True if the schema is a supplemented schema
     ECOBJECTS_EXPORT bool               IsSupplemented() const;
+
+    //! Gets the SupplementalSchemaInfo for this ECSchema
+    ECOBJECTS_EXPORT SupplementalSchemaInfo* const GetSupplementalInfo() const;
 
     //! Returns true if and only if the full schema name (including version) represents a standard schema that should never
     //! be stored persistently in a repository (we expect it to be found elsewhere)

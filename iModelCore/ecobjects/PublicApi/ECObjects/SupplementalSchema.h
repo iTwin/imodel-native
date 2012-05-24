@@ -339,6 +339,57 @@ public:
     ECOBJECTS_EXPORT SupplementedSchemaStatus UpdateSchema(ECSchemaR primarySchema, const bvector<ECSchemaP>& supplementalSchemaList); 
     }; // SupplementalSchemaBuilder
 
+typedef bmap<WString, WString> SchemaNamePurposeMap;
+
+//=======================================================================================
+//! @ingroup ECObjectsGroup
+//! Container for information about supplemental schemas
+//! @remarks SupplementalSchemaInfo contains the following information:
+//! @li Primary schema fullname
+//! @li The name of each supplemental schema that was used to supplement the primary schema
+//! @li the purpose of each of the supplemental schemas
+// @bsistruct                                    Carole.MacDonald                05/2012
+//=======================================================================================
+struct SupplementalSchemaInfo
+    {
+private:
+    WString     m_primarySchemaFullName;
+    WString     m_supplementedKey;
+    SchemaNamePurposeMap  m_supplementalSchemaNamesAndPurpose;
+
+public:
+    //! Constructs an instance of the SupplementalSchemaInfo class
+    //! @param[in]  primarySchemaFullName   The full name of the primary schema this SupplementalSchemaInfo instance relates to
+    //! @param[in]  schemaFullNameToPurposeMapping  The bmap of schema full names and purposes used to supplement the primary schema.h  Schema Fullname is the key, Purpose is the value
+    ECOBJECTS_EXPORT SupplementalSchemaInfo(WStringCR primarySchemaFullName, SchemaNamePurposeMap& schemaFullNameToPurposeMapping);
+
+    //! Returns the full name of the primary schema this SupplementalSchemaInfo instance relates to
+    ECOBJECTS_EXPORT WStringCR GetPrimarySchemaFullName() const { return m_primarySchemaFullName; };
+
+    //! Generates a list of supplemental schema full names
+    //! @param[out] supplementalSchemaNames List of supplemental schema full names
+    //! @returns ECOBJECTS_STATUS_SchemaNotSupplemented if the schema is not supplemented, otherwise ECOBJECTS_STATUS_Success
+    ECOBJECTS_EXPORT ECObjectsStatus GetSupplementalSchemaNames(bvector<WString>& supplementalSchemaNames) const;
+
+    //! Returns the purpose of the supplemental schema with the given full name
+    //! @param[in]  fullSchemaName  The full name of the schema whose purpose you want to know.
+    //! @returns    NULL if there is no schema with that name, otherwise the purpose of the requested supplemental schema
+    ECOBJECTS_EXPORT WStringCP GetPurposeOfSupplementalSchema(WStringCR fullSchemaName) const;
+
+    //! Generates a list of supplemental schema full names that have the input purpose
+    //! @param[out] supplementalSchemas A list of schema full names that have the input purpose
+    //! @param[in]  purpose             Schemas with this purpose will be returned
+    //! @returns ECOBJECTS_STATUS_SchemaNotSupplemented if the schema is not supplemented, otherwise ECOBJECTS_STATUS_Success (even if no matching schemas are found)
+    ECOBJECTS_EXPORT ECObjectsStatus GetSupplementalSchemasWithPurpose(bvector<WString>& supplementalSchemaNames, WStringCR purpose) const;
+
+    //! Returns true if the second schema has the same supplemental schemas as the current schema for the input purpose
+    //! @remarks also returns true if neither schema is supplemented
+    //! @param[in]  secondSchema    The schema that this schema will be compared to
+    //! @param[in]  purpose         Schemas with this purpose will be compared
+    //! @returns    True    If the input schema has the same supplemental schemas as the current schema for the given purpose, or if neither schema is supplemented.
+    ECOBJECTS_EXPORT bool HasSameSupplementalSchemasForPurpose(ECSchemaCR secondSchema, WStringCR purpose) const;
+
+    };
 END_BENTLEY_EC_NAMESPACE
 
 //__PUBLISH_SECTION_END__
