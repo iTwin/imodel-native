@@ -1,16 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: src/ECcontext.cpp $
-|    $RCSfile: file.tpl,v $
-|   $Revision: 1.10 $
-|       $Date: 2005/11/07 15:38:45 $
-|     $Author: EarlinLutz $
 |
 |  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
-#include <ECObjects\ECContext.h>
+#include <ECObjects/ECContext.h>
 
 USING_NAMESPACE_EC
 
