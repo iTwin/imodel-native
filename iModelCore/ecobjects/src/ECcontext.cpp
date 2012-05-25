@@ -10,7 +10,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
-#include <ECObjects\ECContext.h>
+#include <ECObjects/ECContext.h>
 
 USING_NAMESPACE_EC
 
