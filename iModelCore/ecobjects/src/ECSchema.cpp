@@ -1619,7 +1619,7 @@ SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSc
     else
         {
         //We have serialized a schema and its valid. Add its checksum
-        ECObjectsLogger::Log()->infov (L"Native ECSchema read from file: fileName='%ls', schemaName='%ls.%02d.%02d' classCount='%d' address='0x%x'", 
+        ECObjectsLogger::Log()->infov (L"Native ECSchema read from file: fileName='%ls', schemaName='%ls.%02d.%02d' classCount='%d' address='%p'", 
             ecSchemaXmlFile, schemaOut->GetName().c_str(), schemaOut->GetVersionMajor(), schemaOut->GetVersionMinor(), schemaOut->m_classMap.size(), schemaOut.get());
         }
 
