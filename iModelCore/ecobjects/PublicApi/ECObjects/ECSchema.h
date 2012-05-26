@@ -1063,6 +1063,8 @@ struct SchemaKey
         }
 /*__PUBLISH_SECTION_END__*/
     ECOBJECTS_EXPORT WString GetFullSchemaName() const;
+    ECOBJECTS_EXPORT UInt32 GetVersionMajor() const { return m_versionMajor; };
+    ECOBJECTS_EXPORT UInt32 GetVersionMinor() const { return m_versionMinor; };
 /*__PUBLISH_SECTION_START__*/
     };
 
