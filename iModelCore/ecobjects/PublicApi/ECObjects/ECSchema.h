@@ -1276,7 +1276,7 @@ public:
     ECOBJECTS_EXPORT ECSchemaP       GetSchema   (SchemaKeyCR key, SchemaMatchType matchType);
     ECOBJECTS_EXPORT virtual ~ECSchemaCache ();
     ECOBJECTS_EXPORT static  ECSchemaCachePtr Create ();
-    ECOBJECTS_EXPORT int     GetCount();
+    ECOBJECTS_EXPORT int     GetCount() const;
     ECOBJECTS_EXPORT void    Clear();
     ECOBJECTS_EXPORT size_t  GetSchemas (bvector<ECSchemaPtr>& schemas) const;
 };
