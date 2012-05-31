@@ -1272,8 +1272,8 @@ protected:
 public:
     ECOBJECTS_EXPORT ECObjectsStatus AddSchema   (ECSchemaR);
     ECOBJECTS_EXPORT ECObjectsStatus DropSchema  (ECSchemaR);
-    ECOBJECTS_EXPORT ECSchemaP       GetSchema   (SchemaKeyCR key);
-    ECOBJECTS_EXPORT ECSchemaP       GetSchema   (SchemaKeyCR key, SchemaMatchType matchType);
+    ECOBJECTS_EXPORT ECSchemaP       GetSchema   (SchemaKeyCR key) const;
+    ECOBJECTS_EXPORT ECSchemaP       GetSchema   (SchemaKeyCR key, SchemaMatchType matchType) const;
     ECOBJECTS_EXPORT virtual ~ECSchemaCache ();
     ECOBJECTS_EXPORT static  ECSchemaCachePtr Create ();
     ECOBJECTS_EXPORT int     GetCount() const;

@@ -1992,7 +1992,7 @@ void                             ECSchemaCache::Clear ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP       ECSchemaCache::GetSchema   (SchemaKeyCR key)
+ECSchemaP       ECSchemaCache::GetSchema   (SchemaKeyCR key) const
     {
     return GetSchema(key, SCHEMAMATCHTYPE_Identical);
     }
@@ -2000,9 +2000,9 @@ ECSchemaP       ECSchemaCache::GetSchema   (SchemaKeyCR key)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP       ECSchemaCache::GetSchema(SchemaKeyCR key, SchemaMatchType matchType)
+ECSchemaP       ECSchemaCache::GetSchema(SchemaKeyCR key, SchemaMatchType matchType) const
     {
-    SchemaMap::iterator iter;
+    SchemaMap::const_iterator iter;
     switch (matchType)
         {
         case SCHEMAMATCHTYPE_Identical:
