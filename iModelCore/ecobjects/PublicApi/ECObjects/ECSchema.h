@@ -1278,7 +1278,7 @@ public:
     ECOBJECTS_EXPORT static  ECSchemaCachePtr Create ();
     ECOBJECTS_EXPORT int     GetCount();
     ECOBJECTS_EXPORT void    Clear();
-    ECOBJECTS_EXPORT size_t  GetSchemas (bvector<ECSchemaPtr>& schemas);
+    ECOBJECTS_EXPORT size_t  GetSchemas (bvector<ECSchemaPtr>& schemas) const;
 };
 
 
