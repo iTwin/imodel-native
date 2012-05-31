@@ -461,6 +461,7 @@ const bvector<ECSchemaP>& supplementalSchemaList
     
     status = MergeSchemasIntoSupplementedSchema(primarySchema, schemasByPrecedence);
     primarySchema.SetIsSupplemented(true);
+    primarySchema.SetSupplementalSchemaInfo(SupplementalSchemaInfo::Create(primarySchema.GetFullSchemaName(), m_supplementalSchemaNamesAndPurposes));
 
     return status;
     }
@@ -486,6 +487,7 @@ bvector<ECSchemaP> localizationSchemas
         if (!metaData.IsValid())
             return SUPPLEMENTED_SCHEMA_STATUS_Metadata_Missing;
 
+        m_supplementalSchemaNamesAndPurposes[supplemental->GetFullSchemaName()] = metaData->GetSupplementalSchemaPurpose();
         UInt32 precedence = metaData->GetSupplementalSchemaPrecedence();
 
         // Not supporting localization schemas
@@ -965,6 +967,18 @@ SchemaNamePurposeMap& schemaFullNameToPurposeMapping
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+SupplementalSchemaInfoPtr SupplementalSchemaInfo::Create
+(
+WStringCR primarySchemaFullName, 
+SchemaNamePurposeMap& schemaFullNameToPurposeMapping
+)
+    {
+    return new SupplementalSchemaInfo(primarySchemaFullName, schemaFullNameToPurposeMapping);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus SupplementalSchemaInfo::GetSupplementalSchemaNames
 (
 bvector<WString>& supplementalSchemaNames
@@ -1038,8 +1052,8 @@ WStringCR purpose
     bvector<WString> supplementalSchemas;
     bvector<WString> secondSupplementalSchemas;
     GetSupplementalSchemasWithPurpose(supplementalSchemas, purpose);
-    SupplementalSchemaInfo *schemaInfo = secondSchema.GetSupplementalInfo();
-    if (NULL == schemaInfo)
+    SupplementalSchemaInfoPtr schemaInfo = secondSchema.GetSupplementalInfo();
+    if (!schemaInfo.IsValid())
         return false;
     schemaInfo->GetSupplementalSchemasWithPurpose(secondSupplementalSchemas, purpose);
 

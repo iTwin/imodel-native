@@ -1119,7 +1119,7 @@ bool isSupplemented
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfo* info)
+void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfoPtr info)
     {
     m_supplementalSchemaInfo = info;
     }
@@ -1127,7 +1127,7 @@ void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfo* info)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-SupplementalSchemaInfo* const ECSchema::GetSupplementalInfo() const
+SupplementalSchemaInfoPtr const ECSchema::GetSupplementalInfo() const
     {
     return m_supplementalSchemaInfo;
     }

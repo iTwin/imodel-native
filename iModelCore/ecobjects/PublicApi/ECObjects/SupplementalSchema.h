@@ -16,6 +16,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
   
 struct SupplementalSchemaMetaData;  
 typedef RefCountedPtr<SupplementalSchemaMetaData> SupplementalSchemaMetaDataPtr;
+typedef bmap<WString, WString> SchemaNamePurposeMap;
 
 //=======================================================================================
 //! @ingroup ECObjectsGroup
@@ -249,6 +250,8 @@ public:
 
 private:
     WString m_primarySchemaName;
+    ECSchemaP m_schemaToSupplement;
+    SchemaNamePurposeMap m_supplementalSchemaNamesAndPurposes;
     ECSchemaCachePtr m_schemaCache;
 
     static const int PRECEDENCE_THRESHOLD = 199;
@@ -339,8 +342,6 @@ public:
     ECOBJECTS_EXPORT SupplementedSchemaStatus UpdateSchema(ECSchemaR primarySchema, const bvector<ECSchemaP>& supplementalSchemaList); 
     }; // SupplementalSchemaBuilder
 
-typedef bmap<WString, WString> SchemaNamePurposeMap;
-
 //=======================================================================================
 //! @ingroup ECObjectsGroup
 //! Container for information about supplemental schemas
@@ -350,7 +351,7 @@ typedef bmap<WString, WString> SchemaNamePurposeMap;
 //! @li the purpose of each of the supplemental schemas
 // @bsistruct                                    Carole.MacDonald                05/2012
 //=======================================================================================
-struct SupplementalSchemaInfo
+struct SupplementalSchemaInfo : RefCountedBase
     {
 private:
     WString     m_primarySchemaFullName;
@@ -362,6 +363,7 @@ public:
     //! @param[in]  primarySchemaFullName   The full name of the primary schema this SupplementalSchemaInfo instance relates to
     //! @param[in]  schemaFullNameToPurposeMapping  The bmap of schema full names and purposes used to supplement the primary schema.h  Schema Fullname is the key, Purpose is the value
     ECOBJECTS_EXPORT SupplementalSchemaInfo(WStringCR primarySchemaFullName, SchemaNamePurposeMap& schemaFullNameToPurposeMapping);
+    ECOBJECTS_EXPORT static SupplementalSchemaInfoPtr Create(WStringCR primarySchemaFullName, SchemaNamePurposeMap& schemaFullNameToPurposeMapping);
 
     //! Returns the full name of the primary schema this SupplementalSchemaInfo instance relates to
     ECOBJECTS_EXPORT WStringCR GetPrimarySchemaFullName() const { return m_primarySchemaFullName; };

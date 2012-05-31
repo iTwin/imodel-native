@@ -12,18 +12,72 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-struct SupplementalSchemaMetaDataTests     : ECTestFixture  
-    {
-    virtual bool _WantInstanceLeakDetection () override { return false; }
-    };
-
-struct SupplementalSchemaInfoTests     : ECTestFixture   {};
-
-struct SupplementedSchemaBuilderTests : ECTestFixture 
+struct SchemaHolderTestFixture : ECTestFixture
     {
     protected:
         ECSchemaCachePtr m_schemaOwner;
         ECSchemaP m_bscaSchema;
+
+        void CreateSupplementalSchema
+        (
+        ECSchemaP& supplementalSchema,
+        ECSchemaCachePtr schemaOwner,
+        WString primarySchemaName,
+        WString purpose,
+        UInt32 precedence,
+        UInt32 primaryMajorVersion,
+        UInt32 primaryMinorVersion,
+        UInt32 supplementalMajorVersion,
+        UInt32 supplementalMinorVersion
+        )
+            {
+            ECSchemaP bscaSchema;
+            ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
+            UInt32 majorVersion = 1;
+            UInt32 minorVersion = 4;
+            bscaSchema = ECSchema::LocateSchema(L"Bentley_Standard_CustomAttributes", majorVersion, minorVersion, *schemaContext);
+
+            WString supplementalName = primarySchemaName + L"_Supplemental_" + purpose;
+
+            ECSchema::CreateSchema(supplementalSchema, supplementalName, supplementalMajorVersion, supplementalMinorVersion, *schemaOwner);
+            SupplementalSchemaMetaData metaData(primarySchemaName, primaryMajorVersion, primaryMinorVersion, precedence, purpose, false);
+            supplementalSchema->AddReferencedSchema(*bscaSchema);
+            supplementalSchema->SetCustomAttribute(*(metaData.CreateCustomAttribute()));
+            }
+
+    public:
+        virtual void            SetUp () override 
+            { 
+            EXPECT_EQ (S_OK, CoInitialize(NULL)); 
+
+            UInt32 majorVersion = 1;
+            UInt32 minorVersion = 4;
+            m_schemaOwner = ECSchemaCache::Create();
+            ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*m_schemaOwner);
+            m_bscaSchema = ECSchema::LocateSchema(L"Bentley_Standard_CustomAttributes", majorVersion, minorVersion, *schemaContext);
+            __super::SetUp();
+            }
+
+        virtual void TearDown() override
+            {
+            CoUninitialize();
+            __super::TearDown();
+            }
+
+        virtual bool _WantSchemaLeakDetection () override { return false; }
+        virtual bool _WantInstanceLeakDetection () override { return false; }
+    };
+
+struct SupplementalSchemaMetaDataTests     : SchemaHolderTestFixture  
+    {
+    virtual bool _WantInstanceLeakDetection () override { return false; }
+    };
+
+struct SupplementalSchemaInfoTests     : SchemaHolderTestFixture   {};
+
+struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture 
+    {
+    protected:
         ECSchemaP m_customAttributeSchema;
         StandaloneECEnablerPtr m_systemInfoCAEnabler;
         StandaloneECEnablerPtr m_uselessInfoCAEnabler;
@@ -773,14 +827,7 @@ struct SupplementedSchemaBuilderTests : ECTestFixture
     public:
         virtual void            SetUp () override 
             { 
-            EXPECT_EQ (S_OK, CoInitialize(NULL)); 
-
-            UInt32 majorVersion = 1;
-            UInt32 minorVersion = 4;
-            m_schemaOwner = ECSchemaCache::Create();
-            ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*m_schemaOwner);
-            m_bscaSchema = ECSchema::LocateSchema(L"Bentley_Standard_CustomAttributes", majorVersion, minorVersion, *schemaContext);
-
+            __super::SetUp();
             CreateCustomAttributeSchema();
             CreatePrimarySchema(m_primaryTestSchema, *m_schemaOwner);
             CreateSupplementalSchema1 (m_supplementalTestSchema1, *m_schemaOwner);
@@ -803,48 +850,20 @@ struct SupplementedSchemaBuilderTests : ECTestFixture
             CreateSupplementalSchema3 (m_supplementalTestSchema3Copy, *m_schemaOwner);
             CreateSupplementalSchema4 (m_supplementalTestSchema4Copy, *m_schemaOwner);
 
-            __super::SetUp();
             }
 
-        virtual void TearDown() override
-            {
-            CoUninitialize();
-            __super::TearDown();
-            }
-            
         virtual bool _WantSchemaLeakDetection () override { return false; }
         virtual bool _WantInstanceLeakDetection () override { return false; }
     };
-
-ECSchemaP CreateSupplementalSchema(ECSchemaCachePtr schemaOwner)
-    {
-    ECSchemaP schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
-
-    SchemaReadStatus status = ECSchema::ReadFromXmlString (schema, 
-        L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        L"<ECSchema schemaName=\"TestSchema_Supplemental_OverrideWidgets\" version=\"01.00\" displayLabel=\"TestSchema_Supplemental_OverrideWidgets\" description=\"TestSchema_Supplemental_OverrideWidgets Description\" nameSpacePrefix=\"tss\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
-        L"<ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.04\" prefix=\"bsca\" />"
-        L"</ECSchema>", *schemaContext);
-
-    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);    
-
-    SupplementalSchemaMetaData metaData(L"TestSchema", 1, 0, 200, L"OverrideWidgets", false);
-    EXPECT_STREQ(L"TestSchema", metaData.GetPrimarySchemaName().c_str());
-    
-    schema->SetCustomAttribute(*(metaData.CreateCustomAttribute()));
-    return schema;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SupplementalSchemaMetaDataTests, CanRetrieveFromSchema)
     {
-    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
-
     ECSchemaCachePtr  schemaOwner = ECSchemaCache::Create();
-    ECSchemaP supplemental = CreateSupplementalSchema(schemaOwner);
+    ECSchemaP supplemental = NULL;
+    CreateSupplementalSchema(supplemental, schemaOwner, L"TestSchema", L"OverrideWidgets", (UInt32) 200, (UInt32) 1, (UInt32) 0, 4, 2);
 
     EXPECT_TRUE(NULL != supplemental);
 
@@ -857,8 +876,6 @@ TEST_F(SupplementalSchemaMetaDataTests, CanRetrieveFromSchema)
     EXPECT_EQ(200, metaData->GetSupplementalSchemaPrecedence());
     EXPECT_STREQ(L"OverrideWidgets", metaData->GetSupplementalSchemaPurpose().c_str());
     EXPECT_FALSE(metaData->IsUserSpecific());
-
-    CoUninitialize();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -874,12 +891,36 @@ TEST_F(SupplementalSchemaInfoTests, CanSetAndRetrieveInfo)
 
     WString primarySchemaFullName(L"PrimarySchema.08.02");
 
-    SupplementalSchemaInfo schemaInfo1(primarySchemaFullName, schemaNamesAndPurposes1);
-    
     ECSchemaCachePtr  schemaOwner = ECSchemaCache::Create();
-    ECSchemaP schema1;
-    ECSchema::CreateSchema(schema1, L"PrimarySchema", 8, 2, *schemaOwner);
+    ECSchemaP primarySchema;
+    ECSchema::CreateSchema(primarySchema, L"PrimarySchema", 8, 2, *schemaOwner);
 
+    ECSchemaP supplementalSchema1;
+    ECSchemaP supplementalSchema2;
+    ECSchemaP supplementalSchema3;
+    ECSchemaP supplementalSchema4;
+    CreateSupplementalSchema(supplementalSchema1, schemaOwner, L"PrimarySchema", L"Units", 200, 8, 2, 1, 0);
+    CreateSupplementalSchema(supplementalSchema2, schemaOwner, L"PrimarySchema", L"Units", 201, 8, 2, 2, 0);
+    CreateSupplementalSchema(supplementalSchema3, schemaOwner, L"PrimarySchema", L"Alpha", 202, 8, 2, 1, 1);
+    CreateSupplementalSchema(supplementalSchema4, schemaOwner, L"PrimarySchema", L"Beta", 203, 8, 2, 1, 0);
+
+    bvector<ECSchemaP> supplementalSchemas;
+    supplementalSchemas.push_back(supplementalSchema1);
+    supplementalSchemas.push_back(supplementalSchema2);
+    supplementalSchemas.push_back(supplementalSchema3);
+    supplementalSchemas.push_back(supplementalSchema4);
+    SupplementedSchemaBuilder builder;
+    builder.UpdateSchema(*primarySchema, supplementalSchemas);
+
+    ECSchemaP schema2;
+    ECSchema::CreateSchema(schema2, L"PrimarySchema", 8, 2, *schemaOwner);
+    SupplementedSchemaBuilder builder2;
+    builder2.UpdateSchema(*schema2, supplementalSchemas);
+
+    SupplementalSchemaInfoPtr schemaInfo1 = primarySchema->GetSupplementalInfo();
+    SupplementalSchemaInfoPtr schemaInfo2 = schema2->GetSupplementalInfo();
+
+    EXPECT_TRUE(schemaInfo1->HasSameSupplementalSchemasForPurpose(*schema2, L"Units"));
     }
 
 /*---------------------------------------------------------------------------------**//**
