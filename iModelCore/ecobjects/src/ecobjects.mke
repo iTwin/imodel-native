@@ -89,8 +89,6 @@ $(o)BeXmlCGWriter$(oext)         : $(baseDir)BeXmlCGWriter.cpp $(ecobjectsPublic
 
 $(o)ecprovider$(oext)       : $(baseDir)ecprovider.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)ECCompare$(oext)        : $(baseDir)ECCompare.cpp $(ecobjectsPublicAPISrc)ECCompare.h ${MultiCompileDepends}
-
 $(o)auipresentationmgr$(oext): $(baseDir)presentation/auipresentationmgr.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
 
 $(o)auicommand$(oext)        : $(baseDir)presentation/auicommand.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
