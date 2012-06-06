@@ -378,8 +378,11 @@ ECPropertyP sourceProperty
     destProperty->SetIsReadOnly(sourceProperty->GetIsReadOnly());
     destProperty->m_forSupplementation = true;
     sourceProperty->CopyCustomAttributesTo(*destProperty);
-    return AddProperty(destProperty, sourceProperty->GetName());
+    ECObjectsStatus status = AddProperty(destProperty, sourceProperty->GetName());
+    if (ECOBJECTS_STATUS_Success != status)
+        delete destProperty;
 
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -484,7 +487,10 @@ ECPropertyCR newProperty
         }
     
     if (!newProperty._CanOverride(baseProperty))
+        {
+        ECObjectsLogger::Log()->errorv(L"The data type of the ECProperty to add does not match the data type of the base property.  Property name: %ls  New Property Data Type: %ls   Base Property Data Type: %ls\n", newProperty.GetName().c_str(), newProperty.GetTypeName().c_str(), baseProperty.GetTypeName().c_str());
         return ECOBJECTS_STATUS_DataTypeMismatch;
+        }
     return ECOBJECTS_STATUS_Success; 
     }
 
