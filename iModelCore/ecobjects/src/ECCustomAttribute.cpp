@@ -21,6 +21,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 IECCustomAttributeContainer::~IECCustomAttributeContainer() 
     {
     m_primaryCustomAttributes.clear();
+    m_consolidatedCustomAttributes.clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -595,7 +596,7 @@ IECCustomAttributeContainerR destContainer
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
     FOR_EACH (IECInstancePtr customAttribute, GetPrimaryCustomAttributes(false))
         {
-        status = destContainer.SetCustomAttribute(*(customAttribute->CreateCopyThroughSerialization()));
+        status = destContainer.SetPrimaryCustomAttribute(*(customAttribute->CreateCopyThroughSerialization()));
         if (ECOBJECTS_STATUS_Success != status)
             return status;
         }
