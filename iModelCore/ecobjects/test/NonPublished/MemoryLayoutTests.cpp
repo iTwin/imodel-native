@@ -1523,5 +1523,51 @@ TEST_F (MemoryLayoutTests, ProfileSettingValues)
     wprintf (L"  %d StandaloneECInstances with %d string properties initialized in %.4f seconds.\n", nInstances, nStrings, elapsedSeconds);
     }
     
+TEST_F (MemoryLayoutTests, ExpectCorrectPrimitiveTypeForNullValues)
+    {
+    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
+    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    ASSERT_TRUE (schema != NULL);
+    ECClassP ecClass = schema->GetClassP (L"AllPrimitives");
+    ASSERT_TRUE (NULL != ecClass);
 
+    StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
+    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+
+    ECValue v;
+    EXPECT_TRUE(SUCCESS == instance->GetValue(v, L"AString"));
+    EXPECT_TRUE(v.IsNull());
+    EXPECT_TRUE(v.IsPrimitive());
+    EXPECT_TRUE(v.IsString());
+
+    EXPECT_TRUE(SUCCESS == instance->GetValue(v, L"ABoolean"));
+    EXPECT_TRUE(v.IsNull());
+    EXPECT_TRUE(v.IsPrimitive());
+    EXPECT_TRUE(v.IsBoolean());
+
+    ecClass = schema->GetClassP (L"NestedStructArray");
+    ASSERT_TRUE (NULL != ecClass);
+    enabler = ecClass->GetDefaultStandaloneEnabler();
+    instance = enabler->CreateInstance();
+
+    EXPECT_TRUE(SUCCESS == instance->GetValue(v, L"ManufacturerArray[]"));
+    EXPECT_TRUE(v.IsArray());
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success == instance->AddArrayElements (L"ManufacturerArray[]", 2));    
+    EXPECT_TRUE(SUCCESS == instance->GetValue(v, L"ManufacturerArray[]", 0));
+    EXPECT_TRUE(v.IsStruct());
+    EXPECT_TRUE(v.IsNull());
+
+    ecClass = schema->GetClassP (L"FixedSizeArrayTester");
+    ASSERT_TRUE (NULL != ecClass);
+    enabler = ecClass->GetDefaultStandaloneEnabler();
+    instance = enabler->CreateInstance();
+
+    EXPECT_TRUE(SUCCESS == instance->GetValue(v, L"Struct1[]"));
+    EXPECT_TRUE(v.IsArray());
+    EXPECT_TRUE(SUCCESS == instance->GetValue(v, L"Struct1[]", 0));
+    EXPECT_TRUE(v.IsStruct());
+    EXPECT_TRUE(v.IsNull());
+
+
+    }
 END_BENTLEY_EC_NAMESPACE
