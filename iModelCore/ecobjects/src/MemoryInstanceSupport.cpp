@@ -2144,10 +2144,10 @@ ECObjectsStatus       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValu
     bool isInUninitializedFixedCountArray = ((useIndex) && (propertyLayout.GetModifierFlags() & PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount) && (GetAllocatedArrayCount (propertyLayout) == 0));    
     if (isInUninitializedFixedCountArray || (IsPropertyValueNull(propertyLayout, useIndex, index)))
         {
-        if (typeDescriptor.IsPrimitiveArray())
-            v.SetPrimitiveType (typeDescriptor.GetPrimitiveType());
-        else
+        if (typeDescriptor.IsStructArray())
             v.SetPrimitiveType (GetStructArrayPrimitiveType ());
+        else
+            v.SetPrimitiveType (typeDescriptor.GetPrimitiveType());
 
         v.SetToNull();
         return ECOBJECTS_STATUS_Success;
