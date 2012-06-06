@@ -143,22 +143,22 @@ IECInstanceCR supplementalSchemaMetaDataCustomAttribute
     assert (0 == supplementalSchemaMetaDataCustomAttribute.GetClass().GetName().compare(GetCustomAttributeAccessor()));
 
     ECValue propertyValue;
-    if (SUCCESS == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrimarySchemaNamePropertyAccessor()))
+    if (SUCCESS == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrimarySchemaNamePropertyAccessor()) && !propertyValue.IsNull())
         m_primarySchemaName = propertyValue.GetString();
 
-    if (SUCCESS == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrimarySchemaMajorVersionPropertyAccessor()))
+    if (SUCCESS == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrimarySchemaMajorVersionPropertyAccessor()) && !propertyValue.IsNull())
         m_primarySchemaMajorVersion = propertyValue.GetInteger();
 
-    if (SUCCESS == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrimarySchemaMinorVersionPropertyAccessor()))
+    if (SUCCESS == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrimarySchemaMinorVersionPropertyAccessor()) && !propertyValue.IsNull())
         m_primarySchemaMinorVersion = propertyValue.GetInteger();
 
-    if (SUCCESS == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrecedencePropertyAccessor()))
+    if (SUCCESS == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrecedencePropertyAccessor()) && !propertyValue.IsNull())
         m_supplementalSchemaPrecedence = propertyValue.GetInteger();
 
-    if (SUCCESS == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPurposePropertyAccessor()))
+    if (SUCCESS == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPurposePropertyAccessor()) && !propertyValue.IsNull())
         m_supplementalSchemaPurpose = propertyValue.GetString();
 
-    if (SUCCESS == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetIsUserSpecificPropertyAccessor()))
+    if (SUCCESS == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetIsUserSpecificPropertyAccessor()) && !propertyValue.IsNull())
         m_isUserSpecific = propertyValue.GetBoolean();
     }
 
@@ -797,7 +797,11 @@ SchemaPrecedence precedence
         ECPropertyP consolidatedECProperty = consolidatedECClass->GetPropertyP(supplementalECProperty->GetName(), false);
         if (NULL == consolidatedECProperty)
             {
-            consolidatedECClass->CopyProperty(consolidatedECProperty, supplementalECProperty);
+            ECObjectsStatus status = consolidatedECClass->CopyProperty(consolidatedECProperty, supplementalECProperty);
+            if (ECOBJECTS_STATUS_Success != status)
+                {
+                continue;
+                }
             // By adding this property override it is possible that classes derived from this one that override this property
             // will need to have the BaseProperty updated to the newly added temp property.
             FOR_EACH(ECClassP derivedClass, consolidatedECClass->GetDerivedClasses())
