@@ -10,21 +10,32 @@
 
 USING_NAMESPACE_EC
 
+static BeFileName s_rootDirectory;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    ShaunSewall     06/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECSchemaReadContext::Initialize (BeFileNameCR rootDirectory)
+    {
+    s_rootDirectory = rootDirectory;
+    s_rootDirectory.AppendSeparator();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ECSchemaReadContext::GetStandardPaths (bvector<WString>& searchPaths)
     {
-    BeFileName dllPath (ECFileUtilities::GetDllPath().c_str());
-    if (0 == *dllPath.GetName())
+    BeFileName rootDir (s_rootDirectory);
+    if (0 == *rootDir.GetName())
         return false;
     
-    dllPath.AppendSeparator();
-    searchPaths.push_back (dllPath.GetName());
+    rootDir.AppendSeparator();
+    searchPaths.push_back (rootDir.GetName());
     
-    dllPath.AppendToPath (L"ECSchemas");
+    rootDir.AppendToPath (L"ECSchemas");
 
-    BeFileName standardPath = dllPath;
+    BeFileName standardPath = rootDir;
     standardPath.AppendToPath (L"Standard");
     standardPath.AppendSeparator();
     searchPaths.push_back (standardPath.GetName());

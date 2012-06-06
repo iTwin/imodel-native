@@ -84,6 +84,9 @@ protected:
 
     ECOBJECTS_EXPORT virtual void       _AddSchema (ECSchemaR schema);
 public:
+	//! Host should call to establish standard search paths.
+    ECOBJECTS_EXPORT static void Initialize (BeFileNameCR rootDirectory);
+
     IStandaloneEnablerLocaterP  GetStandaloneEnablerLocater();
     void                AddSchema(ECSchemaR schema);
     void                RemoveSchema(ECSchemaR schema);

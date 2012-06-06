@@ -15,7 +15,6 @@
 #include <Bentley/BeStringUtilities.h>
 #include "ecxml.h"
 #include "Logger.h"
-#include "FileUtilities.h"
 #include "StopWatch.h"
 #include <Bentley/BeFileName.h>
 #include <ECObjects/BeXmlCommonGeometry.h>

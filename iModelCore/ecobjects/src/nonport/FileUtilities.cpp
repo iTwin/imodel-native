@@ -9,49 +9,11 @@
 #include <Windows.h>
 #endif
 #include <ECObjects/ECObjectsAPI.h>
-#include "../FileUtilities.h"
 #include <ECObjects/ECValue.h>
 #include <Bentley/BeFileName.h>
 #include <Bentley/BeAssert.h>
 
-extern "C"
-{
-ECOBJECTS_EXPORT WCharCP g_ECFileUtilities_homeDirectory;
-}
-
 USING_NAMESPACE_EC
-
-#if defined (BENTLEY_WIN32) // WIP_NONPORT
-
-WString ECFileUtilities::s_dllPath;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Carole.MacDonald 02/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-WString ECFileUtilities::GetDllPath()
-    {
-// *** WIP_NONPORT -- we need to ask some kind of host for the "home directory"
-    if (s_dllPath.empty())
-        {
-        BeFileName filePath;
-        BeGetModuleFileName (filePath, (void*)&GetDllPath);
-
-        BeFileName dd (BeFileName::DevAndDir, filePath);
-        s_dllPath.assign (dd);
-        }
-    return s_dllPath;
-    }     
-
-#elif defined (BENTLEY_WINRT)
-// *** WIP_WINRT
-
-WString ECFileUtilities::GetDllPath() {return g_ECFileUtilities_homeDirectory;}
-
-#elif defined (__unix__)
-// *** WIP_NONPORT -- we need to ask some kind of host for the "home directory"
-WString ECFileUtilities::GetDllPath() {return WString(getenv("BeGTest_HomeDirectory"));}
-
-#endif    
 
 /*---------------------------------------------------------------------------------**//**
 * Time in local time zone

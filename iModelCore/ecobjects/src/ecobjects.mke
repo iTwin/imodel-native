@@ -42,7 +42,7 @@ MultiCompileDepends=$(_MakeFileSpec)
 #----------------------------------------------------------------------
 #   Objects that go into the ECObjects library
 #----------------------------------------------------------------------
-ECObjectsHeaders = $(ecobjectsPublicAPISrc)ECObjects.h $(ecobjectsPublicAPISrc)ECSchema.h $(ecobjectsPublicAPISrc)ECValue.h $(ecobjectsPublicAPISrc)ECInstance.h $(ecobjectsPublicAPISrc)ECEnabler.h $(ecobjectsPublicAPISrc)DesignByContract.h $(baseDir)ecxml.h $(baseDir)Logger.h $(baseDir)FileUtilities.h $(baseDir)StopWatch.h
+ECObjectsHeaders = $(ecobjectsPublicAPISrc)ECObjects.h $(ecobjectsPublicAPISrc)ECSchema.h $(ecobjectsPublicAPISrc)ECValue.h $(ecobjectsPublicAPISrc)ECInstance.h $(ecobjectsPublicAPISrc)ECEnabler.h $(ecobjectsPublicAPISrc)DesignByContract.h $(baseDir)ecxml.h $(baseDir)Logger.h $(baseDir)StopWatch.h
 
 ECPresentationHeaders = $(ecpresentationPublicAPISrc)auicommand.h $(ecpresentationPublicAPISrc)auiitem.h $(ecpresentationPublicAPISrc)auijournal.h $(ecpresentationPublicAPISrc)auipresentationmgr.h $(ecpresentationPublicAPISrc)auiprovider.h $(ECObjectsHeaders) $(ecpresentationPublicAPISrc)auipresentationapi.h
 
