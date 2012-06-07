@@ -87,17 +87,17 @@ void            ECPresentationManager::RemoveProvider (ECPresentationCommandProv
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ECPresentationManager::AddProvider (ECPresentationImageProviderR provider)
+void            ECPresentationManager::AddProvider (ECPresentationResourceProviderR provider)
     {
-    m_imageProviders.insert(&provider);
+    m_resourceProviders.insert(&provider);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ECPresentationManager::RemoveProvider (ECPresentationImageProviderR provider)
+void            ECPresentationManager::RemoveProvider (ECPresentationResourceProviderR provider)
     {
-    m_imageProviders.erase(&provider);
+    m_resourceProviders.erase(&provider);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -220,13 +220,27 @@ IECPresentationViewDefinitionPtr ECPresentationManager::AggregateViewDefinition 
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECNativeImagePtr ECPresentationManager::GetImage (ECImageKeyCR imageKey, DPoint2dCR size)
     {
-    for (T_ImageProviderSet::const_iterator iter = m_imageProviders.begin(); iter != m_imageProviders.end(); ++iter)
+    for (T_ResourceProviderSet::const_iterator iter = m_resourceProviders.begin(); iter != m_resourceProviders.end(); ++iter)
         {
         IECNativeImagePtr nativeImage = (*iter)->GetImage(imageKey, size);
         if (nativeImage.IsNull())
             continue;
 
         return nativeImage;
+        }
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrius.Zonys                   05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP         ECPresentationManager::GetString (WCharCP rscFileName, UInt tableId, UInt rscId)
+    {
+    for (T_ResourceProviderSet::const_iterator iter = m_resourceProviders.begin(); iter != m_resourceProviders.end(); ++iter)
+        {
+        WCharCP localizedString = (*iter)->GetString (rscFileName, tableId, rscId);
+        if (!WString::IsNullOrEmpty (localizedString))
+            return localizedString;
         }
     return NULL;
     }

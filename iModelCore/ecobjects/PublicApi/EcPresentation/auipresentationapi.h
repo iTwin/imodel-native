@@ -27,7 +27,7 @@ EC_TYPEDEFS (IAUIContentServiceProvider);
 EC_TYPEDEFS (ECImageKey);
 EC_TYPEDEFS (IECNativeImage);
 EC_TYPEDEFS (ECNativeImage);
-EC_TYPEDEFS (ECPresentationImageProvider);
+EC_TYPEDEFS (ECPresentationResourceProvider);
 EC_TYPEDEFS (IECPresentationViewTransform);
 EC_TYPEDEFS (IECPresentationUIItem);
 EC_TYPEDEFS (IECPresentationUIItemInfo);
@@ -53,4 +53,4 @@ END_BENTLEY_EC_NAMESPACE
 #include <EcPresentation/auipresentationmgr.h>
 #include <EcPresentation/ecviewdefinition.h>
 #include <EcPresentation/eccontentdefinition.h>
-#include <EcPresentation/ecimage.h>
+#include <EcPresentation/ECResourceProvider.h>

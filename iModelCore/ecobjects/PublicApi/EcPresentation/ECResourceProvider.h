@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/EcPresentation/ecimage.h $
+|     $Source: PublicApi/EcPresentation/ECResourceProvider.h $
 |
 |  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -95,16 +95,16 @@ struct  ECNativeImage :public IECNativeImage
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ECPresentationImageProvider : public IECPresentationProvider
+struct ECPresentationResourceProvider : public IECPresentationProvider
     {
     protected:
-        virtual ProviderType    _GetProviderType() const override {return ImageService;}
-
-    protected:
+        virtual ProviderType      _GetProviderType() const override {return ResourceService;}
         virtual IECNativeImagePtr _GetImage (ECImageKeyCR imageKey, DPoint2dCR size) = 0;
+        virtual WCharCP           _GetString (WCharCP rscFileName,  UInt tableId, UInt rscId) = 0;
 
     public:
         ECOBJECTS_EXPORT IECNativeImagePtr GetImage (ECImageKeyCR imageKey, DPoint2dCR size);
+        ECOBJECTS_EXPORT WCharCP           GetString (WCharCP rscFileName, UInt tableId, UInt rscId);
     };
 
 END_BENTLEY_EC_NAMESPACE
