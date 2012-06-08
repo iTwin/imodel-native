@@ -19,7 +19,7 @@ struct          IECPresentationProvider
         ViewService     = 1,
         ContentService  = 1<<1,
         CommandService  = 1<<2,
-        ImageService    = 1<<3,
+        ResourceService = 1<<3,
         };
 
     protected:
