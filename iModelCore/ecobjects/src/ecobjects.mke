@@ -103,7 +103,7 @@ $(o)eccontentdefinition$(oext)      : $(baseDir)presentation/eccontentdefinition
 
 $(o)auijournal$(oext)      : $(baseDir)presentation/auijournal.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
 
-$(o)ecimage$(oext)      : $(baseDir)presentation/ecimage.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
+$(o)ECResourceProvider$(oext)      : $(baseDir)presentation/ECResourceProvider.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)

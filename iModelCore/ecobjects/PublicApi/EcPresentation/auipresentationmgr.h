@@ -17,16 +17,16 @@ struct  ECPresentationManager: public NonCopyableClass
     {
     private:
         typedef bset<ECPresentationCommandProviderCP>   T_CmdProviderSet;
-        typedef bset<IECPresentationViewProviderP>        T_ViewProviderSet;
+        typedef bset<IECPresentationViewProviderP>      T_ViewProviderSet;
         typedef bset<IJournalProviderP>                 T_JournalProviderSet;
         typedef bset<IAUIContentServiceProviderP>       T_ContentProviderSet;
-        typedef bset<ECPresentationImageProviderP>      T_ImageProviderSet;
+        typedef bset<ECPresentationResourceProviderP>   T_ResourceProviderSet;
 
         T_CmdProviderSet        m_cmdProviders;
         T_ViewProviderSet       m_viewProviders;
         T_JournalProviderSet    m_journalProviders;
         T_ContentProviderSet    m_contentProviders;
-        T_ImageProviderSet      m_imageProviders;
+        T_ResourceProviderSet   m_resourceProviders;
 
         ECPresentationManager ();
         
@@ -52,9 +52,9 @@ struct  ECPresentationManager: public NonCopyableClass
     ECOBJECTS_EXPORT void                           AddProvider (IAUIContentServiceProviderR provider);
     ECOBJECTS_EXPORT void                           RemoveProvider (IAUIContentServiceProviderR provider);
 
-    //! Add or remove the image provider
-    ECOBJECTS_EXPORT void                           AddProvider (ECPresentationImageProviderR provider);
-    ECOBJECTS_EXPORT void                           RemoveProvider (ECPresentationImageProviderR provider);
+    //! Add or remove the resource provider
+    ECOBJECTS_EXPORT void                           AddProvider (ECPresentationResourceProviderR provider);
+    ECOBJECTS_EXPORT void                           RemoveProvider (ECPresentationResourceProviderR provider);
 
     //!Get the view definition associated with a particular data context.
     //!@param[in] itemInfo      A hint to provide the context in which the view definition will be used. eg. MenuItem
@@ -70,11 +70,17 @@ struct  ECPresentationManager: public NonCopyableClass
     //! different command providers.
     ECOBJECTS_EXPORT bvector<UICommandPtr>              GetCommands (IAUIDataContextCR instance) const;
 
-    //! Fetch an image of the specified size and name from the image providers.
-    ECOBJECTS_EXPORT IECNativeImagePtr GetImage (ECImageKeyCR imageKey, DPoint2dCR size);
+    //! Fetch an image of the specified size and name from the resource providers.
+    ECOBJECTS_EXPORT IECNativeImagePtr                  GetImage (ECImageKeyCR imageKey, DPoint2dCR size);
+
+    //! Get string from resource providers.
+    //!@param[in] rscFileName   Dll name which contains the resource.
+    //!@param[in] tableId       Table ID form which resource shoud be taken.
+    //!@param[in] rscId         Resource ID.
+    ECOBJECTS_EXPORT WCharCP                            GetString (WCharCP rscFileName, UInt tableId, UInt rscId);
 
     //! Execute command automatically calls these. So explicit call is usually un necessary.
-    void                           JournalCmd (IUICommandCR cmd, IAUIDataContextCP instanceData);
+    void                                                JournalCmd (IUICommandCR cmd, IAUIDataContextCP instanceData);
     };
 
 END_BENTLEY_EC_NAMESPACE
