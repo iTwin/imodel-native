@@ -841,7 +841,6 @@ private:
     SchemaWriteStatus           WriteXml (BeXmlNodeR parentNode, Utf8CP elementName) const;
     SchemaReadStatus            ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext);
     
-    virtual ~ECRelationshipConstraint();
     
 protected:
     virtual ECSchemaCP          _GetContainerSchema() const override;
@@ -856,6 +855,8 @@ protected:
 /*__PUBLISH_SECTION_START__*/
 public:
     
+    ECOBJECTS_EXPORT virtual ~ECRelationshipConstraint();
+
     //! Returns true if the constraint allows for a variable number of classes
     ECOBJECTS_EXPORT bool                       GetIsMultiple() const;
     
