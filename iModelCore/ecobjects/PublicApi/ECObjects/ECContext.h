@@ -84,9 +84,6 @@ protected:
 
     ECOBJECTS_EXPORT virtual void       _AddSchema (ECSchemaR schema);
 public:
-	//! Host should call to establish standard search paths.
-    ECOBJECTS_EXPORT static void Initialize (BeFileNameCR rootDirectory);
-
     IStandaloneEnablerLocaterP  GetStandaloneEnablerLocater();
     void                AddSchema(ECSchemaR schema);
     void                RemoveSchema(ECSchemaR schema);
@@ -99,6 +96,9 @@ public:
 
     ECOBJECTS_EXPORT void AddExternalSchemaLocaters (bvector<EC::IECSchemaLocaterP> const& schemaLocators);
 /*__PUBLISH_SECTION_START__*/
+
+	//! Host should call to establish standard search paths.
+    ECOBJECTS_EXPORT static void Initialize (BeFileNameCR rootDirectory);
 
     //! Creates a context for deserializing ECSchemas
     //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the read ECSchema

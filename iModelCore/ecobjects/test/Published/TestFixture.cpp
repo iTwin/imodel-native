@@ -2,13 +2,14 @@
 |
 |     $Source: test/Published/TestFixture.cpp $
 |
-|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 | Based on http://cplus.about.com/od/howtodothingsi2/a/timing.htm
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "ECObjectsTestPCH.h"
 #include "TestFixture.h"
+#include <Bentley/BeFileName.h>
 
 #if defined (COMPILING_PUBLISHED_TESTS)
    // Need to reach in and grab this header since it won't be part of the published API yet we still
@@ -98,6 +99,8 @@ ECTestFixture::ECTestFixture()
         LoggingConfig::SetSeverity(L"ECObjectsNative", LOG_WARNING);
         s_isLoggerInitialized = true;
         }
+
+    EC::ECSchemaReadContext::Initialize (BeFileName(GetDllPath().c_str()));
     }
 
 /*---------------------------------------------------------------------------------**//**
