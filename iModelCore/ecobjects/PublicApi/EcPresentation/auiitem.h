@@ -79,6 +79,7 @@ struct  IAUIDataContext // Query
     //!Describes the different type of context available to the user
     enum ContextType
         {
+        InstanceID,
         Instance,
         ECQuery,
         Custom,
