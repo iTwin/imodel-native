@@ -33,6 +33,8 @@ EC_TYPEDEFS (IECPresentationUIItem);
 EC_TYPEDEFS (IECPresentationUIItemInfo);
 EC_TYPEDEFS (ECPresentationMenuItem);
 EC_TYPEDEFS (ECPresentationMenuItemInfo);
+EC_TYPEDEFS (ECEvent);
+EC_TYPEDEFS (ECSelectionEvent);
 
 namespace Bentley { namespace DgnPlatform {
     struct ECQuery;

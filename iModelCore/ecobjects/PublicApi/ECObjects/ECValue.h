@@ -435,7 +435,6 @@ public:
     ECOBJECTS_EXPORT bool               IsDifferent(ECValuesCollectionIterator const& iter) const;
     ECOBJECTS_EXPORT void               MoveToNext ();
     ECOBJECTS_EXPORT ECPropertyValue const& GetCurrent () const;
-    ECOBJECTS_EXPORT bool               IsAtEnd () const;
     };
 
 //=======================================================================================    

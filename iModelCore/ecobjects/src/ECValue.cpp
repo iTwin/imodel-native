@@ -1903,17 +1903,25 @@ ECValuesCollectionIterator::ECValuesCollectionIterator (ECPropertyValueCR parent
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            ECValuesCollectionIterator::IsAtEnd() const
-    {
-    return 0 == m_propertyValue.GetValueAccessor().GetDepth();
-    }
+//bool            ECValuesCollectionIterator::IsAtEnd() const
+//    {
+//    return 0 == m_propertyValue.GetValueAccessor().GetDepth();
+//    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ECValuesCollectionIterator::IsDifferent(ECValuesCollectionIterator const& otherIter) const
     {
-    return m_propertyValue.GetValueAccessor() != otherIter.m_propertyValue.GetValueAccessor();
+    bool leftAtEnd = 0 == m_propertyValue.GetValueAccessor().GetDepth();
+    bool rightAtEnd = 0 == otherIter.m_propertyValue.GetValueAccessor().GetDepth();
+    if (leftAtEnd && rightAtEnd)
+        return false;
+
+    if (!leftAtEnd && !rightAtEnd)
+        return m_propertyValue.GetValueAccessor() != otherIter.m_propertyValue.GetValueAccessor();
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2061,7 +2069,7 @@ ECValuesCollection::const_iterator ECValuesCollection::begin () const
             UInt32      arrayCount = arrayInfo.GetCount();
 
             if (0 == arrayCount)
-                return const_iterator ();
+                return ECValuesCollection::end ();
             }
 
         iter = new ECValuesCollectionIterator (m_parentPropertyValue);
@@ -2071,11 +2079,18 @@ ECValuesCollection::const_iterator ECValuesCollection::begin () const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValuesCollectionIterator::ECValuesCollectionIterator()
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValuesCollection::const_iterator ECValuesCollection::end () const
     {
-    return const_iterator ();
+    return const_iterator (*new ECValuesCollectionIterator());
     }
 
 /*---------------------------------------------------------------------------------**//**

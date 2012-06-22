@@ -16,12 +16,12 @@ BEGIN_BENTLEY_EC_NAMESPACE
 struct  ECPresentationManager: public NonCopyableClass
     {
     private:
-        typedef bset<ECPresentationCommandProviderCP>   T_CmdProviderSet;
-        typedef bset<IECPresentationViewProviderP>      T_ViewProviderSet;
-        typedef bset<IJournalProviderP>                 T_JournalProviderSet;
-        typedef bset<IAUIContentServiceProviderP>       T_ContentProviderSet;
-        typedef bset<ECPresentationResourceProviderP>   T_ResourceProviderSet;
-
+        typedef bvector<ECPresentationCommandProviderCP>   T_CmdProviderSet;
+        typedef bvector<IECPresentationViewProviderP>      T_ViewProviderSet;
+        typedef bvector<IJournalProviderP>                 T_JournalProviderSet;
+        typedef bvector<IAUIContentServiceProviderP>       T_ContentProviderSet;
+        typedef bvector<ECPresentationResourceProviderP>   T_ResourceProviderSet;
+        
         T_CmdProviderSet        m_cmdProviders;
         T_ViewProviderSet       m_viewProviders;
         T_JournalProviderSet    m_journalProviders;
@@ -31,6 +31,12 @@ struct  ECPresentationManager: public NonCopyableClass
         ECPresentationManager ();
         
         IECPresentationViewDefinitionPtr AggregateViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR instanceData) const;
+
+        template <typename ProviderType, typename ContainerType> 
+        static void CheckAndAddProviderFromList (ProviderType & provider, ContainerType& );
+
+        template <typename ProviderType, typename ContainerType> 
+        static void RemoveProviderFromList (ProviderType & provider, ContainerType& );
 
     public:
     //! Get the presentation manager.
@@ -81,6 +87,13 @@ struct  ECPresentationManager: public NonCopyableClass
 
     //! Execute command automatically calls these. So explicit call is usually un necessary.
     void                                                JournalCmd (IUICommandCR cmd, IAUIDataContextCP instanceData);
+
+
+    //!Hooks for individual EC events
+    ECOBJECTS_EXPORT    void RegisterSelectionHook ();
+    ECOBJECTS_EXPORT    void UnRegisterSelectionHook ();
+
+    ECOBJECTS_EXPORT    void TriggerSelectionEvent (ECSelectionEventCR selectionEvent);
     };
 
 END_BENTLEY_EC_NAMESPACE
