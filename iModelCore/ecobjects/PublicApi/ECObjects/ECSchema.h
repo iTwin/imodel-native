@@ -740,6 +740,7 @@ public:
     //! The pointer returned by this method is valid until the ECClass containing the property is destroyed or the property
     //! is removed from the class.
     //! @param[in]  name     The name of the property to lookup.
+    //! @param[in]  includeBaseClasses  Whether to look on base classes of the current class for the named property
     //! @return   A pointer to an EC::ECProperty if the named property exists within the current class; otherwise, NULL
     ECOBJECTS_EXPORT ECPropertyP     GetPropertyP (WCharCP name, bool includeBaseClasses=true) const;
 
@@ -747,6 +748,7 @@ public:
     //! The pointer returned by this method is valid until the ECClass containing the property is destroyed or the property
     //! is removed from the class.
     //! @param[in]  name     The name of the property to lookup.
+    //! @param[in]  includeBaseClasses  Whether to look on base classes of the current class for the named property
     //! @return   A pointer to an EC::ECProperty if the named property exists within the current class; otherwise, NULL
     ECOBJECTS_EXPORT ECPropertyP     GetPropertyP (WStringCR name, bool includeBaseClasses=true) const;
 
