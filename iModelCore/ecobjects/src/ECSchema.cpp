@@ -840,7 +840,7 @@ UInt32 ECSchema::GetClassCount
 (
 ) const
     {
-    return m_classMap.size();
+    return (UInt32) m_classMap.size();
     }
 
 /*---------------------------------------------------------------------------------**//**
