@@ -110,13 +110,6 @@ CCPchOpts =
 CPchOpts =
 
 #----------------------------------------------------------------------
-#   Non-portable code - cannot use PCH
-#----------------------------------------------------------------------
-$(o)FileUtilities$(oext)   : $(baseDir)nonport/FileUtilities.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
-
-cppObjects +$(o)FileUtilities$(oext)
-
-#----------------------------------------------------------------------
 #   dependencies of the subsystem.
 #----------------------------------------------------------------------
 DLM_NO_DLS                  = 1

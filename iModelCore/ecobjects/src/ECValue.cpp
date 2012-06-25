@@ -133,6 +133,19 @@ SystemTime SystemTime::GetSystemTime()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Time in local time zone
+* @bsimethod                                    Sam.Wilson                      06/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+SystemTime SystemTime::GetLocalTime()
+    {
+    UInt64 localMillis = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+    BeTimeUtilities::AdjustUnixMillisForLocalTime (localMillis);
+    SystemTime time;
+    unixMillisToSystemTime (time, localMillis);
+    return time;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECValue::SetReadOnly(bool isReadOnly) 
