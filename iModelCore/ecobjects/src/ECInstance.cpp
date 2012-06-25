@@ -230,6 +230,22 @@ void IECInstance::Debug_ResetAllocationStats()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr IECInstance::CreateCopyThroughSerialization()
+    {
+    WString ecInstanceXml;
+    this->WriteToXmlString(ecInstanceXml, true, false);
+
+    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext (GetClass().GetSchema());
+
+    IECInstancePtr deserializedInstance;
+    IECInstance::ReadFromXmlString(deserializedInstance, ecInstanceXml.c_str(), *instanceContext);
+
+    return deserializedInstance;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus        IECInstance::_SetInstanceId (WCharCP id)    { return ECOBJECTS_STATUS_OperationNotSupported; }

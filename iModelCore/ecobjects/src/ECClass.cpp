@@ -300,14 +300,78 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::CopyProperty
+(
+ECPropertyP& destProperty, 
+ECPropertyP sourceProperty
+)
+    {
+    if (sourceProperty->GetIsPrimitive())
+        {
+        PrimitiveECPropertyP destPrimitive;
+        PrimitiveECPropertyP sourcePrimitive = sourceProperty->GetAsPrimitiveProperty();
+        destPrimitive = new PrimitiveECProperty(*this, m_hideFromLeakDetection);
+        destPrimitive->SetType(sourcePrimitive->GetType());
+
+        destProperty = destPrimitive;
+        }
+    else if (sourceProperty->GetIsArray())
+        {
+        ArrayECPropertyP destArray;
+        ArrayECPropertyP sourceArray = sourceProperty->GetAsArrayProperty();
+        destArray = new ArrayECProperty (*this, m_hideFromLeakDetection);
+        if (NULL != sourceArray->GetStructElementType())
+            destArray->SetStructElementType(sourceArray->GetStructElementType());
+        else
+            destArray->SetPrimitiveElementType(sourceArray->GetPrimitiveElementType());
+
+        destArray->SetMaxOccurs(sourceArray->GetMaxOccurs());
+        destArray->SetMinOccurs(sourceArray->GetMinOccurs());
+
+        destProperty = destArray;
+        }
+    else if (sourceProperty->GetIsStruct())
+        {
+        StructECPropertyP destStruct;
+        StructECPropertyP sourceStruct = sourceProperty->GetAsStructProperty();
+        destStruct = new StructECProperty (*this, m_hideFromLeakDetection);
+        destStruct->SetType(sourceStruct->GetType());
+
+        destProperty = destStruct;
+        }
+
+    destProperty->SetDescription(sourceProperty->GetDescription());
+    if (sourceProperty->GetIsDisplayLabelDefined())
+        destProperty->SetDisplayLabel(sourceProperty->GetDisplayLabel());
+    destProperty->SetName(sourceProperty->GetName());
+    destProperty->SetIsReadOnly(sourceProperty->GetIsReadOnly());
+    destProperty->m_forSupplementation = true;
+    sourceProperty->CopyCustomAttributesTo(*destProperty);
+    ECObjectsStatus status = AddProperty(destProperty, sourceProperty->GetName());
+    if (ECOBJECTS_STATUS_Success != status)
+        delete destProperty;
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyP ECClass::GetPropertyP (WCharCP propertyName) const
+ECPropertyP ECClass::GetPropertyP
+(
+WCharCP propertyName,
+bool includeBaseClasses
+) const
     {
     PropertyMap::const_iterator  propertyIterator = m_propertyMap.find (propertyName);
     
     if ( propertyIterator != m_propertyMap.end() )
         return propertyIterator->second;
+
+    if (!includeBaseClasses)
+        return NULL;
 
     // not found yet, search the inheritence hierarchy
     FOR_EACH (const ECClassP& baseClass, m_baseClasses)
@@ -322,9 +386,13 @@ ECPropertyP ECClass::GetPropertyP (WCharCP propertyName) const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyP ECClass::GetPropertyP (WStringCR propertyName) const
+ECPropertyP ECClass::GetPropertyP
+(
+WStringCR propertyName,
+bool includeBaseClasses
+) const
     {
-    return  GetPropertyP (propertyName.c_str());
+    return  GetPropertyP (propertyName.c_str(), includeBaseClasses);
     }
 
 static bvector<WString> s_schemasThatAllowOverridingArrays;
@@ -386,7 +454,10 @@ ECObjectsStatus ECClass::CanPropertyBeOverridden (ECPropertyCR baseProperty,ECPr
         }
     
     if (!newProperty._CanOverride(baseProperty))
+        {
+        ECObjectsLogger::Log()->errorv(L"The data type of the ECProperty to add does not match the data type of the base property.  Property name: %ls  New Property Data Type: %ls   Base Property Data Type: %ls\n", newProperty.GetName().c_str(), newProperty.GetTypeName().c_str(), baseProperty.GetTypeName().c_str());
         return ECOBJECTS_STATUS_DataTypeMismatch;
+        }
     return ECOBJECTS_STATUS_Success; 
     }
 
@@ -1568,7 +1639,39 @@ ECObjectsStatus ECRelationshipConstraint::SetRoleLabel (WStringCR value)
     return ECOBJECTS_STATUS_Success;
     }
   
-     
+  /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipConstraint::CopyTo
+(
+ECRelationshipConstraintR toRelationshipConstraint
+)
+    {
+    if (IsRoleLabelDefined())
+        toRelationshipConstraint.SetRoleLabel(GetRoleLabel());
+
+    toRelationshipConstraint.SetCardinality(GetCardinality());
+    toRelationshipConstraint.SetIsPolymorphic(GetIsPolymorphic());
+
+    ECObjectsStatus status;
+    ECSchemaP destSchema = const_cast<ECSchemaP>(toRelationshipConstraint._GetContainerSchema());
+    FOR_EACH(ECClassP constraintClass, GetClasses())
+        {
+        ECClassP destConstraintClass = destSchema->GetClassP(constraintClass->GetName().c_str());
+        if (NULL == destConstraintClass)
+            {
+            status = destSchema->CopyClass(destConstraintClass, *constraintClass);
+            if (ECOBJECTS_STATUS_Success != status)
+                return status;
+            }
+
+        status = toRelationshipConstraint.AddClass(*destConstraintClass);
+        if (ECOBJECTS_STATUS_Success != status)
+            return status;
+        }
+    return CopyCustomAttributesTo(toRelationshipConstraint);
+    }
+       
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
