@@ -1557,9 +1557,9 @@ TEST_F (MemoryLayoutTests, PropertyLayoutBracketsTest)
 
 TEST_F (MemoryLayoutTests, ExpectCorrectPrimitiveTypeForNullValues)
     {
-    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
-    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    ECSchemaPtr      schema = CreateTestSchema();
     ASSERT_TRUE (schema != NULL);
+
     ECClassP ecClass = schema->GetClassP (L"AllPrimitives");
     ASSERT_TRUE (NULL != ecClass);
 
