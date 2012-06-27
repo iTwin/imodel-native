@@ -2087,4 +2087,13 @@ BentleyStatus   SystemTime::InitFromFileTime (_FILETIME const& fileTime)
     return SUCCESS;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SystemTime::InitFromUnixMillis (UInt64 unixMillis)
+    {
+    unixMillisToSystemTime (*this, unixMillis);
+    return SUCCESS;
+    }
+
 END_BENTLEY_EC_NAMESPACE
