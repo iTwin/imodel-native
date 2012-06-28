@@ -147,7 +147,10 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
 * @see ClassLayoutHolder, IECInstance
 * @bsiclass 
 +===============+===============+===============+===============+===============+======*/
-struct StandaloneECInstance : MemoryECInstanceBase, IECInstance
+struct StandaloneECInstance : IECInstance
+//__PUBLISH_SECTION_END__
+                            , MemoryECInstanceBase
+//__PUBLISH_SECTION_START__
     {
 //__PUBLISH_SECTION_END__
 friend struct StandaloneECEnabler;

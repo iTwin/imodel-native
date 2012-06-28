@@ -1259,7 +1259,10 @@ typedef RefCountedPtr<ECSchemaCache>        ECSchemaCachePtr;
 //! An object that controls the lifetime of a set of ECSchemas.  When the schema
 //! owner is destroyed, so are the schemas that it owns.</summary>
 //=======================================================================================
-struct ECSchemaCache /*__PUBLISH_ABSTRACT__*/ : public IECSchemaLocater,  public RefCountedBase
+struct ECSchemaCache /*__PUBLISH_ABSTRACT__*/ : public RefCountedBase
+//__PUBLISH_SECTION_END__
+    ,public IECSchemaLocater
+//__PUBLISH_SECTION_START__
 {
 /*__PUBLISH_SECTION_END__*/
 protected:
@@ -1277,16 +1280,17 @@ public:
     ECOBJECTS_EXPORT static  ECSchemaCachePtr Create ();
     ECOBJECTS_EXPORT int     GetCount();
     ECOBJECTS_EXPORT void    Clear();
+    ECOBJECTS_EXPORT IECSchemaLocater& GetSchemaLocater();
 };
 
 
+/*__PUBLISH_SECTION_END__*/
 
 //=======================================================================================
 //! Locates schemas by looking in a given set of file system folder for ECSchemaXml files
 //=======================================================================================
 struct SearchPathSchemaFileLocater : IECSchemaLocater, RefCountedBase, NonCopyableClass
 {
-/*__PUBLISH_SECTION_END__*/
 private:
     bvector<WString> m_searchPaths;
     SearchPathSchemaFileLocater (bvector<WString> const& searchPaths);
@@ -1300,17 +1304,24 @@ protected:
 
 public:
     bvector<WString>const& GetSearchPath () const {return m_searchPaths;}
-/*__PUBLISH_SECTION_START__*/
 public:
     ECOBJECTS_EXPORT static SearchPathSchemaFileLocaterPtr CreateSearchPathSchemaFileLocater(bvector<WString> const& searchPaths);
 };
+
+/*__PUBLISH_SECTION_START__*/
 
 //=======================================================================================
 //! @ingroup ECObjectsGroup
 //! The in-memory representation of a schema as defined by ECSchemaXML
 //=======================================================================================
-struct ECSchema /*__PUBLISH_ABSTRACT__*/ :RefCountedBase, IECCustomAttributeContainer, NonCopyableClass
+struct ECSchema /*__PUBLISH_ABSTRACT__*/ :RefCountedBase
+//__PUBLISH_SECTION_END__
+                                          , IECCustomAttributeContainer
+//__PUBLISH_SECTION_START__
 {
+private:
+    ECSchema (ECSchema const&);
+    ECSchema& operator= (ECSchema const&);
 /*__PUBLISH_CLASS_VIRTUAL__*/
 /*__PUBLISH_SECTION_END__*/
 friend struct SearchPathSchemaFileLocater;
@@ -1488,6 +1499,9 @@ public:
     
     //! Return full schema name in format GetName().MM.mm where Name is the schema name, MM is major version and mm is minor version.
     ECOBJECTS_EXPORT WString               GetFullSchemaName () const;
+
+    //! Get the IECCustomAttributeContainer holding this schema's custom attributes
+    ECOBJECTS_EXPORT IECCustomAttributeContainer&   GetCustomAttributeContainer();
 
     // ************************************************************************************************************************
     // ************************************  STATIC METHODS *******************************************************************
