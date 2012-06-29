@@ -1239,7 +1239,7 @@ TEST_F(MemoryLayoutTests, CopyInstanceProperties)
     --------------------------------------------------------------------------*/
     EC::StandaloneECInstancePtr duplicateInstance = enabler->CreateInstance();
 
-    ECObjectsStatus copyStatus = duplicateInstance->CopyInstanceProperties (*instance);
+    ECObjectsStatus copyStatus = duplicateInstance->GetAsMemoryECInstance()->CopyInstanceProperties (*instance);
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == copyStatus);
 
     collection = ECValuesCollection::Create (*duplicateInstance);
@@ -2345,7 +2345,7 @@ TEST_F (MemoryLayoutTests, ProfileSettingValues)
         timer.Stop();
         
         elapsedSeconds += timer.GetElapsedSeconds();
-        instance->ClearValues();
+        instance->GetAsMemoryECInstance()->ClearValues();
         }
     
     //wprintf (L"  %d StandaloneECInstances with %d string properties initialized in %.4f seconds.\n", nInstances, nStrings, elapsedSeconds);
