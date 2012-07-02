@@ -22,7 +22,8 @@ BEGIN_BENTLEY_EC_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECCustomAttributeContainer::~IECCustomAttributeContainer() 
     {
-    m_customAttributes.clear();
+    m_primaryCustomAttributes.clear();
+    m_consolidatedCustomAttributes.clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -72,6 +73,41 @@ ECCustomAttributeCollection& returnList
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void IECCustomAttributeContainer::AddUniquePrimaryCustomAttributesToList
+(
+ECCustomAttributeCollection& returnList
+) 
+    {
+    FOR_EACH (IECInstancePtr instance, GetPrimaryCustomAttributes(false))
+        {
+        bool alreadyFound = false;
+        ECClassCR classDefinition = instance->GetClass();
+
+        // only add the instance if there isn't already one with the same classDefinition in the list
+        FOR_EACH (IECInstancePtr testInstance, returnList)
+            {
+            ECClassCR testClass = testInstance->GetClass();
+            if (&classDefinition == &testClass || ECClass::ClassesAreEqualByName(&classDefinition, &testClass))
+                {
+                alreadyFound = true;
+                break;
+                }
+            }
+        if (!alreadyFound)
+            returnList.push_back(instance);
+        }
+
+    // do base containers
+    bvector<IECCustomAttributeContainerP> baseContainers;
+    _GetBaseContainers(baseContainers);
+    FOR_EACH (IECCustomAttributeContainerP container, baseContainers)
+        {
+        container->AddUniquePrimaryCustomAttributesToList(returnList);
+        }
+    }
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IECCustomAttributeContainer::IsDefined
@@ -80,7 +116,7 @@ WStringCR className
 ) 
     {
     ECCustomAttributeCollection::const_iterator iter;
-    for (iter = m_customAttributes.begin(); iter != m_customAttributes.end(); iter++)
+    for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
         {
         ECClassCR currentClass = (*iter)->GetClass();
         if (0 == className.compare(currentClass.GetName()))
@@ -107,7 +143,7 @@ ECClassCR classDefinition
 ) 
     {
     ECCustomAttributeCollection::const_iterator iter;
-    for (iter = m_customAttributes.begin(); iter != m_customAttributes.end(); iter++)
+    for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
         {
         ECClassCR currentClass = (*iter)->GetClass();
         if (&classDefinition == &currentClass || ECClass::ClassesAreEqualByName(&classDefinition, &currentClass))
@@ -130,12 +166,26 @@ ECClassCR classDefinition
 IECInstancePtr IECCustomAttributeContainer::GetCustomAttributeInternal
 (
 WStringCR className,
-bool      includeBaseClasses
+bool      includeBaseClasses,
+bool      includeSupplementalAttributes
 ) const
     {
     IECInstancePtr result;
     ECCustomAttributeCollection::const_iterator iter;
-    for (iter = m_customAttributes.begin(); iter != m_customAttributes.end(); iter++)
+
+    if (includeSupplementalAttributes)
+        {
+        for (iter = m_consolidatedCustomAttributes.begin(); iter != m_consolidatedCustomAttributes.end(); iter++)
+            {
+            ECClassCR currentClass = (*iter)->GetClass();
+            if (0 == className.compare(currentClass.GetName()))
+                {
+                return *iter;
+                }
+            }
+        }
+
+    for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
         {
         ECClassCR currentClass = (*iter)->GetClass();
         if (0 == className.compare(currentClass.GetName()))
@@ -165,7 +215,18 @@ IECInstancePtr IECCustomAttributeContainer::GetCustomAttribute
 WStringCR className
 ) const
     {
-    return GetCustomAttributeInternal (className, true);
+    return GetCustomAttributeInternal (className, true, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr IECCustomAttributeContainer::GetPrimaryCustomAttribute
+(
+WStringCR className
+) const
+    {
+    return GetCustomAttributeInternal (className, true, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -176,7 +237,7 @@ IECInstancePtr IECCustomAttributeContainer::GetCustomAttributeLocal
 WStringCR className
 ) const
     {
-    return GetCustomAttributeInternal(className, false);
+    return GetCustomAttributeInternal(className, false, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -187,7 +248,7 @@ IECInstancePtr IECCustomAttributeContainer::GetCustomAttributeLocal
 ECClassCR   ecClass
 ) const
     {
-    return GetCustomAttributeInternal(ecClass, false);
+    return GetCustomAttributeInternal(ecClass, false, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -196,12 +257,26 @@ ECClassCR   ecClass
 IECInstancePtr IECCustomAttributeContainer::GetCustomAttributeInternal
 (
 ECClassCR classDefinition,
-bool      includeBaseClasses
+bool      includeBaseClasses,
+bool      includeSupplementalAttributes
 ) const
     {
     IECInstancePtr result;
     ECCustomAttributeCollection::const_iterator iter;
-    for (iter = m_customAttributes.begin(); iter != m_customAttributes.end(); iter++)
+
+    if (includeSupplementalAttributes)
+        {
+        for (iter = m_consolidatedCustomAttributes.begin(); iter != m_consolidatedCustomAttributes.end(); iter++)
+            {
+            ECClassCR currentClass = (*iter)->GetClass();
+            if (&classDefinition == &currentClass || ECClass::ClassesAreEqualByName(&classDefinition, &currentClass))
+                {
+                return *iter;
+                }
+            }
+        }
+
+    for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
         {
         ECClassCR currentClass = (*iter)->GetClass();
         if (&classDefinition == &currentClass || ECClass::ClassesAreEqualByName(&classDefinition, &currentClass))
@@ -232,7 +307,18 @@ IECInstancePtr IECCustomAttributeContainer::GetCustomAttribute
 ECClassCR classDefinition
 ) const
     {
-    return GetCustomAttributeInternal (classDefinition, true);
+    return GetCustomAttributeInternal (classDefinition, true, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr IECCustomAttributeContainer::GetPrimaryCustomAttribute
+(
+ECClassCR classDefinition
+) const
+    {
+    return GetCustomAttributeInternal (classDefinition, true, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -243,7 +329,7 @@ ECCustomAttributeInstanceIterable IECCustomAttributeContainer::GetCustomAttribut
 bool includeBase
 ) const
     {
-    return ECCustomAttributeInstanceIterable(*this, includeBase);
+    return ECCustomAttributeInstanceIterable(*this, includeBase, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -265,9 +351,22 @@ bool    ECPropertyIterable::const_iterator::operator==(const_iterator const& rhs
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus IECCustomAttributeContainer::SetCustomAttribute
+ECCustomAttributeInstanceIterable IECCustomAttributeContainer::GetPrimaryCustomAttributes
 (
-IECInstanceR customAttributeInstance
+bool includeBase
+) const
+    {
+    return ECCustomAttributeInstanceIterable(*this, includeBase, false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus IECCustomAttributeContainer::SetCustomAttributeInternal
+(
+ECCustomAttributeCollection& customAttributeCollection,
+IECInstanceR customAttributeInstance,
+bool requireSchemaReference
 )
     {
     ECClassCR classDefinition = customAttributeInstance.GetClass();
@@ -283,25 +382,61 @@ IECInstanceR customAttributeInstance
         {
         if (!ECSchema::IsSchemaReferenced(*containerSchema, classDefinition.GetSchema()))
             {
-            BeAssert (false);
-            return ECOBJECTS_STATUS_SchemaNotFound;
+            if (requireSchemaReference)
+                {
+                BeAssert (false);
+                return ECOBJECTS_STATUS_SchemaNotFound;
+                }
             }
         }
 
     // remove existing custom attributes with matching class
     ECCustomAttributeCollection::iterator iter;
-    for (iter = m_customAttributes.begin(); iter != m_customAttributes.end(); iter++)
+    for (iter = customAttributeCollection.begin(); iter != customAttributeCollection.end(); iter++)
         {
         ECClassCR currentClass = (*iter)->GetClass();
         if (&classDefinition == &currentClass || ECClass::ClassesAreEqualByName(&classDefinition, &currentClass))
             {
-            m_customAttributes.erase(iter);
+            customAttributeCollection.erase(iter);
             break;
             }
         }
 
-    m_customAttributes.push_back(&customAttributeInstance);
+    customAttributeCollection.push_back(&customAttributeInstance);
     return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus IECCustomAttributeContainer::SetCustomAttribute
+(
+IECInstanceR customAttributeInstance
+)
+    {
+    return SetCustomAttributeInternal(m_primaryCustomAttributes, customAttributeInstance, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus IECCustomAttributeContainer::SetPrimaryCustomAttribute
+(
+IECInstanceR customAttributeInstance
+)
+    {
+    return SetCustomAttributeInternal(m_primaryCustomAttributes, customAttributeInstance, false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus IECCustomAttributeContainer::SetConsolidatedCustomAttribute
+(
+IECInstanceR customAttributeInstance
+)
+    {
+    return SetCustomAttributeInternal(m_consolidatedCustomAttributes, customAttributeInstance, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -313,12 +448,12 @@ WStringCR className
 )
     {
     ECCustomAttributeCollection::iterator iter;
-    for (iter = m_customAttributes.begin(); iter != m_customAttributes.end(); iter++)
+    for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
         {
         ECClassCR currentClass = (*iter)->GetClass();
         if (0 == className.compare(currentClass.GetName()))
             {
-            m_customAttributes.erase(iter);
+            m_primaryCustomAttributes.erase(iter);
             return true;
             }
         }
@@ -335,12 +470,12 @@ ECClassCR classDefinition
 )
     {
     ECCustomAttributeCollection::iterator iter;
-    for (iter = m_customAttributes.begin(); iter != m_customAttributes.end(); iter++)
+    for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
         {
         ECClassCR currentClass = (*iter)->GetClass();
         if (&classDefinition == &currentClass || ECClass::ClassesAreEqualByName(&classDefinition, &currentClass))
             {
-            m_customAttributes.erase(iter);
+            m_primaryCustomAttributes.erase(iter);
             return true;
             }
         }
@@ -381,9 +516,12 @@ InstanceReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeXmlNodeR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus IECCustomAttributeContainer::WriteCustomAttributes (BeXmlNodeR containerNode) const
+SchemaWriteStatus IECCustomAttributeContainer::WriteCustomAttributes 
+(
+BeXmlNodeR containerNode
+) const
     {
-    if (m_customAttributes.size() < 1)
+    if (m_primaryCustomAttributes.size() < 1)
         return SCHEMA_WRITE_STATUS_Success;
 
     SchemaWriteStatus   status = SCHEMA_WRITE_STATUS_Success;
@@ -392,7 +530,7 @@ SchemaWriteStatus IECCustomAttributeContainer::WriteCustomAttributes (BeXmlNodeR
     ECCustomAttributeCollection::const_iterator iter;
     // Add the <ECCustomAttributes> node.
     BeXmlNodeP          customAttributeNode = containerNode.AddEmptyElement (EC_CUSTOM_ATTRIBUTES_ELEMENT);
-    for (iter = m_customAttributes.begin(); iter != m_customAttributes.end(); iter++)
+    for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
         {
         (*iter)->WriteToBeXmlNode (*customAttributeNode);
         }
@@ -404,26 +542,33 @@ SchemaWriteStatus IECCustomAttributeContainer::WriteCustomAttributes (BeXmlNodeR
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Deepak.Malkan                   04/2012
+* @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECCustomAttributeInstanceIterable::ECCustomAttributeInstanceIterable
+ECObjectsStatus IECCustomAttributeContainer::CopyCustomAttributesTo
 (
-IECCustomAttributeContainerCR   container,
-bool                            includeBase
-) : m_container(container), m_includeBaseContainers(includeBase)
+IECCustomAttributeContainerR destContainer
+)
     {
+    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+    FOR_EACH (IECInstancePtr customAttribute, GetPrimaryCustomAttributes(false))
+        {
+        status = destContainer.SetPrimaryCustomAttribute(*(customAttribute->CreateCopyThroughSerialization()));
+        if (ECOBJECTS_STATUS_Success != status)
+            return status;
+        }
+    return status;
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECCustomAttributeInstanceIterable::const_iterator::const_iterator
 (
 IECCustomAttributeContainerCR container,
-bool includeBase
+bool includeBase,
+bool includeSupplementalAttributes
 )
     {
-    m_state = IteratorState::Create(container, includeBase);
+    m_state = IteratorState::Create(container, includeBase, includeSupplementalAttributes);
     if (m_state->m_customAttributesIterator == m_state->m_customAttributes->end())
         m_isEnd = true;
     else
@@ -435,7 +580,7 @@ bool includeBase
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECCustomAttributeInstanceIterable::const_iterator ECCustomAttributeInstanceIterable::begin() const
     {
-    return ECCustomAttributeInstanceIterable::const_iterator(m_container, m_includeBaseContainers);
+    return ECCustomAttributeInstanceIterable::const_iterator(m_container, m_includeBaseContainers, m_includeSupplementalAttributes);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -497,19 +642,30 @@ IECInstancePtr const& ECCustomAttributeInstanceIterable::const_iterator::operato
 ECCustomAttributeInstanceIterable::IteratorState::IteratorState
 (
 IECCustomAttributeContainerCR container,
-bool includeBase
+bool includeBase,
+bool includeSupplementalAttributes
 )
     {
     m_customAttributes = new ECCustomAttributeCollection();
-    FOR_EACH (IECInstancePtr ptr, container.m_customAttributes)
+    FOR_EACH (IECInstancePtr ptr, container.m_primaryCustomAttributes)
         m_customAttributes->push_back(ptr);
+
+    if (includeSupplementalAttributes)
+        {
+        FOR_EACH (IECInstancePtr ptr, container.m_consolidatedCustomAttributes)
+            m_customAttributes->push_back(ptr);
+        }
+
     if (includeBase)
         {
         bvector<IECCustomAttributeContainerP> baseContainers;
         container._GetBaseContainers(baseContainers);
         FOR_EACH (IECCustomAttributeContainerP baseContainer, baseContainers)
             {
-            baseContainer->AddUniqueCustomAttributesToList(*m_customAttributes);
+            if (includeSupplementalAttributes)
+                baseContainer->AddUniqueCustomAttributesToList(*m_customAttributes);
+            else
+                baseContainer->AddUniquePrimaryCustomAttributesToList(*m_customAttributes);
             }
         }
     m_customAttributesIterator = m_customAttributes->begin();

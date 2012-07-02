@@ -38,7 +38,7 @@ void ECProperty::SetErrorHandling (bool doAssert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECProperty::ECProperty (ECClassCR ecClass, bool hideFromLeakDetection)
     :
-    m_class(ecClass), m_readOnly(false), m_baseProperty(NULL), m_hideFromLeakDetection (hideFromLeakDetection)
+    m_class(ecClass), m_readOnly(false), m_baseProperty(NULL), m_hideFromLeakDetection (hideFromLeakDetection), m_forSupplementation(false)
     {
     if ( ! m_hideFromLeakDetection)
         g_leakDetector.ObjectCreated(*this);
@@ -297,6 +297,10 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNodeR pa
 SchemaWriteStatus ECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNodeR parentNode, Utf8CP elementName)
     {
     SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
+
+    // If this property was created during supplementation as a local property on the class, then don't serialize it
+    if (m_forSupplementation)
+        return status;
 
     propertyNode = parentNode.AddEmptyElement (elementName);
 
