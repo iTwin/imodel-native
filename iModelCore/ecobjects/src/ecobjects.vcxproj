@@ -62,6 +62,7 @@
   <ItemGroup>
     <ClCompile Include="DesignByContract.cpp" />
     <ClCompile Include="ECClass.cpp" />
+    <ClCompile Include="ECcontext.cpp" />
     <ClCompile Include="ECCustomAttribute.cpp" />
     <ClCompile Include="ECEnabler.cpp" />
     <ClCompile Include="ECInstance.cpp" />
@@ -81,6 +82,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\PublicApi\ECObjects\DesignByContract.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECContext.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECEnabler.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECInstance.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjects.h" />
