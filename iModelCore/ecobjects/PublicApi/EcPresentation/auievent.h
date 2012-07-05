@@ -16,19 +16,19 @@ BEGIN_BENTLEY_EC_NAMESPACE
 struct ECEvent
     {
     private:
-        void*   m_source;
+        void*   m_eventHub;
 
     public:
         ECEvent ()
-            :m_source (NULL)
+            :m_eventHub (NULL)
             {}
 
-        ECEvent (void* source)
-            :m_source(source)
+        ECEvent (void* eventHub)
+            :m_eventHub(eventHub)
             {}
 
-        void*   GetSource () {return m_source;}
-        void    SetSource (void* source) {m_source = source;}
+        void*   GeteventHub () const {return m_eventHub;}
+        void    SeteventHub (void* eventHub) {m_eventHub = eventHub;}
     };
     
 /*---------------------------------------------------------------------------------**//**
@@ -36,9 +36,34 @@ struct ECEvent
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ECSelectionEvent: public ECEvent
     {
-    ECSelectionEvent (void* src)
-        :ECEvent(src)
+    private:
+        ECInstanceIterableDataContextP  m_instanceIterable;
+    
+    public:
+    ECSelectionEvent (void* eventhub, ECInstanceIterableDataContextR instanceIterable)
+        :ECEvent(eventhub), m_instanceIterable(&instanceIterable)
         {}
+    
+    ECInstanceIterableDataContextCP GetInstanceIterable () {return m_instanceIterable;}
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ECSelectionListener
+    {
+    friend ECPresentationManager;
+    protected:
+    //! Return NULL to listen to all events
+    virtual void const* _GeteventHub () const = 0;
+
+    virtual void _OnSelection (ECSelectionEventCR selectionEvent) = 0;
+
+
+    public:
+        ECOBJECTS_EXPORT void const *  GeteventHub () const;
+
+        ECOBJECTS_EXPORT void   OnSelection (ECSelectionEventCR selectionEvent);
     };
 
 

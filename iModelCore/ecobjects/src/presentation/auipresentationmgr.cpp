@@ -278,3 +278,32 @@ WCharCP         ECPresentationManager::GetString (WCharCP rscFileName, UInt tabl
         }
     return NULL;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECPresentationManager::RegisterSelectionHook (ECSelectionListener& listener)
+    {
+    CheckAndAddProviderFromList (listener, m_selecitonListeners);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECPresentationManager::UnRegisterSelectionHook (ECSelectionListener& listener)
+    {
+    RemoveProviderFromList (listener, m_selecitonListeners);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECPresentationManager::TriggerSelectionEvent (ECSelectionEventCR selectionEvent)
+    {
+    void const* eventHub = selectionEvent.GeteventHub();
+    for (T_SelectionListeners::const_iterator iter = m_selecitonListeners.begin(); iter != m_selecitonListeners.end(); ++iter)
+        {
+        if (NULL == eventHub || (*iter)->GeteventHub() == eventHub)
+            (*iter)->_OnSelection(selectionEvent);
+        }
+    }

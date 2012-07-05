@@ -35,6 +35,8 @@ EC_TYPEDEFS (ECPresentationMenuItem);
 EC_TYPEDEFS (ECPresentationMenuItemInfo);
 EC_TYPEDEFS (ECEvent);
 EC_TYPEDEFS (ECSelectionEvent);
+EC_TYPEDEFS (ECSelectionListener);
+EC_TYPEDEFS (ECInstanceIterableDataContext);
 
 namespace Bentley { namespace DgnPlatform {
     struct ECQuery;
@@ -56,3 +58,4 @@ END_BENTLEY_EC_NAMESPACE
 #include <EcPresentation/ecviewdefinition.h>
 #include <EcPresentation/eccontentdefinition.h>
 #include <EcPresentation/ECResourceProvider.h>
+#include <EcPresentation/auievent.h>

@@ -21,12 +21,13 @@ struct  ECPresentationManager: public NonCopyableClass
         typedef bvector<IJournalProviderP>                 T_JournalProviderSet;
         typedef bvector<IAUIContentServiceProviderP>       T_ContentProviderSet;
         typedef bvector<ECPresentationResourceProviderP>   T_ResourceProviderSet;
-        
+        typedef bvector<ECSelectionListenerP>              T_SelectionListeners;
         T_CmdProviderSet        m_cmdProviders;
         T_ViewProviderSet       m_viewProviders;
         T_JournalProviderSet    m_journalProviders;
         T_ContentProviderSet    m_contentProviders;
         T_ResourceProviderSet   m_resourceProviders;
+        T_SelectionListeners    m_selecitonListeners;
 
         ECPresentationManager ();
         
@@ -90,8 +91,8 @@ struct  ECPresentationManager: public NonCopyableClass
 
 
     //!Hooks for individual EC events
-    ECOBJECTS_EXPORT    void RegisterSelectionHook ();
-    ECOBJECTS_EXPORT    void UnRegisterSelectionHook ();
+    ECOBJECTS_EXPORT    void RegisterSelectionHook (ECSelectionListener& listener);
+    ECOBJECTS_EXPORT    void UnRegisterSelectionHook (ECSelectionListener& listener);
 
     ECOBJECTS_EXPORT    void TriggerSelectionEvent (ECSelectionEventCR selectionEvent);
     };
