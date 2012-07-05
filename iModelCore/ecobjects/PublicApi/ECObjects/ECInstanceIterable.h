@@ -75,7 +75,8 @@ struct BaseToDerivedCollectionTransformIteratble : public CollectionTransformIte
     };
 
 
-/*__PUBLISH_SECTION_START_*/
+/*__PUBLISH_SECTION_START__*/
+
 /*---------------------------------------------------------------------------------**//**
 //This is the iterator that is exposed using VirtualCollectionIterator. These virtual member
 functions delegate the iteration to the appropriate implementations of it based on the container
@@ -110,6 +111,8 @@ public:
 typedef EC::IInstanceCollectionAdapter<IECInstanceP const>              IECInstanceCollectionAdapter;
 typedef RefCountedPtr<IECInstanceCollectionAdapter>                     IECInstanceCollectionAdapterPtr;
 typedef EC::IInstanceCollectionIteratorAdapter<IECInstanceP const>      IECInstanceCollectionIteratorAdapter;
+
+/*__PUBLISH_SECTION_END__*/
 
 /*---------------------------------------------------------------------------------**//**
 //Utility class to wrap ones own collection iterator as exposes a DgnECInstanceP 
@@ -210,7 +213,7 @@ public:
         {
         }
     };
-
+/*__PUBLISH_SECTION_START__*/
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
