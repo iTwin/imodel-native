@@ -43,6 +43,7 @@ EXPR_TYPEDEFS(Symbol)
 EXPR_TYPEDEFS(SymbolExpressionContext)
 EXPR_TYPEDEFS(UnitsType)
 EXPR_TYPEDEFS(ValueResult)
+EXPR_TYPEDEFS(ValueSymbol)
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -64,6 +65,7 @@ typedef RefCountedPtr<PrimaryListNode>              PrimaryListNodePtr;
 typedef RefCountedPtr<Symbol>                       SymbolPtr;
 typedef RefCountedPtr<SymbolExpressionContext>      SymbolExpressionContextPtr;
 typedef RefCountedPtr<ValueResult>                  ValueResultPtr;
+typedef RefCountedPtr<ValueSymbol>                  ValueSymbolPtr;
 
 typedef bvector<NodeP>                              NodeVector;
 typedef NodeVector::iterator                        NodeVectorIterator;
@@ -386,7 +388,6 @@ public:
     ECOBJECTS_EXPORT static MethodSymbolPtr    Create(wchar_t const* name, ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod);
 };
 
-/*__PUBLISH_SECTION_END__*/
 /*=================================================================================**//**
 *
 * Used to introduce a named value into the context.
@@ -394,6 +395,7 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct          ValueSymbol : Symbol
 {
+/*__PUBLISH_SECTION_END__*/
 private:
     EC::ECValue     m_expressionValue;
 
@@ -405,11 +407,14 @@ protected:
                                                 { return ExprStatus_NeedsLValue; }
 
 public:
-                ValueSymbol (wchar_t const* name, EC::ECValue& value);
+                ValueSymbol (wchar_t const* name, EC::ECValueCR exprValue);
 
-    void                        GetValue(EC::ECValueR exprValue);
-};  //  End of ValueSymbol
 /*__PUBLISH_SECTION_START__*/
+    ECOBJECTS_EXPORT void       GetValue(EC::ECValueR exprValue);
+    ECOBJECTS_EXPORT void       SetValue(EC::ECValueCR exprValue);
+    ECOBJECTS_EXPORT static ValueSymbolPtr    Create(wchar_t const* name, EC::ECValueCR exprValue);
+
+};  //  End of ValueSymbol
 
 enum            ExpressionToken
     {

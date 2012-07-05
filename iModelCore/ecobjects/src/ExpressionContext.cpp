@@ -716,7 +716,7 @@ ContextSymbolPtr ContextSymbol::CreateContextSymbol(wchar_t const* name, Express
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-                ValueSymbol::ValueSymbol (wchar_t const* name, EC::ECValue& value) : Symbol(name)
+                ValueSymbol::ValueSymbol (wchar_t const* name, EC::ECValueCR value) : Symbol(name)
     {
     m_expressionValue = value;
     }
@@ -751,6 +751,22 @@ ExpressionStatus ValueSymbol::_GetValue(EvaluationResultR evalResult, PrimaryLis
 void            ValueSymbol::GetValue(EC::ECValueR exprValue)
     {
     exprValue = m_expressionValue; 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    07/2012
+//--------------+------------------------------------------------------------------------
+void            ValueSymbol::SetValue(EC::ECValueCR exprValue)
+    {
+    m_expressionValue = exprValue; 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    07/2012
+//--------------+------------------------------------------------------------------------
+ValueSymbolPtr  ValueSymbol::Create(wchar_t const* name, EC::ECValueCR exprValue)
+    {
+    return new ValueSymbol (name, exprValue);
     }
 
 END_BENTLEY_EC_NAMESPACE
