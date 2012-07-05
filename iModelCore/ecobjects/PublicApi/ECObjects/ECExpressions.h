@@ -415,7 +415,6 @@ public:
     ECOBJECTS_EXPORT static ValueSymbolPtr    Create(wchar_t const* name, EC::ECValueCR exprValue);
 
 };  //  End of ValueSymbol
-/*__PUBLISH_SECTION_START__*/
 
 enum            ExpressionToken
     {
