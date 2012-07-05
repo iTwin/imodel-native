@@ -399,6 +399,14 @@ EC::ECRelationshipClassCR     StandaloneECRelationshipEnabler::_GetRelationshipC
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECEnablerCR StandaloneECRelationshipEnabler::GetECEnabler() const
+    {
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 StandaloneECRelationshipEnablerPtr StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (EC::ECRelationshipClassCR ecClass)

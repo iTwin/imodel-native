@@ -93,7 +93,7 @@ TEST_F(CustomAttributeTest, CanAddSingleCustomAttribute)
     IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema);
 
 
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->SetCustomAttribute(*instance));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->GetCustomAttributeContainer().SetCustomAttribute(*instance));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, p->SetCustomAttribute(*instance));
 
     EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));

@@ -1866,6 +1866,14 @@ int                             ECSchemaCache::GetCount ()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/12
++---------------+---------------+---------------+---------------+---------------+------*/
+IECSchemaLocater& ECSchemaCache::GetSchemaLocater()
+    {
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchemaCache::AddSchema   (ECSchemaR ecSchema)
@@ -2044,6 +2052,14 @@ bool NameValidator::Validate (WStringCR name)
 SchemaKeyCR ECSchema::GetSchemaKey ()const
     {
     return m_key;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/12
++---------------+---------------+---------------+---------------+---------------+------*/
+IECCustomAttributeContainer& ECSchema::GetCustomAttributeContainer()
+    {
+    return *this;
     }
 
 /*---------------------------------------------------------------------------------**//**

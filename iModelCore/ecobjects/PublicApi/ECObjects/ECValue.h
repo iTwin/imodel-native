@@ -43,7 +43,8 @@ public:
     ECOBJECTS_EXPORT WString      ToString ();
     ECOBJECTS_EXPORT bool          operator== (const SystemTime&) const;
 
-    ECOBJECTS_EXPORT BentleyStatus InitFromFileTime (_FILETIME const& fileTime);
+    ECOBJECTS_EXPORT BentleyStatus  InitFromFileTime (_FILETIME const& fileTime);
+    ECOBJECTS_EXPORT BentleyStatus  InitFromUnixMillis (UInt64 unixMillis);
     };
 
 //=======================================================================================    
