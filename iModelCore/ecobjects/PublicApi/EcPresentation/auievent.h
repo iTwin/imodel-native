@@ -44,7 +44,7 @@ struct ECSelectionEvent: public ECEvent
         :ECEvent(eventhub), m_instanceIterable(&instanceIterable), m_selectionSource(NULL)
         {}
     
-    ECInstanceIterableDataContextCP GetInstanceIterable () {return m_instanceIterable;}
+    ECInstanceIterableDataContextCP GetInstanceIterable () const {return m_instanceIterable;}
 
     void    SetSelectionSource (void* src) {m_selectionSource = src;}
     void*   GetSelectionSource () const {return m_selectionSource;}
