@@ -11,6 +11,20 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    07/2012
+//--------------+------------------------------------------------------------------------
+static void performConcatenation(EvaluationResultR evalResult, ECValueCR left, ECValueCR right)
+    {
+    WString     resultString;
+    wchar_t const* leftString   = left.GetString();
+    wchar_t const* rightString  = right.GetString();
+    resultString.reserve(wcslen(leftString) + wcslen(rightString) + 1);
+    resultString.append(leftString);
+    resultString.append(rightString);
+    evalResult.GetECValueR().SetString(resultString.c_str(), true);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1972,13 +1986,7 @@ ExpressionStatus  ConcatenateNode::_GetValue(EvaluationResult& evalResult, Expre
     if (((status = Operations::ConvertToString(leftResult)) != ExprStatus_Success) || ((status = Operations::ConvertToString(rightResult)) != ExprStatus_Success))
         return status;
 
-    WString     resultString;
-    wchar_t const* leftString   = leftResult.GetECValue().GetString();
-    wchar_t const* rightString  = rightResult.GetECValue().GetString();
-    resultString.reserve(wcslen(leftString) + wcslen(rightString) + 1);
-    resultString.append(leftString);
-    resultString.append(rightString);
-    evalResult.GetECValueR().SetString(resultString.c_str(), true);
+    performConcatenation (evalResult, leftResult.GetECValue(), rightResult.GetECValue());
 
     return ExprStatus_Success;
     }
@@ -2250,8 +2258,8 @@ ExpressionStatus PlusMinusNode::_PerformOperation(EvaluationResultR evalResult, 
         switch(left.GetPrimitiveType())
             {
             case PRIMITIVETYPE_String:
-                BeAssert (false && L"Implement string concat");
-                return ExprStatus_UnknownError;
+                performConcatenation (evalResult, left, right);
+                return ExprStatus_Success;
 
             case PRIMITIVETYPE_Long:
                 result.SetLong(left.GetLong() + right.GetLong());
