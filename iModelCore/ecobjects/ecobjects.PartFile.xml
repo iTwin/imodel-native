@@ -117,12 +117,6 @@
 
     </Part>
 
-    <!-- You should not include this part directly; it is only to put the static library in LKGs -->
-    <Product Name="ECObjectsStatic" LibType="Static">
-        <SubPart PartName="ECObjectsNative"/>
-        <Directories DirectoryListName="ECObjects" />
-    </Product>
-  
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 <!-- ////////////////////////////////// Products ///////////////////////////////////////// -->
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
@@ -182,7 +176,7 @@
     </ProductDirectoryList>
     <Product Name="ECObjectsTested" PrgOutputDir="ECObjects">
         <SubProduct ProductName="ECObjects" />
-        <SubProduct ProductName="ECObjectsStatic" />
+        <SubPart PartName="ECObjectsNative" LibType="Static"/>
         <SubProduct ProductName="ECObjectsTests" />
         <SubPart PartName="RunECObjectsTests" />
 
