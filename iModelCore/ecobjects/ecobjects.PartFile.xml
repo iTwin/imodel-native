@@ -7,11 +7,15 @@
 <!-- / This section contains parts that make the ECF Runtime ///////////////////////////// -->
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 
+    <Part Name="Logging" ExcludeLibType="Static"> <!-- Trim off dynamic-only parts here so we don't have to download the (non-existant) partfiles) -->
+        <SubPart PartName="LoggingSDK"          PartFile="LoggingSDK"                           Repository="loggingsdk" /> 
+    </Part>
+
     <Part Name="ECObjectsNative" BentleyBuildMakeFile="src/ecobjects.mke" ApiNumber="6">
         <SubPart PartName="BoostHeaders"    PartFile="${SrcBsiCommon}CvsPartfiles/bsibin"           Repository="bsibin-boostheaders" />
         <SubPart PartName="HeaderFiles" />
         <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley" />
-        <SubPart PartName="LoggingSDK"          PartFile="LoggingSDK"                           Repository="loggingsdk" /> 
+        <SubPart PartName="Logging" /> 
         <SubPart PartName="GeomDlls"        PartFile="geomlibs"     Repository="GeomLibs" />
         <SubPart PartName="BeXmlDll"        PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
         <SubPart PartName="StandardSchemas" PartFile="ECStandards"  Repository="ECStandards"/>
@@ -64,7 +68,7 @@
     <Part Name="ECObjectsTestsDependencies">
         <SubPart PartName="google_gtest"         PartFile="gtest"                   Repository="util-gtest" />
         <SubPart PartName="StandardSchemas"      PartFile="ecstandards"             Repository="ecstandards"/>
-        <SubPart PartName="LoggingSDK"          PartFile="LoggingSDK"                           Repository="loggingsdk" /> 
+        <SubPart PartName="Logging" /> 
         <SubPart PartName="ECObjectsNative" />
         <SubPart PartName="ECObjectsTestsSeedData"/>
         <SubPart PartName="ECObjectsTestLoggingConfig"/>
