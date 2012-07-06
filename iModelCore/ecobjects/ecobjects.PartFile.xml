@@ -117,7 +117,11 @@
 
     </Part>
 
-<!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+  <Product Name="ECObjectsStatic"> <!-- Only here to avoid putting directory list on ECObjectsTested -->
+      <SubPart PartName="ECObjectsNative"  LibType="Static"/>
+      <Directories DirectoryListName="ECObjects" />
+  </Product>
+  <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 <!-- ////////////////////////////////// Products ///////////////////////////////////////// -->
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 
@@ -176,7 +180,7 @@
     </ProductDirectoryList>
     <Product Name="ECObjectsTested" PrgOutputDir="ECObjects">
         <SubProduct ProductName="ECObjects" />
-        <SubPart PartName="ECObjectsNative" LibType="Static"/>
+        <SubProduct ProductName="ECObjectsStatic" />
         <SubProduct ProductName="ECObjectsTests" />
         <SubPart PartName="RunECObjectsTests" />
 
