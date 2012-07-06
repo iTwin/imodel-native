@@ -1266,6 +1266,10 @@ struct DLLPUBLIC_ATTRIBUTE ECSchemaCache /*__PUBLISH_ABSTRACT__*/ : public IECSc
 protected:
     SchemaMap   m_schemas;
     
+	// TODO: Uncomment this and remove the public desctructor once ECDb stops declaring this on the stack. 
+    // ECSchemaCache() {}
+    // ECOBJECTS_EXPORT virtual ~ECSchemaCache ();
+
     ECOBJECTS_EXPORT virtual ECSchemaPtr     _LocateSchema (SchemaKeyR schema, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
     
 /*__PUBLISH_SECTION_START__*/

@@ -56,9 +56,9 @@ bool            ECSchemaReadContext::GetStandardPaths (bvector<WString>& searchP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaReadContext::ECSchemaReadContext(ECSchemaCachePtr ecSchemaCache, IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch)
+ECSchemaReadContext::ECSchemaReadContext (ECSchemaCacheR ecSchemaCache, IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch)
     :
-    m_knownSchemas (ecSchemaCache),
+    m_knownSchemas (&ecSchemaCache),
     m_standaloneEnablerLocater(enablerLocater), m_hideSchemasFromLeakDetection (false), 
     m_acceptLegacyImperfectLatestCompatibleMatch(acceptLegacyImperfectLatestCompatibleMatch)
     {
@@ -83,15 +83,21 @@ ECSchemaReadContext::ECSchemaReadContext(ECSchemaCachePtr ecSchemaCache, IStanda
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaReadContextPtr  ECSchemaReadContext::CreateContext (IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch)   
     { 
-    return new ECSchemaReadContext(ECSchemaCache::Create(), enablerLocater, acceptLegacyImperfectLatestCompatibleMatch); 
+    return new ECSchemaReadContext(*ECSchemaCache::Create(), enablerLocater, acceptLegacyImperfectLatestCompatibleMatch); 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/10
++---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaReadContextPtr  ECSchemaReadContext::CreateContext (bool acceptLegacyImperfectLatestCompatibleMatch) 
     {
-    return new ECSchemaReadContext(ECSchemaCache::Create(), NULL, acceptLegacyImperfectLatestCompatibleMatch); 
+    return new ECSchemaReadContext(*ECSchemaCache::Create(), NULL, acceptLegacyImperfectLatestCompatibleMatch); 
     }
 
-ECSchemaReadContextPtr ECSchemaReadContext::CreateContext (ECSchemaCachePtr ecSchemaCache, bool acceptLegacyImperfectLatestCompatibleMatch)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ramanujam.Raman                  07/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaReadContextPtr ECSchemaReadContext::CreateContext (ECSchemaCacheR ecSchemaCache, bool acceptLegacyImperfectLatestCompatibleMatch)
     {
     return new ECSchemaReadContext (ecSchemaCache, NULL, acceptLegacyImperfectLatestCompatibleMatch);
     }

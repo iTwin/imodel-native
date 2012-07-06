@@ -662,7 +662,7 @@ ECObjectsStatus ECSchema::AddReferencedSchema (ECSchemaR refSchema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::AddReferencedSchema (ECSchemaR refSchema, WStringCR namespacePrefix)
     {
-    ECSchemaReadContext context (ECSchemaCache::Create(), NULL, false);
+    ECSchemaReadContext context (*ECSchemaCache::Create(), NULL, false);
     return AddReferencedSchema(refSchema, namespacePrefix, context);
     }
 

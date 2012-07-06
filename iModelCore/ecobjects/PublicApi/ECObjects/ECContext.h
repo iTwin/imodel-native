@@ -80,7 +80,7 @@ protected:
     //! @param[in] ecSchemaCache  Uses supplied schema cache as container to store schemas that are read
     //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the read ECSchema
     //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestCompatible only checks that the major version matches. A warning will be logged if minor version is too low, but the ECSchema will be accepted
-    ECOBJECTS_EXPORT ECSchemaReadContext(ECSchemaCachePtr ecSchemaCache, IStandaloneEnablerLocaterP standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch);
+    ECOBJECTS_EXPORT ECSchemaReadContext (ECSchemaCacheR ecSchemaCache, IStandaloneEnablerLocaterP standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch);
 
     ECOBJECTS_EXPORT virtual void       _AddSchema (ECSchemaR schema);
 public:
@@ -113,7 +113,7 @@ public:
     //! Creates a context for deserializing ECSchemas
     //! @param[in] ecSchemaCache Uses supplied schema cache as container to store schemas that are read
     //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestCompatible only checks that the major version matches. A warning will be logged if minor version is too low, but the ECSchema will be accepted
-    ECOBJECTS_EXPORT static ECSchemaReadContextPtr CreateContext (ECSchemaCachePtr ecSchemaCache, bool acceptLegacyImperfectLatestCompatibleMatch = false);
+    ECOBJECTS_EXPORT static ECSchemaReadContextPtr CreateContext (ECSchemaCacheR ecSchemaCache, bool acceptLegacyImperfectLatestCompatibleMatch = false);
 
     ECOBJECTS_EXPORT void AddSchemaLocater (IECSchemaLocaterR);
     ECOBJECTS_EXPORT void RemoveSchemaLocater (IECSchemaLocaterR);
