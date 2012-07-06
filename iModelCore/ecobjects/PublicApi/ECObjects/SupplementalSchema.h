@@ -379,7 +379,7 @@ public:
     ECOBJECTS_EXPORT WStringCP GetPurposeOfSupplementalSchema(WStringCR fullSchemaName) const;
 
     //! Generates a list of supplemental schema full names that have the input purpose
-    //! @param[out] supplementalSchemas A list of schema full names that have the input purpose
+    //! @param[out] supplementalSchemaNames A list of schema full names that have the input purpose
     //! @param[in]  purpose             Schemas with this purpose will be returned
     //! @returns ECOBJECTS_STATUS_SchemaNotSupplemented if the schema is not supplemented, otherwise ECOBJECTS_STATUS_Success (even if no matching schemas are found)
     ECOBJECTS_EXPORT ECObjectsStatus GetSupplementalSchemasWithPurpose(bvector<WString>& supplementalSchemaNames, WStringCR purpose) const;
