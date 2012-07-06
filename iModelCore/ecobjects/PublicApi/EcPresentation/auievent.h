@@ -38,13 +38,17 @@ struct ECSelectionEvent: public ECEvent
     {
     private:
         ECInstanceIterableDataContextP  m_instanceIterable;
-    
+        void*                           m_selectionSource;
     public:
     ECSelectionEvent (void* eventhub, ECInstanceIterableDataContextR instanceIterable)
-        :ECEvent(eventhub), m_instanceIterable(&instanceIterable)
+        :ECEvent(eventhub), m_instanceIterable(&instanceIterable), m_selectionSource(NULL)
         {}
     
     ECInstanceIterableDataContextCP GetInstanceIterable () {return m_instanceIterable;}
+
+    void    SetSelectionSource (void* src) {m_selectionSource = src;}
+    void*   GetSelectionSource () const {return m_selectionSource;}
+
     };
 
 /*---------------------------------------------------------------------------------**//**

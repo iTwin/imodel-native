@@ -9,6 +9,14 @@
 #include <ECObjects\ECObjectsAPI.h>
 USING_NAMESPACE_EC
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  07/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECInstanceIterable::ECInstanceIterable(IECInstanceCollectionAdapter* collection)
+    :m_collectionPtr(collection)
+    {}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/

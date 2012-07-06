@@ -14,6 +14,7 @@
 #pragma  warning(push)
 #pragma  warning(disable:4265)
 #include <boost/iterator/transform_iterator.hpp>
+#include <boost/shared_ptr.hpp>
 #pragma  warning(pop)
 
 
@@ -213,6 +214,20 @@ public:
         {
         }
     };
+
+template <typename CollectionType>
+struct IECInstanceCollectionAdapterImpl : public EC::InstanceCollectionAdapterImpl<CollectionType, IECInstanceP const> 
+    {
+    };
+
+template <typename T_Instance>
+struct ECInstancePVector : public EC::CollectionTransformIteratble< bvector<RefCountedPtr<T_Instance> >, EC::RefCountedPtrToValueTransform<T_Instance>>
+    {
+    ECInstancePVector (bvector<RefCountedPtr<T_Instance> >const& collection)
+        :CollectionTransformIteratble (collection)
+        {}
+    };
+
 /*__PUBLISH_SECTION_START__*/
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  06/2012
@@ -226,7 +241,7 @@ struct ECInstanceIterable
         ECInstanceIterable ()
             {
             }
-        ECInstanceIterable (IECInstanceCollectionAdapter* collection);
+        ECOBJECTS_EXPORT ECInstanceIterable (IECInstanceCollectionAdapter* collection);
     
         typedef IECInstanceCollectionAdapter::const_iterator  const_iterator;
         ECOBJECTS_EXPORT const_iterator begin () const;
