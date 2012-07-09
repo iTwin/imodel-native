@@ -414,7 +414,7 @@ public:
 //! @see ECValue, ECValueAccessor, ECValuesCollection
 //! @bsiclass 
 //======================================================================================= 
-struct ECValuesCollectionIterator : RefCountedBase
+struct ECValuesCollectionIterator : RefCountedBase, std::iterator<std::forward_iterator_tag, ECPropertyValue const>
     {
 /*__PUBLISH_SECTION_END__*/
 private:
@@ -432,11 +432,9 @@ private:
 /*__PUBLISH_SECTION_START__*/
 
 public:
-    typedef ECPropertyValue const       ReturnType;
     ECOBJECTS_EXPORT bool               IsDifferent(ECValuesCollectionIterator const& iter) const;
     ECOBJECTS_EXPORT void               MoveToNext ();
     ECOBJECTS_EXPORT ECPropertyValue const& GetCurrent () const;
-    ECOBJECTS_EXPORT bool               IsAtEnd () const;
     };
 
 //=======================================================================================    

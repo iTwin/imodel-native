@@ -104,25 +104,23 @@ IECPresentationViewTransformCR  IECPresentationViewDefinition::GetViewTransform 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP         ECPresentationMenuItem::GetToolTip() const
+WCharCP         ECPresentationMenuItemInfo::GetToolTip() const
     {
-    return _GetToolTip();
+    return m_tooltip.c_str();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP         ECPresentationMenuItem::GetLabel() const
+WCharCP         ECPresentationMenuItemInfo::GetLabel() const
     {
-    return _GetLabel();
+    return m_label.c_str();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationMenuItemInfo ECPresentationMenuItem::m_itemInfo;
-
-ECPresentationMenuItemInfoCR ECPresentationMenuItem::GetItemInfo()
+ECPresentationMenuItemInfoCR ECPresentationMenuItem::GetItemInfo() const
     {
     return m_itemInfo;
     }
@@ -149,7 +147,7 @@ ECPresentationMenuItem* ECPresentationMenuItem::CreateSeperator()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool    ECPresentationMenuItem::IsSeperator () const
+bool    ECPresentationMenuItemInfo::IsSeperator () const
     {
     return _IsSeperator();
     }
