@@ -64,14 +64,9 @@ public:
     #define ASSERT_FALSE_IF_NOT_DISABLED(_Message)  (void)0
 #endif
 #else
-        
     //! Avoid direct use of this macro.  It is only intended for use by other macros defined in this file.
     // Forces an assert with the specified message as long as asserts are enabled.  No expression is evaluated.
-#if defined (_WIN32) // WIP_NONPORT -- we should move BeAssert into Bentley
-    #define ASSERT_FALSE_IF_NOT_DISABLED(_Message)    (void)((AssertDisabler::AreAssertsDisabled()) || (BeAssert(_CRT_WIDE(#_Message)), 0))
-#elif defined (__unix__)
-    #define ASSERT_FALSE_IF_NOT_DISABLED(_Message)    (void)((AssertDisabler::AreAssertsDisabled()) || (BeAssert(0),0))
-#endif
+#define ASSERT_FALSE_IF_NOT_DISABLED(_Message)    (void)((AssertDisabler::AreAssertsDisabled()) || (BeAssert(_Message), 0))
 #endif    
 
 //! Avoid direct use of this function.  It is only intended for use by macros defined in this file.
