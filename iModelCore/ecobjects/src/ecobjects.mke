@@ -43,67 +43,89 @@ MultiCompileDepends=$(_MakeFileSpec)
 #----------------------------------------------------------------------
 #   Objects that go into the ECObjects library
 #----------------------------------------------------------------------
-ECObjectsHeaders = $(ecobjectsPublicAPISrc)ECObjects.h $(ecobjectsPublicAPISrc)ECSchema.h $(ecobjectsPublicAPISrc)ECValue.h $(ecobjectsPublicAPISrc)ECInstance.h $(ecobjectsPublicAPISrc)ECEnabler.h $(ecobjectsPublicAPISrc)DesignByContract.h $(baseDir)ecxml.h $(baseDir)Logger.h $(baseDir)FileUtilities.h $(baseDir)StopWatch.h
+ECObjectsHeaders =  $(ecobjectsPublicAPISrc)ECObjects.h \
+                    $(ecobjectsPublicAPISrc)ECSchema.h \
+                    $(ecobjectsPublicAPISrc)ECValue.h \
+                    $(ecobjectsPublicAPISrc)ECInstance.h \
+                    $(ecobjectsPublicAPISrc)ECEnabler.h \
+                    $(ecobjectsPublicAPISrc)DesignByContract.h \
+                    $(ecobjectsPublicAPISrc)MemoryInstanceSupport.h \
+                    $(baseDir)ecxml.h \
+                    $(baseDir)Logger.h \
+                    $(baseDir)FileUtilities.h \
+                    $(baseDir)StopWatch.h
+                    
 
-ECPresentationHeaders = $(ecpresentationPublicAPISrc)auicommand.h $(ecpresentationPublicAPISrc)auiitem.h $(ecpresentationPublicAPISrc)auijournal.h $(ecpresentationPublicAPISrc)auipresentationmgr.h $(ecpresentationPublicAPISrc)auiprovider.h $(ECObjectsHeaders) $(ecpresentationPublicAPISrc)auipresentationapi.h
+ECPresentationHeaders = $(ecpresentationPublicAPISrc)auicommand.h \
+                        $(ecpresentationPublicAPISrc)auiitem.h \
+                        $(ecpresentationPublicAPISrc)auijournal.h \
+                        $(ecpresentationPublicAPISrc)auipresentationmgr.h \
+                        $(ecpresentationPublicAPISrc)auiprovider.h \
+                        $(ECObjectsHeaders) \
+                        $(ecpresentationPublicAPISrc)auipresentationapi.h \
+                        $(ecpresentationPublicAPISrc)auievent.h
 
-$(o)ecxml$(oext)           : $(baseDir)ecxml.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ecxml$(oext)                           : $(baseDir)ecxml.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)ECSchema$(oext)        : $(baseDir)ECSchema.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ECSchema$(oext)                        : $(baseDir)ECSchema.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)ECType$(oext)          : $(baseDir)ECType.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ECType$(oext)                          : $(baseDir)ECType.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)ECClass$(oext)         : $(baseDir)ECClass.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+$(o)ECClass$(oext)                         : $(baseDir)ECClass.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)ECProperty$(oext)      : $(baseDir)ECProperty.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ECProperty$(oext)                      : $(baseDir)ECProperty.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)ECInstance$(oext)      : $(baseDir)ECInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ECInstance$(oext)                      : $(baseDir)ECInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)ECCustomAttribute$(oext)         : $(baseDir)ECCustomAttribute.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ECCustomAttribute$(oext)               : $(baseDir)ECCustomAttribute.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)ECcontext$(oext)         : $(baseDir)ECcontext.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ECcontext$(oext)                       : $(baseDir)ECcontext.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)ECValue$(oext)         : $(baseDir)ECValue.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ECValue$(oext)                         : $(baseDir)ECValue.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)ECEnabler$(oext)       : $(baseDir)ECEnabler.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ECEnabler$(oext)                       : $(baseDir)ECEnabler.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)ExpressionNode$(oext)  : $(baseDir)ExpressionNode.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ExpressionNode$(oext)                  : $(baseDir)ExpressionNode.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)ExpressionContext$(oext) : $(baseDir)ExpressionContext.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ExpressionContext$(oext)               : $(baseDir)ExpressionContext.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)ExpressionHandler$(oext) : $(baseDir)ExpressionHandler.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ExpressionHandler$(oext)               : $(baseDir)ExpressionHandler.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)MemoryInstanceSupport$(oext) : $(baseDir)MemoryInstanceSupport.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)MemoryInstanceSupport.h
+$(o)MemoryInstanceSupport$(oext)           : $(baseDir)MemoryInstanceSupport.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)StandaloneECInstance$(oext)    : $(baseDir)StandaloneECInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)StandaloneECInstance.h $(ecobjectsPublicAPISrc)MemoryInstanceSupport.h
+$(o)StandaloneECInstance$(oext)            : $(baseDir)StandaloneECInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)StandaloneECInstance.h
 
-$(o)StandaloneECRelationshipInstance$(oext)    : $(baseDir)StandaloneECRelationshipInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)StandaloneECRelationshipInstance.h  $(ecobjectsPublicAPISrc)StandaloneECInstance.h $(ecobjectsPublicAPISrc)MemoryInstanceSupport.h
+$(o)StandaloneECRelationshipInstance$(oext) : $(baseDir)StandaloneECRelationshipInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)StandaloneECRelationshipInstance.h  $(ecobjectsPublicAPISrc)StandaloneECInstance.h
 
-$(o)DesignByContract$(oext)        : $(baseDir)DesignByContract.cpp $(ecobjectsPublicAPISrc)DesignByContract.h ${MultiCompileDepends} 
+$(o)DesignByContract$(oext)                : $(baseDir)DesignByContract.cpp $(ecobjectsPublicAPISrc)DesignByContract.h ${MultiCompileDepends} 
 
-$(o)Logger$(oext)          : $(baseDir)Logger.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+$(o)Logger$(oext)                          : $(baseDir)Logger.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)BeXmlCGReader$(oext)         : $(baseDir)BeXmlCGReader.cpp $(ecobjectsPublicAPISrc)BeXmlCommonGeometry.h ${MultiCompileDepends} 
+$(o)BeXmlCGReader$(oext)                   : $(baseDir)BeXmlCGReader.cpp $(ecobjectsPublicAPISrc)BeXmlCommonGeometry.h ${MultiCompileDepends} 
 
-$(o)BeXmlCGWriter$(oext)         : $(baseDir)BeXmlCGWriter.cpp $(ecobjectsPublicAPISrc)BeXmlCommonGeometry.h ${MultiCompileDepends} 
+$(o)BeXmlCGWriter$(oext)                   : $(baseDir)BeXmlCGWriter.cpp $(ecobjectsPublicAPISrc)BeXmlCommonGeometry.h ${MultiCompileDepends} 
 
-$(o)ecprovider$(oext)       : $(baseDir)ecprovider.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ecprovider$(oext)                      : $(baseDir)ecprovider.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)auipresentationmgr$(oext): $(baseDir)presentation/auipresentationmgr.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
+$(o)ecinstanceiterable$(oext)              : $(baseDir)ecinstanceiterable.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)auicommand$(oext)        : $(baseDir)presentation/auicommand.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
+$(o)auipresentationmgr$(oext)              : $(baseDir)presentation/auipresentationmgr.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
 
-$(o)auiitem$(oext)           : $(baseDir)presentation/auiitem.cpp $(ECPresentationHeaders) ${MultiCompileDepends}
+$(o)auicommand$(oext)                      : $(baseDir)presentation/auicommand.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
 
-$(o)auiprovider$(oext)      : $(baseDir)presentation/auiprovider.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
+$(o)auiitem$(oext)                         : $(baseDir)presentation/auiitem.cpp $(ECPresentationHeaders) ${MultiCompileDepends}
 
-$(o)ecviewdefinition$(oext)      : $(baseDir)presentation/ecviewdefinition.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
+$(o)auiprovider$(oext)                     : $(baseDir)presentation/auiprovider.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
 
-$(o)eccontentdefinition$(oext)      : $(baseDir)presentation/eccontentdefinition.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
+$(o)ecviewdefinition$(oext)                : $(baseDir)presentation/ecviewdefinition.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
 
-$(o)auijournal$(oext)      : $(baseDir)presentation/auijournal.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
+$(o)eccontentdefinition$(oext)             : $(baseDir)presentation/eccontentdefinition.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
 
-$(o)ECResourceProvider$(oext)      : $(baseDir)presentation/ECResourceProvider.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
+$(o)auijournal$(oext)                      : $(baseDir)presentation/auijournal.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
+
+$(o)ECResourceProvider$(oext)              : $(baseDir)presentation/ECResourceProvider.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
+
+$(o)auievent$(oext)                        : $(baseDir)presentation/auievent.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)

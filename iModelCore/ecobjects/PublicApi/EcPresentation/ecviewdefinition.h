@@ -39,11 +39,25 @@ struct IECPresentationUIItem: public IAUIItem
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct  ECPresentationMenuItemInfo : public IECPresentationUIItemInfo
     {
+    private:
+        WString m_label;
+        WString m_tooltip;
     protected:
         virtual ItemType    _GetItemType() const override {return Menu;}
         virtual bool        _IsAggregatable () const override {return true;}
+        virtual bool        _IsSeperator () const {return false;}
     public:
         typedef ECPresentationMenuItem  T_ItemType;
+        
+        //! Get the label
+        ECOBJECTS_EXPORT    WCharCP GetLabel() const;
+        ECOBJECTS_EXPORT    void    SetLabel(WCharCP label);
+        
+        //! Get the tooltip
+        ECOBJECTS_EXPORT    WCharCP GetToolTip() const;
+        ECOBJECTS_EXPORT    void    SetToolTip();
+        
+        ECOBJECTS_EXPORT    bool    IsSeperator() const;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -52,23 +66,15 @@ struct  ECPresentationMenuItemInfo : public IECPresentationUIItemInfo
 struct  ECPresentationMenuItem : public IECPresentationUIItem
     {
     private:
-        ECOBJECTS_EXPORT static ECPresentationMenuItemInfo m_itemInfo;
+        ECPresentationMenuItemInfo m_itemInfo;
 
     protected:
         
-        virtual WCharCP                     _GetLabel() const = 0;
-        virtual WCharCP                     _GetToolTip() const = 0;
-        virtual bool                        _IsSeperator () const {return false;}
         virtual IECPresentationUIItemInfoCR _GetViewItemInfo () const {return GetItemInfo();}
 
     public:
-        ECOBJECTS_EXPORT    static ECPresentationMenuItemInfoCR GetItemInfo();
-        //! Get the label
-        ECOBJECTS_EXPORT    WCharCP     GetLabel() const;
-        //! Get the description
-        ECOBJECTS_EXPORT    WCharCP     GetToolTip() const;
+        ECOBJECTS_EXPORT ECPresentationMenuItemInfoCR GetItemInfo () const;
 
-        ECOBJECTS_EXPORT    bool        IsSeperator() const;
 
         static ECPresentationMenuItem*  CreateSeperator();
     };
