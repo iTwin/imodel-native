@@ -37,9 +37,9 @@
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py re ECObjectsScenarioTests -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ecf -p ecftest:ECFrameWorkNativeTests -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -f</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py re ECObjectsScenarioTests -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py re ECObjectsScenarioTests -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ecf -p ecftest:ECFrameWorkNativeTests -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -f</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py re ECObjectsScenarioTests -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -c</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ECObjectsTest_Scenario.exe</NMakeOutput>
     <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutRoot)Win$(PROCESSOR_ARCHITECTURE)\BuildContexts\ecf\VendorAPI\;$(VCInstallDir)INCLUDE\;$(OutRoot)Win$(PROCESSOR_ARCHITECTURE)\BuildContexts\ecf\PublicAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
