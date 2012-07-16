@@ -296,7 +296,7 @@ ECPropertyP sourceProperty
         {
         PrimitiveECPropertyP destPrimitive;
         PrimitiveECPropertyP sourcePrimitive = sourceProperty->GetAsPrimitiveProperty();
-        destPrimitive = new PrimitiveECProperty(*this, m_hideFromLeakDetection);
+        destPrimitive = new PrimitiveECProperty(*this);
         destPrimitive->SetType(sourcePrimitive->GetType());
 
         destProperty = destPrimitive;
@@ -305,7 +305,7 @@ ECPropertyP sourceProperty
         {
         ArrayECPropertyP destArray;
         ArrayECPropertyP sourceArray = sourceProperty->GetAsArrayProperty();
-        destArray = new ArrayECProperty (*this, m_hideFromLeakDetection);
+        destArray = new ArrayECProperty (*this);
         if (NULL != sourceArray->GetStructElementType())
             destArray->SetStructElementType(sourceArray->GetStructElementType());
         else
@@ -320,7 +320,7 @@ ECPropertyP sourceProperty
         {
         StructECPropertyP destStruct;
         StructECPropertyP sourceStruct = sourceProperty->GetAsStructProperty();
-        destStruct = new StructECProperty (*this, m_hideFromLeakDetection);
+        destStruct = new StructECProperty (*this);
         destStruct->SetType(sourceStruct->GetType());
 
         destProperty = destStruct;

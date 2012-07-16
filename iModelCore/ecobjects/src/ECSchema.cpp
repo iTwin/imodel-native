@@ -639,7 +639,7 @@ ECSchemaPtr& schemaOut
 )
     {
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
-    status = CreateSchema(schemaOut,  GetName(), GetVersionMajor(), GetVersionMinor(), m_hideFromLeakDetection);
+    status = CreateSchema(schemaOut,  GetName(), GetVersionMajor(), GetVersionMinor());
     if (ECOBJECTS_STATUS_Success != status)
         return status;
 
