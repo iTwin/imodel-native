@@ -59,12 +59,6 @@
         </Bindings>
     </Part>
 
-    <Part Name="ECObjectsTestBackDoor" BentleyBuildMakeFile="test/BackDoor/BackDoor.mke" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86,LinuxX86,iOSX86,iOSARM">
-        <Bindings>
-            <Libs>Delivery/$(libprefix)ECObjectsTestBackDoor$(libext)</Libs>
-        </Bindings>
-    </Part>
-
     <Part Name="ECObjectsTestsDependencies">
         <SubPart PartName="google_gtest"         PartFile="gtest"                   Repository="util-gtest" />
         <SubPart PartName="StandardSchemas"      PartFile="ecstandards"             Repository="ecstandards"/>
@@ -72,7 +66,6 @@
         <SubPart PartName="ECObjectsNative" />
         <SubPart PartName="ECObjectsTestsSeedData"/>
         <SubPart PartName="ECObjectsTestLoggingConfig"/>
-        <SubPart PartName="ECObjectsTestBackDoor"/>
     </Part>
 
     <Part Name="ECObjectsPublishedTests" BentleyBuildMakeFile="test/PublishedTests.mke" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86,LinuxX86,iOSX86,iOSARM">

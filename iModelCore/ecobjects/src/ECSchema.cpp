@@ -26,13 +26,6 @@ BEGIN_BENTLEY_EC_NAMESPACE
 
 extern ECObjectsStatus GetSchemaFileName (WStringR fullFileName, UInt32& foundVersionMinor, WCharCP schemaPath, bool useLatestCompatibleMatch);
 
-//#define DEBUG_SCHEMA_LEAKS
-#ifdef DEBUG_SCHEMA_LEAKS
-static LeakDetector<ECSchema> g_leakDetector (L"ECSchema", L"ECSchemas", true);
-#else
-static LeakDetector<ECSchema> g_leakDetector (L"ECSchema", L"ECSchemas", false);
-#endif
-
 
 // If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
 // Test programs generally want to get error status back and not assert, so they call ECSchema::AssertOnXmlError (false);
@@ -42,11 +35,10 @@ static  bool        s_noAssert = false;
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchema::ECSchema (bool hideFromLeakDetection)
-    :m_classContainer(m_classMap), m_hideFromLeakDetection(hideFromLeakDetection), m_isSupplemented(false)
+ECSchema::ECSchema ()
+    :m_classContainer(m_classMap), m_isSupplemented(false)
     {
-    if ( ! m_hideFromLeakDetection)
-        g_leakDetector.ObjectCreated(*this);
+    //
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -79,17 +71,9 @@ ECSchema::~ECSchema ()
         }
     m_referencedSchemas.clear();*/
 
-    if ( ! m_hideFromLeakDetection)
-        g_leakDetector.ObjectDestroyed(*this);
-
     m_refSchemaList.clear();
     memset (this, 0xececdead, sizeof(this));
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-ILeakDetector&  ECSchema::Debug_GetLeakDetector() { return g_leakDetector; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    09/10
@@ -376,7 +360,7 @@ ECObjectsStatus ECSchema::AddClass (ECClassP& pClass)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::CreateClass (ECClassP& pClass, WStringCR name)
     {
-    pClass = new ECClass(*this, m_hideFromLeakDetection);
+    pClass = new ECClass(*this);
     ECObjectsStatus status = pClass->SetName (name);
     if (ECOBJECTS_STATUS_Success != status)
         {
@@ -626,12 +610,12 @@ ECObjectsStatus ECSchema::SetVersionFromString (WCharCP versionString)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::CreateSchema (ECSchemaPtr& schemaOut, WStringCR schemaName, UInt32 versionMajor, UInt32 versionMinor, bool hideFromLeakDetection)
+ECObjectsStatus ECSchema::CreateSchema (ECSchemaPtr& schemaOut, WStringCR schemaName, UInt32 versionMajor, UInt32 versionMinor)
     {    
     if (!NameValidator::Validate(schemaName))
         return ECOBJECTS_STATUS_InvalidName;
 
-    schemaOut = new ECSchema(hideFromLeakDetection);
+    schemaOut = new ECSchema();
 
     ECObjectsStatus status;
     
@@ -644,14 +628,6 @@ ECObjectsStatus ECSchema::CreateSchema (ECSchemaPtr& schemaOut, WStringCR schema
         }
 
     return ECOBJECTS_STATUS_Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::CreateSchema (ECSchemaPtr& schemaOut, WStringCR schemaName, UInt32 versionMajor, UInt32 versionMinor)
-    {
-    return CreateSchema (schemaOut, schemaName, versionMajor, versionMinor, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -920,7 +896,7 @@ SchemaReadStatus ECSchema::ReadClassStubsFromXml (BeXmlNodeR schemaNode, ClassDe
         
         if (0 == strcmp (classNode->GetName(), EC_CLASS_ELEMENT))
             {            
-            ecClass = new ECClass (*this, m_hideFromLeakDetection);
+            ecClass = new ECClass (*this);
             ecRelationshipClass = NULL;
             }
         else
@@ -1330,9 +1306,7 @@ SchemaReadStatus ECSchema::ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, UI
 
     ECObjectsLogger::Log()->debugv (L"Reading ECSchema %ls.%02d.%02d", (WCharCP)schemaName.c_str(), versionMajor, versionMinor);
 
-    bool            hideFromLeakDetection = schemaContext.GetHideSchemasFromLeakDetection();
-    
-    ECObjectsStatus createStatus = CreateSchema (schemaOut, schemaName, versionMajor, versionMinor, hideFromLeakDetection);
+    ECObjectsStatus createStatus = CreateSchema (schemaOut, schemaName, versionMajor, versionMinor);
     if (ECOBJECTS_STATUS_DuplicateSchema == createStatus)
         return SCHEMA_READ_STATUS_DuplicateSchema;
     

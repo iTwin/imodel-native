@@ -204,11 +204,6 @@ public:
 
     ECOBJECTS_EXPORT IECInstancePtr     CreateCopyThroughSerialization();
 
-    ECOBJECTS_EXPORT static void        Debug_ResetAllocationStats ();
-    ECOBJECTS_EXPORT static void        Debug_DumpAllocationStats (WCharCP prefix);
-    ECOBJECTS_EXPORT static void        Debug_GetAllocationStats (int* currentLive, int* totalAllocs, int* totalFrees);
-    ECOBJECTS_EXPORT static void        Debug_ReportLeaks (bvector<WString>& classNamesToExclude);
-
     ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromXmlFile   (IECInstancePtr& ecInstance, WCharCP fileName,   ECInstanceReadContextR context);
     ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromXmlStream (IECInstancePtr& ecInstance, IStreamP stream,    ECInstanceReadContextR context);
     ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromXmlString (IECInstancePtr& ecInstance, WCharCP xmlString,  ECInstanceReadContextR context);

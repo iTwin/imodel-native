@@ -242,16 +242,6 @@ enum SupplementedSchemaStatus
     };
 
 /*__PUBLISH_SECTION_END__*/
-/*---------------------------------------------------------------------------------**//**
- @bsiclass
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct          ILeakDetector
-{
-virtual void    GetStats(Int32& currentLive, Int32& totalAllocs, Int32& totalFrees) const = 0;
-virtual void    ResetStats() = 0;
-virtual void    ReportStats (WCharCP prefix) const = 0;
-virtual Int32   CheckForLeaks () const = 0;
-};
 
 //=======================================================================================    
 // ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 

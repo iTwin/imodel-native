@@ -54,7 +54,6 @@ static UInt32 s_bscaVersionMinor = 4;
 StandardCustomAttributesSchemaHolder::StandardCustomAttributesSchemaHolder()
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    schemaContext->HideSchemasFromLeakDetection();
     m_schema = ECSchema::LocateSchema(L"Bentley_Standard_CustomAttributes", s_bscaVersionMajor, s_bscaVersionMinor, *schemaContext);
     m_supplementalSchemaMetaDataClass = m_schema->GetClassP(s_customAttributeAccessor);
 

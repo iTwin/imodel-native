@@ -286,12 +286,11 @@ private:
     bool            m_readOnly;
     ECClassCR       m_class;
     ECPropertyCP    m_baseProperty;    
-    bool            m_hideFromLeakDetection;
     bool            m_forSupplementation;   // If when supplementing the schema, a local property had to be created, then don't serialize this property
     static void     SetErrorHandling (bool doAssert);
 protected:
     WString         m_originalTypeName; //Will be empty unless the typeName was unrecognized. Keep this so that we can re-write the ECSchema without changing the type to string
-    ECProperty (ECClassCR ecClass, bool hideFromLeakDetection);
+    ECProperty (ECClassCR ecClass);
     virtual ~ECProperty();
 
     ECObjectsStatus                     SetName (WStringCR name);
@@ -315,9 +314,6 @@ protected:
 
     virtual PrimitiveECProperty*        _GetAsPrimitiveECProperty() {return NULL;}
     
-public:    
-    ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();
-
 /*__PUBLISH_SECTION_START__*/
 public:    
     //! Returns the name of the ECClass that this property is contained within
@@ -383,7 +379,7 @@ friend struct ECClass;
 private:
     PrimitiveType   m_primitiveType;   
 
-    PrimitiveECProperty (ECClassCR ecClass, bool hideFromLeakDetection) : m_primitiveType(PRIMITIVETYPE_String), ECProperty(ecClass, hideFromLeakDetection) {};
+    PrimitiveECProperty (ECClassCR ecClass) : m_primitiveType(PRIMITIVETYPE_String), ECProperty(ecClass) {};
 
 protected:
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
@@ -413,7 +409,7 @@ friend struct ECClass;
 private:
     ECClassCP   m_structType;   
 
-    StructECProperty (ECClassCR ecClass, bool hideFromLeakDetection) : m_structType(NULL), ECProperty(ecClass, hideFromLeakDetection) {};
+    StructECProperty (ECClassCR ecClass) : m_structType(NULL), ECProperty(ecClass) {};
 
 protected:
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
@@ -452,9 +448,9 @@ private:
 
     ArrayKind           m_arrayKind;
       
-    ArrayECProperty (ECClassCR ecClass, bool hideFromLeakDetection)
+    ArrayECProperty (ECClassCR ecClass)
         : m_primitiveType(PRIMITIVETYPE_String), m_arrayKind (ARRAYKIND_Primitive),
-          m_minOccurs (0), m_maxOccurs (UINT_MAX), ECProperty(ecClass, hideFromLeakDetection) {};
+          m_minOccurs (0), m_maxOccurs (UINT_MAX), ECProperty(ecClass) {};
     ECObjectsStatus                     SetMinOccurs (WStringCR minOccurs);          
     ECObjectsStatus                     SetMaxOccurs (WStringCR maxOccurs);          
 
@@ -580,7 +576,6 @@ private:
     ECSchemaCR                      m_schema;
     ECBaseClassesList               m_baseClasses;
     mutable ECDerivedClassesList    m_derivedClasses;
-    bool                            m_hideFromLeakDetection;
 
     PropertyMap                     m_propertyMap;
     PropertyList                    m_propertyList;
@@ -606,7 +601,7 @@ protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
     //  of a schema.
-    ECClass (ECSchemaCR schema, bool hideFromLeakDetection);
+    ECClass (ECSchemaCR schema);
     virtual ~ECClass();    
 
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
@@ -628,9 +623,6 @@ protected:
     SchemaWriteStatus                   _WriteXml (BeXmlNodeP& createdClassNode, BeXmlNodeR parentNode, Utf8CP elementName) const;
 
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const { return NULL; }  // used to avoid dynamic_cast
-    
-public:    
-    ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();
 
 /*__PUBLISH_SECTION_START__*/
 public:    
@@ -1391,7 +1383,6 @@ private:
     WString                 m_displayLabel;
     WString                 m_description;
     ECClassContainer        m_classContainer;
-    bool                    m_hideFromLeakDetection;
 
     // maps class name -> class pointer    
     ClassMap                m_classMap;
@@ -1401,7 +1392,7 @@ private:
     
     bmap<ECSchemaP, const WString> m_referencedSchemaNamespaceMap;
 
-    ECSchema (bool hideFromLeakDetection);
+    ECSchema ();
     virtual ~ECSchema();
 
     bool                                AddingSchemaCausedCycles () const;
@@ -1434,10 +1425,6 @@ private:
     void                                CollectAllSchemasInGraph (bvector<EC::ECSchemaCP>& allSchemas,  bool includeRootSchema) const;
 protected:
     virtual ECSchemaCP                  _GetContainerSchema() const override;
-
-public:    
-    ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();
-    
 
 /*__PUBLISH_SECTION_START__*/
 public:    
@@ -1604,14 +1591,6 @@ public:
                                                           UInt32 versionMajor, UInt32 versionMinor);
 
 /*__PUBLISH_SECTION_END__*/
-    // This method is intended for use by internal code that needs to manage the schema's lifespan internally.
-    // For example one ECXLayout schema is created for each session and never freed.  Obviously care should be
-    // taken that Schema's allocated this way are not actually leaked.       
-    ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema (ECSchemaPtr& schemaOut, WStringCR schemaName, 
-                                                          UInt32 versionMajor, UInt32 versionMinor,
-                                                          bool hideFromLeakDetection);
-
-
     ECOBJECTS_EXPORT void   ReComputeCheckSum ();
 /*__PUBLISH_SECTION_START__*/
 

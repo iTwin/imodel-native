@@ -25,7 +25,10 @@ typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
 //=======================================================================================    
 //! base class ensuring that all enablers are refcounted
 //=======================================================================================    
-struct ECEnabler : RefCountedBase, IStandaloneEnablerLocater
+struct ECEnabler : RefCountedBase
+/*__PUBLISH_SECTION_END__*/
+    , IStandaloneEnablerLocater
+/*__PUBLISH_SECTION_START__*/
     {
     //! Interface of functor that wants to process text-valued properties
     struct IPropertyProcessor 
@@ -38,6 +41,7 @@ struct ECEnabler : RefCountedBase, IStandaloneEnablerLocater
     enum PropertyProcessingResult  {PROPERTY_PROCESSING_RESULT_Miss=0, PROPERTY_PROCESSING_RESULT_Hit=1, PROPERTY_PROCESSING_RESULT_NoCandidates=3};
     enum PropertyProcessingOptions {PROPERTY_PROCESSING_OPTIONS_SingleType=0, PROPERTY_PROCESSING_OPTIONS_AllTypes=1};
 
+/*__PUBLISH_SECTION_END__*/
 private:
     ECClassCR                    m_ecClass;
     IStandaloneEnablerLocaterP   m_standaloneInstanceEnablerLocater;    // can't be const because the m_standaloneInstanceEnablerLocater may grow if a new enabler is added to its cache
@@ -79,7 +83,7 @@ protected:
     virtual bool                    _HasChildProperties (UInt32 parentIndex) const = 0;
 
     ECOBJECTS_EXPORT         bool                       ProcessStructProperty (bset<ECClassCP>& failedClasses, bool& allStructsFailed, ECValueCR propValue, EC::PrimitiveType primitiveType, IPropertyProcessor const& proc, PropertyProcessingOptions opts) const;
-
+/*__PUBLISH_SECTION_START__*/
 public:
     //! Primarily for debugging/logging purposes. Should match your fully-qualified class name
     ECOBJECTS_EXPORT WCharCP                    GetName() const;
@@ -105,11 +109,12 @@ public:
     //! Get vector of all property indices for property defined by parent index. An index of 0 means root properties.
     ECOBJECTS_EXPORT ECObjectsStatus         GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const;
 
-//    ECOBJECTS_EXPORT bool                       HasChildValues (ECValueAccessorCR, IECInstanceCR) const;
-//    ECOBJECTS_EXPORT ECValuesCollection         GetChildValues (ECValueAccessorCR, IECInstanceCR) const;
+    //! Get the IStandaloneEnablerLocater for this enabler
+    ECOBJECTS_EXPORT IStandaloneEnablerLocaterR GetStandaloneEnablerLocater();
+
     ECOBJECTS_EXPORT UInt32                     GetPropertyCount () const;
     ECOBJECTS_EXPORT StandaloneECEnablerPtr     GetEnablerForStructArrayMember (SchemaKeyCR schemaKey, WCharCP className); 
-
+    
 #if defined (EXPERIMENTAL_TEXT_FILTER)
     //! Call processor on all primitive-valued properties of specified type(s) on this instance. 
     //! Processing is terminated if the processor returns a non-zero value.

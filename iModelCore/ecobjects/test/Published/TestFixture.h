@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/TestFixture.h $
 |
-|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -25,12 +25,6 @@ protected:
 public:
     virtual void            SetUp () override;
     virtual void            TearDown () override;
-
-    virtual bool            _WantSchemaLeakDetection() { return true; }
-    virtual bool            _WantInstanceLeakDetection() { return true; }
-
-    void    TestForECSchemaLeaks ();
-    void    TestForIECInstanceLeaks ();
 
     static WString GetTestDataPath(WCharCP fileName);
     static WString GetWorkingDirectoryPath(WCharCP testFixture, WCharCP fileName);
