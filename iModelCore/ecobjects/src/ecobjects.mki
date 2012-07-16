@@ -7,6 +7,9 @@
 #--------------------------------------------------------------------------------------
 OPTIMIZE_FOR_SPEED=1
 
+appName = ECObjects
+CCompPDBName = $(appName)
+
 # WE_NEED_TO_FIX_OUR_COMPILER_WARNINGS = 1
 
 nameToDefine=__ECOBJECTS_BUILD__

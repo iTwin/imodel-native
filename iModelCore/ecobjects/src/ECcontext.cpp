@@ -51,7 +51,7 @@ bool            ECSchemaReadContext::GetStandardPaths (bvector<WString>& searchP
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaReadContext::ECSchemaReadContext(IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch)
     :
-    m_standaloneEnablerLocater(enablerLocater), m_hideSchemasFromLeakDetection (false), 
+    m_standaloneEnablerLocater(enablerLocater),
     m_acceptLegacyImperfectLatestCompatibleMatch(acceptLegacyImperfectLatestCompatibleMatch)
     {
     m_locators.insert(SchemaLocatorKey (&m_knownSchemas, ReaderContext));
@@ -160,8 +160,6 @@ void  ECSchemaReadContext::AddSchemaPath (WCharCP path)
     m_ownedLocators.push_back(locator);
     }
 
-void  ECSchemaReadContext::HideSchemasFromLeakDetection ()                   { m_hideSchemasFromLeakDetection = true; }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -173,7 +171,6 @@ void                        ECSchemaReadContext::SetFinalSchemaLocater (IECSchem
     }
 
 IStandaloneEnablerLocaterP  ECSchemaReadContext::GetStandaloneEnablerLocater()       { return m_standaloneEnablerLocater;  }
-bool                        ECSchemaReadContext::GetHideSchemasFromLeakDetection()   { return m_hideSchemasFromLeakDetection;  }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012

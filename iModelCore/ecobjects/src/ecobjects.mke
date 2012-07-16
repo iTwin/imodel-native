@@ -9,7 +9,7 @@ PolicyFile      = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
 baseDir         = $(_MakeFilePath)
 SolutionPolicyMki=$(baseDir)ecobjects.mki
 
-programName = ECObjects
+appName = ECObjects
 
 %include    mdl.mki
 
@@ -144,7 +144,7 @@ cppObjects +$(o)FileUtilities$(oext)
 #----------------------------------------------------------------------
 DLM_NO_DLS                  = 1
 DLM_NO_DEF                  = 1
-DLM_NAME                    = ECObjects
+DLM_NAME                    = $(appName)
 DLM_DEST                    = $(o)
 DLM_OBJECT_DEST             = $(o)
 DLM_OBJECT_FILES            = $(cppObjects)
@@ -167,5 +167,5 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 #----------------------------------------------------------------------
 #   NEEDSWORK : Temporary settings
 #----------------------------------------------------------------------
-%include dlmlink.mki
+%include $(sharedMki)linkLibrary.mki
 

@@ -13,8 +13,6 @@ BEGIN_BENTLEY_EC_NAMESPACE
 
 struct CustomAttributeTest : ECTestFixture
     {
-    virtual bool _WantSchemaLeakDetection () override { return true; }
-    virtual bool _WantInstanceLeakDetection () override { return true; }
     };
 
 ECSchemaPtr   CreateCustomAttributeTestSchema()

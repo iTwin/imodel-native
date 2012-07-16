@@ -16,6 +16,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
   
 struct SupplementalSchemaMetaData;  
 typedef RefCountedPtr<SupplementalSchemaMetaData> SupplementalSchemaMetaDataPtr;
+typedef bmap<WString, WString> SchemaNamePurposeMap;
 
 //=======================================================================================
 //! @ingroup ECObjectsGroup
@@ -233,27 +234,102 @@ public:
 //=======================================================================================
 struct SupplementedSchemaBuilder
 {
-private:
-    WString m_primarySchemaName;
-
-    SupplementedSchemaStatus OrderSupplementalSchemas( ECSchemaR primarySchema, const bvector<ECSchemaR>& supplementalSchemaList, bmap<UInt32, ECSchemaP> schemasByPrecedence, bvector<ECSchemaP> localizationSchemas );
-
 public:
-    //! Gets the primary schema name
-    ECOBJECTS_EXPORT WStringCR GetPrimarySchemaName() const;
-
     //! An enumeration used to pass precedence information around.  It provides enough information
     //! to merge the supplemental schemas into the primary schema so long as the supplemental schemas
     //! are properly ordered by precedence.
     enum SchemaPrecedence
         {
         //! The supplemental schema has lower precedence than the consolidated schema
-        Lower,  
+        SCHEMA_PRECEDENCE_Lower,  
         //! The supplemental schema has the same precedence as the consolidated schema. This is a special case where two schemas have the same precedence value.
-        Equal,  
+        SCHEMA_PRECEDENCE_Equal,  
         //! The supplemental schema has greater precedence than the consolidated schema.
-        Greater 
+        SCHEMA_PRECEDENCE_Greater 
         };
+
+private:
+    WString m_primarySchemaName;
+    ECSchemaP m_schemaToSupplement;
+    SchemaNamePurposeMap m_supplementalSchemaNamesAndPurposes;
+    ECSchemaCachePtr m_schemaCache;
+
+    static const int PRECEDENCE_THRESHOLD = 199;
+
+    SupplementedSchemaStatus OrderSupplementalSchemas(bmap<UInt32, ECSchemaP>& schemasByPrecedence, ECSchemaR primarySchema, const bvector<ECSchemaP>& supplementalSchemaList, bvector<ECSchemaP> localizationSchemas );
+
+    //! Merges two schemas of the same precedence into one schema.
+    //! @remarks Used internally if two schemas are input that have the same precedence
+    //! @param[out] mergedSchema    The resulting merged schema between the two input schemas
+    //! @param[in]  schema1 A schema with equal precedence to the input schema2.  If one of the schemas may have already been copied,
+    //! it must be passed in as schema1
+    //! @param[in]  schema2 A schema with equal precedence to the input schema1
+    SupplementedSchemaStatus CreateMergedSchemaFromSchemasWithEqualPrecedence(ECSchemaP schema1, ECSchemaP schema2);
+
+    SupplementedSchemaStatus MergeClassesWithEqualPrecedence(ECSchemaP mergedSchema, ECClassP supplementalClass, WStringCR supplementalSchemaFullName, WStringCR mergedSchemaFullName);
+
+    //! Takes a map of supplemental schemas sorted by precedence and merges them one by one to create the consolidated schema
+    //! @param[in,out]  primarySchema   The schema to merge the supplemental schemas into
+    //! @param[in]      schemasByPrecedence A map of supplemental schemas sorted by precedence
+    SupplementedSchemaStatus MergeSchemasIntoSupplementedSchema (ECSchemaR primarySchema, bmap<UInt32, ECSchemaP> schemasByPrecedence);
+    
+    //! Merges a supplemental schema into the consolidated schema
+    //! @param[in,out]  primarySchema   The consolidated schema that will get supplemented
+    //! @param[in]      supplemental    The supplemental schema being merged
+    //! @param[in]      precedence      The SchemaPrecedence relative to the consolidated schema.  Because the schemas are passed in the correct order, the actual value of precedence is no longer needed.
+    SupplementedSchemaStatus MergeIntoSupplementedSchema(ECSchemaR primarySchema, ECSchemaP supplementalSchema, SchemaPrecedence precedence);
+
+    //! Takes a list of the custom attributes that need to be consolidated to a specific IECCustomAttributeContainer,
+    //! determines if each custom attribute has a class specific delegate to merge it.  Then it calls either the standard or specific delegate
+    //! @param[in,out]  consolidatedCustomAttributeContainer    The ECSchema, ECClass, or ECProperty that holds the consolidated custom attributes
+    //! @param[in]      supplementalCustomAttributes            The custom attributes from the supplemental schema currently being merged
+    //! @param[in]      precedence                              Determines if the precedence is greater, lower, or equal to the consolidated schema
+    //! @param[in]      supplementalSchemaFullName              The name of the schema the supplemental custom attributes come from.  This parameter should be null
+    //!                                                         unless this method is being called in the context of an UpdateSchema call
+    //! @param[in]      consolidatedSchemaFullName              The name of the schema that the consolidated custom attributes come from.  This parameter should
+    //!                                                         be null unless this method is being called in the context of merging schemas of equal precedence during an UpdateSchema call
+    SupplementedSchemaStatus MergeCustomAttributeClasses(IECCustomAttributeContainerR consolidatedCustomAttributeContainer, ECCustomAttributeInstanceIterable supplementalCustomAttributes, SchemaPrecedence precedence, WStringCP supplementalSchemaFullName, WStringCP consolidatedSchemaFullName);
+
+    //! Merges the source and target constraints of an ECRelationshipClass
+    //! @param[in,out]  consolidatedECClass The consolidated class we are going to merge the custom attributes into
+    //! @param[in]      supplementalECClass The supplemental class we are going to get the custom attributes from
+    //! @param[in]      precedence          The precedence relative to the consolidated schema.h  Because the schemas are passed in the correct order, the actual value of precedence is no longer needed
+    SupplementedSchemaStatus MergeRelationshipClassConstraints(ECClassP consolidatedECClass, ECRelationshipClassP supplementalECRelationshipClass, SchemaPrecedence precedence);
+
+    //! Merges the custom attributes for each property in a class
+    //! @param[in,out]  consolidatedECClass The consolidated class we are going to merge the custom attributes into
+    //! @param[in]      supplementalECClass The supplemental class we are going to get the custom attributes from
+    //! @param[in]      precedence          The precedence relative to the consolidated schema.h  Because the schemas are passed in the correct order, the actual value of precedence is no longer needed
+    SupplementedSchemaStatus MergePropertyCustomAttributes(ECClassP consolidatedECClass, ECClassP supplementalECClass, SchemaPrecedence precedence);
+
+    SupplementedSchemaStatus SupplementClass(ECSchemaR primarySchema, ECSchemaP supplementalSchema, ECClassP supplementalECClass, SchemaPrecedence precedence, WStringCP supplementalSchemaFullName);
+
+    //! The default merging "delegate"
+    //! @param[in,out] consolidatedCustomAttributeContainer The ECSchema, ECClass, or ECProperty that holds the consolidation custom attributes
+    //! @param[in]  consolidatedCustomAttribute The custom attribute from the consolidated schema
+    //! @param[in]  supplementalCustomAttribute The custom attribute from the supplemental schema
+    //! @param[in]  precedence  Determines if the precedence is greater, lower, or equal to the consolidated schema
+    SupplementedSchemaStatus MergeStandardCustomAttribute(IECCustomAttributeContainerR consolidatedCustomAttributeContainer, IECInstancePtr supplementalCustomAttribute, IECInstancePtr consolidatedCustomAttribute, SchemaPrecedence precedence);
+
+    //! The merging "delegate" for merging the UnitSpecification custom attribute
+    //! @param[in,out] consolidatedCustomAttributeContainer The ECSchema, ECClass, or ECProperty that holds the consolidation custom attributes
+    //! @param[in]  consolidatedCustomAttribute The custom attribute from the consolidated schema
+    //! @param[in]  supplementalCustomAttribute The custom attribute from the supplemental schema
+    //! @param[in]  precedence  Determines if the precedence is greater, lower, or equal to the consolidated schema
+    SupplementedSchemaStatus MergeUnitSpecificationCustomAttribute(IECCustomAttributeContainerR consolidatedCustomAttributeContainer, IECInstancePtr supplementalCustomAttribute, IECInstancePtr consolidatedCustomAttribute, SchemaPrecedence precedence);
+
+    //! The merging "delegate" for merging the UnitSpecifications custom attribute
+    //! @param[in,out] consolidatedCustomAttributeContainer The ECSchema, ECClass, or ECProperty that holds the consolidation custom attributes
+    //! @param[in]  consolidatedCustomAttribute The custom attribute from the consolidated schema
+    //! @param[in]  supplementalCustomAttribute The custom attribute from the supplemental schema
+    //! @param[in]  precedence  Determines if the precedence is greater, lower, or equal to the consolidated schema
+    SupplementedSchemaStatus MergeUnitSpecificationsCustomAttribute(IECCustomAttributeContainerR consolidatedCustomAttributeContainer, IECInstancePtr supplementalCustomAttribute, IECInstancePtr consolidatedCustomAttribute, SchemaPrecedence precedence);
+
+public:
+    //! Gets the primary schema name
+    ECOBJECTS_EXPORT WStringCR GetPrimarySchemaName() const;
+
+    SupplementedSchemaBuilder() { m_schemaCache = ECSchemaCache::Create(); }
 
     //! Calling this method supplements the custom attributes of the primarySchema and all sub-containers, and applies the
     //! supplemented custom attributes back to the primarySchema
@@ -263,9 +339,59 @@ public:
     //! @param[in]  supplementalSchemaList  A list of schemas that contain a skeleton structure containing only the classes
     //! and properties needed to hold the supplementary custom attributes
     //! @returns A status code indicating whether the primarySchema was successfully supplemented
-    ECOBJECTS_EXPORT SupplementedSchemaStatus UpdateSchema(ECSchemaR primarySchema, const bvector<ECSchemaR>& supplementalSchemaList); 
+    ECOBJECTS_EXPORT SupplementedSchemaStatus UpdateSchema(ECSchemaR primarySchema, const bvector<ECSchemaP>& supplementalSchemaList); 
     }; // SupplementalSchemaBuilder
 
+//=======================================================================================
+//! @ingroup ECObjectsGroup
+//! Container for information about supplemental schemas
+//! @remarks SupplementalSchemaInfo contains the following information:
+//! @li Primary schema fullname
+//! @li The name of each supplemental schema that was used to supplement the primary schema
+//! @li the purpose of each of the supplemental schemas
+// @bsistruct                                    Carole.MacDonald                05/2012
+//=======================================================================================
+struct SupplementalSchemaInfo : RefCountedBase
+    {
+private:
+    WString     m_primarySchemaFullName;
+    WString     m_supplementedKey;
+    SchemaNamePurposeMap  m_supplementalSchemaNamesAndPurpose;
+
+public:
+    //! Constructs an instance of the SupplementalSchemaInfo class
+    //! @param[in]  primarySchemaFullName   The full name of the primary schema this SupplementalSchemaInfo instance relates to
+    //! @param[in]  schemaFullNameToPurposeMapping  The bmap of schema full names and purposes used to supplement the primary schema.h  Schema Fullname is the key, Purpose is the value
+    ECOBJECTS_EXPORT SupplementalSchemaInfo(WStringCR primarySchemaFullName, SchemaNamePurposeMap& schemaFullNameToPurposeMapping);
+    ECOBJECTS_EXPORT static SupplementalSchemaInfoPtr Create(WStringCR primarySchemaFullName, SchemaNamePurposeMap& schemaFullNameToPurposeMapping);
+
+    //! Returns the full name of the primary schema this SupplementalSchemaInfo instance relates to
+    ECOBJECTS_EXPORT WStringCR GetPrimarySchemaFullName() const { return m_primarySchemaFullName; };
+
+    //! Generates a list of supplemental schema full names
+    //! @param[out] supplementalSchemaNames List of supplemental schema full names
+    //! @returns ECOBJECTS_STATUS_SchemaNotSupplemented if the schema is not supplemented, otherwise ECOBJECTS_STATUS_Success
+    ECOBJECTS_EXPORT ECObjectsStatus GetSupplementalSchemaNames(bvector<WString>& supplementalSchemaNames) const;
+
+    //! Returns the purpose of the supplemental schema with the given full name
+    //! @param[in]  fullSchemaName  The full name of the schema whose purpose you want to know.
+    //! @returns    NULL if there is no schema with that name, otherwise the purpose of the requested supplemental schema
+    ECOBJECTS_EXPORT WStringCP GetPurposeOfSupplementalSchema(WStringCR fullSchemaName) const;
+
+    //! Generates a list of supplemental schema full names that have the input purpose
+    //! @param[out] supplementalSchemaNames A list of schema full names that have the input purpose
+    //! @param[in]  purpose             Schemas with this purpose will be returned
+    //! @returns ECOBJECTS_STATUS_SchemaNotSupplemented if the schema is not supplemented, otherwise ECOBJECTS_STATUS_Success (even if no matching schemas are found)
+    ECOBJECTS_EXPORT ECObjectsStatus GetSupplementalSchemasWithPurpose(bvector<WString>& supplementalSchemaNames, WStringCR purpose) const;
+
+    //! Returns true if the second schema has the same supplemental schemas as the current schema for the input purpose
+    //! @remarks also returns true if neither schema is supplemented
+    //! @param[in]  secondSchema    The schema that this schema will be compared to
+    //! @param[in]  purpose         Schemas with this purpose will be compared
+    //! @returns    True    If the input schema has the same supplemental schemas as the current schema for the given purpose, or if neither schema is supplemented.
+    ECOBJECTS_EXPORT bool HasSameSupplementalSchemasForPurpose(ECSchemaCR secondSchema, WStringCR purpose) const;
+
+    };
 END_BENTLEY_EC_NAMESPACE
 
 //__PUBLISH_SECTION_END__
