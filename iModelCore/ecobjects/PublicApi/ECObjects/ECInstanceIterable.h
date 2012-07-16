@@ -29,14 +29,17 @@ BEGIN_BENTLEY_EC_NAMESPACE
 template <typename CollectionType, class UnaryFunction>
 struct CollectionTransformIteratble
     {
-    CollectionType const& m_collection;
+    private:
+    CollectionType const* m_collection;
+    
+    public:
     CollectionTransformIteratble (CollectionType const& collection)
-        :m_collection (collection)
+        :m_collection (&collection)
         {}
 
     typedef boost::transform_iterator<UnaryFunction, typename CollectionType::const_iterator> const_iterator;
-    const_iterator begin () const {return const_iterator (m_collection.begin(), UnaryFunction());}
-    const_iterator end () const {return const_iterator (m_collection.end(), UnaryFunction());}
+    const_iterator begin () const {return const_iterator (m_collection->begin(), UnaryFunction());}
+    const_iterator end () const {return const_iterator (m_collection->end(), UnaryFunction());}
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -50,31 +53,6 @@ struct RefCountedPtrToValueTransform: public std::unary_function<RefCountedPtr<T
         return ptr.GetCR();
         }
     };
-
-/*---------------------------------------------------------------------------------**//**
-//! TODO: test whether we need this adapter or whether the compiler will allow pass through
-* @bsimethod                                    Abeesh.Basheer                  06/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename DerivedType, typename BaseType>
-struct DerviedToBaseTransform :public std::unary_function<DerivedType, BaseType>
-    {
-    BaseType* operator () (DerivedType* ptr) const
-        {
-        return static_cast<BaseType*> (ptr);
-        }
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  06/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename CollectionType, typename BaseType>
-struct BaseToDerivedCollectionTransformIteratble : public CollectionTransformIteratble<CollectionType, DerviedToBaseTransform <typename CollectionType::const_iterator::value_type, BaseType> >
-    {
-    BaseToDerivedCollectionTransformIteratble (CollectionType const& collection)
-        :CollectionTransformIteratble (collection)
-        {}
-    };
-
 
 /*__PUBLISH_SECTION_START__*/
 
@@ -223,13 +201,20 @@ struct IECInstanceCollectionAdapterImpl : public EC::InstanceCollectionAdapterIm
 template <typename T_Instance>
 struct ECInstancePVector : public EC::CollectionTransformIteratble< bvector<RefCountedPtr<T_Instance> >, EC::RefCountedPtrToValueTransform<T_Instance>>
     {
+    bvector<RefCountedPtr<T_Instance> > m_vector;
+    public:
     ECInstancePVector (bvector<RefCountedPtr<T_Instance> >const& collection)
-        :CollectionTransformIteratble (collection)
+        :m_vector(collection), CollectionTransformIteratble (m_vector)
         {}
     };
 
 /*__PUBLISH_SECTION_START__*/
 /*---------------------------------------------------------------------------------**//**
+typical usage 
+for (ECInstanceIterable::const_iterator iter = collection.begin(); iter != collection.end(); ++iter)
+    {
+    IECInstanceP instance = *iter;
+    }
 * @bsimethod                                    Abeesh.Basheer                  06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ECInstanceIterable
