@@ -83,7 +83,9 @@ struct  IAUIDataContext // Query
         Instance,
         ECQuery,
         Custom,
-        InstanceIterable,
+        ECInstanceCollection,
+        //TODO Move this enum to a string for repository dependant values
+        DgnECInstanceCollection
         };
     
     //! Get context type which can be used to call the appropriate Get function
@@ -110,7 +112,7 @@ struct ECInstanceIterableDataContext: public IAUIDataContext
         ECInstanceIterableDataContext (ECInstanceIterable const& data)
             :m_data(data)
             {}
-        virtual ContextType             GetContextType() const {return InstanceIterable;}
+        virtual ContextType             GetContextType() const {return ECInstanceCollection;}
         virtual ECInstanceIterableCP    GetInstanceIterable () const {return &m_data;}
     };
 
