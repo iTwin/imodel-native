@@ -213,13 +213,6 @@ UInt32          PropertyLayout::GetSizeInFixedSection () const
     return 0;
     }    
 
-#define DEBUG_CLASSLAYOUT_LEAKS
-#ifdef DEBUG_CLASSLAYOUT_LEAKS
-static LeakDetector<ClassLayout> g_classLayoutLeakDetector (L"ClassLayout", L"ClassLayouts", true);
-#else
-static LeakDetector<ClassLayout> g_classLayoutLeakDetector (L"ClassLayout", L"ClassLayouts", false);
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * stolen from Dan East code mdlDialog_getHashCodeFromToolPath
 * @bsimethod                                    Bill.Steinbock                  01/2012
@@ -288,9 +281,8 @@ UInt32          ClassLayout::GetChecksum () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayout::ClassLayout(SchemaIndex schemaIndex, bool hideFromLeakDetection)
+ClassLayout::ClassLayout(SchemaIndex schemaIndex)
     :
-    m_hideFromLeakDetection(hideFromLeakDetection),
     m_schemaIndex (schemaIndex),
     m_classIndex(0),
     m_sizeOfFixedSection(0), 
@@ -298,8 +290,6 @@ ClassLayout::ClassLayout(SchemaIndex schemaIndex, bool hideFromLeakDetection)
     {
     m_uniqueId = randomValue();
     m_checkSum = 0;
-    if ( ! m_hideFromLeakDetection)
-        g_classLayoutLeakDetector.ObjectCreated(*this);
     };
     
 /*---------------------------------------------------------------------------------**//**
@@ -310,14 +300,7 @@ ClassLayout::~ClassLayout()
     FOR_EACH (PropertyLayoutP layout, m_propertyLayouts)
         delete layout;
 
-    if ( ! m_hideFromLeakDetection)
-        g_classLayoutLeakDetector.ObjectDestroyed(*this);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-ILeakDetector&  ClassLayout::Debug_GetLeakDetector() { return g_classLayoutLeakDetector; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    11/10
@@ -851,23 +834,23 @@ ClassLayoutP    ClassLayout::Factory::DoBuildClassLayout ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayout::Factory::Factory (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex, bool hideFromLeakDetection)
+ClassLayout::Factory::Factory (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex)
     : 
     m_ecClass (ecClass),
     m_state   (AcceptingFixedSizeProperties),
     m_offset  (sizeof(InstanceHeader) + sizeof(NullflagsBitmask)),
     m_nullflagsOffset (sizeof(InstanceHeader)),
     m_nonStructPropertyCount (0),
-    m_underConstruction (*ClassLayout::CreateEmpty (m_ecClass.GetName().c_str(), classIndex, schemaIndex, hideFromLeakDetection))
+    m_underConstruction (*ClassLayout::CreateEmpty (m_ecClass.GetName().c_str(), classIndex, schemaIndex))
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutP    ClassLayout::BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex, bool hideFromLeakDetection)
+ClassLayoutP    ClassLayout::BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex)
     {
-    Factory     factory (ecClass, classIndex, schemaIndex, hideFromLeakDetection);
+    Factory     factory (ecClass, classIndex, schemaIndex);
 
     return factory.DoBuildClassLayout ();
     }
@@ -875,9 +858,9 @@ ClassLayoutP    ClassLayout::BuildFromClass (ECClassCR ecClass, ClassIndex class
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutP    ClassLayout::CreateEmpty (WCharCP className, ClassIndex classIndex, SchemaIndex schemaIndex, bool hideFromLeakDetection)
+ClassLayoutP    ClassLayout::CreateEmpty (WCharCP className, ClassIndex classIndex, SchemaIndex schemaIndex)
     {
-    ClassLayoutP classLayout = new ClassLayout(schemaIndex, hideFromLeakDetection);
+    ClassLayoutP classLayout = new ClassLayout(schemaIndex);
 
     classLayout->SetClass (className, classIndex);
 

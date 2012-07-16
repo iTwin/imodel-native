@@ -141,7 +141,6 @@ private:
     LogicalStructureMap     m_logicalStructureMap;
     
     // These members are transient
-    bool                              m_hideFromLeakDetection;
     SchemaIndex                       m_schemaIndex;
     UInt32                            m_sizeOfFixedSection;
     bool                              m_isRelationshipClass;
@@ -179,11 +178,11 @@ private:
         void        AddVariableSizeArrayPropertyWithFixedCount (WCharCP accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount, bool isReadOnly);        
         void        AddProperties (ECClassCR ecClass, WCharCP nameRoot, bool addFixedSize);
 
-        Factory (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex, bool hideFromLeakDetection);
+        Factory (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex);
         ClassLayoutP DoBuildClassLayout ();
     };
 
-    ClassLayout(SchemaIndex schemaIndex, bool hideFromLeakDetection);
+    ClassLayout(SchemaIndex schemaIndex);
 
     WString                GetShortDescription() const;
     WString                LogicalStructureToString (UInt32 parentStructIndex = 0, UInt32 indentLevel = 0) const;
@@ -203,7 +202,6 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus         GetPropertyIndices (bvector<UInt32>& properties, UInt32 parentIndex) const;
     ECOBJECTS_EXPORT bool                    HasChildProperties (UInt32 parentIndex) const;
 
-    ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();
     ECOBJECTS_EXPORT ~ClassLayout();
     ECOBJECTS_EXPORT void            AddPropertyDirect (WCharCP accessString, UInt32 parentStructIndex, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask);
     ECOBJECTS_EXPORT ECObjectsStatus FinishLayout ();
@@ -213,8 +211,8 @@ private:
     ClassLayout (){}
 
 public:
-    ECOBJECTS_EXPORT static ClassLayoutP BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex, bool hideFromLeakDetection=false);
-    ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (WCharCP  className, ClassIndex classIndex, SchemaIndex schemaIndex, bool hideFromLeakDetection=false);
+    ECOBJECTS_EXPORT static ClassLayoutP BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex);
+    ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (WCharCP  className, ClassIndex classIndex, SchemaIndex schemaIndex);
 
     ECOBJECTS_EXPORT WString const & GetECClassName() const;
     // These members are only meaningful in the context of a consumer like DgnHandlers.dll that actually handles persistence of ClassLayouts

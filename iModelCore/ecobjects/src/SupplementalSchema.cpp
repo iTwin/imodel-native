@@ -57,7 +57,6 @@ StandardCustomAttributesSchemaHolder::StandardCustomAttributesSchemaHolder()
     m_schemaOwner = ECSchemaCache::Create();
 
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext(*m_schemaOwner);
-    schemaContext->HideSchemasFromLeakDetection();
     m_schema = ECSchema::LocateSchema(L"Bentley_Standard_CustomAttributes", s_bscaVersionMajor, s_bscaVersionMinor, *schemaContext);
     m_supplementalSchemaMetaDataClass = m_schema->GetClassP(s_customAttributeAccessor);
 

@@ -2,7 +2,7 @@
 |
 |     $Source: test/Performance/TestFixture.cpp $
 |
-|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 | Based on http://cplus.about.com/od/howtodothingsi2/a/timing.htm
 |
 +--------------------------------------------------------------------------------------*/
@@ -22,9 +22,6 @@ BEGIN_BENTLEY_EC_NAMESPACE
   
 #define MAX_INTERNAL_INSTANCES  0
 #define MAX_INTERNAL_SCHEMAS    0
-
-#define DEBUG_ECSCHEMA_LEAKS
-#define DEBUG_IECINSTANCE_LEAKS
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/03
@@ -105,7 +102,6 @@ ECTestFixture::ECTestFixture()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECTestFixture::SetUp ()
     {
-    IECInstance::Debug_ResetAllocationStats();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -113,67 +109,6 @@ void            ECTestFixture::SetUp ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECTestFixture::TearDown ()
     {
-#if defined (DEBUG_ECSCHEMA_LEAKS)
-    BackDoor::ECSchema::Debug_GetLeakDetector().ReportStats(L"PostTest");
-#endif
-
-#if defined (DEBUG_IECINSTANCE_LEAKS)
-    IECInstance::Debug_DumpAllocationStats(L"PostTest");
-#endif
-
-    if (_WantSchemaLeakDetection())
-        TestForECSchemaLeaks(); 
-
-    if (_WantInstanceLeakDetection())
-        TestForIECInstanceLeaks(); 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    06/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void    testForLeaks (ILeakDetector& detector, WCharCP leakName)
-    {
-    Int32           numLeaks = detector.CheckForLeaks();
-
-    EXPECT_TRUE (0 == numLeaks)  << "Found " << numLeaks << " leaks of " << leakName;
-
-    if (0 != numLeaks)
-        detector.ResetStats();  // So that this leak doesn't make the next test fail.
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    06/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void    ECTestFixture::TestForECSchemaLeaks ()
-    {
-    testForLeaks (BackDoor::ECSchema::Debug_GetLeakDetector(), L"ECSchemaLeakDetector");
-    testForLeaks (BackDoor::ECClass::Debug_GetLeakDetector(), L"ECClassLeakDetector");
-    testForLeaks (BackDoor::ECProperty::Debug_GetLeakDetector(), L"ECPropertyLeakDetector");
-
-    testForLeaks (BackDoor::ClassLayout::Debug_GetLeakDetector(), L"ClassLayoutLeakDetector");
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void    ECTestFixture::TestForIECInstanceLeaks ()
-    {
-    int numLiveInstances = 0;
-
-    IECInstance::Debug_GetAllocationStats (&numLiveInstances, NULL, NULL);
-    
-    if (numLiveInstances > MAX_INTERNAL_INSTANCES)
-        {
-        char message[1024];
-        sprintf (message, "TestForIECInstanceLeaks found that there are %d IECInstances still alive. Anything more than %d is flagged as an error!\n", 
-            numLiveInstances, MAX_INTERNAL_INSTANCES);
-
-        bvector<WString> classNamesToExclude;
-        IECInstance::Debug_ReportLeaks (classNamesToExclude);
-
-        EXPECT_TRUE (numLiveInstances <= MAX_INTERNAL_INSTANCES) << message;
-        IECInstance::Debug_ResetAllocationStats ();
-        }
     }
 
 WString ECTestFixture::s_dllPath = L"";

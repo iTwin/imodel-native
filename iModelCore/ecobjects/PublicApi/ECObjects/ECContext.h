@@ -67,11 +67,9 @@ private:
     typedef bset<WString, WStringComparer>                  SearchPathList;
     SearchPathList                                          m_searchPaths;
     bvector<SearchPathSchemaFileLocaterPtr>                 m_ownedLocators;
-    bool                            m_hideSchemasFromLeakDetection;
     bool                            m_acceptLegacyImperfectLatestCompatibleMatch;
 
     
-    bool                        GetHideSchemasFromLeakDetection();
     SchemaLocatorSet::iterator  GetHighestLocatorInRange (UInt32& prioirty);
     bool                        GetStandardPaths (bvector<WString>& standardPaths);
 
@@ -91,7 +89,6 @@ public:
     ECOBJECTS_EXPORT ECSchemaCacheR GetKnownSchemas ();
 
     ECSchemaPtr         LocateSchema (SchemaKeyR key, bset<SchemaMatchType> const& matches);
-    ECOBJECTS_EXPORT void HideSchemasFromLeakDetection();
 
     ECOBJECTS_EXPORT void AddExternalSchemaLocaters (bvector<EC::IECSchemaLocaterP> const& schemaLocators);
 /*__PUBLISH_SECTION_START__*/
