@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
-
+#include <ECObjects\ECObjectsAPI.h>
 BEGIN_BENTLEY_EC_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -79,9 +79,11 @@ struct  IAUIDataContext // Query
     //!Describes the different type of context available to the user
     enum ContextType
         {
+        InstanceID,
         Instance,
         ECQuery,
         Custom,
+        InstanceIterable,
         };
     
     //! Get context type which can be used to call the appropriate Get function
@@ -91,9 +93,25 @@ struct  IAUIDataContext // Query
     virtual IECInstanceP            GetInstance () const {return NULL;}
     virtual DgnPlatform::ECQueryCP  GetQuery () const {return NULL;}
     virtual void*                   GetCustomData() const {return NULL;}
-
+    virtual ECInstanceIterableCP    GetInstanceIterable () const {return NULL;}
     //!Virtual destructor
     virtual ~IAUIDataContext () {}
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ECInstanceIterableDataContext: public IAUIDataContext
+    {
+    private:
+    ECInstanceIterable m_data;
+
+    public:
+        ECInstanceIterableDataContext (ECInstanceIterable const& data)
+            :m_data(data)
+            {}
+        virtual ContextType             GetContextType() const {return InstanceIterable;}
+        virtual ECInstanceIterableCP    GetInstanceIterable () const {return &m_data;}
     };
 
 /*---------------------------------------------------------------------------------**//**
