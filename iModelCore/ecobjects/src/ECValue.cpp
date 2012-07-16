@@ -1448,6 +1448,38 @@ WString                                        ECValueAccessor::GetPropertyName(
     return name;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/12
++---------------+---------------+---------------+---------------+---------------+------*/
+static ECPropertyCP propertyFromAccessString (ECClassCR ecClass, WCharCP accessString)
+    {
+    WCharCP dot = wcschr (accessString, '.');
+    if (NULL == dot)
+        return ecClass.GetPropertyP (accessString);
+    else
+        {
+        WString structName (accessString, dot);
+        ECPropertyCP prop = ecClass.GetPropertyP (structName.c_str());
+        if (NULL == prop)
+            { BeAssert (false); return NULL; }
+        StructECPropertyCP structProp = prop->GetAsStructProperty();
+        if (NULL == structProp)
+            { BeAssert (false); return NULL; }
+        
+        return propertyFromAccessString (structProp->GetType(), dot+1);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyCP ECValueAccessor::GetECProperty() const
+    {
+    if (NULL != DeepestLocationCR().enabler)
+        return propertyFromAccessString (DeepestLocationCR().enabler->GetClass(), GetAccessString (GetDepth()-1));
+    else
+        return NULL;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
@@ -1744,7 +1776,7 @@ ECObjectsStatus ECValueAccessor::GetECValue (ECValue& v, IECInstanceCR instance)
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyValue::ECPropertyValue () {}
-ECPropertyValue::ECPropertyValue (IECInstanceCR instance) : m_instance (const_cast <IECInstanceP> (&instance)) {}
+ECPropertyValue::ECPropertyValue (IECInstanceCR instance) : m_instance (&instance) {}
 ECValueCR           ECPropertyValue::GetValue ()            const    { return m_ecValue; }
 IECInstanceCR       ECPropertyValue::GetInstance ()         const    { return *m_instance; }
 ECValueAccessorCR   ECPropertyValue::GetValueAccessor ()    const    { return m_accessor; }
@@ -1774,9 +1806,19 @@ ECPropertyValue::ECPropertyValue (ECPropertyValueCR from)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyValue::ECPropertyValue (IECInstanceCR instance, ECValueAccessorCR accessor)
     :
-    m_instance (const_cast <IECInstanceP> (&instance)), m_accessor (accessor)
+    m_instance (&instance), m_accessor (accessor)
     {
     EvaluateValue();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyValue::ECPropertyValue (IECInstanceCR instance, ECValueAccessorCR accessor, ECValueCR v)
+    :
+    m_instance (&instance), m_accessor (accessor), m_ecValue (v)
+    {
+    //
     }
 
 /*---------------------------------------------------------------------------------**//**
