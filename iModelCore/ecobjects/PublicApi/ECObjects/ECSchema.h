@@ -270,6 +270,18 @@ public:
 
 struct PrimitiveECProperty;
 
+/*=================================================================================**//**
+Base class for an object which adapts the internal value of an ECProperty to a user-friendly string representation.
++===============+===============+===============+===============+===============+======*/
+struct IECTypeAdapter /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
+    {
+/*__PUBLISH_SECTION_END__*/
+    // Note that the 'extended type' system, like other EC concepts such as ECQuery, is currently implemented in DgnPlatform.
+    // Portions of it may need to move down to ECObjects.
+    // For now, this stub class is provided in ECObjects only for type-safety.
+/*__PUBLISH_SECTION_START__*/
+    };
+
 //=======================================================================================
 //! @ingroup ECObjectsGroup
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
@@ -280,13 +292,15 @@ struct ECProperty /*abstract*/ : public IECCustomAttributeContainer
 friend struct ECClass;
 
 private:
-    WString        m_name;        
-    WString        m_displayLabel;
-    WString        m_description;
-    bool            m_readOnly;
-    ECClassCR       m_class;
-    ECPropertyCP    m_baseProperty;    
-    bool            m_forSupplementation;   // If when supplementing the schema, a local property had to be created, then don't serialize this property
+    WString                 m_name;        
+    WString                 m_displayLabel;
+    WString                 m_description;
+    bool                    m_readOnly;
+    ECClassCR               m_class;
+    ECPropertyCP            m_baseProperty;    
+    bool                    m_forSupplementation;   // If when supplementing the schema, a local property had to be created, then don't serialize this property
+    mutable IECTypeAdapter* m_cachedTypeAdapter;
+
     static void     SetErrorHandling (bool doAssert);
 protected:
     WString         m_originalTypeName; //Will be empty unless the typeName was unrecognized. Keep this so that we can re-write the ECSchema without changing the type to string
@@ -313,7 +327,10 @@ protected:
     virtual ECSchemaCP                  _GetContainerSchema() const override;
 
     virtual PrimitiveECProperty*        _GetAsPrimitiveECProperty() {return NULL;}
-    
+public:
+    // The following are used by the 'extended type' system which is currently implemented in DgnPlatform
+    IECTypeAdapter*                     GetCachedTypeAdapter() const { return m_cachedTypeAdapter; }
+    void                                SetCachedTypeAdapter (IECTypeAdapter* adapter) const { m_cachedTypeAdapter = adapter; }
 /*__PUBLISH_SECTION_START__*/
 public:    
     //! Returns the name of the ECClass that this property is contained within
@@ -447,10 +464,11 @@ private:
         };
 
     ArrayKind           m_arrayKind;
-      
+    mutable void*       m_cachedMemberTypeAdapter;
+
     ArrayECProperty (ECClassCR ecClass)
-        : m_primitiveType(PRIMITIVETYPE_String), m_arrayKind (ARRAYKIND_Primitive),
-          m_minOccurs (0), m_maxOccurs (UINT_MAX), ECProperty(ecClass) {};
+        : ECProperty(ecClass), m_primitiveType(PRIMITIVETYPE_String), m_arrayKind (ARRAYKIND_Primitive),
+          m_minOccurs (0), m_maxOccurs (UINT_MAX), m_cachedMemberTypeAdapter (NULL) {};
     ECObjectsStatus                     SetMinOccurs (WStringCR minOccurs);          
     ECObjectsStatus                     SetMaxOccurs (WStringCR maxOccurs);          
 
@@ -461,6 +479,11 @@ protected:
     virtual WString                     _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (WStringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
+
+public:
+    // The following are used by the 'extended type' system which is currently implemented in DgnPlatform
+    void*                               GetCachedMemberTypeAdapter() const  { return m_cachedMemberTypeAdapter; }
+    void                                SetCachedMemberTypeAdapter (void* adapter) const { m_cachedMemberTypeAdapter = adapter; }
 
 /*__PUBLISH_SECTION_START__*/
 public:      
