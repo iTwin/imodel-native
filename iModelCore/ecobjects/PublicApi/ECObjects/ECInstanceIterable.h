@@ -66,7 +66,7 @@ template <typename value_type>
 struct   IInstanceCollectionIteratorAdapter :public Bentley::RefCountedBase, std::iterator<std::forward_iterator_tag, value_type>
     {
     public:
-    typedef typename value_type&  reference;
+    typedef value_type&         reference;
     virtual void                MoveToNext  () = 0;
     virtual bool                IsDifferent (IInstanceCollectionIteratorAdapter const &) const = 0;
     virtual reference           GetCurrent () = 0;
@@ -134,20 +134,20 @@ struct InstanceCollectionAdapterIteratorImpl :public IInstanceCollectionIterator
             while (NULL == *m_adapteriterator);
             }
 
-        virtual reference GetCurrent () override
+        virtual typename IInstanceCollectionIteratorAdapter<value_type>::reference GetCurrent () override
             {
             m_ptr = boost::shared_ptr<value_type>(new value_type(*m_adapteriterator));
             return *m_ptr;
             }
 
-        static InstanceCollectionAdapterIteratorImpl* Create (CollectionType const& collection, bool begin) {
+        static IInstanceCollectionIteratorAdapter<value_type>* Create (CollectionType const& collection, bool begin) {
             return new InstanceCollectionAdapterIteratorImpl(collection, begin);
             }
         
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod                                    Abeesh.Basheer                  03/2011
         +---------------+---------------+---------------+---------------+---------------+------*/
-        virtual bool    IsDifferent (IInstanceCollectionIteratorAdapter const & rhs) const override
+        virtual bool    IsDifferent (IInstanceCollectionIteratorAdapter<value_type> const & rhs) const override
             {
             InstanceCollectionAdapterIteratorImpl const* rhsImpl = static_cast<InstanceCollectionAdapterIteratorImpl const*> (&rhs);
             if (NULL == rhsImpl)//TODO evaluate performance of this cast. Since only public facing collection do this it should be okay
@@ -173,17 +173,17 @@ protected:
         }
 public:
     
-    static InstanceCollectionAdapterImpl* InstanceCollectionAdapterImpl::Create (CollectionType& collection)
+    static InstanceCollectionAdapterImpl* Create (CollectionType& collection)
         {
         return new InstanceCollectionAdapterImpl(collection);
         }
     
-    virtual const_iterator begin() const override
+    virtual typename IInstanceCollectionAdapter<value_type>::const_iterator begin() const override
         {
         return const_iterator (*InstanceCollectionAdapterIteratorImpl <CollectionType, value_type>::Create(*m_adaptedcollection, true));
         }
 
-    virtual const_iterator end() const override
+    virtual typename IInstanceCollectionAdapter<value_type>::const_iterator end() const override
         {
         return const_iterator (*InstanceCollectionAdapterIteratorImpl <CollectionType, value_type>::Create(*m_adaptedcollection, false));
         }
@@ -199,12 +199,12 @@ struct IECInstanceCollectionAdapterImpl : public EC::InstanceCollectionAdapterIm
     };
 
 template <typename T_Instance>
-struct ECInstancePVector : public EC::CollectionTransformIteratble< bvector<RefCountedPtr<T_Instance> >, EC::RefCountedPtrToValueTransform<T_Instance>>
+struct ECInstancePVector : public EC::CollectionTransformIteratble< bvector<RefCountedPtr<T_Instance> >, EC::RefCountedPtrToValueTransform<T_Instance> >
     {
     bvector<RefCountedPtr<T_Instance> > m_vector;
     public:
     ECInstancePVector (bvector<RefCountedPtr<T_Instance> >const& collection)
-        :m_vector(collection), CollectionTransformIteratble (m_vector)
+        :m_vector(collection), CollectionTransformIteratble< bvector<RefCountedPtr<T_Instance> >, EC::RefCountedPtrToValueTransform<T_Instance> > (m_vector)
         {}
     };
 

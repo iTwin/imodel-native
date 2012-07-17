@@ -56,7 +56,7 @@ struct ECSelectionEvent: public ECEvent
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ECSelectionListener
     {
-    friend ECPresentationManager;
+    friend struct ECPresentationManager;
     protected:
     //! Return NULL to listen to all events
     virtual void const* _GeteventHub () const = 0;

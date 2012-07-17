@@ -1372,7 +1372,7 @@ private:
 /*__PUBLISH_CLASS_VIRTUAL__*/
 /*__PUBLISH_SECTION_END__*/
 friend struct SearchPathSchemaFileLocater;
-friend SupplementedSchemaBuilder;
+friend struct SupplementedSchemaBuilder;
 
 // Schemas are RefCounted but none of the constructs held by schemas (classes, properties, etc.) are.
 // They are freed when the schema is freed.
