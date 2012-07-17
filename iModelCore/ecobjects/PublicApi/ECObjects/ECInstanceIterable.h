@@ -180,12 +180,12 @@ public:
     
     virtual typename IInstanceCollectionAdapter<value_type>::const_iterator begin() const override
         {
-        return const_iterator (*InstanceCollectionAdapterIteratorImpl <CollectionType, value_type>::Create(*m_adaptedcollection, true));
+        return typename IInstanceCollectionAdapter<value_type>::const_iterator (*InstanceCollectionAdapterIteratorImpl <CollectionType, value_type>::Create(*m_adaptedcollection, true));
         }
 
     virtual typename IInstanceCollectionAdapter<value_type>::const_iterator end() const override
         {
-        return const_iterator (*InstanceCollectionAdapterIteratorImpl <CollectionType, value_type>::Create(*m_adaptedcollection, false));
+        return typename IInstanceCollectionAdapter<value_type>::const_iterator (*InstanceCollectionAdapterIteratorImpl <CollectionType, value_type>::Create(*m_adaptedcollection, false));
         }
 
     virtual ~InstanceCollectionAdapterImpl ()
