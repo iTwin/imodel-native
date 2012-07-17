@@ -275,11 +275,58 @@ Base class for an object which adapts the internal value of an ECProperty to a u
 +===============+===============+===============+===============+===============+======*/
 struct IECTypeAdapter /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
     {
+    typedef bvector<WString> StandardValuesCollection;
 /*__PUBLISH_SECTION_END__*/
-    // Note that the 'extended type' system, like other EC concepts such as ECQuery, is currently implemented in DgnPlatform.
-    // Portions of it may need to move down to ECObjects.
-    // For now, this stub class is provided in ECObjects only for type-safety.
+    // Note that the implementation of the extended type system is implemented in DgnPlatform in IDgnECTypeAdapter, which subclasses IECTypeAdapter and makes
+    // use of IDgnECTypeAdapterContext which provides dgn-specific context such as file, model, and element.
+    // We may want to see if it is worthwhile to factor out the non-dgn-specific context and move it down to the ECObjects layer.
+protected:
+    virtual bool                _HasStandardValues() const = 0;
+    virtual bool                _CanConvertToString() const = 0;
+    virtual bool                _CanConvertFromString() const = 0;
+    virtual bool                _IsStruct() const = 0;
+    virtual bool                _IsTreatedAsString() const = 0;
+    virtual EC::IECInstancePtr  _CondenseFormatterForSerialization (EC::IECInstanceCR formatter) const = 0;
+    virtual EC::IECInstancePtr  _PopulateDefaultFormatterProperties (EC::IECInstanceCR formatter) const = 0;
+    virtual EC::IECInstancePtr  _CreateDefaultFormatter (bool includeAllValues) const = 0;
+
 /*__PUBLISH_SECTION_START__*/
+public:
+    //! @return true if it is possible to convert the underlying type to a string
+    ECOBJECTS_EXPORT bool                 CanConvertToString () const;
+
+    //! @return true if it is possible to extract the underlying type from a string
+    ECOBJECTS_EXPORT bool                 CanConvertFromString () const;
+    
+    //! Create an IECInstance representing default formatting options for converting to string.
+    //! @param[in] includeAllValues If false, property values will be left NULL to save space; otherwise they will be initialized with default values
+    //! @return An IECInstance which can be passed to ConvertToString(), or NULL if no special formatting options are supported.
+    ECOBJECTS_EXPORT EC::IECInstancePtr   CreateDefaultFormatter (bool includeAllValues) const;
+
+    //! @return true if this type adapter provides a finite set of permissible values for the property it represents
+    ECOBJECTS_EXPORT bool                 HasStandardValues() const;
+
+    //! @return true if the underlying type is a struct.
+/*__PUBLISH_SECTION_END__*/
+    // Note that type adapters representing structs will not be invoked from managed code, as managed callers cannot always
+    // provide the native struct ECInstance, and doing so would be expensive.
+/*__PUBLISH_SECTION_START__*/
+    ECOBJECTS_EXPORT bool                 IsStruct() const;
+
+    //! Indicates if the value is intended to be interpreted as a string by the user, regardless of the underlying property type.
+    //! For example: a TextStyle property may be stored internally as an integer ID, but presented to the user as a string.
+    //! This method is checked when executing queries that perform string comparisons on property values - if it returns true, the property's string representation will be compared against the query; otherwise the property will be ignored.
+    ECOBJECTS_EXPORT bool                 IsTreatedAsString() const;
+
+    //! Given an instance representing formatting options, returns a copy of the instance optimized for serialization
+    //! @param[in] formatter    The formatter instance to condense
+    //! @return an IECInstance suitable for serialization, or NULL if the input formatter contained only default values in which case serialization is not necessary
+    ECOBJECTS_EXPORT EC::IECInstancePtr   CondenseFormatterForSerialization (EC::IECInstanceCR formatter) const;
+
+    //! Given an instance containing custom formatting options, replace any null properties with their default values
+    //! @param[in] formatter    The formatter instance to populate
+    //! @return an IECInstance in which all null properties have been replaced by their default values
+    ECOBJECTS_EXPORT EC::IECInstancePtr   PopulateDefaultFormatterProperties (EC::IECInstanceCR formatter) const;
     };
 
 //=======================================================================================

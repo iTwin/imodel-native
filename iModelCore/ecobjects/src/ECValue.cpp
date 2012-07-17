@@ -1775,20 +1775,38 @@ ECObjectsStatus ECValueAccessor::GetECValue (ECValue& v, IECInstanceCR instance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyValue::ECPropertyValue () {}
-ECPropertyValue::ECPropertyValue (IECInstanceCR instance) : m_instance (&instance) {}
-ECValueCR           ECPropertyValue::GetValue ()            const    { return m_ecValue; }
+ECPropertyValue::ECPropertyValue () : m_evaluated(false) {}
+ECPropertyValue::ECPropertyValue (IECInstanceCR instance) : m_instance (&instance), m_evaluated(false) {}
+ECValueCR           ECPropertyValue::GetValue ()            const    { EvaluateValue(); return m_ecValue; }
 IECInstanceCR       ECPropertyValue::GetInstance ()         const    { return *m_instance; }
 ECValueAccessorCR   ECPropertyValue::GetValueAccessor ()    const    { return m_accessor; }
 ECValueAccessorR    ECPropertyValue::GetValueAccessorR ()            { return m_accessor; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void                ECPropertyValue::ResetValue()
+    {
+    if (m_evaluated)
+        {
+        m_ecValue.Clear();
+        m_evaluated = false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECPropertyValue::EvaluateValue ()
+ECObjectsStatus ECPropertyValue::EvaluateValue () const
     {
-    m_ecValue.Clear();
-    return m_instance->GetValueUsingAccessor (m_ecValue, m_accessor);
+    if (!m_evaluated)
+        {
+        // m_ecValue.Clear();
+        m_evaluated = true;
+        return NULL != m_instance ? m_instance->GetValueUsingAccessor (m_ecValue, m_accessor) : ECOBJECTS_STATUS_Error;
+        }
+    else
+        return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1799,6 +1817,7 @@ ECPropertyValue::ECPropertyValue (ECPropertyValueCR from)
     m_instance = from.m_instance;
     m_accessor = from.m_accessor;
     m_ecValue.From (from.m_ecValue, false);
+    m_evaluated = from.m_evaluated;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1806,9 +1825,9 @@ ECPropertyValue::ECPropertyValue (ECPropertyValueCR from)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyValue::ECPropertyValue (IECInstanceCR instance, ECValueAccessorCR accessor)
     :
-    m_instance (&instance), m_accessor (accessor)
+    m_instance (&instance), m_accessor (accessor), m_evaluated (false)
     {
-    EvaluateValue();
+    // EvaluateValue(); performance: do this lazily
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1816,7 +1835,7 @@ ECPropertyValue::ECPropertyValue (IECInstanceCR instance, ECValueAccessorCR acce
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyValue::ECPropertyValue (IECInstanceCR instance, ECValueAccessorCR accessor, ECValueCR v)
     :
-    m_instance (&instance), m_accessor (accessor), m_ecValue (v)
+    m_instance (&instance), m_accessor (accessor), m_ecValue (v), m_evaluated (true)
     {
     //
     }
@@ -1826,6 +1845,7 @@ ECPropertyValue::ECPropertyValue (IECInstanceCR instance, ECValueAccessorCR acce
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool                ECPropertyValue::HasChildValues () const
     {
+    EvaluateValue();
     return m_ecValue.IsStruct() || m_ecValue.IsArray();
     }
 
@@ -1834,6 +1854,7 @@ bool                ECPropertyValue::HasChildValues () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValuesCollectionPtr  ECPropertyValue::GetChildValues () const
     {
+    EvaluateValue();
     if (m_ecValue.IsStruct() || m_ecValue.IsArray())
         return new ECValuesCollection (*this);
 
@@ -2037,7 +2058,7 @@ void            ECValuesCollectionIterator::MoveToNext()
             }
         }
 
-    m_propertyValue.EvaluateValue ();
+    m_propertyValue.ResetValue ();
     }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
