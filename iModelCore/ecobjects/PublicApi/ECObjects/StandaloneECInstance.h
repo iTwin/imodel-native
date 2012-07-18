@@ -138,6 +138,8 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT UInt32                   GetPerPropertyFlagsDataLength () const;
     ECOBJECTS_EXPORT ECObjectsStatus          AddNullArrayElements (WCharCP propertyAccessString, UInt32 insertCount);
     ECOBJECTS_EXPORT ECObjectsStatus          CopyInstanceProperties (EC::IECInstanceCR fromNativeInstance);
+    ECOBJECTS_EXPORT ECObjectsStatus          SetIsLoadedBit (UInt32 propertyIndex);
+
 };
 
 /*=================================================================================**//**
