@@ -74,6 +74,9 @@ protected:
     virtual UInt32                  _GetPropertyCount () const = 0;
     virtual ECObjectsStatus         _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const = 0;
 
+    ECOBJECTS_EXPORT virtual ECPropertyCP   _LookupECProperty (UInt32 propertyIndex) const;
+    ECOBJECTS_EXPORT virtual ECPropertyCP   _LookupECProperty (WCharCP accessString) const;
+
     // IStandaloneEnablerLocater
     ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr  _LocateStandaloneEnabler (SchemaKeyCR schemaKey, WCharCP className);
 
@@ -83,6 +86,11 @@ protected:
     virtual bool                    _HasChildProperties (UInt32 parentIndex) const = 0;
 
     ECOBJECTS_EXPORT         bool                       ProcessStructProperty (bset<ECClassCP>& failedClasses, bool& allStructsFailed, ECValueCR propValue, EC::PrimitiveType primitiveType, IPropertyProcessor const& proc, PropertyProcessingOptions opts) const;
+
+public:
+    ECOBJECTS_EXPORT ECPropertyCP               LookupECProperty (UInt32 propertyIndex) const;
+    ECOBJECTS_EXPORT ECPropertyCP               LookupECProperty (WCharCP accessString) const;
+
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Primarily for debugging/logging purposes. Should match your fully-qualified class name

@@ -1449,36 +1449,13 @@ WString                                        ECValueAccessor::GetPropertyName(
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-static ECPropertyCP propertyFromAccessString (ECClassCR ecClass, WCharCP accessString)
-    {
-    WCharCP dot = wcschr (accessString, '.');
-    if (NULL == dot)
-        return ecClass.GetPropertyP (accessString);
-    else
-        {
-        WString structName (accessString, dot);
-        ECPropertyCP prop = ecClass.GetPropertyP (structName.c_str());
-        if (NULL == prop)
-            { BeAssert (false); return NULL; }
-        StructECPropertyCP structProp = prop->GetAsStructProperty();
-        if (NULL == structProp)
-            { BeAssert (false); return NULL; }
-        
-        return propertyFromAccessString (structProp->GetType(), dot+1);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyCP ECValueAccessor::GetECProperty() const
     {
-    if (NULL != DeepestLocationCR().enabler)
-        return propertyFromAccessString (DeepestLocationCR().enabler->GetClass(), GetAccessString (GetDepth()-1));
-    else
-        return NULL;
+    return NULL != DeepestLocationCR().enabler
+        ? DeepestLocationCR().enabler->LookupECProperty (DeepestLocationCR().propertyIndex)
+        : NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
