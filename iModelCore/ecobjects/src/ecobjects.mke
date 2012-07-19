@@ -50,6 +50,7 @@ ECObjectsHeaders =  $(ecobjectsPublicAPISrc)ECObjects.h \
                     $(ecobjectsPublicAPISrc)ECEnabler.h \
                     $(ecobjectsPublicAPISrc)DesignByContract.h \
                     $(ecobjectsPublicAPISrc)MemoryInstanceSupport.h \
+                    $(ecobjectsPublicAPISrc)ECEvent.h \
                     $(baseDir)ecxml.h \
                     $(baseDir)Logger.h \
                     $(baseDir)FileUtilities.h \

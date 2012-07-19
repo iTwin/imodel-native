@@ -9,27 +9,6 @@
 /*__BENTLEY_INTERNAL_ONLY__*/
 
 BEGIN_BENTLEY_EC_NAMESPACE
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  06/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct ECEvent
-    {
-    private:
-        void*   m_eventHub;
-
-    public:
-        ECEvent ()
-            :m_eventHub (NULL)
-            {}
-
-        ECEvent (void* eventHub)
-            :m_eventHub(eventHub)
-            {}
-
-        void*   GeteventHub () const {return m_eventHub;}
-        void    SeteventHub (void* eventHub) {m_eventHub = eventHub;}
-    };
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  06/2012

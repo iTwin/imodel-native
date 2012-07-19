@@ -300,7 +300,7 @@ void            ECPresentationManager::UnRegisterSelectionHook (ECSelectionListe
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECPresentationManager::TriggerSelectionEvent (ECSelectionEventCR selectionEvent)
     {
-    void const* eventHub = selectionEvent.GeteventHub();
+    void const* eventHub = selectionEvent.GetEventHub();
     for (T_SelectionListeners::const_iterator iter = m_selecitonListeners.begin(); iter != m_selecitonListeners.end(); ++iter)
         {
         if (NULL == eventHub || (*iter)->GeteventHub() == eventHub)

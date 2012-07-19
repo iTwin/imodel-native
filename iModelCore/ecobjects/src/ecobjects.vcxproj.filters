@@ -13,6 +13,17 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
+    <Filter Include="ECPresentation">
+      <UniqueIdentifier>{85197e54-3a19-444f-a67a-e3eda9d05e3b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ECPresentation\Header Files">
+      <UniqueIdentifier>{490bb640-0ef2-4600-bc70-9f4b78dfe937}</UniqueIdentifier>
+      <Extensions>*.h</Extensions>
+    </Filter>
+    <Filter Include="ECPresentation\Source Files">
+      <UniqueIdentifier>{3b4f4dab-c793-44bb-aecb-cad8174719c7}</UniqueIdentifier>
+      <Extensions>*.cpp</Extensions>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DesignByContract.cpp">
@@ -69,6 +80,33 @@
     <ClCompile Include="SupplementalSchema.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="presentation\auicommand.cpp">
+      <Filter>ECPresentation\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\auievent.cpp">
+      <Filter>ECPresentation\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\auiitem.cpp">
+      <Filter>ECPresentation\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\auijournal.cpp">
+      <Filter>ECPresentation\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\auipresentationmgr.cpp">
+      <Filter>ECPresentation\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\auiprovider.cpp">
+      <Filter>ECPresentation\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\eccontentdefinition.cpp">
+      <Filter>ECPresentation\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\ECResourceProvider.cpp">
+      <Filter>ECPresentation\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\ecviewdefinition.cpp">
+      <Filter>ECPresentation\Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsPch.h">
@@ -114,6 +152,39 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\SupplementalSchema.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentation\auicommand.h">
+      <Filter>ECPresentation\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentation\auievent.h">
+      <Filter>ECPresentation\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentation\auiitem.h">
+      <Filter>ECPresentation\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentation\auijournal.h">
+      <Filter>ECPresentation\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentation\auipresentationapi.h">
+      <Filter>ECPresentation\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentation\auipresentationmgr.h">
+      <Filter>ECPresentation\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentation\auiprovider.h">
+      <Filter>ECPresentation\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentation\eccontentdefinition.h">
+      <Filter>ECPresentation\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentation\ECResourceProvider.h">
+      <Filter>ECPresentation\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentation\ecviewdefinition.h">
+      <Filter>ECPresentation\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ECEvent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
