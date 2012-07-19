@@ -1394,6 +1394,7 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     PrimitiveECPropertyP longProperty;
     PrimitiveECPropertyP stringProperty;
     
+    DISABLE_ASSERTS;
     // Primitives overriding primitives
     EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreatePrimitiveProperty(longProperty, L"StringProperty", PRIMITIVETYPE_Long));
     EXPECT_EQ(NULL, longProperty);
