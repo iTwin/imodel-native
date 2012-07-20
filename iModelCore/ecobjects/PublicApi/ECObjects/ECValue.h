@@ -317,6 +317,9 @@ public:
     //! @return         true if the ECEnablerPtr are equivalent, otherwise false.
     ECOBJECTS_EXPORT bool                   MatchesEnabler (UInt32 depth, ECEnablerCR other) const;
 
+    //! Looks up and returns the ECProperty associated with this accessor
+    ECOBJECTS_EXPORT EC::ECPropertyCP       GetECProperty() const;
+
 /*__PUBLISH_SECTION_START__*/
 
     ECOBJECTS_EXPORT UInt32                 GetDepth() const;
@@ -381,7 +384,7 @@ friend struct ECValuesCollection;
 friend struct ECValuesCollectionIterator;
 
 private:
-    IECInstancePtr      m_instance;
+    IECInstanceCP       m_instance;
     ECValueAccessor     m_accessor;
     ECValue             m_ecValue;
 
@@ -391,6 +394,7 @@ public:
     ECPropertyValue (ECPropertyValueCR);
     ECPropertyValue (IECInstanceCR);
     ECOBJECTS_EXPORT ECPropertyValue (IECInstanceCR, ECValueAccessorCR);
+    ECOBJECTS_EXPORT ECPropertyValue (IECInstanceCR, ECValueAccessorCR, ECValueCR);
 
     ECValueAccessorR    GetValueAccessorR ();
     ECObjectsStatus     EvaluateValue ();
@@ -414,7 +418,7 @@ public:
 //! @see ECValue, ECValueAccessor, ECValuesCollection
 //! @bsiclass 
 //======================================================================================= 
-struct ECValuesCollectionIterator : RefCountedBase
+struct ECValuesCollectionIterator : RefCountedBase, std::iterator<std::forward_iterator_tag, ECPropertyValue const>
     {
 /*__PUBLISH_SECTION_END__*/
 private:
@@ -432,11 +436,9 @@ private:
 /*__PUBLISH_SECTION_START__*/
 
 public:
-    typedef ECPropertyValue const       ReturnType;
     ECOBJECTS_EXPORT bool               IsDifferent(ECValuesCollectionIterator const& iter) const;
     ECOBJECTS_EXPORT void               MoveToNext ();
     ECOBJECTS_EXPORT ECPropertyValue const& GetCurrent () const;
-    ECOBJECTS_EXPORT bool               IsAtEnd () const;
     };
 
 //=======================================================================================    

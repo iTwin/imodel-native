@@ -30,7 +30,6 @@ GUNIT_TEST_VERSION = 1.3
 #   Libs
 #----------------------------------------------------------------------------------------
 libsUsed = \
-        $(BuildContext)SubParts/Libs/ECObjectsTestBackDoor.lib \
         $(BuildContext)SubParts/Libs/ECObjects.lib \
         $(BuildContext)SubParts/Libs/Bentley.lib \
         $(BuildContext)SubParts/Libs/bentleylogging-2.0.lib

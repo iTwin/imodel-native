@@ -20,7 +20,6 @@
 #include <Bentley/BeFileName.h>
 #include <ECObjects/BeXmlCommonGeometry.h>
 #include <Logging/bentleylogging.h>
-#include "LeakDetector.h"
 
 BEGIN_BENTLEY_EC_NAMESPACE
 extern ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, WCharCP filePath);

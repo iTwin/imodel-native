@@ -14,13 +14,6 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-//#define DEBUG_CLASS_LEAKS
-#ifdef DEBUG_CLASS_LEAKS
-static LeakDetector<ECClass> g_leakDetector (L"ECClass", L"ECClasss", true);
-#else
-static LeakDetector<ECClass> g_leakDetector (L"ECClass", L"ECClasss", false);
-#endif
-
 // If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
 // Test programs generally want to get error status back and not assert, so they call ECSchema::AssertOnXmlError (false);
 static  bool        s_noAssert = false;
@@ -36,12 +29,11 @@ void ECClass::SetErrorHandling (bool doAssert)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClass::ECClass (ECSchemaCR schema, bool hideFromLeakDetection)
+ECClass::ECClass (ECSchemaCR schema)
     :
-    m_schema(schema), m_isStruct(false), m_isCustomAttributeClass(false), m_isDomainClass(true), m_hideFromLeakDetection (hideFromLeakDetection)
+    m_schema(schema), m_isStruct(false), m_isCustomAttributeClass(false), m_isDomainClass(true)
     {
-    if ( ! m_hideFromLeakDetection)
-        g_leakDetector.ObjectCreated(*this);
+    //
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -58,15 +50,7 @@ ECClass::~ECClass ()
     m_propertyMap.clear();
     
     m_defaultStandaloneEnabler = NULL;
-
-    if ( ! m_hideFromLeakDetection)
-        g_leakDetector.ObjectDestroyed(*this);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-ILeakDetector&  ECClass::Debug_GetLeakDetector() { return g_leakDetector; }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
@@ -260,7 +244,7 @@ StandaloneECEnablerP ECClass::GetDefaultStandaloneEnabler() const
     {
     if (!m_defaultStandaloneEnabler.IsValid())
         {
-        ClassLayoutP classLayout   = ClassLayout::BuildFromClass (*this, 0, 0, m_hideFromLeakDetection);
+        ClassLayoutP classLayout   = ClassLayout::BuildFromClass (*this, 0, 0);
         m_defaultStandaloneEnabler = StandaloneECEnabler::CreateEnabler (*this, *classLayout, NULL, true);
         }
 
@@ -300,14 +284,78 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::CopyProperty
+(
+ECPropertyP& destProperty, 
+ECPropertyP sourceProperty
+)
+    {
+    if (sourceProperty->GetIsPrimitive())
+        {
+        PrimitiveECPropertyP destPrimitive;
+        PrimitiveECPropertyP sourcePrimitive = sourceProperty->GetAsPrimitiveProperty();
+        destPrimitive = new PrimitiveECProperty(*this);
+        destPrimitive->SetType(sourcePrimitive->GetType());
+
+        destProperty = destPrimitive;
+        }
+    else if (sourceProperty->GetIsArray())
+        {
+        ArrayECPropertyP destArray;
+        ArrayECPropertyP sourceArray = sourceProperty->GetAsArrayProperty();
+        destArray = new ArrayECProperty (*this);
+        if (NULL != sourceArray->GetStructElementType())
+            destArray->SetStructElementType(sourceArray->GetStructElementType());
+        else
+            destArray->SetPrimitiveElementType(sourceArray->GetPrimitiveElementType());
+
+        destArray->SetMaxOccurs(sourceArray->GetMaxOccurs());
+        destArray->SetMinOccurs(sourceArray->GetMinOccurs());
+
+        destProperty = destArray;
+        }
+    else if (sourceProperty->GetIsStruct())
+        {
+        StructECPropertyP destStruct;
+        StructECPropertyP sourceStruct = sourceProperty->GetAsStructProperty();
+        destStruct = new StructECProperty (*this);
+        destStruct->SetType(sourceStruct->GetType());
+
+        destProperty = destStruct;
+        }
+
+    destProperty->SetDescription(sourceProperty->GetDescription());
+    if (sourceProperty->GetIsDisplayLabelDefined())
+        destProperty->SetDisplayLabel(sourceProperty->GetDisplayLabel());
+    destProperty->SetName(sourceProperty->GetName());
+    destProperty->SetIsReadOnly(sourceProperty->GetIsReadOnly());
+    destProperty->m_forSupplementation = true;
+    sourceProperty->CopyCustomAttributesTo(*destProperty);
+    ECObjectsStatus status = AddProperty(destProperty, sourceProperty->GetName());
+    if (ECOBJECTS_STATUS_Success != status)
+        delete destProperty;
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyP ECClass::GetPropertyP (WCharCP propertyName) const
+ECPropertyP ECClass::GetPropertyP
+(
+WCharCP propertyName,
+bool includeBaseClasses
+) const
     {
     PropertyMap::const_iterator  propertyIterator = m_propertyMap.find (propertyName);
     
     if ( propertyIterator != m_propertyMap.end() )
         return propertyIterator->second;
+
+    if (!includeBaseClasses)
+        return NULL;
 
     // not found yet, search the inheritence hierarchy
     FOR_EACH (const ECClassP& baseClass, m_baseClasses)
@@ -322,9 +370,13 @@ ECPropertyP ECClass::GetPropertyP (WCharCP propertyName) const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyP ECClass::GetPropertyP (WStringCR propertyName) const
+ECPropertyP ECClass::GetPropertyP
+(
+WStringCR propertyName,
+bool includeBaseClasses
+) const
     {
-    return  GetPropertyP (propertyName.c_str());
+    return  GetPropertyP (propertyName.c_str(), includeBaseClasses);
     }
 
 static bvector<WString> s_schemasThatAllowOverridingArrays;
@@ -386,7 +438,10 @@ ECObjectsStatus ECClass::CanPropertyBeOverridden (ECPropertyCR baseProperty,ECPr
         }
     
     if (!newProperty._CanOverride(baseProperty))
+        {
+        ECObjectsLogger::Log()->errorv(L"The data type of the ECProperty to add does not match the data type of the base property.  Property name: %ls  New Property Data Type: %ls   Base Property Data Type: %ls\n", newProperty.GetName().c_str(), newProperty.GetTypeName().c_str(), baseProperty.GetTypeName().c_str());
         return ECOBJECTS_STATUS_DataTypeMismatch;
+        }
     return ECOBJECTS_STATUS_Success; 
     }
 
@@ -436,7 +491,7 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP ecProperty, WStringCR name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::CreatePrimitiveProperty (PrimitiveECPropertyP &ecProperty, WStringCR name)
     {
-    ecProperty = new PrimitiveECProperty(*this, m_hideFromLeakDetection);
+    ecProperty = new PrimitiveECProperty(*this);
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECOBJECTS_STATUS_Success)
         {
@@ -452,7 +507,7 @@ ECObjectsStatus ECClass::CreatePrimitiveProperty (PrimitiveECPropertyP &ecProper
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::CreatePrimitiveProperty (PrimitiveECPropertyP &ecProperty, WStringCR name, PrimitiveType primitiveType)
     {
-    ecProperty = new PrimitiveECProperty(*this, m_hideFromLeakDetection);
+    ecProperty = new PrimitiveECProperty(*this);
     ecProperty->SetType(primitiveType);
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECOBJECTS_STATUS_Success)
@@ -468,7 +523,7 @@ ECObjectsStatus ECClass::CreatePrimitiveProperty (PrimitiveECPropertyP &ecProper
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::CreateStructProperty (StructECPropertyP &ecProperty, WStringCR name)
     {
-    ecProperty = new StructECProperty(*this, m_hideFromLeakDetection);
+    ecProperty = new StructECProperty(*this);
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECOBJECTS_STATUS_Success)
         {
@@ -484,7 +539,7 @@ ECObjectsStatus ECClass::CreateStructProperty (StructECPropertyP &ecProperty, WS
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::CreateStructProperty (StructECPropertyP &ecProperty, WStringCR name, ECClassCR structType)
     {
-    ecProperty = new StructECProperty(*this, m_hideFromLeakDetection);
+    ecProperty = new StructECProperty(*this);
     ECObjectsStatus status = ecProperty->SetType(structType);
     if (ECOBJECTS_STATUS_Success == status)
         status = AddProperty(ecProperty, name);
@@ -502,7 +557,7 @@ ECObjectsStatus ECClass::CreateStructProperty (StructECPropertyP &ecProperty, WS
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::CreateArrayProperty (ArrayECPropertyP &ecProperty, WStringCR name)
     {
-    ecProperty = new ArrayECProperty(*this, m_hideFromLeakDetection);
+    ecProperty = new ArrayECProperty(*this);
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECOBJECTS_STATUS_Success)
         {
@@ -518,7 +573,7 @@ ECObjectsStatus ECClass::CreateArrayProperty (ArrayECPropertyP &ecProperty, WStr
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::CreateArrayProperty (ArrayECPropertyP &ecProperty, WStringCR name, PrimitiveType primitiveType)
     {
-    ecProperty = new ArrayECProperty(*this, m_hideFromLeakDetection);
+    ecProperty = new ArrayECProperty(*this);
     ecProperty->SetPrimitiveElementType (primitiveType);
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECOBJECTS_STATUS_Success)
@@ -535,7 +590,7 @@ ECObjectsStatus ECClass::CreateArrayProperty (ArrayECPropertyP &ecProperty, WStr
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::CreateArrayProperty (ArrayECPropertyP &ecProperty, WStringCR name, ECClassCP structType)
     {
-    ecProperty = new ArrayECProperty(*this, m_hideFromLeakDetection);
+    ecProperty = new ArrayECProperty(*this);
     ECObjectsStatus status = ecProperty->SetStructElementType(structType);
     if (ECOBJECTS_STATUS_Success == status)
         status = AddProperty(ecProperty, name);
@@ -880,11 +935,11 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
         Utf8CP      childNodeName = childNode->GetName();
 
         if (0 == strcmp (childNodeName, EC_PROPERTY_ELEMENT))
-            ecProperty = new PrimitiveECProperty (*this, m_hideFromLeakDetection);
+            ecProperty = new PrimitiveECProperty (*this);
         else if (0 == strcmp (childNodeName, EC_ARRAYPROPERTY_ELEMENT))
-            ecProperty = new ArrayECProperty (*this, m_hideFromLeakDetection);
+            ecProperty = new ArrayECProperty (*this);
         else if (0 == strcmp (childNodeName, EC_STRUCTPROPERTY_ELEMENT))
-            ecProperty = new StructECProperty (*this, m_hideFromLeakDetection);
+            ecProperty = new StructECProperty (*this);
         else
             {
             ECObjectsLogger::Log()->warningv (L"Invalid ECSchemaXML: Unknown kind of property '%hs' in ECClass '%ls:%ls'", childNodeName, this->GetSchema().GetName().c_str(), this->GetName().c_str() );
@@ -1568,11 +1623,43 @@ ECObjectsStatus ECRelationshipConstraint::SetRoleLabel (WStringCR value)
     return ECOBJECTS_STATUS_Success;
     }
   
-     
+  /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipConstraint::CopyTo
+(
+ECRelationshipConstraintR toRelationshipConstraint
+)
+    {
+    if (IsRoleLabelDefined())
+        toRelationshipConstraint.SetRoleLabel(GetRoleLabel());
+
+    toRelationshipConstraint.SetCardinality(GetCardinality());
+    toRelationshipConstraint.SetIsPolymorphic(GetIsPolymorphic());
+
+    ECObjectsStatus status;
+    ECSchemaP destSchema = const_cast<ECSchemaP>(toRelationshipConstraint._GetContainerSchema());
+    FOR_EACH(ECClassP constraintClass, GetClasses())
+        {
+        ECClassP destConstraintClass = destSchema->GetClassP(constraintClass->GetName().c_str());
+        if (NULL == destConstraintClass)
+            {
+            status = destSchema->CopyClass(destConstraintClass, *constraintClass);
+            if (ECOBJECTS_STATUS_Success != status)
+                return status;
+            }
+
+        status = toRelationshipConstraint.AddClass(*destConstraintClass);
+        if (ECOBJECTS_STATUS_Success != status)
+            return status;
+        }
+    return CopyCustomAttributesTo(toRelationshipConstraint);
+    }
+       
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipClass::ECRelationshipClass (EC::ECSchemaCR schema) : ECClass (schema, false), m_strength( STRENGTHTYPE_Referencing), m_strengthDirection(STRENGTHDIRECTION_Forward) 
+ECRelationshipClass::ECRelationshipClass (EC::ECSchemaCR schema) : ECClass (schema), m_strength( STRENGTHTYPE_Referencing), m_strengthDirection(STRENGTHDIRECTION_Forward) 
     {
     m_source = new ECRelationshipConstraint(this, false);
     m_target = new ECRelationshipConstraint(this, true);

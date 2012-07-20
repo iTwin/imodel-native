@@ -9,18 +9,6 @@
 #include <ECObjects/ecschema.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
-    
-static UInt32 g_totalAllocs = 0;
-static UInt32 g_totalFrees  = 0;
-static UInt32 g_currentLive = 0;
-
-//#define DEBUG_INSTANCE_LEAKS
-#ifdef DEBUG_INSTANCE_LEAKS
-typedef std::map<IECInstance*, UInt32> DebugInstanceLeakMap;
-DebugInstanceLeakMap    g_debugInstanceLeakMap;
-#endif
-
-//WIP_FUSION:  This should use EC::LeakDetector  (see ecschema.cpp)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  09/2010
@@ -125,15 +113,6 @@ bool IECInstance::IsFixedArrayProperty (EC::IECInstanceR instance, WCharCP acces
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstance::IECInstance()
     {
-    g_totalAllocs++;
-    g_currentLive++;
-#ifdef DEBUG_INSTANCE_LEAKS
-    g_debugInstanceLeakMap[this] = g_totalAllocs; // record this so we know if it was the 1st, 2nd allocation
-#endif
-
-    //size_t sizeofInstance = sizeof(IECInstance);
-    //size_t sizeofVoid = sizeof (void*);
-    
     BeAssert (sizeof(IECInstance) == sizeof (RefCountedBase) && L"Increasing the size or memory layout of the base EC::IECInstance will adversely affect subclasses. Think of this as a pure interface... to which you would never be able to add (additional) data, either");
     };    
 
@@ -142,32 +121,6 @@ IECInstance::IECInstance()
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstance::~IECInstance()
     {
-#ifdef DEBUG_INSTANCE_LEAKS
-    g_debugInstanceLeakMap.erase(this);
-#endif
-
-    g_totalFrees++;
-    g_currentLive--;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void IECInstance::Debug_DumpAllocationStats(WCharCP prefix)
-    {
-    if (!prefix)
-        prefix = L"";
-
-    ECObjectsLogger::Log()->debugv (L"%ls Live IECInstances: %d, Total Allocs: %d, TotalFrees: %d", prefix, g_currentLive, g_totalAllocs, g_totalFrees);
-#ifdef DEBUG_INSTANCE_LEAKS
-    FOR_EACH (DebugInstanceLeakMap::value_type leak, g_debugInstanceLeakMap)
-        {
-        //IECInstance* leakedInstance = leak.first;
-        UInt32    orderOfAllocation = leak.second;
-        ECObjectsLogger::Log()->debugv (L"Leaked the %dth IECInstance that was allocated.", orderOfAllocation);
-        //leakedInstance->Dump();
-        }
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -185,48 +138,19 @@ bool IsExcluded(WString& className, bvector<WString>& classNamesToExclude)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen    02/10
+* @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IECInstance::Debug_ReportLeaks(bvector<WString>& classNamesToExclude)
+IECInstancePtr IECInstance::CreateCopyThroughSerialization()
     {
-#ifdef DEBUG_INSTANCE_LEAKS
-    FOR_EACH (DebugInstanceLeakMap::value_type leak, g_debugInstanceLeakMap)
-        {
-        IECInstance* leakedInstance = leak.first;
-        UInt32    orderOfAllocation = leak.second;
-        
-        WString className = leakedInstance->GetClass().GetName();
-        if (IsExcluded (className, classNamesToExclude))
-            continue;
-        WString schemaName = leakedInstance->GetClass().GetSchema().GetName();
-        ECObjectsLogger::Log()->errorv (L"Leaked the %dth IECInstance that was allocated: ECSchema=%ls, ECClass=%ls, InstanceId=%ls", 
-            orderOfAllocation, schemaName.c_str(), className.c_str(), leakedInstance->GetInstanceId().c_str());
-        //leakedInstance->Dump();
-        }
-#endif
-    }
+    WString ecInstanceXml;
+    this->WriteToXmlString(ecInstanceXml, true, false);
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void IECInstance::Debug_GetAllocationStats(int* currentLive, int* totalAllocs, int* totalFrees)
-    {
-    if (currentLive)
-        *currentLive = g_currentLive;
+    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext (GetClass().GetSchema());
 
-    if (totalAllocs)
-        *totalAllocs = g_totalAllocs;
+    IECInstancePtr deserializedInstance;
+    IECInstance::ReadFromXmlString(deserializedInstance, ecInstanceXml.c_str(), *instanceContext);
 
-    if (totalFrees)
-        *totalFrees  = g_totalFrees;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void IECInstance::Debug_ResetAllocationStats()
-    {
-    g_totalAllocs = g_totalFrees = g_currentLive = 0;
+    return deserializedInstance;
     }
 
 /*---------------------------------------------------------------------------------**//**
