@@ -230,7 +230,6 @@ ECObjectsStatus          MemoryECInstanceBase::SetIsLoadedBit (UInt32 propertyIn
     return status;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/

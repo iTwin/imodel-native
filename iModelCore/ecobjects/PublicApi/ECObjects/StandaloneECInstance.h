@@ -124,6 +124,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT ECObjectsStatus          IsAnyPerPropertyBitSet (bool& isSet, UInt8 bitIndex) const;
     ECOBJECTS_EXPORT ECObjectsStatus          SetPerPropertyBit (UInt8 bitIndex, UInt32 propertyIndex, bool setBit);
     ECOBJECTS_EXPORT ECObjectsStatus          SetBitForAllProperties (UInt8 bitIndex, bool setBit);
+    ECOBJECTS_EXPORT ECObjectsStatus          SetIsLoadedBit (UInt32 propertyIndex);
 
     ECOBJECTS_EXPORT void                     ClearAllPerPropertyFlags ();
     ECOBJECTS_EXPORT UInt8                    GetNumBitsInPerPropertyFlags ();
@@ -138,7 +139,6 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT UInt32                   GetPerPropertyFlagsDataLength () const;
     ECOBJECTS_EXPORT ECObjectsStatus          AddNullArrayElements (WCharCP propertyAccessString, UInt32 insertCount);
     ECOBJECTS_EXPORT ECObjectsStatus          CopyInstanceProperties (EC::IECInstanceCR fromNativeInstance);
-    ECOBJECTS_EXPORT ECObjectsStatus          SetIsLoadedBit (UInt32 propertyIndex);
 
 };
 
