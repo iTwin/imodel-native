@@ -31,7 +31,7 @@ void ECProperty::SetErrorHandling (bool doAssert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECProperty::ECProperty (ECClassCR ecClass)
     :
-    m_class(ecClass), m_readOnly(false), m_baseProperty(NULL), m_forSupplementation(false)
+    m_class(ecClass), m_readOnly(false), m_baseProperty(NULL), m_forSupplementation(false), m_cachedTypeAdapter(NULL)
     {
     //
     }
@@ -794,5 +794,17 @@ ECObjectsStatus ArrayECProperty::SetMaxOccurs (WStringCR maxOccurs)
     SetMaxOccurs (iMaxOccurs);
     return ECOBJECTS_STATUS_Success;
     }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IECTypeAdapter::HasStandardValues() const                                                                       { return _HasStandardValues(); }
+bool IECTypeAdapter::CanConvertFromString () const                                                                   { return _CanConvertFromString (); }
+bool IECTypeAdapter::CanConvertToString () const                                                                     { return _CanConvertToString (); }
+bool IECTypeAdapter::IsStruct() const                                                                                { return _IsStruct(); }
+bool IECTypeAdapter::IsTreatedAsString() const                                                                       { return _IsTreatedAsString(); }
+IECInstancePtr IECTypeAdapter::CreateDefaultFormatter (bool includeAllValues) const                                  { return _CreateDefaultFormatter (includeAllValues); }
+IECInstancePtr IECTypeAdapter::CondenseFormatterForSerialization (IECInstanceCR formatter) const                     { return _CondenseFormatterForSerialization (formatter); }
+IECInstancePtr IECTypeAdapter::PopulateDefaultFormatterProperties (IECInstanceCR formatter) const                    { return _PopulateDefaultFormatterProperties (formatter); }
 
 END_BENTLEY_EC_NAMESPACE
