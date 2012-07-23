@@ -52,6 +52,45 @@ StandaloneECEnablerPtr          ECEnabler::GetEnablerForStructArrayMember (Schem
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyCP ECEnabler::_LookupECProperty (UInt32 propertyIndex) const
+    {
+    WCharCP accessString;
+    return ECOBJECTS_STATUS_Success == GetAccessString (accessString, propertyIndex) ? _LookupECProperty (accessString) : NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/12
++---------------+---------------+---------------+---------------+---------------+------*/
+static ECPropertyCP propertyFromAccessString (ECClassCR ecClass, WCharCP accessString)
+    {
+    WCharCP dot = wcschr (accessString, '.');
+    if (NULL == dot)
+        return ecClass.GetPropertyP (accessString);
+    else
+        {
+        WString structName (accessString, dot);
+        ECPropertyCP prop = ecClass.GetPropertyP (structName.c_str());
+        if (NULL == prop)
+            { BeAssert (false); return NULL; }
+        StructECPropertyCP structProp = prop->GetAsStructProperty();
+        if (NULL == structProp)
+            { BeAssert (false); return NULL; }
+        
+        return propertyFromAccessString (structProp->GetType(), dot+1);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyCP ECEnabler::_LookupECProperty (WCharCP accessString) const
+    {
+    return propertyFromAccessString (GetClass(), accessString);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCR           ECEnabler::GetClass() const  { return m_ecClass; }
@@ -65,6 +104,8 @@ UInt32              ECEnabler::GetNextPropertyIndex  (UInt32 parentIndex, UInt32
 bool                ECEnabler::HasChildProperties (UInt32 parentIndex) const { return _HasChildProperties (parentIndex); }
 ECObjectsStatus     ECEnabler::GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const{ return _GetPropertyIndices (indices, parentIndex); };
 IStandaloneEnablerLocaterR ECEnabler::GetStandaloneEnablerLocater() { return *this; }
+ECPropertyCP        ECEnabler::LookupECProperty (UInt32 propertyIndex) const { return _LookupECProperty (propertyIndex); }
+ECPropertyCP        ECEnabler::LookupECProperty (WCharCP accessString) const { return _LookupECProperty (accessString); }
 
 #if defined (EXPERIMENTAL_TEXT_FILTER)
 /*---------------------------------------------------------------------------------**//**
@@ -259,6 +300,7 @@ EC::ECRelationshipClassCR       IECRelationshipEnabler::GetRelationshipClass() c
 //    {
 //    return false;
 //    }
+
 
 
 END_BENTLEY_EC_NAMESPACE

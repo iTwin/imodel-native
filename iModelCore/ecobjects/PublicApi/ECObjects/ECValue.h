@@ -386,9 +386,11 @@ friend struct ECValuesCollectionIterator;
 private:
     IECInstanceCP       m_instance;
     ECValueAccessor     m_accessor;
-    ECValue             m_ecValue;
+    mutable ECValue     m_ecValue;      // mutable to allow lazy initialization
+    mutable bool        m_evaluated;    // mutable to allow lazy initialization
 
-
+    ECObjectsStatus     EvaluateValue () const;
+    void                ResetValue();   // for ECValuesCollection, which reuses the same ECPropertyValue for multiple properties
 public:
     ECPropertyValue ();
     ECPropertyValue (ECPropertyValueCR);
@@ -397,7 +399,6 @@ public:
     ECOBJECTS_EXPORT ECPropertyValue (IECInstanceCR, ECValueAccessorCR, ECValueCR);
 
     ECValueAccessorR    GetValueAccessorR ();
-    ECObjectsStatus     EvaluateValue ();
 
 /*__PUBLISH_SECTION_START__*/
 public:

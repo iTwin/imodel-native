@@ -171,7 +171,7 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_SetValue (UInt32 pr
     {
     ClassLayoutCR classLayout = GetClassLayout();
 
-    SetPerPropertyBit ((UInt8) PROPERTYFLAGINDEX_IsLoaded, propertyIndex, true);
+    SetIsLoadedBit (propertyIndex);
 
     return SetValueToMemory (classLayout, propertyIndex, v, useArrayIndex, arrayIndex);
     }

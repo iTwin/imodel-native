@@ -270,6 +270,65 @@ public:
 
 struct PrimitiveECProperty;
 
+/*=================================================================================**//**
+Base class for an object which adapts the internal value of an ECProperty to a user-friendly string representation.
++===============+===============+===============+===============+===============+======*/
+struct IECTypeAdapter /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
+    {
+    typedef bvector<WString> StandardValuesCollection;
+/*__PUBLISH_SECTION_END__*/
+    // Note that the implementation of the extended type system is implemented in DgnPlatform in IDgnECTypeAdapter, which subclasses IECTypeAdapter and makes
+    // use of IDgnECTypeAdapterContext which provides dgn-specific context such as file, model, and element.
+    // We may want to see if it is worthwhile to factor out the non-dgn-specific context and move it down to the ECObjects layer.
+protected:
+    virtual bool                _HasStandardValues() const = 0;
+    virtual bool                _CanConvertToString() const = 0;
+    virtual bool                _CanConvertFromString() const = 0;
+    virtual bool                _IsStruct() const = 0;
+    virtual bool                _IsTreatedAsString() const = 0;
+    virtual EC::IECInstancePtr  _CondenseFormatterForSerialization (EC::IECInstanceCR formatter) const = 0;
+    virtual EC::IECInstancePtr  _PopulateDefaultFormatterProperties (EC::IECInstanceCR formatter) const = 0;
+    virtual EC::IECInstancePtr  _CreateDefaultFormatter (bool includeAllValues) const = 0;
+
+/*__PUBLISH_SECTION_START__*/
+public:
+    //! @return true if it is possible to convert the underlying type to a string
+    ECOBJECTS_EXPORT bool                 CanConvertToString () const;
+
+    //! @return true if it is possible to extract the underlying type from a string
+    ECOBJECTS_EXPORT bool                 CanConvertFromString () const;
+    
+    //! Create an IECInstance representing default formatting options for converting to string.
+    //! @param[in] includeAllValues If false, property values will be left NULL to save space; otherwise they will be initialized with default values
+    //! @return An IECInstance which can be passed to ConvertToString(), or NULL if no special formatting options are supported.
+    ECOBJECTS_EXPORT EC::IECInstancePtr   CreateDefaultFormatter (bool includeAllValues) const;
+
+    //! @return true if this type adapter provides a finite set of permissible values for the property it represents
+    ECOBJECTS_EXPORT bool                 HasStandardValues() const;
+
+    //! @return true if the underlying type is a struct.
+/*__PUBLISH_SECTION_END__*/
+    // Note that type adapters representing structs will not be invoked from managed code, as managed callers cannot always
+    // provide the native struct ECInstance, and doing so would be expensive.
+/*__PUBLISH_SECTION_START__*/
+    ECOBJECTS_EXPORT bool                 IsStruct() const;
+
+    //! Indicates if the value is intended to be interpreted as a string by the user, regardless of the underlying property type.
+    //! For example: a TextStyle property may be stored internally as an integer ID, but presented to the user as a string.
+    //! This method is checked when executing queries that perform string comparisons on property values - if it returns true, the property's string representation will be compared against the query; otherwise the property will be ignored.
+    ECOBJECTS_EXPORT bool                 IsTreatedAsString() const;
+
+    //! Given an instance representing formatting options, returns a copy of the instance optimized for serialization
+    //! @param[in] formatter    The formatter instance to condense
+    //! @return an IECInstance suitable for serialization, or NULL if the input formatter contained only default values in which case serialization is not necessary
+    ECOBJECTS_EXPORT EC::IECInstancePtr   CondenseFormatterForSerialization (EC::IECInstanceCR formatter) const;
+
+    //! Given an instance containing custom formatting options, replace any null properties with their default values
+    //! @param[in] formatter    The formatter instance to populate
+    //! @return an IECInstance in which all null properties have been replaced by their default values
+    ECOBJECTS_EXPORT EC::IECInstancePtr   PopulateDefaultFormatterProperties (EC::IECInstanceCR formatter) const;
+    };
+
 //=======================================================================================
 //! @ingroup ECObjectsGroup
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
@@ -280,13 +339,15 @@ struct ECProperty /*abstract*/ : public IECCustomAttributeContainer
 friend struct ECClass;
 
 private:
-    WString        m_name;        
-    WString        m_displayLabel;
-    WString        m_description;
-    bool            m_readOnly;
-    ECClassCR       m_class;
-    ECPropertyCP    m_baseProperty;    
-    bool            m_forSupplementation;   // If when supplementing the schema, a local property had to be created, then don't serialize this property
+    WString                 m_name;        
+    WString                 m_displayLabel;
+    WString                 m_description;
+    bool                    m_readOnly;
+    ECClassCR               m_class;
+    ECPropertyCP            m_baseProperty;    
+    bool                    m_forSupplementation;   // If when supplementing the schema, a local property had to be created, then don't serialize this property
+    mutable IECTypeAdapter* m_cachedTypeAdapter;
+
     static void     SetErrorHandling (bool doAssert);
 protected:
     WString         m_originalTypeName; //Will be empty unless the typeName was unrecognized. Keep this so that we can re-write the ECSchema without changing the type to string
@@ -313,7 +374,10 @@ protected:
     virtual ECSchemaCP                  _GetContainerSchema() const override;
 
     virtual PrimitiveECProperty*        _GetAsPrimitiveECProperty() {return NULL;}
-    
+public:
+    // The following are used by the 'extended type' system which is currently implemented in DgnPlatform
+    IECTypeAdapter*                     GetCachedTypeAdapter() const { return m_cachedTypeAdapter; }
+    void                                SetCachedTypeAdapter (IECTypeAdapter* adapter) const { m_cachedTypeAdapter = adapter; }
 /*__PUBLISH_SECTION_START__*/
 public:    
     //! Returns the name of the ECClass that this property is contained within
@@ -447,10 +511,11 @@ private:
         };
 
     ArrayKind           m_arrayKind;
-      
+    mutable void*       m_cachedMemberTypeAdapter;
+
     ArrayECProperty (ECClassCR ecClass)
-        : m_primitiveType(PRIMITIVETYPE_String), m_arrayKind (ARRAYKIND_Primitive),
-          m_minOccurs (0), m_maxOccurs (UINT_MAX), ECProperty(ecClass) {};
+        : ECProperty(ecClass), m_primitiveType(PRIMITIVETYPE_String), m_arrayKind (ARRAYKIND_Primitive),
+          m_minOccurs (0), m_maxOccurs (UINT_MAX), m_cachedMemberTypeAdapter (NULL) {};
     ECObjectsStatus                     SetMinOccurs (WStringCR minOccurs);          
     ECObjectsStatus                     SetMaxOccurs (WStringCR maxOccurs);          
 
@@ -461,6 +526,11 @@ protected:
     virtual WString                     _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (WStringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
+
+public:
+    // The following are used by the 'extended type' system which is currently implemented in DgnPlatform
+    void*                               GetCachedMemberTypeAdapter() const  { return m_cachedMemberTypeAdapter; }
+    void                                SetCachedMemberTypeAdapter (void* adapter) const { m_cachedMemberTypeAdapter = adapter; }
 
 /*__PUBLISH_SECTION_START__*/
 public:      
