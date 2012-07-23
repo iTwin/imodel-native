@@ -39,12 +39,24 @@ typedef RefCountedPtr<UICommand> UICommandPtr;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct UICommand : public IUICommand, public RefCountedBase
     {
-    private:
+    protected:
+        WString m_commandId;
+        WString m_label;
+        WString m_description;
+        WString m_imageId;
+        bool    m_separator;
         
     public:
         //! Execute the action associated with this command. If a journal provider is registered 
         //! the call results in the creation of the corresponding journal entry.
         ECOBJECTS_EXPORT BentleyStatus  Execute (IAUIDataContextCP instance) const;
+
+        //! Return properties of the UICommand
+        virtual WString const GetCommandId () { return m_commandId; };
+        virtual WString const GetLabel () { return m_label; };
+        virtual WString const GetDescription () { return m_description; };
+        virtual WString const GetImageId () { return m_imageId; };
+        virtual bool    const IsSeparator () { return m_separator; };
     };
 
 /*---------------------------------------------------------------------------------**//**
