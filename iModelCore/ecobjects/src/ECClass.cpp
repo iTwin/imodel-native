@@ -244,7 +244,7 @@ StandaloneECEnablerP ECClass::GetDefaultStandaloneEnabler() const
     {
     if (!m_defaultStandaloneEnabler.IsValid())
         {
-        ClassLayoutP classLayout   = ClassLayout::BuildFromClass (*this, 0, 0);
+        ClassLayoutP classLayout   = ClassLayout::BuildFromClass (*this);
         m_defaultStandaloneEnabler = StandaloneECEnabler::CreateEnabler (*this, *classLayout, NULL, true);
         }
 

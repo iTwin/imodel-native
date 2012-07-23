@@ -281,10 +281,8 @@ UInt32          ClassLayout::GetChecksum () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayout::ClassLayout(SchemaIndex schemaIndex)
+ClassLayout::ClassLayout()
     :
-    m_schemaIndex (schemaIndex),
-    m_classIndex(0),
     m_sizeOfFixedSection(0), 
     m_isRelationshipClass(false), m_propertyIndexOfSourceECPointer(-1), m_propertyIndexOfTargetECPointer(-1)
     {
@@ -308,7 +306,7 @@ ClassLayout::~ClassLayout()
 WString        ClassLayout::GetShortDescription () const
     {
     wchar_t line[1024];
-    BeStringUtilities::Snwprintf (line, _countof(line), L"ClassLayout for ECClassIndex=%i, ECClass.GetName()=%ls", m_classIndex, m_className.c_str());
+    BeStringUtilities::Snwprintf (line, _countof(line), L"ClassLayout for ECClass.GetName()=%ls", m_className.c_str());
 
     return line;
     }
@@ -405,20 +403,13 @@ UInt32          ClassLayout::GetSizeOfFixedSection() const
 void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const
     {
     UInt32 sizeOfFixedSection = GetSizeOfFixedSection();
-    memset (data, 0, sizeof(InstanceHeader)); 
-    
-    InstanceHeader& header = *(InstanceHeader*) data;
-    header.m_schemaIndex   = m_schemaIndex;
-    header.m_classIndex    = m_classIndex;
-    header.m_instanceFlags = 0;
-
     UInt32  nonStructPropCount = GetPropertyCountExcludingEmbeddedStructs();
 
     if (0 == nonStructPropCount)
         return;
         
     UInt32 nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks (nonStructPropCount);
-    InitializeNullFlags ((NullflagsBitmask *)(data + sizeof (InstanceHeader)), nNullflagsBitmasks);
+    InitializeNullFlags ((NullflagsBitmask *)(data), nNullflagsBitmasks);
             
     bool isFirstVariableSizedProperty = true;
     for (UInt32 i = 0; i < m_propertyLayouts.size(); ++i)
@@ -540,8 +531,6 @@ int                    ClassLayout:: GetUniqueId() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 UInt32          ClassLayout::CalculateBytesUsed(byte const * data) const
     {
-    DEBUG_EXPECT (0 != m_sizeOfFixedSection); 
-    
     // handle case when no properties are defined
     if (0 == m_propertyLayouts.size())
         return m_sizeOfFixedSection;
@@ -555,22 +544,6 @@ UInt32          ClassLayout::CalculateBytesUsed(byte const * data) const
     // pLast is the last offset, pointing to one byte beyond the used space, so it is equal to the number of bytes used, so far
     return *pLast;
     }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-SchemaIndex     ClassLayout::GetSchemaIndex() const
-    {
-    return m_schemaIndex;
-    } 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-ClassIndex      ClassLayout::GetClassIndex() const
-    {
-    return m_classIndex;
-    } 
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
@@ -834,23 +807,23 @@ ClassLayoutP    ClassLayout::Factory::DoBuildClassLayout ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayout::Factory::Factory (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex)
+ClassLayout::Factory::Factory (ECClassCR ecClass)
     : 
     m_ecClass (ecClass),
     m_state   (AcceptingFixedSizeProperties),
-    m_offset  (sizeof(InstanceHeader) + sizeof(NullflagsBitmask)),
-    m_nullflagsOffset (sizeof(InstanceHeader)),
+    m_offset  (sizeof(NullflagsBitmask)),
+    m_nullflagsOffset (0),
     m_nonStructPropertyCount (0),
-    m_underConstruction (*ClassLayout::CreateEmpty (m_ecClass.GetName().c_str(), classIndex, schemaIndex))
+    m_underConstruction (*ClassLayout::CreateEmpty (m_ecClass.GetName().c_str()))
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutP    ClassLayout::BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex)
+ClassLayoutP    ClassLayout::BuildFromClass (ECClassCR ecClass)
     {
-    Factory     factory (ecClass, classIndex, schemaIndex);
+    Factory     factory (ecClass);
 
     return factory.DoBuildClassLayout ();
     }
@@ -858,11 +831,11 @@ ClassLayoutP    ClassLayout::BuildFromClass (ECClassCR ecClass, ClassIndex class
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutP    ClassLayout::CreateEmpty (WCharCP className, ClassIndex classIndex, SchemaIndex schemaIndex)
+ClassLayoutP    ClassLayout::CreateEmpty (WCharCP className)
     {
-    ClassLayoutP classLayout = new ClassLayout(schemaIndex);
+    ClassLayoutP classLayout = new ClassLayout();
 
-    classLayout->SetClass (className, classIndex);
+    classLayout->SetClass (className);
 
     return classLayout;
     }
@@ -870,11 +843,9 @@ ClassLayoutP    ClassLayout::CreateEmpty (WCharCP className, ClassIndex classInd
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   ClassLayout::SetClass (WCharCP className, UInt16 classIndex)
+BentleyStatus   ClassLayout::SetClass (WCharCP className)
     {
-    m_classIndex = classIndex;
     m_className  = className;
-
     return SUCCESS;
     }
 
@@ -903,7 +874,7 @@ ECObjectsStatus       ClassLayout::FinishLayout ()
     if (NULL == lastPropertyLayout)
         {
         // Either there are no properties or all the properties are structs.
-        m_sizeOfFixedSection = sizeof (InstanceHeader);
+        m_sizeOfFixedSection = 0;
         }
     else
         {
@@ -933,7 +904,7 @@ ECObjectsStatus       ClassLayout::FinishLayout ()
         else
             {
             if (0 == prevNonStructOffset)
-                DEBUG_EXPECT (m_propertyLayouts[i]->m_offset == sizeof(InstanceHeader) + nNullflagsBitmasks * sizeof(NullflagsBitmask));
+                DEBUG_EXPECT (m_propertyLayouts[i]->m_offset == nNullflagsBitmasks * sizeof(NullflagsBitmask));
             else
                 DEBUG_EXPECT (m_propertyLayouts[i]->m_offset > prevNonStructOffset);
             }
@@ -942,7 +913,7 @@ ECObjectsStatus       ClassLayout::FinishLayout ()
         UInt32 expectedNullflagsOffset = 0;
 
         if ( ! isStruct)
-            expectedNullflagsOffset = (nonStructPropIndex / BITS_PER_NULLFLAGSBITMASK * sizeof(NullflagsBitmask)) + sizeof(InstanceHeader);
+            expectedNullflagsOffset = (nonStructPropIndex / BITS_PER_NULLFLAGSBITMASK * sizeof(NullflagsBitmask));
 
         DEBUG_EXPECT (m_propertyLayouts[i]->m_nullflagsOffset == expectedNullflagsOffset);
 
@@ -1312,6 +1283,23 @@ ClassLayoutCP   SchemaLayout::FindClassLayout (WCharCP className)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   SchemaLayout::FindClassIndex (ClassIndex& classIndex, WCharCP className) const
+    {
+    for (size_t i = 0; i < m_classLayouts.size(); i++)
+        {
+        if (NULL != m_classLayouts[i] && 0 == BeStringUtilities::Wcsicmp (m_classLayouts[i]->GetECClassName().c_str(), className))
+            {
+            classIndex = (ClassIndex)i;
+            return SUCCESS;
+            }
+        }
+
+    return ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen    02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 UInt32          SchemaLayout::GetMaxIndex()
@@ -1419,14 +1407,6 @@ UInt32          MemoryInstanceSupport::GetPropertyValueSize (PropertyLayoutCR pr
         return size;
         }
     }        
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-InstanceHeader const& MemoryInstanceSupport::PeekInstanceHeader (void const* data)
-    {
-    return * ((InstanceHeader const*) data);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin    01/10
@@ -2647,18 +2627,12 @@ WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, Clas
     byte const * data = _GetData();
 
     appendFormattedString (oss, L"%lsECClass=%ls at address = 0x%0x\n", indent, classLayout.GetECClassName().c_str(), data);
-    InstanceHeader& header = *(InstanceHeader*)data;
-
-    appendFormattedString (oss, L"%ls  [0x%0x][%4.d] SchemaIndex = %d\n", indent,        &header.m_schemaIndex,  (byte*)&header.m_schemaIndex   - data, header.m_schemaIndex);
-    appendFormattedString (oss, L"%ls  [0x%0x][%4.d] ClassIndex  = %d\n", indent,        &header.m_classIndex,   (byte*)&header.m_classIndex    - data, header.m_classIndex);
-    appendFormattedString (oss, L"%ls  [0x%0x][%4.d] InstanceFlags = 0x%08.x\n", indent, &header.m_instanceFlags,(byte*)&header.m_instanceFlags - data, header.m_instanceFlags);
-    
     UInt32 nProperties = classLayout.GetPropertyCount ();
     UInt32 nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks (nProperties);
     
     for (UInt32 i = 0; i < nNullflagsBitmasks; i++)
         {
-        UInt32 offset = sizeof(InstanceHeader) + i * sizeof(NullflagsBitmask);
+        UInt32 offset = sizeof(NullflagsBitmask);
         byte const * address = offset + data;
         appendFormattedString (oss, L"%ls  [0x%x][%4.d] Nullflags[%d] = 0x%x\n", indent, address, offset, i, *(NullflagsBitmask*)(data + offset));
         }
@@ -2764,9 +2738,18 @@ WString        MemoryInstanceSupport::InstanceDataToString (WCharCP indent, Clas
             }
         }
         
-    UInt32 offsetOfLast = classLayout.GetSizeOfFixedSection() - sizeof(SecondaryOffset);
-    SecondaryOffset * pLast = (SecondaryOffset*)(data + offsetOfLast);
-    appendFormattedString (oss, L"%ls  [0x%x][%4.d] Offset of TheEnd = %d\n", indent, pLast, offsetOfLast, *pLast);
+    if (1 == nProperties)
+        {
+        // We have one PropertyLayout, which is an empty root struct, signifying an empty ECClass
+        DEBUG_EXPECT (0 == classLayout.GetSizeOfFixedSection());
+        appendFormattedString (oss, L"Class has no properties\n");
+        }
+    else
+        {
+        UInt32 offsetOfLast = classLayout.GetSizeOfFixedSection() - sizeof(SecondaryOffset);
+        SecondaryOffset * pLast = (SecondaryOffset*)(data + offsetOfLast);
+        appendFormattedString (oss, L"%ls  [0x%x][%4.d] Offset of TheEnd = %d\n", indent, pLast, offsetOfLast, *pLast);
+        }
 
     return oss;
     }

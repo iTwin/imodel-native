@@ -1029,7 +1029,7 @@ TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     WString instanceId = instance->GetInstanceId();
     UInt32 size = instance->GetBytesUsed ();
-    EXPECT_EQ (size, UInt32(sizeof(InstanceHeader)));
+    EXPECT_EQ (size, 0);
 
     // WIP_FUSION: should pass the string to the logger via a backdoor
     instance->ToString(L"").c_str();
@@ -1545,7 +1545,7 @@ TEST_F (MemoryLayoutTests, PropertyLayoutBracketsTest)
     ECClassP ecClass = schema->GetClassP (L"BracketTestClass");
     ASSERT_TRUE (NULL != ecClass);
 
-    ClassLayoutP layout = ClassLayout::BuildFromClass (*ecClass, 0, 0);
+    ClassLayoutP layout = ClassLayout::BuildFromClass (*ecClass);
     ASSERT_TRUE (NULL != layout);
 
     PropertyLayoutCP propLayout;

@@ -20,26 +20,17 @@ EC_TYPEDEFS(MemoryInstanceSupport);
 
 BEGIN_BENTLEY_EC_NAMESPACE
     
+typedef UInt32 NullflagsBitmask;
 typedef UInt16 ClassIndex;
 typedef UInt16 SchemaIndex;
 
-typedef UInt32 NullflagsBitmask;
-
 /*__PUBLISH_SECTION_END__*/
 
-typedef UInt32 InstanceFlags;
 typedef UInt32 SecondaryOffset;
 typedef UInt32 ArrayCount;
 
 #define NULLFLAGS_BITMASK_AllOn     0xFFFFFFFF
 
-struct  InstanceHeader
-    {
-    SchemaIndex     m_schemaIndex;
-    ClassIndex      m_classIndex;
-
-    InstanceFlags   m_instanceFlags;
-    };
 /*__PUBLISH_SECTION_START__*/
 
 enum ArrayModifierFlags ENUM_UNDERLYING_TYPE (UInt32)
@@ -133,7 +124,6 @@ private:
         };
     
     // These members are expected to be persisted  
-    ClassIndex              m_classIndex; // Unique per some context, e.g. per DgnFile
     WString                 m_className;
     
     PropertyLayoutVector    m_propertyLayouts;      // This is the primary collection, there is a secondary map for lookup by name, below.    
@@ -141,7 +131,6 @@ private:
     LogicalStructureMap     m_logicalStructureMap;
     
     // These members are transient
-    SchemaIndex                       m_schemaIndex;
     UInt32                            m_sizeOfFixedSection;
     bool                              m_isRelationshipClass;
     int                               m_propertyIndexOfSourceECPointer;
@@ -178,15 +167,15 @@ private:
         void        AddVariableSizeArrayPropertyWithFixedCount (WCharCP accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount, bool isReadOnly);        
         void        AddProperties (ECClassCR ecClass, WCharCP nameRoot, bool addFixedSize);
 
-        Factory (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex);
+        Factory (ECClassCR ecClass);
         ClassLayoutP DoBuildClassLayout ();
     };
 
-    ClassLayout(SchemaIndex schemaIndex);
+    ClassLayout();
 
     WString                GetShortDescription() const;
     WString                LogicalStructureToString (UInt32 parentStructIndex = 0, UInt32 indentLevel = 0) const;
-    BentleyStatus          SetClass (WCharCP  className, UInt16 classIndex);
+    BentleyStatus          SetClass (WCharCP  className);
 
 public:    
     WString                 GetName() const;
@@ -208,16 +197,13 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
 private:
-    ClassLayout (){}
+    //ClassLayout (){}
 
 public:
-    ECOBJECTS_EXPORT static ClassLayoutP BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex);
-    ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (WCharCP  className, ClassIndex classIndex, SchemaIndex schemaIndex);
+    ECOBJECTS_EXPORT static ClassLayoutP BuildFromClass (ECClassCR ecClass);
+    ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (WCharCP  className);
 
     ECOBJECTS_EXPORT WString const & GetECClassName() const;
-    // These members are only meaningful in the context of a consumer like DgnHandlers.dll that actually handles persistence of ClassLayouts
-    ECOBJECTS_EXPORT ClassIndex     GetClassIndex() const;
-    ECOBJECTS_EXPORT SchemaIndex    GetSchemaIndex () const;
     ECOBJECTS_EXPORT int            GetECPointerIndex (ECRelationshipEnd end) const;
     
     ECOBJECTS_EXPORT UInt32          GetChecksum () const;
@@ -261,6 +247,7 @@ public:
     ECOBJECTS_EXPORT BentleyStatus          AddClassLayout (ClassLayoutCR, ClassIndex);
     ECOBJECTS_EXPORT ClassLayoutCP          GetClassLayout (ClassIndex classIndex);
     ECOBJECTS_EXPORT ClassLayoutCP          FindClassLayout (WCharCP className);
+    ECOBJECTS_EXPORT BentleyStatus          FindClassIndex (ClassIndex& classIndex, WCharCP className) const;
     ECOBJECTS_EXPORT BentleyStatus          FindAvailableClassIndex (ClassIndex&);
     // This may often correspond to "number of ClassLayouts - 1", but not necessarily, because there can be gaps
     // so when you call GetClassLayout (index) you might get NULLs. Even the last one could be NULL.
@@ -485,8 +472,6 @@ protected:
     virtual void                _SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable) {};
 
 public:
-    ECOBJECTS_EXPORT static InstanceHeader const&   PeekInstanceHeader (void const* data);
-
     ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
    
     ECOBJECTS_EXPORT void SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable);
