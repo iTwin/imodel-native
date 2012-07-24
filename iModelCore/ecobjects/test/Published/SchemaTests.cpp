@@ -1564,8 +1564,12 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     class1->RemoveProperty(L"StringArrayProperty");
 
     StructECPropertyP structProperty;
+
+    {
     // Structs overriding primitives
+    DISABLE_ASSERTS
     EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateStructProperty(structProperty, L"IntegerProperty"));
+    }
 
     // Structs overriding structs
     // If we don't specify a struct type for the new property, then it should succeed
