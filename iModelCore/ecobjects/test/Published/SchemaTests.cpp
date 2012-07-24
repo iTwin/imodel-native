@@ -1552,8 +1552,11 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     EXPECT_EQ(baseStringProp, stringProperty->GetBaseProperty());
     class1->RemoveProperty(L"StringProperty");
     
+    {
     // Primitives overriding structs
+    DISABLE_ASSERTS
     EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreatePrimitiveProperty(longProperty, L"StructProperty", PRIMITIVETYPE_Long));
+    }
 
     // Primitives overriding arrays
     EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreatePrimitiveProperty(longProperty, L"StringArrayProperty", PRIMITIVETYPE_Long));
