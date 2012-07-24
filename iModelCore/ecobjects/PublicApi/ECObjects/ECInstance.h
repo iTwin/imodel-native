@@ -233,6 +233,7 @@ struct DLLPUBLIC_ATTRIBUTE IECRelationshipInstance : virtual IECInstance
         virtual void            _SetTarget (IECInstanceP instance)= 0;
         virtual IECInstancePtr  _GetTarget () const = 0;
         virtual ECObjectsStatus _GetTargetOrderId (Int64& targetOrderId) const = 0;
+        DECLARE_DUMMY_VIRTUAL_IN_INTERFACE
 
     public:
         ECOBJECTS_EXPORT void            SetSource (IECInstanceP instance);

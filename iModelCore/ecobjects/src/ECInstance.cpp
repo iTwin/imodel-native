@@ -3102,4 +3102,7 @@ ECSchemaCP ECInstanceReadContext::FindSchemaCP(SchemaKeyCR key, SchemaMatchType 
 
     return &m_fallBackSchema;
     }
+
+DEFINE_DUMMY_VIRTUAL_IN_INTERFACE(IECRelationshipInstance)
+
 END_BENTLEY_EC_NAMESPACE
