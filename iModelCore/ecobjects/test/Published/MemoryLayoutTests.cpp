@@ -1732,9 +1732,6 @@ TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     WString instanceId = instance->GetInstanceId();
-    // move to non-published tests
-    //UInt32 size = instance->GetBytesUsed ();
-    //EXPECT_EQ (size, UInt32(sizeof(InstanceHeader)));
 
     // WIP_FUSION: should pass the string to the logger via a backdoor
     instance->ToString(L"").c_str();
