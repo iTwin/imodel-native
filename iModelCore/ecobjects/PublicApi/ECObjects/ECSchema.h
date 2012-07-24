@@ -515,7 +515,7 @@ typedef RefCountedPtr<SearchPathSchemaFileLocater> SearchPathSchemaFileLocaterPt
 //! @ingroup ECObjectsGroup
 //! The in-memory representation of an ECClass as defined by ECSchemaXML
 //=======================================================================================
-struct DLLPUBLIC_ATTRIBUTE ECClass /*__PUBLISH_ABSTRACT__*/ : IECCustomAttributeContainer
+struct ECClass /*__PUBLISH_ABSTRACT__*/ : IECCustomAttributeContainer
 {
 /*__PUBLISH_SECTION_END__*/
 
@@ -903,7 +903,7 @@ public:
 //! @ingroup ECObjectsGroup
 //! The in-memory representation of a relationship class as defined by ECSchemaXML
 //=======================================================================================
-struct DLLPUBLIC_ATTRIBUTE ECRelationshipClass /*__PUBLISH_ABSTRACT__*/ : public ECClass
+struct ECRelationshipClass /*__PUBLISH_ABSTRACT__*/ : public ECClass
 {
     DEFINE_T_SUPER(ECClass)
 /*__PUBLISH_SECTION_END__*/
@@ -1260,7 +1260,7 @@ typedef RefCountedPtr<ECSchemaCache>        ECSchemaCachePtr;
 //! An object that controls the lifetime of a set of ECSchemas.  When the schema
 //! owner is destroyed, so are the schemas that it owns.</summary>
 //=======================================================================================
-struct DLLPUBLIC_ATTRIBUTE ECSchemaCache /*__PUBLISH_ABSTRACT__*/ : public IECSchemaLocater,  public RefCountedBase
+struct ECSchemaCache /*__PUBLISH_ABSTRACT__*/ : public IECSchemaLocater,  public RefCountedBase
 {
 /*__PUBLISH_SECTION_END__*/
 protected:
