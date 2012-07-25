@@ -118,7 +118,7 @@ static ECOBJECTS_EXPORT void WriteSurface (BeXmlWriterR dest, MSBsplineSurfaceCR
 
 //! Write a common geometry indexed mesh
 //! @param [in] dest xml receiver
-static ECOBJECTS_EXPORT void WritePolyface (BeXmlWriterR dest, PolyfaceVectors &mesh);
+static ECOBJECTS_EXPORT void WritePolyface (BeXmlWriterR dest, PolyfaceHeader &mesh);
 //! Write a common geometry text object
 //! @param [in] dest xml receiver
 static ECOBJECTS_EXPORT void WriteTextPlacement (BeXmlWriterR dest, DPoint3dCR xyz, wchar_t const *text, double charSize);
