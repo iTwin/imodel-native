@@ -263,7 +263,7 @@ void BeXmlCGWriter::WriteDisk (BeXmlWriterR dest, DEllipse3dCR arc)
     }
 
 
-void BeXmlCGWriter::WritePolyface (BeXmlWriterR dest, PolyfaceVectors &mesh)
+void BeXmlCGWriter::WritePolyface (BeXmlWriterR dest, PolyfaceHeader &mesh)
     {
     static int s_coordinatePhase = 2;
     dest.WriteElementStart ("IndexedMesh");
