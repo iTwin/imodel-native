@@ -121,17 +121,33 @@ void            ECPresentationManager::RemoveProvider (ECPresentationCommandProv
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ECPresentationManager::AddProvider (ECPresentationResourceProviderR provider)
+void            ECPresentationManager::AddProvider (ECPresentationImageProviderR provider)
     {
-    CheckAndAddProviderFromList (provider, m_resourceProviders);
+    CheckAndAddProviderFromList (provider, m_imageProviders);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ECPresentationManager::RemoveProvider (ECPresentationResourceProviderR provider)
+void            ECPresentationManager::RemoveProvider (ECPresentationImageProviderR provider)
     {
-    RemoveProviderFromList (provider, m_resourceProviders);
+    RemoveProviderFromList (provider, m_imageProviders);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrius.Zonys                   05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECPresentationManager::AddProvider (ECPresentationLocalizationProviderR provider)
+    {
+    CheckAndAddProviderFromList (provider, m_localizationProviders);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrius.Zonys                   05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECPresentationManager::RemoveProvider (ECPresentationLocalizationProviderR provider)
+    {
+    RemoveProviderFromList (provider, m_localizationProviders);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -254,7 +270,7 @@ IECPresentationViewDefinitionPtr ECPresentationManager::AggregateViewDefinition 
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECNativeImagePtr ECPresentationManager::GetImage (ECImageKeyCR imageKey, DPoint2dCR size)
     {
-    for (T_ResourceProviderSet::const_iterator iter = m_resourceProviders.begin(); iter != m_resourceProviders.end(); ++iter)
+    for (T_ImageProviderSet::const_iterator iter = m_imageProviders.begin(); iter != m_imageProviders.end(); ++iter)
         {
         IECNativeImagePtr nativeImage = (*iter)->GetImage(imageKey, size);
         if (nativeImage.IsNull())
@@ -270,7 +286,7 @@ IECNativeImagePtr ECPresentationManager::GetImage (ECImageKeyCR imageKey, DPoint
 +---------------+---------------+---------------+---------------+---------------+------*/
 WCharCP         ECPresentationManager::GetString (WCharCP rscFileName, UInt tableId, UInt rscId)
     {
-    for (T_ResourceProviderSet::const_iterator iter = m_resourceProviders.begin(); iter != m_resourceProviders.end(); ++iter)
+    for (T_LocalizationProviderSet::const_iterator iter = m_localizationProviders.begin(); iter != m_localizationProviders.end(); ++iter)
         {
         WCharCP localizedString = (*iter)->GetString (rscFileName, tableId, rscId);
         if (!WString::IsNullOrEmpty (localizedString))

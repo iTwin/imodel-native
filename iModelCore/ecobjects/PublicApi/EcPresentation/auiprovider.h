@@ -16,10 +16,11 @@ struct          IECPresentationProvider
     {
     enum ProviderType
         {
-        ViewService     = 1,
-        ContentService  = 1<<1,
-        CommandService  = 1<<2,
-        ResourceService = 1<<3,
+        ViewService         = 1,
+        ContentService      = 1<<1,
+        CommandService      = 1<<2,
+        ImageService        = 1<<3,
+        LocalizationService = 1<<4,
         };
 
     protected:
