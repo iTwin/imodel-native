@@ -245,6 +245,31 @@ ECObjectsStatus         MemoryECInstanceBase::IsAnyPerPropertyBitSet (bool& isSe
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Set IsLoaded bit for specified property. If the property is a member of a struct
+* then as set IsLoaded bit on the parent struct property.
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus          MemoryECInstanceBase::SetIsLoadedBit (UInt32 propertyIndex)
+    {
+    UInt8 bitIndex = (UInt8) PROPERTYFLAGINDEX_IsLoaded;
+
+    ECObjectsStatus status = SetPerPropertyBit (bitIndex, propertyIndex, true);
+
+    PropertyLayoutCP propertyLayout = NULL;
+
+    if (ECOBJECTS_STATUS_Success == GetClassLayout().GetPropertyLayoutByIndex (propertyLayout, propertyIndex))
+        {
+        UInt32 parentIndex = propertyLayout->GetParentStructIndex();
+        if (0 != parentIndex)
+            {
+            status = SetIsLoadedBit (parentIndex);
+            }
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus          MemoryECInstanceBase::SetPerPropertyBit (UInt8 bitIndex, UInt32 propertyIndex, bool setBit)
@@ -1612,7 +1637,7 @@ ECObjectsStatus           StandaloneECInstance::_SetValue (UInt32 propertyIndex,
     {
     ClassLayoutCR classLayout = GetClassLayout();
 
-    SetPerPropertyBit ((UInt8) PROPERTYFLAGINDEX_IsLoaded, propertyIndex, true);
+    SetIsLoadedBit (propertyIndex);
 
     return SetValueToMemory (classLayout, propertyIndex, v, useArrayIndex, arrayIndex);
     }
