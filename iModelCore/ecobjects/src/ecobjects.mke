@@ -124,7 +124,9 @@ $(o)eccontentdefinition$(oext)             : $(baseDir)presentation/eccontentdef
 
 $(o)auijournal$(oext)                      : $(baseDir)presentation/auijournal.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
 
-$(o)ECResourceProvider$(oext)              : $(baseDir)presentation/ECResourceProvider.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
+$(o)ECImageProvider$(oext)                 : $(baseDir)presentation/ECImageProvider.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
+
+$(o)ECLocalizationProvider$(oext)          : $(baseDir)presentation/ECLocalizationProvider.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
 
 $(o)auievent$(oext)                        : $(baseDir)presentation/auievent.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
 

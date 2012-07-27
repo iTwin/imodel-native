@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/EcPresentation/ECResourceProvider.h $
+|     $Source: PublicApi/EcPresentation/ECImageProvider.h $
 |
 |  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -11,7 +11,7 @@
 BEGIN_BENTLEY_EC_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
-* @bsiclass                                    Abeesh.Basheer                  04/2012
+* @bsiclass                                     Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ECImageKey
     {
@@ -36,7 +36,7 @@ struct ECImageKey
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsiclass                                    Abeesh.Basheer                  04/2012
+* @bsiclass                                     Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct IECNativeImage : public RefCountedBase
     {
@@ -93,18 +93,16 @@ struct  ECNativeImage :public IECNativeImage
 #pragma warning(default:4189)
 
 /*---------------------------------------------------------------------------------**//**
-* @bsiclass                                    Abeesh.Basheer                  04/2012
+* @bsiclass                                     Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ECPresentationResourceProvider : public IECPresentationProvider
+struct ECPresentationImageProvider : public IECPresentationProvider
     {
     protected:
-        virtual ProviderType      _GetProviderType() const override {return ResourceService;}
+        virtual ProviderType      _GetProviderType() const override {return ImageService;}
         virtual IECNativeImagePtr _GetImage (ECImageKeyCR imageKey, DPoint2dCR size) = 0;
-        virtual WCharCP           _GetString (WCharCP rscFileName,  UInt tableId, UInt rscId) = 0;
 
     public:
         ECOBJECTS_EXPORT IECNativeImagePtr GetImage (ECImageKeyCR imageKey, DPoint2dCR size);
-        ECOBJECTS_EXPORT WCharCP           GetString (WCharCP rscFileName, UInt tableId, UInt rscId);
     };
 
 END_BENTLEY_EC_NAMESPACE
