@@ -1402,8 +1402,11 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     EXPECT_EQ(baseStringProp, stringProperty->GetBaseProperty());
     class1->RemoveProperty(L"StringProperty");
     
+    {
     // Primitives overriding structs
+    DISABLE_ASSERTS
     EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreatePrimitiveProperty(longProperty, L"StructProperty", PRIMITIVETYPE_Long));
+    }
 
     // Primitives overriding arrays
     EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreatePrimitiveProperty(longProperty, L"StringArrayProperty", PRIMITIVETYPE_Long));
@@ -1411,8 +1414,12 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     class1->RemoveProperty(L"StringArrayProperty");
 
     StructECPropertyP structProperty;
+
+    {
     // Structs overriding primitives
+    DISABLE_ASSERTS
     EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateStructProperty(structProperty, L"IntegerProperty"));
+    }
 
     // Structs overriding structs
     // If we don't specify a struct type for the new property, then it should succeed
