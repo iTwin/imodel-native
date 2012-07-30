@@ -68,8 +68,8 @@
 #include <ECObjects/StandaloneECRelationshipInstance.h>
 #include <ECObjects/ecprovider.h>
 #include <ECObjects/ECInstanceIterable.h>
+#include <ECObjects/PresentationMetadataHelper.h>
 #include <Bentley/ScopedArray.h>
-
 
 /*__PUBLISH_SECTION_END__*/
 #include <ECObjects/DesignByContract.h>
