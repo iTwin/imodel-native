@@ -558,6 +558,15 @@ IECCustomAttributeContainerR destContainer
         }
     return status;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Paul.Connelly                   07/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaP IECCustomAttributeContainer::GetContainerSchema()
+    {
+    return const_cast<ECSchemaP> (_GetContainerSchema());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/

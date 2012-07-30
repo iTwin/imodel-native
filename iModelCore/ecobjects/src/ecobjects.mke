@@ -110,6 +110,8 @@ $(o)ecprovider$(oext)                      : $(baseDir)ecprovider.cpp $(ECObject
 
 $(o)ecinstanceiterable$(oext)              : $(baseDir)ecinstanceiterable.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
+$(0)PresentationMetadataHelper$(oext)      : $(baseDir)PresentationMetadataHelper.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
 $(o)auipresentationmgr$(oext)              : $(baseDir)presentation/auipresentationmgr.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
 
 $(o)auicommand$(oext)                      : $(baseDir)presentation/auicommand.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 

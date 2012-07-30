@@ -146,6 +146,9 @@ protected:
 
     ECOBJECTS_EXPORT virtual ~IECCustomAttributeContainer();
 
+public:
+    ECSchemaP                           GetContainerSchema();
+
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Returns true if the container has a custom attribute of a class of the specified name
