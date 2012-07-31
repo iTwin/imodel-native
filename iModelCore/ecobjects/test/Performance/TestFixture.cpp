@@ -2,7 +2,7 @@
 |
 |     $Source: test/Performance/TestFixture.cpp $
 |
-|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 | Based on http://cplus.about.com/od/howtodothingsi2/a/timing.htm
 |
 +--------------------------------------------------------------------------------------*/
@@ -335,8 +335,8 @@ WString ReplaceDelimiters (WStringCR in, WStringCR oldDelimiter, WStringCR newDe
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString ReplaceSlashes (WStringCR in)
     {
-    WString slash ("/");
-    WString backSlash ("\\");
+    WString slash (L"/");
+    WString backSlash (L"\\");
     return ReplaceDelimiters (in, slash, backSlash);
     }
 
@@ -345,18 +345,18 @@ WString ReplaceSlashes (WStringCR in)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString ECTestFixture::GetTestResultsFilePath (WCharCP fileName)
     {
-    WString path = WString(getenv ("TESTRESULTS_DIR"));
+    WString path = WString(getenv ("TESTRESULTS_DIR"), false);
 
     // If they don't, we will put them in the tmp dir.
     if (0 == path.size())
         {
-        path = WString (getenv ("OutRoot"));
+        path = WString (getenv ("OutRoot"), false);
         if (path.size() > 0)
             {
             if (*path.rbegin() != '\\')
                 path.append (L"\\");
 
-            WString processorArch = WString (getenv ("DEFAULT_TARGET_PROCESSOR_ARCHITECTURE"));
+            WString processorArch = WString (getenv ("DEFAULT_TARGET_PROCESSOR_ARCHITECTURE"), false);
             if (0 == processorArch.size())
                 path += L"Winx64";
             else
@@ -371,7 +371,7 @@ WString ECTestFixture::GetTestResultsFilePath (WCharCP fileName)
 
     if (0 == path.size())
         {
-        path = WString (getenv ("tmp"));
+        path.AssignA (getenv ("tmp"));
         if (path.size() > 0 && *path.rbegin() != '\\')
             path.append (L"\\");
 
