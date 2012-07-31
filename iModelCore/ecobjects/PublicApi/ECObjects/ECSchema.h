@@ -1426,6 +1426,7 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
 struct SupplementalSchemaInfo;
+typedef RefCountedPtr<SupplementalSchemaInfo> SupplementalSchemaInfoPtr;
 
 //=======================================================================================
 //! @ingroup ECObjectsGroup
@@ -1458,7 +1459,7 @@ private:
     ClassMap                m_classMap;
     ECSchemaReferenceList   m_refSchemaList;
     bool                m_isSupplemented;
-    SupplementalSchemaInfo  *m_supplementalSchemaInfo;
+    SupplementalSchemaInfoPtr  m_supplementalSchemaInfo;
     
     bmap<ECSchemaP, const WString> m_referencedSchemaNamespaceMap;
 
@@ -1553,7 +1554,7 @@ public:
     ECOBJECTS_EXPORT bool               IsSupplemented() const;
 
     //! Gets the SupplementalSchemaInfo for this ECSchema
-    ECOBJECTS_EXPORT SupplementalSchemaInfo* const GetSupplementalInfo() const;
+    ECOBJECTS_EXPORT SupplementalSchemaInfoPtr const GetSupplementalInfo() const;
 
     //! Returns true if and only if the full schema name (including version) represents a standard schema that should never
     //! be stored persistently in a repository (we expect it to be found elsewhere)

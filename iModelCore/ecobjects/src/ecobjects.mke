@@ -50,6 +50,7 @@ ECObjectsHeaders =  $(ecobjectsPublicAPISrc)ECObjects.h \
                     $(ecobjectsPublicAPISrc)ECEnabler.h \
                     $(ecobjectsPublicAPISrc)DesignByContract.h \
                     $(ecobjectsPublicAPISrc)MemoryInstanceSupport.h \
+					$(ecobjectsPublicAPISrc)SupplementalSchema.h \
                     $(baseDir)ecxml.h \
                     $(baseDir)Logger.h \
                     $(baseDir)FileUtilities.h \
@@ -96,6 +97,8 @@ $(o)MemoryInstanceSupport$(oext)           : $(baseDir)MemoryInstanceSupport.cpp
 $(o)StandaloneECInstance$(oext)            : $(baseDir)StandaloneECInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)StandaloneECInstance.h
 
 $(o)StandaloneECRelationshipInstance$(oext) : $(baseDir)StandaloneECRelationshipInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)StandaloneECRelationshipInstance.h  $(ecobjectsPublicAPISrc)StandaloneECInstance.h
+
+$(o)SupplementalSchema$(oext)              : $(baseDir)SupplementalSchema.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)DesignByContract$(oext)                : $(baseDir)DesignByContract.cpp $(ecobjectsPublicAPISrc)DesignByContract.h ${MultiCompileDepends} 
 

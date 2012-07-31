@@ -980,7 +980,7 @@ void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfo* info)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-SupplementalSchemaInfo* const ECSchema::GetSupplementalInfo() const
+SupplementalSchemaInfoPtr const ECSchema::GetSupplementalInfo() const
     {
     return m_supplementalSchemaInfo;
     }
