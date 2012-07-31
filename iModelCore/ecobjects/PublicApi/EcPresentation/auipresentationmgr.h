@@ -16,18 +16,20 @@ BEGIN_BENTLEY_EC_NAMESPACE
 struct  ECPresentationManager: public NonCopyableClass
     {
     private:
-        typedef bvector<ECPresentationCommandProviderCP>   T_CmdProviderSet;
-        typedef bvector<IECPresentationViewProviderP>      T_ViewProviderSet;
-        typedef bvector<IJournalProviderP>                 T_JournalProviderSet;
-        typedef bvector<IAUIContentServiceProviderP>       T_ContentProviderSet;
-        typedef bvector<ECPresentationResourceProviderP>   T_ResourceProviderSet;
-        typedef bvector<ECSelectionListenerP>              T_SelectionListeners;
-        T_CmdProviderSet        m_cmdProviders;
-        T_ViewProviderSet       m_viewProviders;
-        T_JournalProviderSet    m_journalProviders;
-        T_ContentProviderSet    m_contentProviders;
-        T_ResourceProviderSet   m_resourceProviders;
-        T_SelectionListeners    m_selecitonListeners;
+        typedef bvector<ECPresentationCommandProviderCP>     T_CmdProviderSet;
+        typedef bvector<IECPresentationViewProviderP>        T_ViewProviderSet;
+        typedef bvector<IJournalProviderP>                   T_JournalProviderSet;
+        typedef bvector<IAUIContentServiceProviderP>         T_ContentProviderSet;
+        typedef bvector<ECPresentationImageProviderP>        T_ImageProviderSet;
+        typedef bvector<ECPresentationLocalizationProviderP> T_LocalizationProviderSet;
+        typedef bvector<ECSelectionListenerP>                T_SelectionListeners;
+        T_CmdProviderSet          m_cmdProviders;
+        T_ViewProviderSet         m_viewProviders;
+        T_JournalProviderSet      m_journalProviders;
+        T_ContentProviderSet      m_contentProviders;
+        T_ImageProviderSet        m_imageProviders;
+        T_LocalizationProviderSet m_localizationProviders;
+        T_SelectionListeners      m_selecitonListeners;
 
         ECPresentationManager ();
         
@@ -59,9 +61,13 @@ struct  ECPresentationManager: public NonCopyableClass
     ECOBJECTS_EXPORT void                           AddProvider (IAUIContentServiceProviderR provider);
     ECOBJECTS_EXPORT void                           RemoveProvider (IAUIContentServiceProviderR provider);
 
-    //! Add or remove the resource provider
-    ECOBJECTS_EXPORT void                           AddProvider (ECPresentationResourceProviderR provider);
-    ECOBJECTS_EXPORT void                           RemoveProvider (ECPresentationResourceProviderR provider);
+    //! Add or remove the image provider
+    ECOBJECTS_EXPORT void                           AddProvider (ECPresentationImageProviderR provider);
+    ECOBJECTS_EXPORT void                           RemoveProvider (ECPresentationImageProviderR provider);
+
+    //! Add or remove the localization provider
+    ECOBJECTS_EXPORT void                           AddProvider (ECPresentationLocalizationProviderR provider);
+    ECOBJECTS_EXPORT void                           RemoveProvider (ECPresentationLocalizationProviderR provider);
 
     //!Get the view definition associated with a particular data context.
     //!@param[in] itemInfo      A hint to provide the context in which the view definition will be used. eg. MenuItem
@@ -77,10 +83,10 @@ struct  ECPresentationManager: public NonCopyableClass
     //! different command providers.
     ECOBJECTS_EXPORT bvector<UICommandPtr>              GetCommands (IAUIDataContextCR instance) const;
 
-    //! Fetch an image of the specified size and name from the resource providers.
+    //! Fetch an image of the specified size and name from the image providers.
     ECOBJECTS_EXPORT IECNativeImagePtr                  GetImage (ECImageKeyCR imageKey, DPoint2dCR size);
 
-    //! Get string from resource providers.
+    //! Get string from localization providers.
     //!@param[in] rscFileName   Dll name which contains the resource.
     //!@param[in] tableId       Table ID form which resource shoud be taken.
     //!@param[in] rscId         Resource ID.

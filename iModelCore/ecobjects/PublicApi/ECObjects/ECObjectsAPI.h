@@ -74,6 +74,7 @@
 
 /*__PUBLISH_SECTION_END__*/
 #include <ECObjects/DesignByContract.h>
+#include <ECObjects/ECEvent.h>
 #include <ECObjects/BeXmlCommonGeometry.h>
 // This define is checked from the ECObjects Published ATPs to ensure that they are building against the published header files.
 #define NON_PUBLISHED_HEADER_INCLUDED

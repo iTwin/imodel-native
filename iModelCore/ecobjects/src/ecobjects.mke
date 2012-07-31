@@ -50,7 +50,8 @@ ECObjectsHeaders =  $(ecobjectsPublicAPISrc)ECObjects.h \
                     $(ecobjectsPublicAPISrc)ECEnabler.h \
                     $(ecobjectsPublicAPISrc)DesignByContract.h \
                     $(ecobjectsPublicAPISrc)MemoryInstanceSupport.h \
-					$(ecobjectsPublicAPISrc)SupplementalSchema.h \
+                    $(ecobjectsPublicAPISrc)SupplementalSchema.h \
+                    $(ecobjectsPublicAPISrc)ECEvent.h \
                     $(baseDir)ecxml.h \
                     $(baseDir)Logger.h \
                     $(baseDir)FileUtilities.h \
@@ -126,7 +127,9 @@ $(o)eccontentdefinition$(oext)             : $(baseDir)presentation/eccontentdef
 
 $(o)auijournal$(oext)                      : $(baseDir)presentation/auijournal.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
 
-$(o)ECResourceProvider$(oext)              : $(baseDir)presentation/ECResourceProvider.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
+$(o)ECImageProvider$(oext)                 : $(baseDir)presentation/ECImageProvider.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
+
+$(o)ECLocalizationProvider$(oext)          : $(baseDir)presentation/ECLocalizationProvider.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
 
 $(o)auievent$(oext)                        : $(baseDir)presentation/auievent.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
 
