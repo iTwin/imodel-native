@@ -101,6 +101,7 @@ struct  ECPresentationManager: public NonCopyableClass
     ECOBJECTS_EXPORT    void UnRegisterSelectionHook (ECSelectionListener& listener);
 
     ECOBJECTS_EXPORT    void TriggerSelectionEvent (ECSelectionEventCR selectionEvent);
+    ECOBJECTS_EXPORT    void TriggerSubSelectionEvent (ECSelectionEventCR selectionEvent);
     };
 
 END_BENTLEY_EC_NAMESPACE

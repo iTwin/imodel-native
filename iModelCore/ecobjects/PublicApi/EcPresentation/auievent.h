@@ -42,11 +42,14 @@ struct ECSelectionListener
 
     virtual void _OnSelection (ECSelectionEventCR selectionEvent) = 0;
 
+    virtual void _OnSubSelection (ECSelectionEventCR selectionEvent) {}
 
     public:
         ECOBJECTS_EXPORT void const *  GeteventHub () const;
 
         ECOBJECTS_EXPORT void   OnSelection (ECSelectionEventCR selectionEvent);
+
+        ECOBJECTS_EXPORT void   OnSubSelection (ECSelectionEventCR selectionEvent);
     };
 
 
