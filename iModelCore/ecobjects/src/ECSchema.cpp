@@ -1878,7 +1878,7 @@ Int64 ECSchema::GenerateHashcodeFromECName(WCharCP name)
             d = w - 53;
         else if (w >= 97 && w <= 122) // a - z
             d = w - 59;
-        else if (w == 85)             // :
+        else if (w == 58)             // :
             d = 0;
         else
             d = 0; // illegal char... this should not happen. Log it.
