@@ -132,7 +132,7 @@ private:
     
     // These members are transient
     UInt32                            m_sizeOfFixedSection;
-    bool                              m_isRelationshipClass;
+    bool                              m_isRelationshipClass;         // make this a bitmask IsRelationshipClass, OnPartialInstanceLoaded (this should allow roundtrip native-managed-native
     int                               m_propertyIndexOfSourceECPointer;
     int                               m_propertyIndexOfTargetECPointer;
     int                               m_uniqueId;
