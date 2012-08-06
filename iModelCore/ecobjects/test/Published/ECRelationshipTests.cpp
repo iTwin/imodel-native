@@ -71,7 +71,6 @@ static ECSchemaP       CreateTestSchema (ECSchemaCacheR schemaOwner)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECRelationshipTests, SimpleRelationship)
     {
-    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
     ECSchemaP        schema = CreateTestSchema(*schemaOwner);
     ASSERT_TRUE (schema != NULL);
 
@@ -128,7 +127,6 @@ TEST_F(ECRelationshipTests, SimpleRelationship)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECRelationshipTests, SetRelationshipProperties)
     {
-    ECSchemaCachePtr schemaOwner = ECSchemaCache::Create();
     ECSchemaP        schema = CreateTestSchema(*schemaOwner);
     ASSERT_TRUE (schema != NULL);
 

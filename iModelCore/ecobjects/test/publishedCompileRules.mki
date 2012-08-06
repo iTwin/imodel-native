@@ -27,4 +27,4 @@ $(o)TestFixture$(oext)        : $(baseDir)Published/TestFixture.cpp $(PCHHeaderD
 
 $(o)BuildInstanceAndSerializeToXML$(oext)  : $(baseDir)Published/BuildInstanceAndSerializeToXML.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
 
-#$(o)SupplementalSchemaTests$(oext)  : $(baseDir)Published/SupplementalSchemaTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
+$(o)SupplementalSchemaTests$(oext)  : $(baseDir)Published/SupplementalSchemaTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}

@@ -28,3 +28,10 @@ void            ECSelectionListener::OnSelection (ECSelectionEventCR selectionEv
     return _OnSelection(selectionEvent);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  07/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ void           ECSelectionListener::OnSubSelection (ECSelectionEventCR selectionEvent)
+     {
+     return _OnSubSelection(selectionEvent);
+     }

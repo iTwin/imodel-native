@@ -26,6 +26,7 @@ MemoryECInstanceBase::MemoryECInstanceBase (byte * data, UInt32 size, ClassLayou
     m_structInstances = NULL;
     m_usingSharedMemory = false;
     m_parentInstance = parentInstance;
+    m_usageBitmask = 0;
 
     InitializePerPropertyFlags (classLayout, DEFAULT_NUMBITSPERPROPERTY);
     }
@@ -40,7 +41,7 @@ MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 mi
     m_structInstances = NULL;
     m_data = NULL;
     m_usingSharedMemory = false;
-
+    m_usageBitmask = 0;
     m_parentInstance = parentInstance;
 
     UInt32 size = std::max (minimumBufferSize, classLayout.GetSizeOfFixedSection());
@@ -693,6 +694,65 @@ static void     duplicateProperties (IECInstanceR target, ECValuesCollectionCR s
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt16          MemoryECInstanceBase::GetUsageBitmask () const
+    {
+    return m_usageBitmask;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            MemoryECInstanceBase::SetUsageBitmask (UInt16 mask)
+    {
+    m_usageBitmask =  mask;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            MemoryECInstanceBase::SetPartiallyLoaded (bool set)
+    {
+    if (set)
+        m_usageBitmask = m_usageBitmask | (UInt16)MEMORYINSTANCEUSAGE_IsPartiallyLoaded;
+    else 
+        m_usageBitmask = m_usageBitmask & (~(UInt16)MEMORYINSTANCEUSAGE_IsPartiallyLoaded); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Partially loaded means that not all available instance properties have been load
+* from persistent storage due to some type of loading filter that was limiting
+* the property values returned.
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool           MemoryECInstanceBase::IsPartiallyLoaded ()
+    {
+    return  0 != (m_usageBitmask | (UInt16)MEMORYINSTANCEUSAGE_IsPartiallyLoaded); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* This is used when copying properties from partial instance for instance update processing
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus MemoryECInstanceBase::CopyNonNullPropertiesFromInstance
+(
+EC::IECInstanceCR     fromNativeInstance
+)
+    {
+    IECInstancePtr  thisAsIECInstance = GetAsIECInstance ();
+
+    if (!thisAsIECInstance->GetClass().GetName().Equals (fromNativeInstance.GetClass().GetName().c_str()))
+        return ECOBJECTS_STATUS_Error;
+
+    // copy properties individually
+    ECValuesCollectionPtr   properties = ECValuesCollection::Create (fromNativeInstance);
+    duplicateProperties (*thisAsIECInstance, *properties);
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus MemoryECInstanceBase::CopyInstanceProperties
@@ -713,6 +773,9 @@ EC::IECInstanceCR     fromNativeInstance
         if (classLayout.GetChecksum() == fromMemoryInstance->GetClassLayout().GetChecksum())
             {
             SetData (fromMemoryInstance->GetData (), fromMemoryInstance->GetBytesUsed (), true); // if true is last argument memory is copied
+
+            // copy the usage mask
+            SetUsageBitmask (fromMemoryInstance->GetUsageBitmask());
 
             // copy the perProperty flags
             memcpy (m_perPropertyFlagsHolder.perPropertyFlags, fromMemoryInstance->GetPerPropertyFlagsData(), m_perPropertyFlagsHolder.numPerPropertyFlagsEntries * sizeof(UInt32));

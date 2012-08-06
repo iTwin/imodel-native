@@ -29,6 +29,12 @@ enum PropertyFlagIndex : UInt8
     PROPERTYFLAGINDEX_IsDirty  = 1
     };
 
+enum MemoryInstanceUsageBitmask : UInt16
+    {
+    MEMORYINSTANCEUSAGE_Empty              = 0x0000,
+    MEMORYINSTANCEUSAGE_IsPartiallyLoaded  = 0x0001
+    };
+
 typedef int StructValueIdentifier;
 
 struct StructArrayEntry
@@ -77,6 +83,7 @@ private:
     MemoryECInstanceBase const* m_parentInstance;
     StructValueIdentifier   m_structValueId;
     bool                    m_usingSharedMemory;
+    UInt16                  m_usageBitmask;  // currently only used to round trip Partially Load flag
 
     IECInstancePtr          GetStructArrayInstance (StructValueIdentifier structValueId) const;
     StructArrayEntry const* GetAddressOfStructArrayEntry (StructValueIdentifier key) const;
@@ -132,6 +139,8 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
 
     ECOBJECTS_EXPORT IECInstancePtr           GetStructArrayInstanceByIndex (UInt32 index, StructValueIdentifier& structValueId) const;
     ECOBJECTS_EXPORT ECObjectsStatus          SetStructArrayInstance (MemoryECInstanceBaseCR instance, StructValueIdentifier structValueId);
+    ECOBJECTS_EXPORT ECObjectsStatus          CopyNonNullPropertiesFromInstance (EC::IECInstanceCR fromNativeInstance);
+
     ECOBJECTS_EXPORT void                     SetUsingSharedMemory ();
 
     ECOBJECTS_EXPORT byte const *             GetPerPropertyFlagsData () const;
@@ -139,7 +148,10 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT UInt32                   GetPerPropertyFlagsDataLength () const;
     ECOBJECTS_EXPORT ECObjectsStatus          AddNullArrayElements (WCharCP propertyAccessString, UInt32 insertCount);
     ECOBJECTS_EXPORT ECObjectsStatus          CopyInstanceProperties (EC::IECInstanceCR fromNativeInstance);
-
+    ECOBJECTS_EXPORT UInt16                   GetUsageBitmask () const;
+    ECOBJECTS_EXPORT void                     SetUsageBitmask (UInt16 mask);
+    ECOBJECTS_EXPORT void                     SetPartiallyLoaded (bool set);
+    ECOBJECTS_EXPORT bool                     IsPartiallyLoaded ();
 };
 
 /*=================================================================================**//**
