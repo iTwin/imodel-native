@@ -84,7 +84,7 @@ EC_TYPEDEFS(SystemTime);
 EC_TYPEDEFS(ICustomECStructSerializer);
 EC_TYPEDEFS(CustomStructSerializerManager);
 EC_TYPEDEFS (ECInstanceIterable);
-//EC_TYPEDEFS(SupplementalSchemaMetaData);
+EC_TYPEDEFS(SupplementalSchemaMetaData);
 EC_TYPEDEFS (PresentationMetadataHelper);
 
 typedef struct IStream* IStreamP;

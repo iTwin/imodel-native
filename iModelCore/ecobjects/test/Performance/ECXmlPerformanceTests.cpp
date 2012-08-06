@@ -91,7 +91,6 @@ FILE* logFile
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECXmlPerformanceTest, ReadingAndWritingSchema)
     {
-    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
     FILE* logFile=NULL;
@@ -116,7 +115,6 @@ TEST_F(ECXmlPerformanceTest, ReadingAndWritingSchema)
 
 TEST_F(ECXmlPerformanceTest, ReadingAndWritingInstance)
     {
-    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
     FILE* logFile=NULL;

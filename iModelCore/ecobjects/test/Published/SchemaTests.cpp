@@ -302,7 +302,6 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateNamespacePrefixes)
     // show error messages but do not assert.
     ECSchema::SetErrorHandling (true, false);
 
-    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
@@ -320,7 +319,6 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingSchemaNameAttr
     // show error messages but do not assert.
     ECSchema::SetErrorHandling (true, false);
 
-    
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
@@ -393,7 +391,6 @@ TEST_F(SchemaDeserializationTest, ExpectFailureWhenMissingTypeNameInProperty)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectUnrecognizedTypeNamesToSurviveRoundtrip)
     {
-    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
@@ -930,7 +927,6 @@ TEST_F(SchemaReferenceTest, ExpectSuccessWithCircularReferences)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaReferenceTest, ExpectSuccessWithSpecialCaseOpenPlantSchema)
     {
-    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
     WString seedPath(ECTestFixture::GetTestDataPath(L"").c_str());
     schemaContext->AddSchemaPath(seedPath.c_str());
@@ -1402,8 +1398,11 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     EXPECT_EQ(baseStringProp, stringProperty->GetBaseProperty());
     class1->RemoveProperty(L"StringProperty");
     
+    {
     // Primitives overriding structs
+    DISABLE_ASSERTS
     EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreatePrimitiveProperty(longProperty, L"StructProperty", PRIMITIVETYPE_Long));
+    }
 
     // Primitives overriding arrays
     EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreatePrimitiveProperty(longProperty, L"StringArrayProperty", PRIMITIVETYPE_Long));
@@ -1411,8 +1410,12 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     class1->RemoveProperty(L"StringArrayProperty");
 
     StructECPropertyP structProperty;
+
+    {
     // Structs overriding primitives
+    DISABLE_ASSERTS
     EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateStructProperty(structProperty, L"IntegerProperty"));
+    }
 
     // Structs overriding structs
     // If we don't specify a struct type for the new property, then it should succeed
