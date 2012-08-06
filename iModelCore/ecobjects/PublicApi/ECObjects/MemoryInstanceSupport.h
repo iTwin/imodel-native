@@ -182,8 +182,8 @@ public:
     int                     GetUniqueId() const;
     void                    AddPropertyLayout (WCharCP accessString, PropertyLayoutR);
     void                    AddToLogicalStructureMap (PropertyLayoutR propertyLayout, UInt32 propertyIndex);
-    void                    InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const;
-    UInt32                  GetSizeOfFixedSection() const;
+    ECOBJECTS_EXPORT void   InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const;
+    ECOBJECTS_EXPORT UInt32 GetSizeOfFixedSection() const;
 
     ECOBJECTS_EXPORT UInt32                  GetFirstChildPropertyIndex (UInt32 parentIndex) const;
     ECOBJECTS_EXPORT UInt32                  GetNextChildPropertyIndex (UInt32 parentIndex, UInt32 childIndex) const;

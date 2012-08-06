@@ -67,7 +67,14 @@ static ECPropertyCP propertyFromAccessString (ECClassCR ecClass, WCharCP accessS
     {
     WCharCP dot = wcschr (accessString, '.');
     if (NULL == dot)
-        return ecClass.GetPropertyP (accessString);
+        {
+        // Discrepancy between "managed" access strings, which do not include "[]" for array properties, and "native" access strings, which do...annoyingly requires copying the string...
+        WString fixedAccessString (accessString);
+        if (fixedAccessString.length() >= 2 && '[' == fixedAccessString[fixedAccessString.length()-2])
+            fixedAccessString.erase (fixedAccessString.length()-2);
+
+        return ecClass.GetPropertyP (fixedAccessString.c_str());
+        }
     else
         {
         WString structName (accessString, dot);
