@@ -163,7 +163,7 @@ DLM_NOINITFUNC              = 1
 DLM_NOMSBUILTINS            = 1
 DLM_NOENTRY                 = 1
 %if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT
-LINKER__LIBRARIES           = $(BuildContext)SubParts/Libs/bentleylogging-2.0$(libext) xmllite$(libext)
+LINKER__LIBRARIES           = xmllite$(libext)
 %endif
 LINKER__LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
 LINKER__LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
