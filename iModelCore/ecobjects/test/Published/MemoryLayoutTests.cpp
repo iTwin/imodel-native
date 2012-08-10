@@ -1186,7 +1186,7 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_PrimitiveProperties)
     EXPECT_TRUE (expectedValues.size() == iValue);
     }
 
- /*---------------------------------------------------------------------------------**//**
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, CopyInstanceProperties)
@@ -1248,6 +1248,62 @@ TEST_F(MemoryLayoutTests, CopyInstanceProperties)
     //dumpPropertyValues (*collection, false, 0);
 
     EXPECT_TRUE (expectedValues.size() == iValue);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MemoryLayoutTests, MergeInstanceProperties)
+    {
+    ECSchemaPtr        schema = CreateTestSchema();
+    ASSERT_TRUE (schema.get() != NULL);
+
+    StandaloneECEnablerPtr enabler = schema->GetClassP(L"CadData")->GetDefaultStandaloneEnabler ();
+    ASSERT_TRUE (enabler.IsValid());
+
+    /*--------------------------------------------------------------------------
+        Build the base instance
+    --------------------------------------------------------------------------*/
+    EC::StandaloneECInstancePtr mergeToInstance = enabler->CreateInstance();
+
+    mergeToInstance->SetValue(L"Name",         ECValue (L"base"));
+    mergeToInstance->SetValue(L"Length",       ECValue (142.5));
+    mergeToInstance->SetValue(L"Field_Tested", ECValue (true));
+
+    /*--------------------------------------------------------------------------
+        Build the instance with data to merge
+    --------------------------------------------------------------------------*/
+    EC::StandaloneECInstancePtr mergeFromInstance = enabler->CreateInstance();
+
+    DPoint2d   tstSize = {10.5, 22.3};
+
+    ECValue nullBool (EC::PRIMITIVETYPE_Boolean);
+
+    mergeFromInstance->SetValue(L"Name",         ECValue (L"merge"));
+    mergeFromInstance->SetValue(L"Count",        ECValue (14));
+    mergeFromInstance->SetValue(L"Field_Tested", nullBool);
+    mergeFromInstance->SetValue (L"Size",        ECValue (tstSize));
+
+    MemoryECInstanceBase* mbInstance = mergeToInstance->GetAsMemoryECInstance ();
+    mbInstance->MergePropertiesFromInstance (*mergeFromInstance);
+
+    bvector <AccessStringValuePair> expectedValues;
+
+    expectedValues.push_back (AccessStringValuePair (L"Count",          ECValue(14)));
+    expectedValues.push_back (AccessStringValuePair (L"StartPoint",     ECValue ()));
+    expectedValues.push_back (AccessStringValuePair (L"EndPoint",       ECValue ()));
+    expectedValues.push_back (AccessStringValuePair (L"Size",           ECValue (tstSize)));
+    expectedValues.push_back (AccessStringValuePair (L"Length",         ECValue (142.5)));
+    expectedValues.push_back (AccessStringValuePair (L"Install_Date",   ECValue ()));
+    expectedValues.push_back (AccessStringValuePair (L"Service_Date",   ECValue ()));
+    expectedValues.push_back (AccessStringValuePair (L"Field_Tested",   nullBool));
+    expectedValues.push_back (AccessStringValuePair (L"Name",           ECValue (L"merge")));
+
+    ECValuesCollectionPtr   collection = ECValuesCollection::Create (*mergeToInstance);
+    dumpPropertyValues (*collection, false, 0);
+
+    UInt32                  iValue = 0;
+    verifyECValueEnumeration (*collection, expectedValues, iValue, false);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -132,12 +132,24 @@ SystemTime SystemTime::GetSystemTime()
     return time;
     }
 
+enum ECValueStateFlags ENUM_UNDERLYING_TYPE(unsigned char)
+    {
+    ECVALUE_STATE_None         = 0x00,
+    ECVALUE_STATE_IsNull       = 0x01,
+    ECVALUE_STATE_IsReadOnly   = 0x02,      // Really indicates that the property from which this came is readonly... not the value itself.
+    ECVALUE_STATE_IsLoaded     = 0x04
+    };
+
 /*---------------------------------------------------------------------------------**//**
+*  Really indicates that the property from which this came is readonly... not the value itself.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ECValue::SetReadOnly(bool isReadOnly) 
+void            ECValue::SetIsReadOnly(bool isReadOnly) 
     { 
-    m_isReadOnly = isReadOnly; 
+    if (isReadOnly)
+        m_stateFlags |= ((UInt8)ECVALUE_STATE_IsReadOnly); 
+    else
+        m_stateFlags &= ~((UInt8)ECVALUE_STATE_IsReadOnly); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -145,7 +157,18 @@ void            ECValue::SetReadOnly(bool isReadOnly)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ECValue::IsReadOnly() const 
     { 
-    return m_isReadOnly; 
+    return 0 != (m_stateFlags & ECVALUE_STATE_IsReadOnly); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECValue::SetIsNull(bool isNull)  
+    { 
+    if (isNull)
+        m_stateFlags |= ((UInt8)ECVALUE_STATE_IsNull); 
+    else
+        m_stateFlags &= ~((UInt8)ECVALUE_STATE_IsNull); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -153,7 +176,29 @@ bool            ECValue::IsReadOnly() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ECValue::IsNull() const 
     { 
-    return m_isNull; 
+    return 0 != (m_stateFlags & ECVALUE_STATE_IsNull); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECValue::SetIsLoaded(bool isLoaded)
+    { 
+    if (isLoaded)
+        m_stateFlags |= ((UInt8)ECVALUE_STATE_IsLoaded); 
+    else
+        m_stateFlags &= ~((UInt8)ECVALUE_STATE_IsLoaded); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* It is up to the instance implementation to set this flag. For MemoryBased instances
+* this bit is set in the _GetValue method when it checks the IsLoaded flag for the 
+* property.
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            ECValue::IsLoaded() const 
+    { 
+    return 0 != (m_stateFlags & ECVALUE_STATE_IsLoaded); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -286,9 +331,8 @@ void            ECValue::ConstructUninitialized()
     int size = sizeof (ECValue);
     memset (this, 0xBAADF00D, size); // avoid accidental misinterpretation of uninitialized data
 #endif
-    m_valueKind         = VALUEKIND_Uninitialized;
-    m_isNull            = true;
-    m_isReadOnly        = false;
+    m_valueKind  = VALUEKIND_Uninitialized;
+    m_stateFlags = ECVALUE_STATE_IsNull;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -414,7 +458,7 @@ void            ECValue::ShallowCopy (ECValueCR v)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECValue::FreeMemory ()
     {
-    if (m_isNull)
+    if (IsNull())
         return;
 
     UShort  primitiveType = m_primitiveType;
@@ -443,12 +487,8 @@ void            ECValue::FreeMemory ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECValue::SetToNull()
     {        
-    //if (IsNull())
-    //    return;
-
     FreeMemory ();
-    memset (&m_binaryInfo, 0, sizeof m_binaryInfo);
-    m_isNull = true;
+    SetIsNull (true);
     }
    
 /*---------------------------------------------------------------------------------**//**
@@ -459,16 +499,18 @@ void            ECValue::Clear()
     if (IsNull())
         {
         m_valueKind = VALUEKIND_Uninitialized;
+        m_stateFlags = ECVALUE_STATE_IsNull;
         return;
         }
         
     if (IsUninitialized())
         {
-        m_isNull = true;
+        m_stateFlags = ECVALUE_STATE_IsNull;
         return;
         }
 
-    SetToNull();
+    FreeMemory ();
+    m_stateFlags = ECVALUE_STATE_IsNull;
     m_valueKind = VALUEKIND_Uninitialized;
     }
 
@@ -514,7 +556,7 @@ ECValue::ECValue (ECValueCR v, bool doDeepCopy)
 *  Construct a Null EC::ECValue (of a specific type, but with IsNull = true)
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (ValueKind classification) : m_valueKind(classification), m_isNull(true)
+ECValue::ECValue (ValueKind classification) : m_valueKind(classification), m_stateFlags(ECVALUE_STATE_IsNull)
     {
     }       
 
@@ -522,7 +564,7 @@ ECValue::ECValue (ValueKind classification) : m_valueKind(classification), m_isN
 *  Construct a Null EC::ECValue (of a specific type, but with IsNull = true)
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (PrimitiveType primitiveType) : m_primitiveType(primitiveType), m_isNull(true)
+ECValue::ECValue (PrimitiveType primitiveType) : m_primitiveType(primitiveType), m_stateFlags(ECVALUE_STATE_IsNull)
     {
     }
     
@@ -661,7 +703,7 @@ BentleyStatus       ECValue::SetPrimitiveType (PrimitiveType primitiveType)
 BentleyStatus       ECValue::SetInteger (::Int32 integer)
     {
     Clear();
-    m_isNull    = false;
+    SetIsNull (false);
     m_primitiveType  = PRIMITIVETYPE_Integer;
     m_integer32 = integer;
     
@@ -684,7 +726,7 @@ BentleyStatus       ECValue::SetInteger (::Int32 integer)
 BentleyStatus       ECValue::SetLong (::Int64 long64)
     {
     Clear();
-    m_isNull    = false;
+    SetIsNull (false);
     m_primitiveType  = PRIMITIVETYPE_Long;
     m_long64    = long64;
     
@@ -707,7 +749,7 @@ double          ECValue::GetDouble() const
 BentleyStatus       ECValue::SetDouble (double value)
     {
     Clear();
-    m_isNull    = false;
+    SetIsNull (false);
     m_primitiveType  = PRIMITIVETYPE_Double;
     m_double    = value;
     
@@ -730,7 +772,7 @@ bool          ECValue::GetBoolean() const
 BentleyStatus       ECValue::SetBoolean (bool value)
     {
     Clear();
-    m_isNull         = false;
+    SetIsNull (false);
     m_primitiveType  = PRIMITIVETYPE_Boolean;
     m_boolean        = value;
     
@@ -753,7 +795,7 @@ Int64          ECValue::GetDateTimeTicks() const
 BentleyStatus       ECValue::SetDateTimeTicks (Int64 value)
     {
     Clear();
-    m_isNull         = false;
+    SetIsNull (false);
     m_primitiveType  = PRIMITIVETYPE_DateTime;
     m_dateTime       = value;
     
@@ -834,7 +876,7 @@ DPoint2d          ECValue::GetPoint2D() const
 BentleyStatus       ECValue::SetPoint2D (DPoint2dCR value)
     {
     Clear();
-    m_isNull         = false;
+    SetIsNull (false);
     m_primitiveType  = PRIMITIVETYPE_Point2D;
     m_dPoint2d       = value;
     
@@ -859,7 +901,7 @@ DPoint3d          ECValue::GetPoint3D() const
 BentleyStatus       ECValue::SetPoint3D (DPoint3dCR value)
     {
     Clear();
-    m_isNull         = false;
+    SetIsNull (false);
     m_primitiveType  = PRIMITIVETYPE_Point3D;
     m_dPoint3d       = value;
     
@@ -893,7 +935,7 @@ BentleyStatus ECValue::SetString (WCharCP string, bool holdADuplicate)
         return SUCCESS;
         }
 
-    m_isNull = false;
+    SetIsNull (false);
 
     if (holdADuplicate)    
         m_stringInfo.m_string = BeStringUtilities::Wcsdup (string);
@@ -931,7 +973,7 @@ BentleyStatus ECValue::SetBinary (const byte * data, size_t size, bool holdADupl
         }    
     
 
-    m_isNull = false;
+    SetIsNull (false);
 
     m_binaryInfo.m_size = size;    
     if (holdADuplicate)
@@ -970,7 +1012,7 @@ BentleyStatus       ECValue::SetStruct (IECInstanceP structInstance)
         return SUCCESS;
         }  
             
-    m_isNull    = false;
+    SetIsNull (false);
 
     m_structInstance = structInstance;        
     m_structInstance->AddRef();
@@ -1111,7 +1153,7 @@ ECObjectsStatus   ECValue::SetStructArrayInfo (UInt32 count, bool isFixedCount)
 
     m_arrayInfo.InitializeStructArray (count, isFixedCount);
     
-    m_isNull = false; // arrays are never null
+    SetIsNull (false); // arrays are never null
     
     return ECOBJECTS_STATUS_Success;
     }
@@ -1128,7 +1170,7 @@ ECObjectsStatus       ECValue::SetPrimitiveArrayInfo (PrimitiveType primitiveEle
 
     m_arrayInfo.InitializePrimitiveArray (primitiveElementType, count, isFixedSize);
     
-    m_isNull = false; // arrays are never null
+    SetIsNull (false); // arrays are never null
     
     return ECOBJECTS_STATUS_Success;
     }

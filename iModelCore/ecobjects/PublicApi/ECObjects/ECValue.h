@@ -92,8 +92,8 @@ private:
         ValueKind       m_valueKind;
         PrimitiveType   m_primitiveType;
         };
-    bool                m_isNull;     
-    bool                m_isReadOnly; // Really indicates that the property from which this came is readonly... not the value itself.
+
+    UInt8               m_stateFlags;
 
 protected:    
     typedef bvector<ECValue>  ValuesVector;
@@ -108,8 +108,8 @@ protected:
     struct BinaryInfo
         {
         const byte *        m_data;
-        size_t              m_size;
         bool                m_freeWhenDone;
+        size_t              m_size;
         };
 
     union
@@ -153,11 +153,17 @@ public:
     ECOBJECTS_EXPORT explicit ECValue (bool value);
     ECOBJECTS_EXPORT explicit ECValue (SystemTime const& time);
 
-    ECOBJECTS_EXPORT void           SetReadOnly(bool isReadOnly);
-
+    ECOBJECTS_EXPORT void           SetIsReadOnly(bool isReadOnly);
     ECOBJECTS_EXPORT bool           IsReadOnly() const;
+
+    ECOBJECTS_EXPORT void           SetIsNull(bool isNull); 
     ECOBJECTS_EXPORT bool           IsNull() const;
+
+    ECOBJECTS_EXPORT void           SetIsLoaded(bool isLoaded); 
+    ECOBJECTS_EXPORT bool           IsLoaded() const; 
+
     ECOBJECTS_EXPORT void           SetToNull();
+
     ECOBJECTS_EXPORT void           From(ECValueCR v, bool doDeepCopy);
 
     ECOBJECTS_EXPORT ValueKind      GetKind() const;

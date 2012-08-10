@@ -213,7 +213,7 @@ ECObjectsStatus         MemoryECInstanceBase::IsAnyPerPropertyBitSet (bool& isSe
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus          MemoryECInstanceBase::SetIsLoadedBit (UInt32 propertyIndex)
     {
-    UInt8 bitIndex = (UInt8) PROPERTYFLAGINDEX_IsLoaded;
+    static UInt8 bitIndex = (UInt8) PROPERTYFLAGINDEX_IsLoaded;
 
     ECObjectsStatus status = SetPerPropertyBit (bitIndex, propertyIndex, true);
 
@@ -676,6 +676,28 @@ MemoryECInstanceBase const* MemoryECInstanceBase::GetParentInstance () const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+static void     mergeProperties (IECInstanceR target, ECValuesCollectionCR source)
+    {
+    for (ECValuesCollection::const_iterator it=source.begin(); it != source.end(); ++it)
+        {
+        ECPropertyValue const& prop = *it;
+        if (prop.HasChildValues())
+            {
+            mergeProperties (target, *prop.GetChildValues());
+            continue;
+            }
+
+        ECValueCR value = prop.GetValue();
+        if (value.IsNull() && !value.IsLoaded())  // if loaded null then set the value
+            continue;
+
+        target.SetValueUsingAccessor (prop.GetValueAccessor(), value);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/11
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 static void     duplicateProperties (IECInstanceR target, ECValuesCollectionCR source)
@@ -735,7 +757,7 @@ bool           MemoryECInstanceBase::IsPartiallyLoaded ()
 * This is used when copying properties from partial instance for instance update processing
 * @bsimethod                                    Bill.Steinbock                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus MemoryECInstanceBase::CopyNonNullPropertiesFromInstance
+ECObjectsStatus MemoryECInstanceBase::MergePropertiesFromInstance
 (
 EC::IECInstanceCR     fromNativeInstance
 )
@@ -747,7 +769,7 @@ EC::IECInstanceCR     fromNativeInstance
 
     // copy properties individually
     ECValuesCollectionPtr   properties = ECValuesCollection::Create (fromNativeInstance);
-    duplicateProperties (*thisAsIECInstance, *properties);
+    mergeProperties (*thisAsIECInstance, *properties);
 
     return ECOBJECTS_STATUS_Success;
     }
@@ -949,9 +971,21 @@ ECObjectsStatus           StandaloneECInstance::_GetValue (ECValueR v, WCharCP p
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECInstance::_GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const
     {
+    v.Clear ();
+
     ClassLayoutCR classLayout = GetClassLayout();
 
-    return GetValueFromMemory (classLayout, v, propertyIndex, useArrayIndex, arrayIndex);
+    ECObjectsStatus status = GetValueFromMemory (classLayout, v, propertyIndex, useArrayIndex, arrayIndex);
+    if (ECOBJECTS_STATUS_Success == status)
+        {
+        static UInt8 bitIndex = (UInt8) PROPERTYFLAGINDEX_IsLoaded;
+        bool isSet = false;
+
+        if (ECOBJECTS_STATUS_Success == MemoryECInstanceBase::IsPerPropertyBitSet (isSet, bitIndex, propertyIndex)) 
+            v.SetIsLoaded (isSet);
+        }
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -959,7 +993,6 @@ ECObjectsStatus           StandaloneECInstance::_GetValue (ECValueR v, UInt32 pr
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECInstance::_SetValue (WCharCP propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
     {
-
     PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
 
     UInt32 propertyIndex = 0;

@@ -139,7 +139,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
 
     ECOBJECTS_EXPORT IECInstancePtr           GetStructArrayInstanceByIndex (UInt32 index, StructValueIdentifier& structValueId) const;
     ECOBJECTS_EXPORT ECObjectsStatus          SetStructArrayInstance (MemoryECInstanceBaseCR instance, StructValueIdentifier structValueId);
-    ECOBJECTS_EXPORT ECObjectsStatus          CopyNonNullPropertiesFromInstance (EC::IECInstanceCR fromNativeInstance);
+    ECOBJECTS_EXPORT ECObjectsStatus          MergePropertiesFromInstance (EC::IECInstanceCR fromNativeInstance);
 
     ECOBJECTS_EXPORT void                     SetUsingSharedMemory ();
 
