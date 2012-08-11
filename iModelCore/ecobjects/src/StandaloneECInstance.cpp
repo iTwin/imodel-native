@@ -678,19 +678,26 @@ MemoryECInstanceBase const* MemoryECInstanceBase::GetParentInstance () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     mergeProperties (IECInstanceR target, ECValuesCollectionCR source)
+static void     mergeProperties (IECInstanceR target, ECValuesCollectionCR source, bool sourceIsMemoryBased)
     {
     for (ECValuesCollection::const_iterator it=source.begin(); it != source.end(); ++it)
         {
-        ECPropertyValue const& prop = *it;
+        ECPropertyValue const& prop  = *it;
+        ECValueCR              value = prop.GetValue();
+
+        if (sourceIsMemoryBased)
+            {
+            if (!value.IsLoaded())
+                continue;
+            }
+
         if (prop.HasChildValues())
             {
-            mergeProperties (target, *prop.GetChildValues());
+            mergeProperties (target, *prop.GetChildValues(), sourceIsMemoryBased);
             continue;
             }
 
-        ECValueCR value = prop.GetValue();
-        if (value.IsNull() && !value.IsLoaded())  // if loaded null then set the value
+        if (value.IsNull() && (!sourceIsMemoryBased || !value.IsLoaded()) )  // if value contains a loaded null then set the value
             continue;
 
         target.SetValueUsingAccessor (prop.GetValueAccessor(), value);
@@ -767,10 +774,30 @@ EC::IECInstanceCR     fromNativeInstance
     if (!thisAsIECInstance->GetClass().GetName().Equals (fromNativeInstance.GetClass().GetName().c_str()))
         return ECOBJECTS_STATUS_Error;
 
-    // copy properties individually
-    ECValuesCollectionPtr   properties = ECValuesCollection::Create (fromNativeInstance);
-    mergeProperties (*thisAsIECInstance, *properties);
+    bool sourceIsMemoryBased = (NULL != fromNativeInstance.GetAsMemoryECInstance ());
 
+    ECValuesCollectionPtr   properties = ECValuesCollection::Create (fromNativeInstance);
+    mergeProperties (*thisAsIECInstance, *properties, sourceIsMemoryBased);
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Used when populating per property flags from managed instance
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus          MemoryECInstanceBase::SetInstancePerPropertyFlagsData (byte const* perPropertyFlagsDataAddress, int numBitsPerProperty, int numPerPropertyFlagsEntries)
+    {
+    if (numBitsPerProperty != m_perPropertyFlagsHolder.numBitsPerProperty)
+        return ECOBJECTS_STATUS_Error;
+
+    if (numPerPropertyFlagsEntries !=  m_perPropertyFlagsHolder.numPerPropertyFlagsEntries)
+        return ECOBJECTS_STATUS_Error;
+
+    if (0 == numPerPropertyFlagsEntries)
+        return ECOBJECTS_STATUS_Success;
+
+    memcpy (m_perPropertyFlagsHolder.perPropertyFlags, perPropertyFlagsDataAddress, m_perPropertyFlagsHolder.numPerPropertyFlagsEntries * sizeof(UInt32));
     return ECOBJECTS_STATUS_Success;
     }
 
