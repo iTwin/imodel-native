@@ -1034,6 +1034,49 @@ static void     dumpPropertyValues (ECValuesCollectionR collection, bool isArray
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/11
++---------------+---------------+---------------+---------------+---------------+------*/
+static void     dumpLoadedPropertyValues (ECValuesCollectionR collection, bool isArray, UInt32 indentDepth, bool printValues, int& count)
+    {
+    UInt32  arrayIndex = 0;
+
+    for each (ECPropertyValueCR propertyValue in collection)
+        {
+        ECValueCR v = propertyValue.GetValue();
+        if (!v.IsLoaded())
+            continue;
+
+        count++;
+        if (printValues)
+            {
+            printfIndent (indentDepth);
+            ECValueAccessorCR   accessor = propertyValue.GetValueAccessor();
+            UInt32  accessorDepth = accessor.GetDepth();
+            WCharCP accessString = accessor.GetAccessString (accessorDepth- 1);
+
+            if (isArray)
+                {
+                printf ("Array Member [%d] %S (depth=%d) = %S\n", arrayIndex++, accessString, accessorDepth, v.ToString());
+                }
+            else
+                {
+                printf ("%S (depth=%d)", accessString, accessorDepth);
+                if ( ! v.IsStruct())
+                    printf (" = %S", v.ToString().c_str());
+
+                printf ("\n");
+                }
+            }
+
+        if (propertyValue.HasChildValues ())
+            {
+            ECValuesCollectionPtr children = propertyValue.GetChildValues();
+            dumpLoadedPropertyValues (*children, v.IsArray(), indentDepth+1, printValues, count);
+            }
+        }
+    }
+
 typedef bpair<WString, ECValue>  AccessStringValuePair;
 
 /*---------------------------------------------------------------------------------**//**
@@ -1186,7 +1229,7 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_PrimitiveProperties)
     EXPECT_TRUE (expectedValues.size() == iValue);
     }
 
- /*---------------------------------------------------------------------------------**//**
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, CopyInstanceProperties)
@@ -1248,6 +1291,62 @@ TEST_F(MemoryLayoutTests, CopyInstanceProperties)
     //dumpPropertyValues (*collection, false, 0);
 
     EXPECT_TRUE (expectedValues.size() == iValue);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MemoryLayoutTests, MergeInstanceProperties)
+    {
+    ECSchemaPtr        schema = CreateTestSchema();
+    ASSERT_TRUE (schema.get() != NULL);
+
+    StandaloneECEnablerPtr enabler = schema->GetClassP(L"CadData")->GetDefaultStandaloneEnabler ();
+    ASSERT_TRUE (enabler.IsValid());
+
+    /*--------------------------------------------------------------------------
+        Build the base instance
+    --------------------------------------------------------------------------*/
+    EC::StandaloneECInstancePtr mergeToInstance = enabler->CreateInstance();
+
+    mergeToInstance->SetValue(L"Name",         ECValue (L"base"));
+    mergeToInstance->SetValue(L"Length",       ECValue (142.5));
+    mergeToInstance->SetValue(L"Field_Tested", ECValue (true));
+
+    /*--------------------------------------------------------------------------
+        Build the instance with data to merge
+    --------------------------------------------------------------------------*/
+    EC::StandaloneECInstancePtr mergeFromInstance = enabler->CreateInstance();
+
+    DPoint2d   tstSize = {10.5, 22.3};
+
+    ECValue nullBool (EC::PRIMITIVETYPE_Boolean);
+
+    mergeFromInstance->SetValue(L"Name",         ECValue (L"merge"));
+    mergeFromInstance->SetValue(L"Count",        ECValue (14));
+    mergeFromInstance->SetValue(L"Field_Tested", nullBool);
+    mergeFromInstance->SetValue (L"Size",        ECValue (tstSize));
+
+    MemoryECInstanceBase* mbInstance = mergeToInstance->GetAsMemoryECInstance ();
+    mbInstance->MergePropertiesFromInstance (*mergeFromInstance);
+
+    bvector <AccessStringValuePair> expectedValues;
+
+    expectedValues.push_back (AccessStringValuePair (L"Count",          ECValue(14)));
+    expectedValues.push_back (AccessStringValuePair (L"StartPoint",     ECValue ()));
+    expectedValues.push_back (AccessStringValuePair (L"EndPoint",       ECValue ()));
+    expectedValues.push_back (AccessStringValuePair (L"Size",           ECValue (tstSize)));
+    expectedValues.push_back (AccessStringValuePair (L"Length",         ECValue (142.5)));
+    expectedValues.push_back (AccessStringValuePair (L"Install_Date",   ECValue ()));
+    expectedValues.push_back (AccessStringValuePair (L"Service_Date",   ECValue ()));
+    expectedValues.push_back (AccessStringValuePair (L"Field_Tested",   nullBool));
+    expectedValues.push_back (AccessStringValuePair (L"Name",           ECValue (L"merge")));
+
+    ECValuesCollectionPtr   collection = ECValuesCollection::Create (*mergeToInstance);
+    dumpPropertyValues (*collection, false, 0);
+
+    UInt32                  iValue = 0;
+    verifyECValueEnumeration (*collection, expectedValues, iValue, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1386,6 +1485,39 @@ IECInstanceR    instance
     WString accessString = buildAccessString (accessPrefix, propertyString);
 
     instance.SetValue (accessString.c_str(), ecValue);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+static void     setPartialContactInfo
+(
+bool            skipPhoneNumberData,
+WCharCP         prefix,
+int             areaCode,
+int             phoneNumber,
+WCharCP houseNumber,
+WCharCP street,
+WCharCP town,
+WCharCP state,
+int             zip,
+WCharCP email,
+IECInstanceR    instance
+)
+    {
+    if (!skipPhoneNumberData)
+        {
+        setValue (prefix, L"PhoneNumber.AreaCode",  ECValue (areaCode),     instance);
+        setValue (prefix, L"PhoneNumber.AreaCode",  ECValue (areaCode),     instance);
+        setValue (prefix, L"PhoneNumber.Number",    ECValue (phoneNumber),  instance);
+        setValue (prefix, L"Address.HouseNumber",   ECValue (houseNumber),  instance);
+        }
+
+    setValue (prefix, L"Address.Street",        ECValue (street),       instance);
+    setValue (prefix, L"Address.Town",          ECValue (town),         instance);
+    setValue (prefix, L"Address.State",         ECValue (state),        instance);
+    setValue (prefix, L"Address.Zip",           ECValue (zip),          instance);
+    setValue (prefix, L"Email",                 ECValue (email),        instance);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1599,6 +1731,95 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_StructArray)
     //dumpPropertyValues (*collection, false, 0);
 
     EXPECT_TRUE (expectedValues.size() == iValue);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/11
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MemoryLayoutTests, MergeStructArray)
+    {
+    ECSchemaPtr        schema = CreateTestSchema();
+    ASSERT_TRUE (schema.IsValid());
+
+    StandaloneECEnablerPtr enabler = schema->GetClassP(L"EmployeeDirectory")->GetDefaultStandaloneEnabler ();
+    ASSERT_TRUE (enabler.IsValid());
+
+    /*--------------------------------------------------------------------------
+        Build the instance
+    --------------------------------------------------------------------------*/
+    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    instance->AddArrayElements(L"Employees[]", 2);
+
+    StandaloneECEnablerPtr arrayMemberEnabler = schema->GetClassP(L"Employee")->GetDefaultStandaloneEnabler ();
+    ASSERT_TRUE (enabler.IsValid());
+
+    ECValue v;
+    EC::StandaloneECInstancePtr arrayMemberInstance1 = arrayMemberEnabler->CreateInstance();
+    arrayMemberInstance1->SetValue(L"Name", ECValue (L"John Smith"));
+
+    setContactInfo (L"Home",   610, 7654321, L"175",   L"Oak Lane",    L"Wayne", L"PA", 12348, L"jsmith@home.com", *arrayMemberInstance1);
+    setPartialContactInfo (true, L"Work",   610, 1234567, L"123-4", L"Main Street", L"Exton", L"PA", 12345, L"jsmith@work.com", *arrayMemberInstance1);
+    v.SetStruct(arrayMemberInstance1.get());
+    instance->SetValue (L"Employees[]", v, 0);
+
+    EC::StandaloneECInstancePtr arrayMemberInstance2 = arrayMemberEnabler->CreateInstance();
+    arrayMemberInstance2->SetValue(L"Name", ECValue (L"Jane Doe"));
+    setPartialContactInfo (false, L"Home",   555, 1122334, L"1600", L"Pennsylvania Ave", L"Washington", L"DC", 10001, L"prez@gmail.com", *arrayMemberInstance2);
+    setPartialContactInfo (true, L"Work",   555, 1000000, L"1600", L"Pennsylvania Ave", L"Washington", L"DC", 10001, L"president@whitehouse.gov", *arrayMemberInstance2);
+    v.SetStruct(arrayMemberInstance2.get());
+    instance->SetValue (L"Employees[]", v, 1);
+
+    ECValuesCollectionPtr   collection = ECValuesCollection::Create (*instance);
+    int originalCount = 0;
+    int count = 0;
+
+    dumpLoadedPropertyValues  (*collection, false, 0, false, originalCount);
+
+    EC::StandaloneECInstancePtr toInstance = enabler->CreateInstance();
+
+    MemoryECInstanceBase* mbInstance = toInstance->GetAsMemoryECInstance ();
+    mbInstance->MergePropertiesFromInstance (*instance);
+
+    collection = ECValuesCollection::Create (*toInstance);
+
+    dumpLoadedPropertyValues  (*collection, false, 0, false, count);
+    ASSERT_TRUE (count==originalCount);
+    ASSERT_TRUE (count==41);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/11
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MemoryLayoutTests, MergeStruct)
+    {
+    ECSchemaPtr        schema = CreateTestSchema();
+    ASSERT_TRUE (schema.IsValid());
+
+    StandaloneECEnablerPtr enabler = schema->GetClassP(L"Employee")->GetDefaultStandaloneEnabler ();
+    ASSERT_TRUE (enabler.IsValid());
+
+    ECValue v;
+    EC::StandaloneECInstancePtr employeeInstance = enabler->CreateInstance();
+    employeeInstance->SetValue(L"Name", ECValue (L"John Smith"));
+
+    setPartialContactInfo (false, L"Home",   610, 7654321, L"175",   L"Oak Lane",    L"Wayne", L"PA", 12348, L"jsmith@home.com", *employeeInstance);
+    setPartialContactInfo (true, L"Work",   610, 1234567, L"123-4", L"Main Street", L"Exton", L"PA", 12345, L"jsmith@work.com", *employeeInstance);
+
+    int originalCount = 0;
+    int count = 0;
+
+    ECValuesCollectionPtr   collection = ECValuesCollection::Create (*employeeInstance);
+    dumpLoadedPropertyValues  (*collection, false, 0, false, originalCount);
+
+    EC::StandaloneECInstancePtr toInstance = enabler->CreateInstance();
+
+    MemoryECInstanceBase* mbInstance = toInstance->GetAsMemoryECInstance ();
+    mbInstance->MergePropertiesFromInstance (*employeeInstance);
+
+    collection = ECValuesCollection::Create (*toInstance);
+    dumpLoadedPropertyValues  (*collection, false, 0, false, count);
+    ASSERT_TRUE (count==originalCount);
+    ASSERT_TRUE (count==19);
     }
 
 /*---------------------------------------------------------------------------------**//**

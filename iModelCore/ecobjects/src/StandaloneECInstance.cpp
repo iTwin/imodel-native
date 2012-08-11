@@ -213,7 +213,7 @@ ECObjectsStatus         MemoryECInstanceBase::IsAnyPerPropertyBitSet (bool& isSe
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus          MemoryECInstanceBase::SetIsLoadedBit (UInt32 propertyIndex)
     {
-    UInt8 bitIndex = (UInt8) PROPERTYFLAGINDEX_IsLoaded;
+    static UInt8 bitIndex = (UInt8) PROPERTYFLAGINDEX_IsLoaded;
 
     ECObjectsStatus status = SetPerPropertyBit (bitIndex, propertyIndex, true);
 
@@ -676,6 +676,35 @@ MemoryECInstanceBase const* MemoryECInstanceBase::GetParentInstance () const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+static void     mergeProperties (IECInstanceR target, ECValuesCollectionCR source, bool sourceIsMemoryBased)
+    {
+    for (ECValuesCollection::const_iterator it=source.begin(); it != source.end(); ++it)
+        {
+        ECPropertyValue const& prop  = *it;
+        ECValueCR              value = prop.GetValue();
+
+        if (sourceIsMemoryBased)
+            {
+            if (!value.IsLoaded())
+                continue;
+            }
+
+        if (prop.HasChildValues())
+            {
+            mergeProperties (target, *prop.GetChildValues(), sourceIsMemoryBased);
+            continue;
+            }
+
+        if (value.IsNull() && (!sourceIsMemoryBased || !value.IsLoaded()) )  // if value contains a loaded null then set the value
+            continue;
+
+        target.SetValueUsingAccessor (prop.GetValueAccessor(), value);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/11
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 static void     duplicateProperties (IECInstanceR target, ECValuesCollectionCR source)
@@ -735,7 +764,7 @@ bool           MemoryECInstanceBase::IsPartiallyLoaded ()
 * This is used when copying properties from partial instance for instance update processing
 * @bsimethod                                    Bill.Steinbock                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus MemoryECInstanceBase::CopyNonNullPropertiesFromInstance
+ECObjectsStatus MemoryECInstanceBase::MergePropertiesFromInstance
 (
 EC::IECInstanceCR     fromNativeInstance
 )
@@ -745,10 +774,30 @@ EC::IECInstanceCR     fromNativeInstance
     if (!thisAsIECInstance->GetClass().GetName().Equals (fromNativeInstance.GetClass().GetName().c_str()))
         return ECOBJECTS_STATUS_Error;
 
-    // copy properties individually
-    ECValuesCollectionPtr   properties = ECValuesCollection::Create (fromNativeInstance);
-    duplicateProperties (*thisAsIECInstance, *properties);
+    bool sourceIsMemoryBased = (NULL != fromNativeInstance.GetAsMemoryECInstance ());
 
+    ECValuesCollectionPtr   properties = ECValuesCollection::Create (fromNativeInstance);
+    mergeProperties (*thisAsIECInstance, *properties, sourceIsMemoryBased);
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Used when populating per property flags from managed instance
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus          MemoryECInstanceBase::SetInstancePerPropertyFlagsData (byte const* perPropertyFlagsDataAddress, int numBitsPerProperty, int numPerPropertyFlagsEntries)
+    {
+    if (numBitsPerProperty != m_perPropertyFlagsHolder.numBitsPerProperty)
+        return ECOBJECTS_STATUS_Error;
+
+    if (numPerPropertyFlagsEntries !=  m_perPropertyFlagsHolder.numPerPropertyFlagsEntries)
+        return ECOBJECTS_STATUS_Error;
+
+    if (0 == numPerPropertyFlagsEntries)
+        return ECOBJECTS_STATUS_Success;
+
+    memcpy (m_perPropertyFlagsHolder.perPropertyFlags, perPropertyFlagsDataAddress, m_perPropertyFlagsHolder.numPerPropertyFlagsEntries * sizeof(UInt32));
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -949,9 +998,21 @@ ECObjectsStatus           StandaloneECInstance::_GetValue (ECValueR v, WCharCP p
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECInstance::_GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const
     {
+    v.Clear ();
+
     ClassLayoutCR classLayout = GetClassLayout();
 
-    return GetValueFromMemory (classLayout, v, propertyIndex, useArrayIndex, arrayIndex);
+    ECObjectsStatus status = GetValueFromMemory (classLayout, v, propertyIndex, useArrayIndex, arrayIndex);
+    if (ECOBJECTS_STATUS_Success == status)
+        {
+        static UInt8 bitIndex = (UInt8) PROPERTYFLAGINDEX_IsLoaded;
+        bool isSet = false;
+
+        if (ECOBJECTS_STATUS_Success == MemoryECInstanceBase::IsPerPropertyBitSet (isSet, bitIndex, propertyIndex)) 
+            v.SetIsLoaded (isSet);
+        }
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -959,7 +1020,6 @@ ECObjectsStatus           StandaloneECInstance::_GetValue (ECValueR v, UInt32 pr
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECInstance::_SetValue (WCharCP propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
     {
-
     PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
 
     UInt32 propertyIndex = 0;
