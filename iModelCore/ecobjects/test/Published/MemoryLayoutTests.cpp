@@ -2293,7 +2293,13 @@ TEST_F (MemoryLayoutTests, TestPropertyReadOnly)
     EXPECT_FALSE (instance->IsPropertyReadOnly (namePropertyIndex));
 
     EXPECT_TRUE  (instance->IsPropertyReadOnly (wheelsAccessString));
-    EXPECT_TRUE  (instance->IsPropertyReadOnly (wheelsPropertyIndex));   
+    EXPECT_TRUE  (instance->IsPropertyReadOnly (wheelsPropertyIndex));  
+
+    ECValue v;
+    v.SetInteger(610);
+    EXPECT_TRUE (SUCCESS == instance->SetValue (wheelsAccessString, v));  // should work since original value is NULL
+    v.SetInteger(512);
+    EXPECT_TRUE (ECOBJECTS_STATUS_UnableToSetReadOnlyProperty == instance->SetValue (wheelsAccessString, v));  // should fail since read only and value is not NULL
     };
 
 /*---------------------------------------------------------------------------------**//**

@@ -2287,6 +2287,7 @@ ECObjectsStatus       MemoryInstanceSupport::GetValueFromMemory (ECValueR v, Pro
     POSTCONDITION (false && "Can not obtain value from memory using the specified property layout because it is an unsupported datatype", ECOBJECTS_STATUS_DataTypeNotSupported);        
     }    
     
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2304,6 +2305,29 @@ ECObjectsStatus       MemoryInstanceSupport::GetValueFromMemory (ClassLayoutCR c
     else
         return GetValueFromMemory (v, *propertyLayout);
     }    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus       MemoryInstanceSupport::GetIsNullValueFromMemory (ClassLayoutCR classLayout, bool& isNull, UInt32 propertyIndex, bool useIndex, UInt32 index) const
+    {
+    PropertyLayoutCP propertyLayout = NULL;
+    ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (propertyLayout, propertyIndex);
+    if (ECOBJECTS_STATUS_Success != status || NULL == propertyLayout)
+        return ECOBJECTS_STATUS_PropertyNotFound;    
+
+    if (useIndex)
+        {
+        if (!propertyLayout->GetTypeDescriptor().IsArray())
+            return ECOBJECTS_STATUS_PropertyNotFound;    
+
+        if (index >= GetReservedArrayCount (*propertyLayout))
+            return ECOBJECTS_STATUS_IndexOutOfRange;
+        }
+
+    isNull = IsPropertyValueNull (*propertyLayout, useIndex, index);
+    return ECOBJECTS_STATUS_Success;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/10

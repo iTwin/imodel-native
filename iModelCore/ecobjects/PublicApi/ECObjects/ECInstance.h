@@ -87,10 +87,7 @@ protected:
     ECOBJECTS_EXPORT virtual ~IECInstance();
 
     virtual WString             _GetInstanceId() const = 0; // Virtual and returning WString because a subclass may want to calculate it on demand
-    virtual ECObjectsStatus     _GetValue (ECValueR v, WCharCP managedPropertyAccessor, bool useArrayIndex, UInt32 arrayIndex) const = 0;
     virtual ECObjectsStatus     _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const = 0;
-public:
-    virtual ECObjectsStatus     _SetValue (WCharCP managedPropertyAccessor, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) = 0;
 protected:
     virtual ECObjectsStatus     _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) = 0;
     virtual ECObjectsStatus     _InsertArrayElements (WCharCP managedPropertyAccessor, UInt32 index, UInt32 size) = 0;
@@ -101,6 +98,8 @@ protected:
     virtual bool                _IsReadOnly() const = 0;
     virtual WString             _ToString (WCharCP indent) const = 0;
     virtual size_t              _GetOffsetToIECInstance () const = 0;
+    virtual ECObjectsStatus     _GetIsPropertyNull (bool& v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const = 0;
+
     ECOBJECTS_EXPORT virtual ECObjectsStatus       _SetInstanceId(WCharCP);
     ECOBJECTS_EXPORT virtual ECObjectsStatus       _GetDisplayLabel (WString& displayLabel) const;    
     ECOBJECTS_EXPORT virtual ECObjectsStatus       _SetDisplayLabel (WCharCP displayLabel);    
@@ -124,15 +123,15 @@ public:
     ECOBJECTS_EXPORT ECClassCR          GetClass() const;
     //! Gets the value stored in the specified ECProperty
     //! @param[out] v   If successful, will contain the value of the property
-    //! @param[in]  managedPropertyAccessor Name of the property to retrieve
+    //! @param[in]  propertyAccessString Name of the property to retrieve
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
-    ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, WCharCP managedPropertyAccessor) const;    
+    ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, WCharCP propertyAccessString) const;    
     //! Gets the value stored in the specified ECProperty
     //! @param[out] v   If successful, will contain the value of the property
-    //! @param[in]  managedPropertyAccessor Name of the property to retrieve
+    //! @param[in]  propertyAccessString Name of the property to retrieve
     //! @param[in]  index   The array index, if this is an ArrayProperty
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
-    ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, WCharCP managedPropertyAccessor, UInt32 index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, WCharCP propertyAccessString, UInt32 index) const;
     //! Gets the value stored in the specified ECProperty
     //! @param[out] v   If successful, will contain the value of the property
     //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
@@ -145,16 +144,16 @@ public:
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, UInt32 propertyIndex, UInt32 arrayIndex) const;
     //! Sets the value for the specified property
-    //! @param[in]  managedPropertyAccessor The name of the property to set the value of
+    //! @param[in]  propertyAccessString The name of the property to set the value of
     //! @param[in]  v   The value to set onto the property
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
-    ECOBJECTS_EXPORT ECObjectsStatus    SetValue (WCharCP managedPropertyAccessor, ECValueCR v);    
+    ECOBJECTS_EXPORT ECObjectsStatus    SetValue (WCharCP propertyAccessString, ECValueCR v);    
     //! Sets the value for the specified property
-    //! @param[in]  managedPropertyAccessor The name of the property to set the value of
+    //! @param[in]  propertyAccessString The name of the property to set the value of
     //! @param[in]  v   The value to set onto the property
     //! @param[in]  index   The array index, if this is an ArrayProperty
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
-    ECOBJECTS_EXPORT ECObjectsStatus    SetValue (WCharCP managedPropertyAccessor, ECValueCR v, UInt32 index);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetValue (WCharCP propertyAccessString, ECValueCR v, UInt32 index);
     //! Sets the value for the specified property
     //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
     //! @param[in]  v   The value to set onto the property
@@ -171,7 +170,35 @@ public:
     //! Sets the value of the ECProperty specified by the ECValueAccessor
     ECOBJECTS_EXPORT ECObjectsStatus    SetValueUsingAccessor (ECValueAccessorCR accessor, ECValueCR v);
 
+    //! Check is the NullFlags for the Null setting of a specific value without read the actual value
+    //! Check for Null property value
+    //! @param[out] isNull   If successful, will contain true if property value is NULL.
+    //! @param[in]  propertyAccessString Name of the property to retrieve
+    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT ECObjectsStatus     IsPropertyNull (bool& isNull, WCharCP propertyAccessString) const; 
+
+    //! Check for Null property value
+    //! @param[out] isNull   If successful, will contain true if property value is NULL.
+    //! @param[in]  propertyAccessString Name of the property to retrieve
+    //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty
+    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT ECObjectsStatus     IsPropertyNull (bool& isNull, WCharCP propertyAccessString, UInt32 arrayIndex) const;
+
+    //! Check for Null property value
+    //! @param[out] isNull   If successful, will contain true if property value is NULL.
+    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
+    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT ECObjectsStatus     IsPropertyNull (bool& isNull, UInt32 propertyIndex) const; 
+
+    //! Check for Null property value
+    //! @param[out] isNull   If successful, will contain true if property value is NULL.
+    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
+    //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty
+    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT ECObjectsStatus     IsPropertyNull (bool& isNull, UInt32 propertyIndex, UInt32 arrayIndex) const; 
+
 /*__PUBLISH_SECTION_END__*/
+    ECOBJECTS_EXPORT ECObjectsStatus    GetIsPropertyNull (bool& isNull, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const;
     ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex); 
     ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (UInt32 propertyIndex, ECValueCR v); 
     ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValueUsingAccessor (ECValueAccessorCR accessor, ECValueCR valueToSet);
@@ -185,21 +212,18 @@ public:
     ECOBJECTS_EXPORT bool               IsPropertyReadOnly (UInt32 propertyIndex) const;
 
     //! Contract:
-    //! - For all of the methods, the managedPropertyAccessor should be in the "array element" form, 
+    //! - For all of the methods, the propertyAccessString should be in the "array element" form, 
     //!   e.g. "Aliases[]" instead of "Aliases"         
-    ECOBJECTS_EXPORT ECObjectsStatus      InsertArrayElements (WCharCP managedPropertyAccessor, UInt32 index, UInt32 size); //WIP_FUSION Return the new count?   
-    ECOBJECTS_EXPORT ECObjectsStatus      AddArrayElements (WCharCP managedPropertyAccessor, UInt32 size); //WIP_FUSION Return the new count?
-    ECOBJECTS_EXPORT ECObjectsStatus      RemoveArrayElement (WCharCP managedPropertyAccessor, UInt32 index); //WIP_FUSION return the removed one? YAGNI? Return the new count?
-    ECOBJECTS_EXPORT ECObjectsStatus      ClearArray (WCharCP managedPropertyAccessor);    
+    ECOBJECTS_EXPORT ECObjectsStatus      InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size); //WIP_FUSION Return the new count?   
+    ECOBJECTS_EXPORT ECObjectsStatus      AddArrayElements (WCharCP propertyAccessString, UInt32 size); //WIP_FUSION Return the new count?
+    ECOBJECTS_EXPORT ECObjectsStatus      RemoveArrayElement (WCharCP propertyAccessString, UInt32 index); //WIP_FUSION return the removed one? YAGNI? Return the new count?
+    ECOBJECTS_EXPORT ECObjectsStatus      ClearArray (WCharCP propertyAccessString);    
     ECOBJECTS_EXPORT ECObjectsStatus      GetDisplayLabel (WString& displayLabel) const;    
     ECOBJECTS_EXPORT ECObjectsStatus      SetDisplayLabel (WCharCP displayLabel);    
     
     ECOBJECTS_EXPORT MemoryECInstanceBase* GetAsMemoryECInstance () const;
     ECOBJECTS_EXPORT size_t                GetOffsetToIECInstance () const;
 
-    //WIP_FUSION ParseExpectedNIndices should move to AccessStringHelper struct... along with method to convert to/from .NET ECObjects style accessString
-    ECOBJECTS_EXPORT static int         ParseExpectedNIndices (WCharCP managedPropertyAccessor);
-    
     ECOBJECTS_EXPORT WString            ToString (WCharCP indent) const;
 
     ECOBJECTS_EXPORT IECInstancePtr     CreateCopyThroughSerialization();

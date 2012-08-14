@@ -700,7 +700,7 @@ static void     mergeProperties (IECInstanceR target, ECValuesCollectionCR sourc
         if (value.IsNull() && (!sourceIsMemoryBased || !value.IsLoaded()) )  // if value contains a loaded null then set the value
             continue;
 
-        target.SetValueUsingAccessor (prop.GetValueAccessor(), value);
+        target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), value);
         }
     }
 
@@ -718,7 +718,7 @@ static void     duplicateProperties (IECInstanceR target, ECValuesCollectionCR s
             continue;
             }
 
-        target.SetValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue());
+        target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue());
         }
     }
 
@@ -984,16 +984,6 @@ bool                StandaloneECInstance::_IsReadOnly() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECInstance::_GetValue (ECValueR v, WCharCP propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const
-    {
-    ClassLayoutCR classLayout = GetClassLayout();
-
-    return GetValueFromMemory (classLayout, v, propertyAccessString, useArrayIndex, arrayIndex);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECInstance::_GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const
@@ -1018,15 +1008,11 @@ ECObjectsStatus           StandaloneECInstance::_GetValue (ECValueR v, UInt32 pr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECInstance::_SetValue (WCharCP propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
+ECObjectsStatus           StandaloneECInstance::_GetIsPropertyNull (bool& isNull, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const
     {
-    PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
+    ClassLayoutCR classLayout = GetClassLayout();
 
-    UInt32 propertyIndex = 0;
-    if (ECOBJECTS_STATUS_Success != GetEnabler().GetPropertyIndex(propertyIndex, propertyAccessString))
-        return ECOBJECTS_STATUS_PropertyNotFound;
-
-    return _SetValue (propertyIndex, v, useArrayIndex, arrayIndex);
+    return GetIsNullValueFromMemory (classLayout, isNull, propertyIndex, useArrayIndex, arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
