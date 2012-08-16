@@ -210,19 +210,9 @@ bool                IECInstance::_IsPropertyReadOnly (WCharCP accessString) cons
     {
     if (_IsReadOnly())
         return true;
-
-    // For array properties, the convention has been to use them with
-    // empty brackets at the end: PropertyName[]
-    // As ECProperties, they do not have any brackets: PropertyName
-    WString unBracketedAccessString = accessString;
-    unBracketedAccessString.Trim (L"[]");
-
-    ECPropertyP ecProperty = GetClass().GetPropertyP (unBracketedAccessString.c_str());
-    if (ecProperty)
-        return ecProperty->GetIsReadOnly();
-
-    ECObjectsLogger::Log()->errorv (L"IECInstance: Attempted to check if property '%ls' is read only; could not find property in class '%ls'", unBracketedAccessString.c_str(), GetClass().GetName().c_str());
-    return false;
+    
+    UInt32 propertyIndex;
+    return ECOBJECTS_STATUS_Success != GetEnabler().GetPropertyIndex (propertyIndex, accessString) || IsPropertyReadOnly (propertyIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -230,17 +220,7 @@ bool                IECInstance::_IsPropertyReadOnly (WCharCP accessString) cons
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 bool                IECInstance::_IsPropertyReadOnly (UInt32 propertyIndex) const
     {
-    if (_IsReadOnly())
-        return true;
-
-    WCharCP accessString;
-    ECObjectsStatus status = GetEnabler().GetAccessString  (accessString, propertyIndex);
-    if (ECOBJECTS_STATUS_Success != status)
-        {
-        ECObjectsLogger::Log()->errorv (L"IECInstance: Attempted to check if property with index '%d' is read only; could not resolve property name from enabler '%ls'", propertyIndex, GetEnabler().GetName());
-        return false;
-        }
-    return IECInstance::_IsPropertyReadOnly (accessString);
+    return _IsReadOnly() || GetEnabler().IsPropertyReadOnly (propertyIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**

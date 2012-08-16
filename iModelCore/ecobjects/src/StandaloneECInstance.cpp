@@ -1158,6 +1158,13 @@ StandaloneECInstanceP   StandaloneECEnabler::CreateSharedInstance (byte * data, 
     return instance;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool StandaloneECEnabler::_IsPropertyReadOnly (UInt32 propertyIndex) const
+    {
+    return GetClassLayout().IsPropertyReadOnly (propertyIndex);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
