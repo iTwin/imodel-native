@@ -97,15 +97,25 @@ ICustomECStructSerializerP                      CustomStructSerializerManager::G
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  11/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IECInstance::IsFixedArrayProperty (EC::IECInstanceR instance, WCharCP accessString)
+bool IECInstance::IsFixedArrayProperty (EC::IECInstanceR instance, WCharCP accessString, UInt32* numFixedEntries)
     {
     ECValue         arrayVal;
 
     if (ECOBJECTS_STATUS_Success != instance.GetValue (arrayVal, accessString))
         return false;
 
+    if (!arrayVal.IsArray())
+        return false;
+
     ArrayInfo info = arrayVal.GetArrayInfo();
-    return info.IsFixedCount();
+
+    if (!info.IsFixedCount())
+        return false;
+
+    if (numFixedEntries)
+        *numFixedEntries = info.GetCount();
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**

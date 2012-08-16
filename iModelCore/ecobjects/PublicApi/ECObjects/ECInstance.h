@@ -206,7 +206,12 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (WCharCP propertyAccessString, ECValueCR v, UInt32 arrayIndex); 
 /*__PUBLISH_SECTION_START__*/
 
-    ECOBJECTS_EXPORT static bool        IsFixedArrayProperty (EC::IECInstanceR instance, WCharCP accessString);
+    //! Check property to see it is a fixed size array and optionally return the fixed size.
+    //! @param[in]  instance Instance to process
+    //! @param[in]  accessString   The access string for the array
+    //! @param[out] numFixedEntries   Optional pointer to size of fixed size array.
+    //! @returns true if the property is a fixed size array.
+    ECOBJECTS_EXPORT static bool        IsFixedArrayProperty (EC::IECInstanceR instance, WCharCP accessString, UInt32* numFixedEntries=NULL);
 
     ECOBJECTS_EXPORT bool               IsPropertyReadOnly (WCharCP accessString) const;
     ECOBJECTS_EXPORT bool               IsPropertyReadOnly (UInt32 propertyIndex) const;
