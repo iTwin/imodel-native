@@ -308,14 +308,24 @@ ECObjectsStatus           MemoryECInstanceBase::_ModifyData (UInt32 offset, void
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus                MemoryECInstanceBase::_ShrinkAllocation (UInt32 newAllocation)
+ECObjectsStatus                MemoryECInstanceBase::_ShrinkAllocation ()
     {
-    byte* reallocedData = (byte*)realloc(m_data, newAllocation);
-    if (NULL == reallocedData)
-        { BeAssert (false); return ECOBJECTS_STATUS_UnableToAllocateMemory; }
+    UInt32 newAllocation = GetBytesUsed();
+    if (0 == newAllocation)
+        _FreeAllocation();
+    else if (newAllocation != _GetBytesAllocated())
+        {
+        byte* reallocedData = (byte*)realloc(m_data, newAllocation);
+        if (NULL == reallocedData)
+            {
+            BeAssert (false);
+            return ECOBJECTS_STATUS_UnableToAllocateMemory;
+            }
 
-    m_data = reallocedData;
-    m_bytesAllocated = newAllocation;
+        m_data = reallocedData;
+        m_bytesAllocated = newAllocation;
+        }
+
     return ECOBJECTS_STATUS_Success;
     } 
 
