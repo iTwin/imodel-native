@@ -465,7 +465,7 @@ protected:
     //! This is not guaranteed to do anything or to change to precisely the allocation you request
     //! but it will be at least as large as you request.
     //! @param newAllocation  Additional bytes of memory needed above current allocation    
-    virtual void                _ShrinkAllocation (UInt32 newAllocation) = 0;
+    virtual ECObjectsStatus    _ShrinkAllocation (UInt32 newAllocation) = 0;
     
     //! Free any allocated memory
     virtual void                _FreeAllocation () = 0;
