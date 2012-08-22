@@ -77,6 +77,8 @@ private:
     ECPERSISTENCE_EXPORT virtual BentleyStatus _GetProperty (int propertyIndex, ECPropertyP& ecProperty) const = 0;
     ECPERSISTENCE_EXPORT virtual BentleyStatus _GetClass (int propertyIndex, ECClassP& ecClass) const = 0;
 
+    ECPERSISTENCE_EXPORT virtual WStringCR _GetInstanceId () const = 0;
+
     ECPERSISTENCE_EXPORT virtual bool _IsNull (int propertyIndex) const = 0;
     ECPERSISTENCE_EXPORT virtual bool _GetBooleanValue (int propertyIndex) const = 0;
     ECPERSISTENCE_EXPORT virtual SystemTimeCR _GetDateTimeValue (int propertyIndex) const = 0;
@@ -168,6 +170,8 @@ public:
 
 
     //Read values
+    ECPERSISTENCE_EXPORT WStringCR GetInstanceId () const;
+
     ECPERSISTENCE_EXPORT bool IsNull (int propertyIndex) const;
 
     //TODO: logical const applied here. Differs from BeSQLite API where all GetXXX methods are non-const.

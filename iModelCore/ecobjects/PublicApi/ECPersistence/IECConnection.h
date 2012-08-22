@@ -27,7 +27,7 @@ private:
     ECPERSISTENCE_EXPORT virtual bool _IsOpen () const = 0;
     ECPERSISTENCE_EXPORT virtual IECSchemaManagerCR _GetSchemaManager () const = 0;
     ECPERSISTENCE_EXPORT virtual IECStatementPtr _CreateStatement () = 0;
-    ECPERSISTENCE_EXPORT virtual int _GetLastError (WStringP lastErrorMessage = NULL) const = 0;
+    ECPERSISTENCE_EXPORT virtual int _GetLastError (WStringP lastErrorMessage) const = 0;
 
 public:
     ECPERSISTENCE_EXPORT virtual ~IECConnection () {};

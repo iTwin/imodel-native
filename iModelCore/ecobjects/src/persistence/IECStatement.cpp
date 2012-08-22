@@ -116,7 +116,6 @@ BentleyStatus IECStatement::GetType (int propertyIndex, ECTypeDescriptor*& ecTyp
     return _GetType (propertyIndex, ecType);
     }
 
-
 BentleyStatus IECStatement::GetProperty (int propertyIndex, ECPropertyP& ecProperty) const
     {
     return _GetProperty (propertyIndex, ecProperty);
@@ -125,6 +124,11 @@ BentleyStatus IECStatement::GetProperty (int propertyIndex, ECPropertyP& ecPrope
 BentleyStatus IECStatement::GetClass (int propertyIndex, ECClassP& ecClass) const
     {
     return _GetClass (propertyIndex, ecClass);
+    }
+
+WStringCR IECStatement::GetInstanceId () const
+    {
+    return _GetInstanceId ();
     }
 
 bool IECStatement::IsNull (int propertyIndex) const
