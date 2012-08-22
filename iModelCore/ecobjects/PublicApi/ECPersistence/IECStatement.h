@@ -12,7 +12,7 @@
 
 #include <Geom/GeomApi.h>
 
-#include "ECObjects\ECSchema.h"
+#include "ECObjects/ECSchema.h"
 
 #include "ECPersistence/ECPersistence.h"
 

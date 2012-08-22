@@ -8,8 +8,8 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include "Bentley\NonCopyableClass.h"
-#include "ECObjects\ECSchema.h"
+#include "Bentley/NonCopyableClass.h"
+#include "ECObjects/ECSchema.h"
 #include "ECPersistence/ECPersistence.h"
 
 BEGIN_BENTLEY_EC_NAMESPACE
