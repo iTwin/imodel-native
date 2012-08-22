@@ -40,8 +40,8 @@
     <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild ECObjectsNative -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)  -f</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild ECObjectsNative -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)  -c</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ecobjects.exe</NMakeOutput>
-    <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(VCInstallDir)INCLUDE\;$(SrcRoot)\Ecobject\PublicApi\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\Bentley\PublicAPI\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\bsibin\PublicAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">WIN32;_DEBUG;$(NMakePreprocessorDefinitions);BENTLEY_WIN32;__ECOBJECTS_BUILD__</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(VCInstallDir)INCLUDE\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\ecobjects\PublicAPI\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\bsibin\PublicAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
     <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
@@ -67,6 +67,7 @@
     <ClCompile Include="ECEnabler.cpp" />
     <ClCompile Include="ECInstance.cpp" />
     <ClCompile Include="ECObjectsPch.cpp" />
+    <ClCompile Include="persistence\IECSchemaManager.cpp" />
     <ClCompile Include="ECProperty.cpp" />
     <ClCompile Include="ECSchema.cpp" />
     <ClCompile Include="ECType.cpp" />
@@ -76,6 +77,8 @@
     <ClCompile Include="MemoryInstanceSupport.cpp" />
     <ClCompile Include="nonport\FileUtilities.cpp" />
     <ClCompile Include="nonport\StopWatch.cpp" />
+    <ClCompile Include="persistence\IECConnection.cpp" />
+    <ClCompile Include="persistence\IECStatement.cpp" />
     <ClCompile Include="StandaloneECInstance.cpp" />
     <ClCompile Include="StandaloneECRelationshipInstance.cpp" />
     <ClCompile Include="SupplementalSchema.cpp" />
@@ -88,6 +91,11 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECObjects.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPI.h" />
     <ClInclude Include="..\PublicApi\ECObjects\SupplementalSchema.h" />
+    <ClInclude Include="..\PublicApi\ECPersistence\ECPersistence.h" />
+    <ClInclude Include="..\PublicApi\ECPersistence\ECPersistenceAPI.h" />
+    <ClInclude Include="..\PublicApi\ECPersistence\IECConnection.h" />
+    <ClInclude Include="..\PublicApi\ECPersistence\IECSchemaManager.h" />
+    <ClInclude Include="..\PublicApi\ECPersistence\IECStatement.h" />
     <ClInclude Include="ECObjectsPch.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECSchema.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECValue.h" />

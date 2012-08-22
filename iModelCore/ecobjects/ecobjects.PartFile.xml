@@ -40,6 +40,7 @@
         <Bindings>
             <PublicAPI Domain="ECObjects" />
             <PublicAPI Domain="ECPresentation" />
+            <PublicAPI Domain="ECPersistence" />
         </Bindings>
     </Part>
 

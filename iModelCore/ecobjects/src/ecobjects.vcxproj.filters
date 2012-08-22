@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
+    <Filter Include="ECPersistence">
+      <UniqueIdentifier>{6ff6c24d-06fc-4435-a29d-6bd80f42927c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DesignByContract.cpp">
@@ -72,6 +75,15 @@
     <ClCompile Include="ECcontext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="persistence\IECConnection.cpp">
+      <Filter>ECPersistence</Filter>
+    </ClCompile>
+    <ClCompile Include="persistence\IECStatement.cpp">
+      <Filter>ECPersistence</Filter>
+    </ClCompile>
+    <ClCompile Include="persistence\IECSchemaManager.cpp">
+      <Filter>ECPersistence</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsPch.h">
@@ -121,6 +133,21 @@
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\ECContext.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECPersistence\IECConnection.h">
+      <Filter>ECPersistence</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECPersistence\ECPersistence.h">
+      <Filter>ECPersistence</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECPersistence\IECStatement.h">
+      <Filter>ECPersistence</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECPersistence\ECPersistenceAPI.h">
+      <Filter>ECPersistence</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECPersistence\IECSchemaManager.h">
+      <Filter>ECPersistence</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

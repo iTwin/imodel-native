@@ -44,6 +44,8 @@ MultiCompileDepends=$(_MakeFileSpec)
 #----------------------------------------------------------------------
 ECObjectsHeaders = $(ecobjectsPublicAPISrc)ECObjects.h $(ecobjectsPublicAPISrc)ECSchema.h $(ecobjectsPublicAPISrc)ECValue.h $(ecobjectsPublicAPISrc)ECInstance.h $(ecobjectsPublicAPISrc)ECEnabler.h $(ecobjectsPublicAPISrc)DesignByContract.h $(baseDir)ecxml.h $(baseDir)Logger.h $(baseDir)StopWatch.h
 
+ECPersistenceHeaders = $(ecpersistencePublicAPISrc)ECPersistence.h $(ecpersistencePublicAPISrc)IECConnection.h $(ecpersistencePublicAPISrc)IECSchemaManager.h $(ecpersistencePublicAPISrc)IECStatement.h 
+
 ECPresentationHeaders = $(ecpresentationPublicAPISrc)auicommand.h $(ecpresentationPublicAPISrc)auiitem.h $(ecpresentationPublicAPISrc)auijournal.h $(ecpresentationPublicAPISrc)auipresentationmgr.h $(ecpresentationPublicAPISrc)auiprovider.h $(ECObjectsHeaders) $(ecpresentationPublicAPISrc)auipresentationapi.h
 
 $(o)ecxml$(oext)           : $(baseDir)ecxml.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
@@ -103,6 +105,14 @@ $(o)eccontentdefinition$(oext)      : $(baseDir)presentation/eccontentdefinition
 $(o)auijournal$(oext)      : $(baseDir)presentation/auijournal.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
 
 $(o)ecimage$(oext)      : $(baseDir)presentation/ecimage.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
+
+# ECPersistence
+$(o)IECConnection$(oext)      : $(baseDir)persistence/IECConnection.cpp $(ECPersistenceHeaders) ${MultiCompileDepends} 
+
+$(o)IECSchemaManager$(oext)     : $(baseDir)persistence/IECSchemaManager.cpp $(ECPersistenceHeaders) ${MultiCompileDepends} 
+
+$(o)IECStatement$(oext)      : $(baseDir)persistence/IECStatement.cpp $(ECPersistenceHeaders) ${MultiCompileDepends} 
+
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)

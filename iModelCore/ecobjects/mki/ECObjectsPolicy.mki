@@ -48,6 +48,7 @@ ecPublicAPISrc      = $(SrcRoot)ecobjects/PublicApi/
 ecobjectsPublicAPISrc = $(ecPublicAPISrc)ECObjects/
 ecobjectsSrc        = $(SrcRoot)ecobjects/
 
+ecpersistencePublicAPISrc = $(ecPublicAPISrc)ECPersistence/
 ecpresentationPublicAPISrc = $(ecPublicAPISrc)EcPresentation/
 #-----------------------------------------------------------------------
 # Configure Google Test macros

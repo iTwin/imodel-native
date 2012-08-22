@@ -1,0 +1,190 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicApi/ECPersistence/IECStatement.h $
+|
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__PUBLISH_SECTION_START__*/
+
+#include "Bentley/RefCounted.h"
+
+#include <Geom/GeomApi.h>
+
+#include "ECObjects\ECSchema.h"
+
+#include "ECPersistence/ECPersistence.h"
+
+BEGIN_BENTLEY_EC_NAMESPACE
+
+//TODOS: Return values of the GetXXX method need to be revisited: Return as const ref or as pointer?
+//       Can we assume that the statement owns the values and doesn't pass ownership to the caller?
+
+//=======================================================================================    
+//! @ingroup ECPersistence
+//! Contains the possible values returned when executing an IECStatement or when
+//! stepping through the results of an IECStatement.
+//! @see IECStatement::Step
+//! @bsiclass                                                 Krischan.Eberle      08/2012
+//=======================================================================================    
+enum ECStepStatus
+    {
+    ECSTEPSTATUS_HASROW = 0,
+    ECSTEPSTATUS_DONE = 1,
+    ECSTEPSTATUS_ERROR = 2
+    };
+
+typedef RefCountedPtr<IECStatement> IECStatementPtr;
+
+//=======================================================================================    
+//! @ingroup ECPersistence
+//! IECStatement is used to execute an ECSQL statement. It is also used to read and iterate
+//! over the results of the ECSQL execution.
+//! Clients create an IECStatement from the corresponding IECConnection instance.
+//! @see IECConnection::CreateStatement
+//! @bsiclass                                                 Krischan.Eberle      08/2012
+//=======================================================================================    
+struct IECStatement : RefCountedBase
+    {
+private:
+    ECPERSISTENCE_EXPORT virtual void _Dispose () = 0;
+
+    ECPERSISTENCE_EXPORT virtual BentleyStatus _Prepare (Utf8CP ecsql) = 0;
+    ECPERSISTENCE_EXPORT virtual bool _IsPrepared () const = 0;
+
+    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindBoolean (int parameterIndex, bool value) = 0;
+    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindDateTime (int parameterIndex, const SystemTime& value) = 0;
+    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindInt32 (int parameterIndex, Int32 value) = 0;
+    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindInt64 (int parameterIndex, Int64 value) = 0;
+    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindDouble (int parameterIndex, double value) = 0;
+    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindUtf8String (int parameterIndex, Utf8StringCR value, bool makeCopy) = 0;
+    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindUtf8 (int parameterIndex, Utf8CP value, int length, bool makeCopy) = 0;
+    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindBinary (int parameterIndex, const void* value, int binarySize, bool makeCopy) = 0;
+    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindDPoint2d (int parameterIndex, DPoint2dCR value) = 0;
+    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindDPoint3d (int parameterIndex, DPoint3dCR value) = 0;
+    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindStruct (int parameterIndex, const void* value) = 0;
+    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindArray (int parameterIndex, const void* value) = 0;
+    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindNull (int parameterIndex) = 0;
+    ECPERSISTENCE_EXPORT virtual BentleyStatus _ClearBindings () = 0;
+
+    ECPERSISTENCE_EXPORT virtual ECStepStatus _Step (int* rowsAffected) = 0;
+
+    ECPERSISTENCE_EXPORT virtual BentleyStatus _Reset () = 0;
+
+    ECPERSISTENCE_EXPORT virtual int _GetPropertyCount () const = 0;
+    ECPERSISTENCE_EXPORT virtual BentleyStatus _GetType (int propertyIndex, ECTypeDescriptor*& ecType) const = 0;
+    ECPERSISTENCE_EXPORT virtual BentleyStatus _GetProperty (int propertyIndex, ECPropertyP& ecProperty) const = 0;
+    ECPERSISTENCE_EXPORT virtual BentleyStatus _GetClass (int propertyIndex, ECClassP& ecClass) const = 0;
+
+    ECPERSISTENCE_EXPORT virtual bool _IsNull (int propertyIndex) const = 0;
+    ECPERSISTENCE_EXPORT virtual bool _GetBooleanValue (int propertyIndex) const = 0;
+    ECPERSISTENCE_EXPORT virtual SystemTimeCR _GetDateTimeValue (int propertyIndex) const = 0;
+    ECPERSISTENCE_EXPORT virtual Int32 _GetInt32Value (int propertyIndex) const = 0;
+    ECPERSISTENCE_EXPORT virtual Int64 _GetInt64Value (int propertyIndex) const = 0;
+    ECPERSISTENCE_EXPORT virtual double _GetDoubleValue (int propertyIndex) const = 0;
+    ECPERSISTENCE_EXPORT virtual Utf8StringCR _GetUtf8StringValue (int propertyIndex) const = 0;
+    ECPERSISTENCE_EXPORT virtual Utf8CP _GetUtf8Value (int propertyIndex) const = 0;
+    ECPERSISTENCE_EXPORT virtual const void* _GetBinaryValue (int propertyIndex, int& binarySize) const = 0;
+    ECPERSISTENCE_EXPORT virtual DPoint2dCR _GetDPoint2dValue (int propertyIndex) const = 0;
+    ECPERSISTENCE_EXPORT virtual DPoint3dCR _GetDPoint3dValue (int propertyIndex) const = 0;
+
+public: 
+    ECPERSISTENCE_EXPORT virtual ~IECStatement () {};
+
+    //! Disposes this statement and all resources associated with it.
+    //TODO: need to check whether this works fine with the refcountedness
+    ECPERSISTENCE_EXPORT void Dispose ();
+
+    //*** Prepare ***
+    ECPERSISTENCE_EXPORT BentleyStatus Prepare (Utf8CP ecsql);
+    ECPERSISTENCE_EXPORT bool IsPrepared () const;
+
+    //*** Bind ***
+
+    ECPERSISTENCE_EXPORT BentleyStatus BindBoolean (int parameterIndex, bool value);
+    
+    //! Bind a date time value to a parameter of this statement
+    //! @param[in] parameterIndex Index of the parameter to bind a value to
+    //! @param[in] value The value to bind.
+    //! @return SUCCESS or ERROR
+    //**TODO**: Is SystemTime acceptable as type? It seems independent of anything else in ECObjects. But how can we
+    //ensure that it remains independent in future?
+    ECPERSISTENCE_EXPORT BentleyStatus BindDateTime (int parameterIndex, const SystemTime& value);
+
+    ECPERSISTENCE_EXPORT BentleyStatus BindInt (int parameterIndex, Int32 value);
+    ECPERSISTENCE_EXPORT BentleyStatus BindInt (int parameterIndex, Int64 value);
+    ECPERSISTENCE_EXPORT BentleyStatus BindDouble (int parameterIndex, double value);
+    //TODO: also allow to bind WStrings and WCharP?
+    ECPERSISTENCE_EXPORT BentleyStatus BindString (int parameterIndex, Utf8StringCR value, bool makeCopy=false);
+    ECPERSISTENCE_EXPORT BentleyStatus BindString (int parameterIndex, Utf8CP value, int length=-1, bool makeCopy=false);
+    
+    //! Bind a binary value to a parameter of this statement
+    //! @param[in] parameterIndex Index of the parameter to bind a value to
+    //! @param[in] value The value to bind.
+    //! @param[in] binarySize The number of bytes in the binary value
+    //! @param[in] makeCopy Make a private copy of the binary value. Only pass false if value will remain valid until the statement's bindings are cleared.
+    //! @return SUCCESS or ERROR
+    //**TODO**: This is signature as in BeSQLite. Use signature of ECValue instead (const byte* value, size_t size)?
+    ECPERSISTENCE_EXPORT BentleyStatus BindBinary (int parameterIndex, const void* value, int binarySize, bool makeCopy=false);
+
+    ECPERSISTENCE_EXPORT BentleyStatus BindPoint (int parameterIndex, DPoint2dCR value);
+    ECPERSISTENCE_EXPORT BentleyStatus BindPoint (int parameterIndex, DPoint3dCR value);
+
+    //TODO: Support for geometries? How does the geometry type look like?
+
+    //TODO: With ECPersistence not using ECInstances, we need to find a way to allow clients
+    //to bind structs and arrays.
+    ECPERSISTENCE_EXPORT BentleyStatus BindStruct (int parameterIndex, const void* value);
+    ECPERSISTENCE_EXPORT BentleyStatus BindArray (int parameterIndex, const void* value);
+
+    ECPERSISTENCE_EXPORT BentleyStatus BindNull (int parameterIndex);
+
+    ECPERSISTENCE_EXPORT BentleyStatus ClearBindings ();
+
+    //*** Step ***
+    //! Executes a prepared statement and if the statement returns any results iterates over the result set.
+    //! @param[out] rowsAffected Number of rows affected by the statement (only for INSERT, UPDATE, DELETE)
+    //! @return ECSTEPSTATUS_HASROW each time a new row of data is ready for processing by the caller (only if statement returned any data (SELECT statements).
+    //!         ECSTEPSTATUS_DONE if no further rows exist in the result or if a non-query statement (INSERT, UPDATE, DELETE) was successfully executed.
+    //!         ECSTEPSTATUS_ERROR if any error occurred while executing the statement or stepping through the results.
+    ECPERSISTENCE_EXPORT ECStepStatus Step (int* rowsAffected = NULL);
+
+    ECPERSISTENCE_EXPORT BentleyStatus Reset ();
+
+    //*** Read meta data ***
+    ECPERSISTENCE_EXPORT int GetPropertyCount () const;
+
+    //! Executes a prepared statement and if the statement returns any results iterates over the result set.
+    //! Note: Some SELECT statements return data that might not match and existing ECClass (e.g. select count (*) from Foo).
+    //! In that case callers can still find out about the ECType of that property.
+    //! @param[in] propertyIndex Index of the property in the result set for which the ECType is to be retrieved
+    //! @param[out] ecType ECType for the property at the given index
+    //! @return SUCCESS or ERROR
+    ECPERSISTENCE_EXPORT BentleyStatus GetType (int propertyIndex, ECTypeDescriptor*& ecType) const;
+
+    ECPERSISTENCE_EXPORT BentleyStatus GetProperty (int propertyIndex, ECPropertyP& ecProperty) const;
+    ECPERSISTENCE_EXPORT BentleyStatus GetClass (int propertyIndex, ECClassP& ecClass) const;
+
+
+    //Read values
+    ECPERSISTENCE_EXPORT bool IsNull (int propertyIndex) const;
+
+    //TODO: logical const applied here. Differs from BeSQLite API where all GetXXX methods are non-const.
+    ECPERSISTENCE_EXPORT bool GetBooleanValue (int propertyIndex) const;
+    ECPERSISTENCE_EXPORT SystemTimeCR GetDateTimeValue (int propertyIndex) const;
+    ECPERSISTENCE_EXPORT Int32 GetInt32Value (int propertyIndex) const;
+    ECPERSISTENCE_EXPORT Int64 GetInt64Value (int propertyIndex) const;
+    ECPERSISTENCE_EXPORT double GetDoubleValue (int propertyIndex) const;
+    ECPERSISTENCE_EXPORT Utf8StringCR GetUtf8StringValue (int propertyIndex) const;
+    ECPERSISTENCE_EXPORT Utf8CP GetUtf8Value (int propertyIndex) const;
+    ECPERSISTENCE_EXPORT const void* GetBinaryValue (int propertyIndex, int& binarySize) const;
+
+    ECPERSISTENCE_EXPORT DPoint2dCR GetDPoint2dValue (int propertyIndex) const;
+    ECPERSISTENCE_EXPORT DPoint3dCR GetDPoint3dValue (int propertyIndex) const;
+
+    //TODO: return geometries, structs and arrays
+    };
+
+END_BENTLEY_EC_NAMESPACE
+
