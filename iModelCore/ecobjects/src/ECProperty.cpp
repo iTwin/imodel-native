@@ -803,8 +803,12 @@ bool IECTypeAdapter::CanConvertFromString () const                              
 bool IECTypeAdapter::CanConvertToString () const                                                                     { return _CanConvertToString (); }
 bool IECTypeAdapter::IsStruct() const                                                                                { return _IsStruct(); }
 bool IECTypeAdapter::IsTreatedAsString() const                                                                       { return _IsTreatedAsString(); }
-IECInstancePtr IECTypeAdapter::CreateDefaultFormatter (bool includeAllValues) const                                  { return _CreateDefaultFormatter (includeAllValues); }
+IECInstancePtr IECTypeAdapter::CreateDefaultFormatter (bool includeAllValues, bool forDwg) const                     { return _CreateDefaultFormatter (includeAllValues, forDwg); }
 IECInstancePtr IECTypeAdapter::CondenseFormatterForSerialization (IECInstanceCR formatter) const                     { return _CondenseFormatterForSerialization (formatter); }
 IECInstancePtr IECTypeAdapter::PopulateDefaultFormatterProperties (IECInstanceCR formatter) const                    { return _PopulateDefaultFormatterProperties (formatter); }
+IECInstancePtr IECTypeAdapter::ConvertFormatterToDwg (EC::IECInstanceCR formatter) const                             { return _ConvertFormatterToDwg (formatter); }
+IECInstancePtr IECTypeAdapter::ConvertFormatterToDgn (EC::IECInstanceCR formatter) const                             { return _ConvertFormatterToDgn (formatter); }
+IECInstancePtr IECTypeAdapter::CreateFormatterFromDwgFormatString (WCharCP formatString) const                       { return _CreateFormatterFromDwgFormatString (formatString); }
+bool IECTypeAdapter::ConvertFormatterToDwgFormatString (WStringR formatString, EC::IECInstanceCR formatter) const    { return _ConvertFormatterToDwgFormatString (formatString, formatter); }
 
 END_BENTLEY_EC_NAMESPACE

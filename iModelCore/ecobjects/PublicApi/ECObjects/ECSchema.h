@@ -291,7 +291,17 @@ protected:
     virtual bool                _IsTreatedAsString() const = 0;
     virtual EC::IECInstancePtr  _CondenseFormatterForSerialization (EC::IECInstanceCR formatter) const = 0;
     virtual EC::IECInstancePtr  _PopulateDefaultFormatterProperties (EC::IECInstanceCR formatter) const = 0;
-    virtual EC::IECInstancePtr  _CreateDefaultFormatter (bool includeAllValues) const = 0;
+    virtual EC::IECInstancePtr  _CreateDefaultFormatter (bool includeAllValues, bool forDwg) const = 0;
+    virtual EC::IECInstancePtr  _ConvertFormatterToDwg (EC::IECInstanceCR formatter) const = 0;
+    virtual EC::IECInstancePtr  _ConvertFormatterToDgn (EC::IECInstanceCR formatter) const = 0;
+    virtual bool                _ConvertFormatterToDwgFormatString (WStringR formatString, EC::IECInstanceCR formatter) const = 0;
+    virtual EC::IECInstancePtr  _CreateFormatterFromDwgFormatString (WCharCP formatString) const = 0;
+public:
+    // These methods are used for converting TextFields to and from DWG format.
+    ECOBJECTS_EXPORT EC::IECInstancePtr   ConvertFormatterToDwg (EC::IECInstanceCR formatter) const;
+    ECOBJECTS_EXPORT EC::IECInstancePtr   ConvertFormatterToDgn (EC::IECInstanceCR formatter) const;
+    ECOBJECTS_EXPORT bool                 ConvertFormatterToDwgFormatString (WStringR formatString, EC::IECInstanceCR formatter) const;
+    ECOBJECTS_EXPORT EC::IECInstancePtr   CreateFormatterFromDwgFormatString (WCharCP formatString) const;
 
 /*__PUBLISH_SECTION_START__*/
 public:
@@ -303,8 +313,9 @@ public:
     
     //! Create an IECInstance representing default formatting options for converting to string.
     //! @param[in] includeAllValues If false, property values will be left NULL to save space; otherwise they will be initialized with default values
+    //! @param[in] forDwg           If true, creates a formatting instance compatible with DWG
     //! @return An IECInstance which can be passed to ConvertToString(), or NULL if no special formatting options are supported.
-    ECOBJECTS_EXPORT EC::IECInstancePtr   CreateDefaultFormatter (bool includeAllValues) const;
+    ECOBJECTS_EXPORT EC::IECInstancePtr   CreateDefaultFormatter (bool includeAllValues, bool forDwg = false) const;
 
     //! @return true if this type adapter provides a finite set of permissible values for the property it represents
     ECOBJECTS_EXPORT bool                 HasStandardValues() const;
