@@ -293,15 +293,13 @@ protected:
     virtual EC::IECInstancePtr  _PopulateDefaultFormatterProperties (EC::IECInstanceCR formatter) const = 0;
     virtual EC::IECInstancePtr  _CreateDefaultFormatter (bool includeAllValues, bool forDwg) const = 0;
     virtual EC::IECInstancePtr  _ConvertFormatterToDwg (EC::IECInstanceCR formatter) const = 0;
-    virtual EC::IECInstancePtr  _ConvertFormatterToDgn (EC::IECInstanceCR formatter) const = 0;
-    virtual bool                _ConvertFormatterToDwgFormatString (WStringR formatString, EC::IECInstanceCR formatter) const = 0;
-    virtual EC::IECInstancePtr  _CreateFormatterFromDwgFormatString (WCharCP formatString) const = 0;
+    virtual EC::IECInstancePtr  _ConvertFormatterFromDwg (EC::IECInstanceCR formatter) const = 0;
+    virtual bool                _ConvertFormatterToDwgFormatString (WStringR formatString, UInt32& requiredVersion, UInt32 maxRequiredVersion, EC::IECInstanceCR formatter) const = 0;
 public:
     // These methods are used for converting TextFields to and from DWG format.
     ECOBJECTS_EXPORT EC::IECInstancePtr   ConvertFormatterToDwg (EC::IECInstanceCR formatter) const;
-    ECOBJECTS_EXPORT EC::IECInstancePtr   ConvertFormatterToDgn (EC::IECInstanceCR formatter) const;
-    ECOBJECTS_EXPORT bool                 ConvertFormatterToDwgFormatString (WStringR formatString, EC::IECInstanceCR formatter) const;
-    ECOBJECTS_EXPORT EC::IECInstancePtr   CreateFormatterFromDwgFormatString (WCharCP formatString) const;
+    ECOBJECTS_EXPORT EC::IECInstancePtr   ConvertFormatterFromDwg (EC::IECInstanceCR formatter) const;
+    ECOBJECTS_EXPORT bool                 ConvertFormatterToDwgFormatString (WStringR formatString, UInt32& requiredVersion, UInt32 maxRequiredVersion, EC::IECInstanceCR formatter) const;
 
 /*__PUBLISH_SECTION_START__*/
 public:

@@ -807,8 +807,7 @@ IECInstancePtr IECTypeAdapter::CreateDefaultFormatter (bool includeAllValues, bo
 IECInstancePtr IECTypeAdapter::CondenseFormatterForSerialization (IECInstanceCR formatter) const                     { return _CondenseFormatterForSerialization (formatter); }
 IECInstancePtr IECTypeAdapter::PopulateDefaultFormatterProperties (IECInstanceCR formatter) const                    { return _PopulateDefaultFormatterProperties (formatter); }
 IECInstancePtr IECTypeAdapter::ConvertFormatterToDwg (EC::IECInstanceCR formatter) const                             { return _ConvertFormatterToDwg (formatter); }
-IECInstancePtr IECTypeAdapter::ConvertFormatterToDgn (EC::IECInstanceCR formatter) const                             { return _ConvertFormatterToDgn (formatter); }
-IECInstancePtr IECTypeAdapter::CreateFormatterFromDwgFormatString (WCharCP formatString) const                       { return _CreateFormatterFromDwgFormatString (formatString); }
-bool IECTypeAdapter::ConvertFormatterToDwgFormatString (WStringR formatString, EC::IECInstanceCR formatter) const    { return _ConvertFormatterToDwgFormatString (formatString, formatter); }
+IECInstancePtr IECTypeAdapter::ConvertFormatterFromDwg (EC::IECInstanceCR formatter) const                           { return _ConvertFormatterFromDwg (formatter); }
+bool IECTypeAdapter::ConvertFormatterToDwgFormatString (WStringR fs, UInt32& rv, UInt32 mv, EC::IECInstanceCR fmtr) const    { return _ConvertFormatterToDwgFormatString (fs, rv, mv, fmtr); }
 
 END_BENTLEY_EC_NAMESPACE
