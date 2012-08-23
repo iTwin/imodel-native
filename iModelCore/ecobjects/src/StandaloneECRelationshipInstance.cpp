@@ -130,16 +130,6 @@ bool                StandaloneECRelationshipInstance::_IsReadOnly() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECRelationshipInstance::_GetValue (ECValueR v, WCharCP propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const
-    {
-    ClassLayoutCR classLayout = GetClassLayout();
-
-    return GetValueFromMemory (classLayout, v, propertyAccessString, useArrayIndex, arrayIndex);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECRelationshipInstance::_GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const
@@ -150,18 +140,13 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_GetValue (ECValueR 
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
+* @bsimethod                                    Bill.Steinbock                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECRelationshipInstance::_SetValue (WCharCP propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
+ECObjectsStatus           StandaloneECRelationshipInstance::_GetIsPropertyNull (bool& isNull, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const
     {
+    ClassLayoutCR classLayout = GetClassLayout();
 
-    PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
-
-    UInt32 propertyIndex = 0;
-    if (ECOBJECTS_STATUS_Success != GetEnabler().GetPropertyIndex(propertyIndex, propertyAccessString))
-        return ECOBJECTS_STATUS_PropertyNotFound;
-
-    return _SetValue (propertyIndex, v, useArrayIndex, arrayIndex);
+    return GetIsNullValueFromMemory (classLayout, isNull, propertyIndex, useArrayIndex, arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**

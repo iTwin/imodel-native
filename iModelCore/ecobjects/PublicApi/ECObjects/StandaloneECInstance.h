@@ -101,7 +101,7 @@ protected:
 
     ECOBJECTS_EXPORT virtual bool             _IsMemoryInitialized () const;
     ECOBJECTS_EXPORT virtual ECObjectsStatus  _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength);    
-    ECOBJECTS_EXPORT virtual void             _ShrinkAllocation (UInt32 newAllocation);
+    ECOBJECTS_EXPORT virtual ECObjectsStatus  _ShrinkAllocation ();
     ECOBJECTS_EXPORT virtual void             _FreeAllocation ();
     ECOBJECTS_EXPORT virtual ECObjectsStatus  _GrowAllocation (UInt32 bytesNeeded);        
 
@@ -187,9 +187,7 @@ protected:
     ECOBJECTS_EXPORT virtual WString             _GetInstanceId() const override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetInstanceId(WCharCP id) override;
     ECOBJECTS_EXPORT virtual bool                _IsReadOnly() const override;        
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetValue (ECValueR v, WCharCP propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetValue (WCharCP propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
 
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size) override;
@@ -204,6 +202,8 @@ protected:
 
     // MemoryECInstanceBase
     ECOBJECTS_EXPORT virtual IECInstancePtr      _GetAsIECInstance () const;
+
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetIsPropertyNull (bool& isNull, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
@@ -261,7 +261,7 @@ protected:
     virtual UInt32                      _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const override;
     virtual bool                        _HasChildProperties (UInt32 parentIndex) const override;
     virtual ECObjectsStatus             _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const override;
-
+    virtual bool                        _IsPropertyReadOnly (UInt32 propertyIndex) const override;
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public: 

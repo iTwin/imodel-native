@@ -430,6 +430,7 @@ protected:
     ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElementsFromMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
     ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 removeIndex, UInt32 removeCount);
     ECOBJECTS_EXPORT WString          InstanceDataToString (WCharCP indent, ClassLayoutCR classLayout) const;
+    ECOBJECTS_EXPORT ECObjectsStatus  GetIsNullValueFromMemory (ClassLayoutCR classLayout, bool& isNull, UInt32 propertyIndex, bool useIndex, UInt32 index) const;
 
     virtual ~MemoryInstanceSupport () {}
 
@@ -460,11 +461,8 @@ protected:
     //! @param additionalBytesNeeded  Additional bytes of memory needed above current allocation
     virtual ECObjectsStatus    _GrowAllocation (UInt32 additionalBytesNeeded) = 0;
     
-    //! Reallocates memory for the IECInstance and copies the old IECInstance data into the new memory
-    //! This is not guaranteed to do anything or to change to precisely the allocation you request
-    //! but it will be at least as large as you request.
-    //! @param newAllocation  Additional bytes of memory needed above current allocation    
-    virtual void                _ShrinkAllocation (UInt32 newAllocation) = 0;
+    //! Shrinks the allocated IECInstance data to be as small as possible
+    virtual ECObjectsStatus    _ShrinkAllocation () = 0;
     
     //! Free any allocated memory
     virtual void                _FreeAllocation () = 0;
@@ -472,11 +470,14 @@ protected:
     virtual void                _SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable) {};
 
 public:
-    ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
+    ECOBJECTS_EXPORT ECObjectsStatus        RemoveArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
    
-    ECOBJECTS_EXPORT void SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable);
+    ECOBJECTS_EXPORT void                   SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable);
 
-    ECOBJECTS_EXPORT EC::PrimitiveType         GetStructArrayPrimitiveType () const;
+    ECOBJECTS_EXPORT EC::PrimitiveType      GetStructArrayPrimitiveType () const;
+
+    // Compress the memory storing the data to as small a size as possible
+    ECOBJECTS_EXPORT ECObjectsStatus        Compress();
 
 /*__PUBLISH_SECTION_START__*/  
     };   
