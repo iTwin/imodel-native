@@ -148,6 +148,7 @@ enum ECObjectsStatus
     ECOBJECTS_STATUS_InvalidIndexForPerPropertyFlag                     = ECOBJECTS_ERROR_BASE + 0x23,
     ECOBJECTS_STATUS_SchemaHasReferenceCycle                            = ECOBJECTS_ERROR_BASE + 0x24,
     ECOBJECTS_STATUS_SchemaNotSupplemented                              = ECOBJECTS_ERROR_BASE + 0x25,
+    ECOBJECTS_STATUS_UnableToQueryForNullPropertyFlag                   = ECOBJECTS_ERROR_BASE + 0x26,
     ECOBJECTS_STATUS_Error                                              = ECOBJECTS_ERROR_BASE + 0xFFF,
     }; 
 

@@ -2293,7 +2293,27 @@ TEST_F (MemoryLayoutTests, TestPropertyReadOnly)
     EXPECT_FALSE (instance->IsPropertyReadOnly (namePropertyIndex));
 
     EXPECT_TRUE  (instance->IsPropertyReadOnly (wheelsAccessString));
-    EXPECT_TRUE  (instance->IsPropertyReadOnly (wheelsPropertyIndex));   
+    EXPECT_TRUE  (instance->IsPropertyReadOnly (wheelsPropertyIndex));  
+
+    ECValue v;
+    v.SetInteger(610);
+    EXPECT_TRUE (SUCCESS == instance->SetValue (wheelsAccessString, v));  // should work since original value is NULL
+    v.SetInteger(512);
+    EXPECT_TRUE (ECOBJECTS_STATUS_UnableToSetReadOnlyProperty == instance->SetValue (wheelsAccessString, v));  // should fail since read only and value is not NULL
+
+    // make sure we can copy an instance contains read only properties
+    StandaloneECInstancePtr  copyInstance =  StandaloneECInstance::Duplicate (*instance);
+    EXPECT_TRUE (SUCCESS == instance->GetValue (v, wheelsAccessString));
+    EXPECT_TRUE (610 == v.GetInteger());
+
+    // make sure we can deserialize and instance from XML that contains read only properties
+    WString ecInstanceXml;
+    instance->WriteToXmlString (ecInstanceXml, true, false);
+    EC::IECInstancePtr deserializedInstance = NULL;
+    EC::ECInstanceReadContextPtr instanceContext = EC::ECInstanceReadContext::CreateContext (*schema);
+    EXPECT_TRUE (INSTANCE_READ_STATUS_Success == IECInstance::ReadFromXmlString(deserializedInstance, ecInstanceXml.c_str(), *instanceContext));
+    EXPECT_TRUE (SUCCESS == deserializedInstance->GetValue (v, wheelsAccessString));
+    EXPECT_TRUE (610 == v.GetInteger());
     };
 
 /*---------------------------------------------------------------------------------**//**

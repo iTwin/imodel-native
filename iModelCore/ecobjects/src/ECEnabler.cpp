@@ -52,6 +52,18 @@ StandaloneECEnablerPtr          ECEnabler::GetEnablerForStructArrayMember (Schem
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECEnabler::_IsPropertyReadOnly (UInt32 propertyIndex) const
+    {
+    // Note: this is the default implementation, and it causes significant performance issues because every call to IECInstance::SetValue() checks if the property is read-only
+    // Subclasses are capable of implementing this much more efficiently
+    ECPropertyCP ecproperty = LookupECProperty (propertyIndex);
+    BeAssert (NULL != ecproperty);
+    return NULL == ecproperty || ecproperty->GetIsReadOnly();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyCP ECEnabler::_LookupECProperty (UInt32 propertyIndex) const
@@ -113,6 +125,7 @@ ECObjectsStatus     ECEnabler::GetPropertyIndices (bvector<UInt32>& indices, UIn
 IStandaloneEnablerLocaterR ECEnabler::GetStandaloneEnablerLocater() { return *this; }
 ECPropertyCP        ECEnabler::LookupECProperty (UInt32 propertyIndex) const { return _LookupECProperty (propertyIndex); }
 ECPropertyCP        ECEnabler::LookupECProperty (WCharCP accessString) const { return _LookupECProperty (accessString); }
+bool                ECEnabler::IsPropertyReadOnly (UInt32 propertyIndex) const { return _IsPropertyReadOnly (propertyIndex); }
 
 #if defined (EXPERIMENTAL_TEXT_FILTER)
 /*---------------------------------------------------------------------------------**//**

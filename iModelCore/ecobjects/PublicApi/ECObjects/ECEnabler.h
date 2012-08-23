@@ -76,6 +76,7 @@ protected:
 
     ECOBJECTS_EXPORT virtual ECPropertyCP   _LookupECProperty (UInt32 propertyIndex) const;
     ECOBJECTS_EXPORT virtual ECPropertyCP   _LookupECProperty (WCharCP accessString) const;
+    ECOBJECTS_EXPORT virtual bool           _IsPropertyReadOnly (UInt32 propertyIndex) const;
 
     // IStandaloneEnablerLocater
     ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr  _LocateStandaloneEnabler (SchemaKeyCR schemaKey, WCharCP className);
@@ -90,6 +91,7 @@ protected:
 public:
     ECOBJECTS_EXPORT ECPropertyCP               LookupECProperty (UInt32 propertyIndex) const;
     ECOBJECTS_EXPORT ECPropertyCP               LookupECProperty (WCharCP accessString) const;
+    ECOBJECTS_EXPORT bool                       IsPropertyReadOnly (UInt32 propertyIndex) const;
 
 /*__PUBLISH_SECTION_START__*/
 public:
