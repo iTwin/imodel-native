@@ -803,7 +803,7 @@ bool IECTypeAdapter::CanConvertFromString () const                              
 bool IECTypeAdapter::CanConvertToString () const                                                                     { return _CanConvertToString (); }
 bool IECTypeAdapter::IsStruct() const                                                                                { return _IsStruct(); }
 bool IECTypeAdapter::IsTreatedAsString() const                                                                       { return _IsTreatedAsString(); }
-IECInstancePtr IECTypeAdapter::CreateDefaultFormatter (bool includeAllValues) const                                  { return _CreateDefaultFormatter (includeAllValues); }
+IECInstancePtr IECTypeAdapter::CreateDefaultFormatter (bool includeAllValues, bool forDwg) const                     { return _CreateDefaultFormatter (includeAllValues, forDwg); }
 IECInstancePtr IECTypeAdapter::CondenseFormatterForSerialization (IECInstanceCR formatter) const                     { return _CondenseFormatterForSerialization (formatter); }
 IECInstancePtr IECTypeAdapter::PopulateDefaultFormatterProperties (IECInstanceCR formatter) const                    { return _PopulateDefaultFormatterProperties (formatter); }
 
