@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
+#include <Bentley/WString.h>
 
 typedef struct mdlDesc MdlDesc;
 

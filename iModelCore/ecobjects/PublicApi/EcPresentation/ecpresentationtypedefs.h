@@ -9,6 +9,7 @@
 /*__BENTLEY_INTERNAL_ONLY__*/
 
 #include <ECObjects/ECObjects.h>
+#include <Bentley/RefCounted.h>
 
 EC_TYPEDEFS (IAUIItem);
 EC_TYPEDEFS (IAUIItemInfo);
