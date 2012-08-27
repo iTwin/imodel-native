@@ -84,6 +84,8 @@ struct  IAUIDataContext // Query
         ECQuery,
         Custom,
         ECInstanceCollection,
+        ECGroupingNode,
+        NodeCollection,
         //TODO Move this enum to a string for repository dependant values
         DgnECInstanceCollection
         };
@@ -93,6 +95,7 @@ struct  IAUIDataContext // Query
 
     //!Get the data instance that this datacontext stores.
     virtual IECInstanceP            GetInstance () const {return NULL;}
+    virtual WString                 GetMoniker () const {return NULL;}
     virtual DgnPlatform::ECQueryCP  GetQuery () const {return NULL;}
     virtual void*                   GetCustomData() const {return NULL;}
     virtual ECInstanceIterableCP    GetInstanceIterable () const {return NULL;}
@@ -134,6 +137,44 @@ struct  AUIInstanceDataContext : public IAUIDataContext
         virtual ContextType GetContextType() const override {return IAUIDataContext::Instance;}
         virtual IECInstanceP    GetInstance () const override {return m_instancePtr.get();}
         InstanceType*  GetDataInstnce () const {return m_instancePtr.get();}
+    };
+
+/*---------------------------------------------------------------------------------**//**
+//! A class which describes the data that is backed by a single ECInstance in the UI.
+* @bsiclass                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct  ECGroupingNodeDataContext : public IAUIDataContext
+    {
+    private:
+        WString m_nodeMoniker;
+        
+    public:
+        ECGroupingNodeDataContext (WString moniker)
+            :m_nodeMoniker (moniker)
+            {}
+        
+        virtual ContextType GetContextType() const override { return IAUIDataContext::ECGroupingNode; }
+        virtual WString     GetMoniker () const override { return m_nodeMoniker; }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+//! A class which describes the data that is backed by a single ECInstance in the UI.
+* @bsiclass                                    Abeesh.Basheer                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct  ECNodeCollectionDataContext : public IAUIDataContext
+    {
+    private:
+        ECInstanceIterable m_data;
+        WString m_labels;
+        
+    public:
+        ECNodeCollectionDataContext (WString labels, ECInstanceIterable const& data)
+            :m_labels (labels), m_data(data)
+            {}
+        
+        virtual ContextType GetContextType() const override { return IAUIDataContext::NodeCollection; }
+        virtual WString     GetMoniker () const override { return m_labels; }
+        virtual ECInstanceIterableCP    GetInstanceIterable () const { return &m_data; }
     };
 
 END_BENTLEY_EC_NAMESPACE
