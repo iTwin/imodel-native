@@ -37,7 +37,8 @@ enum ArrayModifierFlags ENUM_UNDERLYING_TYPE (UInt32)
     {
     PROPERTYLAYOUTMODIFIERFLAGS_None              = 0x00,
     PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount = 0x01,
-    PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly        = 0x02
+    PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly        = 0x02,
+    PROPERTYLAYOUTMODIFIERFLAGS_IsCalculated      = 0x04
     };
 
 /*=================================================================================**//**
@@ -51,7 +52,7 @@ private:
     WString                 m_accessString;        
     UInt32                  m_parentStructIndex;
     ECTypeDescriptor        m_typeDescriptor;
-    
+
     // Using UInt32 instead of size_t below because we will persist this struct in an XAttribute. It will never be very big.
     UInt32              m_offset; //! An offset to either the data holding that property's value (for fixed-size values) or to the offset at which the properties value can be found.
     UInt32              m_modifierFlags; //! Can be used to indicate that a string should be treated as fixed size, with a max length, or that a longer fixed size type should be treated as an optional variable-sized type, or that for a string that only an entry to a StringTable is Stored, or that a default value should be used.
@@ -83,6 +84,8 @@ public:
 
     ECOBJECTS_EXPORT bool                        SetReadOnlyMask (bool readOnly);
     ECOBJECTS_EXPORT bool                        IsFixedSized() const;
+    ECOBJECTS_EXPORT bool                        HoldsCalculatedProperty() const;
+
     //! Gets the size required for this PropertyValue in the fixed Section of the IECInstance's memory
     //! Variable-sized types will have 4 byte SecondaryOffset stored in the fixed Section.
     ECOBJECTS_EXPORT UInt32                       GetSizeInFixedSection() const;
@@ -161,9 +164,9 @@ private:
 
         void        AddProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, UInt32 size, UInt32 modifierFlags = 0, UInt32 modifierData = 0);
         void        AddStructProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor);
-        void        AddFixedSizeProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, bool isReadOnly);
+        void        AddFixedSizeProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, bool isReadOnly, bool isCalculated);
         void        AddFixedSizeArrayProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, UInt32 arrayCount, bool isReadOnly);
-        void        AddVariableSizeProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, bool isReadOnly);
+        void        AddVariableSizeProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, bool isReadOnly, bool isCalculated);
         void        AddVariableSizeArrayPropertyWithFixedCount (WCharCP accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount, bool isReadOnly);        
         void        AddProperties (ECClassCR ecClass, WCharCP nameRoot, bool addFixedSize);
 
@@ -211,10 +214,10 @@ public:
     ECOBJECTS_EXPORT UInt32          GetPropertyCountExcludingEmbeddedStructs () const;
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyLayout (PropertyLayoutCP & propertyLayout, WCharCP accessString) const;
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const;
+                     ECObjectsStatus GetPropertyLayoutIndex (UInt32& propertyIndex, PropertyLayoutCR propertyLayout) const;
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyIndex (UInt32& propertyIndex, WCharCP accessString) const;
     ECOBJECTS_EXPORT bool            IsPropertyReadOnly (UInt32 propertyIndex) const;
     ECOBJECTS_EXPORT bool            SetPropertyReadOnly (UInt32 propertyIndex, bool readOnly) const;
-    
     
     //! Determines the number of bytes used, so far
     ECOBJECTS_EXPORT UInt32         CalculateBytesUsed(byte const * data) const;
@@ -398,7 +401,9 @@ private:
         
     ECObjectsStatus                   EnsureSpaceIsAvailable (UInt32& offset, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded);
     ECObjectsStatus                   EnsureSpaceIsAvailableForArrayIndexValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 bytesNeeded);
-    ECObjectsStatus                   GrowPropertyValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 additionalbytesNeeded);           
+    ECObjectsStatus                   GrowPropertyValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 additionalbytesNeeded);
+    // Will update the calculated value in memory and return the updated value in existingValue
+    ECObjectsStatus                   EvaluateCalculatedProperty (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, ECValueR existingValue) const;
          
 protected:
     //! Constructor used by subclasses
@@ -411,16 +416,16 @@ protected:
     //! If nIndices is > 0 then the primitive value for the array element at the specified index is obtained.
     //! This is protected because implementors of _GetStructArrayArrayValueFromMemory should call it to obtain the binary primitive value that they stored
     //! when _SetStructArrayValueToMemory was invoked as a means to locate the externalized struct array value.
-    ECOBJECTS_EXPORT ECObjectsStatus  GetPrimitiveValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, bool useIndex = false, UInt32 index = 0) const;    
+    ECOBJECTS_EXPORT ECObjectsStatus  GetPrimitiveValueFromMemory (ECValueR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, bool useIndex = false, UInt32 index = 0) const;    
     //! Sets the primitive value for the specified property
     //! If nIndices is > 0 then the primitive value for the array element at the specified index is set.
     //! This is protected because implementors of _SetStructArrayArrayValueToMemory should call it to store a binary primitive value that can be retrieved
     //! when _GetStructArrayValueFromMemory is invoked as a means to locate the externalized struct array value.
     ECOBJECTS_EXPORT ECObjectsStatus  SetPrimitiveValueToMemory   (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, bool useIndex = false, UInt32 index = 0);    
-    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout) const;
-    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const;    
-    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ClassLayoutCR classLayout, ECValueR v, WCharCP propertyAccessString, bool useIndex = false, UInt32 index = 0) const;
-    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ClassLayoutCR classLayout, ECValueR v, UInt32 propertyIndex, bool useArrayIndex = false, UInt32 arrayIndex = 0) const;
+    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout) const;
+    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index) const;    
+    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, ClassLayoutCR classLayout, WCharCP propertyAccessString, bool useIndex = false, UInt32 index = 0) const;
+    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, ClassLayoutCR classLayout, UInt32 propertyIndex, bool useArrayIndex = false, UInt32 arrayIndex = 0) const;
     ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout);          
     ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index);              
     ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ClassLayoutCR classLayout, WCharCP propertyAccessString, ECValueCR v,  bool useIndex = false, UInt32 index = 0);      

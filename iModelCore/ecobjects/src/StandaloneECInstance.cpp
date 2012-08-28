@@ -520,7 +520,7 @@ IECInstancePtr  MemoryECInstanceBase::GetStructArrayInstance (StructValueIdentif
 ECObjectsStatus           MemoryECInstanceBase::_GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const
     {
     ECValue structValueIdValue;
-    ECObjectsStatus status = GetPrimitiveValueFromMemory (structValueIdValue, propertyLayout, true, index);      
+    ECObjectsStatus status = GetPrimitiveValueFromMemory (structValueIdValue, GetClassLayout(), propertyLayout, true, index);      
     if (status != ECOBJECTS_STATUS_Success)
         return status;
         
@@ -636,7 +636,7 @@ ECObjectsStatus MemoryECInstanceBase::_RemoveStructArrayElementsFromMemory (Clas
 
     for (UInt32 i = 0; i<removeCount; i++)
         {
-        status = GetPrimitiveValueFromMemory (v, propertyLayout, true, removeIndex+i);
+        status = GetPrimitiveValueFromMemory (v, GetClassLayout(), propertyLayout, true, removeIndex+i);
         if (status != ECOBJECTS_STATUS_Success)
             return status;
 
@@ -1008,7 +1008,7 @@ ECObjectsStatus           StandaloneECInstance::_GetValue (ECValueR v, UInt32 pr
 
     ClassLayoutCR classLayout = GetClassLayout();
 
-    ECObjectsStatus status = GetValueFromMemory (classLayout, v, propertyIndex, useArrayIndex, arrayIndex);
+    ECObjectsStatus status = GetValueFromMemory (v, classLayout, propertyIndex, useArrayIndex, arrayIndex);
     if (ECOBJECTS_STATUS_Success == status)
         {
         static UInt8 bitIndex = (UInt8) PROPERTYFLAGINDEX_IsLoaded;
