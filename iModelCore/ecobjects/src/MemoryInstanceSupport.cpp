@@ -2006,6 +2006,14 @@ ECObjectsStatus       MemoryInstanceSupport::GrowPropertyValue (ClassLayoutCR cl
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus     MemoryInstanceSupport::Compress()
+    {
+    return _IsMemoryInitialized() ? _ShrinkAllocation() : ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 MemoryInstanceSupport::MemoryInstanceSupport (bool allowWritingDirectlyToInstanceMemory) :
