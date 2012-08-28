@@ -757,7 +757,7 @@ void            MemoryECInstanceBase::SetPartiallyLoaded (bool set)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool           MemoryECInstanceBase::IsPartiallyLoaded ()
     {
-    return  0 != (m_usageBitmask | (UInt16)MEMORYINSTANCEUSAGE_IsPartiallyLoaded); 
+    return  0 != (m_usageBitmask & (UInt16)MEMORYINSTANCEUSAGE_IsPartiallyLoaded); 
     }
 
 /*---------------------------------------------------------------------------------**//**
