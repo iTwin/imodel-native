@@ -11,6 +11,9 @@
 
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECObjects.h>
+//__PUBLISH_SECTION_END__
+#include <ECObjects/CalculatedProperty.h>
+//__PUBLISH_SECTION_START__
 #include <ECObjects/ECEnabler.h>
 #include <Bentley/RefCounted.h>
 #include <Bentley/bvector.h>
@@ -346,9 +349,9 @@ private:
     WString                 m_displayLabel;
     WString                 m_description;
     bool                    m_readOnly;
+    bool                    m_forSupplementation;   // If when supplementing the schema, a local property had to be created, then don't serialize this property
     ECClassCR               m_class;
     ECPropertyCP            m_baseProperty;    
-    bool                    m_forSupplementation;   // If when supplementing the schema, a local property had to be created, then don't serialize this property
     mutable IECTypeAdapter* m_cachedTypeAdapter;
 
     static void     SetErrorHandling (bool doAssert);
@@ -434,7 +437,6 @@ public:
     ECOBJECTS_EXPORT StructECPropertyP    GetAsStructProperty () const;       //  "
 };
 
-
 //=======================================================================================
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
 //=======================================================================================
@@ -444,7 +446,8 @@ struct PrimitiveECProperty /*__PUBLISH_ABSTRACT__*/ : public ECProperty
 /*__PUBLISH_SECTION_END__*/
 friend struct ECClass;
 private:
-    PrimitiveType   m_primitiveType;   
+    PrimitiveType                               m_primitiveType;   
+    mutable CalculatedPropertySpecificationPtr  m_calculatedSpec;   // lazily-initialized
 
     PrimitiveECProperty (ECClassCR ecClass) : m_primitiveType(PRIMITIVETYPE_String), ECProperty(ecClass) {};
 
@@ -456,6 +459,10 @@ protected:
     virtual ECObjectsStatus             _SetTypeName (WStringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
     virtual PrimitiveECProperty*        _GetAsPrimitiveECProperty() {return this;}
+
+public:
+    CalculatedPropertySpecificationCP   GetCalculatedPropertySpecification() const;
+    bool                                IsCalculated() const;
 
 /*__PUBLISH_SECTION_START__*/
 public:    
