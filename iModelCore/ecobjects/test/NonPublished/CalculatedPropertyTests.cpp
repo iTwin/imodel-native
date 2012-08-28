@@ -16,6 +16,8 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
+#ifdef WIP_CALCULATED_PROPERTIES
+
 using namespace std;
 
 /*---------------------------------------------------------------------------------**//**
@@ -173,6 +175,8 @@ TEST_F (CalculatedPropertyTests, FailureValue)
     SetValue (*instance, L"S", L"821");
     Test (*instance, L"I", 821);
     }
+
+#endif
 
 END_BENTLEY_EC_NAMESPACE
 
