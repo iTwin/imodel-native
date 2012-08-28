@@ -87,6 +87,9 @@ EC_TYPEDEFS (ECInstanceIterable);
 EC_TYPEDEFS(SupplementalSchemaMetaData);
 EC_TYPEDEFS (PresentationMetadataHelper);
 
+EC_TYPEDEFS (CalculatedPropertySpecification);
+EC_TYPEDEFS (ParserRegex);
+
 typedef struct IStream* IStreamP;
 
 BEGIN_BENTLEY_EC_NAMESPACE

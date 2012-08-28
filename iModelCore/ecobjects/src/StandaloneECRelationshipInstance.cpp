@@ -136,7 +136,7 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_GetValue (ECValueR 
     {
     ClassLayoutCR classLayout = GetClassLayout();
 
-    return GetValueFromMemory (classLayout, v, propertyIndex, useArrayIndex, arrayIndex);
+    return GetValueFromMemory (v, classLayout, propertyIndex, useArrayIndex, arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**

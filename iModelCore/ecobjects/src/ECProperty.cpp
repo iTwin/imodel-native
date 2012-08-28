@@ -410,6 +410,24 @@ ECObjectsStatus PrimitiveECProperty::SetType (PrimitiveType primitiveType)
     m_primitiveType = primitiveType;        
     return ECOBJECTS_STATUS_Success;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PrimitiveECProperty::IsCalculated() const
+    {
+    return GetCustomAttribute (L"CalculatedECPropertySpecification").IsValid();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+CalculatedPropertySpecificationCP PrimitiveECProperty::GetCalculatedPropertySpecification() const
+    {
+    if (m_calculatedSpec.IsNull())
+        m_calculatedSpec = CalculatedPropertySpecification::Create (*this);
+
+    return m_calculatedSpec.get();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   

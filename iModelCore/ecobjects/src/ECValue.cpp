@@ -1095,6 +1095,57 @@ WString    ECValue::ToString () const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECValue::ConvertToPrimitiveType (PrimitiveType newType)
+    {
+    if (IsNull())
+        {
+        SetPrimitiveType (newType);
+        return SUCCESS;
+        }
+    else if (!IsPrimitive())
+        return ERROR;
+    else if (newType == GetPrimitiveType())
+        return SUCCESS;
+    else if (PRIMITIVETYPE_String == newType)
+        {
+        WString strVal = ToString();
+        SetString (strVal.c_str());
+        return SUCCESS;
+        }
+
+    PrimitiveType curType = GetPrimitiveType();
+    switch (newType)
+        {
+    case PRIMITIVETYPE_Integer:
+        {
+        Int32 i;
+        if (PRIMITIVETYPE_Double == curType)
+            i = (Int32)(GetDouble() + 0.5);
+        else if (PRIMITIVETYPE_String != curType || 1 != BeStringUtilities::Swscanf (GetString(), L"%d", &i))
+            return ERROR;
+
+        SetInteger (i);
+        }
+        return SUCCESS;
+    case PRIMITIVETYPE_Double:
+        {
+        double d;
+        if (PRIMITIVETYPE_Integer == curType)
+            d = GetInteger();
+        else if (PRIMITIVETYPE_String != curType || 1 != BeStringUtilities::Swscanf (GetString(), L"%lf", &d))
+            return ERROR;
+
+        SetDouble (d);
+        }
+        return SUCCESS;
+        }
+
+    return ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @description  Performs a binary comparison against another ECValue.
 * @bsimethod                                                    Dylan.Rush      12/10
 +---------------+---------------+---------------+---------------+---------------+------*/ 

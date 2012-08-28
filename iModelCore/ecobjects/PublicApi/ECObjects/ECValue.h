@@ -187,6 +187,15 @@ public:
         
     ECOBJECTS_EXPORT PrimitiveType  GetPrimitiveType() const;
     ECOBJECTS_EXPORT BentleyStatus  SetPrimitiveType(PrimitiveType primitiveElementType);
+    
+/*__PUBLISH_SECTION_END__*/
+    // Attempts to convert this ECValue's primitive value to a different primitive type.
+    // Currently supported conversions (motivated by ECExpressions):
+    //  - double, int, and string are all interconvertible. double => int rounds
+    //  - int, long, double, boolean, points, and datetime can be converted to string (uses ToString())
+    //  - a null value of any primitive type can be converted a null value of any other primitive type
+    ECOBJECTS_EXPORT BentleyStatus  ConvertToPrimitiveType (PrimitiveType primitiveType);
+/*__PUBLISH_SECTION_START__*/
 
     ECOBJECTS_EXPORT ECObjectsStatus  SetStructArrayInfo (UInt32 count, bool isFixedSize);
     ECOBJECTS_EXPORT ECObjectsStatus  SetPrimitiveArrayInfo (PrimitiveType primitiveElementtype, UInt32 count, bool isFixedSize);
