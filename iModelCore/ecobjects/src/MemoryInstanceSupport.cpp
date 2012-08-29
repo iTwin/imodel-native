@@ -2277,8 +2277,10 @@ ECObjectsStatus       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValu
             }
         }
 
+#ifdef WIP_CALCULATED_PROPERTIES
     if (ECOBJECTS_STATUS_Success == status && propertyLayout.HoldsCalculatedProperty())
         status = EvaluateCalculatedProperty (classLayout, propertyLayout, v);
+#endif
 
     return status;
     }
