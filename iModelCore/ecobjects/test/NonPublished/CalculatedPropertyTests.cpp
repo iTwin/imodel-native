@@ -27,10 +27,13 @@ struct CalculatedPropertyTests : ECTestFixture
 
     IECInstancePtr      CreateTestCase (WCharCP propName, WCharCP ecExpr, int options, WCharCP failureValue, WCharCP parserRegex = L"Unused");
     template <typename T>
-    void SetValue (IECInstanceR instance, WCharCP accessor, T const& val)
+    void SetValue (IECInstanceR instance, WCharCP accessor, T const& val, UInt32 arrayIndex = -1)
         {
         ECValue v (val);
-        instance.SetValue (accessor, v);
+        if (-1 == arrayIndex)
+            instance.SetValue (accessor, v);
+        else
+            instance.SetValue (accessor, v, arrayIndex);
         }
     template <typename T>
     void Test (IECInstanceCR instance, WCharCP propName, T const& expectedVal)
@@ -39,6 +42,46 @@ struct CalculatedPropertyTests : ECTestFixture
         EXPECT_SUCCESS (instance.GetValue (actualVal, propName));
         EXPECT_TRUE (actualVal.Equals (ECValue (expectedVal))) << "Expect: " << expectedVal << " Actual: " << actualVal.ToString().c_str();
         }
+
+    struct ExpectedValue
+        {
+        WCharCP     name;
+        ECValue     v;
+
+        template<typename T> ExpectedValue (WCharCP n, T const& val) : name(n), v(val) { }
+        };
+
+    struct ExpectedValueList
+        {
+        bvector<ExpectedValue>  values;
+
+        ExpectedValueList() { }
+        template<typename T>
+        ExpectedValueList (WCharCP n, T const& v) { values.push_back (ExpectedValue (n, v)); }
+        template<typename T, typename U>
+        ExpectedValueList (WCharCP n1, T const& v1, WCharCP n2, U const& v2)
+            {
+            values.push_back (ExpectedValue (n1, v1));
+            values.push_back (ExpectedValue (n2, v2));
+            }
+        };
+
+    void TestUpdate (IECInstanceR instance, WCharCP newValue, ExpectedValueList const& dependentValues)
+        {
+        static const WCharCP propname = L"S";
+        ECValue v (newValue);
+        EXPECT_SUCCESS (instance.SetValue (propname, v));
+
+        FOR_EACH (ExpectedValue const& exp, dependentValues.values)
+            {
+            ECValueAccessor accessor;
+            EXPECT_SUCCESS (ECValueAccessor::PopulateValueAccessor (accessor, instance, exp.name));
+            ECValue actualVal;
+            EXPECT_SUCCESS (instance.GetValueUsingAccessor (actualVal, accessor));
+            EXPECT_TRUE (actualVal.Equals (exp.v)) << "Expect " << exp.v.ToString().c_str() << " Actual " << actualVal.ToString().c_str();
+            }
+        }
+
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -64,11 +107,14 @@ IECInstancePtr CalculatedPropertyTests::CreateTestCase (WCharCP propName, WCharC
     ECClassP ecClass;
     EXPECT_EQ (ECOBJECTS_STATUS_Success, schema->CreateClass (ecClass, L"TestClass"));
     PrimitiveECPropertyP ecProp;
+    ArrayECPropertyP arrayProp;
     ecClass->CreatePrimitiveProperty (ecProp, L"S", PRIMITIVETYPE_String);
+    ecClass->CreatePrimitiveProperty (ecProp, L"S1", PRIMITIVETYPE_String);
     ecClass->CreatePrimitiveProperty (ecProp, L"I", PRIMITIVETYPE_Integer);
     ecClass->CreatePrimitiveProperty (ecProp, L"I2", PRIMITIVETYPE_Integer);
     ecClass->CreatePrimitiveProperty (ecProp, L"D", PRIMITIVETYPE_Double);
     ecClass->CreatePrimitiveProperty (ecProp, L"D2", PRIMITIVETYPE_Double);
+    ecClass->CreateArrayProperty (arrayProp, L"A", PRIMITIVETYPE_Integer);
 
     // Apply the CalculatedECPropertySpecification
     ecProp = ecClass->GetPropertyP (propName)->GetAsPrimitiveProperty();
@@ -132,6 +178,13 @@ TEST_F (CalculatedPropertyTests, BasicExpressions)
     Test (*instance, L"S", L"abs(I-D) == 2.500000");
     SetValue (*instance, L"D", 5.25);
     Test (*instance, L"S", L"abs(I-D) == 4.750000");
+    
+    // Array properties
+    instance = CreateTestCase (L"S", L"this.A[0] * this.A[1]", 0, L"ERROR");
+    instance->AddArrayElements (L"A[]", 2);
+    SetValue (*instance, L"A[]", 5, 0);
+    SetValue (*instance, L"A[]", 6, 1);
+    Test (*instance, L"S", L"30");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -161,7 +214,7 @@ TEST_F (CalculatedPropertyTests, FailureValue)
     Test (*instance, L"S", L"ERROR");
 
     // If no last valid value and evaluation fails we should get back the failure value
-    instance = CreateTestCase (L"I", L"this.NonexistentProperty", 0, L"-999");
+    instance = CreateTestCase (L"I", L"this.NonexistentProperty", OPTION_UseLastValid, L"-999");
     Test (*instance, L"I", -999);
 
     // If an error occurs, we should get back the last valid value
@@ -172,6 +225,48 @@ TEST_F (CalculatedPropertyTests, FailureValue)
     Test (*instance, L"I", 12345);
     SetValue (*instance, L"S", L"821");
     Test (*instance, L"I", 821);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (CalculatedPropertyTests, SetValue)
+    {
+    // Two properties whose values are always identical
+    IECInstancePtr instance = CreateTestCase (L"S", L"this.S1", 0, L"ERROR", L"(?<S1>.*)");
+    TestUpdate (*instance, L"new value", ExpectedValueList (L"S1", L"new value"));
+
+    instance = CreateTestCase (L"S", L"\"I == \" & this.I", 0, L"ERROR", L"I == (?<I>.+)");
+    TestUpdate (*instance, L"I == 1234", ExpectedValueList (L"I", 1234));
+
+    // Multiple properties
+    instance = CreateTestCase (L"S", L"this.I & \", \" & this.I2", 0, L"ERROR", L"(?<I>-?\\d+), (?<D>-?\\d*\\.?\\d+)");
+    TestUpdate (*instance, L"1, 2.5", ExpectedValueList (L"I", 1, L"D", 2.5));
+    TestUpdate (*instance, L"-5, -.75", ExpectedValueList (L"I", -5, L"D", -0.75));
+    TestUpdate (*instance, L"0, 1", ExpectedValueList (L"I", 0, L"D", 1.0));
+
+    // Array properties. The value is always positive
+    instance = CreateTestCase (L"S", L"this.A[0]", 0, L"ERROR", L"-?(?<A[0]>\\d+)");
+    instance->AddArrayElements (L"A[]", 1);
+    TestUpdate (*instance, L"555", ExpectedValueList (L"A[0]", 555));
+    TestUpdate (*instance, L"-555", ExpectedValueList (L"A[0]", 555));
+
+    // Uncaptured groups
+    instance = CreateTestCase (L"S", L"\"prefix \" & this.I", 0, L"ERROR", L"(?:[^\\-\\d])+(?<I>-?\\d+)");
+    TestUpdate (*instance, L"uncaptured -321", ExpectedValueList (L"I", -321));
+
+    // Nested capture groups
+    // We map the calculated property to properties I, I2, and D
+    // such that, given an input string consisting of 2 or more digits:
+    //  I = input[0]
+    //  I2 = input[1..end]
+    //  D = input
+    // Totally contrived and it seems doubtful anyone would use nested capture groups with calculated properties, but it is an option so we test it
+    WCharCP nestedCapture = L"(?<D>(?<I>\\d)(?<I2>\\d+))";
+    instance = CreateTestCase (L"S", L"this.D", 0, L"ERROR", nestedCapture);
+    ExpectedValueList valueList (L"D", 1234.0, L"I", 1);
+    valueList.values.push_back (ExpectedValue (L"I2", 234));
+    TestUpdate (*instance, L"1234", valueList);
     }
 
 END_BENTLEY_EC_NAMESPACE
