@@ -66,7 +66,7 @@ ExpressionStatus Operations::ConvertToString(EvaluationResultR evalResult)
     EC::ECValueR    ecValue = evalResult.GetECValueR();
     BeAssert (!ecValue.IsUninitialized());
         
-    if (!ecValue.IsPrimitive())
+    if (!ecValue.IsPrimitive() || ecValue.IsNull())
         return ExprStatus_WrongType;
 
     if (ecValue.IsString())

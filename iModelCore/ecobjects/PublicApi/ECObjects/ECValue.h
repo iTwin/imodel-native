@@ -194,7 +194,7 @@ public:
     //  - double, int, and string are all interconvertible. double => int rounds
     //  - int, long, double, boolean, points, and datetime can be converted to string (uses ToString())
     //  - a null value of any primitive type can be converted a null value of any other primitive type
-    ECOBJECTS_EXPORT BentleyStatus  ConvertToPrimitiveType (PrimitiveType primitiveType);
+    ECOBJECTS_EXPORT bool           ConvertToPrimitiveType (PrimitiveType primitiveType);
 /*__PUBLISH_SECTION_START__*/
 
     ECOBJECTS_EXPORT ECObjectsStatus  SetStructArrayInfo (UInt32 count, bool isFixedSize);

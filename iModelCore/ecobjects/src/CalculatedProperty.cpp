@@ -24,32 +24,184 @@ struct ParserRegex
 #if defined (HAVE_REGEX)
 private:
     std::tr1::wregex        m_regex;
+    bvector<WString>        m_capturedPropertyNames;        // order indicates capture group number - 1
 
-    ParserRegex (std::tr1::wregex const& regex) : m_regex (regex) { }
+    ParserRegex() { }
+
+    bool ConvertRegexString (WStringR converted, WCharCP in);
+    bool ProcessCaptureGroup (WStringR converted, WCharCP& in, WCharCP end, Int32& depth);
+    bool ProcessRegex (WStringR converted, WCharCP& in, WCharCP end, Int32& depth);
+#endif
 public:
-    static ParserRegexP Create (WCharCP regexStr, bool doNotUseECMA)
+    bool                Apply (IECInstanceR instance, WCharCP calculatedValue) const;
+
+    static ParserRegexP Create (WCharCP regexStr, bool doNotUseECMA);
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ParserRegexP ParserRegex::Create (WCharCP regexStr, bool doNotUseECMA)
+    {
+#if defined (HAVE_REGEX)
+    ParserRegexP parserRegex = new ParserRegex();
+    WString fixedRegexStr;
+    if (parserRegex->ConvertRegexString (fixedRegexStr, regexStr))
         {
-        ParserRegexP parserRegex = NULL;
         try
             {
-            std::tr1::wregex regex (regexStr, doNotUseECMA ? std::tr1::regex_constants::basic : std::tr1::regex_constants::ECMAScript);
-            parserRegex = new ParserRegex (regex);
+            parserRegex->m_regex = std::tr1::wregex (fixedRegexStr.c_str(), doNotUseECMA ? std::tr1::regex_constants::extended : std::tr1::regex_constants::ECMAScript);
             }
         catch (...)
             {
-            BeAssert (false);
+            delete parserRegex;
+            parserRegex = NULL;
+            }
+        }
+    else
+        {
+        delete parserRegex;
+        parserRegex = NULL;
+        }
+
+    return parserRegex;
+#else
+    return NULL;
+#endif
+    }
+
+#if defined (HAVE_REGEX)
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ParserRegex::ConvertRegexString (WStringR converted, WCharCP in)
+    {
+    WCharCP end = in + wcslen (in);
+    Int32 depth = 0;
+    return ProcessRegex (converted, in, end, depth) && 0 == depth;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ParserRegex::ProcessRegex (WStringR converted, WCharCP& in, WCharCP end, Int32& depth)
+    {
+    bool inQuotes = false;
+    while (in < end)
+        {
+        switch (*in)
+            {
+        case '\\':
+            converted.append (1, *in++);
+            break;
+        case '"':
+            inQuotes = !inQuotes;
+            break;
+        case '(':
+            if (!inQuotes)
+                {
+                converted.append (1, '(');
+                depth++;
+                if (!ProcessCaptureGroup (converted, ++in, end, depth))
+                    return false;
+                }
+            break;
+        case ')':
+            if (!inQuotes && 0 < --depth)
+                return true;    // parsing an inner group
             }
 
-        return parserRegex;
+        converted.append (1, *in++);
         }
-#else
-public:
-    static ParserRegexP Create (WCharCP regexStr, bool doNotUseECMA)
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ParserRegex::ProcessCaptureGroup (WStringR converted, WCharCP& in, WCharCP end, Int32& depth)
+    {
+    if (in >= end || *in++ != '?')
+        return false;
+    else if (in >= end)
+        return false;
+
+    WChar c = *in++;
+    if (c == ':')
         {
-        return NULL;
+        // unnamed capture group e.g. "(?:nonCapturingRegex)"
+        converted.append (L"?:");
+        return ProcessRegex (converted, in, end, depth);
         }
-#endif
-    };
+    else if (c == '<')
+        {
+        // named capture group e.g. "(?<propertyName>regex)"
+        WCharCP propNameStart = in;
+        WCharCP propNameEnd = wcschr (propNameStart, '>');
+        if (NULL != propNameEnd && propNameEnd > propNameStart)
+            {
+            m_capturedPropertyNames.push_back (WString (propNameStart, propNameEnd));
+            in = propNameEnd + 1;
+            return ProcessRegex (converted, in, end, depth);
+            }
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool SETVALUE_SUCCEEDED (ECObjectsStatus status)
+    {
+    // ###TODO: ECOBJECTS_STATUS_PropertyValueMatchesNoChange is always causing problems, because it is not an error but
+    // we typically test against ECOBJECTS_STATUS_Success.
+    // Can we get rid of it?
+    return status == ECOBJECTS_STATUS_Success || status == ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ParserRegex::Apply (IECInstanceR instance, WCharCP calculatedValue) const
+    {
+    std::tr1::match_results<WCharCP> matches;
+    if (!std::tr1::regex_match (calculatedValue, matches, m_regex) || matches.size() != m_capturedPropertyNames.size() + 1)
+        return false;
+
+    for (size_t i = 0; i < m_capturedPropertyNames.size(); i++)
+        {
+        // ###TODO: we may want to create this stuff once and cache it with the captured property names
+        ECValueAccessor accessor;
+        if (ECOBJECTS_STATUS_Success != ECValueAccessor::PopulateValueAccessor (accessor, instance, m_capturedPropertyNames[i].c_str()))
+            return false;
+
+        ECPropertyCP ecprop = accessor.GetECProperty();
+        if (NULL == ecprop)
+            return false;
+        
+        PrimitiveType primType;
+        if (ecprop->GetIsPrimitive())
+            primType = ecprop->GetAsPrimitiveProperty()->GetType();
+        else if (ecprop->GetIsArray())
+            primType = ecprop->GetAsArrayProperty()->GetPrimitiveElementType();
+        else
+            return false;
+
+        ECValue v (matches.str (i+1).c_str());
+        if (!v.ConvertToPrimitiveType (primType))
+            return false;
+
+        if (!SETVALUE_SUCCEEDED (instance.SetValueUsingAccessor (accessor, v)))
+            return false;
+        }
+
+    return true;
+    }
+
+#endif  // HAVE_REGEX
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
@@ -112,8 +264,10 @@ CalculatedPropertySpecificationPtr CalculatedPropertySpecification::Create (Prim
     bool isDefaultOnly = (ECOBJECTS_STATUS_Success == customAttr->GetValue (v, L"IsDefaultValueOnly") && !v.IsNull() && v.GetBoolean());
 
     // ###TODO: It seems to me that if the calculated property spec is for default value only, then setting the value should not affect dependent properties and we don't require ParserRegex...correct?
+    // Note: ParserRegex only makes sense for string properties
     ParserRegexP parserRegex = NULL;
-    if (!ecprop.GetIsReadOnly() && !isDefaultOnly)
+    bool wantParserRegex = !isDefaultOnly && PRIMITIVETYPE_String == ecprop.GetType() && !ecprop.GetIsReadOnly();
+    if (wantParserRegex)
         {
         // ###TODO: there is also a configuration variable which can be used to control this...In System.Configuration.ConfigurationManager.AppSettings[] - relevant?
         bool doNotUseECMAScript =  (ECOBJECTS_STATUS_Success == customAttr->GetValue (v, L"DoNotUseECMAScript") && !v.IsNull() && v.GetBoolean());
@@ -127,7 +281,7 @@ CalculatedPropertySpecificationPtr CalculatedPropertySpecification::Create (Prim
 
     ECValue failureValue;
     customAttr->GetValue (failureValue, L"FailureValue");
-    if (SUCCESS != failureValue.ConvertToPrimitiveType (ecprop.GetType()))
+    if (!failureValue.ConvertToPrimitiveType (ecprop.GetType()))
         { BeAssert (false && "Invalid FailureValue in CalculatedECPropertySpecification"); return NULL; }
 
     return new CalculatedPropertySpecification (*node, parserRegex, *customAttr, ecprop.GetType(), failureValue);
@@ -151,7 +305,7 @@ ECObjectsStatus CalculatedPropertySpecification::Evaluate (ECValueR newValue, EC
         
         ValueResultPtr valueResult;
         ECValue exprValue;
-        if (ExprStatus_Success == m_expression->GetValue (valueResult, *m_context, false, true) && ExprStatus_Success == valueResult->GetECValue (exprValue) && SUCCESS == exprValue.ConvertToPrimitiveType (m_propertyType))
+        if (ExprStatus_Success == m_expression->GetValue (valueResult, *m_context, false, true) && ExprStatus_Success == valueResult->GetECValue (exprValue) && exprValue.ConvertToPrimitiveType (m_propertyType))
             newValue = exprValue;
         else
             {
@@ -162,6 +316,22 @@ ECObjectsStatus CalculatedPropertySpecification::Evaluate (ECValueR newValue, EC
         }
 
     return status;   
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus CalculatedPropertySpecification::UpdateDependentProperties (ECValueCR v, IECInstanceR instance) const
+    {
+    if (m_isDefaultOnly)
+        return ECOBJECTS_STATUS_Success;                        // doesn't apply to dependent properties
+    else if (!v.IsString() || v.IsNull())
+        return ECOBJECTS_STATUS_OperationNotSupported;          // only supported for strings
+    else if (NULL == m_parserRegex)
+        return ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
+
+    else
+        return m_parserRegex->Apply (instance, v.GetString()) ? ECOBJECTS_STATUS_Success : ECOBJECTS_STATUS_Error;
     }
 
 END_BENTLEY_EC_NAMESPACE

@@ -38,6 +38,9 @@ public:
     // Attempts to evaluate the property value. Regardless of the return value, newValue will contain the proper result based on flags like UseLastValidOnFailure, FailureValue, and IsDefaultValueOnly
     ECObjectsStatus         Evaluate (ECValueR newValue, ECValueCR existingValue, IECInstanceCR instance) const;
 
+    // Attempts to apply the ParserRegularExpression attribute to dependent properties when setting the calculated property to a new value
+    ECObjectsStatus         UpdateDependentProperties (ECValueCR calculatedValue, IECInstanceR instance) const;
+
     static RefCountedPtr<CalculatedPropertySpecification> Create (PrimitiveECPropertyCR ecprop);
     };
 
