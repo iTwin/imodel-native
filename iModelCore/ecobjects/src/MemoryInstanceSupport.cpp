@@ -2277,10 +2277,8 @@ ECObjectsStatus       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValu
             }
         }
 
-#ifdef WIP_CALCULATED_PROPERTIES
     if (ECOBJECTS_STATUS_Success == status && propertyLayout.HoldsCalculatedProperty())
         status = EvaluateCalculatedProperty (classLayout, propertyLayout, v);
-#endif
 
     return status;
     }
@@ -2395,10 +2393,27 @@ ECObjectsStatus  MemoryInstanceSupport::GetValueFromMemory (ECValueR v, ClassLay
     }    
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus         MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index)
+    {
+    return SetPrimitiveValueToMemory (v, classLayout, propertyLayout, useIndex, index, false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index)
-    {        
+ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, bool alreadyCalculated)
+    {
+    // When we GetPrimitiveValueFromMemory(), we have already calculated its value and we want to set that value to memory, in which case 'alreadyCalculated' will be false
+    // Otherwise, we first need to apply the new calculated property value to its dependent properties
+    if (!alreadyCalculated && propertyLayout.HoldsCalculatedProperty())
+        {
+        ECObjectsStatus calcStatus = SetCalculatedProperty (v, classLayout, propertyLayout);
+        if (ECOBJECTS_STATUS_Success != calcStatus)
+            return calcStatus;
+        }
+
     bool isInUninitializedFixedCountArray = ((useIndex) && (propertyLayout.GetModifierFlags() & PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount) && (GetAllocatedArrayCount (propertyLayout) == 0));
             
     bool  isOriginalValueNull = IsPropertyValueNull (propertyLayout, useIndex, index);
@@ -2685,6 +2700,19 @@ ECObjectsStatus       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR cla
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
+static CalculatedPropertySpecificationCP lookupCalculatedPropertySpecification (IECInstanceCR instance, ClassLayoutCR classLayout, PropertyLayoutCR propLayout)
+    {
+    UInt32 propertyIndex;
+    ECPropertyCP ecprop;
+    if (ECOBJECTS_STATUS_Success != classLayout.GetPropertyLayoutIndex (propertyIndex, propLayout) || NULL == (ecprop = instance.GetEnabler().LookupECProperty (propertyIndex)))
+        return NULL;
+    else
+        return ecprop->GetAsPrimitiveProperty()->GetCalculatedPropertySpecification();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus  MemoryInstanceSupport::EvaluateCalculatedProperty (ClassLayoutCR classLayout, PropertyLayoutCR propLayout, ECValueR existingValue) const
     {
     // ###TODO: I don't like this cast.
@@ -2692,13 +2720,8 @@ ECObjectsStatus  MemoryInstanceSupport::EvaluateCalculatedProperty (ClassLayoutC
     if (NULL == iecInstance)
         { BeAssert (false); return ECOBJECTS_STATUS_Error; }
 
-    UInt32 propertyIndex;
-    ECPropertyCP ecprop;
-    CalculatedPropertySpecificationCP spec;
-    if (ECOBJECTS_STATUS_Success != classLayout.GetPropertyLayoutIndex (propertyIndex, propLayout)
-        || NULL == (ecprop = iecInstance->GetEnabler().LookupECProperty (propertyIndex))
-        || NULL == (spec = ecprop->GetAsPrimitiveProperty()->GetCalculatedPropertySpecification())
-       )
+    CalculatedPropertySpecificationCP spec = lookupCalculatedPropertySpecification (*iecInstance, classLayout, propLayout);
+    if (NULL == spec)
         { BeAssert (false); return ECOBJECTS_STATUS_Error; }
 
     ECValue updatedValue;
@@ -2709,11 +2732,28 @@ ECObjectsStatus  MemoryInstanceSupport::EvaluateCalculatedProperty (ClassLayoutC
 
     // ###TODO: I don't like this cast either. Calculated properties require that we modify the instance in order to store the calculated value
     MemoryInstanceSupport& memInst = const_cast<MemoryInstanceSupport&> (*this);
-    evalStatus = memInst.SetPrimitiveValueToMemory (updatedValue, classLayout, propLayout, false, 0);
+    evalStatus = memInst.SetPrimitiveValueToMemory (updatedValue, classLayout, propLayout, false, 0, true);
     if (ECOBJECTS_STATUS_Success == evalStatus)
         existingValue = updatedValue;
 
     return evalStatus;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus MemoryInstanceSupport::SetCalculatedProperty (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout)
+    {
+    // ###TODO: This cast...
+    IECInstanceP iecInstance = dynamic_cast<IECInstanceP> (this);
+    if (NULL == iecInstance)
+        { BeAssert (false); return ECOBJECTS_STATUS_Error; }
+
+    CalculatedPropertySpecificationCP spec = lookupCalculatedPropertySpecification (*iecInstance, classLayout, propertyLayout);
+    if (NULL == spec)
+        { BeAssert (false); return ECOBJECTS_STATUS_Error; }
+    else
+        return spec->UpdateDependentProperties (v, *iecInstance);
     }
 
 /*---------------------------------------------------------------------------------**//**

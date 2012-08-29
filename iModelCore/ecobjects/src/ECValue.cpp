@@ -1097,22 +1097,22 @@ WString    ECValue::ToString () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECValue::ConvertToPrimitiveType (PrimitiveType newType)
+bool ECValue::ConvertToPrimitiveType (PrimitiveType newType)
     {
     if (IsNull())
         {
         SetPrimitiveType (newType);
-        return SUCCESS;
+        return true;
         }
     else if (!IsPrimitive())
-        return ERROR;
+        return false;
     else if (newType == GetPrimitiveType())
-        return SUCCESS;
+        return true;
     else if (PRIMITIVETYPE_String == newType)
         {
         WString strVal = ToString();
         SetString (strVal.c_str());
-        return SUCCESS;
+        return true;
         }
 
     PrimitiveType curType = GetPrimitiveType();
@@ -1124,25 +1124,25 @@ BentleyStatus ECValue::ConvertToPrimitiveType (PrimitiveType newType)
         if (PRIMITIVETYPE_Double == curType)
             i = (Int32)(GetDouble() + 0.5);
         else if (PRIMITIVETYPE_String != curType || 1 != BeStringUtilities::Swscanf (GetString(), L"%d", &i))
-            return ERROR;
+            return false;
 
         SetInteger (i);
         }
-        return SUCCESS;
+        return true;
     case PRIMITIVETYPE_Double:
         {
         double d;
         if (PRIMITIVETYPE_Integer == curType)
             d = GetInteger();
         else if (PRIMITIVETYPE_String != curType || 1 != BeStringUtilities::Swscanf (GetString(), L"%lf", &d))
-            return ERROR;
+            return false;
 
         SetDouble (d);
         }
-        return SUCCESS;
+        return true;
         }
 
-    return ERROR;
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1769,7 +1769,7 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBu
     // if no character after closing bracket then we just want the array, else we are dealing with a member of a struct array
     if (0 == *(pos2+1))
         {
-        va.PushLocation (enabler, propertyIndex, -1);
+        va.PushLocation (enabler, propertyIndex, indexValue);
         return ECOBJECTS_STATUS_Success;
         }
 

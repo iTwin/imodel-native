@@ -402,8 +402,11 @@ private:
     ECObjectsStatus                   EnsureSpaceIsAvailable (UInt32& offset, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded);
     ECObjectsStatus                   EnsureSpaceIsAvailableForArrayIndexValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 bytesNeeded);
     ECObjectsStatus                   GrowPropertyValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 additionalbytesNeeded);
-    // Will update the calculated value in memory and return the updated value in existingValue
+    // Updates the calculated value in memory and returns the updated value in existingValue
     ECObjectsStatus                   EvaluateCalculatedProperty (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, ECValueR existingValue) const;
+    // Updates the dependent properties of the calculated property
+    ECObjectsStatus                   SetCalculatedProperty (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout);
+    ECObjectsStatus                   SetPrimitiveValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, bool alreadyCalculated);
          
 protected:
     //! Constructor used by subclasses
