@@ -217,19 +217,20 @@ CalculatedPropertySpecification::CalculatedPropertySpecification (NodeR expr, Pa
         m_useLastValidOnFailure = v.GetBoolean();
 
     UInt32 nSymbolSets;
+    bvector<WString> requiredSymbolSets;
     if (ECOBJECTS_STATUS_Success == customAttr.GetValue (v, L"RequiredSymbolSets") && !v.IsNull() && 0 < ( nSymbolSets = v.GetArrayInfo().GetCount()))
         {
-        m_requiredSymbolSets.reserve (nSymbolSets);
+        requiredSymbolSets.reserve (nSymbolSets);
         for (UInt32 i = 0; i < nSymbolSets; i++)
             {
             if (ECOBJECTS_STATUS_Success == customAttr.GetValue (v, L"RequiredSymbolSets", i) && !v.IsNull())
-                m_requiredSymbolSets.push_back (v.GetString());
+                requiredSymbolSets.push_back (v.GetString());
             }
         }
 
     InstanceExpressionContextPtr thisContext = InstanceExpressionContext::Create (NULL);
     ContextSymbolPtr thisSymbol = ContextSymbol::CreateContextSymbol (L"this", *thisContext);
-    SymbolExpressionContextPtr symbolContext = SymbolExpressionContext::Create (NULL);
+    SymbolExpressionContextPtr symbolContext = SymbolExpressionContext::Create (requiredSymbolSets);
     symbolContext->AddSymbol (*thisSymbol);
 
     m_context = symbolContext.get();
@@ -300,7 +301,6 @@ ECObjectsStatus CalculatedPropertySpecification::Evaluate (ECValueR newValue, EC
         newValue = existingValue;
     else
         {
-        // ###TODO: context, symbols
         m_thisContext->SetInstance (instance);
         
         ValueResultPtr valueResult;

@@ -44,6 +44,7 @@ EXPR_TYPEDEFS(SymbolExpressionContext)
 EXPR_TYPEDEFS(UnitsType)
 EXPR_TYPEDEFS(ValueResult)
 EXPR_TYPEDEFS(ValueSymbol)
+EXPR_TYPEDEFS(IECSymbolProvider);
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -295,6 +296,8 @@ public:
     BentleyStatus               RemoveSymbol (SymbolR symbol);
     BentleyStatus               RemoveSymbol (wchar_t const* ident);
 
+    static SymbolExpressionContextPtr   Create (bvector<WString> const& requestedSymbolSets);
+
 /*__PUBLISH_SECTION_START__*/
     ECOBJECTS_EXPORT BentleyStatus  AddSymbol (SymbolR symbol);
     ECOBJECTS_EXPORT static SymbolExpressionContextPtr Create(ExpressionContextP outer);
@@ -415,6 +418,32 @@ public:
     ECOBJECTS_EXPORT static ValueSymbolPtr    Create(wchar_t const* name, EC::ECValueCR exprValue);
 
 };  //  End of ValueSymbol
+
+/*__PUBLISH_SECTION_END__*/
+
+/*=================================================================================**//**
+*
+* Provides a set of Symbols
+*
++===============+===============+===============+===============+===============+======*/
+struct      IECSymbolProvider : RefCountedBase
+    {
+    typedef void (* ExternalSymbolPublisher)(SymbolExpressionContextR, bvector<WString> const&);
+protected:
+    virtual WCharCP                 _GetName() const = 0;
+    virtual void                    _PublishSymbols (SymbolExpressionContextR context, bvector<WString> const& requestedSymbolSets) = 0;
+public:
+    ECOBJECTS_EXPORT WCharCP        GetName() const
+                                        { return _GetName(); }
+    ECOBJECTS_EXPORT void           PublishSymbols (SymbolExpressionContextR context, bvector<WString> const& requestedSymbolSets)
+                                        { return _PublishSymbols (context, requestedSymbolSets); }
+
+    ECOBJECTS_EXPORT static void    RegisterExternalSymbolPublisher (ExternalSymbolPublisher externalPublisher);
+    };
+
+typedef RefCountedPtr<IECSymbolProvider> IECSymbolProviderPtr;
+
+/*__PUBLISH_SECTION_START__*/
 
 enum            ExpressionToken
     {
