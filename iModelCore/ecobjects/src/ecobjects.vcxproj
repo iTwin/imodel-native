@@ -60,17 +60,22 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CalculatedProperty.cpp" />
     <ClCompile Include="DesignByContract.cpp" />
     <ClCompile Include="ECClass.cpp" />
     <ClCompile Include="ECCustomAttribute.cpp" />
     <ClCompile Include="ECEnabler.cpp" />
     <ClCompile Include="ECInstance.cpp" />
+    <ClCompile Include="ecinstanceiterable.cpp" />
     <ClCompile Include="ECObjectsPch.cpp" />
     <ClCompile Include="ECProperty.cpp" />
     <ClCompile Include="ECSchema.cpp" />
     <ClCompile Include="ECType.cpp" />
     <ClCompile Include="ECValue.cpp" />
     <ClCompile Include="ecxml.cpp" />
+    <ClCompile Include="ExpressionContext.cpp" />
+    <ClCompile Include="ExpressionHandler.cpp" />
+    <ClCompile Include="ExpressionNode.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="MemoryInstanceSupport.cpp" />
     <ClCompile Include="nonport\FileUtilities.cpp" />
@@ -89,8 +94,11 @@
     <ClCompile Include="SupplementalSchema.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\PublicApi\ECObjects\CalculatedProperty.h" />
     <ClInclude Include="..\PublicApi\ECObjects\DesignByContract.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECEnabler.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECExpressionNode.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECExpressions.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECInstance.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjects.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPI.h" />
