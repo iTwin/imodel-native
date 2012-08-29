@@ -267,6 +267,7 @@ TEST_F (CalculatedPropertyTests, SetValue)
     ExpectedValueList valueList (L"D", 1234.0, L"I", 1);
     valueList.values.push_back (ExpectedValue (L"I2", 234));
     TestUpdate (*instance, L"1234", valueList);
+    }
 
 END_BENTLEY_EC_NAMESPACE
 
