@@ -2263,12 +2263,15 @@ ECObjectsStatus       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValu
             case PRIMITIVETYPE_String:
                 {
                 WCharP pString = (WCharP)pValue;
-                v.SetString (pString, false); // WIP_FUSION: We are passing false for "makeDuplicateCopy" to avoid the allocation 
+                v.SetString (pString /*, false */); // WIP_FUSION: We are passing false for "makeDuplicateCopy" to avoid the allocation 
                                               // and copying... but how do make the caller aware of this? When do they need 
                                               // to be aware. The wchar_t* they get back would get invalidated if the 
                                               // XAttribute or other IMemoryProvider got reallocated, or the string got moved.
                                               // The caller must immediately use (e.g. marshal or copy) the returned value.
                                               // Optionally, the caller could ask the EC::ECValue to make a duplicate? 
+                                              // WIP_FUSION: UPDATE: I have changed this to make a copy. There are contexts in which we are evaluating ECExpressions
+                                              // which operate on temporary StandaloneECInstances which evaporate immediately after this ECValue is retrieved.
+                                              // Callers have no way of knowing that the string can become corrupt.
                 break;            
                 }
             default:
@@ -2407,17 +2410,28 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
     {
     // When we GetPrimitiveValueFromMemory(), we have already calculated its value and we want to set that value to memory, in which case 'alreadyCalculated' will be false
     // Otherwise, we first need to apply the new calculated property value to its dependent properties
+    bool  isOriginalValueNull = IsPropertyValueNull (propertyLayout, useIndex, index);
+
     if (!alreadyCalculated && propertyLayout.HoldsCalculatedProperty())
         {
         ECObjectsStatus calcStatus = SetCalculatedProperty (v, classLayout, propertyLayout);
-        if (ECOBJECTS_STATUS_Success != calcStatus)
+        switch (calcStatus)
+            {
+        case ECOBJECTS_STATUS_Success:
+            break;
+        case ECOBJECTS_STATUS_UnableToSetReadOnlyProperty:
+            // It is okay to set the read-only value once
+            if (isOriginalValueNull)
+                break;
+            else
+                return calcStatus;
+        default:
             return calcStatus;
+            }
         }
 
     bool isInUninitializedFixedCountArray = ((useIndex) && (propertyLayout.GetModifierFlags() & PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount) && (GetAllocatedArrayCount (propertyLayout) == 0));
             
-    bool  isOriginalValueNull = IsPropertyValueNull (propertyLayout, useIndex, index);
-
     if (v.IsNull())
         {
         if (!isInUninitializedFixedCountArray)
