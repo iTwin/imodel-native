@@ -795,7 +795,7 @@ ECObjectsStatus ECInstanceInteropHelper::GetDouble (IECInstanceCR instance, doub
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/       
-ECObjectsStatus ECInstanceInteropHelper::GetString (IECInstanceCR instance, WCharCP & value, WCharCP managedPropertyAccessor)
+ECObjectsStatus ECInstanceInteropHelper::GetString (IECInstanceCR instance, WStringR value, WCharCP managedPropertyAccessor)
     {
     ECValue v;
 
@@ -1135,7 +1135,7 @@ ECObjectsStatus ECInstanceInteropHelper::GetDouble (IECInstanceCR instance, doub
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/       
-ECObjectsStatus ECInstanceInteropHelper::GetString (IECInstanceCR instance, WCharCP & value, ECValueAccessorCR accessor)
+ECObjectsStatus ECInstanceInteropHelper::GetString (IECInstanceCR instance, WStringR value, ECValueAccessorCR accessor)
     {
     ECValue v;
 

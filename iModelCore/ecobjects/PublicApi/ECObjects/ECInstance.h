@@ -284,7 +284,7 @@ struct ECInstanceInteropHelper
     ECOBJECTS_EXPORT static ECObjectsStatus GetInteger       (IECInstanceCR, int & value,             WCharCP managedPropertyAccessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetLong          (IECInstanceCR, Int64 & value,           WCharCP managedPropertyAccessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetDouble        (IECInstanceCR, double & value,          WCharCP managedPropertyAccessor);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetString        (IECInstanceCR, WCharCP & value, WCharCP managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetString        (IECInstanceCR, WStringR value,          WCharCP managedPropertyAccessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetBoolean       (IECInstanceCR, bool & value,            WCharCP managedPropertyAccessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetPoint2D       (IECInstanceCR, DPoint2dR value,         WCharCP managedPropertyAccessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetPoint3D       (IECInstanceCR, DPoint3dR value,         WCharCP managedPropertyAccessor);
@@ -305,7 +305,7 @@ struct ECInstanceInteropHelper
     ECOBJECTS_EXPORT static ECObjectsStatus GetInteger       (IECInstanceCR, int & value,        ECValueAccessorCR accessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetLong          (IECInstanceCR, Int64 & value,      ECValueAccessorCR accessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetDouble        (IECInstanceCR, double & value,     ECValueAccessorCR accessor);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetString        (IECInstanceCR, WCharCP & value,    ECValueAccessorCR accessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetString        (IECInstanceCR, WStringR value,     ECValueAccessorCR accessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetBoolean       (IECInstanceCR, bool & value,       ECValueAccessorCR accessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetPoint2D       (IECInstanceCR, DPoint2dR value,    ECValueAccessorCR accessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetPoint3D       (IECInstanceCR, DPoint3dR value,    ECValueAccessorCR accessor);
