@@ -79,15 +79,17 @@ struct  IAUIDataContext // Query
     //!Describes the different type of context available to the user
     enum ContextType
         {
-        InstanceID,
-        Instance,
-        ECQuery,
-        Custom,
-        ECInstanceCollection,
-        ECGroupingNode,
-        NodeCollection,
+        Custom                  = 0,
+        InstanceID              = 1,
+        Instance                = 1<<1,
+        ECInstanceCollection    = 1<<2,
         //TODO Move this enum to a string for repository dependant values
-        DgnECInstanceCollection
+        DgnECInstanceCollection = 1<<3,
+        DgnHitPathInfo          = 1<<4,
+        DgnActionItemInfo       = DgnECInstanceCollection | DgnHitPathInfo,
+        ECGroupingNode          = 1<<5,
+        NodeCollection          = 1<<6,
+
         };
     
     //! Get context type which can be used to call the appropriate Get function
@@ -96,7 +98,6 @@ struct  IAUIDataContext // Query
     //!Get the data instance that this datacontext stores.
     virtual IECInstanceP            GetInstance () const {return NULL;}
     virtual WString                 GetMoniker () const {return NULL;}
-    virtual DgnPlatform::ECQueryCP  GetQuery () const {return NULL;}
     virtual void*                   GetCustomData() const {return NULL;}
     virtual ECInstanceIterableCP    GetInstanceIterable () const {return NULL;}
     //!Virtual destructor

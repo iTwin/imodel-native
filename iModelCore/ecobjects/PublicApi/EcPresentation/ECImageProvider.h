@@ -8,32 +8,8 @@
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
 #include <Bentley\BeIconUtilities.h>
+#include "ecimagekey.h"
 BEGIN_BENTLEY_EC_NAMESPACE
-
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass                                     Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct ECImageKey
-    {
-    enum ImageType
-        {
-        Icon,
-        Bitmap,
-        Cursor,
-        };
-
-    private:
-        WString     m_name;
-        ImageType   m_type;
-    
-    public:
-        ECImageKey (WStringCR name, ImageType type)
-            :m_name(name), m_type(type)
-            {}
-
-        ImageType   GetImageType() const {return m_type;}
-        WStringCR   GetImageName() const {return m_name;}
-    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Abeesh.Basheer                  04/2012
@@ -58,6 +34,7 @@ struct IECNativeImage : public RefCountedBase
         virtual ~IECNativeImage ()
             {
             }
+
         NativeImageP    GetImage () const {return m_nativeImage;}
         ECImageKeyCR    GetImageKey() const {return m_key;}
         double          GetHeight () const {return m_imageSize.x;}
@@ -77,7 +54,7 @@ struct  ECNativeImage :public IECNativeImage
     
     public:
 
-    static IECNativeImagePtr CreateNativeImage(ECImageKeyCR key, NativeImageR image, DPoint2d imageSize)
+    static IECNativeImagePtr CreateNativeImage(ECImageKeyCR key, NativeImageR image, DPoint2dCR imageSize)
         {
         return new ECNativeImage(key, image, imageSize);
         }
