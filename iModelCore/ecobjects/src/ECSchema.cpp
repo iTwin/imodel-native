@@ -1186,8 +1186,6 @@ bvector<WString>&               searchPaths
             if (schemaContext.m_acceptLegacyImperfectLatestCompatibleMatch && matchType == SCHEMAMATCHTYPE_LatestCompatible && 
                 0 == foundKey.m_schemaName.CompareTo(key.m_schemaName) && foundKey.m_versionMajor == key.m_versionMajor)
                 {
-                ECObjectsLogger::Log()->warningv (L"Located %ls, which does not meet 'latest compatible' criteria to match %ls, but is being accepted because some legacy schemas are known to require this", 
-                                                  fullFileName.c_str(), key.GetFullSchemaName());
                 // See if this imperfect match ECSchema has is already cached (so we can avoid loading it, below)
             
                 //We found a different key;
@@ -1199,6 +1197,8 @@ bvector<WString>&               searchPaths
                     key.m_versionMinor = foundKey.m_versionMinor;
                     return schemaOut;
                     }
+                ECObjectsLogger::Log()->warningv (L"Located %ls, which does not meet 'latest compatible' criteria to match %ls, but is being accepted because some legacy schemas are known to require this", 
+                    fullFileName.c_str(), key.GetFullSchemaName());
                 }
             else
                 {
