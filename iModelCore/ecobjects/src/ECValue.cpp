@@ -1051,7 +1051,7 @@ WString    ECValue::ToString () const
                 }
             case PRIMITIVETYPE_Long:
                 {
-                str.Sprintf (L"%ld", GetLong());
+                str.Sprintf (L"%lld", GetLong());
                 break;
                 }            
             case PRIMITIVETYPE_Double:
@@ -1122,7 +1122,10 @@ bool ECValue::ConvertToPrimitiveType (PrimitiveType newType)
         {
         Int32 i;
         if (PRIMITIVETYPE_Double == curType)
-            i = (Int32)(GetDouble() + 0.5);
+            {
+            double roundingTerm = DoubleOps::AlmostEqual (GetDouble(), 0.0) ? 0.0 : GetDouble() > 0.0 ? 0.5 : -0.5;
+            i = (Int32)(GetDouble() + roundingTerm);
+            }
         else if (PRIMITIVETYPE_String != curType || 1 != BeStringUtilities::Swscanf (GetString(), L"%d", &i))
             return false;
 
@@ -1187,6 +1190,9 @@ bool              ECValue::Equals (ECValueCR v) const
             return true;
         return 0 == memcmp (m_binaryInfo.m_data, v.m_binaryInfo.m_data, m_binaryInfo.m_size);
         }
+    if (IsDouble())
+        return DoubleOps::AlmostEqual (GetDouble(), v.GetDouble());
+
     size_t primitiveValueSize = (size_t) GetFixedPrimitiveValueSize (GetPrimitiveType());
     //&m_boolean points to the first memory address of the union (as does every other union member)
     return 0 == memcmp (&m_boolean, &v.m_boolean, primitiveValueSize);
