@@ -764,12 +764,12 @@ TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetInteger  (*instance, intVal, L"ReadOnlyInt"));
     EXPECT_TRUE ((int)(50) == intVal);
 
-    WCharCP   stringVal;
+    WString  stringVal;
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, L"AString", L"TEST123"));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetString      (*instance, stringVal, L"AString"));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, L"SomeStrings[0]", L"TEST432"));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetString      (*instance, stringVal, L"SomeStrings[0]"));
-    EXPECT_TRUE (0 == wcscmp(L"TEST432", stringVal));
+    EXPECT_TRUE (0 == wcscmp(L"TEST432", stringVal.c_str()));
 
     Int64       longVal;
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetLongValue (*instance, L"ALong", (Int64)(50)));
@@ -977,15 +977,15 @@ TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper)
 
     WString testString = L"Charmed";
     WString testString2 = L"Charmed2";
-    WCharCP stringValueP = NULL;
+    WString stringValueP;
 
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, L"ManufacturerArray[1].Name", testString.c_str()));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetString (*instance, stringValueP, L"ManufacturerArray[1].Name"));
-    EXPECT_STREQ (testString.c_str(), stringValueP);
+    EXPECT_STREQ (testString.c_str(), stringValueP.c_str());
 
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, L"ManufacturerArray[0].Name", testString2.c_str()));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetString (*instance, stringValueP, L"ManufacturerArray[0].Name"));
-    EXPECT_STREQ (testString2.c_str(), stringValueP);
+    EXPECT_STREQ (testString2.c_str(), stringValueP.c_str());
     };
 
 /*---------------------------------------------------------------------------------**//**
