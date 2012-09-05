@@ -2093,11 +2093,13 @@ ECObjectsStatus       MemoryInstanceSupport::ShiftValueData(ClassLayoutCR classL
         
     UInt32 nSecondaryOffsetsToShift = sizeOfSecondaryOffsetsToShift / sizeof(SecondaryOffset);
 
-    SecondaryOffset * shiftedSecondaryOffsets = (SecondaryOffset*)alloca (sizeOfSecondaryOffsetsToShift);
+    ScopedArray<SecondaryOffset> shiftedSecondaryOffsetArray (nSecondaryOffsetsToShift);
+    SecondaryOffset* shiftedSecondaryOffsets = shiftedSecondaryOffsetArray.GetData();
+
     memset (shiftedSecondaryOffsets, 0, sizeOfSecondaryOffsetsToShift);
     for (UInt32 i = 0; i < nSecondaryOffsetsToShift - 1 && 0 != pCurrent[i]; i++) // stop when we hit a zero
         shiftedSecondaryOffsets[i] = pCurrent[i] + shiftBy;
-        
+
     shiftedSecondaryOffsets[nSecondaryOffsetsToShift - 1] = pCurrent[nSecondaryOffsetsToShift - 1] + shiftBy; // always do the last one
     
     UInt32 offsetOfCurrent = (UInt32)((byte*)pCurrent - data);
@@ -2133,13 +2135,14 @@ ECObjectsStatus       MemoryInstanceSupport::ShiftArrayIndexValueData(PropertyLa
     // Shift all secondaryOffsets for indices following the one that just got larger
     UInt32 nSecondaryOffsetsToShift = arrayCount - (arrayIndex + 1);
     UInt32 sizeOfSecondaryOffsetsToShift = nSecondaryOffsetsToShift * sizeof (SecondaryOffset);    
-    SecondaryOffset * shiftedSecondaryOffsets = (SecondaryOffset*)alloca (sizeOfSecondaryOffsetsToShift);
+
+    ScopedArray<SecondaryOffset> shiftedSecondaryOffsets (nSecondaryOffsetsToShift);
     SecondaryOffset * pCurrent = (SecondaryOffset*)(data + GetOffsetOfArrayIndex (arrayOffset, propertyLayout, arrayIndex + 1));
     for (UInt32 i = 0; i < nSecondaryOffsetsToShift; i++)
-        shiftedSecondaryOffsets[i] = pCurrent[i] + shiftBy;
+        shiftedSecondaryOffsets.GetData()[i] = pCurrent[i] + shiftBy;
         
     UInt32 offsetOfCurrent = (UInt32)((byte*)pCurrent - data);
-    return _ModifyData (offsetOfCurrent, shiftedSecondaryOffsets, sizeOfSecondaryOffsetsToShift);
+    return _ModifyData (offsetOfCurrent, shiftedSecondaryOffsets.GetData(), sizeOfSecondaryOffsetsToShift);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -2972,6 +2975,25 @@ ECObjectsStatus            ArrayResizer::ShiftDataFollowingResizeIndex ()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ScopedWriteBuffer
+    {
+private:
+    ScopedArray<byte>       m_scopedArray;
+    byte*                   m_data;
+
+    ScopedWriteBuffer (ScopedWriteBuffer const&);
+    ScopedWriteBuffer const& operator= (ScopedWriteBuffer const&);
+public:
+    ScopedWriteBuffer (UInt32 size, bool allowWritingDirectlyToMemory, void* directMemory)
+        : m_scopedArray (allowWritingDirectlyToMemory ? 1 : size),
+        m_data (allowWritingDirectlyToMemory ? (byte*)directMemory : m_scopedArray.GetData()) { }
+
+    byte*       GetData()   { return m_data; }
+    };
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus            ArrayResizer::SetSecondaryOffsetsFollowingResizeIndex ()
@@ -2999,13 +3021,10 @@ ECObjectsStatus            ArrayResizer::SetSecondaryOffsetsFollowingResizeIndex
      
     UInt32 insertedSecondaryOffsetByteCount = m_resizeElementCount * m_elementSizeInFixedSection;       
     SecondaryOffset* pSecondaryOffset = (SecondaryOffset*)(m_pResizeIndexPostShift - insertedSecondaryOffsetByteCount);
-    if (m_instance.m_allowWritingDirectlyToInstanceMemory)
-        pWriteBuffer = (byte*)pSecondaryOffset;
-    else
-        {
+    ScopedWriteBuffer writeBuffer (insertedSecondaryOffsetByteCount + (nSecondaryOffsetsShifted * sizeof (SecondaryOffset)), m_instance.m_allowWritingDirectlyToInstanceMemory, pSecondaryOffset);
+    pWriteBuffer = writeBuffer.GetData();
+    if (!m_instance.m_allowWritingDirectlyToInstanceMemory)
         sizeOfWriteBuffer = insertedSecondaryOffsetByteCount + (nSecondaryOffsetsShifted * sizeof (SecondaryOffset));
-        pWriteBuffer = (byte*)alloca (sizeOfWriteBuffer);  
-        }        
         
     // initialize inserted secondary offsets
     SecondaryOffset* pSecondaryOffsetWriteBuffer = (SecondaryOffset*)pWriteBuffer;
@@ -3065,16 +3084,9 @@ ECObjectsStatus            ArrayResizer::SetSecondaryOffsetsPreceedingResizeInde
     if (m_elementTypeIsFixedSize)
         return status;
     
-    byte * pWriteBuffer;              
-    UInt32 sizeOfWriteBuffer = 0;           
-    if (m_instance.m_allowWritingDirectlyToInstanceMemory)
-        pWriteBuffer = (byte*)pSecondaryOffset;
-    else
-        {
-        sizeOfWriteBuffer = byteCountToSet;
-        pWriteBuffer = (byte*)alloca (sizeOfWriteBuffer);  
-        }        
-                    
+    ScopedWriteBuffer writeBuffer (byteCountToSet, m_instance.m_allowWritingDirectlyToInstanceMemory, pSecondaryOffset);
+    byte * pWriteBuffer = writeBuffer.GetData();
+     
     // update shifted secondary offsets        
     SecondaryOffset* pSecondaryOffsetWriteBuffer = (SecondaryOffset*)pWriteBuffer;
 
@@ -3102,19 +3114,13 @@ ECObjectsStatus            ArrayResizer::SetSecondaryOffsetsPreceedingResizeInde
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus            ArrayResizer::WriteArrayHeader ()                
     {
-    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
-    byte * pWriteBuffer;              
-    UInt32 sizeOfWriteBuffer = 0;       
-        
     // write the new array header (updated count & null flags)      
-    if (m_instance.m_allowWritingDirectlyToInstanceMemory)
-        pWriteBuffer = (byte*)(m_data + m_arrayOffset);
-    else
-        {  
-        pWriteBuffer = (byte*)alloca (m_postHeaderByteCount);     
-        sizeOfWriteBuffer = m_postHeaderByteCount;
-        memcpy (pWriteBuffer, m_data + m_arrayOffset, m_preHeaderByteCount); 
-        }        
+    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+    ScopedWriteBuffer writeBuffer (m_postHeaderByteCount, m_instance.m_allowWritingDirectlyToInstanceMemory, (byte*)(m_data + m_arrayOffset));
+    byte * pWriteBuffer = writeBuffer.GetData();
+    if (!m_instance.m_allowWritingDirectlyToInstanceMemory)
+        memcpy (pWriteBuffer, m_data + m_arrayOffset, m_preHeaderByteCount);
+
     *((UInt32*)pWriteBuffer) = m_postAllocatedArrayCount;
     NullflagsBitmask* pNullflagsStart = (NullflagsBitmask*)(pWriteBuffer + sizeof (ArrayCount));
     NullflagsBitmask* pNullflagsCurrent;
