@@ -35,12 +35,28 @@ struct CalculatedPropertyTests : ECTestFixture
         else
             instance.SetValue (accessor, v, arrayIndex);
         }
+    void SetNullValue (IECInstanceR instance, WCharCP accessor, UInt32 arrayIndex = -1)
+        {
+        ECValue v;
+        if (-1 == arrayIndex)
+            instance.SetValue (accessor, v);
+        else
+            instance.SetValue (accessor, v, arrayIndex);
+        }
     template <typename T>
     void Test (IECInstanceCR instance, WCharCP propName, T const& expectedVal)
         {
         ECValue actualVal;
         EXPECT_SUCCESS (instance.GetValue (actualVal, propName));
         EXPECT_TRUE (actualVal.Equals (ECValue (expectedVal))) << "Expect: " << expectedVal << " Actual: " << actualVal.ToString().c_str();
+        }
+
+    void TestNull (IECInstanceCR instance, WCharCP propName)
+        {
+        ECValue actualVal;
+        ECValue nullValue;
+        EXPECT_SUCCESS (instance.GetValue (actualVal, propName));
+        EXPECT_TRUE (actualVal.Equals (nullValue)) << "Expect: " << nullValue.ToString().c_str() << " Actual: " << actualVal.ToString().c_str();
         }
 
     struct ExpectedValue
@@ -110,6 +126,7 @@ IECInstancePtr CalculatedPropertyTests::CreateTestCase (WCharCP propName, WCharC
     ArrayECPropertyP arrayProp;
     ecClass->CreatePrimitiveProperty (ecProp, L"S", PRIMITIVETYPE_String);
     ecClass->CreatePrimitiveProperty (ecProp, L"S1", PRIMITIVETYPE_String);
+    ecClass->CreatePrimitiveProperty (ecProp, L"S2", PRIMITIVETYPE_String);
     ecClass->CreatePrimitiveProperty (ecProp, L"I", PRIMITIVETYPE_Integer);
     ecClass->CreatePrimitiveProperty (ecProp, L"I2", PRIMITIVETYPE_Integer);
     ecClass->CreatePrimitiveProperty (ecProp, L"D", PRIMITIVETYPE_Double);
@@ -124,7 +141,11 @@ IECInstancePtr CalculatedPropertyTests::CreateTestCase (WCharCP propName, WCharC
 
     ECValue v;
     v.SetString (ecExpr);                                   calcSpecAttr->SetValue (L"ECExpression", v);
-    v.SetString (failureValue);                             calcSpecAttr->SetValue (L"FailureValue", v);
+    if (NULL != failureValue)
+        {
+        v.SetString (failureValue);
+        calcSpecAttr->SetValue (L"FailureValue", v);
+        }
     v.SetBoolean (0 != (options & OPTION_DefaultOnly));     calcSpecAttr->SetValue (L"IsDefaultValueOnly", v);
     v.SetBoolean (0 != (options & OPTION_UseLastValid));    calcSpecAttr->SetValue (L"UseLastValidValueOnFailure", v);
     v.SetString (parserRegex);                              calcSpecAttr->SetValue (L"ParserRegularExpression", v);
@@ -149,7 +170,11 @@ TEST_F (CalculatedPropertyTests, BasicExpressions)
 
     // Properties
     instance = CreateTestCase (L"S", L"this.I + this.D", 0, L"ERROR");
+    {
+        DISABLE_ASSERTS
     // Test (*instance, L"S", L"ERROR");      // this.I and this.D are null. Test fails as expected, but also asserts, so commented out
+    }
+
     SetValue (*instance, L"I", 5);
     SetValue (*instance, L"D", 1.234);
     Test (*instance, L"S", L"6.234000");
@@ -165,11 +190,25 @@ TEST_F (CalculatedPropertyTests, BasicExpressions)
     SetValue (*instance, L"D", 2.5);
     SetValue (*instance, L"D2", 3.15);
     Test (*instance, L"I2", 6);     // 2.5 + 3.15 rounds up to 6
+    // Change the constituent properties and confirm the calculated property re-evaluates
+    SetValue (*instance, L"D", 4.7);
+    Test (*instance, L"I2", 8);
 
     instance = CreateTestCase (L"D", L"this.I & this.S", 0, L"-999");
     SetValue (*instance, L"I", 5);
     SetValue (*instance, L"S", L".4");
     Test (*instance, L"D", 5.4);
+    SetValue (*instance, L"S", L"string");
+    Test (*instance, L"S", L"string");
+    Test (*instance, L"D", 5.0); // concatenates into a string of "5string" which equals 5 as a double
+
+    instance = CreateTestCase (L"S", L"this.S1 & this.S2", 0, L"Error calculating value");
+    SetValue (*instance, L"S1", L"S1");
+    Test (*instance, L"S", L"Error calculating value");
+    SetValue (*instance, L"S2", L"S2");
+    Test (*instance, L"S", L"S1S2");
+    SetNullValue (*instance, L"S2");
+    Test (*instance, L"S", L"Error calculating value");
 
     // Conditionals
     instance = CreateTestCase (L"S", L"\"abs(I-D) == \" & IIf(this.I < this.D, this.D - this.I, this.I - this.D)", 0, L"ERROR");
@@ -213,6 +252,13 @@ TEST_F (CalculatedPropertyTests, FailureValue)
     IECInstancePtr instance = CreateTestCase (L"S", L"this.NonexistentProperty", 0, L"ERROR");
     Test (*instance, L"S", L"ERROR");
 
+    instance = CreateTestCase (L"I", L"this.S1", 0, NULL);
+    SetValue (*instance, L"S", L"not a number");
+    {
+        DISABLE_ASSERTS
+        TestNull (*instance, L"I");
+    }
+
     // If no last valid value and evaluation fails we should get back the failure value
     instance = CreateTestCase (L"I", L"this.NonexistentProperty", OPTION_UseLastValid, L"-999");
     Test (*instance, L"I", -999);
@@ -225,6 +271,7 @@ TEST_F (CalculatedPropertyTests, FailureValue)
     Test (*instance, L"I", 12345);
     SetValue (*instance, L"S", L"821");
     Test (*instance, L"I", 821);
+
     }
 
 /*---------------------------------------------------------------------------------**//**
