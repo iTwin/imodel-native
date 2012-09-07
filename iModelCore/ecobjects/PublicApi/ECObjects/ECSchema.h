@@ -47,7 +47,7 @@ struct NameValidator /*abstract*/
 {
     virtual void _Abstract() = 0;
 public:
-    static bool Validate(WStringCR name);
+    ECOBJECTS_EXPORT static bool Validate(WStringCR name);
 };
     
 typedef bvector<ECPropertyP> PropertyList;
