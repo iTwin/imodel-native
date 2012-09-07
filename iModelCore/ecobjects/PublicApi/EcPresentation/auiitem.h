@@ -167,15 +167,17 @@ struct  ECNodeCollectionDataContext : public IAUIDataContext
     private:
         ECInstanceIterable m_data;
         WString m_labels;
+        void* m_customData;
         
     public:
-        ECNodeCollectionDataContext (WString labels, ECInstanceIterable const& data)
-            :m_labels (labels), m_data(data)
+        ECNodeCollectionDataContext (WString labels, ECInstanceIterable const& data, void *customData)
+            :m_labels (labels), m_data (data), m_customData (customData)
             {}
         
         virtual ContextType GetContextType() const override { return IAUIDataContext::NodeCollection; }
         virtual WString     GetMoniker () const override { return m_labels; }
         virtual ECInstanceIterableCP    GetInstanceIterable () const { return &m_data; }
+        virtual void*                   GetCustomData() const {return m_customData;}
     };
 
 END_BENTLEY_EC_NAMESPACE
