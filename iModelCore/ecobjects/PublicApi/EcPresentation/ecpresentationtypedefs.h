@@ -5,8 +5,9 @@
 |  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+/*__PUBLISH_SECTION_START__*/
+
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
 
 #include <ECObjects/ECObjects.h>
 #include <Bentley/RefCounted.h>
@@ -51,3 +52,5 @@ typedef RefCountedPtr<IECPresentationViewDefinition>    IECPresentationViewDefin
 typedef RefCountedPtr<IECContentDefinition> IECContentDefinitionPtr;
 typedef RefCountedPtr<IECNativeImage>       IECNativeImagePtr;
 END_BENTLEY_EC_NAMESPACE
+
+/*__PUBLISH_SECTION_END__*/

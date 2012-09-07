@@ -5,8 +5,10 @@
 |  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
+//__PUBLISH_SECTION_START__
+
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
+
 #include "ecimagekey.h"
 #include "ecpresentationtypedefs.h"
 
@@ -76,8 +78,10 @@ struct IUICommand : public RefCountedBase
         EDITACTION_PRIORITY_MiscGroup6
         };
 
+    //__PUBLISH_SECTION_END__
+
     protected:
-        
+    
         //!Execute the action that this command supports.
         virtual BentleyStatus       _ExecuteCmd(IAUIDataContextCP instance) = 0;
 
@@ -96,7 +100,7 @@ struct IUICommand : public RefCountedBase
         virtual ECImageKeyCP        _GetImageId () const = 0;
         virtual void                _SetImageId (ECImageKeyCR key) { }
         
-        virtual bool                _IsSeparator () const { return false; }
+        virtual bool                _IsSeparator () const = 0;
         
         virtual EditActionMenuMark  _GetMenuMark() const {return MENUMARK_None;}
         virtual void                _SetMenuMark(EditActionMenuMark mark) {}
@@ -109,6 +113,7 @@ struct IUICommand : public RefCountedBase
         virtual EditActionPriority  _GetPriority () const {return EDITACTION_PRIORITY_UserCommon;}
         virtual void                _SetPriority (EditActionPriority priority) {}
 
+//__PUBLISH_SECTION_START__
     public:
         //!virtual destructor.
         virtual ~IUICommand ()
@@ -160,6 +165,7 @@ typedef RefCountedPtr<UICommand> UICommandPtr;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct UICommand : public IUICommand
     {
+//__PUBLISH_SECTION_END__
     private:
         WString             m_commandId;
         WString             m_label;
@@ -207,8 +213,7 @@ struct UICommand : public IUICommand
         virtual EditActionPriority  _GetPriority () const override {return m_priority;}
         virtual void                _SetPriority (EditActionPriority priority) override {m_priority = priority;}
 
-    public:
-    
+//__PUBLISH_SECTION_START__
 
     };
 
@@ -219,15 +224,20 @@ struct UICommand : public IUICommand
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ECPresentationCommandProvider
     {
+
+//__PUBLISH_SECTION_END__
     protected:
-        virtual bvector<UICommandPtr> _GetCommand (IAUIDataContextCR instance) const = 0;
+        virtual void _GetCommand (bvector<UICommandPtr>&commands, IAUIDataContextCR instance) = 0;
     
+//__PUBLISH_SECTION_START__
     public:
 
         virtual ~ECPresentationCommandProvider() {}
 
-        ECOBJECTS_EXPORT bvector<UICommandPtr> GetCommand (IAUIDataContextCR instance) const;
+        ECOBJECTS_EXPORT void GetCommand (bvector<UICommandPtr>&commands, IAUIDataContextCR instance);
     };
 
 
 END_BENTLEY_EC_NAMESPACE
+
+//__PUBLISH_SECTION_END__

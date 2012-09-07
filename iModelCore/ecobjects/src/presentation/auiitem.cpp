@@ -70,3 +70,11 @@ bool            IAUIItemInfo::IsAggregatable () const
     {
     return _IsAggregatable();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  09/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+IAUIDataContext::ContextType     IAUIDataContext::GetContextType() const
+    {
+    return _GetContextType();
+    }

@@ -16,7 +16,7 @@ BEGIN_BENTLEY_EC_NAMESPACE
 struct  ECPresentationManager: public NonCopyableClass
     {
     private:
-        typedef bvector<ECPresentationCommandProviderCP>     T_CmdProviderSet;
+        typedef bvector<ECPresentationCommandProviderP>      T_CmdProviderSet;
         typedef bvector<IECPresentationViewProviderP>        T_ViewProviderSet;
         typedef bvector<IJournalProviderP>                   T_JournalProviderSet;
         typedef bvector<IAUIContentServiceProviderP>         T_ContentProviderSet;
@@ -50,8 +50,8 @@ struct  ECPresentationManager: public NonCopyableClass
     ECOBJECTS_EXPORT void                           RemoveProvider (IJournalProviderR provider);
 
     //! Add or remove the command provider
-    ECOBJECTS_EXPORT void                           AddProvider (ECPresentationCommandProviderCR provider);
-    ECOBJECTS_EXPORT void                           RemoveProvider (ECPresentationCommandProviderCR provider);
+    ECOBJECTS_EXPORT void                           AddProvider (ECPresentationCommandProviderR provider);
+    ECOBJECTS_EXPORT void                           RemoveProvider (ECPresentationCommandProviderR provider);
     
     //! Add or remove the view definition provider
     ECOBJECTS_EXPORT void                           AddProvider (IECPresentationViewProviderR provider);

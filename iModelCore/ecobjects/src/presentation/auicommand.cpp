@@ -23,9 +23,9 @@ BentleyStatus   IUICommand::ExecuteCmd (IAUIDataContextCP instance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<UICommandPtr>   ECPresentationCommandProvider::GetCommand (IAUIDataContextCR instance) const
+void   ECPresentationCommandProvider::GetCommand (bvector<UICommandPtr>& commands, IAUIDataContextCR instance)
     {
-    return _GetCommand(instance);
+    return _GetCommand(commands, instance);
     }
 
 /*---------------------------------------------------------------------------------**//**
