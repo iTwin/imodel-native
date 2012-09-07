@@ -115,6 +115,7 @@ protected:
     virtual ClassLayoutCR       _GetClassLayout () const = 0;
     virtual IECInstancePtr      _GetAsIECInstance () const = 0;
    
+    ECOBJECTS_EXPORT  ECObjectsStatus          SetValueInternal (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex);
 public:
     ECOBJECTS_EXPORT  ECObjectsStatus          SetInstancePerPropertyFlagsData (byte const* perPropertyFlagsDataAddress, int numBitsPerProperty, int numPerPropertyFlagsEntries);
 
@@ -189,7 +190,7 @@ protected:
     ECOBJECTS_EXPORT virtual bool                _IsReadOnly() const override;        
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
-
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetInternalValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size) override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _AddArrayElements (WCharCP propertyAccessString, UInt32 size) override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _RemoveArrayElement (WCharCP propertyAccessString, UInt32 index) override;

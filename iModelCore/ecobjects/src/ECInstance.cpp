@@ -302,7 +302,7 @@ ECObjectsStatus     IECInstance::SetValue (WCharCP propertyAccessString, ECValue
 
 ECObjectsStatus     IECInstance::SetInternalValue (UInt32 propertyIndex, ECValueCR v) 
     {
-    return _SetValue (propertyIndex, v, false, 0); 
+    return _SetInternalValue (propertyIndex, v, false, 0); 
     }
 
 ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v) 
@@ -322,7 +322,16 @@ ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v)
 
 ECObjectsStatus     IECInstance::SetInternalValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) 
     { 
-    return _SetValue (propertyIndex, v, true, arrayIndex); 
+    return _SetInternalValue (propertyIndex, v, true, arrayIndex); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus IECInstance::_SetInternalValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
+    {
+    // Default impl; instances that support calculated properties should override
+    return _SetValue (propertyIndex, v, useArrayIndex, arrayIndex);
     }
 
 ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) 

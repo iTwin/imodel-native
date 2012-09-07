@@ -818,6 +818,22 @@ ECObjectsStatus          MemoryECInstanceBase::SetInstancePerPropertyFlagsData (
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus MemoryECInstanceBase::SetValueInternal (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
+    {
+    PropertyLayoutCP propLayout;
+    ECObjectsStatus status;
+    if (ECOBJECTS_STATUS_Success == (status = GetClassLayout().GetPropertyLayoutByIndex (propLayout, propertyIndex)))
+        {
+        SetIsLoadedBit (propertyIndex);
+        status = SetInternalValueToMemory (GetClassLayout(), *propLayout, v, useArrayIndex, arrayIndex);
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus MemoryECInstanceBase::CopyInstanceProperties
@@ -1041,6 +1057,15 @@ ECObjectsStatus           StandaloneECInstance::_SetValue (UInt32 propertyIndex,
     SetIsLoadedBit (propertyIndex);
 
     return SetValueToMemory (classLayout, propertyIndex, v, useArrayIndex, arrayIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus StandaloneECInstance::_SetInternalValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
+    {
+    SetIsLoadedBit (propertyIndex);
+    return SetValueInternal (propertyIndex, v, useArrayIndex, arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
