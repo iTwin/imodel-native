@@ -92,9 +92,6 @@
     <ClInclude Include="ecxml.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FileUtilities.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Logger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
