@@ -73,7 +73,7 @@ ILeakDetector&  ECClass::Debug_GetLeakDetector() { return g_leakDetector; }
 +---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR ECClass::GetName () const
     {        
-    return m_name;
+    return m_validatedName.GetName();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -92,11 +92,7 @@ WCharCP ECClass::GetFullName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::SetName (WStringCR name)
     {
-    
-    if (!NameValidator::Validate(name))
-        return ECOBJECTS_STATUS_InvalidName;
-        
-    m_name = name;
+    m_validatedName.SetName (name.c_str());
     m_fullName = GetSchema().GetName() + L":" + GetName();
     
     return ECOBJECTS_STATUS_Success;
@@ -124,7 +120,7 @@ ECObjectsStatus ECClass::SetDescription (WStringCR description)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR ECClass::GetDisplayLabel () const
     {
-    return (m_displayLabel.empty()) ? GetName() : m_displayLabel;
+    return m_validatedName.GetDisplayLabel();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -132,7 +128,7 @@ WStringCR ECClass::GetDisplayLabel () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::SetDisplayLabel (WStringCR displayLabel)
     {        
-    m_displayLabel = displayLabel;
+    m_validatedName.SetDisplayLabel (displayLabel.c_str());
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -141,7 +137,7 @@ ECObjectsStatus ECClass::SetDisplayLabel (WStringCR displayLabel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECClass::GetIsDisplayLabelDefined () const
     {
-    return (!m_displayLabel.empty());        
+    return m_validatedName.IsDisplayLabelDefined();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -614,7 +610,7 @@ ECObjectsStatus ECClass::AddBaseClass (ECClassCR baseClass)
         {
         if (*baseClassIterator == (ECClassP)&baseClass)
             {
-            ECObjectsLogger::Log()->warningv (L"Can not add class '%ls' as a base class to '%ls' because it already exists as a base class", baseClass.GetName().c_str(), m_name.c_str());
+            ECObjectsLogger::Log()->warningv (L"Can not add class '%ls' as a base class to '%ls' because it already exists as a base class", baseClass.GetName().c_str(), GetName().c_str());
             return ECOBJECTS_STATUS_NamedItemAlreadyExists;
             }
         }
@@ -671,7 +667,7 @@ ECObjectsStatus ECClass::RemoveBaseClass (ECClassCR baseClass)
         
     if (!baseClassRemoved)
         {
-        ECObjectsLogger::Log()->warningv(L"Class '%ls' is not a base class of class '%ls'", baseClass.GetName().c_str(), m_name.c_str());
+        ECObjectsLogger::Log()->warningv(L"Class '%ls' is not a base class of class '%ls'", baseClass.GetName().c_str(), GetName().c_str());
         return ECOBJECTS_STATUS_ClassNotFound;
         }
         
@@ -805,7 +801,7 @@ bool ECClass::TraverseBaseClasses (TraversalDelegate traverseMethod, bool recurs
 SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
     {                
     WString value;      // used by the macros.
-    if (m_name.length() == 0)
+    if (GetName().length() == 0)
         {
         READ_REQUIRED_XML_ATTRIBUTE (classNode, TYPE_NAME_ATTRIBUTE,        this, Name,     classNode.GetName())    
         }
