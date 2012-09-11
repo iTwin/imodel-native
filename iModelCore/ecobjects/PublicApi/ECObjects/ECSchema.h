@@ -77,6 +77,49 @@ public:
 /*__PUBLISH_SECTION_START__*/
 
 //=======================================================================================    
+//! Handles validation, encoding, and decoding of names for ECSchemas, ECClasses, and
+//! ECProperties.
+//! The names of ECSchemas, ECClasses, and ECProperties must conform to the following
+//! rules:
+//!     -Contains only alphanumeric characters in the ranges ['A'..'Z'], ['a'..'z'], ['0'..'9'], and ['_']
+//!     -Contains at least one character
+//!     -Does not begin with a digit
+//=======================================================================================
+struct ECNameValidation
+    {
+private:
+/*__PUBLISH_SECTION_END__*/
+    static void AppendEncodedCharacter (WStringR encoded, WChar c);
+    static bool IsValidAlphaNumericCharacter (WChar c);
+/*__PUBLISH_SECTION_START__*/
+public:
+    enum ValidationResult
+        {
+        RESULT_Valid = 0,
+        RESULT_NullOrEmpty,
+        RESULT_BeginsWithDigit,
+        RESULT_IncludesInvalidCharacters
+        };
+
+    //! Encodes special characters in a possibly invalid name to produce a valid name
+    //! @param[out] encoded     Will hold the valid name
+    //! @param[in]  name        The name to encode
+    //! @returns true if any special characters were encoded, false if the name was already valid. In either case encoded will contain a valid name.
+    ECOBJECTS_EXPORT static bool                EncodeToValidName (WStringR encoded, WStringCR name);
+
+    //! Decodes special characters in a name encoded by EncodeToValidName() to produce a name suitable for display
+    //! @param[out] decoded     Will hold the decoded name
+    //! @param[in]  name        The name to decode
+    //! @returns true if any special characters were decoded. Regardless of return value, decoded will contain a decoded name.
+    ECOBJECTS_EXPORT static bool                DecodeFromValidName (WStringR decoded, WStringCR name);
+
+    //! Checks a name against the rules for valid names
+    //! @param[in] name     The name to validate
+    //! @returns RESULT_Valid if the name is valid, or a ValidationResult indicating why the name is invalid.
+    ECOBJECTS_EXPORT static ValidationResult    Validate (WCharCP name);
+    };
+
+//=======================================================================================    
 //! Used to represent the type of an ECProperty
 //=======================================================================================
 struct ECTypeDescriptor
