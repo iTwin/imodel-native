@@ -1207,44 +1207,6 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     EXPECT_EQ(2, relationshipClass->GetTarget().GetCardinality().GetLowerLimit());
     EXPECT_EQ(5, relationshipClass->GetTarget().GetCardinality().GetUpperLimit());
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaCreationTest, ExpectErrorWithBadSchemaName)
-    {
-    ECSchemaPtr schema;
-    
-    // . is an invalid character
-    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, ECSchema::CreateSchema(schema, L"TestSchema.1.0", 5, 5));
-
-    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5);
-    
-    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->SetName(L""));
-    
-    // name cannot be an empty string
-    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->SetName(L"    "));
-    
-    // name cannot contain special characters
-    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->SetName(L"&&&&"));
-    
-    // name cannot start with a digit
-    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->SetName(L"0InvalidName"));
-    
-    // name may include underscores
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->SetName(L"_____"));
-    
-    // % is an invalid character
-    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->SetName(L"%"));
-    
-    // a is a valid character
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->SetName(L"a"));
-    
-    // Names can only include characters from the intersection of 7bit ascii and alphanumeric
-    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->SetName(L"abc123!@#"));
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->SetName(L"abc123"));
-
-    }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
@@ -1762,54 +1724,6 @@ TEST_F(ClassTest, AddAndRemoveConstraintClasses)
     EXPECT_EQ(ECOBJECTS_STATUS_ClassNotFound, relClass->GetTarget().RemoveClass(*targetClass));
     }
     
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ClassTest, ExpectErrorWithBadClassName)
-    {
-    ECSchemaPtr schema;
-    ECClassP class1;
-    
-    // . is an invalid character
-    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, ECSchema::CreateSchema(schema, L"TestSchema.1.0", 1, 0));
-
-    ECSchema::CreateSchema(schema, L"TestSchema", 1, 0);
-    
-    //We should not be able to create a class with a non-ASCII name, but non-ASCII Display
-    //Labels are okay; they are usually what is displayed on the frontend.
-    //See: http://bsw-wiki.bentley.com/default.aspx/Development/ECNamingConventions.html
-    //The following are illegal
-    const wchar_t foreignString[] = {0xF9C2, 0xF9C3, 0xF9C4, 0x0000};
-    
-    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, foreignString));
-    
-    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L""));
-    
-    // name cannot be an empty string
-    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L"    "));
-    
-    // name cannot contain special characters
-    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L"&&&&"));
-    
-    // name cannot start with a digit
-    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L"0InvalidName"));
-    
-    // name may include underscores
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->CreateClass(class1, L"_____"));
-    
-    // % is an invalid character
-    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L"%"));
-    
-    // a is a valid character
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->CreateClass(class1, L"a"));
-    
-    // Names can only include characters from the intersection of 7bit ascii and alphanumeric
-    EXPECT_EQ(ECOBJECTS_STATUS_InvalidName, schema->CreateClass(class1, L"abc123!@#"));
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->CreateClass(class1, L"abc123"));
-
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->SetDisplayLabel(foreignString));
-    }
-    
 TEST_F(ClassTest, ExpectReadOnlyFromBaseClass)
     {
     ECSchemaPtr schema;
@@ -1915,6 +1829,123 @@ TEST_F(ClassTest, TestOverridingArrayPropertyWithNonArray)
     TestOverriding(L"ams_user", 1, true);
     TestOverriding(L"Bentley_JSpace_CustomAttributes", 2, true);
     TestOverriding(L"Bentley_Plant", 6, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ECNameValidationTest : ECTestFixture
+    {
+    struct ITester
+        {
+        virtual void        Preprocess (ECSchemaR schema) const = 0;
+        virtual void        Postprocess (ECSchemaR schema) const = 0;
+        };
+
+    void Roundtrip (ITester const& tester)
+        {
+        ECSchemaPtr schema;
+        ECSchema::CreateSchema (schema, L"MySchema", 1, 1);
+        tester.Preprocess (*schema);
+
+        WString schemaXml;
+        EXPECT_EQ (SCHEMA_WRITE_STATUS_Success, schema->WriteToXmlString (schemaXml));
+
+        schema = NULL;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        EXPECT_EQ (SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlString (schema, schemaXml.c_str(), *context));
+
+        tester.Postprocess (*schema);
+        }
+    };
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+struct DisplayLabelTester : ECNameValidationTest::ITester
+    {
+    WString         m_name;
+    WString         m_encodedName;
+
+    DisplayLabelTester (WCharCP name, WCharCP encodedName) : m_name(name), m_encodedName(encodedName) { }
+
+    template<typename T> void Compare (T const& target) const
+        {
+        EXPECT_FALSE (target.GetIsDisplayLabelDefined());
+        EXPECT_TRUE (target.GetName().Equals (m_encodedName)) << L"Name: Expected " << m_encodedName.c_str() << L" Actual " << target.GetName().c_str();
+        EXPECT_TRUE (target.GetDisplayLabel().Equals (m_name)) << L"Label: Expected " << m_name.c_str() << L" Actual " << target.GetDisplayLabel().c_str();
+        }
+
+    template<typename T> void CompareOverriddenLabel(T const& target, WCharCP label) const
+        {
+        EXPECT_TRUE (target.GetIsDisplayLabelDefined());
+        EXPECT_TRUE (target.GetDisplayLabel().Equals (label));
+        }
+
+    virtual void Preprocess (ECSchemaR schema) const override
+        {
+        schema.SetName (m_name);
+        Compare (schema);
+
+        ECClassP ecclass;
+        schema.CreateClass (ecclass, m_name);
+        Compare (*ecclass);
+
+        PrimitiveECPropertyP ecprop;
+        ecclass->CreatePrimitiveProperty (ecprop, m_name, PRIMITIVETYPE_String);
+        Compare (*ecprop);
+        }
+
+    virtual void Postprocess (ECSchemaR schema) const override
+        {
+        ECClassP ecclass = schema.GetClassP (m_encodedName.c_str());
+        ECPropertyP ecprop = ecclass->GetPropertyP (m_encodedName.c_str());
+
+        Compare (schema);
+        Compare (*ecclass);
+        Compare (*ecprop);
+
+        // Test explicitly setting display labels
+        schema.SetDisplayLabel (L"NewDisplayLabel");
+        CompareOverriddenLabel (schema, L"NewDisplayLabel");
+        ecclass->SetDisplayLabel (L"1!@$");
+        CompareOverriddenLabel (*ecclass, L"1!@$");                // will not be encoded
+        ecprop->SetDisplayLabel (L"__x003E__");
+        CompareOverriddenLabel (*ecprop, L"__x003E__");            // will not be decoded
+
+        // Test explicitly un-setting display labels
+        ecclass->SetDisplayLabel (L"");
+        Compare (*ecclass);
+        ecprop->SetDisplayLabel (L"");
+        Compare (*ecprop);
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECNameValidationTest, DisplayLabels)
+    {
+    static const WCharCP s_testValues[] =
+        {
+            L"NothingSpecial", L"NothingSpecial",
+            L"Nothing1Special2", L"Nothing1Special2",
+            L"1_LeadingDigitsDisallowed", L"__x0031___LeadingDigitsDisallowed",
+            L"Special!", L"Special__x0021__",
+            L"thing@mail.com", L"thing__x0040__mail__x002E__com",
+            L"*", L"__x002A__",
+            L"9&:", L"__x0039____x0026____x003A__",
+            L"__xNotAChar__", L"__xNotAChar__",
+            L"__xTTTT__", L"__xTTTT__",
+            L"__x####__", L"__x__x0023____x0023____x0023____x0023____",
+            NULL, NULL
+        };
+
+    for (WCharCP const* cur = s_testValues; *cur; cur += 2)
+        {
+        WCharCP name = *cur, encoded = *(cur+1);
+        Roundtrip (DisplayLabelTester (name, encoded));
+        }
     }
 
 END_BENTLEY_EC_NAMESPACE

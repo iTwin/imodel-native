@@ -42,17 +42,35 @@ bool operator()(WCharCP s1, WCharCP s2) const
     return false;
     }
 };
-
-struct NameValidator /*abstract*/
-{
-    virtual void _Abstract() = 0;
-public:
-    ECOBJECTS_EXPORT static bool Validate(WStringCR name);
-};
+    static bool Validate(WStringCR name);
     
 typedef bvector<ECPropertyP> PropertyList;
 typedef bmap<WCharCP , ECPropertyP, less_str> PropertyMap;
 typedef bmap<WCharCP , ECClassP,    less_str> ClassMap;
+
+/*---------------------------------------------------------------------------------**//**
+* Used to hold property name and display label forECProperty, ECClass, and ECSchema.
+* Property name supports only a limited set of characters; unsupported characters must
+* be escaped as "__x####__" where "####" is a UTF-16 character code.
+* If no explicit display label is provided, the property name is used as the display
+* label, with encoded special characters decoded.
+* @bsistruct                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ECValidatedName
+    {
+private:
+    WString             m_name;
+    WString             m_displayLabel;
+    bool                m_hasExplicitDisplayLabel;
+public:
+    ECValidatedName() : m_hasExplicitDisplayLabel (false) { }
+
+    WStringCR           GetName() const                 { return m_name; }
+    bool                IsDisplayLabelDefined() const   { return m_hasExplicitDisplayLabel; }
+    WStringCR           GetDisplayLabel() const;
+    void                SetName (WCharCP name);
+    void                SetDisplayLabel (WCharCP label);
+    };
 
 /*__PUBLISH_SECTION_START__*/
 
@@ -235,9 +253,8 @@ struct ECProperty /*abstract*/ : public IECCustomAttributeContainer
 friend struct ECClass;
 
 private:
-    WString        m_name;        
-    WString        m_displayLabel;
-    WString        m_description;
+    WString         m_description;
+    ECValidatedName m_validatedName;
     bool            m_readOnly;
     ECClassCR       m_class;
     ECPropertyCP    m_baseProperty;    
@@ -523,10 +540,9 @@ friend struct ECSchema;
 friend struct ECPropertyIterable::IteratorState;
 
 private:
-    WString                         m_name;
     mutable WString                 m_fullName;
-    WString                         m_displayLabel;
     WString                         m_description;
+    ECValidatedName                 m_validatedName;
     bool                            m_isStruct;
     bool                            m_isCustomAttributeClass;
     bool                            m_isDomainClass;
@@ -1334,6 +1350,7 @@ private:
     // maps class name -> class pointer    
     ClassMap                m_classMap;
     ECSchemaReferenceList   m_refSchemaList;
+    bool                    m_hasExplicitDisplayLabel;
     
     bmap<ECSchemaP, const WString> m_referencedSchemaNamespaceMap;
 

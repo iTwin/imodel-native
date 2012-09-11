@@ -88,7 +88,7 @@ ECClassCR ECProperty::GetClass () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR ECProperty::GetName () const
     {
-    return m_name;
+    return m_validatedName.GetName();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -96,10 +96,7 @@ WStringCR ECProperty::GetName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECProperty::SetName (WStringCR name)
     {        
-    if (!NameValidator::Validate(name))
-        return ECOBJECTS_STATUS_InvalidName;
- 
-    m_name = name;        
+    m_validatedName.SetName (name.c_str());
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -125,7 +122,7 @@ ECObjectsStatus ECProperty::SetDescription (WStringCR description)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR ECProperty::GetDisplayLabel () const
     {
-    return (m_displayLabel.empty()) ? GetName() : m_displayLabel;
+    return m_validatedName.GetDisplayLabel();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -133,7 +130,7 @@ WStringCR ECProperty::GetDisplayLabel () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECProperty::SetDisplayLabel (WStringCR displayLabel)
     {        
-    m_displayLabel = displayLabel;
+    m_validatedName.SetDisplayLabel (displayLabel.c_str());
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -176,7 +173,7 @@ ECObjectsStatus ECProperty::SetIsReadOnly (WCharCP isReadOnly)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECProperty::GetIsDisplayLabelDefined () const
     {
-    return (!m_displayLabel.empty());        
+    return m_validatedName.IsDisplayLabelDefined();
     }
 
 /*---------------------------------------------------------------------------------**//**
