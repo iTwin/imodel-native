@@ -22,6 +22,22 @@ WCharCP IECConnection::GetProviderId () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool IECConnection::IsOpen () const
+    {
+    return _IsOpen ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+IECSchemaManagerCR IECConnection::GetSchemaManager () const
+    {
+    return _GetSchemaManager ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 IECStatementPtr IECConnection::CreateStatement ()
     {
     return _CreateStatement ();
