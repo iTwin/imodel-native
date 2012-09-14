@@ -36,7 +36,7 @@ static  bool        s_noAssert = false;
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECNameValidation::ValidationResult ECNameValidation::Validate (WCharCP name)
     {
-    if (NULL == name)
+    if (NULL == name || 0 == *name)
         return RESULT_NullOrEmpty;
     else if ('0' <= name[0] && '9' >= name[0])
         return RESULT_BeginsWithDigit;
