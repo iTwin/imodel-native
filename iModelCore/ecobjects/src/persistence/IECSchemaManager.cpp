@@ -11,11 +11,17 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus IECSchemaManager::ImportSchema (ECSchemaCR ecSchema)
     {
     return _ImportSchema (ecSchema);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus IECSchemaManager::GetClass (WCharCP schemaFullName, WCharCP className, ECClassP& ecClass) const
     {
     return _GetClass (schemaFullName, className, ecClass);

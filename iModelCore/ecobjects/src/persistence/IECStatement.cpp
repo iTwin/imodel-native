@@ -11,179 +11,244 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-void IECStatement::Dispose ()
-    {
-    _Dispose ();
-    }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus IECStatement::Prepare (Utf8CP ecsql)
     {
     return _Prepare (ecsql);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 bool IECStatement::IsPrepared () const
     {
     return _IsPrepared ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus IECStatement::BindBoolean (int parameterIndex, bool value)
     {
     return _BindBoolean (parameterIndex, value);
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus IECStatement::BindDateTime (int parameterIndex, const SystemTime& value)
     {
     return _BindDateTime (parameterIndex, value);
     }
 
-BentleyStatus IECStatement::BindInt (int parameterIndex, Int32 value)
-    {
-    return _BindInt32 (parameterIndex, value);
-    }
-
-BentleyStatus IECStatement::BindInt (int parameterIndex, Int64 value)
-    {
-    return _BindInt64 (parameterIndex, value);
-    }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus IECStatement::BindDouble (int parameterIndex, double value)
     {
     return _BindDouble (parameterIndex, value);
     }
 
-BentleyStatus IECStatement::BindString (int parameterIndex, Utf8StringCR value, bool makeCopy)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus IECStatement::BindInt (int parameterIndex, Int32 value)
     {
-    return _BindUtf8String (parameterIndex, value, makeCopy);
+    return _BindInt32 (parameterIndex, value);
     }
 
-BentleyStatus IECStatement::BindString (int parameterIndex, Utf8CP value, int length, bool makeCopy)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus IECStatement::BindInt (int parameterIndex, Int64 value)
     {
-    return _BindUtf8 (parameterIndex, value, length, makeCopy);
+    return _BindInt64 (parameterIndex, value);
     }
 
-BentleyStatus IECStatement::BindBinary (int parameterIndex, const void* value, int binarySize, bool makeCopy)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus IECStatement::BindString (int parameterIndex, Utf8CP value, int charCount, CopyArgumentOptions makeCopy)
+    {
+    return _BindUtf8 (parameterIndex, value, charCount, makeCopy);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus IECStatement::BindString (int parameterIndex, WCharCP value, CopyArgumentOptions makeCopy)
+    {
+    return _BindString (parameterIndex, value, makeCopy);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus IECStatement::BindBinary (int parameterIndex, const void* value, int binarySize, CopyArgumentOptions makeCopy)
     {
     return _BindBinary (parameterIndex, value, binarySize, makeCopy);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus IECStatement::BindPoint (int parameterIndex, DPoint2dCR value)
     {
     return _BindDPoint2d (parameterIndex, value);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus IECStatement::BindPoint (int parameterIndex, DPoint3dCR value)
     {
     return _BindDPoint3d (parameterIndex, value);
     }
 
-BentleyStatus IECStatement::BindStruct (int parameterIndex, const void* value)
-    {
-    return _BindStruct (parameterIndex, value);
-    }
-
-BentleyStatus IECStatement::BindArray (int parameterIndex, const void* value)
-    {
-    return _BindArray (parameterIndex, value);
-    }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus IECStatement::BindNull (int parameterIndex)
     {
     return _BindNull (parameterIndex);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus IECStatement::ClearBindings ()
     {
     return _ClearBindings ();
     }
 
-ECStepStatus IECStatement::Step (int* rowsAffected)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+IECStatement::StepStatus IECStatement::Step (int* rowsAffected)
     {
     return _Step (rowsAffected);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus IECStatement::Reset ()
     {
     return _Reset ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 int IECStatement::GetPropertyCount () const
     {
     return _GetPropertyCount ();
     }
 
-BentleyStatus IECStatement::GetType (int propertyIndex, ECTypeDescriptor*& ecType) const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyCP IECStatement::GetProperty (int propertyIndex) const
     {
-    return _GetType (propertyIndex, ecType);
+    return _GetProperty (propertyIndex);
     }
 
-BentleyStatus IECStatement::GetProperty (int propertyIndex, ECPropertyP& ecProperty) const
-    {
-    return _GetProperty (propertyIndex, ecProperty);
-    }
-
-BentleyStatus IECStatement::GetClass (int propertyIndex, ECClassP& ecClass) const
-    {
-    return _GetClass (propertyIndex, ecClass);
-    }
-
-WStringCR IECStatement::GetInstanceId () const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCP IECStatement::GetInstanceId () const
     {
     return _GetInstanceId ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 bool IECStatement::IsNull (int propertyIndex) const
     {
     return _IsNull (propertyIndex);
     }
 
-bool IECStatement::GetBooleanValue (int propertyIndex) const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IECStatement::GetBooleanValue (int propertyIndex, ValueStatus* valueStatus) const
     {
-    return _GetBooleanValue (propertyIndex);
+    return _GetBooleanValue (propertyIndex, valueStatus);
     }
 
-SystemTimeCR IECStatement::GetDateTimeValue (int propertyIndex) const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+SystemTimeCP IECStatement::GetDateTimeValue (int propertyIndex, ValueStatus* valueStatus) const
     {
-    return _GetDateTimeValue (propertyIndex);
+    return _GetDateTimeValue (propertyIndex, valueStatus);
     }
 
-Int32 IECStatement::GetInt32Value (int propertyIndex) const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+Int32 IECStatement::GetInt32Value (int propertyIndex, ValueStatus* valueStatus) const
     {
-    return _GetInt32Value (propertyIndex);
+    return _GetInt32Value (propertyIndex, valueStatus);
     }
 
-Int64 IECStatement::GetInt64Value (int propertyIndex) const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+Int64 IECStatement::GetInt64Value (int propertyIndex, ValueStatus* valueStatus) const
     {
-    return _GetInt64Value (propertyIndex);
+    return _GetInt64Value (propertyIndex, valueStatus);
     }
 
-double IECStatement::GetDoubleValue (int propertyIndex) const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+double IECStatement::GetDoubleValue (int propertyIndex, ValueStatus* valueStatus) const
     {
-    return _GetDoubleValue (propertyIndex);
+    return _GetDoubleValue (propertyIndex, valueStatus);
     }
 
-Utf8StringCR IECStatement::GetUtf8StringValue (int propertyIndex) const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP IECStatement::GetStringValue (int propertyIndex, ValueStatus* valueStatus) const
     {
-    return _GetUtf8StringValue (propertyIndex);
+    return _GetStringValue (propertyIndex, valueStatus);
     }
 
-Utf8CP IECStatement::GetUtf8Value (int propertyIndex) const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP IECStatement::GetUtf8Value (int propertyIndex, ValueStatus* valueStatus) const
     {
-    return _GetUtf8Value (propertyIndex);
+    return _GetUtf8Value (propertyIndex, valueStatus);
     }
 
-const void* IECStatement::GetBinaryValue (int propertyIndex, int& binarySize) const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+const void* IECStatement::GetBinaryValue (int propertyIndex, int& binarySize, ValueStatus* valueStatus) const
     {
-    return _GetBinaryValue (propertyIndex, binarySize);
+    return _GetBinaryValue (propertyIndex, binarySize, valueStatus);
     }
 
-DPoint2dCR IECStatement::GetDPoint2dValue (int propertyIndex) const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint2dCP IECStatement::GetDPoint2dValue (int propertyIndex, ValueStatus* valueStatus) const
     {
-    return _GetDPoint2dValue (propertyIndex);
+    return _GetDPoint2dValue (propertyIndex, valueStatus);
     }
 
-DPoint3dCR IECStatement::GetDPoint3dValue (int propertyIndex) const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint3dCP IECStatement::GetDPoint3dValue (int propertyIndex, ValueStatus* valueStatus) const
     {
-    return _GetDPoint3dValue (propertyIndex);
+    return _GetDPoint3dValue (propertyIndex, valueStatus);
     }
 
 
