@@ -88,7 +88,7 @@ private:
     ECPERSISTENCE_EXPORT virtual int _GetPropertyCount () const = 0;
     ECPERSISTENCE_EXPORT virtual ECPropertyCP _GetProperty (int propertyIndex) const = 0;
 
-    ECPERSISTENCE_EXPORT virtual WStringCP _GetInstanceId (ValueStatus* valueStatus = nullptr) const = 0;
+    ECPERSISTENCE_EXPORT virtual WStringCP _GetInstanceId (ValueStatus* valueStatus = NULL) const = 0;
 
     ECPERSISTENCE_EXPORT virtual bool _IsNull (int propertyIndex, ValueStatus* valueStatus) const = 0;
     ECPERSISTENCE_EXPORT virtual bool _GetBooleanValue (int propertyIndex, ValueStatus* valueStatus) const = 0;
@@ -152,7 +152,7 @@ public:
     //! @return STEPSTATUS_HASROW each time a new row of data is ready for processing by the caller (only if statement returned any data (SELECT statements).
     //!         STEPSTATUS_DONE if no further rows exist in the result or if a non-query statement (INSERT, UPDATE, DELETE) was successfully executed.
     //!         STEPSTATUS_ERROR if any error occurred while executing the statement or stepping through the results.
-    ECPERSISTENCE_EXPORT StepStatus Step (int* rowsAffected = nullptr);
+    ECPERSISTENCE_EXPORT StepStatus Step (int* rowsAffected = NULL);
 
     ECPERSISTENCE_EXPORT BentleyStatus Reset ();
 
@@ -168,20 +168,20 @@ public:
 
 
     //Read values
-    ECPERSISTENCE_EXPORT WStringCP GetInstanceId (ValueStatus* valueStatus = nullptr) const;
+    ECPERSISTENCE_EXPORT WStringCP GetInstanceId (ValueStatus* valueStatus = NULL) const;
 
-    ECPERSISTENCE_EXPORT bool IsNull (int propertyIndex, ValueStatus* valueStatus = nullptr) const;
+    ECPERSISTENCE_EXPORT bool IsNull (int propertyIndex, ValueStatus* valueStatus = NULL) const;
 
-    ECPERSISTENCE_EXPORT bool GetBooleanValue (int propertyIndex, ValueStatus* valueStatus = nullptr) const;
-    ECPERSISTENCE_EXPORT SystemTimeCP GetDateTimeValue (int propertyIndex, ValueStatus* valueStatus = nullptr) const;
-    ECPERSISTENCE_EXPORT double GetDoubleValue (int propertyIndex, ValueStatus* valueStatus = nullptr) const;
-    ECPERSISTENCE_EXPORT Int32 GetInt32Value (int propertyIndex, ValueStatus* valueStatus = nullptr) const;
-    ECPERSISTENCE_EXPORT Int64 GetInt64Value (int propertyIndex, ValueStatus* valueStatus = nullptr) const;
-    ECPERSISTENCE_EXPORT WCharCP GetStringValue (int propertyIndex, ValueStatus* valueStatus = nullptr) const;
-    ECPERSISTENCE_EXPORT Utf8CP GetUtf8Value (int propertyIndex, ValueStatus* valueStatus = nullptr) const;
-    ECPERSISTENCE_EXPORT const void* GetBinaryValue (int propertyIndex, int& binarySize, ValueStatus* valueStatus = nullptr) const;
-    ECPERSISTENCE_EXPORT DPoint2dCP GetDPoint2dValue (int propertyIndex, ValueStatus* valueStatus = nullptr) const;
-    ECPERSISTENCE_EXPORT DPoint3dCP GetDPoint3dValue (int propertyIndex, ValueStatus* valueStatus = nullptr) const;
+    ECPERSISTENCE_EXPORT bool GetBooleanValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
+    ECPERSISTENCE_EXPORT SystemTimeCP GetDateTimeValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
+    ECPERSISTENCE_EXPORT double GetDoubleValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
+    ECPERSISTENCE_EXPORT Int32 GetInt32Value (int propertyIndex, ValueStatus* valueStatus = NULL) const;
+    ECPERSISTENCE_EXPORT Int64 GetInt64Value (int propertyIndex, ValueStatus* valueStatus = NULL) const;
+    ECPERSISTENCE_EXPORT WCharCP GetStringValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
+    ECPERSISTENCE_EXPORT Utf8CP GetUtf8Value (int propertyIndex, ValueStatus* valueStatus = NULL) const;
+    ECPERSISTENCE_EXPORT const void* GetBinaryValue (int propertyIndex, int& binarySize, ValueStatus* valueStatus = NULL) const;
+    ECPERSISTENCE_EXPORT DPoint2dCP GetDPoint2dValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
+    ECPERSISTENCE_EXPORT DPoint3dCP GetDPoint3dValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
 
     //TODO: return geometries, structs and arrays
     };
