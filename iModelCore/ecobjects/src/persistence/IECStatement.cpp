@@ -38,9 +38,9 @@ BentleyStatus IECStatement::BindBoolean (int parameterIndex, bool value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus IECStatement::BindDateTime (int parameterIndex, const SystemTime& value)
+BentleyStatus IECStatement::BindDateTime (int parameterIndex, const SystemTime& value, CopyArgumentOptions makeCopy)
     {
-    return _BindDateTime (parameterIndex, value);
+    return _BindDateTime (parameterIndex, value, makeCopy);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -94,17 +94,17 @@ BentleyStatus IECStatement::BindBinary (int parameterIndex, const void* value, i
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus IECStatement::BindPoint (int parameterIndex, DPoint2dCR value)
+BentleyStatus IECStatement::BindPoint (int parameterIndex, DPoint2dCR value, CopyArgumentOptions makeCopy)
     {
-    return _BindDPoint2d (parameterIndex, value);
+    return _BindDPoint2d (parameterIndex, value, makeCopy);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus IECStatement::BindPoint (int parameterIndex, DPoint3dCR value)
+BentleyStatus IECStatement::BindPoint (int parameterIndex, DPoint3dCR value, CopyArgumentOptions makeCopy)
     {
-    return _BindDPoint3d (parameterIndex, value);
+    return _BindDPoint3d (parameterIndex, value, makeCopy);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -158,17 +158,17 @@ ECPropertyCP IECStatement::GetProperty (int propertyIndex) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCP IECStatement::GetInstanceId () const
+WStringCP IECStatement::GetInstanceId (ValueStatus* valueStatus) const
     {
-    return _GetInstanceId ();
+    return _GetInstanceId (valueStatus);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IECStatement::IsNull (int propertyIndex) const
+bool IECStatement::IsNull (int propertyIndex, ValueStatus* valueStatus) const
     {
-    return _IsNull (propertyIndex);
+    return _IsNull (propertyIndex, valueStatus);
     }
 
 /*---------------------------------------------------------------------------------**//**

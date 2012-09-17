@@ -69,15 +69,15 @@ private:
     ECPERSISTENCE_EXPORT virtual bool _IsPrepared () const = 0;
 
     ECPERSISTENCE_EXPORT virtual BentleyStatus _BindBoolean (int parameterIndex, bool value) = 0;
-    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindDateTime (int parameterIndex, const SystemTime& value) = 0;
+    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindDateTime (int parameterIndex, const SystemTime& value, CopyArgumentOptions makeCopy) = 0;
     ECPERSISTENCE_EXPORT virtual BentleyStatus _BindDouble (int parameterIndex, double value) = 0;
     ECPERSISTENCE_EXPORT virtual BentleyStatus _BindInt32 (int parameterIndex, Int32 value) = 0;
     ECPERSISTENCE_EXPORT virtual BentleyStatus _BindInt64 (int parameterIndex, Int64 value) = 0;
     ECPERSISTENCE_EXPORT virtual BentleyStatus _BindUtf8 (int parameterIndex, Utf8CP value, int charCount, CopyArgumentOptions makeCopy) = 0;
     ECPERSISTENCE_EXPORT virtual BentleyStatus _BindString (int parameterIndex, WCharCP value, CopyArgumentOptions makeCopy) = 0;
     ECPERSISTENCE_EXPORT virtual BentleyStatus _BindBinary (int parameterIndex, const void* value, int binarySize, CopyArgumentOptions makeCopy) = 0;
-    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindDPoint2d (int parameterIndex, DPoint2dCR value) = 0;
-    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindDPoint3d (int parameterIndex, DPoint3dCR value) = 0;
+    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindDPoint2d (int parameterIndex, DPoint2dCR value, CopyArgumentOptions makeCopy) = 0;
+    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindDPoint3d (int parameterIndex, DPoint3dCR value, CopyArgumentOptions makeCopy) = 0;
     ECPERSISTENCE_EXPORT virtual BentleyStatus _BindNull (int parameterIndex) = 0;
     ECPERSISTENCE_EXPORT virtual BentleyStatus _ClearBindings () = 0;
 
@@ -88,9 +88,9 @@ private:
     ECPERSISTENCE_EXPORT virtual int _GetPropertyCount () const = 0;
     ECPERSISTENCE_EXPORT virtual ECPropertyCP _GetProperty (int propertyIndex) const = 0;
 
-    ECPERSISTENCE_EXPORT virtual WStringCP _GetInstanceId () const = 0;
+    ECPERSISTENCE_EXPORT virtual WStringCP _GetInstanceId (ValueStatus* valueStatus = nullptr) const = 0;
 
-    ECPERSISTENCE_EXPORT virtual bool _IsNull (int propertyIndex) const = 0;
+    ECPERSISTENCE_EXPORT virtual bool _IsNull (int propertyIndex, ValueStatus* valueStatus) const = 0;
     ECPERSISTENCE_EXPORT virtual bool _GetBooleanValue (int propertyIndex, ValueStatus* valueStatus) const = 0;
     ECPERSISTENCE_EXPORT virtual SystemTimeCP _GetDateTimeValue (int propertyIndex, ValueStatus* valueStatus) const = 0;
     ECPERSISTENCE_EXPORT virtual double _GetDoubleValue (int propertyIndex, ValueStatus* valueStatus) const = 0;
@@ -118,7 +118,7 @@ public:
     //! @return SUCCESS or ERROR
     //**TODO**: Is SystemTime acceptable as type? It seems independent of anything else in ECObjects. But how can we
     //ensure that it remains independent in future?
-    ECPERSISTENCE_EXPORT BentleyStatus BindDateTime (int parameterIndex, const SystemTime& value);
+    ECPERSISTENCE_EXPORT BentleyStatus BindDateTime (int parameterIndex, const SystemTime& value, CopyArgumentOptions makeCopy);
     ECPERSISTENCE_EXPORT BentleyStatus BindDouble (int parameterIndex, double value);
     ECPERSISTENCE_EXPORT BentleyStatus BindInt (int parameterIndex, Int32 value);
     ECPERSISTENCE_EXPORT BentleyStatus BindInt (int parameterIndex, Int64 value);
@@ -134,8 +134,8 @@ public:
     //! @return SUCCESS or ERROR
     ECPERSISTENCE_EXPORT BentleyStatus BindBinary (int parameterIndex, const void* value, int binarySize, CopyArgumentOptions makeCopy);
 
-    ECPERSISTENCE_EXPORT BentleyStatus BindPoint (int parameterIndex, DPoint2dCR value);
-    ECPERSISTENCE_EXPORT BentleyStatus BindPoint (int parameterIndex, DPoint3dCR value);
+    ECPERSISTENCE_EXPORT BentleyStatus BindPoint (int parameterIndex, DPoint2dCR value, CopyArgumentOptions makeCopy);
+    ECPERSISTENCE_EXPORT BentleyStatus BindPoint (int parameterIndex, DPoint3dCR value, CopyArgumentOptions makeCopy);
 
     ECPERSISTENCE_EXPORT BentleyStatus BindNull (int parameterIndex);
 
@@ -168,9 +168,9 @@ public:
 
 
     //Read values
-    ECPERSISTENCE_EXPORT WStringCP GetInstanceId () const;
+    ECPERSISTENCE_EXPORT WStringCP GetInstanceId (ValueStatus* valueStatus = nullptr) const;
 
-    ECPERSISTENCE_EXPORT bool IsNull (int propertyIndex) const;
+    ECPERSISTENCE_EXPORT bool IsNull (int propertyIndex, ValueStatus* valueStatus = nullptr) const;
 
     ECPERSISTENCE_EXPORT bool GetBooleanValue (int propertyIndex, ValueStatus* valueStatus = nullptr) const;
     ECPERSISTENCE_EXPORT SystemTimeCP GetDateTimeValue (int propertyIndex, ValueStatus* valueStatus = nullptr) const;
