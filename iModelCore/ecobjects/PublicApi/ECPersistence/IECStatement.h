@@ -179,7 +179,7 @@ public:
     ECPERSISTENCE_EXPORT Int64 GetInt64Value (int propertyIndex, ValueStatus* valueStatus = nullptr) const;
     ECPERSISTENCE_EXPORT WCharCP GetStringValue (int propertyIndex, ValueStatus* valueStatus = nullptr) const;
     ECPERSISTENCE_EXPORT Utf8CP GetUtf8Value (int propertyIndex, ValueStatus* valueStatus = nullptr) const;
-    ECPERSISTENCE_EXPORT const void* GetBinaryValue (int propertyIndex, int& binarySize ,ValueStatus* valueStatus = nullptr) const;
+    ECPERSISTENCE_EXPORT const void* GetBinaryValue (int propertyIndex, int& binarySize, ValueStatus* valueStatus = nullptr) const;
     ECPERSISTENCE_EXPORT DPoint2dCP GetDPoint2dValue (int propertyIndex, ValueStatus* valueStatus = nullptr) const;
     ECPERSISTENCE_EXPORT DPoint3dCP GetDPoint3dValue (int propertyIndex, ValueStatus* valueStatus = nullptr) const;
 
