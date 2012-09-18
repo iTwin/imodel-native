@@ -120,8 +120,8 @@ public:
     //ensure that it remains independent in future?
     ECPERSISTENCE_EXPORT BentleyStatus BindDateTime (int parameterIndex, const SystemTime& value, CopyArgumentOptions makeCopy);
     ECPERSISTENCE_EXPORT BentleyStatus BindDouble (int parameterIndex, double value);
-    ECPERSISTENCE_EXPORT BentleyStatus BindInt (int parameterIndex, Int32 value);
-    ECPERSISTENCE_EXPORT BentleyStatus BindInt (int parameterIndex, Int64 value);
+    ECPERSISTENCE_EXPORT BentleyStatus BindInt32 (int parameterIndex, Int32 value);
+    ECPERSISTENCE_EXPORT BentleyStatus BindInt64 (int parameterIndex, Int64 value);
     //TODO: also allow to bind WStrings and WCharP?
     ECPERSISTENCE_EXPORT BentleyStatus BindString (int parameterIndex, Utf8CP value, int charCount, CopyArgumentOptions makeCopy);
     ECPERSISTENCE_EXPORT BentleyStatus BindString (int parameterIndex, WCharCP value, CopyArgumentOptions makeCopy);
