@@ -220,13 +220,13 @@ struct UICommand : public IUICommand
 struct ECPresentationCommandProvider
     {
     protected:
-        virtual bvector<UICommandPtr> _GetCommand (IAUIDataContextCR instance) const = 0;
+        virtual bvector<UICommandPtr> _GetCommand (IAUIDataContextCR instance, int purpose) const = 0;
     
     public:
 
         virtual ~ECPresentationCommandProvider() {}
 
-        ECOBJECTS_EXPORT bvector<UICommandPtr> GetCommand (IAUIDataContextCR instance) const;
+        ECOBJECTS_EXPORT bvector<UICommandPtr> GetCommand (IAUIDataContextCR instance, int purpose) const;
     };
 
 
