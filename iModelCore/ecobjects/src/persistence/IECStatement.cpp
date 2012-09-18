@@ -54,7 +54,7 @@ BentleyStatus IECStatement::BindDouble (int parameterIndex, double value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus IECStatement::BindInt (int parameterIndex, Int32 value)
+BentleyStatus IECStatement::BindInt32 (int parameterIndex, Int32 value)
     {
     return _BindInt32 (parameterIndex, value);
     }
@@ -62,7 +62,7 @@ BentleyStatus IECStatement::BindInt (int parameterIndex, Int32 value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus IECStatement::BindInt (int parameterIndex, Int64 value)
+BentleyStatus IECStatement::BindInt64 (int parameterIndex, Int64 value)
     {
     return _BindInt64 (parameterIndex, value);
     }
