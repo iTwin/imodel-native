@@ -41,7 +41,7 @@ static int      randomValue  ()
     // includes low, excludes high.
     int     randomNum = rand();
     int     range = high - low;
-    return  low + (int) ( (double) range * (double) randomNum / (double) (RAND_MAX + 1));
+    return  low + (int) ( (double) range * (double) randomNum / ((double)RAND_MAX + 1));
     }
 
 /*---------------------------------------------------------------------------------**//**
