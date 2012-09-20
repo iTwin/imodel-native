@@ -29,10 +29,11 @@ enum PropertyFlagIndex : UInt8
     PROPERTYFLAGINDEX_IsDirty  = 1
     };
 
-enum MemoryInstanceUsageBitmask : UInt16
+enum MemoryInstanceUsageBitmask : UInt32
     {
     MEMORYINSTANCEUSAGE_Empty              = 0x0000,
-    MEMORYINSTANCEUSAGE_IsPartiallyLoaded  = 0x0001
+    MEMORYINSTANCEUSAGE_IsPartiallyLoaded  = 0x0001,
+    MEMORYINSTANCEUSAGE_IsHidden           = 0x0002     // currently used only by ECXAInstance
     };
 
 typedef int StructValueIdentifier;
@@ -83,7 +84,7 @@ private:
     MemoryECInstanceBase const* m_parentInstance;
     StructValueIdentifier   m_structValueId;
     bool                    m_usingSharedMemory;
-    UInt16                  m_usageBitmask;  // currently only used to round trip Partially Load flag
+    UInt16                  m_usageBitmask;  // currently only used to round trip Partially Loaded and Hidden flags
 
     IECInstancePtr          GetStructArrayInstance (StructValueIdentifier structValueId) const;
     StructArrayEntry const* GetAddressOfStructArrayEntry (StructValueIdentifier key) const;
@@ -157,6 +158,8 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT void                     SetUsageBitmask (UInt16 mask);
     ECOBJECTS_EXPORT void                     SetPartiallyLoaded (bool set);
     ECOBJECTS_EXPORT bool                     IsPartiallyLoaded ();
+    ECOBJECTS_EXPORT void                     SetHiddenInstance (bool set);
+    ECOBJECTS_EXPORT bool                     IsHiddenInstance ();
 };
 
 /*=================================================================================**//**

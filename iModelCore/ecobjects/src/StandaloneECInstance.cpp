@@ -777,6 +777,26 @@ bool           MemoryECInstanceBase::IsPartiallyLoaded ()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            MemoryECInstanceBase::SetHiddenInstance (bool set)
+    {
+    if (set)
+        m_usageBitmask = m_usageBitmask | (UInt16)MEMORYINSTANCEUSAGE_IsHidden;
+    else 
+        m_usageBitmask = m_usageBitmask & (~(UInt16)MEMORYINSTANCEUSAGE_IsHidden); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Currently only used by ECXA Instance serialization/deserialization
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool           MemoryECInstanceBase::IsHiddenInstance ()
+    {
+    return  0 != (m_usageBitmask & (UInt16)MEMORYINSTANCEUSAGE_IsHidden); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * This is used when copying properties from partial instance for instance update processing
 * @bsimethod                                    Bill.Steinbock                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
