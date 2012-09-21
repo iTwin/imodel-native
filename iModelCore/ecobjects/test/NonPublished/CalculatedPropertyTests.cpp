@@ -316,5 +316,44 @@ TEST_F (CalculatedPropertyTests, SetValue)
     TestUpdate (*instance, L"1234", valueList);
     }
 
+TEST_F (CalculatedPropertyTests, SerializeAndDeserializeInstanceWithCalculatedProperties)
+    {
+    IECInstancePtr instance = CreateTestCase(L"S", L"this.S1 & \", \" & this.S2", 0, L"ERROR", L"(?<S1>.*), (?<S2>.*)");
+    SetValue(*instance, L"S1", L"string1");
+    SetValue(*instance, L"S2", L"string2");
+    Test(*instance, L"S", L"string1, string2"); 
+
+    WString ecInstanceXml;
+
+    InstanceWriteStatus status2 = instance->WriteToXmlString(ecInstanceXml, true, false);
+    EXPECT_EQ(INSTANCE_WRITE_STATUS_Success, status2);
+
+    IECInstancePtr deserializedInstance;
+    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext (instance->GetClass().GetSchema());
+
+    InstanceReadStatus status3 = IECInstance::ReadFromXmlString(deserializedInstance, ecInstanceXml.c_str(), *instanceContext);
+    EXPECT_EQ (INSTANCE_READ_STATUS_Success, status3); 
+
+
+    }
+
+TEST_F (CalculatedPropertyTests, SerializeAndDeserializeInstanceWithFailedCalculatedProperties)
+    {
+    IECInstancePtr instance = CreateTestCase(L"S", L"this.S1 & \", \" & this.S2", 0, L"ERROR", L"(?<S1>.*), (?<S2>.*)");
+    Test(*instance, L"S", L"ERROR"); 
+
+    WString ecInstanceXml;
+
+    InstanceWriteStatus status2 = instance->WriteToXmlString(ecInstanceXml, true, false);
+    EXPECT_EQ(INSTANCE_WRITE_STATUS_Success, status2);
+
+    IECInstancePtr deserializedInstance;
+    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext (instance->GetClass().GetSchema());
+
+    InstanceReadStatus status3 = IECInstance::ReadFromXmlString(deserializedInstance, ecInstanceXml.c_str(), *instanceContext);
+    EXPECT_EQ (INSTANCE_READ_STATUS_Success, status3); 
+
+
+    }
 END_BENTLEY_EC_NAMESPACE
 

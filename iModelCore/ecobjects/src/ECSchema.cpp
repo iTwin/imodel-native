@@ -32,18 +32,23 @@ extern ECObjectsStatus GetSchemaFileName (WStringR fullFileName, UInt32& foundVe
 static  bool        s_noAssert = false;
 
 /*---------------------------------------------------------------------------------**//**
-* Currently this is only used by ECValidatedName and ECSchema.
 * @bsimethod                                                    Paul.Connelly   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ECNameValidation
+ECNameValidation::ValidationResult ECNameValidation::Validate (WCharCP name)
     {
-private:
-    static void AppendEncodedCharacter (WStringR encoded, WChar c);
-    static bool IsValidAlphaNumericCharacter (WChar c);
-public:
-    static bool EncodeToValidName (WStringR encoded, WStringCR name);
-    static bool DecodeFromValidName (WStringR decoded, WStringCR name);
-    };
+    if (NULL == name || 0 == *name)
+        return RESULT_NullOrEmpty;
+    else if ('0' <= name[0] && '9' >= name[0])
+        return RESULT_BeginsWithDigit;
+    else
+        {
+        for (WCharCP cur = name; *cur; ++cur)
+            if (!IsValidAlphaNumericCharacter (*cur))
+                return RESULT_IncludesInvalidCharacters;
+        }
+
+    return RESULT_Valid;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/12

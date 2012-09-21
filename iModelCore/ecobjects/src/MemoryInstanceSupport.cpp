@@ -2681,6 +2681,20 @@ ECObjectsStatus       MemoryInstanceSupport::SetValueToMemory (ECValueCR v, Clas
     }     
     
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus MemoryInstanceSupport::SetInternalValueToMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, ECValueCR v, bool useIndex, UInt32 index)
+    {
+    if (!useIndex && propertyLayout.GetTypeDescriptor().IsPrimitive())
+        {
+        // It may have a calculated property specification - make sure we don't try to evaluate the specification or apply value to dependent properties
+        return SetPrimitiveValueToMemory (v, classLayout, propertyLayout, false, 0, true);
+        }
+    else
+        return useIndex ? SetValueToMemory (v, classLayout, propertyLayout, index) : SetValueToMemory (v, classLayout, propertyLayout);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus       MemoryInstanceSupport::SetValueToMemory (ClassLayoutCR classLayout, WCharCP propertyAccessString, ECValueCR v, bool useIndex, UInt32 index)

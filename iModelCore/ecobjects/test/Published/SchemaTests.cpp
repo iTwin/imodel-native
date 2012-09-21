@@ -1952,4 +1952,24 @@ TEST_F (ECNameValidationTest, DisplayLabels)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECNameValidationTest, Validate)
+    {
+#define EXPECT_VALIDATION_RESULT(RESULTTOEXPECT, NAMETOTEST) EXPECT_EQ (ECNameValidation::RESULT_ ## RESULTTOEXPECT, ECNameValidation::Validate (NAMETOTEST))
+    EXPECT_VALIDATION_RESULT(Valid, L"ThisIsAValidName");
+    EXPECT_VALIDATION_RESULT(Valid, L"_123");
+    EXPECT_VALIDATION_RESULT(Valid, L"___");
+    EXPECT_VALIDATION_RESULT(Valid, L"A123");
+
+    EXPECT_VALIDATION_RESULT(NullOrEmpty, L"");
+    EXPECT_VALIDATION_RESULT(NullOrEmpty, NULL);
+
+    EXPECT_VALIDATION_RESULT(BeginsWithDigit, L"1_C");
+
+    EXPECT_VALIDATION_RESULT(IncludesInvalidCharacters, L"!ABC");
+    EXPECT_VALIDATION_RESULT(IncludesInvalidCharacters, L"ABC@");
+    }
+
 END_BENTLEY_EC_NAMESPACE

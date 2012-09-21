@@ -233,14 +233,14 @@ struct ECPresentationCommandProvider
 
 //__PUBLISH_SECTION_END__
     protected:
-        virtual void _GetCommand (bvector<IUICommandPtr>&commands, IAUIDataContextCR instance) = 0;
+        virtual void _GetCommand (bvector<IUICommandPtr>&commands, IAUIDataContextCR instance, int purpose)) = 0;
     
 //__PUBLISH_SECTION_START__
     public:
 
         virtual ~ECPresentationCommandProvider() {}
 
-        ECOBJECTS_EXPORT void GetCommand (bvector<IUICommandPtr>&commands, IAUIDataContextCR instance);
+        ECOBJECTS_EXPORT void GetCommand (bvector<IUICommandPtr>&commands, IAUIDataContextCR instance, int purpose));
     };
 
 

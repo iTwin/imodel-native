@@ -162,6 +162,14 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_SetValue (UInt32 pr
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus StandaloneECRelationshipInstance::_SetInternalValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
+    {
+    return SetValueInternal (propertyIndex, v, useArrayIndex, arrayIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECRelationshipInstance::_InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size)
