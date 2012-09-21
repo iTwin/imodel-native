@@ -5,8 +5,11 @@
 |  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
+
+#pragma once
+
+#include <Geom/GeomApi.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -81,7 +84,7 @@ struct  ECPresentationManager: public NonCopyableClass
 
     //! Get the list of commands that is associated with this data context. Its a union of all commands provided by 
     //! different command providers.
-    ECOBJECTS_EXPORT bvector<UICommandPtr>              GetCommands (IAUIDataContextCR instance) const;
+    ECOBJECTS_EXPORT void                               GetCommands (bvector<IUICommandPtr>& commands, IAUIDataContextCR instance) const;
 
     //! Fetch an image of the specified size and name from the image providers.
     ECOBJECTS_EXPORT IECNativeImagePtr                  GetImage (ECImageKeyCR imageKey, DPoint2dCR size);

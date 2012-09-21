@@ -482,10 +482,11 @@ static ECObjectsStatus getECValueFromInstance (ECValueR v, IECInstanceCR instanc
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 static ECObjectsStatus          getValueHelper (ECValueR value, IECInstanceCR instance, ECValueAccessorCR accessor, UInt32 depth, bool compatible)
     {
-    int arrayIndex = accessor[depth].arrayIndex;
+    ECValueAccessor::Location const& loc = accessor[depth];
+    int arrayIndex = loc.arrayIndex;
     if (compatible)
         {
-        UInt32 propertyIndex = (UInt32)accessor[depth].propertyIndex;
+        UInt32 propertyIndex = (UInt32)loc.propertyIndex;
         if (arrayIndex < 0)
             return instance.GetValue (value, propertyIndex);
         return instance.GetValue (value, propertyIndex,  (UInt32)arrayIndex);
@@ -1681,7 +1682,7 @@ ECObjectsStatus                 IECInstance::InsertArrayElements (WCharCP proper
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus                 IECInstance::AddArrayElements (WCharCP propertyAccessString, UInt32 size)
+EC_INLINE ECObjectsStatus                 IECInstance::AddArrayElements (WCharCP propertyAccessString, UInt32 size)
     {
     return _AddArrayElements (propertyAccessString, size);
     }        

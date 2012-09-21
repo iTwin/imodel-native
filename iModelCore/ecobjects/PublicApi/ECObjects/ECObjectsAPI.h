@@ -79,3 +79,8 @@
 // This define is checked from the ECObjects Published ATPs to ensure that they are building against the published header files.
 #define NON_PUBLISHED_HEADER_INCLUDED
 
+#if defined (NDEBUG) && !defined (ANDROID)
+    #define EC_INLINE inline
+#else
+    #define EC_INLINE
+#endif

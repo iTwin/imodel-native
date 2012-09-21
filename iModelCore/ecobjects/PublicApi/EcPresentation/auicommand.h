@@ -14,6 +14,8 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
+typedef RefCountedPtr<IUICommand> IUICommandPtr;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -113,6 +115,8 @@ struct IUICommand : public RefCountedBase
         virtual EditActionPriority  _GetPriority () const {return EDITACTION_PRIORITY_UserCommon;}
         virtual void                _SetPriority (EditActionPriority priority) {}
 
+        virtual void                _GetChildren(bvector<IUICommandPtr>& children) {}
+
 //__PUBLISH_SECTION_START__
     public:
         //!virtual destructor.
@@ -154,9 +158,11 @@ struct IUICommand : public RefCountedBase
         +---------------+---------------+---------------+---------------+---------------+------*/
         ECOBJECTS_EXPORT EditActionPriority GetPriority () const;
         ECOBJECTS_EXPORT void               SetPriority (EditActionPriority priority);
+
+        ECOBJECTS_EXPORT void               GetChildren (bvector<IUICommandPtr>& children);
     };
 
-typedef RefCountedPtr<UICommand> UICommandPtr;
+
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -227,14 +233,14 @@ struct ECPresentationCommandProvider
 
 //__PUBLISH_SECTION_END__
     protected:
-        virtual void _GetCommand (bvector<UICommandPtr>&commands, IAUIDataContextCR instance) = 0;
+        virtual void _GetCommand (bvector<IUICommandPtr>&commands, IAUIDataContextCR instance) = 0;
     
 //__PUBLISH_SECTION_START__
     public:
 
         virtual ~ECPresentationCommandProvider() {}
 
-        ECOBJECTS_EXPORT void GetCommand (bvector<UICommandPtr>&commands, IAUIDataContextCR instance);
+        ECOBJECTS_EXPORT void GetCommand (bvector<IUICommandPtr>&commands, IAUIDataContextCR instance);
     };
 
 

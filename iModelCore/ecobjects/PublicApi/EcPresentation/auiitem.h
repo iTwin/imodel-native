@@ -83,7 +83,7 @@ struct  IAUIItemInfo
 //! provider, and data context work in unison to describe the UI.
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct  IAUIDataContext // Query
+struct  IAUIDataContext 
     {
     //!Describes the different type of context available to the user
     enum ContextType
@@ -96,6 +96,8 @@ struct  IAUIDataContext // Query
         DgnECInstanceCollection = 1<<3,
         DgnHitPathInfo          = 1<<4,
         DgnActionItemInfoType   = DgnECInstanceCollection | DgnHitPathInfo,
+        ECGroupingNode          = 1<<5,
+        NodeCollection          = 1<<6,
         };
     
     //! Get context type which can be used to call the appropriate Get function
@@ -105,7 +107,7 @@ struct  IAUIDataContext // Query
     virtual IECInstanceP            GetInstance () const {return NULL;}
     virtual void*                   GetCustomData() const {return NULL;}
     virtual ECInstanceIterableCP    GetInstanceIterable () const {return NULL;}
-
+    virtual WString                 GetMoniker () const {return NULL;}
     ECOBJECTS_EXPORT ContextType    GetContextType () const;
     //!Virtual destructor
     virtual ~IAUIDataContext () {}
@@ -120,13 +122,13 @@ struct ECInstanceIterableDataContext: public IAUIDataContext
     {
     private:
     ECInstanceIterable m_data;
-
+    virtual ContextType             _GetContextType() const override {return ECInstanceCollection;}
     public:
         ECInstanceIterableDataContext (ECInstanceIterable const& data)
             :m_data(data)
             {}
-        virtual ContextType             GetContextType() const {return ECInstanceCollection;}
-        virtual ECInstanceIterableCP    GetInstanceIterable () const {return &m_data;}
+        
+        virtual ECInstanceIterableCP    GetInstanceIterable () const override{return &m_data;}
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -189,5 +191,7 @@ struct  ECNodeCollectionDataContext : public IAUIDataContext
         virtual void*                   GetCustomData() const {return m_customData;}
     };
 
-
+/*__PUBLISH_SECTION_START__*/
 END_BENTLEY_EC_NAMESPACE
+
+/*__PUBLISH_SECTION_END__*/

@@ -9,6 +9,8 @@
 /*__BENTLEY_INTERNAL_ONLY__*/
 #include <Bentley\BeIconUtilities.h>
 #include "ecimagekey.h"
+#include <Geom/GeomApi.h>
+#include <Bentley/BeAssert.h>
 BEGIN_BENTLEY_EC_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**

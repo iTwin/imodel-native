@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-
+#include <Bentley/VirtualCollectionIterator.h>
 #include <ECObjects/ECObjects.h>
 /*__PUBLISH_SECTION_END__*/
 

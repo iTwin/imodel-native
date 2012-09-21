@@ -20,8 +20,9 @@ BentleyStatus   IAUIItem::ExecuteActions () const
     if (NULL == instance)
         return ERROR;
 
-    bvector<UICommandPtr> cmds = ECPresentationManager::GetManager().GetCommands(*instance);
-    for (bvector<UICommandPtr>::const_iterator iter = cmds.begin(); iter != cmds.end(); ++iter)
+    bvector<IUICommandPtr> cmds;
+    ECPresentationManager::GetManager().GetCommands(cmds, *instance);
+    for (bvector<IUICommandPtr>::const_iterator iter = cmds.begin(); iter != cmds.end(); ++iter)
         {
         BentleyStatus status = (*iter)->ExecuteCmd (instance);
         if (SUCCESS != status)

@@ -41,10 +41,8 @@ EC_TYPEDEFS (ECSelectionEvent);
 EC_TYPEDEFS (ECSelectionListener);
 EC_TYPEDEFS (ECInstanceIterableDataContext);
 
-namespace Bentley { namespace DgnPlatform {
-    struct ECQuery;
-    typedef ECQuery const*      ECQueryCP;
-    }}
+namespace Bentley {namespace DgnPlatform {struct ECQuery;}}
+ADD_BENTLEY_TYPEDEFS1(DgnPlatform,ECQuery,ECQuery,struct)
 
 BEGIN_BENTLEY_EC_NAMESPACE
 typedef RefCountedPtr<IAUIItem>             IAUIItemPtr;

@@ -153,13 +153,10 @@ void            ECPresentationManager::RemoveProvider (ECPresentationLocalizatio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<UICommandPtr>    ECPresentationManager::GetCommands (IAUIDataContextCR instance) const
+void    ECPresentationManager::GetCommands (bvector<IUICommandPtr>& commands, IAUIDataContextCR instance) const
     {
-    bvector<UICommandPtr> commands;
     for (T_CmdProviderSet::const_iterator iter = m_cmdProviders.begin(); iter != m_cmdProviders.end(); ++iter)
         (*iter)->GetCommand(commands, instance);
-
-    return commands;
     }
 
 /*---------------------------------------------------------------------------------**//**
