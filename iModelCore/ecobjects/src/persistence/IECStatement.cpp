@@ -54,17 +54,17 @@ BentleyStatus IECStatement::BindDouble (int parameterIndex, double value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus IECStatement::BindInt32 (int parameterIndex, Int32 value)
+BentleyStatus IECStatement::BindInteger (int parameterIndex, Int32 value)
     {
-    return _BindInt32 (parameterIndex, value);
+    return _BindInteger (parameterIndex, value);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus IECStatement::BindInt64 (int parameterIndex, Int64 value)
+BentleyStatus IECStatement::BindLong (int parameterIndex, Int64 value)
     {
-    return _BindInt64 (parameterIndex, value);
+    return _BindLong (parameterIndex, value);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -94,17 +94,17 @@ BentleyStatus IECStatement::BindBinary (int parameterIndex, const void* value, i
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus IECStatement::BindPoint (int parameterIndex, DPoint2dCR value, CopyArgumentOptions makeCopy)
+BentleyStatus IECStatement::BindPoint2D (int parameterIndex, DPoint2dCR value, CopyArgumentOptions makeCopy)
     {
-    return _BindDPoint2d (parameterIndex, value, makeCopy);
+    return _BindPoint2D (parameterIndex, value, makeCopy);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus IECStatement::BindPoint (int parameterIndex, DPoint3dCR value, CopyArgumentOptions makeCopy)
+BentleyStatus IECStatement::BindPoint3D (int parameterIndex, DPoint3dCR value, CopyArgumentOptions makeCopy)
     {
-    return _BindDPoint3d (parameterIndex, value, makeCopy);
+    return _BindPoint3D (parameterIndex, value, makeCopy);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -190,17 +190,17 @@ SystemTimeCP IECStatement::GetDateTimeValue (int propertyIndex, ValueStatus* val
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int32 IECStatement::GetInt32Value (int propertyIndex, ValueStatus* valueStatus) const
+Int32 IECStatement::GetIntegerValue (int propertyIndex, ValueStatus* valueStatus) const
     {
-    return _GetInt32Value (valueStatus, propertyIndex);
+    return _GetIntegerValue (valueStatus, propertyIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int64 IECStatement::GetInt64Value (int propertyIndex, ValueStatus* valueStatus) const
+Int64 IECStatement::GetLongValue (int propertyIndex, ValueStatus* valueStatus) const
     {
-    return _GetInt64Value (valueStatus, propertyIndex);
+    return _GetLongValue (valueStatus, propertyIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -238,17 +238,17 @@ const void* IECStatement::GetBinaryValue (int propertyIndex, int& binarySize, Va
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint2dCP IECStatement::GetDPoint2dValue (int propertyIndex, ValueStatus* valueStatus) const
+DPoint2dCP IECStatement::GetPoint2DValue (int propertyIndex, ValueStatus* valueStatus) const
     {
-    return _GetDPoint2dValue (valueStatus, propertyIndex);
+    return _GetPoint2DValue (valueStatus, propertyIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3dCP IECStatement::GetDPoint3dValue (int propertyIndex, ValueStatus* valueStatus) const
+DPoint3dCP IECStatement::GetPoint3DValue (int propertyIndex, ValueStatus* valueStatus) const
     {
-    return _GetDPoint3dValue (valueStatus, propertyIndex);
+    return _GetPoint3DValue (valueStatus, propertyIndex);
     }
 
 

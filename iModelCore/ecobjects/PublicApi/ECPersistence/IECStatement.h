@@ -71,13 +71,13 @@ private:
     ECPERSISTENCE_EXPORT virtual BentleyStatus _BindBoolean (int parameterIndex, bool value) = 0;
     ECPERSISTENCE_EXPORT virtual BentleyStatus _BindDateTime (int parameterIndex, const SystemTime& value, CopyArgumentOptions makeCopy) = 0;
     ECPERSISTENCE_EXPORT virtual BentleyStatus _BindDouble (int parameterIndex, double value) = 0;
-    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindInt32 (int parameterIndex, Int32 value) = 0;
-    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindInt64 (int parameterIndex, Int64 value) = 0;
+    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindInteger (int parameterIndex, Int32 value) = 0;
+    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindLong (int parameterIndex, Int64 value) = 0;
     ECPERSISTENCE_EXPORT virtual BentleyStatus _BindUtf8 (int parameterIndex, Utf8CP value, int charCount, CopyArgumentOptions makeCopy) = 0;
     ECPERSISTENCE_EXPORT virtual BentleyStatus _BindString (int parameterIndex, WCharCP value, CopyArgumentOptions makeCopy) = 0;
     ECPERSISTENCE_EXPORT virtual BentleyStatus _BindBinary (int parameterIndex, const void* value, int binarySize, CopyArgumentOptions makeCopy) = 0;
-    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindDPoint2d (int parameterIndex, DPoint2dCR value, CopyArgumentOptions makeCopy) = 0;
-    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindDPoint3d (int parameterIndex, DPoint3dCR value, CopyArgumentOptions makeCopy) = 0;
+    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindPoint2D (int parameterIndex, DPoint2dCR value, CopyArgumentOptions makeCopy) = 0;
+    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindPoint3D (int parameterIndex, DPoint3dCR value, CopyArgumentOptions makeCopy) = 0;
     ECPERSISTENCE_EXPORT virtual BentleyStatus _BindNull (int parameterIndex) = 0;
     ECPERSISTENCE_EXPORT virtual BentleyStatus _ClearBindings () = 0;
 
@@ -89,18 +89,17 @@ private:
     ECPERSISTENCE_EXPORT virtual ECPropertyCP _GetProperty (int propertyIndex) const = 0;
 
     ECPERSISTENCE_EXPORT virtual WStringCP _GetInstanceId (ValueStatus* valueStatus) const = 0;
-
     ECPERSISTENCE_EXPORT virtual bool _IsNull (ValueStatus* valueStatus, int propertyIndex) const = 0;
     ECPERSISTENCE_EXPORT virtual bool _GetBooleanValue (ValueStatus* valueStatus, int propertyIndex) const = 0;
     ECPERSISTENCE_EXPORT virtual SystemTimeCP _GetDateTimeValue (ValueStatus* valueStatus, int propertyIndex) const = 0;
     ECPERSISTENCE_EXPORT virtual double _GetDoubleValue (ValueStatus* valueStatus, int propertyIndex) const = 0;
-    ECPERSISTENCE_EXPORT virtual Int32 _GetInt32Value (ValueStatus* valueStatus, int propertyIndex) const = 0;
-    ECPERSISTENCE_EXPORT virtual Int64 _GetInt64Value (ValueStatus* valueStatus, int propertyIndex) const = 0;
+    ECPERSISTENCE_EXPORT virtual Int32 _GetIntegerValue (ValueStatus* valueStatus, int propertyIndex) const = 0;
+    ECPERSISTENCE_EXPORT virtual Int64 _GetLongValue (ValueStatus* valueStatus, int propertyIndex) const = 0;
     ECPERSISTENCE_EXPORT virtual WCharCP _GetStringValue (ValueStatus* valueStatus, int propertyIndex) const = 0;
     ECPERSISTENCE_EXPORT virtual Utf8CP _GetUtf8Value (ValueStatus* valueStatus, int propertyIndex) const = 0;
     ECPERSISTENCE_EXPORT virtual const void* _GetBinaryValue (int& binarySize, ValueStatus* valueStatus, int propertyIndex) const = 0;
-    ECPERSISTENCE_EXPORT virtual DPoint2dCP _GetDPoint2dValue (ValueStatus* valueStatus, int propertyIndex) const = 0;
-    ECPERSISTENCE_EXPORT virtual DPoint3dCP _GetDPoint3dValue (ValueStatus* valueStatus, int propertyIndex) const = 0;
+    ECPERSISTENCE_EXPORT virtual DPoint2dCP _GetPoint2DValue (ValueStatus* valueStatus, int propertyIndex) const = 0;
+    ECPERSISTENCE_EXPORT virtual DPoint3dCP _GetPoint3DValue (ValueStatus* valueStatus, int propertyIndex) const = 0;
 
 public: 
     ECPERSISTENCE_EXPORT virtual ~IECStatement () {};
@@ -120,8 +119,8 @@ public:
     //ensure that it remains independent in future?
     ECPERSISTENCE_EXPORT BentleyStatus BindDateTime (int parameterIndex, const SystemTime& value, CopyArgumentOptions makeCopy);
     ECPERSISTENCE_EXPORT BentleyStatus BindDouble (int parameterIndex, double value);
-    ECPERSISTENCE_EXPORT BentleyStatus BindInt32 (int parameterIndex, Int32 value);
-    ECPERSISTENCE_EXPORT BentleyStatus BindInt64 (int parameterIndex, Int64 value);
+    ECPERSISTENCE_EXPORT BentleyStatus BindInteger (int parameterIndex, Int32 value);
+    ECPERSISTENCE_EXPORT BentleyStatus BindLong (int parameterIndex, Int64 value);
     //TODO: also allow to bind WStrings and WCharP?
     ECPERSISTENCE_EXPORT BentleyStatus BindString (int parameterIndex, Utf8CP value, int charCount, CopyArgumentOptions makeCopy);
     ECPERSISTENCE_EXPORT BentleyStatus BindString (int parameterIndex, WCharCP value, CopyArgumentOptions makeCopy);
@@ -134,8 +133,8 @@ public:
     //! @return SUCCESS or ERROR
     ECPERSISTENCE_EXPORT BentleyStatus BindBinary (int parameterIndex, const void* value, int binarySize, CopyArgumentOptions makeCopy);
 
-    ECPERSISTENCE_EXPORT BentleyStatus BindPoint (int parameterIndex, DPoint2dCR value, CopyArgumentOptions makeCopy);
-    ECPERSISTENCE_EXPORT BentleyStatus BindPoint (int parameterIndex, DPoint3dCR value, CopyArgumentOptions makeCopy);
+    ECPERSISTENCE_EXPORT BentleyStatus BindPoint2D (int parameterIndex, DPoint2dCR value, CopyArgumentOptions makeCopy);
+    ECPERSISTENCE_EXPORT BentleyStatus BindPoint3D (int parameterIndex, DPoint3dCR value, CopyArgumentOptions makeCopy);
 
     ECPERSISTENCE_EXPORT BentleyStatus BindNull (int parameterIndex);
 
@@ -175,13 +174,13 @@ public:
     ECPERSISTENCE_EXPORT bool GetBooleanValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
     ECPERSISTENCE_EXPORT SystemTimeCP GetDateTimeValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
     ECPERSISTENCE_EXPORT double GetDoubleValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
-    ECPERSISTENCE_EXPORT Int32 GetInt32Value (int propertyIndex, ValueStatus* valueStatus = NULL) const;
-    ECPERSISTENCE_EXPORT Int64 GetInt64Value (int propertyIndex, ValueStatus* valueStatus = NULL) const;
+    ECPERSISTENCE_EXPORT Int32 GetIntegerValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
+    ECPERSISTENCE_EXPORT Int64 GetLongValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
     ECPERSISTENCE_EXPORT WCharCP GetStringValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
     ECPERSISTENCE_EXPORT Utf8CP GetUtf8Value (int propertyIndex, ValueStatus* valueStatus = NULL) const;
     ECPERSISTENCE_EXPORT const void* GetBinaryValue (int propertyIndex, int& binarySize, ValueStatus* valueStatus = NULL) const;
-    ECPERSISTENCE_EXPORT DPoint2dCP GetDPoint2dValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
-    ECPERSISTENCE_EXPORT DPoint3dCP GetDPoint3dValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
+    ECPERSISTENCE_EXPORT DPoint2dCP GetPoint2DValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
+    ECPERSISTENCE_EXPORT DPoint3dCP GetPoint3DValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
 
     //TODO: return geometries, structs and arrays
     };
