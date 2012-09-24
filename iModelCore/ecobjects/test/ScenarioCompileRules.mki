@@ -2,7 +2,7 @@
 #
 #  $Source: test/ScenarioCompileRules.mki $
 #
-#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -17,3 +17,4 @@ $(o)TestFixture$(oext)        : $(baseDir)NonPublished/TestFixture.cpp $(PCHHead
 
 $(o)ScenarioSchemaTests$(oext)  : $(baseDir)scenario/SchemaTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
 
+$(o)CompressInstanceTests$(oext)  : $(baseDir)scenario/CompressInstanceTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
