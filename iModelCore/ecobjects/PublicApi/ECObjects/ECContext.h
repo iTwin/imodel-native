@@ -141,6 +141,8 @@ public:
 
     IECInstancePtr           CreateStandaloneInstance (ECClassCR ecClass);
 
+    ECSchemaCR GetFallBackSchema ();
+
 /*__PUBLISH_SECTION_START__*/
 
     //! - For use when the caller knows the schema of the instance he is deserializing.

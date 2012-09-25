@@ -331,6 +331,14 @@ IECInstancePtr ECInstanceReadContext::CreateStandaloneInstance (ECClassCR ecClas
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    ColinKerr     08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaCR      ECInstanceReadContext::GetFallBackSchema ()
+    {
+    return m_fallBackSchema;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaPtr     ECSchemaReadContext::GetFoundSchema (SchemaKeyR key, SchemaMatchType matchType)
