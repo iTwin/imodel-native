@@ -490,10 +490,10 @@ InstanceReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeXmlNodeR
     InstanceReadStatus status = INSTANCE_READ_STATUS_Success;
 
     // allow for multiple <ECCustomAttributes> nodes, even though we only ever write one.
-    BeXmlDom::IterableNodeSet customAttributeNodes;
-    containerNode.SelectChildNodes (customAttributeNodes, EC_NAMESPACE_PREFIX ":" EC_CUSTOM_ATTRIBUTES_ELEMENT);
-    FOR_EACH (BeXmlNodeP& customAttributeNode, customAttributeNodes)
+    for (BeXmlNodeP customAttributeNode = containerNode.GetFirstChild (); NULL != customAttributeNode; customAttributeNode = customAttributeNode->GetNextSibling ())
         {
+        if (0 != strcmp (customAttributeNode->GetName (), EC_CUSTOM_ATTRIBUTES_ELEMENT))
+            continue;
         for (BeXmlNodeP customAttributeClassNode = customAttributeNode->GetFirstChild(); NULL != customAttributeClassNode; customAttributeClassNode = customAttributeClassNode->GetNextSibling())
             {
             
