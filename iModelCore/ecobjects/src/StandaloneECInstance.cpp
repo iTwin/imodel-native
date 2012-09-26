@@ -779,12 +779,16 @@ bool           MemoryECInstanceBase::IsPartiallyLoaded ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            MemoryECInstanceBase::SetHiddenInstance (bool set)
+bool            MemoryECInstanceBase::SetHiddenInstance (bool set)
     {
+    bool returnVal = IsHiddenInstance();
+
     if (set)
         m_usageBitmask = m_usageBitmask | (UInt16)MEMORYINSTANCEUSAGE_IsHidden;
     else 
-        m_usageBitmask = m_usageBitmask & (~(UInt16)MEMORYINSTANCEUSAGE_IsHidden); 
+        m_usageBitmask = m_usageBitmask & (~(UInt16)MEMORYINSTANCEUSAGE_IsHidden);
+
+    return returnVal;
     }
 
 /*---------------------------------------------------------------------------------**//**
