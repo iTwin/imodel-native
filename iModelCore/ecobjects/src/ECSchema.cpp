@@ -31,12 +31,163 @@ extern ECObjectsStatus GetSchemaFileName (WStringR fullFileName, UInt32& foundVe
 // Test programs generally want to get error status back and not assert, so they call ECSchema::AssertOnXmlError (false);
 static  bool        s_noAssert = false;
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECNameValidation::ValidationResult ECNameValidation::Validate (WCharCP name)
+    {
+    if (NULL == name || 0 == *name)
+        return RESULT_NullOrEmpty;
+    else if ('0' <= name[0] && '9' >= name[0])
+        return RESULT_BeginsWithDigit;
+    else
+        {
+        for (WCharCP cur = name; *cur; ++cur)
+            if (!IsValidAlphaNumericCharacter (*cur))
+                return RESULT_IncludesInvalidCharacters;
+        }
+
+    return RESULT_Valid;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECNameValidation::AppendEncodedCharacter (WStringR encoded, WChar c)
+    {
+    WChar buf[5];
+    BeStringUtilities::HexFormatOptions opts = (BeStringUtilities::HexFormatOptions)(BeStringUtilities::HEXFORMAT_LeadingZeros | BeStringUtilities::HEXFORMAT_Uppercase);
+    BeStringUtilities::FormatUInt64 (buf, _countof(buf), (UInt64)c, opts, 4);
+    encoded.append (L"__x");
+    encoded.append (buf);
+    encoded.append (L"__");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECNameValidation::IsValidAlphaNumericCharacter (WChar c)
+    {
+    return (((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_'));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECNameValidation::DecodeFromValidName (WStringR decoded, WStringCR name)
+    {
+    // "__x####__"
+    //  012345678
+
+    decoded = name;
+    size_t pos = 0;
+    bool wasDecoded = false;
+    while (pos + 8 < decoded.length() && WString::npos != (pos = decoded.find (L"__x", pos)))
+        {
+        if ('_' == decoded[pos+7] && '_' == decoded[pos+8])
+            {
+            UInt32 charCode;
+            if (1 == BeStringUtilities::Swscanf (decoded.c_str() + pos + 3, L"%x", &charCode))
+                {
+                decoded[pos] = (WChar)charCode;
+                decoded.erase (pos+1, 8);
+                wasDecoded = true;
+                pos++;
+                continue;
+                }
+            }
+
+        // could not decode this escape code, leave it intact
+        pos += 3;
+        }
+
+    return wasDecoded;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECNameValidation::EncodeToValidName (WStringR encoded, WStringCR name)
+    {
+    encoded.clear();
+    if (name.empty())
+        return false;
+
+    encoded.reserve (name.length());
+    bool wasEncoded = false;
+ 
+    // First character cannot be a digit
+    size_t startIndex = 0;
+    if ('0' <= name[0] && '9' >= name[0])
+        {
+        AppendEncodedCharacter (encoded, name[0]);
+        startIndex = 1;
+        wasEncoded = true;
+        }
+        
+    for (size_t i = startIndex; i < name.length(); i++)
+        {
+        if (!IsValidAlphaNumericCharacter (name[i]))
+            {
+            AppendEncodedCharacter (encoded, name[i]);
+            wasEncoded = true;
+            }
+        else
+            encoded.append (1, name[i]);
+        }
+
+    return wasEncoded;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR ECValidatedName::GetDisplayLabel() const
+    {
+    return m_displayLabel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECValidatedName::SetName (WCharCP name)
+    {
+    // Note that this method can be called with an un-encoded name (e.g. called by users creating schemas dynamically),
+    // or with an encoded name (e.g. when deserializing a schema from xml)
+    // Hence we both encode and decode here
+
+    // Encode the name
+    m_name.clear();
+    ECNameValidation::EncodeToValidName (m_name, name);
+
+    // If the display label has not been explicitly set, use the (decoded) property name
+    if (!m_hasExplicitDisplayLabel)
+        ECNameValidation::DecodeFromValidName (m_displayLabel, m_name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECValidatedName::SetDisplayLabel (WCharCP label)
+    {
+    if (NULL == label || '\0' == *label)
+        {
+        m_hasExplicitDisplayLabel = false;
+        m_displayLabel.clear();
+        ECNameValidation::DecodeFromValidName (m_displayLabel, m_name);
+        }
+    else
+        {
+        m_hasExplicitDisplayLabel = true;
+        m_displayLabel = label;
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchema::ECSchema ()
-    :m_classContainer(m_classMap), m_isSupplemented(false)
+    :m_classContainer(m_classMap), m_isSupplemented(false), m_hasExplicitDisplayLabel(false)
     {
     //
     };
@@ -106,10 +257,10 @@ WStringCR ECSchema::GetName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetName (WStringCR name)
     {        
-    if (!NameValidator::Validate(name))
-        return ECOBJECTS_STATUS_InvalidName;
+    ECNameValidation::EncodeToValidName (m_key.m_schemaName, name);
+    if (!m_hasExplicitDisplayLabel)
+        ECNameValidation::DecodeFromValidName (m_displayLabel, m_key.m_schemaName);
 
-    m_key.m_schemaName = name;        
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -152,7 +303,7 @@ ECObjectsStatus ECSchema::SetDescription (WStringCR description)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR ECSchema::GetDisplayLabel () const
     {
-    return (m_displayLabel.empty()) ? GetName() : m_displayLabel;
+    return m_displayLabel;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -161,6 +312,7 @@ WStringCR ECSchema::GetDisplayLabel () const
 ECObjectsStatus ECSchema::SetDisplayLabel (WStringCR displayLabel)
     {        
     m_displayLabel = displayLabel;
+    m_hasExplicitDisplayLabel = true;
     return ECOBJECTS_STATUS_Success;
     }
     
@@ -169,7 +321,7 @@ ECObjectsStatus ECSchema::SetDisplayLabel (WStringCR displayLabel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECSchema::GetIsDisplayLabelDefined () const
     {
-    return (!m_displayLabel.empty());        
+    return m_hasExplicitDisplayLabel;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -612,9 +764,6 @@ ECObjectsStatus ECSchema::SetVersionFromString (WCharCP versionString)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::CreateSchema (ECSchemaPtr& schemaOut, WStringCR schemaName, UInt32 versionMajor, UInt32 versionMinor)
     {    
-    if (!NameValidator::Validate(schemaName))
-        return ECOBJECTS_STATUS_InvalidName;
-
     schemaOut = new ECSchema();
 
     ECObjectsStatus status;
@@ -2150,29 +2299,6 @@ ECClassP const& ECClassContainer::const_iterator::operator*() const
     };
 
 /*---------------------------------------------------------------------------------**//**
-* Validates a name and ensures a name contains only alphanumeric and underscore characters and does not start with a digit.
-*
-* @bsimethod                                    Carole.MacDonald                03/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool NameValidator::Validate (WStringCR name) 
-    {
-    if (name.empty())
-        return false;
-    if (   L'0' <= name[0]
-        && L'9' >= name[0])
-        return false; 
-    for (WString::size_type index = 0; index != name.length(); ++index)
-        {
-        if(    (L'a' > name[index] || L'z' < name[index]) 
-            && (L'A' > name[index] || L'Z' < name[index])
-            && (L'0' > name[index] || L'9' < name[index])
-            && '_'  != name[index])
-            return false;
-        } 
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaKeyCR ECSchema::GetSchemaKey ()const
@@ -2323,6 +2449,7 @@ void            ECSchema::ReComputeCheckSum ()
 
     m_key.m_checkSum = CheckSumHelper::ComputeCheckSumForString (xmlStr.c_str(), sizeof(WChar)* xmlStr.length());
     }
+
 END_BENTLEY_EC_NAMESPACE
 
 

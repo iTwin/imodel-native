@@ -302,7 +302,7 @@ ECObjectsStatus     IECInstance::SetValue (WCharCP propertyAccessString, ECValue
 
 ECObjectsStatus     IECInstance::SetInternalValue (UInt32 propertyIndex, ECValueCR v) 
     {
-    return _SetValue (propertyIndex, v, false, 0); 
+    return _SetInternalValue (propertyIndex, v, false, 0); 
     }
 
 ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v) 
@@ -322,7 +322,16 @@ ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v)
 
 ECObjectsStatus     IECInstance::SetInternalValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) 
     { 
-    return _SetValue (propertyIndex, v, true, arrayIndex); 
+    return _SetInternalValue (propertyIndex, v, true, arrayIndex); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus IECInstance::_SetInternalValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
+    {
+    // Default impl; instances that support calculated properties should override
+    return _SetValue (propertyIndex, v, useArrayIndex, arrayIndex);
     }
 
 ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) 
@@ -795,7 +804,7 @@ ECObjectsStatus ECInstanceInteropHelper::GetDouble (IECInstanceCR instance, doub
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/       
-ECObjectsStatus ECInstanceInteropHelper::GetString (IECInstanceCR instance, WCharCP & value, WCharCP managedPropertyAccessor)
+ECObjectsStatus ECInstanceInteropHelper::GetString (IECInstanceCR instance, WStringR value, WCharCP managedPropertyAccessor)
     {
     ECValue v;
 
@@ -1135,7 +1144,7 @@ ECObjectsStatus ECInstanceInteropHelper::GetDouble (IECInstanceCR instance, doub
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/       
-ECObjectsStatus ECInstanceInteropHelper::GetString (IECInstanceCR instance, WCharCP & value, ECValueAccessorCR accessor)
+ECObjectsStatus ECInstanceInteropHelper::GetString (IECInstanceCR instance, WStringR value, ECValueAccessorCR accessor)
     {
     ECValue v;
 
@@ -2267,7 +2276,7 @@ InstanceReadStatus   ReadPrimitivePropertyValue (PrimitiveECPropertyP primitiveP
         {
         setStatus = ecInstance->SetInternalValue (primitiveProperty->GetName().c_str(), ecValue);
 
-        if (ECOBJECTS_STATUS_Success != setStatus)
+        if (ECOBJECTS_STATUS_Success != setStatus && ECOBJECTS_STATUS_PropertyValueMatchesNoChange != setStatus)
             ECObjectsLogger::Log()->warningv(L"Unable to set value for property %ls", primitiveProperty->GetName().c_str());
         }
     else
@@ -2276,11 +2285,11 @@ InstanceReadStatus   ReadPrimitivePropertyValue (PrimitiveECPropertyP primitiveP
         AppendAccessString (compoundAccessString, *baseAccessString, primitiveProperty->GetName());
         setStatus = ecInstance->SetInternalValue (compoundAccessString.c_str(), ecValue);
 
-        if (ECOBJECTS_STATUS_Success != setStatus)
+        if (ECOBJECTS_STATUS_Success != setStatus && ECOBJECTS_STATUS_PropertyValueMatchesNoChange != setStatus)
             ECObjectsLogger::Log()->warningv(L"Unable to set value for property %ls", compoundAccessString.c_str());
         }
 
-    BeAssert (ECOBJECTS_STATUS_Success == setStatus);
+    BeAssert (ECOBJECTS_STATUS_Success == setStatus || ECOBJECTS_STATUS_PropertyValueMatchesNoChange == setStatus);
 
     return INSTANCE_READ_STATUS_Success;
     }

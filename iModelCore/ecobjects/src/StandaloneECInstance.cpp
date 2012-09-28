@@ -777,6 +777,30 @@ bool           MemoryECInstanceBase::IsPartiallyLoaded ()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            MemoryECInstanceBase::SetHiddenInstance (bool set)
+    {
+    bool returnVal = IsHiddenInstance();
+
+    if (set)
+        m_usageBitmask = m_usageBitmask | (UInt16)MEMORYINSTANCEUSAGE_IsHidden;
+    else 
+        m_usageBitmask = m_usageBitmask & (~(UInt16)MEMORYINSTANCEUSAGE_IsHidden);
+
+    return returnVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Currently only used by ECXA Instance serialization/deserialization
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool           MemoryECInstanceBase::IsHiddenInstance ()
+    {
+    return  0 != (m_usageBitmask & (UInt16)MEMORYINSTANCEUSAGE_IsHidden); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * This is used when copying properties from partial instance for instance update processing
 * @bsimethod                                    Bill.Steinbock                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -815,6 +839,22 @@ ECObjectsStatus          MemoryECInstanceBase::SetInstancePerPropertyFlagsData (
 
     memcpy (m_perPropertyFlagsHolder.perPropertyFlags, perPropertyFlagsDataAddress, m_perPropertyFlagsHolder.numPerPropertyFlagsEntries * sizeof(UInt32));
     return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus MemoryECInstanceBase::SetValueInternal (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
+    {
+    PropertyLayoutCP propLayout;
+    ECObjectsStatus status;
+    if (ECOBJECTS_STATUS_Success == (status = GetClassLayout().GetPropertyLayoutByIndex (propLayout, propertyIndex)))
+        {
+        SetIsLoadedBit (propertyIndex);
+        status = SetInternalValueToMemory (GetClassLayout(), *propLayout, v, useArrayIndex, arrayIndex);
+        }
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1041,6 +1081,15 @@ ECObjectsStatus           StandaloneECInstance::_SetValue (UInt32 propertyIndex,
     SetIsLoadedBit (propertyIndex);
 
     return SetValueToMemory (classLayout, propertyIndex, v, useArrayIndex, arrayIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus StandaloneECInstance::_SetInternalValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
+    {
+    SetIsLoadedBit (propertyIndex);
+    return SetValueInternal (propertyIndex, v, useArrayIndex, arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -29,10 +29,11 @@ enum PropertyFlagIndex : UInt8
     PROPERTYFLAGINDEX_IsDirty  = 1
     };
 
-enum MemoryInstanceUsageBitmask : UInt16
+enum MemoryInstanceUsageBitmask : UInt32
     {
     MEMORYINSTANCEUSAGE_Empty              = 0x0000,
-    MEMORYINSTANCEUSAGE_IsPartiallyLoaded  = 0x0001
+    MEMORYINSTANCEUSAGE_IsPartiallyLoaded  = 0x0001,
+    MEMORYINSTANCEUSAGE_IsHidden           = 0x0002     // currently used only by ECXAInstance
     };
 
 typedef int StructValueIdentifier;
@@ -83,7 +84,7 @@ private:
     MemoryECInstanceBase const* m_parentInstance;
     StructValueIdentifier   m_structValueId;
     bool                    m_usingSharedMemory;
-    UInt16                  m_usageBitmask;  // currently only used to round trip Partially Load flag
+    UInt16                  m_usageBitmask;  // currently only used to round trip Partially Loaded and Hidden flags
 
     IECInstancePtr          GetStructArrayInstance (StructValueIdentifier structValueId) const;
     StructArrayEntry const* GetAddressOfStructArrayEntry (StructValueIdentifier key) const;
@@ -115,6 +116,7 @@ protected:
     virtual ClassLayoutCR       _GetClassLayout () const = 0;
     virtual IECInstancePtr      _GetAsIECInstance () const = 0;
    
+    ECOBJECTS_EXPORT  ECObjectsStatus          SetValueInternal (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex);
 public:
     ECOBJECTS_EXPORT  ECObjectsStatus          SetInstancePerPropertyFlagsData (byte const* perPropertyFlagsDataAddress, int numBitsPerProperty, int numPerPropertyFlagsEntries);
 
@@ -156,6 +158,8 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT void                     SetUsageBitmask (UInt16 mask);
     ECOBJECTS_EXPORT void                     SetPartiallyLoaded (bool set);
     ECOBJECTS_EXPORT bool                     IsPartiallyLoaded ();
+    ECOBJECTS_EXPORT bool                     SetHiddenInstance (bool set);
+    ECOBJECTS_EXPORT bool                     IsHiddenInstance ();
 };
 
 /*=================================================================================**//**
@@ -189,7 +193,7 @@ protected:
     ECOBJECTS_EXPORT virtual bool                _IsReadOnly() const override;        
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
-
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetInternalValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size) override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _AddArrayElements (WCharCP propertyAccessString, UInt32 size) override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _RemoveArrayElement (WCharCP propertyAccessString, UInt32 index) override;

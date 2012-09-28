@@ -42,6 +42,8 @@ struct  ECPresentationManager: public NonCopyableClass
         static void RemoveProviderFromList (ProviderType & provider, ContainerType& );
 
     public:
+    static const int GENERAL_PURPOSE_QUERY = 0;
+    
     //! Get the presentation manager.
     ECOBJECTS_EXPORT static ECPresentationManagerR  GetManager();
 
@@ -82,6 +84,10 @@ struct  ECPresentationManager: public NonCopyableClass
     //! Get the list of commands that is associated with this data context. Its a union of all commands provided by 
     //! different command providers.
     ECOBJECTS_EXPORT bvector<UICommandPtr>              GetCommands (IAUIDataContextCR instance) const;
+
+    //! Get the list of commands that is associated with this data context for a given purpose. Its a union of all 
+    //! commands provided by different command providers.
+    ECOBJECTS_EXPORT bvector<UICommandPtr>              GetCommands (IAUIDataContextCR instance, int purpose) const;
 
     //! Fetch an image of the specified size and name from the image providers.
     ECOBJECTS_EXPORT IECNativeImagePtr                  GetImage (ECImageKeyCR imageKey, DPoint2dCR size);

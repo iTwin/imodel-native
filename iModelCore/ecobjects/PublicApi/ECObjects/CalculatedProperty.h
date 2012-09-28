@@ -24,7 +24,6 @@ struct CalculatedPropertySpecification : RefCountedBase
 private:
     NodePtr                     m_expression;
     ParserRegexP                m_parserRegex;
-    bvector<WString>            m_requiredSymbolSets;
     ECValue                     m_failureValue;
     bool                        m_isDefaultOnly;
     bool                        m_useLastValidOnFailure;

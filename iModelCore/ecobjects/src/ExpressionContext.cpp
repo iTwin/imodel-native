@@ -8,6 +8,10 @@
 #include "ECObjectsPch.h"
 
 #include <ECObjects/ECExpressionNode.h>
+#include <Bentley/BeCriticalSection.h>
+
+static BeCriticalSection                                s_ecexpressionsCS;
+static EC::IECSymbolProvider::ExternalSymbolPublisher   s_externalSymbolPublisher;
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -767,6 +771,32 @@ void            ValueSymbol::SetValue(EC::ECValueCR exprValue)
 ValueSymbolPtr  ValueSymbol::Create(wchar_t const* name, EC::ECValueCR exprValue)
     {
     return new ValueSymbol (name, exprValue);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void IECSymbolProvider::RegisterExternalSymbolPublisher (ExternalSymbolPublisher publisher)
+    {
+    BeCriticalSectionHolder cs (s_ecexpressionsCS);
+    if (NULL == s_externalSymbolPublisher)
+        s_externalSymbolPublisher = publisher;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+SymbolExpressionContextPtr SymbolExpressionContext::Create (bvector<WString> const& requestedSymbolSets)
+    {
+    SymbolExpressionContextPtr context = Create (NULL);
+    if (context.IsValid())
+        {
+        BeCriticalSectionHolder cs (s_ecexpressionsCS);
+        if (NULL != s_externalSymbolPublisher)
+            s_externalSymbolPublisher (*context, requestedSymbolSets);
+        }
+    
+    return context;
     }
 
 END_BENTLEY_EC_NAMESPACE

@@ -23,6 +23,9 @@ bool AssertDisabler::AreAssertsDisabled ()
 AssertDisabler::AssertDisabler ()
     {    
     AssertDisabler::s_globalIgnoreCount++;
+
+    // to handle calls to BeAssert as well
+    putenv("MS_IGNORE_ASSERTS=1");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -31,6 +34,7 @@ AssertDisabler::AssertDisabler ()
 AssertDisabler::~AssertDisabler ()
     {    
     AssertDisabler::s_globalIgnoreCount--;
+    putenv("MS_IGNORE_ASSERTS=");
     }
 
 /*---------------------------------------------------------------------------------**//**
