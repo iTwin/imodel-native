@@ -158,9 +158,12 @@ ECPropertyCP IECStatement::GetProperty (int propertyIndex) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCP IECStatement::GetInstanceId (ValueStatus* valueStatus) const
+WString IECStatement::GetInstanceId (ValueStatus* valueStatus) const
     {
-    return _GetInstanceId (valueStatus);
+    WString instanceId;
+    ValueStatus status = _GetInstanceId (instanceId);
+    AssignValueStatus (valueStatus, status);
+    return instanceId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -168,7 +171,10 @@ WStringCP IECStatement::GetInstanceId (ValueStatus* valueStatus) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IECStatement::IsNull (int propertyIndex, ValueStatus* valueStatus) const
     {
-    return _IsNull (valueStatus, propertyIndex);
+    bool isNull;
+    ValueStatus status = _IsNull (isNull, propertyIndex);
+    AssignValueStatus (valueStatus, status);
+    return isNull;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -176,15 +182,21 @@ bool IECStatement::IsNull (int propertyIndex, ValueStatus* valueStatus) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IECStatement::GetBooleanValue (int propertyIndex, ValueStatus* valueStatus) const
     {
-    return _GetBooleanValue (valueStatus, propertyIndex);
+    bool value;
+    ValueStatus status = _GetBooleanValue (value, propertyIndex);
+    AssignValueStatus (valueStatus, status);
+    return value;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-SystemTimeCP IECStatement::GetDateTimeValue (int propertyIndex, ValueStatus* valueStatus) const
+SystemTime IECStatement::GetDateTimeValue (int propertyIndex, ValueStatus* valueStatus) const
     {
-    return _GetDateTimeValue (valueStatus, propertyIndex);
+    SystemTime value;
+    ValueStatus status = _GetDateTimeValue (value, propertyIndex);
+    AssignValueStatus (valueStatus, status);
+    return value;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -192,7 +204,10 @@ SystemTimeCP IECStatement::GetDateTimeValue (int propertyIndex, ValueStatus* val
 +---------------+---------------+---------------+---------------+---------------+------*/
 Int32 IECStatement::GetIntegerValue (int propertyIndex, ValueStatus* valueStatus) const
     {
-    return _GetIntegerValue (valueStatus, propertyIndex);
+    Int32 value;
+    ValueStatus status = _GetIntegerValue (value, propertyIndex);
+    AssignValueStatus (valueStatus, status);
+    return value;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -200,7 +215,10 @@ Int32 IECStatement::GetIntegerValue (int propertyIndex, ValueStatus* valueStatus
 +---------------+---------------+---------------+---------------+---------------+------*/
 Int64 IECStatement::GetLongValue (int propertyIndex, ValueStatus* valueStatus) const
     {
-    return _GetLongValue (valueStatus, propertyIndex);
+    Int64 value;
+    ValueStatus status = _GetLongValue (value, propertyIndex);
+    AssignValueStatus (valueStatus, status);
+    return value;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -208,7 +226,10 @@ Int64 IECStatement::GetLongValue (int propertyIndex, ValueStatus* valueStatus) c
 +---------------+---------------+---------------+---------------+---------------+------*/
 double IECStatement::GetDoubleValue (int propertyIndex, ValueStatus* valueStatus) const
     {
-    return _GetDoubleValue (valueStatus, propertyIndex);
+    double value;
+    ValueStatus status = _GetDoubleValue (value, propertyIndex);
+    AssignValueStatus (valueStatus, status);
+    return value;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -216,7 +237,10 @@ double IECStatement::GetDoubleValue (int propertyIndex, ValueStatus* valueStatus
 +---------------+---------------+---------------+---------------+---------------+------*/
 WCharCP IECStatement::GetStringValue (int propertyIndex, ValueStatus* valueStatus) const
     {
-    return _GetStringValue (valueStatus, propertyIndex);
+    WCharCP value = NULL;
+    ValueStatus status = _GetStringValue (value, propertyIndex);
+    AssignValueStatus (valueStatus, status);
+    return value;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -224,7 +248,10 @@ WCharCP IECStatement::GetStringValue (int propertyIndex, ValueStatus* valueStatu
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP IECStatement::GetUtf8Value (int propertyIndex, ValueStatus* valueStatus) const
     {
-    return _GetUtf8Value (valueStatus, propertyIndex);
+    Utf8CP value = NULL;
+    ValueStatus status = _GetUtf8Value (value, propertyIndex);
+    AssignValueStatus (valueStatus, status);
+    return value;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -232,24 +259,48 @@ Utf8CP IECStatement::GetUtf8Value (int propertyIndex, ValueStatus* valueStatus) 
 +---------------+---------------+---------------+---------------+---------------+------*/
 const void* IECStatement::GetBinaryValue (int propertyIndex, int& binarySize, ValueStatus* valueStatus) const
     {
-    return _GetBinaryValue (binarySize, valueStatus, propertyIndex);
+    const void* value = NULL;
+    ValueStatus status = _GetBinaryValue (value, binarySize, propertyIndex);
+    AssignValueStatus (valueStatus, status);
+    return value;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint2dCP IECStatement::GetPoint2DValue (int propertyIndex, ValueStatus* valueStatus) const
+DPoint2d IECStatement::GetPoint2DValue (int propertyIndex, ValueStatus* valueStatus) const
     {
-    return _GetPoint2DValue (valueStatus, propertyIndex);
+    DPoint2d value;
+    ValueStatus status = _GetPoint2DValue (value, propertyIndex);
+    AssignValueStatus (valueStatus, status);
+    return value;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3dCP IECStatement::GetPoint3DValue (int propertyIndex, ValueStatus* valueStatus) const
+DPoint3d IECStatement::GetPoint3DValue (int propertyIndex, ValueStatus* valueStatus) const
     {
-    return _GetPoint3DValue (valueStatus, propertyIndex);
+    DPoint3d value;
+    ValueStatus status = _GetPoint3DValue (value, propertyIndex);
+    AssignValueStatus (valueStatus, status);
+    return value;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Krischan.Eberle                09/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+//static
+void IECStatement::AssignValueStatus 
+(
+ValueStatus* valueStatus, 
+const ValueStatus& newValue
+)
+    {
+    if (valueStatus != NULL)
+        {
+        *valueStatus = newValue;
+        }
+    }
 
 END_BENTLEY_EC_NAMESPACE

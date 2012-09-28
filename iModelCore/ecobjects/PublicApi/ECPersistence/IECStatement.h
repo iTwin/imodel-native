@@ -88,19 +88,20 @@ private:
     ECPERSISTENCE_EXPORT virtual int _GetPropertyCount () const = 0;
     ECPERSISTENCE_EXPORT virtual ECPropertyCP _GetProperty (int propertyIndex) const = 0;
 
-    ECPERSISTENCE_EXPORT virtual WStringCP _GetInstanceId (ValueStatus* valueStatus) const = 0;
-    ECPERSISTENCE_EXPORT virtual bool _IsNull (ValueStatus* valueStatus, int propertyIndex) const = 0;
-    ECPERSISTENCE_EXPORT virtual bool _GetBooleanValue (ValueStatus* valueStatus, int propertyIndex) const = 0;
-    ECPERSISTENCE_EXPORT virtual SystemTimeCP _GetDateTimeValue (ValueStatus* valueStatus, int propertyIndex) const = 0;
-    ECPERSISTENCE_EXPORT virtual double _GetDoubleValue (ValueStatus* valueStatus, int propertyIndex) const = 0;
-    ECPERSISTENCE_EXPORT virtual Int32 _GetIntegerValue (ValueStatus* valueStatus, int propertyIndex) const = 0;
-    ECPERSISTENCE_EXPORT virtual Int64 _GetLongValue (ValueStatus* valueStatus, int propertyIndex) const = 0;
-    ECPERSISTENCE_EXPORT virtual WCharCP _GetStringValue (ValueStatus* valueStatus, int propertyIndex) const = 0;
-    ECPERSISTENCE_EXPORT virtual Utf8CP _GetUtf8Value (ValueStatus* valueStatus, int propertyIndex) const = 0;
-    ECPERSISTENCE_EXPORT virtual const void* _GetBinaryValue (int& binarySize, ValueStatus* valueStatus, int propertyIndex) const = 0;
-    ECPERSISTENCE_EXPORT virtual DPoint2dCP _GetPoint2DValue (ValueStatus* valueStatus, int propertyIndex) const = 0;
-    ECPERSISTENCE_EXPORT virtual DPoint3dCP _GetPoint3DValue (ValueStatus* valueStatus, int propertyIndex) const = 0;
+    ECPERSISTENCE_EXPORT virtual ValueStatus _GetInstanceId (WStringR instanceId) const = 0;
+    ECPERSISTENCE_EXPORT virtual ValueStatus _IsNull (bool& isNull, int propertyIndex) const = 0;
+    ECPERSISTENCE_EXPORT virtual ValueStatus _GetBooleanValue (bool& value, int propertyIndex) const = 0;
+    ECPERSISTENCE_EXPORT virtual ValueStatus _GetDateTimeValue (SystemTimeR value, int propertyIndex) const = 0;
+    ECPERSISTENCE_EXPORT virtual ValueStatus _GetDoubleValue (double& value, int propertyIndex) const = 0;
+    ECPERSISTENCE_EXPORT virtual ValueStatus _GetIntegerValue (Int32& value, int propertyIndex) const = 0;
+    ECPERSISTENCE_EXPORT virtual ValueStatus _GetLongValue (Int64& value, int propertyIndex) const = 0;
+    ECPERSISTENCE_EXPORT virtual ValueStatus _GetStringValue (WCharCP& value, int propertyIndex) const = 0;
+    ECPERSISTENCE_EXPORT virtual ValueStatus _GetUtf8Value (Utf8CP& value, int propertyIndex) const = 0;
+    ECPERSISTENCE_EXPORT virtual ValueStatus _GetBinaryValue (const void*& value, int& binarySize, int propertyIndex) const = 0;
+    ECPERSISTENCE_EXPORT virtual ValueStatus _GetPoint2DValue (DPoint2dR value, int propertyIndex) const = 0;
+    ECPERSISTENCE_EXPORT virtual ValueStatus _GetPoint3DValue (DPoint3dR value, int propertyIndex) const = 0;
 
+    static void AssignValueStatus (ValueStatus* valueStatus, const ValueStatus& newValue);
 public: 
     ECPERSISTENCE_EXPORT virtual ~IECStatement () {};
 
@@ -167,20 +168,20 @@ public:
 
 
     //Read values
-    ECPERSISTENCE_EXPORT WStringCP GetInstanceId (ValueStatus* valueStatus = NULL) const;
+    ECPERSISTENCE_EXPORT WString GetInstanceId (ValueStatus* valueStatus = NULL) const;
 
     ECPERSISTENCE_EXPORT bool IsNull (int propertyIndex, ValueStatus* valueStatus = NULL) const;
 
     ECPERSISTENCE_EXPORT bool GetBooleanValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
-    ECPERSISTENCE_EXPORT SystemTimeCP GetDateTimeValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
+    ECPERSISTENCE_EXPORT SystemTime GetDateTimeValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
     ECPERSISTENCE_EXPORT double GetDoubleValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
     ECPERSISTENCE_EXPORT Int32 GetIntegerValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
     ECPERSISTENCE_EXPORT Int64 GetLongValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
     ECPERSISTENCE_EXPORT WCharCP GetStringValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
     ECPERSISTENCE_EXPORT Utf8CP GetUtf8Value (int propertyIndex, ValueStatus* valueStatus = NULL) const;
     ECPERSISTENCE_EXPORT const void* GetBinaryValue (int propertyIndex, int& binarySize, ValueStatus* valueStatus = NULL) const;
-    ECPERSISTENCE_EXPORT DPoint2dCP GetPoint2DValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
-    ECPERSISTENCE_EXPORT DPoint3dCP GetPoint3DValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
+    ECPERSISTENCE_EXPORT DPoint2d GetPoint2DValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
+    ECPERSISTENCE_EXPORT DPoint3d GetPoint3DValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
 
     //TODO: return geometries, structs and arrays
     };
