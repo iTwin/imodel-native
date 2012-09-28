@@ -892,15 +892,16 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
     for (BeXmlNodeP childNode = classNode.GetFirstChild (); NULL != childNode; childNode = childNode->GetNextSibling ())
         {
         Utf8CP childNodeName = childNode->GetName ();
-        if (0 == strcmp (childNodeName, EC_BASE_CLASS_ELEMENT))
-            {
-            if (SCHEMA_READ_STATUS_Success != _ReadBaseClassFromXml(childNode))
-                return SCHEMA_READ_STATUS_InvalidECSchemaXml;
-            }
-        else if (0 == strcmp (childNodeName, EC_PROPERTY_ELEMENT))
+        if (0 == strcmp (childNodeName, EC_PROPERTY_ELEMENT))
             {
             ECPropertyP ecProperty = new PrimitiveECProperty (*this);
             SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, childNodeName);
+            if (SCHEMA_READ_STATUS_Success != status)
+                return status;
+            }
+        else if (0 == strcmp (childNodeName, EC_BASE_CLASS_ELEMENT))
+            {
+            SchemaReadStatus status = _ReadBaseClassFromXml(childNode);
             if (SCHEMA_READ_STATUS_Success != status)
                 return status;
             }

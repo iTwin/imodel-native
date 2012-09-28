@@ -2491,7 +2491,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
                 {
                 if (BEXML_ContentWrongType == status)
                     return INSTANCE_READ_STATUS_TypeMismatch;
-                if (BEXML_NullNodeValue == status || BEXMLINT_NodeNotFound == status)
+                if (BEXML_NullNodeValue == status || BEXML_NodeNotFound == status)
                     ecValue.SetToNull ();
                 return INSTANCE_READ_STATUS_Success;
                 }
@@ -2508,7 +2508,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
                 {
                 if (BEXML_ContentWrongType == status)
                     return INSTANCE_READ_STATUS_TypeMismatch;
-                if (BEXML_NullNodeValue == status || BEXMLINT_NodeNotFound == status)
+                if (BEXML_NullNodeValue == status || BEXML_NodeNotFound == status)
                     ecValue.SetToNull ();
                 return INSTANCE_READ_STATUS_Success;
                 }
@@ -2525,7 +2525,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
                 {
                 if (BEXML_ContentWrongType == status)
                     return INSTANCE_READ_STATUS_TypeMismatch;
-                if (BEXML_NullNodeValue == status || BEXMLINT_NodeNotFound == status)
+                if (BEXML_NullNodeValue == status || BEXML_NodeNotFound == status)
                     ecValue.SetToNull ();
                 return INSTANCE_READ_STATUS_Success;
                 }
@@ -2542,7 +2542,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
                 {
                 if (BEXML_ContentWrongType == status)
                     return INSTANCE_READ_STATUS_TypeMismatch;
-                if (BEXML_NullNodeValue == status || BEXMLINT_NodeNotFound == status)
+                if (BEXML_NullNodeValue == status || BEXML_NodeNotFound == status)
                     ecValue.SetToNull ();
                 return INSTANCE_READ_STATUS_Success;
                 }
@@ -2558,7 +2558,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
                 {
                 if (BEXML_ContentWrongType == status)
                     return INSTANCE_READ_STATUS_TypeMismatch;
-                if (BEXML_NullNodeValue == status || BEXMLINT_NodeNotFound == status)
+                if (BEXML_NullNodeValue == status || BEXML_NodeNotFound == status)
                     ecValue.SetToNull ();
                 return INSTANCE_READ_STATUS_Success;
                 }
@@ -2575,7 +2575,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
                 {
                 if (BEXML_ContentWrongType == status)
                     return INSTANCE_READ_STATUS_TypeMismatch;
-                if (BEXML_NullNodeValue == status || BEXMLINT_NodeNotFound == status)
+                if (BEXML_NullNodeValue == status || BEXML_NodeNotFound == status)
                     ecValue.SetToNull ();
                 return INSTANCE_READ_STATUS_Success;
                 }
@@ -2595,7 +2595,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
                 {
                 if (BEXML_ContentWrongType == status)
                     return INSTANCE_READ_STATUS_TypeMismatch;
-                if (BEXML_NullNodeValue == status || BEXMLINT_NodeNotFound == status)
+                if (BEXML_NullNodeValue == status || BEXML_NodeNotFound == status)
                     ecValue.SetToNull ();
                 return INSTANCE_READ_STATUS_Success;
                 }
