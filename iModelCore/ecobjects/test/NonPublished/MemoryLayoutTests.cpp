@@ -141,8 +141,6 @@ void VerifyArrayInfo (IECInstanceR instance, ECValueR v, WCharCP accessString, U
 void VerifyOutOfBoundsError (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 index)
     {
     v.Clear();    
-    // WIP_FUSION .. ERROR_InvalidIndex
-    // CGM - instance.GetValue() is still returning a StatusInt, but the underlying method is now returning an ECObjectsStatus
     EXPECT_TRUE (ECOBJECTS_STATUS_IndexOutOfRange == instance.GetValue (v, accessString, index));
     EXPECT_TRUE (ECOBJECTS_STATUS_IndexOutOfRange == instance.SetValue (accessString, v, index));
     }    
