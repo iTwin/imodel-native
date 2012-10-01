@@ -543,7 +543,7 @@ UInt32          ClassLayout::CalculateBytesUsed(byte const * data) const
     if (0 == m_propertyLayouts.size())
         return m_sizeOfFixedSection;
         
-    PropertyLayoutCP lastPropertyLayout = m_propertyLayouts[m_propertyLayouts.size() - 1];  // WIP_FUSION: if _GetBytesUsed shows up in profiler, we may want to add bool m_hasVariableSizedValues;
+    PropertyLayoutCP lastPropertyLayout = m_propertyLayouts[m_propertyLayouts.size() - 1];
     if (lastPropertyLayout->IsFixedSized())
         return m_sizeOfFixedSection;
 
