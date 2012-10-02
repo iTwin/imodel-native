@@ -2252,4 +2252,20 @@ BentleyStatus SystemTime::InitFromUnixMillis (UInt64 unixMillis)
     return SUCCESS;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt64 ECValue::GetDateTimeUnixMillis() const
+    {
+    PRECONDITION (IsDateTime() && "Tried to get DateTime value from an EC::ECValue that is not a DateTime.", 0);
+    PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", 0);
+
+    Int64 ticks = (UInt64)GetDateTimeTicks();
+    ticks -= TICKADJUSTMENT;
+    _FILETIME fileTime;
+    fileTime.dwLowDateTime = ticks & 0xFFFFFFFF;
+    fileTime.dwHighDateTime = ticks >> 0x20;
+    return BeTimeUtilities::ConvertFiletimeToUnixMillis (fileTime);
+    }
+
 END_BENTLEY_EC_NAMESPACE

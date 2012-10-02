@@ -102,6 +102,7 @@ protected:
 
     ECOBJECTS_EXPORT virtual bool             _IsMemoryInitialized () const;
     ECOBJECTS_EXPORT virtual ECObjectsStatus  _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength);    
+    ECOBJECTS_EXPORT virtual ECObjectsStatus  _MoveData (UInt32 toOffset, UInt32 fromOffset, UInt32 dataLength);
     ECOBJECTS_EXPORT virtual ECObjectsStatus  _ShrinkAllocation ();
     ECOBJECTS_EXPORT virtual void             _FreeAllocation ();
     ECOBJECTS_EXPORT virtual ECObjectsStatus  _GrowAllocation (UInt32 bytesNeeded);        

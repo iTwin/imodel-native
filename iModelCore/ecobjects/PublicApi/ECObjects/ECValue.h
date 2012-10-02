@@ -225,6 +225,8 @@ public:
     ECOBJECTS_EXPORT Int64          GetDateTimeTicks() const;
     ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 value);
 
+    ECOBJECTS_EXPORT UInt64         GetDateTimeUnixMillis() const;
+
     ECOBJECTS_EXPORT DPoint2d       GetPoint2D() const;
     ECOBJECTS_EXPORT BentleyStatus  SetPoint2D (DPoint2dCR value);
 

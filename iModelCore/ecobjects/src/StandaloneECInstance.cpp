@@ -306,6 +306,20 @@ ECObjectsStatus           MemoryECInstanceBase::_ModifyData (UInt32 offset, void
     }
     
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus MemoryECInstanceBase::_MoveData (UInt32 toOffset, UInt32 fromOffset, UInt32 dataLength)
+    {
+    PRECONDITION (NULL != m_data, ECOBJECTS_STATUS_PreconditionViolated);
+    PRECONDITION (toOffset + dataLength <= m_bytesAllocated, ECOBJECTS_STATUS_MemoryBoundsOverrun);
+
+    byte* data = GetAddressOfPropertyData();
+    memmove (data+toOffset, data+fromOffset, dataLength);
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus                MemoryECInstanceBase::_ShrinkAllocation ()
