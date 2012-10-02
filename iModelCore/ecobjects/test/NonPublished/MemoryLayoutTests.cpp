@@ -544,7 +544,6 @@ void VerifyVariableCountManufacturerArray (IECInstanceR instance, ECValue& v, wc
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ExerciseVariableCountManufacturerArray (IECInstanceR instance, StandaloneECEnablerR manufacturerEnabler, ECValue& v, wchar_t* arrayAccessor)
     {    
-    // WIP_FUSION, review this process of setting array eleeents.  Is it easy enough?
     VerifyArrayInfo (instance, v, arrayAccessor, 0, false);
     
     // create an array of two values
@@ -610,8 +609,14 @@ void ExerciseVariableCountManufacturerArray (IECInstanceR instance, StandaloneEC
     //ASSERT_TRUE (ERROR == instance.SetValue (arrayAccessor, v, 1, &index));            
     }
     
-    // WIP_FUSION ensure we can not set the array to an instance of a struct that is not of the type (or derived from the type) of the property    
-        
+    // ensure we can not set the array to an instance of a struct that is not of the type (or derived from the type) of the property    
+    ECClassP incompatibleClass = manufacturerEnabler.GetClass().GetSchema().GetClassP (L"AllPrimitives");
+    ASSERT_TRUE (NULL != incompatibleClass);
+
+    StandaloneECInstancePtr incompatibleInstance = incompatibleClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    v.SetStruct (incompatibleInstance.get());
+    ASSERT_TRUE (ECOBJECTS_STATUS_UnableToSetStructArrayMemberInstance == instance.SetValue (arrayAccessor, v, 0));
+
     VerifyVariableCountManufacturerArray (instance, v, arrayAccessor);
     }
     
