@@ -20,8 +20,6 @@ using namespace std;
 
 struct MemoryLayoutTests : ECTestFixture {};
 
-// WIP_FUSION: these verify methods are duplicated in DgnPlatformTest... how do we share that code?    
-// WIP_FUSION: where is the right place to share these methods even among ECObjects tests? 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
@@ -141,8 +139,6 @@ void VerifyArrayInfo (IECInstanceR instance, ECValueR v, WCharCP accessString, U
 void VerifyOutOfBoundsError (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 index)
     {
     v.Clear();    
-    // WIP_FUSION .. ERROR_InvalidIndex
-    // CGM - instance.GetValue() is still returning a StatusInt, but the underlying method is now returning an ECObjectsStatus
     EXPECT_TRUE (ECOBJECTS_STATUS_IndexOutOfRange == instance.GetValue (v, accessString, index));
     EXPECT_TRUE (ECOBJECTS_STATUS_IndexOutOfRange == instance.SetValue (accessString, v, index));
     }    
@@ -599,7 +595,6 @@ void VerifyVariableCountManufacturerArray (IECInstanceR instance, ECValue& v, wc
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ExerciseVariableCountManufacturerArray (IECInstanceR instance, StandaloneECEnablerR manufacturerEnabler, ECValue& v, wchar_t* arrayAccessor)
     {    
-    // WIP_FUSION, review this process of setting array eleeents.  Is it easy enough?
     VerifyArrayInfo (instance, v, arrayAccessor, 0, false);
     
     // create an array of two values
@@ -653,20 +648,6 @@ void ExerciseVariableCountManufacturerArray (IECInstanceR instance, StandaloneEC
     v.SetStruct (manufInst.get());
     ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 3));        
     
-    // ensure we can't set the array elements to other primitive types
-    {
-    // WIP_FUSION - these are busted need to fix
-    DISABLE_ASSERTS    
-    v.SetInteger (35);    
-    //index = 2;
-    //ASSERT_TRUE (ERROR == instance.SetValue (arrayAccessor, v, 1, &index));        
-    v.SetString (L"foobar");    
-    //index = 0;
-    //ASSERT_TRUE (ERROR == instance.SetValue (arrayAccessor, v, 1, &index));            
-    }
-    
-    // WIP_FUSION ensure we can not set the array to an instance of a struct that is not of the type (or derived from the type) of the property    
-        
     VerifyVariableCountManufacturerArray (instance, v, arrayAccessor);
     }
     
@@ -713,8 +694,6 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     VerifyArrayInfo (instance, v, L"VariableArrayVariableElement[]", 0, false);
     VerifyArrayInfo (instance, v, L"EndingArray[]", 0, false);
     
-    // WIP_FUSION, verify other properties of ArrayInfo are correct                        
-    
     VerifyIsNullArrayElements (instance, v, L"FixedArrayFixedElement[]", 0, 10, true);
     SetAndVerifyIntegerArray (instance, v, L"FixedArrayFixedElement[]", 172, 10);
     VerifyIsNullArrayElements (instance, v, L"FixedArrayFixedElement[]", 0, 10, false);
@@ -741,12 +720,6 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
 #endif
     StandaloneECEnablerPtr manufEnabler =  instance.GetEnablerR().GetEnablerForStructArrayMember (manufacturerClass->GetSchema().GetSchemaKey(), manufacturerClass->GetName().c_str()); 
     ExerciseVariableCountManufacturerArray (instance, *manufEnabler, v, L"ManufacturerArray[]");
-    
-    // WIP_FUSION verify I can set array elements to NULL        
-            
-    // WIP_FUSION, add array members                       
-    // WIP_FUSION, remove array members
-    // WIP_FUSION, clear array
     
     // Make sure that everything still has the final value that we expected
     VerifyString (instance, v, L"S", largeString);
@@ -780,7 +753,6 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     VerifyStringArray   (instance, v, L"EndingArray[]", L"EArray", 0, 14);                
     VerifyVariableCountManufacturerArray (instance, v, L"ManufacturerArray[]");     
     
-    // WIP_FUSION: should pass the string to the logger via a backdoor
     instance.ToString(L"").c_str();
     }
 
@@ -1931,7 +1903,6 @@ TEST_F(MemoryLayoutTests, InstantiateStandaloneInstance)
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     WString instanceId = instance->GetInstanceId();
-    // WIP_FUSION: should pass the string to the logger via a backdoor
     instance->ToString(L"").c_str();
     ExerciseInstance (*instance, L"Test");
 
@@ -1954,7 +1925,6 @@ TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     WString instanceId = instance->GetInstanceId();
 
-    // WIP_FUSION: should pass the string to the logger via a backdoor
     instance->ToString(L"").c_str();
 
     // instance.Compact()... then check values again
@@ -2220,8 +2190,6 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     fixedDate.SetDateTimeTicks (634027121070910000);
     WString dateStr = fixedDate.ToString();
     EXPECT_TRUE (0 == dateStr.compare (L"#2010/2/25-16:28:27:91#"));
-
-    // WIP_FUSION - test array values
     };
   
 /*---------------------------------------------------------------------------------**//**
@@ -2259,8 +2227,6 @@ TEST_F (MemoryLayoutTests, TestSetGetNull)
     
     EXPECT_TRUE (SUCCESS == instance->GetValue (v, L"S"));
     EXPECT_FALSE (v.IsNull());     
-    
-    // WIP_FUSION test arrays
     };
 
 /*--------------------------------------------------------------------------------**//**

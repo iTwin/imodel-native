@@ -2680,7 +2680,7 @@ ECObjectsStatus       MemoryInstanceSupport::SetValueToMemory (ECValueCR v, Clas
 
     if (typeDescriptor.IsPrimitiveArray())
         return SetPrimitiveValueToMemory (v, classLayout, propertyLayout, true, index);
-    else if (typeDescriptor.IsStructArray())
+    else if (typeDescriptor.IsStructArray() && (v.IsNull() || v.IsStruct()))
         {
         if (v.GetStruct() != NULL)
             {

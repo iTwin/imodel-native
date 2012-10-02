@@ -454,7 +454,6 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingSimpleInstance
 
     EXPECT_EQ (INSTANCE_READ_STATUS_Success, instanceStatus);
 
-    // WIP_FUSION: should pass the string to the logger via a backdoor
     WString str = testInstance->ToString(L"").c_str();
     VerifyTestInstance (testInstance.get(), false);
     };
@@ -502,7 +501,6 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     InstanceReadStatus instanceStatus = IECInstance::ReadFromXmlFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), *instanceContext);
     EXPECT_EQ (INSTANCE_READ_STATUS_Success, instanceStatus);
     
-    // WIP_FUSION: should pass the string to the logger via a backdoor
     testInstance->ToString(L"").c_str();
     VerifyTestInstance (testInstance.get(), false);
 
@@ -546,7 +544,6 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     InstanceReadStatus instanceStatus = IECInstance::ReadFromXmlFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), *instanceContext);
     EXPECT_EQ (INSTANCE_READ_STATUS_Success, instanceStatus);
     
-    // WIP_FUSION: should pass the string to the logger via a backdoor
     testInstance->ToString(L"").c_str();
     VerifyTestInstance (testInstance.get(), false);
 
@@ -633,7 +630,6 @@ TEST_F(PolymorphismDeserializationTest, ExpectSuccessWhenDeserializingPolymorphi
 
     EXPECT_EQ (INSTANCE_READ_STATUS_Success, instanceStatus);
     
-    // WIP_FUSION: should pass the string to the logger via a backdoor
     testInstance->ToString(L"").c_str();
     VerifyPolymorphismInstance (testInstance.get());
     };
