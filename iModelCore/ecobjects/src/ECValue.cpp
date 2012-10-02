@@ -333,6 +333,7 @@ void            ECValue::ConstructUninitialized()
 #endif
     m_valueKind  = VALUEKIND_Uninitialized;
     m_stateFlags = ECVALUE_STATE_IsNull;
+    m_ownsData = false;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -362,21 +363,20 @@ void            ECValue::DeepCopy (ECValueCR v)
 
         case VALUEKIND_Array:
             {
-            //WIP_FUSION 
-            BeAssert (false && "It's impossible to 'copy' an array -- the data is not here");
+            // The array's data is not stored here, so all we can copy is the ArrayInfo (taken care of by memcpy above)
             break;
             }
 
         case PRIMITIVETYPE_Binary:
             {
-            //WIP_FUSION 
-            BeAssert (false && "Needs work: can we copy a binary value? BinaryInfo::m_data is a pointer into somebody's storage container?!");
+            m_ownsData = false;                     // prevent SetBinary from attempting to free the data temporarily copied by memset
+            SetBinary (v.m_binaryInfo.m_data, v.m_binaryInfo.m_size, true);   // copy the data buffer and take ownership
             break;
             }
 
         case PRIMITIVETYPE_String:
-            m_stringInfo.m_freeWhenDone = false; // prevent SetString from attempting to free the string that was temporarily copied by memset
-            SetString (v.m_stringInfo.m_string);
+            m_ownsData = false; // prevent SetString from attempting to free the string that was temporarily copied by memset
+            SetString (v.m_string);
             break;
 
         // the memcpy takes care of these...            
@@ -420,18 +420,22 @@ void            ECValue::ShallowCopy (ECValueCR v)
 
         case PRIMITIVETYPE_Binary:
             {
-            //WIP_FUSION 
-            BeAssert (false && "Needs work: can we copy a binary value? BinaryInfo::m_data is a pointer into somebody's storage container?!");
+            // Only make a copy of the binary data if the original object had a copy
+            if (m_ownsData)
+                {
+                m_ownsData = false;
+                SetBinary (v.m_binaryInfo.m_data, v.m_binaryInfo.m_size, true);
+                }
             break;
             }
 
         case PRIMITIVETYPE_String:
             {
             // Only make a copy of the string if the original object had a copy.
-            if (m_stringInfo.m_freeWhenDone)
+            if (m_ownsData)
                 {
-                m_stringInfo.m_freeWhenDone = false; // prevent SetString from attempting to free the string that was temporarily copied by memset
-                SetString (v.m_stringInfo.m_string);
+                m_ownsData = false; // prevent SetString from attempting to free the string that was temporarily copied by memset
+                SetString (v.m_string);
                 }
 
             break;
@@ -465,13 +469,13 @@ void            ECValue::FreeMemory ()
     switch (primitiveType)
         {
         case PRIMITIVETYPE_String:
-            if ((m_stringInfo.m_freeWhenDone) && (m_stringInfo.m_string != NULL))
-                free (const_cast<WCharP>(m_stringInfo.m_string));
+            if (m_ownsData && m_string != NULL)
+                free (const_cast<WCharP>(m_string));
             return;
 
         case PRIMITIVETYPE_Binary:
         case PRIMITIVETYPE_IGeometry:
-            if ((m_binaryInfo.m_data != NULL) && (m_binaryInfo.m_freeWhenDone))
+            if (NULL != m_binaryInfo.m_data && m_ownsData)
                 free ((void*)m_binaryInfo.m_data);
             return;
 
@@ -556,7 +560,7 @@ ECValue::ECValue (ECValueCR v, bool doDeepCopy)
 *  Construct a Null EC::ECValue (of a specific type, but with IsNull = true)
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (ValueKind classification) : m_valueKind(classification), m_stateFlags(ECVALUE_STATE_IsNull)
+ECValue::ECValue (ValueKind classification) : m_valueKind(classification), m_stateFlags(ECVALUE_STATE_IsNull), m_ownsData(false)
     {
     }       
 
@@ -564,7 +568,7 @@ ECValue::ECValue (ValueKind classification) : m_valueKind(classification), m_sta
 *  Construct a Null EC::ECValue (of a specific type, but with IsNull = true)
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (PrimitiveType primitiveType) : m_primitiveType(primitiveType), m_stateFlags(ECVALUE_STATE_IsNull)
+ECValue::ECValue (PrimitiveType primitiveType) : m_primitiveType(primitiveType), m_stateFlags(ECVALUE_STATE_IsNull), m_ownsData(false)
     {
     }
     
@@ -914,7 +918,7 @@ BentleyStatus       ECValue::SetPoint3D (DPoint3dCR value)
 WCharCP ECValue::GetString() const
     {
     PRECONDITION (IsString() && "Tried to get string value from an EC::ECValue that is not a string.", L"<Programmer Error: Attempted to get string value from EC::ECValue that is not a string.>");
-    return m_stringInfo.m_string;
+    return m_string;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -927,20 +931,20 @@ BentleyStatus ECValue::SetString (WCharCP string, bool holdADuplicate)
     Clear();
         
     m_primitiveType = PRIMITIVETYPE_String;
-    m_stringInfo.m_freeWhenDone = holdADuplicate; // if we hold a duplicate, we are responsible for freeing it
+    m_ownsData = holdADuplicate;
     
     if (NULL == string)
         {
-        m_stringInfo.m_string = NULL;
+        m_string = NULL;
         return SUCCESS;
         }
 
     SetIsNull (false);
 
     if (holdADuplicate)    
-        m_stringInfo.m_string = BeStringUtilities::Wcsdup (string);
+        m_string = BeStringUtilities::Wcsdup (string);
     else
-        m_stringInfo.m_string = string;
+        m_string = string;
             
     return SUCCESS;
     }
@@ -963,7 +967,7 @@ BentleyStatus ECValue::SetBinary (const byte * data, size_t size, bool holdADupl
     Clear();
 
     m_primitiveType = PRIMITIVETYPE_Binary;
-    m_binaryInfo.m_freeWhenDone = holdADuplicate;
+    m_ownsData = holdADuplicate;
     
     if (NULL == data)
         {
@@ -1985,8 +1989,7 @@ ECPropertyValue ECValuesCollectionIterator::GetChildPropertyValue (ECPropertyVal
         if (0 < arrayCount)
             childAccessor.DeepestLocation().arrayIndex = 0;
         else
-            childAccessor.PopLocation();  // WIP_FUSION: better to Clear the accessor?
-                                          //             test this with an array with no members
+            childAccessor.PopLocation();
         }
     else
     if (parentValue.IsStruct())
@@ -2022,8 +2025,7 @@ ECPropertyValue ECValuesCollectionIterator::GetChildPropertyValue (ECPropertyVal
             if (0 != firstIndex)
                 childAccessor.PushLocation (enabler, firstIndex, -1);
             else
-                childAccessor.PopLocation();  // WIP_FUSION: better to Clear the accessor?
-                                              //             test this with a struct with no members
+                childAccessor.PopLocation();
             }
         }
 
@@ -2248,6 +2250,22 @@ BentleyStatus SystemTime::InitFromUnixMillis (UInt64 unixMillis)
     {
     unixMillisToSystemTime (*this, unixMillis);
     return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt64 ECValue::GetDateTimeUnixMillis() const
+    {
+    PRECONDITION (IsDateTime() && "Tried to get DateTime value from an EC::ECValue that is not a DateTime.", 0);
+    PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", 0);
+
+    Int64 ticks = (UInt64)GetDateTimeTicks();
+    ticks -= TICKADJUSTMENT;
+    _FILETIME fileTime;
+    fileTime.dwLowDateTime = ticks & 0xFFFFFFFF;
+    fileTime.dwHighDateTime = ticks >> 0x20;
+    return BeTimeUtilities::ConvertFiletimeToUnixMillis (fileTime);
     }
 
 END_BENTLEY_EC_NAMESPACE

@@ -184,7 +184,6 @@ WString    PropertyLayout::ToString ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            PropertyLayout::IsFixedSized () const
     {
-    // WIP_FUSION: when we have m_modifiers, they will determine if it is fixed size... could have fixed size string or variable int (added at end)
     if (m_typeDescriptor.IsStruct())
         return true;
 
@@ -213,7 +212,7 @@ UInt32          PropertyLayout::GetSizeInFixedSection () const
         return ECValue::GetFixedPrimitiveValueSize(m_typeDescriptor.GetPrimitiveType());
     else if (m_typeDescriptor.IsPrimitiveArray())
         {
-        UInt32 fixedCount = m_modifierData; // WIP_FUSION for now assume modifier data holds the count but I'm not sure if that is the right place for this.
+        UInt32 fixedCount = m_modifierData;
         return CalculateFixedArrayPropertySize (fixedCount, m_typeDescriptor.GetPrimitiveType());
         }
         
@@ -284,6 +283,17 @@ UInt32          ClassLayout::GetChecksum () const
         m_checkSum = ComputeCheckSum ();
 
     return  m_checkSum;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            ClassLayout::Equals (ClassLayoutCR other) const
+    {
+    if (this == &other)
+        return true;
+    else
+        return this->GetChecksum() == other.GetChecksum() && this->m_className.Equals (other.m_className);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1576,11 +1586,14 @@ void            MemoryInstanceSupport::SetPropertyValueNull (PropertyLayoutCR pr
     else
         PrepareToAccessNullFlags (nullflagsOffset, nullflagsBitmask, data, propertyLayout);   
     
-    NullflagsBitmask * nullflags = (NullflagsBitmask *)(data + nullflagsOffset);
-    if (isNull && 0 == (*nullflags & nullflagsBitmask))
-        *nullflags |= nullflagsBitmask; // turn on the null bit
-    else if (!isNull && nullflagsBitmask == (*nullflags & nullflagsBitmask))
-        *nullflags ^= nullflagsBitmask; // turn off the null bit // WIP_FUSION: Needs to use ModifyData
+    NullflagsBitmask* nullflagsP = (NullflagsBitmask*)(data + nullflagsOffset);
+    NullflagsBitmask nullflags = *nullflagsP;
+    if (isNull && 0 == (nullflags & nullflagsBitmask))
+        nullflags |= nullflagsBitmask;
+    else if (!isNull && nullflagsBitmask == (nullflags & nullflagsBitmask))
+        nullflags ^= nullflagsBitmask;
+
+    ModifyData (nullflagsP, nullflags);
     }    
 
 /*---------------------------------------------------------------------------------**//**
@@ -1671,7 +1684,7 @@ ECObjectsStatus       MemoryInstanceSupport::EnsureSpaceIsAvailable (UInt32& off
 
     UInt32 availableBytes = 0;
     if (0 == *pNextSecondaryOffset)
-        *pNextSecondaryOffset = *pSecondaryOffset; // WIP_FUSION: Use ModifyData // As long as we have zeros, it as if the last non-zero one were the value to use whereever there is a zero... 
+        ModifyData (pNextSecondaryOffset, *pSecondaryOffset); // As long as we have zeros, it as if the last non-zero one were the value to use whereever there is a zero... 
     else        
         availableBytes = *pNextSecondaryOffset - *pSecondaryOffset;
 
@@ -2075,7 +2088,7 @@ ECObjectsStatus       MemoryInstanceSupport::ShiftValueData(ClassLayoutCR classL
         if (destination + bytesToMove > data + bytesAllocated)
             return ECOBJECTS_STATUS_IndexOutOfRange;
             
-        memmove (destination, source, bytesToMove); // WIP_FUSION: Use Modify data, instead. Need method from Keith. (D-60516)
+        MoveData (destination, source, bytesToMove);
         }
 
     // Shift all secondaryOffsets for variable-sized property values that follow the one that just got larger
@@ -2129,7 +2142,7 @@ ECObjectsStatus       MemoryInstanceSupport::ShiftArrayIndexValueData(PropertyLa
         if (destination + bytesToMove > data + *pNextProperty)
             return ECOBJECTS_STATUS_IndexOutOfRange;
             
-        memmove (destination, source, bytesToMove); // WIP_FUSION: Use Modify data, instead  (D-60516)
+        MoveData (destination, source, bytesToMove);
         }
 
     // Shift all secondaryOffsets for indices following the one that just got larger
@@ -2474,46 +2487,46 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
 
             Int32 value = v.GetInteger();
 
-            if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, &value, sizeof(value)))
+            UInt32* valueP = (UInt32*)(_GetData() + offset);
+            if (!isOriginalValueNull && *valueP == value)
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
-            // WIP_FUSION: would it speed things up to poke directly when m_allowWritingDirectlyToInstanceMemory is true?
-            result = _ModifyData (offset, &value, sizeof(value));
-            break;
+            result = ModifyData (valueP, value);
             }
+            break;
         case PRIMITIVETYPE_Long:
             {
             if (!v.IsLong ())
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
             Int64 value = v.GetLong();
-
-            if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, &value, sizeof(value)))
+            byte const* valueP = _GetData() + offset;
+            if (!isOriginalValueNull && 0 == memcmp (valueP, &value, sizeof(value)))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
-            result = _ModifyData (offset, &value, sizeof(value));
-            break;
+            result = ModifyData (valueP, &value, sizeof (value));
             }
+            break;
         case PRIMITIVETYPE_Double:
             {
             if (!v.IsDouble ())
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
             double value = v.GetDouble();
-
-            if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, &value, sizeof(value)))
+            byte const* valueP = _GetData() + offset;
+            if (!isOriginalValueNull && 0 == memcmp (valueP, &value, sizeof(value)))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
-            result = _ModifyData (offset, &value, sizeof(value));
-            break;
+            result = ModifyData (valueP, &value, sizeof(value));
             }       
+            break;
         case PRIMITIVETYPE_String:
             {
             if (!v.IsString ())
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
             WCharCP value = v.GetString();
-            UInt32 bytesNeeded = (UInt32)(sizeof(wchar_t) * (wcslen(value) + 1)); // WIP_FUSION: what if the caller could tell us the size?
+            UInt32 bytesNeeded = (UInt32)(sizeof(wchar_t) * (wcslen(value) + 1));
 
             UInt32 currentSize;
             if (useIndex)
@@ -2530,14 +2543,13 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
                 status = EnsureSpaceIsAvailableForArrayIndexValue (classLayout, propertyLayout, index, bytesNeeded);
             else
                 status = EnsureSpaceIsAvailable (offset, classLayout, propertyLayout, bytesNeeded);
+
             if (ECOBJECTS_STATUS_Success != status)
                 return status;
 
-            // WIP_FUSION: would it speed things up to poke directly when m_allowWritingDirectlyToInstanceMemory is true?
-            result = _ModifyData (offset, value, bytesNeeded);
-            break;
+            result = ModifyData (_GetData() + offset, value, bytesNeeded);
             }
-
+            break;
         case PRIMITIVETYPE_IGeometry:
         case PRIMITIVETYPE_Binary:
             {
@@ -2570,6 +2582,7 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
                 status = EnsureSpaceIsAvailableForArrayIndexValue (classLayout, propertyLayout, index, bytesNeeded);
             else
                 status = EnsureSpaceIsAvailable (offset, classLayout, propertyLayout, bytesNeeded);
+
             if (ECOBJECTS_STATUS_Success != status)
                 return status;
                 
@@ -2579,63 +2592,62 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             if (bytesNeeded == 0)
                 return ECOBJECTS_STATUS_Success;
             
-            // WIP_FUSION: would it speed things up to poke directly when m_allowWritingDirectlyToInstanceMemory is true?    
-            result = _ModifyData (offset, dataBuffer, bytesNeeded);
+            result = ModifyData (_GetData() + offset, dataBuffer, bytesNeeded);
             free (dataBuffer);
-            break;
             }
+            break;
         case PRIMITIVETYPE_Boolean:
             {
             if (!v.IsBoolean ())
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
             bool value = v.GetBoolean();
-
-            if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, &value, sizeof(value)))
+            byte const* valueP = _GetData() + offset;
+            if (!isOriginalValueNull && 0 == memcmp (valueP, &value, sizeof(value)))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
-            result = _ModifyData (offset, &value, sizeof(value));
-            break;
+            result = ModifyData (valueP, &value, sizeof(value));
             }       
+            break;
         case PRIMITIVETYPE_Point2D:
             {
             if (!v.IsPoint2D ())
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
             DPoint2d value = v.GetPoint2D();
-
-            if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, &value, sizeof(value)))
+            byte const* valueP = _GetData() + offset;
+            if (!isOriginalValueNull && 0 == memcmp (valueP, &value, sizeof(value)))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
-            result = _ModifyData (offset, &value, sizeof(value));
-            break;
+            result = ModifyData (valueP, &value, sizeof(value));
             }       
+            break;
         case PRIMITIVETYPE_Point3D:
             {
             if (!v.IsPoint3D ())
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
             DPoint3d value = v.GetPoint3D();
-
-            if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, &value, sizeof(value)))
+            byte const* valueP = _GetData() + offset;
+            if (!isOriginalValueNull && 0 == memcmp (valueP, &value, sizeof(value)))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
-            result = _ModifyData (offset, &value, sizeof(value));
-            break;
+            result = ModifyData (valueP, &value, sizeof(value));
             } 
+            break;
         case PRIMITIVETYPE_DateTime:      // stored as long
             {
             if (!v.IsDateTime ())
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
             Int64 value = v.GetDateTimeTicks();
-
-            if (!isOriginalValueNull && 0 == memcmp (_GetData() + offset, &value, sizeof(value)))
+            byte const* valueP = _GetData() + offset;
+            if (!isOriginalValueNull && 0 == memcmp (valueP, &value, sizeof(value)))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
-            result = _ModifyData (offset, &value, sizeof(value));
-            break;
+            result = ModifyData (valueP, &value, sizeof (value));
             }
+            break;
         }
 
     if (ECOBJECTS_STATUS_Success == result)
@@ -2785,6 +2797,51 @@ ECObjectsStatus MemoryInstanceSupport::SetCalculatedProperty (ECValueCR v, Class
         { BeAssert (false); return ECOBJECTS_STATUS_Error; }
     else
         return spec->UpdateDependentProperties (v, *iecInstance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus MemoryInstanceSupport::ModifyData (byte const* data, void const* newData, size_t len)
+    {
+    if (m_allowWritingDirectlyToInstanceMemory)
+        {
+        memcpy (const_cast<byte*> (data), newData, len);
+        return ECOBJECTS_STATUS_Success;
+        }
+    else
+        return _ModifyData ((UInt32)(data - _GetData()), newData, (UInt32)len);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus MemoryInstanceSupport::ModifyData (UInt32 const* data, UInt32 newData)
+    {
+    if (m_allowWritingDirectlyToInstanceMemory)
+        {
+        *const_cast<UInt32*> (data) = newData;
+        return ECOBJECTS_STATUS_Success;
+        }
+    else
+        return _ModifyData ((UInt32)((byte const*)data - _GetData()), &newData, sizeof(newData));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus MemoryInstanceSupport::MoveData (byte* to, byte const* from, size_t len)
+    {
+    if (m_allowWritingDirectlyToInstanceMemory)
+        {
+        memmove (to, from, len);
+        return ECOBJECTS_STATUS_Success;
+        }
+    else
+        {
+        byte const* data = _GetData();
+        return _MoveData ((UInt32)(to - data), (UInt32)(from - data), (UInt32)len);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2982,7 +3039,7 @@ ECObjectsStatus            ArrayResizer::ShiftDataFollowingResizeIndex ()
         {        
         UInt32 byteCountToShift = m_preArrayByteCount - offsetOfResizePoint;        
         DEBUG_EXPECT (m_pResizeIndexPostShift + byteCountToShift <= pNextProperty); 
-        memmove ((byte*)m_pResizeIndexPostShift, m_pResizeIndexPreShift, byteCountToShift); // WIP_FUSION .. use _MoveData, waiting on Keith (D-60516)
+        m_instance.MoveData ((byte*)m_pResizeIndexPostShift, m_pResizeIndexPreShift, byteCountToShift);
         }
     
     return SetSecondaryOffsetsFollowingResizeIndex();        
@@ -3080,7 +3137,7 @@ ECObjectsStatus            ArrayResizer::ShiftDataPreceedingResizeIndex ()
     // shift all the elements in the fixed section preceding the insert point if we needed to grow the nullflags bitmask            
     if ((pShiftTo != pShiftFrom))
         {
-        memmove (pShiftTo, pShiftFrom, byteCountToShift); // WIP_FUSION .. use _MoveData, waiting on Keith (D-60516)
+        m_instance.MoveData (pShiftTo, pShiftFrom, byteCountToShift);
         DEBUG_EXPECT (pShiftTo + byteCountToShift <= m_pResizeIndexPostShift); 
         }
         
