@@ -94,21 +94,14 @@ private:
         };
 
     UInt8               m_stateFlags;
-
+    bool                m_ownsData;             // For binary and string values, if true the data must be freed with this ECValue
 protected:    
     typedef bvector<ECValue>  ValuesVector;
     typedef bvector<ECValue>* ValuesVectorP;
     
-    struct StringInfo
-        {
-        WCharCP             m_string;
-        bool                m_freeWhenDone;   // WIP_FUSION: this could be stored in the "header"... shared with other DataTypes that need to be freed
-        };                                    //             and it would make max size of StringInfo be 8 bytes
-
     struct BinaryInfo
         {
         const byte *        m_data;
-        bool                m_freeWhenDone;
         size_t              m_size;
         };
 
@@ -118,7 +111,7 @@ protected:
         ::Int32             m_integer32;
         ::Int64             m_long64;
         double              m_double;
-        StringInfo          m_stringInfo;
+        WCharCP             m_string;
         ::Int64             m_dateTime;
         DPoint2d            m_dPoint2d;   
         DPoint3d            m_dPoint3d; 
@@ -216,7 +209,7 @@ public:
         
     ECOBJECTS_EXPORT WCharCP        GetString () const;
 /*__PUBLISH_SECTION_END__*/
-                     WCharCP        GetString0 () const {return m_stringInfo.m_string;}
+                     WCharCP        GetString0 () const {return m_string;}
 /*__PUBLISH_SECTION_START__*/
     ECOBJECTS_EXPORT BentleyStatus  SetString (WCharCP string, bool holdADuplicate = true);
 
@@ -231,6 +224,8 @@ public:
 
     ECOBJECTS_EXPORT Int64          GetDateTimeTicks() const;
     ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 value);
+
+    ECOBJECTS_EXPORT UInt64         GetDateTimeUnixMillis() const;
 
     ECOBJECTS_EXPORT DPoint2d       GetPoint2D() const;
     ECOBJECTS_EXPORT BentleyStatus  SetPoint2D (DPoint2dCR value);

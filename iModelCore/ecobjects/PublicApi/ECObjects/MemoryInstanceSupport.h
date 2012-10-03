@@ -59,9 +59,6 @@ private:
     UInt32              m_modifierData;  //! Data used with the modifier flag, like the length of a fixed-sized string.
     UInt32              m_nullflagsOffset;
     NullflagsBitmask    m_nullflagsBitmask;
-
-  //ECPropertyCP        m_property; // WIP_FUSION: optional? YAGNI?
-
 public:
     PropertyLayout (WCharCP accessString, UInt32 psi, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask, UInt32 modifierFlags = 0,  UInt32 modifierData = 0) : //, ECPropertyCP property) :
         m_accessString(accessString), m_parentStructIndex (psi), m_typeDescriptor(typeDescriptor), m_offset(offset), m_nullflagsOffset(nullflagsOffset), 
@@ -194,10 +191,12 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus         GetPropertyIndices (bvector<UInt32>& properties, UInt32 parentIndex) const;
     ECOBJECTS_EXPORT bool                    HasChildProperties (UInt32 parentIndex) const;
 
+    // Returns true if this ClassLayout is equivalent to the other ClassLayout (checks name and checksum)
+    ECOBJECTS_EXPORT bool                    Equals (ClassLayoutCR other) const;
+
     ECOBJECTS_EXPORT ~ClassLayout();
     ECOBJECTS_EXPORT void            AddPropertyDirect (WCharCP accessString, UInt32 parentStructIndex, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask);
     ECOBJECTS_EXPORT ECObjectsStatus FinishLayout ();
-
 /*__PUBLISH_SECTION_START__*/
 private:
     //ClassLayout (){}
@@ -339,7 +338,7 @@ struct MemoryInstanceSupport
     
 /*__PUBLISH_SECTION_START__*/  
 private:    
-    bool                        m_allowWritingDirectlyToInstanceMemory;
+    mutable bool        m_allowWritingDirectlyToInstanceMemory;
 //__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_END__*/    
 
@@ -407,7 +406,10 @@ private:
     // Updates the dependent properties of the calculated property
     ECObjectsStatus                   SetCalculatedProperty (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout);
     ECObjectsStatus                   SetPrimitiveValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, bool alreadyCalculated);
-         
+
+    ECObjectsStatus                   ModifyData (byte const* data, void const* newData, size_t dataLength);
+    ECObjectsStatus                   ModifyData (UInt32 const* data, UInt32 newData);
+    ECObjectsStatus                   MoveData (byte* to, byte const* from, size_t dataLength); 
 protected:
     //! Constructor used by subclasses
     //! @param allowWritingDirectlyToInstanceMemory     If true, MemoryInstanceSupport is allowed to memset, memmove, and poke at the 
@@ -415,6 +417,8 @@ protected:
     //!                                                 If false, all modifications must happen through _ModifyData, e.g. for ECXData.
     ECOBJECTS_EXPORT            MemoryInstanceSupport (bool allowWritingDirectlyToInstanceMemory);
     ECOBJECTS_EXPORT void       InitializeMemory(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated) const;
+                     void       SetInstanceMemoryWritable (bool writable) const { m_allowWritingDirectlyToInstanceMemory = writable; }
+
     //! Obtains the current primitive value for the specified property
     //! If nIndices is > 0 then the primitive value for the array element at the specified index is obtained.
     //! This is protected because implementors of _GetStructArrayArrayValueFromMemory should call it to obtain the binary primitive value that they stored
@@ -463,6 +467,7 @@ protected:
     //! Get a pointer to the first byte of the data    
     virtual byte const *        _GetData () const = 0;
     virtual ECObjectsStatus     _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength) = 0;
+    virtual ECObjectsStatus     _MoveData (UInt32 toOffset, UInt32 fromOffset, UInt32 dataLength) = 0;
     virtual UInt32              _GetBytesAllocated () const = 0;
         
     //! Reallocates memory for the IECInstance and copies the old IECInstance data into the new memory
