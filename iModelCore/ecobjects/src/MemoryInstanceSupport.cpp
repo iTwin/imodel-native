@@ -1943,9 +1943,8 @@ ECObjectsStatus MemoryInstanceSupport::InsertNullArrayElementsAt (ClassLayoutCR 
         return ECOBJECTS_STATUS_PropertyNotFound;
             
     PropertyLayoutCR propertyLayout = *pPropertyLayout;
-    // WIP_FUSION improve error codes
     bool isFixedCount = (propertyLayout.GetModifierFlags() & PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount);
-    PRECONDITION (!isFixedCount && propertyLayout.GetTypeDescriptor().IsArray() && "A variable size array property is required to grow an array", ECOBJECTS_STATUS_PreconditionViolated);
+    PRECONDITION (!isFixedCount && propertyLayout.GetTypeDescriptor().IsArray() && "A variable size array property is required to grow an array", ECOBJECTS_STATUS_UnableToResizeFixedSizedArray);
     
     PRECONDITION (insertCount > 0, ECOBJECTS_STATUS_IndexOutOfRange)        
     
@@ -1969,9 +1968,8 @@ ECObjectsStatus       MemoryInstanceSupport::AddNullArrayElementsAt (ClassLayout
         return ECOBJECTS_STATUS_PropertyNotFound; 
             
     PropertyLayoutCR propertyLayout = *pPropertyLayout;
-    // WIP_FUSION improve error codes
     bool isFixedCount = (propertyLayout.GetModifierFlags() & PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount);
-    PRECONDITION (!isFixedCount && propertyLayout.GetTypeDescriptor().IsArray() && "A variable size array property is required to grow an array", ECOBJECTS_STATUS_PreconditionViolated);
+    PRECONDITION (!isFixedCount && propertyLayout.GetTypeDescriptor().IsArray() && "A variable size array property is required to grow an array", ECOBJECTS_STATUS_UnableToResizeFixedSizedArray);
     
     PRECONDITION (count > 0, ECOBJECTS_STATUS_IndexOutOfRange)        
     
@@ -2279,15 +2277,11 @@ ECObjectsStatus       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValu
             case PRIMITIVETYPE_String:
                 {
                 WCharP pString = (WCharP)pValue;
-                v.SetString (pString /*, false */); // WIP_FUSION: We are passing false for "makeDuplicateCopy" to avoid the allocation 
-                                              // and copying... but how do make the caller aware of this? When do they need 
-                                              // to be aware. The wchar_t* they get back would get invalidated if the 
-                                              // XAttribute or other IMemoryProvider got reallocated, or the string got moved.
-                                              // The caller must immediately use (e.g. marshal or copy) the returned value.
-                                              // Optionally, the caller could ask the EC::ECValue to make a duplicate? 
-                                              // WIP_FUSION: UPDATE: I have changed this to make a copy. There are contexts in which we are evaluating ECExpressions
-                                              // which operate on temporary StandaloneECInstances which evaporate immediately after this ECValue is retrieved.
-                                              // Callers have no way of knowing that the string can become corrupt.
+                // Note: we could avoid a string copy by returning a pointer directly to the string in this instance's memory buffer,
+                // but the pointer will become invalid as soon as the instance does.
+                // Since there are situations in which the returned ECValue outlasts the instance (e.g. evaluating ECExpressions), and the caller
+                // cannot know his ECValue is about to evaporate, we have to make the copy.
+                v.SetString (pString);
                 break;            
                 }
             default:
@@ -2314,7 +2308,7 @@ ECObjectsStatus       MemoryInstanceSupport::GetValueFromMemory (ECValueR v, Cla
         }
     if (typeDescriptor.IsStruct())
         {
-        // WIP_FUSION: Currently this value just serves as a placeholder, but its basically useless.
+        // Note that it is not possible to retrieve an embedded struct as an atomic ECValue - you must access its property values individually.
         v.SetStruct (NULL);
         return ECOBJECTS_STATUS_Success;
         }
@@ -2686,8 +2680,24 @@ ECObjectsStatus       MemoryInstanceSupport::SetValueToMemory (ECValueCR v, Clas
 
     if (typeDescriptor.IsPrimitiveArray())
         return SetPrimitiveValueToMemory (v, classLayout, propertyLayout, true, index);
-    else if (typeDescriptor.IsStructArray()) // WIP_FUSION ensure that the struct is valid to set as an index in this array.              
+    else if (typeDescriptor.IsStructArray() && (v.IsNull() || v.IsStruct()))
+        {
+        if (v.GetStruct() != NULL)
+            {
+            UInt32 propertyIndex;
+            IECInstanceP instance = dynamic_cast<IECInstanceP> (this);
+            if (NULL != instance && ECOBJECTS_STATUS_Success == classLayout.GetPropertyLayoutIndex (propertyIndex, propertyLayout))
+                {
+                // Determine if the struct is valid to add to this array
+                ECPropertyCP ecprop = instance->GetEnabler().LookupECProperty (propertyIndex);
+                ArrayECPropertyCP structArrayProp = ecprop != NULL ? ecprop->GetAsArrayProperty() : NULL;
+                if (NULL != structArrayProp && !v.GetStruct()->GetEnabler().GetClass().Is (structArrayProp->GetStructElementType()))
+                    return ECOBJECTS_STATUS_UnableToSetStructArrayMemberInstance;
+                }
+            }
+
         return _SetStructArrayValueToMemory (v, classLayout, propertyLayout, index);       
+        }
 
     POSTCONDITION (false && "Can not set the value to memory using the specified property layout because it is an unsupported datatype", ECOBJECTS_STATUS_DataTypeNotSupported);
     }     
@@ -3214,10 +3224,13 @@ ECObjectsStatus            ArrayResizer::WriteArrayHeader ()
         
         pNullflagsCurrent = pNullflagsStart + ((m_postAllocatedArrayCount - i) / BITS_PER_NULLFLAGSBITMASK);
         nullflagsBitmask = 0x01 << ((m_postAllocatedArrayCount - i) % BITS_PER_NULLFLAGSBITMASK);        
+        NullflagsBitmask newNullFlags = *pNullflagsCurrent;
         if (isNull && 0 == (*pNullflagsCurrent & nullflagsBitmask))
-            *pNullflagsCurrent |= nullflagsBitmask; // turn on the null bit
+            newNullFlags |= nullflagsBitmask; // turn on the null bit
         else if (!isNull && nullflagsBitmask == (*pNullflagsCurrent & nullflagsBitmask))
-            *pNullflagsCurrent ^= nullflagsBitmask; // turn off the null bit // WIP_FUSION: Needs to use ModifyData   
+            newNullFlags ^= nullflagsBitmask; // turn off the null bit
+
+        m_instance.ModifyData (pNullflagsCurrent, newNullFlags);
         }
         
     // initilize inserted nullflags bits

@@ -20,8 +20,6 @@ using namespace std;
 
 struct MemoryLayoutTests : ECTestFixture {};
 
-// WIP_FUSION: these verify methods are duplicated in DgnPlatformTest... how do we share that code?    
-// WIP_FUSION: where is the right place to share these methods even among ECObjects tests? 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
@@ -544,7 +542,6 @@ void VerifyVariableCountManufacturerArray (IECInstanceR instance, ECValue& v, wc
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ExerciseVariableCountManufacturerArray (IECInstanceR instance, StandaloneECEnablerR manufacturerEnabler, ECValue& v, wchar_t* arrayAccessor)
     {    
-    // WIP_FUSION, review this process of setting array eleeents.  Is it easy enough?
     VerifyArrayInfo (instance, v, arrayAccessor, 0, false);
     
     // create an array of two values
@@ -600,18 +597,21 @@ void ExerciseVariableCountManufacturerArray (IECInstanceR instance, StandaloneEC
     
     // ensure we can't set the array elements to other primitive types
     {
-    // WIP_FUSION - these are busted need to fix
     DISABLE_ASSERTS    
     v.SetInteger (35);    
-    //index = 2;
-    //ASSERT_TRUE (ERROR == instance.SetValue (arrayAccessor, v, 1, &index));        
+    ASSERT_TRUE (ECOBJECTS_STATUS_DataTypeNotSupported == instance.SetValue (arrayAccessor, v, 1));        
     v.SetString (L"foobar");    
-    //index = 0;
-    //ASSERT_TRUE (ERROR == instance.SetValue (arrayAccessor, v, 1, &index));            
+    ASSERT_TRUE (ECOBJECTS_STATUS_DataTypeNotSupported == instance.SetValue (arrayAccessor, v, 1));            
     }
     
-    // WIP_FUSION ensure we can not set the array to an instance of a struct that is not of the type (or derived from the type) of the property    
-        
+    // ensure we can not set the array to an instance of a struct that is not of the type (or derived from the type) of the property    
+    ECClassP incompatibleClass = manufacturerEnabler.GetClass().GetSchema().GetClassP (L"AllPrimitives");
+    ASSERT_TRUE (NULL != incompatibleClass);
+
+    StandaloneECInstancePtr incompatibleInstance = incompatibleClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    v.SetStruct (incompatibleInstance.get());
+    ASSERT_TRUE (ECOBJECTS_STATUS_UnableToSetStructArrayMemberInstance == instance.SetValue (arrayAccessor, v, 0));
+
     VerifyVariableCountManufacturerArray (instance, v, arrayAccessor);
     }
     
@@ -659,8 +659,6 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     VerifyArrayInfo (instance, v, L"VariableArrayVariableElement[]", 0, false);
     VerifyArrayInfo (instance, v, L"EndingArray[]", 0, false);
     
-    // WIP_FUSION, verify other properties of ArrayInfo are correct                        
-    
     VerifyIsNullArrayElements (instance, v, L"FixedArrayFixedElement[]", 0, 10, true);
     SetAndVerifyIntegerArray (instance, v, L"FixedArrayFixedElement[]", 172, 10);
     VerifyIsNullArrayElements (instance, v, L"FixedArrayFixedElement[]", 0, 10, false);
@@ -687,12 +685,6 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
 #endif
     StandaloneECEnablerPtr manufEnabler =  manufacturerClass->GetDefaultStandaloneEnabler();
     ExerciseVariableCountManufacturerArray (instance, *manufEnabler, v, L"ManufacturerArray[]");
-    
-    // WIP_FUSION verify I can set array elements to NULL        
-            
-    // WIP_FUSION, add array members                       
-    // WIP_FUSION, remove array members
-    // WIP_FUSION, clear array
     
     // Make sure that everything still has the final value that we expected
     VerifyString (instance, v, L"S", largeString);
@@ -726,7 +718,6 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     VerifyStringArray   (instance, v, L"EndingArray[]", L"EArray", 0, 14);                
     VerifyVariableCountManufacturerArray (instance, v, L"ManufacturerArray[]");     
     
-    // WIP_FUSION: should pass the string to the logger via a backdoor
     instance.ToString(L"").c_str();
     }
 
@@ -885,45 +876,47 @@ TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
     EXPECT_TRUE (manualIntEntryOutput.GetInteger() == manualIntEntry.GetInteger());
     };
 
- #ifdef  WIP_INSTANCE_BUG
+#define WIP_INSTANCE_BUG
+#ifdef  WIP_INSTANCE_BUG
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
+TEST_F(MemoryLayoutTests, ChangeSizeOfBinaryArrayEntries)
     {
     ECSchemaPtr      schema = CreateTestSchema();
     ASSERT_TRUE (schema != NULL);
 
-    ECClassP ecClass = schema->GetClassP (L"ClassWithStructArray");
-    ASSERT_TRUE (ecClass);
-    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 0, 0);
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
+    ECClassP ecClass = schema->GetClassP (L"AllPrimitives");
+    ASSERT_TRUE (ecClass != NULL);
+    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass);
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, NULL, true);
 
-    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
-    // WIP_FUSION
-    // Cannot modify the value of a binary primitive after it has been set.
-    // Revision: It appears that you cannot change the size of a primitive binary value after it has been set.
-    // This is because of the way it's stored in native ECObjects: as a stream of bits, rather that each
-    // element as a separate entity.
+    EC::StandaloneECInstancePtr wipInstance = enabler->CreateInstance();
+    // Previously there was a bug which prevented changing the size of a binary value once it had been set. This has since been fixed.
     const byte bugTestBinary1[8] = { 0x21, 0xa9, 0x84, 0x9d, 0xca, 0x1d, 0x8a, 0x78 };
     const byte bugTestBinary2[4] = { 0x12, 0x79, 0xca, 0xde };
 
     ECValue bugTestValue0(bugTestBinary2, 4);           
 
-
-    EC::ECInstanceInteropHelper::SetValue (wipInstance, L"SmallBinaryArray[0]", bugTestValue0);
+    ASSERT_TRUE (SUCCESS == wipInstance->InsertArrayElements (L"SomeBinaries[]", 0, 1));
+    ASSERT_TRUE (SUCCESS == EC::ECInstanceInteropHelper::SetValue (*wipInstance, L"SomeBinaries[0]", bugTestValue0));
        
     ECValue bugTestValue1(bugTestBinary1, 8);     
 
-    EC::ECInstanceInteropHelper::SetValue (wipInstance, L"SmallBinaryArray[0]", bugTestValue1);
+    ASSERT_TRUE (SUCCESS == EC::ECInstanceInteropHelper::SetValue (*wipInstance, L"SomeBinaries[0]", bugTestValue1));
   
     EC::ECValue bugTestValue2;
 
-    EC::ECInstanceInteropHelper::GetValue (wipInstance, bugTestValue2, L"SmallBinaryArray[0]");
+    ASSERT_TRUE (SUCCESS == EC::ECInstanceInteropHelper::GetValue (*wipInstance, bugTestValue2, L"SomeBinaries[0]"));
     size_t size1=-1;
     size_t size2=-2;
     const byte* data1 = bugTestValue1.GetBinary(size1);
     const byte* data2 = bugTestValue2.GetBinary(size2);
+
+    ASSERT_TRUE (NULL != data1 && NULL != data2);
+    ASSERT_TRUE (size1 == 8);
+    ASSERT_TRUE (size2 == 8);
+    /*
     Console::WriteLine("Binary 1 : ");
     for(int i=0; i<(int)size1; i++)
         Console::Write("{0}", data1[i]);
@@ -937,6 +930,7 @@ TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
     DEBUG_EXPECT (size1 == size2);
     for(int i=0; i<(int)size1; i++)
         DEBUG_EXPECT(data1[i] == data2[i]);
+    */
     }
 #endif
 
@@ -1001,7 +995,6 @@ TEST_F(MemoryLayoutTests, InstantiateStandaloneInstance)
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
     EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
     WString instanceId = instance->GetInstanceId();
-    // WIP_FUSION: should pass the string to the logger via a backdoor
     WString instanceString = instance->ToString(L"").c_str();
     EXPECT_TRUE (instanceString.length() > 0);
 
@@ -1029,7 +1022,6 @@ TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
     UInt32 size = instance->GetBytesUsed ();
     EXPECT_EQ (size, 0);
 
-    // WIP_FUSION: should pass the string to the logger via a backdoor
     instance->ToString(L"").c_str();
 
     // instance.Compact()... then check values again
@@ -1420,8 +1412,6 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     SystemTime defaultTime1;
     SystemTime defaultTime2;
     EXPECT_TRUE (defaultTime1 == defaultTime2);
-
-    // WIP_FUSION - test array values
     };
   
 /*---------------------------------------------------------------------------------**//**
@@ -1459,10 +1449,6 @@ TEST_F (MemoryLayoutTests, TestSetGetNull)
     
     EXPECT_TRUE (SUCCESS == instance->GetValue (v, L"S"));
     EXPECT_FALSE (v.IsNull());     
-    
-    // WIP_FUSION test arrays
-
-    
     };
     
 void SetStringToSpecifiedNumberOfCharacters (IECInstanceR instance, int nChars)
