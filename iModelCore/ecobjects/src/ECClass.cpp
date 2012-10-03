@@ -812,7 +812,7 @@ bool ECClass::AddUniquePropertiesToList (ECClassCP currentBaseClass, const void 
         for (testIter = propertyList->begin(); testIter != currentEnd; testIter++)
             {
             ECPropertyP testProperty = *testIter;
-            if (testProperty->GetName().compare(prop->GetName()) == 0)
+            if (testProperty->GetName().Equals(prop->GetName()))
                 break;
             }
         // we didn't find it
@@ -885,86 +885,106 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
 SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context)
     {            
     // Get the BaseClass child nodes.
-    BeXmlDom::IterableNodeSet childNodes;
-    classNode.SelectChildNodes (childNodes, EC_NAMESPACE_PREFIX ":" EC_BASE_CLASS_ELEMENT);
-    FOR_EACH (BeXmlNodeP& childNode, childNodes)
-        {        
-        WString qualifiedClassName;
-        childNode->GetContent (qualifiedClassName);
-        
-        // Parse the potentially qualified class name into a namespace prefix and short class name
-        WString namespacePrefix;
-        WString className;
-        if (ECOBJECTS_STATUS_Success != ECClass::ParseClassName (namespacePrefix, className, qualifiedClassName))
+    for (BeXmlNodeP childNode = classNode.GetFirstChild (); NULL != childNode; childNode = childNode->GetNextSibling ())
+        {
+        Utf8CP childNodeName = childNode->GetName ();
+        if (0 == strcmp (childNodeName, EC_PROPERTY_ELEMENT))
             {
-            ECObjectsLogger::Log()->warningv (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the value '%ls' that can not be parsed.",  
-                this->GetName().c_str(), EC_BASE_CLASS_ELEMENT, qualifiedClassName.c_str());
-
-            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
+            ECPropertyP ecProperty = new PrimitiveECProperty (*this);
+            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, childNodeName);
+            if (SCHEMA_READ_STATUS_Success != status)
+                return status;
             }
-        
-        ECSchemaP resolvedSchema = GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
-        if (NULL == resolvedSchema)
+        else if (0 == strcmp (childNodeName, EC_BASE_CLASS_ELEMENT))
             {
-            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the namespace prefix '%ls' that can not be resolved to a referenced schema.", 
-                this->GetName().c_str(), EC_BASE_CLASS_ELEMENT, namespacePrefix.c_str());
-            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
+            SchemaReadStatus status = _ReadBaseClassFromXml(childNode);
+            if (SCHEMA_READ_STATUS_Success != status)
+                return status;
             }
-
-        ECClassP baseClass = resolvedSchema->GetClassP (className.c_str());
-        if (NULL == baseClass)
+        else if (0 == strcmp (childNodeName, EC_ARRAYPROPERTY_ELEMENT))
             {
-            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the value '%ls' that can not be resolved to an ECClass named '%ls' in the ECSchema '%ls'", 
-                this->GetName().c_str(), EC_BASE_CLASS_ELEMENT, qualifiedClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
-            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
+            ECPropertyP ecProperty = new ArrayECProperty (*this);
+            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, childNodeName);
+            if (SCHEMA_READ_STATUS_Success != status)
+                return status;
             }
-
-        if (ECOBJECTS_STATUS_Success != AddBaseClass (*baseClass))
-            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
+        else if (0 == strcmp (childNodeName, EC_STRUCTPROPERTY_ELEMENT))
+            {
+            ECPropertyP ecProperty = new StructECProperty (*this);
+            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, childNodeName);
+            if (SCHEMA_READ_STATUS_Success != status)
+                return status;
+            }
         }
     
-    // Get the Property child nodes.
-    classNode.SelectChildNodes (childNodes, EC_NAMESPACE_PREFIX ":" EC_PROPERTY_ELEMENT " | " EC_NAMESPACE_PREFIX ":" EC_ARRAYPROPERTY_ELEMENT " | " EC_NAMESPACE_PREFIX ":" EC_STRUCTPROPERTY_ELEMENT);
-    FOR_EACH (BeXmlNodeP& childNode, childNodes)
-        {   
-        ECPropertyP ecProperty = NULL;
-        Utf8CP      childNodeName = childNode->GetName();
-
-        if (0 == strcmp (childNodeName, EC_PROPERTY_ELEMENT))
-            ecProperty = new PrimitiveECProperty (*this);
-        else if (0 == strcmp (childNodeName, EC_ARRAYPROPERTY_ELEMENT))
-            ecProperty = new ArrayECProperty (*this);
-        else if (0 == strcmp (childNodeName, EC_STRUCTPROPERTY_ELEMENT))
-            ecProperty = new StructECProperty (*this);
-        else
-            {
-            ECObjectsLogger::Log()->warningv (L"Invalid ECSchemaXML: Unknown kind of property '%hs' in ECClass '%ls:%ls'", childNodeName, this->GetSchema().GetName().c_str(), this->GetName().c_str() );
-            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
-            }
-
-        // read the property data.
-        SchemaReadStatus status = ecProperty->_ReadXml (*childNode, context);
-        if (status != SCHEMA_READ_STATUS_Success)
-            {
-            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to read properties of ECClass '%ls:%ls'", this->GetSchema().GetName().c_str(), this->GetName().c_str());                
-            delete ecProperty;
-            return status;
-            }
-        
-        if (ECOBJECTS_STATUS_Success != this->AddProperty (ecProperty))
-            {
-            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to read ECClass '%ls:%ls' because a problem occurred while adding ECProperty '%hs'", 
-                this->GetName().c_str(), this->GetSchema().GetName().c_str(), childNodeName);
-            delete ecProperty;
-            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
-            }
-        }
-
     // Add Custom Attributes
     ReadCustomAttributes (classNode, context, GetSchema());
 
     return SCHEMA_READ_STATUS_Success;
     }
+
+SchemaReadStatus ECClass::_ReadBaseClassFromXml ( BeXmlNodeP childNode )
+    {
+    WString qualifiedClassName;
+    childNode->GetContent (qualifiedClassName);
+
+    // Parse the potentially qualified class name into a namespace prefix and short class name
+    WString namespacePrefix;
+    WString className;
+    if (ECOBJECTS_STATUS_Success != ECClass::ParseClassName (namespacePrefix, className, qualifiedClassName))
+        {
+        ECObjectsLogger::Log()->warningv (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the value '%ls' that can not be parsed.",  
+            this->GetName().c_str(), EC_BASE_CLASS_ELEMENT, qualifiedClassName.c_str());
+
+        return SCHEMA_READ_STATUS_InvalidECSchemaXml;
+        }
+
+    ECSchemaP resolvedSchema = GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
+    if (NULL == resolvedSchema)
+        {
+        ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the namespace prefix '%ls' that can not be resolved to a referenced schema.", 
+            this->GetName().c_str(), EC_BASE_CLASS_ELEMENT, namespacePrefix.c_str());
+        return SCHEMA_READ_STATUS_InvalidECSchemaXml;
+        }
+
+    ECClassP baseClass = resolvedSchema->GetClassP (className.c_str());
+    if (NULL == baseClass)
+        {
+        ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the value '%ls' that can not be resolved to an ECClass named '%ls' in the ECSchema '%ls'", 
+            this->GetName().c_str(), EC_BASE_CLASS_ELEMENT, qualifiedClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
+        return SCHEMA_READ_STATUS_InvalidECSchemaXml;
+        }
+
+    if (ECOBJECTS_STATUS_Success != AddBaseClass (*baseClass))
+        return SCHEMA_READ_STATUS_InvalidECSchemaXml;
+    
+    return SCHEMA_READ_STATUS_Success;
+    }
+
+
+SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, Utf8CP childNodeName )
+    {
+    // read the property data.
+    SchemaReadStatus status = ecProperty->_ReadXml (*childNode, context);
+    if (status != SCHEMA_READ_STATUS_Success)
+        {
+        ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to read properties of ECClass '%ls:%ls'", this->GetSchema().GetName().c_str(), this->GetName().c_str());                
+        delete ecProperty;
+        return status;
+        }
+
+    if (ECOBJECTS_STATUS_Success != this->AddProperty (ecProperty))
+        {
+        ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to read ECClass '%ls:%ls' because a problem occurred while adding ECProperty '%hs'", 
+            this->GetName().c_str(), this->GetSchema().GetName().c_str(), childNodeName);
+        delete ecProperty;
+        return SCHEMA_READ_STATUS_InvalidECSchemaXml;
+        }
+    
+    return SCHEMA_READ_STATUS_Success;
+    }
+
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
@@ -1370,11 +1390,11 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
     READ_OPTIONAL_XML_ATTRIBUTE (constraintNode, ROLELABEL_ATTRIBUTE, this, RoleLabel);
     READ_OPTIONAL_XML_ATTRIBUTE (constraintNode, CARDINALITY_ATTRIBUTE, this, Cardinality);
     
-    BeXmlDom::IterableNodeSet childNodes;
-    constraintNode.SelectChildNodes (childNodes, EC_NAMESPACE_PREFIX ":" EC_CONSTRAINTCLASS_ELEMENT);
-
-    FOR_EACH (BeXmlNodeP& childNode, childNodes)
+    for (BeXmlNodeP childNode = constraintNode.GetFirstChild (); NULL != childNode; childNode = childNode->GetNextSibling ())
         {
+        if (0 != strcmp (childNode->GetName (), EC_CONSTRAINTCLASS_ELEMENT))
+            continue;
+        
         WString     constraintClassName;
         if (BEXML_Success != childNode->GetAttributeStringValue (constraintClassName, CONSTRAINTCLASSNAME_ATTRIBUTE))
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;

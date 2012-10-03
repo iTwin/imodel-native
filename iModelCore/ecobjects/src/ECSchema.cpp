@@ -1036,28 +1036,29 @@ SchemaReadStatus ECSchema::ReadClassStubsFromXml (BeXmlNodeR schemaNode, ClassDe
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
 
     // Create ECClass Stubs (no attributes or properties)
-    BeXmlDom::IterableNodeSet classNodes;
-    schemaNode.SelectChildNodes (classNodes, EC_NAMESPACE_PREFIX ":" EC_CLASS_ELEMENT " | " EC_NAMESPACE_PREFIX ":" EC_RELATIONSHIP_CLASS_ELEMENT);
-    FOR_EACH (BeXmlNodeP& classNode, classNodes)
+    for (BeXmlNodeP classNode = schemaNode.GetFirstChild (); NULL != classNode; classNode = classNode->GetNextSibling ())
         {
         ECClassP                ecClass;
         ECRelationshipClassP    ecRelationshipClass;
+        Utf8CP nodeName = classNode->GetName ();
         
-        if (0 == strcmp (classNode->GetName(), EC_CLASS_ELEMENT))
+        if (0 == strcmp (nodeName, EC_CLASS_ELEMENT))
             {            
             ecClass = new ECClass (*this);
             ecRelationshipClass = NULL;
             }
-        else
+        else if (0 == strcmp (nodeName, EC_RELATIONSHIP_CLASS_ELEMENT))
             {            
-            ecRelationshipClass = new ECRelationshipClass (*this);            
+            ecRelationshipClass = new ECRelationshipClass (*this);
             ecClass = ecRelationshipClass;
             }
+        else
+            continue;
 
         if (SCHEMA_READ_STATUS_Success != (status = ecClass->_ReadXmlAttributes (*classNode)))
             {
             delete ecClass;
-            return status;           
+            return status;
             }
 
         ECClassP existingClass = this->GetClassP (ecClass->GetName().c_str());

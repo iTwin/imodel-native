@@ -2105,12 +2105,18 @@ InstanceReadStatus      GetInstance (ECClassCP& ecClass, IECInstancePtr& ecInsta
     // get the node name
     WString className (m_xmlNode.GetName(), true);
 
+    ECSchemaCP schema = NULL;
+    
     // get the xmlns name, if there is one.
     Utf8CP  schemaName;
-    if (NULL != (schemaName = m_xmlNode.GetNamespace()))
+    if (NULL != (schemaName = m_xmlNode.GetNamespace()) && 0 != BeStringUtilities::Stricmp (schemaName, ECXML_URI_2_0))
+        {
         m_fullSchemaName.AssignUtf8 (schemaName);
+        schema = GetSchema ();
+        }
+    else
+        schema = &(m_context.GetFallBackSchema ());
 
-    ECSchemaCP  schema = GetSchema();
     if (NULL == schema)
         {
         ECObjectsLogger::Log()->errorv (L"Failed to locate ECSchema %ls", m_fullSchemaName.c_str());
@@ -2456,41 +2462,30 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
     {
     // On entry primitiveValueNode is the XML node that holds the value. 
     // First check to see if the value is set to NULL
-    WString         nullValue;
-    if (BEXML_Success == primitiveValueNode.GetAttributeStringValue (nullValue, XSI_NIL_ATTRIBUTE))
+    bool         nullValue;
+    if (BEXML_Success == primitiveValueNode.GetAttributeBooleanValue (nullValue, XSI_NIL_ATTRIBUTE))
         {
-        if ( (0 == BeStringUtilities::Wcsicmp (nullValue.c_str(), L"true")) || (0 == wcscmp (nullValue.c_str(), L"1")) )
+        if (true == nullValue)
             {
             ecValue.SetToNull();
             return INSTANCE_READ_STATUS_Success;
             }
         }
 
-    // try to read the actual value.
-    WString     propertyValueString;
-    if (BEXML_Success != primitiveValueNode.GetContent (propertyValueString))
-        return INSTANCE_READ_STATUS_Success;
-
-    // an empty string should not be parsed.
-    if (0 == propertyValueString.length())
-        {
-        // set to an empty string. This matches what we did in the managed ECObjects.
-        if (PRIMITIVETYPE_String == propertyType)
-            ecValue.SetString (L"");
-
-        return INSTANCE_READ_STATUS_Success;
-        }
-
-    WCharCP     propertyValueWChar = propertyValueString.c_str();
     switch (propertyType)
         {
         case PRIMITIVETYPE_Binary:
             {
             T_ByteArray                     byteArray;
 
-            if (INSTANCE_READ_STATUS_Success != ConvertStringToByteArray (byteArray, propertyValueWChar))
+            // try to read the actual value.
+            WString     propertyValueString;
+            if (BEXML_Success != primitiveValueNode.GetContent (propertyValueString))
+                return INSTANCE_READ_STATUS_Success;
+
+            if (INSTANCE_READ_STATUS_Success != ConvertStringToByteArray (byteArray, propertyValueString.c_str ()))
                 {
-                ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Binary", propertyValueWChar);
+                ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Binary", propertyValueString.c_str ());
                 return INSTANCE_READ_STATUS_TypeMismatch;
                 }
             ecValue.SetBinary (&byteArray.front(), byteArray.size(), true);
@@ -2499,7 +2494,17 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
 
         case PRIMITIVETYPE_Boolean:
             {
-            bool boolValue = ( (0 == BeStringUtilities::Wcsicmp (propertyValueWChar, L"true"))|| (0 == wcscmp (propertyValueWChar, L"1")) );
+            bool boolValue;
+            BeXmlStatus status = primitiveValueNode.GetContentBooleanValue (boolValue);
+            if (BEXML_Success != status)
+                {
+                if (BEXML_ContentWrongType == status)
+                    return INSTANCE_READ_STATUS_TypeMismatch;
+                if (BEXML_NullNodeValue == status || BEXML_NodeNotFound == status)
+                    ecValue.SetToNull ();
+                return INSTANCE_READ_STATUS_Success;
+                }
+
             ecValue.SetBoolean (boolValue);
             break;
             }
@@ -2507,10 +2512,14 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
         case PRIMITIVETYPE_DateTime:
             {
             Int64   ticks;
-            if (1 != BeStringUtilities::Swscanf (propertyValueWChar, L"%I64d", &ticks))
+            BeXmlStatus status = primitiveValueNode.GetContentInt64Value (ticks);
+            if (BEXML_Success != status)
                 {
-                ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not DateTime", propertyValueWChar);
-                return INSTANCE_READ_STATUS_TypeMismatch;
+                if (BEXML_ContentWrongType == status)
+                    return INSTANCE_READ_STATUS_TypeMismatch;
+                if (BEXML_NullNodeValue == status || BEXML_NodeNotFound == status)
+                    ecValue.SetToNull ();
+                return INSTANCE_READ_STATUS_Success;
                 }
 
             ecValue.SetDateTimeTicks (ticks);
@@ -2520,11 +2529,16 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
         case PRIMITIVETYPE_Double:
             {
             double  doubleValue;
-            if (1 != BeStringUtilities::Swscanf (propertyValueWChar, L"%lg", &doubleValue))
+            BeXmlStatus status = primitiveValueNode.GetContentDoubleValue (doubleValue);
+            if (BEXML_Success != status)
                 {
-                ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Double", propertyValueWChar);
-                return INSTANCE_READ_STATUS_TypeMismatch;
+                if (BEXML_ContentWrongType == status)
+                    return INSTANCE_READ_STATUS_TypeMismatch;
+                if (BEXML_NullNodeValue == status || BEXML_NodeNotFound == status)
+                    ecValue.SetToNull ();
+                return INSTANCE_READ_STATUS_Success;
                 }
+
             ecValue.SetDouble (doubleValue);
             break;
             }
@@ -2532,10 +2546,14 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
         case PRIMITIVETYPE_Integer:
             {
             Int32   intValue;
-            if (1 != BeStringUtilities::Swscanf (propertyValueWChar, L"%d", &intValue))
+            BeXmlStatus status = primitiveValueNode.GetContentInt32Value (intValue);
+            if (BEXML_Success != status)
                 {
-                ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Integer", propertyValueWChar);
-                return INSTANCE_READ_STATUS_TypeMismatch;
+                if (BEXML_ContentWrongType == status)
+                    return INSTANCE_READ_STATUS_TypeMismatch;
+                if (BEXML_NullNodeValue == status || BEXML_NodeNotFound == status)
+                    ecValue.SetToNull ();
+                return INSTANCE_READ_STATUS_Success;
                 }
             ecValue.SetInteger (intValue);
             break;
@@ -2544,42 +2562,68 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
         case PRIMITIVETYPE_Long:
             {
             Int64   longValue;
-            if (1 != BeStringUtilities::Swscanf (propertyValueWChar, L"%I64d", &longValue))
+            BeXmlStatus status = primitiveValueNode.GetContentInt64Value (longValue);
+            if (BEXML_Success != status)
                 {
-                ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Long", propertyValueWChar);
-                return INSTANCE_READ_STATUS_TypeMismatch;
+                if (BEXML_ContentWrongType == status)
+                    return INSTANCE_READ_STATUS_TypeMismatch;
+                if (BEXML_NullNodeValue == status || BEXML_NodeNotFound == status)
+                    ecValue.SetToNull ();
+                return INSTANCE_READ_STATUS_Success;
                 }
+
             ecValue.SetLong (longValue);
             break;
             }
 
         case PRIMITIVETYPE_Point2D:
             {
-            DPoint2d point2d;
-            if (2 != BeStringUtilities::Swscanf (propertyValueWChar, L"%lg,%lg", &point2d.x, &point2d.y))
+            double x, y;
+            BeXmlStatus status = primitiveValueNode.GetContentDPoint2dValue (x, y);
+            if (BEXML_Success != status)
                 {
-                ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Point2D", propertyValueWChar);
-                return INSTANCE_READ_STATUS_TypeMismatch;
+                if (BEXML_ContentWrongType == status)
+                    return INSTANCE_READ_STATUS_TypeMismatch;
+                if (BEXML_NullNodeValue == status || BEXML_NodeNotFound == status)
+                    ecValue.SetToNull ();
+                return INSTANCE_READ_STATUS_Success;
                 }
+
+            DPoint2d point2d;
+            point2d.x = x;
+            point2d.y = y;
             ecValue.SetPoint2D (point2d);
             break;
             }
 
         case PRIMITIVETYPE_Point3D:
             {
-            DPoint3d point3d;
-            if (3 != BeStringUtilities::Swscanf (propertyValueWChar, L"%lg,%lg,%lg", &point3d.x, &point3d.y, &point3d.z))
+            double x, y, z;
+            BeXmlStatus status = primitiveValueNode.GetContentDPoint3dValue (x, y, z);
+            if (BEXML_Success != status)
                 {
-                ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Point3D", propertyValueWChar);
-                return INSTANCE_READ_STATUS_TypeMismatch;
+                if (BEXML_ContentWrongType == status)
+                    return INSTANCE_READ_STATUS_TypeMismatch;
+                if (BEXML_NullNodeValue == status || BEXML_NodeNotFound == status)
+                    ecValue.SetToNull ();
+                return INSTANCE_READ_STATUS_Success;
                 }
+
+            DPoint3d point3d;
+            point3d.x = x;
+            point3d.y = y;
+            point3d.z = z;
             ecValue.SetPoint3D (point3d);
             break;
             }
 
         case PRIMITIVETYPE_String:
             {
-            ecValue.SetString (propertyValueWChar);
+            WString     propertyValueString;
+            BeXmlStatus status = primitiveValueNode.GetContent (propertyValueString);
+            if (BEXML_Success != status)
+                return INSTANCE_READ_STATUS_Success;
+            ecValue.SetString (propertyValueString.c_str ());
             break;
             }
 
@@ -2589,7 +2633,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
             return INSTANCE_READ_STATUS_BadPrimitivePropertyType;
             }
         }
-
+    
     return INSTANCE_READ_STATUS_Success;
     }
 
@@ -2758,7 +2802,7 @@ InstanceWriteStatus     WritePrimitivePropertyValue (PrimitiveECPropertyR primit
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType propertyType, BeXmlNodeR propertyValueNode)
     {
-    wchar_t     outString[512];
+    char     outString[512];
 
     // write the content according to type.
     switch (propertyType)
@@ -2778,45 +2822,45 @@ InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType pr
 
         case PRIMITIVETYPE_Boolean:
             {
-            wcscpy (outString, ecValue.GetBoolean () ? L"True" : L"False");
+            strcpy (outString, ecValue.GetBoolean () ? "True" : "False");
             break;
             }
 
         case PRIMITIVETYPE_DateTime:
             {
-            BeStringUtilities::Snwprintf (outString, L"%I64d", ecValue.GetDateTimeTicks());
+            BeStringUtilities::Snprintf (outString, "%I64d", ecValue.GetDateTimeTicks());
             break;
             }
 
         case PRIMITIVETYPE_Double:
             {
-            BeStringUtilities::Snwprintf (outString, L"%.13g", ecValue.GetDouble());
+            BeStringUtilities::Snprintf (outString, "%.13g", ecValue.GetDouble());
             break;
             }
 
         case PRIMITIVETYPE_Integer:
             {
-            BeStringUtilities::Snwprintf (outString, L"%d", ecValue.GetInteger());
+            BeStringUtilities::Snprintf (outString, "%d", ecValue.GetInteger());
             break;
             }
 
         case PRIMITIVETYPE_Long:
             {
-            BeStringUtilities::Snwprintf (outString, L"%I64d", ecValue.GetLong());
+            BeStringUtilities::Snprintf (outString, "%I64d", ecValue.GetLong());
             break;
             }
 
         case PRIMITIVETYPE_Point2D:
             {
             DPoint2d    point2d = ecValue.GetPoint2D();
-            BeStringUtilities::Snwprintf (outString, L"%.13g,%.13g", point2d.x, point2d.y);
+            BeStringUtilities::Snprintf (outString, "%.13g,%.13g", point2d.x, point2d.y);
             break;
             }
 
         case PRIMITIVETYPE_Point3D:
             {
             DPoint3d    point3d = ecValue.GetPoint3D();
-            BeStringUtilities::Snwprintf (outString, L"%.13g,%.13g,%.13g", point3d.x, point3d.y, point3d.z);
+            BeStringUtilities::Snprintf (outString, "%.13g,%.13g,%.13g", point3d.x, point3d.y, point3d.z);
             break;
             }
 
