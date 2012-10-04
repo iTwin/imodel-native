@@ -437,6 +437,7 @@ private:
     friend struct ECValuesCollection;
 
     ECPropertyValue     m_propertyValue;
+    int                 m_arrayCount;
 
     ECValuesCollectionIterator (IECInstanceCR);
     ECValuesCollectionIterator (ECPropertyValueCR parentPropertyValue);

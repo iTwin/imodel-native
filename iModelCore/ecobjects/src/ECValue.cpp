@@ -1969,7 +1969,8 @@ ECPropertyValue ECValuesCollectionIterator::GetFirstPropertyValue (IECInstanceCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValuesCollectionIterator::ECValuesCollectionIterator (IECInstanceCR instance)
     :
-    m_propertyValue (GetFirstPropertyValue (instance))
+    m_propertyValue (GetFirstPropertyValue (instance)),
+    m_arrayCount (-1)
     {
     }
 
@@ -1978,6 +1979,7 @@ ECValuesCollectionIterator::ECValuesCollectionIterator (IECInstanceCR instance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyValue ECValuesCollectionIterator::GetChildPropertyValue (ECPropertyValueCR parentPropertyValue)
     {
+    m_arrayCount = -1;
     ECValueCR       parentValue = parentPropertyValue.GetValue();
     ECValueAccessor childAccessor (parentPropertyValue.GetValueAccessor());
 
@@ -1987,12 +1989,14 @@ ECPropertyValue ECValuesCollectionIterator::GetChildPropertyValue (ECPropertyVal
         UInt32      arrayCount = arrayInfo.GetCount();
 
         if (0 < arrayCount)
+            {
+            m_arrayCount = arrayCount;
             childAccessor.DeepestLocation().arrayIndex = 0;
+            }
         else
             childAccessor.PopLocation();
         }
-    else
-    if (parentValue.IsStruct())
+    else if (parentValue.IsStruct())
         {
         UInt32          pathLength  = childAccessor.GetDepth();
 
@@ -2085,26 +2089,13 @@ void            ECValuesCollectionIterator::MoveToNext()
         /*--------------------------------------------------------------------------
           If we are on an array member get the next member
         --------------------------------------------------------------------------*/
-        ECValueAccessor arrayAccessor (currentAccessor);
-        arrayAccessor.DeepestLocation().arrayIndex = ECValueAccessor::INDEX_ROOT;
-
-//WIP_FUSION: wouldn't it be better to get the arrayCount once when the iterator is created?
-        ECValue         ecValue;
-        ECObjectsStatus status = m_propertyValue.GetInstance().GetValueUsingAccessor (ecValue, arrayAccessor);
-
-        if ( ! EXPECTED_CONDITION (ECOBJECTS_STATUS_Success == status))
+        if (!EXPECTED_CONDITION (0 <= m_arrayCount))
             return;
-
-        if ( ! EXPECTED_CONDITION (ecValue.IsArray()))
-            return;
-
-        ArrayInfo   arrayInfo  = ecValue.GetArrayInfo();
-        UInt32      arrayCount = arrayInfo.GetCount();
 
         currentAccessor.DeepestLocation().arrayIndex++;
 
         // If that was the last member of the array, we are done
-        if (currentAccessor.DeepestLocation().arrayIndex >= (Int32) arrayCount)
+        if (currentAccessor.DeepestLocation().arrayIndex >= m_arrayCount)
             {
             currentAccessor.Clear();
             return;
@@ -2222,7 +2213,7 @@ ECValuesCollection::const_iterator ECValuesCollection::begin () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValuesCollectionIterator::ECValuesCollectionIterator()
+ECValuesCollectionIterator::ECValuesCollectionIterator() : m_arrayCount(-1)
     {
     }
 
