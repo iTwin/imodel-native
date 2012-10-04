@@ -110,6 +110,7 @@ typedef enum ECErrorCategories
 
 /*=================================================================================**//**
 * @bsiclass
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 enum ECObjectsStatus
     {
@@ -158,6 +159,7 @@ enum ECObjectsStatus
 
 /*=================================================================================**//**
 * @bsiclass
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 enum SchemaReadStatus
     {
@@ -172,6 +174,7 @@ enum SchemaReadStatus
 
 /*=================================================================================**//**
 * @bsiclass
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 enum SchemaWriteStatus
     {
@@ -183,6 +186,7 @@ enum SchemaWriteStatus
 
 /*=================================================================================**//**
 * @bsiclass
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 enum InstanceReadStatus
     {
@@ -220,6 +224,7 @@ enum InstanceReadStatus
     
 /*=================================================================================**//**
 * @bsiclass
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 enum InstanceWriteStatus
     {
@@ -235,7 +240,8 @@ enum InstanceWriteStatus
     };
     
 /*---------------------------------------------------------------------------------**//**
-* @bsiclass                                    Carole.MacDonald                04/2012
+* @bsiclass
+* @ingroup ECObjectsGroup
 +---------------+---------------+---------------+---------------+---------------+------*/
 enum SupplementedSchemaStatus
     {
@@ -259,6 +265,7 @@ enum SupplementedSchemaStatus
 //=======================================================================================    
 //! Represents the classification of the data type of an EC ECValue.  The classification is not the data type itself, but a category of type
 //! such as struct, array or primitive.
+//! @ingroup ECObjectsGroup
 //=======================================================================================    
 enum ValueKind ENUM_UNDERLYING_TYPE(unsigned short)
     {
@@ -279,6 +286,7 @@ enum ValueKind ENUM_UNDERLYING_TYPE(unsigned short)
 //=======================================================================================    
 //! Represents the classification of the data type of an EC array element.  The classification is not the data type itself, but a category of type.
 //! Currently an ECArray can only contain primitive or struct data types.
+//! @ingroup ECObjectsGroup
 //=======================================================================================    
 enum ArrayKind ENUM_UNDERLYING_TYPE(unsigned short)
     {
@@ -301,6 +309,7 @@ enum ArrayKind ENUM_UNDERLYING_TYPE(unsigned short)
 //=======================================================================================    
 //! Enumeration of primitive datatypes supported by native "ECObjects" implementation.
 //! These should correspond to all of the datatypes supported in .NET ECObjects
+//! @ingroup ECObjectsGroup
 //=======================================================================================    
 enum PrimitiveType ENUM_UNDERLYING_TYPE(unsigned short)
     {

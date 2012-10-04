@@ -64,18 +64,14 @@ struct PerPropertyFlagsHolder
 * The memory is laid out according to the ClassLayout. The ClassLayout must be provided by classes that 
 * subclass this class.
 * @see ClassLayoutHolder, IECInstance
+* @ingroup ECObjectsGroup
 * @bsiclass 
 +===============+===============+===============+===============+===============+======*/
 struct MemoryECInstanceBase : MemoryInstanceSupport
 {
 //__PUBLISH_SECTION_END__
 
-// Per John Gooding, "when you provide any sort of multiple inheritance you can’t hide any data members" Since 
-// StandaloneECInstance uses multiple inheritance from MemoryECInstanceBase and IECInstance none of the data
-// members of MemoryECInstanceBase or its base class MemoryInstanceSupport can be hidden from the published API.
-
 friend struct IECInstance;
-//__PUBLISH_SECTION_START__
 private:
     PerPropertyFlagsHolder  m_perPropertyFlagsHolder;
     byte *                  m_data;
@@ -92,7 +88,6 @@ private:
     byte*                   GetAddressOfPropertyData () const;
     ECObjectsStatus         RemoveStructStructArrayEntry (StructValueIdentifier structValueId);
     void                    InitializePerPropertyFlags (ClassLayoutCR classLayout, UInt8 numBitsPerProperty);
-//__PUBLISH_SECTION_END__
 
 protected:
     //! The MemoryECInstanceBase will take ownership of the memory
@@ -222,6 +217,7 @@ public:
 //=======================================================================================
 //! IECWipRelationshipInstance is used to set the name and order properties for an 
 //! ECRelationship.
+//! @ingroup ECObjectsGroup
 //=======================================================================================
 struct IECWipRelationshipInstance : StandaloneECInstance
     {

@@ -21,10 +21,9 @@ typedef RefCountedPtr<ECValuesCollection> ECValuesCollectionPtr;
 
 //=======================================================================================    
 //! SystemTime structure is used to set and get time data from ECValue objects.
-//! @group "ECInstance"
+//! @ingroup ECObjectsGroup
 //! @see ECValue
 //=======================================================================================    
-
 struct SystemTime
 {
 public:
@@ -49,10 +48,10 @@ public:
 
 //=======================================================================================    
 //! Information about an array in an EC::IECInstance. Does not contain the actual elements.
-//! @group "ECInstance"
+//! @ingroup ECObjectsGroup
 //! @see ECValue
 //=======================================================================================    
-struct ArrayInfo  // FUSION_WIP: this could also fit into 8 bytes if packed properly
+struct ArrayInfo
     {
 private:
     union
@@ -60,7 +59,7 @@ private:
         ArrayKind       m_arrayKind;
         PrimitiveType   m_elementPrimitiveType;
         };    
-    bool                m_isFixedCount;     // FUSION_WIP Store this as some other (blittable) type.
+    bool                m_isFixedCount;
     UInt32              m_count;
             
 public:
@@ -250,6 +249,7 @@ public:
 //! applicable (primitive members or the roots of arrays), the INDEX_ROOT constant 
 //! is used.  
 //! @group "ECInstance"
+//! @ingroup ECObjectsGroup
 //! @see ECValue, ECEnabler, ECPropertyValue, ECValuesCollection
 //! @bsiclass 
 //======================================================================================= 
@@ -427,6 +427,7 @@ public:
 
 //=======================================================================================  
 //! @see ECValue, ECValueAccessor, ECValuesCollection
+//! @ingroup ECObjectsGroup
 //! @bsiclass 
 //======================================================================================= 
 struct ECValuesCollectionIterator : RefCountedBase, std::iterator<std::forward_iterator_tag, ECPropertyValue const>
@@ -453,6 +454,7 @@ public:
     };
 
 //=======================================================================================    
+//! @ingroup ECObjectsGroup
 //! @bsiclass 
 //======================================================================================= 
 struct ECValuesCollection : RefCountedBase
