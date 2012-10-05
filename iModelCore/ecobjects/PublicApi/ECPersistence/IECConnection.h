@@ -26,7 +26,7 @@ private:
     ECPERSISTENCE_EXPORT virtual WCharCP _GetProviderId () const = 0;
     ECPERSISTENCE_EXPORT virtual bool _IsOpen () const = 0;
     ECPERSISTENCE_EXPORT virtual IECSchemaManagerCR _GetSchemaManager () const = 0;
-    ECPERSISTENCE_EXPORT virtual IECStatementPtr _CreateStatement () = 0;
+    ECPERSISTENCE_EXPORT virtual IECStatementPtr _CreateStatement () const = 0;
     ECPERSISTENCE_EXPORT virtual int _GetLastError (WStringP lastErrorMessage) const = 0;
 
 public:
@@ -51,7 +51,7 @@ public:
 
     //! Creates a new ECStatement which can be used to execute an ECSQL statement.
     //! @return ECStatement
-    ECPERSISTENCE_EXPORT IECStatementPtr CreateStatement ();
+    ECPERSISTENCE_EXPORT IECStatementPtr CreateStatement () const;
 
     //! Gets information about the last error that occurred within the scope of this connection. last error information
     //! Notes to implementors: This method needs to be thread-safe.

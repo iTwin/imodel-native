@@ -38,7 +38,7 @@ IECSchemaManagerCR IECConnection::GetSchemaManager () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECStatementPtr IECConnection::CreateStatement ()
+IECStatementPtr IECConnection::CreateStatement () const
     {
     return _CreateStatement ();
     }
