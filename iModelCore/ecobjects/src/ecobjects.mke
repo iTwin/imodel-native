@@ -68,6 +68,10 @@ ECPresentationHeaders = $(ecpresentationPublicAPISrc)auicommand.h \
                         $(ecpresentationPublicAPISrc)auipresentationapi.h \
                         $(ecpresentationPublicAPISrc)auievent.h
 
+ECUnitsHeaders =    $(ecunitsPublicAPISrc)Units.h
+
+# ECObjects
+
 $(o)ecxml$(oext)                           : $(baseDir)ecxml.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
 $(o)ECSchema$(oext)                        : $(baseDir)ECSchema.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
@@ -118,6 +122,8 @@ $(o)CalculatedProperty$(oext)              : $(baseDir)CalculatedProperty.cpp $(
 
 $(o)PresentationMetadataHelper$(oext)      : $(baseDir)PresentationMetadataHelper.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
+# ECPresentation
+
 $(o)auipresentationmgr$(oext)              : $(baseDir)presentation/auipresentationmgr.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
 
 $(o)auicommand$(oext)                      : $(baseDir)presentation/auicommand.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
@@ -137,6 +143,10 @@ $(o)ECImageProvider$(oext)                 : $(baseDir)presentation/ECImageProvi
 $(o)ECLocalizationProvider$(oext)          : $(baseDir)presentation/ECLocalizationProvider.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
 
 $(o)auievent$(oext)                        : $(baseDir)presentation/auievent.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
+
+# ECUnits
+
+$(o)units$(oext)                           : $(baseDir)units/units.cpp $(ECUnitsHeaders) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)
