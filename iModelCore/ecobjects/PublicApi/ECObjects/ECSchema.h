@@ -1276,7 +1276,7 @@ typedef RefCountedPtr<ECSchemaCache>        ECSchemaCachePtr;
 //! An object that controls the lifetime of a set of ECSchemas.  When the schema
 //! owner is destroyed, so are the schemas that it owns.</summary>
 //=======================================================================================
-struct ECSchemaCache /*__PUBLISH_ABSTRACT__*/ : public IECSchemaLocater,  public RefCountedBase
+struct EXPORT_VTABLE_ATTRIBUTE ECSchemaCache /*__PUBLISH_ABSTRACT__*/ : public IECSchemaLocater,  public RefCountedBase
 {
 /*__PUBLISH_SECTION_END__*/
 protected:
