@@ -13,8 +13,8 @@
 //  -Where do these belong? Are they part of the EC universe?
 //  -Names.
 
-#define BEGIN_BENTLEY_EC_UNITS_NAMESPACE namespace Bentley { namespace EC { namespace Units {
-#define END_BENTLEY_EC_UNITS_NAMESPACE   } } }
+#define BEGIN_BENTLEY_EC_UNITS_NAMESPACE namespace Bentley { namespace ECUnits {
+#define END_BENTLEY_EC_UNITS_NAMESPACE   } }
 
 #define UNITS_TYPEDEFS(_name_)  \
         BEGIN_BENTLEY_EC_UNITS_NAMESPACE      \
@@ -25,8 +25,6 @@
             typedef _name_ const&    _name_##CR; \
         END_BENTLEY_EC_UNITS_NAMESPACE
 
-UNITS_TYPEDEFS (Descriptor);
-UNITS_TYPEDEFS (DimensionDescriptor);
 UNITS_TYPEDEFS (UnitSystem);
 UNITS_TYPEDEFS (Dimension);
 UNITS_TYPEDEFS (KindOfQuantity);
@@ -36,86 +34,6 @@ UNITS_TYPEDEFS (UnitConverter);
 
 BEGIN_BENTLEY_EC_UNITS_NAMESPACE
 
-enum UnitsStatus
-    {
-    UnitsStatus_Success,
-    UnitsStatus_DuplicateName,
-    UnitsStatus_InvalidName,
-    UnitsStatus_NameNotRegistered,
-    //...
-    UnitsStatus_Error
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsistruct                                                    Paul.Connelly   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct Descriptor
-    {
-private:
-    WString         m_name;
-    WString         m_shortLabel;
-    WString         m_longLabel;
-public:
-    Descriptor (WCharCP name, WCharCP shortLabel, WCharCP longLabel);
-
-    bool        operator< (DescriptorCR rhs) const     { return m_name < rhs.m_name; }
-    bool        operator== (DescriptorCR rhs) const    { return m_name.Equals (rhs.m_name); }
-
-    WCharCP         GetName() const                     { return m_name.c_str(); }
-    WCharCP         GetLabel (bool getShort)            { return getShort ? m_shortLabel.c_str() : m_longLabel.c_str(); }
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsistruct                                                    Paul.Connelly   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct DimensionDescriptor : Descriptor
-    {
-private:
-    WString         m_description;
-    WString         m_derivation;
-public:
-    DimensionDescriptor (WCharCP name, WCharCP shortLabel, WCharCP longLabel, WCharCP description, WCharCP derivation);
-        
-    WCharCP         GetDescription() const      { return m_description.c_str(); }
-    WCharCP         GetDerivation() const       { return m_derivation.c_str(); }
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* Base class for a component of the units framework, such as Unit, UnitSystem, and Dimension.
-* Components registered into the system have a unique name and ID, and a pair of labels.
-* They can be standard components or user-supplied.
-* @bsistruct                                                    Paul.Connelly   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename T_ID, T_ID STANDARD_MAX, typename T_Descriptor = Descriptor> struct Component
-    {
-protected:
-    T_Descriptor const*     m_descriptor;
-    T_ID                    m_id;
-
-    Component() : m_descriptor (NULL), m_id ((T_ID)-1) { }
-
-    friend struct UnitsManager;
-    void        Register (T_ID id, T_Descriptor const* desc) { m_id = id; m_descriptor = desc; }
-public:
-    WCharCP                         GetName() const             { return m_descriptor ? m_descriptor->GetName() : NULL; }
-    WCharCP                         GetShortLabel() const       { return m_descriptor ? m_descriptor->GetLabel (true) : NULL; }
-    WCharCP                         GetLongLabel() const        { return m_descriptor ? m_descriptor->GetLabel (false) : NULL; }
-    bool                            IsStandard() const          { return this->m_id <= STANDARD_MAX; }
-    bool                            IsRegistered() const        { return this->m_id != (T_ID)-1; }
-    T_ID                            GetId() const               { return m_id; }
-    };
-
-// WIP_UNITS: limits...
-typedef UInt8           UnitSystemId;
-typedef UInt8           DimensionId;
-typedef UInt16          KindOfQuantityId;
-typedef UInt16          UnitId;
-
-#define UNREGISTERED_UNITID ((UnitId)-1)
-#define UNREGISTERED_UNITSYSTEMID ((UnitSystemId)-1)
-#define UNREGISTERED_DIMENSIONID ((DimensionId)-1)
-#define UNREGISTERED_KINDOFQUANTITYID ((KindOfQuantityId)-1)
-
 enum StandardUnitSystem
     {
     StandardUnitSystem_None,
@@ -123,7 +41,7 @@ enum StandardUnitSystem
     StandardUnitSystem_USCustomary,
     StandardUnitSystem_Both,
 
-    StandardUnitSystem_MAX = StandardUnitSystem_Both
+    StandardUnitSystem_MAX
     };
 
 enum StandardUnit
@@ -176,88 +94,190 @@ struct UnitConverter
     {
 private:
     UnitConversionType              m_type;
-    double                          m_factor;
     union
         {
-        double                      m_offset;
+        struct
+            {
+            double                  m_factor;
+            double                  m_offset;
+            };
         ICustomUnitConverterP       m_customConverter;
         };
 public:
-    UnitConverter (bool isSlope = false) : m_type (isSlope ? UnitConversionType_Identity : UnitConversionType_Slope), m_factor (0.0), m_offset (0.0) { }
+    UnitConverter (bool isSlope = false) : m_type (isSlope ? UnitConversionType_Identity : UnitConversionType_Slope) { }
     UnitConverter (double factor) : m_type (UnitConversionType_Factor), m_factor (factor), m_offset (0.0) { BeAssert (0.0 != factor); }
     UnitConverter (double factor, double offset) : m_type (UnitConversionType_FactorAndOffset), m_factor (factor), m_offset (offset) { BeAssert (0.0 != factor); }
-    UnitConverter (ICustomUnitConverterR customConverter);
-    UnitConverter (UnitConverterCR other);
-    UnitConverter& operator= (UnitConverterCR other);
-    ~UnitConverter();
+    ECOBJECTS_EXPORT UnitConverter (ICustomUnitConverterR customConverter);
+    ECOBJECTS_EXPORT UnitConverter (UnitConverterCR other);
+    ECOBJECTS_EXPORT UnitConverter& operator= (UnitConverterCR other);
+    ECOBJECTS_EXPORT ~UnitConverter();
 
-    double          ToBase (double valueInThisUnit) const;
-    double          FromBase (double valueInBaseUnit) const;
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* UnitSystem is simply a way to categorize Units, for example SI and English.
-* @bsistruct                                                    Paul.Connelly   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct UnitSystem : Component <UnitSystemId, StandardUnitSystem_MAX>
-    {
-public:
-    static UnitsStatus          GetByName (UnitSystem& unitSystem, WCharCP name);
-    static UnitsStatus          GetById (UnitSystem& unitSystem, UnitSystemId id);
-    static UnitsStatus          Create (UnitSystem& unitSystem, DescriptorCR descriptor);
+    ECOBJECTS_EXPORT double          ToBase (double valueInThisUnit) const;
+    ECOBJECTS_EXPORT double          FromBase (double valueInBaseUnit) const;
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct Dimension : Component <DimensionId, StandardDimension_MAX, DimensionDescriptor>
-    {
-public:
-    UnitsStatus                 CreateUnit (Unit& unit, UnitConverterCR converter, UnitSystemId systemId, DescriptorCR descriptor);
-    UnitsStatus                 CreateKindOfQuantity (KindOfQuantity& koq, KindOfQuantityId baseKoqId, KindOfQuantityId parentKoqId, DescriptorCR& descriptor);
-
-    static UnitsStatus          GetByName (Dimension& dimension, WCharCP name);
-    static UnitsStatus          GetById (Dimension& dimension, DimensionId id);
-    static UnitsStatus          Create (Dimension& dimension, DimensionDescriptorCR descriptor);
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* Every KindOfQuantity belongs to a Dimension. Use Dimension::CreateKindOfQuantity()
-* to create a new KindOfQuantity.
-* @bsistruct                                                    Paul.Connelly   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct KindOfQuantity : Component <KindOfQuantityId, StandardKindOfQuantity_MAX>
+struct UnitSystem
     {
 private:
-    DimensionId                 m_dimensionId;
-    KindOfQuantityId            m_parentKoqId;
-    KindOfQuantityId            m_baseKoqId;
+    WCharCP         m_name;
+    WString         m_shortLabel;
+    WString         m_longLabel;
+
+    UnitSystem (WCharCP shortLabel, WCharCP longLabel) : m_name(NULL), m_shortLabel(shortLabel), m_longLabel(longLabel) { }
 public:
-    static UnitsStatus          GetByName (KindOfQuantity& koq, WCharCP name);
-    static UnitsStatus          GetById (KindOfQuantity& koq, KindOfQuantityId id);
+    WCharCP         GetName() const             { return m_name; }
+    WCharCP         GetLabel() const            { return m_longLabel.c_str(); }
+    WCharCP         GetShortLabel() const       { return m_shortLabel.c_str(); }
+    void            SetLabel (WCharCP label)    { m_longLabel = label ? label : L""; }
+    void            SetShortLabel (WCharCP l)   { m_shortLabel = l ? l : L""; }
+
+    ECOBJECTS_EXPORT static UnitSystemP          Create (WCharCP name, WCharCP shortLabel, WCharCP longLabel);
+    ECOBJECTS_EXPORT static UnitSystemR          GetStandard (StandardUnitSystem id);
+    ECOBJECTS_EXPORT static UnitSystemP          GetByName (WCharCP name);
     };
 
 /*---------------------------------------------------------------------------------**//**
-* Every Unit belongs to a Dimension and a UnitSystem. Use Dimension::CreateUnit() to
+* @bsistruct                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+struct Dimension
+    {
+private:
+    WCharCP             m_name;
+    WString             m_displayName;
+    WString             m_description;
+    WString             m_derivation;
+    
+    Dimension (WCharCP displayName, WCharCP desc, WCharCP deriv) : m_name(NULL), m_displayName(displayName), m_description(desc), m_derivation(deriv) { }
+public:
+    WCharCP             GetName() const             { return m_name; }
+    WCharCP             GetDisplayName() const      { return m_displayName.c_str(); }
+    WCharCP             GetDescription() const      { return m_description.c_str(); }
+    WCharCP             GetDerivation() const       { return m_derivation.c_str(); }
+    void                SetDisplayName (WCharCP n)  { m_displayName = n ? n : L""; }
+    void                SetDescription (WCharCP d)  { m_description = d ? d : L""; }
+    void                SetDerivation (WCharCP d)   { m_derivation = d ? d : L""; }
+
+    ECOBJECTS_EXPORT UnitP               AddUnit (UnitConverterCR converter, UnitSystemCR system, UnitCP baseUnit, WCharCP name, WCharCP shortLabel, WCharCP longLabel);
+    ECOBJECTS_EXPORT KindOfQuantityP     AddKindOfQuantity (WCharCP name, WCharCP description, KindOfQuantityCP parentKOQ = NULL);
+
+    ECOBJECTS_EXPORT static DimensionP   Create (WCharCP name, WCharCP displayName, WCharCP description, WCharCP derivation);
+    ECOBJECTS_EXPORT static DimensionR   GetStandard (StandardDimension id);
+    ECOBJECTS_EXPORT static DimensionP   GetByName (WCharCP name);
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+struct KindOfQuantity
+    {
+private:
+    friend KindOfQuantityP Dimension::AddKindOfQuantity (WCharCP, WCharCP, KindOfQuantityCP);
+
+    WCharCP             m_name;
+    WString             m_description;
+    DimensionCR         m_dimension;
+    KindOfQuantityCP    m_parent;
+
+    KindOfQuantity (WCharCP desc, DimensionCR dimension, KindOfQuantityCP parent)
+        : m_name(NULL), m_description(desc), m_dimension(dimension), m_parent(parent) { }
+public:
+    WCharCP             GetName() const                         { return m_name; }
+    WCharCP             GetDescription() const                  { return m_description.c_str(); }
+    void                SetDescription (WCharCP d)              { m_description = d ? d : L""; }
+
+    DimensionCR         GetDimension() const                    { return m_dimension; }
+    KindOfQuantityCP    GetParent() const                       { return m_parent; }
+    KindOfQuantityCR    GetBase() const                         { return m_parent ? m_parent->GetBase() : *this; }
+
+    ECOBJECTS_EXPORT static KindOfQuantityR      GetStandard (StandardKindOfQuantity id);
+    ECOBJECTS_EXPORT static KindOfQuantityP      GetByName (WCharCP name);
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* Every Unit belongs to a Dimension and a UnitSystem. Use Dimension::AddUnit() to
 * create a Unit.
 * @bsistruct                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct Unit : Component <UnitId, StandardUnit_MAX>
+struct Unit
     {
 private:
-    UnitId          m_baseUnitId;
-    DimensionId     m_dimensionId;
-    UnitSystemId    m_unitSystemId;
-    UnitConverter   m_unitConverter;
-public:
-    UnitConverterCR         GetConverter() const { return m_unitConverter; }
-    bool                    IsConvertible (UnitCR other) const
-        {
-        return m_baseUnitId == other.m_baseUnitId && m_dimensionId == other.m_dimensionId;
-        }
+    friend UnitP Dimension::AddUnit (UnitConverterCR, UnitSystemCR, UnitCP, WCharCP, WCharCP, WCharCP);
 
-    static UnitsStatus      GetByName (Unit& unit, WCharCP name);
-    static UnitsStatus      GetById (Unit& unit, UnitId id);
+    WCharCP                 m_name;
+    WString                 m_shortLabel;
+    WString                 m_longLabel;
+    UnitConverter           m_converter;
+    UnitSystemCR            m_system;
+    DimensionCR             m_dimension;
+    UnitCP                  m_baseUnit;
+
+    Unit (WCharCP shortLabel, WCharCP longLabel, UnitConverterCR converter, UnitSystemCR system, DimensionCR dimension, UnitCP base)
+        : m_name(NULL), m_shortLabel(shortLabel), m_longLabel(longLabel), m_converter(converter), m_system(system), m_dimension(dimension), m_baseUnit(base) { }
+public:
+    DimensionCR             GetDimension() const                    { return m_dimension; }
+    UnitSystemCR            GetSystem() const                       { return m_system; }
+    UnitCR                  GetBase() const                         { return m_baseUnit ? *m_baseUnit : *this; }
+    UnitConverterCR         GetConverter() const                    { return m_converter; }
+    bool                    IsCompatible (UnitCR other) const       { return &GetBase() == &other.GetBase() && &m_dimension == &other.m_dimension; }
+    
+    ECOBJECTS_EXPORT bool   ConvertTo (double& value, UnitCR target) const;
+
+    WCharCP                 GetName() const                         { return m_name; }
+    WCharCP                 GetLabel() const                        { return m_longLabel.c_str(); }
+    WCharCP                 GetShortLabel() const                   { return m_shortLabel.c_str(); }
+    void                    SetLabel (WCharCP l)                    { m_longLabel = l ? l : L""; }
+    void                    SetShortLabel (WCharCP l)               { m_shortLabel = l ? l : L""; }
+
+    ECOBJECTS_EXPORT static UnitR            GetStandard (StandardUnit id);
+    ECOBJECTS_EXPORT static UnitP            GetByName (WCharCP name);
+    };
+
+struct UnitsManager;
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+struct UnitsSchemaReader
+    {
+    // WIP_UNITS: error handling.
+    // The managed implementation throws exceptions all over the place
+    // Some callers may care what went wrong, others may not
+    // Caller can specify:
+    //  -Whether error messages should be logged or not
+    //  -Whether we should halt on first error or try to continue
+    // For now I am simply returning false if any error occurs, without logging
+    enum Error
+        {
+        //...
+        Error_Unknown
+        };
+    
+    typedef bpair<Error, WString>       ErrorMessage;
+    typedef bvector<ErrorMessage>       ErrorLog;
+private:
+    EC::ECSchemaCR      m_schema;
+    ErrorLog            m_errorLog;
+    UnitsManager&       m_unitsManager;
+    bool                m_haltOnError;
+    bool                m_recordErrors;
+    bool                m_applyDisplayLabels;
+
+    void                Log (Error error, WCharCP msg) { m_errorLog.push_back (ErrorMessage (error, msg ? msg : L"")); }
+
+    bool                ReadDimensions();
+    bool                ReadDimension (EC::ECClassCR ecClass, EC::IECInstanceCR attr);
+    bool                ReadUnitsAndKOQs();
+    bool                ReadUnit (EC::ECClassCR ecClass, EC::IECInstanceCR attr);
+    bool                ReadKindOfQuantity (EC::ECClassCR ecClass, EC::IECInstanceCR attr);
+public:
+    ECOBJECTS_EXPORT UnitsSchemaReader (EC::ECSchemaCR unitsSchema, bool recordErrors=false, bool haltOnError=false, bool applyDisplayLabels = true);
+
+    // Process the schema for any Units, Dimensions, and KindOfQuantities or customizations and register them into the system
+    ECOBJECTS_EXPORT bool                ReadUnitsInfo ();
+    // Returns a list of any logged errors in order of occurrence
+    ErrorLog const&     GetErrorLog() const     { return m_errorLog; }
     };
 
 END_BENTLEY_EC_UNITS_NAMESPACE
