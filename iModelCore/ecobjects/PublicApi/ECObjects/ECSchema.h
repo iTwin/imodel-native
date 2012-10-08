@@ -84,6 +84,8 @@ public:
 //!     -Contains only alphanumeric characters in the ranges ['A'..'Z'], ['a'..'z'], ['0'..'9'], and ['_']
 //!     -Contains at least one character
 //!     -Does not begin with a digit
+//! @ingroup ECObjectsGroup
+//! @bsiclass
 //=======================================================================================
 struct ECNameValidation
     {
@@ -121,6 +123,8 @@ public:
 
 //=======================================================================================    
 //! Used to represent the type of an ECProperty
+//! @ingroup ECObjectsGroup
+//! @bsiclass
 //=======================================================================================
 struct ECTypeDescriptor
 {
@@ -167,16 +171,19 @@ public:
 /*__PUBLISH_SECTION_START__*/
 };
 
+/*__PUBLISH_SECTION_END__*/
 // NEEDSWORK - unsure what the best way is to model ECProperty.  Managed implementation has a single ECProperty and introduces an ECType concept.  My gut is that
 // this is overkill for the native implementation.  Alternatively we could have a single ECProperty class that could act as primitive/struct/array or we can take the
 // appoach I've implemented below.
+/*__PUBLISH_SECTION_START__*/
 
 typedef bvector<IECInstancePtr> ECCustomAttributeCollection;
 struct ECCustomAttributeInstanceIterable;
 struct SupplementedSchemaBuilder;
 
 //=======================================================================================
-//
+//! @ingroup ECObjectsGroup
+//! @bsiclass
 //=======================================================================================
 struct IECCustomAttributeContainer /*__PUBLISH_ABSTRACT__*/
 {
@@ -282,7 +289,8 @@ public:
 };
 
 //=======================================================================================
-//
+//! @ingroup ECObjectsGroup
+//! @bsiclass
 //=======================================================================================
 struct ECCustomAttributeInstanceIterable
 {
@@ -338,6 +346,8 @@ struct PrimitiveECProperty;
 
 /*=================================================================================**//**
 Base class for an object which adapts the internal value of an ECProperty to a user-friendly string representation.
+@ingroup ECObjectsGroup
+@bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct IECTypeAdapter /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
     {
@@ -398,6 +408,7 @@ public:
 //=======================================================================================
 //! @ingroup ECObjectsGroup
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
+//! @bsiclass
 //=======================================================================================
 struct ECProperty /*abstract*/ : public IECCustomAttributeContainer
 {
@@ -498,6 +509,8 @@ public:
 
 //=======================================================================================
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
+//! @ingroup ECObjectsGroup
+//! @bsiclass
 //=======================================================================================
 struct PrimitiveECProperty /*__PUBLISH_ABSTRACT__*/ : public ECProperty
 {
@@ -533,6 +546,8 @@ public:
 
 //=======================================================================================
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
+//! @ingroup ECObjectsGroup
+//! @bsiclass
 //=======================================================================================
 struct StructECProperty /*__PUBLISH_ABSTRACT__*/ : public ECProperty
 {
@@ -562,6 +577,8 @@ public:
 
 //=======================================================================================
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
+//! @ingroup ECObjectsGroup
+//! @bsiclass
 //=======================================================================================
 struct ArrayECProperty /*__PUBLISH_ABSTRACT__*/ : public ECProperty
 {
@@ -626,6 +643,8 @@ public:
 
 //=======================================================================================
 //! Container holding ECProperties that supports STL like iteration
+//! @ingroup ECObjectsGroup
+//! @bsiclass
 //=======================================================================================
 struct ECPropertyIterable
 {
@@ -695,6 +714,7 @@ typedef RefCountedPtr<SearchPathSchemaFileLocater> SearchPathSchemaFileLocaterPt
 //=======================================================================================
 //! @ingroup ECObjectsGroup
 //! The in-memory representation of an ECClass as defined by ECSchemaXML
+//! @bsiclass
 //=======================================================================================
 struct ECClass /*__PUBLISH_ABSTRACT__*/ : IECCustomAttributeContainer
 {
@@ -911,9 +931,12 @@ public:
 
 }; // ECClass
 
+//! @ingroup ECObjectsGroup
 enum ECRelationshipEnd { ECRelationshipEnd_Source = 0, ECRelationshipEnd_Target };
+
 //! Used to describe the direction of a related instance within the context
 //! of an IECRelationshipInstance
+//! @ingroup ECObjectsGroup
 enum ECRelatedInstanceDirection
     {
     //! Related instance is the target in the relationship instance
@@ -923,6 +946,7 @@ enum ECRelatedInstanceDirection
     };
 
 //! The various strengths supported on a relationship class.
+//! @ingroup ECObjectsGroup
 enum StrengthType
     {
     //!  'Referencing' relationships imply no ownership and no cascading deletes when the
@@ -948,6 +972,8 @@ enum StrengthType
 //!     Martin notation. Valid cardinalities are (x,y) where x is smaller or equal to y,
 //!     x >= 0 and y >= 1 or y = n (where n represents infinity).
 //!     For example, (0,1), (1,1), (1,n), (0,n), (1,10), (2,5), ...
+//! @ingroup ECObjectsGroup
+//! @bsiclass
 //=======================================================================================
 struct RelationshipCardinality
 {
@@ -1000,6 +1026,8 @@ public:
 
 //=======================================================================================
 //! The in-memory representation of the source and target constraints for an ECRelationshipClass as defined by ECSchemaXML
+//! @ingroup ECObjectsGroup
+//! @bsiclass
 //=======================================================================================
 struct ECRelationshipConstraint : IECCustomAttributeContainer
 {
@@ -1090,6 +1118,7 @@ public:
 //=======================================================================================
 //! @ingroup ECObjectsGroup
 //! The in-memory representation of a relationship class as defined by ECSchemaXML
+//! @bsiclass
 //=======================================================================================
 struct ECRelationshipClass /*__PUBLISH_ABSTRACT__*/ : public ECClass
 {
@@ -1146,9 +1175,7 @@ public:
 
 typedef RefCountedPtr<ECRelationshipClass>      ECRelationshipClassPtr;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsistruct
-+---------------+---------------+---------------+---------------+---------------+------*/
+//! @ingroup ECObjectsGroup
 enum SchemaMatchType
     {
     //! Find exact VersionMajor, VersionMinor match as well as Data
@@ -1162,6 +1189,7 @@ enum SchemaMatchType
     };
 
 /*=================================================================================**//**
+* @ingroup ECObjectsGroup
 * @bsistruct
 +===============+===============+===============+===============+===============+======*/
 struct SchemaKey
@@ -1255,7 +1283,7 @@ struct SchemaKey
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  03/2012
+* @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <SchemaMatchType MatchType>
 struct SchemaKeyMatch : std::binary_function<SchemaKey, SchemaKey, bool>
@@ -1267,7 +1295,7 @@ struct SchemaKeyMatch : std::binary_function<SchemaKey, SchemaKey, bool>
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  03/2012
+* @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <SchemaMatchType MatchType>
 struct SchemaKeyLessThan : std::binary_function<SchemaKey, SchemaKey, bool>
@@ -1282,7 +1310,7 @@ struct SchemaKeyLessThan : std::binary_function<SchemaKey, SchemaKey, bool>
 typedef bmap<SchemaKey , ECSchemaPtr> SchemaMap;
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  03/2012
+* @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SchemaKeyMatchPredicate
     {
@@ -1301,7 +1329,8 @@ struct SchemaKeyMatchPredicate
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsistruct
+* @ingroup ECObjectsGroup
+* @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SchemaNameClassNamePair
 {
@@ -1326,7 +1355,7 @@ public:
 };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  03/2012
+* @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SchemaMapExact:bmap<SchemaKey, ECSchemaPtr, SchemaKeyLessThan <SCHEMAMATCHTYPE_Exact> >
     {
@@ -1347,12 +1376,13 @@ struct SchemaMapExact:bmap<SchemaKey, ECSchemaPtr, SchemaKeyLessThan <SCHEMAMATC
     ECOBJECTS_EXPORT ECClassP  FindClassP (EC::SchemaNameClassNamePair const& classNamePair) const;
     };
 
-typedef SchemaMapExact              ECSchemaReferenceList;
-typedef const ECSchemaReferenceList& ECSchemaReferenceListCR;
-
+typedef SchemaMapExact                  ECSchemaReferenceList;
+typedef const ECSchemaReferenceList&    ECSchemaReferenceListCR;
 
 //=======================================================================================
 //! Supports STL like iterator of classes in a schema
+//! @ingroup ECObjectsGroup
+//! @bsiclass
 //=======================================================================================
 struct ECClassContainer /*__PUBLISH_ABSTRACT__*/
 {
@@ -1413,7 +1443,9 @@ public:
 
 
 //=======================================================================================
-//! Interface to find a standalone enabler, typically for an embedded ECStruct in an ECInstance.</summary>
+//! Interface to find a standalone enabler, typically for an embedded ECStruct in an ECInstance.
+//! @ingroup ECObjectsGroup
+//! @bsiclass
 //=======================================================================================
 struct IStandaloneEnablerLocater
 {
@@ -1430,7 +1462,9 @@ public:
 
 
 //=======================================================================================
-//! Interface implemented by class that provides schema location services.</summary>
+//! Interface implemented by class that provides schema location services.
+//! @ingroup ECObjectsGroup
+//! @bsiclass
 //=======================================================================================
 struct IECSchemaLocater
 {
@@ -1444,7 +1478,9 @@ public:
 typedef RefCountedPtr<ECSchemaCache>        ECSchemaCachePtr;
 //=======================================================================================
 //! An object that controls the lifetime of a set of ECSchemas.  When the schema
-//! owner is destroyed, so are the schemas that it owns.</summary>
+//! owner is destroyed, so are the schemas that it owns.
+//! @ingroup ECObjectsGroup
+//! @bsiclass
 //=======================================================================================
 struct ECSchemaCache /*__PUBLISH_ABSTRACT__*/ : public RefCountedBase
 //__PUBLISH_SECTION_END__
@@ -1502,6 +1538,7 @@ typedef RefCountedPtr<SupplementalSchemaInfo> SupplementalSchemaInfoPtr;
 //=======================================================================================
 //! @ingroup ECObjectsGroup
 //! The in-memory representation of a schema as defined by ECSchemaXML
+//! @bsiclass
 //=======================================================================================
 struct ECSchema /*__PUBLISH_ABSTRACT__*/ :RefCountedBase
 //__PUBLISH_SECTION_END__

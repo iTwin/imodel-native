@@ -18,13 +18,14 @@ BEGIN_BENTLEY_EC_NAMESPACE
 //! to control how they are presented in the UI.
 //! Modifying a schema with this object will add a reference from that schema to the
 //! standard EditorCustomAttributes schema which defines the custom attribute classes.
+//! @ingroup ECObjectsGroup
+//! @bsiclass
 //=======================================================================================
 struct PresentationMetadataHelper
     {
+/*__PUBLISH_SECTION_END__*/
 private:
     ECSchemaPtr             m_customAttributesSchema;
-
-/*__PUBLISH_SECTION_END__*/
 
     struct CustomAttributeData;
 

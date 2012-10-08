@@ -57,10 +57,10 @@ struct RefCountedPtrToValueTransform: public std::unary_function<RefCountedPtr<T
 /*__PUBLISH_SECTION_START__*/
 
 /*---------------------------------------------------------------------------------**//**
-//This is the iterator that is exposed using VirtualCollectionIterator. These virtual member
+This is the iterator that is exposed using VirtualCollectionIterator. These virtual member
 functions delegate the iteration to the appropriate implementations of it based on the container
 collection.
-* @bsimethod                                    Abeesh.Basheer                  03/2011
+@bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename value_type>
 struct   IInstanceCollectionIteratorAdapter :public Bentley::RefCountedBase, std::iterator<std::forward_iterator_tag, value_type>
@@ -73,8 +73,8 @@ struct   IInstanceCollectionIteratorAdapter :public Bentley::RefCountedBase, std
     };
 
 /*---------------------------------------------------------------------------------**//**
-//A container collection which allows you to expose different kinds of collection as a single type
-* @bsimethod                                    Abeesh.Basheer                  03/2011
+A container collection which allows you to expose different kinds of collection as a single type
+@bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename value_type>
 struct IInstanceCollectionAdapter : public Bentley::RefCountedBase
@@ -215,7 +215,8 @@ for (ECInstanceIterable::const_iterator iter = collection.begin(); iter != colle
     {
     IECInstanceP instance = *iter;
     }
-* @bsimethod                                    Abeesh.Basheer                  06/2012
+@ingroup ECObjectsGroup
+@bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ECInstanceIterable
     {
@@ -233,7 +234,7 @@ struct ECInstanceIterable
         ECOBJECTS_EXPORT const_iterator end   () const;
         ECOBJECTS_EXPORT bool empty() const;
         ECOBJECTS_EXPORT bool IsNull () const;
-    };//ECInstanceIterable
+    };
 
 END_BENTLEY_EC_NAMESPACE
 

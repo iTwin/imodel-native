@@ -42,6 +42,7 @@ enum ArrayModifierFlags ENUM_UNDERLYING_TYPE (UInt32)
     };
 
 /*=================================================================================**//**
+* @ingroup ECObjectsGroup
 * @bsistruct
 +===============+===============+===============+===============+===============+======*/      
 struct PropertyLayout
@@ -101,6 +102,7 @@ bool operator()(ClassLayoutCP s1, ClassLayoutCP s2) const;
  /*__PUBLISH_SECTION_START__*/
  /*=================================================================================**//**
 * @bsistruct
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/      
 struct ClassLayout
     {
@@ -228,6 +230,7 @@ public:
 typedef bvector<ClassLayoutCP>  ClassLayoutVector;
 
 /*=================================================================================**//**
+* @ingroup ECObjectsGroup
 * @bsistruct
 +===============+===============+===============+===============+===============+======*/      
 struct SchemaLayout
@@ -330,6 +333,8 @@ private:
 //=======================================================================================    
 //! Base class for EC::IECInstance implementations that get/set values from a block of memory, 
 //! e.g. StandaloneECInstance and ECXInstance
+//! @ingroup ECObjectsGroup
+//! @bsiclass
 //=======================================================================================    
 struct MemoryInstanceSupport
     {

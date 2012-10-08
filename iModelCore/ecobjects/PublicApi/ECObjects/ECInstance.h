@@ -42,6 +42,8 @@ BEGIN_BENTLEY_EC_NAMESPACE
 //////////////////////////////////////////////////////////////////////////////////
 typedef bmap<WString, ICustomECStructSerializerP> NameSerializerMap;
 
+//! @ingroup ECObjectsGroup
+//! @bsiclass
 struct ICustomECStructSerializer
     {
     virtual bool            UsesCustomStructXmlString  (StructECPropertyP structProperty, IECInstanceCR ecInstance) const = 0;
@@ -49,8 +51,11 @@ struct ICustomECStructSerializer
     virtual void            LoadStructureFromString (StructECPropertyP structProperty, IECInstanceR ecInstance, WCharCP baseAccessString, WCharCP valueString) = 0;
     };
 
+//! @ingroup ECObjectsGroup
+//! @bsiclass
 struct CustomStructSerializerManager
 {
+//__PUBLISH_SECTION_END__
 private:
     NameSerializerMap   m_serializers;
 
@@ -58,7 +63,7 @@ private:
     ~CustomStructSerializerManager();
 
     ICustomECStructSerializerP GetCustomSerializer (WCharCP serializerName) const;
-
+//__PUBLISH_SECTION_START__
 public:
     ECOBJECTS_EXPORT  ICustomECStructSerializerP            GetCustomSerializer (StructECPropertyP structProperty, IECInstanceCR ecInstance) const;
     ECOBJECTS_EXPORT  static CustomStructSerializerManagerR GetManager();
@@ -76,6 +81,7 @@ typedef RefCountedPtr<IECInstance> IECInstancePtr;
 //! to the EC::IECInstance.
 //! We could call these "enabled" instances as opposed to "lightweight".
 //! @see ECEnabler
+//! @bsiclass
 //=======================================================================================    
 struct IECInstance : RefCountedBase
     {
@@ -250,6 +256,7 @@ public:
 //! @ingroup ECObjectsGroup
 //! EC::IECRelationshipInstance is the native equivalent of a .NET IECRelationshipInstance.
 //! @see IECInstance, ECRelationshipClass
+//! @bsiclass
 //=======================================================================================    
 struct IECRelationshipInstance : virtual IECInstance
     {
@@ -271,7 +278,6 @@ struct IECRelationshipInstance : virtual IECInstance
     };
 
 typedef RefCountedPtr<IECRelationshipInstance> IECRelationshipInstancePtr;
-        
 
 /*__PUBLISH_SECTION_END__*/
 

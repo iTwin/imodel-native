@@ -24,6 +24,7 @@ typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
 
 //=======================================================================================    
 //! base class ensuring that all enablers are refcounted
+//! @ingroup ECObjectsGroup
 //=======================================================================================    
 struct ECEnabler : RefCountedBase
 /*__PUBLISH_SECTION_END__*/
@@ -143,6 +144,7 @@ public:
 
 //=======================================================================================    
 //! Base class for all relationship enablers
+//! @ingroup ECObjectsGroup
 //=======================================================================================    
  struct IECRelationshipEnabler
  {
