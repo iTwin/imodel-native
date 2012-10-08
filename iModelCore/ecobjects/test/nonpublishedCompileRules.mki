@@ -19,3 +19,4 @@ $(o)NonPublishedSchemaTests$(oext)  : $(baseDir)NonPublished/NonPublishedSchemaT
 
 $(o)CalculatedPropertyTests$(oext)  : $(baseDir)NonPublished/CalculatedPropertyTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
 
+$(o)UnitsTests$(oext)               : $(baseDir)NonPublished/UnitsTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
