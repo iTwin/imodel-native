@@ -40,34 +40,6 @@ BEGIN_BENTLEY_EC_UNITS_NAMESPACE
 
 struct UnitsManager;
 
-enum StandardUnitSystem
-    {
-    StandardUnitSystem_None,
-    StandardUnitSystem_SI,
-    StandardUnitSystem_USCustomary,
-    StandardUnitSystem_Both,
-
-    StandardUnitSystem_MAX
-    };
-
-enum StandardUnit
-    {
-    //...
-    StandardUnit_MAX
-    };
-
-enum StandardDimension
-    {
-    //...
-    StandardDimension_MAX
-    };
-
-enum StandardKindOfQuantity
-    {
-    //...
-    StandardKindOfQuantity_MAX
-    };
-
 enum UnitConversionType
     {
     UnitConversionType_Identity,
@@ -75,6 +47,38 @@ enum UnitConversionType
     UnitConversionType_Factor,
     UnitConversionType_FactorAndOffset,
     UnitConversionType_Custom
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T_Collection, typename T_Value> struct StringMapIteratorAdapter
+    {
+protected:
+    typedef bmap<WString, T_Value>  T_Map;
+
+    T_Collection const&             m_collection;
+    typename T_Map::const_iterator  m_cur;
+    typename T_Map::const_iterator  m_end;
+
+    StringMapIteratorAdapter (T_Collection const& coll, T_Map const& map, bool isEnd)
+        : m_collection(coll), m_cur(isEnd ? map.end() : map.begin()), m_end(isEnd ? m_cur : map.end())
+            {
+            if (m_cur != m_end && !m_collection.Includes (m_cur->second))
+                MoveNext();
+            }
+
+    void                    MoveNext()
+        {
+        while (m_cur != m_end && !m_collection.Includes ((++m_cur)->second))
+            ;
+        }
+public:
+    bool                        operator==(StringMapIteratorAdapter const& rhs) const   { return m_cur == rhs.m_cur; }
+    bool                        operator!=(StringMapIteratorAdapter const& rhs) const   { return !(*this == rhs); }
+    T_Value const*              operator*() const                                       { return &m_cur->second; }
+    T_Value const*              operator->() const                                      { return &m_cur->second; }
+    StringMapIteratorAdapter&   operator++()                                            { MoveNext(); return *this; }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -158,7 +162,6 @@ public:
     void                    SetLabel (WCharCP l)                    { m_longLabel = l ? l : L""; }
     void                    SetShortLabel (WCharCP l)               { m_shortLabel = l ? l : L""; }
 
-    ECOBJECTS_EXPORT static UnitR            GetStandard (StandardUnit id);
     ECOBJECTS_EXPORT static UnitP            GetByName (WCharCP name);
     };
 
@@ -172,7 +175,7 @@ protected:
 public:
     ECOBJECTS_EXPORT bool   IncludesUnit (UnitCR unit) const;
     };
-
+   
 /*---------------------------------------------------------------------------------**//**
 * A collection of all registered units, with an optional filter.
 * @bsistruct                                                    Paul.Connelly   10/12
@@ -184,31 +187,17 @@ private:
 public:
     UnitsCollection (IUnitFilter const* filter = NULL) : m_filter (filter) { }
 
-    struct const_iterator
+    struct const_iterator : StringMapIteratorAdapter<UnitsCollection, Unit>
         {
     private:
         friend struct UnitsCollection;
-        typedef bmap<WString, Unit>     UnitsMap;
 
-        UnitsCollection const&              m_collection;
-        UnitsMap::const_iterator            m_cur;
-        UnitsMap::const_iterator            m_end;
-
-        const_iterator (UnitsCollection const& coll, bool isEnd);
-
-        void                MoveNext();
-    public:
-
-        bool                operator==(const_iterator const& rhs) const { return m_cur == rhs.m_cur; }
-        bool                operator!=(const_iterator const& rhs) const { return !(*this == rhs); }
-        UnitCP              operator*() const                           { return &m_cur->second; }
-        UnitCP              operator->() const                          { return &m_cur->second; }
-        const_iterator&     operator++()                                { MoveNext(); return *this; }
+        ECOBJECTS_EXPORT const_iterator (UnitsCollection const& coll, bool isEnd);
         };
 
     const_iterator      begin() const                       { return const_iterator (*this, false); }
     const_iterator      end() const                         { return const_iterator (*this, true); }
-    bool                IncludesUnit (UnitCR unit) const    { return NULL != m_filter ? m_filter->IncludesUnit (unit) : true; }
+    bool                Includes (UnitCR unit) const        { return NULL != m_filter ? m_filter->IncludesUnit (unit) : true; }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -235,8 +224,57 @@ public:
     UnitsCollection  GetUnits() const            { return UnitsCollection (this); }
 
     ECOBJECTS_EXPORT static UnitSystemP     Create (WCharCP name, WCharCP shortLabel, WCharCP longLabel);
-    ECOBJECTS_EXPORT static UnitSystemR     GetStandard (StandardUnitSystem id);
     ECOBJECTS_EXPORT static UnitSystemP     GetByName (WCharCP name);
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+struct KindOfQuantity
+    {
+private:
+    friend struct Dimension;    /*KindOfQuantityP Dimension::AddKindOfQuantity (WCharCP, WCharCP, KindOfQuantityCP);*/
+
+    WCharCP             m_name;
+    WString             m_description;
+    DimensionCR         m_dimension;
+    KindOfQuantityCP    m_parent;
+
+    KindOfQuantity (WCharCP desc, DimensionCR dimension, KindOfQuantityCP parent)
+        : m_name(NULL), m_description(desc), m_dimension(dimension), m_parent(parent) { }
+public:
+    WCharCP             GetName() const                         { return m_name; }
+    WCharCP             GetDescription() const                  { return m_description.c_str(); }
+    void                SetDescription (WCharCP d)              { m_description = d ? d : L""; }
+
+    DimensionCR         GetDimension() const                    { return m_dimension; }
+    KindOfQuantityCP    GetParent() const                       { return m_parent; }
+    KindOfQuantityCR    GetBase() const                         { return m_parent ? m_parent->GetBase() : *this; }
+
+    ECOBJECTS_EXPORT static KindOfQuantityP      GetByName (WCharCP name);
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+struct KindOfQuantityCollection
+    {
+private:
+    DimensionCP         m_dimension;
+public:
+    KindOfQuantityCollection (DimensionCP dimensionFilter = NULL) : m_dimension(dimensionFilter) { }
+
+    struct const_iterator : StringMapIteratorAdapter<KindOfQuantityCollection, KindOfQuantity>
+        {
+    private:
+        friend struct KindOfQuantityCollection;
+        
+        ECOBJECTS_EXPORT const_iterator (KindOfQuantityCollection const& coll, bool isEnd);
+        };
+
+    const_iterator begin() const                            { return const_iterator (*this, false); }
+    const_iterator end() const                              { return const_iterator (*this, true); }
+    bool           Includes (KindOfQuantityCR koq) const    { return (NULL == m_dimension || &koq.GetDimension() == m_dimension) ? true : false; }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -262,42 +300,35 @@ public:
     void                SetDescription (WCharCP d)  { m_description = d ? d : L""; }
     void                SetDerivation (WCharCP d)   { m_derivation = d ? d : L""; }
 
-    UnitsCollection      GetUnits() const            { return UnitsCollection (this); }
+    UnitsCollection             GetUnits() const            { return UnitsCollection (this); }
+    KindOfQuantityCollection    GetKindsOfQuantity() const  { return KindOfQuantityCollection (this); }
 
     ECOBJECTS_EXPORT UnitP               AddUnit (UnitConverterCR converter, UnitSystemCR system, UnitCP baseUnit, WCharCP name, WCharCP shortLabel, WCharCP longLabel);
     ECOBJECTS_EXPORT KindOfQuantityP     AddKindOfQuantity (WCharCP name, WCharCP description, KindOfQuantityCP parentKOQ = NULL);
 
     ECOBJECTS_EXPORT static DimensionP   Create (WCharCP name, WCharCP displayName, WCharCP description, WCharCP derivation);
-    ECOBJECTS_EXPORT static DimensionR   GetStandard (StandardDimension id);
     ECOBJECTS_EXPORT static DimensionP   GetByName (WCharCP name);
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct KindOfQuantity
+struct DimensionsCollection
     {
-private:
-    friend KindOfQuantityP Dimension::AddKindOfQuantity (WCharCP, WCharCP, KindOfQuantityCP);
-
-    WCharCP             m_name;
-    WString             m_description;
-    DimensionCR         m_dimension;
-    KindOfQuantityCP    m_parent;
-
-    KindOfQuantity (WCharCP desc, DimensionCR dimension, KindOfQuantityCP parent)
-        : m_name(NULL), m_description(desc), m_dimension(dimension), m_parent(parent) { }
 public:
-    WCharCP             GetName() const                         { return m_name; }
-    WCharCP             GetDescription() const                  { return m_description.c_str(); }
-    void                SetDescription (WCharCP d)              { m_description = d ? d : L""; }
+    DimensionsCollection() { }
 
-    DimensionCR         GetDimension() const                    { return m_dimension; }
-    KindOfQuantityCP    GetParent() const                       { return m_parent; }
-    KindOfQuantityCR    GetBase() const                         { return m_parent ? m_parent->GetBase() : *this; }
+    struct const_iterator : StringMapIteratorAdapter<DimensionsCollection, Dimension>
+        {
+    private:
+        friend struct DimensionsCollection;
 
-    ECOBJECTS_EXPORT static KindOfQuantityR      GetStandard (StandardKindOfQuantity id);
-    ECOBJECTS_EXPORT static KindOfQuantityP      GetByName (WCharCP name);
+        ECOBJECTS_EXPORT const_iterator (DimensionsCollection const& coll, bool isEnd);
+        };
+
+    const_iterator      begin() const                       { return const_iterator (*this, false); }
+    const_iterator      end() const                         { return const_iterator (*this, true); }
+    bool                Includes (DimensionCR dim) const    { return true; }
     };
 
 /*---------------------------------------------------------------------------------**//**

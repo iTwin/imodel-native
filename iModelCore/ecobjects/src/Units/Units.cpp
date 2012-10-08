@@ -117,21 +117,12 @@ double UnitConverter::FromBase (double val) const
 struct UnitsManager
     {
 private:
-    typedef bvector<UnitP>                          UnitList;
-    typedef bvector<KindOfQuantityP>                KOQList;
-    typedef bvector<DimensionP>                     DimensionList;
-    typedef bvector<UnitSystemP>                    UnitSystemList;
-
     // Note that Unit, KOQ, Dimension, and UnitSystem store their names as a pointer into the WString key in one of the maps below, to avoid storing each name twice.
     typedef bmap<WString, Unit>                     UnitMap;
     typedef bmap<WString, KindOfQuantity>           KOQMap;
     typedef bmap<WString, Dimension>                DimensionMap;
     typedef bmap<WString, UnitSystem>               UnitSystemMap;
 
-    UnitList        m_unitsById;
-    KOQList         m_koqsById;
-    DimensionList   m_dimensionsById;
-    UnitSystemList  m_systemsById;
     UnitMap         m_unitsByName;
     KOQMap          m_koqsByName;
     DimensionMap    m_dimensionsByName;
@@ -141,11 +132,6 @@ private:
 
     void                InitializeStandardUnitSystems();
 public:
-    UnitR               GetStandardUnit (StandardUnit id) const             { return *m_unitsById[id]; }
-    KindOfQuantityR     GetStandardKOQ (StandardKindOfQuantity id) const    { return *m_koqsById[id]; }
-    DimensionR          GetStandardDimension (StandardDimension id) const   { return *m_dimensionsById[id]; }
-    UnitSystemR         GetStandardSystem (StandardUnitSystem id) const     { return *m_systemsById[id]; }
-
     UnitP             GetUnitByName (WCharCP name)
         {
         UnitMap::iterator iter = m_unitsByName.find (name);
@@ -227,7 +213,9 @@ public:
             return NULL;
         }
 
-    UnitMap const&          GetAllUnits() const { return m_unitsByName; }
+    UnitMap const&          GetAllUnits() const         { return m_unitsByName; }
+    KOQMap const&           GetAllKOQs() const          { return m_koqsByName; }
+    DimensionMap const&     GetAllDimensions() const    { return m_dimensionsByName; }
 
     static UnitsManager&    GetManager()
         {
@@ -240,7 +228,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitsManager::UnitsManager() : m_unitsById(StandardUnit_MAX), m_koqsById(StandardKindOfQuantity_MAX), m_dimensionsById(StandardDimension_MAX), m_systemsById(StandardUnitSystem_MAX)
+UnitsManager::UnitsManager()
     {
     // WIP_UNITS: populate standard lists. Maybe the simplest way would be to add a custom attribute containing the standard ID to all the standard definitions
     // Initialize standard UnitSystems. Apparently nobody ever creates new ones via schemas?
@@ -274,10 +262,10 @@ UnitsManager::UnitsManager() : m_unitsById(StandardUnit_MAX), m_koqsById(Standar
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UnitsManager::InitializeStandardUnitSystems()
     {
-    m_systemsById[StandardUnitSystem_None] = UnitSystem::Create (L"none", NULL, NULL);
-    m_systemsById[StandardUnitSystem_SI] = UnitSystem::Create (L"si", NULL, NULL);
-    m_systemsById[StandardUnitSystem_USCustomary] = UnitSystem::Create (L"usCustomary", NULL, NULL);
-    m_systemsById[StandardUnitSystem_Both] = UnitSystem::Create (L"both", NULL, NULL);
+    UnitSystem::Create (L"none", NULL, NULL);
+    UnitSystem::Create (L"si", NULL, NULL);
+    UnitSystem::Create (L"usCustomary", NULL, NULL);
+    UnitSystem::Create (L"both", NULL, NULL);
     }
     
 static WCharCP PASS_NULL_AS_EMPTY (WCharCP in) { return in ? in : L""; }
@@ -346,29 +334,35 @@ UnitP Dimension::AddUnit (UnitConverterCR converter, UnitSystemCR system, UnitCP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Dimension::_IncludesUnit (UnitCR u) const                   { return &u.GetDimension() == this; }
-bool UnitSystem::_IncludesUnit (UnitCR u) const                  { return &u.GetSystem() == this; }
+bool Dimension::_IncludesUnit (UnitCR u) const                  { return &u.GetDimension() == this; }
+bool UnitSystem::_IncludesUnit (UnitCR u) const                 { return &u.GetSystem() == this; }
 bool IUnitFilter::IncludesUnit (UnitCR u) const                 { return _IncludesUnit (u); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UnitsCollection::const_iterator::MoveNext()
+UnitsCollection::const_iterator::const_iterator (UnitsCollection const& coll, bool isEnd)
+    : StringMapIteratorAdapter<UnitsCollection, Unit> (coll, UnitsManager::GetManager().GetAllUnits(), isEnd)
     {
-    while (m_cur != m_end && !m_collection.IncludesUnit ((++m_cur)->second))
-        ;
+    //
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitsCollection::const_iterator::const_iterator (UnitsCollection const& coll, bool isEnd)
-    : m_collection(coll),
-    m_cur(isEnd ? UnitsManager::GetManager().GetAllUnits().begin() : UnitsManager::GetManager().GetAllUnits().end()),
-    m_end (isEnd ? m_cur : UnitsManager::GetManager().GetAllUnits().end())
+KindOfQuantityCollection::const_iterator::const_iterator (KindOfQuantityCollection const& coll, bool isEnd)
+    : StringMapIteratorAdapter<KindOfQuantityCollection, KindOfQuantity> (coll, UnitsManager::GetManager().GetAllKOQs(), isEnd)
     {
-    if (!m_collection.IncludesUnit (m_cur->second))
-        MoveNext();
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+DimensionsCollection::const_iterator::const_iterator (DimensionsCollection const& coll, bool isEnd)
+    : StringMapIteratorAdapter<DimensionsCollection, Dimension> (coll, UnitsManager::GetManager().GetAllDimensions(), isEnd)
+    {
+    //
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -385,10 +379,6 @@ bool Unit::ConvertTo (double& value, UnitCR target) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitSystemR UnitSystem::GetStandard (StandardUnitSystem id)                 { return UnitsManager::GetManager().GetStandardSystem (id); }
-DimensionR Dimension::GetStandard (StandardDimension id)                    { return UnitsManager::GetManager().GetStandardDimension (id); }
-KindOfQuantityR KindOfQuantity::GetStandard (StandardKindOfQuantity id)     { return UnitsManager::GetManager().GetStandardKOQ (id); }
-UnitR Unit::GetStandard (StandardUnit id)                                   { return UnitsManager::GetManager().GetStandardUnit (id); }
 UnitSystemP UnitSystem::GetByName (WCharCP name)                            { return UnitsManager::GetManager().GetSystemByName (name); }
 DimensionP Dimension::GetByName (WCharCP name)                              { return UnitsManager::GetManager().GetDimensionByName (name); }
 KindOfQuantityP KindOfQuantity::GetByName (WCharCP name)                    { return UnitsManager::GetManager().GetKOQByName (name); }
@@ -570,7 +560,7 @@ bool UnitsSchemaReader::ReadUnit (ECClassCR ecClass, IECInstanceCR attr)
         DimensionP dimension;
         UnitSystemP system = m_unitsManager.GetSystemByName (systemName.GetString());
         if (NULL == system)
-            system = &m_unitsManager.GetStandardSystem (StandardUnitSystem_None);
+            system = m_unitsManager.GetSystemByName (L"none");  // WIP_UNITS: some standard Units erroneously use usConventional instead of usCustomary - fix or they end up in "none"
         
         if (NULL == (dimension = m_unitsManager.GetDimensionByName (dimensionName.GetString())))
             return false;
