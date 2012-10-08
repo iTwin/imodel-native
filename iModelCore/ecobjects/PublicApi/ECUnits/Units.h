@@ -7,6 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+/*__BENTLEY_INTERNAL_ONLY__*/
+// WIP_UNITS: publish api
+
 #include <ECObjects/ECObjects.h>
 
 // WIP_UNITS: This is a very rough implementation, to try some things out.
@@ -119,6 +122,7 @@ public:
     };
 
 /*---------------------------------------------------------------------------------**//**
+* For iterating over Units contained in a Dimension, UnitSystem, or other collection.
 * @bsistruct                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T_Collection> struct UnitIterator
@@ -146,7 +150,7 @@ public:
     bool                        operator==(UnitIterator const& rhs) const   { return m_cur == rhs.m_cur; }
     bool                        operator!=(UnitIterator const& rhs) const   { return !(*this == rhs); }
     UnitCP                      operator*() const                           { return &m_cur->second; }
-    UnitCP                       operator->() const                          { return &m_cur->second; }
+    UnitCP                      operator->() const                          { return &m_cur->second; }
     UnitIterator<T_Collection>& operator++()                                { MoveNext(); return *this; }
     };
 
