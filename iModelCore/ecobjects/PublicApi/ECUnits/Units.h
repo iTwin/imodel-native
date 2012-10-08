@@ -34,6 +34,8 @@ UNITS_TYPEDEFS (UnitConverter);
 
 BEGIN_BENTLEY_EC_UNITS_NAMESPACE
 
+struct UnitsManager;
+
 enum StandardUnitSystem
     {
     StandardUnitSystem_None,
@@ -119,6 +121,38 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T_Collection> struct UnitIterator
+    {
+private:
+    typedef bmap<WString, Unit>     UnitsMap;
+
+    T_Collection const&         m_collection;
+    UnitsMap::const_iterator    m_cur;
+    UnitsMap::const_iterator    m_end;
+
+    void    MoveNext()
+        {
+        while (m_cur != m_end && !m_collection.IncludesUnit ((++m_cur)->second))
+            ;
+        }
+public:
+    UnitIterator (T_Collection const& coll, UnitsMap const& allUnits, bool isEnd)
+        : m_collection(coll), m_cur(isEnd ? allUnits.end() : allUnits.begin()), m_end(allUnits.end())
+        {
+        if (!m_collection.IncludesUnit (m_cur->second))
+            MoveNext();
+        }
+
+    bool                        operator==(UnitIterator const& rhs) const   { return m_cur == rhs.m_cur; }
+    bool                        operator!=(UnitIterator const& rhs) const   { return !(*this == rhs); }
+    UnitCP                      operator*() const                           { return &m_cur->second; }
+    UnitCP                       operator->() const                          { return &m_cur->second; }
+    UnitIterator<T_Collection>& operator++()                                { MoveNext(); return *this; }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
 struct UnitSystem
     {
 private:
@@ -134,9 +168,16 @@ public:
     void            SetLabel (WCharCP label)    { m_longLabel = label ? label : L""; }
     void            SetShortLabel (WCharCP l)   { m_shortLabel = l ? l : L""; }
 
-    ECOBJECTS_EXPORT static UnitSystemP          Create (WCharCP name, WCharCP shortLabel, WCharCP longLabel);
-    ECOBJECTS_EXPORT static UnitSystemR          GetStandard (StandardUnitSystem id);
-    ECOBJECTS_EXPORT static UnitSystemP          GetByName (WCharCP name);
+
+    typedef UnitIterator<UnitSystem>    const_iterator;
+
+    ECOBJECTS_EXPORT const_iterator         begin() const;
+    ECOBJECTS_EXPORT const_iterator         end() const;
+    ECOBJECTS_EXPORT bool                   IncludesUnit (UnitCR unit) const;
+
+    ECOBJECTS_EXPORT static UnitSystemP     Create (WCharCP name, WCharCP shortLabel, WCharCP longLabel);
+    ECOBJECTS_EXPORT static UnitSystemR     GetStandard (StandardUnitSystem id);
+    ECOBJECTS_EXPORT static UnitSystemP     GetByName (WCharCP name);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -160,8 +201,15 @@ public:
     void                SetDescription (WCharCP d)  { m_description = d ? d : L""; }
     void                SetDerivation (WCharCP d)   { m_derivation = d ? d : L""; }
 
+
+    typedef UnitIterator<Dimension> const_iterator;
+
     ECOBJECTS_EXPORT UnitP               AddUnit (UnitConverterCR converter, UnitSystemCR system, UnitCP baseUnit, WCharCP name, WCharCP shortLabel, WCharCP longLabel);
     ECOBJECTS_EXPORT KindOfQuantityP     AddKindOfQuantity (WCharCP name, WCharCP description, KindOfQuantityCP parentKOQ = NULL);
+
+    ECOBJECTS_EXPORT bool                IncludesUnit (UnitCR u) const;
+    ECOBJECTS_EXPORT const_iterator      begin() const;
+    ECOBJECTS_EXPORT const_iterator      end() const;
 
     ECOBJECTS_EXPORT static DimensionP   Create (WCharCP name, WCharCP displayName, WCharCP description, WCharCP derivation);
     ECOBJECTS_EXPORT static DimensionR   GetStandard (StandardDimension id);
@@ -235,7 +283,6 @@ public:
     ECOBJECTS_EXPORT static UnitP            GetByName (WCharCP name);
     };
 
-struct UnitsManager;
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -257,7 +304,6 @@ struct UnitsSchemaReader
     typedef bpair<Error, WString>       ErrorMessage;
     typedef bvector<ErrorMessage>       ErrorLog;
 private:
-    EC::ECSchemaCR      m_schema;
     ErrorLog            m_errorLog;
     UnitsManager&       m_unitsManager;
     bool                m_haltOnError;
@@ -266,18 +312,19 @@ private:
 
     void                Log (Error error, WCharCP msg) { m_errorLog.push_back (ErrorMessage (error, msg ? msg : L"")); }
 
-    bool                ReadDimensions();
+    bool                ReadDimensions (EC::ECSchemaCR schema);
     bool                ReadDimension (EC::ECClassCR ecClass, EC::IECInstanceCR attr);
-    bool                ReadUnitsAndKOQs();
+    bool                ReadUnitsAndKOQs (EC::ECSchemaCR schema);
     bool                ReadUnit (EC::ECClassCR ecClass, EC::IECInstanceCR attr);
     bool                ReadKindOfQuantity (EC::ECClassCR ecClass, EC::IECInstanceCR attr);
 public:
-    ECOBJECTS_EXPORT UnitsSchemaReader (EC::ECSchemaCR unitsSchema, bool recordErrors=false, bool haltOnError=false, bool applyDisplayLabels = true);
+    ECOBJECTS_EXPORT UnitsSchemaReader (bool recordErrors=false, bool haltOnError=false, bool applyDisplayLabels = true);
 
     // Process the schema for any Units, Dimensions, and KindOfQuantities or customizations and register them into the system
-    ECOBJECTS_EXPORT bool                ReadUnitsInfo ();
+    ECOBJECTS_EXPORT bool                ReadUnitsInfo (EC::ECSchemaCR schema);
     // Returns a list of any logged errors in order of occurrence
     ErrorLog const&     GetErrorLog() const     { return m_errorLog; }
+    void                ClearErrorLog()         { m_errorLog.clear(); }
     };
 
 END_BENTLEY_EC_UNITS_NAMESPACE

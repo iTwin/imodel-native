@@ -13,9 +13,9 @@ BEGIN_BENTLEY_EC_UNITS_NAMESPACE
 
 using namespace Bentley::EC;
 
-static WCharCP const  KOQSchemaName                     = L"KindOfQuantity_Schema.01.01";
-static WCharCP const  DimensionSchemaName               = L"Dimension_Schema.01.00";
-static WCharCP const  UnitSchemaName                    = L"Units_Schema.01.00";
+static WCharCP const  KOQSchemaName                     = L"KindOfQuantity_Schema";
+static WCharCP const  DimensionSchemaName               = L"Dimension_Schema";
+static WCharCP const  UnitSchemaName                    = L"Units_Schema";
 static WCharCP const  FACTOR_CONVERTER                  = L"Factor Converter";
 static WCharCP const  FACTOR_OFFSET_CONVERTER           = L"Factor Offset Converter";
 static WCharCP const  BASEUNIT_CONVERTER                = L"BaseUnit Converter";
@@ -166,16 +166,21 @@ public:
 
     UnitSystemP       GetSystemByName (WCharCP name)
         {
-        UnitSystemMap::iterator iter = m_systemsByName.find (name);
+        // Note: the managed impl ignored case, and schemas are written with inconsistent case, so we have to do the same...
+        WString lName (name);
+        lName.ToLower();
+        UnitSystemMap::iterator iter = m_systemsByName.find (lName);
         return iter != m_systemsByName.end() ? &iter->second : NULL;
         }
 
     UnitSystemP       AddSystem (WCharCP& name, UnitSystemCR system)
         {
-        UnitSystemMap::iterator pos = m_systemsByName.lower_bound (name);
-        if (pos == m_systemsByName.end() || !pos->first.Equals (name))
+        WString lName (name);
+        lName.ToLower();
+        UnitSystemMap::iterator pos = m_systemsByName.lower_bound (lName.c_str());
+        if (pos == m_systemsByName.end() || !pos->first.Equals (lName))
             {
-            pos = m_systemsByName.insert (pos, UnitSystemMap::value_type (name, system));
+            pos = m_systemsByName.insert (pos, UnitSystemMap::value_type (lName, system));
             name = pos->first.c_str();
             return &pos->second;
             }
@@ -222,6 +227,8 @@ public:
             return NULL;
         }
 
+    UnitMap const&          GetAllUnits() const { return m_unitsByName; }
+
     static UnitsManager&    GetManager()
         {
         // WIP_UNITS: thread-local
@@ -239,6 +246,27 @@ UnitsManager::UnitsManager() : m_unitsById(StandardUnit_MAX), m_koqsById(Standar
     // Initialize standard UnitSystems. Apparently nobody ever creates new ones via schemas?
     // Read standard schemas.
     InitializeStandardUnitSystems();
+
+    UnitsSchemaReader reader (false, true, false);
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext (NULL, false);
+    SchemaKey key (DimensionSchemaName, 1, 0);  // WIP_FUSION: why does LocateSchema() take a non-const SchemaKey...?
+    ECSchemaPtr schema = context->LocateSchema (key, SCHEMAMATCHTYPE_LatestCompatible);
+    if (schema.IsNull() || !reader.ReadUnitsInfo (*schema))
+        { BeAssert (false); return; }
+
+    key.m_schemaName = KOQSchemaName;
+    key.m_versionMinor = 1;
+    schema = context->LocateSchema (key, SCHEMAMATCHTYPE_LatestCompatible);
+    if (schema.IsNull() || !reader.ReadUnitsInfo (*schema))
+        { BeAssert (false); return; }
+
+    key.m_schemaName = UnitSchemaName;
+    key.m_versionMinor = 0;
+    schema = context->LocateSchema (key, SCHEMAMATCHTYPE_LatestCompatible);
+    if (schema.IsNull() || !reader.ReadUnitsInfo (*schema))
+        { BeAssert (false); return; }
+
+    // WIP_UNITS: Units customization schemas...
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -318,6 +346,16 @@ UnitP Dimension::AddUnit (UnitConverterCR converter, UnitSystemCR system, UnitCP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
+Dimension::const_iterator Dimension::begin() const          { return const_iterator (*this, UnitsManager::GetManager().GetAllUnits(), false); }
+Dimension::const_iterator Dimension::end() const            { return const_iterator (*this, UnitsManager::GetManager().GetAllUnits(), true); }
+bool Dimension::IncludesUnit (UnitCR u) const               { return &u.GetDimension() == this; }
+UnitSystem::const_iterator UnitSystem::begin() const        { return const_iterator (*this, UnitsManager::GetManager().GetAllUnits(), false); }
+UnitSystem::const_iterator UnitSystem::end() const          { return const_iterator (*this, UnitsManager::GetManager().GetAllUnits(), true); }
+bool UnitSystem::IncludesUnit (UnitCR u) const              { return &u.GetSystem() == this; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
 bool Unit::ConvertTo (double& value, UnitCR target) const
     {
     PRECONDITION (IsCompatible (target), false);
@@ -350,8 +388,8 @@ static WStringR buildMessage (WStringR msg, WCharCP a, WCharCP b, WCharCP c, WCh
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitsSchemaReader::UnitsSchemaReader (ECSchemaCR schema, bool recordErrors, bool haltOnError, bool applyDisplayLabels)
-    : m_schema (schema), m_haltOnError(haltOnError), m_recordErrors(recordErrors), m_applyDisplayLabels (applyDisplayLabels), m_unitsManager(UnitsManager::GetManager())
+UnitsSchemaReader::UnitsSchemaReader (bool recordErrors, bool haltOnError, bool applyDisplayLabels)
+    : m_haltOnError(haltOnError), m_recordErrors(recordErrors), m_applyDisplayLabels (applyDisplayLabels), m_unitsManager(UnitsManager::GetManager())
     {
     //
     }
@@ -359,19 +397,21 @@ UnitsSchemaReader::UnitsSchemaReader (ECSchemaCR schema, bool recordErrors, bool
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UnitsSchemaReader::ReadUnitsInfo()
+bool UnitsSchemaReader::ReadUnitsInfo(ECSchemaCR schema)
     {
-    bool readDimensions = ReadDimensions();
-    bool readAll = readDimensions || (!m_haltOnError && ReadUnitsAndKOQs());
-    return readAll;
+    bool readDimensions = ReadDimensions(schema);
+    if (!readDimensions && m_haltOnError)
+        return false;
+
+    return ReadUnitsAndKOQs(schema) ? readDimensions : false;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UnitsSchemaReader::ReadDimensions()
+bool UnitsSchemaReader::ReadDimensions(ECSchemaCR schema)
     {
-    FOR_EACH (ECClassCP ecClass, m_schema.GetClasses())
+    FOR_EACH (ECClassCP ecClass, schema.GetClasses())
         {
         IECInstancePtr attr = ecClass->GetCustomAttribute (DIMENSION_CUSTOMATTRIBUTE);
         if (attr.IsValid())
@@ -426,9 +466,9 @@ bool UnitsSchemaReader::ReadDimension (ECClassCR ecClass, IECInstanceCR attr)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UnitsSchemaReader::ReadUnitsAndKOQs()
+bool UnitsSchemaReader::ReadUnitsAndKOQs(ECSchemaCR schema)
     {
-    FOR_EACH (ECClassCP ecClass, m_schema.GetClasses())
+    FOR_EACH (ECClassCP ecClass, schema.GetClasses())
         {
         IECInstancePtr attr = ecClass->GetCustomAttribute (KOQ_CUSTOMATTRIBUTE);
         if (attr.IsValid())
@@ -511,10 +551,22 @@ bool UnitsSchemaReader::ReadUnit (ECClassCR ecClass, IECInstanceCR attr)
         UnitP baseUnit = NULL;
         DimensionP dimension;
         UnitSystemP system = m_unitsManager.GetSystemByName (systemName.GetString());
-        if (NULL == system || NULL == (dimension = m_unitsManager.GetDimensionByName (dimensionName.GetString())))
+        if (NULL == system)
+            system = &m_unitsManager.GetStandardSystem (StandardUnitSystem_None);
+        
+        if (NULL == (dimension = m_unitsManager.GetDimensionByName (dimensionName.GetString())))
             return false;
         else if (0 != wcscmp (name, baseName.GetString()) && NULL == (baseUnit = m_unitsManager.GetUnitByName (baseName.GetString())))
-            return false;
+            {
+            IECInstancePtr baseUnitAttr;
+            ECClassCP baseUnitClass = ecClass.GetSchema().GetClassP (baseName.GetString());  // WIP_UNITS: Do we ever end up here with base units in a referenced schema which hasn't been processed yet?
+            if (NULL == baseUnitClass ||
+                (baseUnitAttr = baseUnitClass->GetCustomAttribute (UNIT_CUSTOMATTRIBUTE)).IsNull() ||
+                !ReadUnit (*baseUnitClass, *baseUnitAttr) ||
+                NULL == (baseUnit = m_unitsManager.GetUnitByName (baseName.GetString()))
+               )
+                return false;
+            }
 
         bool isSlopeConverter = 0 == wcscmp (conversionTypeName.GetString(), SLOPE_CONVERTER);
         bool isFactorOffsetConverter = !isSlopeConverter && 0 == wcscmp (conversionTypeName.GetString(), FACTOR_OFFSET_CONVERTER);
