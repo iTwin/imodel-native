@@ -23,10 +23,10 @@ BEGIN_BENTLEY_EC_NAMESPACE
 //=======================================================================================
 struct PresentationMetadataHelper
     {
-/*__PUBLISH_SECTION_END__*/
 private:
     ECSchemaPtr             m_customAttributesSchema;
 
+/*__PUBLISH_SECTION_END__*/
     struct CustomAttributeData;
 
     IECInstancePtr          CreateInstance (WCharCP className) const;
