@@ -346,12 +346,30 @@ UnitP Dimension::AddUnit (UnitConverterCR converter, UnitSystemCR system, UnitCP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dimension::const_iterator Dimension::begin() const          { return const_iterator (*this, UnitsManager::GetManager().GetAllUnits(), false); }
-Dimension::const_iterator Dimension::end() const            { return const_iterator (*this, UnitsManager::GetManager().GetAllUnits(), true); }
-bool Dimension::IncludesUnit (UnitCR u) const               { return &u.GetDimension() == this; }
-UnitSystem::const_iterator UnitSystem::begin() const        { return const_iterator (*this, UnitsManager::GetManager().GetAllUnits(), false); }
-UnitSystem::const_iterator UnitSystem::end() const          { return const_iterator (*this, UnitsManager::GetManager().GetAllUnits(), true); }
-bool UnitSystem::IncludesUnit (UnitCR u) const              { return &u.GetSystem() == this; }
+bool Dimension::_IncludesUnit (UnitCR u) const                   { return &u.GetDimension() == this; }
+bool UnitSystem::_IncludesUnit (UnitCR u) const                  { return &u.GetSystem() == this; }
+bool IUnitFilter::IncludesUnit (UnitCR u) const                 { return _IncludesUnit (u); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void UnitsCollection::const_iterator::MoveNext()
+    {
+    while (m_cur != m_end && !m_collection.IncludesUnit ((++m_cur)->second))
+        ;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+UnitsCollection::const_iterator::const_iterator (UnitsCollection const& coll, bool isEnd)
+    : m_collection(coll),
+    m_cur(isEnd ? UnitsManager::GetManager().GetAllUnits().begin() : UnitsManager::GetManager().GetAllUnits().end()),
+    m_end (isEnd ? m_cur : UnitsManager::GetManager().GetAllUnits().end())
+    {
+    if (!m_collection.IncludesUnit (m_cur->second))
+        MoveNext();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12

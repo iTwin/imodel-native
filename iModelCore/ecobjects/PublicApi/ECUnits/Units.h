@@ -34,6 +34,7 @@ UNITS_TYPEDEFS (KindOfQuantity);
 UNITS_TYPEDEFS (Unit);
 UNITS_TYPEDEFS (ICustomUnitConverter);
 UNITS_TYPEDEFS (UnitConverter);
+UNITS_TYPEDEFS (UnitsCollection);
 
 BEGIN_BENTLEY_EC_UNITS_NAMESPACE
 
@@ -109,7 +110,7 @@ private:
         ICustomUnitConverterP       m_customConverter;
         };
 public:
-    UnitConverter (bool isSlope = false) : m_type (isSlope ? UnitConversionType_Identity : UnitConversionType_Slope) { }
+    UnitConverter (bool isSlope = false) : m_type (!isSlope ? UnitConversionType_Identity : UnitConversionType_Slope) { }
     UnitConverter (double factor) : m_type (UnitConversionType_Factor), m_factor (factor), m_offset (0.0) { BeAssert (0.0 != factor); }
     UnitConverter (double factor, double offset) : m_type (UnitConversionType_FactorAndOffset), m_factor (factor), m_offset (offset) { BeAssert (0.0 != factor); }
     ECOBJECTS_EXPORT UnitConverter (ICustomUnitConverterR customConverter);
@@ -122,42 +123,98 @@ public:
     };
 
 /*---------------------------------------------------------------------------------**//**
-* For iterating over Units contained in a Dimension, UnitSystem, or other collection.
+* Every Unit belongs to a Dimension and a UnitSystem. Use Dimension::AddUnit() to
+* create a Unit.
 * @bsistruct                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T_Collection> struct UnitIterator
+struct Unit
     {
 private:
-    typedef bmap<WString, Unit>     UnitsMap;
+    friend struct Dimension;    /*UnitP Dimension::AddUnit (UnitConverterCR, UnitSystemCR, UnitCP, WCharCP, WCharCP, WCharCP);*/
 
-    T_Collection const&         m_collection;
-    UnitsMap::const_iterator    m_cur;
-    UnitsMap::const_iterator    m_end;
+    WCharCP                 m_name;
+    WString                 m_shortLabel;
+    WString                 m_longLabel;
+    UnitConverter           m_converter;
+    UnitSystemCR            m_system;
+    DimensionCR             m_dimension;
+    UnitCP                  m_baseUnit;
 
-    void    MoveNext()
-        {
-        while (m_cur != m_end && !m_collection.IncludesUnit ((++m_cur)->second))
-            ;
-        }
+    Unit (WCharCP shortLabel, WCharCP longLabel, UnitConverterCR converter, UnitSystemCR system, DimensionCR dimension, UnitCP base)
+        : m_name(NULL), m_shortLabel(shortLabel), m_longLabel(longLabel), m_converter(converter), m_system(system), m_dimension(dimension), m_baseUnit(base) { }
 public:
-    UnitIterator (T_Collection const& coll, UnitsMap const& allUnits, bool isEnd)
-        : m_collection(coll), m_cur(isEnd ? allUnits.end() : allUnits.begin()), m_end(allUnits.end())
-        {
-        if (!m_collection.IncludesUnit (m_cur->second))
-            MoveNext();
-        }
+    DimensionCR             GetDimension() const                    { return m_dimension; }
+    UnitSystemCR            GetSystem() const                       { return m_system; }
+    UnitCR                  GetBase() const                         { return m_baseUnit ? *m_baseUnit : *this; }
+    bool                    IsBaseUnit() const                      { return this == &GetBase(); }
+    UnitConverterCR         GetConverter() const                    { return m_converter; }
+    bool                    IsCompatible (UnitCR other) const       { return &GetBase() == &other.GetBase() && &m_dimension == &other.m_dimension; }
+    
+    ECOBJECTS_EXPORT bool   ConvertTo (double& value, UnitCR target) const;
 
-    bool                        operator==(UnitIterator const& rhs) const   { return m_cur == rhs.m_cur; }
-    bool                        operator!=(UnitIterator const& rhs) const   { return !(*this == rhs); }
-    UnitCP                      operator*() const                           { return &m_cur->second; }
-    UnitCP                      operator->() const                          { return &m_cur->second; }
-    UnitIterator<T_Collection>& operator++()                                { MoveNext(); return *this; }
+    WCharCP                 GetName() const                         { return m_name; }
+    WCharCP                 GetLabel() const                        { return m_longLabel.c_str(); }
+    WCharCP                 GetShortLabel() const                   { return m_shortLabel.c_str(); }
+    void                    SetLabel (WCharCP l)                    { m_longLabel = l ? l : L""; }
+    void                    SetShortLabel (WCharCP l)               { m_shortLabel = l ? l : L""; }
+
+    ECOBJECTS_EXPORT static UnitR            GetStandard (StandardUnit id);
+    ECOBJECTS_EXPORT static UnitP            GetByName (WCharCP name);
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct UnitSystem
+struct IUnitFilter
+    {
+protected:
+    virtual bool            _IncludesUnit (UnitCR unit) const = 0;
+public:
+    ECOBJECTS_EXPORT bool   IncludesUnit (UnitCR unit) const;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* A collection of all registered units, with an optional filter.
+* @bsistruct                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+struct UnitsCollection
+    {
+private:
+    IUnitFilter const*  m_filter;
+public:
+    UnitsCollection (IUnitFilter const* filter = NULL) : m_filter (filter) { }
+
+    struct const_iterator
+        {
+    private:
+        friend struct UnitsCollection;
+        typedef bmap<WString, Unit>     UnitsMap;
+
+        UnitsCollection const&              m_collection;
+        UnitsMap::const_iterator            m_cur;
+        UnitsMap::const_iterator            m_end;
+
+        const_iterator (UnitsCollection const& coll, bool isEnd);
+
+        void                MoveNext();
+    public:
+
+        bool                operator==(const_iterator const& rhs) const { return m_cur == rhs.m_cur; }
+        bool                operator!=(const_iterator const& rhs) const { return !(*this == rhs); }
+        UnitCP              operator*() const                           { return &m_cur->second; }
+        UnitCP              operator->() const                          { return &m_cur->second; }
+        const_iterator&     operator++()                                { MoveNext(); return *this; }
+        };
+
+    const_iterator      begin() const                       { return const_iterator (*this, false); }
+    const_iterator      end() const                         { return const_iterator (*this, true); }
+    bool                IncludesUnit (UnitCR unit) const    { return NULL != m_filter ? m_filter->IncludesUnit (unit) : true; }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+struct UnitSystem : IUnitFilter
     {
 private:
     WCharCP         m_name;
@@ -165,19 +222,17 @@ private:
     WString         m_longLabel;
 
     UnitSystem (WCharCP shortLabel, WCharCP longLabel) : m_name(NULL), m_shortLabel(shortLabel), m_longLabel(longLabel) { }
+
+    virtual bool    _IncludesUnit (UnitCR unit) const override;
 public:
+
     WCharCP         GetName() const             { return m_name; }
     WCharCP         GetLabel() const            { return m_longLabel.c_str(); }
     WCharCP         GetShortLabel() const       { return m_shortLabel.c_str(); }
     void            SetLabel (WCharCP label)    { m_longLabel = label ? label : L""; }
     void            SetShortLabel (WCharCP l)   { m_shortLabel = l ? l : L""; }
 
-
-    typedef UnitIterator<UnitSystem>    const_iterator;
-
-    ECOBJECTS_EXPORT const_iterator         begin() const;
-    ECOBJECTS_EXPORT const_iterator         end() const;
-    ECOBJECTS_EXPORT bool                   IncludesUnit (UnitCR unit) const;
+    UnitsCollection  GetUnits() const            { return UnitsCollection (this); }
 
     ECOBJECTS_EXPORT static UnitSystemP     Create (WCharCP name, WCharCP shortLabel, WCharCP longLabel);
     ECOBJECTS_EXPORT static UnitSystemR     GetStandard (StandardUnitSystem id);
@@ -187,7 +242,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct Dimension
+struct Dimension : IUnitFilter
     {
 private:
     WCharCP             m_name;
@@ -196,6 +251,8 @@ private:
     WString             m_derivation;
     
     Dimension (WCharCP displayName, WCharCP desc, WCharCP deriv) : m_name(NULL), m_displayName(displayName), m_description(desc), m_derivation(deriv) { }
+
+    virtual bool        _IncludesUnit (UnitCR unit) const override;
 public:
     WCharCP             GetName() const             { return m_name; }
     WCharCP             GetDisplayName() const      { return m_displayName.c_str(); }
@@ -205,15 +262,10 @@ public:
     void                SetDescription (WCharCP d)  { m_description = d ? d : L""; }
     void                SetDerivation (WCharCP d)   { m_derivation = d ? d : L""; }
 
-
-    typedef UnitIterator<Dimension> const_iterator;
+    UnitsCollection      GetUnits() const            { return UnitsCollection (this); }
 
     ECOBJECTS_EXPORT UnitP               AddUnit (UnitConverterCR converter, UnitSystemCR system, UnitCP baseUnit, WCharCP name, WCharCP shortLabel, WCharCP longLabel);
     ECOBJECTS_EXPORT KindOfQuantityP     AddKindOfQuantity (WCharCP name, WCharCP description, KindOfQuantityCP parentKOQ = NULL);
-
-    ECOBJECTS_EXPORT bool                IncludesUnit (UnitCR u) const;
-    ECOBJECTS_EXPORT const_iterator      begin() const;
-    ECOBJECTS_EXPORT const_iterator      end() const;
 
     ECOBJECTS_EXPORT static DimensionP   Create (WCharCP name, WCharCP displayName, WCharCP description, WCharCP derivation);
     ECOBJECTS_EXPORT static DimensionR   GetStandard (StandardDimension id);
@@ -246,45 +298,6 @@ public:
 
     ECOBJECTS_EXPORT static KindOfQuantityR      GetStandard (StandardKindOfQuantity id);
     ECOBJECTS_EXPORT static KindOfQuantityP      GetByName (WCharCP name);
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* Every Unit belongs to a Dimension and a UnitSystem. Use Dimension::AddUnit() to
-* create a Unit.
-* @bsistruct                                                    Paul.Connelly   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct Unit
-    {
-private:
-    friend UnitP Dimension::AddUnit (UnitConverterCR, UnitSystemCR, UnitCP, WCharCP, WCharCP, WCharCP);
-
-    WCharCP                 m_name;
-    WString                 m_shortLabel;
-    WString                 m_longLabel;
-    UnitConverter           m_converter;
-    UnitSystemCR            m_system;
-    DimensionCR             m_dimension;
-    UnitCP                  m_baseUnit;
-
-    Unit (WCharCP shortLabel, WCharCP longLabel, UnitConverterCR converter, UnitSystemCR system, DimensionCR dimension, UnitCP base)
-        : m_name(NULL), m_shortLabel(shortLabel), m_longLabel(longLabel), m_converter(converter), m_system(system), m_dimension(dimension), m_baseUnit(base) { }
-public:
-    DimensionCR             GetDimension() const                    { return m_dimension; }
-    UnitSystemCR            GetSystem() const                       { return m_system; }
-    UnitCR                  GetBase() const                         { return m_baseUnit ? *m_baseUnit : *this; }
-    UnitConverterCR         GetConverter() const                    { return m_converter; }
-    bool                    IsCompatible (UnitCR other) const       { return &GetBase() == &other.GetBase() && &m_dimension == &other.m_dimension; }
-    
-    ECOBJECTS_EXPORT bool   ConvertTo (double& value, UnitCR target) const;
-
-    WCharCP                 GetName() const                         { return m_name; }
-    WCharCP                 GetLabel() const                        { return m_longLabel.c_str(); }
-    WCharCP                 GetShortLabel() const                   { return m_shortLabel.c_str(); }
-    void                    SetLabel (WCharCP l)                    { m_longLabel = l ? l : L""; }
-    void                    SetShortLabel (WCharCP l)               { m_shortLabel = l ? l : L""; }
-
-    ECOBJECTS_EXPORT static UnitR            GetStandard (StandardUnit id);
-    ECOBJECTS_EXPORT static UnitP            GetByName (WCharCP name);
     };
 
 /*---------------------------------------------------------------------------------**//**
