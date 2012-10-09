@@ -128,8 +128,10 @@ IECInstancePtr CalculatedPropertyTests::CreateTestCase (WCharCP propName, WCharC
     ecClass->CreatePrimitiveProperty (ecProp, L"S1", PRIMITIVETYPE_String);
     ecClass->CreatePrimitiveProperty (ecProp, L"S2", PRIMITIVETYPE_String);
     ecClass->CreatePrimitiveProperty (ecProp, L"I", PRIMITIVETYPE_Integer);
+    ecClass->CreatePrimitiveProperty (ecProp, L"I1", PRIMITIVETYPE_Integer);
     ecClass->CreatePrimitiveProperty (ecProp, L"I2", PRIMITIVETYPE_Integer);
     ecClass->CreatePrimitiveProperty (ecProp, L"D", PRIMITIVETYPE_Double);
+    ecClass->CreatePrimitiveProperty (ecProp, L"D1", PRIMITIVETYPE_Double);
     ecClass->CreatePrimitiveProperty (ecProp, L"D2", PRIMITIVETYPE_Double);
     ecClass->CreateArrayProperty (arrayProp, L"A", PRIMITIVETYPE_Integer);
 
@@ -316,6 +318,9 @@ TEST_F (CalculatedPropertyTests, SetValue)
     TestUpdate (*instance, L"1234", valueList);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CalculatedPropertyTests, SerializeAndDeserializeInstanceWithCalculatedProperties)
     {
     IECInstancePtr instance = CreateTestCase(L"S", L"this.S1 & \", \" & this.S2", 0, L"ERROR", L"(?<S1>.*), (?<S2>.*)");
@@ -337,6 +342,9 @@ TEST_F (CalculatedPropertyTests, SerializeAndDeserializeInstanceWithCalculatedPr
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CalculatedPropertyTests, SerializeAndDeserializeInstanceWithFailedCalculatedProperties)
     {
     IECInstancePtr instance = CreateTestCase(L"S", L"this.S1 & \", \" & this.S2", 0, L"ERROR", L"(?<S1>.*), (?<S2>.*)");
@@ -352,8 +360,57 @@ TEST_F (CalculatedPropertyTests, SerializeAndDeserializeInstanceWithFailedCalcul
 
     InstanceReadStatus status3 = IECInstance::ReadFromXmlString(deserializedInstance, ecInstanceXml.c_str(), *instanceContext);
     EXPECT_EQ (INSTANCE_READ_STATUS_Success, status3); 
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (CalculatedPropertyTests, TestFailureValuesWithIntsAndDoubles)
+    {
+    IECInstancePtr instance = CreateTestCase(L"I", L"this.S1", NULL, NULL);
+        {
+        DISABLE_ASSERTS
+        TestNull (*instance, L"I");
+        }
+    instance = CreateTestCase(L"I", L"this.S1", 0, L"-1");
+    Test (*instance, L"I", -1);
 
+    instance = CreateTestCase(L"I", L"this.S1", 0, L"<Could not be calculated>");
+    TestNull (*instance, L"I");
+
+    instance = CreateTestCase(L"I", L"this.I1 + this.I2", 0, L"<Could not be calculated>");
+    SetValue(*instance, L"I1", 3);
+        {
+        DISABLE_ASSERTS
+        TestNull (*instance, L"I");
+        }
+    instance = CreateTestCase(L"I", L"this.I1 + this.I2", NULL, NULL);
+    SetValue(*instance, L"I1", 3);
+    TestNull (*instance, L"I");
+
+    instance = CreateTestCase(L"I", L"this.I1 / this.I2", NULL, NULL);
+    SetValue(*instance, L"I1", 3);
+    SetValue(*instance, L"I2", 0);
+    TestNull (*instance, L"I");
+
+    instance = CreateTestCase(L"I", L"this.I1 / this.I2", 0, L"-1");
+    SetValue(*instance, L"I1", 3);
+    SetValue(*instance, L"I2", 0);
+    Test (*instance, L"I", -1);
+
+    instance = CreateTestCase(L"D", L"this.D1 + this.D2", NULL, NULL);
+    SetValue(*instance, L"D1", 3.7);
+    TestNull (*instance, L"D");
+
+    instance = CreateTestCase(L"D", L"this.D1 / this.D2", NULL, NULL);
+    SetValue(*instance, L"D1", 3.7);
+    SetValue(*instance, L"D2", 0);
+    TestNull (*instance, L"D");
+
+    instance = CreateTestCase(L"D", L"this.D1 / this.D2", 0, L"-1");
+    SetValue(*instance, L"D1", 3.7);
+    SetValue(*instance, L"D2", 0);
+    Test (*instance, L"D", -1.0);
     }
 END_BENTLEY_EC_NAMESPACE
 

@@ -283,7 +283,10 @@ CalculatedPropertySpecificationPtr CalculatedPropertySpecification::Create (Prim
     ECValue failureValue;
     customAttr->GetValue (failureValue, L"FailureValue");
     if (!failureValue.ConvertToPrimitiveType (ecprop.GetType()))
-        { BeAssert (false && "Invalid FailureValue in CalculatedECPropertySpecification"); return NULL; }
+        {
+        ECObjectsLogger::Log()->infov (L"Unable to convert failure value %ls to primitive type %ls\n", failureValue.GetString(), ecprop.GetTypeName().c_str());
+        failureValue.SetToNull();
+        }
 
     return new CalculatedPropertySpecification (*node, parserRegex, *customAttr, ecprop.GetType(), failureValue);
     }
@@ -305,7 +308,7 @@ ECObjectsStatus CalculatedPropertySpecification::Evaluate (ECValueR newValue, EC
         
         ValueResultPtr valueResult;
         ECValue exprValue;
-        if (ExprStatus_Success == m_expression->GetValue (valueResult, *m_context, false, true) && ExprStatus_Success == valueResult->GetECValue (exprValue) && exprValue.ConvertToPrimitiveType (m_propertyType))
+        if (ExprStatus_Success == m_expression->GetValue (valueResult, *m_context, false, true) && ExprStatus_Success == valueResult->GetECValue (exprValue) && !exprValue.IsNull() && exprValue.ConvertToPrimitiveType (m_propertyType))
             newValue = exprValue;
         else
             {

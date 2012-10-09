@@ -315,7 +315,7 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
 
             BeAssert (EC::ECOBJECTS_STATUS_Success == status);
 
-            if (EC::ECOBJECTS_STATUS_Success != status)
+            if (EC::ECOBJECTS_STATUS_Success != status || ecValue.IsNull())
                 {
                 evalResult.Clear();
                 return ExprStatus_UnknownError;
