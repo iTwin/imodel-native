@@ -50,6 +50,7 @@ enum UnitConversionType
     };
 
 /*---------------------------------------------------------------------------------**//**
+* WIP_UNITS: virtualize iterators, underlying containers may change...
 * @bsistruct                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T_Collection, typename T_Value> struct StringMapIteratorAdapter

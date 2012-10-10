@@ -336,6 +336,11 @@ void            ECValue::ConstructUninitialized()
     m_ownsData = false;
     }
     
+#ifdef DEFERRED_FUSION
+// The initial API supported both shallow and deep copying of ECValues.
+// However no one ever used the deep copy option, and DeepCopy() was not implemented for struct array entries
+// To support it we would need all IECInstance subclasses to implement some Clone() method. Since we currently have no use for this, the deep copy option is no longer available in the API
+//
 /*---------------------------------------------------------------------------------**//**
 * Copies this value, including all strings and array values held by this value.
 * It duplicates string values, even if the original did not hold a duplicate that is was responsible for freeing.
@@ -393,7 +398,8 @@ void            ECValue::DeepCopy (ECValueCR v)
             BeAssert (false); // type not handled
         }
     };
-    
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * Copies this value object without allocating any additional memory.  The copy will
 * hold copies on any external pointers held by the original.
@@ -534,7 +540,7 @@ ECValue::~ECValue()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValueR ECValue::operator= (ECValueCR rhs)
     {
-    From (rhs, false);
+    From (rhs);
     return *this;
     }        
     
@@ -550,10 +556,10 @@ ECValue::ECValue ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (ECValueCR v, bool doDeepCopy)
+ECValue::ECValue (ECValueCR v)
     {
     ConstructUninitialized();
-    From (v, doDeepCopy);
+    From (v);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -660,12 +666,9 @@ ECValue::ECValue (const byte * data, size_t size)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    ECValue::From (ECValueCR v, bool doDeepCopy)
+void    ECValue::From (ECValueCR v)
     {
-    if (doDeepCopy)
-        DeepCopy (v);
-    else
-        ShallowCopy (v);
+    ShallowCopy (v);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1896,7 +1899,7 @@ ECPropertyValue::ECPropertyValue (ECPropertyValueCR from)
     {
     m_instance = from.m_instance;
     m_accessor = from.m_accessor;
-    m_ecValue.From (from.m_ecValue, false);
+    m_ecValue.From (from.m_ecValue);
     m_evaluated = from.m_evaluated;
     }
 
