@@ -336,6 +336,7 @@ void            ECValue::ConstructUninitialized()
     m_ownsData = false;
     }
     
+
 /*---------------------------------------------------------------------------------**//**
 * Copies this value object without allocating any additional memory.  The copy will
 * hold copies on any external pointers held by the original.
