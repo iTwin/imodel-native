@@ -164,12 +164,9 @@ TEST_F(CompressInstanceTests, CheckVariableSizedPropertyAfterCallingCompress)
     {
 
 
-        ECSchemaPtr schema = CreateKitchenSinkSchema ();
+    ECSchemaPtr schema = CreateKitchenSinkSchema ();
     EXPECT_TRUE( schema.IsValid());
-
-
-
-        ECClassP ecClass = schema->GetClassP (L"KitchenSink");
+	ECClassP ecClass = schema->GetClassP (L"KitchenSink");
     ASSERT_TRUE (NULL != ecClass);
 
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
