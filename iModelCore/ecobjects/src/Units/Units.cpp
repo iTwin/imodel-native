@@ -33,6 +33,7 @@ static WCharCP const  KOQ_NAME                          = L"KindOfQuantityName";
 static WCharCP const  DIMENSION_NAME                    = L"DimensionName";
 static WCharCP const  DISPLAY_UNIT_NAME                 = L"DisplayUnitName";
 static WCharCP const  DISPLAY_FORMAT_STRING             = L"DisplayFormatString";
+static WCharCP const  DIMENSION                         = L"Dimension";
 
 static WCharCP const  FACTOR_CONVERTER                  = L"Factor Converter";
 static WCharCP const  FACTOR_OFFSET_CONVERTER           = L"Factor Offset Converter";
@@ -295,7 +296,7 @@ bool UnitLocater::LocateUnitByKOQ (UnitR unit, WCharCP koqName) const
             // check Dimension of the base KOQ
             ECValue v;
             IECInstancePtr koqAttr = koqClass->GetCustomAttribute (KOQ_ATTRIBUTES);
-            if (koqAttr.IsValid() && ECOBJECTS_STATUS_Success == koqAttr->GetValue (v, DIMENSION_NAME) && !v.IsNull())
+            if (koqAttr.IsValid() && ECOBJECTS_STATUS_Success == koqAttr->GetValue (v, DIMENSION) && !v.IsNull())
                 return LocateUnitBySpecification (unit, DIMENSION_NAME, v.GetString());
             }
         }

@@ -14,18 +14,44 @@ using namespace Bentley::EC;
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
+static WCharCP s_refSchemaXml =
+    L"<ECSchema schemaName=\"RefSchema\" nameSpacePrefix=\"ref\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+    L"  <ECSchemaReference name=\"Unit_Attributes\" version=\"01.00\" prefix=\"units_attribs\" />"
+    L"  <ECCustomAttributes>"
+    L"      <IsUnitSystemSchema xmlns=\"Unit_Attributes.01.00\" />"
+    L"      <UnitSpecifications xmlns=\"Unit_Attributes.01.00\">"
+    L"          <UnitSpecificationList>"
+    L"              <UnitSpecification>"
+    L"                  <KindOfQuantityName>LENGTH</KindOfQuantityName>"
+    L"                  <!-- Note no UnitName specified -->"
+    L"              </UnitSpecification>"
+    L"              <UnitSpecification>"
+    L"                  <KindOfQuantityName>DIAMETER</KindOfQuantityName>"
+    L"                  <UnitName>CENTIMETRE</UnitName>"
+    L"              </UnitSpecification>"
+    L"              <UnitSpecification>"
+    L"                  <DimensionName>L</DimensionName>"
+    L"                  <UnitName>KILOMETRE</UnitName>"
+    L"              </UnitSpecification>"
+    L"          </UnitSpecificationList>"
+    L"      </UnitSpecifications>"
+    L"  </ECCustomAttributes>"
+    L"</ECSchema>";
+
 static WCharCP s_schemaXml =
     L"<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
     L"  <ECSchemaReference name=\"Unit_Attributes\" version=\"01.00\" prefix=\"units_attribs\" />"
+    L"  <ECSchemaReference name=\"RefSchema\" version=\"01.00\" prefix=\"refSchema\" />"
+    L"    <!-- Class for testing units defined on properties, for unit conversions -->"
     L"    <ECClass typeName=\"TestClass\" isDomainClass=\"True\">"
-    L"        <ECProperty propertyName=\"FromProperty\" typeName=\"string\">"
+    L"        <ECProperty propertyName=\"FromProperty\" typeName=\"double\">"
     L"          <ECCustomAttributes>"
     L"              <UnitSpecification xmlns=\"Unit_Attributes.01.00\">"
     L"                  <UnitName>KILOMETRE</UnitName>"
     L"              </UnitSpecification>"
     L"          </ECCustomAttributes>"
     L"        </ECProperty>"
-    L"        <ECProperty propertyName=\"ToProperty\" typeName=\"string\">"
+    L"        <ECProperty propertyName=\"ToProperty\" typeName=\"double\">"
     L"          <ECCustomAttributes>"
     L"              <UnitSpecification xmlns=\"Unit_Attributes.01.00\">"
     L"                  <UnitName>KILOMETRE</UnitName>"
@@ -33,6 +59,37 @@ static WCharCP s_schemaXml =
     L"          </ECCustomAttributes>"
     L"        </ECProperty>"
     L"    </ECClass>"
+    L"  <!-- Class for testing UnitSpecifications defined at schema level (including referenced schema) -->"
+    L"  <ECClass typeName=\"UnitSpecClass\" isDomainClass=\"True\">"
+    L"        <ECProperty propertyName=\"FromKOQ\" typeName=\"double\">"
+    L"          <ECCustomAttributes>"
+    L"              <UnitSpecification xmlns=\"Unit_Attributes.01.00\">"
+    L"                  <KindOfQuantityName>DIAMETER</KindOfQuantityName>"
+    L"              </UnitSpecification>"
+    L"          </ECCustomAttributes>"
+    L"        </ECProperty>"
+    L"        <ECProperty propertyName=\"FromParentKOQ\" typeName=\"double\">"
+    L"          <ECCustomAttributes>"
+    L"              <UnitSpecification xmlns=\"Unit_Attributes.01.00\">"
+    L"                  <KindOfQuantityName>DIAMETER_LARGE</KindOfQuantityName>"
+    L"              </UnitSpecification>"
+    L"          </ECCustomAttributes>"
+    L"        </ECProperty>"
+    L"        <ECProperty propertyName=\"FromKOQDimension\" typeName=\"double\">"
+    L"          <ECCustomAttributes>"
+    L"              <UnitSpecification xmlns=\"Unit_Attributes.01.00\">"
+    L"                  <KindOfQuantityName>LENGTH</KindOfQuantityName>"
+    L"              </UnitSpecification>"
+    L"          </ECCustomAttributes>"
+    L"        </ECProperty>"
+    L"        <ECProperty propertyName=\"FromDimension\" typeName=\"double\">"
+    L"          <ECCustomAttributes>"
+    L"              <UnitSpecification xmlns=\"Unit_Attributes.01.00\">"
+    L"                  <DimensionName>L</DimensionName>"
+    L"              </UnitSpecification>"
+    L"          </ECCustomAttributes>"
+    L"        </ECProperty>"
+    L"  </ECClass>"
     L"</ECSchema>";
 
 /*---------------------------------------------------------------------------------**//**
@@ -40,6 +97,7 @@ static WCharCP s_schemaXml =
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct UnitsTest : ECTestFixture
     {
+    ECSchemaPtr     m_refSchema;
     ECSchemaPtr     m_schema;
     ECPropertyCP    m_fromProperty, m_toProperty;
 
@@ -58,6 +116,7 @@ struct UnitsTest : ECTestFixture
         }
 
     void            TestUnitConversion (double fromVal, WCharCP fromUnitName, double expectedVal, WCharCP targetUnitName, double tolerance);
+    void            TestUnitSpecification (WCharCP propName, double expectedValueOfOneMeter);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -68,6 +127,7 @@ void UnitsTest::SetUp()
     ECTestFixture::SetUp();
 
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (m_refSchema, s_refSchemaXml, *context));
     EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (m_schema, s_schemaXml, *context));
 
     m_fromProperty = m_schema->GetClassP (L"TestClass")->GetPropertyP (L"FromProperty");
@@ -87,6 +147,24 @@ void UnitsTest::TestUnitConversion (double fromVal, WCharCP fromUnitName, double
     double convertedVal = fromVal;
     EXPECT_TRUE (srcUnit.ConvertTo (convertedVal, dstUnit));
     EXPECT_TRUE (fabs (convertedVal - expectedVal) < tolerance) << L"Input " << fromVal << fromUnitName << L" Expected " << expectedVal << targetUnitName << L" Actual " << convertedVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void UnitsTest::TestUnitSpecification (WCharCP propName, double expectedValueOfOneMeter)
+    {
+    ECClassCP ecClass = m_schema->GetClassP (L"UnitSpecClass");
+
+    Unit meter (L"m", UnitConverter (false), L"METRE");
+    Unit propUnit;
+    ECPropertyCP ecprop = ecClass->GetPropertyP (propName);
+    EXPECT_TRUE (Unit::GetUnitForECProperty (propUnit, *ecprop));
+
+    EXPECT_TRUE (propUnit.IsCompatible (meter));
+
+    EXPECT_TRUE (propUnit.ConvertTo (expectedValueOfOneMeter, meter));
+    EXPECT_EQ (1.0, expectedValueOfOneMeter);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1590,6 +1668,17 @@ TEST_F (UnitsTest, Conversions)
     TestUnitConversion (1.0e6, L"JOULE_PER_KILOMOLE_PER_DELTA_DEGREE_KELVIN", 1.0e3, L"KILOJOULE_PER_KILOMOLE_PER_DELTA_DEGREE_KELVIN", 1.0e-8);
     TestUnitConversion (1.0e6, L"KILOJOULE_PER_KILOMOLE_PER_DELTA_DEGREE_KELVIN", 1.0e9, L"JOULE_PER_KILOMOLE_PER_DELTA_DEGREE_KELVIN", 1.0e-8);
     TestUnitConversion (1.0e6, L"KILOJOULE_PER_KILOMOLE_PER_DELTA_DEGREE_KELVIN", 2.3884589662749595e5, L"BTU_PER_POUND_MOLE_PER_DELTA_DEGREE_RANKINE", 1.0e-8);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (UnitsTest, TestUnitSpecifications)
+    {
+    TestUnitSpecification (L"FromKOQ", 100.0);
+    TestUnitSpecification (L"FromParentKOQ", 100.0);
+    TestUnitSpecification (L"FromDimension", 0.001);
+    TestUnitSpecification (L"FromKOQDimension", 0.001);
     }
 
 END_BENTLEY_EC_NAMESPACE
