@@ -12,459 +12,81 @@
 
 using namespace Bentley::EC;
 
-BEGIN_BENTLEY_EC_UNITS_NAMESPACE
+BEGIN_BENTLEY_EC_NAMESPACE
 
+static WCharCP s_schemaXml =
+    L"<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+    L"  <ECSchemaReference name=\"Unit_Attributes\" version=\"01.00\" prefix=\"units_attribs\" />"
+    L"    <ECClass typeName=\"TestClass\" isDomainClass=\"True\">"
+    L"        <ECProperty propertyName=\"FromProperty\" typeName=\"string\">"
+    L"          <ECCustomAttributes>"
+    L"              <UnitSpecification xmlns=\"Unit_Attributes.01.00\">"
+    L"                  <UnitName>KILOMETRE</UnitName>"
+    L"              </UnitSpecification>"
+    L"          </ECCustomAttributes>"
+    L"        </ECProperty>"
+    L"        <ECProperty propertyName=\"ToProperty\" typeName=\"string\">"
+    L"          <ECCustomAttributes>"
+    L"              <UnitSpecification xmlns=\"Unit_Attributes.01.00\">"
+    L"                  <UnitName>KILOMETRE</UnitName>"
+    L"              </UnitSpecification>"
+    L"          </ECCustomAttributes>"
+    L"        </ECProperty>"
+    L"    </ECClass>"
+    L"</ECSchema>";
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
 struct UnitsTest : ECTestFixture
     {
-    void            MatchStandardNames (UnitsCollection const& units, WCharCP* names)
-        {
-        size_t nameIndex = 0;
-        FOR_EACH (UnitCP const& unit, units)
-            {
-            EXPECT_TRUE (0 == wcscmp (unit->GetName(), names[nameIndex])) << L"Expected " << names[nameIndex] << L" Actual " << unit->GetName();
-            ++nameIndex;
-            }
+    ECSchemaPtr     m_schema;
+    ECPropertyCP    m_fromProperty, m_toProperty;
 
-        EXPECT_TRUE (NULL == names[nameIndex]);
+    virtual void    SetUp() override;
+
+    void            SetUnits (WCharCP fromUnitName, WCharCP toUnitName)
+        {
+        m_fromProperty->GetCustomAttribute (L"UnitSpecification")->SetValue (L"UnitName", ECValue (fromUnitName));
+        m_toProperty->GetCustomAttribute (L"UnitSpecification")->SetValue (L"UnitName", ECValue (toUnitName));
         }
 
-    void            TestUnitConversion (double fromVal, WCharCP fromUnitName, double expectedVal, WCharCP targetUnitName, double tolerance)
+    void            GetUnits (UnitR from, UnitR to)
         {
-        UnitCP srcUnit = Unit::GetByName (fromUnitName),
-               dstUnit = Unit::GetByName (targetUnitName);
-        EXPECT_TRUE (NULL != srcUnit && NULL != dstUnit);
-        EXPECT_TRUE (srcUnit->IsCompatible (*dstUnit) && dstUnit->IsCompatible (*srcUnit));
-        double convertedVal = fromVal;
-        EXPECT_TRUE (srcUnit->ConvertTo (convertedVal, *dstUnit));
-        EXPECT_TRUE (fabs (convertedVal - expectedVal) < tolerance) << L"Input " << fromVal << fromUnitName << L" Expected " << expectedVal << targetUnitName << L" Actual " << convertedVal;
+        EXPECT_TRUE (Unit::GetUnitForECProperty (from, *m_fromProperty));
+        EXPECT_TRUE (Unit::GetUnitForECProperty (to, *m_toProperty));
         }
-    };
 
-static WCharCP s_UnitsOfLength[] =
-    {
-	L"CENTIMETRE",
-	L"DECIMETRE",
-	L"FOOT",
-	L"INCH",
-	L"KILOMETRE",
-	L"METRE",
-	L"MICROINCH",
-	L"MICROMETRE",
-	L"MILE",
-	L"MILLIFOOT",
-	L"MILLIINCH",
-	L"MILLIMETRE",
-	L"UOR",
-	L"US_SURVEY_FOOT",
-	L"US_SURVEY_INCH",
-	L"US_SURVEY_MILE",
-	L"YARD",
-        NULL
-    };
-
-
-static WCharCP s_USUnits[] =
-    {
-	L"ACRE",
-	L"ACRE_FOOT",
-	L"ACRE_FOOT_PER_DAY",
-	L"ACRE_FOOT_PER_HOUR",
-	L"ACRE_FOOT_PER_MINUTE",
-	L"ACRE_INCH",
-	L"ACRE_INCH_PER_HOUR",
-	L"ACRE_INCH_PER_MINUTE",
-	L"ATMOSPHERE",
-	L"BTU_INCH_PER_FOOT_SQUARED_PER_HOUR_PER_DEGREE_FAHRENHEIT",
-	L"BTU_PER_FOOT_SQUARED_PER_HOUR_PER_DELTA_DEGREE_FAHRENHEIT",
-	L"BTU_PER_HOUR",
-	L"BTU_PER_HOUR_PER_FOOT",
-	L"BTU_PER_HOUR_PER_FOOT_CUBED",
-	L"BTU_PER_HOUR_PER_FOOT_SQUARED",
-	L"BTU_PER_MONTH",
-	L"BTU_PER_POUND_MASS",
-	L"BTU_PER_POUND_MASS_PER_DELTA_DEGREE_FAHRENHEIT",
-	L"BTU_PER_POUND_MASS_PER_DELTA_DEGREE_RANKINE",
-	L"BTU_PER_POUND_MOLE",
-	L"DEGREE",
-	L"DEGREE_FAHRENHEIT",
-	L"DEGREE_RANKINE",
-	L"DELTA_DEGREE_FAHRENHEIT",
-	L"DELTA_DEGREE_RANKINE",
-	L"FOOT",
-	L"FOOT_CUBED",
-	L"FOOT_CUBED_PER_ACRE_PER_SECOND",
-	L"FOOT_CUBED_PER_DAY",
-	L"FOOT_CUBED_PER_FOOT_SQUARED_PER_MINUTE",
-	L"FOOT_CUBED_PER_FOOT_SQUARED_PER_SECOND",
-	L"FOOT_CUBED_PER_MILE_SQUARED_PER_SECOND",
-	L"FOOT_CUBED_PER_MINUTE",
-	L"FOOT_CUBED_PER_POUND_MASS",
-	L"FOOT_CUBED_PER_POUND_MOLE",
-	L"FOOT_CUBED_PER_SECOND",
-	L"FOOT_CUBED_PER_SECOND_PER_SQUARE_ROOT_FOOT_H20",
-	L"FOOT_FOOT",
-	L"FOOT_HORIZONTAL_PER_FOOT_VERTICAL",
-	L"FOOT_MILE",
-	L"FOOT_OF_H2O_CONVENTIONAL",
-	L"FOOT_PER_1000_FOOT",
-	L"FOOT_PER_DAY",
-	L"FOOT_PER_FOOT",
-	L"FOOT_PER_HOUR",
-	L"FOOT_PER_INCH",
-	L"FOOT_PER_MILE",
-	L"FOOT_PER_MINUTE",
-	L"FOOT_PER_SECOND",
-	L"FOOT_POUNDAL",
-	L"FOOT_SQUARED",
-	L"FOOT_SQUARED_HOUR_DELTA_DEGREE_FAHRENHEIT_PER_BTU",
-	L"FOOT_SQUARED_PER_SECOND",
-	L"FOOT_VERTICAL_PER_FOOT_HORIZONTAL",
-	L"GALLON",
-	L"GALLON_IMPERIAL",
-	L"GALLON_IMPERIAL_PER_DAY",
-	L"GALLON_IMPERIAL_PER_MINUTE",
-	L"GALLON_IMPERIAL_PER_SECOND",
-	L"GALLON_PER_ACRE_PER_DAY",
-	L"GALLON_PER_ACRE_PER_MINUTE",
-	L"GALLON_PER_DAY",
-	L"GALLON_PER_DAY_PER_PERSON",
-	L"GALLON_PER_FOOT_SQUARED_PER_DAY",
-	L"GALLON_PER_FOOT_SQUARED_PER_MINUTE",
-	L"GALLON_PER_MILE_SQUARED_PER_DAY",
-	L"GALLON_PER_MILE_SQUARED_PER_MINUTE",
-	L"GALLON_PER_MINUTE",
-	L"GALLON_PER_MINUTE_PER_SQUARE_ROOT_PSI",
-	L"GALLON_PER_SECOND",
-	L"GIGAWATT_HOUR",
-	L"GRAIN_FORCE_PER_HOUR_PER_FOOT_SQUARED_PER_INCH_HG_CONVENTIONAL",
-	L"GRAIN_MASS_PER_HOUR_PER_FOOT_SQUARED",
-	L"GRAIN_MASS_PER_POUND_MASS",
-	L"HORSEPOWER",
-	L"INCH",
-	L"INCH_CUBED",
-	L"INCH_FOOT",
-	L"INCH_METRE",
-	L"INCH_MILE",
-	L"INCH_OF_HG_CONVENTIONAL",
-	L"INCH_PER_DAY",
-	L"INCH_PER_FOOT",
-	L"INCH_PER_HOUR",
-	L"INCH_PER_HOUR_PER_DEGREE_FAHRENHEIT",
-	L"INCH_PER_MINUTE",
-	L"INCH_PER_SECOND",
-	L"INCH_SQUARED",
-	L"INCH_SQUARED_INCH_HG_CONVENTIONAL_HOUR_PER_GRAIN_MASS",
-	L"INCH_SQUARED_PER_FOOT_SQUARED",
-	L"KILOBTU",
-	L"KILOBTU_PER_HOUR",
-	L"KILONEWTON_PER_FOOT_CUBED",
-	L"KILOPOUND_FORCE",
-	L"KILOWATT_HOUR_PER_FOOT_CUBED",
-	L"KILOWATT_HOUR_PER_MILLION_GALLON",
-	L"LUMEN_PER_FOOT_SQUARED",
-	L"MEGAWATT_HOUR",
-	L"MICROGRAM_PER_FOOT_SQUARED_PER_DAY",
-	L"MICROINCH",
-	L"MILE",
-	L"MILE_PER_HOUR",
-	L"MILE_SQUARED",
-	L"MILLIFOOT",
-	L"MILLIGRAM_PER_FOOT_SQUARED_PER_DAY",
-	L"MILLIINCH",
-	L"MILLION_GALLON",
-	L"MILLION_GALLON_IMPERIAL_PER_DAY",
-	L"MILLION_GALLON_PER_DAY",
-	L"ONE_PER_ACRE_FOOT",
-	L"ONE_PER_ACRE_INCH",
-	L"ONE_PER_BTU",
-	L"ONE_PER_FOOT",
-	L"ONE_PER_FOOT_CUBED",
-	L"ONE_PER_FOOT_SQUARED",
-	L"ONE_PER_GALLON",
-	L"ONE_PER_HORSEPOWER",
-	L"ONE_PER_IMPERIAL_GALLON",
-	L"ONE_PER_INCH_CUBED",
-	L"ONE_PER_MILLION_GALLON",
-	L"ONE_PER_SHORT_TON",
-	L"ONE_PER_THOUSAND_FOOT",
-	L"ONE_PER_THOUSAND_GALLON",
-	L"ONE_PER_YARD_CUBED",
-	L"PERSON_PER_ACRE",
-	L"PERSON_PER_FOOT_SQUARED",
-	L"PERSON_PER_MILE_SQUARED",
-	L"POUND",
-	L"POUND_FOOT",
-	L"POUND_FORCE",
-	L"POUND_FORCE_FOOT_SQUARED",
-	L"POUND_FORCE_PER_FOOT_CUBED",
-	L"POUND_FORCE_PER_FOOT_SQUARED",
-	L"POUND_FORCE_PER_INCH",
-	L"POUND_FORCE_PER_INCH_SQUARED",
-	L"POUND_FORCE_PER_INCH_SQUARED_GAUGE",
-	L"POUND_FORCE_PER_INCH_SQUARED_PER_FOOT",
-	L"POUND_MASS_PER_FOOT",
-	L"POUND_MASS_PER_FOOT_SQUARED",
-	L"POUND_MOLE_PER_FOOT_CUBED",
-	L"POUND_PER_ACRE",
-	L"POUND_PER_DAY",
-	L"POUND_PER_FOOT_CUBED",
-	L"POUND_PER_GALLON",
-	L"POUND_PER_HOUR",
-	L"POUND_PER_IMPERIAL_GALLON",
-	L"POUND_PER_INCH_CUBED",
-	L"POUND_PER_MILLION_GALLON",
-	L"POUND_PER_MINUTE",
-	L"POUND_PER_SECOND",
-	L"RECIPROCAL_DELTA_DEGREE_FAHRENHEIT",
-	L"RECIPROCAL_DELTA_DEGREE_RANKINE",
-	L"SHORT_TON",
-	L"SHORT_TON_FORCE",
-	L"SHORT_TON_PER_FOOT_CUBED",
-	L"SIDE_WEIR_COEFFICIENT_US",
-	L"SLUG_PER_FOOT_CUBED",
-	L"THOUSAND_FOOT_SQUARED",
-	L"THOUSAND_GALLON",
-	L"US_SURVEY_FOOT",
-	L"US_SURVEY_INCH",
-	L"US_SURVEY_MILE",
-	L"WATT_SECOND",
-	L"WEIR_COEFFICIENT_US",
-	L"YARD",
-	L"YARD_CUBED",
-	L"YARD_SQUARED",
-        NULL,
-    };
-
-static WCharCP s_SIUnits[] =
-    {
-	L"BARYE",
-	L"BAR_PER_KILOMETRE",
-	L"BTU_PER_POUND_MOLE_PER_DELTA_DEGREE_RANKINE",
-	L"CENTIMETRE",
-	L"CENTIMETRE_CUBED",
-	L"CENTIMETRE_PER_DAY",
-	L"CENTIMETRE_PER_HOUR",
-	L"CENTIMETRE_PER_METRE",
-	L"CENTIMETRE_PER_MINUTE",
-	L"CENTIMETRE_PER_SECOND",
-	L"CENTIMETRE_SQUARED",
-	L"CENTIPOISE",
-	L"CENTISTOKE",
-	L"DECIMETRE",
-	L"DEGREE_CELSIUS",
-	L"DEGREE_KELVIN",
-	L"DELTA_DEGREE_CELSIUS",
-	L"DELTA_DEGREE_KELVIN",
-	L"DELTA_DEGREE_KELVIN_PER_METRE",
-	L"DYNE",
-	L"GIGAJOULE",
-	L"GIGAJOULE_PER_MONTH",
-	L"GIGANEWTON_SECOND_PER_KILOGRAM",
-	L"GIGANEWTON_SECOND_PER_KILOGRAM_PER_METRE",
-	L"GIGAWATT",
-	L"GRADIAN",
-	L"GRAM",
-	L"GRAM_PER_CENTIMETRE_CUBED",
-	L"GRAM_PER_DAY",
-	L"GRAM_PER_HOUR",
-	L"GRAM_PER_METRE_SQUARED",
-	L"GRAM_PER_MINUTE",
-	L"GRAM_PER_SECOND",
-	L"HECTARE",
-	L"HECTOPASCAL",
-	L"JOULE",
-	L"JOULE_PER_KILOGRAM_DELTA_DEGREE_KELVIN",
-	L"JOULE_PER_KILOGRAM_PER_DELTA_DEGREE_CELSIUS",
-	L"JOULE_PER_KILOGRAM_PER_DELTA_DEGREE_KELVIN",
-	L"JOULE_PER_KILOMOLE_PER_DELTA_DEGREE_KELVIN",
-	L"JOULE_PER_METRE_CUBED",
-	L"KILOGRAM",
-	L"KILOGRAM_FORCE",
-	L"KILOGRAM_FORCE_METRE_SQUARED",
-	L"KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED",
-	L"KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED_GAUGE",
-	L"KILOGRAM_FORCE_PER_METRE_SQUARED",
-	L"KILOGRAM_PER_DAY",
-	L"KILOGRAM_PER_DECIMETRE_CUBED",
-	L"KILOGRAM_PER_HECTARE",
-	L"KILOGRAM_PER_HOUR",
-	L"KILOGRAM_PER_KILOGRAM",
-	L"KILOGRAM_PER_KILOWATTHOUR",
-	L"KILOGRAM_PER_LITRE",
-	L"KILOGRAM_PER_METRE",
-	L"KILOGRAM_PER_METRE_CUBED",
-	L"KILOGRAM_PER_METRE_PER_SECOND",
-	L"KILOGRAM_PER_METRE_SQUARED",
-	L"KILOGRAM_PER_MINUTE",
-	L"KILOGRAM_PER_SECOND",
-	L"KILOJOULE",
-	L"KILOJOULE_PER_KILOGRAM",
-	L"KILOJOULE_PER_KILOMOLE",
-	L"KILOJOULE_PER_KILOMOLE_PER_DELTA_DEGREE_KELVIN",
-	L"KILOJOULE_PER_METRE_CUBED",
-	L"KILOMETRE",
-	L"KILOMETRE_PER_HOUR",
-	L"KILOMETRE_SQUARED",
-	L"KILOMOLE_PER_METRE_CUBED",
-	L"KILONEWTON",
-	L"KILONEWTON_PER_METRE_CUBED",
-	L"KILOPASCAL",
-	L"KILOPASCAL_GAUGE",
-	L"KILOWATT_HOUR_PER_METRE_CUBED",
-	L"KILOWATT_HOUR_PER_MILLION_LITRE",
-	L"KNOT_INTERNATIONAL",
-	L"LITRE",
-	L"LITRE_PER_DAY",
-	L"LITRE_PER_HECTARE_PER_DAY",
-	L"LITRE_PER_HOUR",
-	L"LITRE_PER_KILOMETRE_SQUARED_PER_DAY",
-	L"LITRE_PER_METRE_SQUARED_PER_DAY",
-	L"LITRE_PER_METRE_SQUARED_PER_SECOND",
-	L"LITRE_PER_MINUTE",
-	L"LITRE_PER_SECOND",
-	L"LITRE_PER_SECOND_PER_PERSON",
-	L"LITRE_PER_SEC_PER_SQUARE_ROOT_KPA",
-	L"MEGAGRAM",
-	L"MEGAJOULE",
-	L"MEGAJOULE_PER_KILOGRAM",
-	L"MEGAJOULE_PER_METRE_CUBED",
-	L"MEGANEWTON_SECOND_PER_METRE_SQUARED",
-	L"MEGAPASCAL",
-	L"MEGAPASCAL_GAUGE",
-	L"MEGA_LITRE_PER_DAY",
-	L"METRE",
-	L"METRE_CUBED",
-	L"METRE_CUBED_PER_DAY",
-	L"METRE_CUBED_PER_HECTARE_PER_DAY",
-	L"METRE_CUBED_PER_HOUR",
-	L"METRE_CUBED_PER_KILOGRAM",
-	L"METRE_CUBED_PER_KILOMETRE_SQUARED_PER_DAY",
-	L"METRE_CUBED_PER_KILOMOLE",
-	L"METRE_CUBED_PER_METRE_SQUARED_PER_DAY",
-	L"METRE_CUBED_PER_MINUTE",
-	L"METRE_CUBED_PER_MOLE",
-	L"METRE_CUBED_PER_SECOND",
-	L"METRE_CUBED_PER_SECOND_PER_SQUARE_ROOT_METRE_H20",
-	L"METRE_HORIZONTAL_PER_METRE_VERTICAL",
-	L"METRE_KILOMETRE",
-	L"METRE_METRE",
-	L"METRE_OF_H2O_CONVENTIONAL",
-	L"METRE_PER_CENTIMETRE",
-	L"METRE_PER_DAY",
-	L"METRE_PER_HOUR",
-	L"METRE_PER_KILOMETRE",
-	L"METRE_PER_METRE",
-	L"METRE_PER_MINUTE",
-	L"METRE_PER_SECOND",
-	L"METRE_SQUARED",
-	L"METRE_SQUARED_DELTA_DEGREE_CELSIUS_PER_WATT",
-	L"METRE_SQUARED_DELTA_DEGREE_KELVIN_PER_WATT",
-	L"METRE_SQUARED_PER_SECOND",
-	L"METRE_VERTICAL_PER_METRE_HORIZONTAL",
-	L"MICROGRAM",
-	L"MICROGRAM_PER_DAY",
-	L"MICROGRAM_PER_HOUR",
-	L"MICROGRAM_PER_LITRE",
-	L"MICROGRAM_PER_METRE_SQUARED_PER_DAY",
-	L"MICROGRAM_PER_METRE_SQUARED_PER_SECOND",
-	L"MICROGRAM_PER_MINUTE",
-	L"MICROGRAM_PER_SECOND",
-	L"MICROMETRE",
-	L"MILLIGRAM",
-	L"MILLIGRAM_PER_DAY",
-	L"MILLIGRAM_PER_HOUR",
-	L"MILLIGRAM_PER_HOUR_PER_METRE_SQUARED",
-	L"MILLIGRAM_PER_LITRE",
-	L"MILLIGRAM_PER_METRE_SQUARED_PER_DAY",
-	L"MILLIGRAM_PER_METRE_SQUARED_PER_SECOND",
-	L"MILLIGRAM_PER_MINUTE",
-	L"MILLIGRAM_PER_SECOND",
-	L"MILLIMETRE",
-	L"MILLIMETRE_HORIZONTAL_PER_METRE_VERTICAL",
-	L"MILLIMETRE_KILOMETRE",
-	L"MILLIMETRE_METRE",
-	L"MILLIMETRE_OF_H2O_CONVENTIONAL",
-	L"MILLIMETRE_OF_HG_AT_32_FAHRENHEIT",
-	L"MILLIMETRE_PER_DAY",
-	L"MILLIMETRE_PER_HOUR",
-	L"MILLIMETRE_PER_HOUR_PER_DEGREE_CELSIUS",
-	L"MILLIMETRE_PER_METRE",
-	L"MILLIMETRE_PER_MINUTE",
-	L"MILLIMETRE_SQUARED",
-	L"MILLIMETRE_SQUARED_PER_METRE_SQUARED",
-	L"MILLIMETRE_VERTICAL_PER_METRE_HORIZONTAL",
-	L"MILLINEWTON",
-	L"MILLINEWTON_SECOND_PER_METRE_SQUARED",
-	L"MILLION_LITRE",
-	L"MILLION_LITRE_PER_DAY",
-	L"MOLE_PER_METRE_CUBED",
-	L"NEWTON",
-	L"NEWTON_METRE",
-	L"NEWTON_METRE_PER_RADIAN",
-	L"NEWTON_METRE_SQUARED",
-	L"NEWTON_PER_METRE",
-	L"NEWTON_PER_METRE_CUBED",
-	L"NEWTON_PER_METRE_SQUARED",
-	L"NEWTON_PER_MILLIMETRE",
-	L"NEWTON_PER_RADIAN",
-	L"ONE_PER_CENTIMETRE_CUBED",
-	L"ONE_PER_KILOMETRE",
-	L"ONE_PER_KILOWATT",
-	L"ONE_PER_KILOWATT_HOUR",
-	L"ONE_PER_LITRE",
-	L"ONE_PER_MEGAJOULE",
-	L"ONE_PER_METRE",
-	L"ONE_PER_METRE_CUBED",
-	L"ONE_PER_METRE_SQUARED",
-	L"ONE_PER_MILE",
-	L"ONE_PER_MILLIMETRE",
-	L"ONE_PER_MILLION_LITRE",
-	L"ONE_PER_PASCAL",
-	L"ONE_PER_THOUSAND_LITRE",
-	L"ONE_PER_TONNE",
-	L"PASCAL",
-	L"PASCAL_PER_METRE",
-	L"PASCAL_SECOND",
-	L"PERSON_PER_HECTARE",
-	L"PERSON_PER_KILOMETRE_SQUARED",
-	L"PERSON_PER_METRE_SQUARED",
-	L"RADIAN",
-	L"RECIPROCAL_DELTA_DEGREE_CELSIUS",
-	L"RECIPROCAL_DELTA_DEGREE_KELVIN",
-	L"SIDE_WEIR_COEFFICIENT_SI",
-	L"STOKE",
-	L"THOUSAND_LITRE",
-	L"TORR",
-	L"WATT_PER_DELTA_DEGREE_KELVIN",
-	L"WATT_PER_METRE",
-	L"WATT_PER_METRE_CUBED",
-	L"WATT_PER_METRE_PER_DEGREE_CELSIUS",
-	L"WATT_PER_METRE_PER_DEGREE_KELVIN",
-	L"WATT_PER_METRE_SQUARED",
-	L"WATT_PER_METRE_SQUARED_PER_DELTA_DEGREE_CELSIUS",
-	L"WATT_PER_METRE_SQUARED_PER_DELTA_DEGREE_KELVIN",
-	L"WEIR_COEFFICIENT_SI",
-        NULL,
+    void            TestUnitConversion (double fromVal, WCharCP fromUnitName, double expectedVal, WCharCP targetUnitName, double tolerance);
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (UnitsTest, InitializeStandards)
+void UnitsTest::SetUp()
     {
-    static WCharCP s_unitSystemNames[] = { L"noNe", L"USCustomARY", L"sI", L"BoTh" };
-    for (size_t i = 0; i < _countof(s_unitSystemNames); i++)
-        {
-        EXPECT_TRUE (NULL != UnitSystem::GetByName (s_unitSystemNames[i]));
-        }
+    ECTestFixture::SetUp();
 
-    MatchStandardNames (Dimension::GetByName (L"L")->GetUnits(), s_UnitsOfLength);
-    MatchStandardNames (UnitSystem::GetByName (L"uscustomary")->GetUnits(), s_USUnits);
-    MatchStandardNames (UnitSystem::GetByName (L"SI")->GetUnits(), s_SIUnits);
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (m_schema, s_schemaXml, *context));
 
-    UnitCP a = Unit::GetByName (L"METRE"), b = Unit::GetByName (L"METRE");
-    EXPECT_TRUE (NULL != a);
-    EXPECT_TRUE (a == b);
+    m_fromProperty = m_schema->GetClassP (L"TestClass")->GetPropertyP (L"FromProperty");
+    m_toProperty = m_schema->GetClassP (L"TestClass")->GetPropertyP (L"ToProperty");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void UnitsTest::TestUnitConversion (double fromVal, WCharCP fromUnitName, double expectedVal, WCharCP targetUnitName, double tolerance)
+    {
+    SetUnits (fromUnitName, targetUnitName);
+    Unit srcUnit, dstUnit;
+    GetUnits (srcUnit, dstUnit);
+
+    EXPECT_TRUE (srcUnit.IsCompatible (dstUnit) && dstUnit.IsCompatible (srcUnit));
+    double convertedVal = fromVal;
+    EXPECT_TRUE (srcUnit.ConvertTo (convertedVal, dstUnit));
+    EXPECT_TRUE (fabs (convertedVal - expectedVal) < tolerance) << L"Input " << fromVal << fromUnitName << L" Expected " << expectedVal << targetUnitName << L" Actual " << convertedVal;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1970,4 +1592,4 @@ TEST_F (UnitsTest, Conversions)
     TestUnitConversion (1.0e6, L"KILOJOULE_PER_KILOMOLE_PER_DELTA_DEGREE_KELVIN", 2.3884589662749595e5, L"BTU_PER_POUND_MOLE_PER_DELTA_DEGREE_RANKINE", 1.0e-8);
     }
 
-END_BENTLEY_EC_UNITS_NAMESPACE
+END_BENTLEY_EC_NAMESPACE

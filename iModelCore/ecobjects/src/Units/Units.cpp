@@ -9,75 +9,36 @@
 #include <ECUnits/Units.h>
 #include <Bentley/BeAssert.h>
 
-BEGIN_BENTLEY_EC_UNITS_NAMESPACE
+BEGIN_BENTLEY_EC_NAMESPACE
 
-using namespace Bentley::EC;
+static WCharCP const  UNITS_SCHEMA                      = L"Units_Schema";
+static WCharCP const  KOQ_SCHEMA                        = L"KindOfQuantity_Schema";
+static WCharCP const  DIMENSION_SCHEMA                  = L"Dimension_Schema";
 
-static WCharCP const  KOQSchemaName                     = L"KindOfQuantity_Schema";
-static WCharCP const  DimensionSchemaName               = L"Dimension_Schema";
-static WCharCP const  UnitSchemaName                    = L"Units_Schema";
+static WCharCP const  UNIT_ATTRIBUTES                   = L"Unit_Attributes";
+static WCharCP const  KOQ_ATTRIBUTES                    = L"KindOfQuantity_Attributes";
+static WCharCP const  IS_UNIT_SYSTEM_SCHEMA             = L"IsUnitSystemSchema";
+
+static WCharCP const  CONVERSION_TYPE                   = L"ConversionType";
+static WCharCP const  CONVERSION_FACTOR                 = L"ConversionFactor";
+static WCharCP const  CONVERSION_OFFSET                 = L"ConversionOffset";
+static WCharCP const  SHORT_LABEL                       = L"ShortLabel";
+static WCharCP const  BASE_UNIT                         = L"BaseUnit";
+static WCharCP const  UNIT_SPECIFICATION                = L"UnitSpecification";
+static WCharCP const  UNIT_SPECIFICATIONS               = L"UnitSpecifications";
+static WCharCP const  UNIT_SPECIFICATION_LIST           = L"UnitSpecificationList[]";
+static WCharCP const  DISPLAY_UNIT_SPECIFICATION        = L"DisplayUnitSpecification";
+static WCharCP const  UNIT_NAME                         = L"UnitName";
+static WCharCP const  KOQ_NAME                          = L"KindOfQuantityName";
+static WCharCP const  DIMENSION_NAME                    = L"DimensionName";
+static WCharCP const  DISPLAY_UNIT_NAME                 = L"DisplayUnitName";
+static WCharCP const  DISPLAY_FORMAT_STRING             = L"DisplayFormatString";
+
 static WCharCP const  FACTOR_CONVERTER                  = L"Factor Converter";
 static WCharCP const  FACTOR_OFFSET_CONVERTER           = L"Factor Offset Converter";
 static WCharCP const  BASEUNIT_CONVERTER                = L"BaseUnit Converter";
 static WCharCP const  NOOP_CONVERTER                    = L"NoOp Converter";
 static WCharCP const  SLOPE_CONVERTER                   = L"Slope Converter";
-static WCharCP const  DIMENSION_CUSTOMATTRIBUTE         = L"Dimension_Attributes";
-static WCharCP const  KOQ_CUSTOMATTRIBUTE               = L"KindOfQuantity_Attributes";
-static WCharCP const  UNIT_CUSTOMATTRIBUTE              = L"Unit_Attributes";
-static WCharCP const  DIMENSION_PROPNAME                = L"Dimension";
-static WCharCP const  BASEUNIT_PROPNAME                 = L"BaseUnit";
-static WCharCP const  SHORTLABEL_PROPNAME               = L"ShortLabel";
-static WCharCP const  LABEL_PROPNAME                    = L"Label";
-static WCharCP const  DIMENSION_DISPLAYLABEL_PROPNAME   = L"DisplayName";
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-UnitConverter::UnitConverter (ICustomUnitConverter& customConverter)
-    : m_type (UnitConversionType_Custom), m_customConverter (&customConverter)
-    {
-    customConverter.AddRef();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-UnitConverter::UnitConverter (UnitConverter const& other)
-    : m_type(other.m_type), m_factor(other.m_factor), m_offset(other.m_offset)
-    {
-    if (UnitConversionType_Custom == m_type)
-        m_customConverter->AddRef();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-UnitConverter& UnitConverter::operator= (UnitConverter const& other)
-    {
-    if (this != &other)
-        {
-        if (UnitConversionType_Custom == other.m_type)
-            other.m_customConverter->AddRef();
-
-        if (UnitConversionType_Custom == m_type)
-            m_customConverter->Release();
-
-        m_type = other.m_type;
-        m_factor = other.m_factor;
-        m_offset = other.m_offset;
-        }
-
-    return *this;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-UnitConverter::~UnitConverter()
-    {
-    if (UnitConversionType_Custom == m_type)
-        m_customConverter->Release();
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
@@ -87,7 +48,6 @@ double UnitConverter::ToBase (double val) const
     switch (m_type)
         {
     case UnitConversionType_Identity:           return val;
-    case UnitConversionType_Custom:             return m_customConverter->_ToBase (val);
     case UnitConversionType_Factor:             return val / m_factor;
     case UnitConversionType_Slope:              return 0.0 == val ? 0.0 : 1.0 / val; 
     case UnitConversionType_FactorAndOffset:    return (val - m_offset) / m_factor;
@@ -103,266 +63,11 @@ double UnitConverter::FromBase (double val) const
     switch (m_type)
         {
     case UnitConversionType_Identity:           return val;
-    case UnitConversionType_Custom:             return m_customConverter->_FromBase (val);
     case UnitConversionType_Factor:             return val * m_factor;
     case UnitConversionType_Slope:              return 0.0 == val ? 0.0 : 1.0 / val;
     case UnitConversionType_FactorAndOffset:    return (val * m_factor) + m_offset;
     default:                                    BeAssert (false); return 0.0;
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsistruct                                                    Paul.Connelly   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct UnitsManager
-    {
-private:
-    // Note that Unit, KOQ, Dimension, and UnitSystem store their names as a pointer into the WString key in one of the maps below, to avoid storing each name twice.
-    typedef bmap<WString, Unit>                     UnitMap;
-    typedef bmap<WString, KindOfQuantity>           KOQMap;
-    typedef bmap<WString, Dimension>                DimensionMap;
-    typedef bmap<WString, UnitSystem>               UnitSystemMap;
-
-    UnitMap         m_unitsByName;
-    KOQMap          m_koqsByName;
-    DimensionMap    m_dimensionsByName;
-    UnitSystemMap   m_systemsByName;
-
-    UnitsManager();
-
-    void                InitializeStandardUnitSystems();
-public:
-    UnitP             GetUnitByName (WCharCP name)
-        {
-        UnitMap::iterator iter = m_unitsByName.find (name);
-        return iter != m_unitsByName.end() ? &iter->second : NULL;
-        }
-
-    KindOfQuantityP   GetKOQByName (WCharCP name)
-        {
-        KOQMap::iterator iter = m_koqsByName.find (name);
-        return iter != m_koqsByName.end() ? &iter->second : NULL;
-        }
-
-    DimensionP        GetDimensionByName (WCharCP name)
-        {
-        DimensionMap::iterator iter = m_dimensionsByName.find (name);
-        return iter != m_dimensionsByName.end() ? &iter->second : NULL;
-        }
-
-    UnitSystemP       GetSystemByName (WCharCP name)
-        {
-        // Note: the managed impl ignored case, and schemas are written with inconsistent case, so we have to do the same...
-        WString lName (name);
-        lName.ToLower();
-        UnitSystemMap::iterator iter = m_systemsByName.find (lName);
-        return iter != m_systemsByName.end() ? &iter->second : NULL;
-        }
-
-    UnitSystemP       AddSystem (WCharCP& name, UnitSystemCR system)
-        {
-        WString lName (name);
-        lName.ToLower();
-        UnitSystemMap::iterator pos = m_systemsByName.lower_bound (lName.c_str());
-        if (pos == m_systemsByName.end() || !pos->first.Equals (lName))
-            {
-            pos = m_systemsByName.insert (pos, UnitSystemMap::value_type (lName, system));
-            name = pos->first.c_str();
-            return &pos->second;
-            }
-        else
-            return NULL;    // name already exists
-        }
-
-    DimensionP          AddDimension (WCharCP& name, DimensionCR dim)
-        {
-        DimensionMap::iterator pos = m_dimensionsByName.lower_bound (name);
-        if (pos == m_dimensionsByName.end() || !pos->first.Equals (name))
-            {
-            pos = m_dimensionsByName.insert (pos, DimensionMap::value_type (name, dim));
-            name = pos->first.c_str();
-            return &pos->second;
-            }
-        else
-            return NULL;
-        }
-
-    KindOfQuantityP     AddKindOfQuantity (WCharCP& name, KindOfQuantityCR koq)
-        {
-        KOQMap::iterator pos = m_koqsByName.lower_bound (name);
-        if (pos == m_koqsByName.end() || !pos->first.Equals (name))
-            {
-            pos = m_koqsByName.insert (pos, KOQMap::value_type (name, koq));
-            name = pos->first.c_str();
-            return &pos->second;
-            }
-        else
-            return NULL;
-        }
-
-    UnitP               AddUnit (WCharCP& name, UnitCR unit)
-        {
-        UnitMap::iterator pos = m_unitsByName.lower_bound (name);
-        if (pos == m_unitsByName.end() || !pos->first.Equals (name))
-            {
-            pos = m_unitsByName.insert (pos, UnitMap::value_type (name, unit));
-            name = pos->first.c_str();
-            return &pos->second;
-            }
-        else
-            return NULL;
-        }
-
-    UnitMap const&          GetAllUnits() const         { return m_unitsByName; }
-    KOQMap const&           GetAllKOQs() const          { return m_koqsByName; }
-    DimensionMap const&     GetAllDimensions() const    { return m_dimensionsByName; }
-
-    static UnitsManager&    GetManager()
-        {
-        // WIP_UNITS: thread-local
-        static UnitsManager mgr;
-        return mgr;
-        }
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-UnitsManager::UnitsManager()
-    {
-    // WIP_UNITS: populate standard lists. Maybe the simplest way would be to add a custom attribute containing the standard ID to all the standard definitions
-    // Initialize standard UnitSystems. Apparently nobody ever creates new ones via schemas?
-    // Read standard schemas.
-    InitializeStandardUnitSystems();
-
-    UnitsSchemaReader reader (false, true, false);
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext (NULL, false);
-    SchemaKey key (DimensionSchemaName, 1, 0);  // WIP_FUSION: why does LocateSchema() take a non-const SchemaKey...?
-    ECSchemaPtr schema = context->LocateSchema (key, SCHEMAMATCHTYPE_LatestCompatible);
-    if (schema.IsNull() || !reader.ReadUnitsInfo (*schema))
-        { BeAssert (false); return; }
-
-    key.m_schemaName = KOQSchemaName;
-    key.m_versionMinor = 1;
-    schema = context->LocateSchema (key, SCHEMAMATCHTYPE_LatestCompatible);
-    if (schema.IsNull() || !reader.ReadUnitsInfo (*schema))
-        { BeAssert (false); return; }
-
-    key.m_schemaName = UnitSchemaName;
-    key.m_versionMinor = 0;
-    schema = context->LocateSchema (key, SCHEMAMATCHTYPE_LatestCompatible);
-    if (schema.IsNull() || !reader.ReadUnitsInfo (*schema))
-        { BeAssert (false); return; }
-
-    // WIP_UNITS: Units customization schemas...
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void UnitsManager::InitializeStandardUnitSystems()
-    {
-    UnitSystem::Create (L"none", NULL, NULL);
-    UnitSystem::Create (L"si", NULL, NULL);
-    UnitSystem::Create (L"usCustomary", NULL, NULL);
-    UnitSystem::Create (L"both", NULL, NULL);
-    }
-    
-static WCharCP PASS_NULL_AS_EMPTY (WCharCP in) { return in ? in : L""; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-UnitSystemP UnitSystem::Create (WCharCP name, WCharCP shortLabel, WCharCP longLabel)
-    {
-    PRECONDITION (NULL != name && 0 != *name, NULL);
-
-    WCharCP nameP = name;
-    UnitSystemP system = UnitsManager::GetManager().AddSystem (nameP, UnitSystem (PASS_NULL_AS_EMPTY(shortLabel), PASS_NULL_AS_EMPTY(longLabel)));
-    if (NULL != system)
-        system->m_name = nameP;
-
-    return system;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-DimensionP Dimension::Create (WCharCP name, WCharCP displayName, WCharCP description, WCharCP derivation)
-    {
-    PRECONDITION (NULL != name && 0 != *name, NULL);
-
-    WCharCP nameP = name;
-    DimensionP dimension = UnitsManager::GetManager().AddDimension (nameP, Dimension (displayName ? displayName : name, PASS_NULL_AS_EMPTY(description), PASS_NULL_AS_EMPTY(derivation)));
-    if (NULL != dimension)
-        dimension->m_name = nameP;
-
-    return dimension;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-KindOfQuantityP Dimension::AddKindOfQuantity (WCharCP name, WCharCP desc, KindOfQuantityCP parent)
-    {
-    PRECONDITION (NULL != name && 0 != *name, NULL);
-    PRECONDITION (NULL == parent || &parent->GetDimension() == this, NULL);
-
-    WCharCP nameP = name;
-    KindOfQuantityP koq = UnitsManager::GetManager().AddKindOfQuantity (nameP, KindOfQuantity (PASS_NULL_AS_EMPTY(desc), *this, parent));
-    if (NULL != koq)
-        koq->m_name = nameP;
-
-    return koq;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-UnitP Dimension::AddUnit (UnitConverterCR converter, UnitSystemCR system, UnitCP base, WCharCP name, WCharCP shortLabel, WCharCP longLabel)
-    {
-    PRECONDITION (NULL != name && 0 != *name, NULL);
-    
-    WCharCP nameP = name;
-    UnitP unit = UnitsManager::GetManager().AddUnit (nameP, Unit (PASS_NULL_AS_EMPTY(shortLabel), PASS_NULL_AS_EMPTY(longLabel), converter, system, *this, base));
-    if (NULL != unit)
-        unit->m_name = nameP;
-
-    return unit;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Dimension::_IncludesUnit (UnitCR u) const                  { return &u.GetDimension() == this; }
-bool UnitSystem::_IncludesUnit (UnitCR u) const                 { return &u.GetSystem() == this; }
-bool IUnitFilter::IncludesUnit (UnitCR u) const                 { return _IncludesUnit (u); }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-UnitsCollection::const_iterator::const_iterator (UnitsCollection const& coll, bool isEnd)
-    : StringMapIteratorAdapter<UnitsCollection, Unit> (coll, UnitsManager::GetManager().GetAllUnits(), isEnd)
-    {
-    //
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-KindOfQuantityCollection::const_iterator::const_iterator (KindOfQuantityCollection const& coll, bool isEnd)
-    : StringMapIteratorAdapter<KindOfQuantityCollection, KindOfQuantity> (coll, UnitsManager::GetManager().GetAllKOQs(), isEnd)
-    {
-    //
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-DimensionsCollection::const_iterator::const_iterator (DimensionsCollection const& coll, bool isEnd)
-    : StringMapIteratorAdapter<DimensionsCollection, Dimension> (coll, UnitsManager::GetManager().GetAllDimensions(), isEnd)
-    {
-    //
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -377,240 +82,254 @@ bool Unit::ConvertTo (double& value, UnitCR target) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/12
+* Because Graphite loads ECClasses from schemas dynamically, ECSchemas are not pre-
+* processed for units info and units info is not cached.
+* This mechanism may later be virtualized so that caching and preprocessing can be
+* implemented in non-Graphite contexts.
+* @bsistruct                                                    Paul.Connelly   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitSystemP UnitSystem::GetByName (WCharCP name)                            { return UnitsManager::GetManager().GetSystemByName (name); }
-DimensionP Dimension::GetByName (WCharCP name)                              { return UnitsManager::GetManager().GetDimensionByName (name); }
-KindOfQuantityP KindOfQuantity::GetByName (WCharCP name)                    { return UnitsManager::GetManager().GetKOQByName (name); }
-UnitP Unit::GetByName (WCharCP name)                                        { return UnitsManager::GetManager().GetUnitByName (name); }
-
-#ifdef WIP_UNITS
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-static WStringR buildMessage (WStringR msg, WCharCP a, WCharCP b) { msg.clear(); msg.append (a); msg.append (b); return msg; }
-static WStringR buildMessage (WStringR msg, WCharCP a, WCharCP b, WCharCP c) { buildMessage (msg, a, b); msg.append (c); return msg; }
-static WStringR buildMessage (WStringR msg, WCharCP a, WCharCP b, WCharCP c, WCharCP d) { buildMessage (msg, a, b, c); msg.append (d); return msg; }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-UnitsSchemaReader::UnitsSchemaReader (bool recordErrors, bool haltOnError, bool applyDisplayLabels)
-    : m_haltOnError(haltOnError), m_recordErrors(recordErrors), m_applyDisplayLabels (applyDisplayLabels), m_unitsManager(UnitsManager::GetManager())
+struct ECClassLocater
     {
-    //
-    }
+public:
+    ECClassCP       LocateClass (WCharCP schemaName, WCharCP className) const
+        {
+        static ECSchemaReadContextPtr   s_context;
+        static ECSchemaPtr              s_unitsSchema, s_koqSchema;
+
+        if (s_context.IsNull())
+            {
+            // WIP_UNITS: thread safety...
+            // WIP_UNITS: In a non-graphite build we want to hang on to the standard schemas...
+            s_context = ECSchemaReadContext::CreateContext (NULL, false);
+            SchemaKey key (UNITS_SCHEMA, 1, 0);
+            s_unitsSchema = s_context->LocateSchema (key, SCHEMAMATCHTYPE_LatestCompatible);
+            key.m_schemaName = KOQ_SCHEMA;
+            s_koqSchema = s_context->LocateSchema (key, SCHEMAMATCHTYPE_LatestCompatible);
+            }
+
+        if (KOQ_SCHEMA == schemaName)
+            return s_koqSchema->GetClassP (className);
+        else if (UNITS_SCHEMA == schemaName)
+            return s_unitsSchema->GetClassP (className);
+        else
+            return NULL;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* Note that the managed Units framework expects the client app to load any extra Units or
+* units customizations manually. Since schemas using Units from external units schemas
+* do not require a reference to those schemas, we have no way of locating those units.
+* Therefore, this implementation only supports units defined in the standard schemas.
+* @bsistruct                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+struct UnitLocater
+    {
+private:
+    ECPropertyCR            m_ecprop;
+    ECClassLocater          m_classLocater;
+
+    bool    GetUnitFromAttribute (UnitR unit, IECInstanceCR attr, WCharCP unitName) const;
+    bool    LocateUnitBySpecification (UnitR unit, WCharCP propName, WCharCP propValue) const;
+    bool    LocateUnitByKOQ (UnitR unit, WCharCP koqName) const;
+    bool    GetUnitFromSpecifications (UnitR unit, WCharCP propName, WCharCP propValue, IECInstanceCR specsAttr) const;
+public:
+    UnitLocater (ECPropertyCR ecprop) : m_ecprop(ecprop) { }
+
+    bool    LocateUnit (UnitR unit) const;
+    bool    LocateUnitByName (UnitR unit, WCharCP unitName) const;
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UnitsSchemaReader::ReadUnitsInfo(ECSchemaCR schema)
+bool UnitLocater::LocateUnit (UnitR unit) const
     {
-    bool readDimensions = ReadDimensions(schema);
-    if (!readDimensions && m_haltOnError)
+    IECInstancePtr unitSpecAttr = m_ecprop.GetCustomAttribute (UNIT_SPECIFICATION);
+    if (unitSpecAttr.IsNull())
         return false;
 
-    return ReadUnitsAndKOQs(schema) ? readDimensions : false;
+    // If the unit specification defines the Unit, we're done
+    ECValue v;
+    if (ECOBJECTS_STATUS_Success == unitSpecAttr->GetValue (v, UNIT_NAME) && !v.IsNull() && LocateUnitByName (unit, v.GetString()))
+        return true;
+
+    // If the unit specification defines a KindOfQuantity, locate a matching UnitSpecification at schema level defining the Unit
+    if (ECOBJECTS_STATUS_Success == unitSpecAttr->GetValue (v, KOQ_NAME) && !v.IsNull() && LocateUnitByKOQ (unit, v.GetString()))
+        return true;
+
+    // If the unit specification defines a Dimension, locate matching UnitSpecification defining the Unit
+    if (ECOBJECTS_STATUS_Success == unitSpecAttr->GetValue (v, DIMENSION_NAME) && !v.IsNull() && LocateUnitBySpecification (unit, DIMENSION_NAME, v.GetString()))
+        return true;
+
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UnitsSchemaReader::ReadDimensions(ECSchemaCR schema)
+bool UnitLocater::LocateUnitByName (UnitR unit, WCharCP unitName) const
     {
-    FOR_EACH (ECClassCP ecClass, schema.GetClasses())
-        {
-        IECInstancePtr attr = ecClass->GetCustomAttribute (DIMENSION_CUSTOMATTRIBUTE);
-        if (attr.IsValid())
-            {
-            if (!ReadDimension (*ecClass, *attr) && m_haltOnError)
-                return false;
-            }
-        }
-
-    return true;
+    IECInstancePtr unitAttr;
+    ECClassCP unitClass = m_classLocater.LocateClass (UNITS_SCHEMA, unitName);
+    if (NULL != unitClass && (unitAttr = unitClass->GetCustomAttribute (UNIT_ATTRIBUTES)).IsValid())
+        return GetUnitFromAttribute (unit, *unitAttr, unitName);
+    else
+        return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UnitsSchemaReader::ReadDimension (ECClassCR ecClass, IECInstanceCR attr)
+bool UnitLocater::GetUnitFromAttribute (UnitR unit, IECInstanceCR attr, WCharCP unitName) const
     {
-    WString errorMsg;
-    
-    WCharCP name = ecClass.GetName().c_str();
-    DimensionP dimension = m_unitsManager.GetDimensionByName (name);
-    if (NULL == dimension)
-        {
-        ECValue displayLabel, desc, deriv;
-        WCharCP propName = DIMENSION_DISPLAYLABEL_PROPNAME;
-        if (ECOBJECTS_STATUS_Success != attr.GetValue (displayLabel, propName) ||
-            ECOBJECTS_STATUS_Success != attr.GetValue (desc, propName=L"DimensionalDescription") ||
-            ECOBJECTS_STATUS_Success != attr.GetValue (deriv, propName=L"DimensionalDerivation"))
-            {
-            if (m_recordErrors)
-                { /* WIP_UNITS: log? Log (Error_FailedToReadDimension, buildMessage (errorMsg, L"Dimension ", ecClass.GetName().c_str(), L" missing property ", propName)); */ }
-            
-            return !m_haltOnError;
-            }
+    // 1. Extract conversion info
+    ECValue v;
+    if (ECOBJECTS_STATUS_Success != attr.GetValue (v, CONVERSION_TYPE) || v.IsNull())
+        return false;
 
-        dimension = Dimension::Create (name, displayLabel.GetString(), desc.GetString(), deriv.GetString());
-        if (NULL == dimension)
+    bool isSlope = (0 == wcscmp (v.GetString(), SLOPE_CONVERTER));
+    bool isFactorOffset = !isSlope && (0 == wcscmp (v.GetString(), FACTOR_OFFSET_CONVERTER));
+    UnitConverter cvtr (isSlope);
+    if (isFactorOffset || 0 == wcscmp (v.GetString(), FACTOR_CONVERTER))
+        {
+        if (ECOBJECTS_STATUS_Success != attr.GetValue (v, CONVERSION_FACTOR) || v.IsNull())
             return false;
-        }
 
-    if (m_applyDisplayLabels)
-        {
-        if (ecClass.GetIsDisplayLabelDefined() && !ecClass.GetDisplayLabel().empty())
-            { /*WIP_UNITS: what? */ }
+        double conversionFactor = v.GetDouble();
+        if (isFactorOffset)
+            {
+            if (ECOBJECTS_STATUS_Success != attr.GetValue (v, CONVERSION_OFFSET) || v.IsNull())
+                return false;
 
-        // WIP_UNITS: What is up with two custom labels, a name, and a long name?
+            cvtr = UnitConverter (conversionFactor, v.GetDouble());
+            }
+        else
+            cvtr = UnitConverter (conversionFactor);
         }
+    else if (!isSlope && 0 != wcscmp (v.GetString(), BASEUNIT_CONVERTER) && 0 != wcscmp (v.GetString(), NOOP_CONVERTER))
+        return false;       // unknown conversion type
+
+    // 2. Extract label
+    ECValue labelV;
+    if (ECOBJECTS_STATUS_Success != attr.GetValue (labelV, SHORT_LABEL) || labelV.IsNull())
+        return false;
+
+    // 3. Extract base unit name
+    WCharCP baseUnitName = (ECOBJECTS_STATUS_Success == attr.GetValue (v, BASE_UNIT) && !v.IsNull()) ? v.GetString() : unitName;
+
+    unit = Unit (labelV.GetString(), cvtr, baseUnitName);
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* The domain schema can contain a UnitSpecifications custom attribute containing a list
+* of UnitSpecification[] which associate Dimensions or Kinds of Quantity with a Unit.
+* The schema may also reference a schema defining defaults.
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool UnitLocater::LocateUnitBySpecification (UnitR unit, WCharCP propName, WCharCP propValue) const
+    {
+    ECSchemaCR schema = m_ecprop.GetClass().GetSchema();
+    IECInstancePtr specsAttr = schema.GetCustomAttribute (UNIT_SPECIFICATIONS);
+    if (specsAttr.IsValid() && GetUnitFromSpecifications (unit, propName, propValue, *specsAttr))
+        return true;
     
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool UnitsSchemaReader::ReadUnitsAndKOQs(ECSchemaCR schema)
-    {
-    FOR_EACH (ECClassCP ecClass, schema.GetClasses())
+    // WIP_UNITS: figure out which (if any) referenced schema contains specifications once and cache it
+    // (not sure how this works on graphite)
+    FOR_EACH (ECSchemaReferenceList::value_type const& refSchemaEntry, schema.GetReferencedSchemas())
         {
-        IECInstancePtr attr = ecClass->GetCustomAttribute (KOQ_CUSTOMATTRIBUTE);
-        if (attr.IsValid())
-            {
-            if (!ReadKindOfQuantity (*ecClass, *attr) && m_haltOnError)
-                return false;
-            }
-        else if ((attr = ecClass->GetCustomAttribute (UNIT_CUSTOMATTRIBUTE)).IsValid())
-            {
-            if (!ReadUnit (*ecClass, *attr) && m_haltOnError)
-                return false;
-            }
+        ECSchemaPtr refSchema = refSchemaEntry.second;
+        if (refSchema->GetCustomAttribute (IS_UNIT_SYSTEM_SCHEMA).IsValid() && (specsAttr = refSchema->GetCustomAttribute (UNIT_SPECIFICATIONS)).IsValid())
+            return GetUnitFromSpecifications (unit, propName, propValue, *specsAttr);
         }
 
-    return true;
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UnitsSchemaReader::ReadKindOfQuantity (ECClassCR ecClass, IECInstanceCR attr)
+bool UnitLocater::GetUnitFromSpecifications (UnitR unit, WCharCP propName, WCharCP propValue, IECInstanceCR specsAttr) const
     {
-    WCharCP name = ecClass.GetName().c_str();
-    KindOfQuantityP koq = m_unitsManager.GetKOQByName (name);
-    if (NULL == koq)
-        {
-        KindOfQuantityP parentKOQ = NULL;
-        if (ecClass.HasBaseClasses())
-            {
-            if (ecClass.GetBaseClasses().size() > 1)
-                { BeAssert (false); return false; }
-            
-            ECClassCP parentClass = ecClass.GetBaseClasses()[0];
-            parentKOQ = m_unitsManager.GetKOQByName (parentClass->GetName().c_str());
-            if (NULL == parentKOQ)
-                {
-                IECInstancePtr parentAttr = parentClass->GetCustomAttribute (KOQ_CUSTOMATTRIBUTE);
-                if (!parentAttr.IsValid() || !ReadKindOfQuantity (*parentClass, *parentAttr))
-                    { BeAssert (false); return false; }
+    ECValue v;
+    if (ECOBJECTS_STATUS_Success != specsAttr.GetValue (v, UNIT_SPECIFICATION_LIST))
+        return false;
 
-                parentKOQ = m_unitsManager.GetKOQByName (parentClass->GetName().c_str());
+    UInt32 nSpecs = v.GetArrayInfo().GetCount();
+
+    for (UInt32 i = 0; i < nSpecs; i++)
+        {
+        // Find the UnitSpecifications[] entry matching the input criterion
+        IECInstancePtr spec;
+        if (ECOBJECTS_STATUS_Success == specsAttr.GetValue (v, UNIT_SPECIFICATION_LIST, i) && (spec = v.GetStruct()).IsValid())
+            {
+            if (ECOBJECTS_STATUS_Success == spec->GetValue (v, propName) && !v.IsNull() && 0 == wcscmp (v.GetString(), propValue))
+                {
+                // Find a UnitName defined on this UnitSpecification, and from that get the Unit
+                if (ECOBJECTS_STATUS_Success == spec->GetValue (v, UNIT_NAME) && !v.IsNull() && LocateUnitByName (unit, v.GetString()))
+                    return true;
                 }
             }
-
-        ECValue v;
-        DimensionP dimension;
-        if (ECOBJECTS_STATUS_Success != attr.GetValue (v, L"Dimension") || NULL == (dimension = m_unitsManager.GetDimensionByName (v.GetString())))
-            return false;
-
-        WCharCP description = ECOBJECTS_STATUS_Success == attr.GetValue (v, L"Description") ? v.GetString() : NULL;
-        koq = dimension->AddKindOfQuantity (name, description, parentKOQ);
-        if (NULL == koq)
-            return false;
         }
 
-    if (m_applyDisplayLabels)
-        {
-        // WIP_UNITS
-        }
-
-    return true;
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UnitsSchemaReader::ReadUnit (ECClassCR ecClass, IECInstanceCR attr)
+bool UnitLocater::LocateUnitByKOQ (UnitR unit, WCharCP koqName) const
     {
-    WCharCP name = ecClass.GetName().c_str();
-    UnitP unit = m_unitsManager.GetUnitByName (name);
-    if (NULL == unit)
+    if (LocateUnitBySpecification (unit, KOQ_NAME, koqName))
+        return true;
+
+    // Recurse on parent KOQ (KOQ ECClasses are defined in a hierarchy)
+    ECClassCP koqClass = m_classLocater.LocateClass (KOQ_SCHEMA, koqName);
+    if (NULL != koqClass)
         {
-        ECValue dimensionName, systemName, conversionTypeName, baseName;
-        if (ECOBJECTS_STATUS_Success != attr.GetValue (dimensionName, DIMENSION_PROPNAME) ||
-            ECOBJECTS_STATUS_Success != attr.GetValue (systemName, L"UnitSystem") ||
-            ECOBJECTS_STATUS_Success != attr.GetValue (conversionTypeName, L"ConversionType") ||
-            ECOBJECTS_STATUS_Success != attr.GetValue (baseName, BASEUNIT_PROPNAME))
-            return false;
-
-        UnitP baseUnit = NULL;
-        DimensionP dimension;
-        UnitSystemP system = m_unitsManager.GetSystemByName (systemName.GetString());
-        if (NULL == system)
-            system = m_unitsManager.GetSystemByName (L"none");  // WIP_UNITS: some standard Units erroneously use usConventional instead of usCustomary - fix or they end up in "none"
-        
-        if (NULL == (dimension = m_unitsManager.GetDimensionByName (dimensionName.GetString())))
-            return false;
-        else if (0 != wcscmp (name, baseName.GetString()) && NULL == (baseUnit = m_unitsManager.GetUnitByName (baseName.GetString())))
+        if (koqClass->HasBaseClasses())
+            return LocateUnitByKOQ (unit, koqClass->GetBaseClasses()[0]->GetName().c_str());
+        else
             {
-            IECInstancePtr baseUnitAttr;
-            ECClassCP baseUnitClass = ecClass.GetSchema().GetClassP (baseName.GetString());  // WIP_UNITS: Do we ever end up here with base units in a referenced schema which hasn't been processed yet?
-            if (NULL == baseUnitClass ||
-                (baseUnitAttr = baseUnitClass->GetCustomAttribute (UNIT_CUSTOMATTRIBUTE)).IsNull() ||
-                !ReadUnit (*baseUnitClass, *baseUnitAttr) ||
-                NULL == (baseUnit = m_unitsManager.GetUnitByName (baseName.GetString()))
-               )
-                return false;
-            }
-
-        bool isSlopeConverter = 0 == wcscmp (conversionTypeName.GetString(), SLOPE_CONVERTER);
-        bool isFactorOffsetConverter = !isSlopeConverter && 0 == wcscmp (conversionTypeName.GetString(), FACTOR_OFFSET_CONVERTER);
-        UnitConverter converter (isSlopeConverter);
-        if (isFactorOffsetConverter || 0 == wcscmp (conversionTypeName.GetString(), FACTOR_CONVERTER))
-            {
+            // check Dimension of the base KOQ
             ECValue v;
-            if (ECOBJECTS_STATUS_Success != attr.GetValue (v, L"ConversionFactor"))
-                return false;
-
-            double conversionFactor = v.GetDouble();
-            if (isFactorOffsetConverter)
-                {
-                if (ECOBJECTS_STATUS_Success != attr.GetValue (v, L"ConversionOffset"))
-                    return false;
-
-                converter = UnitConverter (conversionFactor, v.GetDouble());
-                }
-            else
-                converter = UnitConverter (conversionFactor);
+            IECInstancePtr koqAttr = koqClass->GetCustomAttribute (KOQ_ATTRIBUTES);
+            if (koqAttr.IsValid() && ECOBJECTS_STATUS_Success == koqAttr->GetValue (v, DIMENSION_NAME) && !v.IsNull())
+                return LocateUnitBySpecification (unit, DIMENSION_NAME, v.GetString());
             }
-        else if (!isSlopeConverter && 0 != wcscmp (conversionTypeName.GetString(), BASEUNIT_CONVERTER) && 0 != wcscmp (conversionTypeName.GetString(), NOOP_CONVERTER))
-            return false;   // unknown converter name
-
-        unit = dimension->AddUnit (converter, *system, baseUnit, name, NULL, NULL);
-        if (NULL == unit)
-            return false;
         }
 
-    if (m_applyDisplayLabels)
-        {
-        // WIP_UNITS
-        }
-
-    return true;
+    return false;
     }
 
-END_BENTLEY_EC_UNITS_NAMESPACE
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Unit::GetUnitForECProperty (UnitR unit, ECPropertyCR ecprop)
+    {
+    IECInstancePtr unitSpecAttr = ecprop.GetCustomAttribute (UNIT_SPECIFICATION);
+    return unitSpecAttr.IsValid() ? UnitLocater (ecprop).LocateUnit (unit) : false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Unit::GetDisplayUnitForECProperty (UnitR unit, WStringR fmt, ECPropertyCR ecprop)
+    {
+    ECValue v;
+    IECInstancePtr attr = ecprop.GetCustomAttribute (DISPLAY_UNIT_SPECIFICATION);
+    if (attr.IsValid() && ECOBJECTS_STATUS_Success == attr->GetValue (v, DISPLAY_UNIT_NAME) && !v.IsNull() && UnitLocater (ecprop).LocateUnitByName (unit, v.GetString()))
+        {
+        fmt.clear();
+        if (ECOBJECTS_STATUS_Success == attr->GetValue (v, DISPLAY_FORMAT_STRING) && !v.IsNull())
+            fmt = v.GetString();
+        
+        return true;
+        }
+
+    return false;
+    }
+
+END_BENTLEY_EC_NAMESPACE
 
