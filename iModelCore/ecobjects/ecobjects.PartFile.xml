@@ -44,6 +44,7 @@
         <Bindings>
             <PublicAPI Domain="ECObjects" />
             <PublicAPI Domain="ECPresentation" />
+            <PublicAPI Domain="ECUnits" />
         </Bindings>
     </Part>
 
@@ -168,14 +169,14 @@
         <ProductDirectory Name="ecschemas"                          Path=""/>
     </ProductDirectoryList>
 
-    <Product Name="ECObjectsTests">
+    <Product Name="ECObjectsTests" SaveProduct="true">
         <SubPart PartName="Tests"/>
         <Directories DirectoryListName="ECObjectsTest"/>
     </Product>
 
     <ProductDirectoryList ListName="ECObjectsTested">
     </ProductDirectoryList>
-    <Product Name="ECObjectsTested" PrgOutputDir="ECObjects">
+    <Product Name="ECObjectsTested" PrgOutputDir="ECObjects" SaveProduct="true">
         <SubProduct ProductName="ECObjects" />
         <SubProduct ProductName="ECObjectsStatic" />
         <SubProduct ProductName="ECObjectsTests" />

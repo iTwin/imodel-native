@@ -22,11 +22,11 @@ BEGIN_BENTLEY_EC_NAMESPACE
 //! There are several implementations of the ECObjects abstractions:
 //! @li In XML (two formats ECSchemaXML and ECInstanceXML)
 //! @li This native C++ implementation
-//! @li In .NET (multiple implementations of IECInstance, IECClass, and related interfaces. One implementation actually wraps a native IECInstance with a managed one
+//! @li In .NET (multiple implementations of IECInstance, IECClass, and related interfaces.
 //!
 //! You can think of an ECClass as being like a C++ or .NET class that only defines properties (ECClasses define no methods or behaviors.) In some ways, they are closer to .NET interfaces that hold only properties... or C++ pure virtual abstract base classes that only contain property getters and setters. They are also very analogous to a database table definition.
 //!
-//! ECClasses contain ECProperties. These are property *definitions* not values.
+//! ECClasses contain ECProperties. These are property *definitions*, not values.
 //!
 //! ECInstances represent instances of objects. Each "belongs" to an ECClass and holds ECPropertyValues. They are somewhat analogous to the rows of a database table.
 //!

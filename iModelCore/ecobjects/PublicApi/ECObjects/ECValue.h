@@ -119,7 +119,6 @@ protected:
         IECInstanceP        m_structInstance;   // The ECValue class calls AddRef and Release for the member as needed
         };
 
-    void DeepCopy (ECValueCR v);
     void ShallowCopy (ECValueCR v);
     void ConstructUninitialized();
     inline void FreeMemory ();
@@ -131,7 +130,7 @@ public:
     ECOBJECTS_EXPORT ~ECValue();
     
     ECOBJECTS_EXPORT ECValue ();
-    ECOBJECTS_EXPORT ECValue (ECValueCR v, bool doDeepCopy = false);
+    ECOBJECTS_EXPORT ECValue (ECValueCR v);
     ECOBJECTS_EXPORT explicit ECValue (ValueKind classification);
     ECOBJECTS_EXPORT explicit ECValue (PrimitiveType primitiveType);
 
@@ -156,7 +155,7 @@ public:
 
     ECOBJECTS_EXPORT void           SetToNull();
 
-    ECOBJECTS_EXPORT void           From(ECValueCR v, bool doDeepCopy);
+    ECOBJECTS_EXPORT void           From(ECValueCR v);
 
     ECOBJECTS_EXPORT ValueKind      GetKind() const;
     ECOBJECTS_EXPORT bool           IsUninitialized () const;
@@ -437,6 +436,7 @@ private:
     friend struct ECValuesCollection;
 
     ECPropertyValue     m_propertyValue;
+    int                 m_arrayCount;
 
     ECValuesCollectionIterator (IECInstanceCR);
     ECValuesCollectionIterator (ECPropertyValueCR parentPropertyValue);

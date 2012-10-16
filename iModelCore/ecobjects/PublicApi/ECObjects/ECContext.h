@@ -110,6 +110,7 @@ public:
     ECOBJECTS_EXPORT void SetFinalSchemaLocater (IECSchemaLocaterR);
 
     //Find the schema matching the schema key and using matchType as the match criteria. This uses the prioritized list of locators to find the schema.
+    //WIP_FUSION: Why is the SchemaKey argument non-null??
     ECOBJECTS_EXPORT ECSchemaPtr         LocateSchema (SchemaKeyR key, SchemaMatchType matchType);
 };
 

@@ -336,64 +336,7 @@ void            ECValue::ConstructUninitialized()
     m_ownsData = false;
     }
     
-/*---------------------------------------------------------------------------------**//**
-* Copies this value, including all strings and array values held by this value.
-* It duplicates string values, even if the original did not hold a duplicate that is was responsible for freeing.
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            ECValue::DeepCopy (ECValueCR v)
-    {     
-    if (this == &v)
-        return;
 
-    memcpy (this, &v, sizeof(ECValue));
-    
-    if (IsNull())
-        return;
-
-    UShort  valueKind = m_valueKind;
-    switch (valueKind)
-        {            
-        case VALUEKIND_Struct:
-            {
-            //WIP_FUSION 
-            BeAssert (false && "Needs work: copy the struct value");
-            break;
-            }
-
-        case VALUEKIND_Array:
-            {
-            // The array's data is not stored here, so all we can copy is the ArrayInfo (taken care of by memcpy above)
-            break;
-            }
-
-        case PRIMITIVETYPE_Binary:
-            {
-            m_ownsData = false;                     // prevent SetBinary from attempting to free the data temporarily copied by memset
-            SetBinary (v.m_binaryInfo.m_data, v.m_binaryInfo.m_size, true);   // copy the data buffer and take ownership
-            break;
-            }
-
-        case PRIMITIVETYPE_String:
-            m_ownsData = false; // prevent SetString from attempting to free the string that was temporarily copied by memset
-            SetString (v.m_string);
-            break;
-
-        // the memcpy takes care of these...            
-        case PRIMITIVETYPE_Boolean:
-        case PRIMITIVETYPE_Integer:
-        case PRIMITIVETYPE_Long:
-        case PRIMITIVETYPE_Double:
-        case PRIMITIVETYPE_Point2D:
-        case PRIMITIVETYPE_Point3D:
-        case PRIMITIVETYPE_DateTime:
-            break;
-                        
-        default:
-            BeAssert (false); // type not handled
-        }
-    };
-    
 /*---------------------------------------------------------------------------------**//**
 * Copies this value object without allocating any additional memory.  The copy will
 * hold copies on any external pointers held by the original.
@@ -534,7 +477,7 @@ ECValue::~ECValue()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValueR ECValue::operator= (ECValueCR rhs)
     {
-    From (rhs, false);
+    From (rhs);
     return *this;
     }        
     
@@ -550,10 +493,10 @@ ECValue::ECValue ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (ECValueCR v, bool doDeepCopy)
+ECValue::ECValue (ECValueCR v)
     {
     ConstructUninitialized();
-    From (v, doDeepCopy);
+    From (v);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -660,12 +603,9 @@ ECValue::ECValue (const byte * data, size_t size)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    ECValue::From (ECValueCR v, bool doDeepCopy)
+void    ECValue::From (ECValueCR v)
     {
-    if (doDeepCopy)
-        DeepCopy (v);
-    else
-        ShallowCopy (v);
+    ShallowCopy (v);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1896,7 +1836,7 @@ ECPropertyValue::ECPropertyValue (ECPropertyValueCR from)
     {
     m_instance = from.m_instance;
     m_accessor = from.m_accessor;
-    m_ecValue.From (from.m_ecValue, false);
+    m_ecValue.From (from.m_ecValue);
     m_evaluated = from.m_evaluated;
     }
 
@@ -1969,7 +1909,8 @@ ECPropertyValue ECValuesCollectionIterator::GetFirstPropertyValue (IECInstanceCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValuesCollectionIterator::ECValuesCollectionIterator (IECInstanceCR instance)
     :
-    m_propertyValue (GetFirstPropertyValue (instance))
+    m_propertyValue (GetFirstPropertyValue (instance)),
+    m_arrayCount (-1)
     {
     }
 
@@ -1978,6 +1919,7 @@ ECValuesCollectionIterator::ECValuesCollectionIterator (IECInstanceCR instance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyValue ECValuesCollectionIterator::GetChildPropertyValue (ECPropertyValueCR parentPropertyValue)
     {
+    m_arrayCount = -1;
     ECValueCR       parentValue = parentPropertyValue.GetValue();
     ECValueAccessor childAccessor (parentPropertyValue.GetValueAccessor());
 
@@ -1987,12 +1929,14 @@ ECPropertyValue ECValuesCollectionIterator::GetChildPropertyValue (ECPropertyVal
         UInt32      arrayCount = arrayInfo.GetCount();
 
         if (0 < arrayCount)
+            {
+            m_arrayCount = arrayCount;
             childAccessor.DeepestLocation().arrayIndex = 0;
+            }
         else
             childAccessor.PopLocation();
         }
-    else
-    if (parentValue.IsStruct())
+    else if (parentValue.IsStruct())
         {
         UInt32          pathLength  = childAccessor.GetDepth();
 
@@ -2085,26 +2029,13 @@ void            ECValuesCollectionIterator::MoveToNext()
         /*--------------------------------------------------------------------------
           If we are on an array member get the next member
         --------------------------------------------------------------------------*/
-        ECValueAccessor arrayAccessor (currentAccessor);
-        arrayAccessor.DeepestLocation().arrayIndex = ECValueAccessor::INDEX_ROOT;
-
-//WIP_FUSION: wouldn't it be better to get the arrayCount once when the iterator is created?
-        ECValue         ecValue;
-        ECObjectsStatus status = m_propertyValue.GetInstance().GetValueUsingAccessor (ecValue, arrayAccessor);
-
-        if ( ! EXPECTED_CONDITION (ECOBJECTS_STATUS_Success == status))
+        if (!EXPECTED_CONDITION (0 <= m_arrayCount))
             return;
-
-        if ( ! EXPECTED_CONDITION (ecValue.IsArray()))
-            return;
-
-        ArrayInfo   arrayInfo  = ecValue.GetArrayInfo();
-        UInt32      arrayCount = arrayInfo.GetCount();
 
         currentAccessor.DeepestLocation().arrayIndex++;
 
         // If that was the last member of the array, we are done
-        if (currentAccessor.DeepestLocation().arrayIndex >= (Int32) arrayCount)
+        if (currentAccessor.DeepestLocation().arrayIndex >= m_arrayCount)
             {
             currentAccessor.Clear();
             return;
@@ -2222,7 +2153,7 @@ ECValuesCollection::const_iterator ECValuesCollection::begin () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValuesCollectionIterator::ECValuesCollectionIterator()
+ECValuesCollectionIterator::ECValuesCollectionIterator() : m_arrayCount(-1)
     {
     }
 
