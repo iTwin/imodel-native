@@ -1352,6 +1352,11 @@ public:
 
         return m_className < other.m_className;
         };
+
+    bool operator==(SchemaNameClassNamePair const& rhs) const
+        {
+        return 0 == m_schemaName.CompareTo(rhs.m_schemaName) && 0 == m_className.CompareTo(rhs.m_className);
+        }
 };
 
 /*---------------------------------------------------------------------------------**//**
