@@ -33,6 +33,14 @@ static WCharCP s_refSchemaXml =
     L"                  <DimensionName>L</DimensionName>"
     L"                  <UnitName>KILOMETRE</UnitName>"
     L"              </UnitSpecification>"
+    L"              <UnitSpecification>"
+    L"                  <KindOfQuantityName>NONEXISTENT_KOQ_WITH_DIMENSION</KindOfQuantityName>"
+    L"                  <DimensionName>L3</DimensionName>"
+    L"              </UnitSpecification>"
+    L"              <UnitSpecification>"
+    L"                  <KindOfQuantityName>NONEXISTENT_KOQ_WITH_UNIT</KindOfQuantityName>"
+    L"                  <UnitName>NONEXISTENT_UNIT</UnitName>"
+    L"              </UnitSpecification>"
     L"          </UnitSpecificationList>"
     L"      </UnitSpecifications>"
     L"  </ECCustomAttributes>"
@@ -42,6 +50,17 @@ static WCharCP s_schemaXml =
     L"<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
     L"  <ECSchemaReference name=\"Unit_Attributes\" version=\"01.00\" prefix=\"units_attribs\" />"
     L"  <ECSchemaReference name=\"RefSchema\" version=\"01.00\" prefix=\"refSchema\" />"
+    L"  <ECCustomAttributes>"
+    L"      <UnitSpecifications xmlns=\"Unit_Attributes.01.00\">"
+    L"          <UnitSpecificationList>"
+    L"              <!-- Dimension L3 referenced in UnitSpecification in referenced schema, with Unit defined in domain schema -->"
+    L"              <UnitSpecification>"
+    L"                  <DimensionName>L3</DimensionName>"
+    L"                  <UnitName>DECIMETRE</UnitName>"
+    L"              </UnitSpecification>"
+    L"          </UnitSpecificationList>"
+    L"      </UnitSpecifications>"
+    L"  </ECCustomAttributes>"
     L"    <!-- Class for testing units defined on properties, for unit conversions -->"
     L"    <ECClass typeName=\"TestClass\" isDomainClass=\"True\">"
     L"        <ECProperty propertyName=\"FromProperty\" typeName=\"double\">"
@@ -86,6 +105,20 @@ static WCharCP s_schemaXml =
     L"          <ECCustomAttributes>"
     L"              <UnitSpecification xmlns=\"Unit_Attributes.01.00\">"
     L"                  <DimensionName>L</DimensionName>"
+    L"              </UnitSpecification>"
+    L"          </ECCustomAttributes>"
+    L"        </ECProperty>"
+    L"        <ECProperty propertyName=\"FromNonExistentKOQWithDimension\" typeName=\"double\">"
+    L"          <ECCustomAttributes>"
+    L"              <UnitSpecification xmlns=\"Unit_Attributes.01.00\">"
+    L"                  <KindOfQuantityName>NONEXISTENT_KOQ_WITH_DIMENSION</KindOfQuantityName>"
+    L"              </UnitSpecification>"
+    L"          </ECCustomAttributes>"
+    L"        </ECProperty>"
+    L"        <ECProperty propertyName=\"FromNonExistentKOQWithUnit\" typeName=\"double\">"
+    L"          <ECCustomAttributes>"
+    L"              <UnitSpecification xmlns=\"Unit_Attributes.01.00\">"
+    L"                  <KindOfQuantityName>NONEXISTENT_KOQ_WITH_UNIT</KindOfQuantityName>"
     L"              </UnitSpecification>"
     L"          </ECCustomAttributes>"
     L"        </ECProperty>"
@@ -168,7 +201,11 @@ void UnitsTest::TestUnitSpecification (WCharCP propName, double expectedValueOfO
     }
 
 /*---------------------------------------------------------------------------------**//**
-* The following ported directly from managed UnitTestCase.cs using regex replace.
+* The following tests were generated from managed tests using regex replace.
+* Generated from ecf\ecobjects\atp\units\UnitTestCase.cs using hg revision e1e9c347ce20
+* Given: Assert.AreEqual (12.0, StandardUnits.INCH.ConvertFrom (1.0, StandardUnits.FOOT), 1.0e-8);
+* Using VIM:
+*   :%s/Assert.AreEqual (\(.*\), StandardUnits\.\(.*\)\.ConvertFrom (\(.*\), StandardUnits\.\(.*\)), \(.*\));/TestUnitConversion (\3, L"\4", \1, L"\2", \5);/g
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (UnitsTest, Conversions)
@@ -1679,6 +1716,14 @@ TEST_F (UnitsTest, TestUnitSpecifications)
     TestUnitSpecification (L"FromParentKOQ", 100.0);
     TestUnitSpecification (L"FromDimension", 0.001);
     TestUnitSpecification (L"FromKOQDimension", 0.001);
+
+    TestUnitSpecification (L"FromNonExistentKOQWithDimension", 10.0);
+
+    // Non-standard Unit produces a Unit which is not convertible to any other Unit
+    Unit nonStandardUnit;
+    EXPECT_TRUE (Unit::GetUnitForECProperty (nonStandardUnit, *m_schema->GetClassP (L"UnitSpecClass")->GetPropertyP (L"FromNonExistentKOQWithUnit")));
+    EXPECT_EQ (0, wcscmp (nonStandardUnit.GetShortLabel(), L"NONEXISTENT_UNIT"));
+    EXPECT_EQ (0, wcscmp (nonStandardUnit.GetBaseUnitName(), L"NONEXISTENT_UNIT"));
     }
 
 END_BENTLEY_EC_NAMESPACE

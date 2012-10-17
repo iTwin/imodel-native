@@ -129,13 +129,14 @@ struct UnitLocater
 private:
     ECPropertyCR            m_ecprop;
     ECClassLocater          m_classLocater;
+    bool                    m_createIfNonStandard;
 
     bool    GetUnitFromAttribute (UnitR unit, IECInstanceCR attr, WCharCP unitName) const;
     bool    LocateUnitBySpecification (UnitR unit, WCharCP propName, WCharCP propValue) const;
     bool    LocateUnitByKOQ (UnitR unit, WCharCP koqName) const;
     bool    GetUnitFromSpecifications (UnitR unit, WCharCP propName, WCharCP propValue, IECInstanceCR specsAttr) const;
 public:
-    UnitLocater (ECPropertyCR ecprop) : m_ecprop(ecprop) { }
+    UnitLocater (ECPropertyCR ecprop, bool createIfNonStandard) : m_ecprop(ecprop), m_createIfNonStandard(createIfNonStandard) { }
 
     bool    LocateUnit (UnitR unit) const;
     bool    LocateUnitByName (UnitR unit, WCharCP unitName) const;
@@ -167,6 +168,9 @@ bool UnitLocater::LocateUnit (UnitR unit) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* In managed, if a Unit specified by name is not found, the system creates a Unit with
+* that name, using the name as the label and itself as the base unit. This inherently
+* forbids converting to/from this Unit to any other.
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool UnitLocater::LocateUnitByName (UnitR unit, WCharCP unitName) const
@@ -175,6 +179,11 @@ bool UnitLocater::LocateUnitByName (UnitR unit, WCharCP unitName) const
     ECClassCP unitClass = m_classLocater.LocateClass (UNITS_SCHEMA, unitName);
     if (NULL != unitClass && (unitAttr = unitClass->GetCustomAttribute (UNIT_ATTRIBUTES)).IsValid())
         return GetUnitFromAttribute (unit, *unitAttr, unitName);
+    else if (m_createIfNonStandard)
+        {
+        unit = Unit (unitName, UnitConverter (false), unitName);
+        return true;
+        }
     else
         return false;
     }
@@ -270,6 +279,12 @@ bool UnitLocater::GetUnitFromSpecifications (UnitR unit, WCharCP propName, WChar
                 // Find a UnitName defined on this UnitSpecification, and from that get the Unit
                 if (ECOBJECTS_STATUS_Success == spec->GetValue (v, UNIT_NAME) && !v.IsNull() && LocateUnitByName (unit, v.GetString()))
                     return true;
+                else if (0 == wcscmp (KOQ_NAME, propName) && ECOBJECTS_STATUS_Success == spec->GetValue (v, DIMENSION_NAME) && !v.IsNull())
+                    {
+                    // Managed supports creating a KindOfQuantity simply by referencing it in conjunction with a DimensionName in a UnitSpecification....
+                    if (LocateUnitBySpecification (unit, DIMENSION_NAME, v.GetString()))
+                        return true;
+                    }
                 }
             }
         }
@@ -310,7 +325,7 @@ bool UnitLocater::LocateUnitByKOQ (UnitR unit, WCharCP koqName) const
 bool Unit::GetUnitForECProperty (UnitR unit, ECPropertyCR ecprop)
     {
     IECInstancePtr unitSpecAttr = ecprop.GetCustomAttribute (UNIT_SPECIFICATION);
-    return unitSpecAttr.IsValid() ? UnitLocater (ecprop).LocateUnit (unit) : false;
+    return unitSpecAttr.IsValid() ? UnitLocater (ecprop, true).LocateUnit (unit) : false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -320,7 +335,7 @@ bool Unit::GetDisplayUnitForECProperty (UnitR unit, WStringR fmt, ECPropertyCR e
     {
     ECValue v;
     IECInstancePtr attr = ecprop.GetCustomAttribute (DISPLAY_UNIT_SPECIFICATION);
-    if (attr.IsValid() && ECOBJECTS_STATUS_Success == attr->GetValue (v, DISPLAY_UNIT_NAME) && !v.IsNull() && UnitLocater (ecprop).LocateUnitByName (unit, v.GetString()))
+    if (attr.IsValid() && ECOBJECTS_STATUS_Success == attr->GetValue (v, DISPLAY_UNIT_NAME) && !v.IsNull() && UnitLocater (ecprop, false).LocateUnitByName (unit, v.GetString()))
         {
         fmt.clear();
         if (ECOBJECTS_STATUS_Success == attr->GetValue (v, DISPLAY_FORMAT_STRING) && !v.IsNull())
