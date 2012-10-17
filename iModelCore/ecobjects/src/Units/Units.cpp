@@ -181,7 +181,7 @@ bool UnitLocater::LocateUnitByName (UnitR unit, WCharCP unitName) const
         return GetUnitFromAttribute (unit, *unitAttr, unitName);
     else if (m_createIfNonStandard)
         {
-        unit = Unit (unitName, UnitConverter (false), unitName);
+        unit = Unit (unitName, unitName, UnitConverter (false), unitName);
         return true;
         }
     else
@@ -228,7 +228,7 @@ bool UnitLocater::GetUnitFromAttribute (UnitR unit, IECInstanceCR attr, WCharCP 
     // 3. Extract base unit name
     WCharCP baseUnitName = (ECOBJECTS_STATUS_Success == attr.GetValue (v, BASE_UNIT) && !v.IsNull()) ? v.GetString() : unitName;
 
-    unit = Unit (labelV.GetString(), cvtr, baseUnitName);
+    unit = Unit (unitName, labelV.GetString(), cvtr, baseUnitName);
     return true;
     }
 
