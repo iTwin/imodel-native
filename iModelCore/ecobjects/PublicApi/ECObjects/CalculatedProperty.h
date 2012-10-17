@@ -14,7 +14,7 @@
 #include <ECObjects/ECExpressions.h>
 #include <Bentley/RefCounted.h>
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   08/12
@@ -45,6 +45,6 @@ public:
 
 typedef RefCountedPtr<CalculatedPropertySpecification> CalculatedPropertySpecificationPtr;
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 
 

@@ -14,7 +14,7 @@
     // regex is coming in C++0x
 #endif
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   08/12
@@ -337,7 +337,7 @@ ECObjectsStatus CalculatedPropertySpecification::UpdateDependentProperties (ECVa
         return m_parserRegex->Apply (instance, v.GetString()) ? ECOBJECTS_STATUS_Success : ECOBJECTS_STATUS_Error;
     }
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 
 #undef HAVE_REGEX
 

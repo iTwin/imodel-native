@@ -19,7 +19,7 @@
 
 
 /*__PUBLISH_SECTION_START__*/
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*__PUBLISH_SECTION_END__*/
 
@@ -87,9 +87,9 @@ public:
     virtual const_iterator end() const = 0;
     };
 
-typedef EC::IInstanceCollectionAdapter<IECInstanceP const>              IECInstanceCollectionAdapter;
+typedef ECObject::IInstanceCollectionAdapter<IECInstanceP const>              IECInstanceCollectionAdapter;
 typedef RefCountedPtr<IECInstanceCollectionAdapter>                     IECInstanceCollectionAdapterPtr;
-typedef EC::IInstanceCollectionIteratorAdapter<IECInstanceP const>      IECInstanceCollectionIteratorAdapter;
+typedef ECObject::IInstanceCollectionIteratorAdapter<IECInstanceP const>      IECInstanceCollectionIteratorAdapter;
 
 /*__PUBLISH_SECTION_END__*/
 
@@ -194,17 +194,17 @@ public:
     };
 
 template <typename CollectionType>
-struct IECInstanceCollectionAdapterImpl : public EC::InstanceCollectionAdapterImpl<CollectionType, IECInstanceP const> 
+struct IECInstanceCollectionAdapterImpl : public ECObject::InstanceCollectionAdapterImpl<CollectionType, IECInstanceP const> 
     {
     };
 
 template <typename T_Instance>
-struct ECInstancePVector : public EC::CollectionTransformIteratble< bvector<RefCountedPtr<T_Instance> >, EC::RefCountedPtrToValueTransform<T_Instance> >
+struct ECInstancePVector : public ECObject::CollectionTransformIteratble< bvector<RefCountedPtr<T_Instance> >, ECObject::RefCountedPtrToValueTransform<T_Instance> >
     {
     bvector<RefCountedPtr<T_Instance> > m_vector;
     public:
     ECInstancePVector (bvector<RefCountedPtr<T_Instance> >const& collection)
-        :m_vector(collection), CollectionTransformIteratble< bvector<RefCountedPtr<T_Instance> >, EC::RefCountedPtrToValueTransform<T_Instance> > (m_vector)
+        :m_vector(collection), CollectionTransformIteratble< bvector<RefCountedPtr<T_Instance> >, ECObject::RefCountedPtrToValueTransform<T_Instance> > (m_vector)
         {}
     };
 
@@ -236,6 +236,6 @@ struct ECInstanceIterable
         ECOBJECTS_EXPORT bool IsNull () const;
     };
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 
 /*__PUBLISH_SECTION_END__*/

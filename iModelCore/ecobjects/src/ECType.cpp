@@ -1,18 +1,18 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ecobjects/native/ECType.cpp $
+|     $Source: src/ECType.cpp $
 |    $RCSfile: file.tpl,v $
 |   $Revision: 1.10 $
 |       $Date: 2005/11/07 15:38:45 $
 |     $Author: EarlinLutz $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "ECObjectsPch.h"
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   02/2010
@@ -61,4 +61,4 @@ ECTypeDescriptor                ECTypeDescriptor::CreateStructTypeDescriptor ()
     return type; 
     }
      
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

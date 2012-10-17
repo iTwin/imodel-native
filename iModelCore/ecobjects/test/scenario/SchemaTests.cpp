@@ -15,7 +15,7 @@
 #include <ECObjects\ECValue.h>
 #include <ECObjects\ECSchema.h>
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 using namespace std;
 
@@ -112,4 +112,4 @@ TEST_F(SchemaTest, ShouldBeAbleToIterateOverECClassContainer)
         }
     ASSERT_EQ(4, count);
     }
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

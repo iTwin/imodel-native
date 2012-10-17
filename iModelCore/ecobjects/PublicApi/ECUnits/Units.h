@@ -17,7 +17,7 @@
 EC_TYPEDEFS (Unit);
 EC_TYPEDEFS (UnitConverter);
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 enum UnitConversionType
     {
@@ -71,7 +71,7 @@ public:
     ECOBJECTS_EXPORT static bool        GetDisplayUnitForECProperty (UnitR unit, WStringR displayFormat, ECPropertyCR ecprop);
     };
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 
 
 
