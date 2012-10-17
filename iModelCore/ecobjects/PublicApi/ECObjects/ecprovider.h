@@ -10,7 +10,7 @@
 
 #include "ECObjects.h"
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 //! @ingroup ECObjectsGroup
 //! @bsiclass
@@ -35,4 +35,4 @@ struct IECProvider
         virtual ~IECProvider() { }
     };
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

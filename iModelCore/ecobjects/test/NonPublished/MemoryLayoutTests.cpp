@@ -14,7 +14,7 @@
 #include <ECObjects\StandaloneECInstance.h>
 #include <ECObjects\ECValue.h>
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 using namespace std;
 
@@ -733,7 +733,7 @@ TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
     ASSERT_TRUE (NULL != ecClass);
 
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
-    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
     
     double    doubleVal;
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetDoubleValue (*instance, L"ADouble", (double)(1.0/3.0)));
@@ -842,7 +842,7 @@ TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
     ASSERT_TRUE (NULL != ecClass);
 
     StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
-    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
     //Testing array of structs
     ECValue structArrayValueInput(42);
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetValue (*instance, L"StructArray[1].AnInt", structArrayValueInput));
@@ -860,7 +860,7 @@ TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
     ASSERT_TRUE (NULL != structClass);
 
     StandaloneECEnablerPtr structEnabler          = structClass->GetDefaultStandaloneEnabler();
-    EC::StandaloneECInstancePtr newStructInstance = structEnabler->CreateInstance();
+    ECObject::StandaloneECInstancePtr newStructInstance = structEnabler->CreateInstance();
 
     ECValue manualIntEntry(64);
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetValue (*newStructInstance, L"AnInt", manualIntEntry));
@@ -891,7 +891,7 @@ TEST_F(MemoryLayoutTests, ChangeSizeOfBinaryArrayEntries)
     ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass);
     StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, NULL, true);
 
-    EC::StandaloneECInstancePtr wipInstance = enabler->CreateInstance();
+    ECObject::StandaloneECInstancePtr wipInstance = enabler->CreateInstance();
     // Previously there was a bug which prevented changing the size of a binary value once it had been set. This has since been fixed.
     const byte bugTestBinary1[8] = { 0x21, 0xa9, 0x84, 0x9d, 0xca, 0x1d, 0x8a, 0x78 };
     const byte bugTestBinary2[4] = { 0x12, 0x79, 0xca, 0xde };
@@ -899,15 +899,15 @@ TEST_F(MemoryLayoutTests, ChangeSizeOfBinaryArrayEntries)
     ECValue bugTestValue0(bugTestBinary2, 4);           
 
     ASSERT_TRUE (SUCCESS == wipInstance->InsertArrayElements (L"SomeBinaries[]", 0, 1));
-    ASSERT_TRUE (SUCCESS == EC::ECInstanceInteropHelper::SetValue (*wipInstance, L"SomeBinaries[0]", bugTestValue0));
+    ASSERT_TRUE (SUCCESS == ECObject::ECInstanceInteropHelper::SetValue (*wipInstance, L"SomeBinaries[0]", bugTestValue0));
        
     ECValue bugTestValue1(bugTestBinary1, 8);     
 
-    ASSERT_TRUE (SUCCESS == EC::ECInstanceInteropHelper::SetValue (*wipInstance, L"SomeBinaries[0]", bugTestValue1));
+    ASSERT_TRUE (SUCCESS == ECObject::ECInstanceInteropHelper::SetValue (*wipInstance, L"SomeBinaries[0]", bugTestValue1));
   
-    EC::ECValue bugTestValue2;
+    ECObject::ECValue bugTestValue2;
 
-    ASSERT_TRUE (SUCCESS == EC::ECInstanceInteropHelper::GetValue (*wipInstance, bugTestValue2, L"SomeBinaries[0]"));
+    ASSERT_TRUE (SUCCESS == ECObject::ECInstanceInteropHelper::GetValue (*wipInstance, bugTestValue2, L"SomeBinaries[0]"));
     size_t size1=-1;
     size_t size2=-2;
     const byte* data1 = bugTestValue1.GetBinary(size1);
@@ -946,7 +946,7 @@ TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper)
     ASSERT_TRUE (NULL != ecClass);
 
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
-    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     double    doubleVal;
     int       intVal;
@@ -993,7 +993,7 @@ TEST_F(MemoryLayoutTests, InstantiateStandaloneInstance)
     ASSERT_TRUE (NULL != ecClass);
 
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
-    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
     WString instanceId = instance->GetInstanceId();
     WString instanceString = instance->ToString(L"").c_str();
     EXPECT_TRUE (instanceString.length() > 0);
@@ -1017,7 +1017,7 @@ TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
     ASSERT_TRUE (NULL != ecClass);
 
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
-    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
     WString instanceId = instance->GetInstanceId();
     UInt32 size = instance->GetBytesUsed ();
     EXPECT_EQ (size, 0);
@@ -1040,7 +1040,7 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     ASSERT_TRUE (NULL != ecClass);
     
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
-    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     DPoint2d   inSize = {10.5, 22.3};
     DPoint3d   inPoint1 = {10.10, 11.11, 12.12};
@@ -1094,7 +1094,7 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void  checkValue (WCharCP accessString, ECValueCR value, EC::StandaloneECInstancePtr& instance)
+static void  checkValue (WCharCP accessString, ECValueCR value, ECObject::StandaloneECInstancePtr& instance)
     {
     UInt32  propertyIndex;
     bool isSet;
@@ -1114,7 +1114,7 @@ static void  checkValue (WCharCP accessString, ECValueCR value, EC::StandaloneEC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void  setValue (WCharCP accessString, ECValueCR value, EC::StandaloneECInstancePtr& instance)
+static void  setValue (WCharCP accessString, ECValueCR value, ECObject::StandaloneECInstancePtr& instance)
     {
     UInt32  propertyIndex;
     bool isSet;
@@ -1139,7 +1139,7 @@ TEST_F(MemoryLayoutTests, CheckPerPropertyFlags)
     ASSERT_TRUE (NULL != ecClass);
     
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
-    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     UInt8  numBitPerProperty =  instance->GetNumBitsInPerPropertyFlags ();
     EXPECT_TRUE (numBitPerProperty == 2);
@@ -1214,7 +1214,7 @@ TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
     ASSERT_TRUE (NULL != ecClass);
     
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
-    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     WCharCP accessString = L"Property34";
 
@@ -1277,7 +1277,7 @@ TEST_F(MemoryLayoutTests, ExpectErrorsWhenViolatingArrayConstraints)
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (NULL != ecClass);    
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
-    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     {
     DISABLE_ASSERTS
@@ -1335,7 +1335,7 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     EXPECT_TRUE (v.IsDouble());
     EXPECT_EQ (doubleValue, v.GetDouble());
     
-    ECValue nullInt (EC::PRIMITIVETYPE_Integer);
+    ECValue nullInt (ECObject::PRIMITIVETYPE_Integer);
     EXPECT_TRUE (nullInt.IsNull());
     EXPECT_TRUE (nullInt.IsInteger());
 
@@ -1426,7 +1426,7 @@ TEST_F (MemoryLayoutTests, TestSetGetNull)
     ASSERT_TRUE (NULL != ecClass);
         
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
-    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
     ECValue v;
     
     EXPECT_TRUE (SUCCESS == instance->GetValue (v, L"D"));
@@ -1483,7 +1483,7 @@ TEST_F (MemoryLayoutTests, ProfileSettingValues)
     ASSERT_TRUE (NULL != ecClass);
         
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
-    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
     
     double elapsedSeconds = 0.0;
     StopWatch timer (L"Time setting of values in a new StandaloneECInstance", true);
@@ -1548,7 +1548,7 @@ TEST_F (MemoryLayoutTests, ExpectCorrectPrimitiveTypeForNullValues)
     ASSERT_TRUE (NULL != ecClass);
 
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
-    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     ECValue v;
     EXPECT_TRUE(SUCCESS == instance->GetValue(v, L"AString"));
@@ -1586,4 +1586,4 @@ TEST_F (MemoryLayoutTests, ExpectCorrectPrimitiveTypeForNullValues)
 
 
     }
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

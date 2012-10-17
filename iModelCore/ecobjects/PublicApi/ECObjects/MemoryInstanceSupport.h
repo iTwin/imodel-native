@@ -18,7 +18,7 @@
 
 EC_TYPEDEFS(MemoryInstanceSupport);
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
     
 typedef UInt32 NullflagsBitmask;
 typedef UInt16 ClassIndex;
@@ -331,7 +331,7 @@ private:
 
 /*__PUBLISH_SECTION_START__*/  
 //=======================================================================================    
-//! Base class for EC::IECInstance implementations that get/set values from a block of memory, 
+//! Base class for ECObject::IECInstance implementations that get/set values from a block of memory, 
 //! e.g. StandaloneECInstance and ECXInstance
 //! @ingroup ECObjectsGroup
 //! @bsiclass
@@ -460,7 +460,7 @@ protected:
     //! externally.
     virtual ECObjectsStatus           _SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index) = 0;
     virtual ECObjectsStatus           _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const = 0;
-    virtual EC::PrimitiveType         _GetStructArrayPrimitiveType () const = 0;
+    virtual ECObject::PrimitiveType         _GetStructArrayPrimitiveType () const = 0;
 
     virtual ECObjectsStatus           _RemoveStructArrayElementsFromMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount) = 0;
 
@@ -493,7 +493,7 @@ public:
    
     ECOBJECTS_EXPORT void                   SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable);
 
-    ECOBJECTS_EXPORT EC::PrimitiveType      GetStructArrayPrimitiveType () const;
+    ECOBJECTS_EXPORT ECObject::PrimitiveType      GetStructArrayPrimitiveType () const;
 
     // Compress the memory storing the data to as small a size as possible
     ECOBJECTS_EXPORT ECObjectsStatus        Compress();
@@ -501,4 +501,4 @@ public:
 /*__PUBLISH_SECTION_START__*/  
     };   
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

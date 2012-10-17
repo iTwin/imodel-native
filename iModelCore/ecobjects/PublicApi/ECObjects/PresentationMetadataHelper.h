@@ -11,7 +11,7 @@
 #include "ECObjects.h"
 #include <ECObjects/StandaloneECInstance.h>
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 //=======================================================================================
 //! Helper object used to apply metadata to ECSchemas, ECClasses, and ECProperties used 
@@ -96,5 +96,5 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetHideNullProperties (ECClassR ecclass) const;
     };
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 

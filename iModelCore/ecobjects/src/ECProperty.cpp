@@ -12,7 +12,7 @@
 
 #include "ECObjectsPch.h"
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 // If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
 // Test programs generally want to get error status back and not assert, so they call ECSchema::AssertOnXmlError (false);
@@ -822,4 +822,4 @@ IECInstancePtr IECTypeAdapter::CreateDefaultFormatter (bool includeAllValues, bo
 IECInstancePtr IECTypeAdapter::CondenseFormatterForSerialization (IECInstanceCR formatter) const                     { return _CondenseFormatterForSerialization (formatter); }
 IECInstancePtr IECTypeAdapter::PopulateDefaultFormatterProperties (IECInstanceCR formatter) const                    { return _PopulateDefaultFormatterProperties (formatter); }
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

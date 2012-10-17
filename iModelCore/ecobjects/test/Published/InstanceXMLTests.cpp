@@ -8,7 +8,7 @@
 #include "ECObjectsTestPCH.h"
 #include "TestFixture.h"
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 struct InstanceDeserializationTest      : ECTestFixture {};
 struct PolymorphismDeserializationTest  : ECTestFixture {};
@@ -682,4 +682,4 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWhenSerializingInstance)
     };
 
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

@@ -9,7 +9,7 @@
 
 #include <ECObjects/ECObjects.h>
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 struct ECFileUtilities
     {
@@ -21,4 +21,4 @@ public:
     static WString GetDllPath();
     };
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

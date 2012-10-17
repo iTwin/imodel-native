@@ -11,7 +11,7 @@
 #include <Geom/GeomApi.h>
 #include <BeXml/BeXml.h>
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //! static methods to read Bentley.Geometry types from Common Geometry xml.
 struct BeXmlCGParser
 {
@@ -186,4 +186,4 @@ static ECOBJECTS_EXPORT void Write (BeXmlWriterR dest, IGeometryPtr data);
 
 };
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

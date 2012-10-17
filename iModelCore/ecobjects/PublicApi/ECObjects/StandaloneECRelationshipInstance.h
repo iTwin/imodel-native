@@ -14,7 +14,7 @@
 EC_TYPEDEFS(StandaloneECRelationshipEnabler);
 EC_TYPEDEFS(StandaloneECRelationshipInstance);
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 typedef RefCountedPtr<StandaloneECRelationshipEnabler>  StandaloneECRelationshipEnablerPtr;
 typedef RefCountedPtr<StandaloneECRelationshipInstance> StandaloneECRelationshipInstancePtr;
@@ -98,9 +98,9 @@ struct StandaloneECRelationshipEnabler : public IECRelationshipEnabler
    {
 //__PUBLISH_SECTION_END__
 private:
-    EC::ECRelationshipClassCR     m_relationshipClass;
+    ECObject::ECRelationshipClassCR     m_relationshipClass;
 
-    StandaloneECRelationshipEnabler (EC::ECRelationshipClassCR ecClass);
+    StandaloneECRelationshipEnabler (ECObject::ECRelationshipClassCR ecClass);
     ~StandaloneECRelationshipEnabler ();
 
 protected:
@@ -114,16 +114,16 @@ protected:
     virtual ECObjectsStatus             _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const override;
 
     virtual IECWipRelationshipInstancePtr _CreateWipRelationshipInstance () const;
-    virtual EC::ECRelationshipClassCR     _GetRelationshipClass() const;
+    virtual ECObject::ECRelationshipClassCR     _GetRelationshipClass() const;
 
 public: 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public: 
-    ECOBJECTS_EXPORT static StandaloneECRelationshipEnablerPtr CreateStandaloneRelationshipEnabler (EC::ECRelationshipClassCR ecClass);
+    ECOBJECTS_EXPORT static StandaloneECRelationshipEnablerPtr CreateStandaloneRelationshipEnabler (ECObject::ECRelationshipClassCR ecClass);
     ECOBJECTS_EXPORT StandaloneECRelationshipInstancePtr       CreateRelationshipInstance () const;
     ECOBJECTS_EXPORT ECEnablerCR                               GetECEnabler() const;
     };
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 

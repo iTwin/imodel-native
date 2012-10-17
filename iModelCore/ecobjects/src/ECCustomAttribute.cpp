@@ -16,7 +16,7 @@
 #include <comdef.h>
 #endif //defined (_WIN32) // WIP_NONPORT
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -687,4 +687,4 @@ ECCustomAttributeInstanceIterable::IteratorState::~IteratorState()
     {
     delete m_customAttributes;
     }
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

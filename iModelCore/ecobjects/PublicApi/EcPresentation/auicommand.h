@@ -10,7 +10,7 @@
 #include "ecimagekey.h"
 #include "ecpresentationtypedefs.h"
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                    Abeesh.Basheer                  04/2012
@@ -230,4 +230,4 @@ struct ECPresentationCommandProvider
     };
 
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

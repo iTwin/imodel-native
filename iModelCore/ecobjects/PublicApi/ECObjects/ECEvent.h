@@ -8,7 +8,7 @@
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  06/2012
@@ -31,4 +31,4 @@ struct ECEvent
         void    SetEventHub (void* eventHub) {m_eventHub = eventHub;}
     };
     
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
