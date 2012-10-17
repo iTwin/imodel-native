@@ -9,7 +9,7 @@
 /*__BENTLEY_INTERNAL_ONLY__*/
 #include <Bentley\BeIconUtilities.h>
 #include "ecimagekey.h"
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Abeesh.Basheer                  04/2012
@@ -82,4 +82,4 @@ struct ECPresentationImageProvider : public IECPresentationProvider
         ECOBJECTS_EXPORT IECNativeImagePtr GetImage (ECImageKeyCR imageKey, DPoint2dCR size);
     };
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

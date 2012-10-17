@@ -2,7 +2,7 @@
 |
 |     $Source: src/Logger.cpp $
 |
-|   $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -10,7 +10,7 @@
 
 USING_NAMESPACE_BENTLEY_LOGGING
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 #if defined (WIP_MT) 
 Bentley::NativeLogging::ILogger * ECObjectsLogger::s_log = NULL;  
@@ -36,4 +36,4 @@ Bentley::NativeLogging::ILogger * ECObjectsLogger::Log()
     }
 #endif
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

@@ -10,9 +10,9 @@
 #include "TestFixture.h"
 #include <ECUnits/Units.h>
 
-using namespace Bentley::EC;
+using namespace Bentley::ECObject;
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 static WCharCP s_refSchemaXml =
     L"<ECSchema schemaName=\"RefSchema\" nameSpacePrefix=\"ref\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
@@ -1681,4 +1681,4 @@ TEST_F (UnitsTest, TestUnitSpecifications)
     TestUnitSpecification (L"FromKOQDimension", 0.001);
     }
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

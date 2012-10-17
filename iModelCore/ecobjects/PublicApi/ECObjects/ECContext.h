@@ -12,7 +12,7 @@
 #include <Geom/GeomApi.h>
 #include <ECObjects/StandaloneECInstance.h>
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 typedef RefCountedPtr<ECSchemaReadContext>      ECSchemaReadContextPtr;
 //=======================================================================================
@@ -91,7 +91,7 @@ public:
 
     ECSchemaPtr         LocateSchema (SchemaKeyR key, bset<SchemaMatchType> const& matches);
 
-    ECOBJECTS_EXPORT void AddExternalSchemaLocaters (bvector<EC::IECSchemaLocaterP> const& schemaLocators);
+    ECOBJECTS_EXPORT void AddExternalSchemaLocaters (bvector<ECObject::IECSchemaLocaterP> const& schemaLocators);
 /*__PUBLISH_SECTION_START__*/
 
     //! Creates a context for deserializing ECSchemas
@@ -155,4 +155,4 @@ public:
     ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext (ECSchemaReadContextR, ECSchemaCR fallBackSchema, ECSchemaPtr* foundSchema);
 };
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

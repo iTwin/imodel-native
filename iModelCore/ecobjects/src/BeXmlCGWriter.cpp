@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 static double s_nearZero = 9.0e-16;
 static size_t s_maxIndexPerLine = 5;
 static wchar_t const *sNamespaceAttribute = L"xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"";
@@ -808,4 +808,4 @@ void BeXmlCGWriter::Write (BeXmlWriterR dest, IGeometryPtr geometry)
         return;
         }
     }
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

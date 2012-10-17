@@ -24,20 +24,20 @@
 #define ECOBJECTS_EXPORT IMPORT_ATTRIBUTE
 #endif
 
-#define BEGIN_BENTLEY_EC_NAMESPACE  BEGIN_BENTLEY_NAMESPACE namespace EC {
+#define BEGIN_BENTLEY_ECOBJECT_NAMESPACE  BEGIN_BENTLEY_NAMESPACE namespace ECObject {
 
-#define END_BENTLEY_EC_NAMESPACE    }}
+#define END_BENTLEY_ECOBJECT_NAMESPACE    }}
 
-#define USING_NAMESPACE_EC  using namespace Bentley::EC;
+#define USING_NAMESPACE_EC  using namespace Bentley::ECObject;
 
 #define EC_TYPEDEFS(_name_)  \
-        BEGIN_BENTLEY_EC_NAMESPACE      \
+        BEGIN_BENTLEY_ECOBJECT_NAMESPACE      \
             struct _name_;      \
             typedef _name_ *         _name_##P;  \
             typedef _name_ &         _name_##R;  \
             typedef _name_ const*    _name_##CP; \
             typedef _name_ const&    _name_##CR; \
-        END_BENTLEY_EC_NAMESPACE
+        END_BENTLEY_ECOBJECT_NAMESPACE
 
 EC_TYPEDEFS(ECValue);
 EC_TYPEDEFS(ECValueAccessor);
@@ -92,7 +92,7 @@ EC_TYPEDEFS (ParserRegex);
 
 typedef struct IStream* IStreamP;
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*=================================================================================**//**
 * @bsiclass
@@ -325,6 +325,6 @@ enum PrimitiveType ENUM_UNDERLYING_TYPE(unsigned short)
     PRIMITIVETYPE_IGeometry                 = 0xa01,
     };
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 
 USING_NAMESPACE_BENTLEY

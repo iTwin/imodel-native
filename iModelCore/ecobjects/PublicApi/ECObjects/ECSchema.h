@@ -27,7 +27,7 @@
 #define DEFAULT_VERSION_MAJOR   1
 #define DEFAULT_VERSION_MINOR   0
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*__PUBLISH_SECTION_END__*/
 /*=================================================================================**//**
@@ -362,9 +362,9 @@ protected:
     virtual bool                _CanConvertFromString() const = 0;
     virtual bool                _IsStruct() const = 0;
     virtual bool                _IsTreatedAsString() const = 0;
-    virtual EC::IECInstancePtr  _CondenseFormatterForSerialization (EC::IECInstanceCR formatter) const = 0;
-    virtual EC::IECInstancePtr  _PopulateDefaultFormatterProperties (EC::IECInstanceCR formatter) const = 0;
-    virtual EC::IECInstancePtr  _CreateDefaultFormatter (bool includeAllValues, bool forDwg) const = 0;
+    virtual ECObject::IECInstancePtr  _CondenseFormatterForSerialization (ECObject::IECInstanceCR formatter) const = 0;
+    virtual ECObject::IECInstancePtr  _PopulateDefaultFormatterProperties (ECObject::IECInstanceCR formatter) const = 0;
+    virtual ECObject::IECInstancePtr  _CreateDefaultFormatter (bool includeAllValues, bool forDwg) const = 0;
 /*__PUBLISH_SECTION_START__*/
 public:
     //! @return true if it is possible to convert the underlying type to a string
@@ -377,7 +377,7 @@ public:
     //! @param[in] includeAllValues If false, property values will be left NULL to save space; otherwise they will be initialized with default values
     //! @param[in] forDwg           If true, creates a formatting instance compatible with DWG
     //! @return An IECInstance which can be passed to ConvertToString(), or NULL if no special formatting options are supported.
-    ECOBJECTS_EXPORT EC::IECInstancePtr   CreateDefaultFormatter (bool includeAllValues, bool forDwg = false) const;
+    ECOBJECTS_EXPORT ECObject::IECInstancePtr   CreateDefaultFormatter (bool includeAllValues, bool forDwg = false) const;
 
     //! @return true if this type adapter provides a finite set of permissible values for the property it represents
     ECOBJECTS_EXPORT bool                 HasStandardValues() const;
@@ -397,12 +397,12 @@ public:
     //! Given an instance representing formatting options, returns a copy of the instance optimized for serialization
     //! @param[in] formatter    The formatter instance to condense
     //! @return an IECInstance suitable for serialization, or NULL if the input formatter contained only default values in which case serialization is not necessary
-    ECOBJECTS_EXPORT EC::IECInstancePtr   CondenseFormatterForSerialization (EC::IECInstanceCR formatter) const;
+    ECOBJECTS_EXPORT ECObject::IECInstancePtr   CondenseFormatterForSerialization (ECObject::IECInstanceCR formatter) const;
 
     //! Given an instance containing custom formatting options, replace any null properties with their default values
     //! @param[in] formatter    The formatter instance to populate
     //! @return an IECInstance in which all null properties have been replaced by their default values
-    ECOBJECTS_EXPORT EC::IECInstancePtr   PopulateDefaultFormatterProperties (EC::IECInstanceCR formatter) const;
+    ECOBJECTS_EXPORT ECObject::IECInstancePtr   PopulateDefaultFormatterProperties (ECObject::IECInstanceCR formatter) const;
     };
 
 //=======================================================================================
@@ -893,7 +893,7 @@ public:
     //! is removed from the class.
     //! @param[in]  name     The name of the property to lookup.
     //! @param[in]  includeBaseClasses  Whether to look on base classes of the current class for the named property
-    //! @return   A pointer to an EC::ECProperty if the named property exists within the current class; otherwise, NULL
+    //! @return   A pointer to an ECObject::ECProperty if the named property exists within the current class; otherwise, NULL
     ECOBJECTS_EXPORT ECPropertyP     GetPropertyP (WCharCP name, bool includeBaseClasses=true) const;
 
     //! Get a property by name within the context of this class and its base classes.
@@ -901,7 +901,7 @@ public:
     //! is removed from the class.
     //! @param[in]  name     The name of the property to lookup.
     //! @param[in]  includeBaseClasses  Whether to look on base classes of the current class for the named property
-    //! @return   A pointer to an EC::ECProperty if the named property exists within the current class; otherwise, NULL
+    //! @return   A pointer to an ECObject::ECProperty if the named property exists within the current class; otherwise, NULL
     ECOBJECTS_EXPORT ECPropertyP     GetPropertyP (WStringCR name, bool includeBaseClasses=true) const;
 
 
@@ -1372,8 +1372,8 @@ struct SchemaMapExact:bmap<SchemaKey, ECSchemaPtr, SchemaKeyLessThan <SCHEMAMATC
 
     //! Get a class by name within the context of this list.
     //! @param[in]  classNamePair     The name of the class and schema to lookup.  This must be an unqualified (short) class name.
-    //! @return   A pointer to an EC::ECClass if the named class exists in within the current list; otherwise, NULL
-    ECOBJECTS_EXPORT ECClassP  FindClassP (EC::SchemaNameClassNamePair const& classNamePair) const;
+    //! @return   A pointer to an ECObject::ECClass if the named class exists in within the current list; otherwise, NULL
+    ECOBJECTS_EXPORT ECClassP  FindClassP (ECObject::SchemaNameClassNamePair const& classNamePair) const;
     };
 
 typedef SchemaMapExact                  ECSchemaReferenceList;
@@ -1602,7 +1602,7 @@ private:
     SchemaWriteStatus                   WriteClass (BeXmlNodeR parentNode, ECClassCR ecClass, ECSchemaWriteContext&) const;
     SchemaWriteStatus                   WriteCustomAttributeDependencies (BeXmlNodeR parentNode, IECCustomAttributeContainerCR container, ECSchemaWriteContext&) const;
     SchemaWriteStatus                   WritePropertyDependencies (BeXmlNodeR parentNode, ECClassCR ecClass, ECSchemaWriteContext&) const;
-    void                                CollectAllSchemasInGraph (bvector<EC::ECSchemaCP>& allSchemas,  bool includeRootSchema) const;
+    void                                CollectAllSchemasInGraph (bvector<ECObject::ECSchemaCP>& allSchemas,  bool includeRootSchema) const;
 protected:
     virtual ECSchemaCP                  _GetContainerSchema() const override;
 
@@ -1685,7 +1685,7 @@ public:
     //! Get a schema by namespace prefix within the context of this schema and its referenced schemas.
     //! @param[in]  namespacePrefix     The prefix of the schema to lookup in the context of this schema and it's references.
     //!                                 Passing an empty namespacePrefix will return a pointer to the current schema.
-    //! @return   A non-refcounted pointer to an EC::ECSchema if it can be successfully resolved from the specified namespacePrefix; otherwise, NULL
+    //! @return   A non-refcounted pointer to an ECObject::ECSchema if it can be successfully resolved from the specified namespacePrefix; otherwise, NULL
     ECOBJECTS_EXPORT ECSchemaP          GetSchemaByNamespacePrefixP(WStringCR namespacePrefix) const;
 
     //! Resolve a namespace prefix for the specified schema within the context of this schema and its references.
@@ -1696,7 +1696,7 @@ public:
 
     //! Get a class by name within the context of this schema.
     //! @param[in]  name     The name of the class to lookup.  This must be an unqualified (short) class name.
-    //! @return   A pointer to an EC::ECClass if the named class exists in within the current schema; otherwise, NULL
+    //! @return   A pointer to an ECObject::ECClass if the named class exists in within the current schema; otherwise, NULL
     ECOBJECTS_EXPORT ECClassP           GetClassP (WCharCP name) const;
 
     //! Gets the other schemas that are used by classes within this schema.
@@ -1884,8 +1884,8 @@ public:
     //! Find all ECSchemas in the schema graph, avoiding duplicates and any cycles.
     //! @param[out]   allSchemas            Vector of schemas including rootSchema.
     //! @param[in]    includeRootSchema     If true then root schema is added to the vector of allSchemas. Defaults to true.
-    ECOBJECTS_EXPORT void FindAllSchemasInGraph (bvector<EC::ECSchemaCP>& allSchemas, bool includeRootSchema=true) const;
-    ECOBJECTS_EXPORT void FindAllSchemasInGraph (bvector<EC::ECSchemaP>& allSchemas, bool includeRootSchema=true);
+    ECOBJECTS_EXPORT void FindAllSchemasInGraph (bvector<ECObject::ECSchemaCP>& allSchemas, bool includeRootSchema=true) const;
+    ECOBJECTS_EXPORT void FindAllSchemasInGraph (bvector<ECObject::ECSchemaP>& allSchemas, bool includeRootSchema=true);
 
     //! Returns this if the name matches, otherwise searches referenced ECSchemas for one whose name matches schemaName
     ECOBJECTS_EXPORT ECSchemaCP FindSchema (SchemaKeyCR schema, SchemaMatchType matchType) const;
@@ -1895,10 +1895,10 @@ public:
 
 }; // ECSchema
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 
 //__PUBLISH_SECTION_END__
-BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::EC::ECCustomAttributeInstanceIterable)
-BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::EC::ECPropertyIterable)
-BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::EC::ECClassContainer)
+BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::ECObject::ECCustomAttributeInstanceIterable)
+BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::ECObject::ECPropertyIterable)
+BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::ECObject::ECClassContainer)
 //__PUBLISH_SECTION_START__

@@ -9,7 +9,7 @@
 
 #include "TestFixture.h"
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 struct CustomAttributeTest : ECTestFixture
     {
@@ -424,4 +424,4 @@ TEST_F (CustomAttributeTest, PresentationMetadataHelper)
     EXPECT_TRUE (str.Equals (v.GetString()));
     }
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

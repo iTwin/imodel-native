@@ -12,7 +12,7 @@
 #include "ECObjectsPch.h"
 #include <ctype.h>
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
@@ -301,4 +301,4 @@ void ECXml::FormatXml (BeXmlDomR pXmlDoc)
     }
 
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
