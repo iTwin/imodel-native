@@ -189,7 +189,7 @@ void UnitsTest::TestUnitSpecification (WCharCP propName, double expectedValueOfO
     {
     ECClassCP ecClass = m_schema->GetClassP (L"UnitSpecClass");
 
-    Unit meter (L"m", UnitConverter (false), L"METRE");
+    Unit meter (L"METRE", L"m", UnitConverter (false), L"METRE");
     Unit propUnit;
     ECPropertyCP ecprop = ecClass->GetPropertyP (propName);
     EXPECT_TRUE (Unit::GetUnitForECProperty (propUnit, *ecprop));

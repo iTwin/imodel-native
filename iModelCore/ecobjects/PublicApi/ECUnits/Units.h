@@ -55,13 +55,15 @@ private:
     WString                 m_baseUnitName;
     WString                 m_shortLabel;
     UnitConverter           m_converter;
-
+    WString                 m_unitName;     // This is required only because DgnPlatform needs it in order to look up unit label customizations...
 public:
     Unit() { }
-    Unit (WCharCP shortLabel, UnitConverterCR converter, WCharCP baseUnitName) : m_baseUnitName (baseUnitName), m_shortLabel (shortLabel), m_converter (converter) { }
+    Unit (WCharCP unitName, WCharCP shortLabel, UnitConverterCR converter, WCharCP baseUnitName) : m_baseUnitName (baseUnitName), m_shortLabel (shortLabel), m_converter (converter), m_unitName (unitName) { }
 
+    WCharCP                 GetName() const                     { return m_unitName.c_str(); }
     WCharCP                 GetBaseUnitName() const             { return m_baseUnitName.c_str(); }
     WCharCP                 GetShortLabel() const               { return m_shortLabel.c_str(); }
+    void                    SetShortLabel (WCharCP label)       { m_shortLabel = label ? label : L""; }
     UnitConverterCR         GetConverter() const                { return m_converter; }
     bool                    IsCompatible (UnitCR other) const   { return m_baseUnitName.Equals (other.m_baseUnitName); }
 
