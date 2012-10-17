@@ -8,7 +8,7 @@
 #include "ECObjectsPch.h"
 #include <typeinfo>
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
@@ -241,7 +241,7 @@ IECWipRelationshipInstancePtr  IECRelationshipEnabler::CreateWipRelationshipInst
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-EC::ECRelationshipClassCR       IECRelationshipEnabler::GetRelationshipClass() const
+ECObject::ECRelationshipClassCR       IECRelationshipEnabler::GetRelationshipClass() const
     {
     return _GetRelationshipClass ();
     }
@@ -323,5 +323,5 @@ EC::ECRelationshipClassCR       IECRelationshipEnabler::GetRelationshipClass() c
 
 
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
     

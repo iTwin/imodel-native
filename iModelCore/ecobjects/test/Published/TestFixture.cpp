@@ -18,7 +18,7 @@
 
 USING_NAMESPACE_BENTLEY_LOGGING
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
   
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/03
@@ -231,5 +231,5 @@ WString ECTestFixture::GetLogConfigurationFilename()
     return L"";
     }       
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 

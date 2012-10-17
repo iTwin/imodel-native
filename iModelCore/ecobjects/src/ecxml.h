@@ -115,7 +115,7 @@ static const WString ECXML_DIRECTION_BACKWARD          = L"backward";
     else if (ECOBJECTS_STATUS_ParseError == _setInPointer->Set##_setInPropertyName (value.c_str())) \
         status = SCHEMA_READ_STATUS_FailedToParseXml;
             
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 struct ECXml /*abstract*/
 {
@@ -132,5 +132,5 @@ public:
     static void FormatXml(BeXmlDomR xmlDom);
 };
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 

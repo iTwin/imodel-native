@@ -9,7 +9,7 @@
 
 /*__BENTLEY_INTERNAL_ONLY__*/
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*=================================================================================**//**
 *
@@ -167,7 +167,7 @@ protected:
     virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
                                         bool allowUnknown, bool allowOverrides) override
         {
-        evalResult = EC::ECValue(m_value.c_str(), false);
+        evalResult = ECObject::ECValue(m_value.c_str(), false);
 
         return ExprStatus_Success;
         }
@@ -236,7 +236,7 @@ protected:
     virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
                                         bool allowUnknown, bool allowOverrides) override
         {
-        evalResult = EC::ECValue(m_value);
+        evalResult = ECObject::ECValue(m_value);
 
         return ExprStatus_Success;
         }
@@ -271,7 +271,7 @@ protected:
     virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
                                         bool allowUnknown, bool allowOverrides) override
         {
-        evalResult = EC::ECValue(m_value);
+        evalResult = ECObject::ECValue(m_value);
 
         return ExprStatus_Success;
         }
@@ -307,7 +307,7 @@ protected:
     virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
                                         bool allowUnknown, bool allowOverrides) override
         {
-        evalResult = EC::ECValue(m_value);
+        evalResult = ECObject::ECValue(m_value);
 
         return ExprStatus_Success;
         }
@@ -336,7 +336,7 @@ protected:
     virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
                                         bool allowUnknown, bool allowOverrides) override
         {
-        evalResult = EC::ECValue(m_value);
+        evalResult = ECObject::ECValue(m_value);
 
         return ExprStatus_Success;
         }
@@ -980,5 +980,5 @@ public:
                                 : m_condition(&condition), m_true(&trueNode), m_false(&falseNode) {}
 };  //  End of struct IIfNode
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 

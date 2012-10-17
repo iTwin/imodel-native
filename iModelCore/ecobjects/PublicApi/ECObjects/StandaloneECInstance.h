@@ -13,7 +13,7 @@
 
 EC_TYPEDEFS(StandaloneECEnabler);
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 #define STANDALONEENABLER_EnablerID         0xEC5E
 typedef RefCountedPtr<StandaloneECEnabler>  StandaloneECEnablerPtr;
@@ -60,7 +60,7 @@ struct PerPropertyFlagsHolder
     };
 
 /*=================================================================================**//**
-* EC::MemoryECInstanceBase is base class for ECInstances that holds its values in memory that it allocates. 
+* ECObject::MemoryECInstanceBase is base class for ECInstances that holds its values in memory that it allocates. 
 * The memory is laid out according to the ClassLayout. The ClassLayout must be provided by classes that 
 * subclass this class.
 * @see ClassLayoutHolder, IECInstance
@@ -107,7 +107,7 @@ protected:
     ECOBJECTS_EXPORT virtual ECObjectsStatus  _SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index) override;    
     ECOBJECTS_EXPORT virtual ECObjectsStatus  _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const override;  
     ECOBJECTS_EXPORT virtual ECObjectsStatus  _RemoveStructArrayElementsFromMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount) override;
-    ECOBJECTS_EXPORT virtual EC::PrimitiveType _GetStructArrayPrimitiveType () const {return PRIMITIVETYPE_Integer;}
+    ECOBJECTS_EXPORT virtual ECObject::PrimitiveType _GetStructArrayPrimitiveType () const {return PRIMITIVETYPE_Integer;}
 
     virtual ClassLayoutCR       _GetClassLayout () const = 0;
     virtual IECInstancePtr      _GetAsIECInstance () const = 0;
@@ -141,7 +141,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
 
     ECOBJECTS_EXPORT IECInstancePtr           GetStructArrayInstanceByIndex (UInt32 index, StructValueIdentifier& structValueId) const;
     ECOBJECTS_EXPORT ECObjectsStatus          SetStructArrayInstance (MemoryECInstanceBaseCR instance, StructValueIdentifier structValueId);
-    ECOBJECTS_EXPORT ECObjectsStatus          MergePropertiesFromInstance (EC::IECInstanceCR fromNativeInstance);
+    ECOBJECTS_EXPORT ECObjectsStatus          MergePropertiesFromInstance (ECObject::IECInstanceCR fromNativeInstance);
 
     ECOBJECTS_EXPORT void                     SetUsingSharedMemory ();
 
@@ -149,7 +149,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT UInt8                    GetNumBitsPerProperty () const;
     ECOBJECTS_EXPORT UInt32                   GetPerPropertyFlagsDataLength () const;
     ECOBJECTS_EXPORT ECObjectsStatus          AddNullArrayElements (WCharCP propertyAccessString, UInt32 insertCount);
-    ECOBJECTS_EXPORT ECObjectsStatus          CopyInstanceProperties (EC::IECInstanceCR fromNativeInstance);
+    ECOBJECTS_EXPORT ECObjectsStatus          CopyInstanceProperties (ECObject::IECInstanceCR fromNativeInstance);
     ECOBJECTS_EXPORT UInt16                   GetUsageBitmask () const;
     ECOBJECTS_EXPORT void                     SetUsageBitmask (UInt16 mask);
     ECOBJECTS_EXPORT void                     SetPartiallyLoaded (bool set);
@@ -160,7 +160,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
 
 /*=================================================================================**//**
 //! @ingroup ECObjectsGroup
-* EC::StandaloneECInstance is the native equivalent of a .NET "Heavyweight" ECInstance.
+* ECObject::StandaloneECInstance is the native equivalent of a .NET "Heavyweight" ECInstance.
 * It holds the values in memory that it allocates... laid out according to the ClassLayout
 * @see ClassLayoutHolder, IECInstance
 * @bsiclass 
@@ -271,5 +271,5 @@ public:
     ECOBJECTS_EXPORT StandaloneECInstancePtr       CreateInstance (UInt32 minimumInitialSize = 0);
     ECOBJECTS_EXPORT StandaloneECInstanceP         CreateSharedInstance (byte * data, UInt32 size);
     };
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 

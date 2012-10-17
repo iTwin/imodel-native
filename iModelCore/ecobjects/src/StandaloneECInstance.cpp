@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //  MemoryECInstanceBase
@@ -819,7 +819,7 @@ bool           MemoryECInstanceBase::IsHiddenInstance ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus MemoryECInstanceBase::MergePropertiesFromInstance
 (
-EC::IECInstanceCR     fromNativeInstance
+ECObject::IECInstanceCR     fromNativeInstance
 )
     {
     IECInstancePtr  thisAsIECInstance = GetAsIECInstance ();
@@ -875,7 +875,7 @@ ECObjectsStatus MemoryECInstanceBase::SetValueInternal (UInt32 propertyIndex, EC
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus MemoryECInstanceBase::CopyInstanceProperties
 (
-EC::IECInstanceCR     fromNativeInstance
+ECObject::IECInstanceCR     fromNativeInstance
 )
     {
     IECInstancePtr  thisAsIECInstance = GetAsIECInstance ();
@@ -944,7 +944,7 @@ EC::IECInstanceCR     fromNativeInstance
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t                StandaloneECInstance::_GetOffsetToIECInstance () const
     {
-    EC::IECInstanceCP iecInstanceP   = dynamic_cast<EC::IECInstanceCP>(this);
+    ECObject::IECInstanceCP iecInstanceP   = dynamic_cast<ECObject::IECInstanceCP>(this);
     byte const* baseAddressOfIECInstance = (byte const *)iecInstanceP;
     byte const* baseAddressOfConcrete = (byte const *)this;
 
@@ -1193,7 +1193,7 @@ StandaloneECEnablerPtr    StandaloneECEnabler::CreateEnabler (ECClassCR ecClass,
 +---------------+---------------+---------------+---------------+---------------+------*/
 WCharCP           StandaloneECEnabler::_GetName() const
     {
-    return L"Bentley::EC::StandaloneECEnabler";
+    return L"Bentley::ECObject::StandaloneECEnabler";
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -1252,4 +1252,4 @@ StandaloneECInstancePtr   StandaloneECEnabler::CreateInstance (UInt32 minimumBuf
     return new StandaloneECInstance (*this, minimumBufferSize);
     }    
     
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

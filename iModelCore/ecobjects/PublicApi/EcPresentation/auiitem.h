@@ -8,7 +8,7 @@
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
 #include <ECObjects\ECObjectsAPI.h>
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 A Uiitem is an instance of a control facing a user. 
@@ -180,4 +180,4 @@ struct  ECNodeCollectionDataContext : public IAUIDataContext
         virtual void*                   GetCustomData() const {return m_customData;}
     };
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

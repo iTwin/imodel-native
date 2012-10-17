@@ -12,7 +12,7 @@
 #include <ECObjects\ECInstance.h>
 #include <Bentley\RefCounted.h>
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
   
 struct SupplementalSchemaMetaData;  
 typedef RefCountedPtr<SupplementalSchemaMetaData> SupplementalSchemaMetaDataPtr;
@@ -392,6 +392,6 @@ public:
     ECOBJECTS_EXPORT bool HasSameSupplementalSchemasForPurpose(ECSchemaCR secondSchema, WStringCR purpose) const;
 
     };
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 
 //__PUBLISH_SECTION_END__
