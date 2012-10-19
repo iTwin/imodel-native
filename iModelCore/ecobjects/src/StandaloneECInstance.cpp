@@ -26,6 +26,7 @@ MemoryECInstanceBase::MemoryECInstanceBase (byte * data, UInt32 size, ClassLayou
     m_structInstances = NULL;
     m_usingSharedMemory = false;
     m_parentInstance = parentInstance;
+    m_usageBitmask = 0;
 
     InitializePerPropertyFlags (classLayout, DEFAULT_NUMBITSPERPROPERTY);
     }
@@ -40,7 +41,7 @@ MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 mi
     m_structInstances = NULL;
     m_data = NULL;
     m_usingSharedMemory = false;
-
+    m_usageBitmask = 0;
     m_parentInstance = parentInstance;
 
     UInt32 size = std::max (minimumBufferSize, classLayout.GetSizeOfFixedSection());
@@ -59,7 +60,7 @@ void    MemoryECInstanceBase::SetUsingSharedMemory ()
     {
     m_usingSharedMemory = true;
     }
-	
+        
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -206,6 +207,31 @@ ECObjectsStatus         MemoryECInstanceBase::IsAnyPerPropertyBitSet (bool& isSe
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Set IsLoaded bit for specified property. If the property is a member of a struct
+* then as set IsLoaded bit on the parent struct property.
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus          MemoryECInstanceBase::SetIsLoadedBit (UInt32 propertyIndex)
+    {
+    static UInt8 bitIndex = (UInt8) PROPERTYFLAGINDEX_IsLoaded;
+
+    ECObjectsStatus status = SetPerPropertyBit (bitIndex, propertyIndex, true);
+
+    PropertyLayoutCP propertyLayout = NULL;
+
+    if (ECOBJECTS_STATUS_Success == GetClassLayout().GetPropertyLayoutByIndex (propertyLayout, propertyIndex))
+        {
+        UInt32 parentIndex = propertyLayout->GetParentStructIndex();
+        if (0 != parentIndex)
+            {
+            status = SetIsLoadedBit (parentIndex);
+            }
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus          MemoryECInstanceBase::SetPerPropertyBit (UInt8 bitIndex, UInt32 propertyIndex, bool setBit)
@@ -280,11 +306,41 @@ ECObjectsStatus           MemoryECInstanceBase::_ModifyData (UInt32 offset, void
     }
     
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus MemoryECInstanceBase::_MoveData (UInt32 toOffset, UInt32 fromOffset, UInt32 dataLength)
+    {
+    PRECONDITION (NULL != m_data, ECOBJECTS_STATUS_PreconditionViolated);
+    PRECONDITION (toOffset + dataLength <= m_bytesAllocated, ECOBJECTS_STATUS_MemoryBoundsOverrun);
+
+    byte* data = GetAddressOfPropertyData();
+    memmove (data+toOffset, data+fromOffset, dataLength);
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void                MemoryECInstanceBase::_ShrinkAllocation (UInt32 newAllocation)
+ECObjectsStatus                MemoryECInstanceBase::_ShrinkAllocation ()
     {
-    DEBUG_EXPECT (false && "WIP_FUSION: needs implementation");
+    UInt32 newAllocation = GetBytesUsed();
+    if (0 == newAllocation)
+        _FreeAllocation();
+    else if (newAllocation != _GetBytesAllocated())
+        {
+        byte* reallocedData = (byte*)realloc(m_data, newAllocation);
+        if (NULL == reallocedData)
+            {
+            BeAssert (false);
+            return ECOBJECTS_STATUS_UnableToAllocateMemory;
+            }
+
+        m_data = reallocedData;
+        m_bytesAllocated = newAllocation;
+        }
+
+    return ECOBJECTS_STATUS_Success;
     } 
 
 /*---------------------------------------------------------------------------------**//**
@@ -321,7 +377,6 @@ ECObjectsStatus           MemoryECInstanceBase::_GrowAllocation (UInt32 bytesNee
     {
     DEBUG_EXPECT (m_bytesAllocated > 0);
     DEBUG_EXPECT (NULL != m_data);
-    // WIP_FUSION: add performance counter
         
     UInt32 newSize = 2 * (m_bytesAllocated + bytesNeeded); // Assume the growing trend will continue.
 
@@ -478,7 +533,7 @@ IECInstancePtr  MemoryECInstanceBase::GetStructArrayInstance (StructValueIdentif
 ECObjectsStatus           MemoryECInstanceBase::_GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const
     {
     ECValue structValueIdValue;
-    ECObjectsStatus status = GetPrimitiveValueFromMemory (structValueIdValue, propertyLayout, true, index);      
+    ECObjectsStatus status = GetPrimitiveValueFromMemory (structValueIdValue, GetClassLayout(), propertyLayout, true, index);      
     if (status != ECOBJECTS_STATUS_Success)
         return status;
         
@@ -594,7 +649,7 @@ ECObjectsStatus MemoryECInstanceBase::_RemoveStructArrayElementsFromMemory (Clas
 
     for (UInt32 i = 0; i<removeCount; i++)
         {
-        status = GetPrimitiveValueFromMemory (v, propertyLayout, true, removeIndex+i);
+        status = GetPrimitiveValueFromMemory (v, GetClassLayout(), propertyLayout, true, removeIndex+i);
         if (status != ECOBJECTS_STATUS_Success)
             return status;
 
@@ -640,13 +695,42 @@ ECObjectsStatus      MemoryECInstanceBase::AddNullArrayElements (WCharCP propert
     {
     return AddNullArrayElementsAt (GetClassLayout(), propertyAccessString, insertCount);
     }
-	
+        
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Paul.Connelly                   10/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 MemoryECInstanceBase const* MemoryECInstanceBase::GetParentInstance () const
     {
     return m_parentInstance;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+static void     mergeProperties (IECInstanceR target, ECValuesCollectionCR source, bool sourceIsMemoryBased)
+    {
+    for (ECValuesCollection::const_iterator it=source.begin(); it != source.end(); ++it)
+        {
+        ECPropertyValue const& prop  = *it;
+        ECValueCR              value = prop.GetValue();
+
+        if (sourceIsMemoryBased)
+            {
+            if (!value.IsLoaded())
+                continue;
+            }
+
+        if (prop.HasChildValues())
+            {
+            mergeProperties (target, *prop.GetChildValues(), sourceIsMemoryBased);
+            continue;
+            }
+
+        if (value.IsNull() && (!sourceIsMemoryBased || !value.IsLoaded()) )  // if value contains a loaded null then set the value
+            continue;
+
+        target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), value);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -663,8 +747,127 @@ static void     duplicateProperties (IECInstanceR target, ECValuesCollectionCR s
             continue;
             }
 
-        target.SetValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue());
+        target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue());
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt16          MemoryECInstanceBase::GetUsageBitmask () const
+    {
+    return m_usageBitmask;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            MemoryECInstanceBase::SetUsageBitmask (UInt16 mask)
+    {
+    m_usageBitmask =  mask;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            MemoryECInstanceBase::SetPartiallyLoaded (bool set)
+    {
+    if (set)
+        m_usageBitmask = m_usageBitmask | (UInt16)MEMORYINSTANCEUSAGE_IsPartiallyLoaded;
+    else 
+        m_usageBitmask = m_usageBitmask & (~(UInt16)MEMORYINSTANCEUSAGE_IsPartiallyLoaded); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Partially loaded means that not all available instance properties have been load
+* from persistent storage due to some type of loading filter that was limiting
+* the property values returned.
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool           MemoryECInstanceBase::IsPartiallyLoaded ()
+    {
+    return  0 != (m_usageBitmask & (UInt16)MEMORYINSTANCEUSAGE_IsPartiallyLoaded); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            MemoryECInstanceBase::SetHiddenInstance (bool set)
+    {
+    bool returnVal = IsHiddenInstance();
+
+    if (set)
+        m_usageBitmask = m_usageBitmask | (UInt16)MEMORYINSTANCEUSAGE_IsHidden;
+    else 
+        m_usageBitmask = m_usageBitmask & (~(UInt16)MEMORYINSTANCEUSAGE_IsHidden);
+
+    return returnVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Currently only used by ECXA Instance serialization/deserialization
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool           MemoryECInstanceBase::IsHiddenInstance ()
+    {
+    return  0 != (m_usageBitmask & (UInt16)MEMORYINSTANCEUSAGE_IsHidden); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* This is used when copying properties from partial instance for instance update processing
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus MemoryECInstanceBase::MergePropertiesFromInstance
+(
+EC::IECInstanceCR     fromNativeInstance
+)
+    {
+    IECInstancePtr  thisAsIECInstance = GetAsIECInstance ();
+
+    if (!thisAsIECInstance->GetClass().GetName().Equals (fromNativeInstance.GetClass().GetName().c_str()))
+        return ECOBJECTS_STATUS_Error;
+
+    bool sourceIsMemoryBased = (NULL != fromNativeInstance.GetAsMemoryECInstance ());
+
+    ECValuesCollectionPtr   properties = ECValuesCollection::Create (fromNativeInstance);
+    mergeProperties (*thisAsIECInstance, *properties, sourceIsMemoryBased);
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Used when populating per property flags from managed instance
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus          MemoryECInstanceBase::SetInstancePerPropertyFlagsData (byte const* perPropertyFlagsDataAddress, int numBitsPerProperty, int numPerPropertyFlagsEntries)
+    {
+    if (numBitsPerProperty != m_perPropertyFlagsHolder.numBitsPerProperty)
+        return ECOBJECTS_STATUS_Error;
+
+    if (numPerPropertyFlagsEntries !=  m_perPropertyFlagsHolder.numPerPropertyFlagsEntries)
+        return ECOBJECTS_STATUS_Error;
+
+    if (0 == numPerPropertyFlagsEntries)
+        return ECOBJECTS_STATUS_Success;
+
+    memcpy (m_perPropertyFlagsHolder.perPropertyFlags, perPropertyFlagsDataAddress, m_perPropertyFlagsHolder.numPerPropertyFlagsEntries * sizeof(UInt32));
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus MemoryECInstanceBase::SetValueInternal (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
+    {
+    PropertyLayoutCP propLayout;
+    ECObjectsStatus status;
+    if (ECOBJECTS_STATUS_Success == (status = GetClassLayout().GetPropertyLayoutByIndex (propLayout, propertyIndex)))
+        {
+        SetIsLoadedBit (propertyIndex);
+        status = SetInternalValueToMemory (GetClassLayout(), *propLayout, v, useArrayIndex, arrayIndex);
+        }
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -688,6 +891,9 @@ EC::IECInstanceCR     fromNativeInstance
         if (classLayout.GetChecksum() == fromMemoryInstance->GetClassLayout().GetChecksum())
             {
             SetData (fromMemoryInstance->GetData (), fromMemoryInstance->GetBytesUsed (), true); // if true is last argument memory is copied
+
+            // copy the usage mask
+            SetUsageBitmask (fromMemoryInstance->GetUsageBitmask());
 
             // copy the perProperty flags
             memcpy (m_perPropertyFlagsHolder.perPropertyFlags, fromMemoryInstance->GetPerPropertyFlagsData(), m_perPropertyFlagsHolder.numPerPropertyFlagsEntries * sizeof(UInt32));
@@ -847,38 +1053,35 @@ bool                StandaloneECInstance::_IsReadOnly() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECInstance::_GetValue (ECValueR v, WCharCP propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const
-    {
-    ClassLayoutCR classLayout = GetClassLayout();
-
-    return GetValueFromMemory (classLayout, v, propertyAccessString, useArrayIndex, arrayIndex);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECInstance::_GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const
     {
+    v.Clear ();
+
     ClassLayoutCR classLayout = GetClassLayout();
 
-    return GetValueFromMemory (classLayout, v, propertyIndex, useArrayIndex, arrayIndex);
+    ECObjectsStatus status = GetValueFromMemory (v, classLayout, propertyIndex, useArrayIndex, arrayIndex);
+    if (ECOBJECTS_STATUS_Success == status)
+        {
+        static UInt8 bitIndex = (UInt8) PROPERTYFLAGINDEX_IsLoaded;
+        bool isSet = false;
+
+        if (ECOBJECTS_STATUS_Success == MemoryECInstanceBase::IsPerPropertyBitSet (isSet, bitIndex, propertyIndex)) 
+            v.SetIsLoaded (isSet);
+        }
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECInstance::_SetValue (WCharCP propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
+ECObjectsStatus           StandaloneECInstance::_GetIsPropertyNull (bool& isNull, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const
     {
+    ClassLayoutCR classLayout = GetClassLayout();
 
-    PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
-
-    UInt32 propertyIndex = 0;
-    if (ECOBJECTS_STATUS_Success != GetEnabler().GetPropertyIndex(propertyIndex, propertyAccessString))
-        return ECOBJECTS_STATUS_PropertyNotFound;
-
-    return _SetValue (propertyIndex, v, useArrayIndex, arrayIndex);
+    return GetIsNullValueFromMemory (classLayout, isNull, propertyIndex, useArrayIndex, arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -888,9 +1091,18 @@ ECObjectsStatus           StandaloneECInstance::_SetValue (UInt32 propertyIndex,
     {
     ClassLayoutCR classLayout = GetClassLayout();
 
-    SetPerPropertyBit ((UInt8) PROPERTYFLAGINDEX_IsLoaded, propertyIndex, true);
+    SetIsLoadedBit (propertyIndex);
 
     return SetValueToMemory (classLayout, propertyIndex, v, useArrayIndex, arrayIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus StandaloneECInstance::_SetInternalValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
+    {
+    SetIsLoadedBit (propertyIndex);
+    return SetValueInternal (propertyIndex, v, useArrayIndex, arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1024,6 +1236,13 @@ StandaloneECInstanceP   StandaloneECEnabler::CreateSharedInstance (byte * data, 
     return instance;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool StandaloneECEnabler::_IsPropertyReadOnly (UInt32 propertyIndex) const
+    {
+    return GetClassLayout().IsPropertyReadOnly (propertyIndex);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09

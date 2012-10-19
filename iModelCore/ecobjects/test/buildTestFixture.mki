@@ -21,13 +21,17 @@ GTEST_MAIN_IS_SUPPLIED = 1
 #----------------------------------------------------------------------------------------
 GUNIT_TEST_VERSION = 1.3
 
+%if BUILD_USING_VS11
+    nameToDefine = _VARIADIC_MAX=10
+    %include cdefapnd.mki
+%endif
+
 #----------------------------------------------------------------------------------------
 #   Libs
 #----------------------------------------------------------------------------------------
 libsUsed = \
-        $(BuildContext)SubParts/Libs/ECObjectsTestBackDoor.lib \
         $(BuildContext)SubParts/Libs/ECObjects.lib \
-        $(BuildContext)SubParts/Libs/Bentley.lib
+        $(BuildContext)SubParts/Libs/Bentley.lib \
 
 #----------------------------------------------------------------------
 #       Create output directories

@@ -29,6 +29,13 @@ enum PropertyFlagIndex ENUM_UNDERLYING_TYPE(UInt8)
     PROPERTYFLAGINDEX_IsDirty  = 1
     };
 
+enum MemoryInstanceUsageBitmask : UInt32
+    {
+    MEMORYINSTANCEUSAGE_Empty              = 0x0000,
+    MEMORYINSTANCEUSAGE_IsPartiallyLoaded  = 0x0001,
+    MEMORYINSTANCEUSAGE_IsHidden           = 0x0002     // currently used only by ECXAInstance
+    };
+
 typedef int StructValueIdentifier;
 
 struct StructArrayEntry
@@ -57,18 +64,14 @@ struct PerPropertyFlagsHolder
 * The memory is laid out according to the ClassLayout. The ClassLayout must be provided by classes that 
 * subclass this class.
 * @see ClassLayoutHolder, IECInstance
+* @ingroup ECObjectsGroup
 * @bsiclass 
 +===============+===============+===============+===============+===============+======*/
 struct MemoryECInstanceBase : MemoryInstanceSupport
 {
 //__PUBLISH_SECTION_END__
 
-// Per John Gooding, "when you provide any sort of multiple inheritance you can’t hide any data members" Since 
-// StandaloneECInstance uses multiple inheritance from MemoryECInstanceBase and IECInstance none of the data
-// members of MemoryECInstanceBase or its base class MemoryInstanceSupport can be hidden from the published API.
-
 friend struct IECInstance;
-//__PUBLISH_SECTION_START__
 private:
     PerPropertyFlagsHolder  m_perPropertyFlagsHolder;
     byte *                  m_data;
@@ -77,6 +80,7 @@ private:
     MemoryECInstanceBase const* m_parentInstance;
     StructValueIdentifier   m_structValueId;
     bool                    m_usingSharedMemory;
+    UInt16                  m_usageBitmask;  // currently only used to round trip Partially Loaded and Hidden flags
 
     IECInstancePtr          GetStructArrayInstance (StructValueIdentifier structValueId) const;
     StructArrayEntry const* GetAddressOfStructArrayEntry (StructValueIdentifier key) const;
@@ -84,7 +88,6 @@ private:
     byte*                   GetAddressOfPropertyData () const;
     ECObjectsStatus         RemoveStructStructArrayEntry (StructValueIdentifier structValueId);
     void                    InitializePerPropertyFlags (ClassLayoutCR classLayout, UInt8 numBitsPerProperty);
-//__PUBLISH_SECTION_END__
 
 protected:
     //! The MemoryECInstanceBase will take ownership of the memory
@@ -94,7 +97,8 @@ protected:
 
     ECOBJECTS_EXPORT virtual bool             _IsMemoryInitialized () const;
     ECOBJECTS_EXPORT virtual ECObjectsStatus  _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength);    
-    ECOBJECTS_EXPORT virtual void             _ShrinkAllocation (UInt32 newAllocation);
+    ECOBJECTS_EXPORT virtual ECObjectsStatus  _MoveData (UInt32 toOffset, UInt32 fromOffset, UInt32 dataLength);
+    ECOBJECTS_EXPORT virtual ECObjectsStatus  _ShrinkAllocation ();
     ECOBJECTS_EXPORT virtual void             _FreeAllocation ();
     ECOBJECTS_EXPORT virtual ECObjectsStatus  _GrowAllocation (UInt32 bytesNeeded);        
 
@@ -107,9 +111,14 @@ protected:
 
     virtual ClassLayoutCR       _GetClassLayout () const = 0;
     virtual IECInstancePtr      _GetAsIECInstance () const = 0;
-                             
+   
+    ECOBJECTS_EXPORT  ECObjectsStatus          SetValueInternal (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex);
+public:
+    ECOBJECTS_EXPORT  ECObjectsStatus          SetInstancePerPropertyFlagsData (byte const* perPropertyFlagsDataAddress, int numBitsPerProperty, int numPerPropertyFlagsEntries);
+
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
+
 public: // These must be public so that ECXInstanceEnabler can get at the guts of StandaloneECInstance to copy it into an XAttribute
     ECOBJECTS_EXPORT void                     SetData (const byte * data, UInt32 size, bool freeExisitingData); //The MemoryECInstanceBase will take ownership of the memory
 
@@ -124,6 +133,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT ECObjectsStatus          IsAnyPerPropertyBitSet (bool& isSet, UInt8 bitIndex) const;
     ECOBJECTS_EXPORT ECObjectsStatus          SetPerPropertyBit (UInt8 bitIndex, UInt32 propertyIndex, bool setBit);
     ECOBJECTS_EXPORT ECObjectsStatus          SetBitForAllProperties (UInt8 bitIndex, bool setBit);
+    ECOBJECTS_EXPORT ECObjectsStatus          SetIsLoadedBit (UInt32 propertyIndex);
 
     ECOBJECTS_EXPORT void                     ClearAllPerPropertyFlags ();
     ECOBJECTS_EXPORT UInt8                    GetNumBitsInPerPropertyFlags ();
@@ -131,6 +141,8 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
 
     ECOBJECTS_EXPORT IECInstancePtr           GetStructArrayInstanceByIndex (UInt32 index, StructValueIdentifier& structValueId) const;
     ECOBJECTS_EXPORT ECObjectsStatus          SetStructArrayInstance (MemoryECInstanceBaseCR instance, StructValueIdentifier structValueId);
+    ECOBJECTS_EXPORT ECObjectsStatus          MergePropertiesFromInstance (EC::IECInstanceCR fromNativeInstance);
+
     ECOBJECTS_EXPORT void                     SetUsingSharedMemory ();
 
     ECOBJECTS_EXPORT byte const *             GetPerPropertyFlagsData () const;
@@ -138,6 +150,12 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT UInt32                   GetPerPropertyFlagsDataLength () const;
     ECOBJECTS_EXPORT ECObjectsStatus          AddNullArrayElements (WCharCP propertyAccessString, UInt32 insertCount);
     ECOBJECTS_EXPORT ECObjectsStatus          CopyInstanceProperties (EC::IECInstanceCR fromNativeInstance);
+    ECOBJECTS_EXPORT UInt16                   GetUsageBitmask () const;
+    ECOBJECTS_EXPORT void                     SetUsageBitmask (UInt16 mask);
+    ECOBJECTS_EXPORT void                     SetPartiallyLoaded (bool set);
+    ECOBJECTS_EXPORT bool                     IsPartiallyLoaded ();
+    ECOBJECTS_EXPORT bool                     SetHiddenInstance (bool set);
+    ECOBJECTS_EXPORT bool                     IsHiddenInstance ();
 };
 
 /*=================================================================================**//**
@@ -147,7 +165,10 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
 * @see ClassLayoutHolder, IECInstance
 * @bsiclass 
 +===============+===============+===============+===============+===============+======*/
-struct StandaloneECInstance : MemoryECInstanceBase, IECInstance
+struct StandaloneECInstance : IECInstance
+//__PUBLISH_SECTION_END__
+                            , MemoryECInstanceBase
+//__PUBLISH_SECTION_START__
     {
 //__PUBLISH_SECTION_END__
 friend struct StandaloneECEnabler;
@@ -166,11 +187,9 @@ protected:
     ECOBJECTS_EXPORT virtual WString             _GetInstanceId() const override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetInstanceId(WCharCP id) override;
     ECOBJECTS_EXPORT virtual bool                _IsReadOnly() const override;        
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetValue (ECValueR v, WCharCP propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetValue (WCharCP propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
-
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetInternalValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size) override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _AddArrayElements (WCharCP propertyAccessString, UInt32 size) override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _RemoveArrayElement (WCharCP propertyAccessString, UInt32 index) override;
@@ -184,6 +203,8 @@ protected:
     // MemoryECInstanceBase
     ECOBJECTS_EXPORT virtual IECInstancePtr      _GetAsIECInstance () const;
 
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetIsPropertyNull (bool& isNull, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
+
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
@@ -196,6 +217,7 @@ public:
 //=======================================================================================
 //! IECWipRelationshipInstance is used to set the name and order properties for an 
 //! ECRelationship.
+//! @ingroup ECObjectsGroup
 //=======================================================================================
 struct IECWipRelationshipInstance : StandaloneECInstance
     {
@@ -240,7 +262,7 @@ protected:
     virtual UInt32                      _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const override;
     virtual bool                        _HasChildProperties (UInt32 parentIndex) const override;
     virtual ECObjectsStatus             _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const override;
-
+    virtual bool                        _IsPropertyReadOnly (UInt32 propertyIndex) const override;
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public: 

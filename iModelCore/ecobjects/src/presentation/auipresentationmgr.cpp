@@ -12,6 +12,40 @@
 USING_NAMESPACE_EC
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+template <typename ProviderType, typename ContainerType>
+void            ECPresentationManager::CheckAndAddProviderFromList (ProviderType & provider, ContainerType& providerList)
+    {
+    if (providerList.empty())
+        {
+        providerList.push_back(&provider);
+        return;
+        }
+
+    typename ContainerType::iterator iter = std::lower_bound(providerList.begin(), providerList.end(), &provider);
+    if (*iter == &provider)
+        return;
+    providerList.insert (iter, &provider);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+template <typename ProviderType, typename ContainerType>
+void            ECPresentationManager::RemoveProviderFromList (ProviderType & provider, ContainerType& providerList)
+    {
+    if (providerList.empty())
+        return;
+
+    typename ContainerType::iterator iter = std::lower_bound(providerList.begin(), providerList.end(), &provider);
+    if (*iter != &provider)
+        return;
+
+    providerList.erase(iter);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPresentationManagerR   ECPresentationManager::GetManager()
@@ -25,7 +59,7 @@ ECPresentationManagerR   ECPresentationManager::GetManager()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECPresentationManager::AddProvider (IJournalProviderR provider)
     {
-    m_journalProviders.insert(&provider);
+    CheckAndAddProviderFromList (provider, m_journalProviders);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -33,7 +67,7 @@ void            ECPresentationManager::AddProvider (IJournalProviderR provider)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECPresentationManager::RemoveProvider (IJournalProviderR provider)
     {
-    m_journalProviders.erase(&provider);
+    RemoveProviderFromList (provider, m_journalProviders);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -41,7 +75,7 @@ void            ECPresentationManager::RemoveProvider (IJournalProviderR provide
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECPresentationManager::AddProvider (IECPresentationViewProviderR provider)
     {
-    m_viewProviders.insert(&provider);
+    CheckAndAddProviderFromList (provider, m_viewProviders);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -49,7 +83,7 @@ void            ECPresentationManager::AddProvider (IECPresentationViewProviderR
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECPresentationManager::RemoveProvider (IECPresentationViewProviderR provider)
     {
-    m_viewProviders.erase(&provider);
+    RemoveProviderFromList (provider, m_viewProviders);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -57,7 +91,7 @@ void            ECPresentationManager::RemoveProvider (IECPresentationViewProvid
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECPresentationManager::AddProvider (IAUIContentServiceProviderR provider)
     {
-    m_contentProviders.insert(&provider);
+    CheckAndAddProviderFromList (provider, m_contentProviders);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -65,7 +99,7 @@ void            ECPresentationManager::AddProvider (IAUIContentServiceProviderR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECPresentationManager::RemoveProvider (IAUIContentServiceProviderR provider)
     {
-    m_contentProviders.erase(&provider);
+    RemoveProviderFromList (provider, m_contentProviders);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -73,7 +107,7 @@ void            ECPresentationManager::RemoveProvider (IAUIContentServiceProvide
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECPresentationManager::AddProvider (ECPresentationCommandProviderCR provider)
     {
-    m_cmdProviders.insert(&provider);
+    CheckAndAddProviderFromList (provider, m_cmdProviders);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -81,7 +115,7 @@ void            ECPresentationManager::AddProvider (ECPresentationCommandProvide
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECPresentationManager::RemoveProvider (ECPresentationCommandProviderCR provider)
     {
-    m_cmdProviders.erase(&provider);
+    RemoveProviderFromList (provider, m_cmdProviders);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -89,7 +123,7 @@ void            ECPresentationManager::RemoveProvider (ECPresentationCommandProv
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECPresentationManager::AddProvider (ECPresentationImageProviderR provider)
     {
-    m_imageProviders.insert(&provider);
+    CheckAndAddProviderFromList (provider, m_imageProviders);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -97,18 +131,42 @@ void            ECPresentationManager::AddProvider (ECPresentationImageProviderR
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECPresentationManager::RemoveProvider (ECPresentationImageProviderR provider)
     {
-    m_imageProviders.erase(&provider);
+    RemoveProviderFromList (provider, m_imageProviders);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
+* @bsimethod                                    Andrius.Zonys                   05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECPresentationManager::AddProvider (ECPresentationLocalizationProviderR provider)
+    {
+    CheckAndAddProviderFromList (provider, m_localizationProviders);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrius.Zonys                   05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECPresentationManager::RemoveProvider (ECPresentationLocalizationProviderR provider)
+    {
+    RemoveProviderFromList (provider, m_localizationProviders);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    dmitrijus.tiazlovas             09/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<UICommandPtr>    ECPresentationManager::GetCommands (IAUIDataContextCR instance) const
+    {
+    return this->GetCommands (instance, ECPresentationManager::GENERAL_PURPOSE_QUERY);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  09/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<UICommandPtr>    ECPresentationManager::GetCommands (IAUIDataContextCR instance, int purpose) const
     {
     bvector<UICommandPtr> commands;
     for (T_CmdProviderSet::const_iterator iter = m_cmdProviders.begin(); iter != m_cmdProviders.end(); ++iter)
         {
-        bvector<UICommandPtr> commandList = (*iter)->GetCommand(instance);
+        bvector<UICommandPtr> commandList = (*iter)->GetCommand(instance, purpose);
         std::copy (commandList.begin(), commandList.end(), std::back_inserter(commands));
         }
 
@@ -229,4 +287,60 @@ IECNativeImagePtr ECPresentationManager::GetImage (ECImageKeyCR imageKey, DPoint
         return nativeImage;
         }
     return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrius.Zonys                   05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP         ECPresentationManager::GetString (WCharCP rscFileName, UInt tableId, UInt rscId)
+    {
+    for (T_LocalizationProviderSet::const_iterator iter = m_localizationProviders.begin(); iter != m_localizationProviders.end(); ++iter)
+        {
+        WCharCP localizedString = (*iter)->GetString (rscFileName, tableId, rscId);
+        if (!WString::IsNullOrEmpty (localizedString))
+            return localizedString;
+        }
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECPresentationManager::RegisterSelectionHook (ECSelectionListener& listener)
+    {
+    CheckAndAddProviderFromList (listener, m_selecitonListeners);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECPresentationManager::UnRegisterSelectionHook (ECSelectionListener& listener)
+    {
+    RemoveProviderFromList (listener, m_selecitonListeners);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECPresentationManager::TriggerSelectionEvent (ECSelectionEventCR selectionEvent)
+    {
+    void const* eventHub = selectionEvent.GetEventHub();
+    for (T_SelectionListeners::const_iterator iter = m_selecitonListeners.begin(); iter != m_selecitonListeners.end(); ++iter)
+        {
+        if (NULL == eventHub || (*iter)->GeteventHub() == eventHub)
+            (*iter)->_OnSelection(selectionEvent);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  07/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECPresentationManager::TriggerSubSelectionEvent (ECSelectionEventCR selectionEvent)
+    {
+    void const* eventHub = selectionEvent.GetEventHub();
+    for (T_SelectionListeners::const_iterator iter = m_selecitonListeners.begin(); iter != m_selecitonListeners.end(); ++iter)
+        {
+        if (NULL == eventHub || (*iter)->GeteventHub() == eventHub)
+            (*iter)->_OnSubSelection(selectionEvent);
+        }
     }

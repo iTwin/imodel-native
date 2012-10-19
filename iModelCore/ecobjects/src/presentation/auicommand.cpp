@@ -14,7 +14,7 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   UICommand::Execute (IAUIDataContextCP instance) const
+BentleyStatus   IUICommand::ExecuteCmd (IAUIDataContextCP instance)
     {
     ECPresentationManager::GetManager().JournalCmd (*this, instance);
     return _ExecuteCmd(instance);
@@ -23,7 +23,135 @@ BentleyStatus   UICommand::Execute (IAUIDataContextCP instance) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<UICommandPtr>   ECPresentationCommandProvider::GetCommand (IAUIDataContextCR instance) const
+bvector<UICommandPtr>   ECPresentationCommandProvider::GetCommand (IAUIDataContextCR instance, int purpose) const
     {
-    return _GetCommand(instance);
+    return _GetCommand(instance, purpose);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            IUICommand::Journal (IJournalItemR journalEntry)
+    {
+    _Journal(journalEntry);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP         IUICommand::GetCommandId () const
+    {
+    return _GetCommandId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WString         IUICommand::GetLabel ()  const
+    {
+    return _GetLabel();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            IUICommand::SetLabel (WStringCR label)
+    {
+    _SetLabel(label);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP         IUICommand::GetDescription ()  const
+    {
+    return _GetDescription();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            IUICommand::SetDescription (WStringCR description)
+    {
+    _SetDescription(description);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECImageKeyCP    IUICommand::GetImageId ()  const
+    {
+    return _GetImageId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            IUICommand::SetImageId (ECImageKeyCR key)
+    {
+    _SetImageId(key);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            IUICommand::IsSeparator ()  const
+    {
+    return _IsSeparator();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+IUICommand::EditActionMenuMark IUICommand::GetMenuMark() const
+    {
+    return _GetMenuMark();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            IUICommand::SetMenuMark(EditActionMenuMark mark)
+    {
+    _SetMenuMark(mark);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            IUICommand::GetIsEnabled () const
+    {
+    return _GetIsEnabled();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            IUICommand::SetIsEnabled (bool enabled)
+    {
+    _SetIsEnabled(enabled);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+UICommand*      IUICommand::GetParent() const
+    {
+    return _GetParent();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+IUICommand::EditActionPriority IUICommand::GetPriority () const
+    {
+    return _GetPriority();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            IUICommand::SetPriority (EditActionPriority priority)
+    {
+    _SetPriority(priority);
     }

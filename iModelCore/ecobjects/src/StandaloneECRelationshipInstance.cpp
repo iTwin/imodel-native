@@ -130,38 +130,23 @@ bool                StandaloneECRelationshipInstance::_IsReadOnly() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECRelationshipInstance::_GetValue (ECValueR v, WCharCP propertyAccessString, bool useArrayIndex, UInt32 arrayIndex) const
-    {
-    ClassLayoutCR classLayout = GetClassLayout();
-
-    return GetValueFromMemory (classLayout, v, propertyAccessString, useArrayIndex, arrayIndex);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECRelationshipInstance::_GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const
     {
     ClassLayoutCR classLayout = GetClassLayout();
 
-    return GetValueFromMemory (classLayout, v, propertyIndex, useArrayIndex, arrayIndex);
+    return GetValueFromMemory (v, classLayout, propertyIndex, useArrayIndex, arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
+* @bsimethod                                    Bill.Steinbock                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECRelationshipInstance::_SetValue (WCharCP propertyAccessString, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
+ECObjectsStatus           StandaloneECRelationshipInstance::_GetIsPropertyNull (bool& isNull, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const
     {
+    ClassLayoutCR classLayout = GetClassLayout();
 
-    PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
-
-    UInt32 propertyIndex = 0;
-    if (ECOBJECTS_STATUS_Success != GetEnabler().GetPropertyIndex(propertyIndex, propertyAccessString))
-        return ECOBJECTS_STATUS_PropertyNotFound;
-
-    return _SetValue (propertyIndex, v, useArrayIndex, arrayIndex);
+    return GetIsNullValueFromMemory (classLayout, isNull, propertyIndex, useArrayIndex, arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -171,9 +156,17 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_SetValue (UInt32 pr
     {
     ClassLayoutCR classLayout = GetClassLayout();
 
-    SetPerPropertyBit ((UInt8) PROPERTYFLAGINDEX_IsLoaded, propertyIndex, true);
+    SetIsLoadedBit (propertyIndex);
 
     return SetValueToMemory (classLayout, propertyIndex, v, useArrayIndex, arrayIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus StandaloneECRelationshipInstance::_SetInternalValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
+    {
+    return SetValueInternal (propertyIndex, v, useArrayIndex, arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -396,6 +389,14 @@ IECWipRelationshipInstancePtr StandaloneECRelationshipEnabler::_CreateWipRelatio
 EC::ECRelationshipClassCR     StandaloneECRelationshipEnabler::_GetRelationshipClass()  const
     {
     return m_relationshipClass;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECEnablerCR StandaloneECRelationshipEnabler::GetECEnabler() const
+    {
+    return *this;
     }
 
 /*---------------------------------------------------------------------------------**//**

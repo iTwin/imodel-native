@@ -8,6 +8,10 @@
 #include "ECObjectsPch.h"
 
 #include <ECObjects/ECExpressionNode.h>
+#include <Bentley/BeCriticalSection.h>
+
+static BeCriticalSection                                s_ecexpressionsCS;
+static EC::IECSymbolProvider::ExternalSymbolPublisher   s_externalSymbolPublisher;
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -311,7 +315,7 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
 
             BeAssert (EC::ECOBJECTS_STATUS_Success == status);
 
-            if (EC::ECOBJECTS_STATUS_Success != status)
+            if (EC::ECOBJECTS_STATUS_Success != status || ecValue.IsNull())
                 {
                 evalResult.Clear();
                 return ExprStatus_UnknownError;
@@ -716,7 +720,7 @@ ContextSymbolPtr ContextSymbol::CreateContextSymbol(wchar_t const* name, Express
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-                ValueSymbol::ValueSymbol (wchar_t const* name, EC::ECValue& value) : Symbol(name)
+                ValueSymbol::ValueSymbol (wchar_t const* name, EC::ECValueCR value) : Symbol(name)
     {
     m_expressionValue = value;
     }
@@ -751,6 +755,48 @@ ExpressionStatus ValueSymbol::_GetValue(EvaluationResultR evalResult, PrimaryLis
 void            ValueSymbol::GetValue(EC::ECValueR exprValue)
     {
     exprValue = m_expressionValue; 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    07/2012
+//--------------+------------------------------------------------------------------------
+void            ValueSymbol::SetValue(EC::ECValueCR exprValue)
+    {
+    m_expressionValue = exprValue; 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    07/2012
+//--------------+------------------------------------------------------------------------
+ValueSymbolPtr  ValueSymbol::Create(wchar_t const* name, EC::ECValueCR exprValue)
+    {
+    return new ValueSymbol (name, exprValue);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void IECSymbolProvider::RegisterExternalSymbolPublisher (ExternalSymbolPublisher publisher)
+    {
+    BeCriticalSectionHolder cs (s_ecexpressionsCS);
+    if (NULL == s_externalSymbolPublisher)
+        s_externalSymbolPublisher = publisher;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+SymbolExpressionContextPtr SymbolExpressionContext::Create (bvector<WString> const& requestedSymbolSets)
+    {
+    SymbolExpressionContextPtr context = Create (NULL);
+    if (context.IsValid())
+        {
+        BeCriticalSectionHolder cs (s_ecexpressionsCS);
+        if (NULL != s_externalSymbolPublisher)
+            s_externalSymbolPublisher (*context, requestedSymbolSets);
+        }
+    
+    return context;
     }
 
 END_BENTLEY_EC_NAMESPACE

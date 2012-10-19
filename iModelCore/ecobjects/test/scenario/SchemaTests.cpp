@@ -29,7 +29,6 @@ struct SchemaTest : ECTestFixture {
 TEST_F(SchemaTest,ExpectReadOnly)
 {
     ECSchemaPtr schema;   
- 
     ECClassP domainClass;
     ECClassP derivedClass;
     ECClassP structClass;

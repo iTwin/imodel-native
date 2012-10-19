@@ -60,6 +60,7 @@
 #include <ECObjects/ECEnabler.h>
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECSchema.h>
+#include <ECObjects/SupplementalSchema.h>
 #include <ECObjects/ECContext.h>
 #include <ECObjects/ECValue.h>
 #include <ECObjects/ECExpressions.h>
@@ -67,11 +68,13 @@
 #include <ECObjects/StandaloneECInstance.h>
 #include <ECObjects/StandaloneECRelationshipInstance.h>
 #include <ECObjects/ecprovider.h>
+#include <ECObjects/ECInstanceIterable.h>
+#include <ECObjects/PresentationMetadataHelper.h>
 #include <Bentley/ScopedArray.h>
-
 
 /*__PUBLISH_SECTION_END__*/
 #include <ECObjects/DesignByContract.h>
+#include <ECObjects/ECEvent.h>
 #include <ECObjects/BeXmlCommonGeometry.h>
 // This define is checked from the ECObjects Published ATPs to ensure that they are building against the published header files.
 #define NON_PUBLISHED_HEADER_INCLUDED

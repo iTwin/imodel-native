@@ -13,8 +13,6 @@ BEGIN_BENTLEY_EC_NAMESPACE
 
 struct CustomAttributeTest : ECTestFixture
     {
-    virtual bool _WantSchemaLeakDetection () override { return true; }
-    virtual bool _WantInstanceLeakDetection () override { return true; }
     };
 
 ECSchemaPtr   CreateCustomAttributeTestSchema()
@@ -93,7 +91,7 @@ TEST_F(CustomAttributeTest, CanAddSingleCustomAttribute)
     IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema);
 
 
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->SetCustomAttribute(*instance));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->GetCustomAttributeContainer().SetCustomAttribute(*instance));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, p->SetCustomAttribute(*instance));
 
     EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
@@ -371,4 +369,59 @@ TEST_F(CustomAttributeTest, ExpectSuccessWhenAddingCircularStructPropertiesToCus
     ASSERT_EQ(ECOBJECTS_STATUS_Success,status);
     }
 #endif
+
+TEST_F (CustomAttributeTest, PresentationMetadataHelper)
+    {
+    ECSchemaPtr             schema;
+    ECClassP                ecclass;
+    PrimitiveECPropertyP    primProp;
+    ArrayECPropertyP        arrayProp;
+    PrimitiveECPropertyP    pointProp;
+
+    ECSchema::CreateSchema (schema, L"TestSchema", 1, 2);
+    schema->CreateClass (ecclass, L"TestClass");
+    ecclass->CreatePrimitiveProperty (primProp, L"PrimitiveProperty", PRIMITIVETYPE_String);
+    ecclass->CreateArrayProperty (arrayProp, L"ArrayProperty", PRIMITIVETYPE_String);
+    ecclass->CreatePrimitiveProperty (pointProp, L"PointProperty", PRIMITIVETYPE_Point3D);
+
+    ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
+
+    PresentationMetadataHelper meta (*readContext);
+
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetHideNullProperties (*ecclass));
+    EXPECT_TRUE (ecclass->IsDefined (L"DontShowNullProperties"));
+
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetIgnoreZ (*pointProp));
+    EXPECT_TRUE (pointProp->IsDefined (L"IgnoreZ"));
+
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetMembersIndependent (*arrayProp));
+    EXPECT_TRUE (arrayProp->IsDefined (L"MembersIndependent"));
+
+    ECValue v;
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetPriority (*primProp, 1234));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, primProp->GetCustomAttribute (L"PropertyPriority")->GetValue (v, L"Priority"));
+    EXPECT_EQ (1234, v.GetInteger());
+
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetAlwaysExpand (*arrayProp, true));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, arrayProp->GetCustomAttribute (L"AlwaysExpand")->GetValue (v, L"ArrayMembers"));
+    EXPECT_TRUE (v.GetBoolean());
+
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetExtendedType (*primProp, 1));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, primProp->GetCustomAttribute (L"ExtendType")->GetValue (v, L"Standard"));
+    EXPECT_EQ (1, v.GetInteger());
+
+    WString str (L"CustomType");
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetExtendedType (*primProp, str.c_str()));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, primProp->GetCustomAttribute (L"ExtendType")->GetValue (v, L"Name"));
+    EXPECT_TRUE (str.Equals (v.GetString()));
+
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetMemberExtendedType (*arrayProp, 1));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, arrayProp->GetCustomAttribute (L"MemberExtendedType")->GetValue (v, L"Standard"));
+    EXPECT_EQ (1, v.GetInteger());
+
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetMemberExtendedType (*arrayProp, str.c_str()));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, arrayProp->GetCustomAttribute (L"MemberExtendedType")->GetValue (v, L"Name"));
+    EXPECT_TRUE (str.Equals (v.GetString()));
+    }
+
 END_BENTLEY_EC_NAMESPACE

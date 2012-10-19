@@ -14,13 +14,6 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-//#define DEBUG_CLASS_LEAKS
-#ifdef DEBUG_CLASS_LEAKS
-static LeakDetector<ECClass> g_leakDetector (L"ECClass", L"ECClasss", true);
-#else
-static LeakDetector<ECClass> g_leakDetector (L"ECClass", L"ECClasss", false);
-#endif
-
 // If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
 // Test programs generally want to get error status back and not BeAssert, so they call ECSchema::AssertOnXmlError (false);
 static  bool        s_noAssert = false;
@@ -36,12 +29,11 @@ void ECClass::SetErrorHandling (bool doAssert)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClass::ECClass (ECSchemaCR schema, bool hideFromLeakDetection)
+ECClass::ECClass (ECSchemaCR schema)
     :
-    m_schema(schema), m_isStruct(false), m_isCustomAttributeClass(false), m_isDomainClass(true), m_hideFromLeakDetection (hideFromLeakDetection)
+    m_schema(schema), m_isStruct(false), m_isCustomAttributeClass(false), m_isDomainClass(true)
     {
-    if ( ! m_hideFromLeakDetection)
-        g_leakDetector.ObjectCreated(*this);
+    //
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -58,15 +50,7 @@ ECClass::~ECClass ()
     m_propertyMap.clear();
     
     m_defaultStandaloneEnabler = NULL;
-
-    if ( ! m_hideFromLeakDetection)
-        g_leakDetector.ObjectDestroyed(*this);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-ILeakDetector&  ECClass::Debug_GetLeakDetector() { return g_leakDetector; }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
@@ -256,7 +240,7 @@ StandaloneECEnablerP ECClass::GetDefaultStandaloneEnabler() const
     {
     if (!m_defaultStandaloneEnabler.IsValid())
         {
-        ClassLayoutP classLayout   = ClassLayout::BuildFromClass (*this, 0, 0, m_hideFromLeakDetection);
+        ClassLayoutP classLayout   = ClassLayout::BuildFromClass (*this);
         m_defaultStandaloneEnabler = StandaloneECEnabler::CreateEnabler (*this, *classLayout, NULL, true);
         }
 
@@ -296,14 +280,78 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::CopyProperty
+(
+ECPropertyP& destProperty, 
+ECPropertyP sourceProperty
+)
+    {
+    if (sourceProperty->GetIsPrimitive())
+        {
+        PrimitiveECPropertyP destPrimitive;
+        PrimitiveECPropertyP sourcePrimitive = sourceProperty->GetAsPrimitiveProperty();
+        destPrimitive = new PrimitiveECProperty(*this);
+        destPrimitive->SetType(sourcePrimitive->GetType());
+
+        destProperty = destPrimitive;
+        }
+    else if (sourceProperty->GetIsArray())
+        {
+        ArrayECPropertyP destArray;
+        ArrayECPropertyP sourceArray = sourceProperty->GetAsArrayProperty();
+        destArray = new ArrayECProperty (*this);
+        if (NULL != sourceArray->GetStructElementType())
+            destArray->SetStructElementType(sourceArray->GetStructElementType());
+        else
+            destArray->SetPrimitiveElementType(sourceArray->GetPrimitiveElementType());
+
+        destArray->SetMaxOccurs(sourceArray->GetMaxOccurs());
+        destArray->SetMinOccurs(sourceArray->GetMinOccurs());
+
+        destProperty = destArray;
+        }
+    else if (sourceProperty->GetIsStruct())
+        {
+        StructECPropertyP destStruct;
+        StructECPropertyP sourceStruct = sourceProperty->GetAsStructProperty();
+        destStruct = new StructECProperty (*this);
+        destStruct->SetType(sourceStruct->GetType());
+
+        destProperty = destStruct;
+        }
+
+    destProperty->SetDescription(sourceProperty->GetDescription());
+    if (sourceProperty->GetIsDisplayLabelDefined())
+        destProperty->SetDisplayLabel(sourceProperty->GetDisplayLabel());
+    destProperty->SetName(sourceProperty->GetName());
+    destProperty->SetIsReadOnly(sourceProperty->GetIsReadOnly());
+    destProperty->m_forSupplementation = true;
+    sourceProperty->CopyCustomAttributesTo(*destProperty);
+    ECObjectsStatus status = AddProperty(destProperty, sourceProperty->GetName());
+    if (ECOBJECTS_STATUS_Success != status)
+        delete destProperty;
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyP ECClass::GetPropertyP (WCharCP propertyName) const
+ECPropertyP ECClass::GetPropertyP
+(
+WCharCP propertyName,
+bool includeBaseClasses
+) const
     {
     PropertyMap::const_iterator  propertyIterator = m_propertyMap.find (propertyName);
     
     if ( propertyIterator != m_propertyMap.end() )
         return propertyIterator->second;
+
+    if (!includeBaseClasses)
+        return NULL;
 
     // not found yet, search the inheritence hierarchy
     FOR_EACH (const ECClassP& baseClass, m_baseClasses)
@@ -318,9 +366,13 @@ ECPropertyP ECClass::GetPropertyP (WCharCP propertyName) const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyP ECClass::GetPropertyP (WStringCR propertyName) const
+ECPropertyP ECClass::GetPropertyP
+(
+WStringCR propertyName,
+bool includeBaseClasses
+) const
     {
-    return  GetPropertyP (propertyName.c_str());
+    return  GetPropertyP (propertyName.c_str(), includeBaseClasses);
     }
 
 static bvector<WString> s_schemasThatAllowOverridingArrays;
@@ -382,7 +434,10 @@ ECObjectsStatus ECClass::CanPropertyBeOverridden (ECPropertyCR baseProperty,ECPr
         }
     
     if (!newProperty._CanOverride(baseProperty))
+        {
+        ECObjectsLogger::Log()->errorv(L"The data type of the ECProperty to add does not match the data type of the base property.  Property name: %ls  New Property Data Type: %ls   Base Property Data Type: %ls\n", newProperty.GetName().c_str(), newProperty.GetTypeName().c_str(), baseProperty.GetTypeName().c_str());
         return ECOBJECTS_STATUS_DataTypeMismatch;
+        }
     return ECOBJECTS_STATUS_Success; 
     }
 
@@ -432,7 +487,7 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP ecProperty, WStringCR name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::CreatePrimitiveProperty (PrimitiveECPropertyP &ecProperty, WStringCR name)
     {
-    ecProperty = new PrimitiveECProperty(*this, m_hideFromLeakDetection);
+    ecProperty = new PrimitiveECProperty(*this);
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECOBJECTS_STATUS_Success)
         {
@@ -448,7 +503,7 @@ ECObjectsStatus ECClass::CreatePrimitiveProperty (PrimitiveECPropertyP &ecProper
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::CreatePrimitiveProperty (PrimitiveECPropertyP &ecProperty, WStringCR name, PrimitiveType primitiveType)
     {
-    ecProperty = new PrimitiveECProperty(*this, m_hideFromLeakDetection);
+    ecProperty = new PrimitiveECProperty(*this);
     ecProperty->SetType(primitiveType);
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECOBJECTS_STATUS_Success)
@@ -464,7 +519,7 @@ ECObjectsStatus ECClass::CreatePrimitiveProperty (PrimitiveECPropertyP &ecProper
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::CreateStructProperty (StructECPropertyP &ecProperty, WStringCR name)
     {
-    ecProperty = new StructECProperty(*this, m_hideFromLeakDetection);
+    ecProperty = new StructECProperty(*this);
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECOBJECTS_STATUS_Success)
         {
@@ -480,7 +535,7 @@ ECObjectsStatus ECClass::CreateStructProperty (StructECPropertyP &ecProperty, WS
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::CreateStructProperty (StructECPropertyP &ecProperty, WStringCR name, ECClassCR structType)
     {
-    ecProperty = new StructECProperty(*this, m_hideFromLeakDetection);
+    ecProperty = new StructECProperty(*this);
     ECObjectsStatus status = ecProperty->SetType(structType);
     if (ECOBJECTS_STATUS_Success == status)
         status = AddProperty(ecProperty, name);
@@ -498,7 +553,7 @@ ECObjectsStatus ECClass::CreateStructProperty (StructECPropertyP &ecProperty, WS
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::CreateArrayProperty (ArrayECPropertyP &ecProperty, WStringCR name)
     {
-    ecProperty = new ArrayECProperty(*this, m_hideFromLeakDetection);
+    ecProperty = new ArrayECProperty(*this);
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECOBJECTS_STATUS_Success)
         {
@@ -514,7 +569,7 @@ ECObjectsStatus ECClass::CreateArrayProperty (ArrayECPropertyP &ecProperty, WStr
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::CreateArrayProperty (ArrayECPropertyP &ecProperty, WStringCR name, PrimitiveType primitiveType)
     {
-    ecProperty = new ArrayECProperty(*this, m_hideFromLeakDetection);
+    ecProperty = new ArrayECProperty(*this);
     ecProperty->SetPrimitiveElementType (primitiveType);
     ECObjectsStatus status = AddProperty(ecProperty, name);
     if (status != ECOBJECTS_STATUS_Success)
@@ -531,7 +586,7 @@ ECObjectsStatus ECClass::CreateArrayProperty (ArrayECPropertyP &ecProperty, WStr
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::CreateArrayProperty (ArrayECPropertyP &ecProperty, WStringCR name, ECClassCP structType)
     {
-    ecProperty = new ArrayECProperty(*this, m_hideFromLeakDetection);
+    ecProperty = new ArrayECProperty(*this);
     ECObjectsStatus status = ecProperty->SetStructElementType(structType);
     if (ECOBJECTS_STATUS_Success == status)
         status = AddProperty(ecProperty, name);
@@ -757,7 +812,7 @@ bool ECClass::AddUniquePropertiesToList (ECClassCP currentBaseClass, const void 
         for (testIter = propertyList->begin(); testIter != currentEnd; testIter++)
             {
             ECPropertyP testProperty = *testIter;
-            if (testProperty->GetName().compare(prop->GetName()) == 0)
+            if (testProperty->GetName().Equals(prop->GetName()))
                 break;
             }
         // we didn't find it
@@ -830,86 +885,106 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
 SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context)
     {            
     // Get the BaseClass child nodes.
-    BeXmlDom::IterableNodeSet childNodes;
-    classNode.SelectChildNodes (childNodes, EC_NAMESPACE_PREFIX ":" EC_BASE_CLASS_ELEMENT);
-    FOR_EACH (BeXmlNodeP& childNode, childNodes)
-        {        
-        WString qualifiedClassName;
-        childNode->GetContent (qualifiedClassName);
-        
-        // Parse the potentially qualified class name into a namespace prefix and short class name
-        WString namespacePrefix;
-        WString className;
-        if (ECOBJECTS_STATUS_Success != ECClass::ParseClassName (namespacePrefix, className, qualifiedClassName))
+    for (BeXmlNodeP childNode = classNode.GetFirstChild (); NULL != childNode; childNode = childNode->GetNextSibling ())
+        {
+        Utf8CP childNodeName = childNode->GetName ();
+        if (0 == strcmp (childNodeName, EC_PROPERTY_ELEMENT))
             {
-            ECObjectsLogger::Log()->warningv (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the value '%ls' that can not be parsed.",  
-                this->GetName().c_str(), EC_BASE_CLASS_ELEMENT, qualifiedClassName.c_str());
-
-            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
+            ECPropertyP ecProperty = new PrimitiveECProperty (*this);
+            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, childNodeName);
+            if (SCHEMA_READ_STATUS_Success != status)
+                return status;
             }
-        
-        ECSchemaP resolvedSchema = GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
-        if (NULL == resolvedSchema)
+        else if (0 == strcmp (childNodeName, EC_BASE_CLASS_ELEMENT))
             {
-            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the namespace prefix '%ls' that can not be resolved to a referenced schema.", 
-                this->GetName().c_str(), EC_BASE_CLASS_ELEMENT, namespacePrefix.c_str());
-            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
+            SchemaReadStatus status = _ReadBaseClassFromXml(childNode);
+            if (SCHEMA_READ_STATUS_Success != status)
+                return status;
             }
-
-        ECClassP baseClass = resolvedSchema->GetClassP (className.c_str());
-        if (NULL == baseClass)
+        else if (0 == strcmp (childNodeName, EC_ARRAYPROPERTY_ELEMENT))
             {
-            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the value '%ls' that can not be resolved to an ECClass named '%ls' in the ECSchema '%ls'", 
-                this->GetName().c_str(), EC_BASE_CLASS_ELEMENT, qualifiedClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
-            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
+            ECPropertyP ecProperty = new ArrayECProperty (*this);
+            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, childNodeName);
+            if (SCHEMA_READ_STATUS_Success != status)
+                return status;
             }
-
-        if (ECOBJECTS_STATUS_Success != AddBaseClass (*baseClass))
-            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
+        else if (0 == strcmp (childNodeName, EC_STRUCTPROPERTY_ELEMENT))
+            {
+            ECPropertyP ecProperty = new StructECProperty (*this);
+            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, childNodeName);
+            if (SCHEMA_READ_STATUS_Success != status)
+                return status;
+            }
         }
     
-    // Get the Property child nodes.
-    classNode.SelectChildNodes (childNodes, EC_NAMESPACE_PREFIX ":" EC_PROPERTY_ELEMENT " | " EC_NAMESPACE_PREFIX ":" EC_ARRAYPROPERTY_ELEMENT " | " EC_NAMESPACE_PREFIX ":" EC_STRUCTPROPERTY_ELEMENT);
-    FOR_EACH (BeXmlNodeP& childNode, childNodes)
-        {   
-        ECPropertyP ecProperty = NULL;
-        Utf8CP      childNodeName = childNode->GetName();
-
-        if (0 == strcmp (childNodeName, EC_PROPERTY_ELEMENT))
-            ecProperty = new PrimitiveECProperty (*this, m_hideFromLeakDetection);
-        else if (0 == strcmp (childNodeName, EC_ARRAYPROPERTY_ELEMENT))
-            ecProperty = new ArrayECProperty (*this, m_hideFromLeakDetection);
-        else if (0 == strcmp (childNodeName, EC_STRUCTPROPERTY_ELEMENT))
-            ecProperty = new StructECProperty (*this, m_hideFromLeakDetection);
-        else
-            {
-            ECObjectsLogger::Log()->warningv (L"Invalid ECSchemaXML: Unknown kind of property '%hs' in ECClass '%ls:%ls'", childNodeName, this->GetSchema().GetName().c_str(), this->GetName().c_str() );
-            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
-            }
-
-        // read the property data.
-        SchemaReadStatus status = ecProperty->_ReadXml (*childNode, context);
-        if (status != SCHEMA_READ_STATUS_Success)
-            {
-            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to read properties of ECClass '%ls:%ls'", this->GetSchema().GetName().c_str(), this->GetName().c_str());                
-            delete ecProperty;
-            return status;
-            }
-        
-        if (ECOBJECTS_STATUS_Success != this->AddProperty (ecProperty))
-            {
-            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to read ECClass '%ls:%ls' because a problem occurred while adding ECProperty '%hs'", 
-                this->GetName().c_str(), this->GetSchema().GetName().c_str(), childNodeName);
-            delete ecProperty;
-            return SCHEMA_READ_STATUS_InvalidECSchemaXml;
-            }
-        }
-
     // Add Custom Attributes
     ReadCustomAttributes (classNode, context, GetSchema());
 
     return SCHEMA_READ_STATUS_Success;
     }
+
+SchemaReadStatus ECClass::_ReadBaseClassFromXml ( BeXmlNodeP childNode )
+    {
+    WString qualifiedClassName;
+    childNode->GetContent (qualifiedClassName);
+
+    // Parse the potentially qualified class name into a namespace prefix and short class name
+    WString namespacePrefix;
+    WString className;
+    if (ECOBJECTS_STATUS_Success != ECClass::ParseClassName (namespacePrefix, className, qualifiedClassName))
+        {
+        ECObjectsLogger::Log()->warningv (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the value '%ls' that can not be parsed.",  
+            this->GetName().c_str(), EC_BASE_CLASS_ELEMENT, qualifiedClassName.c_str());
+
+        return SCHEMA_READ_STATUS_InvalidECSchemaXml;
+        }
+
+    ECSchemaP resolvedSchema = GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
+    if (NULL == resolvedSchema)
+        {
+        ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the namespace prefix '%ls' that can not be resolved to a referenced schema.", 
+            this->GetName().c_str(), EC_BASE_CLASS_ELEMENT, namespacePrefix.c_str());
+        return SCHEMA_READ_STATUS_InvalidECSchemaXml;
+        }
+
+    ECClassP baseClass = resolvedSchema->GetClassP (className.c_str());
+    if (NULL == baseClass)
+        {
+        ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the value '%ls' that can not be resolved to an ECClass named '%ls' in the ECSchema '%ls'", 
+            this->GetName().c_str(), EC_BASE_CLASS_ELEMENT, qualifiedClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
+        return SCHEMA_READ_STATUS_InvalidECSchemaXml;
+        }
+
+    if (ECOBJECTS_STATUS_Success != AddBaseClass (*baseClass))
+        return SCHEMA_READ_STATUS_InvalidECSchemaXml;
+    
+    return SCHEMA_READ_STATUS_Success;
+    }
+
+
+SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, Utf8CP childNodeName )
+    {
+    // read the property data.
+    SchemaReadStatus status = ecProperty->_ReadXml (*childNode, context);
+    if (status != SCHEMA_READ_STATUS_Success)
+        {
+        ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to read properties of ECClass '%ls:%ls'", this->GetSchema().GetName().c_str(), this->GetName().c_str());                
+        delete ecProperty;
+        return status;
+        }
+
+    if (ECOBJECTS_STATUS_Success != this->AddProperty (ecProperty))
+        {
+        ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to read ECClass '%ls:%ls' because a problem occurred while adding ECProperty '%hs'", 
+            this->GetName().c_str(), this->GetSchema().GetName().c_str(), childNodeName);
+        delete ecProperty;
+        return SCHEMA_READ_STATUS_InvalidECSchemaXml;
+        }
+    
+    return SCHEMA_READ_STATUS_Success;
+    }
+
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
@@ -1315,11 +1390,11 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
     READ_OPTIONAL_XML_ATTRIBUTE (constraintNode, ROLELABEL_ATTRIBUTE, this, RoleLabel);
     READ_OPTIONAL_XML_ATTRIBUTE (constraintNode, CARDINALITY_ATTRIBUTE, this, Cardinality);
     
-    BeXmlDom::IterableNodeSet childNodes;
-    constraintNode.SelectChildNodes (childNodes, EC_NAMESPACE_PREFIX ":" EC_CONSTRAINTCLASS_ELEMENT);
-
-    FOR_EACH (BeXmlNodeP& childNode, childNodes)
+    for (BeXmlNodeP childNode = constraintNode.GetFirstChild (); NULL != childNode; childNode = childNode->GetNextSibling ())
         {
+        if (0 != strcmp (childNode->GetName (), EC_CONSTRAINTCLASS_ELEMENT))
+            continue;
+        
         WString     constraintClassName;
         if (BEXML_Success != childNode->GetAttributeStringValue (constraintClassName, CONSTRAINTCLASSNAME_ATTRIBUTE))
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
@@ -1564,11 +1639,43 @@ ECObjectsStatus ECRelationshipConstraint::SetRoleLabel (WStringCR value)
     return ECOBJECTS_STATUS_Success;
     }
   
-     
+  /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipConstraint::CopyTo
+(
+ECRelationshipConstraintR toRelationshipConstraint
+)
+    {
+    if (IsRoleLabelDefined())
+        toRelationshipConstraint.SetRoleLabel(GetRoleLabel());
+
+    toRelationshipConstraint.SetCardinality(GetCardinality());
+    toRelationshipConstraint.SetIsPolymorphic(GetIsPolymorphic());
+
+    ECObjectsStatus status;
+    ECSchemaP destSchema = const_cast<ECSchemaP>(toRelationshipConstraint._GetContainerSchema());
+    FOR_EACH(ECClassP constraintClass, GetClasses())
+        {
+        ECClassP destConstraintClass = destSchema->GetClassP(constraintClass->GetName().c_str());
+        if (NULL == destConstraintClass)
+            {
+            status = destSchema->CopyClass(destConstraintClass, *constraintClass);
+            if (ECOBJECTS_STATUS_Success != status)
+                return status;
+            }
+
+        status = toRelationshipConstraint.AddClass(*destConstraintClass);
+        if (ECOBJECTS_STATUS_Success != status)
+            return status;
+        }
+    return CopyCustomAttributesTo(toRelationshipConstraint);
+    }
+       
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipClass::ECRelationshipClass (EC::ECSchemaCR schema) : ECClass (schema, false), m_strength( STRENGTHTYPE_Referencing), m_strengthDirection(STRENGTHDIRECTION_Forward) 
+ECRelationshipClass::ECRelationshipClass (EC::ECSchemaCR schema) : ECClass (schema), m_strength( STRENGTHTYPE_Referencing), m_strengthDirection(STRENGTHDIRECTION_Forward) 
     {
     m_source = new ECRelationshipConstraint(this, false);
     m_target = new ECRelationshipConstraint(this, true);

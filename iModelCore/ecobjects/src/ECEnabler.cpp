@@ -52,6 +52,64 @@ StandaloneECEnablerPtr          ECEnabler::GetEnablerForStructArrayMember (Schem
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECEnabler::_IsPropertyReadOnly (UInt32 propertyIndex) const
+    {
+    // Note: this is the default implementation, and it causes significant performance issues because every call to IECInstance::SetValue() checks if the property is read-only
+    // Subclasses are capable of implementing this much more efficiently
+    ECPropertyCP ecproperty = LookupECProperty (propertyIndex);
+    BeAssert (NULL != ecproperty);
+    return NULL == ecproperty || ecproperty->GetIsReadOnly();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyCP ECEnabler::_LookupECProperty (UInt32 propertyIndex) const
+    {
+    WCharCP accessString;
+    return ECOBJECTS_STATUS_Success == GetAccessString (accessString, propertyIndex) ? _LookupECProperty (accessString) : NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/12
++---------------+---------------+---------------+---------------+---------------+------*/
+static ECPropertyCP propertyFromAccessString (ECClassCR ecClass, WCharCP accessString)
+    {
+    WCharCP dot = wcschr (accessString, '.');
+    if (NULL == dot)
+        {
+        // Discrepancy between "managed" access strings, which do not include "[]" for array properties, and "native" access strings, which do...annoyingly requires copying the string...
+        WString fixedAccessString (accessString);
+        if (fixedAccessString.length() >= 2 && '[' == fixedAccessString[fixedAccessString.length()-2])
+            fixedAccessString.erase (fixedAccessString.length()-2);
+
+        return ecClass.GetPropertyP (fixedAccessString.c_str());
+        }
+    else
+        {
+        WString structName (accessString, dot);
+        ECPropertyCP prop = ecClass.GetPropertyP (structName.c_str());
+        if (NULL == prop)
+            { BeAssert (false); return NULL; }
+        StructECPropertyCP structProp = prop->GetAsStructProperty();
+        if (NULL == structProp)
+            { BeAssert (false); return NULL; }
+        
+        return propertyFromAccessString (structProp->GetType(), dot+1);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyCP ECEnabler::_LookupECProperty (WCharCP accessString) const
+    {
+    return propertyFromAccessString (GetClass(), accessString);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCR           ECEnabler::GetClass() const  { return m_ecClass; }
@@ -64,6 +122,10 @@ UInt32              ECEnabler::GetFirstPropertyIndex (UInt32 parentIndex) const 
 UInt32              ECEnabler::GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const { return _GetNextPropertyIndex (parentIndex, inputIndex); }
 bool                ECEnabler::HasChildProperties (UInt32 parentIndex) const { return _HasChildProperties (parentIndex); }
 ECObjectsStatus     ECEnabler::GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const{ return _GetPropertyIndices (indices, parentIndex); };
+IStandaloneEnablerLocaterR ECEnabler::GetStandaloneEnablerLocater() { return *this; }
+ECPropertyCP        ECEnabler::LookupECProperty (UInt32 propertyIndex) const { return _LookupECProperty (propertyIndex); }
+ECPropertyCP        ECEnabler::LookupECProperty (WCharCP accessString) const { return _LookupECProperty (accessString); }
+bool                ECEnabler::IsPropertyReadOnly (UInt32 propertyIndex) const { return _IsPropertyReadOnly (propertyIndex); }
 
 #if defined (EXPERIMENTAL_TEXT_FILTER)
 /*---------------------------------------------------------------------------------**//**
@@ -258,6 +320,7 @@ EC::ECRelationshipClassCR       IECRelationshipEnabler::GetRelationshipClass() c
 //    {
 //    return false;
 //    }
+
 
 
 END_BENTLEY_EC_NAMESPACE

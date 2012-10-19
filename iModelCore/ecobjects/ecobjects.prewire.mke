@@ -12,4 +12,6 @@ PolicyFile = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
 always:
    @CreateSymLinks.py -d"$(BuildContextPublicApiDir)ECObjects=$(ecPublicAPISrc)ECObjects"   
    @CreateSymLinks.py -d"$(BuildContextPublicApiDir)ECPresentation=$(ecPublicAPISrc)ECPresentation"
+   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)ECUnits=$(ecPublicAPISrc)ECUnits"
    @CreateSymLinks.py -d"$(BuildContextPublicApiDir)ECPersistence=$(ecPublicAPISrc)ECPersistence"
+

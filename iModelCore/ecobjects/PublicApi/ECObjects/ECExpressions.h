@@ -43,6 +43,8 @@ EXPR_TYPEDEFS(Symbol)
 EXPR_TYPEDEFS(SymbolExpressionContext)
 EXPR_TYPEDEFS(UnitsType)
 EXPR_TYPEDEFS(ValueResult)
+EXPR_TYPEDEFS(ValueSymbol)
+EXPR_TYPEDEFS(IECSymbolProvider);
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
@@ -64,6 +66,7 @@ typedef RefCountedPtr<PrimaryListNode>              PrimaryListNodePtr;
 typedef RefCountedPtr<Symbol>                       SymbolPtr;
 typedef RefCountedPtr<SymbolExpressionContext>      SymbolExpressionContextPtr;
 typedef RefCountedPtr<ValueResult>                  ValueResultPtr;
+typedef RefCountedPtr<ValueSymbol>                  ValueSymbolPtr;
 
 typedef bvector<NodeP>                              NodeVector;
 typedef NodeVector::iterator                        NodeVectorIterator;
@@ -74,6 +77,7 @@ typedef NodePtrVector::iterator                     NodePtrVectorIterator;
 typedef bvector<EvaluationResult>                   EvaluationResultVector;
 typedef EvaluationResultVector::iterator            EvaluationResultVectorIterator;
 
+//! @ingroup ECObjectsGroup
 enum ExpressionStatus
     {
     ExprStatus_Success              =   0,
@@ -205,7 +209,8 @@ public:
 /*__PUBLISH_SECTION_START__*/
 
 /*=================================================================================**//**
-*
+* The context in which an expression is evaluated.
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          ExpressionContext : RefCountedBase
 {
@@ -244,7 +249,8 @@ public:
 }; // End of class ExpressionContext
 
 /*=================================================================================**//**
-*
+* A context in which an IECInstance provides the context for expression evaluation.
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          InstanceExpressionContext : ExpressionContext
 {
@@ -270,7 +276,8 @@ public:
 }; // End of class InstanceExpressionContext
 
 /*=================================================================================**//**
-*
+* A context which provides a set of symbols for expression evaluation.
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          SymbolExpressionContext : ExpressionContext
 {
@@ -293,6 +300,8 @@ public:
     BentleyStatus               RemoveSymbol (SymbolR symbol);
     BentleyStatus               RemoveSymbol (wchar_t const* ident);
 
+    static SymbolExpressionContextPtr   Create (bvector<WString> const& requestedSymbolSets);
+
 /*__PUBLISH_SECTION_START__*/
     ECOBJECTS_EXPORT BentleyStatus  AddSymbol (SymbolR symbol);
     ECOBJECTS_EXPORT static SymbolExpressionContextPtr Create(ExpressionContextP outer);
@@ -303,7 +312,7 @@ public:
 *
 * Base class for all symbol types
 *
-*
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          Symbol : RefCountedBase
 {
@@ -338,7 +347,7 @@ public:
 /*=================================================================================**//**
 *
 * Used to give a name to an instance.
-*
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          ContextSymbol : Symbol
 {
@@ -360,8 +369,8 @@ public:
 };
 
 /*=================================================================================**//**
-*
-*
+* Used to introduce a named method into the context.
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          MethodSymbol : Symbol
 {
@@ -386,14 +395,14 @@ public:
     ECOBJECTS_EXPORT static MethodSymbolPtr    Create(wchar_t const* name, ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod);
 };
 
-/*__PUBLISH_SECTION_END__*/
 /*=================================================================================**//**
 *
 * Used to introduce a named value into the context.
-*
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          ValueSymbol : Symbol
 {
+/*__PUBLISH_SECTION_END__*/
 private:
     EC::ECValue     m_expressionValue;
 
@@ -405,12 +414,40 @@ protected:
                                                 { return ExprStatus_NeedsLValue; }
 
 public:
-                ValueSymbol (wchar_t const* name, EC::ECValue& value);
+                ValueSymbol (wchar_t const* name, EC::ECValueCR exprValue);
 
-    void                        GetValue(EC::ECValueR exprValue);
+/*__PUBLISH_SECTION_START__*/
+    ECOBJECTS_EXPORT void       GetValue(EC::ECValueR exprValue);
+    ECOBJECTS_EXPORT void       SetValue(EC::ECValueCR exprValue);
+    ECOBJECTS_EXPORT static ValueSymbolPtr    Create(wchar_t const* name, EC::ECValueCR exprValue);
+
 };  //  End of ValueSymbol
+
+/*__PUBLISH_SECTION_END__*/
+
+/*=================================================================================**//**
+* Provides a set of Symbols
++===============+===============+===============+===============+===============+======*/
+struct      IECSymbolProvider : RefCountedBase
+    {
+    typedef void (* ExternalSymbolPublisher)(SymbolExpressionContextR, bvector<WString> const&);
+protected:
+    virtual WCharCP                 _GetName() const = 0;
+    virtual void                    _PublishSymbols (SymbolExpressionContextR context, bvector<WString> const& requestedSymbolSets) = 0;
+public:
+    ECOBJECTS_EXPORT WCharCP        GetName() const
+                                        { return _GetName(); }
+    ECOBJECTS_EXPORT void           PublishSymbols (SymbolExpressionContextR context, bvector<WString> const& requestedSymbolSets)
+                                        { return _PublishSymbols (context, requestedSymbolSets); }
+
+    ECOBJECTS_EXPORT static void    RegisterExternalSymbolPublisher (ExternalSymbolPublisher externalPublisher);
+    };
+
+typedef RefCountedPtr<IECSymbolProvider> IECSymbolProviderPtr;
+
 /*__PUBLISH_SECTION_START__*/
 
+//! @ingroup ECObjectsGroup
 enum            ExpressionToken
     {
     TOKEN_None                = 0,
@@ -467,9 +504,6 @@ enum            ExpressionToken
 
 /*__PUBLISH_SECTION_END__*/
 /*=================================================================================**//**
-*
-* !!!Describe Class Here!!!
-*
 * @bsiclass                                                     John.Gooding    02/2011
 +===============+===============+===============+===============+===============+======*/
 struct          UnitsType : RefCountedBase
@@ -481,9 +515,6 @@ struct          UnitsType : RefCountedBase
 };
 
 /*=================================================================================**//**
-*
-* !!!Describe Class Here!!!
-*
 * @bsiclass                                                     John.Gooding    02/2011
 +===============+===============+===============+===============+===============+======*/
 struct          ExpressionType : RefCountedBase
@@ -507,9 +538,7 @@ public:
 }; // ExpressionType
 
 /*=================================================================================**//**
-*
-* !!!Describe Class Here!!!
-*
+* @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct          ReferenceResult 
 {
@@ -520,9 +549,7 @@ struct          ReferenceResult
 };
 
 /*=================================================================================**//**
-*
-* !!!Describe Class Here!!!
-*
+* @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct          EvaluationResult 
 {
@@ -569,9 +596,10 @@ struct          NodeVisitor
     virtual bool ProcessNode(NodeCR node) = 0;
 };
 
-
 /*=================================================================================**//**
-*
+* Parses an EC expression string to produce an expression tree which can be used to
+* evaluate the expression.
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          ECEvaluator
     {
@@ -611,7 +639,8 @@ public:
 };  // End of ECEvaluator class
 
 /*=================================================================================**//**
-*
+* Holds the result of evaluating an EC expression.
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          ValueResult : RefCountedBase
 {
@@ -630,7 +659,8 @@ public:
 };
 
 /*=================================================================================**//**
-*
+* Defines an expression tree for a parsed EC expression.
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          Node : RefCountedBase
 {

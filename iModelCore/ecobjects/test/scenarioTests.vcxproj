@@ -67,6 +67,7 @@
     <ClInclude Include="ECObjectsTestPCH.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="scenario\CompressInstanceTests.cpp" />
     <ClCompile Include="scenario\schematests.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

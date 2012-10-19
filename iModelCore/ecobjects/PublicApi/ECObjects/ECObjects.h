@@ -84,8 +84,12 @@ EC_TYPEDEFS(SystemTime);
 
 EC_TYPEDEFS(ICustomECStructSerializer);
 EC_TYPEDEFS(CustomStructSerializerManager);
+EC_TYPEDEFS (ECInstanceIterable);
+EC_TYPEDEFS(SupplementalSchemaMetaData);
+EC_TYPEDEFS (PresentationMetadataHelper);
 
-//EC_TYPEDEFS(SupplementalSchemaMetaData);
+EC_TYPEDEFS (CalculatedPropertySpecification);
+EC_TYPEDEFS (ParserRegex);
 
 typedef struct IStream* IStreamP;
 
@@ -107,6 +111,7 @@ typedef enum ECErrorCategories
 
 /*=================================================================================**//**
 * @bsiclass
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 enum ECObjectsStatus
     {
@@ -147,11 +152,15 @@ enum ECObjectsStatus
     ECOBJECTS_STATUS_UnableToGetStructArrayMemberInstance               = ECOBJECTS_ERROR_BASE + 0x22,
     ECOBJECTS_STATUS_InvalidIndexForPerPropertyFlag                     = ECOBJECTS_ERROR_BASE + 0x23,
     ECOBJECTS_STATUS_SchemaHasReferenceCycle                            = ECOBJECTS_ERROR_BASE + 0x24,
+    ECOBJECTS_STATUS_SchemaNotSupplemented                              = ECOBJECTS_ERROR_BASE + 0x25,
+    ECOBJECTS_STATUS_UnableToQueryForNullPropertyFlag                   = ECOBJECTS_ERROR_BASE + 0x26,
+    ECOBJECTS_STATUS_UnableToResizeFixedSizedArray                      = ECOBJECTS_ERROR_BASE + 0x27,
     ECOBJECTS_STATUS_Error                                              = ECOBJECTS_ERROR_BASE + 0xFFF,
     }; 
 
 /*=================================================================================**//**
 * @bsiclass
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 enum SchemaReadStatus
     {
@@ -166,6 +175,7 @@ enum SchemaReadStatus
 
 /*=================================================================================**//**
 * @bsiclass
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 enum SchemaWriteStatus
     {
@@ -177,6 +187,7 @@ enum SchemaWriteStatus
 
 /*=================================================================================**//**
 * @bsiclass
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 enum InstanceReadStatus
     {
@@ -214,6 +225,7 @@ enum InstanceReadStatus
     
 /*=================================================================================**//**
 * @bsiclass
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 enum InstanceWriteStatus
     {
@@ -229,7 +241,8 @@ enum InstanceWriteStatus
     };
     
 /*---------------------------------------------------------------------------------**//**
-* @bsiclass                                    Carole.MacDonald                04/2012
+* @bsiclass
+* @ingroup ECObjectsGroup
 +---------------+---------------+---------------+---------------+---------------+------*/
 enum SupplementedSchemaStatus
     {
@@ -237,19 +250,11 @@ enum SupplementedSchemaStatus
     SUPPLEMENTED_SCHEMA_STATUS_Metadata_Missing                 = SUPPLEMENTED_SCHEMA_STATUS_BASE + 1,
     SUPPLEMENTED_SCHEMA_STATUS_Duplicate_Precedence_Error       = SUPPLEMENTED_SCHEMA_STATUS_BASE + 2,
     SUPPLEMENTED_SCHEMA_STATUS_IECRelationship_Not_Allowed      = SUPPLEMENTED_SCHEMA_STATUS_BASE + 3,
+    SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException             = SUPPLEMENTED_SCHEMA_STATUS_BASE + 4,
+    SUPPLEMENTED_SCHEMA_STATUS_SupplementalClassHasBaseClass    = SUPPLEMENTED_SCHEMA_STATUS_BASE + 5,
     };
 
 /*__PUBLISH_SECTION_END__*/
-/*---------------------------------------------------------------------------------**//**
- @bsiclass
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct          ILeakDetector
-{
-virtual void    GetStats(Int32& currentLive, Int32& totalAllocs, Int32& totalFrees) const = 0;
-virtual void    ResetStats() = 0;
-virtual void    ReportStats (WCharCP prefix) const = 0;
-virtual Int32   CheckForLeaks () const = 0;
-};
 
 //=======================================================================================    
 // ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 
@@ -261,6 +266,7 @@ virtual Int32   CheckForLeaks () const = 0;
 //=======================================================================================    
 //! Represents the classification of the data type of an EC ECValue.  The classification is not the data type itself, but a category of type
 //! such as struct, array or primitive.
+//! @ingroup ECObjectsGroup
 //=======================================================================================    
 enum ValueKind ENUM_UNDERLYING_TYPE(unsigned short)
     {
@@ -281,6 +287,7 @@ enum ValueKind ENUM_UNDERLYING_TYPE(unsigned short)
 //=======================================================================================    
 //! Represents the classification of the data type of an EC array element.  The classification is not the data type itself, but a category of type.
 //! Currently an ECArray can only contain primitive or struct data types.
+//! @ingroup ECObjectsGroup
 //=======================================================================================    
 enum ArrayKind ENUM_UNDERLYING_TYPE(unsigned short)
     {
@@ -303,6 +310,7 @@ enum ArrayKind ENUM_UNDERLYING_TYPE(unsigned short)
 //=======================================================================================    
 //! Enumeration of primitive datatypes supported by native "ECObjects" implementation.
 //! These should correspond to all of the datatypes supported in .NET ECObjects
+//! @ingroup ECObjectsGroup
 //=======================================================================================    
 enum PrimitiveType ENUM_UNDERLYING_TYPE(unsigned short)
     {

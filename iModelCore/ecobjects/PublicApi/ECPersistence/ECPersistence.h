@@ -22,20 +22,26 @@
     #define ECPERSISTENCE_EXPORT IMPORT_ATTRIBUTE
 #endif
 
-#define BEGIN_BENTLEY_EC_NAMESPACE  BEGIN_BENTLEY_NAMESPACE namespace EC {
+#ifndef BEGIN_BENTLEY_EC_NAMESPACE
+    #define BEGIN_BENTLEY_EC_NAMESPACE  BEGIN_BENTLEY_NAMESPACE namespace EC {
 
-#define END_BENTLEY_EC_NAMESPACE    }}
+    #define END_BENTLEY_EC_NAMESPACE    }}
+#endif
 
-#define USING_NAMESPACE_EC  using namespace Bentley::EC;
+#ifndef USING_NAMESPACE_EC
+    #define USING_NAMESPACE_EC  using namespace Bentley::EC;
+#endif
 
-#define EC_TYPEDEFS(_name_)  \
-        BEGIN_BENTLEY_EC_NAMESPACE      \
-            struct _name_;      \
-            typedef _name_ *         _name_##P;  \
-            typedef _name_ &         _name_##R;  \
-            typedef _name_ const*    _name_##CP; \
-            typedef _name_ const&    _name_##CR; \
-        END_BENTLEY_EC_NAMESPACE
+#ifndef EC_TYPEDEFS
+    #define EC_TYPEDEFS(_name_)  \
+            BEGIN_BENTLEY_EC_NAMESPACE      \
+                struct _name_;      \
+                typedef _name_ *         _name_##P;  \
+                typedef _name_ &         _name_##R;  \
+                typedef _name_ const*    _name_##CP; \
+                typedef _name_ const&    _name_##CR; \
+            END_BENTLEY_ECECOBJECT_NAMESPACE
+#endif
 
 EC_TYPEDEFS(IECConnection);
 EC_TYPEDEFS(IECSchemaManager);

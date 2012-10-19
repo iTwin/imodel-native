@@ -403,7 +403,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ISolidPrimitivePtr &result)
             axes.GetColumns (vectorX, vectorY, vectorZ);
             centerB.SumOf (centerA, vectorZ, height);
             DgnConeDetail coneDetail (centerA, centerB,
-                        axes,
+                        axes, 
                         radiusA, radiusB,
                         capped);
             result = ISolidPrimitive::CreateDgnCone (coneDetail);
@@ -426,7 +426,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ISolidPrimitivePtr &result)
             DVec3d vectorX, vectorY, vectorZ;
             axes.GetColumns (vectorX, vectorY, vectorZ);
             DgnConeDetail coneDetail (centerA, centerB,
-                        axes,
+                        axes, 
                         radiusA, radiusB,
                         capped);
             result = ISolidPrimitive::CreateDgnCone (coneDetail);
@@ -464,7 +464,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ISolidPrimitivePtr &result)
             axes.GetColumns (vectorX, vectorY, vectorZ);
             centerB.SumOf (centerA, vectorZ, height);
             DgnConeDetail coneDetail (centerA, centerB,
-                        axes,
+                        axes, 
                         radius, radius,
                         capped);
             result = ISolidPrimitive::CreateDgnCone (coneDetail);

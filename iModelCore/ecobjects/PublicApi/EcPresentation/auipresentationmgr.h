@@ -16,23 +16,34 @@ BEGIN_BENTLEY_EC_NAMESPACE
 struct  ECPresentationManager: public NonCopyableClass
     {
     private:
-        typedef bset<ECPresentationCommandProviderCP>   T_CmdProviderSet;
-        typedef bset<IECPresentationViewProviderP>        T_ViewProviderSet;
-        typedef bset<IJournalProviderP>                 T_JournalProviderSet;
-        typedef bset<IAUIContentServiceProviderP>       T_ContentProviderSet;
-        typedef bset<ECPresentationImageProviderP>      T_ImageProviderSet;
-
-        T_CmdProviderSet        m_cmdProviders;
-        T_ViewProviderSet       m_viewProviders;
-        T_JournalProviderSet    m_journalProviders;
-        T_ContentProviderSet    m_contentProviders;
-        T_ImageProviderSet      m_imageProviders;
+        typedef bvector<ECPresentationCommandProviderCP>     T_CmdProviderSet;
+        typedef bvector<IECPresentationViewProviderP>        T_ViewProviderSet;
+        typedef bvector<IJournalProviderP>                   T_JournalProviderSet;
+        typedef bvector<IAUIContentServiceProviderP>         T_ContentProviderSet;
+        typedef bvector<ECPresentationImageProviderP>        T_ImageProviderSet;
+        typedef bvector<ECPresentationLocalizationProviderP> T_LocalizationProviderSet;
+        typedef bvector<ECSelectionListenerP>                T_SelectionListeners;
+        T_CmdProviderSet          m_cmdProviders;
+        T_ViewProviderSet         m_viewProviders;
+        T_JournalProviderSet      m_journalProviders;
+        T_ContentProviderSet      m_contentProviders;
+        T_ImageProviderSet        m_imageProviders;
+        T_LocalizationProviderSet m_localizationProviders;
+        T_SelectionListeners      m_selecitonListeners;
 
         ECPresentationManager ();
         
         IECPresentationViewDefinitionPtr AggregateViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR instanceData) const;
 
+        template <typename ProviderType, typename ContainerType> 
+        static void CheckAndAddProviderFromList (ProviderType & provider, ContainerType& );
+
+        template <typename ProviderType, typename ContainerType> 
+        static void RemoveProviderFromList (ProviderType & provider, ContainerType& );
+
     public:
+    static const int GENERAL_PURPOSE_QUERY = 0;
+    
     //! Get the presentation manager.
     ECOBJECTS_EXPORT static ECPresentationManagerR  GetManager();
 
@@ -56,6 +67,10 @@ struct  ECPresentationManager: public NonCopyableClass
     ECOBJECTS_EXPORT void                           AddProvider (ECPresentationImageProviderR provider);
     ECOBJECTS_EXPORT void                           RemoveProvider (ECPresentationImageProviderR provider);
 
+    //! Add or remove the localization provider
+    ECOBJECTS_EXPORT void                           AddProvider (ECPresentationLocalizationProviderR provider);
+    ECOBJECTS_EXPORT void                           RemoveProvider (ECPresentationLocalizationProviderR provider);
+
     //!Get the view definition associated with a particular data context.
     //!@param[in] itemInfo      A hint to provide the context in which the view definition will be used. eg. MenuItem
     //!@param[in] dataContext   The data context for which the view definition is requested.
@@ -70,11 +85,29 @@ struct  ECPresentationManager: public NonCopyableClass
     //! different command providers.
     ECOBJECTS_EXPORT bvector<UICommandPtr>              GetCommands (IAUIDataContextCR instance) const;
 
+    //! Get the list of commands that is associated with this data context for a given purpose. Its a union of all 
+    //! commands provided by different command providers.
+    ECOBJECTS_EXPORT bvector<UICommandPtr>              GetCommands (IAUIDataContextCR instance, int purpose) const;
+
     //! Fetch an image of the specified size and name from the image providers.
-    ECOBJECTS_EXPORT IECNativeImagePtr GetImage (ECImageKeyCR imageKey, DPoint2dCR size);
+    ECOBJECTS_EXPORT IECNativeImagePtr                  GetImage (ECImageKeyCR imageKey, DPoint2dCR size);
+
+    //! Get string from localization providers.
+    //!@param[in] rscFileName   Dll name which contains the resource.
+    //!@param[in] tableId       Table ID form which resource shoud be taken.
+    //!@param[in] rscId         Resource ID.
+    ECOBJECTS_EXPORT WCharCP                            GetString (WCharCP rscFileName, UInt tableId, UInt rscId);
 
     //! Execute command automatically calls these. So explicit call is usually un necessary.
-    void                           JournalCmd (IUICommandCR cmd, IAUIDataContextCP instanceData);
+    void                                                JournalCmd (IUICommandCR cmd, IAUIDataContextCP instanceData);
+
+
+    //!Hooks for individual EC events
+    ECOBJECTS_EXPORT    void RegisterSelectionHook (ECSelectionListener& listener);
+    ECOBJECTS_EXPORT    void UnRegisterSelectionHook (ECSelectionListener& listener);
+
+    ECOBJECTS_EXPORT    void TriggerSelectionEvent (ECSelectionEventCR selectionEvent);
+    ECOBJECTS_EXPORT    void TriggerSubSelectionEvent (ECSelectionEventCR selectionEvent);
     };
 
 END_BENTLEY_EC_NAMESPACE

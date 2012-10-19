@@ -20,36 +20,29 @@ EC_TYPEDEFS(MemoryInstanceSupport);
 
 BEGIN_BENTLEY_EC_NAMESPACE
     
+typedef UInt32 NullflagsBitmask;
 typedef UInt16 ClassIndex;
 typedef UInt16 SchemaIndex;
 
-typedef UInt32 NullflagsBitmask;
-
 /*__PUBLISH_SECTION_END__*/
 
-typedef UInt32 InstanceFlags;
 typedef UInt32 SecondaryOffset;
 typedef UInt32 ArrayCount;
 
 #define NULLFLAGS_BITMASK_AllOn     0xFFFFFFFF
 
-struct  InstanceHeader
-    {
-    SchemaIndex     m_schemaIndex;
-    ClassIndex      m_classIndex;
-
-    InstanceFlags   m_instanceFlags;
-    };
 /*__PUBLISH_SECTION_START__*/
 
 enum ArrayModifierFlags ENUM_UNDERLYING_TYPE (UInt32)
     {
     PROPERTYLAYOUTMODIFIERFLAGS_None              = 0x00,
     PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount = 0x01,
-    PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly        = 0x02
+    PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly        = 0x02,
+    PROPERTYLAYOUTMODIFIERFLAGS_IsCalculated      = 0x04
     };
 
 /*=================================================================================**//**
+* @ingroup ECObjectsGroup
 * @bsistruct
 +===============+===============+===============+===============+===============+======*/      
 struct PropertyLayout
@@ -60,16 +53,13 @@ private:
     WString                 m_accessString;        
     UInt32                  m_parentStructIndex;
     ECTypeDescriptor        m_typeDescriptor;
-    
+
     // Using UInt32 instead of size_t below because we will persist this struct in an XAttribute. It will never be very big.
     UInt32              m_offset; //! An offset to either the data holding that property's value (for fixed-size values) or to the offset at which the properties value can be found.
     UInt32              m_modifierFlags; //! Can be used to indicate that a string should be treated as fixed size, with a max length, or that a longer fixed size type should be treated as an optional variable-sized type, or that for a string that only an entry to a StringTable is Stored, or that a default value should be used.
     UInt32              m_modifierData;  //! Data used with the modifier flag, like the length of a fixed-sized string.
     UInt32              m_nullflagsOffset;
     NullflagsBitmask    m_nullflagsBitmask;
-
-  //ECPropertyCP        m_property; // WIP_FUSION: optional? YAGNI?
-
 public:
     PropertyLayout (WCharCP accessString, UInt32 psi, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask, UInt32 modifierFlags = 0,  UInt32 modifierData = 0) : //, ECPropertyCP property) :
         m_accessString(accessString), m_parentStructIndex (psi), m_typeDescriptor(typeDescriptor), m_offset(offset), m_nullflagsOffset(nullflagsOffset), 
@@ -92,6 +82,8 @@ public:
 
     ECOBJECTS_EXPORT bool                        SetReadOnlyMask (bool readOnly);
     ECOBJECTS_EXPORT bool                        IsFixedSized() const;
+    ECOBJECTS_EXPORT bool                        HoldsCalculatedProperty() const;
+
     //! Gets the size required for this PropertyValue in the fixed Section of the IECInstance's memory
     //! Variable-sized types will have 4 byte SecondaryOffset stored in the fixed Section.
     ECOBJECTS_EXPORT UInt32                       GetSizeInFixedSection() const;
@@ -110,6 +102,7 @@ bool operator()(ClassLayoutCP s1, ClassLayoutCP s2) const;
  /*__PUBLISH_SECTION_START__*/
  /*=================================================================================**//**
 * @bsistruct
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/      
 struct ClassLayout
     {
@@ -133,7 +126,6 @@ private:
         };
     
     // These members are expected to be persisted  
-    ClassIndex              m_classIndex; // Unique per some context, e.g. per DgnFile
     WString                 m_className;
     
     PropertyLayoutVector    m_propertyLayouts;      // This is the primary collection, there is a secondary map for lookup by name, below.    
@@ -141,10 +133,8 @@ private:
     LogicalStructureMap     m_logicalStructureMap;
     
     // These members are transient
-    bool                              m_hideFromLeakDetection;
-    SchemaIndex                       m_schemaIndex;
     UInt32                            m_sizeOfFixedSection;
-    bool                              m_isRelationshipClass;
+    bool                              m_isRelationshipClass;         // make this a bitmask IsRelationshipClass, OnPartialInstanceLoaded (this should allow roundtrip native-managed-native
     int                               m_propertyIndexOfSourceECPointer;
     int                               m_propertyIndexOfTargetECPointer;
     int                               m_uniqueId;
@@ -173,29 +163,29 @@ private:
 
         void        AddProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, UInt32 size, UInt32 modifierFlags = 0, UInt32 modifierData = 0);
         void        AddStructProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor);
-        void        AddFixedSizeProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, bool isReadOnly);
+        void        AddFixedSizeProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, bool isReadOnly, bool isCalculated);
         void        AddFixedSizeArrayProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, UInt32 arrayCount, bool isReadOnly);
-        void        AddVariableSizeProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, bool isReadOnly);
+        void        AddVariableSizeProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, bool isReadOnly, bool isCalculated);
         void        AddVariableSizeArrayPropertyWithFixedCount (WCharCP accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount, bool isReadOnly);        
         void        AddProperties (ECClassCR ecClass, WCharCP nameRoot, bool addFixedSize);
 
-        Factory (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex, bool hideFromLeakDetection);
+        Factory (ECClassCR ecClass);
         ClassLayoutP DoBuildClassLayout ();
     };
 
-    ClassLayout(SchemaIndex schemaIndex, bool hideFromLeakDetection);
+    ClassLayout();
 
     WString                GetShortDescription() const;
     WString                LogicalStructureToString (UInt32 parentStructIndex = 0, UInt32 indentLevel = 0) const;
-    BentleyStatus          SetClass (WCharCP  className, UInt16 classIndex);
+    BentleyStatus          SetClass (WCharCP  className);
 
 public:    
     WString                 GetName() const;
     int                     GetUniqueId() const;
     void                    AddPropertyLayout (WCharCP accessString, PropertyLayoutR);
     void                    AddToLogicalStructureMap (PropertyLayoutR propertyLayout, UInt32 propertyIndex);
-    void                    InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const;
-    UInt32                  GetSizeOfFixedSection() const;
+    ECOBJECTS_EXPORT void   InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const;
+    ECOBJECTS_EXPORT UInt32 GetSizeOfFixedSection() const;
 
     ECOBJECTS_EXPORT UInt32                  GetFirstChildPropertyIndex (UInt32 parentIndex) const;
     ECOBJECTS_EXPORT UInt32                  GetNextChildPropertyIndex (UInt32 parentIndex, UInt32 childIndex) const;
@@ -203,23 +193,21 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus         GetPropertyIndices (bvector<UInt32>& properties, UInt32 parentIndex) const;
     ECOBJECTS_EXPORT bool                    HasChildProperties (UInt32 parentIndex) const;
 
-    ECOBJECTS_EXPORT static ILeakDetector& Debug_GetLeakDetector ();
+    // Returns true if this ClassLayout is equivalent to the other ClassLayout (checks name and checksum)
+    ECOBJECTS_EXPORT bool                    Equals (ClassLayoutCR other) const;
+
     ECOBJECTS_EXPORT ~ClassLayout();
     ECOBJECTS_EXPORT void            AddPropertyDirect (WCharCP accessString, UInt32 parentStructIndex, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask);
     ECOBJECTS_EXPORT ECObjectsStatus FinishLayout ();
-
 /*__PUBLISH_SECTION_START__*/
 private:
-    ClassLayout (){}
+    //ClassLayout (){}
 
 public:
-    ECOBJECTS_EXPORT static ClassLayoutP BuildFromClass (ECClassCR ecClass, ClassIndex classIndex, SchemaIndex schemaIndex, bool hideFromLeakDetection=false);
-    ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (WCharCP  className, ClassIndex classIndex, SchemaIndex schemaIndex, bool hideFromLeakDetection=false);
+    ECOBJECTS_EXPORT static ClassLayoutP BuildFromClass (ECClassCR ecClass);
+    ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (WCharCP  className);
 
     ECOBJECTS_EXPORT WString const & GetECClassName() const;
-    // These members are only meaningful in the context of a consumer like DgnHandlers.dll that actually handles persistence of ClassLayouts
-    ECOBJECTS_EXPORT ClassIndex     GetClassIndex() const;
-    ECOBJECTS_EXPORT SchemaIndex    GetSchemaIndex () const;
     ECOBJECTS_EXPORT int            GetECPointerIndex (ECRelationshipEnd end) const;
     
     ECOBJECTS_EXPORT UInt32          GetChecksum () const;
@@ -227,10 +215,10 @@ public:
     ECOBJECTS_EXPORT UInt32          GetPropertyCountExcludingEmbeddedStructs () const;
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyLayout (PropertyLayoutCP & propertyLayout, WCharCP accessString) const;
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const;
+                     ECObjectsStatus GetPropertyLayoutIndex (UInt32& propertyIndex, PropertyLayoutCR propertyLayout) const;
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyIndex (UInt32& propertyIndex, WCharCP accessString) const;
     ECOBJECTS_EXPORT bool            IsPropertyReadOnly (UInt32 propertyIndex) const;
     ECOBJECTS_EXPORT bool            SetPropertyReadOnly (UInt32 propertyIndex, bool readOnly) const;
-    
     
     //! Determines the number of bytes used, so far
     ECOBJECTS_EXPORT UInt32         CalculateBytesUsed(byte const * data) const;
@@ -242,6 +230,7 @@ public:
 typedef bvector<ClassLayoutCP>  ClassLayoutVector;
 
 /*=================================================================================**//**
+* @ingroup ECObjectsGroup
 * @bsistruct
 +===============+===============+===============+===============+===============+======*/      
 struct SchemaLayout
@@ -263,6 +252,7 @@ public:
     ECOBJECTS_EXPORT BentleyStatus          AddClassLayout (ClassLayoutCR, ClassIndex);
     ECOBJECTS_EXPORT ClassLayoutCP          GetClassLayout (ClassIndex classIndex);
     ECOBJECTS_EXPORT ClassLayoutCP          FindClassLayout (WCharCP className);
+    ECOBJECTS_EXPORT BentleyStatus          FindClassIndex (ClassIndex& classIndex, WCharCP className) const;
     ECOBJECTS_EXPORT BentleyStatus          FindAvailableClassIndex (ClassIndex&);
     // This may often correspond to "number of ClassLayouts - 1", but not necessarily, because there can be gaps
     // so when you call GetClassLayout (index) you might get NULLs. Even the last one could be NULL.
@@ -343,6 +333,8 @@ private:
 //=======================================================================================    
 //! Base class for EC::IECInstance implementations that get/set values from a block of memory, 
 //! e.g. StandaloneECInstance and ECXInstance
+//! @ingroup ECObjectsGroup
+//! @bsiclass
 //=======================================================================================    
 struct MemoryInstanceSupport
     {
@@ -351,7 +343,7 @@ struct MemoryInstanceSupport
     
 /*__PUBLISH_SECTION_START__*/  
 private:    
-    bool                        m_allowWritingDirectlyToInstanceMemory;
+    mutable bool        m_allowWritingDirectlyToInstanceMemory;
 //__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_END__*/    
 
@@ -413,8 +405,16 @@ private:
         
     ECObjectsStatus                   EnsureSpaceIsAvailable (UInt32& offset, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded);
     ECObjectsStatus                   EnsureSpaceIsAvailableForArrayIndexValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 bytesNeeded);
-    ECObjectsStatus                   GrowPropertyValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 additionalbytesNeeded);           
-         
+    ECObjectsStatus                   GrowPropertyValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 additionalbytesNeeded);
+    // Updates the calculated value in memory and returns the updated value in existingValue
+    ECObjectsStatus                   EvaluateCalculatedProperty (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, ECValueR existingValue) const;
+    // Updates the dependent properties of the calculated property
+    ECObjectsStatus                   SetCalculatedProperty (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout);
+    ECObjectsStatus                   SetPrimitiveValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, bool alreadyCalculated);
+
+    ECObjectsStatus                   ModifyData (byte const* data, void const* newData, size_t dataLength);
+    ECObjectsStatus                   ModifyData (UInt32 const* data, UInt32 newData);
+    ECObjectsStatus                   MoveData (byte* to, byte const* from, size_t dataLength); 
 protected:
     //! Constructor used by subclasses
     //! @param allowWritingDirectlyToInstanceMemory     If true, MemoryInstanceSupport is allowed to memset, memmove, and poke at the 
@@ -422,22 +422,25 @@ protected:
     //!                                                 If false, all modifications must happen through _ModifyData, e.g. for ECXData.
     ECOBJECTS_EXPORT            MemoryInstanceSupport (bool allowWritingDirectlyToInstanceMemory);
     ECOBJECTS_EXPORT void       InitializeMemory(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated) const;
+                     void       SetInstanceMemoryWritable (bool writable) const { m_allowWritingDirectlyToInstanceMemory = writable; }
+
     //! Obtains the current primitive value for the specified property
     //! If nIndices is > 0 then the primitive value for the array element at the specified index is obtained.
     //! This is protected because implementors of _GetStructArrayArrayValueFromMemory should call it to obtain the binary primitive value that they stored
     //! when _SetStructArrayValueToMemory was invoked as a means to locate the externalized struct array value.
-    ECOBJECTS_EXPORT ECObjectsStatus  GetPrimitiveValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, bool useIndex = false, UInt32 index = 0) const;    
+    ECOBJECTS_EXPORT ECObjectsStatus  GetPrimitiveValueFromMemory (ECValueR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, bool useIndex = false, UInt32 index = 0) const;    
     //! Sets the primitive value for the specified property
     //! If nIndices is > 0 then the primitive value for the array element at the specified index is set.
     //! This is protected because implementors of _SetStructArrayArrayValueToMemory should call it to store a binary primitive value that can be retrieved
     //! when _GetStructArrayValueFromMemory is invoked as a means to locate the externalized struct array value.
     ECOBJECTS_EXPORT ECObjectsStatus  SetPrimitiveValueToMemory   (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, bool useIndex = false, UInt32 index = 0);    
-    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout) const;
-    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const;    
-    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ClassLayoutCR classLayout, ECValueR v, WCharCP propertyAccessString, bool useIndex = false, UInt32 index = 0) const;
-    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ClassLayoutCR classLayout, ECValueR v, UInt32 propertyIndex, bool useArrayIndex = false, UInt32 arrayIndex = 0) const;
+    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout) const;
+    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index) const;    
+    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, ClassLayoutCR classLayout, WCharCP propertyAccessString, bool useIndex = false, UInt32 index = 0) const;
+    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, ClassLayoutCR classLayout, UInt32 propertyIndex, bool useArrayIndex = false, UInt32 arrayIndex = 0) const;
     ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout);          
     ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index);              
+    ECOBJECTS_EXPORT ECObjectsStatus  SetInternalValueToMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, ECValueCR v, bool useIndex = false, UInt32 index = 0);
     ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ClassLayoutCR classLayout, WCharCP propertyAccessString, ECValueCR v,  bool useIndex = false, UInt32 index = 0);      
     ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ClassLayoutCR classLayout, UInt32 propertyIndex, ECValueCR v, bool useArrayIndex = false, UInt32 arrayIndex = 0);      
     ECOBJECTS_EXPORT ECObjectsStatus  InsertNullArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 insertIndex, UInt32 insertCount);
@@ -445,6 +448,7 @@ protected:
     ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElementsFromMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
     ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 removeIndex, UInt32 removeCount);
     ECOBJECTS_EXPORT WString          InstanceDataToString (WCharCP indent, ClassLayoutCR classLayout) const;
+    ECOBJECTS_EXPORT ECObjectsStatus  GetIsNullValueFromMemory (ClassLayoutCR classLayout, bool& isNull, UInt32 propertyIndex, bool useIndex, UInt32 index) const;
 
     virtual ~MemoryInstanceSupport () {}
 
@@ -468,6 +472,7 @@ protected:
     //! Get a pointer to the first byte of the data    
     virtual byte const *        _GetData () const = 0;
     virtual ECObjectsStatus     _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength) = 0;
+    virtual ECObjectsStatus     _MoveData (UInt32 toOffset, UInt32 fromOffset, UInt32 dataLength) = 0;
     virtual UInt32              _GetBytesAllocated () const = 0;
         
     //! Reallocates memory for the IECInstance and copies the old IECInstance data into the new memory
@@ -475,11 +480,8 @@ protected:
     //! @param additionalBytesNeeded  Additional bytes of memory needed above current allocation
     virtual ECObjectsStatus    _GrowAllocation (UInt32 additionalBytesNeeded) = 0;
     
-    //! Reallocates memory for the IECInstance and copies the old IECInstance data into the new memory
-    //! This is not guaranteed to do anything or to change to precisely the allocation you request
-    //! but it will be at least as large as you request.
-    //! @param newAllocation  Additional bytes of memory needed above current allocation    
-    virtual void                _ShrinkAllocation (UInt32 newAllocation) = 0;
+    //! Shrinks the allocated IECInstance data to be as small as possible
+    virtual ECObjectsStatus    _ShrinkAllocation () = 0;
     
     //! Free any allocated memory
     virtual void                _FreeAllocation () = 0;
@@ -487,13 +489,14 @@ protected:
     virtual void                _SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable) {};
 
 public:
-    ECOBJECTS_EXPORT static InstanceHeader const&   PeekInstanceHeader (void const* data);
-
-    ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
+    ECOBJECTS_EXPORT ECObjectsStatus        RemoveArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
    
-    ECOBJECTS_EXPORT void SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable);
+    ECOBJECTS_EXPORT void                   SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable);
 
-    ECOBJECTS_EXPORT EC::PrimitiveType         GetStructArrayPrimitiveType () const;
+    ECOBJECTS_EXPORT EC::PrimitiveType      GetStructArrayPrimitiveType () const;
+
+    // Compress the memory storing the data to as small a size as possible
+    ECOBJECTS_EXPORT ECObjectsStatus        Compress();
 
 /*__PUBLISH_SECTION_START__*/  
     };   

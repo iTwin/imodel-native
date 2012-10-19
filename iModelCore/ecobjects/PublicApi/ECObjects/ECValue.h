@@ -8,7 +8,7 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include <Bentley/VirtualCollectionIterator.h>
+#include <ECObjects/VirtualCollectionIterator.h>
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECObjects.h>
 #include <Geom/GeomApi.h>
@@ -21,10 +21,9 @@ typedef RefCountedPtr<ECValuesCollection> ECValuesCollectionPtr;
 
 //=======================================================================================    
 //! SystemTime structure is used to set and get time data from ECValue objects.
-//! @group "ECInstance"
+//! @ingroup ECObjectsGroup
 //! @see ECValue
 //=======================================================================================    
-
 struct SystemTime
 {
 public:
@@ -43,15 +42,16 @@ public:
     ECOBJECTS_EXPORT WString      ToString ();
     ECOBJECTS_EXPORT bool          operator== (const SystemTime&) const;
 
-    ECOBJECTS_EXPORT BentleyStatus InitFromFileTime (_FILETIME const& fileTime);
+    ECOBJECTS_EXPORT BentleyStatus  InitFromFileTime (_FILETIME const& fileTime);
+    ECOBJECTS_EXPORT BentleyStatus  InitFromUnixMillis (UInt64 unixMillis);
     };
 
 //=======================================================================================    
 //! Information about an array in an EC::IECInstance. Does not contain the actual elements.
-//! @group "ECInstance"
+//! @ingroup ECObjectsGroup
 //! @see ECValue
 //=======================================================================================    
-struct ArrayInfo  // FUSION_WIP: this could also fit into 8 bytes if packed properly
+struct ArrayInfo
     {
 private:
     union
@@ -59,7 +59,7 @@ private:
         ArrayKind       m_arrayKind;
         PrimitiveType   m_elementPrimitiveType;
         };    
-    bool                m_isFixedCount;     // FUSION_WIP Store this as some other (blittable) type.
+    bool                m_isFixedCount;
     UInt32              m_count;
             
 public:
@@ -91,24 +91,17 @@ private:
         ValueKind       m_valueKind;
         PrimitiveType   m_primitiveType;
         };
-    bool                m_isNull;     
-    bool                m_isReadOnly; // Really indicates that the property from which this came is readonly... not the value itself.
 
+    UInt8               m_stateFlags;
+    bool                m_ownsData;             // For binary and string values, if true the data must be freed with this ECValue
 protected:    
     typedef bvector<ECValue>  ValuesVector;
     typedef bvector<ECValue>* ValuesVectorP;
     
-    struct StringInfo
-        {
-        WCharCP             m_string;
-        bool                m_freeWhenDone;   // WIP_FUSION: this could be stored in the "header"... shared with other DataTypes that need to be freed
-        };                                    //             and it would make max size of StringInfo be 8 bytes
-
     struct BinaryInfo
         {
         const byte *        m_data;
         size_t              m_size;
-        bool                m_freeWhenDone;
         };
 
     union
@@ -117,7 +110,7 @@ protected:
         ::Int32             m_integer32;
         ::Int64             m_long64;
         double              m_double;
-        StringInfo          m_stringInfo;
+        WCharCP             m_string;
         ::Int64             m_dateTime;
         DPoint2d            m_dPoint2d;   
         DPoint3d            m_dPoint3d; 
@@ -126,7 +119,6 @@ protected:
         IECInstanceP        m_structInstance;   // The ECValue class calls AddRef and Release for the member as needed
         };
 
-    void DeepCopy (ECValueCR v);
     void ShallowCopy (ECValueCR v);
     void ConstructUninitialized();
     inline void FreeMemory ();
@@ -138,7 +130,7 @@ public:
     ECOBJECTS_EXPORT ~ECValue();
     
     ECOBJECTS_EXPORT ECValue ();
-    ECOBJECTS_EXPORT ECValue (ECValueCR v, bool doDeepCopy = false);
+    ECOBJECTS_EXPORT ECValue (ECValueCR v);
     ECOBJECTS_EXPORT explicit ECValue (ValueKind classification);
     ECOBJECTS_EXPORT explicit ECValue (PrimitiveType primitiveType);
 
@@ -152,12 +144,18 @@ public:
     ECOBJECTS_EXPORT explicit ECValue (bool value);
     ECOBJECTS_EXPORT explicit ECValue (SystemTime const& time);
 
-    ECOBJECTS_EXPORT void           SetReadOnly(bool isReadOnly);
-
+    ECOBJECTS_EXPORT void           SetIsReadOnly(bool isReadOnly);
     ECOBJECTS_EXPORT bool           IsReadOnly() const;
+
+    ECOBJECTS_EXPORT void           SetIsNull(bool isNull); 
     ECOBJECTS_EXPORT bool           IsNull() const;
+
+    ECOBJECTS_EXPORT void           SetIsLoaded(bool isLoaded); 
+    ECOBJECTS_EXPORT bool           IsLoaded() const; 
+
     ECOBJECTS_EXPORT void           SetToNull();
-    ECOBJECTS_EXPORT void           From(ECValueCR v, bool doDeepCopy);
+
+    ECOBJECTS_EXPORT void           From(ECValueCR v);
 
     ECOBJECTS_EXPORT ValueKind      GetKind() const;
     ECOBJECTS_EXPORT bool           IsUninitialized () const;
@@ -180,6 +178,15 @@ public:
         
     ECOBJECTS_EXPORT PrimitiveType  GetPrimitiveType() const;
     ECOBJECTS_EXPORT BentleyStatus  SetPrimitiveType(PrimitiveType primitiveElementType);
+    
+/*__PUBLISH_SECTION_END__*/
+    // Attempts to convert this ECValue's primitive value to a different primitive type.
+    // Currently supported conversions (motivated by ECExpressions):
+    //  - double, int, and string are all interconvertible. double => int rounds
+    //  - int, long, double, boolean, points, and datetime can be converted to string (uses ToString())
+    //  - a null value of any primitive type can be converted a null value of any other primitive type
+    ECOBJECTS_EXPORT bool           ConvertToPrimitiveType (PrimitiveType primitiveType);
+/*__PUBLISH_SECTION_START__*/
 
     ECOBJECTS_EXPORT ECObjectsStatus  SetStructArrayInfo (UInt32 count, bool isFixedSize);
     ECOBJECTS_EXPORT ECObjectsStatus  SetPrimitiveArrayInfo (PrimitiveType primitiveElementtype, UInt32 count, bool isFixedSize);
@@ -200,7 +207,7 @@ public:
         
     ECOBJECTS_EXPORT WCharCP        GetString () const;
 /*__PUBLISH_SECTION_END__*/
-                     WCharCP        GetString0 () const {return m_stringInfo.m_string;}
+                     WCharCP        GetString0 () const {return m_string;}
 /*__PUBLISH_SECTION_START__*/
     ECOBJECTS_EXPORT BentleyStatus  SetString (WCharCP string, bool holdADuplicate = true);
 
@@ -215,6 +222,8 @@ public:
 
     ECOBJECTS_EXPORT Int64          GetDateTimeTicks() const;
     ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 value);
+
+    ECOBJECTS_EXPORT UInt64         GetDateTimeUnixMillis() const;
 
     ECOBJECTS_EXPORT DPoint2d       GetPoint2D() const;
     ECOBJECTS_EXPORT BentleyStatus  SetPoint2D (DPoint2dCR value);
@@ -239,6 +248,7 @@ public:
 //! applicable (primitive members or the roots of arrays), the INDEX_ROOT constant 
 //! is used.  
 //! @group "ECInstance"
+//! @ingroup ECObjectsGroup
 //! @see ECValue, ECEnabler, ECPropertyValue, ECValuesCollection
 //! @bsiclass 
 //======================================================================================= 
@@ -316,6 +326,9 @@ public:
     //! @return         true if the ECEnablerPtr are equivalent, otherwise false.
     ECOBJECTS_EXPORT bool                   MatchesEnabler (UInt32 depth, ECEnablerCR other) const;
 
+    //! Looks up and returns the ECProperty associated with this accessor
+    ECOBJECTS_EXPORT EC::ECPropertyCP       GetECProperty() const;
+
 /*__PUBLISH_SECTION_START__*/
 
     ECOBJECTS_EXPORT UInt32                 GetDepth() const;
@@ -380,19 +393,21 @@ friend struct ECValuesCollection;
 friend struct ECValuesCollectionIterator;
 
 private:
-    IECInstancePtr      m_instance;
+    IECInstanceCP       m_instance;
     ECValueAccessor     m_accessor;
-    ECValue             m_ecValue;
+    mutable ECValue     m_ecValue;      // mutable to allow lazy initialization
+    mutable bool        m_evaluated;    // mutable to allow lazy initialization
 
-
+    ECObjectsStatus     EvaluateValue () const;
+    void                ResetValue();   // for ECValuesCollection, which reuses the same ECPropertyValue for multiple properties
 public:
     ECPropertyValue ();
     ECPropertyValue (ECPropertyValueCR);
     ECPropertyValue (IECInstanceCR);
     ECOBJECTS_EXPORT ECPropertyValue (IECInstanceCR, ECValueAccessorCR);
+    ECOBJECTS_EXPORT ECPropertyValue (IECInstanceCR, ECValueAccessorCR, ECValueCR);
 
     ECValueAccessorR    GetValueAccessorR ();
-    ECObjectsStatus     EvaluateValue ();
 
 /*__PUBLISH_SECTION_START__*/
 public:
@@ -411,15 +426,17 @@ public:
 
 //=======================================================================================  
 //! @see ECValue, ECValueAccessor, ECValuesCollection
+//! @ingroup ECObjectsGroup
 //! @bsiclass 
 //======================================================================================= 
-struct ECValuesCollectionIterator : RefCountedBase
+struct ECValuesCollectionIterator : RefCountedBase, std::iterator<std::forward_iterator_tag, ECPropertyValue const>
     {
 /*__PUBLISH_SECTION_END__*/
 private:
     friend struct ECValuesCollection;
 
     ECPropertyValue     m_propertyValue;
+    int                 m_arrayCount;
 
     ECValuesCollectionIterator (IECInstanceCR);
     ECValuesCollectionIterator (ECPropertyValueCR parentPropertyValue);
@@ -431,14 +448,13 @@ private:
 /*__PUBLISH_SECTION_START__*/
 
 public:
-    typedef ECPropertyValue const       ReturnType;
     ECOBJECTS_EXPORT bool               IsDifferent(ECValuesCollectionIterator const& iter) const;
     ECOBJECTS_EXPORT void               MoveToNext ();
     ECOBJECTS_EXPORT ECPropertyValue const& GetCurrent () const;
-    ECOBJECTS_EXPORT bool               IsAtEnd () const;
     };
 
 //=======================================================================================    
+//! @ingroup ECObjectsGroup
 //! @bsiclass 
 //======================================================================================= 
 struct ECValuesCollection : RefCountedBase

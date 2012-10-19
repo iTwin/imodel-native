@@ -16,6 +16,17 @@
     <Filter Include="ECPersistence">
       <UniqueIdentifier>{6ff6c24d-06fc-4435-a29d-6bd80f42927c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ECPresentation">
+      <UniqueIdentifier>{85197e54-3a19-444f-a67a-e3eda9d05e3b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ECPresentation\Header Files">
+      <UniqueIdentifier>{490bb640-0ef2-4600-bc70-9f4b78dfe937}</UniqueIdentifier>
+      <Extensions>*.h</Extensions>
+    </Filter>
+    <Filter Include="ECPresentation\Source Files">
+      <UniqueIdentifier>{3b4f4dab-c793-44bb-aecb-cad8174719c7}</UniqueIdentifier>
+      <Extensions>*.cpp</Extensions>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DesignByContract.cpp">
@@ -72,7 +83,46 @@
     <ClCompile Include="SupplementalSchema.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ECcontext.cpp">
+    <ClCompile Include="presentation\auicommand.cpp">
+      <Filter>ECPresentation\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\auievent.cpp">
+      <Filter>ECPresentation\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\auiitem.cpp">
+      <Filter>ECPresentation\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\auijournal.cpp">
+      <Filter>ECPresentation\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\auipresentationmgr.cpp">
+      <Filter>ECPresentation\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\auiprovider.cpp">
+      <Filter>ECPresentation\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\eccontentdefinition.cpp">
+      <Filter>ECPresentation\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\ECResourceProvider.cpp">
+      <Filter>ECPresentation\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\ecviewdefinition.cpp">
+      <Filter>ECPresentation\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ecinstanceiterable.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ExpressionContext.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ExpressionHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ExpressionNode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CalculatedProperty.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="persistence\IECConnection.cpp">
@@ -83,7 +133,7 @@
     </ClCompile>
     <ClCompile Include="persistence\IECSchemaManager.cpp">
       <Filter>ECPersistence</Filter>
-    </ClCompile>
+    </ClCompile>    
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsPch.h">
@@ -128,6 +178,48 @@
     <ClInclude Include="..\PublicApi\ECObjects\SupplementalSchema.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentation\auicommand.h">
+      <Filter>ECPresentation\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentation\auievent.h">
+      <Filter>ECPresentation\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentation\auiitem.h">
+      <Filter>ECPresentation\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentation\auijournal.h">
+      <Filter>ECPresentation\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentation\auipresentationapi.h">
+      <Filter>ECPresentation\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentation\auipresentationmgr.h">
+      <Filter>ECPresentation\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentation\auiprovider.h">
+      <Filter>ECPresentation\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentation\eccontentdefinition.h">
+      <Filter>ECPresentation\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentation\ECResourceProvider.h">
+      <Filter>ECPresentation\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentation\ecviewdefinition.h">
+      <Filter>ECPresentation\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ECEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\CalculatedProperty.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\ECExpressionNode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\ECExpressions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\ECContext.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -136,16 +228,7 @@
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECPersistence\ECPersistence.h">
       <Filter>ECPersistence</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicApi\ECPersistence\IECStatement.h">
-      <Filter>ECPersistence</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicApi\ECPersistence\ECPersistenceAPI.h">
-      <Filter>ECPersistence</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicApi\ECPersistence\IECSchemaManager.h">
-      <Filter>ECPersistence</Filter>
-    </ClInclude>
+    </ClInclude>    
   </ItemGroup>
   <ItemGroup>
     <None Include="ecobjects.mke" />

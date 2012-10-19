@@ -14,13 +14,6 @@
 
 BEGIN_BENTLEY_EC_NAMESPACE
 
-//#define DEBUG_PROPERTY_LEAKS
-#ifdef DEBUG_PROPERTY_LEAKS
-static LeakDetector<ECProperty> g_leakDetector (L"ECProperty", L"ECProperties", true);
-#else
-static LeakDetector<ECProperty> g_leakDetector (L"ECProperty", L"ECProperties", false);
-#endif
-
 // If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
 // Test programs generally want to get error status back and not BeAssert, so they call ECSchema::AssertOnXmlError (false);
 static  bool        s_noAssert = false;
@@ -36,27 +29,20 @@ void ECProperty::SetErrorHandling (bool doAssert)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECProperty::ECProperty (ECClassCR ecClass, bool hideFromLeakDetection)
+ECProperty::ECProperty (ECClassCR ecClass)
     :
-    m_class(ecClass), m_readOnly(false), m_baseProperty(NULL), m_hideFromLeakDetection (hideFromLeakDetection)
+    m_class(ecClass), m_readOnly(false), m_baseProperty(NULL), m_forSupplementation(false), m_cachedTypeAdapter(NULL)
     {
-    if ( ! m_hideFromLeakDetection)
-        g_leakDetector.ObjectCreated(*this);
-    };
+    //
+    }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECProperty::~ECProperty ()
     {
-    if ( ! m_hideFromLeakDetection)
-        g_leakDetector.ObjectDestroyed(*this);
+    //
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-ILeakDetector&  ECProperty::Debug_GetLeakDetector() { return g_leakDetector; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
@@ -295,6 +281,10 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNodeR pa
     {
     SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
 
+    // If this property was created during supplementation as a local property on the class, then don't serialize it
+    if (m_forSupplementation)
+        return status;
+
     propertyNode = parentNode.AddEmptyElement (elementName);
 
     propertyNode->AddAttributeStringValue (PROPERTY_NAME_ATTRIBUTE, this->GetName().c_str());
@@ -416,6 +406,24 @@ ECObjectsStatus PrimitiveECProperty::SetType (PrimitiveType primitiveType)
     {        
     m_primitiveType = primitiveType;        
     return ECOBJECTS_STATUS_Success;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PrimitiveECProperty::IsCalculated() const
+    {
+    return GetCustomAttribute (L"CalculatedECPropertySpecification").IsValid();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+CalculatedPropertySpecificationCP PrimitiveECProperty::GetCalculatedPropertySpecification() const
+    {
+    if (m_calculatedSpec.IsNull())
+        m_calculatedSpec = CalculatedPropertySpecification::Create (*this);
+
+    return m_calculatedSpec.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -801,5 +809,17 @@ ECObjectsStatus ArrayECProperty::SetMaxOccurs (WStringCR maxOccurs)
     SetMaxOccurs (iMaxOccurs);
     return ECOBJECTS_STATUS_Success;
     }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IECTypeAdapter::HasStandardValues() const                                                                       { return _HasStandardValues(); }
+bool IECTypeAdapter::CanConvertFromString () const                                                                   { return _CanConvertFromString (); }
+bool IECTypeAdapter::CanConvertToString () const                                                                     { return _CanConvertToString (); }
+bool IECTypeAdapter::IsStruct() const                                                                                { return _IsStruct(); }
+bool IECTypeAdapter::IsTreatedAsString() const                                                                       { return _IsTreatedAsString(); }
+IECInstancePtr IECTypeAdapter::CreateDefaultFormatter (bool includeAllValues, bool forDwg) const                     { return _CreateDefaultFormatter (includeAllValues, forDwg); }
+IECInstancePtr IECTypeAdapter::CondenseFormatterForSerialization (IECInstanceCR formatter) const                     { return _CondenseFormatterForSerialization (formatter); }
+IECInstancePtr IECTypeAdapter::PopulateDefaultFormatterProperties (IECInstanceCR formatter) const                    { return _PopulateDefaultFormatterProperties (formatter); }
 
 END_BENTLEY_EC_NAMESPACE

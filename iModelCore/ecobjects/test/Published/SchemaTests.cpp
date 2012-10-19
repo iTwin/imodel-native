@@ -280,6 +280,22 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNamespace)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectSuccessWhenCustomAttributeIsMissingNamespace)
+    {
+    // show error messages but do not assert.
+    ECSchema::SetErrorHandling (true, false);
+
+    
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath( L"MissingNamespaceOnCustomAttribute.01.00.ecschema.xml").c_str(), *schemaContext);
+
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
+    };
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasUnsupportedNamespace)
     {
     // show error messages but do not assert.
@@ -302,7 +318,6 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateNamespacePrefixes)
     // show error messages but do not assert.
     ECSchema::SetErrorHandling (true, false);
 
-    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
@@ -320,7 +335,6 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingSchemaNameAttr
     // show error messages but do not assert.
     ECSchema::SetErrorHandling (true, false);
 
-    
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
@@ -393,7 +407,6 @@ TEST_F(SchemaDeserializationTest, ExpectFailureWhenMissingTypeNameInProperty)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectUnrecognizedTypeNamesToSurviveRoundtrip)
     {
-    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
@@ -930,7 +943,6 @@ TEST_F(SchemaReferenceTest, ExpectSuccessWithCircularReferences)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaReferenceTest, ExpectSuccessWithSpecialCaseOpenPlantSchema)
     {
-    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
     WString seedPath(ECTestFixture::GetTestDataPath(L"").c_str());
     schemaContext->AddSchemaPath(seedPath.c_str());
@@ -1356,6 +1368,7 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     PrimitiveECPropertyP longProperty;
     PrimitiveECPropertyP stringProperty;
     
+    DISABLE_ASSERTS;
     // Primitives overriding primitives
     EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreatePrimitiveProperty(longProperty, L"StringProperty", PRIMITIVETYPE_Long));
     EXPECT_EQ(NULL, longProperty);
@@ -1363,8 +1376,11 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     EXPECT_EQ(baseStringProp, stringProperty->GetBaseProperty());
     class1->RemoveProperty(L"StringProperty");
     
+    {
     // Primitives overriding structs
+    DISABLE_ASSERTS
     EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreatePrimitiveProperty(longProperty, L"StructProperty", PRIMITIVETYPE_Long));
+    }
 
     // Primitives overriding arrays
     EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreatePrimitiveProperty(longProperty, L"StringArrayProperty", PRIMITIVETYPE_Long));
@@ -1372,8 +1388,12 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     class1->RemoveProperty(L"StringArrayProperty");
 
     StructECPropertyP structProperty;
+
+    {
     // Structs overriding primitives
+    DISABLE_ASSERTS
     EXPECT_EQ(ECOBJECTS_STATUS_DataTypeMismatch, class1->CreateStructProperty(structProperty, L"IntegerProperty"));
+    }
 
     // Structs overriding structs
     // If we don't specify a struct type for the new property, then it should succeed
@@ -1946,6 +1966,26 @@ TEST_F (ECNameValidationTest, DisplayLabels)
         WCharCP name = *cur, encoded = *(cur+1);
         Roundtrip (DisplayLabelTester (name, encoded));
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECNameValidationTest, Validate)
+    {
+#define EXPECT_VALIDATION_RESULT(RESULTTOEXPECT, NAMETOTEST) EXPECT_EQ (ECNameValidation::RESULT_ ## RESULTTOEXPECT, ECNameValidation::Validate (NAMETOTEST))
+    EXPECT_VALIDATION_RESULT(Valid, L"ThisIsAValidName");
+    EXPECT_VALIDATION_RESULT(Valid, L"_123");
+    EXPECT_VALIDATION_RESULT(Valid, L"___");
+    EXPECT_VALIDATION_RESULT(Valid, L"A123");
+
+    EXPECT_VALIDATION_RESULT(NullOrEmpty, L"");
+    EXPECT_VALIDATION_RESULT(NullOrEmpty, NULL);
+
+    EXPECT_VALIDATION_RESULT(BeginsWithDigit, L"1_C");
+
+    EXPECT_VALIDATION_RESULT(IncludesInvalidCharacters, L"!ABC");
+    EXPECT_VALIDATION_RESULT(IncludesInvalidCharacters, L"ABC@");
     }
 
 END_BENTLEY_EC_NAMESPACE

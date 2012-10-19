@@ -132,25 +132,24 @@ SystemTime SystemTime::GetSystemTime()
     return time;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* Time in local time zone
-* @bsimethod                                    Sam.Wilson                      06/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-SystemTime SystemTime::GetLocalTime()
+enum ECValueStateFlags ENUM_UNDERLYING_TYPE(unsigned char)
     {
-    UInt64 localMillis = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-    BeTimeUtilities::AdjustUnixMillisForLocalTime (localMillis);
-    SystemTime time;
-    unixMillisToSystemTime (time, localMillis);
-    return time;
-    }
+    ECVALUE_STATE_None         = 0x00,
+    ECVALUE_STATE_IsNull       = 0x01,
+    ECVALUE_STATE_IsReadOnly   = 0x02,      // Really indicates that the property from which this came is readonly... not the value itself.
+    ECVALUE_STATE_IsLoaded     = 0x04
+    };
 
 /*---------------------------------------------------------------------------------**//**
+*  Really indicates that the property from which this came is readonly... not the value itself.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ECValue::SetReadOnly(bool isReadOnly) 
+void            ECValue::SetIsReadOnly(bool isReadOnly) 
     { 
-    m_isReadOnly = isReadOnly; 
+    if (isReadOnly)
+        m_stateFlags |= ((UInt8)ECVALUE_STATE_IsReadOnly); 
+    else
+        m_stateFlags &= ~((UInt8)ECVALUE_STATE_IsReadOnly); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -158,7 +157,18 @@ void            ECValue::SetReadOnly(bool isReadOnly)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ECValue::IsReadOnly() const 
     { 
-    return m_isReadOnly; 
+    return 0 != (m_stateFlags & ECVALUE_STATE_IsReadOnly); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECValue::SetIsNull(bool isNull)  
+    { 
+    if (isNull)
+        m_stateFlags |= ((UInt8)ECVALUE_STATE_IsNull); 
+    else
+        m_stateFlags &= ~((UInt8)ECVALUE_STATE_IsNull); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -166,7 +176,29 @@ bool            ECValue::IsReadOnly() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ECValue::IsNull() const 
     { 
-    return m_isNull; 
+    return 0 != (m_stateFlags & ECVALUE_STATE_IsNull); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECValue::SetIsLoaded(bool isLoaded)
+    { 
+    if (isLoaded)
+        m_stateFlags |= ((UInt8)ECVALUE_STATE_IsLoaded); 
+    else
+        m_stateFlags &= ~((UInt8)ECVALUE_STATE_IsLoaded); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* It is up to the instance implementation to set this flag. For MemoryBased instances
+* this bit is set in the _GetValue method when it checks the IsLoaded flag for the 
+* property.
+* @bsimethod                                    Bill.Steinbock                  08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            ECValue::IsLoaded() const 
+    { 
+    return 0 != (m_stateFlags & ECVALUE_STATE_IsLoaded); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -299,70 +331,12 @@ void            ECValue::ConstructUninitialized()
     int size = sizeof (ECValue);
     memset (this, 0xBAADF00D, size); // avoid accidental misinterpretation of uninitialized data
 #endif
-    m_valueKind         = VALUEKIND_Uninitialized;
-    m_isNull            = true;
-    m_isReadOnly        = false;
+    m_valueKind  = VALUEKIND_Uninitialized;
+    m_stateFlags = ECVALUE_STATE_IsNull;
+    m_ownsData = false;
     }
     
-/*---------------------------------------------------------------------------------**//**
-* Copies this value, including all strings and array values held by this value.
-* It duplicates string values, even if the original did not hold a duplicate that is was responsible for freeing.
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            ECValue::DeepCopy (ECValueCR v)
-    {     
-    if (this == &v)
-        return;
 
-    memcpy (this, &v, sizeof(ECValue));
-    
-    if (IsNull())
-        return;
-
-    UShort  valueKind = m_valueKind;
-    switch (valueKind)
-        {            
-        case VALUEKIND_Struct:
-            {
-            //WIP_FUSION 
-            BeAssert (false && "Needs work: copy the struct value");
-            break;
-            }
-
-        case VALUEKIND_Array:
-            {
-            //WIP_FUSION 
-            BeAssert (false && "It's impossible to 'copy' an array -- the data is not here");
-            break;
-            }
-
-        case PRIMITIVETYPE_Binary:
-            {
-            //WIP_FUSION 
-            BeAssert (false && "Needs work: can we copy a binary value? BinaryInfo::m_data is a pointer into somebody's storage container?!");
-            break;
-            }
-
-        case PRIMITIVETYPE_String:
-            m_stringInfo.m_freeWhenDone = false; // prevent SetString from attempting to free the string that was temporarily copied by memset
-            SetString (v.m_stringInfo.m_string);
-            break;
-
-        // the memcpy takes care of these...            
-        case PRIMITIVETYPE_Boolean:
-        case PRIMITIVETYPE_Integer:
-        case PRIMITIVETYPE_Long:
-        case PRIMITIVETYPE_Double:
-        case PRIMITIVETYPE_Point2D:
-        case PRIMITIVETYPE_Point3D:
-        case PRIMITIVETYPE_DateTime:
-            break;
-                        
-        default:
-            BeAssert (false); // type not handled
-        }
-    };
-    
 /*---------------------------------------------------------------------------------**//**
 * Copies this value object without allocating any additional memory.  The copy will
 * hold copies on any external pointers held by the original.
@@ -389,18 +363,22 @@ void            ECValue::ShallowCopy (ECValueCR v)
 
         case PRIMITIVETYPE_Binary:
             {
-            //WIP_FUSION 
-            BeAssert (false && "Needs work: can we copy a binary value? BinaryInfo::m_data is a pointer into somebody's storage container?!");
+            // Only make a copy of the binary data if the original object had a copy
+            if (m_ownsData)
+                {
+                m_ownsData = false;
+                SetBinary (v.m_binaryInfo.m_data, v.m_binaryInfo.m_size, true);
+                }
             break;
             }
 
         case PRIMITIVETYPE_String:
             {
             // Only make a copy of the string if the original object had a copy.
-            if (m_stringInfo.m_freeWhenDone)
+            if (m_ownsData)
                 {
-                m_stringInfo.m_freeWhenDone = false; // prevent SetString from attempting to free the string that was temporarily copied by memset
-                SetString (v.m_stringInfo.m_string);
+                m_ownsData = false; // prevent SetString from attempting to free the string that was temporarily copied by memset
+                SetString (v.m_string);
                 }
 
             break;
@@ -427,20 +405,20 @@ void            ECValue::ShallowCopy (ECValueCR v)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECValue::FreeMemory ()
     {
-    if (m_isNull)
+    if (IsNull())
         return;
 
     UShort  primitiveType = m_primitiveType;
     switch (primitiveType)
         {
         case PRIMITIVETYPE_String:
-            if ((m_stringInfo.m_freeWhenDone) && (m_stringInfo.m_string != NULL))
-                free (const_cast<WCharP>(m_stringInfo.m_string));
+            if (m_ownsData && m_string != NULL)
+                free (const_cast<WCharP>(m_string));
             return;
 
         case PRIMITIVETYPE_Binary:
         case PRIMITIVETYPE_IGeometry:
-            if ((m_binaryInfo.m_data != NULL) && (m_binaryInfo.m_freeWhenDone))
+            if (NULL != m_binaryInfo.m_data && m_ownsData)
                 free ((void*)m_binaryInfo.m_data);
             return;
 
@@ -456,12 +434,8 @@ void            ECValue::FreeMemory ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECValue::SetToNull()
     {        
-    //if (IsNull())
-    //    return;
-
     FreeMemory ();
-    memset (&m_binaryInfo, 0, sizeof m_binaryInfo);
-    m_isNull = true;
+    SetIsNull (true);
     }
    
 /*---------------------------------------------------------------------------------**//**
@@ -472,16 +446,18 @@ void            ECValue::Clear()
     if (IsNull())
         {
         m_valueKind = VALUEKIND_Uninitialized;
+        m_stateFlags = ECVALUE_STATE_IsNull;
         return;
         }
         
     if (IsUninitialized())
         {
-        m_isNull = true;
+        m_stateFlags = ECVALUE_STATE_IsNull;
         return;
         }
 
-    SetToNull();
+    FreeMemory ();
+    m_stateFlags = ECVALUE_STATE_IsNull;
     m_valueKind = VALUEKIND_Uninitialized;
     }
 
@@ -501,7 +477,7 @@ ECValue::~ECValue()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValueR ECValue::operator= (ECValueCR rhs)
     {
-    From (rhs, false);
+    From (rhs);
     return *this;
     }        
     
@@ -517,17 +493,17 @@ ECValue::ECValue ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (ECValueCR v, bool doDeepCopy)
+ECValue::ECValue (ECValueCR v)
     {
     ConstructUninitialized();
-    From (v, doDeepCopy);
+    From (v);
     }
     
 /*---------------------------------------------------------------------------------**//**
 *  Construct a Null EC::ECValue (of a specific type, but with IsNull = true)
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (ValueKind classification) : m_valueKind(classification), m_isNull(true)
+ECValue::ECValue (ValueKind classification) : m_valueKind(classification), m_stateFlags(ECVALUE_STATE_IsNull), m_ownsData(false)
     {
     }       
 
@@ -535,7 +511,7 @@ ECValue::ECValue (ValueKind classification) : m_valueKind(classification), m_isN
 *  Construct a Null EC::ECValue (of a specific type, but with IsNull = true)
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (PrimitiveType primitiveType) : m_primitiveType(primitiveType), m_isNull(true)
+ECValue::ECValue (PrimitiveType primitiveType) : m_primitiveType(primitiveType), m_stateFlags(ECVALUE_STATE_IsNull), m_ownsData(false)
     {
     }
     
@@ -627,12 +603,9 @@ ECValue::ECValue (const byte * data, size_t size)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    ECValue::From (ECValueCR v, bool doDeepCopy)
+void    ECValue::From (ECValueCR v)
     {
-    if (doDeepCopy)
-        DeepCopy (v);
-    else
-        ShallowCopy (v);
+    ShallowCopy (v);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -674,7 +647,7 @@ BentleyStatus       ECValue::SetPrimitiveType (PrimitiveType primitiveType)
 BentleyStatus       ECValue::SetInteger (::Int32 integer)
     {
     Clear();
-    m_isNull    = false;
+    SetIsNull (false);
     m_primitiveType  = PRIMITIVETYPE_Integer;
     m_integer32 = integer;
     
@@ -697,7 +670,7 @@ BentleyStatus       ECValue::SetInteger (::Int32 integer)
 BentleyStatus       ECValue::SetLong (::Int64 long64)
     {
     Clear();
-    m_isNull    = false;
+    SetIsNull (false);
     m_primitiveType  = PRIMITIVETYPE_Long;
     m_long64    = long64;
     
@@ -720,7 +693,7 @@ double          ECValue::GetDouble() const
 BentleyStatus       ECValue::SetDouble (double value)
     {
     Clear();
-    m_isNull    = false;
+    SetIsNull (false);
     m_primitiveType  = PRIMITIVETYPE_Double;
     m_double    = value;
     
@@ -743,7 +716,7 @@ bool          ECValue::GetBoolean() const
 BentleyStatus       ECValue::SetBoolean (bool value)
     {
     Clear();
-    m_isNull         = false;
+    SetIsNull (false);
     m_primitiveType  = PRIMITIVETYPE_Boolean;
     m_boolean        = value;
     
@@ -766,7 +739,7 @@ Int64          ECValue::GetDateTimeTicks() const
 BentleyStatus       ECValue::SetDateTimeTicks (Int64 value)
     {
     Clear();
-    m_isNull         = false;
+    SetIsNull (false);
     m_primitiveType  = PRIMITIVETYPE_DateTime;
     m_dateTime       = value;
     
@@ -847,7 +820,7 @@ DPoint2d          ECValue::GetPoint2D() const
 BentleyStatus       ECValue::SetPoint2D (DPoint2dCR value)
     {
     Clear();
-    m_isNull         = false;
+    SetIsNull (false);
     m_primitiveType  = PRIMITIVETYPE_Point2D;
     m_dPoint2d       = value;
     
@@ -872,7 +845,7 @@ DPoint3d          ECValue::GetPoint3D() const
 BentleyStatus       ECValue::SetPoint3D (DPoint3dCR value)
     {
     Clear();
-    m_isNull         = false;
+    SetIsNull (false);
     m_primitiveType  = PRIMITIVETYPE_Point3D;
     m_dPoint3d       = value;
     
@@ -885,7 +858,7 @@ BentleyStatus       ECValue::SetPoint3D (DPoint3dCR value)
 WCharCP ECValue::GetString() const
     {
     PRECONDITION (IsString() && "Tried to get string value from an EC::ECValue that is not a string.", L"<Programmer Error: Attempted to get string value from EC::ECValue that is not a string.>");
-    return m_stringInfo.m_string;
+    return m_string;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -898,20 +871,20 @@ BentleyStatus ECValue::SetString (WCharCP string, bool holdADuplicate)
     Clear();
         
     m_primitiveType = PRIMITIVETYPE_String;
-    m_stringInfo.m_freeWhenDone = holdADuplicate; // if we hold a duplicate, we are responsible for freeing it
+    m_ownsData = holdADuplicate;
     
     if (NULL == string)
         {
-        m_stringInfo.m_string = NULL;
+        m_string = NULL;
         return SUCCESS;
         }
 
-    m_isNull = false;
+    SetIsNull (false);
 
     if (holdADuplicate)    
-        m_stringInfo.m_string = BeStringUtilities::Wcsdup (string);
+        m_string = BeStringUtilities::Wcsdup (string);
     else
-        m_stringInfo.m_string = string;
+        m_string = string;
             
     return SUCCESS;
     }
@@ -934,7 +907,7 @@ BentleyStatus ECValue::SetBinary (const byte * data, size_t size, bool holdADupl
     Clear();
 
     m_primitiveType = PRIMITIVETYPE_Binary;
-    m_binaryInfo.m_freeWhenDone = holdADuplicate;
+    m_ownsData = holdADuplicate;
     
     if (NULL == data)
         {
@@ -944,7 +917,7 @@ BentleyStatus ECValue::SetBinary (const byte * data, size_t size, bool holdADupl
         }    
     
 
-    m_isNull = false;
+    SetIsNull (false);
 
     m_binaryInfo.m_size = size;    
     if (holdADuplicate)
@@ -983,7 +956,7 @@ BentleyStatus       ECValue::SetStruct (IECInstanceP structInstance)
         return SUCCESS;
         }  
             
-    m_isNull    = false;
+    SetIsNull (false);
 
     m_structInstance = structInstance;        
     m_structInstance->AddRef();
@@ -1022,7 +995,7 @@ WString    ECValue::ToString () const
                 }
             case PRIMITIVETYPE_Long:
                 {
-                str.Sprintf (L"%ld", GetLong());
+                str.Sprintf (L"%lld", GetLong());
                 break;
                 }            
             case PRIMITIVETYPE_Double:
@@ -1074,6 +1047,60 @@ WString    ECValue::ToString () const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECValue::ConvertToPrimitiveType (PrimitiveType newType)
+    {
+    if (IsNull())
+        {
+        SetPrimitiveType (newType);
+        return true;
+        }
+    else if (!IsPrimitive())
+        return false;
+    else if (newType == GetPrimitiveType())
+        return true;
+    else if (PRIMITIVETYPE_String == newType)
+        {
+        WString strVal = ToString();
+        SetString (strVal.c_str());
+        return true;
+        }
+
+    PrimitiveType curType = GetPrimitiveType();
+    switch (newType)
+        {
+    case PRIMITIVETYPE_Integer:
+        {
+        Int32 i;
+        if (PRIMITIVETYPE_Double == curType)
+            {
+            double roundingTerm = DoubleOps::AlmostEqual (GetDouble(), 0.0) ? 0.0 : GetDouble() > 0.0 ? 0.5 : -0.5;
+            i = (Int32)(GetDouble() + roundingTerm);
+            }
+        else if (PRIMITIVETYPE_String != curType || 1 != BeStringUtilities::Swscanf (GetString(), L"%d", &i))
+            return false;
+
+        SetInteger (i);
+        }
+        return true;
+    case PRIMITIVETYPE_Double:
+        {
+        double d;
+        if (PRIMITIVETYPE_Integer == curType)
+            d = GetInteger();
+        else if (PRIMITIVETYPE_String != curType || 1 != BeStringUtilities::Swscanf (GetString(), L"%lf", &d))
+            return false;
+
+        SetDouble (d);
+        }
+        return true;
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @description  Performs a binary comparison against another ECValue.
 * @bsimethod                                                    Dylan.Rush      12/10
 +---------------+---------------+---------------+---------------+---------------+------*/ 
@@ -1115,6 +1142,9 @@ bool              ECValue::Equals (ECValueCR v) const
             return true;
         return 0 == memcmp (m_binaryInfo.m_data, v.m_binaryInfo.m_data, m_binaryInfo.m_size);
         }
+    if (IsDouble())
+        return DoubleOps::AlmostEqual (GetDouble(), v.GetDouble());
+
     size_t primitiveValueSize = (size_t) GetFixedPrimitiveValueSize (GetPrimitiveType());
     //&m_boolean points to the first memory address of the union (as does every other union member)
     return 0 == memcmp (&m_boolean, &v.m_boolean, primitiveValueSize);
@@ -1132,7 +1162,7 @@ ECObjectsStatus   ECValue::SetStructArrayInfo (UInt32 count, bool isFixedCount)
 
     m_arrayInfo.InitializeStructArray (count, isFixedCount);
     
-    m_isNull = false; // arrays are never null
+    SetIsNull (false); // arrays are never null
     
     return ECOBJECTS_STATUS_Success;
     }
@@ -1149,7 +1179,7 @@ ECObjectsStatus       ECValue::SetPrimitiveArrayInfo (PrimitiveType primitiveEle
 
     m_arrayInfo.InitializePrimitiveArray (primitiveElementType, count, isFixedSize);
     
-    m_isNull = false; // arrays are never null
+    SetIsNull (false); // arrays are never null
     
     return ECOBJECTS_STATUS_Success;
     }
@@ -1469,6 +1499,15 @@ WString                                        ECValueAccessor::GetPropertyName(
     return name;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyCP ECValueAccessor::GetECProperty() const
+    {
+    return NULL != DeepestLocationCR().enabler
+        ? DeepestLocationCR().enabler->LookupECProperty (DeepestLocationCR().propertyIndex)
+        : NULL;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
@@ -1688,7 +1727,7 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBu
     // if no character after closing bracket then we just want the array, else we are dealing with a member of a struct array
     if (0 == *(pos2+1))
         {
-        va.PushLocation (enabler, propertyIndex, -1);
+        va.PushLocation (enabler, propertyIndex, indexValue);
         return ECOBJECTS_STATUS_Success;
         }
 
@@ -1764,20 +1803,38 @@ ECObjectsStatus ECValueAccessor::GetECValue (ECValue& v, IECInstanceCR instance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyValue::ECPropertyValue () {}
-ECPropertyValue::ECPropertyValue (IECInstanceCR instance) : m_instance (const_cast <IECInstanceP> (&instance)) {}
-ECValueCR           ECPropertyValue::GetValue ()            const    { return m_ecValue; }
+ECPropertyValue::ECPropertyValue () : m_evaluated(false) {}
+ECPropertyValue::ECPropertyValue (IECInstanceCR instance) : m_instance (&instance), m_evaluated(false) {}
+ECValueCR           ECPropertyValue::GetValue ()            const    { EvaluateValue(); return m_ecValue; }
 IECInstanceCR       ECPropertyValue::GetInstance ()         const    { return *m_instance; }
 ECValueAccessorCR   ECPropertyValue::GetValueAccessor ()    const    { return m_accessor; }
 ECValueAccessorR    ECPropertyValue::GetValueAccessorR ()            { return m_accessor; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void                ECPropertyValue::ResetValue()
+    {
+    if (m_evaluated)
+        {
+        m_ecValue.Clear();
+        m_evaluated = false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECPropertyValue::EvaluateValue ()
+ECObjectsStatus ECPropertyValue::EvaluateValue () const
     {
-    m_ecValue.Clear();
-    return m_instance->GetValueUsingAccessor (m_ecValue, m_accessor);
+    if (!m_evaluated)
+        {
+        // m_ecValue.Clear();
+        m_evaluated = true;
+        return NULL != m_instance ? m_instance->GetValueUsingAccessor (m_ecValue, m_accessor) : ECOBJECTS_STATUS_Error;
+        }
+    else
+        return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1787,7 +1844,8 @@ ECPropertyValue::ECPropertyValue (ECPropertyValueCR from)
     {
     m_instance = from.m_instance;
     m_accessor = from.m_accessor;
-    m_ecValue.From (from.m_ecValue, false);
+    m_ecValue.From (from.m_ecValue);
+    m_evaluated = from.m_evaluated;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1795,9 +1853,19 @@ ECPropertyValue::ECPropertyValue (ECPropertyValueCR from)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyValue::ECPropertyValue (IECInstanceCR instance, ECValueAccessorCR accessor)
     :
-    m_instance (const_cast <IECInstanceP> (&instance)), m_accessor (accessor)
+    m_instance (&instance), m_accessor (accessor), m_evaluated (false)
     {
-    EvaluateValue();
+    // EvaluateValue(); performance: do this lazily
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyValue::ECPropertyValue (IECInstanceCR instance, ECValueAccessorCR accessor, ECValueCR v)
+    :
+    m_instance (&instance), m_accessor (accessor), m_ecValue (v), m_evaluated (true)
+    {
+    //
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1805,6 +1873,7 @@ ECPropertyValue::ECPropertyValue (IECInstanceCR instance, ECValueAccessorCR acce
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool                ECPropertyValue::HasChildValues () const
     {
+    EvaluateValue();
     return m_ecValue.IsStruct() || m_ecValue.IsArray();
     }
 
@@ -1813,6 +1882,7 @@ bool                ECPropertyValue::HasChildValues () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValuesCollectionPtr  ECPropertyValue::GetChildValues () const
     {
+    EvaluateValue();
     if (m_ecValue.IsStruct() || m_ecValue.IsArray())
         return new ECValuesCollection (*this);
 
@@ -1847,7 +1917,8 @@ ECPropertyValue ECValuesCollectionIterator::GetFirstPropertyValue (IECInstanceCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValuesCollectionIterator::ECValuesCollectionIterator (IECInstanceCR instance)
     :
-    m_propertyValue (GetFirstPropertyValue (instance))
+    m_propertyValue (GetFirstPropertyValue (instance)),
+    m_arrayCount (-1)
     {
     }
 
@@ -1856,6 +1927,7 @@ ECValuesCollectionIterator::ECValuesCollectionIterator (IECInstanceCR instance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyValue ECValuesCollectionIterator::GetChildPropertyValue (ECPropertyValueCR parentPropertyValue)
     {
+    m_arrayCount = -1;
     ECValueCR       parentValue = parentPropertyValue.GetValue();
     ECValueAccessor childAccessor (parentPropertyValue.GetValueAccessor());
 
@@ -1865,13 +1937,14 @@ ECPropertyValue ECValuesCollectionIterator::GetChildPropertyValue (ECPropertyVal
         UInt32      arrayCount = arrayInfo.GetCount();
 
         if (0 < arrayCount)
+            {
+            m_arrayCount = arrayCount;
             childAccessor.DeepestLocation().arrayIndex = 0;
+            }
         else
-            childAccessor.PopLocation();  // WIP_FUSION: better to Clear the accessor?
-                                          //             test this with an array with no members
+            childAccessor.PopLocation();
         }
-    else
-    if (parentValue.IsStruct())
+    else if (parentValue.IsStruct())
         {
         UInt32          pathLength  = childAccessor.GetDepth();
 
@@ -1904,8 +1977,7 @@ ECPropertyValue ECValuesCollectionIterator::GetChildPropertyValue (ECPropertyVal
             if (0 != firstIndex)
                 childAccessor.PushLocation (enabler, firstIndex, -1);
             else
-                childAccessor.PopLocation();  // WIP_FUSION: better to Clear the accessor?
-                                              //             test this with a struct with no members
+                childAccessor.PopLocation();
             }
         }
 
@@ -1924,17 +1996,25 @@ ECValuesCollectionIterator::ECValuesCollectionIterator (ECPropertyValueCR parent
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            ECValuesCollectionIterator::IsAtEnd() const
-    {
-    return 0 == m_propertyValue.GetValueAccessor().GetDepth();
-    }
+//bool            ECValuesCollectionIterator::IsAtEnd() const
+//    {
+//    return 0 == m_propertyValue.GetValueAccessor().GetDepth();
+//    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ECValuesCollectionIterator::IsDifferent(ECValuesCollectionIterator const& otherIter) const
     {
-    return m_propertyValue.GetValueAccessor() != otherIter.m_propertyValue.GetValueAccessor();
+    bool leftAtEnd = 0 == m_propertyValue.GetValueAccessor().GetDepth();
+    bool rightAtEnd = 0 == otherIter.m_propertyValue.GetValueAccessor().GetDepth();
+    if (leftAtEnd && rightAtEnd)
+        return false;
+
+    if (!leftAtEnd && !rightAtEnd)
+        return m_propertyValue.GetValueAccessor() != otherIter.m_propertyValue.GetValueAccessor();
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1957,26 +2037,13 @@ void            ECValuesCollectionIterator::MoveToNext()
         /*--------------------------------------------------------------------------
           If we are on an array member get the next member
         --------------------------------------------------------------------------*/
-        ECValueAccessor arrayAccessor (currentAccessor);
-        arrayAccessor.DeepestLocation().arrayIndex = ECValueAccessor::INDEX_ROOT;
-
-//WIP_FUSION: wouldn't it be better to get the arrayCount once when the iterator is created?
-        ECValue         ecValue;
-        ECObjectsStatus status = m_propertyValue.GetInstance().GetValueUsingAccessor (ecValue, arrayAccessor);
-
-        if ( ! EXPECTED_CONDITION (ECOBJECTS_STATUS_Success == status))
+        if (!EXPECTED_CONDITION (0 <= m_arrayCount))
             return;
-
-        if ( ! EXPECTED_CONDITION (ecValue.IsArray()))
-            return;
-
-        ArrayInfo   arrayInfo  = ecValue.GetArrayInfo();
-        UInt32      arrayCount = arrayInfo.GetCount();
 
         currentAccessor.DeepestLocation().arrayIndex++;
 
         // If that was the last member of the array, we are done
-        if (currentAccessor.DeepestLocation().arrayIndex >= (Int32) arrayCount)
+        if (currentAccessor.DeepestLocation().arrayIndex >= m_arrayCount)
             {
             currentAccessor.Clear();
             return;
@@ -2008,7 +2075,7 @@ void            ECValuesCollectionIterator::MoveToNext()
             }
         }
 
-    m_propertyValue.EvaluateValue ();
+    m_propertyValue.ResetValue ();
     }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -2082,7 +2149,7 @@ ECValuesCollection::const_iterator ECValuesCollection::begin () const
             UInt32      arrayCount = arrayInfo.GetCount();
 
             if (0 == arrayCount)
-                return const_iterator ();
+                return ECValuesCollection::end ();
             }
 
         iter = new ECValuesCollectionIterator (m_parentPropertyValue);
@@ -2092,11 +2159,18 @@ ECValuesCollection::const_iterator ECValuesCollection::begin () const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValuesCollectionIterator::ECValuesCollectionIterator() : m_arrayCount(-1)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValuesCollection::const_iterator ECValuesCollection::end () const
     {
-    return const_iterator ();
+    return const_iterator (*new ECValuesCollectionIterator());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2106,6 +2180,31 @@ BentleyStatus   SystemTime::InitFromFileTime (_FILETIME const& fileTime)
     {
     unixMillisToSystemTime (*this, BeTimeUtilities::ConvertFiletimeToUnixMillis(fileTime));
     return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SystemTime::InitFromUnixMillis (UInt64 unixMillis)
+    {
+    unixMillisToSystemTime (*this, unixMillis);
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt64 ECValue::GetDateTimeUnixMillis() const
+    {
+    PRECONDITION (IsDateTime() && "Tried to get DateTime value from an EC::ECValue that is not a DateTime.", 0);
+    PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", 0);
+
+    Int64 ticks = (UInt64)GetDateTimeTicks();
+    ticks -= TICKADJUSTMENT;
+    _FILETIME fileTime;
+    fileTime.dwLowDateTime = ticks & 0xFFFFFFFF;
+    fileTime.dwHighDateTime = ticks >> 0x20;
+    return BeTimeUtilities::ConvertFiletimeToUnixMillis (fileTime);
     }
 
 END_BENTLEY_EC_NAMESPACE

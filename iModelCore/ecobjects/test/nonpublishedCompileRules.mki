@@ -16,3 +16,7 @@ $(o)TestFixture$(oext)        : $(baseDir)NonPublished/TestFixture.cpp $(PCHHead
 $(o)MemoryLayoutTests$(oext)  : $(baseDir)NonPublished/MemoryLayoutTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
 
 $(o)NonPublishedSchemaTests$(oext)  : $(baseDir)NonPublished/NonPublishedSchemaTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
+
+$(o)CalculatedPropertyTests$(oext)  : $(baseDir)NonPublished/CalculatedPropertyTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
+
+$(o)UnitsTests$(oext)               : $(baseDir)NonPublished/UnitsTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
