@@ -73,12 +73,12 @@ public:
 typedef RefCountedPtr<IECInstance> IECInstancePtr;
 //=======================================================================================    
 //! @ingroup ECObjectsGroup
-//! ECObject::IECInstance is the native equivalent of a .NET IECInstance.
+//! ECN::IECInstance is the native equivalent of a .NET IECInstance.
 //! Unlike IECInstance, it is not a pure interface, but is a concrete struct.
 //! Whereas in .NET, one might implement IECInstance, or use the "Lightweight" system
 //! in Bentley.ECObjects.Lightweight, in native "ECObjects" you write a class that implements
 //! the DgnElementECInstanceEnabler interface and one or more related interfaces to supply functionality 
-//! to the ECObject::IECInstance.
+//! to the ECN::IECInstance.
 //! We could call these "enabled" instances as opposed to "lightweight".
 //! @see ECEnabler
 //! @bsiclass
@@ -218,7 +218,7 @@ public:
     //! @param[in]  accessString   The access string for the array
     //! @param[out] numFixedEntries   Optional pointer to size of fixed size array.
     //! @returns true if the property is a fixed size array.
-    ECOBJECTS_EXPORT static bool        IsFixedArrayProperty (ECObject::IECInstanceR instance, WCharCP accessString, UInt32* numFixedEntries=NULL);
+    ECOBJECTS_EXPORT static bool        IsFixedArrayProperty (ECN::IECInstanceR instance, WCharCP accessString, UInt32* numFixedEntries=NULL);
 
     ECOBJECTS_EXPORT bool               IsPropertyReadOnly (WCharCP accessString) const;
     ECOBJECTS_EXPORT bool               IsPropertyReadOnly (UInt32 propertyIndex) const;
@@ -254,7 +254,7 @@ public:
     
 //=======================================================================================    
 //! @ingroup ECObjectsGroup
-//! ECObject::IECRelationshipInstance is the native equivalent of a .NET IECRelationshipInstance.
+//! ECN::IECRelationshipInstance is the native equivalent of a .NET IECRelationshipInstance.
 //! @see IECInstance, ECRelationshipClass
 //! @bsiclass
 //=======================================================================================    
@@ -334,8 +334,8 @@ struct ECInstanceInteropHelper
     ECOBJECTS_EXPORT static void            SetToNull (IECInstanceR, ECValueAccessorCR);
 
     ECOBJECTS_EXPORT static bool            IsPropertyReadOnly (IECInstanceCR, ECValueAccessorR);
-    ECOBJECTS_EXPORT static ECObject::ECEnablerP  GetEnablerForStructArrayEntry (IECInstanceR instance, ECValueAccessorR arrayMemberAccessor, SchemaKeyCR schemaKey, WCharCP className);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetStructArrayEntry (ECObject::ECValueAccessorR structArrayEntryValueAccessor, IECInstanceR instance, UInt32 index, ECObject::ECValueAccessorCR structArrayValueAccessor, 
+    ECOBJECTS_EXPORT static ECN::ECEnablerP  GetEnablerForStructArrayEntry (IECInstanceR instance, ECValueAccessorR arrayMemberAccessor, SchemaKeyCR schemaKey, WCharCP className);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetStructArrayEntry (ECN::ECValueAccessorR structArrayEntryValueAccessor, IECInstanceR instance, UInt32 index, ECN::ECValueAccessorCR structArrayValueAccessor, 
                                                                   bool createPropertyIfNotFound, WCharCP wcharAccessString, SchemaKeyCR schemaKey, WCharCP className);
 
     ECOBJECTS_EXPORT static bool            IsCalculatedECProperty (IECInstanceCR instance, int propertyIndex);

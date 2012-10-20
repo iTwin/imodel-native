@@ -257,7 +257,7 @@ struct          InstanceExpressionContext : ExpressionContext
 /*__PUBLISH_SECTION_END__*/
 
 private:
-    ECObject::IECInstancePtr          m_instance;
+    ECN::IECInstancePtr          m_instance;
 
 protected:
 
@@ -266,12 +266,12 @@ protected:
     virtual ExpressionStatus    _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
 
 public:
-    ECObject::ECEnablerCR             GetEnabler() { return m_instance->GetEnabler(); }
+    ECN::ECEnablerCR             GetEnabler() { return m_instance->GetEnabler(); }
 
 /*__PUBLISH_SECTION_START__*/
 
-    ECOBJECTS_EXPORT ECObject::IECInstanceCP           GetInstanceCP() const;
-    ECOBJECTS_EXPORT void                        SetInstance(ECObject::IECInstanceCR instance);
+    ECOBJECTS_EXPORT ECN::IECInstanceCP           GetInstanceCP() const;
+    ECOBJECTS_EXPORT void                        SetInstance(ECN::IECInstanceCR instance);
     ECOBJECTS_EXPORT static InstanceExpressionContextPtr Create(ExpressionContextP outer);
 }; // End of class InstanceExpressionContext
 
@@ -404,7 +404,7 @@ struct          ValueSymbol : Symbol
 {
 /*__PUBLISH_SECTION_END__*/
 private:
-    ECObject::ECValue     m_expressionValue;
+    ECN::ECValue     m_expressionValue;
 
 protected:
     virtual                         ~ValueSymbol();
@@ -414,12 +414,12 @@ protected:
                                                 { return ExprStatus_NeedsLValue; }
 
 public:
-                ValueSymbol (wchar_t const* name, ECObject::ECValueCR exprValue);
+                ValueSymbol (wchar_t const* name, ECN::ECValueCR exprValue);
 
 /*__PUBLISH_SECTION_START__*/
-    ECOBJECTS_EXPORT void       GetValue(ECObject::ECValueR exprValue);
-    ECOBJECTS_EXPORT void       SetValue(ECObject::ECValueCR exprValue);
-    ECOBJECTS_EXPORT static ValueSymbolPtr    Create(wchar_t const* name, ECObject::ECValueCR exprValue);
+    ECOBJECTS_EXPORT void       GetValue(ECN::ECValueR exprValue);
+    ECOBJECTS_EXPORT void       SetValue(ECN::ECValueCR exprValue);
+    ECOBJECTS_EXPORT static ValueSymbolPtr    Create(wchar_t const* name, ECN::ECValueCR exprValue);
 
 };  //  End of ValueSymbol
 
@@ -509,7 +509,7 @@ enum            ExpressionToken
 struct          UnitsType : RefCountedBase
 {
     UnitsOrder  m_unitsOrder;
-    ECObject::IECInstancePtr  m_extendedType;
+    ECN::IECInstancePtr  m_extendedType;
     bool        m_powerCanDecrease;
     bool        m_powerCanIncrease;
 };
@@ -521,11 +521,11 @@ struct          ExpressionType : RefCountedBase
 {
 private:
     int                 m_unitsPower;   // 0 -- unknown, 1 -- linear, 2 -- squared, 3 -- cubed
-    ECObject::IECInstancePtr  m_extendedType;
-    ECObject::ValueKind       m_valueKind;
-    ECObject::PrimitiveType   m_primitiveType;
-    ECObject::ArrayKind       m_arrayKind;    //  Relevant only if m_valueKind == VALUEKIND_Array
-    ECObject::ECClassCP       m_structClass;  //  Relevant if m_valueKind == VALUEKIND_Struct or 
+    ECN::IECInstancePtr  m_extendedType;
+    ECN::ValueKind       m_valueKind;
+    ECN::PrimitiveType   m_primitiveType;
+    ECN::ArrayKind       m_arrayKind;    //  Relevant only if m_valueKind == VALUEKIND_Array
+    ECN::ECClassCP       m_structClass;  //  Relevant if m_valueKind == VALUEKIND_Struct or 
                                         //  m_valueKind == VALUEKIND_Array and m_arrayKind == ARRAYKIND_Struct
 private:
     void                Init();
@@ -533,7 +533,7 @@ private:
 protected:
 
 public:
-    ExpressionType (ECObject::PrimitiveECPropertyR primitiveProp);
+    ExpressionType (ECN::PrimitiveECPropertyR primitiveProp);
 
 }; // ExpressionType
 
@@ -542,7 +542,7 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct          ReferenceResult 
 {
-    ECObject::ECPropertyCP    m_property;
+    ECN::ECPropertyCP    m_property;
     WString             m_accessString;
     ::UInt32            m_arrayIndex;
     int                 m_memberSelector;   // 1 for x, 2, for y, 3 for z
@@ -557,7 +557,7 @@ private:
 //  Provides a list of conditions for which the shortcuts or bindings are valid
     ValueType   m_valueType;
     UnitsOrder  m_unitsOrder;
-    ECObject::ECValue m_ecValue;
+    ECN::ECValue m_ecValue;
 
 public:
 
@@ -572,10 +572,10 @@ public:
     EvaluationResultR operator=(EvaluationResultCR rhs);
     void                    Clear();
 
-    ECOBJECTS_EXPORT ECObject::ECValueR            GetECValueR();
-    ECOBJECTS_EXPORT ExpressionStatus        GetECValue(ECObject::ECValueR result);
-    ECOBJECTS_EXPORT ECObject::ECValueCR           GetECValue() const;
-    ECOBJECTS_EXPORT EvaluationResultR       operator= (ECObject::ECValueCR rhs);
+    ECOBJECTS_EXPORT ECN::ECValueR            GetECValueR();
+    ECOBJECTS_EXPORT ExpressionStatus        GetECValue(ECN::ECValueR result);
+    ECOBJECTS_EXPORT ECN::ECValueCR           GetECValue() const;
+    ECOBJECTS_EXPORT EvaluationResultR       operator= (ECN::ECValueCR rhs);
     };
 
 /*__PUBLISH_SECTION_START__*/
@@ -655,7 +655,7 @@ public:
     static ValueResultPtr      Create(EvaluationResultR result);
 
 /*__PUBLISH_SECTION_START__*/
-    ECOBJECTS_EXPORT ExpressionStatus  GetECValue (ECObject::ECValueR ecValue);
+    ECOBJECTS_EXPORT ExpressionStatus  GetECValue (ECN::ECValueR ecValue);
 };
 
 /*=================================================================================**//**

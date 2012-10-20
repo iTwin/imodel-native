@@ -854,7 +854,7 @@ TEST_F(SupplementalSchemaMetaDataTests, CanRetrieveFromSchema)
             tempSchema->GetFullSchemaName();
             ECCustomAttributeInstanceIterable iter = tempSchema->GetCustomAttributeContainer().GetCustomAttributes(true);
 
-    Bentley::ECObject::SupplementalSchemaMetaDataPtr metaData;
+    Bentley::ECN::SupplementalSchemaMetaDataPtr metaData;
     EXPECT_TRUE(SupplementalSchemaMetaData::TryGetFromSchema(metaData, *supplemental));
     EXPECT_TRUE(metaData.IsValid());
     EXPECT_STREQ(L"TestSchema", metaData->GetPrimarySchemaName().c_str());

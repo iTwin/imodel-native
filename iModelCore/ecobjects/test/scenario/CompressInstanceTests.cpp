@@ -145,7 +145,7 @@ void SetAndVerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessStrin
     EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
     VerifyInteger (instance, v, accessString, value);
     }
-static void validateArrayCount  (ECObject::StandaloneECInstanceCR instance, WCharCP propertyName, UInt32 expectedCount)
+static void validateArrayCount  (ECN::StandaloneECInstanceCR instance, WCharCP propertyName, UInt32 expectedCount)
     {
     ECValue varray;
     EXPECT_TRUE (SUCCESS == instance.GetValue (varray, propertyName));
@@ -170,7 +170,7 @@ TEST_F(CompressInstanceTests, CheckVariableSizedPropertyAfterCallingCompress)
     ASSERT_TRUE (NULL != ecClass);
 
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
-    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
 	SystemTime inTime = SystemTime::GetLocalTime();
     int        inCount = 100;

@@ -819,7 +819,7 @@ bool           MemoryECInstanceBase::IsHiddenInstance ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus MemoryECInstanceBase::MergePropertiesFromInstance
 (
-ECObject::IECInstanceCR     fromNativeInstance
+ECN::IECInstanceCR     fromNativeInstance
 )
     {
     IECInstancePtr  thisAsIECInstance = GetAsIECInstance ();
@@ -875,7 +875,7 @@ ECObjectsStatus MemoryECInstanceBase::SetValueInternal (UInt32 propertyIndex, EC
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus MemoryECInstanceBase::CopyInstanceProperties
 (
-ECObject::IECInstanceCR     fromNativeInstance
+ECN::IECInstanceCR     fromNativeInstance
 )
     {
     IECInstancePtr  thisAsIECInstance = GetAsIECInstance ();
@@ -944,7 +944,7 @@ ECObject::IECInstanceCR     fromNativeInstance
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t                StandaloneECInstance::_GetOffsetToIECInstance () const
     {
-    ECObject::IECInstanceCP iecInstanceP   = dynamic_cast<ECObject::IECInstanceCP>(this);
+    ECN::IECInstanceCP iecInstanceP   = dynamic_cast<ECN::IECInstanceCP>(this);
     byte const* baseAddressOfIECInstance = (byte const *)iecInstanceP;
     byte const* baseAddressOfConcrete = (byte const *)this;
 
@@ -1193,7 +1193,7 @@ StandaloneECEnablerPtr    StandaloneECEnabler::CreateEnabler (ECClassCR ecClass,
 +---------------+---------------+---------------+---------------+---------------+------*/
 WCharCP           StandaloneECEnabler::_GetName() const
     {
-    return L"Bentley::ECObject::StandaloneECEnabler";
+    return L"Bentley::ECN::StandaloneECEnabler";
     }
     
 /*---------------------------------------------------------------------------------**//**

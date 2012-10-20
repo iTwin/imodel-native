@@ -665,7 +665,7 @@ SchemaPrecedence precedence
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-Bentley::ECObject::SupplementedSchemaStatus SupplementedSchemaBuilder::MergeCustomAttributeClasses
+Bentley::ECN::SupplementedSchemaStatus SupplementedSchemaBuilder::MergeCustomAttributeClasses
 ( 
 IECCustomAttributeContainerR consolidatedCustomAttributeContainer, 
 ECCustomAttributeInstanceIterable supplementalCustomAttributes, 

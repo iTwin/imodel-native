@@ -91,7 +91,7 @@ public:
 
     ECSchemaPtr         LocateSchema (SchemaKeyR key, bset<SchemaMatchType> const& matches);
 
-    ECOBJECTS_EXPORT void AddExternalSchemaLocaters (bvector<ECObject::IECSchemaLocaterP> const& schemaLocators);
+    ECOBJECTS_EXPORT void AddExternalSchemaLocaters (bvector<ECN::IECSchemaLocaterP> const& schemaLocators);
 /*__PUBLISH_SECTION_START__*/
 
     //! Creates a context for deserializing ECSchemas

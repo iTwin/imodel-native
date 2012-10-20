@@ -167,7 +167,7 @@ protected:
     virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
                                         bool allowUnknown, bool allowOverrides) override
         {
-        evalResult = ECObject::ECValue(m_value.c_str(), false);
+        evalResult = ECN::ECValue(m_value.c_str(), false);
 
         return ExprStatus_Success;
         }
@@ -236,7 +236,7 @@ protected:
     virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
                                         bool allowUnknown, bool allowOverrides) override
         {
-        evalResult = ECObject::ECValue(m_value);
+        evalResult = ECN::ECValue(m_value);
 
         return ExprStatus_Success;
         }
@@ -271,7 +271,7 @@ protected:
     virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
                                         bool allowUnknown, bool allowOverrides) override
         {
-        evalResult = ECObject::ECValue(m_value);
+        evalResult = ECN::ECValue(m_value);
 
         return ExprStatus_Success;
         }
@@ -307,7 +307,7 @@ protected:
     virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
                                         bool allowUnknown, bool allowOverrides) override
         {
-        evalResult = ECObject::ECValue(m_value);
+        evalResult = ECN::ECValue(m_value);
 
         return ExprStatus_Success;
         }
@@ -336,7 +336,7 @@ protected:
     virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
                                         bool allowUnknown, bool allowOverrides) override
         {
-        evalResult = ECObject::ECValue(m_value);
+        evalResult = ECN::ECValue(m_value);
 
         return ExprStatus_Success;
         }

@@ -47,7 +47,7 @@ public:
     };
 
 //=======================================================================================    
-//! Information about an array in an ECObject::IECInstance. Does not contain the actual elements.
+//! Information about an array in an ECN::IECInstance. Does not contain the actual elements.
 //! @ingroup ECObjectsGroup
 //! @see ECValue
 //=======================================================================================    
@@ -77,9 +77,9 @@ public:
 //=======================================================================================    
 //! @ingroup ECObjectsGroup
 //! Variant-like object representing the value of an ECPropertyValue. 
-//! It does not represent a "live" reference into the underlying ECObject::IECInstance 
-//! (or the object that the ECObject::IECInstance represents). Changing the ECObject::ECValue will not affect
-//! the ECObject::IECInstance unless you subsequently call SetValue() with it.
+//! It does not represent a "live" reference into the underlying ECN::IECInstance 
+//! (or the object that the ECN::IECInstance represents). Changing the ECN::ECValue will not affect
+//! the ECN::IECInstance unless you subsequently call SetValue() with it.
 //! 
 //! @group "ECInstance"
 //=======================================================================================    
@@ -327,7 +327,7 @@ public:
     ECOBJECTS_EXPORT bool                   MatchesEnabler (UInt32 depth, ECEnablerCR other) const;
 
     //! Looks up and returns the ECProperty associated with this accessor
-    ECOBJECTS_EXPORT ECObject::ECPropertyCP       GetECProperty() const;
+    ECOBJECTS_EXPORT ECN::ECPropertyCP       GetECProperty() const;
 
 /*__PUBLISH_SECTION_START__*/
 
@@ -486,5 +486,5 @@ END_BENTLEY_ECOBJECT_NAMESPACE
 
 //__PUBLISH_SECTION_END__
 #include <boost/foreach.hpp>
-BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::ECObject::ECValuesCollection)
+BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::ECN::ECValuesCollection)
 //__PUBLISH_SECTION_START__

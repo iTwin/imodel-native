@@ -10,7 +10,7 @@
 #include "TestFixture.h"
 #include <ECUnits/Units.h>
 
-using namespace Bentley::ECObject;
+using namespace Bentley::ECN;
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 

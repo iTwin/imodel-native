@@ -24,11 +24,11 @@
 #define ECOBJECTS_EXPORT IMPORT_ATTRIBUTE
 #endif
 
-#define BEGIN_BENTLEY_ECOBJECT_NAMESPACE  BEGIN_BENTLEY_NAMESPACE namespace ECObject {
+#define BEGIN_BENTLEY_ECOBJECT_NAMESPACE  BEGIN_BENTLEY_NAMESPACE namespace ECN {
 
 #define END_BENTLEY_ECOBJECT_NAMESPACE    }}
 
-#define USING_NAMESPACE_EC  using namespace Bentley::ECObject;
+#define USING_NAMESPACE_EC  using namespace Bentley::ECN;
 
 #define EC_TYPEDEFS(_name_)  \
         BEGIN_BENTLEY_ECOBJECT_NAMESPACE      \

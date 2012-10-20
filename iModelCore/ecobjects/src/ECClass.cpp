@@ -1675,7 +1675,7 @@ ECRelationshipConstraintR toRelationshipConstraint
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipClass::ECRelationshipClass (ECObject::ECSchemaCR schema) : ECClass (schema), m_strength( STRENGTHTYPE_Referencing), m_strengthDirection(STRENGTHDIRECTION_Forward) 
+ECRelationshipClass::ECRelationshipClass (ECN::ECSchemaCR schema) : ECClass (schema), m_strength( STRENGTHTYPE_Referencing), m_strengthDirection(STRENGTHDIRECTION_Forward) 
     {
     m_source = new ECRelationshipConstraint(this, false);
     m_target = new ECRelationshipConstraint(this, true);
@@ -1796,7 +1796,7 @@ ECObjectsStatus ECRelationshipClass::GetOrderedRelationshipPropertyName (WString
     IECInstancePtr caInstance = GetCustomAttribute(L"SupportsOrderedRelationships");
     if (caInstance.IsValid())
         {
-        ECObject::ECValue value;
+        ECN::ECValue value;
         WCharCP propertyName=L"OrderIdTargetProperty";
 
         if (end == ECRelationshipEnd_Source)

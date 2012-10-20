@@ -30,10 +30,10 @@ static void performConcatenation(EvaluationResultR evalResult, ECValueCR left, E
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus Operations::ConvertToInt32(EvaluationResultR evalResult) 
     {
-    ECObject::ECValueR    ecValue = evalResult.GetECValueR();
+    ECN::ECValueR    ecValue = evalResult.GetECValueR();
     BeAssert (!ecValue.IsUninitialized() && ecValue.IsPrimitive());
 
-    ECObject::PrimitiveType  primType = ecValue.GetPrimitiveType();
+    ECN::PrimitiveType  primType = ecValue.GetPrimitiveType();
     switch(primType)
         {
         case PRIMITIVETYPE_Boolean:
@@ -63,7 +63,7 @@ ExpressionStatus Operations::ConvertToInt32(EvaluationResultR evalResult)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus Operations::ConvertToString(EvaluationResultR evalResult) 
     {
-    ECObject::ECValueR    ecValue = evalResult.GetECValueR();
+    ECN::ECValueR    ecValue = evalResult.GetECValueR();
     BeAssert (!ecValue.IsUninitialized());
         
     if (!ecValue.IsPrimitive() || ecValue.IsNull())
@@ -103,10 +103,10 @@ ExpressionStatus Operations::ConvertToString(EvaluationResultR evalResult)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus Operations::ConvertToInt64(EvaluationResultR evalResult) 
     {
-    ECObject::ECValueR    ecValue = evalResult.GetECValueR();
+    ECN::ECValueR    ecValue = evalResult.GetECValueR();
     BeAssert (!ecValue.IsUninitialized() && ecValue.IsPrimitive());
 
-    ECObject::PrimitiveType  primType = ecValue.GetPrimitiveType();
+    ECN::PrimitiveType  primType = ecValue.GetPrimitiveType();
     switch(primType)
         {
         case PRIMITIVETYPE_Boolean:
@@ -136,10 +136,10 @@ ExpressionStatus Operations::ConvertToInt64(EvaluationResultR evalResult)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus Operations::ConvertToDouble(EvaluationResultR evalResult) 
     {
-    ECObject::ECValueR    ecValue = evalResult.GetECValueR();
+    ECN::ECValueR    ecValue = evalResult.GetECValueR();
     BeAssert (!ecValue.IsUninitialized() && ecValue.IsPrimitive());
 
-    ECObject::PrimitiveType  primType = ecValue.GetPrimitiveType();
+    ECN::PrimitiveType  primType = ecValue.GetPrimitiveType();
     switch(primType)
         {
         case PRIMITIVETYPE_Boolean:
@@ -249,7 +249,7 @@ ExpressionStatus Operations::ConvertToBooleanOperand (EvaluationResultR evalResu
     if (ecValue.IsBoolean())
         return ExprStatus_Success;
 
-    ECObject::PrimitiveType   primType = ecValue.GetPrimitiveType();
+    ECN::PrimitiveType   primType = ecValue.GetPrimitiveType();
     bool    boolValue = false;
     switch(primType)
         {
@@ -420,14 +420,14 @@ ref ECEvaluationResult     ecValue
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus Operations::PerformArithmeticPromotion(EvaluationResult& leftResult, EvaluationResult& rightResult, bool allowStrings)
     {
-    ECObject::ECValueR    left    = leftResult.GetECValueR();
-    ECObject::ECValueR    right   = rightResult.GetECValueR();
+    ECN::ECValueR    left    = leftResult.GetECValueR();
+    ECN::ECValueR    right   = rightResult.GetECValueR();
 
     if (!left.IsPrimitive() || !right.IsPrimitive())
         return ExprStatus_PrimitiveRequired;
 
-    ECObject::PrimitiveType   leftCode    = left.GetPrimitiveType();
-    ECObject::PrimitiveType   rightCode   = right.GetPrimitiveType();
+    ECN::PrimitiveType   leftCode    = left.GetPrimitiveType();
+    ECN::PrimitiveType   rightCode   = right.GetPrimitiveType();
 
     //  PRIMITIVETYPE_DateTime, point types, and Boolean are all missing from this
     //  We may also want to provide a way for structs with extended types to perform the conversion to 
@@ -453,7 +453,7 @@ ExpressionStatus Operations::PerformArithmeticPromotion(EvaluationResult& leftRe
             return ExprStatus_Success;
 
         ECValueR            target = PRIMITIVETYPE_Long == leftCode ? right : left;
-        ECObject::PrimitiveType   targetCode = PRIMITIVETYPE_Long == leftCode ? rightCode : leftCode;
+        ECN::PrimitiveType   targetCode = PRIMITIVETYPE_Long == leftCode ? rightCode : leftCode;
         if (PRIMITIVETYPE_Double == targetCode)
             {
             target.SetLong((Int64)target.GetDouble());
@@ -476,7 +476,7 @@ ExpressionStatus Operations::PerformArithmeticPromotion(EvaluationResult& leftRe
             return ExprStatus_Success;
 
         ECValueR            target = PRIMITIVETYPE_Double == leftCode ? right : left;
-        ECObject::PrimitiveType   targetCode = PRIMITIVETYPE_Double == leftCode ? rightCode : leftCode;
+        ECN::PrimitiveType   targetCode = PRIMITIVETYPE_Double == leftCode ? rightCode : leftCode;
 
         if (PRIMITIVETYPE_Integer == targetCode)
             {
@@ -542,12 +542,12 @@ EvaluationResultR           resultOut,
 EvaluationResultR           left
 )
     {
-    ECObject::ECValueR        ecLeft = left.GetECValueR();
+    ECN::ECValueR        ecLeft = left.GetECValueR();
 
     if (!ecLeft.IsPrimitive())
         return ExprStatus_IncompatibleTypes;
 
-    ECObject::PrimitiveType   primType = ecLeft.GetPrimitiveType();
+    ECN::PrimitiveType   primType = ecLeft.GetPrimitiveType();
 
     if (PRIMITIVETYPE_String == primType)
         {
@@ -592,12 +592,12 @@ EvaluationResultR           resultOut,
 EvaluationResultR           left
 )
     {
-    ECObject::ECValueR        ecLeft = left.GetECValueR();
+    ECN::ECValueR        ecLeft = left.GetECValueR();
 
     if (!ecLeft.IsPrimitive())
         return ExprStatus_IncompatibleTypes;
 
-    ECObject::PrimitiveType   primType = ecLeft.GetPrimitiveType();
+    ECN::PrimitiveType   primType = ecLeft.GetPrimitiveType();
 
     if (PRIMITIVETYPE_String == primType)
         {
@@ -654,7 +654,7 @@ EvaluationResultR         right
     if (!left.GetECValue().IsPrimitive())
         return ExprStatus_WrongType;
 
-    ECObject::PrimitiveType   primType = left.GetECValue().GetPrimitiveType();
+    ECN::PrimitiveType   primType = left.GetECValue().GetPrimitiveType();
     int                 count = right.GetECValue().GetInteger();
 
     //  If string, we may want to try to convert to int.
@@ -723,7 +723,7 @@ EvaluationResultR           right
     if (ExprStatus_Success != status)
         return status;
 
-    ECObject::PrimitiveType   primType = left.GetECValue().GetPrimitiveType();
+    ECN::PrimitiveType   primType = left.GetECValue().GetPrimitiveType();
 
     switch (primType)
         {
@@ -931,7 +931,7 @@ EvaluationResultR            right
             }
         }
 
-    ECObject::PrimitiveType  primType = left.GetECValue().GetPrimitiveType();
+    ECN::PrimitiveType  primType = left.GetECValue().GetPrimitiveType();
     if (PRIMITIVETYPE_Integer == primType)
         {
         switch (junctionOperator)
@@ -1067,7 +1067,7 @@ ExpressionStatus EvaluationResult::GetInteger(Int32& result)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus EvaluationResult::GetECValue(ECObject::ECValueR result)
+ExpressionStatus EvaluationResult::GetECValue(ECN::ECValueR result)
     {
 #if defined (NOTNOW)
     //  Enable this is we disable direct access to ECValue
@@ -1084,7 +1084,7 @@ ExpressionStatus EvaluationResult::GetECValue(ECObject::ECValueR result)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObject::ECValueR    EvaluationResult::GetECValueR() 
+ECN::ECValueR    EvaluationResult::GetECValueR() 
     { 
     return m_ecValue; 
     }
@@ -1092,7 +1092,7 @@ ECObject::ECValueR    EvaluationResult::GetECValueR()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObject::ECValueCR   EvaluationResult::GetECValue() const 
+ECN::ECValueCR   EvaluationResult::GetECValue() const 
     { 
     return m_ecValue; 
     }
@@ -1480,8 +1480,8 @@ NodePtr         Node::CreateIIf(NodeR conditional, NodeR trueNode, NodeR falseNo
 void            ExpressionType::Init ()
     {
     m_unitsPower        = 0;
-    m_valueKind         = ECObject::VALUEKIND_Uninitialized;
-    m_arrayKind         = ECObject::ARRAYKIND_Primitive;
+    m_valueKind         = ECN::VALUEKIND_Uninitialized;
+    m_arrayKind         = ECN::ARRAYKIND_Primitive;
     m_structClass       = NULL;
     }
 
@@ -1490,12 +1490,12 @@ void            ExpressionType::Init ()
 +---------------+---------------+---------------+---------------+---------------+------*/
                 ExpressionType::ExpressionType
 (
-ECObject::PrimitiveECPropertyR primitiveProp
+ECN::PrimitiveECPropertyR primitiveProp
 )
     {
     Init();
 
-    m_valueKind = ECObject::VALUEKIND_Primitive;
+    m_valueKind = ECN::VALUEKIND_Primitive;
     m_primitiveType = primitiveProp.GetType();
 
 #if defined (NOTNOW)
@@ -1624,7 +1624,7 @@ ExpressionStatus CallNode::InvokeInstanceMethod(EvaluationResult& evalResult, Ev
     ExpressionStatus    exprStatus = context.ResolveMethod(methodReference, this->GetMethodName(), true);
     if (ExprStatus_Success != exprStatus)
         {
-        evalResult = ECObject::ECValue();
+        evalResult = ECN::ECValue();
         return exprStatus;
         }
 
@@ -1662,7 +1662,7 @@ ExpressionStatus CallNode::InvokeStaticMethod(EvaluationResult& evalResult, Expr
     ExpressionStatus    exprStatus = context.ResolveMethod(methodReference, this->GetMethodName(), true);
     if (ExprStatus_Success != exprStatus)
         {
-        evalResult = ECObject::ECValue();
+        evalResult = ECN::ECValue();
         return exprStatus;
         }
 
@@ -1717,14 +1717,14 @@ ExpressionStatus AssignmentNode::_GetValue(EvaluationResult& evalResult, Express
     if (ExprStatus_Success != exprStatus)
         return exprStatus;
 
-    ECObject::PrimitiveECPropertyCP   primProperty = refResult.m_property->GetAsPrimitiveProperty();
+    ECN::PrimitiveECPropertyCP   primProperty = refResult.m_property->GetAsPrimitiveProperty();
     if (NULL != primProperty)
         {
-        ECObject::IECInstanceP    instance = instanceResult.GetECValueR().GetStruct().get();
-        ECObject::ECEnablerCR     enabler = instance->GetEnabler();
+        ECN::IECInstanceP    instance = instanceResult.GetECValueR().GetStruct().get();
+        ECN::ECEnablerCR     enabler = instance->GetEnabler();
 
         ::UInt32     propertyIndex;
-        if (enabler.GetPropertyIndex(propertyIndex, refResult.m_accessString.c_str()) != ECObject::ECOBJECTS_STATUS_Success)
+        if (enabler.GetPropertyIndex(propertyIndex, refResult.m_accessString.c_str()) != ECN::ECOBJECTS_STATUS_Success)
             {
             evalResult.Clear();
             return ExprStatus_UnknownError;
@@ -1734,13 +1734,13 @@ ExpressionStatus AssignmentNode::_GetValue(EvaluationResult& evalResult, Express
 #if defined (NOTNOW)
         switch(primProperty->GetType())
             {
-            case ECObject::PRIMITIVETYPE_String:
-            case ECObject::PRIMITIVETYPE_Long:
-            case ECObject::PRIMITIVETYPE_Integer:
-            case ECObject::PRIMITIVETYPE_Double:
+            case ECN::PRIMITIVETYPE_String:
+            case ECN::PRIMITIVETYPE_Long:
+            case ECN::PRIMITIVETYPE_Integer:
+            case ECN::PRIMITIVETYPE_Double:
 #endif
-        ECObject::ECObjectsStatus  ecStatus = instance->SetValue(propertyIndex, evalResult.GetECValue());
-        if (ECObject::ECOBJECTS_STATUS_Success != ecStatus)
+        ECN::ECObjectsStatus  ecStatus = instance->SetValue(propertyIndex, evalResult.GetECValue());
+        if (ECN::ECOBJECTS_STATUS_Success != ecStatus)
             {
             evalResult.Clear();
             return ExprStatus_UnknownError;
@@ -2073,14 +2073,14 @@ ExpressionStatus BinaryNode::GetOperandValues(EvaluationResult& leftResult, Eval
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus BinaryNode::PromoteCommon(EvaluationResult& leftResult, EvaluationResult& rightResult, ExpressionContextR context, bool allowStrings)
     {
-    ECObject::ECValueR    left    = leftResult.GetECValueR();
-    ECObject::ECValueR    right   = rightResult.GetECValueR();
+    ECN::ECValueR    left    = leftResult.GetECValueR();
+    ECN::ECValueR    right   = rightResult.GetECValueR();
 
     if (!left.IsPrimitive() || !right.IsPrimitive())
         return ExprStatus_PrimitiveRequired;
 
-    ECObject::PrimitiveType   leftCode    = left.GetPrimitiveType();
-    ECObject::PrimitiveType   rightCode   = right.GetPrimitiveType();
+    ECN::PrimitiveType   leftCode    = left.GetPrimitiveType();
+    ECN::PrimitiveType   rightCode   = right.GetPrimitiveType();
 
     //  PRIMITIVETYPE_DateTime, point types, and Boolean are all missing from this
     //  We may also want to provide a way for structs with extended types to perform the conversion to 
@@ -2123,7 +2123,7 @@ ExpressionStatus BinaryNode::PromoteCommon(EvaluationResult& leftResult, Evaluat
             return ExprStatus_Success;
 
         ECValueR            target = PRIMITIVETYPE_Long == leftCode ? right : left;
-        ECObject::PrimitiveType   targetCode = PRIMITIVETYPE_Long == leftCode ? rightCode : leftCode;
+        ECN::PrimitiveType   targetCode = PRIMITIVETYPE_Long == leftCode ? rightCode : leftCode;
         if (PRIMITIVETYPE_Double == targetCode)
             {
             target.SetLong((Int64)target.GetDouble());
@@ -2146,7 +2146,7 @@ ExpressionStatus BinaryNode::PromoteCommon(EvaluationResult& leftResult, Evaluat
             return ExprStatus_Success;
 
         ECValueR            target = PRIMITIVETYPE_Double == leftCode ? right : left;
-        ECObject::PrimitiveType   targetCode = PRIMITIVETYPE_Double == leftCode ? rightCode : leftCode;
+        ECN::PrimitiveType   targetCode = PRIMITIVETYPE_Double == leftCode ? rightCode : leftCode;
 
         if (PRIMITIVETYPE_Integer == targetCode)
             {
@@ -2249,9 +2249,9 @@ ExpressionStatus PlusMinusNode::_Promote(EvaluationResult& leftResult, Evaluatio
 +---------------+---------------+---------------+---------------+---------------+-----*/
 ExpressionStatus PlusMinusNode::_PerformOperation(EvaluationResultR evalResult, EvaluationResultCR leftResult, EvaluationResultCR rightResult, ExpressionContextR context)
     {
-    ECObject::ECValueCR   left    = leftResult.GetECValue();
-    ECObject::ECValueCR   right   = rightResult.GetECValue();
-    ECObject::ECValueR    result  = evalResult.GetECValueR();
+    ECN::ECValueCR   left    = leftResult.GetECValue();
+    ECN::ECValueCR   right   = rightResult.GetECValue();
+    ECN::ECValueR    result  = evalResult.GetECValueR();
 
     if (m_operatorCode == TOKEN_Plus)
         {
@@ -2416,7 +2416,7 @@ ExpressionStatus Node::GetValue(ValueResultPtr& valueResult, ExpressionContextR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-EvaluationResultR EvaluationResult::operator= (ECObject::ECValueCR rhs)
+EvaluationResultR EvaluationResult::operator= (ECN::ECValueCR rhs)
     {
     m_ecValue.Clear();
     m_ecValue = rhs;
@@ -2428,7 +2428,7 @@ EvaluationResultR EvaluationResult::operator= (ECObject::ECValueCR rhs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus ValueResult::GetECValue (ECObject::ECValueR ecValue)
+ExpressionStatus ValueResult::GetECValue (ECN::ECValueR ecValue)
     {
     return m_evalResult.GetECValue(ecValue);
     }

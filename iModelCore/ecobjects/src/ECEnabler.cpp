@@ -241,7 +241,7 @@ IECWipRelationshipInstancePtr  IECRelationshipEnabler::CreateWipRelationshipInst
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObject::ECRelationshipClassCR       IECRelationshipEnabler::GetRelationshipClass() const
+ECN::ECRelationshipClassCR       IECRelationshipEnabler::GetRelationshipClass() const
     {
     return _GetRelationshipClass ();
     }

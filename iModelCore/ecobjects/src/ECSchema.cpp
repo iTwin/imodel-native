@@ -2043,15 +2043,15 @@ bool     utf16
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ECSchema::FindAllSchemasInGraph (bvector<ECObject::ECSchemaP>& allSchemas, bool includeRootSchema)
+void            ECSchema::FindAllSchemasInGraph (bvector<ECN::ECSchemaP>& allSchemas, bool includeRootSchema)
     {
-    FindAllSchemasInGraph ((bvector<ECObject::ECSchemaCP>&)allSchemas, includeRootSchema);
+    FindAllSchemasInGraph ((bvector<ECN::ECSchemaCP>&)allSchemas, includeRootSchema);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ECSchema::CollectAllSchemasInGraph (bvector<ECObject::ECSchemaCP>& allSchemas, bool includeRootSchema) const
+void            ECSchema::CollectAllSchemasInGraph (bvector<ECN::ECSchemaCP>& allSchemas, bool includeRootSchema) const
     {
     if (includeRootSchema)
         allSchemas.push_back (this);
@@ -2065,7 +2065,7 @@ void            ECSchema::CollectAllSchemasInGraph (bvector<ECObject::ECSchemaCP
                 continue;
             }
 
-        bvector<ECObject::ECSchemaCP>::iterator it = std::find (allSchemas.begin(), allSchemas.end(), iter->second.get());
+        bvector<ECN::ECSchemaCP>::iterator it = std::find (allSchemas.begin(), allSchemas.end(), iter->second.get());
 
         if (it != allSchemas.end())
             continue;
@@ -2077,7 +2077,7 @@ void            ECSchema::CollectAllSchemasInGraph (bvector<ECObject::ECSchemaCP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    07/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ECSchema::FindAllSchemasInGraph (bvector<ECObject::ECSchemaCP>& allSchemas, bool includeRootSchema) const
+void            ECSchema::FindAllSchemasInGraph (bvector<ECN::ECSchemaCP>& allSchemas, bool includeRootSchema) const
     {
     this->CollectAllSchemasInGraph (allSchemas, includeRootSchema);
     std::reverse(allSchemas.begin(), allSchemas.end());
@@ -2388,9 +2388,9 @@ WString         SchemaKey::GetFullSchemaName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ECClassFinder
     {
-    ECObject::SchemaNameClassNamePair const& m_key;
+    ECN::SchemaNameClassNamePair const& m_key;
     ECClassP&                          m_class;
-    ECClassFinder (ECObject::SchemaNameClassNamePair const& key, ECClassP& foundClass)
+    ECClassFinder (ECN::SchemaNameClassNamePair const& key, ECClassP& foundClass)
         :m_key(key), m_class(foundClass)
         {}
 
@@ -2421,7 +2421,7 @@ struct ECClassFinder
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassP        SchemaMapExact::FindClassP (ECObject::SchemaNameClassNamePair const& classNamePair) const
+ECClassP        SchemaMapExact::FindClassP (ECN::SchemaNameClassNamePair const& classNamePair) const
     {
     ECClassP classInstance = NULL;
     ECClassFinder classFinder(classNamePair, classInstance);

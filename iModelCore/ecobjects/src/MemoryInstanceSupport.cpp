@@ -258,7 +258,7 @@ UInt32  ClassLayout::ComputeCheckSum () const
         checkSum = ((checkSum + (UInt32)propertyP->GetModifierFlags()) & 0xffff);
         checkSum = ((checkSum + (UInt32)propertyP->GetModifierData()) & 0xffff);
 
-        ECObject::ECTypeDescriptor typeDescr = propertyP->GetTypeDescriptor();
+        ECN::ECTypeDescriptor typeDescr = propertyP->GetTypeDescriptor();
         checkSum = ((checkSum + (UInt32)typeDescr.GetTypeKind()) & 0xffff);
         checkSum = ((checkSum + (UInt32)typeDescr.GetPrimitiveType()) & 0xffff);    // since we are in a union Primitive Type includes Array Type
 
@@ -1635,7 +1635,7 @@ UInt32          MemoryInstanceSupport::GetOffsetOfArrayIndex (UInt32 arrayOffset
     if (IsArrayOfFixedSizeElements (propertyLayout))
         primaryOffset += (index * ECValue::GetFixedPrimitiveValueSize (propertyLayout.GetTypeDescriptor().GetPrimitiveType()));
     else if (PRIMITIVETYPE_Integer == GetStructArrayPrimitiveType () && propertyLayout.GetTypeDescriptor().IsStructArray())
-        primaryOffset += (index * ECValue::GetFixedPrimitiveValueSize (ECObject::PRIMITIVETYPE_Integer));
+        primaryOffset += (index * ECValue::GetFixedPrimitiveValueSize (ECN::PRIMITIVETYPE_Integer));
     else
         primaryOffset += index * sizeof (SecondaryOffset);
 
@@ -2167,7 +2167,7 @@ void            MemoryInstanceSupport::InitializeMemory(ClassLayoutCR classLayou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObject::PrimitiveType         MemoryInstanceSupport::GetStructArrayPrimitiveType () const
+ECN::PrimitiveType         MemoryInstanceSupport::GetStructArrayPrimitiveType () const
     {
     return _GetStructArrayPrimitiveType();
     }

@@ -771,7 +771,7 @@ TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper)
     ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 0, 0);
     StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
 
-    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     double    doubleVal;
     int       intVal;
@@ -896,8 +896,8 @@ TEST_F(MemoryLayoutTests, ECValueEqualsMethod)
     v2.SetPoint3D (point3dInput1);
     EXPECT_FALSE  (v1.Equals (v2));
 
-    ECObject::StandaloneECInstancePtr testInstance0 = enabler->CreateInstance();
-    ECObject::StandaloneECInstancePtr testInstance1 = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr testInstance0 = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr testInstance1 = enabler->CreateInstance();
     v1.SetStruct  (testInstance0.get());
     v2.SetStruct  (testInstance0.get());
     EXPECT_TRUE   (v1.Equals(v2));
@@ -1109,9 +1109,9 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmptyInstance)
     /*--------------------------------------------------------------------------
         Create an empty instance
     --------------------------------------------------------------------------*/
-    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
-    ECObject::ECValuesCollectionPtr collection = ECObject::ECValuesCollection::Create (*instance);
+    ECN::ECValuesCollectionPtr collection = ECN::ECValuesCollection::Create (*instance);
 
     /*--------------------------------------------------------------------------
         Iterate through its values - shouldn't find any
@@ -1154,7 +1154,7 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_PrimitiveProperties)
     /*--------------------------------------------------------------------------
         Build the instance
     --------------------------------------------------------------------------*/
-    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     instance->SetValue(L"Name",         ECValue (L"My Name"));
     instance->SetValue(L"Count",        ECValue (14));
@@ -1215,7 +1215,7 @@ TEST_F(MemoryLayoutTests, CopyInstanceProperties)
     /*--------------------------------------------------------------------------
         Build the instance
     --------------------------------------------------------------------------*/
-    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     instance->SetValue(L"Name",         ECValue (L"My Name"));
     instance->SetValue(L"Count",        ECValue (14));
@@ -1252,7 +1252,7 @@ TEST_F(MemoryLayoutTests, CopyInstanceProperties)
     /*--------------------------------------------------------------------------
         Duplicate the instance and verify the duplicate.
     --------------------------------------------------------------------------*/
-    ECObject::StandaloneECInstancePtr duplicateInstance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr duplicateInstance = enabler->CreateInstance();
 
     ECObjectsStatus copyStatus = duplicateInstance->GetAsMemoryECInstance()->CopyInstanceProperties (*instance);
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == copyStatus);
@@ -1279,7 +1279,7 @@ TEST_F(MemoryLayoutTests, MergeInstanceProperties)
     /*--------------------------------------------------------------------------
         Build the base instance
     --------------------------------------------------------------------------*/
-    ECObject::StandaloneECInstancePtr mergeToInstance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr mergeToInstance = enabler->CreateInstance();
 
     mergeToInstance->SetValue(L"Name",         ECValue (L"base"));
     mergeToInstance->SetValue(L"Length",       ECValue (142.5));
@@ -1288,11 +1288,11 @@ TEST_F(MemoryLayoutTests, MergeInstanceProperties)
     /*--------------------------------------------------------------------------
         Build the instance with data to merge
     --------------------------------------------------------------------------*/
-    ECObject::StandaloneECInstancePtr mergeFromInstance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr mergeFromInstance = enabler->CreateInstance();
 
     DPoint2d   tstSize = {10.5, 22.3};
 
-    ECValue nullBool (ECObject::PRIMITIVETYPE_Boolean);
+    ECValue nullBool (ECN::PRIMITIVETYPE_Boolean);
 
     mergeFromInstance->SetValue(L"Name",         ECValue (L"merge"));
     mergeFromInstance->SetValue(L"Count",        ECValue (14));
@@ -1335,7 +1335,7 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_PrimitiveArray)
     /*--------------------------------------------------------------------------
         Build the instance
     --------------------------------------------------------------------------*/
-    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     instance->SetValue(L"AString",  ECValue (L"Happy String"));
     instance->SetValue(L"AnInt",    ECValue (6));
@@ -1583,7 +1583,7 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmbeddedStructs)
     /*--------------------------------------------------------------------------
         Build the instance
     --------------------------------------------------------------------------*/
-    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
     setContactInfo (L"", 610, 1234567, L"123-4", L"Main Street", L"Exton", L"PA", 12345, L"nobody@nowhere.com", *instance);
 
     /*--------------------------------------------------------------------------
@@ -1632,14 +1632,14 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_StructArray)
     /*--------------------------------------------------------------------------
         Build the instance
     --------------------------------------------------------------------------*/
-    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
     instance->AddArrayElements(L"Employees[]", 2);
 
     StandaloneECEnablerPtr arrayMemberEnabler = schema->GetClassP(L"Employee")->GetDefaultStandaloneEnabler ();
     ASSERT_TRUE (enabler.IsValid());
 
     ECValue v;
-    ECObject::StandaloneECInstancePtr arrayMemberInstance1 = arrayMemberEnabler->CreateInstance();
+    ECN::StandaloneECInstancePtr arrayMemberInstance1 = arrayMemberEnabler->CreateInstance();
     arrayMemberInstance1->SetValue(L"Name", ECValue (L"John Smith"));
 
     setContactInfo (L"Home",   610, 7654321, L"175",   L"Oak Lane",    L"Wayne", L"PA", 12348, L"jsmith@home.com", *arrayMemberInstance1);
@@ -1647,7 +1647,7 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_StructArray)
     v.SetStruct(arrayMemberInstance1.get());
     instance->SetValue (L"Employees[]", v, 0);
 
-    ECObject::StandaloneECInstancePtr arrayMemberInstance2 = arrayMemberEnabler->CreateInstance();
+    ECN::StandaloneECInstancePtr arrayMemberInstance2 = arrayMemberEnabler->CreateInstance();
     arrayMemberInstance2->SetValue(L"Name", ECValue (L"Jane Doe"));
     setContactInfo (L"Home",   555, 1122334, L"1600", L"Pennsylvania Ave", L"Washington", L"DC", 10001, L"prez@gmail.com", *arrayMemberInstance2);
     setContactInfo (L"Work",   555, 1000000, L"1600", L"Pennsylvania Ave", L"Washington", L"DC", 10001, L"president@whitehouse.gov", *arrayMemberInstance2);
@@ -1719,14 +1719,14 @@ TEST_F(MemoryLayoutTests, MergeStructArray)
     /*--------------------------------------------------------------------------
         Build the instance
     --------------------------------------------------------------------------*/
-    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
     instance->AddArrayElements(L"Employees[]", 2);
 
     StandaloneECEnablerPtr arrayMemberEnabler = schema->GetClassP(L"Employee")->GetDefaultStandaloneEnabler ();
     ASSERT_TRUE (enabler.IsValid());
 
     ECValue v;
-    ECObject::StandaloneECInstancePtr arrayMemberInstance1 = arrayMemberEnabler->CreateInstance();
+    ECN::StandaloneECInstancePtr arrayMemberInstance1 = arrayMemberEnabler->CreateInstance();
     arrayMemberInstance1->SetValue(L"Name", ECValue (L"John Smith"));
 
     setContactInfo (L"Home",   610, 7654321, L"175",   L"Oak Lane",    L"Wayne", L"PA", 12348, L"jsmith@home.com", *arrayMemberInstance1);
@@ -1734,7 +1734,7 @@ TEST_F(MemoryLayoutTests, MergeStructArray)
     v.SetStruct(arrayMemberInstance1.get());
     instance->SetValue (L"Employees[]", v, 0);
 
-    ECObject::StandaloneECInstancePtr arrayMemberInstance2 = arrayMemberEnabler->CreateInstance();
+    ECN::StandaloneECInstancePtr arrayMemberInstance2 = arrayMemberEnabler->CreateInstance();
     arrayMemberInstance2->SetValue(L"Name", ECValue (L"Jane Doe"));
     setPartialContactInfo (false, L"Home",   555, 1122334, L"1600", L"Pennsylvania Ave", L"Washington", L"DC", 10001, L"prez@gmail.com", *arrayMemberInstance2);
     setPartialContactInfo (true, L"Work",   555, 1000000, L"1600", L"Pennsylvania Ave", L"Washington", L"DC", 10001, L"president@whitehouse.gov", *arrayMemberInstance2);
@@ -1747,7 +1747,7 @@ TEST_F(MemoryLayoutTests, MergeStructArray)
 
     dumpLoadedPropertyValues  (*collection, false, 0, false, originalCount);
 
-    ECObject::StandaloneECInstancePtr toInstance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr toInstance = enabler->CreateInstance();
 
     MemoryECInstanceBase* mbInstance = toInstance->GetAsMemoryECInstance ();
     mbInstance->MergePropertiesFromInstance (*instance);
@@ -1771,7 +1771,7 @@ TEST_F(MemoryLayoutTests, MergeStruct)
     ASSERT_TRUE (enabler.IsValid());
 
     ECValue v;
-    ECObject::StandaloneECInstancePtr employeeInstance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr employeeInstance = enabler->CreateInstance();
     employeeInstance->SetValue(L"Name", ECValue (L"John Smith"));
 
     setPartialContactInfo (false, L"Home",   610, 7654321, L"175",   L"Oak Lane",    L"Wayne", L"PA", 12348, L"jsmith@home.com", *employeeInstance);
@@ -1783,7 +1783,7 @@ TEST_F(MemoryLayoutTests, MergeStruct)
     ECValuesCollectionPtr   collection = ECValuesCollection::Create (*employeeInstance);
     dumpLoadedPropertyValues  (*collection, false, 0, false, originalCount);
 
-    ECObject::StandaloneECInstancePtr toInstance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr toInstance = enabler->CreateInstance();
 
     MemoryECInstanceBase* mbInstance = toInstance->GetAsMemoryECInstance ();
     mbInstance->MergePropertiesFromInstance (*employeeInstance);
@@ -1807,9 +1807,9 @@ TEST_F(MemoryLayoutTests, SimpleMergeTwoInstances)
 
     StandaloneECEnablerPtr enabler = primitiveClass->GetDefaultStandaloneEnabler();
     
-    ECObject::StandaloneECInstancePtr sourceInstance0 = enabler->CreateInstance();
-    ECObject::StandaloneECInstancePtr sourceInstance1 = enabler->CreateInstance();
-    ECObject::StandaloneECInstancePtr targetInstance  = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr sourceInstance0 = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr sourceInstance1 = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr targetInstance  = enabler->CreateInstance();
 
     ECValue v;
     v.SetDouble(1.0/3.0);
@@ -1901,7 +1901,7 @@ TEST_F(MemoryLayoutTests, InstantiateStandaloneInstance)
     ASSERT_TRUE (NULL != ecClass);
 
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
-    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
     WString instanceId = instance->GetInstanceId();
     instance->ToString(L"").c_str();
     ExerciseInstance (*instance, L"Test");
@@ -1922,7 +1922,7 @@ TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
     ASSERT_TRUE (NULL != ecClass);
 
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
-    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
     WString instanceId = instance->GetInstanceId();
 
     instance->ToString(L"").c_str();
@@ -1943,7 +1943,7 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     ASSERT_TRUE (NULL != ecClass);
     
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
-    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     DPoint2d   inSize = {10.5, 22.3};
     DPoint3d   inPoint1 = {10.10, 11.11, 12.12};
@@ -2006,7 +2006,7 @@ TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
     ASSERT_TRUE (NULL != ecClass);
     
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
-    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     WCharCP accessString = L"Property34";
 
@@ -2069,7 +2069,7 @@ TEST_F(MemoryLayoutTests, ExpectErrorsWhenViolatingArrayConstraints)
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (NULL != ecClass);    
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
-    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     {
     DISABLE_ASSERTS
@@ -2127,7 +2127,7 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     EXPECT_TRUE (v.IsDouble());
     EXPECT_EQ (doubleValue, v.GetDouble());
     
-    ECValue nullInt (ECObject::PRIMITIVETYPE_Integer);
+    ECValue nullInt (ECN::PRIMITIVETYPE_Integer);
     EXPECT_TRUE (nullInt.IsNull());
     EXPECT_TRUE (nullInt.IsInteger());
 
@@ -2204,7 +2204,7 @@ TEST_F (MemoryLayoutTests, TestSetGetNull)
     ASSERT_TRUE (NULL != ecClass);
         
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
-    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
     ECValue v;
     
     EXPECT_TRUE (SUCCESS == instance->GetValue (v, L"D"));
@@ -2246,7 +2246,7 @@ TEST_F (MemoryLayoutTests, TestPropertyReadOnly)
     ASSERT_TRUE (NULL != ecClass);
         
     StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
-    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
     
     WCharCP nameAccessString = L"Name";
     WCharCP wheelsAccessString = L"Wheels";
@@ -2275,8 +2275,8 @@ TEST_F (MemoryLayoutTests, TestPropertyReadOnly)
     // make sure we can deserialize and instance from XML that contains read only properties
     WString ecInstanceXml;
     instance->WriteToXmlString (ecInstanceXml, true, false);
-    ECObject::IECInstancePtr deserializedInstance = NULL;
-    ECObject::ECInstanceReadContextPtr instanceContext = ECObject::ECInstanceReadContext::CreateContext (*schema);
+    ECN::IECInstancePtr deserializedInstance = NULL;
+    ECN::ECInstanceReadContextPtr instanceContext = ECN::ECInstanceReadContext::CreateContext (*schema);
     EXPECT_TRUE (INSTANCE_READ_STATUS_Success == IECInstance::ReadFromXmlString(deserializedInstance, ecInstanceXml.c_str(), *instanceContext));
     EXPECT_TRUE (SUCCESS == deserializedInstance->GetValue (v, wheelsAccessString));
     EXPECT_TRUE (610 == v.GetInteger());
@@ -2309,7 +2309,7 @@ TEST_F (MemoryLayoutTests, TestBinarySetGet)
     ASSERT_TRUE (NULL != ecClass);
         
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
-    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
     
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"ABinary", v0In));
     EXPECT_TRUE (SUCCESS == instance->GetValue (v0Out, L"ABinary"));
@@ -2324,7 +2324,7 @@ TEST_F (MemoryLayoutTests, TestBinarySetGet)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void validateArrayCount  (ECObject::StandaloneECInstanceCR instance, WCharCP propertyName, UInt32 expectedCount)
+static void validateArrayCount  (ECN::StandaloneECInstanceCR instance, WCharCP propertyName, UInt32 expectedCount)
     {
     ECValue varray;
     EXPECT_TRUE (SUCCESS == instance.GetValue (varray, propertyName));
@@ -2351,7 +2351,7 @@ TEST_F (MemoryLayoutTests, TestRemovingArrayEntries)
     ASSERT_TRUE (NULL != ecClass);
         
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
-    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
     
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"FixedArrayFixedElement[]",  ECValue ((int)1), 1));
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"FixedArrayFixedElement[]",  ECValue ((int)3), 3));
@@ -2459,7 +2459,7 @@ TEST_F (MemoryLayoutTests, IterateCompleClass)
     ASSERT_TRUE (NULL != ecClass);
         
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
-    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     ECValue b(true);
     ECValue s1(L"719372644");
@@ -2477,7 +2477,7 @@ TEST_F (MemoryLayoutTests, IterateCompleClass)
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"IntProperty", i2));
 
     StandaloneECEnablerPtr structArrayEnabler = schema->GetClassP(L"StructClass")->GetDefaultStandaloneEnabler ();
-    ECObject::StandaloneECInstancePtr structInstance = structArrayEnabler->CreateInstance();
+    ECN::StandaloneECInstancePtr structInstance = structArrayEnabler->CreateInstance();
 
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"BooleanProperty", b));
     EXPECT_TRUE (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == instance->SetValue (L"BooleanProperty", b));
@@ -2537,7 +2537,7 @@ TEST_F (MemoryLayoutTests, ProfileSettingValues)
     ASSERT_TRUE (NULL != ecClass);
         
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
-    ECObject::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
     
     //UInt32 slack = 0;
     double elapsedSeconds = 0.0;

@@ -11,7 +11,7 @@
 #include <Bentley/BeCriticalSection.h>
 
 static BeCriticalSection                                s_ecexpressionsCS;
-static ECObject::IECSymbolProvider::ExternalSymbolPublisher   s_externalSymbolPublisher;
+static ECN::IECSymbolProvider::ExternalSymbolPublisher   s_externalSymbolPublisher;
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -32,9 +32,9 @@ ExpressionStatus InstanceExpressionContext::_GetReference(EvaluationResultR eval
     size_t      index = startIndex;
     bool        appendDot = false;
     WString     accessString;
-    ECObject::IECInstancePtr  instance = const_cast<ECObject::IECInstanceP>(GetInstanceCP());
-    ECObject::ECEnablerCP     enabler = &instance->GetEnabler();
-    ECObject::ECClassCP       ecClass = &enabler->GetClass();
+    ECN::IECInstancePtr  instance = const_cast<ECN::IECInstanceP>(GetInstanceCP());
+    ECN::ECEnablerCP     enabler = &instance->GetEnabler();
+    ECN::ECClassCP       ecClass = &enabler->GetClass();
 
 
     accessString.reserve(50);
@@ -48,7 +48,7 @@ ExpressionStatus InstanceExpressionContext::_GetReference(EvaluationResultR eval
         }
 
     ExpressionToken        nextOperation = primaryList.GetOperation(index);
-    ECObject::ECPropertyP             currentProperty = NULL;
+    ECN::ECPropertyP             currentProperty = NULL;
     
     while (TOKEN_None != nextOperation)
         {
@@ -89,7 +89,7 @@ ExpressionStatus InstanceExpressionContext::_GetReference(EvaluationResultR eval
                 return ExprStatus_PrimitiveRequired;
                 }
 
-            ECObject::StructECPropertyCP  structProperty = currentProperty->GetAsStructProperty();
+            ECN::StructECPropertyCP  structProperty = currentProperty->GetAsStructProperty();
             BeAssert (NULL != structProperty);
 
             ecClass = &structProperty->GetType();
@@ -100,7 +100,7 @@ ExpressionStatus InstanceExpressionContext::_GetReference(EvaluationResultR eval
             if (NULL == currentProperty)
                 return ExprStatus_UnknownSymbol;
 
-            ECObject::PrimitiveECPropertyCP   primProp = currentProperty->GetAsPrimitiveProperty();
+            ECN::PrimitiveECPropertyCP   primProp = currentProperty->GetAsPrimitiveProperty();
             if (NULL == primProp)
                 {
                 evalResult.Clear();
@@ -108,7 +108,7 @@ ExpressionStatus InstanceExpressionContext::_GetReference(EvaluationResultR eval
                 }
 
             ::UInt32     propertyIndex;
-            if (enabler->GetPropertyIndex(propertyIndex, accessString.c_str()) != ECObject::ECOBJECTS_STATUS_Success)
+            if (enabler->GetPropertyIndex(propertyIndex, accessString.c_str()) != ECN::ECOBJECTS_STATUS_Success)
                 {
                 evalResult.Clear();
                 return ExprStatus_UnknownError;
@@ -130,7 +130,7 @@ ExpressionStatus InstanceExpressionContext::_GetReference(EvaluationResultR eval
 
         if (TOKEN_LeftBracket == nextOperation)
             {
-            ECObject::ArrayECPropertyCP   arrayProp = currentProperty->GetAsArrayProperty();
+            ECN::ArrayECPropertyCP   arrayProp = currentProperty->GetAsArrayProperty();
 
             if (NULL == arrayProp)
                 {
@@ -157,7 +157,7 @@ ExpressionStatus InstanceExpressionContext::_GetReference(EvaluationResultR eval
             UInt32         arrayIndex = (UInt32)indexResult.GetECValue().GetInteger();
 
             //  May need to get an instance or primitive value.
-            if (arrayProp->GetKind() == ECObject::ARRAYKIND_Primitive)
+            if (arrayProp->GetKind() == ECN::ARRAYKIND_Primitive)
                 {
                 if (TOKEN_None != nextOperation)
                     {
@@ -174,20 +174,20 @@ ExpressionStatus InstanceExpressionContext::_GetReference(EvaluationResultR eval
                 return ExprStatus_Success;
                 }
 
-            BeAssert(ECObject::ARRAYKIND_Struct == arrayProp->GetKind());
+            BeAssert(ECN::ARRAYKIND_Struct == arrayProp->GetKind());
 
             accessString.append(L"[]");
             ::UInt32     propertyIndex;
-            if (enabler->GetPropertyIndex(propertyIndex, accessString.c_str()) != ECObject::ECOBJECTS_STATUS_Success)
+            if (enabler->GetPropertyIndex(propertyIndex, accessString.c_str()) != ECN::ECOBJECTS_STATUS_Success)
                 {
                 evalResult.Clear();
                 return ExprStatus_UnknownError;
                 }
 
-            ECObject::ECValue         ecValue;
-            ECObject::ECObjectsStatus  ecStatus = instance->GetValue(ecValue, propertyIndex, arrayIndex);
+            ECN::ECValue         ecValue;
+            ECN::ECObjectsStatus  ecStatus = instance->GetValue(ecValue, propertyIndex, arrayIndex);
 
-            if (ECObject::ECOBJECTS_STATUS_Success != ecStatus)
+            if (ECN::ECOBJECTS_STATUS_Success != ecStatus)
                 {
                 evalResult.Clear();
                 return ExprStatus_UnknownError;             //  This should return a good translation of the ECOBJECTS_STATUS_ value
@@ -228,9 +228,9 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
     size_t      index = startIndex;
     bool        appendDot = false;
     WString     accessString;
-    ECObject::IECInstancePtr  instance = const_cast<ECObject::IECInstanceP>(GetInstanceCP());
-    ECObject::ECEnablerCP     enabler = &instance->GetEnabler();
-    ECObject::ECClassCP       ecClass = &enabler->GetClass();
+    ECN::IECInstancePtr  instance = const_cast<ECN::IECInstanceP>(GetInstanceCP());
+    ECN::ECEnablerCP     enabler = &instance->GetEnabler();
+    ECN::ECClassCP       ecClass = &enabler->GetClass();
 
     accessString.reserve(50);
 
@@ -246,7 +246,7 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
 
     while (TOKEN_None != nextOperation)
         {
-        ECObject::ECPropertyP             currentProperty = NULL;
+        ECN::ECPropertyP             currentProperty = NULL;
 
         while (TOKEN_Dot == nextOperation || TOKEN_Ident == nextOperation)
             {
@@ -285,7 +285,7 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
                 return ExprStatus_PrimitiveRequired;
                 }
 
-            ECObject::StructECPropertyCP  structProperty = currentProperty->GetAsStructProperty();
+            ECN::StructECPropertyCP  structProperty = currentProperty->GetAsStructProperty();
             BeAssert (NULL != structProperty);
 
             ecClass = &structProperty->GetType();
@@ -296,7 +296,7 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
             if (NULL == currentProperty)
                 return ExprStatus_UnknownSymbol;
 
-            ECObject::PrimitiveECPropertyCP   primProp = currentProperty->GetAsPrimitiveProperty();
+            ECN::PrimitiveECPropertyCP   primProp = currentProperty->GetAsPrimitiveProperty();
             if (NULL == primProp)
                 {
                 evalResult.Clear();
@@ -304,18 +304,18 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
                 }
 
             ::UInt32     propertyIndex;
-            if (enabler->GetPropertyIndex(propertyIndex, accessString.c_str()) != ECObject::ECOBJECTS_STATUS_Success)
+            if (enabler->GetPropertyIndex(propertyIndex, accessString.c_str()) != ECN::ECOBJECTS_STATUS_Success)
                 {
                 evalResult.Clear();
                 return ExprStatus_UnknownError;
                 }
 
-            ECObject::ECValue         ecValue;
-            ECObject::ECObjectsStatus  status = instance->GetValue(ecValue, propertyIndex);
+            ECN::ECValue         ecValue;
+            ECN::ECObjectsStatus  status = instance->GetValue(ecValue, propertyIndex);
 
-            BeAssert (ECObject::ECOBJECTS_STATUS_Success == status);
+            BeAssert (ECN::ECOBJECTS_STATUS_Success == status);
 
-            if (ECObject::ECOBJECTS_STATUS_Success != status || ecValue.IsNull())
+            if (ECN::ECOBJECTS_STATUS_Success != status || ecValue.IsNull())
                 {
                 evalResult.Clear();
                 return ExprStatus_UnknownError;
@@ -331,28 +331,28 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
                 {
                 //  Does not seem worth trying this. There is no way to access a struct independently.
                 ::UInt32     propertyIndex;
-                if (enabler->GetPropertyIndex(propertyIndex, accessString.c_str()) != ECObject::ECOBJECTS_STATUS_Success)
+                if (enabler->GetPropertyIndex(propertyIndex, accessString.c_str()) != ECN::ECOBJECTS_STATUS_Success)
                     {
                     evalResult.Clear();
                     return ExprStatus_UnknownError;
                     }
 
-                ECObject::ECValue         ecValue;
-                ECObject::ECObjectsStatus  status = instance->GetValue(ecValue, propertyIndex);
+                ECN::ECValue         ecValue;
+                ECN::ECObjectsStatus  status = instance->GetValue(ecValue, propertyIndex);
 
-                if (ECObject::ECOBJECTS_STATUS_Success != status)
+                if (ECN::ECOBJECTS_STATUS_Success != status)
                     {
                     evalResult.Clear();
                     return ExprStatus_UnknownError;
                     }
 
-                if (ecValue.GetKind () !=- ECObject::VALUEKIND_Struct)
+                if (ecValue.GetKind () !=- ECN::VALUEKIND_Struct)
                     {
                     evalResult.Clear();
                     return ExprStatus_StructRequired;;
                     }
 
-                ECObject::IECInstancePtr  valueInstance = ecValue.GetStruct();
+                ECN::IECInstancePtr  valueInstance = ecValue.GetStruct();
                 evalResult.GetECValueR().SetStruct(valueInstance.get());
                 }
 
@@ -391,7 +391,7 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
 
         if (TOKEN_LeftBracket == nextOperation)
             {
-            ECObject::ArrayECPropertyCP   arrayProp = currentProperty->GetAsArrayProperty();
+            ECN::ArrayECPropertyCP   arrayProp = currentProperty->GetAsArrayProperty();
 
             if (NULL == arrayProp)
                 {
@@ -418,7 +418,7 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
             UInt32         arrayIndex = (UInt32)indexResult.GetECValue().GetInteger();
 
             //  May need to get an instance or primitive value.
-            if (arrayProp->GetKind() == ECObject::ARRAYKIND_Primitive)
+            if (arrayProp->GetKind() == ECN::ARRAYKIND_Primitive)
                 {
                 if (index < numberOfOperators)
                     {
@@ -428,18 +428,18 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
 
                 accessString.append(L"[]");
                 ::UInt32     propertyIndex;
-                if (enabler->GetPropertyIndex(propertyIndex, accessString.c_str()) != ECObject::ECOBJECTS_STATUS_Success)
+                if (enabler->GetPropertyIndex(propertyIndex, accessString.c_str()) != ECN::ECOBJECTS_STATUS_Success)
                     {
                     evalResult.Clear();
                     return ExprStatus_UnknownError;
                     }
 
-                ECObject::ECValue         ecValue;
-                ECObject::ECObjectsStatus  ecStatus = instance->GetValue(ecValue, propertyIndex, arrayIndex);
+                ECN::ECValue         ecValue;
+                ECN::ECObjectsStatus  ecStatus = instance->GetValue(ecValue, propertyIndex, arrayIndex);
 
-                BeAssert (ECObject::ECOBJECTS_STATUS_Success == ecStatus);
+                BeAssert (ECN::ECOBJECTS_STATUS_Success == ecStatus);
 
-                if (ECObject::ECOBJECTS_STATUS_Success != ecStatus)
+                if (ECN::ECOBJECTS_STATUS_Success != ecStatus)
                     {
                     evalResult.Clear();
                     return ExprStatus_UnknownError;
@@ -449,20 +449,20 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
                 return ExprStatus_Success;
                 }
 
-            BeAssert(ECObject::ARRAYKIND_Struct == arrayProp->GetKind());
+            BeAssert(ECN::ARRAYKIND_Struct == arrayProp->GetKind());
 
             accessString.append(L"[]");
             ::UInt32     propertyIndex;
-            if (enabler->GetPropertyIndex(propertyIndex, accessString.c_str()) != ECObject::ECOBJECTS_STATUS_Success)
+            if (enabler->GetPropertyIndex(propertyIndex, accessString.c_str()) != ECN::ECOBJECTS_STATUS_Success)
                 {
                 evalResult.Clear();
                 return ExprStatus_UnknownError;
                 }
 
-            ECObject::ECValue         ecValue;
-            ECObject::ECObjectsStatus  ecStatus = instance->GetValue(ecValue, propertyIndex, arrayIndex);
+            ECN::ECValue         ecValue;
+            ECN::ECObjectsStatus  ecStatus = instance->GetValue(ecValue, propertyIndex, arrayIndex);
 
-            if (ECObject::ECOBJECTS_STATUS_Success != ecStatus)
+            if (ECN::ECOBJECTS_STATUS_Success != ecStatus)
                 {
                 evalResult.Clear();
                 return ExprStatus_UnknownError;             //  This should return a good translation of the ECOBJECTS_STATUS_ value
@@ -496,7 +496,7 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObject::IECInstanceCP   InstanceExpressionContext::GetInstanceCP() const 
+ECN::IECInstanceCP   InstanceExpressionContext::GetInstanceCP() const 
     { 
     return m_instance.get(); 
     }
@@ -504,9 +504,9 @@ ECObject::IECInstanceCP   InstanceExpressionContext::GetInstanceCP() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            InstanceExpressionContext::SetInstance(ECObject::IECInstanceCR instance)
+void            InstanceExpressionContext::SetInstance(ECN::IECInstanceCR instance)
     { 
-    m_instance = &const_cast<ECObject::IECInstanceR>(instance); 
+    m_instance = &const_cast<ECN::IECInstanceR>(instance); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -720,7 +720,7 @@ ContextSymbolPtr ContextSymbol::CreateContextSymbol(wchar_t const* name, Express
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-                ValueSymbol::ValueSymbol (wchar_t const* name, ECObject::ECValueCR value) : Symbol(name)
+                ValueSymbol::ValueSymbol (wchar_t const* name, ECN::ECValueCR value) : Symbol(name)
     {
     m_expressionValue = value;
     }
@@ -733,13 +733,13 @@ ExpressionStatus ValueSymbol::_GetValue(EvaluationResultR evalResult, PrimaryLis
     if (primaryList.GetNumberOfOperators() > startIndex)
         {
         ExpressionToken token = primaryList.GetOperation(startIndex);
-        if (ECObject::TOKEN_Dot == token)
+        if (ECN::TOKEN_Dot == token)
             return ExprStatus_StructRequired;
 
-        if (ECObject::TOKEN_LParen == token)
+        if (ECN::TOKEN_LParen == token)
             return ExprStatus_MethodRequired;
 
-        if (ECObject::TOKEN_LeftBracket == token)
+        if (ECN::TOKEN_LeftBracket == token)
             return ExprStatus_ArrayRequired;
 
         return ExprStatus_UnknownError;
@@ -752,7 +752,7 @@ ExpressionStatus ValueSymbol::_GetValue(EvaluationResultR evalResult, PrimaryLis
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ValueSymbol::GetValue(ECObject::ECValueR exprValue)
+void            ValueSymbol::GetValue(ECN::ECValueR exprValue)
     {
     exprValue = m_expressionValue; 
     }
@@ -760,7 +760,7 @@ void            ValueSymbol::GetValue(ECObject::ECValueR exprValue)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    07/2012
 //--------------+------------------------------------------------------------------------
-void            ValueSymbol::SetValue(ECObject::ECValueCR exprValue)
+void            ValueSymbol::SetValue(ECN::ECValueCR exprValue)
     {
     m_expressionValue = exprValue; 
     }
@@ -768,7 +768,7 @@ void            ValueSymbol::SetValue(ECObject::ECValueCR exprValue)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    07/2012
 //--------------+------------------------------------------------------------------------
-ValueSymbolPtr  ValueSymbol::Create(wchar_t const* name, ECObject::ECValueCR exprValue)
+ValueSymbolPtr  ValueSymbol::Create(wchar_t const* name, ECN::ECValueCR exprValue)
     {
     return new ValueSymbol (name, exprValue);
     }

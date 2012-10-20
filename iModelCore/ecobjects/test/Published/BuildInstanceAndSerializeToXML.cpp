@@ -139,7 +139,7 @@ struct  SampleDataInstanceManager
             return NULL;
 
         // create an empty instance
-        ECObject::StandaloneECInstancePtr instance = m_enabler->CreateInstance();
+        ECN::StandaloneECInstancePtr instance = m_enabler->CreateInstance();
 
         // populate the instance
         instance->SetValue(L"Name",         ECValue (data.m_name.c_str()));
@@ -175,7 +175,7 @@ TEST_F(BasicTest, BuildInstanceAndSerializeToXML)
     for (int i=0; i<5; i++)
         {
         SampleData sampleData (i, (UInt32)(i%2)*3);
-        ECObject::StandaloneECInstancePtr testInstance = instanceManager.CreateInstance (sampleData);
+        ECN::StandaloneECInstancePtr testInstance = instanceManager.CreateInstance (sampleData);
         ASSERT_TRUE (testInstance.IsValid());
 
         InstanceWriteStatus status2 = testInstance->WriteToXmlString(ecInstanceXml, true, false);

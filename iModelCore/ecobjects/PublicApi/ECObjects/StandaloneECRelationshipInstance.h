@@ -98,9 +98,9 @@ struct StandaloneECRelationshipEnabler : public IECRelationshipEnabler
    {
 //__PUBLISH_SECTION_END__
 private:
-    ECObject::ECRelationshipClassCR     m_relationshipClass;
+    ECN::ECRelationshipClassCR     m_relationshipClass;
 
-    StandaloneECRelationshipEnabler (ECObject::ECRelationshipClassCR ecClass);
+    StandaloneECRelationshipEnabler (ECN::ECRelationshipClassCR ecClass);
     ~StandaloneECRelationshipEnabler ();
 
 protected:
@@ -114,13 +114,13 @@ protected:
     virtual ECObjectsStatus             _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const override;
 
     virtual IECWipRelationshipInstancePtr _CreateWipRelationshipInstance () const;
-    virtual ECObject::ECRelationshipClassCR     _GetRelationshipClass() const;
+    virtual ECN::ECRelationshipClassCR     _GetRelationshipClass() const;
 
 public: 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public: 
-    ECOBJECTS_EXPORT static StandaloneECRelationshipEnablerPtr CreateStandaloneRelationshipEnabler (ECObject::ECRelationshipClassCR ecClass);
+    ECOBJECTS_EXPORT static StandaloneECRelationshipEnablerPtr CreateStandaloneRelationshipEnabler (ECN::ECRelationshipClassCR ecClass);
     ECOBJECTS_EXPORT StandaloneECRelationshipInstancePtr       CreateRelationshipInstance () const;
     ECOBJECTS_EXPORT ECEnablerCR                               GetECEnabler() const;
     };
