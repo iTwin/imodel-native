@@ -927,7 +927,7 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaReferenceTest, ExpectSuccessWithCircularReferences)
+TEST_F(SchemaReferenceTest, ExpectFailureWithCircularReferences)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
     WString seedPath(ECTestFixture::GetTestDataPath(L"").c_str());
