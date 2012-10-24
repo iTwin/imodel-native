@@ -77,7 +77,7 @@ A container collection which allows you to expose different kinds of collection 
 @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename value_type>
-struct IInstanceCollectionAdapter : public Bentley::RefCountedBase
+struct IInstanceCollectionAdapterEx : public Bentley::RefCountedBase
     {
 private:
 
@@ -87,7 +87,7 @@ public:
     virtual const_iterator end() const = 0;
     };
 
-typedef EC::IInstanceCollectionAdapter<IECInstanceP const>              IECInstanceCollectionAdapter;
+typedef EC::IInstanceCollectionAdapterEx<IECInstanceP const>              IECInstanceCollectionAdapter;
 typedef RefCountedPtr<IECInstanceCollectionAdapter>                     IECInstanceCollectionAdapterPtr;
 typedef EC::IInstanceCollectionIteratorAdapter<IECInstanceP const>      IECInstanceCollectionIteratorAdapter;
 
@@ -162,7 +162,7 @@ struct InstanceCollectionAdapterIteratorImpl :public IInstanceCollectionIterator
 * @bsimethod                                    Abeesh.Basheer                  03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename CollectionType, typename value_type>
-struct InstanceCollectionAdapterImpl : public IInstanceCollectionAdapter<value_type>
+struct InstanceCollectionAdapterImpl : public IInstanceCollectionAdapterEx<value_type>
     {
 private:
     boost::shared_ptr<CollectionType>   m_adaptedcollection;
@@ -178,14 +178,14 @@ public:
         return new InstanceCollectionAdapterImpl(collection);
         }
     
-    virtual typename IInstanceCollectionAdapter<value_type>::const_iterator begin() const override
+    virtual typename IInstanceCollectionAdapterEx<value_type>::const_iterator begin() const override
         {
-        return typename IInstanceCollectionAdapter<value_type>::const_iterator (*InstanceCollectionAdapterIteratorImpl <CollectionType, value_type>::Create(*m_adaptedcollection, true));
+        return typename IInstanceCollectionAdapterEx<value_type>::const_iterator (*InstanceCollectionAdapterIteratorImpl <CollectionType, value_type>::Create(*m_adaptedcollection, true));
         }
 
-    virtual typename IInstanceCollectionAdapter<value_type>::const_iterator end() const override
+    virtual typename IInstanceCollectionAdapterEx<value_type>::const_iterator end() const override
         {
-        return typename IInstanceCollectionAdapter<value_type>::const_iterator (*InstanceCollectionAdapterIteratorImpl <CollectionType, value_type>::Create(*m_adaptedcollection, false));
+        return typename IInstanceCollectionAdapterEx<value_type>::const_iterator (*InstanceCollectionAdapterIteratorImpl <CollectionType, value_type>::Create(*m_adaptedcollection, false));
         }
 
     virtual ~InstanceCollectionAdapterImpl ()
