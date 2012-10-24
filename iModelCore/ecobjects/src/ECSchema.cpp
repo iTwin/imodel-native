@@ -18,7 +18,7 @@
 #include <ECObjects/StronglyConnectedGraph.h>
 #include <boost/iterator/iterator_adaptor.hpp>
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 extern ECObjectsStatus GetSchemaFileName (WStringR fullFileName, UInt32& foundVersionMinor, WCharCP schemaPath, bool useLatestCompatibleMatch);
 
@@ -2040,15 +2040,15 @@ bool     utf16
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ECSchema::FindAllSchemasInGraph (bvector<EC::ECSchemaP>& allSchemas, bool includeRootSchema)
+void            ECSchema::FindAllSchemasInGraph (bvector<ECN::ECSchemaP>& allSchemas, bool includeRootSchema)
     {
-    FindAllSchemasInGraph ((bvector<EC::ECSchemaCP>&)allSchemas, includeRootSchema);
+    FindAllSchemasInGraph ((bvector<ECN::ECSchemaCP>&)allSchemas, includeRootSchema);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ECSchema::CollectAllSchemasInGraph (bvector<EC::ECSchemaCP>& allSchemas, bool includeRootSchema) const
+void            ECSchema::CollectAllSchemasInGraph (bvector<ECN::ECSchemaCP>& allSchemas, bool includeRootSchema) const
     {
     if (includeRootSchema)
         allSchemas.push_back (this);
@@ -2062,7 +2062,7 @@ void            ECSchema::CollectAllSchemasInGraph (bvector<EC::ECSchemaCP>& all
                 continue;
             }
 
-        bvector<EC::ECSchemaCP>::iterator it = std::find (allSchemas.begin(), allSchemas.end(), iter->second.get());
+        bvector<ECN::ECSchemaCP>::iterator it = std::find (allSchemas.begin(), allSchemas.end(), iter->second.get());
 
         if (it != allSchemas.end())
             continue;
@@ -2074,7 +2074,7 @@ void            ECSchema::CollectAllSchemasInGraph (bvector<EC::ECSchemaCP>& all
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    07/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ECSchema::FindAllSchemasInGraph (bvector<EC::ECSchemaCP>& allSchemas, bool includeRootSchema) const
+void            ECSchema::FindAllSchemasInGraph (bvector<ECN::ECSchemaCP>& allSchemas, bool includeRootSchema) const
     {
     this->CollectAllSchemasInGraph (allSchemas, includeRootSchema);
     std::reverse(allSchemas.begin(), allSchemas.end());
@@ -2437,9 +2437,9 @@ WString         SchemaKey::GetFullSchemaName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ECClassFinder
     {
-    EC::SchemaNameClassNamePair const& m_key;
+    ECN::SchemaNameClassNamePair const& m_key;
     ECClassP&                          m_class;
-    ECClassFinder (EC::SchemaNameClassNamePair const& key, ECClassP& foundClass)
+    ECClassFinder (ECN::SchemaNameClassNamePair const& key, ECClassP& foundClass)
         :m_key(key), m_class(foundClass)
         {}
 
@@ -2470,7 +2470,7 @@ struct ECClassFinder
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassP        SchemaMapExact::FindClassP (EC::SchemaNameClassNamePair const& classNamePair) const
+ECClassP        SchemaMapExact::FindClassP (ECN::SchemaNameClassNamePair const& classNamePair) const
     {
     ECClassP classInstance = NULL;
     ECClassFinder classFinder(classNamePair, classInstance);
@@ -2499,6 +2499,6 @@ void            ECSchema::ReComputeCheckSum ()
     m_key.m_checkSum = CheckSumHelper::ComputeCheckSumForString (xmlStr.c_str(), sizeof(WChar)* xmlStr.length());
     }
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 
 

@@ -15,7 +15,7 @@
 #include <ECObjects\ECValue.h>
 #include <ECObjects\ECSchema.h>
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 using namespace std;
 
@@ -145,7 +145,7 @@ void SetAndVerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessStrin
     EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
     VerifyInteger (instance, v, accessString, value);
     }
-static void validateArrayCount  (EC::StandaloneECInstanceCR instance, WCharCP propertyName, UInt32 expectedCount)
+static void validateArrayCount  (ECN::StandaloneECInstanceCR instance, WCharCP propertyName, UInt32 expectedCount)
     {
     ECValue varray;
     EXPECT_TRUE (SUCCESS == instance.GetValue (varray, propertyName));
@@ -170,7 +170,7 @@ TEST_F(CompressInstanceTests, CheckVariableSizedPropertyAfterCallingCompress)
     ASSERT_TRUE (NULL != ecClass);
 
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
-    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
 	SystemTime inTime = SystemTime::GetLocalTime();
     int        inCount = 100;
@@ -260,4 +260,4 @@ TEST_F(CompressInstanceTests, CheckVariableSizedPropertyAfterCallingCompress)
     validateArrayCount (*instance, L"myManufacturerStructArray[]", 3);
 
    }
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

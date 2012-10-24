@@ -14,7 +14,7 @@
 
 #define EXPECT_SUCCESS(EXPR) EXPECT_TRUE(SUCCESS == EXPR)
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 using namespace std;
 
@@ -412,5 +412,5 @@ TEST_F (CalculatedPropertyTests, TestFailureValuesWithIntsAndDoubles)
     SetValue(*instance, L"D2", 0);
     Test (*instance, L"D", -1.0);
     }
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 

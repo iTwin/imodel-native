@@ -12,7 +12,7 @@
 #include "ECPersistence/IECSchemaManager.h"
 #include "ECPersistence/IECStatement.h"
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 //=======================================================================================    
 //! @ingroup ECPersistence
@@ -62,4 +62,4 @@ public:
     ECPERSISTENCE_EXPORT int GetLastError (WStringP lastErrorMessage = NULL) const;
     };
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

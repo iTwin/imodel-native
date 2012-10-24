@@ -17,7 +17,7 @@
 
 using namespace std;
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 const UInt32 BITS_PER_NULLFLAGSBITMASK = (sizeof(NullflagsBitmask) * 8);
 
@@ -263,7 +263,7 @@ UInt32  ClassLayout::ComputeCheckSum () const
         checkSum = ((checkSum + (UInt32)propertyP->GetModifierFlags()) & 0xffff);
         checkSum = ((checkSum + (UInt32)propertyP->GetModifierData()) & 0xffff);
 
-        EC::ECTypeDescriptor typeDescr = propertyP->GetTypeDescriptor();
+        ECN::ECTypeDescriptor typeDescr = propertyP->GetTypeDescriptor();
         checkSum = ((checkSum + (UInt32)typeDescr.GetTypeKind()) & 0xffff);
         checkSum = ((checkSum + (UInt32)typeDescr.GetPrimitiveType()) & 0xffff);    // since we are in a union Primitive Type includes Array Type
 
@@ -1643,7 +1643,7 @@ UInt32          MemoryInstanceSupport::GetOffsetOfArrayIndex (UInt32 arrayOffset
     if (IsArrayOfFixedSizeElements (propertyLayout))
         primaryOffset += (index * ECValue::GetFixedPrimitiveValueSize (propertyLayout.GetTypeDescriptor().GetPrimitiveType()));
     else if (PRIMITIVETYPE_Integer == GetStructArrayPrimitiveType () && propertyLayout.GetTypeDescriptor().IsStructArray())
-        primaryOffset += (index * ECValue::GetFixedPrimitiveValueSize (EC::PRIMITIVETYPE_Integer));
+        primaryOffset += (index * ECValue::GetFixedPrimitiveValueSize (ECN::PRIMITIVETYPE_Integer));
     else
         primaryOffset += index * sizeof (SecondaryOffset);
 
@@ -2175,7 +2175,7 @@ void            MemoryInstanceSupport::InitializeMemory(ClassLayoutCR classLayou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-EC::PrimitiveType         MemoryInstanceSupport::GetStructArrayPrimitiveType () const
+ECN::PrimitiveType         MemoryInstanceSupport::GetStructArrayPrimitiveType () const
     {
     return _GetStructArrayPrimitiveType();
     }
@@ -3286,4 +3286,4 @@ ECObjectsStatus       ArrayResizer::CreateNullArrayElementsAt (ClassLayoutCR cla
     // WIP_FUSION how do we deal with an error that occurs during the insert "transaction" after some data has already been moved/modified but we haven't finished?
     }    
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

@@ -19,7 +19,7 @@
 
 USING_NAMESPACE_BENTLEY_LOGGING
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
   
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/03
@@ -94,7 +94,7 @@ ECTestFixture::ECTestFixture()
         s_isLoggerInitialized = true;
         }
 
-    EC::ECSchemaReadContext::Initialize (BeFileName(GetDllPath().c_str()));
+    ECN::ECSchemaReadContext::Initialize (BeFileName(GetDllPath().c_str()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -234,5 +234,5 @@ WString ECTestFixture::GetLogConfigurationFilename()
     return L"";
     }       
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 

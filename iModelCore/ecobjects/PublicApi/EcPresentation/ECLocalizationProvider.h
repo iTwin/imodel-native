@@ -8,7 +8,7 @@
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Andrius.Zonys                   05/2012
@@ -23,4 +23,4 @@ struct ECPresentationLocalizationProvider : public IECPresentationProvider
         ECOBJECTS_EXPORT WCharCP  GetString (WCharCP rscFileName, UInt tableId, UInt rscId);
     };
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

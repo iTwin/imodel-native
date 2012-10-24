@@ -8,7 +8,7 @@
 
 #include "ECObjectsPch.h"
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass
@@ -665,7 +665,7 @@ SchemaPrecedence precedence
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-Bentley::EC::SupplementedSchemaStatus SupplementedSchemaBuilder::MergeCustomAttributeClasses
+Bentley::ECN::SupplementedSchemaStatus SupplementedSchemaBuilder::MergeCustomAttributeClasses
 ( 
 IECCustomAttributeContainerR consolidatedCustomAttributeContainer, 
 ECCustomAttributeInstanceIterable supplementalCustomAttributes, 
@@ -1092,5 +1092,5 @@ WStringCR purpose
         }
     return true;
     }
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 

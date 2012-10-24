@@ -14,7 +14,7 @@
 #include <Geom/GeomApi.h>
 struct _FILETIME;
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 typedef RefCountedPtr<ECPropertyValue> ECPropertyValuePtr;
 typedef RefCountedPtr<ECValuesCollection> ECValuesCollectionPtr;
@@ -47,7 +47,7 @@ public:
     };
 
 //=======================================================================================    
-//! Information about an array in an EC::IECInstance. Does not contain the actual elements.
+//! Information about an array in an ECN::IECInstance. Does not contain the actual elements.
 //! @ingroup ECObjectsGroup
 //! @see ECValue
 //=======================================================================================    
@@ -77,9 +77,9 @@ public:
 //=======================================================================================    
 //! @ingroup ECObjectsGroup
 //! Variant-like object representing the value of an ECPropertyValue. 
-//! It does not represent a "live" reference into the underlying EC::IECInstance 
-//! (or the object that the EC::IECInstance represents). Changing the EC::ECValue will not affect
-//! the EC::IECInstance unless you subsequently call SetValue() with it.
+//! It does not represent a "live" reference into the underlying ECN::IECInstance 
+//! (or the object that the ECN::IECInstance represents). Changing the ECN::ECValue will not affect
+//! the ECN::IECInstance unless you subsequently call SetValue() with it.
 //! 
 //! @group "ECInstance"
 //=======================================================================================    
@@ -327,7 +327,7 @@ public:
     ECOBJECTS_EXPORT bool                   MatchesEnabler (UInt32 depth, ECEnablerCR other) const;
 
     //! Looks up and returns the ECProperty associated with this accessor
-    ECOBJECTS_EXPORT EC::ECPropertyCP       GetECProperty() const;
+    ECOBJECTS_EXPORT ECN::ECPropertyCP       GetECProperty() const;
 
 /*__PUBLISH_SECTION_START__*/
 
@@ -482,9 +482,9 @@ public:
     ECOBJECTS_EXPORT ECPropertyValueCR  GetParentProperty () const;
     };
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 
 //__PUBLISH_SECTION_END__
 #include <boost/foreach.hpp>
-BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::EC::ECValuesCollection)
+BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::ECN::ECValuesCollection)
 //__PUBLISH_SECTION_START__

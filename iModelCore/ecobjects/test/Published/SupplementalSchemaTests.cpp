@@ -10,7 +10,7 @@
 #include <comdef.h>
 #include "TestFixture.h"
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 struct SchemaHolderTestFixture : ECTestFixture
     {
@@ -854,7 +854,7 @@ TEST_F(SupplementalSchemaMetaDataTests, CanRetrieveFromSchema)
             tempSchema->GetFullSchemaName();
             ECCustomAttributeInstanceIterable iter = tempSchema->GetCustomAttributeContainer().GetCustomAttributes(true);
 
-    Bentley::EC::SupplementalSchemaMetaDataPtr metaData;
+    Bentley::ECN::SupplementalSchemaMetaDataPtr metaData;
     EXPECT_TRUE(SupplementalSchemaMetaData::TryGetFromSchema(metaData, *supplemental));
     EXPECT_TRUE(metaData.IsValid());
     EXPECT_STREQ(L"TestSchema", metaData->GetPrimarySchemaName().c_str());
@@ -1155,4 +1155,4 @@ TEST_F(SupplementedSchemaBuilderTests, SupplementingWithInheritance)
     ValidateSystemInfoCustomAttribute(bc2Prop1DerivedClass4, L"LowPrioritySchema1.DerivedClass4.BC2Prop1", L"LowPrioritySchema1.DerivedClass4.BC2Prop1");
     }
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

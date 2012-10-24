@@ -8,7 +8,7 @@
 #pragma once
 #include <windows.h>
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 struct ECTestFixture : public ::testing::Test
     {
@@ -29,4 +29,4 @@ public:
     static WString GetWorkingDirectoryPath(WCharCP testFixture, WCharCP fileName);
     };
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

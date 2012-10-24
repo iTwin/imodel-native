@@ -12,7 +12,7 @@
 
 #include "ECObjectsPch.h"
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   02/2010
@@ -61,4 +61,4 @@ ECTypeDescriptor                ECTypeDescriptor::CreateStructTypeDescriptor ()
     return type; 
     }
      
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

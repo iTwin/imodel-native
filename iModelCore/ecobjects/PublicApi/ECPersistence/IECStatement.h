@@ -16,7 +16,7 @@
 
 #include "ECPersistence/ECPersistence.h"
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 enum CopyArgumentOptions
     {
@@ -186,5 +186,5 @@ public:
     //TODO: return geometries, structs and arrays
     };
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 

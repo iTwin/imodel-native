@@ -12,7 +12,7 @@
 #include "ECObjects/ECSchema.h"
 #include "ECPersistence/ECPersistence.h"
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 //*** WIP: Content of the IECSChemaManager is not finalized. The class added for the purpose
 //of showing its integration in ECPersistence.
@@ -36,5 +36,5 @@ struct IECSchemaManager : NonCopyableClass
         ECPERSISTENCE_EXPORT BentleyStatus GetClass (WCharCP schemaFullName, WCharCP className, ECClassP& ecClass) const;
     };
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 

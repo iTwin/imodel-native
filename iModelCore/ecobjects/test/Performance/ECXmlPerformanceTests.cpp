@@ -9,7 +9,7 @@
 #include "TestFixture.h"
 #include "StopWatch.h"
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 struct ECXmlPerformanceTest   : ECTestFixture {};
 
@@ -133,4 +133,4 @@ TEST_F(ECXmlPerformanceTest, ReadingAndWritingInstance)
     TimeInstance(L"OpenPlant_3D.01.02.ecschema.xml", L"OpenPlant_3D_Instance.xml", schemaContext, logFile);
     fclose(logFile);
     };
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

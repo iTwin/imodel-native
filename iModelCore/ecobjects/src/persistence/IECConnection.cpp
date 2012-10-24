@@ -9,7 +9,7 @@
 
 #include "ECPersistence/IECConnection.h"
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                08/2012
@@ -51,4 +51,4 @@ int IECConnection::GetLastError (WStringP lastErrorMessage) const
     return _GetLastError (lastErrorMessage);
     }
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

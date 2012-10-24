@@ -8,7 +8,7 @@
 #include "ECObjectsPch.h"
 #include <ECObjects/ecschema.h>
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  09/2010
@@ -97,7 +97,7 @@ ICustomECStructSerializerP                      CustomStructSerializerManager::G
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  11/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IECInstance::IsFixedArrayProperty (EC::IECInstanceR instance, WCharCP accessString, UInt32* numFixedEntries)
+bool IECInstance::IsFixedArrayProperty (ECN::IECInstanceR instance, WCharCP accessString, UInt32* numFixedEntries)
     {
     ECValue         arrayVal;
 
@@ -123,7 +123,7 @@ bool IECInstance::IsFixedArrayProperty (EC::IECInstanceR instance, WCharCP acces
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstance::IECInstance()
     {
-    BeAssert (sizeof(IECInstance) == sizeof (RefCountedBase) && L"Increasing the size or memory layout of the base EC::IECInstance will adversely affect subclasses. Think of this as a pure interface... to which you would never be able to add (additional) data, either");
+    BeAssert (sizeof(IECInstance) == sizeof (RefCountedBase) && L"Increasing the size or memory layout of the base ECN::IECInstance will adversely affect subclasses. Think of this as a pure interface... to which you would never be able to add (additional) data, either");
     };    
 
 /*---------------------------------------------------------------------------------**//**
@@ -665,7 +665,7 @@ ECObjectsStatus           IECInstance::SetInternalValueUsingAccessor (ECValueAcc
         // If the struct does not have an instance associated with it then build the instance
         if (newInstance.IsNull())
             {
-            EC::ECEnablerR          structEnabler = *(const_cast<EC::ECEnablerP>(&accessor.GetEnabler (depth + 1)));
+            ECN::ECEnablerR          structEnabler = *(const_cast<ECN::ECEnablerP>(&accessor.GetEnabler (depth + 1)));
             ECClassCR               structClass   = accessor.GetEnabler (depth + 1).GetClass();
             StandaloneECEnablerPtr  standaloneEnabler = structEnabler.GetEnablerForStructArrayMember (structClass.GetSchema().GetSchemaKey(), structClass.GetName().c_str());
 
@@ -1375,9 +1375,9 @@ bool            ECInstanceInteropHelper::IsPropertyReadOnly (IECInstanceCR insta
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-EC::ECEnablerP                  ECInstanceInteropHelper::GetEnablerForStructArrayEntry (IECInstanceR instance, ECValueAccessorR arrayMemberAccessor, SchemaKeyCR schemaKey, WCharCP className)
+ECN::ECEnablerP                  ECInstanceInteropHelper::GetEnablerForStructArrayEntry (IECInstanceR instance, ECValueAccessorR arrayMemberAccessor, SchemaKeyCR schemaKey, WCharCP className)
     {
-    EC::ECValue v;
+    ECN::ECValue v;
     instance.GetValueUsingAccessor (v, arrayMemberAccessor);
 
     if (!v.IsStruct())
@@ -1385,14 +1385,14 @@ EC::ECEnablerP                  ECInstanceInteropHelper::GetEnablerForStructArra
 
     if (!v.IsNull())
         {
-        EC::IECInstancePtr structInstance = v.GetStruct();
+        ECN::IECInstancePtr structInstance = v.GetStruct();
         return &structInstance->GetEnablerR();
         }
 
     // if we get here we probably have a fixed size array with NULL entries
-    EC::ECEnablerP structArrayEnabler = const_cast<EC::ECEnablerP>(arrayMemberAccessor.DeepestLocation().enabler);
+    ECN::ECEnablerP structArrayEnabler = const_cast<ECN::ECEnablerP>(arrayMemberAccessor.DeepestLocation().enabler);
 
-    EC::StandaloneECEnablerPtr standaloneEnabler = structArrayEnabler->GetEnablerForStructArrayMember (schemaKey, className);
+    ECN::StandaloneECEnablerPtr standaloneEnabler = structArrayEnabler->GetEnablerForStructArrayMember (schemaKey, className);
     if (standaloneEnabler.IsNull())
         {
         ECObjectsLogger::Log()->errorv (L"Unable to locate a standalone enabler for class %ls", className);
@@ -1407,21 +1407,21 @@ EC::ECEnablerP                  ECInstanceInteropHelper::GetEnablerForStructArra
 * before calling this method.
 * @bsimethod                                    Bill.Steinbock                  06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-/* static */ EC::IECInstancePtr getParentNativeInstance (EC::IECInstanceCP rootInstance, EC::ECValueAccessorCR structValueAccessor)
+/* static */ ECN::IECInstancePtr getParentNativeInstance (ECN::IECInstanceCP rootInstance, ECN::ECValueAccessorCR structValueAccessor)
     {
     // if not a top level property, get the native instance that will contain this struct array
     if (structValueAccessor.GetDepth () > 1)
         {
-        EC::ECValue parentStructValue;
+        ECN::ECValue parentStructValue;
 
-        EC::ECValueAccessor parentInstanceAccessor (structValueAccessor);
+        ECN::ECValueAccessor parentInstanceAccessor (structValueAccessor);
         parentInstanceAccessor.PopLocation ();   // remove one level to get to the parent instance
 
         rootInstance->GetValueUsingAccessor (parentStructValue, parentInstanceAccessor);
         if (!parentStructValue.IsStruct ())
             return NULL;
 
-        EC::IECInstancePtr structInstance = parentStructValue.GetStruct ();
+        ECN::IECInstancePtr structInstance = parentStructValue.GetStruct ();
         if (structInstance.IsValid())
             return structInstance;
 
@@ -1429,32 +1429,32 @@ EC::ECEnablerP                  ECInstanceInteropHelper::GetEnablerForStructArra
         return getParentNativeInstance (rootInstance, parentInstanceAccessor);
         }
 
-    return const_cast<EC::IECInstanceP>(rootInstance);
+    return const_cast<ECN::IECInstanceP>(rootInstance);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (EC::ECValueAccessorR structArrayEntryValueAccessor, IECInstanceR instance, UInt32 index, EC::ECValueAccessorCR structArrayValueAccessor, 
+ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (ECN::ECValueAccessorR structArrayEntryValueAccessor, IECInstanceR instance, UInt32 index, ECN::ECValueAccessorCR structArrayValueAccessor, 
                                                              bool createPropertyIfNotFound, WCharCP wcharAccessString, 
                                                              SchemaKeyCR schemaKey, WCharCP className)
     {
-    EC::ECEnablerR structArrayEnabler = *(const_cast<EC::ECEnablerP>(structArrayValueAccessor.DeepestLocationCR().enabler));
-    EC::StandaloneECEnablerPtr standaloneEnabler = structArrayEnabler.GetEnablerForStructArrayMember (schemaKey, className);
+    ECN::ECEnablerR structArrayEnabler = *(const_cast<ECN::ECEnablerP>(structArrayValueAccessor.DeepestLocationCR().enabler));
+    ECN::StandaloneECEnablerPtr standaloneEnabler = structArrayEnabler.GetEnablerForStructArrayMember (schemaKey, className);
     if (standaloneEnabler.IsNull())
         {
         ECObjectsLogger::Log()->errorv (L"Unable to locate a standalone enabler for class \" %ls \"", className);
         return ECOBJECTS_STATUS_EnablerNotFound;
         }
 
-    EC::ECValue  arrayVal;
+    ECN::ECValue  arrayVal;
     instance.GetValueUsingAccessor (arrayVal, structArrayValueAccessor);
 
     ArrayInfo   arrayInfo  = arrayVal.GetArrayInfo();
     UInt32      arrayCount = arrayInfo.GetCount();
 
     // adjust the ECVAlueAccessor to include the array index
-    EC::ECValueAccessor arrayEntryValueAccessor (structArrayValueAccessor);
+    ECN::ECValueAccessor arrayEntryValueAccessor (structArrayValueAccessor);
     arrayEntryValueAccessor.DeepestLocation ().arrayIndex = index;
 
     if (arrayCount <= index)
@@ -1467,7 +1467,7 @@ ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (EC::ECValueAccess
         if (instance.IsReadOnly())
             return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
 
-        EC::IECInstancePtr parentNativeInstance = getParentNativeInstance (&instance, structArrayValueAccessor);
+        ECN::IECInstancePtr parentNativeInstance = getParentNativeInstance (&instance, structArrayValueAccessor);
         if (parentNativeInstance.IsNull())
             {
             ECObjectsLogger::Log()->error (L"Unable to get native instance when processing ECInstanceInteropHelper::GetStructArrayEntry");
@@ -1475,13 +1475,13 @@ ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (EC::ECValueAccess
             }
 
         ::UInt32 numToInsert = (index + 1) - arrayCount;
-        if (EC::ECOBJECTS_STATUS_Success != parentNativeInstance->AddArrayElements (wcharAccessString, numToInsert))
+        if (ECN::ECOBJECTS_STATUS_Success != parentNativeInstance->AddArrayElements (wcharAccessString, numToInsert))
             {
             ECObjectsLogger::Log()->errorv(L"Unable to add array element(s) to native instance - access string \"%ls\"", structArrayValueAccessor.GetManagedAccessString().c_str());
             return ECOBJECTS_STATUS_UnableToAddStructArrayMember;
             }
 
-        EC::ECValue  arrayEntryVal;
+        ECN::ECValue  arrayEntryVal;
         for (::UInt32 i=0; i<numToInsert; i++)
             {
             arrayEntryVal.SetStruct (standaloneEnabler->CreateInstance().get());
@@ -1492,7 +1492,7 @@ ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (EC::ECValueAccess
     else
         {
         // make sure the struct instance is not null
-        EC::ECValue arrayEntryVal;
+        ECN::ECValue arrayEntryVal;
 
         instance.GetValueUsingAccessor (arrayEntryVal, arrayEntryValueAccessor);
         if (arrayEntryVal.IsNull())
@@ -1507,7 +1507,7 @@ ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (EC::ECValueAccess
 
             arrayEntryVal.SetStruct (standaloneEnabler->CreateInstance().get());
 
-            EC::IECInstancePtr parentNativeInstance = getParentNativeInstance (&instance, structArrayValueAccessor);
+            ECN::IECInstancePtr parentNativeInstance = getParentNativeInstance (&instance, structArrayValueAccessor);
             if (parentNativeInstance.IsNull())
                 {
                 ECObjectsLogger::Log()->error (L"Unable to get native instance when processing ECInstanceInteropHelper::GetStructArrayEntry");
@@ -1643,7 +1643,7 @@ ECObjectsStatus ECInstanceInteropHelper::SetValueByIndex (IECInstanceR instance,
     if (-1 == arrayIndex)
         return instance.SetValue ((UInt32) propertyIndex, value);
 
-    EC::ECValue v;
+    ECN::ECValue v;
     instance.GetValue (v, propertyIndex);
     UInt32 count = v.GetArrayInfo().GetCount();
     if ((UInt32)arrayIndex >= count)
@@ -1655,7 +1655,7 @@ ECObjectsStatus ECInstanceInteropHelper::SetValueByIndex (IECInstanceR instance,
         if (ECOBJECTS_STATUS_Success != status)
             return status;
         status = instance.AddArrayElements (accessString, size);
-        if (EC::ECOBJECTS_STATUS_Success != status)
+        if (ECN::ECOBJECTS_STATUS_Success != status)
             return status;
         }
     return instance.SetValue ((UInt32) propertyIndex, value, (UInt32) arrayIndex);
@@ -1669,7 +1669,7 @@ ECObjectsStatus ECInstanceInteropHelper::GetValueByIndex (ECValueR value, IECIns
     if (-1 == arrayIndex)
         return instance.GetValue (value, (UInt32) propertyIndex);
 
-    EC::ECValue v;
+    ECN::ECValue v;
     instance.GetValue (v, propertyIndex);
     UInt32 count = v.GetArrayInfo().GetCount();
     if ((UInt32)propertyIndex >= count)
@@ -1767,7 +1767,7 @@ ECObjectsStatus                 IECInstance::_GetDisplayLabel (WString& displayL
     if (NULL == propertyName)
         return ECOBJECTS_STATUS_Error;
 
-    EC::ECValue ecValue;
+    ECN::ECValue ecValue;
     if (SUCCESS == GetValue (ecValue, propertyName) && !ecValue.IsNull())
         {
         displayLabel = ecValue.GetString();
@@ -1794,7 +1794,7 @@ ECObjectsStatus                 IECInstance::_SetDisplayLabel (WCharCP displayLa
     if (NULL == propertyName)
         return ECOBJECTS_STATUS_Error;
 
-    EC::ECValue ecValue;
+    ECN::ECValue ecValue;
     ecValue.SetString (displayLabel);
 
     if (SUCCESS == SetValue (propertyName, ecValue))
@@ -3146,4 +3146,4 @@ ECSchemaCP ECInstanceReadContext::FindSchemaCP(SchemaKeyCR key, SchemaMatchType 
 
     return &m_fallBackSchema;
     }
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

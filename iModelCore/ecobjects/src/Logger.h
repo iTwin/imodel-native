@@ -11,7 +11,7 @@
 #include <Logging/bentleylogging.h>
 
 USING_NAMESPACE_BENTLEY_LOGGING
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 struct ECObjectsLogger
 {
@@ -23,4 +23,4 @@ public:
     static ILogger* Log();
 };
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

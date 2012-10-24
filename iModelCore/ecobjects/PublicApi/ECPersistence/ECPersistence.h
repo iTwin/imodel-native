@@ -22,19 +22,19 @@
     #define ECPERSISTENCE_EXPORT IMPORT_ATTRIBUTE
 #endif
 
-#ifndef BEGIN_BENTLEY_EC_NAMESPACE
-    #define BEGIN_BENTLEY_EC_NAMESPACE  BEGIN_BENTLEY_NAMESPACE namespace EC {
+#ifndef BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+    #define BEGIN_BENTLEY_ECOBJECT_NAMESPACE  BEGIN_BENTLEY_NAMESPACE namespace EC {
 
-    #define END_BENTLEY_EC_NAMESPACE    }}
+    #define END_BENTLEY_ECOBJECT_NAMESPACE    }}
 #endif
 
 #ifndef USING_NAMESPACE_EC
-    #define USING_NAMESPACE_EC  using namespace Bentley::EC;
+    #define USING_NAMESPACE_EC  using namespace Bentley::ECN;
 #endif
 
 #ifndef EC_TYPEDEFS
     #define EC_TYPEDEFS(_name_)  \
-            BEGIN_BENTLEY_EC_NAMESPACE      \
+            BEGIN_BENTLEY_ECOBJECT_NAMESPACE      \
                 struct _name_;      \
                 typedef _name_ *         _name_##P;  \
                 typedef _name_ &         _name_##R;  \

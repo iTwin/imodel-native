@@ -9,7 +9,7 @@
 
 #include "ECPersistence/IECSchemaManager.h"
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                08/2012
@@ -27,4 +27,4 @@ BentleyStatus IECSchemaManager::GetClass (WCharCP schemaFullName, WCharCP classN
     return _GetClass (schemaFullName, className, ecClass);
     }
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

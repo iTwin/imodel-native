@@ -9,7 +9,7 @@
 #include <Bentley/IStorage.h>   // for _FILETIME
 #include <Bentley/BeAssert.h>
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      04/2012
@@ -500,7 +500,7 @@ ECValue::ECValue (ECValueCR v)
     }
     
 /*---------------------------------------------------------------------------------**//**
-*  Construct a Null EC::ECValue (of a specific type, but with IsNull = true)
+*  Construct a Null ECN::ECValue (of a specific type, but with IsNull = true)
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValue::ECValue (ValueKind classification) : m_valueKind(classification), m_stateFlags(ECVALUE_STATE_IsNull), m_ownsData(false)
@@ -508,7 +508,7 @@ ECValue::ECValue (ValueKind classification) : m_valueKind(classification), m_sta
     }       
 
 /*---------------------------------------------------------------------------------**//**
-*  Construct a Null EC::ECValue (of a specific type, but with IsNull = true)
+*  Construct a Null ECN::ECValue (of a specific type, but with IsNull = true)
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValue::ECValue (PrimitiveType primitiveType) : m_primitiveType(primitiveType), m_stateFlags(ECVALUE_STATE_IsNull), m_ownsData(false)
@@ -579,8 +579,8 @@ ECValue::ECValue (SystemTime const& time)
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @param holdADuplicate     If true, EC::ECValue will make a duplicate, otherwise 
-* EC::ECValue holds the original pointer. Intended only for use when initializing arrays of strings, to avoid duplicating them twice.
+* @param holdADuplicate     If true, ECN::ECValue will make a duplicate, otherwise 
+* ECN::ECValue holds the original pointer. Intended only for use when initializing arrays of strings, to avoid duplicating them twice.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValue::ECValue (WCharCP string, bool holdADuplicate)
@@ -613,7 +613,7 @@ void    ECValue::From (ECValueCR v)
 +---------------+---------------+---------------+---------------+---------------+------*/
 PrimitiveType   ECValue::GetPrimitiveType() const
     {
-    PRECONDITION (IsPrimitive() && "Tried to get the primitive type of an EC::ECValue that is not classified as a primitive.", (PrimitiveType)0);    
+    PRECONDITION (IsPrimitive() && "Tried to get the primitive type of an ECN::ECValue that is not classified as a primitive.", (PrimitiveType)0);    
     return m_primitiveType;
     }
 
@@ -636,7 +636,7 @@ BentleyStatus       ECValue::SetPrimitiveType (PrimitiveType primitiveType)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ::Int32         ECValue::GetInteger() const
     {
-    PRECONDITION (IsInteger() && "Tried to get integer value from an EC::ECValue that is not an integer.", 0);
+    PRECONDITION (IsInteger() && "Tried to get integer value from an ECN::ECValue that is not an integer.", 0);
     PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", 0);
     return m_integer32;
     };
@@ -659,7 +659,7 @@ BentleyStatus       ECValue::SetInteger (::Int32 integer)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ::Int64         ECValue::GetLong() const
     {
-    PRECONDITION (IsLong() && "Tried to get long64 value from an EC::ECValue that is not an long64.", 0);
+    PRECONDITION (IsLong() && "Tried to get long64 value from an ECN::ECValue that is not an long64.", 0);
     PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", 0);
     return m_long64;
     };
@@ -682,7 +682,7 @@ BentleyStatus       ECValue::SetLong (::Int64 long64)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double          ECValue::GetDouble() const
     {
-    PRECONDITION (IsDouble() && "Tried to get double value from an EC::ECValue that is not an double.", std::numeric_limits<double>::quiet_NaN());
+    PRECONDITION (IsDouble() && "Tried to get double value from an ECN::ECValue that is not an double.", std::numeric_limits<double>::quiet_NaN());
     PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", std::numeric_limits<double>::quiet_NaN());
     return m_double;
     };
@@ -705,7 +705,7 @@ BentleyStatus       ECValue::SetDouble (double value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool          ECValue::GetBoolean() const
     {
-    PRECONDITION (IsBoolean() && "Tried to get boolean value from an EC::ECValue that is not a boolean.", 0);
+    PRECONDITION (IsBoolean() && "Tried to get boolean value from an ECN::ECValue that is not a boolean.", 0);
     PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", 0);
     return m_boolean;
     };
@@ -728,7 +728,7 @@ BentleyStatus       ECValue::SetBoolean (bool value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Int64          ECValue::GetDateTimeTicks() const
     {
-    PRECONDITION (IsDateTime() && "Tried to get DateTime value from an EC::ECValue that is not a DateTime.", 0);
+    PRECONDITION (IsDateTime() && "Tried to get DateTime value from an ECN::ECValue that is not a DateTime.", 0);
     PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", 0);
     return m_dateTime;
     }
@@ -809,7 +809,7 @@ BentleyStatus          ECValue::SetDateTime (SystemTime const& systemTime)
 DPoint2d          ECValue::GetPoint2D() const
     {
     DPoint2d badValue = {0.0,0.0};
-    PRECONDITION (IsPoint2D() && "Tried to get Point2D value from an EC::ECValue that is not a Point2D.", badValue);
+    PRECONDITION (IsPoint2D() && "Tried to get Point2D value from an ECN::ECValue that is not a Point2D.", badValue);
     PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", badValue);
     return m_dPoint2d;
     };
@@ -834,7 +834,7 @@ DPoint3d          ECValue::GetPoint3D() const
     {
     DPoint3d badValue = {0.0,0.0,0.0};
 
-    PRECONDITION (IsPoint3D() && "Tried to get Point3D value from an EC::ECValue that is not a Point3D.", badValue);
+    PRECONDITION (IsPoint3D() && "Tried to get Point3D value from an ECN::ECValue that is not a Point3D.", badValue);
     PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", badValue);
     return m_dPoint3d;
     };
@@ -857,13 +857,13 @@ BentleyStatus       ECValue::SetPoint3D (DPoint3dCR value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WCharCP ECValue::GetString() const
     {
-    PRECONDITION (IsString() && "Tried to get string value from an EC::ECValue that is not a string.", L"<Programmer Error: Attempted to get string value from EC::ECValue that is not a string.>");
+    PRECONDITION (IsString() && "Tried to get string value from an ECN::ECValue that is not a string.", L"<Programmer Error: Attempted to get string value from ECN::ECValue that is not a string.>");
     return m_string;
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @param[in] holdADuplicate     If true, EC::ECValue will make a duplicate, otherwise 
-*                               EC::ECValue holds the original pointer
+* @param[in] holdADuplicate     If true, ECN::ECValue will make a duplicate, otherwise 
+*                               ECN::ECValue holds the original pointer
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECValue::SetString (WCharCP string, bool holdADuplicate)
@@ -894,7 +894,7 @@ BentleyStatus ECValue::SetString (WCharCP string, bool holdADuplicate)
 +---------------+---------------+---------------+---------------+---------------+------*/
 const byte * ECValue::GetBinary(size_t& size) const
     {
-    PRECONDITION (IsBinary() && "Tried to get binarydata from an EC::ECValue that is not binary.", NULL);
+    PRECONDITION (IsBinary() && "Tried to get binarydata from an ECN::ECValue that is not binary.", NULL);
     size = m_binaryInfo.m_size;
     return m_binaryInfo.m_data;
     };
@@ -937,7 +937,7 @@ BentleyStatus ECValue::SetBinary (const byte * data, size_t size, bool holdADupl
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstancePtr  ECValue::GetStruct() const
     {
-    PRECONDITION (IsStruct() && "Tried to get struct value from an EC::ECValue that is not a struct.", 0);
+    PRECONDITION (IsStruct() && "Tried to get struct value from an ECN::ECValue that is not a struct.", 0);
     return m_structInstance;    
     };
 
@@ -1038,7 +1038,7 @@ WString    ECValue::ToString () const
                 
             default:
                 {
-                return L"EC::ECValue::ToString needs work... unsupported data type";
+                return L"ECN::ECValue::ToString needs work... unsupported data type";
                 }            
             }
         }
@@ -1201,11 +1201,11 @@ UInt32          ECValue::GetFixedPrimitiveValueSize (PrimitiveType primitivetype
     {
     switch (primitivetype)
         {
-        case EC::PRIMITIVETYPE_Integer:
+        case ECN::PRIMITIVETYPE_Integer:
             return sizeof(Int32);
-        case EC::PRIMITIVETYPE_Long:
+        case ECN::PRIMITIVETYPE_Long:
             return sizeof(Int64);
-        case EC::PRIMITIVETYPE_Double:
+        case ECN::PRIMITIVETYPE_Double:
             return sizeof(double);
         case PRIMITIVETYPE_Boolean:
             return sizeof(bool); 
@@ -1737,7 +1737,7 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBu
     if (!structClass)
         return ECOBJECTS_STATUS_Error;
 
-    EC::ECEnablerP enablerP = const_cast<EC::ECEnablerP>(&enabler);
+    ECN::ECEnablerP enablerP = const_cast<ECN::ECEnablerP>(&enabler);
     StandaloneECEnablerPtr structEnabler = dynamic_cast<StandaloneECEnablerP>(enablerP->GetEnablerForStructArrayMember (structClass->GetSchema().GetSchemaKey(), structClass->GetName().c_str()).get());
     if (structEnabler.IsNull())
         return ECOBJECTS_STATUS_Error;
@@ -2196,7 +2196,7 @@ BentleyStatus SystemTime::InitFromUnixMillis (UInt64 unixMillis)
 +---------------+---------------+---------------+---------------+---------------+------*/
 UInt64 ECValue::GetDateTimeUnixMillis() const
     {
-    PRECONDITION (IsDateTime() && "Tried to get DateTime value from an EC::ECValue that is not a DateTime.", 0);
+    PRECONDITION (IsDateTime() && "Tried to get DateTime value from an ECN::ECValue that is not a DateTime.", 0);
     PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", 0);
 
     Int64 ticks = (UInt64)GetDateTimeTicks();
@@ -2207,4 +2207,4 @@ UInt64 ECValue::GetDateTimeUnixMillis() const
     return BeTimeUtilities::ConvertFiletimeToUnixMillis (fileTime);
     }
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

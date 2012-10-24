@@ -9,7 +9,7 @@
 #include <ECUnits/Units.h>
 #include <Bentley/BeAssert.h>
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 static WCharCP const  UNITS_SCHEMA                      = L"Units_Schema";
 static WCharCP const  KOQ_SCHEMA                        = L"KindOfQuantity_Schema";
@@ -347,5 +347,5 @@ bool Unit::GetDisplayUnitForECProperty (UnitR unit, WStringR fmt, ECPropertyCR e
     return false;
     }
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 

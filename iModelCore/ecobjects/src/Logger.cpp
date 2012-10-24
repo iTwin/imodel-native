@@ -10,7 +10,7 @@
 
 USING_NAMESPACE_BENTLEY_LOGGING
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 #if defined (WIP_MT) 
 Bentley::NativeLogging::ILogger * ECObjectsLogger::s_log = NULL;  
@@ -36,4 +36,4 @@ Bentley::NativeLogging::ILogger * ECObjectsLogger::Log()
     }
 #endif
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

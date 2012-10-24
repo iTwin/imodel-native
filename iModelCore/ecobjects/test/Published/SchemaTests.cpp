@@ -8,7 +8,7 @@
 #include "ECObjectsTestPCH.h"
 #include "TestFixture.h"
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 // NEEDSWORK Improve strategy for seed data.  Should not be maintained in source.
 #define SCHEMAS_PATH  L"" 
@@ -1988,4 +1988,4 @@ TEST_F (ECNameValidationTest, Validate)
     EXPECT_VALIDATION_RESULT(IncludesInvalidCharacters, L"ABC@");
     }
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
