@@ -25,20 +25,22 @@ struct ContentSpecification /*__PUBLISH_ABSTRACT__*/
     /*__PUBLISH_SECTION_END__*/
     private:
         int                                 m_priority;
+        bool                                m_onlyIfNotHandled;
         RelatedPropertiesSpecificationList  m_relatedPropertiesSpecification;
 
     protected:
     /*__PUBLISH_SECTION_START__*/
-        ECOBJECTS_EXPORT ContentSpecification () : m_priority (1000)
+        ECOBJECTS_EXPORT ContentSpecification () : m_priority (1000), m_onlyIfNotHandled (false)
             {
             }
 
-        ECOBJECTS_EXPORT ContentSpecification (int priority) : m_priority (priority)
+        ECOBJECTS_EXPORT ContentSpecification (int priority, bool onlyIfNotHandled) : m_priority (priority), m_onlyIfNotHandled (onlyIfNotHandled)
             {
             }
 
+        ECOBJECTS_EXPORT virtual CharCP                      _GetXmlElementName () = 0;
         ECOBJECTS_EXPORT virtual bool                        _ReadXml (BeXmlNodeP xmlNode) = 0;
-        //ECOBJECTS_EXPORT virtual void                        _WriteXml (BeXmlNodeP xmlNode) = 0;
+        ECOBJECTS_EXPORT virtual void                        _WriteXml (BeXmlNodeP xmlNode) = 0;
 
     public:
         //! Destructor.
@@ -47,8 +49,14 @@ struct ContentSpecification /*__PUBLISH_ABSTRACT__*/
         //! Reads specification from XML.
         ECOBJECTS_EXPORT bool                                ReadXml (BeXmlNodeP xmlNode);
 
+        //! Writes specification to xml node.
+        ECOBJECTS_EXPORT void                                WriteXml (BeXmlNodeP parentXmlNode);
+
         //! Priority of the specification, defines the order in which specifications are evaluated and executed.
         ECOBJECTS_EXPORT int                                 GetPriority (void) const         { return m_priority; }
+
+        //! Returns true if this rule should be executed only in the case where there are no other higher priority rules for this particular cotext.
+        ECOBJECTS_EXPORT bool                                GetOnlyIfNotHandled (void) const { return m_onlyIfNotHandled; }
 
         //! Related properties of acceptable ECInstances, that will be shown next to ECInstance proerties (the same row for example).
         ECOBJECTS_EXPORT RelatedPropertiesSpecificationList&  GetRelatedProperties (void)     { return m_relatedPropertiesSpecification; }

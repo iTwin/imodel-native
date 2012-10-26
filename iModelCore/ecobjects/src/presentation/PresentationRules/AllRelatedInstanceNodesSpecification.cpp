@@ -15,6 +15,14 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+CharCP AllRelatedInstanceNodesSpecification::_GetXmlElementName ()
+    {
+    return ALL_RELATED_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 bool AllRelatedInstanceNodesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     {
     //Optional:
@@ -31,4 +39,15 @@ bool AllRelatedInstanceNodesSpecification::_ReadXml (BeXmlNodeP xmlNode)
         m_supportedSchemas = L"";
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void AllRelatedInstanceNodesSpecification::_WriteXml (BeXmlNodeP xmlNode)
+    {
+    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYCLASS, m_groupByClass);
+    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYLABEL, m_groupByLabel);
+    xmlNode->AddAttributeInt32Value   (COMMON_XML_ATTRIBUTE_SKIPRELATEDLEVEL, m_skipRelatedLevel);
+    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_SUPPORTEDSCHEMAS, m_supportedSchemas.c_str ());
     }

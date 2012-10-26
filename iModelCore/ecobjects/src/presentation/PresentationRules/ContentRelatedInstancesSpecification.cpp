@@ -16,6 +16,14 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+CharCP ContentRelatedInstancesSpecification::_GetXmlElementName ()
+    {
+    return CONTENT_RELATED_INSTANCES_SPECIFICATION_XML_NODE_NAME;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 bool ContentRelatedInstancesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     {
     if (BEXML_Success != xmlNode->GetAttributeInt32Value (m_skipRelatedLevel, COMMON_XML_ATTRIBUTE_SKIPRELATEDLEVEL))
@@ -40,7 +48,21 @@ bool ContentRelatedInstancesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeStringValue (requiredDirectionString, COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION))
         requiredDirectionString = L"";
     else
-        m_requiredDirection = CommonTools::ParseRequiredDirectionString (requiredDirectionString);
+        m_requiredDirection = CommonTools::ParseRequiredDirectionString (requiredDirectionString.c_str ());
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentRelatedInstancesSpecification::_WriteXml (BeXmlNodeP xmlNode)
+    {
+    xmlNode->AddAttributeInt32Value  (COMMON_XML_ATTRIBUTE_SKIPRELATEDLEVEL, m_skipRelatedLevel);
+    xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_INSTANCEFILTER, m_instanceFilter.c_str ());
+    xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_RELATIONSHIPSCHEMANAME, m_relationshipSchemaName.c_str ());
+    xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_RELATIONSHIPCLASSNAMES, m_relationshipClassNames.c_str ());
+    xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_RELATEDSCHEMANAME, m_relatedSchemaName.c_str ());
+    xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_RELATEDCLASSNAMES, m_relatedClassNames.c_str ());
+    xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION, CommonTools::FormatRequiredDirectionString (m_requiredDirection));
     }

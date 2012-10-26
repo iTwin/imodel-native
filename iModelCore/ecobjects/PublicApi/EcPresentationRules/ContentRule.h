@@ -26,7 +26,9 @@ struct ContentRule : public PresentationRule
 
     protected:
     /*__PUBLISH_SECTION_START__*/
+        ECOBJECTS_EXPORT virtual CharCP                 _GetXmlElementName ();
         ECOBJECTS_EXPORT virtual bool                   _ReadXml (BeXmlNodeP xmlNode) override;
+        ECOBJECTS_EXPORT virtual void                   _WriteXml (BeXmlNodeP xmlNode) override;
 
     public:
         ECOBJECTS_EXPORT ContentRule ()
@@ -34,8 +36,8 @@ struct ContentRule : public PresentationRule
             {
             }
 
-        ECOBJECTS_EXPORT ContentRule (WStringCR condition, int priority, bool onlyIfNotHadled)
-            : PresentationRule (condition, priority, onlyIfNotHadled)
+        ECOBJECTS_EXPORT ContentRule (WStringCR condition, int priority, bool onlyIfNotHandled)
+            : PresentationRule (condition, priority, onlyIfNotHandled)
             {
             }
 

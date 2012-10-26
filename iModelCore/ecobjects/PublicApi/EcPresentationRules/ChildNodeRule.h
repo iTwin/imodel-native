@@ -27,7 +27,9 @@ struct ChildNodeRule : public PresentationRule
 
     protected:
         /*__PUBLISH_SECTION_START__*/
+        ECOBJECTS_EXPORT virtual CharCP                 _GetXmlElementName ();
         ECOBJECTS_EXPORT virtual bool                   _ReadXml (BeXmlNodeP xmlNode) override;
+        ECOBJECTS_EXPORT virtual void                   _WriteXml (BeXmlNodeP xmlNode) override;
 
     public:
         ECOBJECTS_EXPORT ChildNodeRule ()
@@ -35,8 +37,8 @@ struct ChildNodeRule : public PresentationRule
             {
             }
 
-        ECOBJECTS_EXPORT ChildNodeRule (WStringCR condition, int priority, bool onlyIfNotHadled, RuleTargetTree targetTree)
-            : PresentationRule (condition, priority, onlyIfNotHadled), m_targetTree (targetTree)
+        ECOBJECTS_EXPORT ChildNodeRule (WStringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree)
+            : PresentationRule (condition, priority, onlyIfNotHandled), m_targetTree (targetTree)
             {
             }
 
@@ -58,15 +60,18 @@ RootNodeRule defines rules for generating root nodes.
 struct RootNodeRule : public ChildNodeRule
     {
     /*__PUBLISH_SECTION_END__*/
-    public:
+    protected:
     /*__PUBLISH_SECTION_START__*/
+        ECOBJECTS_EXPORT virtual CharCP                 _GetXmlElementName () override;
+
+    public:
         ECOBJECTS_EXPORT RootNodeRule ()
             : ChildNodeRule ()
             {
             }
 
-        ECOBJECTS_EXPORT RootNodeRule (WStringCR condition, int priority, bool onlyIfNotHadled, RuleTargetTree targetTree)
-            : ChildNodeRule (condition, priority, onlyIfNotHadled, targetTree)
+        ECOBJECTS_EXPORT RootNodeRule (WStringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree)
+            : ChildNodeRule (condition, priority, onlyIfNotHandled, targetTree)
             {
             }
     };

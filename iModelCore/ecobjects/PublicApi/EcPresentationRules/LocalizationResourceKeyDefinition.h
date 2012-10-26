@@ -26,7 +26,9 @@ struct LocalizationResourceKeyDefinition : public PresentationKey
 
     protected:
     /*__PUBLISH_SECTION_START__*/
-        ECOBJECTS_EXPORT virtual bool _ReadXml (BeXmlNodeP xmlNode);
+        ECOBJECTS_EXPORT virtual CharCP  _GetXmlElementName ();
+        ECOBJECTS_EXPORT virtual bool    _ReadXml (BeXmlNodeP xmlNode);
+        ECOBJECTS_EXPORT virtual void    _WriteXml (BeXmlNodeP xmlNode);
 
     public:
         ECOBJECTS_EXPORT LocalizationResourceKeyDefinition ()
@@ -35,18 +37,18 @@ struct LocalizationResourceKeyDefinition : public PresentationKey
             }
 
         ECOBJECTS_EXPORT LocalizationResourceKeyDefinition (int priority, WStringCR id, WStringCR key, WStringCR defaultValue)
-            : PresentationKey (priority), m_id (m_id), m_key (key), m_defaultValue (defaultValue)
+            : PresentationKey (priority), m_id (id), m_key (key), m_defaultValue (defaultValue)
             {
             }
 
         //! Id of the resource to localize.
-        ECOBJECTS_EXPORT WStringCR    GetId (void) const             { return m_id; }
+        ECOBJECTS_EXPORT WStringCR       GetId (void) const             { return m_id; }
 
         //! New key of the resource.
-        ECOBJECTS_EXPORT WStringCR    GetKey (void) const            { return m_key; }
+        ECOBJECTS_EXPORT WStringCR       GetKey (void) const            { return m_key; }
 
         //! Default value which is used if the resource is not found.
-        ECOBJECTS_EXPORT WStringCR    GetDefaultValue (void) const   { return m_defaultValue; }
+        ECOBJECTS_EXPORT WStringCR       GetDefaultValue (void) const   { return m_defaultValue; }
 
     };
 

@@ -30,6 +30,7 @@
 #define COMMON_XML_ATTRIBUTE_RELATEDCLASSNAMES                                        "RelatedClassNames"
 #define COMMON_XML_ATTRIBUTE_SCHEMANAME                                               "SchemaName"
 #define COMMON_XML_ATTRIBUTE_CLASSNAMES                                               "ClassNames"
+#define COMMON_XML_ATTRIBUTE_ONLYIFNOTHANDLED                                         "OnlyIfNotHandled"
 
 #define PRESENTATION_RULE_SET_XML_NODE_NAME                                           "PresentationRuleSet"
 #define PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID                                 "RuleSetId"
@@ -38,7 +39,6 @@
 #define PRESENTATION_RULE_SET_XML_ATTRIBUTE_PREFERREDIMAGE                            "PreferredImage"
 
 #define PRESENTATION_RULE_XML_ATTRIBUTE_CONDITION                                     "Condition"
-#define PRESENTATION_RULE_XML_ATTRIBUTE_ONLYIFNOTHANDLED                              "OnlyIfNotHandled"
 
 #define ROOT_NODE_RULE_XML_NODE_NAME                                                  "RootNodeRule"
 
@@ -98,11 +98,11 @@
 
 #define INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME                "InstancesOfSpecificClasses"
 
-//ContentSpecifications
-#define RELATED_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME                            "RelatedInstanceNodesSpecification"
+#define RELATED_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME                            "RelatedInstances"
 
 #define SEARCH_RESULT_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME                      "SearchResultInstances"
 
+//ContentSpecifications
 #define RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME                                "RelatedProperties"
 
 #define CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME             "ContentInstancesOfSpecificClasses"

@@ -15,6 +15,14 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+CharCP ContentInstancesOfSpecificClassesSpecification::_GetXmlElementName ()
+    {
+    return CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 bool ContentInstancesOfSpecificClassesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     {
     //Required:
@@ -35,4 +43,14 @@ bool ContentInstancesOfSpecificClassesSpecification::_ReadXml (BeXmlNodeP xmlNod
         m_instanceFilter = L"";
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentInstancesOfSpecificClassesSpecification::_WriteXml (BeXmlNodeP xmlNode)
+    {
+    xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_SCHEMANAME, m_schemaName.c_str ());
+    xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_CLASSNAMES, m_classNames.c_str ());
+    xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_INSTANCEFILTER, m_instanceFilter.c_str ());
     }

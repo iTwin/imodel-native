@@ -28,7 +28,9 @@ struct ContentInstancesOfSpecificClassesSpecification : public ContentSpecificat
 
     protected:
     /*__PUBLISH_SECTION_START__*/
+        ECOBJECTS_EXPORT virtual CharCP               _GetXmlElementName ();
         ECOBJECTS_EXPORT virtual bool                 _ReadXml (BeXmlNodeP xmlNode);
+        ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode);
 
     public:
         ECOBJECTS_EXPORT ContentInstancesOfSpecificClassesSpecification () 
@@ -36,8 +38,8 @@ struct ContentInstancesOfSpecificClassesSpecification : public ContentSpecificat
             {
             }
 
-        ECOBJECTS_EXPORT ContentInstancesOfSpecificClassesSpecification (int priority, WStringCR instanceFilter, WStringCR schemaName, WStringCR classNames) 
-            : ContentSpecification (priority), m_instanceFilter (instanceFilter), m_schemaName (schemaName), m_classNames (classNames)
+        ECOBJECTS_EXPORT ContentInstancesOfSpecificClassesSpecification (int priority, bool onlyIfNotHandled, WStringCR instanceFilter, WStringCR schemaName, WStringCR classNames) 
+            : ContentSpecification (priority, onlyIfNotHandled), m_instanceFilter (instanceFilter), m_schemaName (schemaName), m_classNames (classNames)
             {
             }
 

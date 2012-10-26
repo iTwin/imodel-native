@@ -15,10 +15,28 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+CharCP ImageIdOverride::_GetXmlElementName ()
+    {
+    return IMAGE_ID_OVERRIDE_XML_NODE_NAME;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 bool ImageIdOverride::_ReadXml (BeXmlNodeP xmlNode)
     {
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_imageIdExpression, IMAGE_ID_OVERRIDE_XML_ATTRIBUTE_IMAGEID))
         m_imageIdExpression = L"";
 
     return PresentationRule::_ReadXml (xmlNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void ImageIdOverride::_WriteXml (BeXmlNodeP xmlNode)
+    {
+    xmlNode->AddAttributeStringValue (IMAGE_ID_OVERRIDE_XML_ATTRIBUTE_IMAGEID, m_imageIdExpression.c_str ());
+
+    PresentationRule::_WriteXml (xmlNode);
     }

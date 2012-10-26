@@ -35,8 +35,9 @@ struct ChildNodeSpecification /*__PUBLISH_ABSTRACT__*/
         ECOBJECTS_EXPORT ChildNodeSpecification ();
         ECOBJECTS_EXPORT ChildNodeSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy);
 
+        ECOBJECTS_EXPORT virtual CharCP               _GetXmlElementName () = 0;
         ECOBJECTS_EXPORT virtual bool                 _ReadXml (BeXmlNodeP xmlNode) = 0;
-        //ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode) = 0;
+        ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode) = 0;
 
     public:
         //! Destructor.
@@ -44,6 +45,9 @@ struct ChildNodeSpecification /*__PUBLISH_ABSTRACT__*/
 
         //! Reads specification from XML.
         ECOBJECTS_EXPORT bool                         ReadXml (BeXmlNodeP xmlNode);
+
+        //! Writes specification to xml node.
+        ECOBJECTS_EXPORT void                         WriteXml (BeXmlNodeP parentXmlNode);
 
         //! Priority of the specification, defines the order in which specifications are evaluated and executed.
         ECOBJECTS_EXPORT int                          GetPriority (void) const               { return m_priority; }

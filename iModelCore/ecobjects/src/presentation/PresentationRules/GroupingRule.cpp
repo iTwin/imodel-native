@@ -24,6 +24,14 @@ GroupingRule::~GroupingRule (void)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+CharCP GroupingRule::_GetXmlElementName ()
+    {
+    return GROUPING_RULE_XML_NODE_NAME;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 bool GroupingRule::_ReadXml (BeXmlNodeP xmlNode)
     {
     //Required:
@@ -55,6 +63,21 @@ bool GroupingRule::_ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+void GroupingRule::_WriteXml (BeXmlNodeP xmlNode)
+    {
+    xmlNode->AddAttributeStringValue (GROUPING_RULE_XML_ATTRIBUTE_SCHEMANAME, m_schemaName.c_str ());
+    xmlNode->AddAttributeStringValue (GROUPING_RULE_XML_ATTRIBUTE_CLASSNAME, m_className.c_str ());
+    xmlNode->AddAttributeStringValue (GROUPING_RULE_XML_ATTRIBUTE_MENUCONDITION, m_contextMenuCondition.c_str ());
+    xmlNode->AddAttributeStringValue (GROUPING_RULE_XML_ATTRIBUTE_MENULABEL, m_contextMenuLabel.c_str ());
+
+    CommonTools::WriteRulesToXmlNode<PropertyGroup, PropertyGroupList> (xmlNode, m_groups);
+
+    PresentationRule::_WriteXml (xmlNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 PropertyGroup::~PropertyGroup (void)
     {
     CommonTools::FreePresentationRules (m_ranges);
@@ -79,13 +102,28 @@ bool PropertyGroup::ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_contextMenuLabel, PROPERTY_GROUP_XML_ATTRIBUTE_MENULABEL))
         m_contextMenuLabel = L"";
 
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_createGroupsForSingleItem, PROPERTY_GROUP_XML_ATTRIBUTE_CREATEGROUPFORSINGLEITEM))
-        m_createGroupsForSingleItem = false;
+    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_createGroupForSingleItem, PROPERTY_GROUP_XML_ATTRIBUTE_CREATEGROUPFORSINGLEITEM))
+        m_createGroupForSingleItem = false;
 
     //Load Ranges
     CommonTools::LoadRulesFromXmlNode<PropertyRangeGroupSpecification, PropertyRangeGroupList> (xmlNode, m_ranges, PROPERTY_RANGE_GROUP_XML_NODE_NAME);
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void PropertyGroup::WriteXml (BeXmlNodeP parentXmlNode)
+    {
+    BeXmlNodeP specificationNode = parentXmlNode->AddEmptyElement (PROPERTY_GROUP_XML_NODE_NAME);
+
+    specificationNode->AddAttributeStringValue  (PROPERTY_GROUP_XML_ATTRIBUTE_PROPERTYNAME, m_propertyName.c_str ());
+    specificationNode->AddAttributeStringValue  (PROPERTY_GROUP_XML_ATTRIBUTE_IMAGEID, m_imageId.c_str ());
+    specificationNode->AddAttributeStringValue  (PROPERTY_GROUP_XML_ATTRIBUTE_MENULABEL, m_contextMenuLabel.c_str ());
+    specificationNode->AddAttributeBooleanValue (PROPERTY_GROUP_XML_ATTRIBUTE_CREATEGROUPFORSINGLEITEM, m_createGroupForSingleItem);
+
+    CommonTools::WriteRulesToXmlNode<PropertyRangeGroupSpecification, PropertyRangeGroupList> (specificationNode, m_ranges);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -114,4 +152,17 @@ bool PropertyRangeGroupSpecification::ReadXml (BeXmlNodeP xmlNode)
         m_imageId = L"";    
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void PropertyRangeGroupSpecification::WriteXml (BeXmlNodeP parentXmlNode)
+    {
+    BeXmlNodeP specificationNode = parentXmlNode->AddEmptyElement (PROPERTY_RANGE_GROUP_XML_NODE_NAME);
+
+    specificationNode->AddAttributeStringValue (PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_FROMVALUE, m_fromValue.c_str ());
+    specificationNode->AddAttributeStringValue (PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_TOVALUE, m_toValue.c_str ());
+    specificationNode->AddAttributeStringValue (PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_LABEL, m_label.c_str ());
+    specificationNode->AddAttributeStringValue (PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_IMAGEID, m_imageId.c_str ());
     }

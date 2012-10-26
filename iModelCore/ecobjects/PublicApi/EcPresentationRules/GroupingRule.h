@@ -34,7 +34,9 @@ struct GroupingRule : public PresentationRule
 
     protected:
     /*__PUBLISH_SECTION_START__*/
+        ECOBJECTS_EXPORT virtual CharCP      _GetXmlElementName ();
         ECOBJECTS_EXPORT virtual bool        _ReadXml (BeXmlNodeP xmlNode) override;
+        ECOBJECTS_EXPORT virtual void        _WriteXml (BeXmlNodeP xmlNode) override;
 
     public:
         ECOBJECTS_EXPORT GroupingRule ()
@@ -83,18 +85,18 @@ struct PropertyGroup
         WString                 m_propertyName;
         WString                 m_imageId;
         WString                 m_contextMenuLabel;
-        bool                    m_createGroupsForSingleItem;
+        bool                    m_createGroupForSingleItem;
         PropertyRangeGroupList  m_ranges;
 
     public:
     /*__PUBLISH_SECTION_START__*/
         ECOBJECTS_EXPORT PropertyGroup ()
-            : m_propertyName (L""), m_imageId (L""), m_contextMenuLabel (L""), m_createGroupsForSingleItem (false)
+            : m_propertyName (L""), m_imageId (L""), m_contextMenuLabel (L""), m_createGroupForSingleItem (false)
             {
             }
 
-        ECOBJECTS_EXPORT PropertyGroup (WStringCR propertyName, WStringCR imageId, WStringCR contextMenuLabel, bool createGroupsForSingleItem)
-            : m_propertyName (propertyName), m_imageId (imageId), m_contextMenuLabel (contextMenuLabel), m_createGroupsForSingleItem (createGroupsForSingleItem)
+        ECOBJECTS_EXPORT PropertyGroup (WStringCR propertyName, WStringCR imageId, WStringCR contextMenuLabel, bool createGroupForSingleItem)
+            : m_propertyName (propertyName), m_imageId (imageId), m_contextMenuLabel (contextMenuLabel), m_createGroupForSingleItem (createGroupForSingleItem)
             {
             }
 
@@ -103,6 +105,9 @@ struct PropertyGroup
 
         //! Reads PresentationRule from xml node.
         ECOBJECTS_EXPORT bool                     ReadXml (BeXmlNodeP xmlNode);
+
+        //! Writes group to xml node.
+        ECOBJECTS_EXPORT void                     WriteXml (BeXmlNodeP parentXmlNode);
 
         //! ECProperty name to group ECInstances by.
         ECOBJECTS_EXPORT WStringCR                GetPropertyName (void) const                { return m_propertyName; }
@@ -114,7 +119,7 @@ struct PropertyGroup
         ECOBJECTS_EXPORT WStringCR                GetContextMenuLabel (void) const            { return m_contextMenuLabel; }
 
         //! ContextMenu label of this particular grouping option. If not set ECProperty DisplayLabel will be used.
-        ECOBJECTS_EXPORT bool                     GetCreateGroupsForSingleItem (void) const   { return m_createGroupsForSingleItem; }
+        ECOBJECTS_EXPORT bool                     GetCreateGroupForSingleItem (void) const    { return m_createGroupForSingleItem; }
 
         //! List of grouping ranges. If grouping ranges are not specified ECInstances will be grouped by common value.
         ECOBJECTS_EXPORT PropertyRangeGroupList&  GetRanges (void)                            { return m_ranges;    }
@@ -150,6 +155,9 @@ struct PropertyRangeGroupSpecification
 
         //! Grouping range node label. If not set label will be formated using From and To values.
         ECOBJECTS_EXPORT bool                     ReadXml (BeXmlNodeP xmlNode);
+
+        //! Writes specification to xml node.
+        ECOBJECTS_EXPORT void                     WriteXml (BeXmlNodeP parentXmlNode);
 
         //! ImageId of the grouping range node. If not set ECProperty ImageId will be used.
         ECOBJECTS_EXPORT WStringCR                GetLabel (void) const                       { return m_label; }

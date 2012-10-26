@@ -25,7 +25,9 @@ struct StyleOverride : public PresentationRule
 
     protected:
     /*__PUBLISH_SECTION_START__*/
-        ECOBJECTS_EXPORT virtual bool _ReadXml (BeXmlNodeP xmlNode) override;
+        ECOBJECTS_EXPORT virtual CharCP   _GetXmlElementName ();
+        ECOBJECTS_EXPORT virtual bool     _ReadXml (BeXmlNodeP xmlNode) override;
+        ECOBJECTS_EXPORT virtual void     _WriteXml (BeXmlNodeP xmlNode) override;
 
     public:
         ECOBJECTS_EXPORT StyleOverride ()
@@ -40,13 +42,13 @@ struct StyleOverride : public PresentationRule
             }
 
         //! Foreground color override value. Can be ECExpression string. If value is not set it will not affect original value.
-        ECOBJECTS_EXPORT WStringCR    GetForeColor (void) const    { return m_foreColor; }
+        ECOBJECTS_EXPORT WStringCR        GetForeColor (void) const    { return m_foreColor; }
 
         //! Background color override value. Can be ECExpression string. If value is not set it will not affect original value.
-        ECOBJECTS_EXPORT WStringCR    GetBackColor (void) const    { return m_backColor; }
+        ECOBJECTS_EXPORT WStringCR        GetBackColor (void) const    { return m_backColor; }
 
         //! FontStyle override value. Can be ECExpression string. If value is not set it will not affect original value.
-        ECOBJECTS_EXPORT WStringCR    GetFontStyle (void) const    { return m_fontStyle; }
+        ECOBJECTS_EXPORT WStringCR        GetFontStyle (void) const    { return m_fontStyle; }
 
     };
 

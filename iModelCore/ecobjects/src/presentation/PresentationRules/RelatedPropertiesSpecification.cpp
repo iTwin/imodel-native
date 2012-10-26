@@ -34,7 +34,21 @@ bool RelatedPropertiesSpecification::ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeStringValue (requiredDirectionString, COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION))
         requiredDirectionString = L"";
     else
-        m_requiredDirection = CommonTools::ParseRequiredDirectionString (requiredDirectionString);
+        m_requiredDirection = CommonTools::ParseRequiredDirectionString (requiredDirectionString.c_str ());
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void RelatedPropertiesSpecification::WriteXml (BeXmlNodeP parentXmlNode)
+    {
+    BeXmlNodeP relatedPropertiesNode = parentXmlNode->AddEmptyElement (RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
+
+    relatedPropertiesNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_RELATIONSHIPSCHEMANAME, m_relationshipSchemaName.c_str ());
+    relatedPropertiesNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_RELATIONSHIPCLASSNAMES, m_relationshipClassNames.c_str ());
+    relatedPropertiesNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_RELATEDSCHEMANAME, m_relatedSchemaName.c_str ());
+    relatedPropertiesNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_RELATEDCLASSNAMES, m_relatedClassNames.c_str ());
+    relatedPropertiesNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION, CommonTools::FormatRequiredDirectionString (m_requiredDirection));
     }

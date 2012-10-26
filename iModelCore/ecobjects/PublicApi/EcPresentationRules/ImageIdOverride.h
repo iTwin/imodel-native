@@ -24,7 +24,9 @@ struct ImageIdOverride : public PresentationRule
 
     protected:
     /*__PUBLISH_SECTION_START__*/
-        ECOBJECTS_EXPORT virtual bool _ReadXml (BeXmlNodeP xmlNode) override;
+        ECOBJECTS_EXPORT virtual CharCP   _GetXmlElementName ();
+        ECOBJECTS_EXPORT virtual bool     _ReadXml (BeXmlNodeP xmlNode) override;
+        ECOBJECTS_EXPORT virtual void     _WriteXml (BeXmlNodeP xmlNode) override;
 
     public:
         ECOBJECTS_EXPORT ImageIdOverride ()
@@ -32,13 +34,13 @@ struct ImageIdOverride : public PresentationRule
             {
             }
 
-        ECOBJECTS_EXPORT ImageIdOverride (WStringCR condition, WStringCR imageIdExpression, int priority, bool onlyIfNotHadled)
-            : PresentationRule (condition, priority, onlyIfNotHadled), m_imageIdExpression (imageIdExpression)
+        ECOBJECTS_EXPORT ImageIdOverride (WStringCR condition, int priority, WStringCR imageIdExpression)
+            : PresentationRule (condition, priority, false), m_imageIdExpression (imageIdExpression)
             {
             }
 
         //! Returns ImageId override ECExpression string.
-        ECOBJECTS_EXPORT WStringCR    GetImageId (void) const    { return m_imageIdExpression; }
+        ECOBJECTS_EXPORT WStringCR        GetImageId (void) const    { return m_imageIdExpression; }
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

@@ -67,3 +67,20 @@ bool ChildNodeSpecification::ReadXml (BeXmlNodeP xmlNode)
 
     return _ReadXml (xmlNode);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChildNodeSpecification::WriteXml (BeXmlNodeP parentXmlNode)
+    {
+    BeXmlNodeP specificationNode = parentXmlNode->AddEmptyElement (_GetXmlElementName ());
+
+    specificationNode->AddAttributeInt32Value   (COMMON_XML_ATTRIBUTE_PRIORITY, m_priority);
+    specificationNode->AddAttributeBooleanValue (CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_ALWAYSRETURNSCHILDREN, m_alwaysReturnsChildren);
+    specificationNode->AddAttributeBooleanValue (CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_HIDENODESINHIERARCHY, m_hideNodesInHierarchy);
+
+    CommonTools::WriteRulesToXmlNode<ChildNodeRule, ChildNodeRuleList> (specificationNode, m_nestedRules);
+
+    //Make sure we call protected override
+    _WriteXml (specificationNode);
+    }

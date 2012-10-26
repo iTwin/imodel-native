@@ -15,6 +15,14 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+CharCP SelectedNodeInstancesSpecification::_GetXmlElementName ()
+    {
+    return SELECTED_NODE_INSTANCES_SPECIFICATION_XML_NODE_NAME;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 bool SelectedNodeInstancesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     {
     //Optional:
@@ -25,4 +33,13 @@ bool SelectedNodeInstancesSpecification::_ReadXml (BeXmlNodeP xmlNode)
         m_acceptableClassNames = L"";
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void SelectedNodeInstancesSpecification::_WriteXml (BeXmlNodeP xmlNode)
+    {
+    xmlNode->AddAttributeStringValue (SELECTED_NODE_INSTANCES_SPECIFICATION_XML_ATTRIBUTE_ACCEPTABLESCHEMANAME, m_acceptableSchemaName.c_str ());
+    xmlNode->AddAttributeStringValue (SELECTED_NODE_INSTANCES_SPECIFICATION_XML_ATTRIBUTE_ACCEPTABLECLASSNAMES, m_acceptableClassNames.c_str ());
     }

@@ -67,6 +67,9 @@ struct PresentationRuleSet : public RefCountedBase
         //Reads PresentationRuleSet from XML. Returns false if it is not able to load it.
         bool                                            ReadXml (BeXmlDomR xmlDom);
 
+        //Writes PresentationRuleSet to XML.
+        void                                            WriteXml (BeXmlDomR xmlDom);
+
         //Private destructor.
                                                         ~PresentationRuleSet (void);
 
@@ -87,6 +90,12 @@ struct PresentationRuleSet : public RefCountedBase
 
         //! Reads PresentationRuleSet from XmlFile.
         ECOBJECTS_EXPORT static PresentationRuleSetPtr  ReadFromXmlFile (WCharCP xmlFilePath);
+
+        //! Writes PresentationRuleSet to XmlString.
+        ECOBJECTS_EXPORT WString                        WriteToXmlString ();
+
+        //! Writes PresentationRuleSet to XmlFile.
+        ECOBJECTS_EXPORT bool                           WriteToXmlFile (WCharCP xmlFilePath);
 
         //! PresentationRuleSet identificator.
         ECOBJECTS_EXPORT WStringCR                      GetRuleSetId (void) const         { return m_ruleSetId;        }

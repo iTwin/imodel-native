@@ -33,7 +33,9 @@ struct ContentRelatedInstancesSpecification : public ContentSpecification
 
     protected:
     /*__PUBLISH_SECTION_START__*/
+        ECOBJECTS_EXPORT virtual CharCP               _GetXmlElementName ();
         ECOBJECTS_EXPORT virtual bool                 _ReadXml (BeXmlNodeP xmlNode);
+        ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode);
 
     public:
         ECOBJECTS_EXPORT ContentRelatedInstancesSpecification () 
@@ -46,6 +48,7 @@ struct ContentRelatedInstancesSpecification : public ContentSpecification
         ECOBJECTS_EXPORT ContentRelatedInstancesSpecification 
                                              (
                                               int                        priority, 
+                                              bool                       onlyIfNotHandled,
                                               int                        skipRelatedLevel,
                                               WString                    instanceFilter,
                                               RequiredRelationDirection  requiredDirection,
@@ -54,7 +57,7 @@ struct ContentRelatedInstancesSpecification : public ContentSpecification
                                               WString                    relatedSchemaName,
                                               WString                    relatedClassNames
                                              ) 
-            : ContentSpecification (priority), m_skipRelatedLevel (skipRelatedLevel), 
+            : ContentSpecification (priority, onlyIfNotHandled), m_skipRelatedLevel (skipRelatedLevel), 
               m_instanceFilter (instanceFilter), m_requiredDirection (requiredDirection),
               m_relationshipSchemaName (relationshipSchemaName), m_relationshipClassNames (relationshipClassNames), 
               m_relatedSchemaName (relatedSchemaName), m_relatedClassNames (relatedClassNames)
