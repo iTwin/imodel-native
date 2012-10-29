@@ -15,10 +15,11 @@ BEGIN_BENTLEY_EC_NAMESPACE
 * @bsimethod                                    Sam.Wilson      04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 #pragma warning(disable:4189) // umillisCheck unused if NDEBUG set.
-static void unixMillisToSystemTime (SystemTime& systemTime, UInt64 umillis)
+static BentleyStatus unixMillisToSystemTime (SystemTime& systemTime, UInt64 umillis)
     {
     struct tm tm;
-    BeTimeUtilities::ConvertUnixMillisToTm (tm, umillis);
+    BentleyStatus stat = BeTimeUtilities::ConvertUnixMillisToTm (tm, umillis);
+    POSTCONDITION (stat == SUCCESS, ERROR);
     systemTime.wYear        = (UInt16)tm.tm_year + 1900;
     systemTime.wMonth       = (UInt16)tm.tm_mon + 1;
     systemTime.wDayOfWeek   = (UInt16)tm.tm_wday;
@@ -29,16 +30,23 @@ static void unixMillisToSystemTime (SystemTime& systemTime, UInt64 umillis)
     systemTime.wMilliseconds = umillis % 1000LL;
 
     BeAssert (BeTimeUtilities::ConvertTmToUnixMillis(tm) + systemTime.wMilliseconds == umillis);
+    return SUCCESS;
     }
 #pragma warning(default:4189)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-static UInt64 systemTimeToUnixMillis (SystemTime const& systemTime)
+static BentleyStatus systemTimeToUnixMillis (UInt64& unixMillisecs, SystemTime const& systemTime)
     {
+    //Underlying OS functions only work within Unix epoch
+    //Note: End of epoch is only approximate (exact end is 2038-01-19 03:14:07 UTC).
+    //As these method might become deprecated, the approximation should be sufficient.
+    PRECONDITION (systemTime.wYear >= 1970 && systemTime.wYear <= 2037, ERROR);
+
     struct tm tm;
     memset (&tm, 0, sizeof(tm));
+
     tm.tm_year              = systemTime.wYear - 1900;
     tm.tm_mon               = systemTime.wMonth - 1;     
     tm.tm_mday              = systemTime.wDay;
@@ -47,7 +55,9 @@ static UInt64 systemTimeToUnixMillis (SystemTime const& systemTime)
     tm.tm_sec               = systemTime.wSecond;     
     UInt64 umillis          = BeTimeUtilities::ConvertTmToUnixMillis (tm);
     umillis                += systemTime.wMilliseconds;
-    return umillis;
+
+    unixMillisecs = umillis;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -128,7 +138,8 @@ WString SystemTime::ToString
 SystemTime SystemTime::GetSystemTime()
     {
     SystemTime time;
-    unixMillisToSystemTime (time, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    BentleyStatus stat = unixMillisToSystemTime (time, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    POSTCONDITION (stat == SUCCESS, time);
     return time;
     }
 
@@ -141,7 +152,8 @@ SystemTime SystemTime::GetLocalTime()
     UInt64 localMillis = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
     BeTimeUtilities::AdjustUnixMillisForLocalTime (localMillis);
     SystemTime time;
-    unixMillisToSystemTime (time, localMillis);
+    BentleyStatus stat = unixMillisToSystemTime (time, localMillis);
+    POSTCONDITION (stat == SUCCESS, time);
     return time;
     }
 
@@ -807,7 +819,8 @@ SystemTime          ECValue::GetDateTime () const
 
     UInt64 umillis = BeTimeUtilities::ConvertFiletimeToUnixMillis(fileTime);
 
-    unixMillisToSystemTime (systemTime, umillis);
+    BentleyStatus stat = unixMillisToSystemTime (systemTime, umillis);
+    POSTCONDITION (stat == SUCCESS, SystemTime ());
 
     return systemTime;
     }
@@ -819,7 +832,9 @@ BentleyStatus          ECValue::SetDateTime (SystemTime const& systemTime)
     {
     Clear();
 
-    UInt64 umillis = systemTimeToUnixMillis (systemTime);
+    UInt64 umillis;
+    BentleyStatus stat = systemTimeToUnixMillis (umillis, systemTime);
+    POSTCONDITION (stat == SUCCESS, ERROR);
 
     _FILETIME fileTime;
     BeTimeUtilities::ConvertUnixMillisToFiletime (fileTime, umillis);
@@ -2104,7 +2119,8 @@ ECValuesCollection::const_iterator ECValuesCollection::end () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   SystemTime::InitFromFileTime (_FILETIME const& fileTime)
     {
-    unixMillisToSystemTime (*this, BeTimeUtilities::ConvertFiletimeToUnixMillis(fileTime));
+    BentleyStatus stat = unixMillisToSystemTime (*this, BeTimeUtilities::ConvertFiletimeToUnixMillis(fileTime));
+    POSTCONDITION (stat == SUCCESS, ERROR);
     return SUCCESS;
     }
 
