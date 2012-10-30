@@ -9,17 +9,6 @@
 #include <Bentley/BeAssert.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
- /*
- WString SystemTime::ToString
-(
-)
-    {
-    WString str;
-    str.Sprintf (L"#%d/%d/%d-%d:%d:%d:%d#", wYear, wMonth, wDay, wHour, wMinute, wSecond, wMilliseconds);
-    return str;
-    }
-*/
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
