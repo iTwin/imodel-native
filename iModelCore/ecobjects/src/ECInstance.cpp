@@ -860,7 +860,7 @@ ECObjectsStatus ECInstanceInteropHelper::GetPoint3D (IECInstanceCR instance, DPo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::GetDateTime (IECInstanceCR instance, SystemTime & value, WCharCP managedPropertyAccessor)
+ECObjectsStatus ECInstanceInteropHelper::GetDateTime (IECInstanceCR instance, DateTimeR value, WCharCP managedPropertyAccessor)
     {
     ECValue v;
 
@@ -1080,7 +1080,7 @@ ECObjectsStatus ECInstanceInteropHelper::SetPoint3DValue  (IECInstanceR instance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::SetDateTimeValue (IECInstanceR instance, WCharCP managedPropertyAccessor, SystemTime& value)
+ECObjectsStatus ECInstanceInteropHelper::SetDateTimeValue (IECInstanceR instance, WCharCP managedPropertyAccessor, DateTimeR value)
     {
     ECValue v(value);
     return setECValueInInstance (v, instance, managedPropertyAccessor);
@@ -1200,7 +1200,7 @@ ECObjectsStatus ECInstanceInteropHelper::GetPoint3D (IECInstanceCR instance, DPo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::GetDateTime (IECInstanceCR instance, SystemTime & value, ECValueAccessorCR accessor)
+ECObjectsStatus ECInstanceInteropHelper::GetDateTime (IECInstanceCR instance, DateTimeR value, ECValueAccessorCR accessor)
     {
     ECValue v;
 
@@ -1302,7 +1302,7 @@ ECObjectsStatus ECInstanceInteropHelper::SetPoint3DValue  (IECInstanceR instance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::SetDateTimeValue (IECInstanceR instance, ECValueAccessorCR accessor, SystemTime& value)
+ECObjectsStatus ECInstanceInteropHelper::SetDateTimeValue (IECInstanceR instance, ECValueAccessorCR accessor, DateTimeR value)
     {
     ECValue v(value);
     return  instance.SetValueUsingAccessor (accessor, v);

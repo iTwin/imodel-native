@@ -6,123 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
-#include <Bentley/IStorage.h>   // for _FILETIME
 #include <Bentley/BeAssert.h>
 
 BEGIN_BENTLEY_EC_NAMESPACE
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-#pragma warning(disable:4189) // umillisCheck unused if NDEBUG set.
-static BentleyStatus unixMillisToSystemTime (SystemTime& systemTime, UInt64 umillis)
-    {
-    struct tm tm;
-    BentleyStatus stat = BeTimeUtilities::ConvertUnixMillisToTm (tm, umillis);
-    POSTCONDITION (stat == SUCCESS, ERROR);
-    systemTime.wYear        = (UInt16)tm.tm_year + 1900;
-    systemTime.wMonth       = (UInt16)tm.tm_mon + 1;
-    systemTime.wDayOfWeek   = (UInt16)tm.tm_wday;
-    systemTime.wDay         = (UInt16)tm.tm_mday;
-    systemTime.wHour        = (UInt16)tm.tm_hour;
-    systemTime.wMinute      = (UInt16)tm.tm_min;
-    systemTime.wSecond      = (UInt16)tm.tm_sec;
-    systemTime.wMilliseconds = umillis % 1000LL;
-
-    BeAssert (BeTimeUtilities::ConvertTmToUnixMillis(tm) + systemTime.wMilliseconds == umillis);
-    return SUCCESS;
-    }
-#pragma warning(default:4189)
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-static BentleyStatus systemTimeToUnixMillis (UInt64& unixMillisecs, SystemTime const& systemTime)
-    {
-    //Underlying OS functions only work within Unix epoch
-    //Note: End of epoch is only approximate (exact end is 2038-01-19 03:14:07 UTC).
-    //As these method might become deprecated, the approximation should be sufficient.
-    PRECONDITION (systemTime.wYear >= 1970 && systemTime.wYear <= 2037, ERROR);
-
-    struct tm tm;
-    memset (&tm, 0, sizeof(tm));
-
-    tm.tm_year              = systemTime.wYear - 1900;
-    tm.tm_mon               = systemTime.wMonth - 1;     
-    tm.tm_mday              = systemTime.wDay;
-    tm.tm_hour              = systemTime.wHour;        
-    tm.tm_min               = systemTime.wMinute;      
-    tm.tm_sec               = systemTime.wSecond;     
-    UInt64 umillis          = BeTimeUtilities::ConvertTmToUnixMillis (tm);
-    umillis                += systemTime.wMilliseconds;
-
-    unixMillisecs = umillis;
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-static unsigned short  getMaxDay (unsigned short year, unsigned short month)
-    {
-    static unsigned short monthDays [] = {31,28,31,30,31,30,31,31,30,31,30,31};
-
-    bool isLeap = (0 == year%4) && ((0 != year%100) || (0 == year%400));
-
-    if (isLeap && (2==month))
-        return monthDays[month-1]+1;
-
-    return monthDays[month-1];
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Day of week 0=Sunday
-* @bsimethod                                    Bill.Steinbock                  11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-static unsigned short  getDayOfWeek (unsigned short year, unsigned short month, unsigned short day)
-    {
-    int a = (14 - month) / 12;  // 1 for Jan and Feb else 0
-    int y = year - a;
-    int m = month + (12 * a) - 2;
-    return (unsigned short) (day + y + (y / 4.0) - (y / 100) + (y / 400) + ((31 * m) / 12))  % 7;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-SystemTime::SystemTime
-(
-unsigned short year, 
-unsigned short month, 
-unsigned short day, 
-unsigned short hour, 
-unsigned short minute, 
-unsigned short second, 
-unsigned short milliseconds
-)
-    {
-    wYear =  (year >= 1601 && year < 9999) ? year : 1601;
-    wMonth = (month > 0 && month <= 12)? month : 1;
-    wDay = (day > 0 && day <= getMaxDay(wYear, wMonth)) ? day : 1;
-    wHour = (hour >= 0 && hour < 24) ? hour : 0;
-    wMinute = (minute >= 0 && minute < 60) ? minute : 0;
-    wSecond = (second >= 0 && second < 60) ? second : 0;
-    wMilliseconds = (milliseconds >= 0 && milliseconds < 1000) ? milliseconds : 0;
-    wDayOfWeek = getDayOfWeek (wYear, wMonth, wDay);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  11/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
- bool SystemTime::operator== (const SystemTime& rhs) const
-     {
-     return 0 == memcmp (this, &rhs, sizeof(SystemTime));
-     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-WString SystemTime::ToString
+ /*
+ WString SystemTime::ToString
 (
 )
     {
@@ -130,32 +18,7 @@ WString SystemTime::ToString
     str.Sprintf (L"#%d/%d/%d-%d:%d:%d:%d#", wYear, wMonth, wDay, wHour, wMinute, wSecond, wMilliseconds);
     return str;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* UTC time
-* @bsimethod                                    Bill.Steinbock                  02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-SystemTime SystemTime::GetSystemTime()
-    {
-    SystemTime time;
-    BentleyStatus stat = unixMillisToSystemTime (time, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
-    POSTCONDITION (stat == SUCCESS, time);
-    return time;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Time in local time zone
-* @bsimethod                                    Sam.Wilson                      06/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-SystemTime SystemTime::GetLocalTime()
-    {
-    UInt64 localMillis = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-    BeTimeUtilities::AdjustUnixMillisForLocalTime (localMillis);
-    SystemTime time;
-    BentleyStatus stat = unixMillisToSystemTime (time, localMillis);
-    POSTCONDITION (stat == SUCCESS, time);
-    return time;
-    }
+*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
@@ -606,12 +469,12 @@ ECValue::ECValue (bool value)
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  02/2010
+* @bsimethod                                    Krischan.Eberle                  10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (SystemTime const& time)
+ECValue::ECValue (DateTimeCR dateTime)
     {
     ConstructUninitialized();
-    SetDateTime (time);
+    SetDateTime (dateTime);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -786,63 +649,43 @@ BentleyStatus       ECValue::SetDateTimeTicks (Int64 value)
     }
 
 //////////////////////////////////////////////////////////////////////////////////////////
-// Native Code
-// FILETIME   - A file time is a 64-bit value that represents the number of 100-nanosecond 
-//              intervals that have elapsed since 00:00:00 01/01/1601.
-//
-// SYSTEMTIME - A structure that specifies a date and time, using individual members for 
-//              the month, day, year, weekday, hour, minute, second, and millisecond.
-//
-//---------------------------------------------------------------------------------------
 // Managed Code
 // DateTime   - The DateTime.Ticks value stored in a ECXAttribute represents the number 
 //              of 100-nanosecond  intervals that have elapsed since 00:00:00 01/01/01 
 //////////////////////////////////////////////////////////////////////////////////////////
 
-static const Int64 TICKADJUSTMENT = 504911232000000000LL;     // ticks between 01/01/01 and 01/01/1601
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  02/2010
+* @bsimethod                                    Krischan.Eberle             10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-SystemTime          ECValue::GetDateTime () const
+DateTime          ECValue::GetDateTime () const
     {
-    SystemTime systemTime;
-    Int64      systemDateTicks = GetDateTimeTicks ();
+    Int64 ecTicks = GetDateTimeTicks ();
 
-    memset (&systemTime, 0, sizeof(systemTime));
+    // m_dateTime is number of ticks since 00:00:00 01/01/01
+    Int64 jdInHnsSigned = ecTicks + static_cast<Int64> (DateTime::CE_EPOCH_AS_JD_HNS);
+    BeAssert (jdInHnsSigned >= 0);
+    UInt64 jdInHns = static_cast<UInt64> (jdInHnsSigned);
+    
+    DateTime dateTime;
+    BentleyStatus stat = DateTime::FromJulianDay (dateTime, jdInHns, DateTime::DATETIMEKIND_Utc);
+    POSTCONDITION (stat == SUCCESS, DateTime ());
 
-    // m_dateTime is number of ticks since 00:00:00 01/01/01 - Fileticks are relative to 00:00:00 01/01/1601
-    systemDateTicks -= TICKADJUSTMENT; 
-    _FILETIME fileTime;
-    fileTime.dwLowDateTime  = systemDateTicks & 0xffffffff;
-    fileTime.dwHighDateTime = systemDateTicks >> 32;
-
-    UInt64 umillis = BeTimeUtilities::ConvertFiletimeToUnixMillis(fileTime);
-
-    BentleyStatus stat = unixMillisToSystemTime (systemTime, umillis);
-    POSTCONDITION (stat == SUCCESS, SystemTime ());
-
-    return systemTime;
+    return dateTime;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus          ECValue::SetDateTime (SystemTime const& systemTime) 
+BentleyStatus          ECValue::SetDateTime (DateTimeCR dateTime) 
     {
     Clear();
-
-    UInt64 umillis;
-    BentleyStatus stat = systemTimeToUnixMillis (umillis, systemTime);
+    
+    UInt64 jdInHns;
+    BentleyStatus stat = dateTime.ToJulianDay (jdInHns);
     POSTCONDITION (stat == SUCCESS, ERROR);
 
-    _FILETIME fileTime;
-    BeTimeUtilities::ConvertUnixMillisToFiletime (fileTime, umillis);
-
-    // m_dateTime is number of ticks since 00:00:00 01/01/01 - Fileticks are relative to 00:00:00 01/01/1601
-    Int64 systemDateTicks = (Int64)fileTime.dwLowDateTime | ((Int64)fileTime.dwHighDateTime << 32);
-    systemDateTicks += TICKADJUSTMENT; 
-    return SetDateTimeTicks (systemDateTicks);
+    Int64 ecTicks = static_cast<Int64> (jdInHns) - static_cast<Int64> (DateTime::CE_EPOCH_AS_JD_HNS);
+    return SetDateTimeTicks (ecTicks);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1067,7 +910,7 @@ WString    ECValue::ToString () const
                 }
             case PRIMITIVETYPE_DateTime:
                 {
-                SystemTime timeDate = GetDateTime();
+                DateTime timeDate = GetDateTime();
                 return timeDate.ToString();
                 }
             case PRIMITIVETYPE_Binary:
@@ -2114,14 +1957,5 @@ ECValuesCollection::const_iterator ECValuesCollection::end () const
     return const_iterator ();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  01/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   SystemTime::InitFromFileTime (_FILETIME const& fileTime)
-    {
-    BentleyStatus stat = unixMillisToSystemTime (*this, BeTimeUtilities::ConvertFiletimeToUnixMillis(fileTime));
-    POSTCONDITION (stat == SUCCESS, ERROR);
-    return SUCCESS;
-    }
 
 END_BENTLEY_EC_NAMESPACE
