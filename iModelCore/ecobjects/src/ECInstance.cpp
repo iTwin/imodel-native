@@ -1718,24 +1718,38 @@ WString                         IECInstance::ToString (WCharCP indent) const
     return _ToString (indent);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+static WCharCP getInstanceLabelPropertyNameFromClass (ECClassCR ecClass)
+    {
+    IECInstancePtr caInstance = ecClass.GetCustomAttribute (L"InstanceLabelSpecification");
+    if (caInstance.IsValid())
+        {
+        ECValue value;
+        if (SUCCESS == caInstance->GetValue (value, L"PropertyName") && !value.IsNull())
+            return value.GetString();
+        }
+
+    FOR_EACH (ECClassCP baseClass, ecClass.GetBaseClasses())
+        {
+        WCharCP propName = getInstanceLabelPropertyNameFromClass (*baseClass);
+        if (NULL != propName)
+            return propName;
+        }
+
+    return NULL;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 WCharCP                         IECInstance::GetInstanceLabelPropertyName () const
     {
-    ECClassCR ecClass = GetClass(); 
-
-        // see if the struct has a custom attribute to custom serialize itself
-    IECInstancePtr caInstance = ecClass.GetCustomAttribute(L"InstanceLabelSpecification");
-    if (caInstance.IsValid())
-        {
-        ECValue value;
-        if (SUCCESS == caInstance->GetValue (value, L"PropertyName") && !value.IsNull())
-            {
-            return value.GetString();
-            }
-        }
+    ECClassCR ecClass = GetClass();
+    WCharCP propName = getInstanceLabelPropertyNameFromClass (ecClass);
+    if (NULL != propName)
+        return propName;
 
     if (NULL != ecClass.GetPropertyP (L"DisplayLabel"))
         return L"DisplayLabel";
@@ -1743,7 +1757,7 @@ WCharCP                         IECInstance::GetInstanceLabelPropertyName () con
     if (NULL != ecClass.GetPropertyP (L"DISPLAYLABEL"))
         return L"DISPLAYLABEL";
 
-     if (NULL != ecClass.GetPropertyP (L"displaylabel"))
+    if (NULL != ecClass.GetPropertyP (L"displaylabel"))
         return L"displaylabel";
    
     if (NULL != ecClass.GetPropertyP (L"Name"))
