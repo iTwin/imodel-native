@@ -43,6 +43,7 @@ WString ECFileUtilities::GetDllPath() {return WString(getenv("BeGTest_HomeDirect
 
 #endif    
 
+#if WIP_DEAD_DGNEC_CODE
 /*---------------------------------------------------------------------------------**//**
 * Time in local time zone
 * @bsimethod                                    Bill.Steinbock                  02/2010
@@ -60,5 +61,5 @@ SystemTime SystemTime::GetLocalTime()
     return GetSystemTime();
 #endif
     }
-
+#endif
 

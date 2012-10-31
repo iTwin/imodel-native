@@ -18,19 +18,6 @@ enum ECValueStateFlags ENUM_UNDERLYING_TYPE(unsigned char)
     };
 
 /*---------------------------------------------------------------------------------**//**
-* Time in local time zone
-* @bsimethod                                    Sam.Wilson                      06/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-SystemTime SystemTime::GetLocalTime()
-    {
-    UInt64 localMillis = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-    BeTimeUtilities::AdjustUnixMillisForLocalTime (localMillis);
-    SystemTime time;
-    unixMillisToSystemTime (time, localMillis);
-    return time;
-    }
-	
-/*---------------------------------------------------------------------------------**//**
 *  Really indicates that the property from which this came is readonly... not the value itself.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2043,32 +2030,6 @@ ECValuesCollectionIterator::ECValuesCollectionIterator() : m_arrayCount(-1)
 ECValuesCollection::const_iterator ECValuesCollection::end () const
     {
     return const_iterator (*new ECValuesCollectionIterator());
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   06/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SystemTime::InitFromUnixMillis (UInt64 unixMillis)
-    {
-    unixMillisToSystemTime (*this, unixMillis);
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-UInt64 ECValue::GetDateTimeUnixMillis() const
-    {
-    PRECONDITION (IsDateTime() && "Tried to get DateTime value from an ECN::ECValue that is not a DateTime.", 0);
-    PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", 0);
-
-    Int64 ticks = (UInt64)GetDateTimeTicks();
-    ticks -= TICKADJUSTMENT;
-    _FILETIME fileTime;
-    fileTime.dwLowDateTime = ticks & 0xFFFFFFFF;
-    fileTime.dwHighDateTime = ticks >> 0x20;
-    return BeTimeUtilities::ConvertFiletimeToUnixMillis (fileTime);
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

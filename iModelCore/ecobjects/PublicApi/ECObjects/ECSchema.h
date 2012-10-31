@@ -1278,6 +1278,8 @@ struct SchemaKey
         }
 /*__PUBLISH_SECTION_END__*/
     ECOBJECTS_EXPORT WString GetFullSchemaName() const;
+    ECOBJECTS_EXPORT UInt32 GetVersionMajor() const { return m_versionMajor; };
+    ECOBJECTS_EXPORT UInt32 GetVersionMinor() const { return m_versionMinor; };
 /*__PUBLISH_SECTION_START__*/
     };
 
@@ -1735,6 +1737,12 @@ public:
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml
     //          will contain the serialized schema.  Otherwise, ecSchemaXml will be unmodified
     ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlString (WStringR ecSchemaXml) const;
+    
+    //! Serializes an ECXML schema to a string
+    //! @param[out] ecSchemaXml     The string containing the Xml of the serialized schema
+    //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml
+    //          will contain the serialized schema.  Otherwise, ecSchemaXml will be unmodified
+    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlString (Utf8StringR ecSchemaXml) const;
 
     //! Serializes an ECXML schema to a file
     //! @param[in]  ecSchemaXmlFile  The absolute path of the file to serialize the schema to

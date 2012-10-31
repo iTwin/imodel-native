@@ -1992,6 +1992,24 @@ SchemaWriteStatus ECSchema::WriteToXmlString (WStringR ecSchemaXml) const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
+SchemaWriteStatus ECSchema::WriteToXmlString (Utf8StringR ecSchemaXml) const
+    {
+    ecSchemaXml.clear();
+
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();        
+
+    SchemaWriteStatus status;
+    if (SCHEMA_WRITE_STATUS_Success != (status = WriteXml (*xmlDom.get())))
+        return status;
+
+    xmlDom->ToString (ecSchemaXml, BeXmlDom::TO_STRING_OPTION_OmitByteOrderMark);
+
+    return SCHEMA_WRITE_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus ECSchema::WriteToXmlFile
 (
 WCharCP ecSchemaXmlFile,
