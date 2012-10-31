@@ -65,11 +65,16 @@
 #define GROUPING_RULE_XML_ATTRIBUTE_MENUCONDITION                                     "ContextMenuCondition"
 #define GROUPING_RULE_XML_ATTRIBUTE_MENULABEL                                         "ContextMenuLabel"
 
+#define CLASS_GROUP_XML_NODE_NAME                                                     "ClassGroup"
+#define CLASS_GROUP_XML_ATTRIBUTE_SCHEMANAME                                          "SchemaName"
+#define CLASS_GROUP_XML_ATTRIBUTE_BASECLASSNAME                                       "BaseClassName"
+
 #define PROPERTY_GROUP_XML_NODE_NAME                                                  "PropertyGroup"
 #define PROPERTY_GROUP_XML_ATTRIBUTE_PROPERTYNAME                                     "PropertyName"
-#define PROPERTY_GROUP_XML_ATTRIBUTE_IMAGEID                                          "ImageId"
-#define PROPERTY_GROUP_XML_ATTRIBUTE_CREATEGROUPFORSINGLEITEM                         "CreateGroupForSingleItem"
-#define PROPERTY_GROUP_XML_ATTRIBUTE_MENULABEL                                        "ContextMenuLabel"
+
+#define GROUP_XML_ATTRIBUTE_IMAGEID                                                   "ImageId"
+#define GROUP_XML_ATTRIBUTE_CREATEGROUPFORSINGLEITEM                                  "CreateGroupForSingleItem"
+#define GROUP_XML_ATTRIBUTE_MENULABEL                                                 "ContextMenuLabel"
 
 #define PROPERTY_RANGE_GROUP_XML_NODE_NAME                                            "Range"
 #define PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_LABEL                                      "Label"
