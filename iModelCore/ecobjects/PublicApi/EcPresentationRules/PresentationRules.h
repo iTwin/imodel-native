@@ -21,6 +21,8 @@ EC_TYPEDEFS (RootNodeRule);
 EC_TYPEDEFS (LabelOverride);
 EC_TYPEDEFS (StyleOverride);
 EC_TYPEDEFS (GroupingRule);
+EC_TYPEDEFS (GroupSpecification);
+EC_TYPEDEFS (ClassGroup);
 EC_TYPEDEFS (PropertyGroup);
 EC_TYPEDEFS (PropertyRangeGroupSpecification);
 EC_TYPEDEFS (LocalizationResourceKeyDefinition);
