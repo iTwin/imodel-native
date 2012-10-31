@@ -125,7 +125,13 @@ ECObjectsStatus ECProperty::SetDisplayLabel (WStringCR displayLabel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECProperty::GetIsReadOnly () const
     {
-    return m_readOnly;
+    CalculatedPropertySpecificationCP calcSpec;
+    if (m_readOnly)
+        return true;
+    else if (GetIsPrimitive() && NULL != (calcSpec = GetAsPrimitiveProperty()->GetCalculatedPropertySpecification()))
+        return calcSpec->IsReadOnly();
+    else
+        return false;
     }
 
 /*---------------------------------------------------------------------------------**//**

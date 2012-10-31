@@ -267,7 +267,7 @@ CalculatedPropertySpecificationPtr CalculatedPropertySpecification::Create (Prim
     // ###TODO: It seems to me that if the calculated property spec is for default value only, then setting the value should not affect dependent properties and we don't require ParserRegex...correct?
     // Note: ParserRegex only makes sense for string properties
     ParserRegexP parserRegex = NULL;
-    bool wantParserRegex = !isDefaultOnly && PRIMITIVETYPE_String == ecprop.GetType() && !ecprop.GetIsReadOnly();
+    bool wantParserRegex = !isDefaultOnly && PRIMITIVETYPE_String == ecprop.GetType() && !ecprop.IsReadOnlyFlagSet();
     if (wantParserRegex)
         {
         // ###TODO: there is also a configuration variable which can be used to control this...In System.Configuration.ConfigurationManager.AppSettings[] - relevant?
