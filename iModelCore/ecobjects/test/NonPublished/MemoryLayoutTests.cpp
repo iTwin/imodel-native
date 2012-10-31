@@ -790,9 +790,9 @@ TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetPoint3D      (*instance, point3dOutput, L"SomePoint3ds[0]"));
     EXPECT_TRUE (point3dInput.x == point3dOutput.x && point3dInput.y == point3dOutput.y && point3dInput.z == point3dOutput.z);
 
-    SystemTime timeInput  = SystemTime::GetLocalTime();
+    DateTime timeInput  = DateTime::GetCurrentTimeUtc ();
     Int64      ticksInput = 634027121070910000;
-    SystemTime timeOutput;
+    DateTime timeOutput;
     Int64      ticksOutput;
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetDateTimeValue (*instance, L"ADateTime", timeInput));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetDateTime      (*instance, timeOutput, L"ADateTime"));
@@ -1045,7 +1045,7 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     DPoint2d   inSize = {10.5, 22.3};
     DPoint3d   inPoint1 = {10.10, 11.11, 12.12};
     DPoint3d   inPoint2 ={200.100, 210.110, 220.120};
-    SystemTime inTime = SystemTime::GetLocalTime();
+    DateTime   inTime = DateTime::GetCurrentTimeUtc ();
     int        inCount = 100;
     double     inLength = 432.178;
     bool       inTest = true;
@@ -1082,8 +1082,8 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     point3d = ecValue.GetPoint3D ();
     EXPECT_TRUE (SUCCESS == memcmp (&inPoint2, &point3d, sizeof(DPoint3d)));
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"Service_Date"));
-    SystemTime  sysTime = ecValue.GetDateTime ();
-    EXPECT_TRUE (SUCCESS == memcmp (&inTime, &sysTime, sizeof(SystemTime)));
+    DateTime  sysTime = ecValue.GetDateTime ();
+    EXPECT_TRUE (SUCCESS == memcmp (&inTime, &sysTime, sizeof(DateTime)));
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"Install_Date"));
     EXPECT_TRUE (ecValue.GetDateTimeTicks() == inTicks);
 
@@ -1147,7 +1147,7 @@ TEST_F(MemoryLayoutTests, CheckPerPropertyFlags)
     DPoint2d   inSize = {10.5, 22.3};
     DPoint3d   inPoint1 = {10.10, 11.11, 12.12};
     DPoint3d   inPoint2 ={100.100, 110.110, 120.120};
-    SystemTime inTime = SystemTime::GetLocalTime();
+    DateTime   inTime = DateTime::GetCurrentTimeUtc();
     int        inCount = 100;
     double     inLength = 432.178;
     bool       inTest = true;
@@ -1386,31 +1386,30 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     EXPECT_TRUE (0 == point2Str.compare (L"{10,100}"));
 
     // DateTime
-    SystemTime now = SystemTime::GetLocalTime();
-    ECValue dateValue (now);
-    SystemTime nowUTC = SystemTime::GetSystemTime();
-    dateValue.GetDateTimeTicks ();
+    DateTime nowUtc = DateTime::GetCurrentTimeUtc ();
+    ECValue dateValue (nowUtc);
     EXPECT_TRUE (dateValue.IsDateTime());
-    SystemTime nowtoo = dateValue.GetDateTime ();
-    EXPECT_TRUE (0 == memcmp(&nowtoo, &now, sizeof(nowtoo)));
+    DateTime nowUtctoo = dateValue.GetDateTime ();
+    EXPECT_TRUE (0 == memcmp(&nowUtctoo, &nowUtc, sizeof(nowUtctoo)));
+    //now test with local time. As ECValue::GetDateTime always returns DATETIMEKIND_Utc
+    //the comparison should fail.
+    /*dateValue.Clear ();
+    DateTime now = DateTime::GetCurrentTime ();
+    dateValue = ECValue (now);
+    DateTime nowtoo = dateValue.GetDateTime ();
+    EXPECT_FALSE (0 == memcmp(&nowtoo, &now, sizeof(nowtoo)));
+    */
     ECValue fixedDate;
     fixedDate.SetDateTimeTicks (634027121070910000);
     WString dateStr = fixedDate.ToString();
-    EXPECT_TRUE (0 == dateStr.compare (L"#2010/2/25-16:28:27:91#"));
+    EXPECT_TRUE (0 == dateStr.compare (L"2010-02-25T16:28:27.091Z")) << L"Expected date: " << fixedDate.GetDateTime ().ToString ().c_str ();
 
     // test operator ==
-    SystemTime specificTime (now.wYear, now.wMonth, now.wDay, now.wHour, now.wMinute, now.wSecond, now.wMilliseconds);
-    EXPECT_TRUE (specificTime == now);
+    DateTime specificTime (nowUtc.GetKind (), nowUtc.GetYear (), nowUtc.GetMonth (), nowUtc.GetDay (), nowUtc.GetHour (), nowUtc.GetMinute (), nowUtc.GetSecond (), nowUtc.GetHectoNanosecond ());
+    EXPECT_TRUE (specificTime == nowUtc);
 
-    // check to make sure leap year 
-    // check to make sure leap year 
-    SystemTime lastOfFebLeapYear (2012, 2, 29, 10, 10, 10, 10);
-    EXPECT_TRUE (lastOfFebLeapYear.wDayOfWeek == 3);
-    SystemTime marchFirstLeapYear (2012, 3, 1, 10, 10, 10, 10);
-    EXPECT_TRUE (marchFirstLeapYear.wDayOfWeek == 4);
-
-    SystemTime defaultTime1;
-    SystemTime defaultTime2;
+    DateTime defaultTime1;
+    DateTime defaultTime2;
     EXPECT_TRUE (defaultTime1 == defaultTime2);
     };
   

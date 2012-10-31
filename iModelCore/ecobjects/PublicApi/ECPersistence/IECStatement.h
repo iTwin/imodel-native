@@ -9,6 +9,7 @@
 /*__PUBLISH_SECTION_START__*/
 
 #include "Bentley/RefCounted.h"
+#include <Bentley/DateTime.h>
 
 #include <Geom/GeomApi.h>
 
@@ -69,7 +70,7 @@ private:
     ECPERSISTENCE_EXPORT virtual bool _IsPrepared () const = 0;
 
     ECPERSISTENCE_EXPORT virtual BentleyStatus _BindBoolean (int parameterIndex, bool value) = 0;
-    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindDateTime (int parameterIndex, const SystemTime& value, CopyArgumentOptions makeCopy) = 0;
+    ECPERSISTENCE_EXPORT virtual BentleyStatus _BindDateTime (int parameterIndex, DateTimeCR value, CopyArgumentOptions makeCopy) = 0;
     ECPERSISTENCE_EXPORT virtual BentleyStatus _BindDouble (int parameterIndex, double value) = 0;
     ECPERSISTENCE_EXPORT virtual BentleyStatus _BindInteger (int parameterIndex, Int32 value) = 0;
     ECPERSISTENCE_EXPORT virtual BentleyStatus _BindLong (int parameterIndex, Int64 value) = 0;
@@ -91,7 +92,7 @@ private:
     ECPERSISTENCE_EXPORT virtual ValueStatus _GetInstanceId (WStringR instanceId) const = 0;
     ECPERSISTENCE_EXPORT virtual ValueStatus _IsNull (bool& isNull, int propertyIndex) const = 0;
     ECPERSISTENCE_EXPORT virtual ValueStatus _GetBooleanValue (bool& value, int propertyIndex) const = 0;
-    ECPERSISTENCE_EXPORT virtual ValueStatus _GetDateTimeValue (SystemTimeR value, int propertyIndex) const = 0;
+    ECPERSISTENCE_EXPORT virtual ValueStatus _GetDateTimeValue (DateTimeR value, int propertyIndex) const = 0;
     ECPERSISTENCE_EXPORT virtual ValueStatus _GetDoubleValue (double& value, int propertyIndex) const = 0;
     ECPERSISTENCE_EXPORT virtual ValueStatus _GetIntegerValue (Int32& value, int propertyIndex) const = 0;
     ECPERSISTENCE_EXPORT virtual ValueStatus _GetLongValue (Int64& value, int propertyIndex) const = 0;
@@ -116,9 +117,7 @@ public:
     //! @param[in] parameterIndex Index of the parameter to bind a value to
     //! @param[in] value The value to bind.
     //! @return SUCCESS or ERROR
-    //**TODO**: Is SystemTime acceptable as type? It seems independent of anything else in ECObjects. But how can we
-    //ensure that it remains independent in future?
-    ECPERSISTENCE_EXPORT BentleyStatus BindDateTime (int parameterIndex, const SystemTime& value, CopyArgumentOptions makeCopy);
+    ECPERSISTENCE_EXPORT BentleyStatus BindDateTime (int parameterIndex, DateTimeCR value, CopyArgumentOptions makeCopy);
     ECPERSISTENCE_EXPORT BentleyStatus BindDouble (int parameterIndex, double value);
     ECPERSISTENCE_EXPORT BentleyStatus BindInteger (int parameterIndex, Int32 value);
     ECPERSISTENCE_EXPORT BentleyStatus BindLong (int parameterIndex, Int64 value);
@@ -173,7 +172,7 @@ public:
     ECPERSISTENCE_EXPORT bool IsNull (int propertyIndex, ValueStatus* valueStatus = NULL) const;
 
     ECPERSISTENCE_EXPORT bool GetBooleanValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
-    ECPERSISTENCE_EXPORT SystemTime GetDateTimeValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
+    ECPERSISTENCE_EXPORT DateTime GetDateTimeValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
     ECPERSISTENCE_EXPORT double GetDoubleValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
     ECPERSISTENCE_EXPORT Int32 GetIntegerValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;
     ECPERSISTENCE_EXPORT Int64 GetLongValue (int propertyIndex, ValueStatus* valueStatus = NULL) const;

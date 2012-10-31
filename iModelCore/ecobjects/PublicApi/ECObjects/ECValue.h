@@ -9,42 +9,17 @@
 /*__PUBLISH_SECTION_START__*/
 
 #include <ECObjects/VirtualCollectionIterator.h>
+#include <Bentley/DateTime.h>
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECObjects.h>
 #include <Geom/GeomApi.h>
-struct _FILETIME;
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 typedef RefCountedPtr<ECPropertyValue> ECPropertyValuePtr;
 typedef RefCountedPtr<ECValuesCollection> ECValuesCollectionPtr;
-
-//=======================================================================================    
-//! SystemTime structure is used to set and get time data from ECValue objects.
-//! @ingroup ECObjectsGroup
-//! @see ECValue
-//=======================================================================================    
-struct SystemTime
-{
-public:
-    unsigned short wYear;
-    unsigned short wMonth;
-    unsigned short wDayOfWeek;
-    unsigned short wDay;
-    unsigned short wHour;
-    unsigned short wMinute;
-    unsigned short wSecond;
-    unsigned short wMilliseconds;
-
-    ECOBJECTS_EXPORT SystemTime(unsigned short year=1601, unsigned short month=1, unsigned short day=1, unsigned short hour=0, unsigned short minute=0, unsigned short second=0, unsigned short milliseconds=0);
-    ECOBJECTS_EXPORT static SystemTime GetLocalTime();
-    ECOBJECTS_EXPORT static SystemTime GetSystemTime();
-    ECOBJECTS_EXPORT WString      ToString ();
-    ECOBJECTS_EXPORT bool          operator== (const SystemTime&) const;
-
-    ECOBJECTS_EXPORT BentleyStatus  InitFromFileTime (_FILETIME const& fileTime);
+//! @group "ECInstance"
     ECOBJECTS_EXPORT BentleyStatus  InitFromUnixMillis (UInt64 unixMillis);
-    };
 
 //=======================================================================================    
 //! Information about an array in an ECN::IECInstance. Does not contain the actual elements.
@@ -142,7 +117,7 @@ public:
     ECOBJECTS_EXPORT explicit ECValue (DPoint2dCR point2d);
     ECOBJECTS_EXPORT explicit ECValue (DPoint3dCR point3d);
     ECOBJECTS_EXPORT explicit ECValue (bool value);
-    ECOBJECTS_EXPORT explicit ECValue (SystemTime const& time);
+    ECOBJECTS_EXPORT explicit ECValue (DateTimeCR dateTime);
 
     ECOBJECTS_EXPORT void           SetIsReadOnly(bool isReadOnly);
     ECOBJECTS_EXPORT bool           IsReadOnly() const;
@@ -217,8 +192,8 @@ public:
     ECOBJECTS_EXPORT IECInstancePtr GetStruct() const;
     ECOBJECTS_EXPORT BentleyStatus  SetStruct (IECInstanceP structInstance);
         
-    ECOBJECTS_EXPORT SystemTime     GetDateTime() const;
-    ECOBJECTS_EXPORT BentleyStatus  SetDateTime (SystemTime const& systemTime); 
+    ECOBJECTS_EXPORT DateTime       GetDateTime() const;
+    ECOBJECTS_EXPORT BentleyStatus  SetDateTime (DateTimeCR dateTime); 
 
     ECOBJECTS_EXPORT Int64          GetDateTimeTicks() const;
     ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 value);

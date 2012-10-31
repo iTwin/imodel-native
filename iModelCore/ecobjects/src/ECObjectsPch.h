@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/Bentley.h>
+#include <Bentley/DateTime.h>
 #include <Bentley/CatchNonPortable.h>
 #include <ECObjects/ECObjectsAPI.h>
 #include <assert.h>

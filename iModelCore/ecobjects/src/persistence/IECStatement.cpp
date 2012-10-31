@@ -38,7 +38,7 @@ BentleyStatus IECStatement::BindBoolean (int parameterIndex, bool value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus IECStatement::BindDateTime (int parameterIndex, const SystemTime& value, CopyArgumentOptions makeCopy)
+BentleyStatus IECStatement::BindDateTime (int parameterIndex, DateTimeCR value, CopyArgumentOptions makeCopy)
     {
     return _BindDateTime (parameterIndex, value, makeCopy);
     }
@@ -191,9 +191,9 @@ bool IECStatement::GetBooleanValue (int propertyIndex, ValueStatus* valueStatus)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Krischan.Eberle                08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-SystemTime IECStatement::GetDateTimeValue (int propertyIndex, ValueStatus* valueStatus) const
+DateTime IECStatement::GetDateTimeValue (int propertyIndex, ValueStatus* valueStatus) const
     {
-    SystemTime value;
+    DateTime value;
     ValueStatus status = _GetDateTimeValue (value, propertyIndex);
     AssignValueStatus (valueStatus, status);
     return value;
