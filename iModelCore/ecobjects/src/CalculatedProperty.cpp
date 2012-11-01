@@ -334,7 +334,11 @@ ECObjectsStatus CalculatedPropertySpecification::UpdateDependentProperties (ECVa
         return ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
 
     else
+#if defined (HAVE_REGEX)    // WIP_NONPORT - regex
         return m_parserRegex->Apply (instance, v.GetString()) ? ECOBJECTS_STATUS_Success : ECOBJECTS_STATUS_Error; // Add a status for failure to parse regexp
+#else
+        return ECOBJECTS_STATUS_ParseError;
+#endif
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
