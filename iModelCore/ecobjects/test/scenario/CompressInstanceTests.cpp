@@ -172,7 +172,7 @@ TEST_F(CompressInstanceTests, CheckVariableSizedPropertyAfterCallingCompress)
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
     ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
-	SystemTime inTime = SystemTime::GetLocalTime();
+	//SystemTime inTime = SystemTime::GetLocalTime();
     int        inCount = 100;
     double     inLength = 432.178;
     bool       inTest = true;

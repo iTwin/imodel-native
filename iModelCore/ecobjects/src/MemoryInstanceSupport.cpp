@@ -2434,17 +2434,17 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
         {
         ECObjectsStatus calcStatus = SetCalculatedProperty (v, classLayout, propertyLayout);
         switch (calcStatus)
-            {
-        case ECOBJECTS_STATUS_Success:
-            break;
-        case ECOBJECTS_STATUS_UnableToSetReadOnlyProperty:
-            // It is okay to set the read-only value once
-            if (isOriginalValueNull)
+            {//needswork: if it failed to parse the value with a regexp, maybe we still allow them to set it... just not propagate to dependents?
+            case ECOBJECTS_STATUS_Success:
                 break;
-            else
+            case ECOBJECTS_STATUS_UnableToSetReadOnlyProperty:
+                // It is okay to set the read-only value once
+                if (isOriginalValueNull)
+                    break;
+                else
+                    return calcStatus;
+            default:
                 return calcStatus;
-        default:
-            return calcStatus;
             }
         }
 

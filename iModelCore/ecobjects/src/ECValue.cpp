@@ -459,7 +459,7 @@ ECValue::ECValue (DateTimeCR dateTime)
 * ECN::ECValue holds the original pointer. Intended only for use when initializing arrays of strings, to avoid duplicating them twice.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (WCharCP string, bool holdADuplicate)
+ECValue::ECValue (WCharCP string, bool holdADuplicate) //needswork: add an overload that takes utf8
     {
     ConstructUninitialized();
     SetString (string, holdADuplicate);

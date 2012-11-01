@@ -2014,7 +2014,7 @@ SchemaWriteStatus ECSchema::WriteToXmlFile
 (
 WCharCP ecSchemaXmlFile,
 bool    utf16
-)
+) const
     {
     BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();        
 
