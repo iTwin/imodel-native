@@ -654,7 +654,7 @@ SchemaPrecedence precedence
         if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
             {
             ECObjectsLogger::Log()->errorv(L"Failed to merge the custom attributes from the supplemental class '%ls' into the supplemented class '%ls:%ls'",
-                ecClass->GetFullName(),  primarySchema->GetFullSchemaName(), ecClass->GetName());     
+                                           ecClass->GetFullName(),  primarySchema->GetFullSchemaName().c_str(), ecClass->GetName().c_str());
             return status;
             }
         }
