@@ -39,7 +39,7 @@ WString ECFileUtilities::GetDllPath()
 
 #elif defined (__unix__)
 // *** WIP_NONPORT -- we need to ask some kind of host for the "home directory"
-WString ECFileUtilities::GetDllPath() {return WString(getenv("BeGTest_HomeDirectory"));}
+WString ECFileUtilities::GetDllPath() {return WString(getenv("BeGTest_HomeDirectory"), true);}
 
 #endif    
 
