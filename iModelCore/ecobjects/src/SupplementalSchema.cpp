@@ -653,11 +653,8 @@ SchemaPrecedence precedence
         status = SupplementClass(primarySchema, supplementalSchema, ecClass, precedence, &supplementalSchemaFullName);
         if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
             {
-            WString name = ecClass->GetName();
-            WString fullName = ecClass->GetFullName();
-            WString fullSchemaName = primarySchema->GetFullSchemaName();
             ECObjectsLogger::Log()->errorv(L"Failed to merge the custom attributes from the supplemental class '%ls' into the supplemented class '%ls:%ls'",
-                fullName.c_str(),  fullSchemaName.c_str(), name.c_str());
+                                           ecClass->GetFullName(),  primarySchema->GetFullSchemaName().c_str(), ecClass->GetName().c_str());
             return status;
             }
         }

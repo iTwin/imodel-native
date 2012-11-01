@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
-#include <Bentley\BeIconUtilities.h>
+#include <Bentley/BeIconUtilities.h>
 #include "ecimagekey.h"
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
