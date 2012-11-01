@@ -109,9 +109,9 @@ public:
             }
 
         if (KOQ_SCHEMA == schemaName)
-            return s_koqSchema->GetClassP (className);
+            return s_koqSchema->GetClassCP (className);
         else if (UNITS_SCHEMA == schemaName)
-            return s_unitsSchema->GetClassP (className);
+            return s_unitsSchema->GetClassCP (className);
         else
             return NULL;
         }

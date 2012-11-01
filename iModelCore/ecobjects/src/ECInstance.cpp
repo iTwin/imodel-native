@@ -2125,7 +2125,7 @@ InstanceReadStatus      GetInstance (ECClassCP& ecClass, IECInstancePtr& ecInsta
 
     // see if we can find the class from the schema.
     ECClassCP    foundClass;
-    if (NULL == (foundClass = schema->GetClassP (className.c_str())))
+    if (NULL == (foundClass = schema->GetClassCP (className.c_str())))
         {
         ECSchemaReferenceListCR refList = schema->GetReferencedSchemas();
         SchemaKey key;
@@ -2133,13 +2133,13 @@ InstanceReadStatus      GetInstance (ECClassCP& ecClass, IECInstancePtr& ecInsta
             {
             ECSchemaReferenceList::const_iterator schemaIterator = refList.find (key);
             if (schemaIterator != refList.end())
-                foundClass = schemaIterator->second->GetClassP (className.c_str());
+                foundClass = schemaIterator->second->GetClassCP (className.c_str());
             }
         else
             {
             for (ECSchemaReferenceList::const_iterator schemaIterator = refList.begin(); schemaIterator != refList.end(); schemaIterator++)
                 {
-                if (NULL != (foundClass = schemaIterator->second->GetClassP (className.c_str())))
+                if (NULL != (foundClass = schemaIterator->second->GetClassCP (className.c_str())))
                     break;
                 }
             }
@@ -2661,7 +2661,7 @@ ECClassCP                       ValidateArrayStructType (WCharCP typeFound, ECCl
 
     // typeFound must resolve to an ECClass that is either expectedType or a class that has expectedType as a Base GetClass().
     ECClassCP    classFound;
-    if (NULL == (classFound = schema->GetClassP (typeFound)))
+    if (NULL == (classFound = schema->GetClassCP (typeFound)))
         {
         BeAssert (false);
         return NULL;

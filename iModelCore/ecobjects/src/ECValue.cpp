@@ -1616,9 +1616,9 @@ static void tokenize(const WString& str, bvector<WString>& tokens, const WString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECClassP getClassFromSchema (ECSchemaCR rootSchema, WCharCP className)
+static ECClassCP getClassFromSchema (ECSchemaCR rootSchema, WCharCP className)
     {
-    ECClassP classP = rootSchema.GetClassP (className);
+    ECClassCP classP = rootSchema.GetClassCP (className);
     if (classP)
         return classP;
 
@@ -1636,13 +1636,13 @@ static ECClassP getClassFromSchema (ECSchemaCR rootSchema, WCharCP className)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECClassP getPropertyFromClass (ECClassCR enablerClass, WCharCP propertyName)
+static ECClassCP getPropertyFromClass (ECClassCR enablerClass, WCharCP propertyName)
     {
     WCharCP dotPos = wcschr (propertyName, '.');
     if (NULL != dotPos)
         {
         WString structName (propertyName, dotPos);
-        ECClassP structClass = getPropertyFromClass (enablerClass, structName.c_str());
+        ECClassCP structClass = getPropertyFromClass (enablerClass, structName.c_str());
         if (NULL == structClass)
             { BeAssert (false); return NULL; }
 
@@ -1725,7 +1725,7 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBu
 
     WString str = asBuffer; 
 
-    ECClassP structClass = getPropertyFromClass (enabler.GetClass(), asBuffer);
+    ECClassCP structClass = getPropertyFromClass (enabler.GetClass(), asBuffer);
     if (!structClass)
         return ECOBJECTS_STATUS_Error;
 

@@ -605,7 +605,7 @@ void ExerciseVariableCountManufacturerArray (IECInstanceR instance, StandaloneEC
     }
     
     // ensure we can not set the array to an instance of a struct that is not of the type (or derived from the type) of the property    
-    ECClassP incompatibleClass = manufacturerEnabler.GetClass().GetSchema().GetClassP (L"AllPrimitives");
+    ECClassCP incompatibleClass = manufacturerEnabler.GetClass().GetSchema().GetClassCP (L"AllPrimitives");
     ASSERT_TRUE (NULL != incompatibleClass);
 
     StandaloneECInstancePtr incompatibleInstance = incompatibleClass->GetDefaultStandaloneEnabler()->CreateInstance();
