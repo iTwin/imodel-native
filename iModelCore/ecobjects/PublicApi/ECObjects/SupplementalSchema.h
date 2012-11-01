@@ -9,8 +9,8 @@
 
 /*__PUBLISH_SECTION_START__*/
 
-#include <ECObjects\ECInstance.h>
-#include <Bentley\RefCounted.h>
+#include <ECObjects/ECInstance.h>
+#include <Bentley/RefCounted.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
   

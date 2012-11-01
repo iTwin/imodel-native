@@ -29,7 +29,7 @@ enum PropertyFlagIndex ENUM_UNDERLYING_TYPE(UInt8)
     PROPERTYFLAGINDEX_IsDirty  = 1
     };
 
-enum MemoryInstanceUsageBitmask : UInt32
+enum MemoryInstanceUsageBitmask ENUM_UNDERLYING_TYPE(UInt32)
     {
     MEMORYINSTANCEUSAGE_Empty              = 0x0000,
     MEMORYINSTANCEUSAGE_IsPartiallyLoaded  = 0x0001,

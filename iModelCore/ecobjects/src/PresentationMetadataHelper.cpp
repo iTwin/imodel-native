@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
-#include <ECObjects\PresentationMetadataHelper.h>
+#include <ECObjects/PresentationMetadataHelper.h>
 
 USING_NAMESPACE_EC
 

@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
-#include <ECObjects\ECObjectsAPI.h>
+#include <ECObjects/ECObjectsAPI.h>
 USING_NAMESPACE_EC
 
 
