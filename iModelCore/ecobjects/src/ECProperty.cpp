@@ -215,7 +215,7 @@ bool ECProperty::GetIsStruct () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StructECPropertyP ECProperty::GetAsStructProperty () const
     {
-    return dynamic_cast<StructECPropertyP>((ECPropertyP)this);
+    return GetIsStruct() ? static_cast<StructECPropertyP>((ECPropertyP)this) : NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -231,7 +231,7 @@ bool ECProperty::GetIsArray () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ArrayECPropertyP ECProperty::GetAsArrayProperty () const
     {
-    return dynamic_cast<ArrayECPropertyP>((ECPropertyP)this);
+    return GetIsArray() ? static_cast<ArrayECPropertyP>((ECPropertyP)this) : NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
