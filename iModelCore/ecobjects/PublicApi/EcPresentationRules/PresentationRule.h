@@ -45,12 +45,16 @@ struct PresentationKey /*__PUBLISH_ABSTRACT__*/
             {
             }
 
+        ECOBJECTS_EXPORT virtual CharCP         _GetXmlElementName () = 0;
         ECOBJECTS_EXPORT virtual bool           _ReadXml (BeXmlNodeP xmlNode) = 0;
-        //ECOBJECTS_EXPORT virtual void           _WriteXml (BeXmlNodeP xmlNode) = 0;
+        ECOBJECTS_EXPORT virtual void           _WriteXml (BeXmlNodeP xmlNode) = 0;
 
     public:
         //! Reads PresentationRule from xml node.
         ECOBJECTS_EXPORT bool                   ReadXml (BeXmlNodeP xmlNode);
+
+        //! Writes PresentationRule to xml node.
+        ECOBJECTS_EXPORT void                   WriteXml (BeXmlNodeP parentXmlNode);
 
         //! Priority of the rule, defines the order in which rules are evaluated and executed.
         ECOBJECTS_EXPORT int                    GetPriority (void) const             { return m_priority; }
@@ -62,33 +66,34 @@ struct PresentationKey /*__PUBLISH_ABSTRACT__*/
 Base class for all PresentationRules.
 * @bsiclass                                     Eligijus.Mauragas               06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct PresentationRule : public PresentationKey
+struct PresentationRule : public PresentationKey /*__PUBLISH_ABSTRACT__*/
     {
     /*__PUBLISH_SECTION_END__*/
     private:
         WString   m_condition;
-        bool      m_onlyIfNotHadled;
+        bool      m_onlyIfNotHandled;
 
     protected:
     /*__PUBLISH_SECTION_START__*/
         ECOBJECTS_EXPORT PresentationRule ()
-            : PresentationKey (), m_condition (L""), m_onlyIfNotHadled (false)
+            : PresentationKey (), m_condition (L""), m_onlyIfNotHandled (false)
             {
             }
 
-        ECOBJECTS_EXPORT PresentationRule (WStringCR condition, int priority, bool onlyIfNotHadled)
-            : PresentationKey (priority), m_condition (condition), m_onlyIfNotHadled (onlyIfNotHadled)
+        ECOBJECTS_EXPORT PresentationRule (WStringCR condition, int priority, bool onlyIfNotHandled)
+            : PresentationKey (priority), m_condition (condition), m_onlyIfNotHandled (onlyIfNotHandled)
             {
             }
 
         ECOBJECTS_EXPORT virtual bool           _ReadXml (BeXmlNodeP xmlNode);
+        ECOBJECTS_EXPORT virtual void           _WriteXml (BeXmlNodeP xmlNode);
 
     public:
         //! Condition is an ECExpression string, which will be evaluated against the given context in order to decide whether to apply this rule or not.
         ECOBJECTS_EXPORT WStringCR              GetCondition (void) const            { return m_condition; }
 
         //! Returns true if this rule should be executed only in the case where there are no other higher priority rules for this particular cotext.
-        ECOBJECTS_EXPORT bool                   GetOnlyIfNotHandled (void) const     { return m_onlyIfNotHadled; }
+        ECOBJECTS_EXPORT bool                   GetOnlyIfNotHandled (void) const     { return m_onlyIfNotHandled; }
 
     };
 

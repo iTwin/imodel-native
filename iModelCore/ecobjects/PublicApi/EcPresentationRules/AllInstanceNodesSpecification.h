@@ -28,7 +28,9 @@ struct AllInstanceNodesSpecification : public ChildNodeSpecification
 
     protected:
     /*__PUBLISH_SECTION_START__*/
+        ECOBJECTS_EXPORT virtual CharCP               _GetXmlElementName ();
         ECOBJECTS_EXPORT virtual bool                 _ReadXml (BeXmlNodeP xmlNode);
+        ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode);
 
     public:
         ECOBJECTS_EXPORT AllInstanceNodesSpecification ()

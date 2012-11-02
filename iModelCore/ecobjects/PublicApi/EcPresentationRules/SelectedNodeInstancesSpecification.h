@@ -27,7 +27,9 @@ struct SelectedNodeInstancesSpecification : public ContentSpecification
 
     protected:
     /*__PUBLISH_SECTION_START__*/
+        ECOBJECTS_EXPORT virtual CharCP               _GetXmlElementName ();
         ECOBJECTS_EXPORT virtual bool                 _ReadXml (BeXmlNodeP xmlNode);
+        ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode);
 
     public:
         ECOBJECTS_EXPORT SelectedNodeInstancesSpecification () 
@@ -35,8 +37,8 @@ struct SelectedNodeInstancesSpecification : public ContentSpecification
             {
             }
 
-        ECOBJECTS_EXPORT SelectedNodeInstancesSpecification (int priority, WStringCR acceptableSchemaName, WStringCR acceptableClassNames) 
-            : ContentSpecification (priority), m_acceptableSchemaName (acceptableSchemaName), m_acceptableClassNames (acceptableClassNames)
+        ECOBJECTS_EXPORT SelectedNodeInstancesSpecification (int priority, bool onlyIfNotHandled, WStringCR acceptableSchemaName, WStringCR acceptableClassNames) 
+            : ContentSpecification (priority, onlyIfNotHandled), m_acceptableSchemaName (acceptableSchemaName), m_acceptableClassNames (acceptableClassNames)
             {
             }
 

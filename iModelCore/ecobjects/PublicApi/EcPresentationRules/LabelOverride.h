@@ -25,7 +25,9 @@ struct LabelOverride : public PresentationRule
 
     protected:
     /*__PUBLISH_SECTION_START__*/
-        ECOBJECTS_EXPORT virtual bool _ReadXml (BeXmlNodeP xmlNode) override;
+        ECOBJECTS_EXPORT virtual CharCP   _GetXmlElementName ();
+        ECOBJECTS_EXPORT virtual bool     _ReadXml (BeXmlNodeP xmlNode) override;
+        ECOBJECTS_EXPORT virtual void     _WriteXml (BeXmlNodeP xmlNode) override;
 
     public:
         ECOBJECTS_EXPORT LabelOverride ()
@@ -39,10 +41,10 @@ struct LabelOverride : public PresentationRule
             }
 
         //! Label override value. Can be ECExpression string. If value is not set it will not affect original value defined by schema.
-        ECOBJECTS_EXPORT WStringCR    GetLabel (void) const          { return m_label; }
+        ECOBJECTS_EXPORT WStringCR        GetLabel (void) const          { return m_label; }
 
         //! Description override value. Can be ECExpression string. If value is not set it will not affect original value defined by schema.
-        ECOBJECTS_EXPORT WStringCR    GetDescription (void) const    { return m_description; }
+        ECOBJECTS_EXPORT WStringCR        GetDescription (void) const    { return m_description; }
 
     };
 
