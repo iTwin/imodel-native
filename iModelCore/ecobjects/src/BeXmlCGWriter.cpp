@@ -687,7 +687,7 @@ double sweepAngle
                 -xyz0.y, xyz0.x, 0.0,
                 0.0, sweepAngle
                 );
-    worldEllipse.ProductOf (localToWorld, localEllipse);
+    localToWorld.Multiply (worldEllipse, localEllipse);
     return worldEllipse;
     }
 
