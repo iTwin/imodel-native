@@ -24,8 +24,11 @@ AssertDisabler::AssertDisabler ()
     {    
     AssertDisabler::s_globalIgnoreCount++;
 
+#if !defined (BENTLEY_WINRT) 
+    // WIP: calling putenv is nonportable and generally a bad idea
     // to handle calls to BeAssert as well
     putenv("MS_IGNORE_ASSERTS=1");
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -34,7 +37,11 @@ AssertDisabler::AssertDisabler ()
 AssertDisabler::~AssertDisabler ()
     {    
     AssertDisabler::s_globalIgnoreCount--;
+
+#if !defined (BENTLEY_WINRT)
+    // WIP: calling putenv is nonportable and generally a bad idea
     putenv("MS_IGNORE_ASSERTS=");
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
