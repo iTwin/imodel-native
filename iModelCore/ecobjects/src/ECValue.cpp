@@ -1865,8 +1865,19 @@ ECPropertyValue::ECPropertyValue (IECInstanceCR instance, ECValueAccessorCR acce
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool                ECPropertyValue::HasChildValues () const
     {
+    // Avoid evaluating value if it cannot have child values
+    ECPropertyCP prop = m_accessor.GetECProperty();
+    if (NULL == prop || prop->GetIsPrimitive())
+        return false;
+
+    // Must evaluate value to determine if null/empty
     EvaluateValue();
-    return m_ecValue.IsStruct() || m_ecValue.IsArray();
+    if (m_ecValue.IsNull())
+        return false;
+    else if (m_ecValue.IsArray() && m_ecValue.GetArrayInfo().GetCount() == 0)
+        return false;
+    else
+        return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
