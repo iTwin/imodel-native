@@ -1869,13 +1869,15 @@ bool                ECPropertyValue::HasChildValues () const
     ECPropertyCP prop = m_accessor.GetECProperty();
     if (NULL == prop || prop->GetIsPrimitive())
         return false;
+    else if (prop->GetIsStruct())
+        return true;    // embedded struct always has child values, ECValue always null
 
-    // Must evaluate value to determine if null/empty
+    // It's an array or struct array instance. Must evaluate value to determine if null/empty
     EvaluateValue();
     if (m_ecValue.IsNull())
-        return false;
-    else if (m_ecValue.IsArray() && m_ecValue.GetArrayInfo().GetCount() == 0)
-        return false;
+        return false;       // null array (should not happen) or null struct array instance
+    else if (m_ecValue.IsArray() && 0 == m_ecValue.GetArrayInfo().GetCount())
+        return false;       // empty array
     else
         return true;
     }
