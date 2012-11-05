@@ -231,14 +231,7 @@ bool ECProperty::GetIsArray () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ArrayECPropertyP ECProperty::GetAsArrayProperty () const
     {
-#ifdef WIP_THIS_BREAKS_ECEXPRESSIONS
-    // ECExpressions has a bug in which it tries to call this method on a NULL ECProperty.
-    // This went unnoticed because we used to just dynamic_cast the NULL pointer.
-    // Remove this when ECExpressions is fixed
     return GetIsArray() ? static_cast<ArrayECPropertyP>((ECPropertyP)this) : NULL;
-#else
-    return dynamic_cast<ArrayECPropertyP>((ECPropertyP)this);
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

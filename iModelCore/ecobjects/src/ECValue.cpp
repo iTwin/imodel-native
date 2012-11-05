@@ -1795,7 +1795,7 @@ ECObjectsStatus ECValueAccessor::GetECValue (ECValue& v, IECInstanceCR instance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyValue::ECPropertyValue () : m_evaluated(false) {}
+ECPropertyValue::ECPropertyValue () : m_instance(NULL), m_evaluated(false) {}
 ECPropertyValue::ECPropertyValue (IECInstanceCR instance) : m_instance (&instance), m_evaluated(false) {}
 ECValueCR           ECPropertyValue::GetValue ()            const    { EvaluateValue(); return m_ecValue; }
 IECInstanceCR       ECPropertyValue::GetInstance ()         const    { return *m_instance; }
@@ -1865,7 +1865,8 @@ ECPropertyValue::ECPropertyValue (IECInstanceCR instance, ECValueAccessorCR acce
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool                ECPropertyValue::HasChildValues () const
     {
-    // Avoid evaluating value if it cannot have child values
+    // Avoid evaluating value if we can answer this by looking at the ECProperty
+    // ###TODO: cache the property somewhere, as we need to look it up again in GetChildValues and elsewhere
     ECPropertyCP prop = m_accessor.GetECProperty();
     if (NULL == prop || prop->GetIsPrimitive())
         return false;
@@ -1876,10 +1877,15 @@ bool                ECPropertyValue::HasChildValues () const
     EvaluateValue();
     if (m_ecValue.IsNull())
         return false;       // null array (should not happen) or null struct array instance
+    else if (m_ecValue.IsStruct())
+        return true;        // struct array entry
     else if (m_ecValue.IsArray() && 0 == m_ecValue.GetArrayInfo().GetCount())
         return false;       // empty array
     else
+        {
+        BeAssert (m_ecValue.IsArray());
         return true;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1887,11 +1893,7 @@ bool                ECPropertyValue::HasChildValues () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValuesCollectionPtr  ECPropertyValue::GetChildValues () const
     {
-    EvaluateValue();
-    if (m_ecValue.IsStruct() || m_ecValue.IsArray())
-        return new ECValuesCollection (*this);
-
-    return new ECValuesCollection ();
+    return HasChildValues() ? new ECValuesCollection (*this) : new ECValuesCollection();
     }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -1949,7 +1951,7 @@ ECPropertyValue ECValuesCollectionIterator::GetChildPropertyValue (ECPropertyVal
         else
             childAccessor.PopLocation();
         }
-    else if (parentValue.IsStruct())
+    else /* if (parentValue.IsStruct()) ###TODO: concept of an ECValue containing an embedded struct is undefined. */
         {
         UInt32          pathLength  = childAccessor.GetDepth();
 
