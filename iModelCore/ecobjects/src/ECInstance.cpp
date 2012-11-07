@@ -1767,8 +1767,17 @@ ECObjectsStatus                 IECInstance::_GetDisplayLabel (WString& displayL
     if (NULL == propertyName)
         return ECOBJECTS_STATUS_Error;
 
+#ifdef __unix__
+    WString stringValW;
+    BeStringUtilities::Utf16ToWChar (stringValW, (Utf16CP)propertyName);
+#endif
+    
     EC::ECValue ecValue;
+#ifdef __unix__
+    if (SUCCESS == GetValue (ecValue, stringValW.c_str()) && !ecValue.IsNull())
+#else
     if (SUCCESS == GetValue (ecValue, propertyName) && !ecValue.IsNull())
+#endif
         {
         displayLabel = ecValue.GetString();
         return ECOBJECTS_STATUS_Success;
