@@ -2287,12 +2287,19 @@ ECObjectsStatus       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValu
                 } 
             case PRIMITIVETYPE_String:
                 {
+#if defined (__unix__)
+                // Strings are stored as Utf16, so need to be converted under Unix
+                WString stringValueW;
+                BeStringUtilities::Utf16ToWChar (stringValueW, (Utf16CP) pValue);
+                v.SetString (stringValueW.c_str());
+#else                
                 WCharP pString = (WCharP)pValue;
                 // Note: we could avoid a string copy by returning a pointer directly to the string in this instance's memory buffer,
                 // but the pointer will become invalid as soon as the instance does.
                 // Since there are situations in which the returned ECValue outlasts the instance (e.g. evaluating ECExpressions), and the caller
                 // cannot know his ECValue is about to evaporate, we have to make the copy.
                 v.SetString (pString);
+#endif                
                 break;            
                 }
             default:
