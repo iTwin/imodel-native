@@ -2536,9 +2536,17 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             {
             if (!v.IsString ())
                 return ECOBJECTS_STATUS_DataTypeMismatch;
-
-            WCharCP value = v.GetString();
-            UInt32 bytesNeeded = (UInt32)(sizeof(wchar_t) * (wcslen(value) + 1));
+            
+#if defined (__unix__)
+            // On Unix, Utf16 and WChar are different sizes
+            Utf16Buffer bufferUtf16;
+            BeStringUtilities::WCharToUtf16 (bufferUtf16, v.GetString());
+            Utf16CP valueUtf16 = bufferUtf16.data();
+#else
+            // On Windows, Utf16 and WChar are the same size/encoding
+            Utf16CP valueUtf16 = (Utf16CP) v.GetString();
+#endif
+            UInt32 bytesNeeded = (UInt32)(sizeof(Utf16Char) * (BeStringUtilities::Utf16Len(valueUtf16) + 1));
 
             UInt32 currentSize;
             if (useIndex)
@@ -2546,7 +2554,7 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             else
                 currentSize = GetPropertyValueSize (propertyLayout);
 
-            if (!isOriginalValueNull && currentSize>=bytesNeeded && 0 == memcmp (_GetData() + offset, value, bytesNeeded))
+            if (!isOriginalValueNull && currentSize>=bytesNeeded && 0 == memcmp (_GetData() + offset, valueUtf16, bytesNeeded))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
             ECObjectsStatus status;
@@ -2559,7 +2567,7 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
             if (ECOBJECTS_STATUS_Success != status)
                 return status;
 
-            result = ModifyData (_GetData() + offset, value, bytesNeeded);
+            result = ModifyData (_GetData() + offset, valueUtf16, bytesNeeded);
             }
             break;
         case PRIMITIVETYPE_IGeometry:
@@ -2793,7 +2801,11 @@ ECObjectsStatus  MemoryInstanceSupport::EvaluateCalculatedProperty (ClassLayoutC
 
     CalculatedPropertySpecificationCP spec = lookupCalculatedPropertySpecification (*iecInstance, classLayout, propLayout);
     if (NULL == spec)
-        { BeAssert (false); return ECOBJECTS_STATUS_Error; }
+        { 
+        // ###TODO: Comment out BeAssert until Graphite CalculatedECProperty support is in better shape
+        // BeAssert (false);
+        return ECOBJECTS_STATUS_Error; 
+        }
 
     ECValue updatedValue;
     ECObjectsStatus evalStatus = spec->Evaluate (updatedValue, existingValue, *iecInstance);
@@ -2822,7 +2834,11 @@ ECObjectsStatus MemoryInstanceSupport::SetCalculatedProperty (ECValueCR v, Class
 
     CalculatedPropertySpecificationCP spec = lookupCalculatedPropertySpecification (*iecInstance, classLayout, propertyLayout);
     if (NULL == spec)
-        { BeAssert (false); return ECOBJECTS_STATUS_Error; }
+        { 
+        // ###TODO: Comment out BeAssert until Graphite CalculatedECProperty support is in better shape
+        // BeAssert (false);
+        return ECOBJECTS_STATUS_Error; 
+        }
     else
         return spec->UpdateDependentProperties (v, *iecInstance);
     }

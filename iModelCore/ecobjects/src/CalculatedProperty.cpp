@@ -276,7 +276,11 @@ CalculatedPropertySpecificationPtr CalculatedPropertySpecification::Create (Prim
             {
             parserRegex = ParserRegex::Create (v.GetString(), doNotUseECMAScript);
             if (NULL == parserRegex)
-                { BeAssert (false && "A non-read-only non-default CalculatedECPropertySpecification must provide a valid ParserRegularExpression"); return NULL; }
+                { 
+                // ###TODO: Comment out BeAssert until Graphite CalculatedECProperty support is in better shape
+                // BeAssert (false && "A non-read-only non-default CalculatedECPropertySpecification must provide a valid ParserRegularExpression"); 
+                return NULL; 
+                }
             }
         }
 
