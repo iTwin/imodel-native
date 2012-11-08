@@ -791,6 +791,12 @@ ECObjectsStatus ArrayECProperty::SetMaxOccurs (UInt32 maxOccurs)
     {
     PRECONDITION (maxOccurs >= m_minOccurs, ECOBJECTS_STATUS_PreconditionViolated);
     m_maxOccurs = maxOccurs;
+    if (1 == m_maxOccurs)
+        {
+        // D-106653 ClassEditor defaults maxOccurs to 1, but 8.11.9 allows array size to exceed 1. Assume maxOccurs=1 is due to ClassEditor bug and treat as unbounded
+        m_maxOccurs = UINT_MAX;
+        }
+
     return ECOBJECTS_STATUS_Success;
     }
 
