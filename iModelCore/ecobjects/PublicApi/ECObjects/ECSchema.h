@@ -207,7 +207,7 @@ protected:
     InstanceReadStatus                  ReadCustomAttributes (BeXmlNodeR containerNode, ECSchemaReadContextR context, ECSchemaCR fallBackSchema);
     SchemaWriteStatus                   WriteCustomAttributes(BeXmlNodeR parentNode) const;
 
-    ECObjectsStatus                     CopyCustomAttributesTo(IECCustomAttributeContainerR destContainer);
+    ECObjectsStatus                     CopyCustomAttributesTo(IECCustomAttributeContainerR destContainer) const;
 
     void                                AddUniqueCustomAttributesToList(ECCustomAttributeCollection& returnList);
     void                                AddUniquePrimaryCustomAttributesToList(ECCustomAttributeCollection& returnList);
@@ -1576,6 +1576,7 @@ private:
     bool                        m_isSupplemented;
     bool                        m_hasExplicitDisplayLabel;
     SupplementalSchemaInfoPtr   m_supplementalSchemaInfo;
+    bool                        m_immutable;
 
     bmap<ECSchemaP, const WString> m_referencedSchemaNamespaceMap;
 
@@ -1610,6 +1611,7 @@ private:
     SchemaWriteStatus                   WriteCustomAttributeDependencies (BeXmlNodeR parentNode, IECCustomAttributeContainerCR container, ECSchemaWriteContext&) const;
     SchemaWriteStatus                   WritePropertyDependencies (BeXmlNodeR parentNode, ECClassCR ecClass, ECSchemaWriteContext&) const;
     void                                CollectAllSchemasInGraph (bvector<ECN::ECSchemaCP>& allSchemas,  bool includeRootSchema) const;
+    void                                ReComputeCheckSum ();
 protected:
     virtual ECSchemaCP                  _GetContainerSchema() const override;
 
@@ -1693,7 +1695,7 @@ public:
     //! @param[in]  namespacePrefix     The prefix of the schema to lookup in the context of this schema and it's references.
     //!                                 Passing an empty namespacePrefix will return a pointer to the current schema.
     //! @return   A non-refcounted pointer to an ECN::ECSchema if it can be successfully resolved from the specified namespacePrefix; otherwise, NULL
-    ECOBJECTS_EXPORT ECSchemaP          GetSchemaByNamespacePrefixP(WStringCR namespacePrefix) const;
+    ECOBJECTS_EXPORT ECSchemaCP         GetSchemaByNamespacePrefixP(WStringCR namespacePrefix) const;
 
     //! Resolve a namespace prefix for the specified schema within the context of this schema and its references.
     //! @param[in]  schema     The schema to lookup a namespace prefix in the context of this schema and its references.
@@ -1704,7 +1706,8 @@ public:
     //! Get a class by name within the context of this schema.
     //! @param[in]  name     The name of the class to lookup.  This must be an unqualified (short) class name.
     //! @return   A pointer to an ECN::ECClass if the named class exists in within the current schema; otherwise, NULL
-    ECOBJECTS_EXPORT ECClassP           GetClassP (WCharCP name) const;
+    ECOBJECTS_EXPORT ECClassCP          GetClassCP (WCharCP name) const;
+    ECOBJECTS_EXPORT ECClassP           GetClassP (WCharCP name);
 
     //! Gets the other schemas that are used by classes within this schema.
     //! Referenced schemas are the schemas that contain definitions of base classes,
@@ -1758,7 +1761,7 @@ public:
     //! @param[in]  sourceClass The class to copy
     ECOBJECTS_EXPORT ECObjectsStatus        CopyClass(ECClassP& targetClass, ECClassR sourceClass);
 
-    ECOBJECTS_EXPORT ECObjectsStatus        CopySchema(ECSchemaPtr& schemaOut);
+    ECOBJECTS_EXPORT ECObjectsStatus        CopySchema(ECSchemaPtr& schemaOut) const;
 
     //! Get the IECCustomAttributeContainer holding this schema's custom attributes
     ECOBJECTS_EXPORT IECCustomAttributeContainer&   GetCustomAttributeContainer();
@@ -1778,7 +1781,7 @@ public:
                                                           UInt32 versionMajor, UInt32 versionMinor);
 
 /*__PUBLISH_SECTION_END__*/
-    ECOBJECTS_EXPORT void   ReComputeCheckSum ();
+    
 /*__PUBLISH_SECTION_START__*/
 
     //! Generate a schema version string given the major and minor version values.
@@ -1900,6 +1903,8 @@ public:
     //! Returns this if the name matches, otherwise searches referenced ECSchemas for one whose name matches schemaName
     ECOBJECTS_EXPORT ECSchemaP FindSchemaP (SchemaKeyCR schema, SchemaMatchType matchType);
 
+    //!Set the schema to be immutable. Immutable schema cannot be modified.
+    ECOBJECTS_EXPORT void   SetImmutable();
 }; // ECSchema
 
 END_BENTLEY_ECOBJECT_NAMESPACE

@@ -215,7 +215,7 @@ bool ECProperty::GetIsStruct () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StructECPropertyP ECProperty::GetAsStructProperty () const
     {
-    return dynamic_cast<StructECPropertyP>((ECPropertyP)this);
+    return GetIsStruct() ? static_cast<StructECPropertyP>((ECPropertyP)this) : NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -231,7 +231,7 @@ bool ECProperty::GetIsArray () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ArrayECPropertyP ECProperty::GetAsArrayProperty () const
     {
-    return dynamic_cast<ArrayECPropertyP>((ECPropertyP)this);
+    return GetIsArray() ? static_cast<ArrayECPropertyP>((ECPropertyP)this) : NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -490,7 +490,7 @@ WString StructECProperty::_GetTypeName () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ResolveStructType (ECClassP& structClass, WStringCR typeName, ECPropertyCR ecProperty)
+ECObjectsStatus ResolveStructType (ECClassCP& structClass, WStringCR typeName, ECPropertyCR ecProperty)
     {
     // typeName may potentially be qualified so we must parse into a namespace prefix and short class name
     WString namespacePrefix;
@@ -502,7 +502,7 @@ ECObjectsStatus ResolveStructType (ECClassP& structClass, WStringCR typeName, EC
         return status;
         }
     
-    ECSchemaP resolvedSchema = ecProperty.GetClass().GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
+    ECSchemaCP resolvedSchema = ecProperty.GetClass().GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
     if (NULL == resolvedSchema)
         {
         ECObjectsLogger::Log()->warningv (L"Cannot resolve the type name '%ls' as a struct type because the namespacePrefix '%ls' can not be resolved to the primary or a referenced schema.", 
@@ -510,7 +510,7 @@ ECObjectsStatus ResolveStructType (ECClassP& structClass, WStringCR typeName, EC
         return ECOBJECTS_STATUS_SchemaNotFound;
         }
 
-    structClass = resolvedSchema->GetClassP (className.c_str());
+    structClass = resolvedSchema->GetClassCP (className.c_str());
     if (NULL == structClass)
         {
         ECObjectsLogger::Log()->warningv (L"Cannot resolve the type name '%ls' as a struct type because ECClass '%ls' does not exist in the schema '%ls'.", 
@@ -526,7 +526,7 @@ ECObjectsStatus ResolveStructType (ECClassP& structClass, WStringCR typeName, EC
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus StructECProperty::_SetTypeName (WStringCR typeName)
     {
-    ECClassP structClass;
+    ECClassCP structClass;
     ECObjectsStatus status = ResolveStructType (structClass, typeName, *this);
     if (ECOBJECTS_STATUS_Success != status)
         {
@@ -666,7 +666,7 @@ ECObjectsStatus ArrayECProperty::_SetTypeName (WStringCR typeName)
     if (ECOBJECTS_STATUS_Success == status)
         return SetPrimitiveElementType (primitiveType);
     
-    ECClassP structClass;
+    ECClassCP structClass;
     status = ResolveStructType (structClass, typeName, *this);
     if (ECOBJECTS_STATUS_Success == status)
         return SetStructElementType (structClass);

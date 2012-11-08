@@ -130,6 +130,13 @@ ExpressionStatus InstanceExpressionContext::_GetReference(EvaluationResultR eval
 
         if (TOKEN_LeftBracket == nextOperation)
             {
+            if (NULL == currentProperty)
+                {
+                // ###TODO: support instance["accessString"] property access syntax...
+                evalResult.Clear();
+                return ExprStatus_ArrayRequired;
+                }
+
             ECN::ArrayECPropertyCP   arrayProp = currentProperty->GetAsArrayProperty();
 
             if (NULL == arrayProp)
@@ -391,6 +398,13 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
 
         if (TOKEN_LeftBracket == nextOperation)
             {
+            if (NULL == currentProperty)
+                {
+                // ###TODO: support instance["accessString"] property access syntax...
+                evalResult.Clear();
+                return ExprStatus_ArrayRequired;
+                }
+
             ECN::ArrayECPropertyCP   arrayProp = currentProperty->GetAsArrayProperty();
 
             if (NULL == arrayProp)

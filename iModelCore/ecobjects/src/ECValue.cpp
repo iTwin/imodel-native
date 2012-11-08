@@ -1616,9 +1616,9 @@ static void tokenize(const WString& str, bvector<WString>& tokens, const WString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECClassP getClassFromSchema (ECSchemaCR rootSchema, WCharCP className)
+static ECClassCP getClassFromSchema (ECSchemaCR rootSchema, WCharCP className)
     {
-    ECClassP classP = rootSchema.GetClassP (className);
+    ECClassCP classP = rootSchema.GetClassCP (className);
     if (classP)
         return classP;
 
@@ -1636,13 +1636,13 @@ static ECClassP getClassFromSchema (ECSchemaCR rootSchema, WCharCP className)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECClassP getPropertyFromClass (ECClassCR enablerClass, WCharCP propertyName)
+static ECClassCP getPropertyFromClass (ECClassCR enablerClass, WCharCP propertyName)
     {
     WCharCP dotPos = wcschr (propertyName, '.');
     if (NULL != dotPos)
         {
         WString structName (propertyName, dotPos);
-        ECClassP structClass = getPropertyFromClass (enablerClass, structName.c_str());
+        ECClassCP structClass = getPropertyFromClass (enablerClass, structName.c_str());
         if (NULL == structClass)
             { BeAssert (false); return NULL; }
 
@@ -1725,7 +1725,7 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBu
 
     WString str = asBuffer; 
 
-    ECClassP structClass = getPropertyFromClass (enabler.GetClass(), asBuffer);
+    ECClassCP structClass = getPropertyFromClass (enabler.GetClass(), asBuffer);
     if (!structClass)
         return ECOBJECTS_STATUS_Error;
 
@@ -1795,7 +1795,7 @@ ECObjectsStatus ECValueAccessor::GetECValue (ECValue& v, IECInstanceCR instance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyValue::ECPropertyValue () : m_evaluated(false) {}
+ECPropertyValue::ECPropertyValue () : m_instance(NULL), m_evaluated(false) {}
 ECPropertyValue::ECPropertyValue (IECInstanceCR instance) : m_instance (&instance), m_evaluated(false) {}
 ECValueCR           ECPropertyValue::GetValue ()            const    { EvaluateValue(); return m_ecValue; }
 IECInstanceCR       ECPropertyValue::GetInstance ()         const    { return *m_instance; }
@@ -1865,8 +1865,27 @@ ECPropertyValue::ECPropertyValue (IECInstanceCR instance, ECValueAccessorCR acce
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool                ECPropertyValue::HasChildValues () const
     {
+    // Avoid evaluating value if we can answer this by looking at the ECProperty
+    // ###TODO: cache the property somewhere, as we need to look it up again in GetChildValues and elsewhere
+    ECPropertyCP prop = m_accessor.GetECProperty();
+    if (NULL == prop || prop->GetIsPrimitive())
+        return false;
+    else if (prop->GetIsStruct())
+        return true;    // embedded struct always has child values, ECValue always null
+
+    // It's an array or struct array instance. Must evaluate value to determine if null/empty
     EvaluateValue();
-    return m_ecValue.IsStruct() || m_ecValue.IsArray();
+    if (m_ecValue.IsNull())
+        return false;       // null array (should not happen) or null struct array instance
+    else if (m_ecValue.IsStruct())
+        return true;        // struct array entry
+    else if (m_ecValue.IsArray() && 0 == m_ecValue.GetArrayInfo().GetCount())
+        return false;       // empty array
+    else
+        {
+        BeAssert (m_ecValue.IsArray());
+        return true;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1874,11 +1893,7 @@ bool                ECPropertyValue::HasChildValues () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValuesCollectionPtr  ECPropertyValue::GetChildValues () const
     {
-    EvaluateValue();
-    if (m_ecValue.IsStruct() || m_ecValue.IsArray())
-        return new ECValuesCollection (*this);
-
-    return new ECValuesCollection ();
+    return HasChildValues() ? new ECValuesCollection (*this) : new ECValuesCollection();
     }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -1936,7 +1951,7 @@ ECPropertyValue ECValuesCollectionIterator::GetChildPropertyValue (ECPropertyVal
         else
             childAccessor.PopLocation();
         }
-    else if (parentValue.IsStruct())
+    else /* if (parentValue.IsStruct()) ###TODO: concept of an ECValue containing an embedded struct is undefined. */
         {
         UInt32          pathLength  = childAccessor.GetDepth();
 

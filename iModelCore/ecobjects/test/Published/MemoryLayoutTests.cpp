@@ -711,7 +711,7 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     ExerciseVariableCountStringArray (instance, v, L"VariableArrayVariableElement[]", L"Var+Var");
     ExerciseVariableCountStringArray (instance, v, L"EndingArray[]", L"EArray");        
     
-    ECClassP manufacturerClass = instance.GetClass().GetSchema().GetClassP (L"Manufacturer");
+    ECClassCP manufacturerClass = instance.GetClass().GetSchema().GetClassCP (L"Manufacturer");
     ASSERT_TRUE (NULL != manufacturerClass);
 
 #ifdef OLD_WAY    

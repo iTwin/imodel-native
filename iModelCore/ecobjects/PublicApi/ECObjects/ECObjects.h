@@ -154,6 +154,7 @@ enum ECObjectsStatus
     ECOBJECTS_STATUS_SchemaNotSupplemented                              = ECOBJECTS_ERROR_BASE + 0x25,
     ECOBJECTS_STATUS_UnableToQueryForNullPropertyFlag                   = ECOBJECTS_ERROR_BASE + 0x26,
     ECOBJECTS_STATUS_UnableToResizeFixedSizedArray                      = ECOBJECTS_ERROR_BASE + 0x27,
+    ECOBJECTS_STATUS_SchemaIsImmutable                                  = ECOBJECTS_ERROR_BASE + 0x28,
     ECOBJECTS_STATUS_Error                                              = ECOBJECTS_ERROR_BASE + 0xFFF,
     }; 
 

@@ -939,7 +939,7 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml ( BeXmlNodeP childNode )
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
 
-    ECSchemaP resolvedSchema = GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
+    ECSchemaCP resolvedSchema = GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
     if (NULL == resolvedSchema)
         {
         ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the namespace prefix '%ls' that can not be resolved to a referenced schema.", 
@@ -947,7 +947,7 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml ( BeXmlNodeP childNode )
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
 
-    ECClassP baseClass = resolvedSchema->GetClassP (className.c_str());
+    ECClassCP baseClass = resolvedSchema->GetClassCP (className.c_str());
     if (NULL == baseClass)
         {
         ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the value '%ls' that can not be resolved to an ECClass named '%ls' in the ECSchema '%ls'", 
@@ -1409,7 +1409,7 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
         
-        ECSchemaP resolvedSchema = m_relClass->GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
+        ECSchemaCP resolvedSchema = m_relClass->GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
         if (NULL == resolvedSchema)
             {
             ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: ECRelationshipConstraint contains a %hs attribute with the namespace prefix '%ls' that can not be resolved to a referenced schema.", 
@@ -1417,7 +1417,7 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
 
-        ECClassP constraintClass = resolvedSchema->GetClassP (className.c_str());
+        ECClassCP constraintClass = resolvedSchema->GetClassCP (className.c_str());
         if (NULL == constraintClass)
             {
             ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: The ECRelationshipConstraint contains a %hs attribute with the value '%ls' that can not be resolved to an ECClass named '%ls' in the ECSchema '%ls'", 

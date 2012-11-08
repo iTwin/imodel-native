@@ -1718,24 +1718,38 @@ WString                         IECInstance::ToString (WCharCP indent) const
     return _ToString (indent);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+static WCharCP getInstanceLabelPropertyNameFromClass (ECClassCR ecClass)
+    {
+    IECInstancePtr caInstance = ecClass.GetCustomAttribute (L"InstanceLabelSpecification");
+    if (caInstance.IsValid())
+        {
+        ECValue value;
+        if (SUCCESS == caInstance->GetValue (value, L"PropertyName") && !value.IsNull())
+            return value.GetString();
+        }
+
+    FOR_EACH (ECClassCP baseClass, ecClass.GetBaseClasses())
+        {
+        WCharCP propName = getInstanceLabelPropertyNameFromClass (*baseClass);
+        if (NULL != propName)
+            return propName;
+        }
+
+    return NULL;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 WCharCP                         IECInstance::GetInstanceLabelPropertyName () const
     {
-    ECClassCR ecClass = GetClass(); 
-
-        // see if the struct has a custom attribute to custom serialize itself
-    IECInstancePtr caInstance = ecClass.GetCustomAttribute(L"InstanceLabelSpecification");
-    if (caInstance.IsValid())
-        {
-        ECValue value;
-        if (SUCCESS == caInstance->GetValue (value, L"PropertyName") && !value.IsNull())
-            {
-            return value.GetString();
-            }
-        }
+    ECClassCR ecClass = GetClass();
+    WCharCP propName = getInstanceLabelPropertyNameFromClass (ecClass);
+    if (NULL != propName)
+        return propName;
 
     if (NULL != ecClass.GetPropertyP (L"DisplayLabel"))
         return L"DisplayLabel";
@@ -1743,7 +1757,7 @@ WCharCP                         IECInstance::GetInstanceLabelPropertyName () con
     if (NULL != ecClass.GetPropertyP (L"DISPLAYLABEL"))
         return L"DISPLAYLABEL";
 
-     if (NULL != ecClass.GetPropertyP (L"displaylabel"))
+    if (NULL != ecClass.GetPropertyP (L"displaylabel"))
         return L"displaylabel";
    
     if (NULL != ecClass.GetPropertyP (L"Name"))
@@ -2125,7 +2139,7 @@ InstanceReadStatus      GetInstance (ECClassCP& ecClass, IECInstancePtr& ecInsta
 
     // see if we can find the class from the schema.
     ECClassCP    foundClass;
-    if (NULL == (foundClass = schema->GetClassP (className.c_str())))
+    if (NULL == (foundClass = schema->GetClassCP (className.c_str())))
         {
         ECSchemaReferenceListCR refList = schema->GetReferencedSchemas();
         SchemaKey key;
@@ -2133,13 +2147,13 @@ InstanceReadStatus      GetInstance (ECClassCP& ecClass, IECInstancePtr& ecInsta
             {
             ECSchemaReferenceList::const_iterator schemaIterator = refList.find (key);
             if (schemaIterator != refList.end())
-                foundClass = schemaIterator->second->GetClassP (className.c_str());
+                foundClass = schemaIterator->second->GetClassCP (className.c_str());
             }
         else
             {
             for (ECSchemaReferenceList::const_iterator schemaIterator = refList.begin(); schemaIterator != refList.end(); schemaIterator++)
                 {
-                if (NULL != (foundClass = schemaIterator->second->GetClassP (className.c_str())))
+                if (NULL != (foundClass = schemaIterator->second->GetClassCP (className.c_str())))
                     break;
                 }
             }
@@ -2661,7 +2675,7 @@ ECClassCP                       ValidateArrayStructType (WCharCP typeFound, ECCl
 
     // typeFound must resolve to an ECClass that is either expectedType or a class that has expectedType as a Base GetClass().
     ECClassCP    classFound;
-    if (NULL == (classFound = schema->GetClassP (typeFound)))
+    if (NULL == (classFound = schema->GetClassCP (typeFound)))
         {
         BeAssert (false);
         return NULL;

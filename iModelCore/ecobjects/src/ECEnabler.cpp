@@ -36,7 +36,7 @@ StandaloneECEnablerPtr          ECEnabler::_LocateStandaloneEnabler (SchemaKeyCR
     if (NULL == schema)
         return NULL;
 
-    ECClassP ecClass = schema->GetClassP(className);
+    ECClassCP ecClass = schema->GetClassCP(className);
     if (NULL == ecClass)
         return NULL;
     

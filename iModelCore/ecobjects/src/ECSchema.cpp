@@ -187,7 +187,7 @@ void ECValidatedName::SetDisplayLabel (WCharCP label)
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchema::ECSchema ()
-    :m_classContainer(m_classMap), m_isSupplemented(false), m_hasExplicitDisplayLabel(false)
+    :m_classContainer(m_classMap), m_isSupplemented(false), m_hasExplicitDisplayLabel(false), m_immutable(false)
     {
     //
     };
@@ -257,6 +257,8 @@ WStringCR ECSchema::GetName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetName (WStringCR name)
     {        
+    if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
+
     ECNameValidation::EncodeToValidName (m_key.m_schemaName, name);
     if (!m_hasExplicitDisplayLabel)
         ECNameValidation::DecodeFromValidName (m_displayLabel, m_key.m_schemaName);
@@ -276,7 +278,8 @@ WStringCR ECSchema::GetNamespacePrefix () const
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetNamespacePrefix (WStringCR namespacePrefix)
-    {        
+    {
+    if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
     m_namespacePrefix = namespacePrefix;  
     return ECOBJECTS_STATUS_Success;
     }
@@ -293,7 +296,9 @@ WStringCR ECSchema::GetDescription () const
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetDescription (WStringCR description)
-    {        
+    {
+    if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
+
     m_description = description;
     return ECOBJECTS_STATUS_Success;
     }
@@ -310,7 +315,9 @@ WStringCR ECSchema::GetDisplayLabel () const
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetDisplayLabel (WStringCR displayLabel)
-    {        
+    {
+    if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
+
     m_displayLabel = displayLabel;
     m_hasExplicitDisplayLabel = true;
     return ECOBJECTS_STATUS_Success;
@@ -437,7 +444,9 @@ UInt32 ECSchema::GetVersionMajor () const
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetVersionMajor (const UInt32 versionMajor)
-    {        
+    {
+    if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
+
     m_key.m_versionMajor = versionMajor;
     return ECOBJECTS_STATUS_Success;
     }
@@ -456,7 +465,9 @@ UInt32 ECSchema::GetVersionMinor
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetVersionMinor (const UInt32 versionMinor)
-    {        
+    {
+    if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
+
     m_key.m_versionMinor = versionMinor;
     return ECOBJECTS_STATUS_Success;
     }
@@ -464,7 +475,15 @@ ECObjectsStatus ECSchema::SetVersionMinor (const UInt32 versionMinor)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassP ECSchema::GetClassP (WCharCP name) const
+ECClassCP ECSchema::GetClassCP (WCharCP name) const
+    {
+    return const_cast<ECSchemaP> (this)->GetClassP(name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECClassP ECSchema::GetClassP (WCharCP name)
     {
     ClassMap::const_iterator  classIterator;
     classIterator = m_classMap.find (name);
@@ -494,6 +513,8 @@ void ECSchema::DebugDump()const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::AddClass (ECClassP& pClass)
     {
+    if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
+
     bpair <ClassMap::iterator, bool> resultPair;
     resultPair = m_classMap.insert (bpair<WCharCP, ECClassP> (pClass->GetName().c_str(), pClass));
     if (resultPair.second == false)
@@ -512,6 +533,8 @@ ECObjectsStatus ECSchema::AddClass (ECClassP& pClass)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::CreateClass (ECClassP& pClass, WStringCR name)
     {
+    if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
+
     pClass = new ECClass(*this);
     ECObjectsStatus status = pClass->SetName (name);
     if (ECOBJECTS_STATUS_Success != status)
@@ -533,8 +556,10 @@ ECClassP& targetClass,
 ECClassR sourceClass
 )
     {
+    if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
+
     // first make sure the class doesn't already exist in the schema
-    if (NULL != this->GetClassP(sourceClass.GetName().c_str()))
+    if (NULL != this->GetClassCP(sourceClass.GetName().c_str()))
         return ECOBJECTS_STATUS_NamedItemAlreadyExists;
     
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
@@ -584,6 +609,8 @@ ECClassR sourceClass
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::CreateRelationshipClass (ECRelationshipClassP& pClass, WStringCR name)
     {
+    if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
+
     pClass = new ECRelationshipClass(*this);
     ECObjectsStatus status = pClass->SetName (name);
     if (ECOBJECTS_STATUS_Success != status)
@@ -748,6 +775,8 @@ ECObjectsStatus ECSchema::ParseVersionString (UInt32& versionMajor, UInt32& vers
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetVersionFromString (WCharCP versionString)
     {
+    if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
+
     UInt32 versionMajor;
     UInt32 versionMinor;
     ECObjectsStatus status;
@@ -785,7 +814,7 @@ ECObjectsStatus ECSchema::CreateSchema (ECSchemaPtr& schemaOut, WStringCR schema
 ECObjectsStatus ECSchema::CopySchema
 (
 ECSchemaPtr& schemaOut
-)
+) const
     {
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
     status = CreateSchema(schemaOut,  GetName(), GetVersionMajor(), GetVersionMinor());
@@ -814,10 +843,10 @@ ECSchemaPtr& schemaOut
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP ECSchema::GetSchemaByNamespacePrefixP (WStringCR namespacePrefix) const
+ECSchemaCP ECSchema::GetSchemaByNamespacePrefixP (WStringCR namespacePrefix) const
     {
     if (namespacePrefix.length() == 0)
-        return (ECSchemaP)this;
+        return this;
 
     // lookup referenced schema by prefix
     bmap<ECSchemaP, WString const>::const_iterator schemaIterator;
@@ -1080,7 +1109,7 @@ SchemaReadStatus ECSchema::ReadClassStubsFromXml (BeXmlNodeR schemaNode, ClassDe
         classes.push_back (make_bpair (ecClass, classNode));
         }
     return status;
-    }
+    } 
 
 /*---------------------------------------------------------------------------------**//**
  - Expects class stubs have already been read and created.  They are stored in the vector passed into this method.
@@ -2394,7 +2423,7 @@ struct ECClassFinder
         :m_key(key), m_class(foundClass)
         {}
 
-    bool operator () (ECSchemaCR val)
+    bool operator () (ECSchemaR val)
         {
         if (0 != val.GetName().CompareTo(m_key.m_schemaName))
             return false;
@@ -2443,6 +2472,9 @@ UInt32          ECSchema::ComputeSchemaXmlStringCheckSum(WCharCP str, size_t len
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECSchema::ReComputeCheckSum ()
     {
+    if (m_immutable)
+        return;
+
     WString xmlStr;
     if (SCHEMA_WRITE_STATUS_Success != WriteToXmlString (xmlStr))
         return;
@@ -2450,6 +2482,17 @@ void            ECSchema::ReComputeCheckSum ()
     m_key.m_checkSum = CheckSumHelper::ComputeCheckSumForString (xmlStr.c_str(), sizeof(WChar)* xmlStr.length());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECSchema::SetImmutable()
+    {
+    BeAssert(!m_immutable);
+    ReComputeCheckSum();
+    m_immutable = true;
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE
+
 
 
