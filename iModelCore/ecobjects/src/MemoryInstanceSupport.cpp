@@ -1484,6 +1484,9 @@ ArrayCount      MemoryInstanceSupport::GetAllocatedArrayCount (PropertyLayoutCR 
         if ((arrayOffset == 0) || (*pNextOffset == 0) || (arrayOffset == *pNextOffset))
             return 0;
 
+        if (arrayOffset >= _GetBytesAllocated())
+            return 0; //NEEDSWORK: A temporary hack until we can find the real problem
+
         byte const * pCount = _GetData() + arrayOffset;
         return *((ArrayCount*)pCount);
         }
