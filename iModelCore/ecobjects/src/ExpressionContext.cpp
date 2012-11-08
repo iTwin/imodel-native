@@ -52,21 +52,44 @@ ExpressionStatus InstanceExpressionContext::_GetReference(EvaluationResultR eval
     
     while (TOKEN_None != nextOperation)
         {
-        while (TOKEN_Dot == nextOperation || TOKEN_Ident == nextOperation)
+        while (TOKEN_Dot == nextOperation || TOKEN_Ident == nextOperation || TOKEN_LeftBracket == nextOperation)    // Handle instance["AccessString"] and instance.AccessString property access
             {
-            BeAssert(NULL != dynamic_cast<IdentNodeCP>(primaryList.GetOperatorNode(index)));
+            WString memberName;
+            if (TOKEN_LeftBracket == nextOperation)
+                {
+                // Property access or array indexer?
+                if (NULL != currentProperty && currentProperty->GetIsArray())
+                    break;
+                else
+                    {
+                    LBracketNodeCP lBracketNode = static_cast<LBracketNodeCP>(primaryList.GetOperatorNode(index));
+                    EvaluationResult accessorResult;
+                    NodePtr accessorNode = lBracketNode->GetIndexNode();
+                    ExpressionStatus exprStatus = accessorNode->GetValue (accessorResult, globalContext, false, true);
+                    if (ExprStatus_Success != exprStatus)
+                        {
+                        evalResult.Clear();
+                        return exprStatus;
+                        }
+                    
+                    memberName = accessorResult.GetECValue().GetString();
+                    }
+                }
+            else
+                {
+                BeAssert (NULL != dynamic_cast<IdentNodeCP>(primaryList.GetOperatorNode(index)));
+                IdentNodeCP       identNode = static_cast<IdentNodeCP>(primaryList.GetOperatorNode(index));
+                memberName = identNode->GetName();
+                }
 
-            IdentNodeCP       identNode = static_cast<IdentNodeCP>(primaryList.GetOperatorNode(index++));
-            
             //  Will be TOKEN_None if index is at the end
-            nextOperation = primaryList.GetOperation(index);
+            nextOperation = primaryList.GetOperation(++index);
 
             if (appendDot)
                 accessString.append(L".");
 
             appendDot = true;
 
-            wchar_t const*  memberName = identNode->GetName();
             accessString.append(memberName);
 
             currentProperty = ecClass->GetPropertyP(memberName);
@@ -132,7 +155,6 @@ ExpressionStatus InstanceExpressionContext::_GetReference(EvaluationResultR eval
             {
             if (NULL == currentProperty)
                 {
-                // ###TODO: support instance["accessString"] property access syntax...
                 evalResult.Clear();
                 return ExprStatus_ArrayRequired;
                 }
@@ -255,21 +277,46 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
         {
         ECN::ECPropertyP             currentProperty = NULL;
 
-        while (TOKEN_Dot == nextOperation || TOKEN_Ident == nextOperation)
+        while (TOKEN_Dot == nextOperation || TOKEN_Ident == nextOperation || TOKEN_LeftBracket == nextOperation)
             {
-            BeAssert(NULL != dynamic_cast<IdentNodeCP>(primaryList.GetOperatorNode(index)));
+            WString memberName;
+            if (TOKEN_LeftBracket == nextOperation)
+                {
+                if (NULL != currentProperty && currentProperty->GetIsArray())
+                    break;
+                else
+                    {
+                    BeAssert (NULL != dynamic_cast<LBracketNodeCP>(primaryList.GetOperatorNode(index)));
 
-            IdentNodeCP       identNode = static_cast<IdentNodeCP>(primaryList.GetOperatorNode(index++));
-            
+                    LBracketNodeCP lBracketNode = static_cast<LBracketNodeCP>(primaryList.GetOperatorNode (index));
+                    EvaluationResult accessorResult;
+                    NodePtr accessorNode = lBracketNode->GetIndexNode();
+                    ExpressionStatus exprStatus = accessorNode->GetValue (accessorResult, globalContext, false, true);
+                    if (ExprStatus_Success != exprStatus)
+                        {
+                        evalResult.Clear();
+                        return exprStatus;
+                        }
+
+                    memberName = accessorResult.GetECValue().GetString();
+                    }
+                }
+            else
+                {
+                BeAssert(NULL != dynamic_cast<IdentNodeCP>(primaryList.GetOperatorNode(index)));
+
+                IdentNodeCP       identNode = static_cast<IdentNodeCP>(primaryList.GetOperatorNode(index));
+                memberName = identNode->GetName();
+                }
+
             //  Will be TOKEN_None if index is at the end
-            nextOperation = primaryList.GetOperation(index);
+            nextOperation = primaryList.GetOperation(++index);
 
             if (appendDot)
                 accessString.append(L".");
 
             appendDot = true;
 
-            wchar_t const*  memberName = identNode->GetName();
             accessString.append(memberName);
 
             currentProperty = ecClass->GetPropertyP(memberName);
@@ -400,7 +447,6 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
             {
             if (NULL == currentProperty)
                 {
-                // ###TODO: support instance["accessString"] property access syntax...
                 evalResult.Clear();
                 return ExprStatus_ArrayRequired;
                 }
