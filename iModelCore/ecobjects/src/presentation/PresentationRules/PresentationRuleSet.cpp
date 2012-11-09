@@ -77,13 +77,10 @@ bool PresentationRuleSet::ReadXml (BeXmlDomR xmlDom)
         return false;
         }
 
-    if (BEXML_Success != ruleSetNode->GetAttributeStringValue (m_supportedSchemas, COMMON_XML_ATTRIBUTE_SUPPORTEDSCHEMAS))
-        {
-        ECObjectsLogger::Log()->errorv (L"Invalid PresentationRuleSetXML: %hs element must contain a %hs attribute", PRESENTATION_RULE_SET_XML_NODE_NAME, COMMON_XML_ATTRIBUTE_SUPPORTEDSCHEMAS);
-        return false;
-        }
-
     //Optional:
+    if (BEXML_Success != ruleSetNode->GetAttributeStringValue (m_supportedSchemas, COMMON_XML_ATTRIBUTE_SUPPORTEDSCHEMAS))
+        m_supportedSchemas = L"";
+
     if (BEXML_Success != ruleSetNode->GetAttributeBooleanValue (m_isSupplemental, PRESENTATION_RULE_SET_XML_ATTRIBUTE_ISSUPPLEMENTAL))
         m_isSupplemental = false;
 
