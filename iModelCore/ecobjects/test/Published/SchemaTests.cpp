@@ -1085,8 +1085,11 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     EXPECT_EQ(0, nestedArrayProp->GetMinOccurs());
     EXPECT_EQ(UINT_MAX, nestedArrayProp->GetMaxOccurs());
     EXPECT_EQ(1, primitiveArrayProp->GetMinOccurs());
+#if FIXED_COUNT_ARRAYS_ARE_SUPPORTED
     EXPECT_EQ(10, primitiveArrayProp->GetMaxOccurs());
-    
+#else
+    EXPECT_EQ(UINT_MAX, primitiveArrayProp->GetMaxOccurs());
+#endif
     EXPECT_TRUE(stringProp->GetIsPrimitive());
     EXPECT_FALSE(stringProp->GetIsStruct());
     EXPECT_FALSE(stringProp->GetIsArray());

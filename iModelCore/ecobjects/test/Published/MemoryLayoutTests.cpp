@@ -16,6 +16,8 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
+#define FIXED_COUNT_ARRAYS_ARE_SUPPORTED 0
+
 using namespace std;
 
 struct MemoryLayoutTests : ECTestFixture {};
@@ -688,12 +690,14 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
         }          
         
     VerifyArrayInfo (instance, v, L"BeginningArray[]", 0, false);
-    VerifyArrayInfo (instance, v, L"FixedArrayFixedElement[]", 10, true);
     VerifyArrayInfo (instance, v, L"VariableArrayFixedElement[]", 0, false);
-    VerifyArrayInfo (instance, v, L"FixedArrayVariableElement[]", 12, true);
     VerifyArrayInfo (instance, v, L"VariableArrayVariableElement[]", 0, false);
     VerifyArrayInfo (instance, v, L"EndingArray[]", 0, false);
     
+#if FIXED_COUNT_ARRAYS_ARE_SUPPORTED
+    // We cannot honor min/maxOccurs attributes of ArrayECProperty, so arrays are always unbounded
+    VerifyArrayInfo (instance, v, L"FixedArrayFixedElement[]", 10, true);
+    VerifyArrayInfo (instance, v, L"FixedArrayVariableElement[]", 12, true);
     VerifyIsNullArrayElements (instance, v, L"FixedArrayFixedElement[]", 0, 10, true);
     SetAndVerifyIntegerArray (instance, v, L"FixedArrayFixedElement[]", 172, 10);
     VerifyIsNullArrayElements (instance, v, L"FixedArrayFixedElement[]", 0, 10, false);
@@ -705,7 +709,25 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     SetAndVerifyStringArray (instance, v, L"FixedArrayVariableElement[]", L"LaaaaaaargeString", 10);       
     VerifyStringArray (instance, v, L"FixedArrayVariableElement[]", L"BaseStringXXXXXXXXXX", 10, 2);
     SetAndVerifyStringArray (instance, v, L"FixedArrayVariableElement[]", L"XString", 12);           
-    
+#else
+    // Replace #ifdef'ed out section above
+    VerifyArrayInfo (instance, v, L"FixedArrayFixedElement[]", 0, false);
+    VerifyArrayInfo (instance, v, L"FixedArrayVariableElement[]", 0, false);
+    instance.AddArrayElements (L"FixedArrayFixedElement[]", 10);                       // if we supported fixed count arrays, the elements would already have been allocated and this would be unnecessary
+    VerifyIsNullArrayElements (instance, v, L"FixedArrayFixedElement[]", 0, 10, true);
+    SetAndVerifyIntegerArray (instance, v, L"FixedArrayFixedElement[]", 172, 10);
+    VerifyIsNullArrayElements (instance, v, L"FixedArrayFixedElement[]", 0, 10, false);
+    SetAndVerifyIntegerArray (instance, v, L"FixedArrayFixedElement[]", 283, 10);
+
+    instance.AddArrayElements (L"FixedArrayVariableElement[]", 12);                    // if we supported fixed count arrays, the elements would already have been allocated and this would be unnecessary
+    VerifyIsNullArrayElements (instance, v, L"FixedArrayVariableElement[]", 0, 12, true);
+    SetAndVerifyStringArray (instance, v, L"FixedArrayVariableElement[]", L"BaseString", 12);
+    VerifyIsNullArrayElements (instance, v, L"FixedArrayVariableElement[]", 0, 12, false);
+    SetAndVerifyStringArray (instance, v, L"FixedArrayVariableElement[]", L"LaaaaaaargeString", 10);
+    VerifyStringArray (instance, v, L"FixedArrayVariableElement[]", L"BaseStringXXXXXXXXXX", 10, 2);
+    SetAndVerifyStringArray (instance, v, L"FixedArrayVariableElement[]", L"XString", 12);
+#endif
+
     ExerciseVariableCountStringArray (instance, v, L"BeginningArray[]", L"BAValue");
     ExerciseVariableCountIntArray    (instance, v, L"VariableArrayFixedElement[]", 57);
     ExerciseVariableCountStringArray (instance, v, L"VariableArrayVariableElement[]", L"Var+Var");
@@ -734,17 +756,9 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
         swprintf (propertyName, L"Property%i", i);
         VerifyString (instance, v, propertyName, valueForFinalStrings);
         }    
-    VerifyArrayInfo     (instance, v, L"FixedArrayFixedElement[]", 10, true);
-    VerifyIntegerArray  (instance, v, L"FixedArrayFixedElement[]", 283, 0, 10);             
     VerifyArrayInfo     (instance, v, L"BeginningArray[]", 14, false);
     VerifyIsNullArrayElements   (instance, v, L"BeginningArray[]", 0, 14, false);
     VerifyStringArray   (instance, v, L"BeginningArray[]", L"BAValue", 0, 14);        
-    VerifyArrayInfo     (instance, v, L"FixedArrayVariableElement[]", 12, true);
-    VerifyIsNullArrayElements   (instance, v, L"FixedArrayVariableElement[]", 0, 12, false);
-    VerifyStringArray   (instance, v, L"FixedArrayVariableElement[]", L"XString", 0, 12);           
-    VerifyArrayInfo     (instance, v, L"VariableArrayFixedElement[]", 14, false);
-    VerifyIsNullArrayElements   (instance, v, L"VariableArrayFixedElement[]", 0, 14, false);
-    VerifyIntegerArray  (instance, v, L"VariableArrayFixedElement[]", 57, 0, 14);                   
     VerifyArrayInfo     (instance, v, L"VariableArrayVariableElement[]", 14, false);
     VerifyIsNullArrayElements   (instance, v, L"VariableArrayVariableElement[]", 0, 14, false);
     VerifyStringArray   (instance, v, L"VariableArrayVariableElement[]", L"Var+Var", 0, 14);               
@@ -753,6 +767,17 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     VerifyStringArray   (instance, v, L"EndingArray[]", L"EArray", 0, 14);                
     VerifyVariableCountManufacturerArray (instance, v, L"ManufacturerArray[]");     
     
+#if FIXED_COUNT_ARRAYS_ARE_SUPPORTED
+    VerifyArrayInfo     (instance, v, L"FixedArrayFixedElement[]", 10, true);
+    VerifyIntegerArray  (instance, v, L"FixedArrayFixedElement[]", 283, 0, 10);             
+    VerifyArrayInfo     (instance, v, L"FixedArrayVariableElement[]", 12, true);
+    VerifyIsNullArrayElements   (instance, v, L"FixedArrayVariableElement[]", 0, 12, false);
+    VerifyStringArray   (instance, v, L"FixedArrayVariableElement[]", L"XString", 0, 12);           
+    VerifyArrayInfo     (instance, v, L"VariableArrayFixedElement[]", 14, false);
+    VerifyIsNullArrayElements   (instance, v, L"VariableArrayFixedElement[]", 0, 14, false);
+    VerifyIntegerArray  (instance, v, L"VariableArrayFixedElement[]", 57, 0, 14);                   
+#endif
+
     instance.ToString(L"").c_str();
     }
 
@@ -780,6 +805,7 @@ TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper)
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetDouble      (*instance, doubleVal, L"D"));
     EXPECT_TRUE ((double)(1.0/3.0) == doubleVal);
 
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::AddArrayElements (L"FixedArrayFixedElement[]", 1));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetIntegerValue (*instance, L"FixedArrayFixedElement[0]", (int)(97)));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetInteger      (*instance, intVal, L"FixedArrayFixedElement[0]"));
     EXPECT_TRUE (97 == intVal);
@@ -2073,14 +2099,17 @@ TEST_F(MemoryLayoutTests, ExpectErrorsWhenViolatingArrayConstraints)
 
     {
     DISABLE_ASSERTS
+
+#if FIXED_COUNT_ARRAYS_ARE_SUPPORTED
     // verify we can not change the size of fixed arrays        
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"FixedArrayFixedElement[]", 0, 1));
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"FixedArrayFixedElement[]", 10, 1));
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->AddArrayElements    (L"FixedArrayFixedElement[]", 1));
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"FixedArrayVariableElement[]", 0, 1));
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"FixedArrayVariableElement[]", 12, 1));
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->AddArrayElements    (L"FixedArrayVariableElement[]", 1));
-    
+    ASSERT_EQ (FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"FixedArrayFixedElement[]", 0, 1));
+    ASSERT_EQ (FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"FixedArrayFixedElement[]", 10, 1));
+    ASSERT_EQ (FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECOBJECTS_STATUS_Success != instance->AddArrayElements    (L"FixedArrayFixedElement[]", 1));
+    ASSERT_EQ (FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"FixedArrayVariableElement[]", 0, 1));
+    ASSERT_EQ (FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"FixedArrayVariableElement[]", 12, 1));
+    ASSERT_EQ (FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECOBJECTS_STATUS_Success != instance->AddArrayElements    (L"FixedArrayVariableElement[]", 1));
+#endif
+
     // verify constraints of array insertion are enforced
     ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"NonExistArray", 0, 1));
     ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"BeginningArray", 0, 1)); // missing brackets
@@ -2353,6 +2382,7 @@ TEST_F (MemoryLayoutTests, TestRemovingArrayEntries)
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
     ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
     
+#if FIXED_COUNT_ARRAYS_ARE_SUPPORTED
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"FixedArrayFixedElement[]",  ECValue ((int)1), 1));
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"FixedArrayFixedElement[]",  ECValue ((int)3), 3));
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"FixedArrayFixedElement[]",  ECValue ((int)5), 5));
@@ -2375,6 +2405,7 @@ TEST_F (MemoryLayoutTests, TestRemovingArrayEntries)
     DISABLE_ASSERTS    
     EXPECT_TRUE (ECOBJECTS_STATUS_Success != instance->RemoveArrayElement(L"FixedArrayVariableElement[]", 2));
     }
+#endif
 
     instance->AddArrayElements(L"SomeStrings[]", 5);
 
@@ -2481,20 +2512,33 @@ TEST_F (MemoryLayoutTests, IterateCompleClass)
 
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"BooleanProperty", b));
     EXPECT_TRUE (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == instance->SetValue (L"BooleanProperty", b));
+#if !FIXED_COUNT_ARRAYS_ARE_SUPPORTED
+    EXPECT_TRUE (SUCCESS == instance->AddArrayElements (L"SimpleArrayProperty[]", 1));
+#endif
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"SimpleArrayProperty[]", s1, 0));
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"StructProperty.StringProperty", s2));
     EXPECT_TRUE (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == instance->SetValue (L"StructProperty.StringProperty", s2));
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"StructProperty.IntProperty", i1));
     EXPECT_TRUE (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == instance->SetValue (L"StructProperty.IntProperty", i1));
+#if !FIXED_COUNT_ARRAYS_ARE_SUPPORTED
+    EXPECT_TRUE (SUCCESS == instance->AddArrayElements (L"StructProperty.ArrayProperty[]", 1));
+#endif
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"StructProperty.ArrayProperty[]", s3, 0));
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"DoubleProperty", d1));
     EXPECT_TRUE (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == instance->SetValue (L"DoubleProperty", d1));
 
     EXPECT_TRUE (SUCCESS == structInstance->SetValue (L"StringProperty", s5));
     EXPECT_TRUE (SUCCESS == structInstance->SetValue (L"IntProperty", i3));
+#if !FIXED_COUNT_ARRAYS_ARE_SUPPORTED
+    EXPECT_TRUE (SUCCESS == structInstance->AddArrayElements (L"ArrayProperty[]", 1));
+#endif
     EXPECT_TRUE (SUCCESS == structInstance->SetValue (L"ArrayProperty[]", s6, 0));
 
+#if FIXED_COUNT_ARRAYS_ARE_SUPPORTED
     // This is a fixed-size struct array so we don't have to insert members
+#else
+    EXPECT_TRUE (SUCCESS == instance->AddArrayElements (L"StructArrayProperty[]", 1));
+#endif
     ECValue structVal;
     structVal.SetStruct (structInstance.get());
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"StructArrayProperty[]", structVal, 0));
