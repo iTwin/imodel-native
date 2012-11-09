@@ -71,6 +71,7 @@ ECPresentationHeaders = $(ecpresentationPublicAPISrc)auicommand.h \
 ECPresentationRulesHeaders = $(ecpresentationRulesPublicAPISrc)PresentationRules.h \
                              $(ecpresentationRulesPublicAPISrc)ChildNodeSpecification.h \
                              $(ecpresentationRulesPublicAPISrc)ChildNodeRule.h \
+                             $(ecpresentationRulesPublicAPISrc)CheckBoxRule.h \
                              $(ecpresentationRulesPublicAPISrc)ContentRule.h \
                              $(ecpresentationRulesPublicAPISrc)ImageIdOverride.h \
                              $(ecpresentationRulesPublicAPISrc)PresentationRule.h \
@@ -175,6 +176,8 @@ $(o)ChildNodeRule$(oext)                                   : $(baseDir)presentat
 $(o)ChildNodeSpecification$(oext)                          : $(baseDir)presentation/PresentationRules/ChildNodeSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
 $(o)ContentRule$(oext)                                     : $(baseDir)presentation/PresentationRules/ContentRule.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
+
+$(o)CheckBoxRule$(oext)                                    : $(baseDir)presentation/PresentationRules/CheckBoxRule.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
 $(o)ImageIdOverride$(oext)                                 : $(baseDir)presentation/PresentationRules/ImageIdOverride.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
