@@ -20,6 +20,7 @@ typedef bvector<LabelOverrideP>                      LabelOverrideList;
 typedef bvector<StyleOverrideP>                      StyleOverrideList;
 typedef bvector<GroupingRuleP>                       GroupingRuleList;
 typedef bvector<LocalizationResourceKeyDefinitionP>  LocalizationResourceKeyDefinitionList;
+typedef bvector<CheckBoxRuleP>                       CheckBoxRuleList;
 
 /*---------------------------------------------------------------------------------**//**
 PresentationRuleSet is a container of all presentation rules for particular type of the tree
@@ -44,6 +45,7 @@ struct PresentationRuleSet : public RefCountedBase
         StyleOverrideList                      m_styleOverrides;
         GroupingRuleList                       m_groupingRules;
         LocalizationResourceKeyDefinitionList  m_localizationResourceKeyDefinitions;
+        CheckBoxRuleList                       m_checkBoxRules;
 
         //Private constructor. This class instance should be creates using static helper methods.
         PresentationRuleSet (void)
@@ -138,6 +140,9 @@ struct PresentationRuleSet : public RefCountedBase
 
         //! Collection of rules, which should be used when localization resource key definition is predefined.
         ECOBJECTS_EXPORT LocalizationResourceKeyDefinitionList&  GetLocalizationResourceKeyDefinitions (void) { return m_localizationResourceKeyDefinitions; }
+
+        //! Collection of rules, which should be used when check boxes for particural nodes should be displayed.
+        ECOBJECTS_EXPORT CheckBoxRuleList&              GetCheckBoxRules (void)           { return m_checkBoxRules;    }
 
     };
 

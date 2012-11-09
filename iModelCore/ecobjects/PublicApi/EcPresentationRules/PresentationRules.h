@@ -20,6 +20,7 @@ EC_TYPEDEFS (PresentationRuleSet);
 EC_TYPEDEFS (RootNodeRule);
 EC_TYPEDEFS (LabelOverride);
 EC_TYPEDEFS (StyleOverride);
+EC_TYPEDEFS (CheckBoxRule);
 EC_TYPEDEFS (GroupingRule);
 EC_TYPEDEFS (GroupSpecification);
 EC_TYPEDEFS (ClassGroup);
@@ -52,6 +53,7 @@ END_BENTLEY_ECOBJECT_NAMESPACE
 #include <ECPresentationRules/LabelOverride.h>
 #include <ECPresentationRules/StyleOverride.h>
 #include <ECPresentationRules/LocalizationResourceKeyDefinition.h>
+#include <ECPresentationRules/CheckBoxRule.h>
 #include <ECPresentationRules/GroupingRule.h>
 #include <ECPresentationRules/AllInstanceNodesSpecification.h>
 #include <ECPresentationRules/AllRelatedInstanceNodesSpecification.h>

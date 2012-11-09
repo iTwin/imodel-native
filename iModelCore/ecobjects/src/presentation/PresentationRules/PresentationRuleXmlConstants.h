@@ -65,6 +65,11 @@
 #define GROUPING_RULE_XML_ATTRIBUTE_MENUCONDITION                                     "ContextMenuCondition"
 #define GROUPING_RULE_XML_ATTRIBUTE_MENULABEL                                         "ContextMenuLabel"
 
+#define CHECKBOX_RULE_XML_NODE_NAME                                                   "CheckBoxRule"
+#define CHECKBOX_RULE_XML_ATTRIBUTE_PROPERTYNAME                                      "PropertyName"
+#define CHECKBOX_RULE_XML_ATTRIBUTE_USEINVERSEDPROPERTYVALUE                          "UseInversedPropertyValue"
+#define CHECKBOX_RULE_XML_ATTRIBUTE_DEFAULTVALUE                                      "DefaultValue"
+
 #define CLASS_GROUP_XML_NODE_NAME                                                     "ClassGroup"
 #define CLASS_GROUP_XML_ATTRIBUTE_SCHEMANAME                                          "SchemaName"
 #define CLASS_GROUP_XML_ATTRIBUTE_BASECLASSNAME                                       "BaseClassName"
