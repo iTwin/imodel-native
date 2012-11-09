@@ -781,7 +781,7 @@ ECObjectsStatus ArrayECProperty::SetMinOccurs (WStringCR minOccurs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 UInt32 ArrayECProperty::GetMaxOccurs () const
     {
-    return m_maxOccurs;
+    return /* m_maxOccurs; */ UINT_MAX; // D-106653
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -789,13 +789,11 @@ UInt32 ArrayECProperty::GetMaxOccurs () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ArrayECProperty::SetMaxOccurs (UInt32 maxOccurs)
     {
+    // D-106653: Note: We store maxOccurs as read from schema, but we do not enforce it - callers can increase the size of the array beyond maxOccurs and array elements are always stored in variable-size section
+    // of ECD buffer.
+    // ###TODO: should we allocate space for maxOccurs elements when initializing ECD buffer? Test code expects this, but does real code?
     PRECONDITION (maxOccurs >= m_minOccurs, ECOBJECTS_STATUS_PreconditionViolated);
     m_maxOccurs = maxOccurs;
-    if (1 == m_maxOccurs)
-        {
-        // D-106653 ClassEditor defaults maxOccurs to 1, but 8.11.9 allows array size to exceed 1. Assume maxOccurs=1 is due to ClassEditor bug and treat as unbounded
-        m_maxOccurs = UINT_MAX;
-        }
 
     return ECOBJECTS_STATUS_Success;
     }

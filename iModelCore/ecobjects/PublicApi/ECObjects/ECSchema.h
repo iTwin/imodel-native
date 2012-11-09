@@ -590,7 +590,7 @@ friend struct ECClass;
 
 private:
     UInt32              m_minOccurs;
-    UInt32              m_maxOccurs;
+    UInt32              m_maxOccurs;    // D-106653 we store this as read from the schema, but all arrays are considered to be of unbounded size
 
     union
         {
