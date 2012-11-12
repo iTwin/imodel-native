@@ -259,23 +259,27 @@ public:
     const static int INDEX_ROOT = -1;
     struct Location
         {
-        ECEnablerCP   enabler;
-        int           propertyIndex;
-        int           arrayIndex;
+    private:
+        ECEnablerCP             m_enabler;
+        int                     m_propertyIndex;
+        int                     m_arrayIndex;
 /*__PUBLISH_SECTION_END__*/
-        Location (ECEnablerCP newEnabler, int newPropertyIndex, int newArrayIndex)
-            : enabler (newEnabler), propertyIndex (newPropertyIndex), arrayIndex (newArrayIndex)
-            {
-            }
-        Location ()
-            :arrayIndex(INDEX_ROOT),enabler(NULL), propertyIndex(0)
-            {
-            }
-        Location (const Location& loc)
-            : enabler (loc.enabler), propertyIndex (loc.propertyIndex), arrayIndex (loc.arrayIndex)
-            {
-            }
+        mutable ECPropertyCP    m_cachedProperty;
+    public:
+
+        Location (ECEnablerCP enabler, int propIdx, int arrayIdx) : m_enabler(enabler), m_propertyIndex(propIdx), m_arrayIndex(arrayIdx), m_cachedProperty(NULL) { }
+        Location () : m_enabler(NULL), m_propertyIndex(NULL), m_arrayIndex(NULL), m_cachedProperty(NULL) { }
+        Location (const Location& loc) : m_enabler(loc.m_enabler), m_propertyIndex(loc.m_propertyIndex), m_arrayIndex(loc.m_arrayIndex), m_cachedProperty(loc.m_cachedProperty) { }
+
+        ECPropertyCP    GetECProperty() const;
+        void            SetPropertyIndex (int index)                { m_cachedProperty = NULL; m_propertyIndex = index; }
+        void            SetArrayIndex (int index)                   { m_arrayIndex = index; }
+        void            IncrementArrayIndex()                       { m_arrayIndex++; }
 /*__PUBLISH_SECTION_START__*/
+    public:
+        ECEnablerCP             GetEnabler() const          { return m_enabler; }
+        int                     GetPropertyIndex() const    { return m_propertyIndex; }
+        int                     GetArrayIndex() const       { return m_arrayIndex; }
         };
 
     typedef bvector<Location> LocationVector;
