@@ -79,45 +79,46 @@ struct GroupingRule : public PresentationRule
 GroupSpecification that identifies parameters on how to group ECInstances
 * @bsiclass                                     Andrius.Zonys                   10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct GroupSpecification /*__PUBLISH_ABSTRACT__*/
+struct GroupSpecification
     {
-    /*__PUBLISH_SECTION_END__*/
+//__PUBLISH_SECTION_END__
     private:
         WString                 m_imageId;
         WString                 m_contextMenuLabel;
         bool                    m_createGroupForSingleItem;
 
-    protected:
-    /*__PUBLISH_SECTION_START__*/
-        ECOBJECTS_EXPORT GroupSpecification ()
-            : m_imageId (L""), m_contextMenuLabel (L""), m_createGroupForSingleItem (false)
-            {
-            }
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
+protected:
+    ECOBJECTS_EXPORT GroupSpecification ()
+        : m_imageId (L""), m_contextMenuLabel (L""), m_createGroupForSingleItem (false)
+        {
+        }
 
-        ECOBJECTS_EXPORT GroupSpecification (WStringCR imageId, WStringCR contextMenuLabel, bool createGroupForSingleItem)
-            : m_imageId (imageId), m_contextMenuLabel (contextMenuLabel), m_createGroupForSingleItem (createGroupForSingleItem)
-            {
-            }
+    ECOBJECTS_EXPORT GroupSpecification (WStringCR imageId, WStringCR contextMenuLabel, bool createGroupForSingleItem)
+        : m_imageId (imageId), m_contextMenuLabel (contextMenuLabel), m_createGroupForSingleItem (createGroupForSingleItem)
+        {
+        }
 
-        ECOBJECTS_EXPORT virtual CharCP           _GetXmlElementName () = 0;
-        ECOBJECTS_EXPORT virtual bool             _ReadXml (BeXmlNodeP xmlNode) = 0;
-        ECOBJECTS_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode) = 0;
+    ECOBJECTS_EXPORT virtual CharCP           _GetXmlElementName () = 0;
+    ECOBJECTS_EXPORT virtual bool             _ReadXml (BeXmlNodeP xmlNode) = 0;
+    ECOBJECTS_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode) = 0;
 
-    public:
-        //! Reads group specification from xml node.
-        ECOBJECTS_EXPORT bool                     ReadXml (BeXmlNodeP xmlNode);
+public:
+    //! Reads group specification from xml node.
+    ECOBJECTS_EXPORT bool                     ReadXml (BeXmlNodeP xmlNode);
 
-        //! Writes group specification to xml node.
-        ECOBJECTS_EXPORT void                     WriteXml (BeXmlNodeP parentXmlNode);
+    //! Writes group specification to xml node.
+    ECOBJECTS_EXPORT void                     WriteXml (BeXmlNodeP parentXmlNode);
 
-        //! ImageId of the grouping node. Can be ECExpression. If not set ECClass or ECProperty ImageId will be used.
-        ECOBJECTS_EXPORT WStringCR                GetImageId (void) const                     { return m_imageId; }
+    //! ImageId of the grouping node. Can be ECExpression. If not set ECClass or ECProperty ImageId will be used.
+    ECOBJECTS_EXPORT WStringCR                GetImageId (void) const                     { return m_imageId; }
 
-        //! ContextMenu label of this particular grouping option. If not set ECClass or ECProperty DisplayLabel will be used.
-        ECOBJECTS_EXPORT WStringCR                GetContextMenuLabel (void) const            { return m_contextMenuLabel; }
+    //! ContextMenu label of this particular grouping option. If not set ECClass or ECProperty DisplayLabel will be used.
+    ECOBJECTS_EXPORT WStringCR                GetContextMenuLabel (void) const            { return m_contextMenuLabel; }
 
-        //! Idendifies whether a group should be created even if there is only single of particular group.
-        ECOBJECTS_EXPORT bool                     GetCreateGroupForSingleItem (void) const    { return m_createGroupForSingleItem; }
+    //! Idendifies whether a group should be created even if there is only single of particular group.
+    ECOBJECTS_EXPORT bool                     GetCreateGroupForSingleItem (void) const    { return m_createGroupForSingleItem; }
     };
 
 /*---------------------------------------------------------------------------------**//**

@@ -126,7 +126,7 @@ public:
 //! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================
-struct ECTypeDescriptor
+struct ECTypeDescriptor /*__PUBLISH_SEALED__*/
 {
 private:
     ValueKind       m_typeKind;
@@ -185,9 +185,8 @@ struct SupplementedSchemaBuilder;
 //! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================
-struct IECCustomAttributeContainer /*__PUBLISH_ABSTRACT__*/
+struct IECCustomAttributeContainer
 {
-/*__PUBLISH_CLASS_VIRTUAL__*/
 /*__PUBLISH_SECTION_END__*/
 private:
     friend struct ECCustomAttributeInstanceIterable;
@@ -219,7 +218,8 @@ protected:
 public:
     ECSchemaP                           GetContainerSchema();
 
-/*__PUBLISH_SECTION_START__*/
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
 public:
     //! Returns true if the container has a custom attribute of a class of the specified name
     ECOBJECTS_EXPORT bool               IsDefined(WStringCR className) ;
@@ -303,11 +303,12 @@ private:
    ECCustomAttributeInstanceIterable( IECCustomAttributeContainerCR container, bool includeBase, bool includeSupplementalAttributes) : m_container(container), m_includeBaseContainers(includeBase),
     m_includeSupplementalAttributes(includeSupplementalAttributes) {};
 public:
-    struct IteratorState /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
+    struct IteratorState : RefCountedBase
         {
         friend struct const_iterator;
-/*__PUBLISH_SECTION_END__*/
 
+//__PUBLISH_CLASS_VIRTUAL__
+/*__PUBLISH_SECTION_END__*/
         ECCustomAttributeCollection* m_customAttributes;
         ECCustomAttributeCollection::const_iterator m_customAttributesIterator;
 
@@ -349,7 +350,7 @@ Base class for an object which adapts the internal value of an ECProperty to a u
 @ingroup ECObjectsGroup
 @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct IECTypeAdapter /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
+struct IECTypeAdapter : RefCountedBase
     {
     typedef bvector<WString> StandardValuesCollection;
 /*__PUBLISH_SECTION_END__*/
@@ -365,7 +366,9 @@ protected:
     virtual ECN::IECInstancePtr  _CondenseFormatterForSerialization (ECN::IECInstanceCR formatter) const = 0;
     virtual ECN::IECInstancePtr  _PopulateDefaultFormatterProperties (ECN::IECInstanceCR formatter) const = 0;
     virtual ECN::IECInstancePtr  _CreateDefaultFormatter (bool includeAllValues, bool forDwg) const = 0;
-/*__PUBLISH_SECTION_START__*/
+
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
 public:
     //! @return true if it is possible to convert the underlying type to a string
     ECOBJECTS_EXPORT bool                 CanConvertToString () const;
@@ -514,7 +517,7 @@ public:
 //! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================
-struct PrimitiveECProperty /*__PUBLISH_ABSTRACT__*/ : public ECProperty
+struct PrimitiveECProperty : public ECProperty
 {
     DEFINE_T_SUPER(ECProperty)
 /*__PUBLISH_SECTION_END__*/
@@ -538,7 +541,8 @@ public:
     CalculatedPropertySpecificationCP   GetCalculatedPropertySpecification() const;
     bool                                IsCalculated() const;
 
-/*__PUBLISH_SECTION_START__*/
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
 public:
     //! Sets the PrimitiveType of this ECProperty.  The default type is PRIMITIVETYPE_String
     ECOBJECTS_EXPORT ECObjectsStatus SetType(PrimitiveType value);
@@ -551,7 +555,7 @@ public:
 //! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================
-struct StructECProperty /*__PUBLISH_ABSTRACT__*/ : public ECProperty
+struct StructECProperty : public ECProperty
 {
     DEFINE_T_SUPER(ECProperty)
 /*__PUBLISH_SECTION_END__*/
@@ -569,7 +573,8 @@ protected:
     virtual ECObjectsStatus             _SetTypeName (WStringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
 
-/*__PUBLISH_SECTION_START__*/
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
 public:
     //! The property type.
     //! This type must be an ECClass where IsStruct is set to true.
@@ -582,7 +587,7 @@ public:
 //! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================
-struct ArrayECProperty /*__PUBLISH_ABSTRACT__*/ : public ECProperty
+struct ArrayECProperty : public ECProperty
 {
     DEFINE_T_SUPER(ECProperty)
 /*__PUBLISH_SECTION_END__*/
@@ -657,9 +662,9 @@ private:
     bool            m_includeBaseProperties;
 
     ECPropertyIterable(ECClassCR ecClass, bool includeBaseProperties);
-public:
 
-    struct IteratorState /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
+public:
+    struct IteratorState : RefCountedBase
         {
         friend struct const_iterator;
 /*__PUBLISH_SECTION_END__*/
@@ -671,6 +676,7 @@ public:
             ~IteratorState();
             static RefCountedPtr<IteratorState> Create (ECClassCR ecClass, bool includeBaseProperties)
                 { return new IteratorState(ecClass, includeBaseProperties); };
+//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
         };
 
@@ -718,7 +724,7 @@ typedef RefCountedPtr<SearchPathSchemaFileLocater> SearchPathSchemaFileLocaterPt
 //! The in-memory representation of an ECClass as defined by ECSchemaXML
 //! @bsiclass
 //=======================================================================================
-struct ECClass /*__PUBLISH_ABSTRACT__*/ : IECCustomAttributeContainer
+struct ECClass : IECCustomAttributeContainer
 {
 /*__PUBLISH_SECTION_END__*/
 
@@ -787,7 +793,8 @@ protected:
 
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const { return NULL; }  // used to avoid dynamic_cast
 
-/*__PUBLISH_SECTION_START__*/
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
 public:
     ECOBJECTS_EXPORT StandaloneECEnablerP  GetDefaultStandaloneEnabler() const;
     ECOBJECTS_EXPORT ECRelationshipClassCP GetRelationshipClassCP() const;
@@ -1122,7 +1129,7 @@ public:
 //! The in-memory representation of a relationship class as defined by ECSchemaXML
 //! @bsiclass
 //=======================================================================================
-struct ECRelationshipClass /*__PUBLISH_ABSTRACT__*/ : public ECClass
+struct ECRelationshipClass : public ECClass
 {
     DEFINE_T_SUPER(ECClass)
 /*__PUBLISH_SECTION_END__*/
@@ -1150,7 +1157,8 @@ protected:
     virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context) override;
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const override {return this;};
 
-/*__PUBLISH_SECTION_START__*/
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
 public:
     //! Returns pointer to ECRelationshipClassP,  used to avoid dynamic_cast.
     //! @return     Returns NULL if not an ECRelationshipClass
@@ -1391,7 +1399,7 @@ typedef const ECSchemaReferenceList&    ECSchemaReferenceListCR;
 //! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================
-struct ECClassContainer /*__PUBLISH_ABSTRACT__*/
+struct ECClassContainer
 {
 /*__PUBLISH_SECTION_END__*/
 private:
@@ -1404,13 +1412,13 @@ private:
 public:
     ECOBJECTS_EXPORT ECClassContainer (ClassMap const& classMap) : m_classMap (classMap) {}; //public for test purposes only
 
-/*__PUBLISH_SECTION_START__*/
-
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
 public:
     //=======================================================================================
     // @bsistruct
     //=======================================================================================
-    struct IteratorState /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
+    struct IteratorState : RefCountedBase
         {
         friend struct const_iterator;
 /*__PUBLISH_SECTION_END__*/
@@ -1419,7 +1427,8 @@ public:
 
             IteratorState (ClassMap::const_iterator mapIterator) { m_mapIterator = mapIterator; };
             static RefCountedPtr<IteratorState> Create (ClassMap::const_iterator mapIterator) { return new IteratorState(mapIterator); };
-/*__PUBLISH_SECTION_START__*/
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
         };
 
     //=======================================================================================
@@ -1489,7 +1498,7 @@ typedef RefCountedPtr<ECSchemaCache>        ECSchemaCachePtr;
 //! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================
-struct ECSchemaCache /*__PUBLISH_ABSTRACT__*/ : public RefCountedBase
+struct ECSchemaCache : public RefCountedBase
 //__PUBLISH_SECTION_END__
     ,public IECSchemaLocater
 //__PUBLISH_SECTION_START__
@@ -1500,7 +1509,8 @@ protected:
 
     ECOBJECTS_EXPORT virtual ECSchemaPtr     _LocateSchema (SchemaKeyR schema, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
 
-/*__PUBLISH_SECTION_START__*/
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
 public:
     ECOBJECTS_EXPORT ECObjectsStatus AddSchema   (ECSchemaR);
     ECOBJECTS_EXPORT ECObjectsStatus DropSchema  (ECSchemaR);
@@ -1547,7 +1557,7 @@ typedef RefCountedPtr<SupplementalSchemaInfo> SupplementalSchemaInfoPtr;
 //! The in-memory representation of a schema as defined by ECSchemaXML
 //! @bsiclass
 //=======================================================================================
-struct ECSchema /*__PUBLISH_ABSTRACT__*/ :RefCountedBase
+struct ECSchema : RefCountedBase
 //__PUBLISH_SECTION_END__
                                           , IECCustomAttributeContainer
 //__PUBLISH_SECTION_START__
@@ -1555,7 +1565,7 @@ struct ECSchema /*__PUBLISH_ABSTRACT__*/ :RefCountedBase
 private:
     ECSchema (ECSchema const&);
     ECSchema& operator= (ECSchema const&);
-/*__PUBLISH_CLASS_VIRTUAL__*/
+
 /*__PUBLISH_SECTION_END__*/
 friend struct SearchPathSchemaFileLocater;
 friend struct SupplementedSchemaBuilder;
@@ -1615,7 +1625,8 @@ private:
 protected:
     virtual ECSchemaCP                  _GetContainerSchema() const override;
 
-/*__PUBLISH_SECTION_START__*/
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
 public:
     ECOBJECTS_EXPORT SchemaKeyCR        GetSchemaKey() const;
     ECOBJECTS_EXPORT void               DebugDump() const;
