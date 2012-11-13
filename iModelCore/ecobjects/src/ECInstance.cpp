@@ -491,10 +491,10 @@ static ECObjectsStatus getECValueFromInstance (ECValueR v, IECInstanceCR instanc
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 static ECObjectsStatus          getValueHelper (ECValueR value, IECInstanceCR instance, ECValueAccessorCR accessor, UInt32 depth, bool compatible)
     {
-    int arrayIndex = accessor[depth].arrayIndex;
+    int arrayIndex = accessor[depth].GetArrayIndex();
     if (compatible)
         {
-        UInt32 propertyIndex = (UInt32)accessor[depth].propertyIndex;
+        UInt32 propertyIndex = (UInt32)accessor[depth].GetPropertyIndex();
         if (arrayIndex < 0)
             return instance.GetValue (value, propertyIndex);
         return instance.GetValue (value, propertyIndex,  (UInt32)arrayIndex);
@@ -515,10 +515,10 @@ static ECObjectsStatus          getValueHelper (ECValueR value, IECInstanceCR in
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 static ECObjectsStatus          setValueHelper (IECInstanceR instance, ECValueAccessorCR accessor, UInt32 depth, bool compatible, ECValueCR value)
     {
-    int arrayIndex = accessor[depth].arrayIndex;
+    int arrayIndex = accessor[depth].GetArrayIndex();
     if (compatible)
         {
-        UInt32 propertyIndex = (UInt32)accessor[depth].propertyIndex;
+        UInt32 propertyIndex = (UInt32)accessor[depth].GetPropertyIndex();
 
         if(arrayIndex < 0)
             {
@@ -543,10 +543,10 @@ static ECObjectsStatus          setValueHelper (IECInstanceR instance, ECValueAc
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 static ECObjectsStatus          setInternalValueHelper (IECInstanceR instance, ECValueAccessorCR accessor, UInt32 depth, bool compatible, ECValueCR value)
     {
-    int arrayIndex = accessor[depth].arrayIndex;
+    int arrayIndex = accessor[depth].GetArrayIndex();
     if (compatible)
         {
-        UInt32 propertyIndex = (UInt32)accessor[depth].propertyIndex;
+        UInt32 propertyIndex = (UInt32)accessor[depth].GetPropertyIndex();
 
         if(arrayIndex < 0)
             {
@@ -578,19 +578,19 @@ ECObjectsStatus           IECInstance::GetValueUsingAccessor (ECValueR v, ECValu
     for (UInt32 depth = 0; depth < accessor.GetDepth(); depth ++)
         {
         v.Clear();
-        bool compatible = (accessor[depth].enabler == &currentInstance->GetEnabler()); // if same enabler then use property index to set value else use access string
+        bool compatible = (accessor[depth].GetEnabler() == &currentInstance->GetEnabler()); // if same enabler then use property index to set value else use access string
 
         status = getValueHelper (v, *currentInstance, accessor, depth, compatible);
         if (ECOBJECTS_STATUS_Success != status)
             {
             // if we're accessing a property of an embedded struct, we expect GetValue() to return a null struct - so continue
-            if (v.IsStruct () && v.IsNull () && ECValueAccessor::INDEX_ROOT == accessor[depth].arrayIndex)
+            if (v.IsStruct () && v.IsNull () && ECValueAccessor::INDEX_ROOT == accessor[depth].GetArrayIndex())
                 continue;
             else
                 return status;
             }
 
-        if (v.IsStruct() && accessor[depth].arrayIndex >= 0)
+        if (v.IsStruct() && accessor[depth].GetArrayIndex() >= 0)
             currentInstance = v.GetStruct();
         }
 
@@ -607,9 +607,9 @@ ECObjectsStatus           IECInstance::SetInternalValueUsingAccessor (ECValueAcc
 
     for (UInt32 depth = 0; depth < accessor.GetDepth(); depth++)
         {
-        bool compatible = (accessor[depth].enabler == &currentInstance->GetEnabler()); // if same enabler then use property index to set value else use access string
-        int  propertyIndex   = accessor[depth].propertyIndex;
-        int  arrayIndex      = accessor[depth].arrayIndex;
+        bool compatible = (accessor[depth].GetEnabler() == &currentInstance->GetEnabler()); // if same enabler then use property index to set value else use access string
+        int  propertyIndex   = accessor[depth].GetPropertyIndex();
+        int  arrayIndex      = accessor[depth].GetArrayIndex();
 
         if (arrayIndex > -1)
             {
@@ -1349,7 +1349,7 @@ void            ECInstanceInteropHelper::SetToNull (IECInstanceR instance, ECVal
 bool            ECInstanceInteropHelper::IsPropertyReadOnly (IECInstanceCR instance, ECValueAccessorR accessor)
     {
     ECObjectsStatus status;
-    UInt32 propertyIndex = accessor.DeepestLocation().propertyIndex;
+    UInt32 propertyIndex = accessor.DeepestLocation().GetPropertyIndex();
     if (1 < accessor.GetDepth())
         {
         ECValue v;
@@ -1390,7 +1390,7 @@ ECN::ECEnablerP                  ECInstanceInteropHelper::GetEnablerForStructArr
         }
 
     // if we get here we probably have a fixed size array with NULL entries
-    ECN::ECEnablerP structArrayEnabler = const_cast<ECN::ECEnablerP>(arrayMemberAccessor.DeepestLocation().enabler);
+    ECN::ECEnablerP structArrayEnabler = const_cast<ECN::ECEnablerP>(arrayMemberAccessor.DeepestLocation().GetEnabler());
 
     ECN::StandaloneECEnablerPtr standaloneEnabler = structArrayEnabler->GetEnablerForStructArrayMember (schemaKey, className);
     if (standaloneEnabler.IsNull())
@@ -1439,7 +1439,7 @@ ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (ECN::ECValueAcces
                                                              bool createPropertyIfNotFound, WCharCP wcharAccessString, 
                                                              SchemaKeyCR schemaKey, WCharCP className)
     {
-    ECN::ECEnablerR structArrayEnabler = *(const_cast<ECN::ECEnablerP>(structArrayValueAccessor.DeepestLocationCR().enabler));
+    ECN::ECEnablerR structArrayEnabler = *(const_cast<ECN::ECEnablerP>(structArrayValueAccessor.DeepestLocationCR().GetEnabler()));
     ECN::StandaloneECEnablerPtr standaloneEnabler = structArrayEnabler.GetEnablerForStructArrayMember (schemaKey, className);
     if (standaloneEnabler.IsNull())
         {
@@ -1455,7 +1455,7 @@ ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (ECN::ECValueAcces
 
     // adjust the ECVAlueAccessor to include the array index
     ECN::ECValueAccessor arrayEntryValueAccessor (structArrayValueAccessor);
-    arrayEntryValueAccessor.DeepestLocation ().arrayIndex = index;
+    arrayEntryValueAccessor.DeepestLocation ().SetArrayIndex (index);
 
     if (arrayCount <= index)
         {
@@ -3148,6 +3148,21 @@ InstanceWriteStatus     IECInstance::WriteToXmlStream (IStreamP stream, bool isC
     }
 #endif //defined (NEEDSWORK_XML)
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+Bentley::DgnPlatform::DgnECInstance const* IECInstance::AsDgnECInstanceCP() const
+    {
+    return _GetAsDgnECInstance();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+Bentley::DgnPlatform::DgnECInstance* IECInstance::AsDgnECInstanceP()
+    {
+    return const_cast<Bentley::DgnPlatform::DgnECInstance*> (_GetAsDgnECInstance());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012

@@ -1314,7 +1314,7 @@ void ECValueAccessor::Clone (ECValueAccessorCR accessor)
     m_locationVector.clear();
 
     FOR_EACH (ECValueAccessor::Location const & location, accessor.GetLocationVectorCR())
-        PushLocation (*location.enabler, location.propertyIndex, location.arrayIndex);
+        PushLocation (*location.GetEnabler(), location.GetPropertyIndex(), location.GetArrayIndex());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1338,7 +1338,7 @@ const ECValueAccessor::LocationVector&          ECValueAccessor::GetLocationVect
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECEnablerCR                                     ECValueAccessor::GetEnabler (UInt32 depth) const
     {
-    return * m_locationVector[depth].enabler;
+    return * m_locationVector[depth].GetEnabler();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1453,8 +1453,8 @@ WCharCP                                 ECValueAccessor::GetAccessString () cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 WCharCP                                 ECValueAccessor::GetAccessString (UInt32 depth) const
     {
-    int propertyIndex         = m_locationVector[depth].propertyIndex;
-    ECEnablerCR enabler       = * m_locationVector[depth].enabler;
+    int propertyIndex         = m_locationVector[depth].GetPropertyIndex();
+    ECEnablerCR enabler       = * m_locationVector[depth].GetEnabler();
     WCharCP accessString;
     if (ECOBJECTS_STATUS_Success == enabler.GetAccessString (accessString, propertyIndex))
         return accessString;
@@ -1492,13 +1492,22 @@ WString                                        ECValueAccessor::GetPropertyName(
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyCP ECValueAccessor::Location::GetECProperty() const
+    {
+    if (NULL == m_cachedProperty && NULL != m_enabler)
+        m_cachedProperty = m_enabler->LookupECProperty (m_propertyIndex);
+
+    return m_cachedProperty;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyCP ECValueAccessor::GetECProperty() const
     {
-    return NULL != DeepestLocationCR().enabler
-        ? DeepestLocationCR().enabler->LookupECProperty (DeepestLocationCR().propertyIndex)
-        : NULL;
+    return DeepestLocationCR().GetECProperty();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1511,9 +1520,9 @@ WString                                        ECValueAccessor::GetDebugAccessSt
         {
         if(depth > 0)
             temp.append (L" -> ");
-        temp.append (WPrintfString(L"{%d", m_locationVector[depth].propertyIndex));
-        if(m_locationVector[depth].arrayIndex > -1)
-            temp.append (WPrintfString(L",%d", m_locationVector[depth].arrayIndex));
+        temp.append (WPrintfString(L"{%d", m_locationVector[depth].GetPropertyIndex()));
+        if(m_locationVector[depth].GetArrayIndex() > -1)
+            temp.append (WPrintfString(L",%d", m_locationVector[depth].GetArrayIndex()));
         temp.append (L"}");
         temp.append (GetAccessString (depth));
         }
@@ -1539,11 +1548,11 @@ WString                                        ECValueAccessor::GetManagedAccess
 
         temp.append (str);
         //If the current index is an array element,
-        if(m_locationVector[depth].arrayIndex > -1)
+        if(m_locationVector[depth].GetArrayIndex() > -1)
             {
             //Delete the last ']' from the access string and write a number.
             temp.resize (temp.size()-1);
-            temp.append (WPrintfString(L"%d", m_locationVector[depth].arrayIndex));
+            temp.append (WPrintfString(L"%d", m_locationVector[depth].GetArrayIndex()));
             temp.append (L"]");
             }
         }
@@ -1568,9 +1577,9 @@ bool ECValueAccessor::operator!=(ECValueAccessorCR accessor) const
         return true;
     for(UInt32 depth = 0; depth < GetDepth(); depth ++)
         {
-        if((*this)[depth].enabler != accessor[depth].enabler
-            || (*this)[depth].propertyIndex != accessor[depth].propertyIndex
-            || (*this)[depth].arrayIndex    != accessor[depth].arrayIndex)
+        if((*this)[depth].GetEnabler() != accessor[depth].GetEnabler()
+            || (*this)[depth].GetPropertyIndex() != accessor[depth].GetPropertyIndex()
+            || (*this)[depth].GetArrayIndex()    != accessor[depth].GetArrayIndex())
             return true;
         }
     return false;
@@ -1763,18 +1772,18 @@ ECObjectsStatus ECValueAccessor::GetECValue (ECValue& v, IECInstanceCR instance)
         {
         Location loc = m_locationVector[depth];
 
-        if (!(loc.enabler == &currentInstance->GetEnabler()))
+        if (!(loc.GetEnabler() == &currentInstance->GetEnabler()))
             return ECOBJECTS_STATUS_Error;
 
-        if (-1 != loc.arrayIndex)
-            status = instance.GetValue (v, loc.propertyIndex, loc.arrayIndex);
+        if (-1 != loc.GetArrayIndex())
+            status = instance.GetValue (v, loc.GetPropertyIndex(), loc.GetArrayIndex());
         else
-            status = instance.GetValue (v, loc.propertyIndex);
+            status = instance.GetValue (v, loc.GetPropertyIndex());
 
         if (ECOBJECTS_STATUS_Success != status)
             return status;
 
-        if (v.IsStruct() && 0 <= loc.arrayIndex)
+        if (v.IsStruct() && 0 <= loc.GetArrayIndex())
             {
             structInstancePtr = v.GetStruct();
             if (structInstancePtr.IsNull())
@@ -1866,12 +1875,12 @@ ECPropertyValue::ECPropertyValue (IECInstanceCR instance, ECValueAccessorCR acce
 bool                ECPropertyValue::HasChildValues () const
     {
     // Avoid evaluating value if we can answer this by looking at the ECProperty
-    // ###TODO: cache the property somewhere, as we need to look it up again in GetChildValues and elsewhere
+    // Note: performance: the accessor caches the ECProperty, since we often request it more than once
     ECPropertyCP prop = m_accessor.GetECProperty();
     ArrayECPropertyCP arrayProp;
     if (NULL == prop || prop->GetIsPrimitive())
         return false;
-    else if (NULL != (arrayProp = prop->GetAsArrayProperty()) && ARRAYKIND_Primitive == arrayProp->GetKind() && -1 != m_accessor.DeepestLocationCR().arrayIndex)
+    else if (NULL != (arrayProp = prop->GetAsArrayProperty()) && ARRAYKIND_Primitive == arrayProp->GetKind() && -1 != m_accessor.DeepestLocationCR().GetArrayIndex())
         return false;   // this is a primitive array member, it has no child properties
     else if (prop->GetIsStruct())
         return true;    // embedded struct always has child values, ECValue always null
@@ -1949,7 +1958,7 @@ ECPropertyValue ECValuesCollectionIterator::GetChildPropertyValue (ECPropertyVal
         if (0 < arrayCount)
             {
             m_arrayCount = arrayCount;
-            childAccessor.DeepestLocation().arrayIndex = 0;
+            childAccessor.DeepestLocation().SetArrayIndex (0);
             }
         else
             childAccessor.PopLocation();
@@ -1961,7 +1970,7 @@ ECPropertyValue ECValuesCollectionIterator::GetChildPropertyValue (ECPropertyVal
         if ( ! EXPECTED_CONDITION (0 < pathLength))
             return ECPropertyValue();
 
-        if (ECValueAccessor::INDEX_ROOT != childAccessor[pathLength - 1].arrayIndex)
+        if (ECValueAccessor::INDEX_ROOT != childAccessor[pathLength - 1].GetArrayIndex())
             {
             IECInstancePtr  structInstance  = parentValue.GetStruct();
             if (structInstance.IsValid())
@@ -1980,8 +1989,8 @@ ECPropertyValue ECValuesCollectionIterator::GetChildPropertyValue (ECPropertyVal
             }
         else
             {
-            UInt32          parentIndex =  childAccessor[pathLength - 1].propertyIndex;
-            ECEnablerCR     enabler     = *childAccessor[pathLength - 1].enabler;
+            UInt32          parentIndex =  childAccessor[pathLength - 1].GetPropertyIndex();
+            ECEnablerCR     enabler     = *childAccessor[pathLength - 1].GetEnabler();
             UInt32          firstIndex  =  enabler.GetFirstPropertyIndex (parentIndex);
 
             if (0 != firstIndex)
@@ -2042,7 +2051,7 @@ void            ECValuesCollectionIterator::MoveToNext()
     {
     ECValueAccessorR    currentAccessor = m_propertyValue.GetValueAccessorR();    
 
-    if (ECValueAccessor::INDEX_ROOT != currentAccessor.DeepestLocation().arrayIndex)
+    if (ECValueAccessor::INDEX_ROOT != currentAccessor.DeepestLocation().GetArrayIndex())
         {
         /*--------------------------------------------------------------------------
           If we are on an array member get the next member
@@ -2050,10 +2059,10 @@ void            ECValuesCollectionIterator::MoveToNext()
         if (!EXPECTED_CONDITION (0 <= m_arrayCount))
             return;
 
-        currentAccessor.DeepestLocation().arrayIndex++;
+        currentAccessor.DeepestLocation().IncrementArrayIndex();
 
         // If that was the last member of the array, we are done
-        if (currentAccessor.DeepestLocation().arrayIndex >= m_arrayCount)
+        if (currentAccessor.DeepestLocation().GetArrayIndex() >= m_arrayCount)
             {
             currentAccessor.Clear();
             return;
@@ -2065,17 +2074,17 @@ void            ECValuesCollectionIterator::MoveToNext()
           Ask the enabler for the next sibling property.
         --------------------------------------------------------------------------*/
         UInt32      pathLength   = currentAccessor.GetDepth();
-        UInt32      currentIndex = currentAccessor[pathLength - 1].propertyIndex;
+        UInt32      currentIndex = currentAccessor[pathLength - 1].GetPropertyIndex();
         UInt32      parentIndex = 0;
 
         // If we are inside an embedded struct get the struct index from the accessor's path
-        if (pathLength > 1 && ECValueAccessor::INDEX_ROOT == currentAccessor[pathLength - 2].arrayIndex)
-            parentIndex = currentAccessor[pathLength - 2].propertyIndex;
+        if (pathLength > 1 && ECValueAccessor::INDEX_ROOT == currentAccessor[pathLength - 2].GetArrayIndex())
+            parentIndex = currentAccessor[pathLength - 2].GetPropertyIndex();
 
-        ECEnablerCP enabler   = currentAccessor[pathLength - 1].enabler;
+        ECEnablerCP enabler   = currentAccessor[pathLength - 1].GetEnabler();
         UInt32      nextIndex = enabler->GetNextPropertyIndex (parentIndex, currentIndex);
 
-        currentAccessor.DeepestLocation().propertyIndex = nextIndex;
+        currentAccessor.DeepestLocation().SetPropertyIndex (nextIndex);
 
         // If that was the last index in the current struct, we are done
         if (0 == nextIndex)
