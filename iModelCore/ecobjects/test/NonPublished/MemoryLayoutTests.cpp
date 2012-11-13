@@ -1083,7 +1083,7 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     EXPECT_TRUE (SUCCESS == memcmp (&inPoint2, &point3d, sizeof(DPoint3d)));
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"Service_Date"));
     DateTime  sysTime = ecValue.GetDateTime ();
-    EXPECT_TRUE (SUCCESS == memcmp (&inTime, &sysTime, sizeof(DateTime)));
+    EXPECT_TRUE (inTime.Compare (sysTime, true));
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"Install_Date"));
     EXPECT_TRUE (ecValue.GetDateTimeTicks() == inTicks);
 
