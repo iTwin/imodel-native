@@ -1481,13 +1481,6 @@ WString                                        ECValueAccessor::GetPropertyName(
         name = name.substr (lastDotIndex, len);
         }
 
-    // strip [] from array names
-    size_t bracketIndex = name.rfind ('[');
-    if (WString::npos != bracketIndex)
-        {
-        name = name.substr (0, bracketIndex);
-        }
-
     return name;
     }
 
@@ -1550,8 +1543,7 @@ WString                                        ECValueAccessor::GetManagedAccess
         //If the current index is an array element,
         if(m_locationVector[depth].GetArrayIndex() > -1)
             {
-            //Delete the last ']' from the access string and write a number.
-            temp.resize (temp.size()-1);
+            temp.append (L"[");
             temp.append (WPrintfString(L"%d", m_locationVector[depth].GetArrayIndex()));
             temp.append (L"]");
             }
@@ -1673,7 +1665,6 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBu
     {
     ECObjectsStatus status;
     UInt32          propertyIndex;
-    WString        asBufferStr;
 
     // see if access string specifies an array
     WCharCP pos1 = wcschr (managedPropertyAccessor, L'[');
@@ -1688,10 +1679,7 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBu
             return ECOBJECTS_STATUS_Success;
             }
 
-        // see if the accessstring is to an array
-        asBufferStr = managedPropertyAccessor;
-        asBufferStr.append (L"[]");
-        status = enabler.GetPropertyIndex (propertyIndex, asBufferStr.c_str());
+        status = enabler.GetPropertyIndex (propertyIndex, managedPropertyAccessor);
 
         if (ECOBJECTS_STATUS_Success != status)
             return status;
@@ -1718,10 +1706,7 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBu
 
     ECValue  arrayVal;
 
-    asBufferStr = asBuffer;
-    asBufferStr.append (L"[]");
-
-    status = enabler.GetPropertyIndex (propertyIndex, asBufferStr.c_str());
+    status = enabler.GetPropertyIndex (propertyIndex, asBuffer);
     if (ECOBJECTS_STATUS_Success != status)
         return status;
 

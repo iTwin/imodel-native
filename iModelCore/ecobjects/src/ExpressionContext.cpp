@@ -194,8 +194,6 @@ ExpressionStatus InstanceExpressionContext::_GetReference(EvaluationResultR eval
                     return ExprStatus_StructRequired;  //  might be method required.  Should check next node
                     }
 
-                accessString.append(L"[]");
-
                 refResult.m_accessString = accessString;
                 refResult.m_arrayIndex = arrayIndex;
                 refResult.m_property = currentProperty;
@@ -205,7 +203,6 @@ ExpressionStatus InstanceExpressionContext::_GetReference(EvaluationResultR eval
 
             BeAssert(ECN::ARRAYKIND_Struct == arrayProp->GetKind());
 
-            accessString.append(L"[]");
             ::UInt32     propertyIndex;
             if (enabler->GetPropertyIndex(propertyIndex, accessString.c_str()) != ECN::ECOBJECTS_STATUS_Success)
                 {
@@ -486,7 +483,6 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
                     return ExprStatus_StructRequired;  //  might be method required.  Should check next node
                     }
 
-                accessString.append(L"[]");
                 ::UInt32     propertyIndex;
                 if (enabler->GetPropertyIndex(propertyIndex, accessString.c_str()) != ECN::ECOBJECTS_STATUS_Success)
                     {
@@ -511,7 +507,6 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
 
             BeAssert(ECN::ARRAYKIND_Struct == arrayProp->GetKind());
 
-            accessString.append(L"[]");
             ::UInt32     propertyIndex;
             if (enabler->GetPropertyIndex(propertyIndex, accessString.c_str()) != ECN::ECOBJECTS_STATUS_Success)
                 {

@@ -365,7 +365,6 @@ static ECPropertyP getProperty  (ECClassCR ecClass, WCharCP accessor, wchar_t* b
     //For example, the full native accessor could be "GrandfatherStruct.ParentStruct.StringMember"
     //In this case, passing this accessor to this function will give you the
     //ECProperty for StringMember.
-    //WIP_FUSION this leaves the [] appended at the end of arrays.
    
     WCharCP dotPos = wcschr (accessor, L'.');
     if (NULL != dotPos)
@@ -412,6 +411,7 @@ static ECObjectsStatus getECValueUsingFullAccessString (wchar_t* asBuffer, wchar
     wcsncpy(asBuffer, managedPropertyAccessor, numChars>NUM_ACCESSSTRING_BUFFER_CHARS?NUM_ACCESSSTRING_BUFFER_CHARS:numChars);
     asBuffer[numChars]=0;
 
+    // BRACKETS_OKAY: Brackets contain an array index
     WCharCP pos2 = wcschr (pos1+1, L']');
 
     BeAssert (pos2 != NULL);
@@ -427,10 +427,7 @@ static ECObjectsStatus getECValueUsingFullAccessString (wchar_t* asBuffer, wchar
     ECValue         arrayVal;
     ECObjectsStatus status;
 
-    WString asBufferStr = asBuffer;
-    asBufferStr.append (L"[]");
-
-    if (ECOBJECTS_STATUS_Success != (status = instance.GetValue (arrayVal, asBufferStr.c_str())))
+    if (ECOBJECTS_STATUS_Success != (status = instance.GetValue (arrayVal, asBuffer)))
         return status;
 
     if (-1 == indexValue)
@@ -452,11 +449,11 @@ static ECObjectsStatus getECValueUsingFullAccessString (wchar_t* asBuffer, wchar
         return ECOBJECTS_STATUS_Error;
 
     if (arrayInfo.IsPrimitiveArray())
-        return instance.GetValue (v, asBufferStr.c_str(), indexValue);
+        return instance.GetValue (v, asBuffer, indexValue);
 
     // must be a struct array
     
-    if (ECOBJECTS_STATUS_Success != (status = instance.GetValue (arrayVal, asBufferStr.c_str(), indexValue)))
+    if (ECOBJECTS_STATUS_Success != (status = instance.GetValue (arrayVal, asBuffer, indexValue)))
         return status;
 
     // If there is no '.' in the rest of the access string, the caller was requesting the value representing the struct
@@ -922,10 +919,7 @@ static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar
     ECValue         arrayVal;
     ECObjectsStatus status;
 
-    WString asBufferStr = asBuffer;
-    asBufferStr.append (L"[]");
-
-    if (ECOBJECTS_STATUS_Success != (status = instance.GetValue (arrayVal, asBufferStr.c_str())))
+    if (ECOBJECTS_STATUS_Success != (status = instance.GetValue (arrayVal, asBuffer)))
         return status;
 
     ArrayInfo arrayInfo = arrayVal.GetArrayInfo();
@@ -937,7 +931,7 @@ static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar
             return ECOBJECTS_STATUS_Error;
 
         UInt numToInsert = (indexValue + 1) - size;
-        status =  instance.AddArrayElements (asBufferStr.c_str(), numToInsert);    
+        status =  instance.AddArrayElements (asBuffer, numToInsert);    
         if (ECOBJECTS_STATUS_Success != status)
             return status;
 
@@ -945,10 +939,9 @@ static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar
             {
             ECClassCR    ecClass     = instance.GetClass();
 
-            //ECPropertyP  prop = ecClass.GetPropertyP (asBuffer);
             wchar_t buffer [NUM_INDEX_BUFFER_CHARS+1];
-            wcsncpy(buffer, asBufferStr.c_str(), NUM_INDEX_BUFFER_CHARS);
-            ECPropertyP prop = getProperty (ecClass, asBufferStr.c_str(), buffer);
+            wcsncpy(buffer, asBuffer, NUM_INDEX_BUFFER_CHARS);
+            ECPropertyP prop = getProperty (ecClass, asBuffer, buffer);
             
             if (!prop->GetIsArray())
                 return ECOBJECTS_STATUS_Error;
@@ -968,10 +961,10 @@ static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar
             for (UInt32 i=0; i<numToInsert; i++)
                 {
                 // only set new struct value if AddArrayElements did not already set it
-                if (ECOBJECTS_STATUS_Success != instance.GetValue (arrayEntryVal, asBufferStr.c_str (), size+i) || arrayEntryVal.IsNull ())
+                if (ECOBJECTS_STATUS_Success != instance.GetValue (arrayEntryVal, asBuffer, size+i) || arrayEntryVal.IsNull ())
                     {
                     arrayEntryVal.SetStruct (standaloneEnabler->CreateInstance().get());
-                    if (SUCCESS != instance.SetValue (asBufferStr.c_str(), arrayEntryVal, size+i))
+                    if (SUCCESS != instance.SetValue (asBuffer, arrayEntryVal, size+i))
                         return ECOBJECTS_STATUS_Error;
                     }
                 }
@@ -979,15 +972,15 @@ static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar
         }
 
     if (arrayInfo.IsPrimitiveArray())
-        return instance.SetValue (asBufferStr.c_str(), v, indexValue);
+        return instance.SetValue (asBuffer, v, indexValue);
 
     // must be a struct array
     if (NULL == wcschr (pos2, L'.'))
         {
         //Caller is attempting to set the value of this struct array element directly.
-        return instance.SetValue (asBufferStr.c_str(), v, indexValue);
+        return instance.SetValue (asBuffer, v, indexValue);
         }
-    instance.GetValue (arrayVal, asBufferStr.c_str(), indexValue);
+    instance.GetValue (arrayVal, asBuffer, indexValue);
     IECInstancePtr arrayEntryInstance = arrayVal.GetStruct();
 
     return setECValueUsingFullAccessString (asBuffer, indexBuffer, v, *arrayEntryInstance, pos2+2); // move to character after "]." in access string.
@@ -2320,8 +2313,6 @@ InstanceReadStatus   ReadArrayPropertyValue (ArrayECPropertyP arrayProperty, IEC
     else
         AppendAccessString (accessString, *baseAccessString, arrayProperty->GetName());
 
-    accessString.append (L"[]");
-
     // start the address out as zero.
     UInt32      index = 0;
 
@@ -2909,8 +2900,6 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
         accessString = arrayProperty.GetName();    
     else
         AppendAccessString (accessString, *baseAccessString, arrayProperty.GetName());
-
-    accessString.append (L"[]");
 
     // no members, don't write anything.
     ECValue         ecValue;

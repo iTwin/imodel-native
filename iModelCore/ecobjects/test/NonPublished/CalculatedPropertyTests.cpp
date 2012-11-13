@@ -222,9 +222,9 @@ TEST_F (CalculatedPropertyTests, BasicExpressions)
     
     // Array properties
     instance = CreateTestCase (L"S", L"this.A[0] * this.A[1]", 0, L"ERROR");
-    instance->AddArrayElements (L"A[]", 2);
-    SetValue (*instance, L"A[]", 5, 0);
-    SetValue (*instance, L"A[]", 6, 1);
+    instance->AddArrayElements (L"A", 2);
+    SetValue (*instance, L"A", 5, 0);
+    SetValue (*instance, L"A", 6, 1);
     Test (*instance, L"S", L"30");
     }
 
@@ -296,7 +296,7 @@ TEST_F (CalculatedPropertyTests, SetValue)
 
     // Array properties. The value is always positive
     instance = CreateTestCase (L"S", L"this.A[0]", 0, L"ERROR", L"-?(?<A[0]>\\d+)");
-    instance->AddArrayElements (L"A[]", 1);
+    instance->AddArrayElements (L"A", 1);
     TestUpdate (*instance, L"555", ExpectedValueList (L"A[0]", 555));
     TestUpdate (*instance, L"-555", ExpectedValueList (L"A[0]", 555));
 

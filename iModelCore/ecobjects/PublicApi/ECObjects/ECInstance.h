@@ -122,7 +122,9 @@ protected:
     ECOBJECTS_EXPORT virtual bool                   _IsPropertyReadOnly (UInt32 propertyIndex) const;
     ECOBJECTS_EXPORT virtual ECObjectsStatus        _SetInternalValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex);
 
+/*__PUBLISH_SECTION_END__*/
     virtual Bentley::DgnPlatform::DgnECInstance const*  _GetAsDgnECInstance() const   { return NULL; }
+/*__PUBLISH_SECTION_START__*/
 public:
     ECOBJECTS_EXPORT void const*        GetBaseAddress () {return this;}
     ECOBJECTS_EXPORT ECEnablerCR        GetEnabler() const;
@@ -236,8 +238,8 @@ public:
     ECOBJECTS_EXPORT bool               IsPropertyReadOnly (UInt32 propertyIndex) const;
 
     //! Contract:
-    //! - For all of the methods, the propertyAccessString should be in the "array element" form, 
-    //!   e.g. "Aliases[]" instead of "Aliases"         
+    //! - For all of the methods, the propertyAccessString shall not contain brackets.
+    //!   e.g. "Aliases", not "Aliases[]" or "Aliases[0]"
     ECOBJECTS_EXPORT ECObjectsStatus      InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size);
     ECOBJECTS_EXPORT ECObjectsStatus      AddArrayElements (WCharCP propertyAccessString, UInt32 size);
     ECOBJECTS_EXPORT ECObjectsStatus      RemoveArrayElement (WCharCP propertyAccessString, UInt32 index);
