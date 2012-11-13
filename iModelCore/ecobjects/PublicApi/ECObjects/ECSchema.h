@@ -1902,6 +1902,11 @@ public:
     //!           contain the read schema.  Otherwise schemaOut will be unmodified.
     ECOBJECTS_EXPORT static SchemaReadStatus ReadFromXmlStream (ECSchemaPtr& schemaOut, IStreamP ecSchemaXmlStream, ECSchemaReadContextR schemaContext);
 
+    //! Returns true if the schema is an ECStandard schema
+    //! @return True if a standard schema, false otherwise
+    //! @param[in]  schemaName  Name of the schema to test.  This is just the schema name, no version info
+    ECOBJECTS_EXPORT static bool IsStandardSchema(WStringCR schemaName);
+
     //! Find all ECSchemas in the schema graph, avoiding duplicates and any cycles.
     //! @param[out]   allSchemas            Vector of schemas including rootSchema.
     //! @param[in]    includeRootSchema     If true then root schema is added to the vector of allSchemas. Defaults to true.
