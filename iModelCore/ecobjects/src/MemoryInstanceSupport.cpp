@@ -170,9 +170,6 @@ WString    PropertyLayout::ToString ()
     else
         typeName = L"struct";
 
-    if (m_typeDescriptor.IsArray())
-        typeName.append(L"[]");
-    
     wchar_t line[1024];
     BeStringUtilities::Snwprintf (line, _countof(line), L"%-32s %-16s offset=%3i nullflagsOffset=%3i, nullflagsBitmask=0x%08.X", m_accessString.c_str(), typeName.c_str(), m_offset, m_nullflagsOffset, m_nullflagsBitmask);
         
@@ -640,15 +637,8 @@ void            ClassLayout::Factory::AddProperty (WCharCP accessString, ECTypeD
             }
         } 
 
-    // WIP_FUSION, for now all accessors of array property layouts are stored with the brackets appended.  This means all access to array values through an
-    // IECInstance must include the brackets.  If you want to obtain an array element value then you specify an index.  If you want to obtain an array info value
-    // then you do not specify an index.  I'd like to consider an update to this so if an access string does not include the [] then we always return the ArrayInfo value.
-    WString tempAccessString = accessString;
-    if (typeDescriptor.IsArray())
-        tempAccessString.append (L"[]");
-
     UInt32          parentStructIndex = GetParentStructIndex(accessString);
-    PropertyLayoutP propertyLayout = new PropertyLayout (tempAccessString.c_str(), parentStructIndex, typeDescriptor, m_offset, m_nullflagsOffset, nullflagsBitmask, modifierFlags, modifierData);
+    PropertyLayoutP propertyLayout = new PropertyLayout (accessString, parentStructIndex, typeDescriptor, m_offset, m_nullflagsOffset, nullflagsBitmask, modifierFlags, modifierData);
     m_underConstruction.AddPropertyLayout (accessString, *propertyLayout); 
 
     m_offset += (UInt32)size;

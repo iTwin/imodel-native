@@ -238,8 +238,8 @@ public:
     ECOBJECTS_EXPORT bool               IsPropertyReadOnly (UInt32 propertyIndex) const;
 
     //! Contract:
-    //! - For all of the methods, the propertyAccessString should be in the "array element" form, 
-    //!   e.g. "Aliases[]" instead of "Aliases"         
+    //! - For all of the methods, the propertyAccessString shall not contain brackets.
+    //!   e.g. "Aliases", not "Aliases[]" or "Aliases[0]"
     ECOBJECTS_EXPORT ECObjectsStatus      InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size);
     ECOBJECTS_EXPORT ECObjectsStatus      AddArrayElements (WCharCP propertyAccessString, UInt32 size);
     ECOBJECTS_EXPORT ECObjectsStatus      RemoveArrayElement (WCharCP propertyAccessString, UInt32 index);
