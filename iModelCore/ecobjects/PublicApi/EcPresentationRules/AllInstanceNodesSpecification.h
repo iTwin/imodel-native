@@ -38,9 +38,9 @@ struct AllInstanceNodesSpecification : public ChildNodeSpecification
             {
             }
 
-        ECOBJECTS_EXPORT AllInstanceNodesSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, 
+        ECOBJECTS_EXPORT AllInstanceNodesSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, bool hideIfNoChildren,
                                        bool groupByClass, bool groupByLabel, WStringCR supportedSchemas)
-            : ChildNodeSpecification (priority, alwaysReturnsChildren, hideNodesInHierarchy), 
+            : ChildNodeSpecification (priority, alwaysReturnsChildren, hideNodesInHierarchy, hideIfNoChildren), 
             m_groupByClass (groupByClass), m_groupByLabel (groupByLabel), m_supportedSchemas (supportedSchemas)
             {
             }

@@ -39,8 +39,8 @@ struct CustomNodeSpecification : public ChildNodeSpecification
             {
             }
 
-        ECOBJECTS_EXPORT CustomNodeSpecification (int priority, WStringCR type, WStringCR label, WStringCR description, WStringCR imageId)
-            : ChildNodeSpecification (priority, true, false), 
+        ECOBJECTS_EXPORT CustomNodeSpecification (int priority, bool hideIfNoChildren, WStringCR type, WStringCR label, WStringCR description, WStringCR imageId)
+            : ChildNodeSpecification (priority, true, false, hideIfNoChildren), 
             m_type (type), m_label (label), m_description (description), m_imageId (imageId)
             {
             }

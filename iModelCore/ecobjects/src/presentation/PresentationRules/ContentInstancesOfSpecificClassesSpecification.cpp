@@ -26,12 +26,6 @@ CharCP ContentInstancesOfSpecificClassesSpecification::_GetXmlElementName ()
 bool ContentInstancesOfSpecificClassesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     {
     //Required:
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_schemaName, COMMON_XML_ATTRIBUTE_SCHEMANAME))
-        {
-        ECObjectsLogger::Log()->errorv (L"Invalid XML: %hs element must contain a %hs attribute", CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME, COMMON_XML_ATTRIBUTE_SCHEMANAME);
-        return false;
-        }
-
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_classNames, COMMON_XML_ATTRIBUTE_CLASSNAMES))
         {
         ECObjectsLogger::Log()->errorv (L"Invalid XML: %hs element must contain a %hs attribute", CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME, COMMON_XML_ATTRIBUTE_CLASSNAMES);
@@ -39,6 +33,9 @@ bool ContentInstancesOfSpecificClassesSpecification::_ReadXml (BeXmlNodeP xmlNod
         }
 
     //Optional:
+    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_arePolymorphic, COMMON_XML_ATTRIBUTE_AREPOLYMORPHIC))
+        m_arePolymorphic = false;
+
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_instanceFilter, COMMON_XML_ATTRIBUTE_INSTANCEFILTER))
         m_instanceFilter = L"";
 
@@ -50,7 +47,7 @@ bool ContentInstancesOfSpecificClassesSpecification::_ReadXml (BeXmlNodeP xmlNod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentInstancesOfSpecificClassesSpecification::_WriteXml (BeXmlNodeP xmlNode)
     {
-    xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_SCHEMANAME, m_schemaName.c_str ());
-    xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_CLASSNAMES, m_classNames.c_str ());
-    xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_INSTANCEFILTER, m_instanceFilter.c_str ());
+    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_CLASSNAMES, m_classNames.c_str ());
+    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_AREPOLYMORPHIC, m_arePolymorphic);
+    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_INSTANCEFILTER, m_instanceFilter.c_str ());
     }

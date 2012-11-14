@@ -26,9 +26,7 @@ struct ContentRelatedInstancesSpecification : public ContentSpecification
         int                        m_skipRelatedLevel;
         WString                    m_instanceFilter;
         RequiredRelationDirection  m_requiredDirection;
-        WString                    m_relationshipSchemaName;
         WString                    m_relationshipClassNames;
-        WString                    m_relatedSchemaName;
         WString                    m_relatedClassNames;
 
     protected:
@@ -40,27 +38,22 @@ struct ContentRelatedInstancesSpecification : public ContentSpecification
     public:
         ECOBJECTS_EXPORT ContentRelatedInstancesSpecification () 
             : ContentSpecification (), m_skipRelatedLevel (0), m_instanceFilter (L""), 
-            m_requiredDirection (RequiredRelationDirection_Both), m_relationshipSchemaName (L""),
-            m_relationshipClassNames (L""), m_relatedSchemaName (L""), m_relatedClassNames (L"")
+            m_requiredDirection (RequiredRelationDirection_Both), m_relationshipClassNames (L""), m_relatedClassNames (L"")
             {
             }
 
         ECOBJECTS_EXPORT ContentRelatedInstancesSpecification 
                                              (
-                                              int                        priority, 
-                                              bool                       onlyIfNotHandled,
+                                              int                        priority,
                                               int                        skipRelatedLevel,
                                               WString                    instanceFilter,
                                               RequiredRelationDirection  requiredDirection,
-                                              WString                    relationshipSchemaName,
                                               WString                    relationshipClassNames,
-                                              WString                    relatedSchemaName,
                                               WString                    relatedClassNames
                                              ) 
-            : ContentSpecification (priority, onlyIfNotHandled), m_skipRelatedLevel (skipRelatedLevel), 
+            : ContentSpecification (priority), m_skipRelatedLevel (skipRelatedLevel), 
               m_instanceFilter (instanceFilter), m_requiredDirection (requiredDirection),
-              m_relationshipSchemaName (relationshipSchemaName), m_relationshipClassNames (relationshipClassNames), 
-              m_relatedSchemaName (relatedSchemaName), m_relatedClassNames (relatedClassNames)
+              m_relationshipClassNames (relationshipClassNames), m_relatedClassNames (relatedClassNames)
             {
             }
 
@@ -74,16 +67,10 @@ struct ContentRelatedInstancesSpecification : public ContentSpecification
         //! Returns direction of relationship that should be selected in the query.
         ECOBJECTS_EXPORT RequiredRelationDirection    GetRequiredRelationDirection (void) const  { return m_requiredDirection; }
 
-        //! Schema name of specified relationship classes.
-        ECOBJECTS_EXPORT WStringCR                    GetRelationshipSchemaName (void) const     { return m_relationshipSchemaName; }
-
-        //! Relationship class names separated by comma that should be used by this specification.
+        //! Relationship class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
         ECOBJECTS_EXPORT WStringCR                    GetRelationshipClassNames (void) const     { return m_relationshipClassNames; }
 
-        //! Schema name of specified related classes.
-        ECOBJECTS_EXPORT WStringCR                    GetRelatedSchemaName (void) const          { return m_relatedSchemaName; }
-
-        //! Related class names separated by comma that should be used by this specification.
+        //! Related class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
         ECOBJECTS_EXPORT WStringCR                    GetRelatedClassNames (void) const          { return m_relatedClassNames; }
 
     };

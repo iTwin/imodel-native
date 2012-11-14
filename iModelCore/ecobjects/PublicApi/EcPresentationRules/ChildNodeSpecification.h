@@ -26,6 +26,7 @@ private:
     int                m_id;
     bool               m_alwaysReturnsChildren;
     bool               m_hideNodesInHierarchy;
+    bool               m_hideIfNoChildren;
     ChildNodeRuleList  m_nestedRules;
 
     static int GetNewSpecificationId ();
@@ -34,7 +35,7 @@ private:
 //__PUBLISH_SECTION_START__
 protected:
     ECOBJECTS_EXPORT ChildNodeSpecification ();
-    ECOBJECTS_EXPORT ChildNodeSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy);
+    ECOBJECTS_EXPORT ChildNodeSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, bool hideIfNoChildren);
 
     ECOBJECTS_EXPORT virtual CharCP               _GetXmlElementName () = 0;
     ECOBJECTS_EXPORT virtual bool                 _ReadXml (BeXmlNodeP xmlNode) = 0;
@@ -62,6 +63,10 @@ public:
     //! f this property is set it will not show nodes of this specification in the hierarchy, instead it will 
     //! use those nodes to get children that will be actually returned.
     ECOBJECTS_EXPORT bool                         GetHideNodesInHierarchy (void) const   { return m_hideNodesInHierarchy; }
+
+    //! If this property is set, it will not show nodes in the hierarchy that doesn't contain children.
+    //! Important: Setting this to true may affect tree performance.
+    ECOBJECTS_EXPORT bool                         GetHideIfNoChildren (void)             { return m_hideIfNoChildren; }
 
     //! Collection ChildNodeSpecifications that will be used to provide child/root nodes.
     ECOBJECTS_EXPORT ChildNodeRuleList&           GetNestedRules (void)                  { return m_nestedRules; }

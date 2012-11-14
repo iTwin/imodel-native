@@ -24,13 +24,12 @@
 #define COMMON_XML_ATTRIBUTE_SHOWEMPTYGROUPS                                          "ShowEmptyGroups"
 #define COMMON_XML_ATTRIBUTE_INSTANCEFILTER                                           "InstanceFilter"
 #define COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION                                        "RequiredDirection"
-#define COMMON_XML_ATTRIBUTE_RELATIONSHIPSCHEMANAME                                   "RelationshipSchemaName"
 #define COMMON_XML_ATTRIBUTE_RELATIONSHIPCLASSNAMES                                   "RelationshipClassNames"
-#define COMMON_XML_ATTRIBUTE_RELATEDSCHEMANAME                                        "RelatedSchemaName"
 #define COMMON_XML_ATTRIBUTE_RELATEDCLASSNAMES                                        "RelatedClassNames"
 #define COMMON_XML_ATTRIBUTE_SCHEMANAME                                               "SchemaName"
 #define COMMON_XML_ATTRIBUTE_CLASSNAMES                                               "ClassNames"
 #define COMMON_XML_ATTRIBUTE_ONLYIFNOTHANDLED                                         "OnlyIfNotHandled"
+#define COMMON_XML_ATTRIBUTE_AREPOLYMORPHIC                                           "ArePolymorphic"
 
 #define PRESENTATION_RULE_SET_XML_NODE_NAME                                           "PresentationRuleSet"
 #define PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID                                 "RuleSetId"
@@ -95,6 +94,7 @@
 //ChildNodeSpecifications
 #define CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_ALWAYSRETURNSCHILDREN                  "AlwaysReturnsChildren"
 #define CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_HIDENODESINHIERARCHY                   "HideNodesInHierarchy"
+#define CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_HIDEIFNOCHILDREN                       "HideIfNoChildren"
 
 #define ALL_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME                                "AllInstances"
 
