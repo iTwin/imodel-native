@@ -134,6 +134,9 @@
     <ClCompile Include="ECcontext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="persistence\IECSchemaManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsPch.h">
@@ -232,11 +235,11 @@
     <ClInclude Include="..\PublicApi\ECPersistence\ECPersistenceAPI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicApi\ECPersistence\IECSchemaManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicApi\ECPersistence\IECStatement.h">
-      <Filter>Header Files</Filter>
+      <Filter>ECPersistence</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECPersistence\IECSchemaManager.h">
+      <Filter>ECPersistence</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

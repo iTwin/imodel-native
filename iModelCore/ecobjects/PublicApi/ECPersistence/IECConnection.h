@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-/*__PUBLISH_SECTION_START__*/
+//__PUBLISH_SECTION_START__
 
 #include "ECPersistence/ECPersistence.h"
 #include "ECPersistence/IECSchemaManager.h"
