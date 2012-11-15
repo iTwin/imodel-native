@@ -98,6 +98,52 @@ struct CalculatedPropertyTests : ECTestFixture
             }
         }
 
+	static WString    GetTestSchemaXMLString ()
+    {
+    wchar_t fmt[] = L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                    L"<ECSchema schemaName=\"RelationshipTesting\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+                    L"    <ECClass typeName=\"ClassA\" displayLabel=\"Class A\" isDomainClass=\"True\">"
+                    L"        <ECProperty propertyName=\"p\" typeName=\"int\" />"
+                    L"    </ECClass>"
+                    L"    <ECClass typeName=\"ClassB\" displayLabel=\"Class B\" isDomainClass=\"True\">"
+                    L"        <ECProperty propertyName=\"p\" typeName=\"int\" />"
+                    L"        <ECProperty propertyName=\"b\" typeName=\"int\" />"
+                    L"    </ECClass>"
+                    L"    <ECRelationshipClass typeName=\"ALikesB\" displayLabel=\"A likes B\" strength=\"referencing\">"
+                    L"        <Source cardinality=\"(1,1)\" roleLabel=\"likes\" polymorphic=\"False\">"
+                    L"            <Class class=\"ClassA\" />"
+                    L"        </Source>"
+                    L"        <Target cardinality=\"(1,1)\" roleLabel=\"is liked by\" polymorphic=\"True\">"
+                    L"            <Class class=\"ClassB\" />"
+                    L"        </Target>"
+                    L"        <ECProperty propertyName=\"p\" typeName=\"int\" />"
+                    L"        <ECProperty propertyName=\"Name\" typeName=\"string\" />"
+                    L"        <ECProperty propertyName=\"SourceOrderId\" typeName=\"int\" />"
+                    L"        <ECProperty propertyName=\"TargetOrderId\" typeName=\"int\" />"
+                    L"    </ECRelationshipClass>"
+                    L"</ECSchema>";
+
+    return fmt;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Muhammad.Zaighum                  10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+static ECSchemaP       CreateTestSchema (ECSchemaCacheR schemaOwner)
+    {
+    WString schemaXMLString = GetTestSchemaXMLString ();
+
+   // EXPECT_EQ (S_OK, CoInitialize(NULL));  
+
+    ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr schema;        
+    EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (schema, schemaXMLString.c_str(), *schemaContext));  
+
+  //  CoUninitialize();
+    return schema.get();
+    }
+
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -412,5 +458,80 @@ TEST_F (CalculatedPropertyTests, TestFailureValuesWithIntsAndDoubles)
     SetValue(*instance, L"D2", 0);
     Test (*instance, L"D", -1.0);
     }
-END_BENTLEY_ECOBJECT_NAMESPACE
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Muhammad.Zaighum                10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (CalculatedPropertyTests, ExpectSuccessWhenCopyFailedCalculatedPropertyThatHasARegex)
+    {
+		IECInstancePtr instance = CreateTestCase(L"S",L"S1 - S2",0, L"<Could not be calculated>", L"^(?<S1>.*)\\-(?<S2>.*)");
+		IECInstancePtr instance2=StandaloneECInstance::Duplicate(*instance);
+
+		Test(*instance2,L"S",L"<Could not be calculated>");
+		Test(*instance,L"S",L"<Could not be calculated>");
+		TestNull (*instance, L"S1");
+		TestNull (*instance, L"S2");
+		TestNull (*instance2, L"S1");
+		TestNull (*instance2, L"S2");
+	}
+
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Muhammad.Zaighum                10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (CalculatedPropertyTests, EvaluationAgainstANewInstanceUsesItsNewValues)
+{
+	IECInstancePtr instance = CreateTestCase(L"S",L"this.S1",0, NULL, NULL);
+
+	SetValue(*instance, L"S1", L"initial");
+	Test (*instance, L"S", L"initial");
+
+	SetValue(*instance, L"S1", L"different");
+	Test (*instance, L"S", L"different");
+}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Muhammad.Zaighum                10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (CalculatedPropertyTests, SettingACalculatedPropertyUpdatesThePropertiesFromWhichItWasCalculate)
+{
+	IECInstancePtr instance = CreateTestCase(L"S",L"S1 - S2",0, L"<Could not be calculated>",L"^(?<S1>.*)-(?<S2>.*)");
+	SetValue(*instance, L"S", L"1-2");
+	Test(*instance, L"S1", L"1");
+	Test(*instance, L"S2", L"2");
+
+
+	SetValue(*instance, L"S", L"3-4");
+	Test(*instance, L"S1", L"3");
+	Test(*instance, L"S2", L"4");
+}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Muhammad.Zaighum                10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (CalculatedPropertyTests, CalculatedPropertiesWithNoParserRegExAreReadOnly)
+{
+	IECInstancePtr instance = CreateTestCase(L"S",L"S1",1, L"<Could not be calculated>",NULL);
+	ASSERT_EQ (true,instance->IsPropertyReadOnly(L"S"));
+}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Muhammad.Zaighum                10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (CalculatedPropertyTests, UseLastValidValueInsteadOfFailure)
+{	
+	IECInstancePtr instance = CreateTestCase(L"S",L"this.S1 & \"-\" & this.S2",OPTION_UseLastValid , L"<Could not be calculated>");
+	Test(*instance, L"S", L"<Could not be calculated>");
+	
+	SetValue(*instance, L"S1", L"3");
+	SetValue(*instance, L"S2", L"4");
+	Test(*instance, L"S", L"3-4");
+
+	SetNullValue(*instance, L"S1");
+	TestNull(*instance, L"S1");
+
+	Test(*instance, L"S", L"3-4");
+
+	SetNullValue(*instance, L"S2");
+	TestNull(*instance, L"S2");
+	Test(*instance, L"S", L"3-4");
+}
+END_BENTLEY_ECOBJECT_NAMESPACE
