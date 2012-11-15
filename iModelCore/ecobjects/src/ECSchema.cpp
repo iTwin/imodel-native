@@ -2104,12 +2104,12 @@ void            ECSchema::FindAllSchemasInGraph (bvector<ECN::ECSchemaCP>& allSc
 Int64 ECSchema::GenerateHashcodeFromECName(WCharCP name)
     {
     // There are only 64 possible characters in a valid EC name (if we include ':' from ECClass::GetFullName(),
-    // and thus they call all be represented in 6 bits.
+    // and thus they can all be represented in 6 bits.
     // We map the possible characters to numbers from 0 to 63
     // We add one number to the hashcode, shift everything up by 6 bits, then add the next.
     // If bits start rolling off the top, we recycle them at the bottom... exclusive-or-ing them with the lowest bits.
     // Thus for names of 10 or fewer characters, the hash is always unique (and actually loses no information)
-    // For longer names, duplication is possible.
+    // For longer names, duplication is theoretically possible, but highly unlikely
     if (NULL == name)
         return 0;
 
