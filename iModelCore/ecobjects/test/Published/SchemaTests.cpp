@@ -1991,4 +1991,36 @@ TEST_F (ECNameValidationTest, Validate)
     EXPECT_VALIDATION_RESULT(IncludesInvalidCharacters, L"ABC@");
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (SchemaDeserializationTest, ExpectErrorWhenBaseClassNotFound)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr refSchema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString (refSchema, 
+        L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        L"<ECSchema schemaName=\"ReferencedSchema\" version=\"01.00\" displayLabel=\"Display Label\" description=\"Description\" nameSpacePrefix=\"ref\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
+        L"    <ECClass typeName=\"BaseClass\" description=\"Project ECClass\" displayLabel=\"Project\" isDomainClass=\"True\" />"
+        L"</ECSchema>", *schemaContext);
+
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
+
+    ECSchemaPtr schema;
+    status = ECSchema::ReadFromXmlString (schema, 
+        L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        L"<ECSchema schemaName=\"Stuff\" version=\"09.06\" displayLabel=\"Display Label\" description=\"Description\" nameSpacePrefix=\"stuff\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
+        L"<ECSchemaReference name=\"ReferencedSchema\" version=\"01.00\" prefix=\"ref\" />"
+        L"    <ECClass typeName=\"ecProject\" description=\"Project ECClass\" displayLabel=\"Project\" isDomainClass=\"True\">"
+        L"       <BaseClass>BaseClassDOESNOTEXIST</BaseClass>"
+        L"       <BaseClass>ref:BaseClass</BaseClass>"
+        L"    </ECClass>"
+        L"</ECSchema>", *schemaContext);
+
+    EXPECT_NE (SCHEMA_READ_STATUS_Success, status);    
+    EXPECT_TRUE (schema.IsNull());
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE

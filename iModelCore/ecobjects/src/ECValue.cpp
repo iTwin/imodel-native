@@ -140,6 +140,258 @@ enum ECValueStateFlags ENUM_UNDERLYING_TYPE(unsigned char)
     ECVALUE_STATE_IsLoaded     = 0x04
     };
 
+enum ECValueOwnedDataFlags ENUM_UNDERLYING_TYPE(unsigned char)
+    {
+    ECVALUE_DATA_Binary         = 1 << 0,
+    ECVALUE_DATA_Utf8           = 1 << 1,
+    ECVALUE_DATA_Utf16          = 1 << 2,
+#if !defined (_WIN32)
+    ECVALUE_DATA_WChar          = 1 << 3,
+#endif
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isDataOwned (UInt8 const& flags, ECValueOwnedDataFlags flag)        { return 0 != (flags & flag); }
+static void setDataOwned (UInt8& flags, ECValueOwnedDataFlags flag, bool owned) { flags = owned ? (flags | flag) : (flags & ~flag); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECValue::StringInfo::SetWChar (WCharCP str, UInt8& flags, bool owned)
+    {
+#if defined (_WIN32)
+    SetUtf16 ((Utf16CP)str, flags, owned);
+#else
+    if (NULL == str)
+        owned = false;
+
+    setDataOwned (flags, ECVALUE_DATA_WChar, owned);
+    m_wchar = owned ? BeStringUtilities::Wcsdup (str) : str;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECValue::StringInfo::SetUtf16 (Utf16CP str, UInt8& flags, bool owned)
+    {
+    if (NULL == str)
+        owned = false;
+
+    setDataOwned (flags, ECVALUE_DATA_Utf16, owned);
+    if (!owned)
+        m_utf16 = str;
+    else
+        {
+        size_t size = 1;    // null terminator
+#if defined (_WIN32)
+        size += wcslen ((WCharCP)str);
+#else
+        while (0 != *(str++))
+            ++size;
+
+        str -= size;
+#endif
+        size *= sizeof(Utf16Char);
+        m_utf16 = (Utf16CP)malloc (size);
+        memcpy (const_cast<Utf16P>(m_utf16), str, size);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECValue::StringInfo::SetUtf8 (Utf8CP str, UInt8& flags, bool owned)
+    {
+    if (NULL == str)
+        owned = false;
+
+    setDataOwned (flags, ECVALUE_DATA_Utf8, owned);
+    m_utf8 = owned ? BeStringUtilities::Strdup (str) : str;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECValue::StringInfo::ConvertToUtf8 (UInt8& flags)
+    {
+    if (NULL == m_utf8)
+        {
+        Utf8String buf;
+        if (NULL != m_utf16)
+            {
+            // ###TODO: eww...can we avoid this?
+            WString wBuf;
+            BeStringUtilities::Utf16ToWChar (wBuf, m_utf16);
+            BeStringUtilities::WCharToUtf8 (buf, wBuf.c_str());
+            }
+#if !defined (_WIN32)
+        else if (NULL != m_wchar)
+            BeStringUtilities::WCharToUtf8 (buf, m_wchar);
+#endif
+        m_utf8 = BeStringUtilities::Strdup (buf.c_str());
+        setDataOwned (flags, ECVALUE_DATA_Utf8, NULL != m_utf8);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECValue::StringInfo::ConvertToUtf16 (UInt8& flags)
+    {
+    if (NULL == m_utf16)
+        {
+        Utf16Buffer buf;
+        if (NULL != m_utf8)
+            {
+            if (0 == *m_utf8)       // BeStringUtilities will give us back an empty buffer for an empty string...not what we want
+                buf.push_back (0);
+            else
+                BeStringUtilities::Utf8ToUtf16 (buf, m_utf8);
+            }
+#if !defined (_WIN32)
+        else if (NULL != m_wchar)
+            BeStringUtilities::WCharToUtf16 (buf, m_wchar);
+#endif
+
+        if (!buf.empty())
+            {
+            size_t size = buf.size() * sizeof(Utf16Char);
+            m_utf16 = (Utf16CP)malloc (size);
+            memcpy (const_cast<Utf16P>(m_utf16), &buf[0], size);
+            setDataOwned (flags, ECVALUE_DATA_Utf16, true);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECValue::StringInfo::FreeAndClear (UInt8& flags)
+    {
+    if (isDataOwned (flags, ECVALUE_DATA_Utf16))
+        free (const_cast<Utf16P>(m_utf16));
+
+    if (isDataOwned (flags, ECVALUE_DATA_Utf8))
+        free (const_cast<Utf8P>(m_utf8));
+
+#if !defined (_WIN32)
+    if (isDataOwned (flags, ECVALUE_DATA_WChar))
+        free (const_cast<WCharP>(m_wchar));
+#endif
+
+    flags = 0;
+    SetNull();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECValue::StringInfo::SetNull()
+    {
+    m_utf8 = NULL;
+    m_utf16 = NULL;
+#if !defined(_WIN32)
+    m_wchar = NULL;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP ECValue::StringInfo::GetWChar (UInt8& flags)
+    {
+#if defined (_WIN32)
+    return (WCharCP)GetUtf16 (flags);
+#else
+    if (NULL == m_wchar)
+        {
+        // ###TODO: Note we do a copy into the WString, and then another copy from WString to our buffer
+        // Do we have reliable methods for determining the required number of bytes required to store the converted string which would allow us to avoid using WString?
+        WString buf;
+        if (NULL != m_utf8)
+            BeStringUtilities::Utf8ToWChar (buf, m_utf8);
+        else if (NULL != m_utf16)
+            BeStringUtilities::Utf16ToWChar (buf, m_utf16);
+
+        m_wchar = buf.c_str();
+        setDataOwned (flags, ECVALUE_DATA_WChar, NULL != m_wchar);
+        }
+            
+    return m_wchar;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP ECValue::StringInfo::GetUtf8 (UInt8& flags)
+    {
+    ConvertToUtf8 (flags);  // if we already have Utf8 this does nothing
+    return m_utf8;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf16CP ECValue::StringInfo::GetUtf16 (UInt8& flags)
+    {
+    ConvertToUtf16 (flags); // if we already have Utf16 this does nothing
+    return m_utf16;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECValue::StringInfo::Equals (ECValue::StringInfo const& rhs, UInt8& flags)
+    {
+    // We already know both strings are not null
+    // Depending on the encodings held by each StringInfo we may need to perform conversion...might as well store the converted value while we're at it.
+    if (NULL != rhs.m_utf8)
+        {
+        if (NULL != m_utf8)
+            return 0 == strcmp (m_utf8, rhs.m_utf8);
+        else
+            {
+            ConvertToUtf8 (flags);
+            return Equals (rhs, flags);
+            }
+        }
+    else if (NULL != rhs.m_utf16)
+        {
+        if (NULL != m_utf16)
+            return 0 == BeStringUtilities::CompareUtf16 (m_utf16, rhs.m_utf16);
+#if !defined (_WIN32)
+        else if (NULL != m_wchar)
+            return 0 == BeStringutilities::CompareUtf16WChar (rhs.m_utf16, m_wchar);
+#endif
+        else
+            {
+            ConvertToUtf16 (flags);
+            return Equals (rhs, flags);
+            }
+        }
+#if !defined (_WIN32)
+    else if (NULL != rhs.m_wchar)
+        {
+        if (NULL != m_wchar)
+            return 0 == wcscmp (m_wchar, rhs.m_wchar);
+        else if (NULL != m_utf16)
+            return 0 == BeStringUtilities::CompareUtf16WChar (m_utf16, rhs.m_wchar);
+        else
+            {
+            ConvertToUtf16 (flags);
+            return Equals (rhs, flags);
+            }
+        }
+#endif
+
+    BeAssert (false && "It should not be possible to compare StringInfos where one or both contains all null strings");
+    return false;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 *  Really indicates that the property from which this came is readonly... not the value itself.
 * @bsimethod                                                    CaseyMullen     09/09
@@ -333,7 +585,7 @@ void            ECValue::ConstructUninitialized()
 #endif
     m_valueKind  = VALUEKIND_Uninitialized;
     m_stateFlags = ECVALUE_STATE_IsNull;
-    m_ownsData = false;
+    m_ownershipFlags = 0;
     }
     
 
@@ -364,9 +616,9 @@ void            ECValue::ShallowCopy (ECValueCR v)
         case PRIMITIVETYPE_Binary:
             {
             // Only make a copy of the binary data if the original object had a copy
-            if (m_ownsData)
+            if (isDataOwned (m_ownershipFlags, ECVALUE_DATA_Binary))
                 {
-                m_ownsData = false;
+                setDataOwned (m_ownershipFlags, ECVALUE_DATA_Binary, false);
                 SetBinary (v.m_binaryInfo.m_data, v.m_binaryInfo.m_size, true);
                 }
             break;
@@ -375,10 +627,21 @@ void            ECValue::ShallowCopy (ECValueCR v)
         case PRIMITIVETYPE_String:
             {
             // Only make a copy of the string if the original object had a copy.
-            if (m_ownsData)
+            if (0 != m_ownershipFlags)
                 {
-                m_ownsData = false; // prevent SetString from attempting to free the string that was temporarily copied by memset
-                SetString (v.m_string);
+                // ###TODO: only copy the preferred encoding? Copy all encodings contained in other StringInfo?
+                m_ownershipFlags = 0; // prevent FreeAndClear() from attempting to free the strings that were temporarily copied by memset
+                m_stringInfo.FreeAndClear (m_ownershipFlags);
+                if (NULL != v.m_stringInfo.m_utf8)
+                    SetUtf8CP (v.m_stringInfo.m_utf8);
+                else if (NULL != v.m_stringInfo.m_utf16)
+                    SetUtf16CP (v.m_stringInfo.m_utf16);
+#if !defined (_WIN32)
+                else if (NULL != v.m_stringInfo.m_wchar)
+                    SetString (v.m_stringInfo.m_wchar);
+#endif
+                else
+                    SetString (NULL);
                 }
 
             break;
@@ -412,13 +675,12 @@ void            ECValue::FreeMemory ()
     switch (primitiveType)
         {
         case PRIMITIVETYPE_String:
-            if (m_ownsData && m_string != NULL)
-                free (const_cast<WCharP>(m_string));
+            m_stringInfo.FreeAndClear (m_ownershipFlags);
             return;
 
         case PRIMITIVETYPE_Binary:
         case PRIMITIVETYPE_IGeometry:
-            if (NULL != m_binaryInfo.m_data && m_ownsData)
+            if (NULL != m_binaryInfo.m_data && isDataOwned (m_ownershipFlags, ECVALUE_DATA_Binary))
                 free ((void*)m_binaryInfo.m_data);
             return;
 
@@ -503,7 +765,7 @@ ECValue::ECValue (ECValueCR v)
 *  Construct a Null ECN::ECValue (of a specific type, but with IsNull = true)
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (ValueKind classification) : m_valueKind(classification), m_stateFlags(ECVALUE_STATE_IsNull), m_ownsData(false)
+ECValue::ECValue (ValueKind classification) : m_valueKind(classification), m_stateFlags(ECVALUE_STATE_IsNull), m_ownershipFlags(0)
     {
     }       
 
@@ -511,7 +773,7 @@ ECValue::ECValue (ValueKind classification) : m_valueKind(classification), m_sta
 *  Construct a Null ECN::ECValue (of a specific type, but with IsNull = true)
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (PrimitiveType primitiveType) : m_primitiveType(primitiveType), m_stateFlags(ECVALUE_STATE_IsNull), m_ownsData(false)
+ECValue::ECValue (PrimitiveType primitiveType) : m_primitiveType(primitiveType), m_stateFlags(ECVALUE_STATE_IsNull), m_ownershipFlags(0)
     {
     }
     
@@ -587,6 +849,24 @@ ECValue::ECValue (WCharCP string, bool holdADuplicate)
     {
     ConstructUninitialized();
     SetString (string, holdADuplicate);
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValue::ECValue (Utf8CP string, bool holdADuplicate)
+    {
+    ConstructUninitialized();
+    SetUtf8CP (string, holdADuplicate);
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValue::ECValue (Utf16CP string, bool holdADuplicate)
+    {
+    ConstructUninitialized();
+    SetUtf16CP (string, holdADuplicate);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -853,42 +1133,83 @@ BentleyStatus       ECValue::SetPoint3D (DPoint3dCR value)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
+* @bsimethod                                                    Paul.Connelly   11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 WCharCP ECValue::GetString() const
     {
     PRECONDITION (IsString() && "Tried to get string value from an ECN::ECValue that is not a string.", L"<Programmer Error: Attempted to get string value from ECN::ECValue that is not a string.>");
-    return m_string;
-    };
+    return m_stringInfo.GetWChar (m_ownershipFlags);
+    }
 
 /*---------------------------------------------------------------------------------**//**
-* @param[in] holdADuplicate     If true, ECN::ECValue will make a duplicate, otherwise 
-*                               ECN::ECValue holds the original pointer
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP  ECValue::GetUtf8CP() const
+    {
+    if (!IsString())
+        {
+        BeAssert (false && L"<Programmer Error: Attempted to get string value from ECN::ECValue that is not a string.>");
+        return NULL;
+        }
+
+    return m_stringInfo.GetUtf8 (m_ownershipFlags);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf16CP ECValue::GetUtf16CP() const
+    {
+    if (!IsString())
+        {
+        BeAssert (false && L"<Programmer Error: Attempted to get string value from ECN::ECValue that is not a string.>");
+        return NULL;
+        }
+
+    return m_stringInfo.GetUtf16 (m_ownershipFlags);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECValue::InitForString (void const * str)
+    {
+    Clear();
+    m_stringInfo.SetNull();
+    m_primitiveType = PRIMITIVETYPE_String;
+    SetIsNull (NULL == str);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECValue::SetString (WCharCP string, bool holdADuplicate)
     {
-    Clear();
-        
-    m_primitiveType = PRIMITIVETYPE_String;
-    m_ownsData = holdADuplicate;
-    
-    if (NULL == string)
-        {
-        m_string = NULL;
-        return SUCCESS;
-        }
-
-    SetIsNull (false);
-
-    if (holdADuplicate)    
-        m_string = BeStringUtilities::Wcsdup (string);
-    else
-        m_string = string;
-            
+    InitForString (string);
+    m_stringInfo.SetWChar (string, m_ownershipFlags, holdADuplicate);
     return SUCCESS;
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECValue::SetUtf8CP (Utf8CP string, bool holdADuplicate)
+    {
+    InitForString (string);
+    m_stringInfo.SetUtf8 (string, m_ownershipFlags, holdADuplicate);
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECValue::SetUtf16CP (Utf16CP string, bool holdADuplicate)
+    {
+    InitForString (string);
+    m_stringInfo.SetUtf16 (string, m_ownershipFlags, holdADuplicate);
+    return SUCCESS;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -907,7 +1228,7 @@ BentleyStatus ECValue::SetBinary (const byte * data, size_t size, bool holdADupl
     Clear();
 
     m_primitiveType = PRIMITIVETYPE_Binary;
-    m_ownsData = holdADuplicate;
+    setDataOwned (m_ownershipFlags, ECVALUE_DATA_Binary, holdADuplicate);
     
     if (NULL == data)
         {
@@ -1125,7 +1446,7 @@ bool              ECValue::Equals (ECValueCR v) const
     if (GetPrimitiveType() != v.GetPrimitiveType())
         return false;
     if (IsString())
-        return 0 == wcscmp (GetString0(), v.GetString0());
+        return m_stringInfo.Equals (v.m_stringInfo, m_ownershipFlags);
     if (IsBinary())
         {
         if (m_binaryInfo.m_size != v.m_binaryInfo.m_size)

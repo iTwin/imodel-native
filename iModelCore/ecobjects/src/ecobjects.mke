@@ -49,7 +49,7 @@ ECObjectsHeaders =  $(ecobjectsPublicAPISrc)ECObjects.h \
                     $(ecobjectsPublicAPISrc)ECInstance.h \
                     $(ecobjectsPublicAPISrc)ECEnabler.h \
                     $(ecobjectsPublicAPISrc)DesignByContract.h \
-                    $(ecobjectsPublicAPISrc)MemoryInstanceSupport.h \
+                    $(ecobjectsPublicAPISrc)ECDBuffer.h \
                     $(ecobjectsPublicAPISrc)SupplementalSchema.h \
                     $(ecobjectsPublicAPISrc)ECEvent.h \
                     $(baseDir)ecxml.h \
@@ -123,7 +123,7 @@ $(o)ExpressionContext$(oext)                               : $(baseDir)Expressio
 
 $(o)ExpressionHandler$(oext)                               : $(baseDir)ExpressionHandler.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)MemoryInstanceSupport$(oext)                           : $(baseDir)MemoryInstanceSupport.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+$(o)ECDBuffer$(oext)                           : $(baseDir)ECDBuffer.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)StandaloneECInstance$(oext)                            : $(baseDir)StandaloneECInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)StandaloneECInstance.h
 
