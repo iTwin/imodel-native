@@ -245,7 +245,12 @@ void ECValue::StringInfo::ConvertToUtf16 (UInt8& flags)
         {
         Utf16Buffer buf;
         if (NULL != m_utf8)
-            BeStringUtilities::Utf8ToUtf16 (buf, m_utf8);
+            {
+            if (0 == *m_utf8)       // BeStringUtilities will give us back an empty buffer for an empty string...not what we want
+                buf.push_back (0);
+            else
+                BeStringUtilities::Utf8ToUtf16 (buf, m_utf8);
+            }
 #if !defined (_WIN32)
         else if (NULL != m_wchar)
             BeStringUtilities::WCharToUtf16 (buf, m_wchar);

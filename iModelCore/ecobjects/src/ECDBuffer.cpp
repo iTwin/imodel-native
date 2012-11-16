@@ -2277,16 +2277,18 @@ ECObjectsStatus       ECDBuffer::GetPrimitiveValueFromMemory (ECValueR v, ClassL
                 } 
             case PRIMITIVETYPE_String:
                 {
-                WCharP pString = (WCharP)pValue;
                 // Note: we could avoid a string copy by returning a pointer directly to the string in this instance's memory buffer,
                 // but the pointer will become invalid as soon as the instance does.
                 // Since there are situations in which the returned ECValue outlasts the instance (e.g. evaluating ECExpressions), and the caller
                 // cannot know his ECValue is about to evaporate, we have to make the copy.
-                v.SetString (pString);
+                if (StringEncoding_Utf16 == GetStringEncoding())
+                    v.SetUtf16CP ((Utf16CP)pValue);
+                else
+                    v.SetUtf8CP ((Utf8CP)pValue);
                 break;            
                 }
             default:
-                BeAssert (false && "datetype not implemented");
+                BeAssert (false && "datatype not implemented");
                 return ECOBJECTS_STATUS_DataTypeNotSupported;
             }
         }
@@ -2520,8 +2522,18 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, ClassLa
             if (!v.IsString ())
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
-            WCharCP value = v.GetString();
-            UInt32 bytesNeeded = (UInt32)(sizeof(wchar_t) * (wcslen(value) + 1));
+            void const* value;
+            UInt32 bytesNeeded;
+            if (StringEncoding_Utf16 == GetStringEncoding())
+                {
+                value = v.GetUtf16CP();
+                bytesNeeded = (1 + (UInt32)BeStringUtilities::Utf16Len (v.GetUtf16CP())) * sizeof(Utf16Char);
+                }
+            else
+                {
+                value = v.GetUtf8CP();
+                bytesNeeded = 1 + (UInt32)strlen (v.GetUtf8CP());
+                }
 
             UInt32 currentSize;
             if (useIndex)
