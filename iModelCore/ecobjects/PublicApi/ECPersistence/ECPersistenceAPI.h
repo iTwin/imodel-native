@@ -6,9 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
-/*__PUBLISH_SECTION_START__*/
-
+//__BENTLEY_INTERNAL_ONLY__
 #include <ECPersistence/IECConnection.h>
 #include <ECPersistence/IECSchemaManager.h>
 #include <ECPersistence/IECStatement.h>
+
