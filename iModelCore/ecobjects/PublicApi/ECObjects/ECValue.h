@@ -118,6 +118,8 @@ protected:
 #if !defined (_WIN32)
         WCharCP             m_wchar;        // On Windows we use m_utf16. The presence of the extra pointer wouldn't hurt anything but want to ensure it's only used on unix.
 #endif
+        void                ConvertToUtf8 (UInt8& flags);
+        void                ConvertToUtf16 (UInt8& flags);
     public:
         // All the business with the flags parameters is so that StringInfo can modify ECValue's ownership flags.
         // If we stored the flags on StringInfo, we would increase the size of the union.

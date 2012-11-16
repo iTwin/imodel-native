@@ -215,6 +215,55 @@ void ECValue::StringInfo::SetUtf8 (Utf8CP str, UInt8& flags, bool owned)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
+void ECValue::StringInfo::ConvertToUtf8 (UInt8& flags)
+    {
+    if (NULL == m_utf8)
+        {
+        Utf8String buf;
+        if (NULL != m_utf16)
+            {
+            // ###TODO: eww...can we avoid this?
+            WString wBuf;
+            BeStringUtilities::Utf16ToWChar (wBuf, m_utf16);
+            BeStringUtilities::WCharToUtf8 (buf, wBuf.c_str());
+            }
+#if !defined (_WIN32)
+        else if (NULL != m_wchar)
+            BeStringUtilities::WCharToUtf8 (buf, m_wchar);
+#endif
+        m_utf8 = BeStringUtilities::Strdup (buf.c_str());
+        setDataOwned (flags, ECVALUE_DATA_Utf8, NULL != m_utf8);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECValue::StringInfo::ConvertToUtf16 (UInt8& flags)
+    {
+    if (NULL == m_utf16)
+        {
+        Utf16Buffer buf;
+        if (NULL != m_utf8)
+            BeStringUtilities::Utf8ToUtf16 (buf, m_utf8);
+#if !defined (_WIN32)
+        else if (NULL != m_wchar)
+            BeStringUtilities::WCharToUtf16 (buf, m_wchar);
+#endif
+
+        if (!buf.empty())
+            {
+            size_t size = buf.size() * sizeof(Utf16Char);
+            m_utf16 = (Utf16CP)malloc (size);
+            memcpy (const_cast<Utf16P>(m_utf16), &buf[0], size);
+            setDataOwned (flags, ECVALUE_DATA_Utf16, true);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
 void ECValue::StringInfo::FreeAndClear (UInt8& flags)
     {
     if (isDataOwned (flags, ECVALUE_DATA_Utf16))
@@ -275,25 +324,7 @@ WCharCP ECValue::StringInfo::GetWChar (UInt8& flags)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP ECValue::StringInfo::GetUtf8 (UInt8& flags)
     {
-    if (NULL == m_utf8)
-        {
-        Utf8String buf;
-        if (NULL != m_utf16)
-            {
-            // ###TODO: eww...can we avoid this?
-            WString wBuf;
-            BeStringUtilities::Utf16ToWChar (wBuf, m_utf16);
-            BeStringUtilities::WCharToUtf8 (buf, wBuf.c_str());
-            }
-#if !defined (_WIN32)
-        else if (NULL != m_wchar)
-            BeStringUtilities::WCharToUtf8 (buf, m_wchar);
-#endif
-
-        m_utf8 = buf.c_str();
-        setDataOwned (flags, ECVALUE_DATA_Utf8, NULL != m_utf8);
-        }
-
+    ConvertToUtf8 (flags);  // if we already have Utf8 this does nothing
     return m_utf8;
     }
 
@@ -302,25 +333,7 @@ Utf8CP ECValue::StringInfo::GetUtf8 (UInt8& flags)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf16CP ECValue::StringInfo::GetUtf16 (UInt8& flags)
     {
-    if (NULL == m_utf16)
-        {
-        Utf16Buffer buf;
-        if (NULL != m_utf8)
-            BeStringUtilities::Utf8ToUtf16 (buf, m_utf8);
-#if !defined (_WIN32)
-        else if (NULL != m_wchar)
-            BeStringUtilities::WCharToUtf16 (buf, m_wchar);
-#endif
-
-        if (!buf.empty())
-            {
-            size_t size = buf.size() * sizeof(Utf16Char);
-            m_utf16 = (Utf16CP)malloc (size);
-            memcpy (const_cast<Utf16P>(m_utf16), &buf[0], size);
-            setDataOwned (flags, ECVALUE_DATA_Utf16, true);
-            }
-        }
-
+    ConvertToUtf16 (flags); // if we already have Utf16 this does nothing
     return m_utf16;
     }
 
@@ -337,7 +350,7 @@ bool ECValue::StringInfo::Equals (ECValue::StringInfo const& rhs, UInt8& flags)
             return 0 == strcmp (m_utf8, rhs.m_utf8);
         else
             {
-            SetUtf8 (rhs.m_utf8, flags, true);
+            ConvertToUtf8 (flags);
             return Equals (rhs, flags);
             }
         }
@@ -351,7 +364,7 @@ bool ECValue::StringInfo::Equals (ECValue::StringInfo const& rhs, UInt8& flags)
 #endif
         else
             {
-            SetUtf16 (rhs.m_utf16, flags, true);
+            ConvertToUtf16 (flags);
             return Equals (rhs, flags);
             }
         }
@@ -364,7 +377,7 @@ bool ECValue::StringInfo::Equals (ECValue::StringInfo const& rhs, UInt8& flags)
             return 0 == BeStringUtilities::CompareUtf16WChar (m_utf16, rhs.m_wchar);
         else
             {
-            SetUtf16 (rhs.m_utf16, flags, true);
+            ConvertToUtf16 (flags);
             return Equals (rhs, flags);
             }
         }
