@@ -418,13 +418,22 @@ UInt32          ClassLayout::GetSizeOfFixedSection() const
 void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const
     {
     UInt32 sizeOfFixedSection = GetSizeOfFixedSection();
+    memset (data, 0, sizeof(ECDBuffer::ECDFlagsType));
+
+    // Set the default string encoding
+    if (ECDBuffer::StringEncoding_Utf8 == ECDBuffer::GetDefaultStringEncoding())
+        {
+        ECDBuffer::ECDFlagsType* flags = (ECDBuffer::ECDFlagsType*)(data);
+        *flags = ECDBuffer::ECDFLAG_Utf8Encoding;
+        }
+
     UInt32  nonStructPropCount = GetPropertyCountExcludingEmbeddedStructs();
 
     if (0 == nonStructPropCount)
         return;
         
     UInt32 nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks (nonStructPropCount);
-    InitializeNullFlags ((NullflagsBitmask *)(data), nNullflagsBitmasks);
+    InitializeNullFlags ((NullflagsBitmask *)(data + sizeof(ECDBuffer::ECDFlagsType)), nNullflagsBitmasks);
             
     bool isFirstVariableSizedProperty = true;
     for (UInt32 i = 0; i < m_propertyLayouts.size(); ++i)
@@ -546,6 +555,8 @@ int                    ClassLayout:: GetUniqueId() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 UInt32          ClassLayout::CalculateBytesUsed(byte const * data) const
     {
+    DEBUG_EXPECT (0 != m_sizeOfFixedSection);       // even with no properties we store flags
+
     // handle case when no properties are defined
     if (0 == m_propertyLayouts.size())
         return m_sizeOfFixedSection;
@@ -825,8 +836,8 @@ ClassLayout::Factory::Factory (ECClassCR ecClass)
     : 
     m_ecClass (ecClass),
     m_state   (AcceptingFixedSizeProperties),
-    m_offset  (sizeof(NullflagsBitmask)),
-    m_nullflagsOffset (0),
+    m_offset  (sizeof(ECDBuffer::ECDFlagsType) + sizeof(NullflagsBitmask)),
+    m_nullflagsOffset (sizeof(ECDBuffer::ECDFlagsType)),
     m_nonStructPropertyCount (0),
     m_underConstruction (*ClassLayout::CreateEmpty (m_ecClass.GetName().c_str()))
     {
@@ -888,7 +899,7 @@ ECObjectsStatus       ClassLayout::FinishLayout ()
     if (NULL == lastPropertyLayout)
         {
         // Either there are no properties or all the properties are structs.
-        m_sizeOfFixedSection = 0;
+        m_sizeOfFixedSection = sizeof(ECDBuffer::ECDFlagsType);
         }
     else
         {
@@ -918,7 +929,7 @@ ECObjectsStatus       ClassLayout::FinishLayout ()
         else
             {
             if (0 == prevNonStructOffset)
-                DEBUG_EXPECT (m_propertyLayouts[i]->m_offset == nNullflagsBitmasks * sizeof(NullflagsBitmask));
+                DEBUG_EXPECT (m_propertyLayouts[i]->m_offset == nNullflagsBitmasks * sizeof(NullflagsBitmask) + sizeof(ECDBuffer::ECDFlagsType));
             else
                 DEBUG_EXPECT (m_propertyLayouts[i]->m_offset > prevNonStructOffset);
             }
@@ -927,7 +938,7 @@ ECObjectsStatus       ClassLayout::FinishLayout ()
         UInt32 expectedNullflagsOffset = 0;
 
         if ( ! isStruct)
-            expectedNullflagsOffset = (nonStructPropIndex / BITS_PER_NULLFLAGSBITMASK * sizeof(NullflagsBitmask));
+            expectedNullflagsOffset = (nonStructPropIndex / BITS_PER_NULLFLAGSBITMASK * sizeof(NullflagsBitmask)) + sizeof(ECDBuffer::ECDFlagsType);
 
         DEBUG_EXPECT (m_propertyLayouts[i]->m_nullflagsOffset == expectedNullflagsOffset);
 
@@ -2845,6 +2856,50 @@ ECObjectsStatus ECDBuffer::MoveData (byte* to, byte const* from, size_t len)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECDBuffer::GetFlag (ECDFlagsType flag) const
+    {
+    ECDFlagsType flags = *((ECDFlagsType const*)_GetData());
+    return 0 != (flags & flag);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECDBuffer::SetFlag (ECDFlagsType flag, bool set)
+    {
+    byte const* data = _GetData();
+    ECDFlagsType flags = *((ECDFlagsType const*)data);
+    if (set)
+        flags |= flag;
+    else
+        flags &= ~flag;
+
+    ModifyData (data, &flags, sizeof(flags));
+    }
+
+#if defined(_WIN32)
+static ECDBuffer::StringEncoding s_preferredEncoding = ECDBuffer::StringEncoding_Utf16;
+#else
+static ECDBuffer::StringEncoding s_preferredEncoding = ECDBuffer::StringEncoding_Utf8;
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECDBuffer::StringEncoding ECDBuffer::GetStringEncoding() const
+    {
+    return GetFlag (ECDFLAG_Utf8Encoding) ? StringEncoding_Utf8 : StringEncoding_Utf16;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECDBuffer::StringEncoding ECDBuffer::GetDefaultStringEncoding ()                { return s_preferredEncoding; }
+void ECDBuffer::SetDefaultStringEncoding (StringEncoding def)                   { s_preferredEncoding = def; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString        ECDBuffer::InstanceDataToString (WCharCP indent, ClassLayoutCR classLayout) const
@@ -2867,7 +2922,7 @@ WString        ECDBuffer::InstanceDataToString (WCharCP indent, ClassLayoutCR cl
     
     for (UInt32 i = 0; i < nNullflagsBitmasks; i++)
         {
-        UInt32 offset = sizeof(NullflagsBitmask);
+        UInt32 offset = sizeof(ECDBuffer::ECDFlagsType) + i * sizeof(NullflagsBitmask);
         byte const * address = offset + data;
         appendFormattedString (oss, L"%ls  [0x%x][%4.d] Nullflags[%d] = 0x%x\n", indent, address, offset, i, *(NullflagsBitmask*)(data + offset));
         }
@@ -2976,7 +3031,7 @@ WString        ECDBuffer::InstanceDataToString (WCharCP indent, ClassLayoutCR cl
     if (1 == nProperties)
         {
         // We have one PropertyLayout, which is an empty root struct, signifying an empty ECClass
-        DEBUG_EXPECT (0 == classLayout.GetSizeOfFixedSection());
+        DEBUG_EXPECT (sizeof(ECDBuffer::ECDFlagsType) == classLayout.GetSizeOfFixedSection());
         appendFormattedString (oss, L"Class has no properties\n");
         }
     else

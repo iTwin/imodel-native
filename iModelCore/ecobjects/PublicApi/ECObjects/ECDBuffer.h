@@ -340,12 +340,20 @@ struct ECDBuffer
     {
     friend  struct ArrayResizer;
 /*__PUBLISH_SECTION_END__*/    
-    
+    typedef UInt8 ECDFlagsType;
+
+    enum ECDFlags ENUM_UNDERLYING_TYPE(ECDFlagsType)
+        {
+        // Encoding used for all strings in this buffer. If not set, encoding is Utf16
+        ECDFLAG_Utf8Encoding            = 1 << 0,
+        };
 /*__PUBLISH_SECTION_START__*/  
 private:    
     mutable bool        m_allowWritingDirectlyToInstanceMemory;
 //__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_END__*/    
+    bool                GetFlag (ECDFlagsType flag) const;
+    void                SetFlag (ECDFlagsType flag, bool set);
 
     //! Returns the offset of the property value relative to the start of the instance data.
     //! If useIndex is true then the offset of the array element value at the specified index is returned.
@@ -498,6 +506,20 @@ public:
     // Compress the memory storing the data to as small a size as possible
     ECOBJECTS_EXPORT ECObjectsStatus        Compress();
 
+    // Encoding used by all strings in the buffer
+    enum StringEncoding
+        {
+        StringEncoding_Utf8,
+        StringEncoding_Utf16
+        };
+
+    // Get the encoding used by strings in this buffer
+    ECOBJECTS_EXPORT StringEncoding         GetStringEncoding() const;
+    // Returns a platform-dependent preferred encoding for strings, or the encoding set by a call to SetDefaultStringEncoding.
+    // This is the encoding that will be used when creating new in-memory ECDBuffers.
+    ECOBJECTS_EXPORT static StringEncoding  GetDefaultStringEncoding();
+    // Override the platform-dependent preferred encoding used when creating new in-memory ECDBuffers.
+    ECOBJECTS_EXPORT static void            SetDefaultStringEncoding (StringEncoding defaultEncoding);
 /*__PUBLISH_SECTION_START__*/  
     };   
 
