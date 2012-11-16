@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/ECObjects/MemoryInstanceSupport.h $
+|     $Source: PublicApi/ECObjects/ECDBuffer.h $
 |
 |   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -16,7 +16,7 @@
 #define PROPERTYLAYOUT_Target_ECPointer L"Target ECPointer"
 /*__PUBLISH_SECTION_START__*/
 
-EC_TYPEDEFS(MemoryInstanceSupport);
+EC_TYPEDEFS(ECDBuffer);
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
     
@@ -107,7 +107,7 @@ bool operator()(ClassLayoutCP s1, ClassLayoutCP s2) const;
 struct ClassLayout
     {
 /*__PUBLISH_SECTION_END__*/
-    friend struct MemoryInstanceSupport;
+    friend struct ECDBuffer;
 private:
     struct AccessStringIndexPair : bpair<WCharCP, UInt32>
         {
@@ -278,15 +278,15 @@ public:
     ECOBJECTS_EXPORT ClassLayoutCR  GetClassLayout() const;
     };
 
-//! An internal helper used by MemoryInstanceSupport to resize (add/remove elements) array property values
+//! An internal helper used by ECDBuffer to resize (add/remove elements) array property values
 struct      ArrayResizer
     {
-    friend struct MemoryInstanceSupport;
+    friend struct ECDBuffer;
     
 private:
     ClassLayoutCR           m_classLayout;
     PropertyLayoutCR        m_propertyLayout;
-    MemoryInstanceSupportR  m_instance;
+    ECDBufferR  m_instance;
     
     UInt32          m_arrayOffset;
     
@@ -318,7 +318,7 @@ private:
     
     byte const *    m_data;
 
-    ArrayResizer (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, MemoryInstanceSupportR instance, UInt32 resizeIndex, UInt32 resizeElementCount);
+    ArrayResizer (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, ECDBufferR instance, UInt32 resizeIndex, UInt32 resizeElementCount);
         
     ECObjectsStatus       ShiftDataFollowingResizeIndex ();
     ECObjectsStatus       SetSecondaryOffsetsFollowingResizeIndex ();
@@ -326,7 +326,7 @@ private:
     ECObjectsStatus       SetSecondaryOffsetsPreceedingResizeIndex (SecondaryOffset* pSecondaryOffset, UInt32 byteCountToSet);    
     ECObjectsStatus       WriteArrayHeader ();
         
-    static ECObjectsStatus    CreateNullArrayElementsAt (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, MemoryInstanceSupportR instance, UInt32 insertIndex, UInt32 insertCount);
+    static ECObjectsStatus    CreateNullArrayElementsAt (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, ECDBufferR instance, UInt32 insertIndex, UInt32 insertCount);
     };
 
 /*__PUBLISH_SECTION_START__*/  
@@ -336,7 +336,7 @@ private:
 //! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================    
-struct MemoryInstanceSupport
+struct ECDBuffer
     {
     friend  struct ArrayResizer;
 /*__PUBLISH_SECTION_END__*/    
@@ -396,7 +396,7 @@ private:
     //! Shifts the values' data and adjusts SecondaryOffsets for all variable-sized property values 
     //! AFTER the given one, to make room for additional bytes needed for the property value of the given PropertyLayout
     //! or to "compact" to reclaim unused space.
-    //! @param data           Start of the data of the MemoryInstanceSupport
+    //! @param data           Start of the data of the ECDBuffer
     //! @param bytesAllocated How much memory is allocated for the data
     //! @param propertyLayout PropertyLayout of the variable-sized property whose size is increasing
     //! @param shiftBy        Positive or negative! Memory will be moved and SecondaryOffsets will be adjusted by this amount
@@ -417,10 +417,10 @@ private:
     ECObjectsStatus                   MoveData (byte* to, byte const* from, size_t dataLength); 
 protected:
     //! Constructor used by subclasses
-    //! @param allowWritingDirectlyToInstanceMemory     If true, MemoryInstanceSupport is allowed to memset, memmove, and poke at the 
+    //! @param allowWritingDirectlyToInstanceMemory     If true, ECDBuffer is allowed to memset, memmove, and poke at the 
     //!                                                 memory directly, e.g. for StandaloneECIntance.
     //!                                                 If false, all modifications must happen through _ModifyData, e.g. for ECXData.
-    ECOBJECTS_EXPORT            MemoryInstanceSupport (bool allowWritingDirectlyToInstanceMemory);
+    ECOBJECTS_EXPORT            ECDBuffer (bool allowWritingDirectlyToInstanceMemory);
     ECOBJECTS_EXPORT void       InitializeMemory(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated) const;
                      void       SetInstanceMemoryWritable (bool writable) const { m_allowWritingDirectlyToInstanceMemory = writable; }
 
@@ -450,7 +450,7 @@ protected:
     ECOBJECTS_EXPORT WString          InstanceDataToString (WCharCP indent, ClassLayoutCR classLayout) const;
     ECOBJECTS_EXPORT ECObjectsStatus  GetIsNullValueFromMemory (ClassLayoutCR classLayout, bool& isNull, UInt32 propertyIndex, bool useIndex, UInt32 index) const;
 
-    virtual ~MemoryInstanceSupport () {}
+    virtual ~ECDBuffer () {}
 
     //! Sets the in-memory value of the array index of the specified property to be the struct value as held by v
     //! Since struct arrays support polymorphic values, we do not support storing the full struct value in the data section of the instance.  It must be externalized, therefore

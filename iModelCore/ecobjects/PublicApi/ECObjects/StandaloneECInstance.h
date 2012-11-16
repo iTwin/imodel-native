@@ -9,7 +9,7 @@
 #pragma once
 
 #include <ECObjects/ECObjects.h>
-#include <ECObjects/MemoryInstanceSupport.h>
+#include <ECObjects/ECDBuffer.h>
 
 EC_TYPEDEFS(StandaloneECEnabler);
 
@@ -67,7 +67,7 @@ struct PerPropertyFlagsHolder
 * @ingroup ECObjectsGroup
 * @bsiclass 
 +===============+===============+===============+===============+===============+======*/
-struct MemoryECInstanceBase : MemoryInstanceSupport
+struct MemoryECInstanceBase : ECDBuffer
 {
 //__PUBLISH_SECTION_END__
 

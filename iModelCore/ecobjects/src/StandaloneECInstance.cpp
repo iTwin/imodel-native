@@ -19,7 +19,7 @@ const UInt32 BITS_TO_SHIFT_FOR_FLAGSBITMASK = 5;            // bitToCheck >> BIT
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 MemoryECInstanceBase::MemoryECInstanceBase (byte * data, UInt32 size, ClassLayoutCR classLayout, bool allowWritingDirectlyToInstanceMemory, MemoryECInstanceBase const* parentInstance) :
-        MemoryInstanceSupport (allowWritingDirectlyToInstanceMemory),
+        ECDBuffer (allowWritingDirectlyToInstanceMemory),
         m_bytesAllocated(size)
     {
     m_data = data;
@@ -35,7 +35,7 @@ MemoryECInstanceBase::MemoryECInstanceBase (byte * data, UInt32 size, ClassLayou
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory, MemoryECInstanceBase const* parentInstance) :
-        MemoryInstanceSupport (allowWritingDirectlyToInstanceMemory),
+        ECDBuffer (allowWritingDirectlyToInstanceMemory),
         m_bytesAllocated(0)
     {
     m_structInstances = NULL;

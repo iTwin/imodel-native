@@ -240,11 +240,11 @@ public:
         
     ECOBJECTS_EXPORT WCharCP        GetString () const;
     ECOBJECTS_EXPORT Utf8CP         GetUtf8CP () const;
-    ECOBJECTS_EXPORT Utf16CP        GetUtf16CP () const;    // the only real caller of this should be MemoryInstanceSupport
+    ECOBJECTS_EXPORT Utf16CP        GetUtf16CP () const;    // the only real caller of this should be ECDBuffer
 
     ECOBJECTS_EXPORT BentleyStatus  SetString (WCharCP string, bool holdADuplicate = true);
     ECOBJECTS_EXPORT BentleyStatus  SetUtf8CP (Utf8CP string, bool holdADuplicate = true);
-    ECOBJECTS_EXPORT BentleyStatus  SetUtf16CP (Utf16CP string, bool holdADuplicate = true);    // primarily for use by MemoryInstanceSupport
+    ECOBJECTS_EXPORT BentleyStatus  SetUtf16CP (Utf16CP string, bool holdADuplicate = true);    // primarily for use by ECDBuffer
 
     ECOBJECTS_EXPORT const byte *   GetBinary (size_t& size) const;
     ECOBJECTS_EXPORT BentleyStatus  SetBinary (const byte * data, size_t size, bool holdADuplicate = false);
