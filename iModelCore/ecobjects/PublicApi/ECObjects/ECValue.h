@@ -85,6 +85,8 @@ public:
 //=======================================================================================    
 struct ECValue
     {
+public:
+    void ShallowCopy (ECValueCR v);
 private:        
     union
         {
@@ -93,7 +95,9 @@ private:
         };
 
     UInt8               m_stateFlags;
-    bool                m_ownsData;             // For binary and string values, if true the data must be freed with this ECValue
+    mutable UInt8       m_ownershipFlags;       // mutable because string ownership may change when we perform on-demand encoding conversions...
+
+    void                InitForString (void const * str);
 protected:    
     typedef bvector<ECValue>  ValuesVector;
     typedef bvector<ECValue>* ValuesVectorP;
@@ -104,13 +108,39 @@ protected:
         size_t              m_size;
         };
 
+    struct StringInfo
+        {
+    private:
+        friend void ECValue::ShallowCopy (ECValueCR);
+
+        Utf8CP              m_utf8;             
+        Utf16CP             m_utf16;
+#if !defined (_WIN32)
+        WCharCP             m_wchar;        // On Windows we use m_utf16. The presence of the extra pointer wouldn't hurt anything but want to ensure it's only used on unix.
+#endif
+    public:
+        // All the business with the flags parameters is so that StringInfo can modify ECValue's ownership flags.
+        // If we stored the flags on StringInfo, we would increase the size of the union.
+        WCharCP             GetWChar (UInt8& flags);
+        Utf8CP              GetUtf8 (UInt8& flags);
+        Utf16CP             GetUtf16 (UInt8& flags);
+
+        void                SetWChar (WCharCP str, UInt8& flags, bool makeCopy);
+        void                SetUtf8 (Utf8CP str, UInt8& flags, bool makeCopy);
+        void                SetUtf16 (Utf16CP str, UInt8& flags, bool makeCopy);
+
+        void                FreeAndClear (UInt8& flags);
+        void                SetNull();          // does not free pointers - used to init from Uninitialized ECValue state
+        bool                Equals (StringInfo const& rhs, UInt8& flags);
+        };
+
     union
         {
         bool                m_boolean;
         ::Int32             m_integer32;
         ::Int64             m_long64;
         double              m_double;
-        WCharCP             m_string;
+        mutable StringInfo  m_stringInfo;       // mutable so that we can convert to requested encoding on demand
         ::Int64             m_dateTime;
         DPoint2d            m_dPoint2d;   
         DPoint3d            m_dPoint3d; 
@@ -119,7 +149,6 @@ protected:
         IECInstanceP        m_structInstance;   // The ECValue class calls AddRef and Release for the member as needed
         };
 
-    void ShallowCopy (ECValueCR v);
     void ConstructUninitialized();
     inline void FreeMemory ();
          
@@ -138,6 +167,8 @@ public:
     ECOBJECTS_EXPORT explicit ECValue (::Int64 long64);
     ECOBJECTS_EXPORT explicit ECValue (double doubleVal);
     ECOBJECTS_EXPORT explicit ECValue (WCharCP string, bool holdADuplicate = true);
+    ECOBJECTS_EXPORT explicit ECValue (Utf8CP string, bool holdADuplicate = true);
+    ECOBJECTS_EXPORT explicit ECValue (Utf16CP string, bool holdADuplicate = true);
     ECOBJECTS_EXPORT explicit ECValue (const byte * blob, size_t size);
     ECOBJECTS_EXPORT explicit ECValue (DPoint2dCR point2d);
     ECOBJECTS_EXPORT explicit ECValue (DPoint3dCR point3d);
@@ -206,10 +237,12 @@ public:
     ECOBJECTS_EXPORT BentleyStatus  SetDouble (double value);  
         
     ECOBJECTS_EXPORT WCharCP        GetString () const;
-/*__PUBLISH_SECTION_END__*/
-                     WCharCP        GetString0 () const {return m_string;}
-/*__PUBLISH_SECTION_START__*/
+    ECOBJECTS_EXPORT Utf8CP         GetUtf8CP () const;
+    ECOBJECTS_EXPORT Utf16CP        GetUtf16CP () const;    // the only real caller of this should be MemoryInstanceSupport
+
     ECOBJECTS_EXPORT BentleyStatus  SetString (WCharCP string, bool holdADuplicate = true);
+    ECOBJECTS_EXPORT BentleyStatus  SetUtf8CP (Utf8CP string, bool holdADuplicate = true);
+    ECOBJECTS_EXPORT BentleyStatus  SetUtf16CP (Utf16CP string, bool holdADuplicate = true);    // primarily for use by MemoryInstanceSupport
 
     ECOBJECTS_EXPORT const byte *   GetBinary (size_t& size) const;
     ECOBJECTS_EXPORT BentleyStatus  SetBinary (const byte * data, size_t size, bool holdADuplicate = false);
