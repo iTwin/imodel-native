@@ -2838,7 +2838,13 @@ ECObjectsStatus MemoryInstanceSupport::SetCalculatedProperty (ECValueCR v, Class
         return ECOBJECTS_STATUS_Error; 
         }
     else
-        return spec->UpdateDependentProperties (v, *iecInstance);
+        {
+        ECObjectsStatus status = spec->UpdateDependentProperties (v, *iecInstance);
+        if (ECOBJECTS_STATUS_Success != status)
+            ECObjectsLogger::Log()->infov(L"Failed to update dependent ECPropertyValues when setting CalculatedECProperty '%ls'", propertyLayout.GetAccessString());
+
+        return status;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

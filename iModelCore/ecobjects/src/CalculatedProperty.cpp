@@ -339,7 +339,7 @@ ECObjectsStatus CalculatedPropertySpecification::UpdateDependentProperties (ECVa
 
     else
 #if defined (HAVE_REGEX)    // WIP_NONPORT - regex
-        return m_parserRegex->Apply (instance, v.GetString()) ? ECOBJECTS_STATUS_Success : ECOBJECTS_STATUS_Error; // Add a status for failure to parse regexp
+        return m_parserRegex->Apply (instance, v.GetString()) ? ECOBJECTS_STATUS_Success : ECOBJECTS_STATUS_ParseError;
 #else
         return ECOBJECTS_STATUS_ParseError;
 #endif
