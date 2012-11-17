@@ -1162,10 +1162,7 @@ ECObjectsStatus     ClassLayout::GetPropertyIndex (UInt32& propertyIndex, WCharC
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus       ClassLayout::GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const
     {
-    BeAssert (propertyIndex < m_propertyLayouts.size());
-    if (propertyIndex >= m_propertyLayouts.size())
-        return ECOBJECTS_STATUS_IndexOutOfRange; 
-        
+    PRECONDITION (propertyIndex < m_propertyLayouts.size(), ECOBJECTS_STATUS_IndexOutOfRange);
     propertyLayout = m_propertyLayouts[propertyIndex];
     return ECOBJECTS_STATUS_Success;
     }
@@ -2397,7 +2394,10 @@ ECObjectsStatus       MemoryInstanceSupport::GetIsNullValueFromMemory (ClassLayo
     if (useIndex)
         {
         if (!propertyLayout->GetTypeDescriptor().IsArray())
-            return ECOBJECTS_STATUS_PropertyNotFound;    
+            {
+            BeAssert(false && "You cannot use an array index if the property is not an array!");
+            return ECOBJECTS_STATUS_PropertyNotFound;
+            }
 
         if (index >= GetReservedArrayCount (*propertyLayout))
             return ECOBJECTS_STATUS_IndexOutOfRange;
@@ -2472,9 +2472,7 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
         } 
 
     if (isInUninitializedFixedCountArray)
-        {
         ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, 0, GetReservedArrayCount (propertyLayout));
-        }   
 
     UInt32 offset = GetOffsetOfPropertyValue (propertyLayout, useIndex, index);
 
