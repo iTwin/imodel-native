@@ -1070,9 +1070,9 @@ UInt32          ECValue::GetFixedPrimitiveValueSize (PrimitiveType primitivetype
         case PRIMITIVETYPE_Boolean:
             return sizeof(bool); 
         case PRIMITIVETYPE_Point2D:
-            return 2*sizeof(double);
+            return 2 * sizeof(double);
         case PRIMITIVETYPE_Point3D:
-            return 3*sizeof(double);
+            return 3 * sizeof(double);
         case PRIMITIVETYPE_DateTime:
             return sizeof(Int64); //ticks
         default:
