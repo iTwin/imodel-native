@@ -215,7 +215,7 @@ public:
     ECOBJECTS_EXPORT UInt32          GetPropertyCountExcludingEmbeddedStructs () const;
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyLayout (PropertyLayoutCP & propertyLayout, WCharCP accessString) const;
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const;
-                     ECObjectsStatus GetPropertyLayoutIndex (UInt32& propertyIndex, PropertyLayoutCR propertyLayout) const;
+    ECOBJECTS_EXPORT ECObjectsStatus GetPropertyLayoutIndex (UInt32& propertyIndex, PropertyLayoutCR propertyLayout) const;
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyIndex (UInt32& propertyIndex, WCharCP accessString) const;
     ECOBJECTS_EXPORT bool            IsPropertyReadOnly (UInt32 propertyIndex) const;
     ECOBJECTS_EXPORT bool            SetPropertyReadOnly (UInt32 propertyIndex, bool readOnly) const;
@@ -389,18 +389,6 @@ private:
     //! If nIndices is > 0 then the null bit is set for the array element at the specified index    
     void                SetPropertyValueNull (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, bool isNull);    
 
-    //! Returns the number of elements in the specfieid array that are currently reserved but not necessarily allocated.
-    //! This is important when an array has a minimum size but has not yet been initialized.  We delay initializing the memory for the minimum # of elements until
-    //! the first value is set.  If an array does not have a minimum element count then GetReservedArrayCount will always equal GetAllocatedArrayCount
-    //! This value is always >= the value returned by GetAllocatedArrayCount.
-    //! This is the value used to set the count on an ArrayInfo value object that will be returned to a caller via GetValueFromMemory.  It is an implementation detail
-    //! of memory based instances as to whether or not the physical memory to back that array count has actually been allocated.
-    ArrayCount          GetReservedArrayCount (PropertyLayoutCR propertyLayout) const;
-    
-    //! Returns the number of elements in the specfieid array that are currently allocated in the instance data memory block.
-    //! See the description of GetReservedArrayCount for explanation about the differences between the two.
-    ArrayCount          GetAllocatedArrayCount (PropertyLayoutCR propertyLayout) const;
-    
     //! Shifts the values' data and adjusts SecondaryOffsets for all variable-sized property values 
     //! AFTER the given one, to make room for additional bytes needed for the property value of the given PropertyLayout
     //! or to "compact" to reclaim unused space.
@@ -424,6 +412,19 @@ private:
     ECObjectsStatus                   ModifyData (UInt32 const* data, UInt32 newData);
     ECObjectsStatus                   MoveData (byte* to, byte const* from, size_t dataLength); 
 protected:
+    //! Returns the number of elements in the specfieid array that are currently reserved but not necessarily allocated.
+    //! This is important when an array has a minimum size but has not yet been initialized.  We delay initializing the memory for the minimum # of elements until
+    //! the first value is set.  If an array does not have a minimum element count then GetReservedArrayCount will always equal GetAllocatedArrayCount
+    //! This value is always >= the value returned by GetAllocatedArrayCount.
+    //! This is the value used to set the count on an ArrayInfo value object that will be returned to a caller via GetValueFromMemory.  It is an implementation detail
+    //! of memory based instances as to whether or not the physical memory to back that array count has actually been allocated.
+    ECOBJECTS_EXPORT ArrayCount          GetReservedArrayCount (PropertyLayoutCR propertyLayout) const;
+    
+    //! Returns the number of elements in the specfieid array that are currently allocated in the instance data memory block.
+    //! See the description of GetReservedArrayCount for explanation about the differences between the two.
+    ECOBJECTS_EXPORT ArrayCount          GetAllocatedArrayCount (PropertyLayoutCR propertyLayout) const;
+    
+
     //! Constructor used by subclasses
     //! @param allowWritingDirectlyToInstanceMemory     If true, ECDBuffer is allowed to memset, memmove, and poke at the 
     //!                                                 memory directly, e.g. for StandaloneECIntance.

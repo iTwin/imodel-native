@@ -171,9 +171,8 @@ void SetAndVerifyStringArray (IECInstanceR instance, ECValueR v, WCharCP accessS
         incrementingString.append (L"X");
         v.SetString(incrementingString.c_str());
 
-        // since the test sets some of the array values more than once to the same value we must check SUCCESS || ECOBJECTS_STATUS_PropertyValueMatchesNoChange 
         ECObjectsStatus status = instance.SetValue (accessString, v, i);
-        EXPECT_TRUE (SUCCESS == status || ECOBJECTS_STATUS_PropertyValueMatchesNoChange == status);
+        EXPECT_TRUE (SUCCESS == status);
         }
     
     VerifyStringArray (instance, v, accessString, value, 0, count);
@@ -199,9 +198,8 @@ void SetAndVerifyIntegerArray (IECInstanceR instance, ECValueR v, WCharCP access
         {
         v.SetInteger(baseValue + i); 
 
-        // since the test sets some of the array values more than once to the same value we must check SUCCESS || ECOBJECTS_STATUS_PropertyValueMatchesNoChange 
         ECObjectsStatus status = instance.SetValue (accessString, v, i);
-        EXPECT_TRUE (SUCCESS == status || ECOBJECTS_STATUS_PropertyValueMatchesNoChange == status);
+        EXPECT_TRUE (SUCCESS == status);
         }
         
     VerifyIntegerArray (instance, v, accessString, baseValue, 0, count);
@@ -2510,21 +2508,21 @@ TEST_F (MemoryLayoutTests, IterateCompleClass)
     ECN::StandaloneECInstancePtr structInstance = structArrayEnabler->CreateInstance();
 
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"BooleanProperty", b));
-    EXPECT_TRUE (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == instance->SetValue (L"BooleanProperty", b));
+    EXPECT_TRUE (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == instance->ChangeValue (L"BooleanProperty", b));
 #if !FIXED_COUNT_ARRAYS_ARE_SUPPORTED
     EXPECT_TRUE (SUCCESS == instance->AddArrayElements (L"SimpleArrayProperty", 1));
 #endif
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"SimpleArrayProperty", s1, 0));
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"StructProperty.StringProperty", s2));
-    EXPECT_TRUE (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == instance->SetValue (L"StructProperty.StringProperty", s2));
+    EXPECT_TRUE (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == instance->ChangeValue (L"StructProperty.StringProperty", s2));
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"StructProperty.IntProperty", i1));
-    EXPECT_TRUE (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == instance->SetValue (L"StructProperty.IntProperty", i1));
+    EXPECT_TRUE (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == instance->ChangeValue (L"StructProperty.IntProperty", i1));
 #if !FIXED_COUNT_ARRAYS_ARE_SUPPORTED
     EXPECT_TRUE (SUCCESS == instance->AddArrayElements (L"StructProperty.ArrayProperty", 1));
 #endif
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"StructProperty.ArrayProperty", s3, 0));
     EXPECT_TRUE (SUCCESS == instance->SetValue (L"DoubleProperty", d1));
-    EXPECT_TRUE (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == instance->SetValue (L"DoubleProperty", d1));
+    EXPECT_TRUE (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == instance->ChangeValue (L"DoubleProperty", d1));
 
     EXPECT_TRUE (SUCCESS == structInstance->SetValue (L"StringProperty", s5));
     EXPECT_TRUE (SUCCESS == structInstance->SetValue (L"IntProperty", i3));

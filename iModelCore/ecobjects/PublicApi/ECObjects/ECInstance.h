@@ -182,6 +182,30 @@ public:
     //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex);
+
+    //! Change the value for the specified property
+    //! @param[in]  propertyAccessString The name of the property to set the value of
+    //! @param[in]  v   The value to set onto the property
+    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (WCharCP propertyAccessString, ECValueCR v);    
+    //! Change the value for the specified property
+    //! @param[in]  propertyAccessString The name of the property to set the value of
+    //! @param[in]  v   The value to set onto the property
+    //! @param[in]  index   The array index, if this is an ArrayProperty
+    //! @returns ECOBJECTS_STATUS_Success if successful, ECOBJECTS_STATUS_PropertyValueMatchesNoChange if no change, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (WCharCP propertyAccessString, ECValueCR v, UInt32 index);
+    //! Change the value for the specified property
+    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
+    //! @param[in]  v   The value to set onto the property
+    //! @returns ECOBJECTS_STATUS_Success if successful, ECOBJECTS_STATUS_PropertyValueMatchesNoChange if no change, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (UInt32 propertyIndex, ECValueCR v);
+    //! Change the value for the specified property
+    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
+    //! @param[in]  v   The value to set onto the property
+    //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty
+    //! @returns ECOBJECTS_STATUS_Success if successful, ECOBJECTS_STATUS_PropertyValueMatchesNoChange if no change, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex);
+
     //! Gets the value of the ECProperty specified by the ECValueAccessor
     ECOBJECTS_EXPORT ECObjectsStatus    GetValueUsingAccessor (ECValueR v, ECValueAccessorCR accessor) const;
     //! Sets the value of the ECProperty specified by the ECValueAccessor
