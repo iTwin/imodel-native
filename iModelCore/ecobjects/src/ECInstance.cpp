@@ -231,6 +231,9 @@ ECEnablerR            IECInstance::GetEnablerR() const { return *const_cast<ECEn
 bool                  IECInstance::IsReadOnly() const { return _IsReadOnly();  }
 MemoryECInstanceBase* IECInstance::GetAsMemoryECInstance () const {return _GetAsMemoryECInstance();}
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/   
 ECObjectsStatus     IECInstance::GetValue (ECValueR v, WCharCP propertyAccessString) const 
     {
     UInt32 propertyIndex=0;
@@ -242,6 +245,9 @@ ECObjectsStatus     IECInstance::GetValue (ECValueR v, WCharCP propertyAccessStr
     return _GetValue (v, propertyIndex, false, 0); 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/   
 ECObjectsStatus     IECInstance::GetValue (ECValueR v, WCharCP propertyAccessString, UInt32 arrayIndex) const 
     {
     UInt32 propertyIndex=0;
@@ -253,9 +259,19 @@ ECObjectsStatus     IECInstance::GetValue (ECValueR v, WCharCP propertyAccessStr
     return _GetValue (v, propertyIndex, true, arrayIndex); 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/   
 ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex) const { return _GetValue (v, propertyIndex, false, 0); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/   
 ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex, UInt32 arrayIndex) const { return _GetValue (v, propertyIndex, true, arrayIndex); }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/   
 ECObjectsStatus     IECInstance::SetInternalValue (WCharCP propertyAccessString, ECValueCR v) 
     {
     UInt32 propertyIndex=0;
@@ -267,7 +283,10 @@ ECObjectsStatus     IECInstance::SetInternalValue (WCharCP propertyAccessString,
     return SetInternalValue (propertyIndex, v); 
     }
 
-ECObjectsStatus     IECInstance::SetValue (WCharCP propertyAccessString, ECValueCR v) 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/   
+ECObjectsStatus     IECInstance::ChangeValue (WCharCP propertyAccessString, ECValueCR v) 
     {
     UInt32 propertyIndex=0;
     ECObjectsStatus status = GetEnabler().GetPropertyIndex (propertyIndex, propertyAccessString);
@@ -275,9 +294,25 @@ ECObjectsStatus     IECInstance::SetValue (WCharCP propertyAccessString, ECValue
     if (ECOBJECTS_STATUS_Success != status)
         return status;
 
-    return SetValue (propertyIndex, v); 
+    return ChangeValue (propertyIndex, v); 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus     IECInstance::SetValue (WCharCP propertyAccessString, ECValueCR v) 
+    {
+    ECObjectsStatus status = ChangeValue (propertyAccessString, v);
+
+    if (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == status)
+        return ECOBJECTS_STATUS_Success;
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/   
 ECObjectsStatus     IECInstance::SetInternalValue (WCharCP propertyAccessString, ECValueCR v, UInt32 arrayIndex) 
     {
     UInt32 propertyIndex=0;
@@ -289,7 +324,10 @@ ECObjectsStatus     IECInstance::SetInternalValue (WCharCP propertyAccessString,
     return SetInternalValue (propertyIndex, v, arrayIndex); 
     }
 
-ECObjectsStatus     IECInstance::SetValue (WCharCP propertyAccessString, ECValueCR v, UInt32 arrayIndex) 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/   
+ECObjectsStatus     IECInstance::ChangeValue (WCharCP propertyAccessString, ECValueCR v, UInt32 arrayIndex) 
     {
     UInt32 propertyIndex=0;
     ECObjectsStatus status = GetEnabler().GetPropertyIndex (propertyIndex, propertyAccessString);
@@ -297,15 +335,34 @@ ECObjectsStatus     IECInstance::SetValue (WCharCP propertyAccessString, ECValue
     if (ECOBJECTS_STATUS_Success != status)
         return status;
 
-    return SetValue (propertyIndex, v, arrayIndex); 
+    return ChangeValue (propertyIndex, v, arrayIndex); 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/   
+ECObjectsStatus     IECInstance::SetValue (WCharCP propertyAccessString, ECValueCR v, UInt32 arrayIndex) 
+    {
+    ECObjectsStatus status = ChangeValue (propertyAccessString, v, arrayIndex);
+
+    if (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == status)
+        return ECOBJECTS_STATUS_Success;
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/   
 ECObjectsStatus     IECInstance::SetInternalValue (UInt32 propertyIndex, ECValueCR v) 
     {
     return _SetInternalValue (propertyIndex, v, false, 0); 
     }
 
-ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v) 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/   
+ECObjectsStatus     IECInstance::ChangeValue (UInt32 propertyIndex, ECValueCR v) 
     {
     if (IsReadOnly())
         return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
@@ -320,6 +377,22 @@ ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v)
     return _SetValue (propertyIndex, v, false, 0); 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/   
+ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v) 
+    {
+    ECObjectsStatus status = ChangeValue (propertyIndex, v);
+
+    if (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == status)
+        return ECOBJECTS_STATUS_Success;
+
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus     IECInstance::SetInternalValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) 
     { 
     return _SetInternalValue (propertyIndex, v, true, arrayIndex); 
@@ -334,7 +407,10 @@ ECObjectsStatus IECInstance::_SetInternalValue (UInt32 propertyIndex, ECValueCR 
     return _SetValue (propertyIndex, v, useArrayIndex, arrayIndex);
     }
 
-ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus     IECInstance::ChangeValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) 
     {
     if (IsReadOnly())
         return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
@@ -348,6 +424,19 @@ ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v, UI
         return ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
 
     return _SetValue (propertyIndex, v, true, arrayIndex); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) 
+    {
+    ECObjectsStatus status = ChangeValue (propertyIndex, v, arrayIndex);
+
+    if (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == status)
+        return ECOBJECTS_STATUS_Success;
+
+    return  status;
     }
 
 bool                IECInstance::IsPropertyReadOnly (UInt32 propertyIndex) const { return _IsPropertyReadOnly (propertyIndex); }
