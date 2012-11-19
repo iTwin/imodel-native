@@ -1027,7 +1027,7 @@ TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
     ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
     WString instanceId = instance->GetInstanceId();
     UInt32 size = instance->GetBytesUsed ();
-    EXPECT_EQ (size, 1);
+    EXPECT_EQ (size, sizeof(ECDHeader));
 
     instance->ToString(L"").c_str();
 

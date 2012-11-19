@@ -102,6 +102,8 @@ bool operator()(ClassLayoutCP s1, ClassLayoutCP s2) const;
  /*__PUBLISH_SECTION_START__*/
  /*=================================================================================**//**
 * @bsistruct
+* Responsible for managing the layout of the portion of an ECD buffer storing property
+* values.
 * @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/      
 struct ClassLayout
@@ -220,8 +222,8 @@ public:
     ECOBJECTS_EXPORT bool            IsPropertyReadOnly (UInt32 propertyIndex) const;
     ECOBJECTS_EXPORT bool            SetPropertyReadOnly (UInt32 propertyIndex, bool readOnly) const;
     
-    //! Determines the number of bytes used, so far
-    ECOBJECTS_EXPORT UInt32         CalculateBytesUsed(byte const * data) const;
+    //! Determines the number of bytes used for property data, so far
+    ECOBJECTS_EXPORT UInt32         CalculateBytesUsed(byte const * propertyData) const;
     ECOBJECTS_EXPORT bool           IsCompatible(ClassLayoutCR layout) const;
 
     ECOBJECTS_EXPORT WString       ToString() const;
@@ -316,7 +318,7 @@ private:
     byte const *    m_pResizeIndexPreShift;
     byte const *    m_pResizeIndexPostShift;    
     
-    byte const *    m_data;
+    byte const *    m_propertyData;
 
     ArrayResizer (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, ECDBufferR instance, UInt32 resizeIndex, UInt32 resizeElementCount);
         
@@ -332,7 +334,7 @@ private:
 enum ECDFormatVersion ENUM_UNDERLYING_TYPE(UInt8)
     {
     // Invalid or unknown version, possibly result of corrupted ECD buffer
-    ECDFormat_Invalid   = -1,
+    ECDFormat_Invalid   = 0xFF,
 
     // First version of ECD format to support versioning
     ECDFormat_v0        = 0,
@@ -348,7 +350,7 @@ enum ECDFormatVersion ENUM_UNDERLYING_TYPE(UInt8)
 
     // The minimum ECD format version capable of modifying data persisted with ECDFormat_Current.
     // Any code compiled with a version less than this cannot safely update ECData saved with ECDFormat_Current.
-    ECDFormat_MinimumWritable = ECDFormat_V0,
+    ECDFormat_MinimumWritable = ECDFormat_v0,
     };
 
 enum ECDFlags ENUM_UNDERLYING_TYPE(UInt8)
@@ -367,6 +369,7 @@ enum ECDFlags ENUM_UNDERLYING_TYPE(UInt8)
 #pragma pack(push, 1)
 struct ECDHeader_v0
     {
+private:
     // The version of ECD format used by this buffer.
     UInt8           m_formatVersion;
     // The minimum version of ECD format which is read-compatible with the data in this buffer. Always less than or equal to m_formatVersion
@@ -381,14 +384,18 @@ struct ECDHeader_v0
     // A set of flags. See ECDFlags
     UInt8           m_flags;
     // Additional data can be appended here in future versions by creating a subclass of ECDHeader_v0
-
+public:
     // Construct header with default values and size
-    ECOBJECTS_EXPORT ECDHeader();
-    // Read header from persisted ECData. Returns false if no ECDHeader could be extracted. This generally indicates corrupt data.
-    ECOBJECTS_EXPORT static bool    ReadHeader (ECDHeader& header, byte const* data);
+    ECOBJECTS_EXPORT ECDHeader_v0();
+    // Read header from persisted ECData. Returns false if no ECDHeader could be extracted.
+    ECOBJECTS_EXPORT static bool    ReadHeader (ECDHeader_v0& header, byte const* data);
 
-    bool            GetFlag (ECDFlags flag) const       { return 0 != (m_flags & flag); }
-    void            SetFlag (ECDFlags flag, bool set)   { m_flags = set ? (m_flags | flag) : (m_flags & ~flag); }
+    bool                GetFlag (ECDFlags flag) const       { return 0 != (m_flags & flag); }
+    void                SetFlag (ECDFlags flag, bool set)   { m_flags = set ? (m_flags | flag) : (m_flags & ~flag); }
+    bool                IsReadable() const                  { return ECDFormat_Current >= m_readableByVersion; }
+    bool                IsWritable() const                  { return ECDFormat_Current >= m_writableByVersion; }
+    UInt8               GetFormatVersion() const            { return m_formatVersion; }
+    UInt8               GetSize() const                     { return m_headerSize; }
     };
 #pragma pack(pop)
 
@@ -406,9 +413,11 @@ struct ECDBuffer
     friend  struct ArrayResizer;
 private:    
     mutable bool        m_allowWritingDirectlyToInstanceMemory;
-    ECDHeader           m_header;                                   // in-memory copy of persisted header, for read access only (modifying header always updates data buffer and this in-memory copy)
+
 //__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_END__*/    
+
+    UInt32              GetOffsetToPropertyData() const;
 
     //! Returns the offset of the property value relative to the start of the instance data.
     //! If useIndex is true then the offset of the array element value at the specified index is returned.
@@ -467,6 +476,11 @@ private:
     ECObjectsStatus                   ModifyData (UInt32 const* data, UInt32 newData);
     ECObjectsStatus                   MoveData (byte* to, byte const* from, size_t dataLength); 
 protected:
+    ECOBJECTS_EXPORT ECDHeader const*       GetECDHeaderCP() const;
+    //! Returns the number of bytes which must be allocated to store the header + the fixed portion of the property data, using ECDFormat_Current
+    static ECOBJECTS_EXPORT UInt32          CalculateInitialAllocation (ClassLayoutCR classLayout);
+    ECOBJECTS_EXPORT UInt32                 CalculateBytesUsed (ClassLayoutCR classLayout) const;
+
     //! Returns the number of elements in the specfieid array that are currently reserved but not necessarily allocated.
     //! This is important when an array has a minimum size but has not yet been initialized.  We delay initializing the memory for the minimum # of elements until
     //! the first value is set.  If an array does not have a minimum element count then GetReservedArrayCount will always equal GetAllocatedArrayCount
@@ -533,7 +547,7 @@ protected:
 
     virtual bool                _IsMemoryInitialized () const = 0;    
     
-    //! Get a pointer to the first byte of the data    
+    //! Get a pointer to the first byte of the ECDBuffer's data. This points to the first byte of the ECDHeader    
     virtual byte const *        _GetData () const = 0;
     virtual ECObjectsStatus     _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength) = 0;
     virtual ECObjectsStatus     _MoveData (UInt32 toOffset, UInt32 fromOffset, UInt32 dataLength) = 0;
@@ -552,6 +566,8 @@ protected:
     
     virtual void                _SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable) {};
 
+    // Get a pointer to the first byte of the ECDBuffer's property data. This is the first byte beyond the ECDHeader.
+    ECOBJECTS_EXPORT byte const*    GetPropertyData() const;
 public:
     ECOBJECTS_EXPORT ECObjectsStatus        RemoveArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
    
