@@ -329,6 +329,71 @@ private:
     static ECObjectsStatus    CreateNullArrayElementsAt (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, ECDBufferR instance, UInt32 insertIndex, UInt32 insertCount);
     };
 
+enum ECDFormatVersion ENUM_UNDERLYING_TYPE(UInt8)
+    {
+    // Invalid or unknown version, possibly result of corrupted ECD buffer
+    ECDFormat_Invalid   = -1,
+
+    // First version of ECD format to support versioning
+    ECDFormat_v0        = 0,
+
+    // Newer versions go here. Document all changes made to the format for each new version
+
+    // The ECD format version with which this code was compiled. Should always match the maximum value of ECDFormatVersion
+    ECDFormat_Current   = ECDFormat_v0,
+
+    // The minimum ECD format version capable of reading data persisted with ECDFormat_Current.
+    // Any code compiled with a version less than this cannot correctly interpret ECData saved with ECDFormat_Current.
+    ECDFormat_MinimumReadable = ECDFormat_v0,
+
+    // The minimum ECD format version capable of modifying data persisted with ECDFormat_Current.
+    // Any code compiled with a version less than this cannot safely update ECData saved with ECDFormat_Current.
+    ECDFormat_MinimumWritable = ECDFormat_V0,
+    };
+
+enum ECDFlags ENUM_UNDERLYING_TYPE(UInt8)
+    {
+    // Encoding used for all strings in this buffer. If not set, encoding is Utf16
+    ECDFLAG_Utf8Encoding            = 1 << 0,
+
+    // Future version of ECD format may add additional flags here.
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* This header is prepended to every ECDBuffer. Its purpose is to allow existing code to
+* react gracefully to future changes to the ECD format.
+* @bsistruct                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+#pragma pack(push, 1)
+struct ECDHeader_v0
+    {
+    // The version of ECD format used by this buffer.
+    UInt8           m_formatVersion;
+    // The minimum version of ECD format which is read-compatible with the data in this buffer. Always less than or equal to m_formatVersion
+    // Code compiled for an ECD format version less than m_readableByVersion should not attempt to read the buffer. All other code can safely read the buffer.
+    UInt8           m_readableByVersion;
+    // The minimum version of ECD format which is write-compatible with the data in this buffer. Always less than or equal to m_formatVersion, always greater than or equal to m_readableByVersion.
+    // Code compiled for an ECD format version less than m_writableByVersion should not attempt to modify the buffer.
+    // All other code can safely modify the buffer, with the caveat that the persisted header is kept intact, aside from modifications to data understood by the compiled ECD format version.
+    UInt8           m_writableByVersion;
+    // The size in bytes of this header. Adding this value to the base address of the buffer yields the beginning of the property data.
+    UInt8           m_headerSize;
+    // A set of flags. See ECDFlags
+    UInt8           m_flags;
+    // Additional data can be appended here in future versions by creating a subclass of ECDHeader_v0
+
+    // Construct header with default values and size
+    ECOBJECTS_EXPORT ECDHeader();
+    // Read header from persisted ECData. Returns false if no ECDHeader could be extracted. This generally indicates corrupt data.
+    ECOBJECTS_EXPORT static bool    ReadHeader (ECDHeader& header, byte const* data);
+
+    bool            GetFlag (ECDFlags flag) const       { return 0 != (m_flags & flag); }
+    void            SetFlag (ECDFlags flag, bool set)   { m_flags = set ? (m_flags | flag) : (m_flags & ~flag); }
+    };
+#pragma pack(pop)
+
+typedef ECDHeader_v0 ECDHeader;
+
 /*__PUBLISH_SECTION_START__*/  
 //=======================================================================================    
 //! Base class for ECN::IECInstance implementations that get/set values from a block of memory, 
@@ -339,21 +404,11 @@ private:
 struct ECDBuffer
     {
     friend  struct ArrayResizer;
-/*__PUBLISH_SECTION_END__*/    
-    typedef UInt8 ECDFlagsType;
-
-    enum ECDFlags ENUM_UNDERLYING_TYPE(ECDFlagsType)
-        {
-        // Encoding used for all strings in this buffer. If not set, encoding is Utf16
-        ECDFLAG_Utf8Encoding            = 1 << 0,
-        };
-/*__PUBLISH_SECTION_START__*/  
 private:    
     mutable bool        m_allowWritingDirectlyToInstanceMemory;
+    ECDHeader           m_header;                                   // in-memory copy of persisted header, for read access only (modifying header always updates data buffer and this in-memory copy)
 //__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_END__*/    
-    bool                GetFlag (ECDFlagsType flag) const;
-    void                SetFlag (ECDFlagsType flag, bool set);
 
     //! Returns the offset of the property value relative to the start of the instance data.
     //! If useIndex is true then the offset of the array element value at the specified index is returned.
