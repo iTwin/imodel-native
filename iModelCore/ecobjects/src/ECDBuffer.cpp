@@ -2171,12 +2171,12 @@ ECObjectsStatus       ECDBuffer::ShiftArrayIndexValueData(PropertyLayoutCR prope
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ECDBuffer::InitializeMemory(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated) const
+void            ECDBuffer::InitializeMemory(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated)
     {
     ECDHeader hdr;
     memcpy (data, &hdr, hdr.GetSize());
 
-    classLayout.InitializeMemoryForInstance (data + GetOffsetToPropertyData(), bytesAllocated - hdr.GetSize());
+    classLayout.InitializeMemoryForInstance (data + hdr.GetSize(), bytesAllocated - hdr.GetSize());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3353,7 +3353,8 @@ bool ECDHeader_v0::ReadHeader (ECDHeader_v0& hdrOut, byte const* data)
         return false;
         }
 
-    memcpy (&hdrOut, hdr, hdr->GetSize());
+    // Note we use sizeof(ECDHeader), not hdr->GetSize(), because the persisted header might be from a newer ECD format version and be larger than ECDHeader can hold
+    memcpy (&hdrOut, hdr, sizeof(ECDHeader));
     return true;
     }
 
@@ -3391,6 +3392,23 @@ UInt32 ECDBuffer::GetOffsetToPropertyData() const
 UInt32 ECDBuffer::CalculateInitialAllocation (ClassLayoutCR classLayout)
     {
     return sizeof(ECDHeader) + classLayout.GetSizeOfFixedSection();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECDBuffer::IsCompatibleVersion (ECDHeader* header, byte const* data, bool requireWritable)
+    {
+    ECDHeader localHeader;
+    if (NULL == header)
+        header = &localHeader;
+
+    if (!ECDHeader::ReadHeader (*header, data))
+        return false;
+    else if (requireWritable && !header->IsWritable())
+        return false;
+    else
+        return header->IsReadable();
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

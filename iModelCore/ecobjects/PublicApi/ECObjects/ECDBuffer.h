@@ -369,7 +369,7 @@ enum ECDFlags ENUM_UNDERLYING_TYPE(UInt8)
 #pragma pack(push, 1)
 struct ECDHeader_v0
     {
-private:
+protected:
     // The version of ECD format used by this buffer.
     UInt8           m_formatVersion;
     // The minimum version of ECD format which is read-compatible with the data in this buffer. Always less than or equal to m_formatVersion
@@ -476,10 +476,9 @@ private:
     ECObjectsStatus                   ModifyData (UInt32 const* data, UInt32 newData);
     ECObjectsStatus                   MoveData (byte* to, byte const* from, size_t dataLength); 
 protected:
-    ECOBJECTS_EXPORT ECDHeader const*       GetECDHeaderCP() const;
     //! Returns the number of bytes which must be allocated to store the header + the fixed portion of the property data, using ECDFormat_Current
-    static ECOBJECTS_EXPORT UInt32          CalculateInitialAllocation (ClassLayoutCR classLayout);
     ECOBJECTS_EXPORT UInt32                 CalculateBytesUsed (ClassLayoutCR classLayout) const;
+    ECOBJECTS_EXPORT ECDHeader const*       GetECDHeaderCP() const;
 
     //! Returns the number of elements in the specfieid array that are currently reserved but not necessarily allocated.
     //! This is important when an array has a minimum size but has not yet been initialized.  We delay initializing the memory for the minimum # of elements until
@@ -499,7 +498,6 @@ protected:
     //!                                                 memory directly, e.g. for StandaloneECIntance.
     //!                                                 If false, all modifications must happen through _ModifyData, e.g. for ECXData.
     ECOBJECTS_EXPORT            ECDBuffer (bool allowWritingDirectlyToInstanceMemory);
-    ECOBJECTS_EXPORT void       InitializeMemory(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated) const;
                      void       SetInstanceMemoryWritable (bool writable) const { m_allowWritingDirectlyToInstanceMemory = writable; }
 
     //! Obtains the current primitive value for the specified property
@@ -577,6 +575,19 @@ public:
 
     // Compress the memory storing the data to as small a size as possible
     ECOBJECTS_EXPORT ECObjectsStatus        Compress();
+    // Calculate how many bytes are required for an empty buffer using the specified classLayout
+    ECOBJECTS_EXPORT static UInt32          CalculateInitialAllocation (ClassLayoutCR classLayout);
+    // Initialize a block of memory for a new ECDBuffer.
+    ECOBJECTS_EXPORT static void            InitializeMemory(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated);
+
+    //! Given a persisted ECD buffer, returns true if the data is compatible with ECDFormat_Current.
+    //! This method must be called before attempting to instantiate an ECD-based instance from a block of persistent memory.
+    //! If it returns false, the calling method must not attempt to instantiate the instance.
+    //! @param[out] header          Optional; if non-null, will contain a copy of the persistent ECDHeader
+    //! @param[in]  data            The ECD-formatted block of memory
+    //! @param[in]  requireWritable If true, the method will return false if the block of memory is not write-compatible with ECDFormat_Current.
+    //! @return     true if the memory is read-compatible (if requireWritable=false) or write-compatible(if requireWritable=true) with ECDFormat_Current
+    ECOBJECTS_EXPORT static bool            IsCompatibleVersion (ECDHeader* header, byte const* data, bool requireWritable = false);
 
     // Encoding used by all strings in the buffer
     enum StringEncoding
