@@ -19,7 +19,7 @@ const UInt32 BITS_TO_SHIFT_FOR_FLAGSBITMASK = 5;            // bitToCheck >> BIT
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 MemoryECInstanceBase::MemoryECInstanceBase (byte * data, UInt32 size, ClassLayoutCR classLayout, bool allowWritingDirectlyToInstanceMemory, MemoryECInstanceBase const* parentInstance) :
-        MemoryInstanceSupport (allowWritingDirectlyToInstanceMemory),
+        ECDBuffer (allowWritingDirectlyToInstanceMemory),
         m_bytesAllocated(size)
     {
     m_data = data;
@@ -35,7 +35,7 @@ MemoryECInstanceBase::MemoryECInstanceBase (byte * data, UInt32 size, ClassLayou
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory, MemoryECInstanceBase const* parentInstance) :
-        MemoryInstanceSupport (allowWritingDirectlyToInstanceMemory),
+        ECDBuffer (allowWritingDirectlyToInstanceMemory),
         m_bytesAllocated(0)
     {
     m_structInstances = NULL;
@@ -1133,9 +1133,7 @@ ECObjectsStatus           StandaloneECInstance::_AddArrayElements (WCharCP prope
 ECObjectsStatus           StandaloneECInstance::_RemoveArrayElement (WCharCP propertyAccessString, UInt32 index)
     {
     ClassLayoutCR classLayout = GetClassLayout();    
-    ECObjectsStatus status = RemoveArrayElementsAt (classLayout, propertyAccessString, index, 1);
-    
-    return status;
+    return RemoveArrayElementsAt (classLayout, propertyAccessString, index, 1);
     } 
 
  /*---------------------------------------------------------------------------------**//**
@@ -1143,7 +1141,29 @@ ECObjectsStatus           StandaloneECInstance::_RemoveArrayElement (WCharCP pro
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECInstance::_ClearArray (WCharCP propertyAccessString)
     {
-    return ECOBJECTS_STATUS_OperationNotSupported;
+    static UInt8 bitIndex = (UInt8) PROPERTYFLAGINDEX_IsLoaded;
+    ClassLayoutCR classLayout = GetClassLayout();    
+    PropertyLayoutCP pPropertyLayout = NULL;
+    ECObjectsStatus status = classLayout.GetPropertyLayout (pPropertyLayout, propertyAccessString);
+    if (SUCCESS != status || NULL == pPropertyLayout)
+        return ECOBJECTS_STATUS_PropertyNotFound;
+
+    UInt32 arrayCount = GetReservedArrayCount (*pPropertyLayout);
+    if (arrayCount > 0)
+        {
+        status =  RemoveArrayElements (classLayout, *pPropertyLayout, 0, arrayCount);
+
+        if (ECOBJECTS_STATUS_Success == status)
+            {
+            UInt32 propertyIndex;
+            if (ECOBJECTS_STATUS_Success == classLayout.GetPropertyLayoutIndex (propertyIndex, *pPropertyLayout))
+                SetPerPropertyBit (bitIndex, propertyIndex, false);
+            }
+
+        return  status;
+        }
+
+    return ECOBJECTS_STATUS_Success;
     }                      
 
 /*---------------------------------------------------------------------------------**//**

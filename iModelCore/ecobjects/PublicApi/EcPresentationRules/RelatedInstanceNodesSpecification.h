@@ -43,9 +43,7 @@ struct RelatedInstanceNodesSpecification : public ChildNodeSpecification
         WString                    m_instanceFilter;
         RequiredRelationDirection  m_requiredDirection;
         WString                    m_supportedSchemas;
-        WString                    m_relationshipSchemaName;
         WString                    m_relationshipClassNames;
-        WString                    m_relatedSchemaName;
         WString                    m_relatedClassNames;
 
 
@@ -59,8 +57,7 @@ struct RelatedInstanceNodesSpecification : public ChildNodeSpecification
         ECOBJECTS_EXPORT RelatedInstanceNodesSpecification ()
             : ChildNodeSpecification (), m_groupByClass (true), m_groupByLabel (true), m_showEmptyGroups (false),
             m_skipRelatedLevel (0), m_instanceFilter (L""), m_requiredDirection (RequiredRelationDirection_Both),
-            m_supportedSchemas (L""), m_relationshipSchemaName (L""), m_relationshipClassNames (L""), 
-            m_relatedSchemaName (L""), m_relatedClassNames (L"")
+            m_supportedSchemas (L""), m_relationshipClassNames (L""), m_relatedClassNames (L"")
             {
             }
 
@@ -72,20 +69,18 @@ struct RelatedInstanceNodesSpecification : public ChildNodeSpecification
                                            bool                       groupByClass,
                                            bool                       groupByLabel,
                                            bool                       showEmptyGroups,
+                                           bool                       hideIfNoChildren,
                                            int                        skipRelatedLevel,
                                            WString                    instanceFilter,
                                            RequiredRelationDirection  requiredDirection,
                                            WString                    supportedSchemas,
-                                           WString                    relationshipSchemaName,
                                            WString                    relationshipClassNames,
-                                           WString                    relatedSchemaName,
                                            WString                    relatedClassNames
                                           )
-            : ChildNodeSpecification (priority, alwaysReturnsChildren, hideNodesInHierarchy), 
+            : ChildNodeSpecification (priority, alwaysReturnsChildren, hideNodesInHierarchy, hideIfNoChildren), 
               m_groupByClass (groupByClass), m_groupByLabel (groupByLabel), m_showEmptyGroups (showEmptyGroups), 
               m_skipRelatedLevel (skipRelatedLevel), m_instanceFilter (instanceFilter), m_requiredDirection (requiredDirection),
-              m_supportedSchemas (supportedSchemas), m_relationshipSchemaName (relationshipSchemaName), m_relationshipClassNames (relationshipClassNames), 
-              m_relatedSchemaName (relatedSchemaName), m_relatedClassNames (relatedClassNames)
+              m_supportedSchemas (supportedSchemas), m_relationshipClassNames (relationshipClassNames),  m_relatedClassNames (relatedClassNames)
             {
             }
 
@@ -112,16 +107,10 @@ struct RelatedInstanceNodesSpecification : public ChildNodeSpecification
         //! Returns supported schemas that should be used by this specification.
         ECOBJECTS_EXPORT WStringCR                    GetSupportedSchemas (void) const           { return m_supportedSchemas; }
 
-        //! Schema name of specified relationship classes.
-        ECOBJECTS_EXPORT WStringCR                    GetRelationshipSchemaName (void) const     { return m_relationshipSchemaName; }
-
-        //! Relationship class names separated by comma that should be used by this specification.
+        //! Relationship class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
         ECOBJECTS_EXPORT WStringCR                    GetRelationshipClassNames (void) const     { return m_relationshipClassNames; }
 
-        //! Schema name of specified related classes.
-        ECOBJECTS_EXPORT WStringCR                    GetRelatedSchemaName (void) const          { return m_relatedSchemaName; }
-
-        //! Related class names separated by comma that should be used by this specification.
+        //! Related class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
         ECOBJECTS_EXPORT WStringCR                    GetRelatedClassNames (void) const          { return m_relatedClassNames; }
 
     };

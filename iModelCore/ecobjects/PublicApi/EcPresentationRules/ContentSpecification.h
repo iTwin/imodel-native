@@ -20,47 +20,43 @@ typedef bvector<RelatedPropertiesSpecificationP> RelatedPropertiesSpecificationL
 Base class for all ContentSpecifications.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ContentSpecification /*__PUBLISH_ABSTRACT__*/
+struct ContentSpecification
     {
-    /*__PUBLISH_SECTION_END__*/
-    private:
-        int                                 m_priority;
-        bool                                m_onlyIfNotHandled;
-        RelatedPropertiesSpecificationList  m_relatedPropertiesSpecification;
+//__PUBLISH_SECTION_END__
+private:
+    int                                 m_priority;
+    RelatedPropertiesSpecificationList  m_relatedPropertiesSpecification;
 
-    protected:
-    /*__PUBLISH_SECTION_START__*/
-        ECOBJECTS_EXPORT ContentSpecification () : m_priority (1000), m_onlyIfNotHandled (false)
-            {
-            }
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
+protected:
+    ECOBJECTS_EXPORT ContentSpecification () : m_priority (1000)
+        {
+        }
 
-        ECOBJECTS_EXPORT ContentSpecification (int priority, bool onlyIfNotHandled) : m_priority (priority), m_onlyIfNotHandled (onlyIfNotHandled)
-            {
-            }
+    ECOBJECTS_EXPORT ContentSpecification (int priority) : m_priority (priority)
+        {
+        }
 
-        ECOBJECTS_EXPORT virtual CharCP                      _GetXmlElementName () = 0;
-        ECOBJECTS_EXPORT virtual bool                        _ReadXml (BeXmlNodeP xmlNode) = 0;
-        ECOBJECTS_EXPORT virtual void                        _WriteXml (BeXmlNodeP xmlNode) = 0;
+    ECOBJECTS_EXPORT virtual CharCP                      _GetXmlElementName () = 0;
+    ECOBJECTS_EXPORT virtual bool                        _ReadXml (BeXmlNodeP xmlNode) = 0;
+    ECOBJECTS_EXPORT virtual void                        _WriteXml (BeXmlNodeP xmlNode) = 0;
 
-    public:
-        //! Destructor.
-        ECOBJECTS_EXPORT                                     ~ContentSpecification (void);
+public:
+    //! Destructor.
+    ECOBJECTS_EXPORT                                     ~ContentSpecification (void);
 
-        //! Reads specification from XML.
-        ECOBJECTS_EXPORT bool                                ReadXml (BeXmlNodeP xmlNode);
+    //! Reads specification from XML.
+    ECOBJECTS_EXPORT bool                                ReadXml (BeXmlNodeP xmlNode);
 
-        //! Writes specification to xml node.
-        ECOBJECTS_EXPORT void                                WriteXml (BeXmlNodeP parentXmlNode);
+    //! Writes specification to xml node.
+    ECOBJECTS_EXPORT void                                WriteXml (BeXmlNodeP parentXmlNode);
 
-        //! Priority of the specification, defines the order in which specifications are evaluated and executed.
-        ECOBJECTS_EXPORT int                                 GetPriority (void) const         { return m_priority; }
+    //! Priority of the specification, defines the order in which specifications are evaluated and executed.
+    ECOBJECTS_EXPORT int                                 GetPriority (void) const         { return m_priority; }
 
-        //! Returns true if this rule should be executed only in the case where there are no other higher priority rules for this particular cotext.
-        ECOBJECTS_EXPORT bool                                GetOnlyIfNotHandled (void) const { return m_onlyIfNotHandled; }
-
-        //! Related properties of acceptable ECInstances, that will be shown next to ECInstance proerties (the same row for example).
-        ECOBJECTS_EXPORT RelatedPropertiesSpecificationList&  GetRelatedProperties (void)     { return m_relatedPropertiesSpecification; }
-
+    //! Related properties of acceptable ECInstances, that will be shown next to ECInstance proerties (the same row for example).
+    ECOBJECTS_EXPORT RelatedPropertiesSpecificationList&  GetRelatedProperties (void)     { return m_relatedPropertiesSpecification; }
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

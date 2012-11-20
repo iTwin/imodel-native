@@ -32,14 +32,8 @@ bool ContentRelatedInstancesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_instanceFilter, COMMON_XML_ATTRIBUTE_INSTANCEFILTER))
         m_instanceFilter = L"";
 
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_relationshipSchemaName, COMMON_XML_ATTRIBUTE_RELATIONSHIPSCHEMANAME))
-        m_relationshipSchemaName = L"";
-
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_relationshipClassNames, COMMON_XML_ATTRIBUTE_RELATIONSHIPCLASSNAMES))
         m_relationshipClassNames = L"";
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_relatedSchemaName, COMMON_XML_ATTRIBUTE_RELATEDSCHEMANAME))
-        m_relatedSchemaName = L"";
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_relatedClassNames, COMMON_XML_ATTRIBUTE_RELATEDCLASSNAMES))
         m_relatedClassNames = L"";
@@ -60,9 +54,7 @@ void ContentRelatedInstancesSpecification::_WriteXml (BeXmlNodeP xmlNode)
     {
     xmlNode->AddAttributeInt32Value  (COMMON_XML_ATTRIBUTE_SKIPRELATEDLEVEL, m_skipRelatedLevel);
     xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_INSTANCEFILTER, m_instanceFilter.c_str ());
-    xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_RELATIONSHIPSCHEMANAME, m_relationshipSchemaName.c_str ());
     xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_RELATIONSHIPCLASSNAMES, m_relationshipClassNames.c_str ());
-    xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_RELATEDSCHEMANAME, m_relatedSchemaName.c_str ());
     xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_RELATEDCLASSNAMES, m_relatedClassNames.c_str ());
     xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION, CommonTools::FormatRequiredDirectionString (m_requiredDirection));
     }

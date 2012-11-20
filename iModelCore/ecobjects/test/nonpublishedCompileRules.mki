@@ -22,3 +22,6 @@ $(o)CalculatedPropertyTests$(oext)  : $(baseDir)NonPublished/CalculatedPropertyT
 $(o)PresentationRulesTests$(oext)   : $(baseDir)NonPublished/PresentationRulesTests.cpp    $(PCHHeaderDependency) ${MultiCompileDepends}
 
 $(o)UnitsTests$(oext)               : $(baseDir)NonPublished/UnitsTests.cpp                $(PCHHeaderDependency) ${MultiCompileDepends}
+
+$(o)StringEncodingTests$(oext)      : $(baseDir)NonPublished/StringEncodingTests.cpp       $(PCHHeaderDependency) ${MultiCompileDepends}
+

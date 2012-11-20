@@ -1725,5 +1725,11 @@ TEST_F (UnitsTest, TestUnitSpecifications)
     EXPECT_EQ (0, wcscmp (nonStandardUnit.GetShortLabel(), L"NONEXISTENT_UNIT"));
     EXPECT_EQ (0, wcscmp (nonStandardUnit.GetBaseUnitName(), L"NONEXISTENT_UNIT"));
     }
-
+//TEST_F (UnitsTest, GetUnitForPropertyFromSupplementalSchemaWhereSupplementalSchemaOverridesDomainSchemaAtPropertyLevel)
+//    {
+//		
+//        Unit defaultUnit;// = m_manager.GetUnit (m_wheelClass, m_AreaProp);
+//		Unit::GetUnitForECProperty (defaultUnit, *m_fromProperty)
+//        VerifyDefaultUnit ("INCH_SQUARED", defaultUnit);
+//    }
 END_BENTLEY_ECOBJECT_NAMESPACE

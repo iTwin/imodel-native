@@ -356,13 +356,20 @@ void initStandardSchemaNames()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchema::IsStandardSchema(WStringCR schemaName)
+    {
+    initStandardSchemaNames();
+    bvector<WString>::iterator iter = std::find(s_standardSchemaNames.begin(), s_standardSchemaNames.end(), schemaName);
+    return (iter != s_standardSchemaNames.end());
+    }
+/*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECSchema::IsStandardSchema () const
     {
-    initStandardSchemaNames();
-    bvector<WString>::iterator iter = std::find(s_standardSchemaNames.begin(), s_standardSchemaNames.end(), m_key.m_schemaName);
-    return (iter != s_standardSchemaNames.end());
+    return IsStandardSchema(m_key.m_schemaName);
     }
 
 /*---------------------------------------------------------------------------------**//**

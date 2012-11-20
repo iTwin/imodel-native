@@ -99,24 +99,24 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
     int         expectedInts[] = {0, 101, 202, 303, 404, 505, 606, 707, 808, 909};
     for (UInt32 index=0; index < _countof (expectedInts); index++)
         {
-        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedArray[]", index));
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedArray", index));
         EXPECT_EQ (expectedInts[index], ecValue.GetInteger());
         }
 
     int         moreInts[] = {41556, 32757, 56789, 32757, 21482 };
     for (UInt32 index=0; index < _countof (moreInts); index++)
         {
-        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"IntArray[]", index));
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"IntArray", index));
         EXPECT_EQ (moreInts[index], ecValue.GetInteger());
         }
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"OneMemberIntArray[]", 0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"OneMemberIntArray", 0));
     EXPECT_EQ (3, ecValue.GetInteger());
 
     DPoint3d    expectedPoints[] = { {4.0, 0.0, 0.0}, {1.0, 1.0, 1.0}, {2.0, 2.0, 2.0}, {3.0, 3.0, 3.0}, {4.0, 4.0, 4.0}, {5.0, 5.0, 5.0} };
     for (UInt32 index=0; index < _countof (expectedPoints); index++)
         {
-        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"PointArray[]", index));
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"PointArray", index));
         EXPECT_EQ (expectedPoints[index].x, ecValue.GetPoint3D().x);
         EXPECT_EQ (expectedPoints[index].y, ecValue.GetPoint3D().y);
         EXPECT_EQ (expectedPoints[index].z, ecValue.GetPoint3D().z);
@@ -124,12 +124,12 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
 
     for (UInt32 index=0; index < 300; index++)
         {
-        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"DateArray[]", index));
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"DateArray", index));
         }
 
     for (UInt32 index=0; index < 300; index++)
         {
-        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"StringArray[]", index));
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"StringArray", index));
         wchar_t     expectedString[128];
         swprintf (expectedString, L"String %d", index%30);
         EXPECT_STREQ (expectedString, ecValue.GetString());
@@ -137,7 +137,7 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
 
     for (UInt32 index=0; index < 100; index++)
         {
-        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"SmallIntArray[]", index));
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"SmallIntArray", index));
         EXPECT_EQ (index, ecValue.GetInteger());
         }
 
@@ -179,7 +179,7 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
     for (UInt32 index=0; index < _countof (struct2ExpectedValues); index++)
         {
         ECValue         structArrayMember;
-        EXPECT_EQ (SUCCESS, testInstance->GetValue (structArrayMember, L"StructArray[]", index));
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (structArrayMember, L"StructArray", index));
         IECInstancePtr  structArrayInstance = structArrayMember.GetStruct();
         EXPECT_EQ (true, structArrayInstance.IsValid());
         
@@ -212,7 +212,7 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
         for (UInt32 nestedIndex=0; nestedIndex < struct2ExpectedValues[index].arraySize; nestedIndex++)
             {
             ECValue     nestedArrayMember;
-            EXPECT_EQ (SUCCESS, structArrayInstance->GetValue (nestedArrayMember, L"NestedArray[]", nestedIndex));
+            EXPECT_EQ (SUCCESS, structArrayInstance->GetValue (nestedArrayMember, L"NestedArray", nestedIndex));
             IECInstancePtr  nestedInstance = nestedArrayMember.GetStruct();
             EXPECT_EQ (true, nestedInstance.IsValid());
             
@@ -265,70 +265,70 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingFaultyInstance
     EXPECT_EQ (INSTANCE_READ_STATUS_Success, instanceStatus);
     //Testing a struct with type errors in its values
     ECValue ecValue;
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.BinaryArray[]",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.BinaryArray",0));
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.BooleanArray[]",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.BooleanArray",0));
     EXPECT_EQ (true, ecValue.GetBoolean());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.DateTimeArray[]",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.DateTimeArray",0));
     EXPECT_EQ (633374681466664305, ecValue.GetDateTimeTicks());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.DoubleArray[]",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.DoubleArray",0));
     EXPECT_EQ (1.2, ecValue.GetDouble());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.IntArray[]",1));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.IntArray",1));
     EXPECT_EQ (7, ecValue.GetInteger());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.LongArray[]",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.LongArray",0));
     EXPECT_EQ (300, ecValue.GetLong());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.Point2DArray[]",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.Point2DArray",0));
     EXPECT_EQ (0, ecValue.GetPoint2D().x);
     EXPECT_EQ (1, ecValue.GetPoint2D().y);
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.Point3DArray[]",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.Point3DArray",0));
     EXPECT_EQ (0, ecValue.GetPoint3D().x);
     EXPECT_EQ (1, ecValue.GetPoint3D().y);
     EXPECT_EQ (0, ecValue.GetPoint3D().z);
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.StringArray[]",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.StringArray",0));
     EXPECT_STREQ (ecValue.GetString(), L"Test");
 
     // Testing a struct that misformatted values
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.BinaryArray[]",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.BinaryArray",0));
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.BooleanArray[]",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.BooleanArray",0));
     EXPECT_EQ (true, ecValue.GetBoolean());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DateTimeArray[]",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DateTimeArray",0));
     EXPECT_EQ (633374681466664305, ecValue.GetDateTimeTicks());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DoubleArray[]",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DoubleArray",0));
     EXPECT_EQ (1.2, ecValue.GetDouble());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.IntArray[]",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.IntArray",0));
     EXPECT_EQ (7, ecValue.GetInteger());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.LongArray[]",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.LongArray",0));
     EXPECT_EQ (300, ecValue.GetLong());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point2DArray[]",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point2DArray",0));
     EXPECT_EQ (0, ecValue.GetPoint2D().x);
     EXPECT_EQ (1, ecValue.GetPoint2D().y);
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point3DArray[]",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point3DArray",0));
     EXPECT_EQ (0, ecValue.GetPoint3D().x);
     EXPECT_EQ (1, ecValue.GetPoint3D().y);
     EXPECT_EQ (0, ecValue.GetPoint3D().z);
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.StringArray[]",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.StringArray",0));
     EXPECT_STREQ (ecValue.GetString(), L"");
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.StringArray[]",6));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.StringArray",6));
     EXPECT_STREQ (ecValue.GetString(), L"Test");
 
     //Testing a struct with few errors among entirely bad structs in the same array
     ECValue badStructArrayMember;
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (badStructArrayMember, L"ArrayOfBadStructs[]",2));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (badStructArrayMember, L"ArrayOfBadStructs",2));
     IECInstancePtr  structInstance = badStructArrayMember.GetStruct();
     EXPECT_EQ (true, structInstance.IsValid());
 
@@ -388,49 +388,49 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingInstanceWithEm
     EXPECT_EQ (INSTANCE_READ_STATUS_Success, instanceStatus);
     //Testing a struct with type errors in its values
     ECValue ecValue;
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.BinaryArray[]",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.BinaryArray",0));
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.BooleanArray[]",1));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.BooleanArray",1));
     EXPECT_EQ (true, ecValue.IsNull());
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.BooleanArray[]",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.BooleanArray",0));
     EXPECT_EQ (true, ecValue.GetBoolean());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DateTimeArray[]",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DateTimeArray",0));
     EXPECT_EQ (true, ecValue.IsNull());
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DateTimeArray[]",1));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DateTimeArray",1));
     EXPECT_EQ (633374681466664305, ecValue.GetDateTimeTicks());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DoubleArray[]",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DoubleArray",0));
     EXPECT_EQ (true, ecValue.IsNull());
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DoubleArray[]",1));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DoubleArray",1));
     EXPECT_EQ (1.2, ecValue.GetDouble());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.IntArray[]",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.IntArray",0));
     EXPECT_EQ (true, ecValue.IsNull());
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.IntArray[]",1));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.IntArray",1));
     EXPECT_EQ (7, ecValue.GetInteger());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.LongArray[]",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.LongArray",0));
     EXPECT_EQ (true, ecValue.IsNull());
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.LongArray[]",1));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.LongArray",1));
     EXPECT_EQ (300, ecValue.GetLong());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point2DArray[]",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point2DArray",0));
     EXPECT_EQ (true, ecValue.IsNull());
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point2DArray[]",1));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point2DArray",1));
     EXPECT_EQ (0, ecValue.GetPoint2D().x);
     EXPECT_EQ (1, ecValue.GetPoint2D().y);
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point3DArray[]",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point3DArray",0));
     EXPECT_EQ (true, ecValue.IsNull());
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point3DArray[]",1));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point3DArray",1));
     EXPECT_EQ (0, ecValue.GetPoint3D().x);
     EXPECT_EQ (1, ecValue.GetPoint3D().y);
     EXPECT_EQ (0, ecValue.GetPoint3D().z);
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.StringArray[]",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.StringArray",0));
     EXPECT_STREQ (ecValue.GetString(), L"");
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.StringArray[]",6));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.StringArray",6));
     EXPECT_STREQ (ecValue.GetString(), L"Test");
     };
 
@@ -571,7 +571,7 @@ void    VerifyPolymorphismInstance (IECInstanceCP testInstance)
     EXPECT_EQ (-1, ecValue.GetInteger());
 
     // get and check the first member.
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"PolymorphArray[]", 0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"PolymorphArray", 0));
     IECInstancePtr  polymorphArrayInstance = ecValue.GetStruct();
     EXPECT_EQ (true, polymorphArrayInstance.IsValid());
     ECClassCR       arrayMember0Class = polymorphArrayInstance->GetClass();
@@ -581,7 +581,7 @@ void    VerifyPolymorphismInstance (IECInstanceCP testInstance)
     EXPECT_EQ (0, ecValue.GetInteger());
 
     // get and check the second member.
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"PolymorphArray[]", 1));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"PolymorphArray", 1));
     polymorphArrayInstance = ecValue.GetStruct();
     EXPECT_EQ (true, polymorphArrayInstance.IsValid());
     ECClassCR arrayMember1Class = polymorphArrayInstance->GetClass();
@@ -594,7 +594,7 @@ void    VerifyPolymorphismInstance (IECInstanceCP testInstance)
     EXPECT_EQ (2, ecValue.GetInteger());
 
     // get and check the third member.
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"PolymorphArray[]", 2));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"PolymorphArray", 2));
     polymorphArrayInstance = ecValue.GetStruct();
     EXPECT_EQ (true, polymorphArrayInstance.IsValid());
     ECClassCR arrayMember2Class = polymorphArrayInstance->GetClass();

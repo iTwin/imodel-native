@@ -23,8 +23,8 @@ struct ContentInstancesOfSpecificClassesSpecification : public ContentSpecificat
     /*__PUBLISH_SECTION_END__*/
     private:
         WString  m_instanceFilter;
-        WString  m_schemaName;
         WString  m_classNames;
+        bool     m_arePolymorphic;
 
     protected:
     /*__PUBLISH_SECTION_START__*/
@@ -34,22 +34,22 @@ struct ContentInstancesOfSpecificClassesSpecification : public ContentSpecificat
 
     public:
         ECOBJECTS_EXPORT ContentInstancesOfSpecificClassesSpecification () 
-            : ContentSpecification (), m_instanceFilter (L""), m_schemaName (L""), m_classNames (L"")
+            : ContentSpecification (), m_instanceFilter (L""), m_classNames (L""), m_arePolymorphic (false)
             {
             }
 
-        ECOBJECTS_EXPORT ContentInstancesOfSpecificClassesSpecification (int priority, bool onlyIfNotHandled, WStringCR instanceFilter, WStringCR schemaName, WStringCR classNames) 
-            : ContentSpecification (priority, onlyIfNotHandled), m_instanceFilter (instanceFilter), m_schemaName (schemaName), m_classNames (classNames)
+        ECOBJECTS_EXPORT ContentInstancesOfSpecificClassesSpecification (int priority, WStringCR instanceFilter, WStringCR classNames, bool arePolymorphic) 
+            : ContentSpecification (priority), m_instanceFilter (instanceFilter), m_classNames (classNames), m_arePolymorphic (arePolymorphic)
             {
             }
 
-        //! Schema name of specified classes.
-        ECOBJECTS_EXPORT WStringCR                    GetSchemaName (void) const         { return m_schemaName; }
-
-        //! Class names separated by comma that should be used by this specification.
+        //! Class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
         ECOBJECTS_EXPORT WStringCR                    GetClassNames (void) const         { return m_classNames; }
 
-        //! InstanceFiler is spacially formated string that represents WhereCriteria in 
+        //! This flag identifies whether ECClasses defined in this specification should be marked as polymorphic in the Query.
+        ECOBJECTS_EXPORT bool                         GetArePolymorphic (void) const     { return m_arePolymorphic; }
+
+        //! InstanceFiler is specially formated string that represents WhereCriteria in 
         //! ECQuery that is used to filter query results.
         ECOBJECTS_EXPORT WStringCR                    GetInstanceFilter (void) const     { return m_instanceFilter; }
 

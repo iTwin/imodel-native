@@ -26,12 +26,6 @@ CharCP InstanceNodesOfSpecificClassesSpecification::_GetXmlElementName ()
 bool InstanceNodesOfSpecificClassesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     {
     //Required:
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_schemaName, COMMON_XML_ATTRIBUTE_SCHEMANAME))
-        {
-        ECObjectsLogger::Log()->errorv (L"Invalid InstanceNodesOfSpecificClassesSpecificationXML: %hs element must contain a %hs attribute", INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME, COMMON_XML_ATTRIBUTE_SCHEMANAME);
-        return false;
-        }
-
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_classNames, COMMON_XML_ATTRIBUTE_CLASSNAMES))
         {
         ECObjectsLogger::Log()->errorv (L"Invalid InstanceNodesOfSpecificClassesSpecificationXML: %hs element must contain a %hs attribute", INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME, COMMON_XML_ATTRIBUTE_CLASSNAMES);
@@ -39,6 +33,9 @@ bool InstanceNodesOfSpecificClassesSpecification::_ReadXml (BeXmlNodeP xmlNode)
         }
 
     //Optional:
+    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_arePolymorphic, COMMON_XML_ATTRIBUTE_AREPOLYMORPHIC))
+        m_arePolymorphic = false;
+
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_groupByClass, COMMON_XML_ATTRIBUTE_GROUPBYCLASS))
         m_groupByClass = true;
 
@@ -59,8 +56,8 @@ bool InstanceNodesOfSpecificClassesSpecification::_ReadXml (BeXmlNodeP xmlNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void InstanceNodesOfSpecificClassesSpecification::_WriteXml (BeXmlNodeP xmlNode)
     {
-    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_SCHEMANAME, m_schemaName.c_str ());
     xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_CLASSNAMES, m_classNames.c_str ());
+    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_AREPOLYMORPHIC, m_arePolymorphic);
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYCLASS, m_groupByClass);
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYLABEL, m_groupByLabel);
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_SHOWEMPTYGROUPS, m_showEmptyGroups);
