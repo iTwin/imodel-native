@@ -2010,7 +2010,7 @@ SchemaWriteStatus ECSchema::WriteToXmlString (WStringR ecSchemaXml) const
     {
     ecSchemaXml.clear();
 
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();        
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();
 
     SchemaWriteStatus status;
     if (SCHEMA_WRITE_STATUS_Success != (status = WriteXml (*xmlDom.get())))
