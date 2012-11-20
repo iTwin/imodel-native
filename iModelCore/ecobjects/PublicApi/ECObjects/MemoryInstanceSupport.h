@@ -50,14 +50,16 @@ struct PropertyLayout
 /*__PUBLISH_SECTION_END__*/
 friend struct ClassLayout;    
 private:
-    WString                 m_accessString;        
+    WString                 m_accessString;
     UInt32                  m_parentStructIndex;
     ECTypeDescriptor        m_typeDescriptor;
 
     // Using UInt32 instead of size_t below because we will persist this struct in an XAttribute. It will never be very big.
     UInt32              m_offset; //! An offset to either the data holding that property's value (for fixed-size values) or to the offset at which the properties value can be found.
-    UInt32              m_modifierFlags; //! Can be used to indicate that a string should be treated as fixed size, with a max length, or that a longer fixed size type should be treated as an optional variable-sized type, or that for a string that only an entry to a StringTable is Stored, or that a default value should be used.
-    UInt32              m_modifierData;  //! Data used with the modifier flag, like the length of a fixed-sized string.
+    //! Indicates some special handling for the ECProperty, e.g. PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly, PROPERTYLAYOUTMODIFIERFLAGS_IsCalculated, etc.
+    UInt32              m_modifierFlags; 
+    //! Data used with the modifier flag, like the length of a fixed-sized string.
+    UInt32              m_modifierData;  
     UInt32              m_nullflagsOffset;
     NullflagsBitmask    m_nullflagsBitmask;
 public:
