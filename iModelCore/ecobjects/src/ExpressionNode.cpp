@@ -1347,7 +1347,7 @@ NodePtr         Node::CreateStringLiteral (wchar_t const* value)
     {
     size_t      origLen = wcslen(value);
     BeAssert(origLen > 1);
-    wchar_t*    buffer = (wchar_t*)_alloca(2 *(origLen+1));
+    wchar_t*    buffer = (wchar_t*)_alloca(sizeof(wchar_t) * (origLen + 1));
 
     BeStringUtilities::Wcsncpy(buffer, origLen, value+1);
     buffer[origLen-2] = 0;

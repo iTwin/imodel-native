@@ -1986,7 +1986,7 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     EXPECT_TRUE (SUCCESS == memcmp (&inPoint2, &point3d, sizeof(DPoint3d)));
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"Service_Date"));
     DateTime  sysTime = ecValue.GetDateTime ();
-    EXPECT_TRUE (SUCCESS == memcmp (&inTime, &sysTime, sizeof(DateTime)));
+    EXPECT_TRUE (inTime.Compare (sysTime, true));
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"Install_Date"));
     EXPECT_TRUE (ecValue.GetDateTimeTicks() == inTicks);
 
@@ -2182,20 +2182,13 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     DateTime nowUtc = DateTime::GetCurrentTimeUtc ();
     ECValue dateValue (nowUtc);
     EXPECT_TRUE (dateValue.IsDateTime());
-    DateTime nowUtctoo = dateValue.GetDateTime ();
-    EXPECT_TRUE (0 == memcmp(&nowUtctoo, &nowUtc, sizeof(nowUtctoo)));
-    //now test with local time. As ECValue::GetDateTime always returns DATETIMEKIND_Utc
-    //the comparison should fail.
-/*    dateValue.Clear ();
-    DateTime now = Bentley::DateTime::GetCurrentTime ();
-    dateValue = ECValue (now);
-    DateTime nowtoo = dateValue.GetDateTime ();
-    EXPECT_FALSE (0 == memcmp(&nowtoo, &now, sizeof(nowtoo)));
-    */
+    DateTime nowToo = dateValue.GetDateTime ();
+    EXPECT_TRUE (nowToo.Compare (nowUtc, true));
+
     ECValue fixedDate;
     fixedDate.SetDateTimeTicks (634027121070910000);
     WString dateStr = fixedDate.ToString();
-    EXPECT_TRUE (0 == dateStr.compare (L"2010-02-25T16:28:27.091Z")) << L"Expected date: " << fixedDate.GetDateTime ().ToString ().c_str ();
+    EXPECT_TRUE (0 == dateStr.compare (L"2010-02-25T16:28:27.091")) << L"Expected date: " << fixedDate.GetDateTime ().ToString ().c_str ();
     };
   
 /*---------------------------------------------------------------------------------**//**

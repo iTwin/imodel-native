@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-/*__PUBLISH_SECTION_START__*/
+//__BENTLEY_INTERNAL_ONLY__
 
 #include "Bentley/RefCounted.h"
 #include <Bentley/DateTime.h>
@@ -37,7 +37,7 @@ typedef RefCountedPtr<IECStatement> IECStatementPtr;
 //=======================================================================================    
 struct IECStatement : RefCountedBase
     {
-    public:
+public:
     //=======================================================================================    
     //! @ingroup ECPersistence
     //! Contains the possible values returned when executing an IECStatement or when
@@ -102,7 +102,9 @@ private:
     ECPERSISTENCE_EXPORT virtual ValueStatus _GetPoint2DValue (DPoint2dR value, int propertyIndex) const = 0;
     ECPERSISTENCE_EXPORT virtual ValueStatus _GetPoint3DValue (DPoint3dR value, int propertyIndex) const = 0;
 
+//__PUBLISH_SECTION_END__
     static void AssignValueStatus (ValueStatus* valueStatus, const ValueStatus& newValue);
+//__PUBLISH_SECTION_START__
 public: 
     ECPERSISTENCE_EXPORT virtual ~IECStatement () {};
 

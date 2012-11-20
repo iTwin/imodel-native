@@ -12,7 +12,7 @@
     </Part>
 
     <Part Name="ECObjectsNative" BentleyBuildMakeFile="src/ecobjects.mke" ApiNumber="6">
-        <SubPart PartName="BoostHeaders"    PartFile="${SrcBsiCommon}CvsPartfiles/bsibin"           Repository="bsibin-boostheaders" />
+        <SubPart PartName="BoostHeaders"    PartFile="BoostHeaders" Repository="BoostHeaders" />
         <SubPart PartName="HeaderFiles" />
         <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="Logging" /> 

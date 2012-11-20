@@ -641,7 +641,8 @@ DateTime          ECValue::GetDateTime () const
     UInt64 jdInHns = static_cast<UInt64> (jdInHnsSigned);
     
     DateTime dateTime;
-    BentleyStatus stat = DateTime::FromJulianDay (dateTime, jdInHns, DateTime::DATETIMEKIND_Utc);
+    //Using DATETIMEKIND_Unspecified for now so that legacy data (which didn't use the kind at all) gets handled well
+    BentleyStatus stat = DateTime::FromJulianDay (dateTime, jdInHns, DateTime::DATETIMEKIND_Unspecified);
     POSTCONDITION (stat == SUCCESS, DateTime ());
 
     return dateTime;
