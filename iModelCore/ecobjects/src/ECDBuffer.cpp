@@ -19,6 +19,15 @@ using namespace std;
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
+enum ECDHeaderOffsets
+    {
+    ECDOFFSET_FormatVersion         = 0,
+    ECDOFFSET_ReadableByVersion     = 1,
+    ECDOFFSET_WritableByVersion     = 2,
+    ECDOFFSET_HeaderSize            = 3,
+    ECDOFFSET_Flags                 = 4
+    };
+
 const UInt32 BITS_PER_NULLFLAGSBITMASK = (sizeof(NullflagsBitmask) * 8);
 
 /*---------------------------------------------------------------------------------**//**
@@ -2892,11 +2901,8 @@ static ECDBuffer::StringEncoding s_preferredEncoding = ECDBuffer::StringEncoding
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDBuffer::StringEncoding ECDBuffer::GetStringEncoding() const
     {
-    ECDHeader const* hdr = GetECDHeaderCP();
-    if (NULL == hdr)
-        { BeAssert(false); return StringEncoding_Utf16; }
-
-    return hdr->GetFlag (ECDFLAG_Utf8Encoding) ? StringEncoding_Utf8 : StringEncoding_Utf16;
+    UInt8 flags = UInt8(*(_GetData() + ECDOFFSET_Flags));
+    return 0 != (flags & ECDFLAG_Utf8Encoding) ? StringEncoding_Utf8 : StringEncoding_Utf16;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3381,9 +3387,8 @@ ECDHeader const* ECDBuffer::GetECDHeaderCP() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 UInt32 ECDBuffer::GetOffsetToPropertyData() const
     {
-    ECDHeader const* hdr = GetECDHeaderCP();
-    BeAssert (NULL != hdr);
-    return NULL != hdr ? hdr->GetSize() : -1;
+    UInt8* hdrSizeP = (UInt8*)(_GetData() + ECDOFFSET_HeaderSize);
+    return *hdrSizeP;
     }
 
 /*---------------------------------------------------------------------------------**//**
