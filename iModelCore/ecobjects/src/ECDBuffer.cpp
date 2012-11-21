@@ -19,6 +19,15 @@ using namespace std;
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
+enum ECDHeaderOffsets
+    {
+    ECDOFFSET_FormatVersion         = 0,
+    ECDOFFSET_ReadableByVersion     = 1,
+    ECDOFFSET_WritableByVersion     = 2,
+    ECDOFFSET_HeaderSize            = 3,
+    ECDOFFSET_Flags                 = 4
+    };
+
 const UInt32 BITS_PER_NULLFLAGSBITMASK = (sizeof(NullflagsBitmask) * 8);
 
 /*---------------------------------------------------------------------------------**//**
@@ -418,14 +427,6 @@ UInt32          ClassLayout::GetSizeOfFixedSection() const
 void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const
     {
     UInt32 sizeOfFixedSection = GetSizeOfFixedSection();
-    memset (data, 0, sizeof(ECDBuffer::ECDFlagsType));
-
-    // Set the default string encoding
-    if (ECDBuffer::StringEncoding_Utf8 == ECDBuffer::GetDefaultStringEncoding())
-        {
-        ECDBuffer::ECDFlagsType* flags = (ECDBuffer::ECDFlagsType*)(data);
-        *flags = ECDBuffer::ECDFLAG_Utf8Encoding;
-        }
 
     UInt32  nonStructPropCount = GetPropertyCountExcludingEmbeddedStructs();
 
@@ -433,7 +434,7 @@ void            ClassLayout::InitializeMemoryForInstance(byte * data, UInt32 byt
         return;
         
     UInt32 nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks (nonStructPropCount);
-    InitializeNullFlags ((NullflagsBitmask *)(data + sizeof(ECDBuffer::ECDFlagsType)), nNullflagsBitmasks);
+    InitializeNullFlags ((NullflagsBitmask *)data, nNullflagsBitmasks);
             
     bool isFirstVariableSizedProperty = true;
     for (UInt32 i = 0; i < m_propertyLayouts.size(); ++i)
@@ -553,10 +554,8 @@ int                    ClassLayout:: GetUniqueId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          ClassLayout::CalculateBytesUsed(byte const * data) const
+UInt32          ClassLayout::CalculateBytesUsed(byte const * propertyData) const
     {
-    DEBUG_EXPECT (0 != m_sizeOfFixedSection);       // even with no properties we store flags
-
     // handle case when no properties are defined
     if (0 == m_propertyLayouts.size())
         return m_sizeOfFixedSection;
@@ -565,7 +564,7 @@ UInt32          ClassLayout::CalculateBytesUsed(byte const * data) const
     if (lastPropertyLayout->IsFixedSized())
         return m_sizeOfFixedSection;
 
-    SecondaryOffset * pLast = (SecondaryOffset*)(data + m_sizeOfFixedSection - sizeof(SecondaryOffset));
+    SecondaryOffset * pLast = (SecondaryOffset*)(propertyData + m_sizeOfFixedSection - sizeof(SecondaryOffset));
     
     // pLast is the last offset, pointing to one byte beyond the used space, so it is equal to the number of bytes used, so far
     return *pLast;
@@ -836,8 +835,8 @@ ClassLayout::Factory::Factory (ECClassCR ecClass)
     : 
     m_ecClass (ecClass),
     m_state   (AcceptingFixedSizeProperties),
-    m_offset  (sizeof(ECDBuffer::ECDFlagsType) + sizeof(NullflagsBitmask)),
-    m_nullflagsOffset (sizeof(ECDBuffer::ECDFlagsType)),
+    m_offset  (sizeof(NullflagsBitmask)),
+    m_nullflagsOffset (0),
     m_nonStructPropertyCount (0),
     m_underConstruction (*ClassLayout::CreateEmpty (m_ecClass.GetName().c_str()))
     {
@@ -899,7 +898,7 @@ ECObjectsStatus       ClassLayout::FinishLayout ()
     if (NULL == lastPropertyLayout)
         {
         // Either there are no properties or all the properties are structs.
-        m_sizeOfFixedSection = sizeof(ECDBuffer::ECDFlagsType);
+        m_sizeOfFixedSection = 0;
         }
     else
         {
@@ -929,7 +928,7 @@ ECObjectsStatus       ClassLayout::FinishLayout ()
         else
             {
             if (0 == prevNonStructOffset)
-                DEBUG_EXPECT (m_propertyLayouts[i]->m_offset == nNullflagsBitmasks * sizeof(NullflagsBitmask) + sizeof(ECDBuffer::ECDFlagsType));
+                DEBUG_EXPECT (m_propertyLayouts[i]->m_offset == nNullflagsBitmasks * sizeof(NullflagsBitmask));
             else
                 DEBUG_EXPECT (m_propertyLayouts[i]->m_offset > prevNonStructOffset);
             }
@@ -938,7 +937,7 @@ ECObjectsStatus       ClassLayout::FinishLayout ()
         UInt32 expectedNullflagsOffset = 0;
 
         if ( ! isStruct)
-            expectedNullflagsOffset = (nonStructPropIndex / BITS_PER_NULLFLAGSBITMASK * sizeof(NullflagsBitmask)) + sizeof(ECDBuffer::ECDFlagsType);
+            expectedNullflagsOffset = (nonStructPropIndex / BITS_PER_NULLFLAGSBITMASK * sizeof(NullflagsBitmask));
 
         DEBUG_EXPECT (m_propertyLayouts[i]->m_nullflagsOffset == expectedNullflagsOffset);
 
@@ -1396,7 +1395,7 @@ UInt32          ECDBuffer::GetPropertyValueSize (PropertyLayoutCR propertyLayout
     else
         {    
         UInt32 offset = propertyLayout.GetOffset();
-        SecondaryOffset const * pSecondaryOffset = (SecondaryOffset const *)(_GetData() + offset);
+        SecondaryOffset const * pSecondaryOffset = (SecondaryOffset const *)(GetPropertyData() + offset);
         
         SecondaryOffset secondaryOffset = *pSecondaryOffset;
         if (0 == secondaryOffset)
@@ -1428,7 +1427,7 @@ UInt32          ECDBuffer::GetPropertyValueSize (PropertyLayoutCR propertyLayout
     else
         {                            
         UInt32 arrayOffset = GetOffsetOfPropertyValue (propertyLayout);   
-        byte const *             data = _GetData();
+        byte const *             data = GetPropertyData();
         SecondaryOffset* pIndexValueOffset = (SecondaryOffset*)(data + GetOffsetOfArrayIndex (arrayOffset, propertyLayout, index));    
         SecondaryOffset indexValueOffset = arrayOffset + *pIndexValueOffset;    
         if (0 == indexValueOffset)        
@@ -1447,6 +1446,15 @@ UInt32          ECDBuffer::GetPropertyValueSize (PropertyLayoutCR propertyLayout
         return size;
         }
     }        
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+byte const* ECDBuffer::GetPropertyData() const
+    {
+    byte const* data = _GetData();
+    return NULL != data ? data + GetOffsetToPropertyData() : NULL;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin    01/10
@@ -1470,14 +1478,14 @@ ArrayCount      ECDBuffer::GetAllocatedArrayCount (PropertyLayoutCR propertyLayo
         }
     else
         {
-        SecondaryOffset* pSecondaryOffset = (SecondaryOffset*)(_GetData() + propertyLayout.GetOffset());
+        SecondaryOffset* pSecondaryOffset = (SecondaryOffset*)(GetPropertyData() + propertyLayout.GetOffset());
         SecondaryOffset* pNextOffset = pSecondaryOffset + 1;        
         
         SecondaryOffset arrayOffset = *pSecondaryOffset;
         if ((arrayOffset == 0) || (*pNextOffset == 0) || (arrayOffset == *pNextOffset))
             return 0;
 
-        byte const * pCount = _GetData() + arrayOffset;
+        byte const * pCount = GetPropertyData() + arrayOffset;
         return *((ArrayCount*)pCount);
         }
     }    
@@ -1487,7 +1495,7 @@ ArrayCount      ECDBuffer::GetAllocatedArrayCount (PropertyLayoutCR propertyLayo
 +---------------+---------------+---------------+---------------+---------------+------*/
 byte const *    ECDBuffer::GetAddressOfPropertyValue (PropertyLayoutCR propertyLayout) const
     {
-    return _GetData() + GetOffsetOfPropertyValue (propertyLayout);
+    return GetPropertyData() + GetOffsetOfPropertyValue (propertyLayout);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -1496,7 +1504,7 @@ byte const *    ECDBuffer::GetAddressOfPropertyValue (PropertyLayoutCR propertyL
 byte const *    ECDBuffer::GetAddressOfPropertyValue (PropertyLayoutCR propertyLayout, UInt32 index) const
     {
     UInt32 arrayOffset = GetOffsetOfPropertyValue (propertyLayout);   
-    return _GetData() + GetOffsetOfArrayIndexValue (arrayOffset, propertyLayout, index);
+    return GetPropertyData() + GetOffsetOfArrayIndexValue (arrayOffset, propertyLayout, index);
     }    
 
 /*---------------------------------------------------------------------------------**//**
@@ -1558,7 +1566,7 @@ bool            ECDBuffer::IsPropertyValueNull (PropertyLayoutCR propertyLayout,
     {
     UInt32 nullflagsOffset;
     UInt32 nullflagsBitmask;
-    byte const * data = _GetData();
+    byte const * data = GetPropertyData();
     if (useIndex)
         {
         // see if we have an UninitializedFixedCountArray
@@ -1581,7 +1589,7 @@ void            ECDBuffer::SetPropertyValueNull (PropertyLayoutCR propertyLayout
     {  
     UInt32 nullflagsOffset;
     UInt32 nullflagsBitmask;
-    byte const * data = _GetData();
+    byte const * data = GetPropertyData();
     if (useIndex)
         PrepareToAccessNullFlags (nullflagsOffset, nullflagsBitmask, data, propertyLayout, index);   
     else
@@ -1606,7 +1614,7 @@ UInt32          ECDBuffer::GetOffsetOfPropertyValue (PropertyLayoutCR propertyLa
     
     if (!propertyLayout.IsFixedSized())
         {
-        SecondaryOffset const * pSecondaryOffset = (SecondaryOffset const *)(_GetData() + offset);
+        SecondaryOffset const * pSecondaryOffset = (SecondaryOffset const *)(GetPropertyData() + offset);
         offset = *pSecondaryOffset;
         }
         
@@ -1615,6 +1623,7 @@ UInt32          ECDBuffer::GetOffsetOfPropertyValue (PropertyLayoutCR propertyLa
     else
         return GetOffsetOfArrayIndexValue (offset, propertyLayout, index);
     }       
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1653,7 +1662,7 @@ UInt32          ECDBuffer::GetOffsetOfArrayIndexValue (UInt32 arrayOffset, Prope
     if (IsArrayOfFixedSizeElements (propertyLayout) || (PRIMITIVETYPE_Integer == GetStructArrayPrimitiveType () && propertyLayout.GetTypeDescriptor().IsStructArray()))
         return arrayIndexOffset;
 
-    byte const * data = _GetData();
+    byte const * data = GetPropertyData();
     SecondaryOffset const * pSecondaryOffset = (SecondaryOffset const *)(data + arrayIndexOffset);
 
     SecondaryOffset secondaryOffset = *pSecondaryOffset;
@@ -1669,7 +1678,7 @@ UInt32          ECDBuffer::GetOffsetOfArrayIndexValue (UInt32 arrayOffset, Prope
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus       ECDBuffer::EnsureSpaceIsAvailable (UInt32& offset, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded)
     {
-    byte const *             data = _GetData();
+    byte const *             data = GetPropertyData();
     SecondaryOffset*         pSecondaryOffset = (SecondaryOffset*)(data + propertyLayout.GetOffset());
     SecondaryOffset*         pNextSecondaryOffset = pSecondaryOffset + 1;
     
@@ -1722,33 +1731,35 @@ ECObjectsStatus ECDBuffer::RemoveArrayElementsFromMemory (ClassLayoutCR classLay
     // since we can not use memmove on XAttribute memory, copy the memory move it around and then use _ModifyData
     // copy the entire instance into allocated memory
     ScopedArray<byte> scoped((size_t)bytesAllocated);
-    byte*   data = scoped.GetData();
-    memcpy (data, currentData, (size_t)bytesAllocated);
+    byte*   _data = scoped.GetData();
+    memcpy (_data, currentData, (size_t)bytesAllocated);
+
+    byte*   propertyData = _data + GetOffsetToPropertyData();
 
     bool    hasFixedSizedElements = IsArrayOfFixedSizeElements (propertyLayout) || ((PRIMITIVETYPE_Integer == GetStructArrayPrimitiveType () && propertyLayout.GetTypeDescriptor().IsStructArray()));
     UInt32  arrayOffset           = GetOffsetOfPropertyValue (propertyLayout);   
-    byte   *arrayAddress          = data + arrayOffset;
+    byte   *arrayAddress          = propertyData + arrayOffset;
 
     // modify from bottom up
     SecondaryOffset  beginIndexValueOffset = GetOffsetOfArrayIndexValue (arrayOffset, propertyLayout, removeIndex);
-    byte *           destination = data + beginIndexValueOffset;
+    byte *           destination = propertyData + beginIndexValueOffset;
     byte *           source;
     UInt32           bytesToMove;
     UInt32           totalBytesAdjusted=0;
     ArrayCount       preArrayCount = GetAllocatedArrayCount (propertyLayout);
     ArrayCount       postArrayCount = preArrayCount - removeCount;
-    SecondaryOffset* pThisProperty = (SecondaryOffset*)(data + propertyLayout.GetOffset());
+    SecondaryOffset* pThisProperty = (SecondaryOffset*)(propertyData + propertyLayout.GetOffset());
     SecondaryOffset* pNextProperty = pThisProperty + 1;
 
     if ((removeIndex + removeCount) >= preArrayCount) // removing entries an end of array
         {
-        source = data + *pNextProperty;
+        source = propertyData + *pNextProperty;
         bytesToMove = bytesAllocated - *pNextProperty;
         }
     else   // removing entries at beginning or in middle of array
         {
         SecondaryOffset endIndexValueOffset = GetOffsetOfArrayIndexValue (arrayOffset, propertyLayout, removeIndex+removeCount);
-        source = data + endIndexValueOffset;
+        source = propertyData + endIndexValueOffset;
 
         bytesToMove = bytesAllocated - endIndexValueOffset;
         }
@@ -1763,13 +1774,13 @@ ECObjectsStatus ECDBuffer::RemoveArrayElementsFromMemory (ClassLayoutCR classLay
     UInt32           preNullFlagBitmasksCount = CalculateNumberNullFlagsBitmasks (preArrayCount);   
     UInt32           postNullFlagBitmasksCount = CalculateNumberNullFlagsBitmasks (postArrayCount);
     UInt32           nullFlagsDelta = 0;
-    SecondaryOffset* firstArrayEntryOffset = (SecondaryOffset *)(data + GetOffsetOfArrayIndex (arrayOffset, propertyLayout, 0));
+    SecondaryOffset* firstArrayEntryOffset = (SecondaryOffset *)(propertyData + GetOffsetOfArrayIndex (arrayOffset, propertyLayout, 0));
 
     if (!hasFixedSizedElements)
         {
         // remove secondary offsets to array entry values
         SecondaryOffset  beginIndexValueOffset = GetOffsetOfArrayIndex (arrayOffset, propertyLayout, removeIndex);
-        byte *           destination = data + beginIndexValueOffset;  
+        byte *           destination = propertyData + beginIndexValueOffset;  
         UInt32           offsetDelta = removeCount * sizeof(SecondaryOffset);
 
         source      = destination + offsetDelta;    
@@ -1858,7 +1869,7 @@ ECObjectsStatus ECDBuffer::RemoveArrayElementsFromMemory (ClassLayoutCR classLay
     // Update the array count
     memcpy (arrayAddress, &postArrayCount, sizeof(ArrayCount));
    
-    SecondaryOffset * pLast = (SecondaryOffset*)(data + classLayout.GetSizeOfFixedSection() - sizeof(SecondaryOffset));
+    SecondaryOffset * pLast = (SecondaryOffset*)(propertyData + classLayout.GetSizeOfFixedSection() - sizeof(SecondaryOffset));
 
     // adjust the offsets in the fixed section beyond the one we just modified
     while (pNextProperty <= pLast)
@@ -1868,7 +1879,7 @@ ECObjectsStatus ECDBuffer::RemoveArrayElementsFromMemory (ClassLayoutCR classLay
         }
 
     // replace all property data for the instance
-    status = _ModifyData (0, data, bytesAllocated);
+    status = _ModifyData (0, _data, bytesAllocated);
 
     if (ECOBJECTS_STATUS_Success == status)
         _HandleArrayResize (&propertyLayout, removeIndex, -1 * removeCount);
@@ -2000,7 +2011,7 @@ ECObjectsStatus       ECDBuffer::EnsureSpaceIsAvailableForArrayIndexValue (Class
     
     UInt32 arrayCount = GetAllocatedArrayCount (propertyLayout);
     
-    UInt32 endOfValueDataPreGrow = *((SecondaryOffset*)(_GetData() + propertyLayout.GetOffset()) + 1);
+    UInt32 endOfValueDataPreGrow = *((SecondaryOffset*)(GetPropertyData() + propertyLayout.GetOffset()) + 1);
     ECObjectsStatus status = GrowPropertyValue (classLayout, propertyLayout, additionalBytesNeeded);
 
     if (ECOBJECTS_STATUS_Success != status)
@@ -2013,12 +2024,21 @@ ECObjectsStatus       ECDBuffer::EnsureSpaceIsAvailableForArrayIndexValue (Class
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32              ECDBuffer::CalculateBytesUsed (ClassLayoutCR classLayout) const
+    {
+    UInt32 offset = GetOffsetToPropertyData();
+    return offset + classLayout.CalculateBytesUsed (_GetData() + offset);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus       ECDBuffer::GrowPropertyValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 additionalBytesNeeded)
     {
-    byte const * data = _GetData();
-    UInt32 bytesUsed = classLayout.CalculateBytesUsed(data);
+    byte const * data = GetPropertyData();
+    UInt32 bytesUsed = classLayout.CalculateBytesUsed(data) + GetOffsetToPropertyData();
         
     UInt32 bytesAllocated = _GetBytesAllocated();    
     UInt32 additionalBytesAvailable = bytesAllocated - bytesUsed;
@@ -2036,12 +2056,12 @@ ECObjectsStatus       ECDBuffer::GrowPropertyValue (ClassLayoutCR classLayout, P
     if (ECOBJECTS_STATUS_Success != status)
         return status;
         
-    byte * writeableData = (byte *)_GetData();
-    DEBUG_EXPECT (bytesUsed == classLayout.CalculateBytesUsed(writeableData));
+    byte * writeableData = (byte *)GetPropertyData();
+    DEBUG_EXPECT (bytesUsed == classLayout.CalculateBytesUsed(writeableData) + GetOffsetToPropertyData());
     
     status = ShiftValueData(classLayout, writeableData, bytesAllocated, propertyLayout, additionalBytesNeeded);
 
-    DEBUG_EXPECT (0 == bytesUsed || (bytesUsed + additionalBytesNeeded == classLayout.CalculateBytesUsed(writeableData)));
+    DEBUG_EXPECT (0 == bytesUsed || (bytesUsed + additionalBytesNeeded == GetOffsetToPropertyData() + classLayout.CalculateBytesUsed(writeableData)));
     
     return status;
     }
@@ -2065,14 +2085,14 @@ ECDBuffer::ECDBuffer (bool allowWritingDirectlyToInstanceMemory) :
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus       ECDBuffer::ShiftValueData(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated, PropertyLayoutCR propertyLayout, Int32 shiftBy)
+ECObjectsStatus       ECDBuffer::ShiftValueData(ClassLayoutCR classLayout, byte * propertyData, UInt32 bytesAllocated, PropertyLayoutCR propertyLayout, Int32 shiftBy)
     {
     DEBUG_EXPECT (0 != shiftBy && "It is a pointless waste of time to shift nothing");
     DEBUG_EXPECT (!propertyLayout.IsFixedSized() && "The propertyLayout should be that of the variable-sized property whose size is increasing");
     DEBUG_EXPECT (classLayout.GetSizeOfFixedSection() > 0 && "The ClassLayout has not been initialized");
     
-    SecondaryOffset * pLast = (SecondaryOffset*)(data + classLayout.GetSizeOfFixedSection() - sizeof(SecondaryOffset));
-    SecondaryOffset * pAdjusting = (SecondaryOffset*)(data + propertyLayout.GetOffset());
+    SecondaryOffset * pLast = (SecondaryOffset*)(propertyData + classLayout.GetSizeOfFixedSection() - sizeof(SecondaryOffset));
+    SecondaryOffset * pAdjusting = (SecondaryOffset*)(propertyData + propertyLayout.GetOffset());
     SecondaryOffset * pCurrent = pAdjusting + 1; // start at the one AFTER the property whose value's size is adjusting
     DEBUG_EXPECT (pCurrent <= pLast);
     DEBUG_EXPECT ((*pCurrent - *pAdjusting + shiftBy) >= 0 && "shiftBy cannot be such that it would cause the adjusting property to shrink to a negative size");
@@ -2080,11 +2100,11 @@ ECObjectsStatus       ECDBuffer::ShiftValueData(ClassLayoutCR classLayout, byte 
     UInt32 bytesToMove = *pLast - *pCurrent;
     if (bytesToMove > 0)
         {
-        byte * source = data + *pCurrent;
+        byte * source = propertyData + *pCurrent;
         byte * destination = source + shiftBy;
         
-        DEBUG_EXPECT (destination + bytesToMove <= data + bytesAllocated && "Attempted to move memory beyond the end of the allocated XAttribute.");
-        if (destination + bytesToMove > data + bytesAllocated)
+        DEBUG_EXPECT (destination + bytesToMove <= propertyData + bytesAllocated && "Attempted to move memory beyond the end of the allocated XAttribute.");
+        if (destination + bytesToMove > propertyData + bytesAllocated)
             return ECOBJECTS_STATUS_IndexOutOfRange;
             
         MoveData (destination, source, bytesToMove);
@@ -2114,8 +2134,9 @@ ECObjectsStatus       ECDBuffer::ShiftValueData(ClassLayoutCR classLayout, byte 
 
     shiftedSecondaryOffsets[nSecondaryOffsetsToShift - 1] = pCurrent[nSecondaryOffsetsToShift - 1] + shiftBy; // always do the last one
     
-    UInt32 offsetOfCurrent = (UInt32)((byte*)pCurrent - data);
-    return _ModifyData (offsetOfCurrent, shiftedSecondaryOffsets, sizeOfSecondaryOffsetsToShift);
+    // UInt32 offsetOfCurrent = (UInt32)((byte*)pCurrent - propertyData);
+    // return _ModifyData (offsetOfCurrent, shiftedSecondaryOffsets, sizeOfSecondaryOffsetsToShift);
+    return ModifyData ((byte*)pCurrent, shiftedSecondaryOffsets, sizeOfSecondaryOffsetsToShift);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2126,7 +2147,7 @@ ECObjectsStatus       ECDBuffer::ShiftArrayIndexValueData(PropertyLayoutCR prope
     DEBUG_EXPECT (0 != shiftBy && "It is a pointless waste of time to shift nothing");
     DEBUG_EXPECT (arrayIndex < arrayCount - 1 && "It is a pointless waste of time to shift nothing");
 
-    byte * data = (byte*)_GetData();
+    byte * data = (byte*)GetPropertyData();
     SecondaryOffset* pNextProperty = (SecondaryOffset*)(data + propertyLayout.GetOffset()) + 1;
     UInt32 arrayOffset = GetOffsetOfPropertyValue (propertyLayout);   
     SecondaryOffset indexValueOffset = GetOffsetOfArrayIndexValue (arrayOffset, propertyLayout, arrayIndex + 1); // start at the one AFTER the index whose value's size is adjusting
@@ -2153,16 +2174,18 @@ ECObjectsStatus       ECDBuffer::ShiftArrayIndexValueData(PropertyLayoutCR prope
     for (UInt32 i = 0; i < nSecondaryOffsetsToShift; i++)
         shiftedSecondaryOffsets.GetData()[i] = pCurrent[i] + shiftBy;
         
-    UInt32 offsetOfCurrent = (UInt32)((byte*)pCurrent - data);
-    return _ModifyData (offsetOfCurrent, shiftedSecondaryOffsets.GetData(), sizeOfSecondaryOffsetsToShift);
+    return ModifyData ((byte const*)pCurrent, shiftedSecondaryOffsets.GetData(), sizeOfSecondaryOffsetsToShift);
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ECDBuffer::InitializeMemory(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated) const
+void            ECDBuffer::InitializeMemory(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated)
     {
-    classLayout.InitializeMemoryForInstance (data, bytesAllocated);
+    ECDHeader hdr;
+    memcpy (data, &hdr, hdr.GetSize());
+
+    classLayout.InitializeMemoryForInstance (data + hdr.GetSize(), bytesAllocated - hdr.GetSize());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2484,7 +2507,7 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, ClassLa
 
             Int32 value = v.GetInteger();
 
-            UInt32* valueP = (UInt32*)(_GetData() + offset);
+            UInt32* valueP = (UInt32*)(GetPropertyData() + offset);
             if (!isOriginalValueNull && *valueP == value)
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
@@ -2497,7 +2520,7 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, ClassLa
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
             Int64 value = v.GetLong();
-            byte const* valueP = _GetData() + offset;
+            byte const* valueP = GetPropertyData() + offset;
             if (!isOriginalValueNull && 0 == memcmp (valueP, &value, sizeof(value)))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
@@ -2510,7 +2533,7 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, ClassLa
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
             double value = v.GetDouble();
-            byte const* valueP = _GetData() + offset;
+            byte const* valueP = GetPropertyData() + offset;
             if (!isOriginalValueNull && 0 == memcmp (valueP, &value, sizeof(value)))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
@@ -2541,7 +2564,7 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, ClassLa
             else
                 currentSize = GetPropertyValueSize (propertyLayout);
 
-            if (!isOriginalValueNull && currentSize>=bytesNeeded && 0 == memcmp (_GetData() + offset, value, bytesNeeded))
+            if (!isOriginalValueNull && currentSize>=bytesNeeded && 0 == memcmp (GetPropertyData() + offset, value, bytesNeeded))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
             ECObjectsStatus status;
@@ -2554,7 +2577,7 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, ClassLa
             if (ECOBJECTS_STATUS_Success != status)
                 return status;
 
-            result = ModifyData (_GetData() + offset, value, bytesNeeded);
+            result = ModifyData (GetPropertyData() + offset, value, bytesNeeded);
             }
             break;
         case PRIMITIVETYPE_IGeometry:
@@ -2581,7 +2604,7 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, ClassLa
 
             UInt32 bytesNeeded = (UInt32)totalSize;
 
-            if (!isOriginalValueNull && currentSize>=totalSize && 0 == memcmp (_GetData() + offset, dataBuffer, bytesNeeded))
+            if (!isOriginalValueNull && currentSize>=totalSize && 0 == memcmp (GetPropertyData() + offset, dataBuffer, bytesNeeded))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
             ECObjectsStatus status;
@@ -2599,7 +2622,7 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, ClassLa
             if (bytesNeeded == 0)
                 return ECOBJECTS_STATUS_Success;
             
-            result = ModifyData (_GetData() + offset, dataBuffer, bytesNeeded);
+            result = ModifyData (GetPropertyData() + offset, dataBuffer, bytesNeeded);
             free (dataBuffer);
             }
             break;
@@ -2609,7 +2632,7 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, ClassLa
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
             bool value = v.GetBoolean();
-            byte const* valueP = _GetData() + offset;
+            byte const* valueP = GetPropertyData() + offset;
             if (!isOriginalValueNull && 0 == memcmp (valueP, &value, sizeof(value)))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
@@ -2622,7 +2645,7 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, ClassLa
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
             DPoint2d value = v.GetPoint2D();
-            byte const* valueP = _GetData() + offset;
+            byte const* valueP = GetPropertyData() + offset;
             if (!isOriginalValueNull && 0 == memcmp (valueP, &value, sizeof(value)))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
@@ -2635,7 +2658,7 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, ClassLa
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
             DPoint3d value = v.GetPoint3D();
-            byte const* valueP = _GetData() + offset;
+            byte const* valueP = GetPropertyData() + offset;
             if (!isOriginalValueNull && 0 == memcmp (valueP, &value, sizeof(value)))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
@@ -2648,7 +2671,7 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, ClassLa
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
             Int64 value = v.GetDateTimeTicks();
-            byte const* valueP = _GetData() + offset;
+            byte const* valueP = GetPropertyData() + offset;
             if (!isOriginalValueNull && 0 == memcmp (valueP, &value, sizeof(value)))
                 return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
 
@@ -2867,30 +2890,6 @@ ECObjectsStatus ECDBuffer::MoveData (byte* to, byte const* from, size_t len)
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDBuffer::GetFlag (ECDFlagsType flag) const
-    {
-    ECDFlagsType flags = *((ECDFlagsType const*)_GetData());
-    return 0 != (flags & flag);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECDBuffer::SetFlag (ECDFlagsType flag, bool set)
-    {
-    byte const* data = _GetData();
-    ECDFlagsType flags = *((ECDFlagsType const*)data);
-    if (set)
-        flags |= flag;
-    else
-        flags &= ~flag;
-
-    ModifyData (data, &flags, sizeof(flags));
-    }
-
 #if defined(_WIN32)
 static ECDBuffer::StringEncoding s_preferredEncoding = ECDBuffer::StringEncoding_Utf16;
 #else
@@ -2902,7 +2901,8 @@ static ECDBuffer::StringEncoding s_preferredEncoding = ECDBuffer::StringEncoding
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDBuffer::StringEncoding ECDBuffer::GetStringEncoding() const
     {
-    return GetFlag (ECDFLAG_Utf8Encoding) ? StringEncoding_Utf8 : StringEncoding_Utf16;
+    UInt8 flags = UInt8(*(_GetData() + ECDOFFSET_Flags));
+    return 0 != (flags & ECDFLAG_Utf8Encoding) ? StringEncoding_Utf8 : StringEncoding_Utf16;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2926,7 +2926,7 @@ WString        ECDBuffer::InstanceDataToString (WCharCP indent, ClassLayoutCR cl
     if (s_skipDump)
         return oss;
   
-    byte const * data = _GetData();
+    byte const * data = GetPropertyData();
 
     appendFormattedString (oss, L"%lsECClass=%ls at address = 0x%0x\n", indent, classLayout.GetECClassName().c_str(), data);
     UInt32 nProperties = classLayout.GetPropertyCount ();
@@ -2934,7 +2934,7 @@ WString        ECDBuffer::InstanceDataToString (WCharCP indent, ClassLayoutCR cl
     
     for (UInt32 i = 0; i < nNullflagsBitmasks; i++)
         {
-        UInt32 offset = sizeof(ECDBuffer::ECDFlagsType) + i * sizeof(NullflagsBitmask);
+        UInt32 offset = GetECDHeaderCP()->GetSize() + i * sizeof(NullflagsBitmask);
         byte const * address = offset + data;
         appendFormattedString (oss, L"%ls  [0x%x][%4.d] Nullflags[%d] = 0x%x\n", indent, address, offset, i, *(NullflagsBitmask*)(data + offset));
         }
@@ -3043,7 +3043,7 @@ WString        ECDBuffer::InstanceDataToString (WCharCP indent, ClassLayoutCR cl
     if (1 == nProperties)
         {
         // We have one PropertyLayout, which is an empty root struct, signifying an empty ECClass
-        DEBUG_EXPECT (sizeof(ECDBuffer::ECDFlagsType) == classLayout.GetSizeOfFixedSection());
+        DEBUG_EXPECT (0 == classLayout.GetSizeOfFixedSection());
         appendFormattedString (oss, L"Class has no properties\n");
         }
     else
@@ -3095,12 +3095,12 @@ ECObjectsStatus            ArrayResizer::ShiftDataFollowingResizeIndex ()
     {
     // shift all data (fixed & variable) to the right of the element where the resize should occur
     UInt32 offsetOfResizePoint = m_preHeaderByteCount + (m_resizeIndex * m_elementSizeInFixedSection);         
-    m_pResizeIndexPreShift = m_data + m_arrayOffset + offsetOfResizePoint;
+    m_pResizeIndexPreShift = m_propertyData + m_arrayOffset + offsetOfResizePoint;
     m_pResizeIndexPostShift = m_pResizeIndexPreShift + m_resizeFixedSectionByteCount;        
     #ifndef NDEBUG
     UInt32 arrayByteCountAfterGrow = m_instance.GetPropertyValueSize (m_propertyLayout);
-    byte const * pNextProperty = m_data + m_arrayOffset + arrayByteCountAfterGrow;
-    DEBUG_EXPECT (pNextProperty == m_data + *((SecondaryOffset*)(m_data + m_propertyLayout.GetOffset()) + 1));
+    byte const * pNextProperty = m_propertyData + m_arrayOffset + arrayByteCountAfterGrow;
+    DEBUG_EXPECT (pNextProperty == m_propertyData + *((SecondaryOffset*)(m_propertyData + m_propertyLayout.GetOffset()) + 1));
     #endif    
     if (m_preArrayByteCount > offsetOfResizePoint)
         {        
@@ -3178,9 +3178,9 @@ ECObjectsStatus            ArrayResizer::SetSecondaryOffsetsFollowingResizeIndex
         
     if (!m_instance.m_allowWritingDirectlyToInstanceMemory)
         {
-        UInt32 modifyOffset = (UInt32)(m_pResizeIndexPostShift - m_data) - insertedSecondaryOffsetByteCount;
-        status = m_instance._ModifyData (modifyOffset, pWriteBuffer, sizeOfWriteBuffer);            
-        DEBUG_EXPECT (m_data + modifyOffset + sizeOfWriteBuffer <= m_data + m_arrayOffset + m_instance.GetPropertyValueSize (m_propertyLayout));
+        byte const* modifyP = m_pResizeIndexPostShift - insertedSecondaryOffsetByteCount;
+        status = m_instance.ModifyData (modifyP, pWriteBuffer, sizeOfWriteBuffer);            
+        //DEBUG_EXPECT (m_propertyData + modifyOffset + sizeOfWriteBuffer <= m_propertyData + m_arrayOffset + m_instance.GetPropertyValueSize (m_propertyLayout));
         if (ECOBJECTS_STATUS_Success != status)
             return status;        
         }            
@@ -3197,8 +3197,8 @@ ECObjectsStatus            ArrayResizer::ShiftDataPreceedingResizeIndex ()
     if (m_resizeIndex == 0)
         return status;
     
-    byte const * pShiftFrom = m_data + m_arrayOffset + m_preHeaderByteCount;
-    byte * pShiftTo = (byte*)(m_data + m_arrayOffset + m_postHeaderByteCount);
+    byte const * pShiftFrom = m_propertyData + m_arrayOffset + m_preHeaderByteCount;
+    byte * pShiftTo = (byte*)(m_propertyData + m_arrayOffset + m_postHeaderByteCount);
     UInt32 byteCountToShift = (UInt32)(m_pResizeIndexPreShift - pShiftFrom);                
     
     // shift all the elements in the fixed section preceding the insert point if we needed to grow the nullflags bitmask            
@@ -3236,10 +3236,9 @@ ECObjectsStatus            ArrayResizer::SetSecondaryOffsetsPreceedingResizeInde
         
     if (!m_instance.m_allowWritingDirectlyToInstanceMemory)
         {
-        UInt32 modifyOffset = (UInt32)((byte*)pSecondaryOffset - m_data);
-        status = m_instance._ModifyData (modifyOffset, pWriteBuffer, byteCountToSet);
-        DEBUG_EXPECT (modifyOffset >= m_postHeaderByteCount);
-        DEBUG_EXPECT (m_data + modifyOffset + byteCountToSet <= m_pResizeIndexPostShift);
+        status = m_instance.ModifyData ((byte*)pSecondaryOffset, pWriteBuffer, byteCountToSet);
+        //DEBUG_EXPECT (modifyOffset >= m_postHeaderByteCount);
+        //DEBUG_EXPECT (m_propertyData + modifyOffset + byteCountToSet <= m_pResizeIndexPostShift);
         if (ECOBJECTS_STATUS_Success != status)
             return status;        
         }               
@@ -3254,10 +3253,10 @@ ECObjectsStatus            ArrayResizer::WriteArrayHeader ()
     {
     // write the new array header (updated count & null flags)      
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
-    ScopedWriteBuffer writeBuffer (m_postHeaderByteCount, m_instance.m_allowWritingDirectlyToInstanceMemory, (byte*)(m_data + m_arrayOffset));
+    ScopedWriteBuffer writeBuffer (m_postHeaderByteCount, m_instance.m_allowWritingDirectlyToInstanceMemory, (byte*)(m_propertyData + m_arrayOffset));
     byte * pWriteBuffer = writeBuffer.GetData();
     if (!m_instance.m_allowWritingDirectlyToInstanceMemory)
-        memcpy (pWriteBuffer, m_data + m_arrayOffset, m_preHeaderByteCount);
+        memcpy (pWriteBuffer, m_propertyData + m_arrayOffset, m_preHeaderByteCount);
 
     *((UInt32*)pWriteBuffer) = m_postAllocatedArrayCount;
     NullflagsBitmask* pNullflagsStart = (NullflagsBitmask*)(pWriteBuffer + sizeof (ArrayCount));
@@ -3300,7 +3299,7 @@ ECObjectsStatus            ArrayResizer::WriteArrayHeader ()
         }
     if (!m_instance.m_allowWritingDirectlyToInstanceMemory)
         {
-        status = m_instance._ModifyData (m_arrayOffset, pWriteBuffer, m_postHeaderByteCount);
+        status = m_instance.ModifyData (m_propertyData + m_arrayOffset, pWriteBuffer, m_postHeaderByteCount);
         if (ECOBJECTS_STATUS_Success != status)
             return status;        
         }                       
@@ -3320,7 +3319,7 @@ ECObjectsStatus       ArrayResizer::CreateNullArrayElementsAt (ClassLayoutCR cla
     if (ECOBJECTS_STATUS_Success != status)
         return status;       
         
-    resizer.m_data = resizer.m_instance._GetData();
+    resizer.m_propertyData = resizer.m_instance.GetPropertyData();
     status = resizer.ShiftDataFollowingResizeIndex();        
     if (ECOBJECTS_STATUS_Success != status)
         return status;
@@ -3334,5 +3333,87 @@ ECObjectsStatus       ArrayResizer::CreateNullArrayElementsAt (ClassLayoutCR cla
     return status;    
     // WIP_FUSION how do we deal with an error that occurs during the insert "transaction" after some data has already been moved/modified but we haven't finished?
     }    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECDHeader_v0::ECDHeader_v0()
+  : m_formatVersion(ECDFormat_Current), m_readableByVersion(ECDFormat_MinimumReadable), m_writableByVersion(ECDFormat_MinimumWritable), m_headerSize(sizeof(ECDHeader)), m_flags(0)
+    {
+    if (ECDBuffer::StringEncoding_Utf8 == ECDBuffer::GetDefaultStringEncoding())
+        SetFlag (ECDFLAG_Utf8Encoding, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECDHeader_v0::ReadHeader (ECDHeader_v0& hdrOut, byte const* data)
+    {
+    // Note this returns the version of the header with which the code was compiled, truncating any data added to the struct in a future version.
+    // This is correct - older code has no way to interpret the additional data anyway.
+    // The original header remains intact in the ECD buffer's data.
+    ECDHeader_v0* hdr = (ECDHeader_v0*)data;
+    if (ECDFormat_Invalid == hdr->m_formatVersion)
+        {
+        // When would this actually happen?
+        return false;
+        }
+
+    // Note we use sizeof(ECDHeader), not hdr->GetSize(), because the persisted header might be from a newer ECD format version and be larger than ECDHeader can hold
+    memcpy (&hdrOut, hdr, sizeof(ECDHeader));
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECDHeader const* ECDBuffer::GetECDHeaderCP() const
+    {
+    byte const* data = _GetData();
+#ifndef NDEBUG
+    ECDHeader hdr;
+    if (!ECDHeader::ReadHeader (hdr, data))
+        {
+        BeAssert (false);
+        return NULL;
+        }
+#endif
+
+    return (ECDHeader const*)data;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32 ECDBuffer::GetOffsetToPropertyData() const
+    {
+    UInt8* hdrSizeP = (UInt8*)(_GetData() + ECDOFFSET_HeaderSize);
+    return *hdrSizeP;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32 ECDBuffer::CalculateInitialAllocation (ClassLayoutCR classLayout)
+    {
+    return sizeof(ECDHeader) + classLayout.GetSizeOfFixedSection();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECDBuffer::IsCompatibleVersion (ECDHeader* header, byte const* data, bool requireWritable)
+    {
+    ECDHeader localHeader;
+    if (NULL == header)
+        header = &localHeader;
+
+    if (!ECDHeader::ReadHeader (*header, data))
+        return false;
+    else if (requireWritable && !header->IsWritable())
+        return false;
+    else
+        return header->IsReadable();
+    }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

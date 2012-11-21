@@ -44,7 +44,7 @@ MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 mi
     m_usageBitmask = 0;
     m_parentInstance = parentInstance;
 
-    UInt32 size = std::max (minimumBufferSize, classLayout.GetSizeOfFixedSection());
+    UInt32 size = std::max (minimumBufferSize, CalculateInitialAllocation (classLayout));
     m_data = (byte*)malloc (size);
     m_bytesAllocated = size;
 
@@ -578,7 +578,7 @@ UInt32              MemoryECInstanceBase::GetBytesUsed () const
     if (NULL == m_data)
         return 0;
 
-    return GetClassLayout().CalculateBytesUsed(_GetData());
+    return CalculateBytesUsed (GetClassLayout());
     }
 
 /*---------------------------------------------------------------------------------**//**

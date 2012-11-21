@@ -102,6 +102,8 @@ bool operator()(ClassLayoutCP s1, ClassLayoutCP s2) const;
  /*__PUBLISH_SECTION_START__*/
  /*=================================================================================**//**
 * @bsistruct
+* Responsible for managing the layout of the portion of an ECD buffer storing property
+* values.
 * @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/      
 struct ClassLayout
@@ -220,8 +222,8 @@ public:
     ECOBJECTS_EXPORT bool            IsPropertyReadOnly (UInt32 propertyIndex) const;
     ECOBJECTS_EXPORT bool            SetPropertyReadOnly (UInt32 propertyIndex, bool readOnly) const;
     
-    //! Determines the number of bytes used, so far
-    ECOBJECTS_EXPORT UInt32         CalculateBytesUsed(byte const * data) const;
+    //! Determines the number of bytes used for property data, so far
+    ECOBJECTS_EXPORT UInt32         CalculateBytesUsed(byte const * propertyData) const;
     ECOBJECTS_EXPORT bool           IsCompatible(ClassLayoutCR layout) const;
 
     ECOBJECTS_EXPORT WString       ToString() const;
@@ -316,7 +318,7 @@ private:
     byte const *    m_pResizeIndexPreShift;
     byte const *    m_pResizeIndexPostShift;    
     
-    byte const *    m_data;
+    byte const *    m_propertyData;
 
     ArrayResizer (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, ECDBufferR instance, UInt32 resizeIndex, UInt32 resizeElementCount);
         
@@ -329,6 +331,76 @@ private:
     static ECObjectsStatus    CreateNullArrayElementsAt (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, ECDBufferR instance, UInt32 insertIndex, UInt32 insertCount);
     };
 
+enum ECDFormatVersion ENUM_UNDERLYING_TYPE(UInt8)
+    {
+    // Invalid or unknown version, possibly result of corrupted ECD buffer
+    ECDFormat_Invalid   = 0xFF,
+
+    // First version of ECD format to support versioning
+    ECDFormat_v0        = 0,
+
+    // Newer versions go here. Document all changes made to the format for each new version
+
+    // The ECD format version with which this code was compiled. Should always match the maximum value of ECDFormatVersion
+    ECDFormat_Current   = ECDFormat_v0,
+
+    // The minimum ECD format version capable of reading data persisted with ECDFormat_Current.
+    // Any code compiled with a version less than this cannot correctly interpret ECData saved with ECDFormat_Current.
+    ECDFormat_MinimumReadable = ECDFormat_v0,
+
+    // The minimum ECD format version capable of modifying data persisted with ECDFormat_Current.
+    // Any code compiled with a version less than this cannot safely update ECData saved with ECDFormat_Current.
+    ECDFormat_MinimumWritable = ECDFormat_v0,
+    };
+
+enum ECDFlags ENUM_UNDERLYING_TYPE(UInt8)
+    {
+    // Encoding used for all strings in this buffer. If not set, encoding is Utf16
+    ECDFLAG_Utf8Encoding            = 1 << 0,
+
+    // Future version of ECD format may add additional flags here.
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* This header is prepended to every ECDBuffer. Its purpose is to allow existing code to
+* react gracefully to future changes to the ECD format.
+* @bsistruct                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+#pragma pack(push, 1)
+struct ECDHeader_v0
+    {
+protected:
+    // The version of ECD format used by this buffer.
+    UInt8           m_formatVersion;
+    // The minimum version of ECD format which is read-compatible with the data in this buffer. Always less than or equal to m_formatVersion
+    // Code compiled for an ECD format version less than m_readableByVersion should not attempt to read the buffer. All other code can safely read the buffer.
+    UInt8           m_readableByVersion;
+    // The minimum version of ECD format which is write-compatible with the data in this buffer. Always less than or equal to m_formatVersion, always greater than or equal to m_readableByVersion.
+    // Code compiled for an ECD format version less than m_writableByVersion should not attempt to modify the buffer.
+    // All other code can safely modify the buffer, with the caveat that the persisted header is kept intact, aside from modifications to data understood by the compiled ECD format version.
+    UInt8           m_writableByVersion;
+    // The size in bytes of this header. Adding this value to the base address of the buffer yields the beginning of the property data.
+    UInt8           m_headerSize;
+    // A set of flags. See ECDFlags
+    UInt8           m_flags;
+    // Additional data can be appended here in future versions by creating a subclass of ECDHeader_v0
+public:
+    // Construct header with default values and size
+    ECOBJECTS_EXPORT ECDHeader_v0();
+    // Read header from persisted ECData. Returns false if no ECDHeader could be extracted.
+    ECOBJECTS_EXPORT static bool    ReadHeader (ECDHeader_v0& header, byte const* data);
+
+    bool                GetFlag (ECDFlags flag) const       { return 0 != (m_flags & flag); }
+    void                SetFlag (ECDFlags flag, bool set)   { m_flags = set ? (m_flags | flag) : (m_flags & ~flag); }
+    bool                IsReadable() const                  { return ECDFormat_Current >= m_readableByVersion; }
+    bool                IsWritable() const                  { return ECDFormat_Current >= m_writableByVersion; }
+    UInt8               GetFormatVersion() const            { return m_formatVersion; }
+    UInt8               GetSize() const                     { return m_headerSize; }
+    };
+#pragma pack(pop)
+
+typedef ECDHeader_v0 ECDHeader;
+
 /*__PUBLISH_SECTION_START__*/  
 //=======================================================================================    
 //! Base class for ECN::IECInstance implementations that get/set values from a block of memory, 
@@ -339,21 +411,13 @@ private:
 struct ECDBuffer
     {
     friend  struct ArrayResizer;
-/*__PUBLISH_SECTION_END__*/    
-    typedef UInt8 ECDFlagsType;
-
-    enum ECDFlags ENUM_UNDERLYING_TYPE(ECDFlagsType)
-        {
-        // Encoding used for all strings in this buffer. If not set, encoding is Utf16
-        ECDFLAG_Utf8Encoding            = 1 << 0,
-        };
-/*__PUBLISH_SECTION_START__*/  
 private:    
     mutable bool        m_allowWritingDirectlyToInstanceMemory;
+
 //__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_END__*/    
-    bool                GetFlag (ECDFlagsType flag) const;
-    void                SetFlag (ECDFlagsType flag, bool set);
+
+    UInt32              GetOffsetToPropertyData() const;
 
     //! Returns the offset of the property value relative to the start of the instance data.
     //! If useIndex is true then the offset of the array element value at the specified index is returned.
@@ -412,6 +476,10 @@ private:
     ECObjectsStatus                   ModifyData (UInt32 const* data, UInt32 newData);
     ECObjectsStatus                   MoveData (byte* to, byte const* from, size_t dataLength); 
 protected:
+    //! Returns the number of bytes which must be allocated to store the header + the fixed portion of the property data, using ECDFormat_Current
+    ECOBJECTS_EXPORT UInt32                 CalculateBytesUsed (ClassLayoutCR classLayout) const;
+    ECOBJECTS_EXPORT ECDHeader const*       GetECDHeaderCP() const;
+
     //! Returns the number of elements in the specfieid array that are currently reserved but not necessarily allocated.
     //! This is important when an array has a minimum size but has not yet been initialized.  We delay initializing the memory for the minimum # of elements until
     //! the first value is set.  If an array does not have a minimum element count then GetReservedArrayCount will always equal GetAllocatedArrayCount
@@ -430,7 +498,6 @@ protected:
     //!                                                 memory directly, e.g. for StandaloneECIntance.
     //!                                                 If false, all modifications must happen through _ModifyData, e.g. for ECXData.
     ECOBJECTS_EXPORT            ECDBuffer (bool allowWritingDirectlyToInstanceMemory);
-    ECOBJECTS_EXPORT void       InitializeMemory(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated) const;
                      void       SetInstanceMemoryWritable (bool writable) const { m_allowWritingDirectlyToInstanceMemory = writable; }
 
     //! Obtains the current primitive value for the specified property
@@ -478,7 +545,7 @@ protected:
 
     virtual bool                _IsMemoryInitialized () const = 0;    
     
-    //! Get a pointer to the first byte of the data    
+    //! Get a pointer to the first byte of the ECDBuffer's data. This points to the first byte of the ECDHeader    
     virtual byte const *        _GetData () const = 0;
     virtual ECObjectsStatus     _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength) = 0;
     virtual ECObjectsStatus     _MoveData (UInt32 toOffset, UInt32 fromOffset, UInt32 dataLength) = 0;
@@ -497,6 +564,8 @@ protected:
     
     virtual void                _SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable) {};
 
+    // Get a pointer to the first byte of the ECDBuffer's property data. This is the first byte beyond the ECDHeader.
+    ECOBJECTS_EXPORT byte const*    GetPropertyData() const;
 public:
     ECOBJECTS_EXPORT ECObjectsStatus        RemoveArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
    
@@ -506,6 +575,19 @@ public:
 
     // Compress the memory storing the data to as small a size as possible
     ECOBJECTS_EXPORT ECObjectsStatus        Compress();
+    // Calculate how many bytes are required for an empty buffer using the specified classLayout
+    ECOBJECTS_EXPORT static UInt32          CalculateInitialAllocation (ClassLayoutCR classLayout);
+    // Initialize a block of memory for a new ECDBuffer.
+    ECOBJECTS_EXPORT static void            InitializeMemory(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated);
+
+    //! Given a persisted ECD buffer, returns true if the data is compatible with ECDFormat_Current.
+    //! This method must be called before attempting to instantiate an ECD-based instance from a block of persistent memory.
+    //! If it returns false, the calling method must not attempt to instantiate the instance.
+    //! @param[out] header          Optional; if non-null, will contain a copy of the persistent ECDHeader
+    //! @param[in]  data            The ECD-formatted block of memory
+    //! @param[in]  requireWritable If true, the method will return false if the block of memory is not write-compatible with ECDFormat_Current.
+    //! @return     true if the memory is read-compatible (if requireWritable=false) or write-compatible(if requireWritable=true) with ECDFormat_Current
+    ECOBJECTS_EXPORT static bool            IsCompatibleVersion (ECDHeader* header, byte const* data, bool requireWritable = false);
 
     // Encoding used by all strings in the buffer
     enum StringEncoding
