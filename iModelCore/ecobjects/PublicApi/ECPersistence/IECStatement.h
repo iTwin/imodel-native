@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-//__PUBLISH_SECTION_START__
+//__BENTLEY_INTERNAL_ONLY__
 
 #include "Bentley/RefCounted.h"
 #include <Bentley/DateTime.h>

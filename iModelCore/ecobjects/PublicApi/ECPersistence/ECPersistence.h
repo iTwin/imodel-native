@@ -6,8 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
-/*__PUBLISH_SECTION_START__*/
+//__BENTLEY_INTERNAL_ONLY__
 
 #include <ECObjects/ECObjects.h>
 
@@ -20,4 +19,5 @@
 EC_TYPEDEFS(IECConnection);
 EC_TYPEDEFS(IECSchemaManager);
 EC_TYPEDEFS(IECStatement);
+
 
