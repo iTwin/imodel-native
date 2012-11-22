@@ -605,7 +605,7 @@ void ExerciseVariableCountManufacturerArray (IECInstanceR instance, StandaloneEC
     }
     
     // ensure we can not set the array to an instance of a struct that is not of the type (or derived from the type) of the property    
-    ECClassP incompatibleClass = manufacturerEnabler.GetClass().GetSchema().GetClassP (L"AllPrimitives");
+    ECClassCP incompatibleClass = manufacturerEnabler.GetClass().GetSchema().GetClassCP (L"AllPrimitives");
     ASSERT_TRUE (NULL != incompatibleClass);
 
     StandaloneECInstancePtr incompatibleInstance = incompatibleClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -652,31 +652,33 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
         SetAndVerifyString (instance, v, propertyName, valueForFinalStrings);
         }          
         
-    VerifyArrayInfo (instance, v, L"BeginningArray[]", 0, false);
-    VerifyArrayInfo (instance, v, L"FixedArrayFixedElement[]", 10, true);
-    VerifyArrayInfo (instance, v, L"VariableArrayFixedElement[]", 0, false);
-    VerifyArrayInfo (instance, v, L"FixedArrayVariableElement[]", 12, true);
-    VerifyArrayInfo (instance, v, L"VariableArrayVariableElement[]", 0, false);
-    VerifyArrayInfo (instance, v, L"EndingArray[]", 0, false);
+#ifdef THESE_TESTS_DUPLICATE_PUBLISHED_TESTS
+    VerifyArrayInfo (instance, v, L"BeginningArray", 0, false);
+    VerifyArrayInfo (instance, v, L"FixedArrayFixedElement", 10, true);
+    VerifyArrayInfo (instance, v, L"VariableArrayFixedElement", 0, false);
+    VerifyArrayInfo (instance, v, L"FixedArrayVariableElement", 12, true);
+    VerifyArrayInfo (instance, v, L"VariableArrayVariableElement", 0, false);
+    VerifyArrayInfo (instance, v, L"EndingArray", 0, false);
     
-    VerifyIsNullArrayElements (instance, v, L"FixedArrayFixedElement[]", 0, 10, true);
-    SetAndVerifyIntegerArray (instance, v, L"FixedArrayFixedElement[]", 172, 10);
-    VerifyIsNullArrayElements (instance, v, L"FixedArrayFixedElement[]", 0, 10, false);
-    SetAndVerifyIntegerArray (instance, v, L"FixedArrayFixedElement[]", 283, 10);    
+    VerifyIsNullArrayElements (instance, v, L"FixedArrayFixedElement", 0, 10, true);
+    SetAndVerifyIntegerArray (instance, v, L"FixedArrayFixedElement", 172, 10);
+    VerifyIsNullArrayElements (instance, v, L"FixedArrayFixedElement", 0, 10, false);
+    SetAndVerifyIntegerArray (instance, v, L"FixedArrayFixedElement", 283, 10);    
     
-    VerifyIsNullArrayElements (instance, v, L"FixedArrayVariableElement[]", 0, 12, true);
-    SetAndVerifyStringArray (instance, v, L"FixedArrayVariableElement[]", L"BaseString", 12);       
-    VerifyIsNullArrayElements (instance, v, L"FixedArrayVariableElement[]", 0, 12, false);
-    SetAndVerifyStringArray (instance, v, L"FixedArrayVariableElement[]", L"LaaaaaaargeString", 10);       
-    VerifyStringArray (instance, v, L"FixedArrayVariableElement[]", L"BaseStringXXXXXXXXXX", 10, 2);
-    SetAndVerifyStringArray (instance, v, L"FixedArrayVariableElement[]", L"XString", 12);           
+    VerifyIsNullArrayElements (instance, v, L"FixedArrayVariableElement", 0, 12, true);
+    SetAndVerifyStringArray (instance, v, L"FixedArrayVariableElement", L"BaseString", 12);       
+    VerifyIsNullArrayElements (instance, v, L"FixedArrayVariableElement", 0, 12, false);
+    SetAndVerifyStringArray (instance, v, L"FixedArrayVariableElement", L"LaaaaaaargeString", 10);       
+    VerifyStringArray (instance, v, L"FixedArrayVariableElement", L"BaseStringXXXXXXXXXX", 10, 2);
+    SetAndVerifyStringArray (instance, v, L"FixedArrayVariableElement", L"XString", 12);           
+#endif
     
-    ExerciseVariableCountStringArray (instance, v, L"BeginningArray[]", L"BAValue");
-    ExerciseVariableCountIntArray    (instance, v, L"VariableArrayFixedElement[]", 57);
-    ExerciseVariableCountStringArray (instance, v, L"VariableArrayVariableElement[]", L"Var+Var");
-    ExerciseVariableCountStringArray (instance, v, L"EndingArray[]", L"EArray");        
+    ExerciseVariableCountStringArray (instance, v, L"BeginningArray", L"BAValue");
+    ExerciseVariableCountIntArray    (instance, v, L"VariableArrayFixedElement", 57);
+    ExerciseVariableCountStringArray (instance, v, L"VariableArrayVariableElement", L"Var+Var");
+    ExerciseVariableCountStringArray (instance, v, L"EndingArray", L"EArray");        
     
-    ECClassP manufacturerClass = instance.GetClass().GetSchema().GetClassP (L"Manufacturer");
+    ECClassCP manufacturerClass = instance.GetClass().GetSchema().GetClassCP (L"Manufacturer");
     ASSERT_TRUE (NULL != manufacturerClass);
 
 #ifdef OLD_WAY    
@@ -684,7 +686,7 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     StandaloneECEnablerPtr manufEnabler = StandaloneECEnabler::CreateEnabler (*manufacturerClass, *manufClassLayout, true);
 #endif
     StandaloneECEnablerPtr manufEnabler =  manufacturerClass->GetDefaultStandaloneEnabler();
-    ExerciseVariableCountManufacturerArray (instance, *manufEnabler, v, L"ManufacturerArray[]");
+    ExerciseVariableCountManufacturerArray (instance, *manufEnabler, v, L"ManufacturerArray");
     
     // Make sure that everything still has the final value that we expected
     VerifyString (instance, v, L"S", largeString);
@@ -699,25 +701,28 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
         swprintf (propertyName, L"Property%i", i);
         VerifyString (instance, v, propertyName, valueForFinalStrings);
         }    
-    VerifyArrayInfo     (instance, v, L"FixedArrayFixedElement[]", 10, true);
-    VerifyIntegerArray  (instance, v, L"FixedArrayFixedElement[]", 283, 0, 10);             
-    VerifyArrayInfo     (instance, v, L"BeginningArray[]", 14, false);
-    VerifyIsNullArrayElements   (instance, v, L"BeginningArray[]", 0, 14, false);
-    VerifyStringArray   (instance, v, L"BeginningArray[]", L"BAValue", 0, 14);        
-    VerifyArrayInfo     (instance, v, L"FixedArrayVariableElement[]", 12, true);
-    VerifyIsNullArrayElements   (instance, v, L"FixedArrayVariableElement[]", 0, 12, false);
-    VerifyStringArray   (instance, v, L"FixedArrayVariableElement[]", L"XString", 0, 12);           
-    VerifyArrayInfo     (instance, v, L"VariableArrayFixedElement[]", 14, false);
-    VerifyIsNullArrayElements   (instance, v, L"VariableArrayFixedElement[]", 0, 14, false);
-    VerifyIntegerArray  (instance, v, L"VariableArrayFixedElement[]", 57, 0, 14);                   
-    VerifyArrayInfo     (instance, v, L"VariableArrayVariableElement[]", 14, false);
-    VerifyIsNullArrayElements   (instance, v, L"VariableArrayVariableElement[]", 0, 14, false);
-    VerifyStringArray   (instance, v, L"VariableArrayVariableElement[]", L"Var+Var", 0, 14);               
-    VerifyArrayInfo     (instance, v, L"EndingArray[]", 14, false);
-    VerifyIsNullArrayElements   (instance, v, L"EndingArray[]", 0, 14, false);
-    VerifyStringArray   (instance, v, L"EndingArray[]", L"EArray", 0, 14);                
-    VerifyVariableCountManufacturerArray (instance, v, L"ManufacturerArray[]");     
+    VerifyArrayInfo     (instance, v, L"BeginningArray", 14, false);
+    VerifyIsNullArrayElements   (instance, v, L"BeginningArray", 0, 14, false);
+    VerifyStringArray   (instance, v, L"BeginningArray", L"BAValue", 0, 14);        
+    VerifyIsNullArrayElements   (instance, v, L"VariableArrayFixedElement", 0, 14, false);
+    VerifyIntegerArray  (instance, v, L"VariableArrayFixedElement", 57, 0, 14);                   
+    VerifyArrayInfo     (instance, v, L"VariableArrayVariableElement", 14, false);
+    VerifyIsNullArrayElements   (instance, v, L"VariableArrayVariableElement", 0, 14, false);
+    VerifyStringArray   (instance, v, L"VariableArrayVariableElement", L"Var+Var", 0, 14);               
+    VerifyArrayInfo     (instance, v, L"EndingArray", 14, false);
+    VerifyArrayInfo     (instance, v, L"VariableArrayFixedElement", 14, false);
+    VerifyIsNullArrayElements   (instance, v, L"EndingArray", 0, 14, false);
+    VerifyStringArray   (instance, v, L"EndingArray", L"EArray", 0, 14);                
+    VerifyVariableCountManufacturerArray (instance, v, L"ManufacturerArray");     
     
+#ifdef THESE_TESTS_DUPLICATE_PUBLISHED_TESTS
+    VerifyArrayInfo     (instance, v, L"FixedArrayFixedElement", 10, true);
+    VerifyIntegerArray  (instance, v, L"FixedArrayFixedElement", 283, 0, 10);             
+    VerifyArrayInfo     (instance, v, L"FixedArrayVariableElement", 12, true);
+    VerifyIsNullArrayElements   (instance, v, L"FixedArrayVariableElement", 0, 12, false);
+    VerifyStringArray   (instance, v, L"FixedArrayVariableElement", L"XString", 0, 12);           
+#endif
+
     instance.ToString(L"").c_str();
     }
 
@@ -898,7 +903,7 @@ TEST_F(MemoryLayoutTests, ChangeSizeOfBinaryArrayEntries)
 
     ECValue bugTestValue0(bugTestBinary2, 4);           
 
-    ASSERT_TRUE (SUCCESS == wipInstance->InsertArrayElements (L"SomeBinaries[]", 0, 1));
+    ASSERT_TRUE (SUCCESS == wipInstance->InsertArrayElements (L"SomeBinaries", 0, 1));
     ASSERT_TRUE (SUCCESS == ECN::ECInstanceInteropHelper::SetValue (*wipInstance, L"SomeBinaries[0]", bugTestValue0));
        
     ECValue bugTestValue1(bugTestBinary1, 8);     
@@ -934,6 +939,7 @@ TEST_F(MemoryLayoutTests, ChangeSizeOfBinaryArrayEntries)
     }
 #endif
 
+#ifdef THESE_TESTS_DUPLICATE_PUBLISHED_TESTS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -979,6 +985,7 @@ TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper)
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetString (*instance, stringValueP, L"ManufacturerArray[0].Name"));
     EXPECT_STREQ (testString2.c_str(), stringValueP.c_str());
     };
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
@@ -1020,7 +1027,7 @@ TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
     ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
     WString instanceId = instance->GetInstanceId();
     UInt32 size = instance->GetBytesUsed ();
-    EXPECT_EQ (size, 0);
+    EXPECT_EQ (size, sizeof(ECDHeader));
 
     instance->ToString(L"").c_str();
 
@@ -1266,6 +1273,7 @@ TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
     
     };
 
+#ifdef THESE_TESTS_DUPLICATE_PUBLISHED_TESTS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1282,28 +1290,29 @@ TEST_F(MemoryLayoutTests, ExpectErrorsWhenViolatingArrayConstraints)
     {
     DISABLE_ASSERTS
     // verify we can not change the size of fixed arrays        
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"FixedArrayFixedElement[]", 0, 1));
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"FixedArrayFixedElement[]", 10, 1));
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->AddArrayElements    (L"FixedArrayFixedElement[]", 1));
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"FixedArrayVariableElement[]", 0, 1));
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"FixedArrayVariableElement[]", 12, 1));
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->AddArrayElements    (L"FixedArrayVariableElement[]", 1));
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"FixedArrayFixedElement", 0, 1));
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"FixedArrayFixedElement", 10, 1));
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->AddArrayElements    (L"FixedArrayFixedElement", 1));
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"FixedArrayVariableElement", 0, 1));
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"FixedArrayVariableElement", 12, 1));
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->AddArrayElements    (L"FixedArrayVariableElement", 1));
     
     // verify constraints of array insertion are enforced
     ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"NonExistArray", 0, 1));
     ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"BeginningArray", 0, 1)); // missing brackets
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"BeginningArray[]", 2, 1)); // insert index is invalid    
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"BeginningArray[]", 0, 0)); // insert count is invalid    
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"BeginningArray", 2, 1)); // insert index is invalid    
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements (L"BeginningArray", 0, 0)); // insert count is invalid    
     }
     
     ECValue v;
-    VerifyOutOfBoundsError (*instance, v, L"BeginningArray[]", 0);
-    VerifyOutOfBoundsError (*instance, v, L"FixedArrayFixedElement[]", 10);
-    VerifyOutOfBoundsError (*instance, v, L"VariableArrayFixedElement[]", 0);
-    VerifyOutOfBoundsError (*instance, v, L"FixedArrayVariableElement[]", 12);
-    VerifyOutOfBoundsError (*instance, v, L"VariableArrayVariableElement[]", 0);
-    VerifyOutOfBoundsError (*instance, v, L"EndingArray[]", 0);                     
+    VerifyOutOfBoundsError (*instance, v, L"BeginningArray", 0);
+    VerifyOutOfBoundsError (*instance, v, L"FixedArrayFixedElement", 10);
+    VerifyOutOfBoundsError (*instance, v, L"VariableArrayFixedElement", 0);
+    VerifyOutOfBoundsError (*instance, v, L"FixedArrayVariableElement", 12);
+    VerifyOutOfBoundsError (*instance, v, L"VariableArrayVariableElement", 0);
+    VerifyOutOfBoundsError (*instance, v, L"EndingArray", 0);                     
     };    
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
@@ -1513,7 +1522,7 @@ TEST_F (MemoryLayoutTests, PropertyLayoutBracketsTest)
         L"</ECSchema>";
 
     // If brackets are omitted, then "B" precedes "B0"
-    // Else, "B0" preceds "B[]"
+    // Else, "B0" preceds "B"
     // The order of declaration of properties in the schema matters here.
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext ();
     ECSchemaPtr schema;
@@ -1526,7 +1535,7 @@ TEST_F (MemoryLayoutTests, PropertyLayoutBracketsTest)
     ASSERT_TRUE (NULL != layout);
 
     PropertyLayoutCP propLayout;
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, layout->GetPropertyLayout (propLayout, L"B[]"));   // would have failed prior to bug fix
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, layout->GetPropertyLayout (propLayout, L"B"));   // would have failed prior to bug fix
     EXPECT_EQ (ECOBJECTS_STATUS_Success, layout->GetPropertyLayout (propLayout, L"B0"));
 
     delete layout;
@@ -1559,10 +1568,10 @@ TEST_F (MemoryLayoutTests, ExpectCorrectPrimitiveTypeForNullValues)
     enabler = ecClass->GetDefaultStandaloneEnabler();
     instance = enabler->CreateInstance();
 
-    EXPECT_TRUE(SUCCESS == instance->GetValue(v, L"ManufacturerArray[]"));
+    EXPECT_TRUE(SUCCESS == instance->GetValue(v, L"ManufacturerArray"));
     EXPECT_TRUE(v.IsArray());
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == instance->AddArrayElements (L"ManufacturerArray[]", 2));    
-    EXPECT_TRUE(SUCCESS == instance->GetValue(v, L"ManufacturerArray[]", 0));
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success == instance->AddArrayElements (L"ManufacturerArray", 2));    
+    EXPECT_TRUE(SUCCESS == instance->GetValue(v, L"ManufacturerArray", 0));
     EXPECT_TRUE(v.IsStruct());
     EXPECT_TRUE(v.IsNull());
 
@@ -1571,12 +1580,17 @@ TEST_F (MemoryLayoutTests, ExpectCorrectPrimitiveTypeForNullValues)
     enabler = ecClass->GetDefaultStandaloneEnabler();
     instance = enabler->CreateInstance();
 
-    EXPECT_TRUE(SUCCESS == instance->GetValue(v, L"Struct1[]"));
+#ifndef FIXED_COUNT_ARRAYS_ARE_SUPPORTED
+    EXPECT_TRUE (SUCCESS == instance->AddArrayElements (L"Struct1", 1));
+#endif
+
+    EXPECT_TRUE(SUCCESS == instance->GetValue(v, L"Struct1"));
     EXPECT_TRUE(v.IsArray());
-    EXPECT_TRUE(SUCCESS == instance->GetValue(v, L"Struct1[]", 0));
+    EXPECT_TRUE(SUCCESS == instance->GetValue(v, L"Struct1", 0));
     EXPECT_TRUE(v.IsStruct());
     EXPECT_TRUE(v.IsNull());
 
 
     }
+
 END_BENTLEY_ECOBJECT_NAMESPACE

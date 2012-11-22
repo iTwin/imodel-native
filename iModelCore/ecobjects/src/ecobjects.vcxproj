@@ -43,11 +43,14 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BeXmlCGReader.cpp" />
+    <ClCompile Include="BeXmlCGWriter.cpp" />
     <ClCompile Include="CalculatedProperty.cpp" />
     <ClCompile Include="DesignByContract.cpp" />
     <ClCompile Include="ECClass.cpp" />
     <ClCompile Include="ECcontext.cpp" />
     <ClCompile Include="ECCustomAttribute.cpp" />
+    <ClCompile Include="ECDBuffer.cpp" />
     <ClCompile Include="ECEnabler.cpp" />
     <ClCompile Include="ECInstance.cpp" />
     <ClCompile Include="ecinstanceiterable.cpp" />

@@ -9,7 +9,7 @@
 #pragma once
 
 #include <ECObjects/ECObjects.h>
-#include <ECObjects/MemoryInstanceSupport.h>
+#include <ECObjects/ECDBuffer.h>
 
 EC_TYPEDEFS(StandaloneECRelationshipEnabler);
 EC_TYPEDEFS(StandaloneECRelationshipInstance);
