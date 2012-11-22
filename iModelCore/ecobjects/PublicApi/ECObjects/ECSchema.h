@@ -903,6 +903,9 @@ public:
     //! @return   A pointer to an ECN::ECProperty if the named property exists within the current class; otherwise, NULL
     ECOBJECTS_EXPORT ECPropertyP     GetPropertyP (WStringCR name, bool includeBaseClasses=true) const;
 
+    //! Get the property that stores the instance label for the class. 
+    //! @return A pointer to ECN::ECProperty if the instance label has been specified; otherwise, NULL
+    ECOBJECTS_EXPORT ECPropertyP GetInstanceLabelProperty() const;
 
     // ************************************************************************************************************************
     // ************************************  STATIC METHODS *******************************************************************
