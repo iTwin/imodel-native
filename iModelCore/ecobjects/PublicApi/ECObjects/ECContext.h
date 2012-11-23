@@ -19,7 +19,7 @@ typedef RefCountedPtr<ECSchemaReadContext>      ECSchemaReadContextPtr;
 //! Context object used for schema creation and deserialization.
 //! @ingroup ECObjectsGroup
 //=======================================================================================
-struct ECSchemaReadContext /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
+struct ECSchemaReadContext : RefCountedBase
 {
 /*__PUBLISH_SECTION_END__*/
 friend struct ECSchema;
@@ -93,8 +93,9 @@ public:
     ECSchemaPtr         LocateSchema (SchemaKeyR key, bset<SchemaMatchType> const& matches);
 
     ECOBJECTS_EXPORT void AddExternalSchemaLocaters (bvector<ECN::IECSchemaLocaterP> const& schemaLocators);
-/*__PUBLISH_SECTION_START__*/
 
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
 	//! Host should call to establish standard search paths.
     ECOBJECTS_EXPORT static void Initialize (BeFileNameCR rootDirectory);
 
@@ -123,7 +124,7 @@ typedef RefCountedPtr<ECInstanceReadContext>      ECInstanceReadContextPtr;
 //! Context object used for instance creation and deserialization.
 //! @ingroup ECObjectsGroup
 //=======================================================================================
-struct ECInstanceReadContext /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
+struct ECInstanceReadContext : RefCountedBase
 {
 /*__PUBLISH_SECTION_END__*/
 private:
@@ -150,7 +151,9 @@ public:
 
     ECSchemaCR GetFallBackSchema ();
 
-/*__PUBLISH_SECTION_START__*/
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
+public:
 
     //! - For use when the caller knows the schema of the instance he is deserializing.
     ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext (ECSchemaCR, IStandaloneEnablerLocaterP = NULL);

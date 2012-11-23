@@ -441,7 +441,7 @@ SchemaMatchType matchType
 +---------------+---------------+---------------+---------------+---------------+------*/
 SupplementedSchemaStatus SupplementedSchemaBuilder::UpdateSchema
 (
-ECSchemaPtr primarySchema, 
+ECSchemaR primarySchema, 
 bvector<ECSchemaP>& supplementalSchemaList
 )
     {
@@ -454,7 +454,7 @@ bvector<ECSchemaP>& supplementalSchemaList
         return status;
 
     // If it is already supplemented, need to unsupplement it first
-    if (primarySchema->IsSupplemented())
+    if (primarySchema.IsSupplemented())
         {
         //UnsupplementSchemaContainer ();
         //if (NULL != m_classesToUpdate)
@@ -464,8 +464,8 @@ bvector<ECSchemaP>& supplementalSchemaList
         }
     
     status = MergeSchemasIntoSupplementedSchema(primarySchema, schemasByPrecedence);
-    primarySchema->SetIsSupplemented(true);
-    primarySchema->SetSupplementalSchemaInfo(SupplementalSchemaInfo::Create(primarySchema->GetFullSchemaName().c_str(), m_supplementalSchemaNamesAndPurposes).get());
+    primarySchema.SetIsSupplemented(true);
+    primarySchema.SetSupplementalSchemaInfo(SupplementalSchemaInfo::Create(primarySchema.GetFullSchemaName().c_str(), m_supplementalSchemaNamesAndPurposes).get());
 
     return status;
     }
@@ -476,7 +476,7 @@ bvector<ECSchemaP>& supplementalSchemaList
 SupplementedSchemaStatus SupplementedSchemaBuilder::OrderSupplementalSchemas
 (
 bmap<UInt32, ECSchemaP>& schemasByPrecedence, 
-ECSchemaPtr primarySchema, 
+ECSchemaR primarySchema, 
 const bvector<ECSchemaP>& supplementalSchemaList, 
 bvector<ECSchemaP> localizationSchemas 
 )
@@ -594,7 +594,7 @@ WStringCR mergedSchemaFullName
 +---------------+---------------+---------------+---------------+---------------+------*/
 SupplementedSchemaStatus SupplementedSchemaBuilder::MergeSchemasIntoSupplementedSchema
 (
-ECSchemaPtr primarySchema,
+ECSchemaR primarySchema,
 bmap<UInt32, ECSchemaP> schemasByPrecedence
 )
     {
@@ -633,7 +633,7 @@ bmap<UInt32, ECSchemaP> schemasByPrecedence
 +---------------+---------------+---------------+---------------+---------------+------*/
 SupplementedSchemaStatus SupplementedSchemaBuilder::MergeIntoSupplementedSchema
 (
-ECSchemaPtr primarySchema,
+ECSchemaR primarySchema,
 ECSchemaP supplementalSchema,
 SchemaPrecedence precedence
 )
@@ -641,10 +641,10 @@ SchemaPrecedence precedence
     ECCustomAttributeInstanceIterable supplementalCustomAttributes = supplementalSchema->GetCustomAttributes(false);
     WString supplementalSchemaFullName = supplementalSchema->GetFullSchemaName();
 
-    SupplementedSchemaStatus status = MergeCustomAttributeClasses(primarySchema->GetCustomAttributeContainer(), supplementalCustomAttributes, precedence, &supplementalSchemaFullName, NULL);
+    SupplementedSchemaStatus status = MergeCustomAttributeClasses(primarySchema.GetCustomAttributeContainer(), supplementalCustomAttributes, precedence, &supplementalSchemaFullName, NULL);
     if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
         {
-        ECObjectsLogger::Log()->errorv (L"Failed to merge the custom attributes from the supplemental schema '%ls' into the supplemented schema '%ls'", supplementalSchemaFullName.c_str(), primarySchema->GetFullSchemaName().c_str());
+        ECObjectsLogger::Log()->errorv (L"Failed to merge the custom attributes from the supplemental schema '%ls' into the supplemented schema '%ls'", supplementalSchemaFullName.c_str(), primarySchema.GetFullSchemaName().c_str());
         return status;
         }
 
@@ -654,7 +654,7 @@ SchemaPrecedence precedence
         if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
             {
             ECObjectsLogger::Log()->errorv(L"Failed to merge the custom attributes from the supplemental class '%ls' into the supplemented class '%ls:%ls'",
-                                           ecClass->GetFullName(),  primarySchema->GetFullSchemaName().c_str(), ecClass->GetName().c_str());
+                                           ecClass->GetFullName(),  primarySchema.GetFullSchemaName().c_str(), ecClass->GetName().c_str());
             return status;
             }
         }
@@ -712,7 +712,7 @@ WStringCP consolidatedSchemaFullName
 +---------------+---------------+---------------+---------------+---------------+------*/
 SupplementedSchemaStatus SupplementedSchemaBuilder::SupplementClass
 (
-ECSchemaPtr primarySchema,
+ECSchemaR primarySchema,
 ECSchemaP supplementalSchema,
 ECClassP supplementalECClass,
 SchemaPrecedence precedence,
@@ -720,7 +720,7 @@ WStringCP supplementalSchemaFullName
 )
     {
     SupplementedSchemaStatus status = SUPPLEMENTED_SCHEMA_STATUS_Success;
-    ECClassP consolidatedECClass = primarySchema->GetClassP(supplementalECClass->GetName().c_str());
+    ECClassP consolidatedECClass = primarySchema.GetClassP(supplementalECClass->GetName().c_str());
     if (NULL == consolidatedECClass)
         return SUPPLEMENTED_SCHEMA_STATUS_Success;
 

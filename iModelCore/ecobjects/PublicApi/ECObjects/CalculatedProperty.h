@@ -40,6 +40,8 @@ public:
     // Attempts to apply the ParserRegularExpression attribute to dependent properties when setting the calculated property to a new value
     ECObjectsStatus         UpdateDependentProperties (ECValueCR calculatedValue, IECInstanceR instance) const;
 
+    bool                    IsReadOnly() const { return NULL == m_parserRegex && !m_isDefaultOnly; }
+
     static RefCountedPtr<CalculatedPropertySpecification> Create (PrimitiveECPropertyCR ecprop);
     };
 
