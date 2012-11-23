@@ -1130,7 +1130,7 @@ static void  setValue (WCharCP accessString, ECValueCR value, ECN::StandaloneECI
     EXPECT_TRUE (SUCCESS  == instance->SetValue (propertyIndex, value));
 
     EXPECT_TRUE (SUCCESS  == instance->IsPerPropertyBitSet (isSet, (UInt8) PROPERTYFLAGINDEX_IsLoaded, propertyIndex));
-    EXPECT_TRUE (true  == isSet);
+    EXPECT_TRUE (true  == isSet) << L"IECInstance::IsPerPropertyBitSet for property " << accessString;
     EXPECT_TRUE (SUCCESS  == instance->SetPerPropertyBit ((UInt8) PROPERTYFLAGINDEX_IsDirty, propertyIndex, 0==propertyIndex%2));
     }
 
