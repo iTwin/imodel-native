@@ -1511,7 +1511,7 @@ struct ECSchemaCache : public RefCountedBase
 protected:
     SchemaMap   m_schemas;
 
-	// TODO: Uncomment this and remove the public desctructor once ECDb stops declaring this on the stack. 
+    // TODO: Uncomment this and remove the public desctructor once ECDb stops declaring this on the stack. 
     // ECSchemaCache() {}
     // ECOBJECTS_EXPORT virtual ~ECSchemaCache ();
 
@@ -1529,7 +1529,7 @@ public:
     ECOBJECTS_EXPORT int     GetCount();
     ECOBJECTS_EXPORT void    Clear();
     ECOBJECTS_EXPORT IECSchemaLocater& GetSchemaLocater();
-	ECOBJECTS_EXPORT size_t GetSchemas (bvector<ECSchemaPtr>& schemas) const;
+    ECOBJECTS_EXPORT size_t GetSchemas (bvector<ECSchemaPtr>& schemas) const;
 };
 
 
