@@ -96,7 +96,8 @@ public:
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
-	//! Host should call to establish standard search paths.
+public:
+    //! Host should call to establish standard search paths.
     ECOBJECTS_EXPORT static void Initialize (BeFileNameCR rootDirectory);
 
     //! Creates a context for deserializing ECSchemas
