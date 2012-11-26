@@ -2308,12 +2308,6 @@ ECObjectsStatus       ECDBuffer::GetPrimitiveValueFromMemory (ECValueR v, ClassL
                 } 
             case PRIMITIVETYPE_String:
                 {
-#if defined (__unix__)
-                // Strings are stored as Utf16, so need to be converted under Unix
-                WString stringValueW;
-                BeStringUtilities::Utf16ToWChar (stringValueW, (Utf16CP) pValue);
-                v.SetString (stringValueW.c_str());
-#else                
                 // Note: we could avoid a string copy by returning a pointer directly to the string in this instance's memory buffer,
                 // but the pointer will become invalid as soon as the instance does.
                 // Since there are situations in which the returned ECValue outlasts the instance (e.g. evaluating ECExpressions), and the caller
@@ -2322,7 +2316,6 @@ ECObjectsStatus       ECDBuffer::GetPrimitiveValueFromMemory (ECValueR v, ClassL
                     v.SetUtf16CP ((Utf16CP)pValue);
                 else
                     v.SetUtf8CP ((Utf8CP)pValue);
-#endif                
                 break;            
                 }
             default:
@@ -2561,14 +2554,6 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, ClassLa
             if (!v.IsString ())
                 return ECOBJECTS_STATUS_DataTypeMismatch;
             
-#if defined (__unix__)
-			//TODO from Merge: Resolve this. Can we call v.GetUtf16CP on Unix right away?
-            // On Unix, Utf16 and WChar are different sizes
-            Utf16Buffer bufferUtf16;
-            BeStringUtilities::WCharToUtf16 (bufferUtf16, v.GetString());
-            void const * value = bufferUtf16.data();
-            UInt32 bytesNeeded = (1 + (UInt32)BeStringUtilities::Utf16Len (v.GetUtf16CP())) * sizeof(Utf16Char);
-#else
             void const* value;
             UInt32 bytesNeeded;
             if (StringEncoding_Utf16 == GetStringEncoding())
@@ -2581,7 +2566,6 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, ClassLa
                 value = v.GetUtf8CP();
                 bytesNeeded = 1 + (UInt32)strlen (v.GetUtf8CP());
                 }
-#endif
 
             UInt32 currentSize;
             if (useIndex)
