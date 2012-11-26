@@ -15,6 +15,13 @@
 BENTLEY_TYPEDEFS (BeXmlDom)
 BENTLEY_TYPEDEFS (BeXmlNode)
 
+/*__PUBLISH_SECTION_END__*/
+namespace Bentley { namespace DgnPlatform {
+    struct DgnECInstance;
+} }
+
+/*__PUBLISH_SECTION_START__*/
+
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 //! @addtogroup ECObjectsGroup
@@ -86,6 +93,9 @@ typedef RefCountedPtr<IECInstance> IECInstancePtr;
 //=======================================================================================    
 struct EXPORT_VTABLE_ATTRIBUTE IECInstance : RefCountedBase
     {
+private:
+    WCharCP GetInstanceLabelPropertyName () const;
+
 protected:    
     ECOBJECTS_EXPORT IECInstance(); 
     ECOBJECTS_EXPORT virtual ~IECInstance();
@@ -113,6 +123,9 @@ protected:
     ECOBJECTS_EXPORT virtual bool                   _IsPropertyReadOnly (UInt32 propertyIndex) const;
     ECOBJECTS_EXPORT virtual ECObjectsStatus        _SetInternalValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex);
 
+/*__PUBLISH_SECTION_END__*/
+    virtual Bentley::DgnPlatform::DgnECInstance const*  _GetAsDgnECInstance() const   { return NULL; }
+/*__PUBLISH_SECTION_START__*/
 public:
     ECOBJECTS_EXPORT void const*        GetBaseAddress () {return this;}
     ECOBJECTS_EXPORT ECEnablerCR        GetEnabler() const;
@@ -170,6 +183,30 @@ public:
     //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex);
+
+    //! Change the value for the specified property
+    //! @param[in]  propertyAccessString The name of the property to set the value of
+    //! @param[in]  v   The value to set onto the property
+    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (WCharCP propertyAccessString, ECValueCR v);    
+    //! Change the value for the specified property
+    //! @param[in]  propertyAccessString The name of the property to set the value of
+    //! @param[in]  v   The value to set onto the property
+    //! @param[in]  index   The array index, if this is an ArrayProperty
+    //! @returns ECOBJECTS_STATUS_Success if successful, ECOBJECTS_STATUS_PropertyValueMatchesNoChange if no change, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (WCharCP propertyAccessString, ECValueCR v, UInt32 index);
+    //! Change the value for the specified property
+    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
+    //! @param[in]  v   The value to set onto the property
+    //! @returns ECOBJECTS_STATUS_Success if successful, ECOBJECTS_STATUS_PropertyValueMatchesNoChange if no change, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (UInt32 propertyIndex, ECValueCR v);
+    //! Change the value for the specified property
+    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
+    //! @param[in]  v   The value to set onto the property
+    //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty
+    //! @returns ECOBJECTS_STATUS_Success if successful, ECOBJECTS_STATUS_PropertyValueMatchesNoChange if no change, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex);
+
     //! Gets the value of the ECProperty specified by the ECValueAccessor
     ECOBJECTS_EXPORT ECObjectsStatus    GetValueUsingAccessor (ECValueR v, ECValueAccessorCR accessor) const;
     //! Sets the value of the ECProperty specified by the ECValueAccessor
@@ -208,7 +245,11 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (UInt32 propertyIndex, ECValueCR v); 
     ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValueUsingAccessor (ECValueAccessorCR accessor, ECValueCR valueToSet);
     ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (WCharCP propertyAccessString, ECValueCR v); 
-    ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (WCharCP propertyAccessString, ECValueCR v, UInt32 arrayIndex); 
+    ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (WCharCP propertyAccessString, ECValueCR v, UInt32 arrayIndex);
+
+    // These are provided to avoid the cost of dynamic cast.
+    ECOBJECTS_EXPORT Bentley::DgnPlatform::DgnECInstance const* AsDgnECInstanceCP() const;
+    ECOBJECTS_EXPORT Bentley::DgnPlatform::DgnECInstance*       AsDgnECInstanceP();
 /*__PUBLISH_SECTION_START__*/
 
     //! Check property to see it is a fixed size array and optionally return the fixed size.
@@ -222,8 +263,8 @@ public:
     ECOBJECTS_EXPORT bool               IsPropertyReadOnly (UInt32 propertyIndex) const;
 
     //! Contract:
-    //! - For all of the methods, the propertyAccessString should be in the "array element" form, 
-    //!   e.g. "Aliases[]" instead of "Aliases"         
+    //! - For all of the methods, the propertyAccessString shall not contain brackets.
+    //!   e.g. "Aliases", not "Aliases[]" or "Aliases[0]"
     ECOBJECTS_EXPORT ECObjectsStatus      InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size);
     ECOBJECTS_EXPORT ECObjectsStatus      AddArrayElements (WCharCP propertyAccessString, UInt32 size);
     ECOBJECTS_EXPORT ECObjectsStatus      RemoveArrayElement (WCharCP propertyAccessString, UInt32 index);

@@ -153,9 +153,9 @@ struct  SampleDataInstanceManager
         if (data.m_numReadings > 0)
             {
             // add room for the array members and then set the values for each
-            instance->AddArrayElements(L"Readings[]", data.m_numReadings);
+            instance->AddArrayElements(L"Readings", data.m_numReadings);
             for (UInt32 i=0; i<data.m_numReadings; i++)
-                instance->SetValue(L"Readings[]", ECValue (data.m_readings[i]), i);
+                instance->SetValue(L"Readings", ECValue (data.m_readings[i]), i);
             }
 
         return instance;
