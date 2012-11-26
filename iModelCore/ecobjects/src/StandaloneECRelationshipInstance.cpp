@@ -75,7 +75,7 @@ size_t                StandaloneECRelationshipInstance::_LoadObjectDataIntoManag
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  12/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr      StandaloneECRelationshipInstance::_GetAsIECInstance () const
+IECInstanceP      StandaloneECRelationshipInstance::_GetAsIECInstance () const
     {
     return const_cast<StandaloneECRelationshipInstance*>(this);
     }

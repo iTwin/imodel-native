@@ -196,6 +196,14 @@ MemoryECInstanceBase* IECInstance::_GetAsMemoryECInstance () const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECDBuffer* IECInstance::_GetECDBuffer() const
+    {
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  12/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t IECInstance::GetOffsetToIECInstance () const
@@ -229,6 +237,7 @@ bool                IECInstance::_IsPropertyReadOnly (UInt32 propertyIndex) cons
 ECEnablerCR           IECInstance::GetEnabler() const { return _GetEnabler();  }
 ECEnablerR            IECInstance::GetEnablerR() const { return *const_cast<ECEnablerP>(&_GetEnabler());  }
 bool                  IECInstance::IsReadOnly() const { return _IsReadOnly();  }
+ECDBuffer*            IECInstance::GetECDBuffer() const { return _GetECDBuffer(); }
 MemoryECInstanceBase* IECInstance::GetAsMemoryECInstance () const {return _GetAsMemoryECInstance();}
 
 /*---------------------------------------------------------------------------------**//**

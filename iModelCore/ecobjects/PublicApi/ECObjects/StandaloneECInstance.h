@@ -108,10 +108,10 @@ protected:
     ECOBJECTS_EXPORT virtual ECObjectsStatus  _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const override;  
     ECOBJECTS_EXPORT virtual ECObjectsStatus  _RemoveStructArrayElementsFromMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount) override;
     ECOBJECTS_EXPORT virtual ECN::PrimitiveType _GetStructArrayPrimitiveType () const {return PRIMITIVETYPE_Integer;}
-
-    virtual ClassLayoutCR       _GetClassLayout () const = 0;
-    virtual IECInstancePtr      _GetAsIECInstance () const = 0;
    
+    ECOBJECTS_EXPORT virtual void             _ClearValues () override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus  _CopyInstanceProperties (ECN::IECInstanceCR fromNativeInstance) override;
+
     ECOBJECTS_EXPORT  ECObjectsStatus          SetValueInternal (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex);
 public:
     ECOBJECTS_EXPORT  ECObjectsStatus          SetInstancePerPropertyFlagsData (byte const* perPropertyFlagsDataAddress, int numBitsPerProperty, int numPerPropertyFlagsEntries);
@@ -125,9 +125,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT byte const *             GetData () const;
     ECOBJECTS_EXPORT UInt32                   GetBytesUsed () const;
     ECOBJECTS_EXPORT UInt32                   GetPerPropertyFlagsSize () const;
-    ECOBJECTS_EXPORT void                     ClearValues ();
-    ECOBJECTS_EXPORT ClassLayoutCR            GetClassLayout() const;
-    ECOBJECTS_EXPORT IECInstancePtr           GetAsIECInstance () const;
+
     ECOBJECTS_EXPORT ECObjectsStatus          RemoveStructArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
     ECOBJECTS_EXPORT ECObjectsStatus          IsPerPropertyBitSet (bool& isSet, UInt8 bitIndex, UInt32 propertyIndex) const;
     ECOBJECTS_EXPORT ECObjectsStatus          IsAnyPerPropertyBitSet (bool& isSet, UInt8 bitIndex) const;
@@ -149,7 +147,6 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT UInt8                    GetNumBitsPerProperty () const;
     ECOBJECTS_EXPORT UInt32                   GetPerPropertyFlagsDataLength () const;
     ECOBJECTS_EXPORT ECObjectsStatus          AddNullArrayElements (WCharCP propertyAccessString, UInt32 insertCount);
-    ECOBJECTS_EXPORT ECObjectsStatus          CopyInstanceProperties (ECN::IECInstanceCR fromNativeInstance);
     ECOBJECTS_EXPORT UInt16                   GetUsageBitmask () const;
     ECOBJECTS_EXPORT void                     SetUsageBitmask (UInt16 mask);
     ECOBJECTS_EXPORT void                     SetPartiallyLoaded (bool set);
@@ -198,10 +195,11 @@ protected:
     ECOBJECTS_EXPORT virtual ClassLayoutCR       _GetClassLayout () const;
     ECOBJECTS_EXPORT virtual ECEnablerCR         _GetEnabler() const override;
     ECOBJECTS_EXPORT virtual MemoryECInstanceBase* _GetAsMemoryECInstance () const override;
+    ECOBJECTS_EXPORT virtual ECDBuffer*          _GetECDBuffer() const override;
     ECOBJECTS_EXPORT virtual size_t              _GetOffsetToIECInstance () const;
 
     // MemoryECInstanceBase
-    ECOBJECTS_EXPORT virtual IECInstancePtr      _GetAsIECInstance () const;
+    ECOBJECTS_EXPORT virtual IECInstanceP        _GetAsIECInstance () const;
 
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetIsPropertyNull (bool& isNull, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
 

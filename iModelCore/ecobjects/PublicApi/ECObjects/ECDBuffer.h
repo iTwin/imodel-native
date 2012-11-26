@@ -526,6 +526,8 @@ protected:
     ECOBJECTS_EXPORT WString          InstanceDataToString (WCharCP indent, ClassLayoutCR classLayout) const;
     ECOBJECTS_EXPORT ECObjectsStatus  GetIsNullValueFromMemory (ClassLayoutCR classLayout, bool& isNull, UInt32 propertyIndex, bool useIndex, UInt32 index) const;
 
+    ECOBJECTS_EXPORT ECObjectsStatus  CopyInstancePropertiesToBuffer (IECInstanceCR srcInstance);
+
     virtual ~ECDBuffer () {}
 
     //! Sets the in-memory value of the array index of the specified property to be the struct value as held by v
@@ -564,9 +566,20 @@ protected:
     
     virtual void                _SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable) {};
 
+    virtual void                _ClearValues() = 0;
+    virtual ECObjectsStatus     _CopyInstanceProperties (IECInstanceCR source) = 0;
+
+    virtual IECInstanceP        _GetAsIECInstance () const = 0;
+ 
+    virtual ClassLayoutCR       _GetClassLayout() const = 0;
+
     // Get a pointer to the first byte of the ECDBuffer's property data. This is the first byte beyond the ECDHeader.
     ECOBJECTS_EXPORT byte const*    GetPropertyData() const;
 public:
+    ECOBJECTS_EXPORT ClassLayoutCR          GetClassLayout () const;
+
+    ECOBJECTS_EXPORT IECInstanceP           GetAsIECInstance () const;
+
     ECOBJECTS_EXPORT ECObjectsStatus        RemoveArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
    
     ECOBJECTS_EXPORT void                   SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable);
@@ -604,6 +617,12 @@ public:
     // Override the platform-dependent preferred encoding used when creating new in-memory ECDBuffers.
     ECOBJECTS_EXPORT static void            SetDefaultStringEncoding (StringEncoding defaultEncoding);
 /*__PUBLISH_SECTION_START__*/  
+public:
+    // Sets all values to null
+    ECOBJECTS_EXPORT void                   ClearValues();
+    // Copies property values from source instance
+    ECOBJECTS_EXPORT ECObjectsStatus        CopyInstanceProperties (IECInstanceCR sourceInstance);
+
     };   
 
 END_BENTLEY_ECOBJECT_NAMESPACE
