@@ -11,7 +11,7 @@
 #include "ecimagekey.h"
 #include <Geom/GeomApi.h>
 #include <Bentley/BeAssert.h>
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Abeesh.Basheer                  04/2012
@@ -84,4 +84,4 @@ struct ECPresentationImageProvider : public IECPresentationProvider
         ECOBJECTS_EXPORT IECNativeImagePtr GetImage (ECImageKeyCR imageKey, DPoint2dCR size);
     };
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

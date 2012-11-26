@@ -15,7 +15,7 @@
 #include <ECObjects\ECValue.h>
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 using namespace std;
 
@@ -139,7 +139,7 @@ struct  SampleDataInstanceManager
             return NULL;
 
         // create an empty instance
-        EC::StandaloneECInstancePtr instance = m_enabler->CreateInstance();
+        ECN::StandaloneECInstancePtr instance = m_enabler->CreateInstance();
 
         // populate the instance
         instance->SetValue(L"Name",         ECValue (data.m_name.c_str()));
@@ -153,9 +153,9 @@ struct  SampleDataInstanceManager
         if (data.m_numReadings > 0)
             {
             // add room for the array members and then set the values for each
-            instance->AddArrayElements(L"Readings[]", data.m_numReadings);
+            instance->AddArrayElements(L"Readings", data.m_numReadings);
             for (UInt32 i=0; i<data.m_numReadings; i++)
-                instance->SetValue(L"Readings[]", ECValue (data.m_readings[i]), i);
+                instance->SetValue(L"Readings", ECValue (data.m_readings[i]), i);
             }
 
         return instance;
@@ -175,7 +175,7 @@ TEST_F(BasicTest, BuildInstanceAndSerializeToXML)
     for (int i=0; i<5; i++)
         {
         SampleData sampleData (i, (UInt32)(i%2)*3);
-        EC::StandaloneECInstancePtr testInstance = instanceManager.CreateInstance (sampleData);
+        ECN::StandaloneECInstancePtr testInstance = instanceManager.CreateInstance (sampleData);
         ASSERT_TRUE (testInstance.IsValid());
 
         InstanceWriteStatus status2 = testInstance->WriteToXmlString(ecInstanceXml, true, false);
@@ -186,4 +186,4 @@ TEST_F(BasicTest, BuildInstanceAndSerializeToXML)
     }
 
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

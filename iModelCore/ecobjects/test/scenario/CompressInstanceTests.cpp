@@ -15,7 +15,7 @@
 #include <ECObjects\ECValue.h>
 #include <ECObjects\ECSchema.h>
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 using namespace std;
 
@@ -145,7 +145,7 @@ void SetAndVerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessStrin
     EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
     VerifyInteger (instance, v, accessString, value);
     }
-static void validateArrayCount  (EC::StandaloneECInstanceCR instance, WCharCP propertyName, UInt32 expectedCount)
+static void validateArrayCount  (ECN::StandaloneECInstanceCR instance, WCharCP propertyName, UInt32 expectedCount)
     {
     ECValue varray;
     EXPECT_TRUE (SUCCESS == instance.GetValue (varray, propertyName));
@@ -164,16 +164,13 @@ TEST_F(CompressInstanceTests, CheckVariableSizedPropertyAfterCallingCompress)
     {
 
 
-        ECSchemaPtr schema = CreateKitchenSinkSchema ();
+    ECSchemaPtr schema = CreateKitchenSinkSchema ();
     EXPECT_TRUE( schema.IsValid());
-
-
-
-        ECClassP ecClass = schema->GetClassP (L"KitchenSink");
+	ECClassP ecClass = schema->GetClassP (L"KitchenSink");
     ASSERT_TRUE (NULL != ecClass);
 
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
-    EC::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
 	SystemTime inTime = SystemTime::GetLocalTime();
     int        inCount = 100;
@@ -222,11 +219,11 @@ TEST_F(CompressInstanceTests, CheckVariableSizedPropertyAfterCallingCompress)
     EXPECT_TRUE (manufacturerEnabler.IsValid());
 
     ECValue v;
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success == instance->AddArrayElements (L"myManufacturerStructArray[]", 4));
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success == instance->AddArrayElements (L"myManufacturerStructArray", 4));
         instance->Compress();
-    VerifyArrayInfo (*instance, v, L"myManufacturerStructArray[]", 4, false);
+    VerifyArrayInfo (*instance, v, L"myManufacturerStructArray", 4, false);
         instance->Compress();
-    VerifyIsNullArrayElements (*instance, v, L"myManufacturerStructArray[]", 0, 4, true);
+    VerifyIsNullArrayElements (*instance, v, L"myManufacturerStructArray", 0, 4, true);
 
     IECInstancePtr manufInst = manufacturerEnabler->CreateInstance().get();
 
@@ -235,32 +232,32 @@ TEST_F(CompressInstanceTests, CheckVariableSizedPropertyAfterCallingCompress)
     SetAndVerifyInteger (*manufInst, v, L"AccountNo", 3475);
         instance->Compress();
     v.SetStruct (manufInst.get());
-    ASSERT_TRUE (SUCCESS == instance->SetValue (L"myManufacturerStructArray[]", v, 0));
+    ASSERT_TRUE (SUCCESS == instance->SetValue (L"myManufacturerStructArray", v, 0));
 
     manufInst = manufacturerEnabler->CreateInstance().get();
     SetAndVerifyString (*manufInst, v, L"Name", L"Kia");
     SetAndVerifyInteger (*manufInst, v, L"AccountNo", 1791);
     v.SetStruct (manufInst.get());
-    ASSERT_TRUE (SUCCESS == instance->SetValue (L"myManufacturerStructArray[]", v, 1));
+    ASSERT_TRUE (SUCCESS == instance->SetValue (L"myManufacturerStructArray", v, 1));
 
     manufInst = manufacturerEnabler->CreateInstance().get();
     SetAndVerifyString (*manufInst, v, L"Name", L"Honda");
     SetAndVerifyInteger (*manufInst, v, L"AccountNo", 1592);
     v.SetStruct (manufInst.get());
-    ASSERT_TRUE (SUCCESS == instance->SetValue (L"myManufacturerStructArray[]", v, 2));
+    ASSERT_TRUE (SUCCESS == instance->SetValue (L"myManufacturerStructArray", v, 2));
 
     manufInst = manufacturerEnabler->CreateInstance().get();
     SetAndVerifyString (*manufInst, v, L"Name", L"Chevy");
     SetAndVerifyInteger (*manufInst, v, L"AccountNo", 19341);
     v.SetStruct (manufInst.get());
-    ASSERT_TRUE (SUCCESS == instance->SetValue (L"myManufacturerStructArray[]", v, 3));
+    ASSERT_TRUE (SUCCESS == instance->SetValue (L"myManufacturerStructArray", v, 3));
         instance->Compress();
-    VerifyIsNullArrayElements (*instance, v, L"myManufacturerStructArray[]", 0, 4, false);
+    VerifyIsNullArrayElements (*instance, v, L"myManufacturerStructArray", 0, 4, false);
 
     // remove struct array element
-    instance->RemoveArrayElement(L"myManufacturerStructArray[]", 2);
+    instance->RemoveArrayElement(L"myManufacturerStructArray", 2);
         instance->Compress();
-    validateArrayCount (*instance, L"myManufacturerStructArray[]", 3);
+    validateArrayCount (*instance, L"myManufacturerStructArray", 3);
 
    }
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

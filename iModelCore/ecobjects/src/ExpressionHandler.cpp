@@ -60,7 +60,7 @@ Threading issues -- can optimization modify nodes?  Do we generate nodes every t
 Instance methods -- what instances are allowed?  It seems that we cannot allow an instance that is an embedded 
 */
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
@@ -1310,4 +1310,4 @@ ExpressionContextP thisContext
     m_thisContext = thisContext;
     }
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

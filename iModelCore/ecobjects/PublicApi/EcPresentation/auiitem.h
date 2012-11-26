@@ -11,7 +11,7 @@
 
 #include <ECObjects\ECInstanceIterable.h>
 #include "ecpresentationtypedefs.h"
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 A Uiitem is an instance of a control facing a user. 
@@ -189,6 +189,6 @@ struct  ECNodeCollectionDataContext : public IAUIDataContext
     };
 
 /*__PUBLISH_SECTION_START__*/
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 
 /*__PUBLISH_SECTION_END__*/

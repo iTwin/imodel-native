@@ -24,20 +24,20 @@
 #define ECOBJECTS_EXPORT IMPORT_ATTRIBUTE
 #endif
 
-#define BEGIN_BENTLEY_EC_NAMESPACE  BEGIN_BENTLEY_NAMESPACE namespace EC {
+#define BEGIN_BENTLEY_ECOBJECT_NAMESPACE  BEGIN_BENTLEY_NAMESPACE namespace ECN {
 
-#define END_BENTLEY_EC_NAMESPACE    }}
+#define END_BENTLEY_ECOBJECT_NAMESPACE    }}
 
-#define USING_NAMESPACE_EC  using namespace Bentley::EC;
+#define USING_NAMESPACE_EC  using namespace Bentley::ECN;
 
 #define EC_TYPEDEFS(_name_)  \
-        BEGIN_BENTLEY_EC_NAMESPACE      \
+        BEGIN_BENTLEY_ECOBJECT_NAMESPACE      \
             struct _name_;      \
             typedef _name_ *         _name_##P;  \
             typedef _name_ &         _name_##R;  \
             typedef _name_ const*    _name_##CP; \
             typedef _name_ const&    _name_##CR; \
-        END_BENTLEY_EC_NAMESPACE
+        END_BENTLEY_ECOBJECT_NAMESPACE
 
 EC_TYPEDEFS(ECValue);
 EC_TYPEDEFS(ECValueAccessor);
@@ -92,7 +92,7 @@ EC_TYPEDEFS (ParserRegex);
 
 typedef struct IStream* IStreamP;
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*=================================================================================**//**
 * @bsiclass
@@ -110,6 +110,7 @@ typedef enum ECErrorCategories
 
 /*=================================================================================**//**
 * @bsiclass
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 enum ECObjectsStatus
     {
@@ -152,11 +153,14 @@ enum ECObjectsStatus
     ECOBJECTS_STATUS_SchemaHasReferenceCycle                            = ECOBJECTS_ERROR_BASE + 0x24,
     ECOBJECTS_STATUS_SchemaNotSupplemented                              = ECOBJECTS_ERROR_BASE + 0x25,
     ECOBJECTS_STATUS_UnableToQueryForNullPropertyFlag                   = ECOBJECTS_ERROR_BASE + 0x26,
+    ECOBJECTS_STATUS_UnableToResizeFixedSizedArray                      = ECOBJECTS_ERROR_BASE + 0x27,
+    ECOBJECTS_STATUS_SchemaIsImmutable                                  = ECOBJECTS_ERROR_BASE + 0x28,
     ECOBJECTS_STATUS_Error                                              = ECOBJECTS_ERROR_BASE + 0xFFF,
     }; 
 
 /*=================================================================================**//**
 * @bsiclass
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 enum SchemaReadStatus
     {
@@ -171,6 +175,7 @@ enum SchemaReadStatus
 
 /*=================================================================================**//**
 * @bsiclass
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 enum SchemaWriteStatus
     {
@@ -182,6 +187,7 @@ enum SchemaWriteStatus
 
 /*=================================================================================**//**
 * @bsiclass
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 enum InstanceReadStatus
     {
@@ -219,6 +225,7 @@ enum InstanceReadStatus
     
 /*=================================================================================**//**
 * @bsiclass
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 enum InstanceWriteStatus
     {
@@ -234,7 +241,8 @@ enum InstanceWriteStatus
     };
     
 /*---------------------------------------------------------------------------------**//**
-* @bsiclass                                    Carole.MacDonald                04/2012
+* @bsiclass
+* @ingroup ECObjectsGroup
 +---------------+---------------+---------------+---------------+---------------+------*/
 enum SupplementedSchemaStatus
     {
@@ -258,6 +266,7 @@ enum SupplementedSchemaStatus
 //=======================================================================================    
 //! Represents the classification of the data type of an EC ECValue.  The classification is not the data type itself, but a category of type
 //! such as struct, array or primitive.
+//! @ingroup ECObjectsGroup
 //=======================================================================================    
 enum ValueKind ENUM_UNDERLYING_TYPE(unsigned short)
     {
@@ -278,6 +287,7 @@ enum ValueKind ENUM_UNDERLYING_TYPE(unsigned short)
 //=======================================================================================    
 //! Represents the classification of the data type of an EC array element.  The classification is not the data type itself, but a category of type.
 //! Currently an ECArray can only contain primitive or struct data types.
+//! @ingroup ECObjectsGroup
 //=======================================================================================    
 enum ArrayKind ENUM_UNDERLYING_TYPE(unsigned short)
     {
@@ -300,6 +310,7 @@ enum ArrayKind ENUM_UNDERLYING_TYPE(unsigned short)
 //=======================================================================================    
 //! Enumeration of primitive datatypes supported by native "ECObjects" implementation.
 //! These should correspond to all of the datatypes supported in .NET ECObjects
+//! @ingroup ECObjectsGroup
 //=======================================================================================    
 enum PrimitiveType ENUM_UNDERLYING_TYPE(unsigned short)
     {
@@ -315,6 +326,6 @@ enum PrimitiveType ENUM_UNDERLYING_TYPE(unsigned short)
     PRIMITIVETYPE_IGeometry                 = 0xa01,
     };
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 
 USING_NAMESPACE_BENTLEY

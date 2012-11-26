@@ -9,7 +9,7 @@
 /*__BENTLEY_INTERNAL_ONLY__*/
 
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 //IJournal Item can be modeled as an IECInstance where you configure rules to specify how a journal item can be obtained.
 //However in general use case creating a rule processor for a specific scripting language will be very involved and complex.
@@ -37,4 +37,4 @@ struct  IJournalProvider
 
     };
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

@@ -16,7 +16,7 @@
 #include <comdef.h>
 #endif //defined (_WIN32) // WIP_NONPORT
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -490,10 +490,10 @@ InstanceReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeXmlNodeR
     InstanceReadStatus status = INSTANCE_READ_STATUS_Success;
 
     // allow for multiple <ECCustomAttributes> nodes, even though we only ever write one.
-    BeXmlDom::IterableNodeSet customAttributeNodes;
-    containerNode.SelectChildNodes (customAttributeNodes, EC_NAMESPACE_PREFIX ":" EC_CUSTOM_ATTRIBUTES_ELEMENT);
-    FOR_EACH (BeXmlNodeP& customAttributeNode, customAttributeNodes)
+    for (BeXmlNodeP customAttributeNode = containerNode.GetFirstChild (); NULL != customAttributeNode; customAttributeNode = customAttributeNode->GetNextSibling ())
         {
+        if (0 != strcmp (customAttributeNode->GetName (), EC_CUSTOM_ATTRIBUTES_ELEMENT))
+            continue;
         for (BeXmlNodeP customAttributeClassNode = customAttributeNode->GetFirstChild(); NULL != customAttributeClassNode; customAttributeClassNode = customAttributeClassNode->GetNextSibling())
             {
             
@@ -547,7 +547,7 @@ BeXmlNodeR containerNode
 ECObjectsStatus IECCustomAttributeContainer::CopyCustomAttributesTo
 (
 IECCustomAttributeContainerR destContainer
-)
+) const
     {
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
     FOR_EACH (IECInstancePtr customAttribute, GetPrimaryCustomAttributes(false))
@@ -687,4 +687,4 @@ ECCustomAttributeInstanceIterable::IteratorState::~IteratorState()
     {
     delete m_customAttributes;
     }
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

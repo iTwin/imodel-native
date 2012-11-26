@@ -104,12 +104,12 @@ ECSchemaReadContext::SchemaLocatorSet::iterator  ECSchemaReadContext::GetHighest
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void  ECSchemaReadContext::AddExternalSchemaLocaters (bvector<EC::IECSchemaLocaterP> const& locators) 
+void  ECSchemaReadContext::AddExternalSchemaLocaters (bvector<ECN::IECSchemaLocaterP> const& locators) 
     {
     UInt32 priority = External;
     SchemaLocatorSet::iterator iter =  GetHighestLocatorInRange (priority);
     
-    for (bvector<EC::IECSchemaLocaterP>::const_iterator locatorIter = locators.begin(); locatorIter != locators.end(); ++locatorIter)
+    for (bvector<ECN::IECSchemaLocaterP>::const_iterator locatorIter = locators.begin(); locatorIter != locators.end(); ++locatorIter)
         iter = m_locators.insert(iter, SchemaLocatorKey(*locatorIter, ++priority));
     }
 
@@ -328,6 +328,14 @@ IECInstancePtr ECInstanceReadContext::_CreateStandaloneInstance (ECClassCR ecCla
 IECInstancePtr ECInstanceReadContext::CreateStandaloneInstance (ECClassCR ecClass)
     {
     return _CreateStandaloneInstance (ecClass);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    ColinKerr     08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaCR      ECInstanceReadContext::GetFallBackSchema ()
+    {
+    return m_fallBackSchema;
     }
 
 /*---------------------------------------------------------------------------------**//**

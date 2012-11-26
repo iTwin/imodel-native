@@ -14,7 +14,7 @@
 #include <Bentley/RefCounted.h>
 #include <Bentley/bset.h>
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 typedef RefCountedPtr<StandaloneECEnabler>        StandaloneECEnablerPtr;
 typedef RefCountedPtr<ECEnabler>                  ECEnablerPtr;
@@ -24,6 +24,7 @@ typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
 
 //=======================================================================================    
 //! base class ensuring that all enablers are refcounted
+//! @ingroup ECObjectsGroup
 //=======================================================================================    
 struct ECEnabler : RefCountedBase
 /*__PUBLISH_SECTION_END__*/
@@ -82,11 +83,11 @@ protected:
     ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr  _LocateStandaloneEnabler (SchemaKeyCR schemaKey, WCharCP className);
 
 #if defined (EXPERIMENTAL_TEXT_FILTER)
-    ECOBJECTS_EXPORT virtual PropertyProcessingResult   _ProcessPrimitiveProperties (bset<ECClassCP>& failedClasses, IECInstanceCR, EC::PrimitiveType, IPropertyProcessor const&, PropertyProcessingOptions) const;
+    ECOBJECTS_EXPORT virtual PropertyProcessingResult   _ProcessPrimitiveProperties (bset<ECClassCP>& failedClasses, IECInstanceCR, ECN::PrimitiveType, IPropertyProcessor const&, PropertyProcessingOptions) const;
 #endif
     virtual bool                    _HasChildProperties (UInt32 parentIndex) const = 0;
 
-    ECOBJECTS_EXPORT         bool                       ProcessStructProperty (bset<ECClassCP>& failedClasses, bool& allStructsFailed, ECValueCR propValue, EC::PrimitiveType primitiveType, IPropertyProcessor const& proc, PropertyProcessingOptions opts) const;
+    ECOBJECTS_EXPORT         bool                       ProcessStructProperty (bset<ECClassCP>& failedClasses, bool& allStructsFailed, ECValueCR propValue, ECN::PrimitiveType primitiveType, IPropertyProcessor const& proc, PropertyProcessingOptions opts) const;
 
 public:
     ECOBJECTS_EXPORT ECPropertyCP               LookupECProperty (UInt32 propertyIndex) const;
@@ -137,23 +138,24 @@ public:
     //! @param[in] primitiveType    The type of primitive property to process, unless \a opts is PROPERTY_PROCESSING_OPTIONS_AllTypes
     //! @param[in] opts             Processing options.
     //! @return The result of processing.
-    ECOBJECTS_EXPORT PropertyProcessingResult ProcessPrimitiveProperties (bset<ECClassCP>& failedClasses, IECInstanceCR instance, EC::PrimitiveType primitiveType, IPropertyProcessor const& proc, PropertyProcessingOptions opts = PROPERTY_PROCESSING_OPTIONS_SingleType) const;
+    ECOBJECTS_EXPORT PropertyProcessingResult ProcessPrimitiveProperties (bset<ECClassCP>& failedClasses, IECInstanceCR instance, ECN::PrimitiveType primitiveType, IPropertyProcessor const& proc, PropertyProcessingOptions opts = PROPERTY_PROCESSING_OPTIONS_SingleType) const;
 #endif
     };
 
 //=======================================================================================    
 //! Base class for all relationship enablers
+//! @ingroup ECObjectsGroup
 //=======================================================================================    
  struct IECRelationshipEnabler
  {
 protected:
     virtual IECWipRelationshipInstancePtr _CreateWipRelationshipInstance () const = 0;
-    virtual EC::ECRelationshipClassCR     _GetRelationshipClass() const = 0;
+    virtual ECN::ECRelationshipClassCR     _GetRelationshipClass() const = 0;
 
  public:
     //! Get a WipRelationshipInstance that is used to set relationship name and order Ids.
     ECOBJECTS_EXPORT IECWipRelationshipInstancePtr  CreateWipRelationshipInstance() const;
-    ECOBJECTS_EXPORT EC::ECRelationshipClassCR      GetRelationshipClass() const;
+    ECOBJECTS_EXPORT ECN::ECRelationshipClassCR      GetRelationshipClass() const;
  };
 
  /*__PUBLISH_SECTION_END__*/
@@ -216,4 +218,4 @@ protected:
  
  /*__PUBLISH_SECTION_START__*/
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

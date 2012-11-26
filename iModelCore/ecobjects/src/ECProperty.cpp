@@ -12,7 +12,7 @@
 
 #include "ECObjectsPch.h"
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 // If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
 // Test programs generally want to get error status back and not assert, so they call ECSchema::AssertOnXmlError (false);
@@ -125,7 +125,13 @@ ECObjectsStatus ECProperty::SetDisplayLabel (WStringCR displayLabel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECProperty::GetIsReadOnly () const
     {
-    return m_readOnly;
+    CalculatedPropertySpecificationCP calcSpec;
+    if (m_readOnly)
+        return true;
+    else if (GetIsPrimitive() && NULL != (calcSpec = GetAsPrimitiveProperty()->GetCalculatedPropertySpecification()))
+        return calcSpec->IsReadOnly();
+    else
+        return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -209,7 +215,7 @@ bool ECProperty::GetIsStruct () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StructECPropertyP ECProperty::GetAsStructProperty () const
     {
-    return dynamic_cast<StructECPropertyP>((ECPropertyP)this);
+    return GetIsStruct() ? static_cast<StructECPropertyP>((ECPropertyP)this) : NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -225,7 +231,7 @@ bool ECProperty::GetIsArray () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ArrayECPropertyP ECProperty::GetAsArrayProperty () const
     {
-    return dynamic_cast<ArrayECPropertyP>((ECPropertyP)this);
+    return GetIsArray() ? static_cast<ArrayECPropertyP>((ECPropertyP)this) : NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -484,7 +490,7 @@ WString StructECProperty::_GetTypeName () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ResolveStructType (ECClassP& structClass, WStringCR typeName, ECPropertyCR ecProperty)
+ECObjectsStatus ResolveStructType (ECClassCP& structClass, WStringCR typeName, ECPropertyCR ecProperty)
     {
     // typeName may potentially be qualified so we must parse into a namespace prefix and short class name
     WString namespacePrefix;
@@ -496,7 +502,7 @@ ECObjectsStatus ResolveStructType (ECClassP& structClass, WStringCR typeName, EC
         return status;
         }
     
-    ECSchemaP resolvedSchema = ecProperty.GetClass().GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
+    ECSchemaCP resolvedSchema = ecProperty.GetClass().GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
     if (NULL == resolvedSchema)
         {
         ECObjectsLogger::Log()->warningv (L"Cannot resolve the type name '%ls' as a struct type because the namespacePrefix '%ls' can not be resolved to the primary or a referenced schema.", 
@@ -504,7 +510,7 @@ ECObjectsStatus ResolveStructType (ECClassP& structClass, WStringCR typeName, EC
         return ECOBJECTS_STATUS_SchemaNotFound;
         }
 
-    structClass = resolvedSchema->GetClassP (className.c_str());
+    structClass = resolvedSchema->GetClassCP (className.c_str());
     if (NULL == structClass)
         {
         ECObjectsLogger::Log()->warningv (L"Cannot resolve the type name '%ls' as a struct type because ECClass '%ls' does not exist in the schema '%ls'.", 
@@ -520,7 +526,7 @@ ECObjectsStatus ResolveStructType (ECClassP& structClass, WStringCR typeName, EC
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus StructECProperty::_SetTypeName (WStringCR typeName)
     {
-    ECClassP structClass;
+    ECClassCP structClass;
     ECObjectsStatus status = ResolveStructType (structClass, typeName, *this);
     if (ECOBJECTS_STATUS_Success != status)
         {
@@ -660,7 +666,7 @@ ECObjectsStatus ArrayECProperty::_SetTypeName (WStringCR typeName)
     if (ECOBJECTS_STATUS_Success == status)
         return SetPrimitiveElementType (primitiveType);
     
-    ECClassP structClass;
+    ECClassCP structClass;
     status = ResolveStructType (structClass, typeName, *this);
     if (ECOBJECTS_STATUS_Success == status)
         return SetStructElementType (structClass);
@@ -775,7 +781,7 @@ ECObjectsStatus ArrayECProperty::SetMinOccurs (WStringCR minOccurs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 UInt32 ArrayECProperty::GetMaxOccurs () const
     {
-    return m_maxOccurs;
+    return /* m_maxOccurs; */ UINT_MAX; // D-106653
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -783,8 +789,12 @@ UInt32 ArrayECProperty::GetMaxOccurs () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ArrayECProperty::SetMaxOccurs (UInt32 maxOccurs)
     {
+    // D-106653: Note: We store maxOccurs as read from schema, but we do not enforce it - callers can increase the size of the array beyond maxOccurs and array elements are always stored in variable-size section
+    // of ECD buffer.
+    // ###TODO: should we allocate space for maxOccurs elements when initializing ECD buffer? Test code expects this, but does real code?
     PRECONDITION (maxOccurs >= m_minOccurs, ECOBJECTS_STATUS_PreconditionViolated);
     m_maxOccurs = maxOccurs;
+
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -822,4 +832,4 @@ EC_INLINE IECInstancePtr IECTypeAdapter::CreateDefaultFormatter (bool includeAll
 EC_INLINE IECInstancePtr IECTypeAdapter::CondenseFormatterForSerialization (IECInstanceCR formatter) const                     { return _CondenseFormatterForSerialization (formatter); }
 EC_INLINE IECInstancePtr IECTypeAdapter::PopulateDefaultFormatterProperties (IECInstanceCR formatter) const                    { return _PopulateDefaultFormatterProperties (formatter); }
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

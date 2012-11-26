@@ -10,8 +10,10 @@
 
 #include "ECObjects.h"
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
+//! @ingroup ECObjectsGroup
+//! @bsiclass
 struct IECProvider
     {
     protected:
@@ -30,8 +32,7 @@ struct IECProvider
         //! This should be the name of the provider that will be written to the schema.
         ECOBJECTS_EXPORT WCharCP        GetProviderName () const;
 
-        virtual ~IECProvider ()
-            {}
+        virtual ~IECProvider() { }
     };
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

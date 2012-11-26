@@ -14,7 +14,7 @@
 #include <ECObjects/ECExpressions.h>
 #include <Bentley/RefCounted.h>
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   08/12
@@ -40,11 +40,13 @@ public:
     // Attempts to apply the ParserRegularExpression attribute to dependent properties when setting the calculated property to a new value
     ECObjectsStatus         UpdateDependentProperties (ECValueCR calculatedValue, IECInstanceR instance) const;
 
+    bool                    IsReadOnly() const { return NULL == m_parserRegex && !m_isDefaultOnly; }
+
     static RefCountedPtr<CalculatedPropertySpecification> Create (PrimitiveECPropertyCR ecprop);
     };
 
 typedef RefCountedPtr<CalculatedPropertySpecification> CalculatedPropertySpecificationPtr;
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 
 

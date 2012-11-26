@@ -10,7 +10,7 @@
 #include "StopWatch.h"
 #include "TestFixture.h"
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 using namespace std;
 
@@ -87,14 +87,14 @@ TEST_F(ECRelationshipTests, SimpleRelationship)
     ECValue p1;
     p1.SetInteger (123);
 
-    EC::StandaloneECInstancePtr sourceInstance = sourceEnabler->CreateInstance();
+    ECN::StandaloneECInstancePtr sourceInstance = sourceEnabler->CreateInstance();
     sourceInstance->SetValue(L"p", p1);
     sourceInstance->SetInstanceId(L"source");
 
     ECValue p2, b2;
     p2.SetInteger (456);
     b2.SetInteger (789);
-    EC::StandaloneECInstancePtr targetInstance = targetEnabler->CreateInstance();
+    ECN::StandaloneECInstancePtr targetInstance = targetEnabler->CreateInstance();
     targetInstance->SetValue(L"p", p2);
     targetInstance->SetValue(L"b", b2);
     targetInstance->SetInstanceId(L"target");
@@ -143,14 +143,14 @@ TEST_F(ECRelationshipTests, SetRelationshipProperties)
     ECValue p1;
     p1.SetInteger (123);
 
-    EC::StandaloneECInstancePtr sourceInstance = sourceEnabler->CreateInstance();
+    ECN::StandaloneECInstancePtr sourceInstance = sourceEnabler->CreateInstance();
     sourceInstance->SetValue(L"p", p1);
     sourceInstance->SetInstanceId(L"source");
 
     ECValue p2, b2;
     p2.SetInteger (456);
     b2.SetInteger (789);
-    EC::StandaloneECInstancePtr targetInstance = targetEnabler->CreateInstance();
+    ECN::StandaloneECInstancePtr targetInstance = targetEnabler->CreateInstance();
     targetInstance->SetValue(L"p", p2);
     targetInstance->SetValue(L"b", b2);
     targetInstance->SetInstanceId(L"target");
@@ -196,4 +196,4 @@ TEST_F(ECRelationshipTests, SetRelationshipProperties)
 #endif // Turning these off temporarily until Bill or Abeesh has a chance to look at them
 
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

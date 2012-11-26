@@ -11,13 +11,15 @@
 #include "ECObjects.h"
 #include <ECObjects/StandaloneECInstance.h>
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 //=======================================================================================
 //! Helper object used to apply metadata to ECSchemas, ECClasses, and ECProperties used 
 //! to control how they are presented in the UI.
 //! Modifying a schema with this object will add a reference from that schema to the
 //! standard EditorCustomAttributes schema which defines the custom attribute classes.
+//! @ingroup ECObjectsGroup
+//! @bsiclass
 //=======================================================================================
 struct PresentationMetadataHelper
     {
@@ -25,7 +27,6 @@ private:
     ECSchemaPtr             m_customAttributesSchema;
 
 /*__PUBLISH_SECTION_END__*/
-
     struct CustomAttributeData;
 
     IECInstancePtr          CreateInstance (WCharCP className) const;
@@ -95,5 +96,5 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetHideNullProperties (ECClassR ecclass) const;
     };
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 

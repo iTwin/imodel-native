@@ -14,7 +14,14 @@
 BENTLEY_TYPEDEFS (BeXmlDom)
 BENTLEY_TYPEDEFS (BeXmlNode)
 
-BEGIN_BENTLEY_EC_NAMESPACE
+/*__PUBLISH_SECTION_END__*/
+namespace Bentley { namespace DgnPlatform {
+    struct DgnECInstance;
+} }
+
+/*__PUBLISH_SECTION_START__*/
+
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 //! @addtogroup ECObjectsGroup
 //! ECObjects is a set of abstractions for working with engineering/business data and metadata. 
@@ -22,11 +29,11 @@ BEGIN_BENTLEY_EC_NAMESPACE
 //! There are several implementations of the ECObjects abstractions:
 //! @li In XML (two formats ECSchemaXML and ECInstanceXML)
 //! @li This native C++ implementation
-//! @li In .NET (multiple implementations of IECInstance, IECClass, and related interfaces. One implementation actually wraps a native IECInstance with a managed one
+//! @li In .NET (multiple implementations of IECInstance, IECClass, and related interfaces.
 //!
 //! You can think of an ECClass as being like a C++ or .NET class that only defines properties (ECClasses define no methods or behaviors.) In some ways, they are closer to .NET interfaces that hold only properties... or C++ pure virtual abstract base classes that only contain property getters and setters. They are also very analogous to a database table definition.
 //!
-//! ECClasses contain ECProperties. These are property *definitions* not values.
+//! ECClasses contain ECProperties. These are property *definitions*, not values.
 //!
 //! ECInstances represent instances of objects. Each "belongs" to an ECClass and holds ECPropertyValues. They are somewhat analogous to the rows of a database table.
 //!
@@ -42,6 +49,8 @@ BEGIN_BENTLEY_EC_NAMESPACE
 //////////////////////////////////////////////////////////////////////////////////
 typedef bmap<WString, ICustomECStructSerializerP> NameSerializerMap;
 
+//! @ingroup ECObjectsGroup
+//! @bsiclass
 struct ICustomECStructSerializer
     {
     virtual bool            UsesCustomStructXmlString  (StructECPropertyP structProperty, IECInstanceCR ecInstance) const = 0;
@@ -49,8 +58,11 @@ struct ICustomECStructSerializer
     virtual void            LoadStructureFromString (StructECPropertyP structProperty, IECInstanceR ecInstance, WCharCP baseAccessString, WCharCP valueString) = 0;
     };
 
+//! @ingroup ECObjectsGroup
+//! @bsiclass
 struct CustomStructSerializerManager
 {
+//__PUBLISH_SECTION_END__
 private:
     NameSerializerMap   m_serializers;
 
@@ -58,7 +70,7 @@ private:
     ~CustomStructSerializerManager();
 
     ICustomECStructSerializerP GetCustomSerializer (WCharCP serializerName) const;
-
+//__PUBLISH_SECTION_START__
 public:
     ECOBJECTS_EXPORT  ICustomECStructSerializerP            GetCustomSerializer (StructECPropertyP structProperty, IECInstanceCR ecInstance) const;
     ECOBJECTS_EXPORT  static CustomStructSerializerManagerR GetManager();
@@ -68,14 +80,15 @@ public:
 typedef RefCountedPtr<IECInstance> IECInstancePtr;
 //=======================================================================================    
 //! @ingroup ECObjectsGroup
-//! EC::IECInstance is the native equivalent of a .NET IECInstance.
+//! ECN::IECInstance is the native equivalent of a .NET IECInstance.
 //! Unlike IECInstance, it is not a pure interface, but is a concrete struct.
 //! Whereas in .NET, one might implement IECInstance, or use the "Lightweight" system
 //! in Bentley.ECObjects.Lightweight, in native "ECObjects" you write a class that implements
 //! the DgnElementECInstanceEnabler interface and one or more related interfaces to supply functionality 
-//! to the EC::IECInstance.
+//! to the ECN::IECInstance.
 //! We could call these "enabled" instances as opposed to "lightweight".
 //! @see ECEnabler
+//! @bsiclass
 //=======================================================================================    
 struct IECInstance : RefCountedBase
     {
@@ -109,6 +122,9 @@ protected:
     ECOBJECTS_EXPORT virtual bool                   _IsPropertyReadOnly (UInt32 propertyIndex) const;
     ECOBJECTS_EXPORT virtual ECObjectsStatus        _SetInternalValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex);
 
+/*__PUBLISH_SECTION_END__*/
+    virtual Bentley::DgnPlatform::DgnECInstance const*  _GetAsDgnECInstance() const   { return NULL; }
+/*__PUBLISH_SECTION_START__*/
 public:
     ECOBJECTS_EXPORT void const*        GetBaseAddress () {return this;}
     ECOBJECTS_EXPORT ECEnablerCR        GetEnabler() const;
@@ -166,6 +182,30 @@ public:
     //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex);
+
+    //! Change the value for the specified property
+    //! @param[in]  propertyAccessString The name of the property to set the value of
+    //! @param[in]  v   The value to set onto the property
+    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (WCharCP propertyAccessString, ECValueCR v);    
+    //! Change the value for the specified property
+    //! @param[in]  propertyAccessString The name of the property to set the value of
+    //! @param[in]  v   The value to set onto the property
+    //! @param[in]  index   The array index, if this is an ArrayProperty
+    //! @returns ECOBJECTS_STATUS_Success if successful, ECOBJECTS_STATUS_PropertyValueMatchesNoChange if no change, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (WCharCP propertyAccessString, ECValueCR v, UInt32 index);
+    //! Change the value for the specified property
+    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
+    //! @param[in]  v   The value to set onto the property
+    //! @returns ECOBJECTS_STATUS_Success if successful, ECOBJECTS_STATUS_PropertyValueMatchesNoChange if no change, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (UInt32 propertyIndex, ECValueCR v);
+    //! Change the value for the specified property
+    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
+    //! @param[in]  v   The value to set onto the property
+    //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty
+    //! @returns ECOBJECTS_STATUS_Success if successful, ECOBJECTS_STATUS_PropertyValueMatchesNoChange if no change, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex);
+
     //! Gets the value of the ECProperty specified by the ECValueAccessor
     ECOBJECTS_EXPORT ECObjectsStatus    GetValueUsingAccessor (ECValueR v, ECValueAccessorCR accessor) const;
     //! Sets the value of the ECProperty specified by the ECValueAccessor
@@ -204,7 +244,11 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (UInt32 propertyIndex, ECValueCR v); 
     ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValueUsingAccessor (ECValueAccessorCR accessor, ECValueCR valueToSet);
     ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (WCharCP propertyAccessString, ECValueCR v); 
-    ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (WCharCP propertyAccessString, ECValueCR v, UInt32 arrayIndex); 
+    ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (WCharCP propertyAccessString, ECValueCR v, UInt32 arrayIndex);
+
+    // These are provided to avoid the cost of dynamic cast.
+    ECOBJECTS_EXPORT Bentley::DgnPlatform::DgnECInstance const* AsDgnECInstanceCP() const;
+    ECOBJECTS_EXPORT Bentley::DgnPlatform::DgnECInstance*       AsDgnECInstanceP();
 /*__PUBLISH_SECTION_START__*/
 
     //! Check property to see it is a fixed size array and optionally return the fixed size.
@@ -212,17 +256,17 @@ public:
     //! @param[in]  accessString   The access string for the array
     //! @param[out] numFixedEntries   Optional pointer to size of fixed size array.
     //! @returns true if the property is a fixed size array.
-    ECOBJECTS_EXPORT static bool        IsFixedArrayProperty (EC::IECInstanceR instance, WCharCP accessString, UInt32* numFixedEntries=NULL);
+    ECOBJECTS_EXPORT static bool        IsFixedArrayProperty (ECN::IECInstanceR instance, WCharCP accessString, UInt32* numFixedEntries=NULL);
 
     ECOBJECTS_EXPORT bool               IsPropertyReadOnly (WCharCP accessString) const;
     ECOBJECTS_EXPORT bool               IsPropertyReadOnly (UInt32 propertyIndex) const;
 
     //! Contract:
-    //! - For all of the methods, the propertyAccessString should be in the "array element" form, 
-    //!   e.g. "Aliases[]" instead of "Aliases"         
-    ECOBJECTS_EXPORT ECObjectsStatus      InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size); //WIP_FUSION Return the new count?   
-    ECOBJECTS_EXPORT ECObjectsStatus      AddArrayElements (WCharCP propertyAccessString, UInt32 size); //WIP_FUSION Return the new count?
-    ECOBJECTS_EXPORT ECObjectsStatus      RemoveArrayElement (WCharCP propertyAccessString, UInt32 index); //WIP_FUSION return the removed one? YAGNI? Return the new count?
+    //! - For all of the methods, the propertyAccessString shall not contain brackets.
+    //!   e.g. "Aliases", not "Aliases[]" or "Aliases[0]"
+    ECOBJECTS_EXPORT ECObjectsStatus      InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size);
+    ECOBJECTS_EXPORT ECObjectsStatus      AddArrayElements (WCharCP propertyAccessString, UInt32 size);
+    ECOBJECTS_EXPORT ECObjectsStatus      RemoveArrayElement (WCharCP propertyAccessString, UInt32 index);
     ECOBJECTS_EXPORT ECObjectsStatus      ClearArray (WCharCP propertyAccessString);    
     ECOBJECTS_EXPORT ECObjectsStatus      GetDisplayLabel (WString& displayLabel) const;    
     ECOBJECTS_EXPORT ECObjectsStatus      SetDisplayLabel (WCharCP displayLabel);    
@@ -248,8 +292,9 @@ public:
     
 //=======================================================================================    
 //! @ingroup ECObjectsGroup
-//! EC::IECRelationshipInstance is the native equivalent of a .NET IECRelationshipInstance.
+//! ECN::IECRelationshipInstance is the native equivalent of a .NET IECRelationshipInstance.
 //! @see IECInstance, ECRelationshipClass
+//! @bsiclass
 //=======================================================================================    
 struct IECRelationshipInstance : virtual IECInstance
     {
@@ -271,7 +316,6 @@ struct IECRelationshipInstance : virtual IECInstance
     };
 
 typedef RefCountedPtr<IECRelationshipInstance> IECRelationshipInstancePtr;
-        
 
 /*__PUBLISH_SECTION_END__*/
 
@@ -328,8 +372,8 @@ struct ECInstanceInteropHelper
     ECOBJECTS_EXPORT static void            SetToNull (IECInstanceR, ECValueAccessorCR);
 
     ECOBJECTS_EXPORT static bool            IsPropertyReadOnly (IECInstanceCR, ECValueAccessorR);
-    ECOBJECTS_EXPORT static EC::ECEnablerP  GetEnablerForStructArrayEntry (IECInstanceR instance, ECValueAccessorR arrayMemberAccessor, SchemaKeyCR schemaKey, WCharCP className);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetStructArrayEntry (EC::ECValueAccessorR structArrayEntryValueAccessor, IECInstanceR instance, UInt32 index, EC::ECValueAccessorCR structArrayValueAccessor, 
+    ECOBJECTS_EXPORT static ECN::ECEnablerP  GetEnablerForStructArrayEntry (IECInstanceR instance, ECValueAccessorR arrayMemberAccessor, SchemaKeyCR schemaKey, WCharCP className);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetStructArrayEntry (ECN::ECValueAccessorR structArrayEntryValueAccessor, IECInstanceR instance, UInt32 index, ECN::ECValueAccessorCR structArrayValueAccessor, 
                                                                   bool createPropertyIfNotFound, WCharCP wcharAccessString, SchemaKeyCR schemaKey, WCharCP className);
 
     ECOBJECTS_EXPORT static bool            IsCalculatedECProperty (IECInstanceCR instance, int propertyIndex);
@@ -355,4 +399,4 @@ struct ECInstanceInteropHelper
 /*__PUBLISH_SECTION_START__*/
 
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

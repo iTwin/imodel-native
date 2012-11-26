@@ -44,11 +44,11 @@ EC_TYPEDEFS (ECInstanceIterableDataContext);
 namespace Bentley {namespace DgnPlatform {struct ECQuery;}}
 ADD_BENTLEY_TYPEDEFS1(DgnPlatform,ECQuery,ECQuery,struct)
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 typedef RefCountedPtr<IAUIItem>             IAUIItemPtr;
 typedef RefCountedPtr<IECPresentationViewDefinition>    IECPresentationViewDefinitionPtr;
 typedef RefCountedPtr<IECContentDefinition> IECContentDefinitionPtr;
 typedef RefCountedPtr<IECNativeImage>       IECNativeImagePtr;
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 
 /*__PUBLISH_SECTION_END__*/

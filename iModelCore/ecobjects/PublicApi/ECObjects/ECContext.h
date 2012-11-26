@@ -12,13 +12,14 @@
 #include <Geom/GeomApi.h>
 #include <ECObjects/StandaloneECInstance.h>
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 typedef RefCountedPtr<ECSchemaReadContext>      ECSchemaReadContextPtr;
 //=======================================================================================
-//! Context object used for schema creation and deserialization.</summary>
+//! Context object used for schema creation and deserialization.
+//! @ingroup ECObjectsGroup
 //=======================================================================================
-struct ECSchemaReadContext /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
+struct ECSchemaReadContext : RefCountedBase
 {
 /*__PUBLISH_SECTION_END__*/
 friend struct ECSchema;
@@ -90,8 +91,11 @@ public:
 
     ECSchemaPtr         LocateSchema (SchemaKeyR key, bset<SchemaMatchType> const& matches);
 
-    ECOBJECTS_EXPORT void AddExternalSchemaLocaters (bvector<EC::IECSchemaLocaterP> const& schemaLocators);
-/*__PUBLISH_SECTION_START__*/
+    ECOBJECTS_EXPORT void AddExternalSchemaLocaters (bvector<ECN::IECSchemaLocaterP> const& schemaLocators);
+
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
+public:
 
     //! Creates a context for deserializing ECSchemas
     //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the read ECSchema
@@ -109,14 +113,16 @@ public:
     ECOBJECTS_EXPORT void SetFinalSchemaLocater (IECSchemaLocaterR);
 
     //Find the schema matching the schema key and using matchType as the match criteria. This uses the prioritized list of locators to find the schema.
+    //WIP_FUSION: Why is the SchemaKey argument non-null??
     ECOBJECTS_EXPORT ECSchemaPtr         LocateSchema (SchemaKeyR key, SchemaMatchType matchType);
 };
 
 typedef RefCountedPtr<ECInstanceReadContext>      ECInstanceReadContextPtr;
 //=======================================================================================
-//! Context object used for instance creation and deserialization.</summary>
+//! Context object used for instance creation and deserialization.
+//! @ingroup ECObjectsGroup
 //=======================================================================================
-struct ECInstanceReadContext /*__PUBLISH_ABSTRACT__*/ : RefCountedBase
+struct ECInstanceReadContext : RefCountedBase
 {
 /*__PUBLISH_SECTION_END__*/
 private:
@@ -141,7 +147,11 @@ public:
 
     IECInstancePtr           CreateStandaloneInstance (ECClassCR ecClass);
 
-/*__PUBLISH_SECTION_START__*/
+    ECSchemaCR GetFallBackSchema ();
+
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
+public:
 
     //! - For use when the caller knows the schema of the instance he is deserializing.
     ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext (ECSchemaCR, IStandaloneEnablerLocaterP = NULL);
@@ -150,4 +160,4 @@ public:
     ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext (ECSchemaReadContextR, ECSchemaCR fallBackSchema, ECSchemaPtr* foundSchema);
 };
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

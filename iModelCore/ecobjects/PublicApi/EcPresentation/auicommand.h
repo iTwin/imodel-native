@@ -12,7 +12,7 @@
 #include "ecimagekey.h"
 #include "ecpresentationtypedefs.h"
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 typedef RefCountedPtr<IUICommand> IUICommandPtr;
 
@@ -244,6 +244,6 @@ struct ECPresentationCommandProvider
     };
 
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 
 //__PUBLISH_SECTION_END__

@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //  StandaloneECRelationshipInstance
@@ -42,7 +42,7 @@ StandaloneECRelationshipInstance::~StandaloneECRelationshipInstance()
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t                StandaloneECRelationshipInstance::_GetOffsetToIECInstance () const
     {
-    EC::IECInstanceCP iecInstanceP   = dynamic_cast<EC::IECInstanceCP>(this);
+    ECN::IECInstanceCP iecInstanceP   = dynamic_cast<ECN::IECInstanceCP>(this);
     byte const* baseAddressOfIECInstance = (byte const *)iecInstanceP;
     byte const* baseAddressOfConcrete = (byte const *)this;
 
@@ -353,7 +353,7 @@ StandaloneECRelationshipEnabler::~StandaloneECRelationshipEnabler ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 WCharCP           StandaloneECRelationshipEnabler::_GetName() const
     {
-    return L"Bentley::EC::StandaloneECEnabler";
+    return L"Bentley::ECN::StandaloneECEnabler";
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -386,7 +386,7 @@ IECWipRelationshipInstancePtr StandaloneECRelationshipEnabler::_CreateWipRelatio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-EC::ECRelationshipClassCR     StandaloneECRelationshipEnabler::_GetRelationshipClass()  const
+ECN::ECRelationshipClassCR     StandaloneECRelationshipEnabler::_GetRelationshipClass()  const
     {
     return m_relationshipClass;
     }
@@ -402,7 +402,7 @@ ECEnablerCR StandaloneECRelationshipEnabler::GetECEnabler() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneECRelationshipEnablerPtr StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (EC::ECRelationshipClassCR ecClass)
+StandaloneECRelationshipEnablerPtr StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (ECN::ECRelationshipClassCR ecClass)
     {
     return new StandaloneECRelationshipEnabler (ecClass);
     }
@@ -415,4 +415,4 @@ StandaloneECRelationshipInstancePtr       StandaloneECRelationshipEnabler::Creat
     return new StandaloneECRelationshipInstance (*this);
     }
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

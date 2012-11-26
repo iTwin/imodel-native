@@ -13,7 +13,7 @@
 
 typedef struct mdlDesc MdlDesc;
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Abeesh.Basheer                  04/2012
@@ -62,6 +62,6 @@ struct ECImageKey
         void        SetMdlDesc(MdlDesc* desc) {m_mdlDesc = desc;}
     };
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 
 /*__PUBLISH_SECTION_END__*/

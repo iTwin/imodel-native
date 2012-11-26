@@ -10,7 +10,7 @@
 #include <comdef.h>
 #include "TestFixture.h"
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 struct SchemaHolderTestFixture : ECTestFixture
     {
@@ -302,7 +302,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
             bvector<ECSchemaP> supplementalSchemas;
             supplementalSchemas.push_back(supplementalSchema.get());
             SupplementedSchemaBuilder builder;
-            builder.UpdateSchema(schema, supplementalSchemas);
+            builder.UpdateSchema(*schema, supplementalSchemas);
             classA = schema->GetClassP(L"A");
             classB = schema->GetClassP(L"B");
             }
@@ -854,7 +854,7 @@ TEST_F(SupplementalSchemaMetaDataTests, CanRetrieveFromSchema)
             tempSchema->GetFullSchemaName();
             ECCustomAttributeInstanceIterable iter = tempSchema->GetCustomAttributeContainer().GetCustomAttributes(true);
 
-    Bentley::EC::SupplementalSchemaMetaDataPtr metaData;
+    Bentley::ECN::SupplementalSchemaMetaDataPtr metaData;
     EXPECT_TRUE(SupplementalSchemaMetaData::TryGetFromSchema(metaData, *supplemental));
     EXPECT_TRUE(metaData.IsValid());
     EXPECT_STREQ(L"TestSchema", metaData->GetPrimarySchemaName().c_str());
@@ -896,12 +896,12 @@ TEST_F(SupplementalSchemaInfoTests, CanSetAndRetrieveInfo)
     supplementalSchemas.push_back(supplementalSchema3.get());
     supplementalSchemas.push_back(supplementalSchema4.get());
     SupplementedSchemaBuilder builder;
-    builder.UpdateSchema(primarySchema, supplementalSchemas);
+    builder.UpdateSchema(*primarySchema, supplementalSchemas);
 
     ECSchemaPtr schema2;
     ECSchema::CreateSchema(schema2, L"PrimarySchema", 8, 2);
     SupplementedSchemaBuilder builder2;
-    builder2.UpdateSchema(schema2, supplementalSchemas);
+    builder2.UpdateSchema(*schema2, supplementalSchemas);
 
     SupplementalSchemaInfoPtr schemaInfo1 = primarySchema->GetSupplementalInfo();
 
@@ -924,7 +924,7 @@ TEST_F(SupplementedSchemaBuilderTests, BuildAConflictingConsolidatedSchema)
     SupplementedSchemaBuilder builder;
     ECSchemaPtr primaryTestSchema;
     CreatePrimarySchema(primaryTestSchema);
-    EXPECT_EQ(SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException, builder.UpdateSchema(primaryTestSchema, supplementalSchemas));
+    EXPECT_EQ(SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException, builder.UpdateSchema(*primaryTestSchema, supplementalSchemas));
     VerifySchemasAreUnchanged();
 
     }
@@ -945,7 +945,7 @@ TEST_F(SupplementedSchemaBuilderTests, BuildANonConflictingConsolidatedSchema)
     SupplementedSchemaBuilder builder;
     ECSchemaPtr primaryTestSchema;
     CreatePrimarySchema(primaryTestSchema);
-    EXPECT_EQ(SUPPLEMENTED_SCHEMA_STATUS_Success, builder.UpdateSchema(primaryTestSchema, supplementalSchemas));
+    EXPECT_EQ(SUPPLEMENTED_SCHEMA_STATUS_Success, builder.UpdateSchema(*primaryTestSchema, supplementalSchemas));
     //m_supplementalTestSchema1->WriteToXmlFile(L"d:\\temp\\supplementalSchemas\\supplementalSchema1Post.xml");
     //m_supplementalTestSchema2->WriteToXmlFile(L"d:\\temp\\supplementalSchemas\\supplementalSchema2Post.xml");
     //m_supplementalTestSchema3->WriteToXmlFile(L"d:\\temp\\supplementalSchemas\\supplementalSchema3Post.xml");
@@ -1056,7 +1056,7 @@ TEST_F(SupplementedSchemaBuilderTests, SupplementCustomAttributesOnRelationshipC
     bvector<ECSchemaP> supplementalSchemas;
     supplementalSchemas.push_back(supplementalSchema0.get());
     SupplementedSchemaBuilder builder;
-    EXPECT_EQ(SUPPLEMENTED_SCHEMA_STATUS_Success, builder.UpdateSchema(schema, supplementalSchemas));
+    EXPECT_EQ(SUPPLEMENTED_SCHEMA_STATUS_Success, builder.UpdateSchema(*schema, supplementalSchemas));
 
     ECClassP supplementedClass = schema->GetClassP(L"RelationshipWithCustomAttributes");
     EXPECT_TRUE(NULL != supplementedClass);
@@ -1075,7 +1075,7 @@ TEST_F(SupplementedSchemaBuilderTests, SupplementCustomAttributesOnRelationshipC
 
     CreatePrimarySchemaForRelationshipTests(schema2);
     SupplementedSchemaBuilder builder2;
-    EXPECT_EQ(SUPPLEMENTED_SCHEMA_STATUS_Success, builder2.UpdateSchema(schema2, supplementalSchemas));
+    EXPECT_EQ(SUPPLEMENTED_SCHEMA_STATUS_Success, builder2.UpdateSchema(*schema2, supplementalSchemas));
 
     supplementedClass = schema2->GetClassP(L"RelationshipWithCustomAttributes");
     EXPECT_TRUE(NULL != supplementedClass);
@@ -1122,7 +1122,7 @@ TEST_F(SupplementedSchemaBuilderTests, SupplementingWithInheritance)
     supplementalSchemas.push_back(highPrioritySchema200.get());
 
     SupplementedSchemaBuilder builder;
-    builder.UpdateSchema(inheritPrimarySchema, supplementalSchemas);
+    builder.UpdateSchema(*inheritPrimarySchema, supplementalSchemas);
 
     EXPECT_TRUE(inheritPrimarySchema->IsSupplemented());
 
@@ -1155,4 +1155,4 @@ TEST_F(SupplementedSchemaBuilderTests, SupplementingWithInheritance)
     ValidateSystemInfoCustomAttribute(bc2Prop1DerivedClass4, L"LowPrioritySchema1.DerivedClass4.BC2Prop1", L"LowPrioritySchema1.DerivedClass4.BC2Prop1");
     }
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

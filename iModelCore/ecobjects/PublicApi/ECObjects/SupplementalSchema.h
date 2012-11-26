@@ -12,7 +12,7 @@
 #include <ECObjects\ECInstance.h>
 #include <Bentley\RefCounted.h>
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
   
 struct SupplementalSchemaMetaData;  
 typedef RefCountedPtr<SupplementalSchemaMetaData> SupplementalSchemaMetaDataPtr;
@@ -256,7 +256,7 @@ private:
 
     static const int PRECEDENCE_THRESHOLD = 199;
 
-    SupplementedSchemaStatus OrderSupplementalSchemas(bmap<UInt32, ECSchemaP>& schemasByPrecedence, ECSchemaPtr primarySchema, const bvector<ECSchemaP>& supplementalSchemaList, bvector<ECSchemaP> localizationSchemas );
+    SupplementedSchemaStatus OrderSupplementalSchemas(bmap<UInt32, ECSchemaP>& schemasByPrecedence, ECSchemaR primarySchema, const bvector<ECSchemaP>& supplementalSchemaList, bvector<ECSchemaP> localizationSchemas );
 
     //! Merges two schemas of the same precedence into one schema.
     //! @remarks Used internally if two schemas are input that have the same precedence
@@ -271,13 +271,13 @@ private:
     //! Takes a map of supplemental schemas sorted by precedence and merges them one by one to create the consolidated schema
     //! @param[in,out]  primarySchema   The schema to merge the supplemental schemas into
     //! @param[in]      schemasByPrecedence A map of supplemental schemas sorted by precedence
-    SupplementedSchemaStatus MergeSchemasIntoSupplementedSchema (ECSchemaPtr primarySchema, bmap<UInt32, ECSchemaP> schemasByPrecedence);
+    SupplementedSchemaStatus MergeSchemasIntoSupplementedSchema (ECSchemaR primarySchema, bmap<UInt32, ECSchemaP> schemasByPrecedence);
     
     //! Merges a supplemental schema into the consolidated schema
     //! @param[in,out]  primarySchema   The consolidated schema that will get supplemented
     //! @param[in]      supplemental    The supplemental schema being merged
     //! @param[in]      precedence      The SchemaPrecedence relative to the consolidated schema.  Because the schemas are passed in the correct order, the actual value of precedence is no longer needed.
-    SupplementedSchemaStatus MergeIntoSupplementedSchema(ECSchemaPtr primarySchema, ECSchemaP supplementalSchema, SchemaPrecedence precedence);
+    SupplementedSchemaStatus MergeIntoSupplementedSchema(ECSchemaR primarySchema, ECSchemaP supplementalSchema, SchemaPrecedence precedence);
 
     //! Takes a list of the custom attributes that need to be consolidated to a specific IECCustomAttributeContainer,
     //! determines if each custom attribute has a class specific delegate to merge it.  Then it calls either the standard or specific delegate
@@ -302,7 +302,7 @@ private:
     //! @param[in]      precedence          The precedence relative to the consolidated schema.h  Because the schemas are passed in the correct order, the actual value of precedence is no longer needed
     SupplementedSchemaStatus MergePropertyCustomAttributes(ECClassP consolidatedECClass, ECClassP supplementalECClass, SchemaPrecedence precedence);
 
-    SupplementedSchemaStatus SupplementClass(ECSchemaPtr primarySchema, ECSchemaP supplementalSchema, ECClassP supplementalECClass, SchemaPrecedence precedence, WStringCP supplementalSchemaFullName);
+    SupplementedSchemaStatus SupplementClass(ECSchemaR primarySchema, ECSchemaP supplementalSchema, ECClassP supplementalECClass, SchemaPrecedence precedence, WStringCP supplementalSchemaFullName);
 
     //! The default merging "delegate"
     //! @param[in,out] consolidatedCustomAttributeContainer The ECSchema, ECClass, or ECProperty that holds the consolidation custom attributes
@@ -339,7 +339,7 @@ public:
     //! @param[in]  supplementalSchemaList  A list of schemas that contain a skeleton structure containing only the classes
     //! and properties needed to hold the supplementary custom attributes
     //! @returns A status code indicating whether the primarySchema was successfully supplemented
-    ECOBJECTS_EXPORT SupplementedSchemaStatus UpdateSchema(ECSchemaPtr primarySchema, bvector<ECSchemaP>& supplementalSchemaList); 
+    ECOBJECTS_EXPORT SupplementedSchemaStatus UpdateSchema(ECSchemaR primarySchema, bvector<ECSchemaP>& supplementalSchemaList); 
     }; // SupplementalSchemaBuilder
 
 //=======================================================================================
@@ -392,6 +392,6 @@ public:
     ECOBJECTS_EXPORT bool HasSameSupplementalSchemasForPurpose(ECSchemaCR secondSchema, WStringCR purpose) const;
 
     };
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 
 //__PUBLISH_SECTION_END__

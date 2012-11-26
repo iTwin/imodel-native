@@ -84,7 +84,7 @@ PresentationMetadataHelper::~PresentationMetadataHelper()
 IECInstancePtr PresentationMetadataHelper::CreateInstance (WCharCP className) const
     {
     IECInstancePtr instance;
-    ECClassP ecClass = m_customAttributesSchema->GetClassP (className);
+    ECClassCP ecClass = m_customAttributesSchema->GetClassCP (className);
     if (NULL == ecClass)
         {
         BeAssert (false);

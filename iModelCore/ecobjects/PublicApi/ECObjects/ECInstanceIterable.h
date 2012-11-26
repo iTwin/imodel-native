@@ -19,7 +19,7 @@
 
 
 /*__PUBLISH_SECTION_START__*/
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*__PUBLISH_SECTION_END__*/
 
@@ -57,10 +57,10 @@ struct RefCountedPtrToValueTransform: public std::unary_function<RefCountedPtr<T
 /*__PUBLISH_SECTION_START__*/
 
 /*---------------------------------------------------------------------------------**//**
-//This is the iterator that is exposed using VirtualCollectionIterator. These virtual member
+This is the iterator that is exposed using VirtualCollectionIterator. These virtual member
 functions delegate the iteration to the appropriate implementations of it based on the container
 collection.
-* @bsimethod                                    Abeesh.Basheer                  03/2011
+@bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename value_type>
 struct   IInstanceCollectionIteratorAdapter :public Bentley::RefCountedBase, std::iterator<std::forward_iterator_tag, value_type>
@@ -73,8 +73,8 @@ struct   IInstanceCollectionIteratorAdapter :public Bentley::RefCountedBase, std
     };
 
 /*---------------------------------------------------------------------------------**//**
-//A container collection which allows you to expose different kinds of collection as a single type
-* @bsimethod                                    Abeesh.Basheer                  03/2011
+A container collection which allows you to expose different kinds of collection as a single type
+@bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename value_type>
 struct IInstanceCollectionAdapter : public Bentley::RefCountedBase
@@ -87,9 +87,9 @@ public:
     virtual const_iterator end() const = 0;
     };
 
-typedef EC::IInstanceCollectionAdapter<IECInstanceP const>              IECInstanceCollectionAdapter;
+typedef ECN::IInstanceCollectionAdapter<IECInstanceP const>              IECInstanceCollectionAdapter;
 typedef RefCountedPtr<IECInstanceCollectionAdapter>                     IECInstanceCollectionAdapterPtr;
-typedef EC::IInstanceCollectionIteratorAdapter<IECInstanceP const>      IECInstanceCollectionIteratorAdapter;
+typedef ECN::IInstanceCollectionIteratorAdapter<IECInstanceP const>      IECInstanceCollectionIteratorAdapter;
 
 /*__PUBLISH_SECTION_END__*/
 
@@ -194,17 +194,17 @@ public:
     };
 
 template <typename CollectionType>
-struct IECInstanceCollectionAdapterImpl : public EC::InstanceCollectionAdapterImpl<CollectionType, IECInstanceP const> 
+struct IECInstanceCollectionAdapterImpl : public ECN::InstanceCollectionAdapterImpl<CollectionType, IECInstanceP const> 
     {
     };
 
 template <typename T_Instance>
-struct ECInstancePVector : public EC::CollectionTransformIteratble< bvector<RefCountedPtr<T_Instance> >, EC::RefCountedPtrToValueTransform<T_Instance> >
+struct ECInstancePVector : public ECN::CollectionTransformIteratble< bvector<RefCountedPtr<T_Instance> >, ECN::RefCountedPtrToValueTransform<T_Instance> >
     {
     bvector<RefCountedPtr<T_Instance> > m_vector;
     public:
     ECInstancePVector (bvector<RefCountedPtr<T_Instance> >const& collection)
-        :m_vector(collection), CollectionTransformIteratble< bvector<RefCountedPtr<T_Instance> >, EC::RefCountedPtrToValueTransform<T_Instance> > (m_vector)
+        :m_vector(collection), CollectionTransformIteratble< bvector<RefCountedPtr<T_Instance> >, ECN::RefCountedPtrToValueTransform<T_Instance> > (m_vector)
         {}
     };
 
@@ -215,7 +215,8 @@ for (ECInstanceIterable::const_iterator iter = collection.begin(); iter != colle
     {
     IECInstanceP instance = *iter;
     }
-* @bsimethod                                    Abeesh.Basheer                  06/2012
+@ingroup ECObjectsGroup
+@bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ECInstanceIterable
     {
@@ -233,8 +234,8 @@ struct ECInstanceIterable
         ECOBJECTS_EXPORT const_iterator end   () const;
         ECOBJECTS_EXPORT bool empty() const;
         ECOBJECTS_EXPORT bool IsNull () const;
-    };//ECInstanceIterable
+    };
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 
 /*__PUBLISH_SECTION_END__*/

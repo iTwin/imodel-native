@@ -8,7 +8,7 @@
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Abeesh.Basheer                  05/2012
@@ -122,4 +122,4 @@ struct  IECPresentationViewProvider : public IECPresentationProvider
     };
 
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE

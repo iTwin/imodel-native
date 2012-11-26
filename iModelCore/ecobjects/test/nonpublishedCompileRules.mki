@@ -9,13 +9,23 @@
 #########################################################################################
 # Compile the list of tests. 
 #########################################################################################
-$(o)StopWatch$(oext)          : $(baseDir)NonPublished/StopWatch.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
+$(o)StopWatch$(oext)                : $(baseDir)NonPublished/StopWatch.cpp                 $(PCHHeaderDependency) ${MultiCompileDepends}
 
-$(o)TestFixture$(oext)        : $(baseDir)NonPublished/TestFixture.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
+$(o)TestFixture$(oext)              : $(baseDir)NonPublished/TestFixture.cpp               $(PCHHeaderDependency) ${MultiCompileDepends}
 
-$(o)MemoryLayoutTests$(oext)  : $(baseDir)NonPublished/MemoryLayoutTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
+$(o)MemoryLayoutTests$(oext)        : $(baseDir)NonPublished/MemoryLayoutTests.cpp         $(PCHHeaderDependency) ${MultiCompileDepends}
 
 $(o)NonPublishedSchemaTests$(oext)  : $(baseDir)NonPublished/NonPublishedSchemaTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
 
 $(o)CalculatedPropertyTests$(oext)  : $(baseDir)NonPublished/CalculatedPropertyTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
 
+$(o)PresentationRulesTests$(oext)   : $(baseDir)NonPublished/PresentationRulesTests.cpp    $(PCHHeaderDependency) ${MultiCompileDepends}
+
+$(o)StringEncodingTests$(oext)      : $(baseDir)NonPublished/StringEncodingTests.cpp       $(PCHHeaderDependency) ${MultiCompileDepends}
+
+$(o)UnitsTests$(oext)               : $(baseDir)NonPublished/UnitsTests.cpp                $(PCHHeaderDependency) ${MultiCompileDepends}
+
+$(o)UnitsTests$(oext)               : $(baseDir)NonPublished/UnitsTestBase.cpp                $(PCHHeaderDependency) ${MultiCompileDepends}
+
+
+$(o)UnitsTests$(oext)               : $(baseDir)NonPublished/ECSchemaUnitsManagerTests.cpp                $(PCHHeaderDependency) ${MultiCompileDepends}

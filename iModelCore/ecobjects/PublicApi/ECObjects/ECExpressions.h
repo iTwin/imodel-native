@@ -10,13 +10,13 @@
 /*__PUBLISH_SECTION_START__*/
 
 #define EXPR_TYPEDEFS(_name_)  \
-        BEGIN_BENTLEY_EC_NAMESPACE      \
+        BEGIN_BENTLEY_ECOBJECT_NAMESPACE      \
             struct _name_;      \
             typedef _name_ *         _name_##P;  \
             typedef _name_ &         _name_##R;  \
             typedef _name_ const*    _name_##CP; \
             typedef _name_ const&    _name_##CR; \
-        END_BENTLEY_EC_NAMESPACE
+        END_BENTLEY_ECOBJECT_NAMESPACE
 
 EXPR_TYPEDEFS(ArgumentTreeNode)
 EXPR_TYPEDEFS(ArithmeticNode)
@@ -46,7 +46,7 @@ EXPR_TYPEDEFS(ValueResult)
 EXPR_TYPEDEFS(ValueSymbol)
 EXPR_TYPEDEFS(IECSymbolProvider);
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 typedef RefCountedPtr<ArgumentTreeNode>             ArgumentTreeNodePtr;
 typedef RefCountedPtr<CallNode>                     CallNodePtr;
@@ -77,6 +77,7 @@ typedef NodePtrVector::iterator                     NodePtrVectorIterator;
 typedef bvector<EvaluationResult>                   EvaluationResultVector;
 typedef EvaluationResultVector::iterator            EvaluationResultVectorIterator;
 
+//! @ingroup ECObjectsGroup
 enum ExpressionStatus
     {
     ExprStatus_Success              =   0,
@@ -208,7 +209,8 @@ public:
 /*__PUBLISH_SECTION_START__*/
 
 /*=================================================================================**//**
-*
+* The context in which an expression is evaluated.
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          ExpressionContext : RefCountedBase
 {
@@ -247,14 +249,15 @@ public:
 }; // End of class ExpressionContext
 
 /*=================================================================================**//**
-*
+* A context in which an IECInstance provides the context for expression evaluation.
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          InstanceExpressionContext : ExpressionContext
 {
 /*__PUBLISH_SECTION_END__*/
 
 private:
-    EC::IECInstancePtr          m_instance;
+    ECN::IECInstancePtr          m_instance;
 
 protected:
 
@@ -263,17 +266,18 @@ protected:
     virtual ExpressionStatus    _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
 
 public:
-    EC::ECEnablerCR             GetEnabler() { return m_instance->GetEnabler(); }
+    ECN::ECEnablerCR             GetEnabler() { return m_instance->GetEnabler(); }
 
 /*__PUBLISH_SECTION_START__*/
 
-    ECOBJECTS_EXPORT EC::IECInstanceCP           GetInstanceCP() const;
-    ECOBJECTS_EXPORT void                        SetInstance(EC::IECInstanceCR instance);
+    ECOBJECTS_EXPORT ECN::IECInstanceCP           GetInstanceCP() const;
+    ECOBJECTS_EXPORT void                        SetInstance(ECN::IECInstanceCR instance);
     ECOBJECTS_EXPORT static InstanceExpressionContextPtr Create(ExpressionContextP outer);
 }; // End of class InstanceExpressionContext
 
 /*=================================================================================**//**
-*
+* A context which provides a set of symbols for expression evaluation.
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          SymbolExpressionContext : ExpressionContext
 {
@@ -308,7 +312,7 @@ public:
 *
 * Base class for all symbol types
 *
-*
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          Symbol : RefCountedBase
 {
@@ -343,7 +347,7 @@ public:
 /*=================================================================================**//**
 *
 * Used to give a name to an instance.
-*
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          ContextSymbol : Symbol
 {
@@ -365,8 +369,8 @@ public:
 };
 
 /*=================================================================================**//**
-*
-*
+* Used to introduce a named method into the context.
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          MethodSymbol : Symbol
 {
@@ -394,13 +398,13 @@ public:
 /*=================================================================================**//**
 *
 * Used to introduce a named value into the context.
-*
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          ValueSymbol : Symbol
 {
 /*__PUBLISH_SECTION_END__*/
 private:
-    EC::ECValue     m_expressionValue;
+    ECN::ECValue     m_expressionValue;
 
 protected:
     virtual                         ~ValueSymbol();
@@ -410,21 +414,19 @@ protected:
                                                 { return ExprStatus_NeedsLValue; }
 
 public:
-                ValueSymbol (wchar_t const* name, EC::ECValueCR exprValue);
+                ValueSymbol (wchar_t const* name, ECN::ECValueCR exprValue);
 
 /*__PUBLISH_SECTION_START__*/
-    ECOBJECTS_EXPORT void       GetValue(EC::ECValueR exprValue);
-    ECOBJECTS_EXPORT void       SetValue(EC::ECValueCR exprValue);
-    ECOBJECTS_EXPORT static ValueSymbolPtr    Create(wchar_t const* name, EC::ECValueCR exprValue);
+    ECOBJECTS_EXPORT void       GetValue(ECN::ECValueR exprValue);
+    ECOBJECTS_EXPORT void       SetValue(ECN::ECValueCR exprValue);
+    ECOBJECTS_EXPORT static ValueSymbolPtr    Create(wchar_t const* name, ECN::ECValueCR exprValue);
 
 };  //  End of ValueSymbol
 
 /*__PUBLISH_SECTION_END__*/
 
 /*=================================================================================**//**
-*
 * Provides a set of Symbols
-*
 +===============+===============+===============+===============+===============+======*/
 struct      IECSymbolProvider : RefCountedBase
     {
@@ -445,6 +447,7 @@ typedef RefCountedPtr<IECSymbolProvider> IECSymbolProviderPtr;
 
 /*__PUBLISH_SECTION_START__*/
 
+//! @ingroup ECObjectsGroup
 enum            ExpressionToken
     {
     TOKEN_None                = 0,
@@ -501,34 +504,28 @@ enum            ExpressionToken
 
 /*__PUBLISH_SECTION_END__*/
 /*=================================================================================**//**
-*
-* !!!Describe Class Here!!!
-*
 * @bsiclass                                                     John.Gooding    02/2011
 +===============+===============+===============+===============+===============+======*/
 struct          UnitsType : RefCountedBase
 {
     UnitsOrder  m_unitsOrder;
-    EC::IECInstancePtr  m_extendedType;
+    ECN::IECInstancePtr  m_extendedType;
     bool        m_powerCanDecrease;
     bool        m_powerCanIncrease;
 };
 
 /*=================================================================================**//**
-*
-* !!!Describe Class Here!!!
-*
 * @bsiclass                                                     John.Gooding    02/2011
 +===============+===============+===============+===============+===============+======*/
 struct          ExpressionType : RefCountedBase
 {
 private:
     int                 m_unitsPower;   // 0 -- unknown, 1 -- linear, 2 -- squared, 3 -- cubed
-    EC::IECInstancePtr  m_extendedType;
-    EC::ValueKind       m_valueKind;
-    EC::PrimitiveType   m_primitiveType;
-    EC::ArrayKind       m_arrayKind;    //  Relevant only if m_valueKind == VALUEKIND_Array
-    EC::ECClassCP       m_structClass;  //  Relevant if m_valueKind == VALUEKIND_Struct or 
+    ECN::IECInstancePtr  m_extendedType;
+    ECN::ValueKind       m_valueKind;
+    ECN::PrimitiveType   m_primitiveType;
+    ECN::ArrayKind       m_arrayKind;    //  Relevant only if m_valueKind == VALUEKIND_Array
+    ECN::ECClassCP       m_structClass;  //  Relevant if m_valueKind == VALUEKIND_Struct or 
                                         //  m_valueKind == VALUEKIND_Array and m_arrayKind == ARRAYKIND_Struct
 private:
     void                Init();
@@ -536,27 +533,23 @@ private:
 protected:
 
 public:
-    ExpressionType (EC::PrimitiveECPropertyR primitiveProp);
+    ExpressionType (ECN::PrimitiveECPropertyR primitiveProp);
 
 }; // ExpressionType
 
 /*=================================================================================**//**
-*
-* !!!Describe Class Here!!!
-*
+* @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct          ReferenceResult 
 {
-    EC::ECPropertyCP    m_property;
+    ECN::ECPropertyCP    m_property;
     WString             m_accessString;
     ::UInt32            m_arrayIndex;
     int                 m_memberSelector;   // 1 for x, 2, for y, 3 for z
 };
 
 /*=================================================================================**//**
-*
-* !!!Describe Class Here!!!
-*
+* @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct          EvaluationResult 
 {
@@ -564,7 +557,7 @@ private:
 //  Provides a list of conditions for which the shortcuts or bindings are valid
     ValueType   m_valueType;
     UnitsOrder  m_unitsOrder;
-    EC::ECValue m_ecValue;
+    ECN::ECValue m_ecValue;
 
 public:
 
@@ -579,10 +572,10 @@ public:
     EvaluationResultR operator=(EvaluationResultCR rhs);
     void                    Clear();
 
-    ECOBJECTS_EXPORT EC::ECValueR            GetECValueR();
-    ECOBJECTS_EXPORT ExpressionStatus        GetECValue(EC::ECValueR result);
-    ECOBJECTS_EXPORT EC::ECValueCR           GetECValue() const;
-    ECOBJECTS_EXPORT EvaluationResultR       operator= (EC::ECValueCR rhs);
+    ECOBJECTS_EXPORT ECN::ECValueR            GetECValueR();
+    ECOBJECTS_EXPORT ExpressionStatus        GetECValue(ECN::ECValueR result);
+    ECOBJECTS_EXPORT ECN::ECValueCR           GetECValue() const;
+    ECOBJECTS_EXPORT EvaluationResultR       operator= (ECN::ECValueCR rhs);
     };
 
 /*__PUBLISH_SECTION_START__*/
@@ -603,9 +596,10 @@ struct          NodeVisitor
     virtual bool ProcessNode(NodeCR node) = 0;
 };
 
-
 /*=================================================================================**//**
-*
+* Parses an EC expression string to produce an expression tree which can be used to
+* evaluate the expression.
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          ECEvaluator
     {
@@ -645,7 +639,8 @@ public:
 };  // End of ECEvaluator class
 
 /*=================================================================================**//**
-*
+* Holds the result of evaluating an EC expression.
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          ValueResult : RefCountedBase
 {
@@ -660,11 +655,12 @@ public:
     static ValueResultPtr      Create(EvaluationResultR result);
 
 /*__PUBLISH_SECTION_START__*/
-    ECOBJECTS_EXPORT ExpressionStatus  GetECValue (EC::ECValueR ecValue);
+    ECOBJECTS_EXPORT ExpressionStatus  GetECValue (ECN::ECValueR ecValue);
 };
 
 /*=================================================================================**//**
-*
+* Defines an expression tree for a parsed EC expression.
+* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          Node : RefCountedBase
 {
@@ -741,7 +737,7 @@ public:
 };  //  End of struct Node
 
 
-END_BENTLEY_EC_NAMESPACE
+END_BENTLEY_ECOBJECT_NAMESPACE
 
 /*__PUBLISH_SECTION_END__*/
 

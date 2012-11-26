@@ -8,7 +8,7 @@
 #include "ECObjectsTestPCH.h"
 #include "TestFixture.h"
 
-BEGIN_BENTLEY_EC_NAMESPACE
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 // NEEDSWORK Improve strategy for seed data.  Should not be maintained in source.
 #define SCHEMAS_PATH  L"" 
@@ -277,6 +277,22 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNamespace)
     EXPECT_EQ (SCHEMA_READ_STATUS_InvalidECSchemaXml, status);
     };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectSuccessWhenCustomAttributeIsMissingNamespace)
+    {
+    // show error messages but do not assert.
+    ECSchema::SetErrorHandling (true, false);
+
+    
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath( L"MissingNamespaceOnCustomAttribute.01.00.ecschema.xml").c_str(), *schemaContext);
+
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
+    };
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -911,7 +927,7 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaReferenceTest, ExpectSuccessWithCircularReferences)
+TEST_F(SchemaReferenceTest, ExpectFailureWithCircularReferences)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
     WString seedPath(ECTestFixture::GetTestDataPath(L"").c_str());
@@ -1069,8 +1085,11 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     EXPECT_EQ(0, nestedArrayProp->GetMinOccurs());
     EXPECT_EQ(UINT_MAX, nestedArrayProp->GetMaxOccurs());
     EXPECT_EQ(1, primitiveArrayProp->GetMinOccurs());
+#if FIXED_COUNT_ARRAYS_ARE_SUPPORTED
     EXPECT_EQ(10, primitiveArrayProp->GetMaxOccurs());
-    
+#else
+    EXPECT_EQ(UINT_MAX, primitiveArrayProp->GetMaxOccurs());
+#endif
     EXPECT_TRUE(stringProp->GetIsPrimitive());
     EXPECT_FALSE(stringProp->GetIsStruct());
     EXPECT_FALSE(stringProp->GetIsArray());
@@ -1972,4 +1991,36 @@ TEST_F (ECNameValidationTest, Validate)
     EXPECT_VALIDATION_RESULT(IncludesInvalidCharacters, L"ABC@");
     }
 
-END_BENTLEY_EC_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (SchemaDeserializationTest, ExpectErrorWhenBaseClassNotFound)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr refSchema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString (refSchema, 
+        L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        L"<ECSchema schemaName=\"ReferencedSchema\" version=\"01.00\" displayLabel=\"Display Label\" description=\"Description\" nameSpacePrefix=\"ref\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
+        L"    <ECClass typeName=\"BaseClass\" description=\"Project ECClass\" displayLabel=\"Project\" isDomainClass=\"True\" />"
+        L"</ECSchema>", *schemaContext);
+
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
+
+    ECSchemaPtr schema;
+    status = ECSchema::ReadFromXmlString (schema, 
+        L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        L"<ECSchema schemaName=\"Stuff\" version=\"09.06\" displayLabel=\"Display Label\" description=\"Description\" nameSpacePrefix=\"stuff\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
+        L"<ECSchemaReference name=\"ReferencedSchema\" version=\"01.00\" prefix=\"ref\" />"
+        L"    <ECClass typeName=\"ecProject\" description=\"Project ECClass\" displayLabel=\"Project\" isDomainClass=\"True\">"
+        L"       <BaseClass>BaseClassDOESNOTEXIST</BaseClass>"
+        L"       <BaseClass>ref:BaseClass</BaseClass>"
+        L"    </ECClass>"
+        L"</ECSchema>", *schemaContext);
+
+    EXPECT_NE (SCHEMA_READ_STATUS_Success, status);    
+    EXPECT_TRUE (schema.IsNull());
+    }
+
+END_BENTLEY_ECOBJECT_NAMESPACE

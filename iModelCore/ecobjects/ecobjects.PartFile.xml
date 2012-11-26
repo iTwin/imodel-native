@@ -12,7 +12,7 @@
     </Part>
 
     <Part Name="ECObjectsNative" BentleyBuildMakeFile="src/ecobjects.mke" ApiNumber="6">
-        <SubPart PartName="BoostHeaders"    PartFile="${SrcBsiCommon}CvsPartfiles/bsibin"           Repository="bsibin-boostheaders" />
+        <SubPart PartName="BoostHeaders"    PartFile="BoostHeaders"   Repository="BoostHeaders" />
         <SubPart PartName="HeaderFiles" />
         <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="Logging" /> 
@@ -44,6 +44,8 @@
         <Bindings>
             <PublicAPI Domain="ECObjects" />
             <PublicAPI Domain="ECPresentation" />
+            <PublicAPI Domain="ECPresentationRules" />
+            <PublicAPI Domain="ECUnits" />
         </Bindings>
     </Part>
 
@@ -168,14 +170,14 @@
         <ProductDirectory Name="ecschemas"                          Path=""/>
     </ProductDirectoryList>
 
-    <Product Name="ECObjectsTests">
+    <Product Name="ECObjectsTests" SaveProduct="true">
         <SubPart PartName="Tests"/>
         <Directories DirectoryListName="ECObjectsTest"/>
     </Product>
 
     <ProductDirectoryList ListName="ECObjectsTested">
     </ProductDirectoryList>
-    <Product Name="ECObjectsTested" PrgOutputDir="ECObjects">
+    <Product Name="ECObjectsTested" PrgOutputDir="ECObjects" SaveProduct="true">
         <SubProduct ProductName="ECObjects" />
         <SubProduct ProductName="ECObjectsStatic" />
         <SubProduct ProductName="ECObjectsTests" />
