@@ -3229,6 +3229,21 @@ InstanceWriteStatus     IECInstance::WriteToXmlStream (IStreamP stream, bool isC
     }
 #endif //defined (NEEDSWORK_XML)
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+Bentley::DgnPlatform::DgnECInstance const* IECInstance::AsDgnECInstanceCP() const
+    {
+    return _GetAsDgnECInstance();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+Bentley::DgnPlatform::DgnECInstance* IECInstance::AsDgnECInstanceP()
+    {
+    return const_cast<Bentley::DgnPlatform::DgnECInstance*> (_GetAsDgnECInstance());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012

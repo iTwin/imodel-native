@@ -15,6 +15,13 @@
 BENTLEY_TYPEDEFS (BeXmlDom)
 BENTLEY_TYPEDEFS (BeXmlNode)
 
+/*__PUBLISH_SECTION_END__*/
+namespace Bentley { namespace DgnPlatform {
+    struct DgnECInstance;
+} }
+
+/*__PUBLISH_SECTION_START__*/
+
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 //! @addtogroup ECObjectsGroup
@@ -116,6 +123,9 @@ protected:
     ECOBJECTS_EXPORT virtual bool                   _IsPropertyReadOnly (UInt32 propertyIndex) const;
     ECOBJECTS_EXPORT virtual ECObjectsStatus        _SetInternalValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex);
 
+/*__PUBLISH_SECTION_END__*/
+    virtual Bentley::DgnPlatform::DgnECInstance const*  _GetAsDgnECInstance() const   { return NULL; }
+/*__PUBLISH_SECTION_START__*/
 public:
     ECOBJECTS_EXPORT void const*        GetBaseAddress () {return this;}
     ECOBJECTS_EXPORT ECEnablerCR        GetEnabler() const;
@@ -235,7 +245,11 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (UInt32 propertyIndex, ECValueCR v); 
     ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValueUsingAccessor (ECValueAccessorCR accessor, ECValueCR valueToSet);
     ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (WCharCP propertyAccessString, ECValueCR v); 
-    ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (WCharCP propertyAccessString, ECValueCR v, UInt32 arrayIndex); 
+    ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (WCharCP propertyAccessString, ECValueCR v, UInt32 arrayIndex);
+
+    // These are provided to avoid the cost of dynamic cast.
+    ECOBJECTS_EXPORT Bentley::DgnPlatform::DgnECInstance const* AsDgnECInstanceCP() const;
+    ECOBJECTS_EXPORT Bentley::DgnPlatform::DgnECInstance*       AsDgnECInstanceP();
 /*__PUBLISH_SECTION_START__*/
 
     //! Check property to see it is a fixed size array and optionally return the fixed size.
