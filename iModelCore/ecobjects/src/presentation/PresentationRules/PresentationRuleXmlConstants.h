@@ -69,6 +69,8 @@
 #define CHECKBOX_RULE_XML_ATTRIBUTE_USEINVERSEDPROPERTYVALUE                          "UseInversedPropertyValue"
 #define CHECKBOX_RULE_XML_ATTRIBUTE_DEFAULTVALUE                                      "DefaultValue"
 
+#define RENAMENODE_RULE_XML_NODE_NAME                                                 "RenameNodeRule"
+
 #define CLASS_GROUP_XML_NODE_NAME                                                     "ClassGroup"
 #define CLASS_GROUP_XML_ATTRIBUTE_SCHEMANAME                                          "SchemaName"
 #define CLASS_GROUP_XML_ATTRIBUTE_BASECLASSNAME                                       "BaseClassName"
