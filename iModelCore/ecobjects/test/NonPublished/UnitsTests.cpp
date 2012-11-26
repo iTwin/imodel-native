@@ -1730,6 +1730,7 @@ TEST_F (UnitsTest, TestUnitSpecifications)
 //		
 //        Unit defaultUnit;// = m_manager.GetUnit (m_wheelClass, m_AreaProp);
 //		Unit::GetUnitForECProperty (defaultUnit, *m_fromProperty)
-//        VerifyDefaultUnit ("INCH_SQUARED", defaultUnit);
+//        ASSERT_NEQ (NULL,defaultUnit)<< "The returned Unit is null.";
+//		ASSERT_EQ (expectedUnitName, defaultUnit.Name)<<"The expected Unit name does not match the actual name.");
 //    }
 END_BENTLEY_ECOBJECT_NAMESPACE
