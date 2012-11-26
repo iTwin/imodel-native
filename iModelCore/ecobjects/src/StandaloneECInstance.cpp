@@ -213,9 +213,7 @@ ECObjectsStatus         MemoryECInstanceBase::IsAnyPerPropertyBitSet (bool& isSe
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus          MemoryECInstanceBase::SetIsLoadedBit (UInt32 propertyIndex)
     {
-    static UInt8 bitIndex = (UInt8) PROPERTYFLAGINDEX_IsLoaded;
-
-    ECObjectsStatus status = SetPerPropertyBit (bitIndex, propertyIndex, true);
+    ECObjectsStatus status = SetPerPropertyBit ((UInt8) PROPERTYFLAGINDEX_IsLoaded, propertyIndex, true);
 
     PropertyLayoutCP propertyLayout = NULL;
 
@@ -1064,10 +1062,9 @@ ECObjectsStatus           StandaloneECInstance::_GetValue (ECValueR v, UInt32 pr
     ECObjectsStatus status = GetValueFromMemory (v, classLayout, propertyIndex, useArrayIndex, arrayIndex);
     if (ECOBJECTS_STATUS_Success == status)
         {
-        static UInt8 bitIndex = (UInt8) PROPERTYFLAGINDEX_IsLoaded;
         bool isSet = false;
 
-        if (ECOBJECTS_STATUS_Success == MemoryECInstanceBase::IsPerPropertyBitSet (isSet, bitIndex, propertyIndex)) 
+        if (ECOBJECTS_STATUS_Success == MemoryECInstanceBase::IsPerPropertyBitSet (isSet, (UInt8) PROPERTYFLAGINDEX_IsLoaded, propertyIndex)) 
             v.SetIsLoaded (isSet);
         }
 
@@ -1141,7 +1138,6 @@ ECObjectsStatus           StandaloneECInstance::_RemoveArrayElement (WCharCP pro
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECInstance::_ClearArray (WCharCP propertyAccessString)
     {
-    static UInt8 bitIndex = (UInt8) PROPERTYFLAGINDEX_IsLoaded;
     ClassLayoutCR classLayout = GetClassLayout();    
     PropertyLayoutCP pPropertyLayout = NULL;
     ECObjectsStatus status = classLayout.GetPropertyLayout (pPropertyLayout, propertyAccessString);
@@ -1157,7 +1153,7 @@ ECObjectsStatus           StandaloneECInstance::_ClearArray (WCharCP propertyAcc
             {
             UInt32 propertyIndex;
             if (ECOBJECTS_STATUS_Success == classLayout.GetPropertyLayoutIndex (propertyIndex, *pPropertyLayout))
-                SetPerPropertyBit (bitIndex, propertyIndex, false);
+                SetPerPropertyBit ((UInt8) PROPERTYFLAGINDEX_IsLoaded, propertyIndex, false);
             }
 
         return  status;
