@@ -34,9 +34,6 @@ struct IAUIItem : public RefCountedBase // Content Service Element
         //! Get the command associated with this ui instance if any
         ECOBJECTS_EXPORT IAUIItemInfoCR GetUIItemInfo () const;
 
-        //! Do all the actions associated with the ui item using the bound data context.
-        ECOBJECTS_EXPORT BentleyStatus ExecuteActions() const;
-
         //! Get the parent instance associated with this instance.
         ECOBJECTS_EXPORT IAUIItemCP     GetParent () const;
     };
