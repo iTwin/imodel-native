@@ -277,7 +277,7 @@ public:
     public:
 
         Location (ECEnablerCP enabler, int propIdx, int arrayIdx) : m_enabler(enabler), m_propertyIndex(propIdx), m_arrayIndex(arrayIdx), m_cachedProperty(NULL) { }
-        Location () : m_enabler(NULL), m_propertyIndex(0), m_arrayIndex(0), m_cachedProperty(NULL) { }
+        Location () : m_enabler(NULL), m_propertyIndex(-1), m_arrayIndex(INDEX_ROOT), m_cachedProperty(NULL) { }
         Location (const Location& loc) : m_enabler(loc.m_enabler), m_propertyIndex(loc.m_propertyIndex), m_arrayIndex(loc.m_arrayIndex), m_cachedProperty(loc.m_cachedProperty) { }
 
         ECPropertyCP    GetECProperty() const;
