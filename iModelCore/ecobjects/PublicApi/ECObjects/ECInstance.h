@@ -86,9 +86,6 @@ typedef RefCountedPtr<IECInstance> IECInstancePtr;
 //=======================================================================================    
 struct EXPORT_VTABLE_ATTRIBUTE IECInstance : RefCountedBase
     {
-private:
-    WCharCP GetInstanceLabelPropertyName () const;
-
 protected:    
     ECOBJECTS_EXPORT IECInstance(); 
     ECOBJECTS_EXPORT virtual ~IECInstance();

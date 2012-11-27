@@ -6,8 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-/*__PUBLISH_SECTION_START__*/
-
+//__BENTLEY_INTERNAL_ONLY__
 #include "Bentley/NonCopyableClass.h"
 #include "ECObjects/ECSchema.h"
 #include "ECPersistence/ECPersistence.h"
@@ -37,4 +36,3 @@ struct IECSchemaManager : NonCopyableClass
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
-

@@ -1120,6 +1120,43 @@ ECSchemaCP ECClass::_GetContainerSchema
     {
     return &m_schema;
     }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Ramanujam.Raman                10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyP ECClass::GetInstanceLabelProperty() const
+    {
+    /*
+     * Note: The ugly case by case comparisions is just a way to make the instance 
+     * labels from legacy ECschemas (that didn't follow consistent property naming)
+     * acceptable.
+     */
+
+    ECPropertyP instanceLabelProperty = NULL;
+    IECInstancePtr caInstance = this->GetCustomAttribute(L"InstanceLabelSpecification");
+    if (caInstance.IsValid())
+        {
+        ECValue value;
+        if (SUCCESS == caInstance->GetValue (value, L"PropertyName") && !value.IsNull())
+            {
+            WCharCP propertyName = value.GetString();
+            instanceLabelProperty = this->GetPropertyP (propertyName);
+            if (NULL != instanceLabelProperty)
+                return instanceLabelProperty;
+            }
+        }
+
+    WString instanceLabelPropertyNames[6] = 
+        {L"DisplayLabel", L"DISPLAYLABEL", L"displaylabel", L"Name", L"NAME", L"name"};
+    FOR_EACH (WStringCR propName, instanceLabelPropertyNames)
+        {
+        instanceLabelProperty = this->GetPropertyP (propName.c_str());
+        if (NULL != instanceLabelProperty)
+            return instanceLabelProperty;
+        }
+
+    return NULL;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                04/2010
