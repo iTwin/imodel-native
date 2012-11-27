@@ -33,7 +33,7 @@ public: ECSchemaUnitsManagerTests()
 //	{}
 
 };
- /*
+ 
 TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromSupplementalSchemaWhereSupplementalSchemaOverridesDomainSchemaAtPropertyLevel)
     {
 		Unit defaultUnit;

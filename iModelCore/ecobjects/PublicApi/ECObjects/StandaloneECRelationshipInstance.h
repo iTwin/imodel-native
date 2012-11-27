@@ -74,7 +74,7 @@ protected:
     virtual size_t              _GetOffsetToIECInstance () const;
 
     // MemoryECInstanceBase
-    virtual IECInstancePtr      _GetAsIECInstance () const;
+    virtual IECInstanceP        _GetAsIECInstance () const;
     virtual size_t              _LoadObjectDataIntoManagedInstance (byte* managedBuffer) const;
 
 //__PUBLISH_CLASS_VIRTUAL__

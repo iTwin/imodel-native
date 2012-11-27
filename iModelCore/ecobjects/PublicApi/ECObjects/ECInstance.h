@@ -117,6 +117,7 @@ protected:
     ECOBJECTS_EXPORT virtual ECObjectsStatus       _GetDisplayLabel (WString& displayLabel) const;    
     ECOBJECTS_EXPORT virtual ECObjectsStatus       _SetDisplayLabel (WCharCP displayLabel);    
     ECOBJECTS_EXPORT virtual MemoryECInstanceBase* _GetAsMemoryECInstance () const;
+    ECOBJECTS_EXPORT virtual ECDBuffer*            _GetECDBuffer() const;
     //! If you override one of these IsPropertyReadOnly methods, you should override the other.
     ECOBJECTS_EXPORT virtual bool                   _IsPropertyReadOnly (WCharCP accessString) const;
     ECOBJECTS_EXPORT virtual bool                   _IsPropertyReadOnly (UInt32 propertyIndex) const;
@@ -271,6 +272,7 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus      GetDisplayLabel (WString& displayLabel) const;    
     ECOBJECTS_EXPORT ECObjectsStatus      SetDisplayLabel (WCharCP displayLabel);    
     
+    ECOBJECTS_EXPORT ECDBuffer*            GetECDBuffer() const;
     ECOBJECTS_EXPORT MemoryECInstanceBase* GetAsMemoryECInstance () const;
     ECOBJECTS_EXPORT size_t                GetOffsetToIECInstance () const;
 
