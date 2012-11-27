@@ -172,10 +172,10 @@ ECObjectsStatus StandaloneECRelationshipInstance::_SetInternalValue (UInt32 prop
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECRelationshipInstance::_InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size)
+ECObjectsStatus           StandaloneECRelationshipInstance::_InsertArrayElements (UInt32 propIdx, UInt32 index, UInt32 size)
     {
     ClassLayoutCR classLayout = GetClassLayout();
-    ECObjectsStatus status = InsertNullArrayElementsAt (classLayout, propertyAccessString, index, size);
+    ECObjectsStatus status = InsertNullArrayElementsAt (classLayout, propIdx, index, size);
     
     return status;
     } 
@@ -183,10 +183,10 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_InsertArrayElements
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECRelationshipInstance::_AddArrayElements (WCharCP propertyAccessString, UInt32 size)
+ECObjectsStatus           StandaloneECRelationshipInstance::_AddArrayElements (UInt32 propIdx, UInt32 size)
     {
     ClassLayoutCR classLayout = GetClassLayout();    
-    ECObjectsStatus status = AddNullArrayElementsAt (classLayout, propertyAccessString, size);
+    ECObjectsStatus status = AddNullArrayElementsAt (classLayout, propIdx, size);
     
     return status;
     }        
@@ -194,10 +194,10 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_AddArrayElements (W
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECRelationshipInstance::_RemoveArrayElement (WCharCP propertyAccessString, UInt32 index)
+ECObjectsStatus           StandaloneECRelationshipInstance::_RemoveArrayElement (UInt32 propIdx, UInt32 index)
     {
     ClassLayoutCR classLayout = GetClassLayout();    
-    ECObjectsStatus status = RemoveArrayElementsAt (classLayout, propertyAccessString, index, 1);
+    ECObjectsStatus status = RemoveArrayElementsAt (classLayout, propIdx, index, 1);
     
     return status;
     } 
@@ -205,7 +205,7 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_RemoveArrayElement 
  /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECRelationshipInstance::_ClearArray (WCharCP propertyAccessString)
+ECObjectsStatus           StandaloneECRelationshipInstance::_ClearArray (UInt32 propIdx)
     {
     return ECOBJECTS_STATUS_OperationNotSupported;
     }                      

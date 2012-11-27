@@ -1775,7 +1775,9 @@ ECObjectsStatus ECInstanceInteropHelper::GetValueByIndex (ECValueR value, IECIns
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus                 IECInstance::InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size)
     {
-    return _InsertArrayElements (propertyAccessString, index, size);
+    UInt32 propIdx;
+    ECObjectsStatus status = GetEnabler().GetPropertyIndex (propIdx, propertyAccessString);
+    return ECOBJECTS_STATUS_Success == status ? InsertArrayElements (propIdx, index, size) : status;
     } 
     
 /*---------------------------------------------------------------------------------**//**
@@ -1783,7 +1785,9 @@ ECObjectsStatus                 IECInstance::InsertArrayElements (WCharCP proper
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus                 IECInstance::AddArrayElements (WCharCP propertyAccessString, UInt32 size)
     {
-    return _AddArrayElements (propertyAccessString, size);
+    UInt32 propIdx;
+    ECObjectsStatus status = GetEnabler().GetPropertyIndex (propIdx, propertyAccessString);
+    return ECOBJECTS_STATUS_Success == status ? AddArrayElements (propIdx, size) : status;
     }        
 
 /*---------------------------------------------------------------------------------**//**
@@ -1791,7 +1795,9 @@ ECObjectsStatus                 IECInstance::AddArrayElements (WCharCP propertyA
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus                 IECInstance::RemoveArrayElement (WCharCP propertyAccessString, UInt32 index)
     {
-    return _RemoveArrayElement (propertyAccessString, index);
+    UInt32 propIdx;
+    ECObjectsStatus status = GetEnabler().GetPropertyIndex (propIdx, propertyAccessString);
+    return ECOBJECTS_STATUS_Success == status ? RemoveArrayElement (propIdx, index) : status;
     } 
     
 /*---------------------------------------------------------------------------------**//**
@@ -1799,8 +1805,19 @@ ECObjectsStatus                 IECInstance::RemoveArrayElement (WCharCP propert
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus                 IECInstance::ClearArray (WCharCP propertyAccessString)
     {
-    return _ClearArray (propertyAccessString);
+    UInt32 propertyIndex;
+    ECObjectsStatus status = GetEnabler().GetPropertyIndex (propertyIndex, propertyAccessString);
+    return ECOBJECTS_STATUS_Success == status ? ClearArray (propertyIndex) : status;
     }           
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus IECInstance::ClearArray (UInt32 propIdx)                                    { return _ClearArray (propIdx); }
+ECObjectsStatus IECInstance::InsertArrayElements (UInt32 propIdx, UInt32 idx, UInt32 size)  { return _InsertArrayElements (propIdx, idx, size); }
+ECObjectsStatus IECInstance::AddArrayElements (UInt32 propIdx, UInt32 size)                 { return _AddArrayElements (propIdx, size); }
+ECObjectsStatus IECInstance::RemoveArrayElement (UInt32 propIdx, UInt32 idx)                { return _RemoveArrayElement (propIdx, idx); }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/

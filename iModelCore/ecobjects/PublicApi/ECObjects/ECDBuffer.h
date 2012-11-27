@@ -524,10 +524,11 @@ protected:
     ECOBJECTS_EXPORT ECObjectsStatus  SetInternalValueToMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, ECValueCR v, bool useIndex = false, UInt32 index = 0);
     ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ClassLayoutCR classLayout, WCharCP propertyAccessString, ECValueCR v,  bool useIndex = false, UInt32 index = 0);      
     ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ClassLayoutCR classLayout, UInt32 propertyIndex, ECValueCR v, bool useArrayIndex = false, UInt32 arrayIndex = 0);      
-    ECOBJECTS_EXPORT ECObjectsStatus  InsertNullArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 insertIndex, UInt32 insertCount);
-    ECOBJECTS_EXPORT ECObjectsStatus  AddNullArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 insertCount);
+    ECOBJECTS_EXPORT ECObjectsStatus  InsertNullArrayElementsAt (ClassLayoutCR classLayout, UInt32 propIdx, UInt32 insertIndex, UInt32 insertCount);
+    ECOBJECTS_EXPORT ECObjectsStatus  AddNullArrayElementsAt (ClassLayoutCR classLayout, UInt32 propIdx, UInt32 insertCount);
     ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElementsFromMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
-    ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 removeIndex, UInt32 removeCount);
+    ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElementsAt (ClassLayoutCR classLayout, UInt32 propIdx, UInt32 removeIndex, UInt32 removeCount);
+    ECOBJECTS_EXPORT ECObjectsStatus  ClearArrayElementsFromMemory (ClassLayoutCR classLayout, UInt32 propIdx);
     ECOBJECTS_EXPORT WString          InstanceDataToString (WCharCP indent, ClassLayoutCR classLayout) const;
     ECOBJECTS_EXPORT ECObjectsStatus  GetIsNullValueFromMemory (ClassLayoutCR classLayout, bool& isNull, UInt32 propertyIndex, bool useIndex, UInt32 index) const;
 

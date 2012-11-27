@@ -677,9 +677,9 @@ UInt32                   MemoryECInstanceBase::GetPerPropertyFlagsDataLength () 
  /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus      MemoryECInstanceBase::AddNullArrayElements (WCharCP propertyAccessString, UInt32 insertCount)
+ECObjectsStatus      MemoryECInstanceBase::AddNullArrayElements (UInt32 propIdx, UInt32 insertCount)
     {
-    return AddNullArrayElementsAt (GetClassLayout(), propertyAccessString, insertCount);
+    return AddNullArrayElementsAt (GetClassLayout(), propIdx, insertCount);
     }
         
 /*---------------------------------------------------------------------------------**//**
@@ -1034,10 +1034,10 @@ ECObjectsStatus StandaloneECInstance::_SetInternalValue (UInt32 propertyIndex, E
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECInstance::_InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size)
+ECObjectsStatus           StandaloneECInstance::_InsertArrayElements (UInt32 propIdx, UInt32 index, UInt32 size)
     {
     ClassLayoutCR classLayout = GetClassLayout();
-    ECObjectsStatus status = InsertNullArrayElementsAt (classLayout, propertyAccessString, index, size);
+    ECObjectsStatus status = InsertNullArrayElementsAt (classLayout, propIdx, index, size);
     
     return status;
     } 
@@ -1045,10 +1045,10 @@ ECObjectsStatus           StandaloneECInstance::_InsertArrayElements (WCharCP pr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECInstance::_AddArrayElements (WCharCP propertyAccessString, UInt32 size)
+ECObjectsStatus           StandaloneECInstance::_AddArrayElements (UInt32 propIdx, UInt32 size)
     {
     ClassLayoutCR classLayout = GetClassLayout();    
-    ECObjectsStatus status = AddNullArrayElementsAt (classLayout, propertyAccessString, size);
+    ECObjectsStatus status = AddNullArrayElementsAt (classLayout, propIdx, size);
     
     return status;
     }        
@@ -1056,20 +1056,20 @@ ECObjectsStatus           StandaloneECInstance::_AddArrayElements (WCharCP prope
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECInstance::_RemoveArrayElement (WCharCP propertyAccessString, UInt32 index)
+ECObjectsStatus           StandaloneECInstance::_RemoveArrayElement (UInt32 propIdx, UInt32 index)
     {
     ClassLayoutCR classLayout = GetClassLayout();    
-    return RemoveArrayElementsAt (classLayout, propertyAccessString, index, 1);
+    return RemoveArrayElementsAt (classLayout, propIdx, index, 1);
     } 
 
  /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECInstance::_ClearArray (WCharCP propertyAccessString)
+ECObjectsStatus           StandaloneECInstance::_ClearArray (UInt32 propIdx)
     {
     ClassLayoutCR classLayout = GetClassLayout();    
     PropertyLayoutCP pPropertyLayout = NULL;
-    ECObjectsStatus status = classLayout.GetPropertyLayout (pPropertyLayout, propertyAccessString);
+    ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (pPropertyLayout, propIdx);
     if (SUCCESS != status || NULL == pPropertyLayout)
         return ECOBJECTS_STATUS_PropertyNotFound;
 
@@ -1079,11 +1079,7 @@ ECObjectsStatus           StandaloneECInstance::_ClearArray (WCharCP propertyAcc
         status =  RemoveArrayElements (classLayout, *pPropertyLayout, 0, arrayCount);
 
         if (ECOBJECTS_STATUS_Success == status)
-            {
-            UInt32 propertyIndex;
-            if (ECOBJECTS_STATUS_Success == classLayout.GetPropertyLayoutIndex (propertyIndex, *pPropertyLayout))
-                SetPerPropertyBit ((UInt8) PROPERTYFLAGINDEX_IsLoaded, propertyIndex, false);
-            }
+            SetPerPropertyBit ((UInt8) PROPERTYFLAGINDEX_IsLoaded, propIdx, false);
 
         return  status;
         }

@@ -62,10 +62,10 @@ protected:
     virtual ECObjectsStatus     _SetInternalValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;
     virtual ECObjectsStatus     _GetIsPropertyNull (bool& isNull, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
 
-    virtual ECObjectsStatus     _InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size) override;
-    virtual ECObjectsStatus     _AddArrayElements (WCharCP propertyAccessString, UInt32 size) override;
-    virtual ECObjectsStatus     _RemoveArrayElement (WCharCP propertyAccessString, UInt32 index) override;
-    virtual ECObjectsStatus     _ClearArray (WCharCP propertyAccessString) override;    
+    virtual ECObjectsStatus     _InsertArrayElements (UInt32 propIdx, UInt32 index, UInt32 size) override;
+    virtual ECObjectsStatus     _AddArrayElements (UInt32 propIdx, UInt32 size) override;
+    virtual ECObjectsStatus     _RemoveArrayElement (UInt32 propIdx, UInt32 index) override;
+    virtual ECObjectsStatus     _ClearArray (UInt32 propIdx) override;    
     virtual WString             _ToString (WCharCP indent) const override;
     virtual ClassLayoutCR       _GetClassLayout () const;
     virtual ECEnablerCR         _GetEnabler() const override;

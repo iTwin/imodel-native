@@ -1928,14 +1928,30 @@ ECObjectsStatus ECDBuffer::RemoveArrayElements (ClassLayoutCR classLayout, Prope
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECDBuffer::ClearArrayElementsFromMemory (ClassLayoutCR classLayout, UInt32 propertyIndex)
+    {
+    PropertyLayoutCP pPropertyLayout = NULL;
+    
+    ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (pPropertyLayout, propertyIndex);
+    if (ECOBJECTS_STATUS_Success == status)
+        {
+        UInt32 arrayCount = GetReservedArrayCount (*pPropertyLayout);
+        if (0 < arrayCount)
+            status = RemoveArrayElements (classLayout, *pPropertyLayout, 0, arrayCount);
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECDBuffer::RemoveArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 removeIndex, UInt32 removeCount)
+ECObjectsStatus ECDBuffer::RemoveArrayElementsAt (ClassLayoutCR classLayout, UInt32 propIdx, UInt32 removeIndex, UInt32 removeCount)
     {        
-    PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
-       
     PropertyLayoutCP pPropertyLayout = NULL;
-    ECObjectsStatus status = classLayout.GetPropertyLayout (pPropertyLayout, propertyAccessString);
+    ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (pPropertyLayout, propIdx);
     if (SUCCESS != status || NULL == pPropertyLayout)
         return ECOBJECTS_STATUS_PropertyNotFound;
 
@@ -1945,12 +1961,10 @@ ECObjectsStatus ECDBuffer::RemoveArrayElementsAt (ClassLayoutCR classLayout, WCh
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECDBuffer::InsertNullArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 insertIndex, UInt32 insertCount)
+ECObjectsStatus ECDBuffer::InsertNullArrayElementsAt (ClassLayoutCR classLayout, UInt32 propIdx, UInt32 insertIndex, UInt32 insertCount)
     {        
-    PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
-                
     PropertyLayoutCP pPropertyLayout = NULL;
-    ECObjectsStatus status = classLayout.GetPropertyLayout (pPropertyLayout, propertyAccessString);
+    ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (pPropertyLayout, propIdx);
     if (SUCCESS != status || NULL == pPropertyLayout)
         return ECOBJECTS_STATUS_PropertyNotFound;
             
@@ -1970,12 +1984,10 @@ ECObjectsStatus ECDBuffer::InsertNullArrayElementsAt (ClassLayoutCR classLayout,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus       ECDBuffer::AddNullArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 count)
+ECObjectsStatus       ECDBuffer::AddNullArrayElementsAt (ClassLayoutCR classLayout, UInt32 propIdx, UInt32 count)
     {        
-    PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
-                
     PropertyLayoutCP pPropertyLayout = NULL;
-    ECObjectsStatus status = classLayout.GetPropertyLayout (pPropertyLayout, propertyAccessString);
+    ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (pPropertyLayout, propIdx);
     if (ECOBJECTS_STATUS_Success != status || NULL == pPropertyLayout)
         return ECOBJECTS_STATUS_PropertyNotFound; 
             
