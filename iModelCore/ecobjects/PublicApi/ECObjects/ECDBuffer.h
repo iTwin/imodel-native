@@ -475,6 +475,11 @@ private:
     ECObjectsStatus                   ModifyData (byte const* data, void const* newData, size_t dataLength);
     ECObjectsStatus                   ModifyData (UInt32 const* data, UInt32 newData);
     ECObjectsStatus                   MoveData (byte* to, byte const* from, size_t dataLength); 
+
+    // These methods are for internal use by ECDBuffer only. They should be used within a single scope and *must* be paired. ScopedDataAccessor helps ensure this.
+    friend struct ScopedDataAccessor;
+    virtual bool                      _AcquireData() const = 0;
+    virtual bool                      _ReleaseData() const = 0;
 protected:
     //! Returns the number of bytes which must be allocated to store the header + the fixed portion of the property data, using ECDFormat_Current
     ECOBJECTS_EXPORT UInt32                 CalculateBytesUsed (ClassLayoutCR classLayout) const;

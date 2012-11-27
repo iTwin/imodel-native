@@ -112,6 +112,9 @@ protected:
     ECOBJECTS_EXPORT virtual void             _ClearValues () override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus  _CopyInstanceProperties (ECN::IECInstanceCR fromNativeInstance) override;
 
+                     virtual bool             _AcquireData() const override { return true; }
+                     virtual bool             _ReleaseData() const override { return true; }
+
     ECOBJECTS_EXPORT  ECObjectsStatus          SetValueInternal (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex);
 public:
     ECOBJECTS_EXPORT  ECObjectsStatus          SetInstancePerPropertyFlagsData (byte const* perPropertyFlagsDataAddress, int numBitsPerProperty, int numPerPropertyFlagsEntries);

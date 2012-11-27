@@ -2223,6 +2223,23 @@ static void     duplicateProperties (IECInstanceR target, ECValuesCollectionCR s
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ScopedDataAccessor
+    {
+private:
+    ECDBuffer const*            m_buffer;
+public:
+    ScopedDataAccessor (ECDBuffer const& buffer) : m_buffer(buffer._AcquireData() ? &buffer : NULL) { }
+    ~ScopedDataAccessor ()
+        {
+        if (IsValid())
+            m_buffer->_ReleaseData();
+        }
+    bool    IsValid() const { return NULL != m_buffer; }
+    };
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECDBuffer::CopyInstancePropertiesToBuffer (IECInstanceCR source)
@@ -2236,6 +2253,11 @@ ECObjectsStatus ECDBuffer::CopyInstancePropertiesToBuffer (IECInstanceCR source)
     ClassLayoutCR classLayout = GetClassLayout();
     if (NULL != srcBuffer && classLayout.Equals (srcBuffer->GetClassLayout()))
         {
+        // Ensure source instance's data is accessible. This is ugly but necessary e.g. if source instance is an ECXDInstance - it may need to acquire its XAttribute
+        ScopedDataAccessor scopedDataAccessor (*srcBuffer);
+        if (!scopedDataAccessor.IsValid())
+            { BeAssert(false); return ECOBJECTS_STATUS_Error; }
+
         // Make sure we have enough room for the data
         UInt32 bytesUsed = CalculateBytesUsed (classLayout);
         UInt32 bytesNeeded = srcBuffer->CalculateBytesUsed (classLayout);
@@ -2281,7 +2303,7 @@ ECObjectsStatus ECDBuffer::CopyInstancePropertiesToBuffer (IECInstanceCR source)
     else
         {
         // do a manual property-by-property copy. When will this actually happen? Should we support it?
-        ECValuesCollectionPtr srcValues;
+        ECValuesCollectionPtr srcValues = ECValuesCollection::Create (source);
         duplicateProperties (*thisInstance, *srcValues);
         }
 
