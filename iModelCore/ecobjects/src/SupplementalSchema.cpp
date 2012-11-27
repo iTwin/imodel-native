@@ -708,6 +708,25 @@ WStringCP consolidatedSchemaFullName
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Affan.Khan                      11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus SupplementedSchemaBuilder::SetConsolidatedCustomAttribute(IECCustomAttributeContainerR container, IECInstanceR customAttributeInstance)
+    {
+    ECSchemaR customAttributeSchema = const_cast<ECSchemaR>(customAttributeInstance.GetClass().GetSchema());
+    ECSchemaP containerSchema = container.GetContainerSchema();
+    if (containerSchema != &(customAttributeSchema))
+        {
+        if (!ECSchema::IsSchemaReferenced (*containerSchema, customAttributeSchema))
+            {
+            ECObjectsStatus status = containerSchema->AddReferencedSchema (customAttributeSchema);
+            if (status != ECOBJECTS_STATUS_Success)
+                return status;
+            }
+        }
+    return container.SetConsolidatedCustomAttribute (customAttributeInstance);
+
+    }
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 SupplementedSchemaStatus SupplementedSchemaBuilder::SupplementClass
@@ -839,7 +858,7 @@ SchemaPrecedence precedence
     ECClassCR customAttributeClass = supplementalCustomAttribute->GetClass();
     if (SCHEMA_PRECEDENCE_Greater == precedence)
         {
-        if (ECOBJECTS_STATUS_Success != consolidatedCustomAttributeContainer.SetConsolidatedCustomAttribute(*supplementalCustomAttribute))
+        if (ECOBJECTS_STATUS_Success != SetConsolidatedCustomAttribute(consolidatedCustomAttributeContainer, *supplementalCustomAttribute))
             return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
         }
     // This case is ONLY for dealing with two supplemental schemas that have the same precedence.
@@ -859,7 +878,7 @@ SchemaPrecedence precedence
             return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
         }
     else if (!consolidatedCustomAttribute.IsValid())
-        if (ECOBJECTS_STATUS_Success != consolidatedCustomAttributeContainer.SetConsolidatedCustomAttribute(*supplementalCustomAttribute))
+        if (ECOBJECTS_STATUS_Success != SetConsolidatedCustomAttribute (consolidatedCustomAttributeContainer, *supplementalCustomAttribute))
             return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
 
     return SUPPLEMENTED_SCHEMA_STATUS_Success;
@@ -891,7 +910,7 @@ SchemaPrecedence precedence
 
         }
     else
-        setStatus = consolidatedCustomAttributeContainer.SetConsolidatedCustomAttribute(*supplementalCustomAttribute);
+        setStatus = SetConsolidatedCustomAttribute (consolidatedCustomAttributeContainer, *supplementalCustomAttribute);
     return setStatus == ECOBJECTS_STATUS_Success ? SUPPLEMENTED_SCHEMA_STATUS_Success : SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
     }
 
