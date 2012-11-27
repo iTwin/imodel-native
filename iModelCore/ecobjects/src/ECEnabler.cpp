@@ -36,7 +36,7 @@ StandaloneECEnablerPtr          ECEnabler::_LocateStandaloneEnabler (SchemaKeyCR
     if (NULL == schema)
         return NULL;
 
-    ECClassP ecClass = schema->GetClassP(className);
+    ECClassCP ecClass = schema->GetClassCP(className);
     if (NULL == ecClass)
         return NULL;
     
@@ -80,12 +80,7 @@ static ECPropertyCP propertyFromAccessString (ECClassCR ecClass, WCharCP accessS
     WCharCP dot = wcschr (accessString, '.');
     if (NULL == dot)
         {
-        // Discrepancy between "managed" access strings, which do not include "[]" for array properties, and "native" access strings, which do...annoyingly requires copying the string...
-        WString fixedAccessString (accessString);
-        if (fixedAccessString.length() >= 2 && '[' == fixedAccessString[fixedAccessString.length()-2])
-            fixedAccessString.erase (fixedAccessString.length()-2);
-
-        return ecClass.GetPropertyP (fixedAccessString.c_str());
+        return ecClass.GetPropertyP (accessString);
         }
     else
         {

@@ -547,7 +547,7 @@ BeXmlNodeR containerNode
 ECObjectsStatus IECCustomAttributeContainer::CopyCustomAttributesTo
 (
 IECCustomAttributeContainerR destContainer
-)
+) const
     {
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
     FOR_EACH (IECInstancePtr customAttribute, GetPrimaryCustomAttributes(false))
