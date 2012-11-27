@@ -90,10 +90,18 @@ public:
     //! @return ECOBJECTS_STATUS_Success if the custom attribute was applied
     ECOBJECTS_EXPORT ECObjectsStatus    SetAlwaysExpand (ECPropertyR ecproperty, bool andArrayMembers = false) const;
 
+    //! Applies a custom attribute indicating that when the value of the property is changed, the other properties should be refreshed in the UI
+    ECOBJECTS_EXPORT ECObjectsStatus    SetRequiresReload (ECPropertyR ecproperty) const;
+
     //! Applies a custom attribute which prevents null property values from being displayed in the UI
     //! @param ecclass  The ECClass to which to apply the custom attribute
     //! @return ECOBJECTS_STATUS_Success if the custom attribute was applied
     ECOBJECTS_EXPORT ECObjectsStatus    SetHideNullProperties (ECClassR ecclass) const;
+
+    //! Applies a custom attribute to the schema which indicates properties of extended types such as Distance or Area are stored in UORs
+    //! This is typically applied to schemas which define intrinsic properties of elements stored in dgn files
+    //! If the attribute is not present on a schema, properties of these extended types will be assumed to be stored in meters unless a UnitSpecification attribute is applied
+    ECOBJECTS_EXPORT ECObjectsStatus    SetStoresUnitsAsUORs (ECSchemaR schema) const;
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
