@@ -16,7 +16,7 @@ using namespace Bentley::ECN;
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-//#ifdef THESE_TESTS_ALL_CRASH
+#ifdef THESE_TESTS_ALL_CRASH
 
 /*====================================================================================**/
 /// <summary>Tests for Bentley.Units and Bentley.ECObjects.Units.</summary>
