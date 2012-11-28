@@ -21,11 +21,12 @@ void UnitsTestBase::SetUp
     {
     m_testSchema = NULL;
 
-    InitializeUnits (L"testschema", m_testSchema,m_supplementalSchemas);
+    bvector<ECSchemaP> supplementalSchemas;
+    InitializeUnits (L"testschema", m_testSchema,supplementalSchemas);
 
     // Test that test schemas are not null
      ASSERT_TRUE(m_testSchema!=NULL)<<"Test setup failure: Domain Schema not loaded";
-     ASSERT_TRUE (m_supplementalSchemas.size()!=NULL)<< "Test setup failure: Supplemental Schema not loaded";
+     ASSERT_TRUE (supplementalSchemas.size()!=0)<< "Test setup failure: Supplemental Schema not loaded";
     //m_testSchema2 = CreateSchemaWithKOQHierarchy ();
     //Assert.IsNotNull (m_testSchema2, "Test setup failure: Secondary Domain Schema not loaded");
     //m_referencedSchema = ECObjects.LocateSchema ("testReferencedSchema.01.00", SchemaMatchType.Exact, NULL, NULL);
@@ -37,7 +38,7 @@ void UnitsTestBase::SetUp
     SupplementedSchemaBuilder supplementedSchemaBuilder;// = new SupplementedSchemaBuilder ();
 	m_testSchema->CopySchema (m_supplementedSchema);
 	m_supplementedSchema->IsSupplemented();
-    supplementedSchemaBuilder.UpdateSchema (*m_supplementedSchema, m_supplementalSchemas);
+    supplementedSchemaBuilder.UpdateSchema (*m_supplementedSchema, supplementalSchemas);
 	m_supplementedSchema->IsSupplemented();
    // m_supplementedSchema = supplementedSchemaBuilder.SupplementedSchema;
    // Assert.IsNotNull (m_supplementedSchema, "Test setup Failure: The Supplemented Schema is null");
@@ -48,6 +49,10 @@ void UnitsTestBase::SetUp
     InitClassAndPropertyVariables ();
 
     InitExpectedResultLists ();
+
+    WString schemaXml;
+    m_supplementedSchema->WriteToXmlString (schemaXml);
+    wprintf (schemaXml.c_str());
     }
 
 /*------------------------------------------------------------------------------------**/
@@ -62,6 +67,8 @@ bvector< ECSchemaP > & testSupplementalSchemas
 )
     {
 
+    if (0 == m_supplementalSchemas.size())
+        {
 	bvector<WString> searchPaths;
     searchPaths.push_back (ECTestFixture::GetTestDataPath(L""));
     SearchPathSchemaFileLocaterPtr schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
@@ -79,11 +86,17 @@ bvector< ECSchemaP > & testSupplementalSchemas
 
   //   Load Supplemental Schema
     //testSupplementalSchemas = new bvector< ECSchemaP > ();
-    testSupplementalSchemas.push_back ((schemaContext->LocateSchema(SchemaKey(L"TestSupplementalSchema", 01, 00), SCHEMAMATCHTYPE_Latest)).get());
-    testSupplementalSchemas.push_back ((schemaContext->LocateSchema(SchemaKey(L"TestUnitDefaults", 01, 00), SCHEMAMATCHTYPE_Latest)).get());
-    testSupplementalSchemas.push_back ((schemaContext->LocateSchema(SchemaKey(L"WidthDefaults", 01, 00), SCHEMAMATCHTYPE_Latest)).get());
-    
+    SchemaKey suppKey (L"TestSupplementalSchema", 1, 0),
+              defKey  (L"TestUnitDefaults", 1, 0),
+              widthKey (L"WidthDefaults", 1, 0);
 
+    m_supplementalSchemas.push_back ((schemaContext->LocateSchema(suppKey, SCHEMAMATCHTYPE_Latest)).get());
+    m_supplementalSchemas.push_back ((schemaContext->LocateSchema(defKey, SCHEMAMATCHTYPE_Latest)).get());
+    m_supplementalSchemas.push_back ((schemaContext->LocateSchema(widthKey, SCHEMAMATCHTYPE_Latest)).get());
+    }
+
+    for (size_t i = 0; i < m_supplementalSchemas.size(); ++i)
+        testSupplementalSchemas.push_back (m_supplementalSchemas[i].get());
     }
 
 /*------------------------------------------------------------------------------------**/
@@ -373,8 +386,7 @@ WString expectedUnitName,
 Unit defaultUnit
 )
     {
-   // ASSERT_FALSE (defaultUnit==NULL )<<"The returned Unit is null.";
-    ASSERT_EQ (expectedUnitName.c_str(), defaultUnit.GetName())<<"The expected Unit name does not match the actual name.";
+   ASSERT_TRUE (expectedUnitName.Equals (defaultUnit.GetName())) << "Expected " << expectedUnitName.c_str() << " Actual " << defaultUnit.GetName();
     }
 //
 ///*------------------------------------------------------------------------------------**/
