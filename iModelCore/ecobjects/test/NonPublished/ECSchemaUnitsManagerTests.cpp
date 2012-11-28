@@ -147,8 +147,6 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnit_FromKOQ_OverriddingUnitSystemDefaults
         VerifyDefaultUnit (L"MILLIMETRE", defaultUnit);
     }
 
-//#endif
-
 #endif
 
 END_BENTLEY_ECOBJECT_NAMESPACE
