@@ -79,9 +79,9 @@ bvector< ECSchemaP > & testSupplementalSchemas
 
   //   Load Supplemental Schema
     //testSupplementalSchemas = new bvector< ECSchemaP > ();
-    testSupplementalSchemas.push_back ((schemaContext->LocateSchema(SchemaKey(L"TestSupplementalSchema", 01, 00), SCHEMAMATCHTYPE_Latest)).get());
-    testSupplementalSchemas.push_back ((schemaContext->LocateSchema(SchemaKey(L"TestUnitDefaults", 01, 00), SCHEMAMATCHTYPE_Latest)).get());
-    testSupplementalSchemas.push_back ((schemaContext->LocateSchema(SchemaKey(L"WidthDefaults", 01, 00), SCHEMAMATCHTYPE_Latest)).get());
+   // testSupplementalSchemas.push_back ((schemaContext->LocateSchema(SchemaKey(L"TestSupplementalSchema", 01, 00), SCHEMAMATCHTYPE_Latest)).get());
+    //testSupplementalSchemas.push_back ((schemaContext->LocateSchema(SchemaKey(L"TestUnitDefaults", 01, 00), SCHEMAMATCHTYPE_Latest)).get());
+    //testSupplementalSchemas.push_back ((schemaContext->LocateSchema(SchemaKey(L"WidthDefaults", 01, 00), SCHEMAMATCHTYPE_Latest)).get());
     
 
     }
