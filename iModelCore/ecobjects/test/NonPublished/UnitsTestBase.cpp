@@ -8,7 +8,6 @@
 #include "ECObjectsTestPCH.h"
 #include "StopWatch.h"
 #include "TestFixture.h"
-#include <ECUnits/Units.h>
 #include "UnitsTestBase.h"
 
 using namespace Bentley::ECN;
@@ -23,11 +22,10 @@ void UnitsTestBase::SetUp
     m_testSchema = NULL;
 
     InitializeUnits (L"testschema", m_testSchema,m_supplementalSchemas);
-	m_BikeClass = m_testSchema->GetClassP (L"Bike");
-	m_testSchema->IsSupplemented();
+
     // Test that test schemas are not null
-   // Assert.IsNotNull (m_testSchema, "Test setup failure: Domain Schema not loaded");
-    //Assert.IsNotNull (m_supplementalSchemas, "Test setup failure: Supplemental Schema not loaded");
+     ASSERT_TRUE(m_testSchema!=NULL)<<"Test setup failure: Domain Schema not loaded";
+     ASSERT_TRUE (m_supplementalSchemas.size()!=NULL)<< "Test setup failure: Supplemental Schema not loaded";
     //m_testSchema2 = CreateSchemaWithKOQHierarchy ();
     //Assert.IsNotNull (m_testSchema2, "Test setup failure: Secondary Domain Schema not loaded");
     //m_referencedSchema = ECObjects.LocateSchema ("testReferencedSchema.01.00", SchemaMatchType.Exact, NULL, NULL);
@@ -63,20 +61,7 @@ ECSchemaPtr testSchema,
 bvector< ECSchemaP > & testSupplementalSchemas
 )
     {
-    //UnitInitialization.Initialize ();
 
-    //// Load Domain Schema
-    //string repositorySchemaPaths = System.Configuration.ConfigurationManager.AppSettings["ECUnitsRepositorySchemaPath"];
-    //if (String.IsNullOrEmpty (repositorySchemaPaths))
-    //    {
-    //    Assert.Fail ("The Repository Schemas could not be found because the 'ECUnitsRepostiorySchemaPath' appSetting is null.");
-    //    }
-    //SearchPathSchemaFileLocater locater = new SearchPathSchemaFileLocater ();
-    //ECObjects.AddSchemaLocater (locater);
-
-    //string assemblyPath = Assembly.GetExecutingAssembly ().CodeBase;
-    //assemblyPath = Path.GetDirectoryName (assemblyPath.Substring (assemblyPath.IndexOf (":///") + 4));
-    //locater.SearchPath = Path.Combine (assemblyPath, repositorySchemaPaths);
 	bvector<WString> searchPaths;
     searchPaths.push_back (ECTestFixture::GetTestDataPath(L""));
     SearchPathSchemaFileLocaterPtr schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
@@ -93,11 +78,11 @@ bvector< ECSchemaP > & testSupplementalSchemas
     //testSchema = ECObjects.LocateSchema (testSchemaName, SchemaMatchType.Exact, NULL, NULL);
 
   //   Load Supplemental Schema
-   /* testSupplementalSchemas = new bvector< ECSchemaP > ();
-    testSupplementalSchemas.Add (ECObjects.LocateSchema ("TestSupplementalSchema.01.00", SchemaMatchType.Exact, null, null));
-    testSupplementalSchemas.Add (ECObjects.LocateSchema ("TestUnitDefaults.01.00", SchemaMatchType.Exact, null, null));
-   testSupplementalSchemas.Add (ECObjects.LocateSchema ("WidthDefaults.01.00", SchemaMatchType.Exact, null, null));
-   */ 
+    //testSupplementalSchemas = new bvector< ECSchemaP > ();
+    testSupplementalSchemas.push_back ((schemaContext->LocateSchema(SchemaKey(L"TestSupplementalSchema", 01, 00), SCHEMAMATCHTYPE_Latest)).get());
+    testSupplementalSchemas.push_back ((schemaContext->LocateSchema(SchemaKey(L"TestUnitDefaults", 01, 00), SCHEMAMATCHTYPE_Latest)).get());
+    testSupplementalSchemas.push_back ((schemaContext->LocateSchema(SchemaKey(L"WidthDefaults", 01, 00), SCHEMAMATCHTYPE_Latest)).get());
+    
 
     }
 
