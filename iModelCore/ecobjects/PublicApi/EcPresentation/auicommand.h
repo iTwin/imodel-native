@@ -153,7 +153,6 @@ struct IUICommand : public RefCountedBase
 
 typedef RefCountedPtr<UICommand> UICommandPtr;
 
-
 /*---------------------------------------------------------------------------------**//**
 //! A UIcommand represents an action that can be applied on a data context. (Usually an ecinstnace)
 * @bsiclass                                    Abeesh.Basheer                  04/2012
