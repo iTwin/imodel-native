@@ -33,7 +33,7 @@ public: ECSchemaUnitsManagerTests()
 //	{}
 
 };
-
+ 
 TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromSupplementalSchemaWhereSupplementalSchemaOverridesDomainSchemaAtPropertyLevel)
     {
 		Unit defaultUnit;
@@ -148,7 +148,5 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnit_FromKOQ_OverriddingUnitSystemDefaults
     }
 
 #endif
-
-
 
 END_BENTLEY_ECOBJECT_NAMESPACE

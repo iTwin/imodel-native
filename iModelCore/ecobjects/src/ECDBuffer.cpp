@@ -1928,14 +1928,30 @@ ECObjectsStatus ECDBuffer::RemoveArrayElements (ClassLayoutCR classLayout, Prope
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECDBuffer::ClearArrayElementsFromMemory (ClassLayoutCR classLayout, UInt32 propertyIndex)
+    {
+    PropertyLayoutCP pPropertyLayout = NULL;
+    
+    ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (pPropertyLayout, propertyIndex);
+    if (ECOBJECTS_STATUS_Success == status)
+        {
+        UInt32 arrayCount = GetReservedArrayCount (*pPropertyLayout);
+        if (0 < arrayCount)
+            status = RemoveArrayElements (classLayout, *pPropertyLayout, 0, arrayCount);
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECDBuffer::RemoveArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 removeIndex, UInt32 removeCount)
+ECObjectsStatus ECDBuffer::RemoveArrayElementsAt (ClassLayoutCR classLayout, UInt32 propIdx, UInt32 removeIndex, UInt32 removeCount)
     {        
-    PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
-       
     PropertyLayoutCP pPropertyLayout = NULL;
-    ECObjectsStatus status = classLayout.GetPropertyLayout (pPropertyLayout, propertyAccessString);
+    ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (pPropertyLayout, propIdx);
     if (SUCCESS != status || NULL == pPropertyLayout)
         return ECOBJECTS_STATUS_PropertyNotFound;
 
@@ -1945,12 +1961,10 @@ ECObjectsStatus ECDBuffer::RemoveArrayElementsAt (ClassLayoutCR classLayout, WCh
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECDBuffer::InsertNullArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 insertIndex, UInt32 insertCount)
+ECObjectsStatus ECDBuffer::InsertNullArrayElementsAt (ClassLayoutCR classLayout, UInt32 propIdx, UInt32 insertIndex, UInt32 insertCount)
     {        
-    PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
-                
     PropertyLayoutCP pPropertyLayout = NULL;
-    ECObjectsStatus status = classLayout.GetPropertyLayout (pPropertyLayout, propertyAccessString);
+    ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (pPropertyLayout, propIdx);
     if (SUCCESS != status || NULL == pPropertyLayout)
         return ECOBJECTS_STATUS_PropertyNotFound;
             
@@ -1970,12 +1984,10 @@ ECObjectsStatus ECDBuffer::InsertNullArrayElementsAt (ClassLayoutCR classLayout,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus       ECDBuffer::AddNullArrayElementsAt (ClassLayoutCR classLayout, WCharCP propertyAccessString, UInt32 count)
+ECObjectsStatus       ECDBuffer::AddNullArrayElementsAt (ClassLayoutCR classLayout, UInt32 propIdx, UInt32 count)
     {        
-    PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
-                
     PropertyLayoutCP pPropertyLayout = NULL;
-    ECObjectsStatus status = classLayout.GetPropertyLayout (pPropertyLayout, propertyAccessString);
+    ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (pPropertyLayout, propIdx);
     if (ECOBJECTS_STATUS_Success != status || NULL == pPropertyLayout)
         return ECOBJECTS_STATUS_PropertyNotFound; 
             
@@ -2194,6 +2206,120 @@ void            ECDBuffer::InitializeMemory(ClassLayoutCR classLayout, byte * da
 ECN::PrimitiveType         ECDBuffer::GetStructArrayPrimitiveType () const
     {
     return _GetStructArrayPrimitiveType();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECDBuffer::ClearValues()                                               { _ClearValues(); }
+ECObjectsStatus ECDBuffer::CopyInstanceProperties (IECInstanceCR source)    { return _CopyInstanceProperties (source); }
+IECInstanceP ECDBuffer::GetAsIECInstance() const                            { return _GetAsIECInstance(); }
+ClassLayoutCR ECDBuffer::GetClassLayout() const                             { return _GetClassLayout(); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    03/11
++---------------+---------------+---------------+---------------+---------------+------*/ 
+static void     duplicateProperties (IECInstanceR target, ECValuesCollectionCR source)
+    {
+    for (ECValuesCollection::const_iterator it=source.begin(); it != source.end(); ++it)
+        {
+        ECPropertyValue const& prop = *it;
+        if (prop.HasChildValues())
+            {
+            duplicateProperties (target, *prop.GetChildValues());
+            continue;
+            }
+
+        target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ScopedDataAccessor
+    {
+private:
+    ECDBuffer const*            m_buffer;
+public:
+    ScopedDataAccessor (ECDBuffer const& buffer) : m_buffer(buffer._AcquireData() ? &buffer : NULL) { }
+    ~ScopedDataAccessor ()
+        {
+        if (IsValid())
+            m_buffer->_ReleaseData();
+        }
+    bool    IsValid() const { return NULL != m_buffer; }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECDBuffer::CopyInstancePropertiesToBuffer (IECInstanceCR source)
+    {
+    IECInstanceP thisInstance = GetAsIECInstance();
+    if (!thisInstance->GetClass().GetName().Equals (source.GetClass().GetName()))
+        return ECOBJECTS_STATUS_Error;
+
+    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+    ECDBuffer* srcBuffer = source.GetECDBuffer();
+    ClassLayoutCR classLayout = GetClassLayout();
+    if (NULL != srcBuffer && classLayout.Equals (srcBuffer->GetClassLayout()))
+        {
+        // Ensure source instance's data is accessible. This is ugly but necessary e.g. if source instance is an ECXDInstance - it may need to acquire its XAttribute
+        ScopedDataAccessor scopedDataAccessor (*srcBuffer);
+        if (!scopedDataAccessor.IsValid())
+            { BeAssert(false); return ECOBJECTS_STATUS_Error; }
+
+        // Make sure we have enough room for the data
+        UInt32 bytesUsed = CalculateBytesUsed (classLayout);
+        UInt32 bytesNeeded = srcBuffer->CalculateBytesUsed (classLayout);
+        if (bytesNeeded > bytesUsed)
+            {
+            if (ECOBJECTS_STATUS_Success != _GrowAllocation (bytesNeeded - bytesUsed))
+                return ECOBJECTS_STATUS_Error;
+            }
+
+        // copy ecd buffer
+        if (ECOBJECTS_STATUS_Success != ModifyData (_GetData(), srcBuffer->_GetData(), bytesNeeded))
+            return ECOBJECTS_STATUS_Error;
+
+        // copy struct instances, updating their identifiers if necessary
+        PropertyLayoutCP propLayout;
+        UInt32 nProperties = classLayout.GetPropertyCount();
+        for (UInt32 propIdx = 0; propIdx < nProperties; propIdx++)
+            {
+            if (ECOBJECTS_STATUS_Success != classLayout.GetPropertyLayoutByIndex (propLayout, propIdx) || !propLayout->GetTypeDescriptor().IsStructArray())
+                continue;
+
+            ArrayCount nEntries = srcBuffer->GetReservedArrayCount (*propLayout);
+            for (ArrayCount arrayIdx = 0; arrayIdx < nEntries; arrayIdx++)
+                {
+                ECValue srcStructVal;
+                if (ECOBJECTS_STATUS_Success == srcBuffer->_GetStructArrayValueFromMemory (srcStructVal, *propLayout, arrayIdx) && !srcStructVal.IsNull())
+                    {
+                    if (ECOBJECTS_STATUS_Success != (status = _SetStructArrayValueToMemory (srcStructVal, classLayout, *propLayout, arrayIdx)))
+                        {
+                        // This useless return value is a constant pain in the...
+                        if (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == status)
+                            status = ECOBJECTS_STATUS_Success;
+                        else
+                            break;
+                        }
+                    }
+                }
+
+            if (ECOBJECTS_STATUS_Success != status)
+                break;
+            }
+        }
+    else
+        {
+        // do a manual property-by-property copy. When will this actually happen? Should we support it?
+        ECValuesCollectionPtr srcValues = ECValuesCollection::Create (source);
+        duplicateProperties (*thisInstance, *srcValues);
+        }
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2721,7 +2847,7 @@ ECObjectsStatus       ECDBuffer::SetValueToMemory (ECValueCR v, ClassLayoutCR cl
         if (v.GetStruct() != NULL)
             {
             UInt32 propertyIndex;
-            IECInstanceP instance = dynamic_cast<IECInstanceP> (this);
+            IECInstanceP instance = this->GetAsIECInstance();
             if (NULL != instance && ECOBJECTS_STATUS_Success == classLayout.GetPropertyLayoutIndex (propertyIndex, propertyLayout))
                 {
                 // Determine if the struct is valid to add to this array
@@ -2804,8 +2930,7 @@ static CalculatedPropertySpecificationCP lookupCalculatedPropertySpecification (
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus  ECDBuffer::EvaluateCalculatedProperty (ClassLayoutCR classLayout, PropertyLayoutCR propLayout, ECValueR existingValue) const
     {
-    // ###TODO: I don't like this cast.
-    IECInstanceCP iecInstance = dynamic_cast<IECInstanceCP> (this);
+    IECInstanceCP iecInstance = this->GetAsIECInstance();
     if (NULL == iecInstance)
         { BeAssert (false); return ECOBJECTS_STATUS_Error; }
 
@@ -2833,8 +2958,7 @@ ECObjectsStatus  ECDBuffer::EvaluateCalculatedProperty (ClassLayoutCR classLayou
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECDBuffer::SetCalculatedProperty (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout)
     {
-    // ###TODO: This cast...
-    IECInstanceP iecInstance = dynamic_cast<IECInstanceP> (this);
+    IECInstanceP iecInstance = this->GetAsIECInstance();
     if (NULL == iecInstance)
         { BeAssert (false); return ECOBJECTS_STATUS_Error; }
 

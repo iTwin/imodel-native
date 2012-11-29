@@ -21,6 +21,7 @@ typedef bvector<StyleOverrideP>                      StyleOverrideList;
 typedef bvector<GroupingRuleP>                       GroupingRuleList;
 typedef bvector<LocalizationResourceKeyDefinitionP>  LocalizationResourceKeyDefinitionList;
 typedef bvector<CheckBoxRuleP>                       CheckBoxRuleList;
+typedef bvector<RenameNodeRuleP>                     RenameNodeRuleList;
 
 /*---------------------------------------------------------------------------------**//**
 PresentationRuleSet is a container of all presentation rules for particular type of the tree
@@ -46,6 +47,7 @@ struct PresentationRuleSet : public RefCountedBase
         GroupingRuleList                       m_groupingRules;
         LocalizationResourceKeyDefinitionList  m_localizationResourceKeyDefinitions;
         CheckBoxRuleList                       m_checkBoxRules;
+        RenameNodeRuleList                     m_renameNodeRules;
 
         //Private constructor. This class instance should be creates using static helper methods.
         PresentationRuleSet (void)
@@ -99,7 +101,7 @@ struct PresentationRuleSet : public RefCountedBase
         //! Writes PresentationRuleSet to XmlFile.
         ECOBJECTS_EXPORT bool                           WriteToXmlFile (WCharCP xmlFilePath);
 
-        //! PresentationRuleSet identificator.
+        //! PresentationRuleSet identification.
         ECOBJECTS_EXPORT WStringCR                      GetRuleSetId (void) const         { return m_ruleSetId;        }
 
         //! Full id of PresentationRuleSet that includes RuleSetId, Version, and IsSupplemental flag.
@@ -126,13 +128,13 @@ struct PresentationRuleSet : public RefCountedBase
         //! Collection of rules, which should be used when content for selected nodes needs to be populated.
         ECOBJECTS_EXPORT ContentRuleList&               GetContentRules (void)            { return m_contentRules;     }
 
-        //! Collection of rules, which should be used when default ImageId for nodes should be overriden.
+        //! Collection of rules, which should be used when default ImageId for nodes should be overridden.
         ECOBJECTS_EXPORT ImageIdOverrideList&           GetImageIdOverrides (void)        { return m_imageIdRules;     }
 
-        //! Collection of rules, which should be used when defaul Label or Description for nodes should be overriden.
+        //! Collection of rules, which should be used when default Label or Description for nodes should be overridden.
         ECOBJECTS_EXPORT LabelOverrideList&             GetLabelOverrides (void)          { return m_labelOverrides;   }
 
-        //! Collection of rules, which should be used when defaul style for nodes should be overriden.
+        //! Collection of rules, which should be used when default style for nodes should be overridden.
         ECOBJECTS_EXPORT StyleOverrideList&             GetStyleOverrides (void)          { return m_styleOverrides;   }
 
         //! Collection of rules, which should be used when advanced grouping should be applied for particular classes.
@@ -141,9 +143,11 @@ struct PresentationRuleSet : public RefCountedBase
         //! Collection of rules, which should be used when localization resource key definition is predefined.
         ECOBJECTS_EXPORT LocalizationResourceKeyDefinitionList&  GetLocalizationResourceKeyDefinitions (void) { return m_localizationResourceKeyDefinitions; }
 
-        //! Collection of rules, which should be used when check boxes for particural nodes should be displayed.
+        //! Collection of rules, which should be used when check boxes for particular nodes should be displayed.
         ECOBJECTS_EXPORT CheckBoxRuleList&              GetCheckBoxRules (void)           { return m_checkBoxRules;    }
 
+        //! Collection of rules, which should be used when particular nodes should be displayed.
+        ECOBJECTS_EXPORT RenameNodeRuleList&            GetRenameNodeRules (void)         { return m_renameNodeRules;  }
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
