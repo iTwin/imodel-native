@@ -28,7 +28,7 @@ ECSchemaPtr m_supplementedSchema;
 /// <summary>The schema supplemental modification to test</summary>
 ECSchemaPtr m_supplementalSchemaMod;
 /// <summary>The list of supplemental schemas to test</summary>
-bvector< ECSchemaP > m_supplementalSchemas;
+bvector< ECSchemaPtr > m_supplementalSchemas;
 /// <summary>The second schema to test</summary>
 ECSchemaPtr  m_testSchema2;
 /// <summary>The schema referenced by the schema to test</summary>

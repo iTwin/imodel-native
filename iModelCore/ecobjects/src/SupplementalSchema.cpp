@@ -688,8 +688,9 @@ WStringCP consolidatedSchemaFullName
         if (localCustomAttribute.IsValid())
             consolidatedCustomAttribute = localCustomAttribute->CreateCopyThroughSerialization();
 
+#ifdef DO_UNITS_REQUIRE_SPECIAL_HANDLING    // NEEDSWORK: special methods for units unimplemented...but are they actually required in native?
         // We don't use merging delegates like in the managed world, but Units custom attributes still need to be treated specially
-        if (customAttribute->GetClass().GetSchema().GetName().EqualsI(L"Unit_Attributes.01.00"))
+        if (customAttribute->GetClass().GetSchema().GetName().EqualsI(L"Unit_Attributes"))  // changed from "Unit_Attributes.01.00" - ECSchema::GetName() does not include the version numbers...
             {
             if (customAttribute->GetClass().GetName().EqualsI(L"UnitSpecification"))
                 status = MergeUnitSpecificationCustomAttribute(consolidatedCustomAttributeContainer, supplementalCustomAttribute, consolidatedCustomAttribute, precedence);
@@ -699,6 +700,7 @@ WStringCP consolidatedSchemaFullName
                 status = MergeStandardCustomAttribute(consolidatedCustomAttributeContainer, supplementalCustomAttribute, consolidatedCustomAttribute, precedence);
             }
         else
+#endif
             status = MergeStandardCustomAttribute(consolidatedCustomAttributeContainer, supplementalCustomAttribute, consolidatedCustomAttribute, precedence);
 
         if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
