@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
+#include <Bentley/IStorage.h>   // for _FILETIME
 #include <Bentley/BeAssert.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
@@ -627,6 +628,7 @@ BentleyStatus       ECValue::SetDateTimeTicks (Int64 value)
 // DateTime   - The DateTime.Ticks value stored in a ECXAttribute represents the number 
 //              of 100-nanosecond  intervals that have elapsed since 00:00:00 01/01/01 
 //////////////////////////////////////////////////////////////////////////////////////////
+static const Int64 TICKADJUSTMENT = 504911232000000000LL;     // ticks between 01/01/01 and 01/01/1601
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Krischan.Eberle             10/2012
@@ -646,6 +648,22 @@ DateTime          ECValue::GetDateTime () const
     POSTCONDITION (stat == SUCCESS, DateTime ());
 
     return dateTime;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt64 ECValue::GetDateTimeUnixMillis() const
+    {
+    PRECONDITION (IsDateTime() && "Tried to get DateTime value from an ECN::ECValue that is not a DateTime.", 0);
+    PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", 0);
+
+    Int64 ticks = (UInt64)GetDateTimeTicks();
+    ticks -= TICKADJUSTMENT;
+    _FILETIME fileTime;
+    fileTime.dwLowDateTime = ticks & 0xFFFFFFFF;
+    fileTime.dwHighDateTime = ticks >> 0x20;
+    return BeTimeUtilities::ConvertFiletimeToUnixMillis (fileTime);
     }
 
 /*---------------------------------------------------------------------------------**//**
