@@ -8,9 +8,7 @@
 #include "ECObjectsPch.h"
 
 #include <ECObjects/ECExpressionNode.h>
-#include <Bentley/BeCriticalSection.h>
 
-static BeCriticalSection                                s_ecexpressionsCS;
 static ECN::IECSymbolProvider::ExternalSymbolPublisher   s_externalSymbolPublisher;
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
@@ -778,7 +776,7 @@ ValueSymbolPtr  ValueSymbol::Create(wchar_t const* name, ECN::ECValueCR exprValu
 +---------------+---------------+---------------+---------------+---------------+------*/
 void IECSymbolProvider::RegisterExternalSymbolPublisher (ExternalSymbolPublisher publisher)
     {
-    BeCriticalSectionHolder cs (s_ecexpressionsCS);
+    // MT: This is a function pointer passed down from DgnPlatform. The function wraps access to the host object which actually provides the symbols.
     if (NULL == s_externalSymbolPublisher)
         s_externalSymbolPublisher = publisher;
     }
@@ -791,7 +789,6 @@ SymbolExpressionContextPtr SymbolExpressionContext::Create (bvector<WString> con
     SymbolExpressionContextPtr context = Create (NULL);
     if (context.IsValid())
         {
-        BeCriticalSectionHolder cs (s_ecexpressionsCS);
         if (NULL != s_externalSymbolPublisher)
             s_externalSymbolPublisher (*context, requestedSymbolSets);
         }
