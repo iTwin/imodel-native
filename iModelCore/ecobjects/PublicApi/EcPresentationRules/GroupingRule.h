@@ -83,20 +83,18 @@ struct GroupSpecification
     {
 //__PUBLISH_SECTION_END__
     private:
-        WString                 m_imageId;
-        WString                 m_contextMenuLabel;
-        bool                    m_createGroupForSingleItem;
+        WString  m_contextMenuLabel;
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 protected:
     ECOBJECTS_EXPORT GroupSpecification ()
-        : m_imageId (L""), m_contextMenuLabel (L""), m_createGroupForSingleItem (false)
+        : m_contextMenuLabel (L"")
         {
         }
 
-    ECOBJECTS_EXPORT GroupSpecification (WStringCR imageId, WStringCR contextMenuLabel, bool createGroupForSingleItem)
-        : m_imageId (imageId), m_contextMenuLabel (contextMenuLabel), m_createGroupForSingleItem (createGroupForSingleItem)
+    ECOBJECTS_EXPORT GroupSpecification (WStringCR contextMenuLabel)
+        : m_contextMenuLabel (contextMenuLabel)
         {
         }
 
@@ -111,14 +109,35 @@ public:
     //! Writes group specification to xml node.
     ECOBJECTS_EXPORT void                     WriteXml (BeXmlNodeP parentXmlNode);
 
-    //! ImageId of the grouping node. Can be ECExpression. If not set ECClass or ECProperty ImageId will be used.
-    ECOBJECTS_EXPORT WStringCR                GetImageId (void) const                     { return m_imageId; }
-
     //! ContextMenu label of this particular grouping option. If not set ECClass or ECProperty DisplayLabel will be used.
     ECOBJECTS_EXPORT WStringCR                GetContextMenuLabel (void) const            { return m_contextMenuLabel; }
+    };
 
-    //! Idendifies whether a group should be created even if there is only single of particular group.
-    ECOBJECTS_EXPORT bool                     GetCreateGroupForSingleItem (void) const    { return m_createGroupForSingleItem; }
+/*---------------------------------------------------------------------------------**//**
+This grouping option allows to create a Instance NavNode that represents mutiple instances
+of the same label.
+* @bsiclass                                     Eligijus.Mauragas               11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct SameLabelInstanceGroup : public GroupSpecification
+    {
+    /*__PUBLISH_SECTION_END__*/
+    protected:
+    /*__PUBLISH_SECTION_START__*/
+        ECOBJECTS_EXPORT virtual CharCP           _GetXmlElementName ();
+        ECOBJECTS_EXPORT virtual bool             _ReadXml (BeXmlNodeP xmlNode);
+        ECOBJECTS_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode);
+
+    public:
+        ECOBJECTS_EXPORT SameLabelInstanceGroup ()
+            : GroupSpecification ()
+            {
+            }
+
+        ECOBJECTS_EXPORT SameLabelInstanceGroup (WStringCR contextMenuLabel)
+            : GroupSpecification (contextMenuLabel)
+            {
+            }
+
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -129,8 +148,9 @@ struct ClassGroup : public GroupSpecification
     {
     /*__PUBLISH_SECTION_END__*/
     private:
-        WString                 m_schemaName;
-        WString                 m_baseClassName;
+        bool      m_createGroupForSingleItem;
+        WString   m_schemaName;
+        WString   m_baseClassName;
 
     protected:
     /*__PUBLISH_SECTION_START__*/
@@ -140,14 +160,17 @@ struct ClassGroup : public GroupSpecification
 
     public:
         ECOBJECTS_EXPORT ClassGroup ()
-            : GroupSpecification (), m_schemaName (L""), m_baseClassName (L"")
+            : GroupSpecification (), m_createGroupForSingleItem (false), m_schemaName (L""), m_baseClassName (L"")
             {
             }
 
-        ECOBJECTS_EXPORT ClassGroup (WStringCR imageId, WStringCR contextMenuLabel, bool createGroupForSingleItem, WStringCR schemaName, WStringCR baseClassName)
-            : GroupSpecification (imageId, contextMenuLabel, createGroupForSingleItem), m_schemaName (schemaName), m_baseClassName (baseClassName)
+        ECOBJECTS_EXPORT ClassGroup (WStringCR contextMenuLabel, bool createGroupForSingleItem, WStringCR schemaName, WStringCR baseClassName)
+            : GroupSpecification (contextMenuLabel), m_createGroupForSingleItem (createGroupForSingleItem), m_schemaName (schemaName), m_baseClassName (baseClassName)
             {
             }
+
+        //! Idendifies whether a group should be created even if there is only single of particular group.
+        ECOBJECTS_EXPORT bool                     GetCreateGroupForSingleItem (void) const    { return m_createGroupForSingleItem; }
 
         //! ECSchema name of base class.
         ECOBJECTS_EXPORT WStringCR                GetSchemaName (void) const                  { return m_schemaName; }
@@ -166,6 +189,8 @@ struct PropertyGroup : public GroupSpecification
     {
     /*__PUBLISH_SECTION_END__*/
     private:
+        WString                 m_imageId;
+        bool                    m_createGroupForSingleItem;
         WString                 m_propertyName;
         PropertyRangeGroupList  m_ranges;
 
@@ -177,17 +202,23 @@ struct PropertyGroup : public GroupSpecification
 
     public:
         ECOBJECTS_EXPORT PropertyGroup ()
-            : GroupSpecification (), m_propertyName (L"")
+            : GroupSpecification (), m_imageId (L""), m_createGroupForSingleItem (false), m_propertyName (L"")
             {
             }
 
-        ECOBJECTS_EXPORT PropertyGroup (WStringCR imageId, WStringCR contextMenuLabel, bool createGroupForSingleItem, WStringCR propertyName)
-            : GroupSpecification (imageId, contextMenuLabel, createGroupForSingleItem), m_propertyName (propertyName)
+        ECOBJECTS_EXPORT PropertyGroup (WStringCR contextMenuLabel, WStringCR imageId, bool createGroupForSingleItem, WStringCR propertyName)
+            : GroupSpecification (contextMenuLabel), m_imageId (imageId), m_createGroupForSingleItem (createGroupForSingleItem), m_propertyName (propertyName)
             {
             }
 
         //! Destructor.
         ECOBJECTS_EXPORT                          ~PropertyGroup (void);
+
+        //! ImageId of the grouping node. Can be ECExpression. If not set ECClass or ECProperty ImageId will be used.
+        ECOBJECTS_EXPORT WStringCR                GetImageId (void) const                     { return m_imageId; }
+
+        //! Idendifies whether a group should be created even if there is only single of particular group.
+        ECOBJECTS_EXPORT bool                     GetCreateGroupForSingleItem (void) const    { return m_createGroupForSingleItem; }
 
         //! ECProperty name to group ECInstances by.
         ECOBJECTS_EXPORT WStringCR                GetPropertyName (void) const                { return m_propertyName; }
