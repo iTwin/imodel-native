@@ -81,6 +81,7 @@ ECPresentationRulesHeaders = $(ecpresentationRulesPublicAPISrc)PresentationRules
                              $(ecpresentationRulesPublicAPISrc)StyleOverride.h \
                              $(ecpresentationRulesPublicAPISrc)LocalizationResourceKeyDefinition.h \
                              $(ecpresentationRulesPublicAPISrc)GroupingRule.h \
+                             $(ecpresentationRulesPublicAPISrc)SortingRule.h \
                              $(ecpresentationRulesPublicAPISrc)AllInstanceNodesSpecification.h \
                              $(ecpresentationRulesPublicAPISrc)AllRelatedInstanceNodesSpecification.h \
                              $(ecpresentationRulesPublicAPISrc)CustomNodeSpecification.h \
@@ -124,7 +125,7 @@ $(o)ExpressionContext$(oext)                               : $(baseDir)Expressio
 
 $(o)ExpressionHandler$(oext)                               : $(baseDir)ExpressionHandler.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)ECDBuffer$(oext)                           : $(baseDir)ECDBuffer.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+$(o)ECDBuffer$(oext)                                       : $(baseDir)ECDBuffer.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)StandaloneECInstance$(oext)                            : $(baseDir)StandaloneECInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)StandaloneECInstance.h
 
@@ -195,6 +196,8 @@ $(o)StyleOverride$(oext)                                   : $(baseDir)presentat
 $(o)LocalizationResourceKeyDefinition$(oext)               : $(baseDir)presentation/PresentationRules/LocalizationResourceKeyDefinition.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
 $(o)GroupingRule$(oext)                                    : $(baseDir)presentation/PresentationRules/GroupingRule.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
+
+$(o)SortingRule$(oext)                                     : $(baseDir)presentation/PresentationRules/SortingRule.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
 $(o)AllInstanceNodesSpecification$(oext)                   : $(baseDir)presentation/PresentationRules/AllInstanceNodesSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 

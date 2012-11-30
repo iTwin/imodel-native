@@ -28,6 +28,7 @@ PresentationRuleSet::~PresentationRuleSet ()
     CommonTools::FreePresentationRules (m_localizationResourceKeyDefinitions);
     CommonTools::FreePresentationRules (m_checkBoxRules);
     CommonTools::FreePresentationRules (m_renameNodeRules);
+    CommonTools::FreePresentationRules (m_sortingRules);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -102,6 +103,7 @@ bool PresentationRuleSet::ReadXml (BeXmlDomR xmlDom)
     CommonTools::LoadRulesFromXmlNode <LocalizationResourceKeyDefinition, LocalizationResourceKeyDefinitionList> (ruleSetNode, m_localizationResourceKeyDefinitions, LOCALIZATION_DEFINITION_XML_NODE_NAME);
     CommonTools::LoadRulesFromXmlNode <CheckBoxRule,    CheckBoxRuleList>    (ruleSetNode, m_checkBoxRules,    CHECKBOX_RULE_XML_NODE_NAME);
     CommonTools::LoadRulesFromXmlNode <RenameNodeRule,  RenameNodeRuleList>  (ruleSetNode, m_renameNodeRules,  RENAMENODE_RULE_XML_NODE_NAME);
+    CommonTools::LoadRulesFromXmlNode <SortingRule,     SortingRuleList>     (ruleSetNode, m_sortingRules,     SORTING_RULE_XML_NODE_NAME);
 
     return true;
     }
@@ -129,6 +131,7 @@ void PresentationRuleSet::WriteXml (BeXmlDomR xmlDom)
     CommonTools::WriteRulesToXmlNode<LocalizationResourceKeyDefinition, LocalizationResourceKeyDefinitionList> (ruleSetNode, m_localizationResourceKeyDefinitions);
     CommonTools::WriteRulesToXmlNode<CheckBoxRule,    CheckBoxRuleList>    (ruleSetNode, m_checkBoxRules);
     CommonTools::WriteRulesToXmlNode<RenameNodeRule,  RenameNodeRuleList>  (ruleSetNode, m_renameNodeRules);
+    CommonTools::WriteRulesToXmlNode<SortingRule,     SortingRuleList>     (ruleSetNode, m_sortingRules);
     }
 
 /*---------------------------------------------------------------------------------**//**
