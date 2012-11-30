@@ -82,10 +82,12 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
 
 //! Avoid direct use of this macro.  It is only intended for use by other macros defined in this file.
 #define EXPECT_CONDITION_LOG_ASSERT_RETURN(_Expression, _ErrorStatus, _LogMessage, ...)       \
+    {\
     if (!(_Expression))                                                         \
         {                                                                       \
         LOG_ASSERT_RETURN(_Expression, _ErrorStatus, _LogMessage, ## __VA_ARGS__)            \
-        }
+        }\
+    }
 
 //! This macro should be utilized in published API methods to enforce any restrictions on the parameters of the method and/or data members as a way to 
 //! ensure the method is to behave correctly, PRIOR to running the code in the method.  It is in accordance with the Bertrand Meyer "Design By Contract" methodology.
