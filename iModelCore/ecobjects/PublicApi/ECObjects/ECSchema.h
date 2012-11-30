@@ -91,7 +91,6 @@ struct ECNameValidation
 private:
 /*__PUBLISH_SECTION_END__*/
     static void AppendEncodedCharacter (WStringR encoded, WChar c);
-    static bool IsValidAlphaNumericCharacter (WChar c);
 /*__PUBLISH_SECTION_START__*/
 public:
     enum ValidationResult
@@ -118,6 +117,9 @@ public:
     //! @param[in] name     The name to validate
     //! @returns RESULT_Valid if the name is valid, or a ValidationResult indicating why the name is invalid.
     ECOBJECTS_EXPORT static ValidationResult    Validate (WCharCP name);
+
+    //! Checks whether a character is valid for use in an ECName, e.g. alphanumeric, plus '_'
+    ECOBJECTS_EXPORT static bool IsValidAlphaNumericCharacter (WChar c);
     };
 
 //=======================================================================================    
