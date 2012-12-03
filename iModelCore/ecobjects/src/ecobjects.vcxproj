@@ -106,7 +106,6 @@
     <ClInclude Include="..\PublicApi\ECPersistence\IECConnection.h" />
     <ClInclude Include="..\PublicApi\ECPersistence\IECSchemaManager.h" />
     <ClInclude Include="..\PublicApi\ECPersistence\IECStatement.h" />
-    <ClInclude Include="ECEvent.h" />
     <ClInclude Include="ECObjectsPch.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECSchema.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECValue.h" />

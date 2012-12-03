@@ -211,9 +211,6 @@
     <ClInclude Include="..\PublicApi\EcPresentation\ecviewdefinition.h">
       <Filter>ECPresentation\Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ECEvent.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\CalculatedProperty.h">
       <Filter>Header Files</Filter>
     </ClInclude>
