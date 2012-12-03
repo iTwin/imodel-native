@@ -119,6 +119,17 @@ void            ECPresentationManager::RemoveProvider (ECPresentationCommandProv
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    dmitrijus.tiazlovas              11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPresentationCommandProviderCP ECPresentationManager::GetCommandProviderById (WString providerId)
+    {
+    for (T_CmdProviderSet::iterator iter = m_cmdProviders.begin(); iter != m_cmdProviders.end(); ++iter)
+        if (BeStringUtilities::Wcsicmp ((*iter)->GetProviderId ().c_str (), providerId.c_str ()))
+            return *iter;
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECPresentationManager::AddProvider (ECPresentationImageProviderR provider)

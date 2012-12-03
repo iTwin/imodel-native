@@ -73,6 +73,11 @@
 
 #define SAMEL_LABEL_INSTANCE_GROUP_XML_NODE_NAME                                      "SameLabelInstanceGroup"
 
+#define DISPLAYRELATEDITEMS_SPECIFICATION_XML_NODE_NAME                               "DisplayRelatedItems"
+#define DISPLAYRELATEDITEMS_SPECIFICATION_XML_ATTRIBUTE_LOGICALCHILDREN               "LogicalChildren"
+#define DISPLAYRELATEDITEMS_SPECIFICATION_XML_ATTRIBUTE_NESTINGDEPTH                  "NestingDepth"
+#define DISPLAYRELATEDITEMS_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPCLASSES           "RelationshipClasses"
+
 #define CLASS_GROUP_XML_NODE_NAME                                                     "ClassGroup"
 #define CLASS_GROUP_XML_ATTRIBUTE_SCHEMANAME                                          "SchemaName"
 #define CLASS_GROUP_XML_ATTRIBUTE_BASECLASSNAME                                       "BaseClassName"
