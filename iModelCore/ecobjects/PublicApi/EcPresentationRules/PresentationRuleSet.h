@@ -148,7 +148,7 @@ struct PresentationRuleSet : public RefCountedBase
         //! Collection of rules, which should be used when check boxes for particular nodes should be displayed.
         ECOBJECTS_EXPORT CheckBoxRuleList&              GetCheckBoxRules (void)           { return m_checkBoxRules;    }
 
-        //! Collection of rules, which should be used when particular nodes should be displayed.
+        //! Collection of rules, which should be used when particular nodes can be renamed.
         ECOBJECTS_EXPORT RenameNodeRuleList&            GetRenameNodeRules (void)         { return m_renameNodeRules;  }
 
         //! Collection of rules, which should be used for configuring sorting of ECInstances.

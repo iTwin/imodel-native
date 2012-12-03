@@ -222,7 +222,7 @@ struct ECPresentationCommandProvider
         virtual bvector<UICommandPtr> _GetCommand (IAUIDataContextCR instance, int purpose) const = 0;
     
     public:
-
+        virtual WString GetProviderId () const = 0;
         virtual ~ECPresentationCommandProvider() {}
 
         ECOBJECTS_EXPORT bvector<UICommandPtr> GetCommand (IAUIDataContextCR instance, int purpose) const;
