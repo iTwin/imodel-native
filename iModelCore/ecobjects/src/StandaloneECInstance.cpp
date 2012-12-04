@@ -423,7 +423,20 @@ ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueC
         }
     else
         {
-        p = v.GetStruct();    
+        // Avoid making a copy if we have a Standalone that's not already part of somebody else's struct array
+        IECInstancePtr pFrom = v.GetStruct();
+        StandaloneECInstancePtr pTo = dynamic_cast<StandaloneECInstance*> (pFrom.get());
+        if (pTo.IsNull() || pTo->IsSupportingInstance())
+            {
+            pTo = pFrom->GetEnabler().GetClass().GetDefaultStandaloneEnabler()->CreateInstance();
+            ECObjectsStatus copyStatus = pTo->CopyInstanceProperties (*pFrom);
+            if (ECOBJECTS_STATUS_Success != copyStatus)
+                return copyStatus;
+            }
+
+        // We now own it as a supporting instance
+        pTo->SetIsSupportingInstance();
+        p = pTo.get();
         structValueIdValue.SetInteger (structValueId);
         }
 
@@ -876,7 +889,7 @@ size_t                StandaloneECInstance::_GetOffsetToIECInstance () const
 +---------------+---------------+---------------+---------------+---------------+------*/        
 StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerR enabler, byte * data, UInt32 size) :
         MemoryECInstanceBase (data, size, enabler.GetClassLayout(), true),
-        m_sharedWipEnabler(&enabler)
+        m_sharedWipEnabler(&enabler), m_isSupportingInstance (false)
     {
     }
 
@@ -885,7 +898,7 @@ StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerR enabler, byte *
 +---------------+---------------+---------------+---------------+---------------+------*/        
 StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerR enabler, UInt32 minimumBufferSize) :
         MemoryECInstanceBase (enabler.GetClassLayout(), minimumBufferSize, true),
-        m_sharedWipEnabler(&enabler)
+        m_sharedWipEnabler(&enabler), m_isSupportingInstance (false)
     {
     }
     

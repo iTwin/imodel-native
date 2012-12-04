@@ -1566,7 +1566,7 @@ static bool ClassNameComparer (ECClassP class1, ECClassP class2)
     int comparison = class1->GetName().CompareTo (class2->GetName());
     return comparison < 0;
     }
-  
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
