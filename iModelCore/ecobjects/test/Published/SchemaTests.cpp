@@ -957,6 +957,41 @@ TEST_F(SchemaReferenceTest, ExpectSuccessWithSpecialCaseOpenPlantSchema)
     EXPECT_EQ(0, refSchema->GetName().CompareTo(L"Bentley_Standard_CustomAttributes"));
     }
 
+TEST_F(SchemaReferenceTest, ExpectSchemaGraphInCorrectOrder)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    WString seedPath(ECTestFixture::GetTestDataPath(L"").c_str());
+    schemaContext->AddSchemaPath(seedPath.c_str());
+
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath( L"Bentley_Plant.06.00.ecschema.xml").c_str(), *schemaContext);
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
+    bvector<ECSchemaP> schemasToImport;
+    schema->FindAllSchemasInGraph (schemasToImport, true);
+    bvector<WCharCP> expectedPrefixes;
+    expectedPrefixes.push_back(L"iipmdbca");
+    expectedPrefixes.push_back(L"rdlca");
+    expectedPrefixes.push_back(L"beca");
+    expectedPrefixes.push_back(L"bsca");
+    expectedPrefixes.push_back(L"bsm");
+    expectedPrefixes.push_back(L"bjca");
+    expectedPrefixes.push_back(L"jclass");
+    expectedPrefixes.push_back(L"dmd");
+    expectedPrefixes.push_back(L"stepmd");
+    expectedPrefixes.push_back(L"bjeca");
+    expectedPrefixes.push_back(L"bpca");
+    expectedPrefixes.push_back(L"bp");
+
+    EXPECT_EQ(schemasToImport.size(), expectedPrefixes.size());
+    int counter = 0;
+    FOR_EACH(ECSchemaP testSchema, schemasToImport)
+        {
+        WString prefix = testSchema->GetNamespacePrefix();
+        EXPECT_EQ(0, wcscmp(prefix.c_str(), expectedPrefixes[counter]));
+        counter++;
+        }
+    }
+
 TEST_F(SchemaLocateTest, ExpectSuccessWhenLocatingStandardSchema)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
