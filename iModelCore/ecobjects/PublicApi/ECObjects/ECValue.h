@@ -226,13 +226,33 @@ public:
     ECOBJECTS_EXPORT IECInstancePtr GetStruct() const;
     ECOBJECTS_EXPORT BentleyStatus  SetStruct (IECInstanceP structInstance);
         
-    ECOBJECTS_EXPORT DateTime       GetDateTime() const;
+    //! Gets the DateTime value.
+    //! @return DateTime value
+    ECOBJECTS_EXPORT DateTime       GetDateTime () const;
+    
+    //! Sets the DateTime value.
+    //! @param[in] dateTime DateTime value to set
+    //! @return SUCCESS or ERROR
     ECOBJECTS_EXPORT BentleyStatus  SetDateTime (DateTimeCR dateTime); 
 
-    ECOBJECTS_EXPORT Int64          GetDateTimeTicks() const;
+    //! Gets the DateTime value as ticks since the beginning of the Common Era epoch.
+    //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
+    //! epoch begins at 0001-01-01 00:00:00 UTC.
+    //! @return DateTime value as ticks since the beginning of the Common Era epoch.
+    ECOBJECTS_EXPORT Int64          GetDateTimeTicks () const;
+
+    //! Sets the DateTime value as ticks since the beginning of the Common Era epoch.
+    //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
+    //! epoch begins at 0001-01-01 00:00:00 UTC.
+    //! @param[in] value DateTime Common Era ticks to set
+    //! @return SUCCESS or ERROR
     ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 value);
 
-    ECOBJECTS_EXPORT UInt64         GetDateTimeUnixMillis() const;
+    //! Returns the DateTime value as milliseconds since the beginning of the Unix epoch.
+    //! The Unix epoch begins at 1970-01-01 00:00:00 UTC.
+    //! DateTimes before the Unix epoch are negative.
+    //! @return DateTime as milliseconds since the beginning of the Unix epoch.
+    ECOBJECTS_EXPORT Int64          GetDateTimeUnixMillis() const;
 
     ECOBJECTS_EXPORT DPoint2d       GetPoint2D() const;
     ECOBJECTS_EXPORT BentleyStatus  SetPoint2D (DPoint2dCR value);

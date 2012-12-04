@@ -879,6 +879,12 @@ BentleyStatus       ECValue::SetBoolean (bool value)
     return SUCCESS;
     }
 
+//////////////////////////////////////////////////////////////////////////////////////////
+// DateTime   - The DateTime ticks are the number of 100-nanosecond intervals 
+//              that have elapsed since the beginning of the Common Era epoch (0001-01-01 00:00:00 UTC)
+//              (This is the same as in managed ECObjects and .NET's System.DateTime respectively)
+//////////////////////////////////////////////////////////////////////////////////////////
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -902,30 +908,32 @@ BentleyStatus       ECValue::SetDateTimeTicks (Int64 value)
     return SUCCESS;
     }
 
-//////////////////////////////////////////////////////////////////////////////////////////
-// Managed Code
-// DateTime   - The DateTime.Ticks value stored in a ECXAttribute represents the number 
-//              of 100-nanosecond  intervals that have elapsed since 00:00:00 01/01/01 
-//////////////////////////////////////////////////////////////////////////////////////////
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Krischan.Eberle             10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DateTime          ECValue::GetDateTime () const
+DateTime ECValue::GetDateTime () const
     {
-    Int64 ecTicks = GetDateTimeTicks ();
+    Int64 commonEraTicks = GetDateTimeTicks ();
 
-    // m_dateTime is number of ticks since 00:00:00 01/01/01
-    Int64 jdInHnsSigned = ecTicks + static_cast<Int64> (DateTime::CE_EPOCH_AS_JD_HNS);
-    BeAssert (jdInHnsSigned >= 0);
-    UInt64 jdInHns = static_cast<UInt64> (jdInHnsSigned);
-    
     DateTime dateTime;
     //Using DATETIMEKIND_Unspecified for now so that legacy data (which didn't use the kind at all) gets handled well
-    BentleyStatus stat = DateTime::FromJulianDay (dateTime, jdInHns, DateTime::DATETIMEKIND_Unspecified);
+    BentleyStatus stat = DateTime::FromCommonEraTicks (dateTime, commonEraTicks, DateTime::DATETIMEKIND_Unspecified);
     POSTCONDITION (stat == SUCCESS, DateTime ());
 
     return dateTime;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+Int64 ECValue::GetDateTimeUnixMillis () const
+    {
+    PRECONDITION (IsDateTime() && "Tried to get DateTime value from an ECN::ECValue that is not a DateTime.", 0);
+    PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", 0);
+
+    Int64 commonEraTicks = GetDateTimeTicks ();
+    UInt64 jdInHns = DateTime::CommonEraTicksToJulianDay (commonEraTicks);
+    return DateTime::JulianDayToUnixMilliseconds (jdInHns);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -935,12 +943,11 @@ BentleyStatus          ECValue::SetDateTime (DateTimeCR dateTime)
     {
     Clear();
     
-    UInt64 jdInHns;
-    BentleyStatus stat = dateTime.ToJulianDay (jdInHns);
+    Int64 commonEraTicks = 0LL;
+    BentleyStatus stat = dateTime.ToCommonEraTicks (commonEraTicks);
     POSTCONDITION (stat == SUCCESS, ERROR);
 
-    Int64 ecTicks = static_cast<Int64> (jdInHns) - static_cast<Int64> (DateTime::CE_EPOCH_AS_JD_HNS);
-    return SetDateTimeTicks (ecTicks);
+    return SetDateTimeTicks (commonEraTicks);
     }
 
 /*---------------------------------------------------------------------------------**//**
