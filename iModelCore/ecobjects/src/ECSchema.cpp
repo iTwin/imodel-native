@@ -1454,7 +1454,7 @@ ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMat
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus ECSchema::ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, UInt32 checkSum, ECSchemaReadContextR schemaContext)
-    {            
+    {
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
     StopWatch overallTimer(L"Overall schema de-serialization timer", true);
     
@@ -1493,14 +1493,13 @@ SchemaReadStatus ECSchema::ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, UI
     ECObjectsLogger::Log()->debugv (L"Reading ECSchema %ls.%02d.%02d", (WCharCP)schemaName.c_str(), versionMajor, versionMinor);
 
     ECObjectsStatus createStatus = CreateSchema (schemaOut, schemaName, versionMajor, versionMinor);
-    if (ECOBJECTS_STATUS_DuplicateSchema == createStatus)
-        return SCHEMA_READ_STATUS_DuplicateSchema;
-    
     if (ECOBJECTS_STATUS_Success != createStatus)
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
     
     schemaOut->m_key.m_checkSum = checkSum;
-    schemaContext.AddSchema (*schemaOut);
+    
+    if (ECOBJECTS_STATUS_DuplicateSchema == schemaContext.AddSchema (*schemaOut))
+        return SCHEMA_READ_STATUS_DuplicateSchema;
 
     // OPTIONAL attributes - If these attributes exist they MUST be valid        
     WString value;  // used by macro.

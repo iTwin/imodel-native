@@ -83,11 +83,11 @@ protected:
     ECOBJECTS_EXPORT virtual void       _AddSchema (ECSchemaR schema);
 public:
     IStandaloneEnablerLocaterP  GetStandaloneEnablerLocater();
-    void                AddSchema(ECSchemaR schema);
+    ECObjectsStatus     AddSchema(ECSchemaR schema);
     void                RemoveSchema(ECSchemaR schema);
     ECSchemaPtr         GetFoundSchema (SchemaKeyR key, SchemaMatchType matchType);
 
-    ECOBJECTS_EXPORT ECSchemaCacheR GetKnownSchemas ();
+    ECOBJECTS_EXPORT ECSchemaCacheR GetFoundSchemas ();
 
     ECSchemaPtr         LocateSchema (SchemaKeyR key, bset<SchemaMatchType> const& matches);
 
