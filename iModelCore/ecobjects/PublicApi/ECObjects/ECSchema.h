@@ -1874,10 +1874,30 @@ public:
     //! relative to the executing dll will be searched.
     //! @param[in]    schema              Key describing the schema to be located
     //! @param[in]    schemaContext       Required to create schemas
-     ECOBJECTS_EXPORT static ECSchemaPtr  LocateSchema (SchemaKeyR schema, ECSchemaReadContextR schemaContext);
+    ECOBJECTS_EXPORT static ECSchemaPtr  LocateSchema (SchemaKeyR schema, ECSchemaReadContextR schemaContext);
 
     //!
-    //! Writes an ECSchema from an ECSchemaXML-formatted string.
+    //! Reads an ECSchema from a UTF-8 encoded ECSchemaXML-formatted string.
+    //! @code
+    //! // The IECSchemaOwner determines the lifespan of any ECSchema objects that are created using it.
+    //! ECSchemaCachePtr                  schemaOwner = ECSchemaCache::Create();
+    //!
+    //! // The schemaContext supplies an IECSchemaOwner to control the lifetime of read ECSchemas and a
+    //!
+    //! ECSchemaP schema;
+    //! SchemaReadStatus status = ECSchema::ReadFromXmlString (schema, ecSchemaAsString, *schemaContext);
+    //! if (SCHEMA_READ_STATUS_Success != status)
+    //!     return ERROR;
+    //! @endcode
+    //! @param[out]   schemaOut           The read schema
+    //! @param[in]    ecSchemaXml         The UTF-8 encoded string containing ECSchemaXML to write
+    //! @param[in]    schemaContext       Required to create schemas
+    //! @return   A status code indicating whether the schema was successfully read.  If SUCCESS is returned then schemaOut will
+    //!           contain the read schema.  Otherwise schemaOut will be unmodified.
+    ECOBJECTS_EXPORT static SchemaReadStatus ReadFromXmlString (ECSchemaPtr& schemaOut, Utf8CP ecSchemaXml, ECSchemaReadContextR schemaContext);
+
+    //!
+    //! Reads an ECSchema from an ECSchemaXML-formatted string.
     //! @code
     //! // The IECSchemaOwner determines the lifespan of any ECSchema objects that are created using it.
     //! ECSchemaCachePtr                  schemaOwner = ECSchemaCache::Create();

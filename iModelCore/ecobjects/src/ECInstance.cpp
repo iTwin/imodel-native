@@ -3102,6 +3102,22 @@ InstanceReadStatus   IECInstance::ReadFromXmlFile (IECInstancePtr& ecInstance, W
     return ReadFromBeXmlDom (ecInstance, *xmlDom.get(), context);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                12/2012
+//+---------------+---------------+---------------+---------------+---------------+------
+InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr& ecInstance, Utf8CP ecInstanceXml, ECInstanceReadContextR context)
+    {
+    ecInstance = NULL;
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString (xmlStatus, ecInstanceXml);
+    if (!xmlDom.IsValid())
+        {
+        BeAssert (false);
+        LogXmlLoadError ();
+        return INSTANCE_READ_STATUS_XmlParseError;
+        }
+    return ReadFromBeXmlDom (ecInstance, *xmlDom.get(), context);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
@@ -3177,9 +3193,29 @@ InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool isSt
             ? INSTANCE_WRITE_STATUS_Success : INSTANCE_WRITE_STATUS_FailedToWriteFile;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                06/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
+//-------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                12/2012
+//+---------------+---------------+---------------+---------------+---------------+------
+InstanceWriteStatus     IECInstance::WriteToXmlString (Utf8String & ecInstanceXml, bool isStandAlone, bool writeInstanceId)
+    {
+    ecInstanceXml.clear();
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();        
+    InstanceXmlWriter   instanceWriter (*xmlDom.get(), NULL);
+    InstanceWriteStatus status;
+    if (INSTANCE_WRITE_STATUS_Success != (status = instanceWriter.WriteInstance (*this, writeInstanceId)))
+        return status;
+
+    UInt64  opts = BeXmlDom::TO_STRING_OPTION_OmitByteOrderMark;
+    if ( ! isStandAlone)
+        opts |= BeXmlDom::TO_STRING_OPTION_OmitXmlDeclaration;
+
+    xmlDom->ToString (ecInstanceXml, (BeXmlDom::ToStringOption) opts);
+    return INSTANCE_WRITE_STATUS_Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Carole.MacDonald                06/2010
+//+---------------+---------------+---------------+---------------+---------------+------
 InstanceWriteStatus     IECInstance::WriteToXmlString (WString & ecInstanceXml, bool isStandAlone, bool writeInstanceId)
     {
     ecInstanceXml.clear();

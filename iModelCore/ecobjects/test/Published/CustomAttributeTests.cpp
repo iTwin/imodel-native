@@ -11,10 +11,16 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
 struct CustomAttributeTest : ECTestFixture
     {
     };
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   
+//+---------------+---------------+---------------+---------------+---------------+------
 ECSchemaPtr   CreateCustomAttributeTestSchema()
     {
     ECSchemaPtr schema;
@@ -56,6 +62,56 @@ ECSchemaPtr   CreateCustomAttributeTestSchema()
     return schema;
     }                                    
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   
+//+---------------+---------------+---------------+---------------+---------------+------
+void VerifyCustomAttributeTestSchema (ECSchemaPtr customAttributeSchema)
+    {
+    EXPECT_TRUE (customAttributeSchema.IsValid ()) << L"Custom attribute schema is null.";
+    EXPECT_STREQ (L"TestSchema.05.05", customAttributeSchema->GetFullSchemaName ().c_str ()) << L"Custom attribute schema full name mismatches.";
+    
+    WCharCP className = L"CustomAttribClass";
+    EXPECT_TRUE (customAttributeSchema->GetClassCP (className) != NULL) << L"Class " << className << L" not found in custom attribute schema.";
+
+    className = L"CustomAttribClass2";
+    EXPECT_TRUE (customAttributeSchema->GetClassCP (className) != NULL) << L"Class " << className << L" not found in custom attribute schema.";
+
+    className = L"CustomAttribClass3";
+    EXPECT_TRUE (customAttributeSchema->GetClassCP (className) != NULL) << L"Class " << className << L" not found in custom attribute schema.";
+
+    className = L"CustomAttribClass4";
+    EXPECT_TRUE (customAttributeSchema->GetClassCP (className) != NULL) << L"Class " << className << L" not found in custom attribute schema.";
+
+    WCharCP baseClassName = L"BaseClass";
+    ECClassCP ecClass = customAttributeSchema->GetClassCP (baseClassName);
+    ASSERT_TRUE (ecClass != NULL) << L"Class " << baseClassName << L" not found in custom attribute schema.";
+    WCharCP propertyName = L"StringMember";
+    EXPECT_TRUE (ecClass->GetPropertyP (propertyName, false) != NULL) << L"Property " << propertyName << L" not found in class " << baseClassName;
+    
+    className = L"TestClass";
+    ecClass = customAttributeSchema->GetClassCP (className);
+    ASSERT_TRUE (ecClass != NULL) << L"Class " << className << L" not found in custom attribute schema.";
+    const ECBaseClassesList& baseClassList = ecClass->GetBaseClasses ();
+    EXPECT_EQ (1, baseClassList.size ()) << L"Class " << className << L"is expected to only have one base class";
+    EXPECT_STREQ (baseClassName, baseClassList[0]->GetName ().c_str ()) << L"Unexpected base class of class " << className;
+
+    propertyName = L"StringMember";
+    EXPECT_TRUE (ecClass->GetPropertyP (propertyName, true) != NULL) << L"Inherited property " << propertyName << L" not found in class " << className;
+
+    className = L"ClassWithProperties";
+    ecClass = customAttributeSchema->GetClassCP (className);
+    ASSERT_TRUE (ecClass != NULL) << L"Class " << className << L" not found in custom attribute schema.";
+    const ECBaseClassesList& baseClassList2 = ecClass->GetBaseClasses ();
+    EXPECT_EQ (1, baseClassList2.size ()) << L"Class " << className << L"is expected to only have one base class";
+    EXPECT_STREQ (baseClassName, baseClassList2[0]->GetName ().c_str ()) << L"Unexpected base class of class " << className;
+
+    propertyName = L"StringMember";
+    EXPECT_TRUE (ecClass->GetPropertyP (propertyName, false) != NULL) << L"Overridden property " << propertyName << L" not found in class " << className;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   
+//+---------------+---------------+---------------+---------------+---------------+------
 IECInstancePtr GetInstanceForClass(WCharCP className, ECSchemaR schema)
     {
     ECClassP ecClass = schema.GetClassP(className);
@@ -65,6 +121,9 @@ IECInstancePtr GetInstanceForClass(WCharCP className, ECSchemaR schema)
     }
 
 #ifdef NDEBUG // avoid assert eccustomattribute.cpp line 205 stopping build
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CustomAttributeTest, ExpectFailureWhenSetNonCustomAttributeClass)
     {
     
@@ -78,6 +137,9 @@ TEST_F(CustomAttributeTest, ExpectFailureWhenSetNonCustomAttributeClass)
     }
 #endif
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CustomAttributeTest, CanAddSingleCustomAttribute)
     {
     
@@ -97,6 +159,9 @@ TEST_F(CustomAttributeTest, CanAddSingleCustomAttribute)
     EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CustomAttributeTest, CanAddMultipleCustomAttributes)
     {
     
@@ -116,6 +181,9 @@ TEST_F(CustomAttributeTest, CanAddMultipleCustomAttributes)
     EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance4));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CustomAttributeTest, ExpectSuccessWhenAddDuplicateCustomAttribute)
     {
     
@@ -129,6 +197,9 @@ TEST_F(CustomAttributeTest, ExpectSuccessWhenAddDuplicateCustomAttribute)
     EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CustomAttributeTest, ExpectSuccessWhenAddCustomAttributeToProperty)
     {
     
@@ -143,6 +214,9 @@ TEST_F(CustomAttributeTest, ExpectSuccessWhenAddCustomAttributeToProperty)
     EXPECT_EQ(ECOBJECTS_STATUS_Success, stringProperty->SetCustomAttribute(*instance));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CustomAttributeTest, ExpectIsDefined)
     {
     
@@ -161,6 +235,9 @@ TEST_F(CustomAttributeTest, ExpectIsDefined)
     EXPECT_TRUE(containerClass->IsDefined(*customAttributeClass));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CustomAttributeTest, ExpectIsDefinedOnBaseClass)
     {
     
@@ -184,6 +261,9 @@ TEST_F(CustomAttributeTest, ExpectIsDefinedOnBaseClass)
     EXPECT_TRUE(containerClass->IsDefined(*customAttributeClass));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CustomAttributeTest, ExpectCanGetCustomAttribute)
     {
     
@@ -206,6 +286,9 @@ TEST_F(CustomAttributeTest, ExpectCanGetCustomAttribute)
     EXPECT_TRUE(instance == gotInstance);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CustomAttributeTest, ExpectCanGetAllCustomAttributes)
     {
     
@@ -262,6 +345,9 @@ TEST_F(CustomAttributeTest, ExpectCanGetAllCustomAttributes)
     EXPECT_TRUE(foundCustomAttrib3);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CustomAttributeTest, ExpectCanRemoveCustomAttribute)
     {
     
@@ -292,6 +378,9 @@ TEST_F(CustomAttributeTest, ExpectCanRemoveCustomAttribute)
     }
 
 #ifdef NDEBUG // avoid assert eccustomattribute.cpp line 205 stopping build
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CustomAttributeTest, ExpectFailureWithUnreferencedCustomAttribute)
     {
     
@@ -316,6 +405,9 @@ TEST_F(CustomAttributeTest, ExpectFailureWithUnreferencedCustomAttribute)
 #endif
 
 #ifdef TEST_DEFECT_D_88458 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   
+//+---------------+---------------+---------------+---------------+---------------+------
 // This is a nonsensical scenario, so the defect is being deferred.  But the code is
 // here if the defect ever gets reopened 
 TEST_F(CustomAttributeTest, ExpectSuccessWhenAddingCircularStructPropertiesToCustomAttributeClass)
@@ -370,6 +462,9 @@ TEST_F(CustomAttributeTest, ExpectSuccessWhenAddingCircularStructPropertiesToCus
     }
 #endif
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (CustomAttributeTest, PresentationMetadataHelper)
     {
     ECSchemaPtr             schema;
@@ -422,6 +517,59 @@ TEST_F (CustomAttributeTest, PresentationMetadataHelper)
     EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetMemberExtendedType (*arrayProp, str.c_str()));
     EXPECT_EQ (ECOBJECTS_STATUS_Success, arrayProp->GetCustomAttribute (L"MemberExtendedType")->GetValue (v, L"Name"));
     EXPECT_TRUE (str.Equals (v.GetString()));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (CustomAttributeTest, SerializeSchemaToXmlUtfString)
+    {
+    WCharCP const testClassName = L"TestClass";
+
+    WCharCP const caClassName = L"CustomAttribClass";
+    WCharCP const caStringPropName = L"StringProperty";
+    ECSchemaPtr expectedSchema = CreateCustomAttributeTestSchema ();
+    ECClassP caClass = expectedSchema->GetClassP (caClassName);
+    EXPECT_TRUE (caClass != NULL) << L"Test custom attribute class " << caClassName << L" not found";
+    PrimitiveECPropertyP stringProp = NULL;
+    caClass->CreatePrimitiveProperty (stringProp, caStringPropName, PRIMITIVETYPE_String);
+
+    Utf8String expectedCAString;
+    EXPECT_EQ (SUCCESS, BeStringUtilities::WCharToUtf8 (expectedCAString, L"äöüßá³µ"));
+    IECInstancePtr caInstance = GetInstanceForClass (caClassName, *expectedSchema);
+    ECValue expectedUtf8Value (expectedCAString.c_str ());
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, caInstance->SetValue (caStringPropName, expectedUtf8Value)) << L"Assigning property value to custom attribute instance failed.";
+
+    ECClassP testClass = expectedSchema->GetClassP (testClassName);
+    EXPECT_TRUE (testClass != NULL) << L"Test class " << testClass << L" not found";
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, testClass->SetCustomAttribute (*caInstance)) << L"Assigning the custom attribute instance to class " << testClassName << L" failed.";
+
+    //serializing
+    Utf8String schemaUtfXml;
+    SchemaWriteStatus serializeStat = expectedSchema->WriteToXmlString (schemaUtfXml);
+    EXPECT_EQ (SCHEMA_WRITE_STATUS_Success, serializeStat) << L"Serializing the schema to a UTF-8 XML string failed.";
+
+    //deserializing
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr actualSchema = NULL;
+    SchemaReadStatus deserializeStat = ECSchema::ReadFromXmlString (actualSchema, schemaUtfXml.c_str (), *schemaContext);
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, deserializeStat) << L"Deserializing the schema from a UTF-8 XML string failed.";
+
+    //base check of actual vs expected schema
+    VerifyCustomAttributeTestSchema (actualSchema);
+    //now check CA added in this test
+    ECClassCP actualCAClass = actualSchema->GetClassCP (caClassName);
+    EXPECT_TRUE (actualCAClass->GetPropertyP (caStringPropName) != NULL) << L"Property " << caStringPropName << L" not found in custom attribute class.";
+    //now check CA instance added in this test
+    ECClassCP actualTestClass = actualSchema->GetClassCP (testClassName);
+
+    IECInstancePtr actualCAInstance = actualTestClass->GetCustomAttribute (*actualCAClass);
+    ASSERT_TRUE (actualCAInstance.IsValid ()) << L"Test class " << testClassName << L" doesn't have the expected custom attribute instance.";
+
+    ECValue actualUtf8Value;
+    ASSERT_EQ (ECOBJECTS_STATUS_Success, actualCAInstance->GetValue (actualUtf8Value, caStringPropName)) << L"Property " << caStringPropName << L"not found in custom attribute instance on test class.";
+    EXPECT_TRUE (expectedUtf8Value.Equals (actualUtf8Value)) << L"Unexpected string property value of custom attribute instance";
+    EXPECT_STREQ (expectedCAString.c_str (), actualUtf8Value.GetUtf8CP ()) << L"Unexpected string value of custom attribute property value";
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

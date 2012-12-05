@@ -1833,14 +1833,23 @@ struct          CheckSumHelper
 
     static const int BUFFER_SIZE = 1024;
     public:
+        static UInt32 ComputeCheckSumForString (Utf8CP string, size_t bufferSize);
         static UInt32 ComputeCheckSumForString (WCharCP string, size_t bufferSize);
         static UInt32 ComputeCheckSumForFile (WCharCP schemaFile);
     };
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Krischan.Eberle                  12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32 CheckSumHelper::ComputeCheckSumForString (Utf8CP string, size_t bufferSize)
+    {
+    return crc32 (0, (Byte*) string, bufferSize);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          CheckSumHelper::ComputeCheckSumForString (WCharCP string, size_t bufferSize)
+UInt32 CheckSumHelper::ComputeCheckSumForString (WCharCP string, size_t bufferSize)
     {
     return crc32 (0, (Byte*) string, bufferSize);
     }
@@ -1906,6 +1915,54 @@ SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSc
         //We have serialized a schema and its valid. Add its checksum
         ECObjectsLogger::Log()->infov (L"Native ECSchema read from file: fileName='%ls', schemaName='%ls.%02d.%02d' classCount='%d' address='0x%x'", 
                                        ecSchemaXmlFile, schemaOut->GetName().c_str(), schemaOut->GetVersionMajor(), schemaOut->GetVersionMinor(), schemaOut->m_classMap.size(), schemaOut.get());
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaReadStatus     ECSchema::ReadFromXmlString
+(
+ECSchemaPtr&         schemaOut, 
+Utf8CP               ecSchemaXml,
+ECSchemaReadContextR schemaContext
+)
+    {                  
+    ECObjectsLogger::Log()->debugv (L"About to read native ECSchema read from string."); // mainly included for timing
+    schemaOut = NULL;
+    SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
+    
+    size_t stringByteCount = strlen (ecSchemaXml) * sizeof(Utf8Char);
+    
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString (xmlStatus, ecSchemaXml, stringByteCount);
+        
+    if (BEXML_Success != xmlStatus)
+        {
+        BeAssert (s_noAssert);
+        LogXmlLoadError (xmlDom.get());
+        return SCHEMA_READ_STATUS_FailedToParseXml;
+        } 
+    
+    UInt32 checkSum = CheckSumHelper::ComputeCheckSumForString (ecSchemaXml, stringByteCount);
+    status = ReadXml (schemaOut, *xmlDom.get(), checkSum, schemaContext);
+    if (SCHEMA_READ_STATUS_DuplicateSchema == status)
+        return status; // already logged
+    
+    if (ECOBJECTS_STATUS_Success != status)
+        {
+        Utf8Char first200Characters[201];
+               
+        BeStringUtilities::Strncpy (first200Characters, ecSchemaXml, 200);
+        first200Characters[200] = '\0';
+        ECObjectsLogger::Log()->errorv (L"Failed to read XML from string (1st 200 characters): %hs", first200Characters);
+        }
+    else
+        {
+        ECObjectsLogger::Log()->infov (L"Native ECSchema read from string: schemaName='%ls' classCount='%d' schemaAddress='0x%x' stringAddress='0x%x'", 
+        schemaOut->GetSchemaKey().GetFullSchemaName().c_str(), schemaOut->m_classMap.size(), schemaOut.get(), ecSchemaXml);
         }
 
     return status;
