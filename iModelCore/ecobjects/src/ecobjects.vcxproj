@@ -7,7 +7,7 @@
     </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|x86">
       <Configuration>Debug</Configuration>
-      <Platform>x86</Platform>
+      <Platform>Win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -35,7 +35,7 @@
     <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild ECObjectsNative -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -c</NMakeCleanCommandLine>
     <NMakeOutput>ecobjects.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions);BENTLEY_WIN32;__ECOBJECTS_BUILD__</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath>$(ProjectDir)\..\PublicAPI\;$(ProjectDir);$(VCInstallDir)INCLUDE\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\ecobjects\PublicAPI\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\bsibin\VendorAPI\</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(ProjectDir)\..\PublicAPI\;$(ProjectDir);$(VCInstallDir)INCLUDE\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\ecobjects\PublicAPI\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\ecobjects\VendorAPI\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\bsibin\PublicAPI\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\bsibin\VendorAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <NMakeForcedIncludes>$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <NMakeAssemblySearchPath>$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
     <NMakeForcedUsingAssemblies>$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
@@ -109,7 +109,6 @@
     <ClInclude Include="..\PublicApi\ECPersistence\IECConnection.h" />
     <ClInclude Include="..\PublicApi\ECPersistence\IECSchemaManager.h" />
     <ClInclude Include="..\PublicApi\ECPersistence\IECStatement.h" />
-    <ClInclude Include="ECEvent.h" />
     <ClInclude Include="ECObjectsPch.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECSchema.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECValue.h" />

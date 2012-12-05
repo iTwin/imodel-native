@@ -108,9 +108,9 @@ public:
             s_koqSchema = s_context->LocateSchema (key, SCHEMAMATCHTYPE_LatestCompatible);
             }
 
-        if (KOQ_SCHEMA == schemaName)
+        if (KOQ_SCHEMA == schemaName && s_koqSchema.IsValid())
             return s_koqSchema->GetClassCP (className);
-        else if (UNITS_SCHEMA == schemaName)
+        else if (UNITS_SCHEMA == schemaName && s_unitsSchema.IsValid())
             return s_unitsSchema->GetClassCP (className);
         else
             return NULL;
