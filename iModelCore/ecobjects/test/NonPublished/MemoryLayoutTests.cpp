@@ -1596,8 +1596,88 @@ TEST_F (MemoryLayoutTests, ExpectCorrectPrimitiveTypeForNullValues)
     EXPECT_TRUE(SUCCESS == instance->GetValue(v, L"Struct1", 0));
     EXPECT_TRUE(v.IsStruct());
     EXPECT_TRUE(v.IsNull());
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* MemoryECInstanceBase stores supporting instances as StandaloneECInstances.
+* For efficiency we want to avoid making a copy of the supporting instance when setting
+* it to the parent's struct array.
+* But we also want to avoid having more than one parent instance claim ownership of
+* a single supporting instance; otherwise modifying one would modify the other.
+* @bsimethod                                                    Paul.Connelly   12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (MemoryLayoutTests, SupportingInstanceOwnership)
+    {
+    ECSchemaPtr schema = CreateTestSchema();
+    ECClassP parentClass = schema->GetClassP (L"NestedStructArray");    // contains an array of Manufacturer structs
+    ECClassP structClass = schema->GetClassP (L"Manufacturer");
 
+    StandaloneECInstancePtr originalStruct = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    StandaloneECInstancePtr parentA = parentClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    StandaloneECInstancePtr parentB = parentClass->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    parentA->AddArrayElements (L"ManufacturerArray", 1);
+    parentB->AddArrayElements (L"ManufacturerArray", 1);
+    
+    ECValue structVal;
+    structVal.SetStruct (originalStruct.get());
+
+    parentA->SetValue (L"ManufacturerArray", structVal, 0);
+    parentB->SetValue (L"ManufacturerArray", structVal, 0);
+
+    parentA->GetValue (structVal, L"ManufacturerArray", 0);
+    EXPECT_EQ (structVal.GetStruct().get(), originalStruct.get());
+
+    parentB->GetValue (structVal, L"ManufacturerArray", 0);
+    EXPECT_NE (structVal.GetStruct().get(), originalStruct.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* When we duplicate instances, we want to make sure that supporting instances are copied
+* recursively.
+* @bsimethod                                                    Paul.Connelly   12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (MemoryLayoutTests, CopyRecursiveSupportingInstances)
+    {
+    ECSchemaPtr schema = CreateTestSchema();
+
+    // populate our source instance with nested struct arrays
+    IECInstancePtr outer    = schema->GetClassP (L"ClassWithStructArray")->GetDefaultStandaloneEnabler()->CreateInstance(),
+                   middle   = schema->GetClassP (L"NestedStructArray")->GetDefaultStandaloneEnabler()->CreateInstance(),
+                   inner    = schema->GetClassP (L"Manufacturer")->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    inner->SetValue (L"Name", ECValue (L"Hooray!"));
+    
+    ECValue structVal;
+    middle->AddArrayElements (L"ManufacturerArray", 1);
+    structVal.SetStruct (inner.get());
+    middle->SetValue (L"ManufacturerArray", structVal, 0);
+
+    outer->AddArrayElements (L"ComplicatedStructArray", 1);
+    structVal.SetStruct (middle.get());
+    outer->SetValue (L"ComplicatedStructArray", structVal, 0);
+
+    // make a copy
+    StandaloneECInstancePtr outerCopy = outer->GetEnabler().GetClass().GetDefaultStandaloneEnabler()->CreateInstance();
+    outerCopy->CopyInstanceProperties (*outer);
+
+    // confirm the nested struct array instances have been copied as well
+    outerCopy->GetValue (structVal, L"ComplicatedStructArray", 0);
+    IECInstancePtr middleCopy = structVal.GetStruct();
+    EXPECT_NE (middleCopy.get(), middle.get());
+
+    middleCopy->GetValue (structVal, L"ManufacturerArray", 0);
+    IECInstancePtr innerCopy = structVal.GetStruct();
+    EXPECT_NE (innerCopy.get(), inner.get());
+    
+    // modify the original deepest supporting instance
+    ECValue v (L"Oh no!");
+    inner->SetValue (L"Name", v);
+
+    // confirm our copy of the deepest supporting instance remains intact
+    innerCopy->GetValue (v, L"Name");
+    EXPECT_EQ (0, wcscmp (v.GetString(), L"Hooray!"));
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
