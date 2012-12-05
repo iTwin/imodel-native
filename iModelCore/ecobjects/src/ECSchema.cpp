@@ -2114,7 +2114,11 @@ void            ECSchema::CollectAllSchemasInGraph (bvector<ECN::ECSchemaCP>& al
         bvector<ECN::ECSchemaCP>::iterator it = std::find (allSchemas.begin(), allSchemas.end(), iter->second.get());
 
         if (it != allSchemas.end())
+            {
+            allSchemas.erase(it);
+            allSchemas.push_back(iter->second.get());
             continue;
+            }
 
         iter->second->CollectAllSchemasInGraph (allSchemas, true);
         }
