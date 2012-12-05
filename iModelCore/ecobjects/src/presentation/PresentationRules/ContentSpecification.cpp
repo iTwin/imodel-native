@@ -19,6 +19,7 @@ USING_NAMESPACE_EC
 ContentSpecification::~ContentSpecification ()
     {
     CommonTools::FreePresentationRules (m_relatedPropertiesSpecification);
+    CommonTools::FreePresentationRules (m_displayRelatedItemsSpecification);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -31,6 +32,7 @@ bool ContentSpecification::ReadXml (BeXmlNodeP xmlNode)
         m_priority = 1000;
 
     CommonTools::LoadRulesFromXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (xmlNode, m_relatedPropertiesSpecification, RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
+    CommonTools::LoadRulesFromXmlNode<DisplayRelatedItemsSpecification, DisplayRelatedItemsSpecificationList> (xmlNode, m_displayRelatedItemsSpecification, DISPLAYRELATEDITEMS_SPECIFICATION_XML_NODE_NAME);
 
     return _ReadXml (xmlNode);
     }
@@ -45,6 +47,7 @@ void ContentSpecification::WriteXml (BeXmlNodeP parentXmlNode)
     specificationNode->AddAttributeInt32Value   (COMMON_XML_ATTRIBUTE_PRIORITY, m_priority);
 
     CommonTools::WriteRulesToXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (specificationNode, m_relatedPropertiesSpecification);
+    CommonTools::WriteRulesToXmlNode<DisplayRelatedItemsSpecification, DisplayRelatedItemsSpecificationList> (specificationNode, m_displayRelatedItemsSpecification);
 
     //Make sure we call protected override
     _WriteXml (specificationNode);

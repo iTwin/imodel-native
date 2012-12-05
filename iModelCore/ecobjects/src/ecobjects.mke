@@ -72,6 +72,7 @@ ECPresentationRulesHeaders = $(ecpresentationRulesPublicAPISrc)PresentationRules
                              $(ecpresentationRulesPublicAPISrc)ChildNodeSpecification.h \
                              $(ecpresentationRulesPublicAPISrc)ChildNodeRule.h \
                              $(ecpresentationRulesPublicAPISrc)CheckBoxRule.h \
+                             $(ecpresentationRulesPublicAPISrc)DisplayRelatedItemsSpecification.h \
                              $(ecpresentationRulesPublicAPISrc)RenameNodeRule.h \
                              $(ecpresentationRulesPublicAPISrc)ContentRule.h \
                              $(ecpresentationRulesPublicAPISrc)ImageIdOverride.h \
@@ -180,6 +181,8 @@ $(o)ChildNodeSpecification$(oext)                          : $(baseDir)presentat
 $(o)ContentRule$(oext)                                     : $(baseDir)presentation/PresentationRules/ContentRule.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
 $(o)CheckBoxRule$(oext)                                    : $(baseDir)presentation/PresentationRules/CheckBoxRule.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
+
+$(o)IncludeRelatedItemsSpecification$(oext)                : $(baseDir)presentation/PresentationRules/DisplayRelatedItemsSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
 $(o)RenameNodeRule$(oext)                                  : $(baseDir)presentation/PresentationRules/RenameNodeRule.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
