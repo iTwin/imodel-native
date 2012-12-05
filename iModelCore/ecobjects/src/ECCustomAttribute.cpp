@@ -494,9 +494,9 @@ InstanceReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeXmlNodeR
         {
         if (0 != strcmp (customAttributeNode->GetName (), EC_CUSTOM_ATTRIBUTES_ELEMENT))
             continue;
+
         for (BeXmlNodeP customAttributeClassNode = customAttributeNode->GetFirstChild(); NULL != customAttributeClassNode; customAttributeClassNode = customAttributeClassNode->GetNextSibling())
             {
-            
             ECInstanceReadContextPtr context = ECInstanceReadContext::CreateContext (schemaContext, fallBackSchema, NULL);
 
             IECInstancePtr  customAttributeInstance;

@@ -301,7 +301,7 @@ private:
     IECCustomAttributeContainerCR m_container;
     bool                        m_includeBaseContainers;
     bool                        m_includeSupplementalAttributes;
-   ECCustomAttributeInstanceIterable( IECCustomAttributeContainerCR container, bool includeBase, bool includeSupplementalAttributes) : m_container(container), m_includeBaseContainers(includeBase),
+    ECCustomAttributeInstanceIterable( IECCustomAttributeContainerCR container, bool includeBase, bool includeSupplementalAttributes) : m_container(container), m_includeBaseContainers(includeBase),
     m_includeSupplementalAttributes(includeSupplementalAttributes) {};
 public:
     struct IteratorState : RefCountedBase
