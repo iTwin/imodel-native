@@ -1566,7 +1566,7 @@ static bool ClassNameComparer (ECClassP class1, ECClassP class2)
     int comparison = class1->GetName().CompareTo (class2->GetName());
     return comparison < 0;
     }
-  
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2115,7 +2115,11 @@ void            ECSchema::CollectAllSchemasInGraph (bvector<ECN::ECSchemaCP>& al
         bvector<ECN::ECSchemaCP>::iterator it = std::find (allSchemas.begin(), allSchemas.end(), iter->second.get());
 
         if (it != allSchemas.end())
+            {
+            allSchemas.erase(it);
+            allSchemas.push_back(iter->second.get());
             continue;
+            }
 
         iter->second->CollectAllSchemasInGraph (allSchemas, true);
         }
