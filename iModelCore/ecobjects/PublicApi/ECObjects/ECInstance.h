@@ -103,10 +103,10 @@ protected:
     virtual ECObjectsStatus     _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const = 0;
 protected:
     virtual ECObjectsStatus     _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) = 0;
-    virtual ECObjectsStatus     _InsertArrayElements (WCharCP managedPropertyAccessor, UInt32 index, UInt32 size) = 0;
-    virtual ECObjectsStatus     _AddArrayElements (WCharCP managedPropertyAccessor, UInt32 size) = 0;
-    virtual ECObjectsStatus     _RemoveArrayElement (WCharCP managedPropertyAccessor, UInt32 index) = 0;
-    virtual ECObjectsStatus     _ClearArray (WCharCP managedPropertyAccessor) = 0;    
+    virtual ECObjectsStatus     _InsertArrayElements (UInt32 propertyIndex, UInt32 index, UInt32 size) = 0;
+    virtual ECObjectsStatus     _AddArrayElements (UInt32 propertyIndex, UInt32 size) = 0;
+    virtual ECObjectsStatus     _RemoveArrayElement (UInt32 propertyIndex, UInt32 index) = 0;
+    virtual ECObjectsStatus     _ClearArray (UInt32 propertyIndex) = 0;    
     virtual ECEnablerCR         _GetEnabler() const = 0;
     virtual bool                _IsReadOnly() const = 0;
     virtual WString             _ToString (WCharCP indent) const = 0;
@@ -117,6 +117,7 @@ protected:
     ECOBJECTS_EXPORT virtual ECObjectsStatus       _GetDisplayLabel (WString& displayLabel) const;    
     ECOBJECTS_EXPORT virtual ECObjectsStatus       _SetDisplayLabel (WCharCP displayLabel);    
     ECOBJECTS_EXPORT virtual MemoryECInstanceBase* _GetAsMemoryECInstance () const;
+    ECOBJECTS_EXPORT virtual ECDBuffer*            _GetECDBuffer() const;
     //! If you override one of these IsPropertyReadOnly methods, you should override the other.
     ECOBJECTS_EXPORT virtual bool                   _IsPropertyReadOnly (WCharCP accessString) const;
     ECOBJECTS_EXPORT virtual bool                   _IsPropertyReadOnly (UInt32 propertyIndex) const;
@@ -264,13 +265,20 @@ public:
     //! Contract:
     //! - For all of the methods, the propertyAccessString shall not contain brackets.
     //!   e.g. "Aliases", not "Aliases[]" or "Aliases[0]"
-    ECOBJECTS_EXPORT ECObjectsStatus      InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size);
-    ECOBJECTS_EXPORT ECObjectsStatus      AddArrayElements (WCharCP propertyAccessString, UInt32 size);
-    ECOBJECTS_EXPORT ECObjectsStatus      RemoveArrayElement (WCharCP propertyAccessString, UInt32 index);
-    ECOBJECTS_EXPORT ECObjectsStatus      ClearArray (WCharCP propertyAccessString);    
-    ECOBJECTS_EXPORT ECObjectsStatus      GetDisplayLabel (WString& displayLabel) const;    
-    ECOBJECTS_EXPORT ECObjectsStatus      SetDisplayLabel (WCharCP displayLabel);    
+    ECOBJECTS_EXPORT ECObjectsStatus    InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size);
+    ECOBJECTS_EXPORT ECObjectsStatus    RemoveArrayElement (WCharCP propertyAccessString, UInt32 index);
+    ECOBJECTS_EXPORT ECObjectsStatus    AddArrayElements (WCharCP propertyAccessString, UInt32 size);
+    ECOBJECTS_EXPORT ECObjectsStatus    ClearArray (WCharCP propertyAccessString);    
+
+    ECOBJECTS_EXPORT ECObjectsStatus    InsertArrayElements (UInt32 propertyIndex, UInt32 index, UInt32 size);
+    ECOBJECTS_EXPORT ECObjectsStatus    RemoveArrayElement (UInt32 propertyIndex, UInt32 index);
+    ECOBJECTS_EXPORT ECObjectsStatus    AddArrayElements (UInt32 propertyIndex, UInt32 size);
+    ECOBJECTS_EXPORT ECObjectsStatus    ClearArray (UInt32 propertyIndex);
+
+    ECOBJECTS_EXPORT ECObjectsStatus    GetDisplayLabel (WString& displayLabel) const;    
+    ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel (WCharCP displayLabel);    
     
+    ECOBJECTS_EXPORT ECDBuffer*            GetECDBuffer() const;
     ECOBJECTS_EXPORT MemoryECInstanceBase* GetAsMemoryECInstance () const;
     ECOBJECTS_EXPORT size_t                GetOffsetToIECInstance () const;
 

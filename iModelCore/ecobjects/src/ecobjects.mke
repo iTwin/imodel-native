@@ -72,6 +72,7 @@ ECPresentationRulesHeaders = $(ecpresentationRulesPublicAPISrc)PresentationRules
                              $(ecpresentationRulesPublicAPISrc)ChildNodeSpecification.h \
                              $(ecpresentationRulesPublicAPISrc)ChildNodeRule.h \
                              $(ecpresentationRulesPublicAPISrc)CheckBoxRule.h \
+                             $(ecpresentationRulesPublicAPISrc)DisplayRelatedItemsSpecification.h \
                              $(ecpresentationRulesPublicAPISrc)RenameNodeRule.h \
                              $(ecpresentationRulesPublicAPISrc)ContentRule.h \
                              $(ecpresentationRulesPublicAPISrc)ImageIdOverride.h \
@@ -81,6 +82,7 @@ ECPresentationRulesHeaders = $(ecpresentationRulesPublicAPISrc)PresentationRules
                              $(ecpresentationRulesPublicAPISrc)StyleOverride.h \
                              $(ecpresentationRulesPublicAPISrc)LocalizationResourceKeyDefinition.h \
                              $(ecpresentationRulesPublicAPISrc)GroupingRule.h \
+                             $(ecpresentationRulesPublicAPISrc)SortingRule.h \
                              $(ecpresentationRulesPublicAPISrc)AllInstanceNodesSpecification.h \
                              $(ecpresentationRulesPublicAPISrc)AllRelatedInstanceNodesSpecification.h \
                              $(ecpresentationRulesPublicAPISrc)CustomNodeSpecification.h \
@@ -124,7 +126,7 @@ $(o)ExpressionContext$(oext)                               : $(baseDir)Expressio
 
 $(o)ExpressionHandler$(oext)                               : $(baseDir)ExpressionHandler.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
-$(o)ECDBuffer$(oext)                           : $(baseDir)ECDBuffer.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+$(o)ECDBuffer$(oext)                                       : $(baseDir)ECDBuffer.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)StandaloneECInstance$(oext)                            : $(baseDir)StandaloneECInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)StandaloneECInstance.h
 
@@ -180,6 +182,8 @@ $(o)ContentRule$(oext)                                     : $(baseDir)presentat
 
 $(o)CheckBoxRule$(oext)                                    : $(baseDir)presentation/PresentationRules/CheckBoxRule.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
+$(o)IncludeRelatedItemsSpecification$(oext)                : $(baseDir)presentation/PresentationRules/DisplayRelatedItemsSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
+
 $(o)RenameNodeRule$(oext)                                  : $(baseDir)presentation/PresentationRules/RenameNodeRule.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
 $(o)ImageIdOverride$(oext)                                 : $(baseDir)presentation/PresentationRules/ImageIdOverride.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
@@ -195,6 +199,8 @@ $(o)StyleOverride$(oext)                                   : $(baseDir)presentat
 $(o)LocalizationResourceKeyDefinition$(oext)               : $(baseDir)presentation/PresentationRules/LocalizationResourceKeyDefinition.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
 $(o)GroupingRule$(oext)                                    : $(baseDir)presentation/PresentationRules/GroupingRule.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
+
+$(o)SortingRule$(oext)                                     : $(baseDir)presentation/PresentationRules/SortingRule.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
 $(o)AllInstanceNodesSpecification$(oext)                   : $(baseDir)presentation/PresentationRules/AllInstanceNodesSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
@@ -253,11 +259,11 @@ DLM_NOINITFUNC              = 1
 DLM_NOMSBUILTINS            = 1
 DLM_NOENTRY                 = 1
 %if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT
-LINKER__LIBRARIES           = xmllite$(libext)
+LINKER_LIBRARIES            = xmllite$(libext)
 %endif
-LINKER__LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
-LINKER__LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
-LINKER__LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext)
 DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1

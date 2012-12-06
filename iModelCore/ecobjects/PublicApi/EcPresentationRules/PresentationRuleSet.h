@@ -22,6 +22,7 @@ typedef bvector<GroupingRuleP>                       GroupingRuleList;
 typedef bvector<LocalizationResourceKeyDefinitionP>  LocalizationResourceKeyDefinitionList;
 typedef bvector<CheckBoxRuleP>                       CheckBoxRuleList;
 typedef bvector<RenameNodeRuleP>                     RenameNodeRuleList;
+typedef bvector<SortingRuleP>                        SortingRuleList;
 
 /*---------------------------------------------------------------------------------**//**
 PresentationRuleSet is a container of all presentation rules for particular type of the tree
@@ -48,6 +49,7 @@ struct PresentationRuleSet : public RefCountedBase
         LocalizationResourceKeyDefinitionList  m_localizationResourceKeyDefinitions;
         CheckBoxRuleList                       m_checkBoxRules;
         RenameNodeRuleList                     m_renameNodeRules;
+        SortingRuleList                        m_sortingRules;
 
         //Private constructor. This class instance should be creates using static helper methods.
         PresentationRuleSet (void)
@@ -146,8 +148,11 @@ struct PresentationRuleSet : public RefCountedBase
         //! Collection of rules, which should be used when check boxes for particular nodes should be displayed.
         ECOBJECTS_EXPORT CheckBoxRuleList&              GetCheckBoxRules (void)           { return m_checkBoxRules;    }
 
-        //! Collection of rules, which should be used when particular nodes should be displayed.
+        //! Collection of rules, which should be used when particular nodes can be renamed.
         ECOBJECTS_EXPORT RenameNodeRuleList&            GetRenameNodeRules (void)         { return m_renameNodeRules;  }
+
+        //! Collection of rules, which should be used for configuring sorting of ECInstances.
+        ECOBJECTS_EXPORT SortingRuleList&               GetSortingRules (void)            { return m_sortingRules;}
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

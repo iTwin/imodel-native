@@ -34,6 +34,7 @@ static WCharCP ARRAY_BEHAVIOR_CLASSNAME          = L"ArrayBehaviorAttributes";
 static WCharCP FILEPICKER_INFO_CLASSNAME         = L"FilePickerAttributes";
 static WCharCP STRIKE_THRU_CLASSNAME             = L"StrikethroughSpecification";
 static WCharCP MEMBER_NAME_FROM_VALUE_CLASSNAME  = L"ArrayMemberNameFromValue";
+static WCharCP STORES_UNITS_AS_UORS_CLASSNAME    = L"StoresUnitsAsUors";
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   07/12
@@ -205,6 +206,14 @@ ECObjectsStatus PresentationMetadataHelper::SetHideNullProperties (ECClassR eccl
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus PresentationMetadataHelper::SetStoresUnitsAsUORs (ECSchemaR schema) const
+    {
+    return CreateCustomAttribute (schema, STORES_UNITS_AS_UORS_CLASSNAME);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus PresentationMetadataHelper::SetMembersIndependent (ECPropertyR ecproperty) const
@@ -235,4 +244,11 @@ ECObjectsStatus PresentationMetadataHelper::SetAlwaysExpand (ECPropertyR ecprope
         return CreateCustomAttribute (ecproperty, ALWAYS_EXPAND_CLASSNAME); // "ArrayMembers" defaults to false, and ignored for non-array properties
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus PresentationMetadataHelper::SetRequiresReload (ECPropertyR ecproperty) const
+    {
+    return CreateCustomAttribute (ecproperty, REQUIRES_RELOAD_CLASSNAME);
+    }
 

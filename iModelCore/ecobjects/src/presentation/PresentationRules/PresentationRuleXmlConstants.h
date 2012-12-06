@@ -28,6 +28,7 @@
 #define COMMON_XML_ATTRIBUTE_RELATEDCLASSNAMES                                        "RelatedClassNames"
 #define COMMON_XML_ATTRIBUTE_SCHEMANAME                                               "SchemaName"
 #define COMMON_XML_ATTRIBUTE_CLASSNAMES                                               "ClassNames"
+#define COMMON_XML_ATTRIBUTE_PROPERTYNAME                                             "PropertyName"
 #define COMMON_XML_ATTRIBUTE_ONLYIFNOTHANDLED                                         "OnlyIfNotHandled"
 #define COMMON_XML_ATTRIBUTE_AREPOLYMORPHIC                                           "ArePolymorphic"
 
@@ -65,18 +66,23 @@
 #define GROUPING_RULE_XML_ATTRIBUTE_MENULABEL                                         "ContextMenuLabel"
 
 #define CHECKBOX_RULE_XML_NODE_NAME                                                   "CheckBoxRule"
-#define CHECKBOX_RULE_XML_ATTRIBUTE_PROPERTYNAME                                      "PropertyName"
 #define CHECKBOX_RULE_XML_ATTRIBUTE_USEINVERSEDPROPERTYVALUE                          "UseInversedPropertyValue"
 #define CHECKBOX_RULE_XML_ATTRIBUTE_DEFAULTVALUE                                      "DefaultValue"
 
 #define RENAMENODE_RULE_XML_NODE_NAME                                                 "RenameNodeRule"
+
+#define SAMEL_LABEL_INSTANCE_GROUP_XML_NODE_NAME                                      "SameLabelInstanceGroup"
+
+#define DISPLAYRELATEDITEMS_SPECIFICATION_XML_NODE_NAME                               "DisplayRelatedItems"
+#define DISPLAYRELATEDITEMS_SPECIFICATION_XML_ATTRIBUTE_LOGICALCHILDREN               "LogicalChildren"
+#define DISPLAYRELATEDITEMS_SPECIFICATION_XML_ATTRIBUTE_NESTINGDEPTH                  "NestingDepth"
+#define DISPLAYRELATEDITEMS_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPCLASSES           "RelationshipClasses"
 
 #define CLASS_GROUP_XML_NODE_NAME                                                     "ClassGroup"
 #define CLASS_GROUP_XML_ATTRIBUTE_SCHEMANAME                                          "SchemaName"
 #define CLASS_GROUP_XML_ATTRIBUTE_BASECLASSNAME                                       "BaseClassName"
 
 #define PROPERTY_GROUP_XML_NODE_NAME                                                  "PropertyGroup"
-#define PROPERTY_GROUP_XML_ATTRIBUTE_PROPERTYNAME                                     "PropertyName"
 
 #define GROUP_XML_ATTRIBUTE_IMAGEID                                                   "ImageId"
 #define GROUP_XML_ATTRIBUTE_CREATEGROUPFORSINGLEITEM                                  "CreateGroupForSingleItem"
@@ -92,6 +98,10 @@
 #define LOCALIZATION_DEFINITION_XML_ATTRIBUTE_ID                                      "Id"
 #define LOCALIZATION_DEFINITION_XML_ATTRIBUTE_KEY                                     "Key"
 #define LOCALIZATION_DEFINITION_XML_ATTRIBUTE_DEFAULTVALUE                            "DefaultValue"
+
+#define SORTING_RULE_XML_NODE_NAME                                                    "SortingRule"
+#define SORTING_RULE_XML_ATTRIBUTE_SORTASCENDING                                      "SortAscending"
+#define SORTING_RULE_XML_ATTRIBUTE_DONOTSORT                                          "DoNotSort"
 
 //ChildNodeSpecifications
 #define CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_ALWAYSRETURNSCHILDREN                  "AlwaysReturnsChildren"

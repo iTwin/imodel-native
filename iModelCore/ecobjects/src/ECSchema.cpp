@@ -1555,15 +1555,18 @@ SchemaReadStatus ECSchema::ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, UI
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool ClassNameComparer (ECClassP class1, ECClassP class2)
     {
-    // null values are always less than non-null values
+    // We should never have a NULL ECClass here.
+    // However we will pretend a NULL ECClass is always less than a non-NULL ECClass
+    BeAssert (NULL != class1 && NULL != class2);
     if (NULL == class1)
-        return true;
-    if (NULL == class2)
-        return false;
-    int comparison = wcscmp(class1->GetName().c_str(), class2->GetName().c_str());
-    return (comparison <= 0);
+        return NULL != class2;      // class 1 < class2 if class2 non-null, equal otherwise
+    else if (NULL == class2)
+        return false;               // class1 > class2
+
+    int comparison = class1->GetName().CompareTo (class2->GetName());
+    return comparison < 0;
     }
-  
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1709,8 +1712,16 @@ SchemaWriteStatus ECSchema::WriteXml (BeXmlDomR xmlDom) const
     std::list<ECClassP> sortedClasses;
     // sort the classes by name so the order in which they are written is predictable.
     FOR_EACH (ECClassP pClass, GetClasses())
-        sortedClasses.push_back(pClass);
-        
+        {
+        if (NULL == pClass)
+            {
+            BeAssert(false);
+            continue;
+            }
+        else
+            sortedClasses.push_back(pClass);
+        }
+
     sortedClasses.sort (ClassNameComparer);
     
     FOR_EACH (ECClassP pClass, sortedClasses)
@@ -2104,7 +2115,11 @@ void            ECSchema::CollectAllSchemasInGraph (bvector<ECN::ECSchemaCP>& al
         bvector<ECN::ECSchemaCP>::iterator it = std::find (allSchemas.begin(), allSchemas.end(), iter->second.get());
 
         if (it != allSchemas.end())
+            {
+            allSchemas.erase(it);
+            allSchemas.push_back(iter->second.get());
             continue;
+            }
 
         iter->second->CollectAllSchemasInGraph (allSchemas, true);
         }

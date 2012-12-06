@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+
+P*--------------------------------------------------------------------------------------+
 |
 |     $Source: src/StandaloneECInstance.cpp $
 |
@@ -213,9 +213,7 @@ ECObjectsStatus         MemoryECInstanceBase::IsAnyPerPropertyBitSet (bool& isSe
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus          MemoryECInstanceBase::SetIsLoadedBit (UInt32 propertyIndex)
     {
-    static UInt8 bitIndex = (UInt8) PROPERTYFLAGINDEX_IsLoaded;
-
-    ECObjectsStatus status = SetPerPropertyBit (bitIndex, propertyIndex, true);
+    ECObjectsStatus status = SetPerPropertyBit ((UInt8) PROPERTYFLAGINDEX_IsLoaded, propertyIndex, true);
 
     PropertyLayoutCP propertyLayout = NULL;
 
@@ -425,13 +423,30 @@ ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueC
         }
     else
         {
-        p = v.GetStruct();    
+        // Avoid making a copy if we have a Standalone that's not already part of somebody else's struct array
+        IECInstancePtr pFrom = v.GetStruct();
+        StandaloneECInstancePtr pTo = dynamic_cast<StandaloneECInstance*> (pFrom.get());
+        if (pTo.IsNull() || pTo->IsSupportingInstance())
+            {
+            pTo = pFrom->GetEnabler().GetClass().GetDefaultStandaloneEnabler()->CreateInstance();
+            ECObjectsStatus copyStatus = pTo->CopyInstanceProperties (*pFrom);
+            if (ECOBJECTS_STATUS_Success != copyStatus)
+                return copyStatus;
+            }
+
+        // We now own it as a supporting instance
+        pTo->SetIsSupportingInstance();
+        p = pTo.get();
         structValueIdValue.SetInteger (structValueId);
         }
 
     ECObjectsStatus status = SetPrimitiveValueToMemory (structValueIdValue, classLayout, propertyLayout, true, index);      
     if (status != ECOBJECTS_STATUS_Success)
-        return status;
+        {
+        // This useless return value again....
+        if (ECOBJECTS_STATUS_PropertyValueMatchesNoChange != status)
+            return status;
+        }
                  
     if (NULL == m_structInstances)
         m_structInstances = new StructInstanceVector ();
@@ -584,7 +599,7 @@ UInt32              MemoryECInstanceBase::GetBytesUsed () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
-void                MemoryECInstanceBase::ClearValues ()
+void                MemoryECInstanceBase::_ClearValues ()
     {
     if (m_structInstances)
         m_structInstances->clear ();
@@ -594,22 +609,6 @@ void                MemoryECInstanceBase::ClearValues ()
     ClearAllPerPropertyFlags ();
     }
    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  04/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutCR       MemoryECInstanceBase::GetClassLayout () const
-    {
-    return _GetClassLayout();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  04/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr       MemoryECInstanceBase::GetAsIECInstance () const
-    {
-    return _GetAsIECInstance();
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -691,9 +690,9 @@ UInt32                   MemoryECInstanceBase::GetPerPropertyFlagsDataLength () 
  /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus      MemoryECInstanceBase::AddNullArrayElements (WCharCP propertyAccessString, UInt32 insertCount)
+ECObjectsStatus      MemoryECInstanceBase::AddNullArrayElements (UInt32 propIdx, UInt32 insertCount)
     {
-    return AddNullArrayElementsAt (GetClassLayout(), propertyAccessString, insertCount);
+    return AddNullArrayElementsAt (GetClassLayout(), propIdx, insertCount);
     }
         
 /*---------------------------------------------------------------------------------**//**
@@ -730,24 +729,6 @@ static void     mergeProperties (IECInstanceR target, ECValuesCollectionCR sourc
             continue;
 
         target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), value);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    03/11
-+---------------+---------------+---------------+---------------+---------------+------*/ 
-static void     duplicateProperties (IECInstanceR target, ECValuesCollectionCR source)
-    {
-    for (ECValuesCollection::const_iterator it=source.begin(); it != source.end(); ++it)
-        {
-        ECPropertyValue const& prop = *it;
-        if (prop.HasChildValues())
-            {
-            duplicateProperties (target, *prop.GetChildValues());
-            continue;
-            }
-
-        target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue());
         }
     }
 
@@ -873,67 +854,19 @@ ECObjectsStatus MemoryECInstanceBase::SetValueInternal (UInt32 propertyIndex, EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus MemoryECInstanceBase::CopyInstanceProperties
+ECObjectsStatus MemoryECInstanceBase::_CopyInstanceProperties
 (
 ECN::IECInstanceCR     fromNativeInstance
 )
     {
-    IECInstancePtr  thisAsIECInstance = GetAsIECInstance ();
-
-    if (!thisAsIECInstance->GetClass().GetName().Equals (fromNativeInstance.GetClass().GetName().c_str()))
-        return ECOBJECTS_STATUS_Error;
-
-    MemoryECInstanceBase* fromMemoryInstance = fromNativeInstance.GetAsMemoryECInstance ();
-    if (fromMemoryInstance != NULL)
+    MemoryECInstanceBase* fromMemoryInstance = fromNativeInstance.GetAsMemoryECInstance();
+    if (NULL != fromMemoryInstance && GetClassLayout().Equals (fromMemoryInstance->GetClassLayout()))
         {
-        ClassLayoutCR classLayout = GetClassLayout();
-
-        if (classLayout.GetChecksum() == fromMemoryInstance->GetClassLayout().GetChecksum())
-            {
-            SetData (fromMemoryInstance->GetData (), fromMemoryInstance->GetBytesUsed (), true); // if true is last argument memory is copied
-
-            // copy the usage mask
-            SetUsageBitmask (fromMemoryInstance->GetUsageBitmask());
-
-            // copy the perProperty flags
-            memcpy (m_perPropertyFlagsHolder.perPropertyFlags, fromMemoryInstance->GetPerPropertyFlagsData(), m_perPropertyFlagsHolder.numPerPropertyFlagsEntries * sizeof(UInt32));
-
-            if (fromMemoryInstance->m_structInstances && fromMemoryInstance->m_structInstances)
-                {
-                for (size_t i = 0; i<fromMemoryInstance->m_structInstances->size(); i++)
-                    {
-                    StructArrayEntry const& entry = (*fromMemoryInstance->m_structInstances)[i];
-                    
-                    MemoryECInstanceBase* structMbInstance = entry.structInstance->GetAsMemoryECInstance();
-                    if (!structMbInstance)
-                        continue;
-
-                    ECClassCR structClass = entry.structInstance->GetClass();
-                    StandaloneECEnablerPtr standaloneEnabler = entry.structInstance->GetEnablerR().GetEnablerForStructArrayMember (structClass.GetSchema().GetSchemaKey(), structClass.GetName().c_str());
-                    if (standaloneEnabler.IsNull())
-                        continue;
-
-                    StandaloneECInstancePtr copiedStructInstance = standaloneEnabler->CreateInstance();
-                    copiedStructInstance->CopyInstanceProperties (*entry.structInstance);
-
-                    if (NULL == m_structInstances)
-                        m_structInstances = new StructInstanceVector ();
-
-                    IECInstancePtr p = copiedStructInstance->GetAsIECInstance ();
-                    StructArrayEntry newEntry (entry.structValueIdentifier, p);
-                    m_structInstances->push_back (newEntry);
-                    }
-                }
-            
-            return ECOBJECTS_STATUS_Success;
-            }
+        SetUsageBitmask (fromMemoryInstance->GetUsageBitmask());
+        memcpy (m_perPropertyFlagsHolder.perPropertyFlags, fromMemoryInstance->GetPerPropertyFlagsData(), m_perPropertyFlagsHolder.numPerPropertyFlagsEntries * sizeof(UInt32));
         }
 
-    // copy properties individually
-    ECValuesCollectionPtr   properties = ECValuesCollection::Create (fromNativeInstance);
-    duplicateProperties (*thisAsIECInstance, *properties);
-
-    return ECOBJECTS_STATUS_Success;
+    return CopyInstancePropertiesToBuffer (fromNativeInstance);
     }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -956,7 +889,7 @@ size_t                StandaloneECInstance::_GetOffsetToIECInstance () const
 +---------------+---------------+---------------+---------------+---------------+------*/        
 StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerR enabler, byte * data, UInt32 size) :
         MemoryECInstanceBase (data, size, enabler.GetClassLayout(), true),
-        m_sharedWipEnabler(&enabler)
+        m_sharedWipEnabler(&enabler), m_isSupportingInstance (false)
     {
     }
 
@@ -965,7 +898,7 @@ StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerR enabler, byte *
 +---------------+---------------+---------------+---------------+---------------+------*/        
 StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerR enabler, UInt32 minimumBufferSize) :
         MemoryECInstanceBase (enabler.GetClassLayout(), minimumBufferSize, true),
-        m_sharedWipEnabler(&enabler)
+        m_sharedWipEnabler(&enabler), m_isSupportingInstance (false)
     {
     }
     
@@ -997,7 +930,7 @@ StandaloneECInstancePtr         StandaloneECInstance::Duplicate(IECInstanceCR in
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  12/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr      StandaloneECInstance::_GetAsIECInstance () const
+IECInstanceP      StandaloneECInstance::_GetAsIECInstance () const
     {
     return const_cast<StandaloneECInstance*>(this);
     }
@@ -1008,6 +941,14 @@ IECInstancePtr      StandaloneECInstance::_GetAsIECInstance () const
 MemoryECInstanceBase* StandaloneECInstance::_GetAsMemoryECInstance () const
     {
     return const_cast<StandaloneECInstance*>(this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECDBuffer* StandaloneECInstance::_GetECDBuffer() const
+    {
+    return const_cast<StandaloneECInstance*> (this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1064,10 +1005,8 @@ ECObjectsStatus           StandaloneECInstance::_GetValue (ECValueR v, UInt32 pr
     ECObjectsStatus status = GetValueFromMemory (v, classLayout, propertyIndex, useArrayIndex, arrayIndex);
     if (ECOBJECTS_STATUS_Success == status)
         {
-        static UInt8 bitIndex = (UInt8) PROPERTYFLAGINDEX_IsLoaded;
         bool isSet = false;
-
-        if (ECOBJECTS_STATUS_Success == MemoryECInstanceBase::IsPerPropertyBitSet (isSet, bitIndex, propertyIndex)) 
+        if (ECOBJECTS_STATUS_Success == MemoryECInstanceBase::IsPerPropertyBitSet (isSet, (UInt8) PROPERTYFLAGINDEX_IsLoaded, propertyIndex)) 
             v.SetIsLoaded (isSet);
         }
 
@@ -1108,10 +1047,10 @@ ECObjectsStatus StandaloneECInstance::_SetInternalValue (UInt32 propertyIndex, E
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECInstance::_InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size)
+ECObjectsStatus           StandaloneECInstance::_InsertArrayElements (UInt32 propIdx, UInt32 index, UInt32 size)
     {
     ClassLayoutCR classLayout = GetClassLayout();
-    ECObjectsStatus status = InsertNullArrayElementsAt (classLayout, propertyAccessString, index, size);
+    ECObjectsStatus status = InsertNullArrayElementsAt (classLayout, propIdx, index, size);
     
     return status;
     } 
@@ -1119,10 +1058,10 @@ ECObjectsStatus           StandaloneECInstance::_InsertArrayElements (WCharCP pr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECInstance::_AddArrayElements (WCharCP propertyAccessString, UInt32 size)
+ECObjectsStatus           StandaloneECInstance::_AddArrayElements (UInt32 propIdx, UInt32 size)
     {
     ClassLayoutCR classLayout = GetClassLayout();    
-    ECObjectsStatus status = AddNullArrayElementsAt (classLayout, propertyAccessString, size);
+    ECObjectsStatus status = AddNullArrayElementsAt (classLayout, propIdx, size);
     
     return status;
     }        
@@ -1130,21 +1069,20 @@ ECObjectsStatus           StandaloneECInstance::_AddArrayElements (WCharCP prope
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECInstance::_RemoveArrayElement (WCharCP propertyAccessString, UInt32 index)
+ECObjectsStatus           StandaloneECInstance::_RemoveArrayElement (UInt32 propIdx, UInt32 index)
     {
     ClassLayoutCR classLayout = GetClassLayout();    
-    return RemoveArrayElementsAt (classLayout, propertyAccessString, index, 1);
+    return RemoveArrayElementsAt (classLayout, propIdx, index, 1);
     } 
 
  /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECInstance::_ClearArray (WCharCP propertyAccessString)
+ECObjectsStatus           StandaloneECInstance::_ClearArray (UInt32 propIdx)
     {
-    static UInt8 bitIndex = (UInt8) PROPERTYFLAGINDEX_IsLoaded;
     ClassLayoutCR classLayout = GetClassLayout();    
     PropertyLayoutCP pPropertyLayout = NULL;
-    ECObjectsStatus status = classLayout.GetPropertyLayout (pPropertyLayout, propertyAccessString);
+    ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (pPropertyLayout, propIdx);
     if (SUCCESS != status || NULL == pPropertyLayout)
         return ECOBJECTS_STATUS_PropertyNotFound;
 
@@ -1154,11 +1092,7 @@ ECObjectsStatus           StandaloneECInstance::_ClearArray (WCharCP propertyAcc
         status =  RemoveArrayElements (classLayout, *pPropertyLayout, 0, arrayCount);
 
         if (ECOBJECTS_STATUS_Success == status)
-            {
-            UInt32 propertyIndex;
-            if (ECOBJECTS_STATUS_Success == classLayout.GetPropertyLayoutIndex (propertyIndex, *pPropertyLayout))
-                SetPerPropertyBit (bitIndex, propertyIndex, false);
-            }
+            SetPerPropertyBit ((UInt8) PROPERTYFLAGINDEX_IsLoaded, propIdx, false);
 
         return  status;
         }

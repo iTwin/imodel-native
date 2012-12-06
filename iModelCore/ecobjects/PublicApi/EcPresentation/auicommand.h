@@ -242,7 +242,7 @@ struct ECPresentationCommandProvider
     
 //__PUBLISH_SECTION_START__
     public:
-
+        virtual WString GetProviderId () const = 0;
         virtual ~ECPresentationCommandProvider() {}
 
         ECOBJECTS_EXPORT void GetCommand (bvector<IUICommandPtr>&commands, IAUIDataContextCR instance, int purpose);

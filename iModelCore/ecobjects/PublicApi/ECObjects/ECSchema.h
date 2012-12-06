@@ -1660,8 +1660,6 @@ public:
     ECOBJECTS_EXPORT UInt32             GetVersionMinor() const;
     //! Returns an iterable container of ECClasses sorted by name. For unsorted called overload.
     ECOBJECTS_EXPORT ECClassContainerCR GetClasses() const;
-    //! Fills a vector will the ECClasses of the ECSchema in the original order in which they were added.
-    ECOBJECTS_EXPORT void               GetClasses(bvector<ECClassP>& classes) const;
 
     //! Gets the number of classes in the schema
     ECOBJECTS_EXPORT UInt32             GetClassCount() const;
