@@ -527,18 +527,25 @@ TEST_F (CustomAttributeTest, SerializeSchemaToXmlUtfString)
     WCharCP const testClassName = L"TestClass";
 
     WCharCP const caClassName = L"CustomAttribClass";
-    WCharCP const caStringPropName = L"StringProperty";
+    WCharCP const caWCharStringPropName = L"WCharStringProperty";
+    WCharCP const caUtf8StringPropName = L"Utf8StringProperty";
     ECSchemaPtr expectedSchema = CreateCustomAttributeTestSchema ();
     ECClassP caClass = expectedSchema->GetClassP (caClassName);
     EXPECT_TRUE (caClass != NULL) << L"Test custom attribute class " << caClassName << L" not found";
     PrimitiveECPropertyP stringProp = NULL;
-    caClass->CreatePrimitiveProperty (stringProp, caStringPropName, PRIMITIVETYPE_String);
+    caClass->CreatePrimitiveProperty (stringProp, caWCharStringPropName, PRIMITIVETYPE_String);
+    caClass->CreatePrimitiveProperty (stringProp, caUtf8StringPropName, PRIMITIVETYPE_String);
 
-    Utf8String expectedCAString;
-    EXPECT_EQ (SUCCESS, BeStringUtilities::WCharToUtf8 (expectedCAString, L"äöüßá³µ"));
+    WCharCP caPropValueString = L"äöüßá³µ";
+    Utf8String expectedCAPropValueUtf8String;
+    EXPECT_EQ (SUCCESS, BeStringUtilities::WCharToUtf8 (expectedCAPropValueUtf8String, caPropValueString));
+
     IECInstancePtr caInstance = GetInstanceForClass (caClassName, *expectedSchema);
-    ECValue expectedUtf8Value (expectedCAString.c_str ());
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, caInstance->SetValue (caStringPropName, expectedUtf8Value)) << L"Assigning property value to custom attribute instance failed.";
+    ECValue expectedWCharValue (caPropValueString);
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, caInstance->SetValue (caWCharStringPropName, expectedWCharValue)) << L"Assigning value to " << caWCharStringPropName << L" in custom attribute instance failed.";
+
+    ECValue expectedUtf8Value (expectedCAPropValueUtf8String.c_str ());
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, caInstance->SetValue (caUtf8StringPropName, expectedUtf8Value)) << L"Assigning value to " << caUtf8StringPropName << L" in custom attribute instance failed.";
 
     ECClassP testClass = expectedSchema->GetClassP (testClassName);
     EXPECT_TRUE (testClass != NULL) << L"Test class " << testClass << L" not found";
@@ -559,17 +566,24 @@ TEST_F (CustomAttributeTest, SerializeSchemaToXmlUtfString)
     VerifyCustomAttributeTestSchema (actualSchema);
     //now check CA added in this test
     ECClassCP actualCAClass = actualSchema->GetClassCP (caClassName);
-    EXPECT_TRUE (actualCAClass->GetPropertyP (caStringPropName) != NULL) << L"Property " << caStringPropName << L" not found in custom attribute class.";
+    EXPECT_TRUE (actualCAClass->GetPropertyP (caWCharStringPropName) != NULL) << L"Property " << caWCharStringPropName << L" not found in custom attribute class.";
     //now check CA instance added in this test
     ECClassCP actualTestClass = actualSchema->GetClassCP (testClassName);
 
     IECInstancePtr actualCAInstance = actualTestClass->GetCustomAttribute (*actualCAClass);
     ASSERT_TRUE (actualCAInstance.IsValid ()) << L"Test class " << testClassName << L" doesn't have the expected custom attribute instance.";
 
+    //verify UTF-8 property value
     ECValue actualUtf8Value;
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, actualCAInstance->GetValue (actualUtf8Value, caStringPropName)) << L"Property " << caStringPropName << L"not found in custom attribute instance on test class.";
-    EXPECT_TRUE (expectedUtf8Value.Equals (actualUtf8Value)) << L"Unexpected string property value of custom attribute instance";
-    EXPECT_STREQ (expectedCAString.c_str (), actualUtf8Value.GetUtf8CP ()) << L"Unexpected string value of custom attribute property value";
+    ASSERT_EQ (ECOBJECTS_STATUS_Success, actualCAInstance->GetValue (actualUtf8Value, caUtf8StringPropName)) << L"Property " << caUtf8StringPropName << L"not found in custom attribute instance on test class.";
+    EXPECT_TRUE (expectedUtf8Value.Equals (actualUtf8Value)) << L"Unexpected ECValue of property " << caUtf8StringPropName << L" of custom attribute instance";
+    EXPECT_STREQ (expectedCAPropValueUtf8String.c_str (), actualUtf8Value.GetUtf8CP ()) << L"Unexpected string value of property " << caUtf8StringPropName << L" of custom attribute instance";
+
+    //verify wchar property value
+    ECValue actualWCharValue;
+    ASSERT_EQ (ECOBJECTS_STATUS_Success, actualCAInstance->GetValue (actualWCharValue, caWCharStringPropName)) << L"Property " << caWCharStringPropName << L"not found in custom attribute instance on test class.";
+    EXPECT_TRUE (expectedWCharValue.Equals (actualWCharValue)) << L"Unexpected ECValue of property " << caWCharStringPropName << L" of custom attribute instance";
+    EXPECT_STREQ (caPropValueString, actualWCharValue.GetString ()) << L"Unexpected string value of property " << caWCharStringPropName << L" of custom attribute instance";
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
