@@ -11,6 +11,7 @@
 
 #include "ecimagekey.h"
 #include "ecpresentationtypedefs.h"
+#include "auiprovider.h"
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -233,16 +234,15 @@ struct UICommand : public IUICommand
 //! data contexts. The presentation manager providers a union.
 * @bsiclass                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ECPresentationCommandProvider
+struct ECPresentationCommandProvider : public IECPresentationProvider
     {
 
 //__PUBLISH_SECTION_END__
     protected:
         virtual void _GetCommand (bvector<IUICommandPtr>&commands, IAUIDataContextCR instance, int purpose) = 0;
-    
+        virtual ProviderType    _GetProviderType (void) const {return CommandService;}
 //__PUBLISH_SECTION_START__
     public:
-        virtual WString GetProviderId () const = 0;
         virtual ~ECPresentationCommandProvider() {}
 
         ECOBJECTS_EXPORT void GetCommand (bvector<IUICommandPtr>&commands, IAUIDataContextCR instance, int purpose);

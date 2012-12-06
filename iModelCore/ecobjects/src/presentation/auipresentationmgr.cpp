@@ -121,10 +121,10 @@ void            ECPresentationManager::RemoveProvider (ECPresentationCommandProv
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    dmitrijus.tiazlovas              11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationCommandProviderCP ECPresentationManager::GetCommandProviderById (WString providerId)
+ECPresentationCommandProviderCP ECPresentationManager::GetCommandProviderById (UInt16 providerId)
     {
     for (T_CmdProviderSet::iterator iter = m_cmdProviders.begin(); iter != m_cmdProviders.end(); ++iter)
-        if (BeStringUtilities::Wcsicmp ((*iter)->GetProviderId ().c_str (), providerId.c_str ()))
+        if ((*iter)->GetProviderId () == providerId)
             return *iter;
     return NULL;
     }
