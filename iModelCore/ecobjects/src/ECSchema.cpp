@@ -1911,19 +1911,18 @@ SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSc
     return status;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus     ECSchema::ReadFromXmlString
 (
-ECSchemaPtr&                      schemaOut, 
-WCharCP                         ecSchemaXml,
+ECSchemaPtr&         schemaOut, 
+WCharCP              ecSchemaXml,
 ECSchemaReadContextR schemaContext
 )
     {                  
     ECObjectsLogger::Log()->debugv (L"About to read native ECSchema read from string."); // mainly included for timing
-        schemaOut = NULL;
+    schemaOut = NULL;
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
 
     BeXmlStatus xmlStatus;

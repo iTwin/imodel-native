@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
+#include <Bentley/IStorage.h>   // for _FILETIME
 #include <Bentley/BeAssert.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE

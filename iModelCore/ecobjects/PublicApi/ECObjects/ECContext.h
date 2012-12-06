@@ -86,7 +86,7 @@ public:
     IStandaloneEnablerLocaterP  GetStandaloneEnablerLocater();
     void                AddSchema(ECSchemaR schema);
     void                RemoveSchema(ECSchemaR schema);
-    ECSchemaPtr         GetFoundSchema (SchemaKeyR key, SchemaMatchType matchType);
+    ECSchemaPtr         GetFoundSchema (SchemaKeyCR key, SchemaMatchType matchType);
     ECSchemaCacheR     GetCache()  { return m_knownSchemas; }
     ECOBJECTS_EXPORT ECSchemaCacheR GetKnownSchemas ();
 

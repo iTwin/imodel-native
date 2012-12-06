@@ -2913,11 +2913,11 @@ ECObjectsStatus ECDBuffer::MoveData (byte* to, byte const* from, size_t len)
         }
     }
 
-#if defined(_WIN32)
-static ECDBuffer::StringEncoding s_preferredEncoding = ECDBuffer::StringEncoding_Utf16;
-#else
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   12/12
+//+---------------+---------------+---------------+---------------+---------------+------
+// In Graphite strings should always be stored in UTF-8
 static ECDBuffer::StringEncoding s_preferredEncoding = ECDBuffer::StringEncoding_Utf8;
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/12
