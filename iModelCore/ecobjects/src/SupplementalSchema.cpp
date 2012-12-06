@@ -442,9 +442,11 @@ SchemaMatchType matchType
 SupplementedSchemaStatus SupplementedSchemaBuilder::UpdateSchema
 (
 ECSchemaR primarySchema, 
-bvector<ECSchemaP>& supplementalSchemaList
+bvector<ECSchemaP>& supplementalSchemaList,
+bool createCopyOfSupplementalCustomAttribute
 )
     {
+    m_createCopyOfSupplementalCustomAttribute = createCopyOfSupplementalCustomAttribute;
     bmap<UInt32, ECSchemaP> schemasByPrecedence;
     bvector<ECSchemaP> localizationSchemas;
     SupplementedSchemaStatus status = SUPPLEMENTED_SCHEMA_STATUS_Success;
@@ -681,12 +683,15 @@ WStringCP consolidatedSchemaFullName
         if (0 == wcscmp(SupplementalSchemaMetaData::GetCustomAttributeAccessor(), className.c_str()))
             continue;
 
-        IECInstancePtr supplementalCustomAttribute = customAttribute->CreateCopyThroughSerialization();
+        IECInstancePtr supplementalCustomAttribute = m_createCopyOfSupplementalCustomAttribute ? customAttribute->CreateCopyThroughSerialization() : customAttribute;
         IECInstancePtr localCustomAttribute = consolidatedCustomAttributeContainer.GetCustomAttributeLocal(customAttribute->GetClass());
         IECInstancePtr consolidatedCustomAttribute;
         
         if (localCustomAttribute.IsValid())
-            consolidatedCustomAttribute = localCustomAttribute->CreateCopyThroughSerialization();
+            if (m_createCopyOfSupplementalCustomAttribute)
+                consolidatedCustomAttribute = localCustomAttribute->CreateCopyThroughSerialization();
+            else
+                consolidatedCustomAttribute = localCustomAttribute;
 
         // We don't use merging delegates like in the managed world, but Units custom attributes still need to be treated specially
         if (customAttribute->GetClass().GetSchema().GetName().EqualsI(L"Unit_Attributes.01.00"))
