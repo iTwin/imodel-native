@@ -1878,4 +1878,23 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, EC
     return SCHEMA_READ_STATUS_Success;
     }
     
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            ECClass::Is(WCharCP name) const
+    {
+    if (0 == GetName().CompareTo(name))
+        return true;
+
+    const ECBaseClassesList& baseClass = GetBaseClasses();
+    for (ECBaseClassesList::const_iterator iter = baseClass.begin(); iter != baseClass.end(); ++iter)
+        {
+        if ((*iter)->Is(name))
+            return true;
+        }
+
+    return false;
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE
