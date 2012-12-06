@@ -80,6 +80,12 @@ struct IUICommand : public RefCountedBase
         EDITACTION_PRIORITY_MiscGroup6
         };
 
+    enum ApplicationPurpose
+        {
+        Unknown              = 0,
+        ViewWindowRightClick = 1,
+        };
+
     //__PUBLISH_SECTION_END__
 
     protected:
@@ -162,8 +168,7 @@ struct IUICommand : public RefCountedBase
         ECOBJECTS_EXPORT void               GetChildren (bvector<IUICommandPtr>& children);
     };
 
-
-
+typedef RefCountedPtr<UICommand> UICommandPtr;
 
 /*---------------------------------------------------------------------------------**//**
 //! A UIcommand represents an action that can be applied on a data context. (Usually an ecinstnace)
