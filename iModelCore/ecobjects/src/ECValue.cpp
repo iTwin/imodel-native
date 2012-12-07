@@ -243,7 +243,7 @@ bool ECValue::StringInfo::Equals (ECValue::StringInfo const& rhs, UInt8& flags)
             return 0 == BeStringUtilities::CompareUtf16 (m_utf16, rhs.m_utf16);
 #if !defined (_WIN32)
         else if (NULL != m_wchar)
-            return 0 == BeStringutilities::CompareUtf16WChar (rhs.m_utf16, m_wchar);
+            return 0 == BeStringUtilities::CompareUtf16WChar (rhs.m_utf16, m_wchar);
 #endif
         else
             {
