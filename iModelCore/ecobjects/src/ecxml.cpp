@@ -91,6 +91,8 @@ ECObjectsStatus ECXml::ParsePrimitiveType (PrimitiveType& primitiveType, WString
         primitiveType = PRIMITIVETYPE_Binary;
     else if (0 == typeName.compare(0, ECXML_TYPENAME_IGEOMETRY_GENERIC.length(), ECXML_TYPENAME_IGEOMETRY_GENERIC))
         primitiveType = PRIMITIVETYPE_IGeometry; 
+    else if (0 == typeName.compare(0, ECXML_TYPENAME_IGEOMETRY_LEGACY.length(), ECXML_TYPENAME_IGEOMETRY_LEGACY))
+        primitiveType = PRIMITIVETYPE_IGeometry; 
     else
         return ECOBJECTS_STATUS_ParseError;
 

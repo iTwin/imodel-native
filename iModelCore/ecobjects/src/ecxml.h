@@ -76,8 +76,9 @@ static const WString ECXML_TYPENAME_LONG               = L"long";
 static const WString ECXML_TYPENAME_POINT2D            = L"point2d";
 static const WString ECXML_TYPENAME_POINT3D            = L"point3d";
 static const WString ECXML_TYPENAME_STRING             = L"string";
-static const WString ECXML_TYPENAME_IGEOMETRY          = L"Bentley.Geometry.Common.IGeometry";
-static const WString ECXML_TYPENAME_IGEOMETRY_GENERIC  = L"Bentley.Geometry.Common"; // This is used for matching incoming types to any common geometry type
+static const WString ECXML_TYPENAME_IGEOMETRY          = L"Bentley.GeometryNET.Common.IGeometry";
+static const WString ECXML_TYPENAME_IGEOMETRY_GENERIC  = L"Bentley.GeometryNET.Common"; // This is used for matching incoming types to any common geometry type
+static const WString ECXML_TYPENAME_IGEOMETRY_LEGACY   = L"Bentley.Geometry.Common";
 static const WString EMPTY_STRING = L"";
 
 static const WString ECXML_STRENGTH_REFERENCING        = L"referencing";
