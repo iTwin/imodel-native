@@ -1953,11 +1953,11 @@ ECSchemaReadContextR schemaContext
     
     if (ECOBJECTS_STATUS_Success != status)
         {
-        Utf8Char first200Characters[201];
+        Utf8Char first200Bytes[201];
                
-        BeStringUtilities::Strncpy (first200Characters, ecSchemaXml, 200);
-        first200Characters[200] = '\0';
-        ECObjectsLogger::Log()->errorv (L"Failed to read XML from string (1st 200 characters): %hs", first200Characters);
+        BeStringUtilities::Strncpy (first200Bytes, ecSchemaXml, 200);
+        first200Bytes[200] = '\0';
+        ECObjectsLogger::Log()->errorv (L"Failed to read XML from string (1st 200 characters approx.): %hs", first200Bytes);
         }
     else
         {
