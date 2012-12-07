@@ -54,7 +54,7 @@ struct SelectedNodeInstancesSpecification : public ContentSpecification
         ECOBJECTS_EXPORT WStringCR                    GetAcceptableClassNames (void) const         { return m_acceptableClassNames; }
 
         //! Identifies whether AcceptableClasses should be check polymorphically.
-        ECOBJECTS_EXPORT bool                         GetmAcceptablePolymorphically (void) const   { return m_acceptablePolymorphically; }
+        ECOBJECTS_EXPORT bool                         GetAcceptablePolymorphically (void) const    { return m_acceptablePolymorphically; }
 
     };
 
