@@ -253,7 +253,7 @@ private:
     ECSchemaP m_schemaToSupplement;
     SchemaNamePurposeMap m_supplementalSchemaNamesAndPurposes;
     ECSchemaCachePtr m_schemaCache;
-
+    bool m_createCopyOfSupplementalCustomAttribute;
     static const int PRECEDENCE_THRESHOLD = 199;
 
     SupplementedSchemaStatus OrderSupplementalSchemas(bmap<UInt32, ECSchemaP>& schemasByPrecedence, ECSchemaR primarySchema, const bvector<ECSchemaP>& supplementalSchemaList, bvector<ECSchemaP> localizationSchemas );
@@ -343,8 +343,10 @@ public:
     //! have the supplemented custom attributes added to it, and it will be marked as supplemented
     //! @param[in]  supplementalSchemaList  A list of schemas that contain a skeleton structure containing only the classes
     //! and properties needed to hold the supplementary custom attributes
+    //! @param[in]  createCopyOfSupplementalCustomAttribute Create copy of supplemental custom attribute before putting it on
+    //! the primary schema.
     //! @returns A status code indicating whether the primarySchema was successfully supplemented
-    ECOBJECTS_EXPORT SupplementedSchemaStatus UpdateSchema(ECSchemaR primarySchema, bvector<ECSchemaP>& supplementalSchemaList); 
+    ECOBJECTS_EXPORT SupplementedSchemaStatus UpdateSchema(ECSchemaR primarySchema, bvector<ECSchemaP>& supplementalSchemaList, bool createCopyOfSupplementalCustomAttribute = true); 
     }; // SupplementalSchemaBuilder
 
 //=======================================================================================
