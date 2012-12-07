@@ -43,33 +43,33 @@ struct IUICommand : public RefCountedBase
     +===============+===============+===============+===============+===============+======*/
     enum EditActionPriority
         {
-        EDITACTION_PRIORITY_Highest            = 10000,
-        EDITACTION_PRIORITY_TopGroup1          = 9500,
-        EDITACTION_PRIORITY_TopGroup2          = 9400,
-        EDITACTION_PRIORITY_TopGroup3          = 9300,
-        EDITACTION_PRIORITY_TopGroup4          = 9200,
-        EDITACTION_PRIORITY_TopGroup5          = 9000,
+        EDITACTION_PRIORITY_Highest            = 1000,
+        EDITACTION_PRIORITY_TopGroup1          = 950,
+        EDITACTION_PRIORITY_TopGroup2          = 940,
+        EDITACTION_PRIORITY_TopGroup3          = 930,
+        EDITACTION_PRIORITY_TopGroup4          = 920,
+        EDITACTION_PRIORITY_TopGroup5          = 900,
 
-        EDITACTION_PRIORITY_UserCommon         = 7000,
-        EDITACTION_PRIORITY_CommonManipulation = 5000,
-        EDITACTION_PRIORITY_ElementSpecific    = 4000,
-        EDITACTION_PRIORITY_UserSelection      = 3500,
-        EDITACTION_PRIORITY_Selection          = 3000,
+        EDITACTION_PRIORITY_UserCommon         = 700,
+        EDITACTION_PRIORITY_CommonManipulation = 500,
+        EDITACTION_PRIORITY_ElementSpecific    = 400,
+        EDITACTION_PRIORITY_UserSelection      = 350,
+        EDITACTION_PRIORITY_Selection          = 300,
 
-        EDITACTION_PRIORITY_UserClipboard      = 2500,
-        EDITACTION_PRIORITY_Clipboard          = 2000,
-        EDITACTION_PRIORITY_UserDelete         = 1500,
-        EDITACTION_PRIORITY_Delete             = 1000,
+        EDITACTION_PRIORITY_UserClipboard      = 250,
+        EDITACTION_PRIORITY_Clipboard          = 200,
+        EDITACTION_PRIORITY_UserDelete         = 150,
+        EDITACTION_PRIORITY_Delete             = 100,
 
-        EDITACTION_PRIORITY_UserProperties     = 500,
+        EDITACTION_PRIORITY_UserProperties     = 50,
         EDITACTION_PRIORITY_Properties         = 0,
 
-        EDITACTION_PRIORITY_BottomGroup1       = -20,
-        EDITACTION_PRIORITY_BottomGroup2       = -40,
-        EDITACTION_PRIORITY_BottomGroup3       = -60,
-        EDITACTION_PRIORITY_BottomGroup4       = -80,
-        EDITACTION_PRIORITY_BottomGroup5       = -100,
-        EDITACTION_PRIORITY_Lowest             = -10000,
+        EDITACTION_PRIORITY_BottomGroup1       = -2,
+        EDITACTION_PRIORITY_BottomGroup2       = -4,
+        EDITACTION_PRIORITY_BottomGroup3       = -6,
+        EDITACTION_PRIORITY_BottomGroup4       = -8,
+        EDITACTION_PRIORITY_BottomGroup5       = -10,
+        EDITACTION_PRIORITY_Lowest             = -1000,
 
         #if defined (BEIJING_DGNPLATFORM_WIP_SWW)
         #endif // defined (BEIJING_DGNPLATFORM_WIP_SWW)
@@ -109,7 +109,7 @@ struct IUICommand : public RefCountedBase
         virtual ECImageKeyCP        _GetImageId () const = 0;
         virtual void                _SetImageId (ECImageKeyCR key) { }
         
-        virtual bool                _IsSeparator () const = 0;
+        virtual bool                _IsSeparator () const {return false;}
         
         virtual EditActionMenuMark  _GetMenuMark() const {return MENUMARK_None;}
         virtual void                _SetMenuMark(EditActionMenuMark mark) {}
