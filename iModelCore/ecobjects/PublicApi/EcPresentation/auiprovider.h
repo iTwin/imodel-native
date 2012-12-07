@@ -5,8 +5,9 @@
 |  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+//__PUBLISH_SECTION_START__
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
+
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
@@ -40,3 +41,5 @@ struct          IECPresentationProvider
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+//__PUBLISH_SECTION_END__

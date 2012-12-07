@@ -5,8 +5,9 @@
 |  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+/*__PUBLISH_SECTION_START__*/
+
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
 
 #include <ECObjects/ECObjects.h>
 #include <Bentley/RefCounted.h>
@@ -40,10 +41,8 @@ EC_TYPEDEFS (ECSelectionEvent);
 EC_TYPEDEFS (ECSelectionListener);
 EC_TYPEDEFS (ECInstanceIterableDataContext);
 
-namespace Bentley { namespace DgnPlatform {
-    struct ECQuery;
-    typedef ECQuery const*      ECQueryCP;
-    }}
+namespace Bentley {namespace DgnPlatform {struct ECQuery;}}
+ADD_BENTLEY_TYPEDEFS1(DgnPlatform,ECQuery,ECQuery,struct)
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 typedef RefCountedPtr<IAUIItem>             IAUIItemPtr;
@@ -51,3 +50,5 @@ typedef RefCountedPtr<IECPresentationViewDefinition>    IECPresentationViewDefin
 typedef RefCountedPtr<IECContentDefinition> IECContentDefinitionPtr;
 typedef RefCountedPtr<IECNativeImage>       IECNativeImagePtr;
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/*__PUBLISH_SECTION_END__*/

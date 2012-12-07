@@ -5,8 +5,11 @@
 |  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
+
+#pragma once
+
+#include <Geom/GeomApi.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -16,7 +19,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 struct  ECPresentationManager: public NonCopyableClass
     {
     private:
-        typedef bvector<ECPresentationCommandProviderCP>     T_CmdProviderSet;
+        typedef bvector<ECPresentationCommandProviderP>      T_CmdProviderSet;
         typedef bvector<IECPresentationViewProviderP>        T_ViewProviderSet;
         typedef bvector<IJournalProviderP>                   T_JournalProviderSet;
         typedef bvector<IAUIContentServiceProviderP>         T_ContentProviderSet;
@@ -52,11 +55,11 @@ struct  ECPresentationManager: public NonCopyableClass
     ECOBJECTS_EXPORT void                           RemoveProvider (IJournalProviderR provider);
 
     //! Add or remove the command provider
-    ECOBJECTS_EXPORT void                           AddProvider (ECPresentationCommandProviderCR provider);
-    ECOBJECTS_EXPORT void                           RemoveProvider (ECPresentationCommandProviderCR provider);
+    ECOBJECTS_EXPORT void                           AddProvider (ECPresentationCommandProviderR provider);
+    ECOBJECTS_EXPORT void                           RemoveProvider (ECPresentationCommandProviderR provider);
 
     //! Obtain command provider by id
-    ECOBJECTS_EXPORT ECPresentationCommandProviderCP GetCommandProviderById (WString providerId);
+    ECOBJECTS_EXPORT ECPresentationCommandProviderCP GetCommandProviderById (UInt16 providerId);
 
     //! Add or remove the view definition provider
     ECOBJECTS_EXPORT void                           AddProvider (IECPresentationViewProviderR provider);
@@ -84,13 +87,9 @@ struct  ECPresentationManager: public NonCopyableClass
     //!@param[in] dataContext   The data context for which the view definition is requested.
     ECOBJECTS_EXPORT IECContentDefinitionPtr            GetContentDefinition (IECPresentationViewDefinitionCR viewDef) const;
 
-    //! Get the list of commands that is associated with this data context. Its a union of all commands provided by 
-    //! different command providers.
-    ECOBJECTS_EXPORT bvector<UICommandPtr>              GetCommands (IAUIDataContextCR instance) const;
-
     //! Get the list of commands that is associated with this data context for a given purpose. Its a union of all 
     //! commands provided by different command providers.
-    ECOBJECTS_EXPORT bvector<UICommandPtr>              GetCommands (IAUIDataContextCR instance, int purpose) const;
+    ECOBJECTS_EXPORT void                               GetCommands (bvector<IUICommandPtr>& commands, IAUIDataContextCR instance, int purpose);
 
     //! Fetch an image of the specified size and name from the image providers.
     ECOBJECTS_EXPORT IECNativeImagePtr                  GetImage (ECImageKeyCR imageKey, DPoint2dCR size);
