@@ -98,6 +98,8 @@ private:
     mutable UInt8       m_ownershipFlags;       // mutable because string ownership may change when we perform on-demand encoding conversions...
 
     void                InitForString (void const * str);
+    BentleyStatus  SetBinaryInternal (const byte * data, size_t size, bool holdADuplicate = false);
+
 protected:    
     typedef bvector<ECValue>  ValuesVector;
     typedef bvector<ECValue>* ValuesVectorP;
@@ -248,7 +250,10 @@ public:
 
     ECOBJECTS_EXPORT const byte *   GetBinary (size_t& size) const;
     ECOBJECTS_EXPORT BentleyStatus  SetBinary (const byte * data, size_t size, bool holdADuplicate = false);
-    
+
+    ECOBJECTS_EXPORT const byte *   GetIGeometry (size_t& size) const;
+    ECOBJECTS_EXPORT BentleyStatus  SetIGeometry (const byte * data, size_t size, bool holdADuplicate = false);
+
     ECOBJECTS_EXPORT IECInstancePtr GetStruct() const;
     ECOBJECTS_EXPORT BentleyStatus  SetStruct (IECInstanceP structInstance);
         

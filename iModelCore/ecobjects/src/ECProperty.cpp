@@ -393,6 +393,8 @@ ECObjectsStatus PrimitiveECProperty::_SetTypeName (WStringCR typeName)
                                 this->GetName().c_str() );
         return status;
         }
+    else if (PRIMITIVETYPE_IGeometry == primitiveType)
+        m_originalTypeName = typeName; // Internally we treat everything as the common Bentley.Geometry.Common.IGeometry, but we need to preserve the actual type
 
     return SetType (primitiveType);
     }
