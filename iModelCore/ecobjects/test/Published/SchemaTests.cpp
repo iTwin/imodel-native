@@ -22,6 +22,19 @@ struct ClassTest                 : ECTestFixture {};
 struct SchemaLocateTest          : ECTestFixture {};
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyP GetPropertyByName (ECClassCR ecClass, WCharCP name, bool expectExists = true)
+    {
+    ECPropertyP prop = ecClass.GetPropertyP (name);
+    EXPECT_EQ (expectExists, NULL != prop);
+    Utf8String utf8 (name);
+    prop = ecClass.GetPropertyP (utf8.c_str());
+    EXPECT_EQ (expectExists, NULL != prop);
+    return prop;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 void VerifyWidgetsSchema
@@ -57,7 +70,7 @@ ECSchemaPtr const&   schema
     EXPECT_FALSE (pClass->GetIsCustomAttributeClass());
     EXPECT_TRUE (pClass->GetIsDomainClass());
     EXPECT_FALSE (pClass->HasBaseClasses());
-    ECPropertyP pProperty = pClass->GetPropertyP (L"Name");
+    ECPropertyP pProperty = GetPropertyByName (*pClass, L"Name");
     ASSERT_TRUE (NULL != pProperty);
     EXPECT_STREQ (L"Name", pProperty->GetName().c_str());
     EXPECT_TRUE (pProperty->GetIsPrimitive());
@@ -71,7 +84,7 @@ ECSchemaPtr const&   schema
     EXPECT_EQ (pClass, &pProperty->GetClass());
     EXPECT_FALSE (pProperty->GetIsReadOnly());
 
-    pProperty = pClass->GetPropertyP (L"PropertyDoesNotExistInClass");
+    pProperty = GetPropertyByName (*pClass, L"PropertyDoesNotExistInClass", false);
     EXPECT_FALSE (pProperty);
 
     ECClassP customAttribClass = schema->GetClassP(L"AccessCustomAttributes");
@@ -106,7 +119,7 @@ ECSchemaPtr const&   schema
     EXPECT_FALSE (pClass->GetIsCustomAttributeClass());
     EXPECT_TRUE (pClass->GetIsDomainClass());
     EXPECT_FALSE (pClass->HasBaseClasses());
-    pProperty = pClass->GetPropertyP (L"NestedArray");
+    pProperty = GetPropertyByName (*pClass, L"NestedArray");
     EXPECT_TRUE (NULL != pProperty);
     EXPECT_STREQ (L"NestedArray", pProperty->GetName().c_str());
     EXPECT_FALSE (pProperty->GetIsPrimitive());
@@ -127,7 +140,7 @@ ECSchemaPtr const&   schema
     pClass = schema->GetClassP(L"TestClass");
     ASSERT_TRUE (NULL != pClass);
     EXPECT_TRUE (pClass->HasBaseClasses());
-    pProperty = pClass->GetPropertyP (L"EmbeddedStruct");
+    pProperty = GetPropertyByName (*pClass, L"EmbeddedStruct");
     ASSERT_TRUE (NULL != pProperty);
     EXPECT_STREQ (L"EmbeddedStruct", pProperty->GetName().c_str());
     EXPECT_FALSE (pProperty->GetIsPrimitive());
@@ -449,7 +462,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithInvalidTypeNameInPrimitivePro
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
 
     ECClassP pClass = schema->GetClassP(L"ecProject");
-    ECPropertyP pProperty = pClass->GetPropertyP(L"Name");
+    ECPropertyP pProperty = GetPropertyByName (*pClass, L"Name");
     EXPECT_TRUE (PRIMITIVETYPE_String == pProperty->GetAsPrimitiveProperty()->GetType());
     };
 
@@ -589,7 +602,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromStri
     EXPECT_FALSE (pClass->GetIsCustomAttributeClass());
     EXPECT_TRUE (pClass->GetIsDomainClass());
     EXPECT_FALSE (pClass->HasBaseClasses());
-    ECPropertyP pProperty = pClass->GetPropertyP (L"Name");
+    ECPropertyP pProperty = GetPropertyByName (*pClass, L"Name");
     ASSERT_TRUE (NULL != pProperty);
     EXPECT_STREQ (L"Name", pProperty->GetName().c_str());
     EXPECT_TRUE (pProperty->GetIsPrimitive());
@@ -603,7 +616,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromStri
     EXPECT_EQ (pClass, &pProperty->GetClass());
     EXPECT_FALSE (pProperty->GetIsReadOnly());
 
-    pProperty = pClass->GetPropertyP (L"PropertyDoesNotExistInClass");
+    pProperty = GetPropertyByName (*pClass, L"PropertyDoesNotExistInClass", false);
     EXPECT_FALSE (pProperty);
     };
 
@@ -666,7 +679,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateClassesInXml)
     ASSERT_TRUE (NULL != projectClass);
     EXPECT_STREQ(L"Project ECClass", projectClass->GetDescription().c_str());
     EXPECT_STREQ(L"Project", projectClass->GetDisplayLabel().c_str());
-    ECPropertyP pProperty = projectClass->GetPropertyP (L"Name");
+    ECPropertyP pProperty = GetPropertyByName (*projectClass, L"Name");
     ASSERT_TRUE (NULL != pProperty);
     EXPECT_STREQ (L"Name", pProperty->GetName().c_str());
     EXPECT_TRUE (pProperty->GetIsPrimitive());
@@ -695,7 +708,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateClassesInXml)
     ASSERT_TRUE (NULL != projectClass);
     EXPECT_STREQ(L"New Project ECClass", projectClass->GetDescription().c_str());
     EXPECT_STREQ(L"Project", projectClass->GetDisplayLabel().c_str());
-    pProperty = projectClass->GetPropertyP (L"Name");
+    pProperty = GetPropertyByName (*projectClass, L"Name");
     ASSERT_TRUE (NULL != pProperty);
     EXPECT_STREQ (L"Name", pProperty->GetName().c_str());
     EXPECT_TRUE (pProperty->GetIsPrimitive());
@@ -703,7 +716,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateClassesInXml)
     EXPECT_FALSE (pProperty->GetIsArray());
     EXPECT_STREQ (L"string", pProperty->GetTypeName().c_str());
 
-    pProperty = projectClass->GetPropertyP (L"Author");
+    pProperty = GetPropertyByName (*projectClass, L"Author");
     ASSERT_TRUE (NULL != pProperty);
     EXPECT_STREQ (L"Author", pProperty->GetName().c_str());
     EXPECT_TRUE (pProperty->GetIsPrimitive());
@@ -1571,9 +1584,9 @@ TEST_F(ClassTest, ExpectProperties)
     cd->AddBaseClass(*ab);
     ef->AddBaseClass(*cd);
 
-    EXPECT_TRUE(NULL != ef->GetPropertyP(L"e"));    
-    EXPECT_TRUE(NULL != ef->GetPropertyP(L"c"));    
-    EXPECT_TRUE(NULL != ef->GetPropertyP(L"a"));    
+    EXPECT_TRUE(NULL != GetPropertyByName (*ef, L"e"));    
+    EXPECT_TRUE(NULL != GetPropertyByName (*ef, L"c"));    
+    EXPECT_TRUE(NULL != GetPropertyByName (*ef, L"a"));    
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -1799,7 +1812,7 @@ TEST_F(ClassTest, ExpectReadOnlyFromBaseClass)
 
     ASSERT_EQ(ECOBJECTS_STATUS_Success, child->AddBaseClass(*base));
 
-    ECPropertyP ecProp = child->GetPropertyP(L"readOnlyProp");
+    ECPropertyP ecProp = GetPropertyByName (*child, L"readOnlyProp");
     ASSERT_EQ(true, ecProp->GetIsReadOnly());
 
     }
@@ -1957,7 +1970,7 @@ struct DisplayLabelTester : ECNameValidationTest::ITester
     virtual void Postprocess (ECSchemaR schema) const override
         {
         ECClassP ecclass = schema.GetClassP (m_encodedName.c_str());
-        ECPropertyP ecprop = ecclass->GetPropertyP (m_encodedName.c_str());
+        ECPropertyP ecprop = GetPropertyByName (*ecclass, m_encodedName.c_str());
 
         Compare (schema);
         Compare (*ecclass);

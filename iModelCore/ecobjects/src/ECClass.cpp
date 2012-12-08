@@ -375,6 +375,52 @@ bool includeBaseClasses
     return  GetPropertyP (propertyName.c_str(), includeBaseClasses);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* On Graphite, Casey wants to be able to get a property by its name in Utf8, taking
+* advantage of the fact that EC names are constrained to ASCII range.
+* @bsimethod                                                    Paul.Connelly   12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyP ECClass::GetPropertyP (Utf8CP name, bool includeBaseClasses) const
+    {
+    struct Comparator
+        {
+        bool operator()(PropertyMap::value_type const& entry, Utf8CP u) const
+            {
+            WCharCP w = entry.first;
+            while (*w)
+                {
+                int cmp = (Utf8Char)(*w) - (*u);
+                if (cmp < 0)
+                    return true;
+                else if (cmp > 0)
+                    return false;
+
+                ++w;
+                ++u;
+                }
+
+            // all characters in w match; u is either equal or greater
+            return 0 != *u;
+            }
+        };
+
+    Comparator comp;
+    PropertyMap::const_iterator found = std::lower_bound (m_propertyMap.begin(), m_propertyMap.end(), name, comp);
+    if (m_propertyMap.end() != found)
+        return found->second;
+    else if (includeBaseClasses)
+        {
+        FOR_EACH (ECClassCP ecClass, m_baseClasses)
+            {
+            ECPropertyP prop = ecClass->GetPropertyP (name, true);
+            if (NULL != prop)
+                return prop;
+            }
+        }
+
+    return NULL;
+    }
+
 static bvector<WString> s_schemasThatAllowOverridingArrays;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                11/2011
