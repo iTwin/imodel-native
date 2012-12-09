@@ -375,6 +375,60 @@ bool includeBaseClasses
     return  GetPropertyP (propertyName.c_str(), includeBaseClasses);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+static int asciiCmp (WCharCP w, Utf8CP u)
+    {
+    while (*w)
+        {
+        // Do we care about endian-ness here?
+        int cmp = (Utf8Char)(*w) - (*u);
+        if (0 != cmp)
+            return cmp;
+
+        ++w;
+        ++u;
+        }
+
+    // all characters in w match; check lengths match
+    return 0 == *u ? 0 : -1;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* On Graphite, Casey wants to be able to get a property by its name in Utf8, taking
+* advantage of the fact that EC names are constrained to ASCII range.
+* @bsimethod                                                    Paul.Connelly   12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyP ECClass::GetPropertyP (Utf8CP name, bool includeBaseClasses) const
+    {
+    struct Comparator
+        {
+        bool operator()(PropertyMap::value_type const& entry, Utf8CP u) const
+            {
+            return asciiCmp (entry.first, u) < 0;
+            }
+        };
+
+    Comparator comp;
+    PropertyMap::const_iterator found = std::lower_bound (m_propertyMap.begin(), m_propertyMap.end(), name, comp);
+    if (m_propertyMap.end() != found && 0 == asciiCmp (found->first, name))
+        {
+        return found->second;
+        }
+    else if (includeBaseClasses)
+        {
+        FOR_EACH (ECClassCP ecClass, m_baseClasses)
+            {
+            ECPropertyP prop = ecClass->GetPropertyP (name, true);
+            if (NULL != prop)
+                return prop;
+            }
+        }
+
+    return NULL;
+    }
+
 static bvector<WString> s_schemasThatAllowOverridingArrays;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                11/2011
