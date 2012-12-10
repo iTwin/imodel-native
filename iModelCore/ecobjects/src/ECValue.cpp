@@ -2246,15 +2246,12 @@ ECValuesCollectionPtr  ECPropertyValue::GetChildValues () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyValue ECValuesCollectionIterator::GetFirstPropertyValue (IECInstanceCR instance)
     {
-    ECValueAccessor firstPropertyAccessor;
-
     ECEnablerCR enabler = instance.GetEnabler();
-
     if (1 == enabler.GetPropertyCount())
         return ECPropertyValue ();
 
     UInt32  firstIndex = enabler.GetFirstPropertyIndex (0);
-
+    ECValueAccessor firstPropertyAccessor;
     if (0 != firstIndex)
         firstPropertyAccessor.PushLocation (enabler, firstIndex, -1);    
 
@@ -2519,7 +2516,8 @@ ECValuesCollectionIterator::ECValuesCollectionIterator() : m_arrayCount(-1)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValuesCollection::const_iterator ECValuesCollection::end () const
     {
-    return const_iterator (*new ECValuesCollectionIterator());
+    static ECValuesCollection::const_iterator s_end(*new ECValuesCollectionIterator());
+    return s_end;
     }
 
 /*---------------------------------------------------------------------------------**//**
