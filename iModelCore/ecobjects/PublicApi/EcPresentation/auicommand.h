@@ -101,10 +101,10 @@ struct IUICommand : public RefCountedBase
         virtual WCharCP             _GetCommandId () const = 0;
         
         virtual WString             _GetLabel () const = 0;
-        virtual void                _SetLabel (WStringCR label) {}
+        virtual void                _SetLabel (WCharCP label) {}
 
-        virtual WCharCP             _GetDescription () const { return NULL; }
-        virtual void                _SetDescription (WStringCR description) {}
+        virtual WString             _GetDescription () const { return WString(); }
+        virtual void                _SetDescription (WCharCP description) {}
         
         virtual ECImageKeyCP        _GetImageId () const = 0;
         virtual void                _SetImageId (ECImageKeyCR key) { }
@@ -142,10 +142,10 @@ struct IUICommand : public RefCountedBase
         ECOBJECTS_EXPORT WCharCP            GetCommandId () const;
         
         ECOBJECTS_EXPORT WString            GetLabel ()  const;
-        ECOBJECTS_EXPORT void               SetLabel (WStringCR label);
+        ECOBJECTS_EXPORT void               SetLabel (WCharCP label);
 
-        ECOBJECTS_EXPORT WCharCP            GetDescription ()  const;
-        ECOBJECTS_EXPORT void               SetDescription (WStringCR description);
+        ECOBJECTS_EXPORT WString            GetDescription ()  const;
+        ECOBJECTS_EXPORT void               SetDescription (WCharCP description);
         
         ECOBJECTS_EXPORT ECImageKeyCP       GetImageId ()  const;
         ECOBJECTS_EXPORT void               SetImageId (ECImageKeyCR key);
@@ -207,10 +207,10 @@ struct UICommand : public IUICommand
         virtual WCharCP             _GetCommandId () const override { return m_commandId.c_str(); }
         
         virtual WString             _GetLabel ()  const override { return m_label; }
-        virtual void                _SetLabel (WStringCR label) override {m_label = label; }
+        virtual void                _SetLabel (WCharCP label) override {m_label = label; }
 
-        virtual WCharCP             _GetDescription ()  const override { return m_description.c_str(); }
-        virtual void                _SetDescription (WStringCR description) override {m_description = description;}
+        virtual WString             _GetDescription ()  const override { return m_description; }
+        virtual void                _SetDescription (WCharCP description) override {m_description = description;}
         
         virtual ECImageKeyCP        _GetImageId ()  const override { return &m_imageKey; }
         virtual void                _SetImageId (ECImageKeyCR key) override {m_imageKey = key; }

@@ -55,7 +55,7 @@ WString         IUICommand::GetLabel ()  const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            IUICommand::SetLabel (WStringCR label)
+void            IUICommand::SetLabel (WCharCP label)
     {
     _SetLabel(label);
     }
@@ -63,7 +63,7 @@ void            IUICommand::SetLabel (WStringCR label)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP         IUICommand::GetDescription ()  const
+WString         IUICommand::GetDescription ()  const
     {
     return _GetDescription();
     }
@@ -71,7 +71,7 @@ WCharCP         IUICommand::GetDescription ()  const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            IUICommand::SetDescription (WStringCR description)
+void            IUICommand::SetDescription (WCharCP description)
     {
     _SetDescription(description);
     }
