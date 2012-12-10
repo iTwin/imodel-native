@@ -5,12 +5,17 @@
 |  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
+//__PUBLISH_SECTION_START__
+
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
+
 #include "ecimagekey.h"
 #include "ecpresentationtypedefs.h"
+#include "auiprovider.h"
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+
+typedef RefCountedPtr<IUICommand> IUICommandPtr;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                    Abeesh.Basheer                  04/2012
@@ -38,33 +43,33 @@ struct IUICommand : public RefCountedBase
     +===============+===============+===============+===============+===============+======*/
     enum EditActionPriority
         {
-        EDITACTION_PRIORITY_Highest            = 10000,
-        EDITACTION_PRIORITY_TopGroup1          = 9500,
-        EDITACTION_PRIORITY_TopGroup2          = 9400,
-        EDITACTION_PRIORITY_TopGroup3          = 9300,
-        EDITACTION_PRIORITY_TopGroup4          = 9200,
-        EDITACTION_PRIORITY_TopGroup5          = 9000,
+        EDITACTION_PRIORITY_Highest            = 1000,
+        EDITACTION_PRIORITY_TopGroup1          = 950,
+        EDITACTION_PRIORITY_TopGroup2          = 940,
+        EDITACTION_PRIORITY_TopGroup3          = 930,
+        EDITACTION_PRIORITY_TopGroup4          = 920,
+        EDITACTION_PRIORITY_TopGroup5          = 900,
 
-        EDITACTION_PRIORITY_UserCommon         = 7000,
-        EDITACTION_PRIORITY_CommonManipulation = 5000,
-        EDITACTION_PRIORITY_ElementSpecific    = 4000,
-        EDITACTION_PRIORITY_UserSelection      = 3500,
-        EDITACTION_PRIORITY_Selection          = 3000,
+        EDITACTION_PRIORITY_UserCommon         = 700,
+        EDITACTION_PRIORITY_CommonManipulation = 500,
+        EDITACTION_PRIORITY_ElementSpecific    = 400,
+        EDITACTION_PRIORITY_UserSelection      = 350,
+        EDITACTION_PRIORITY_Selection          = 300,
 
-        EDITACTION_PRIORITY_UserClipboard      = 2500,
-        EDITACTION_PRIORITY_Clipboard          = 2000,
-        EDITACTION_PRIORITY_UserDelete         = 1500,
-        EDITACTION_PRIORITY_Delete             = 1000,
+        EDITACTION_PRIORITY_UserClipboard      = 250,
+        EDITACTION_PRIORITY_Clipboard          = 200,
+        EDITACTION_PRIORITY_UserDelete         = 150,
+        EDITACTION_PRIORITY_Delete             = 100,
 
-        EDITACTION_PRIORITY_UserProperties     = 500,
+        EDITACTION_PRIORITY_UserProperties     = 50,
         EDITACTION_PRIORITY_Properties         = 0,
 
-        EDITACTION_PRIORITY_BottomGroup1       = -20,
-        EDITACTION_PRIORITY_BottomGroup2       = -40,
-        EDITACTION_PRIORITY_BottomGroup3       = -60,
-        EDITACTION_PRIORITY_BottomGroup4       = -80,
-        EDITACTION_PRIORITY_BottomGroup5       = -100,
-        EDITACTION_PRIORITY_Lowest             = -10000,
+        EDITACTION_PRIORITY_BottomGroup1       = -2,
+        EDITACTION_PRIORITY_BottomGroup2       = -4,
+        EDITACTION_PRIORITY_BottomGroup3       = -6,
+        EDITACTION_PRIORITY_BottomGroup4       = -8,
+        EDITACTION_PRIORITY_BottomGroup5       = -10,
+        EDITACTION_PRIORITY_Lowest             = -1000,
 
         #if defined (BEIJING_DGNPLATFORM_WIP_SWW)
         #endif // defined (BEIJING_DGNPLATFORM_WIP_SWW)
@@ -76,8 +81,16 @@ struct IUICommand : public RefCountedBase
         EDITACTION_PRIORITY_MiscGroup6
         };
 
+    enum ApplicationPurpose
+        {
+        Unknown              = 0,
+        ViewWindowRightClick = 1,
+        };
+
+    //__PUBLISH_SECTION_END__
+
     protected:
-        
+    
         //!Execute the action that this command supports.
         virtual BentleyStatus       _ExecuteCmd(IAUIDataContextCP instance) = 0;
 
@@ -96,7 +109,7 @@ struct IUICommand : public RefCountedBase
         virtual ECImageKeyCP        _GetImageId () const = 0;
         virtual void                _SetImageId (ECImageKeyCR key) { }
         
-        virtual bool                _IsSeparator () const { return false; }
+        virtual bool                _IsSeparator () const {return false;}
         
         virtual EditActionMenuMark  _GetMenuMark() const {return MENUMARK_None;}
         virtual void                _SetMenuMark(EditActionMenuMark mark) {}
@@ -109,6 +122,9 @@ struct IUICommand : public RefCountedBase
         virtual EditActionPriority  _GetPriority () const {return EDITACTION_PRIORITY_UserCommon;}
         virtual void                _SetPriority (EditActionPriority priority) {}
 
+        virtual void                _GetChildren(bvector<IUICommandPtr>& children) {}
+
+//__PUBLISH_SECTION_START__
     public:
         //!virtual destructor.
         virtual ~IUICommand ()
@@ -149,6 +165,8 @@ struct IUICommand : public RefCountedBase
         +---------------+---------------+---------------+---------------+---------------+------*/
         ECOBJECTS_EXPORT EditActionPriority GetPriority () const;
         ECOBJECTS_EXPORT void               SetPriority (EditActionPriority priority);
+
+        ECOBJECTS_EXPORT void               GetChildren (bvector<IUICommandPtr>& children);
     };
 
 typedef RefCountedPtr<UICommand> UICommandPtr;
@@ -159,6 +177,7 @@ typedef RefCountedPtr<UICommand> UICommandPtr;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct UICommand : public IUICommand
     {
+//__PUBLISH_SECTION_END__
     private:
         WString             m_commandId;
         WString             m_label;
@@ -206,8 +225,7 @@ struct UICommand : public IUICommand
         virtual EditActionPriority  _GetPriority () const override {return m_priority;}
         virtual void                _SetPriority (EditActionPriority priority) override {m_priority = priority;}
 
-    public:
-    
+//__PUBLISH_SECTION_START__
 
     };
 
@@ -216,17 +234,21 @@ struct UICommand : public IUICommand
 //! data contexts. The presentation manager providers a union.
 * @bsiclass                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ECPresentationCommandProvider
+struct ECPresentationCommandProvider : public IECPresentationProvider
     {
+
+//__PUBLISH_SECTION_END__
     protected:
-        virtual bvector<UICommandPtr> _GetCommand (IAUIDataContextCR instance, int purpose) const = 0;
-    
+        virtual void _GetCommand (bvector<IUICommandPtr>&commands, IAUIDataContextCR instance, int purpose) = 0;
+        virtual ProviderType    _GetProviderType (void) const {return CommandService;}
+//__PUBLISH_SECTION_START__
     public:
-        virtual WString GetProviderId () const = 0;
         virtual ~ECPresentationCommandProvider() {}
 
-        ECOBJECTS_EXPORT bvector<UICommandPtr> GetCommand (IAUIDataContextCR instance, int purpose) const;
+        ECOBJECTS_EXPORT void GetCommand (bvector<IUICommandPtr>&commands, IAUIDataContextCR instance, int purpose);
     };
 
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+//__PUBLISH_SECTION_END__

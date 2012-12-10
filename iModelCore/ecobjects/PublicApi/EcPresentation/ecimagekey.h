@@ -5,6 +5,8 @@
 |  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+/*__PUBLISH_SECTION_START__*/
+
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
 #include <Bentley/WString.h>
@@ -61,3 +63,5 @@ struct ECImageKey
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/*__PUBLISH_SECTION_END__*/

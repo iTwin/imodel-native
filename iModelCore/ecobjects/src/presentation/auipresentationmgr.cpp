@@ -105,7 +105,7 @@ void            ECPresentationManager::RemoveProvider (IAUIContentServiceProvide
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ECPresentationManager::AddProvider (ECPresentationCommandProviderCR provider)
+void            ECPresentationManager::AddProvider (ECPresentationCommandProviderR provider)
     {
     CheckAndAddProviderFromList (provider, m_cmdProviders);
     }
@@ -113,7 +113,7 @@ void            ECPresentationManager::AddProvider (ECPresentationCommandProvide
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ECPresentationManager::RemoveProvider (ECPresentationCommandProviderCR provider)
+void            ECPresentationManager::RemoveProvider (ECPresentationCommandProviderR provider)
     {
     RemoveProviderFromList (provider, m_cmdProviders);
     }
@@ -121,10 +121,10 @@ void            ECPresentationManager::RemoveProvider (ECPresentationCommandProv
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    dmitrijus.tiazlovas              11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationCommandProviderCP ECPresentationManager::GetCommandProviderById (WString providerId)
+ECPresentationCommandProviderCP ECPresentationManager::GetCommandProviderById (UInt16 providerId)
     {
     for (T_CmdProviderSet::iterator iter = m_cmdProviders.begin(); iter != m_cmdProviders.end(); ++iter)
-        if (BeStringUtilities::Wcsicmp ((*iter)->GetProviderId ().c_str (), providerId.c_str ()))
+        if ((*iter)->GetProviderId () == providerId)
             return *iter;
     return NULL;
     }
@@ -162,26 +162,12 @@ void            ECPresentationManager::RemoveProvider (ECPresentationLocalizatio
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    dmitrijus.tiazlovas             09/2012
+* @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<UICommandPtr>    ECPresentationManager::GetCommands (IAUIDataContextCR instance) const
+void    ECPresentationManager::GetCommands (bvector<IUICommandPtr>& commands, IAUIDataContextCR instance, int purpose)
     {
-    return this->GetCommands (instance, ECPresentationManager::GENERAL_PURPOSE_QUERY);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  09/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<UICommandPtr>    ECPresentationManager::GetCommands (IAUIDataContextCR instance, int purpose) const
-    {
-    bvector<UICommandPtr> commands;
     for (T_CmdProviderSet::const_iterator iter = m_cmdProviders.begin(); iter != m_cmdProviders.end(); ++iter)
-        {
-        bvector<UICommandPtr> commandList = (*iter)->GetCommand(instance, purpose);
-        std::copy (commandList.begin(), commandList.end(), std::back_inserter(commands));
-        }
-
-    return commands;
+        (*iter)->GetCommand(commands, instance, purpose);
     }
 
 /*---------------------------------------------------------------------------------**//**

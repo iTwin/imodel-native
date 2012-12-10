@@ -506,7 +506,8 @@ private:
 
     ECValuesCollection ();
     ECValuesCollection (ECPropertyValueCR parentPropValue);
-    ECValuesCollection (IECInstanceCR);
+public:
+    ECOBJECTS_EXPORT ECValuesCollection (IECInstanceCR);
 /*__PUBLISH_SECTION_START__*/
 
 public:

@@ -14,26 +14,6 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   IAUIItem::ExecuteActions () const
-    {
-    IAUIDataContextCP instance = GetDataInstance();
-    if (NULL == instance)
-        return ERROR;
-
-    bvector<UICommandPtr> cmds = ECPresentationManager::GetManager().GetCommands(*instance);
-    for (bvector<UICommandPtr>::const_iterator iter = cmds.begin(); iter != cmds.end(); ++iter)
-        {
-        BentleyStatus status = (*iter)->ExecuteCmd (instance);
-        if (SUCCESS != status)
-            return status;
-        }
-    
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
 IAUIDataContextCP    IAUIItem::GetDataInstance() const
     {
     return _GetDataInstance();
@@ -69,4 +49,12 @@ IAUIItemInfo::ItemType  IAUIItemInfo::GetItemType() const
 bool            IAUIItemInfo::IsAggregatable () const
     {
     return _IsAggregatable();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  09/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+IAUIDataContext::ContextType     IAUIDataContext::GetContextType() const
+    {
+    return _GetContextType();
     }
