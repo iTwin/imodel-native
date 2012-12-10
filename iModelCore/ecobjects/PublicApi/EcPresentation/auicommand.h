@@ -104,8 +104,8 @@ struct IUICommand : public RefCountedBase
         virtual bool                _GetIsEnabled () const {return false;}
         virtual void                _SetIsEnabled (bool enabled) {;}
 
-        virtual UICommand*          _GetParent() const {return NULL;}
-        
+        virtual IUICommand*          _GetParent() const {return NULL;}
+        virtual void                _GetChildren (bvector<IUICommandPtr>& children) const {}
         virtual EditActionPriority  _GetPriority () const {return EDITACTION_PRIORITY_UserCommon;}
         virtual void                _SetPriority (EditActionPriority priority) {}
 
@@ -141,8 +141,8 @@ struct IUICommand : public RefCountedBase
         ECOBJECTS_EXPORT bool               GetIsEnabled () const;
         ECOBJECTS_EXPORT void               SetIsEnabled (bool enabled);
 
-        ECOBJECTS_EXPORT UICommand*         GetParent() const;
-        
+        ECOBJECTS_EXPORT IUICommand*        GetParent() const;
+        ECOBJECTS_EXPORT void               GetChildren (bvector<IUICommandPtr>& children) const;
         /*---------------------------------------------------------------------------------**//**
         * Get the priority value for this Edit Action. Higher values are placed higher in the popup menu.
         * @return       the priority for this Edit Action.
