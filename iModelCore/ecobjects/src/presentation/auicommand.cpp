@@ -135,7 +135,7 @@ void            IUICommand::SetIsEnabled (bool enabled)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UICommand*      IUICommand::GetParent() const
+IUICommand* IUICommand::GetParent() const
     {
     return _GetParent();
     }

@@ -117,7 +117,8 @@ struct IUICommand : public RefCountedBase
         virtual bool                _GetIsEnabled () const {return false;}
         virtual void                _SetIsEnabled (bool enabled) {;}
 
-        virtual IUICommand*          _GetParent() const {return NULL;}
+        virtual IUICommand*         _GetParent() const {return NULL;}
+        
         virtual void                _GetChildren (bvector<IUICommandPtr>& children) const {}
         virtual EditActionPriority  _GetPriority () const {return EDITACTION_PRIORITY_UserCommon;}
         virtual void                _SetPriority (EditActionPriority priority) {}
