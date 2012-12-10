@@ -1211,6 +1211,14 @@ BentleyStatus ECValue::SetUtf16CP (Utf16CP string, bool holdADuplicate)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+const byte * ECValue::GetIGeometry(size_t& size) const
+    {
+    return GetBinary(size);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 const byte * ECValue::GetBinary(size_t& size) const
@@ -1221,6 +1229,17 @@ const byte * ECValue::GetBinary(size_t& size) const
     };
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECValue::SetIGeometry(const byte * data, size_t size, bool holdADuplicate)
+    {
+    Clear();
+
+    m_primitiveType = PRIMITIVETYPE_IGeometry;
+    return SetBinaryInternal(data, size, holdADuplicate);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECValue::SetBinary (const byte * data, size_t size, bool holdADuplicate)
@@ -1228,6 +1247,11 @@ BentleyStatus ECValue::SetBinary (const byte * data, size_t size, bool holdADupl
     Clear();
 
     m_primitiveType = PRIMITIVETYPE_Binary;
+    return SetBinaryInternal(data, size, holdADuplicate);
+    }
+
+BentleyStatus ECValue::SetBinaryInternal(const byte * data, size_t size, bool holdADuplicate)
+    {
     setDataOwned (m_ownershipFlags, ECVALUE_DATA_Binary, holdADuplicate);
     
     if (NULL == data)
