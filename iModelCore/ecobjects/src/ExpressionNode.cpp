@@ -2354,7 +2354,7 @@ ExpressionStatus ComparisonNode::_GetValue(EvaluationResult& evalResult, Express
         {
         wchar_t const*  leftString   = ecLeft.GetString();
         wchar_t const*  rightString  = ecRight.GetString();
-        int             intResult = !wcscmp(leftString, rightString);
+        int             intResult = wcscmp(leftString, rightString);
         bool            boolResult = false;
         
         switch (m_operatorCode)

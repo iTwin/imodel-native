@@ -300,7 +300,7 @@ public:
     BentleyStatus               RemoveSymbol (SymbolR symbol);
     BentleyStatus               RemoveSymbol (wchar_t const* ident);
 
-    static SymbolExpressionContextPtr   Create (bvector<WString> const& requestedSymbolSets);
+    ECOBJECTS_EXPORT static SymbolExpressionContextPtr   Create (bvector<WString> const& requestedSymbolSets);
 
 /*__PUBLISH_SECTION_START__*/
     ECOBJECTS_EXPORT BentleyStatus  AddSymbol (SymbolR symbol);
