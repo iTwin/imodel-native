@@ -87,8 +87,7 @@ public:
     void                AddSchema(ECSchemaR schema);
     void                RemoveSchema(ECSchemaR schema);
     ECSchemaPtr         GetFoundSchema (SchemaKeyR key, SchemaMatchType matchType);
-    ECSchemaCacheR     GetCache()  { return m_knownSchemas; }
-    ECOBJECTS_EXPORT ECSchemaCacheR GetKnownSchemas ();
+    ECSchemaCacheR      GetCache()  { return m_knownSchemas; }
 
     ECSchemaPtr         LocateSchema (SchemaKeyR key, bset<SchemaMatchType> const& matches);
 

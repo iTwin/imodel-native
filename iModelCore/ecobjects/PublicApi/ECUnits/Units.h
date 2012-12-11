@@ -13,9 +13,12 @@
 // It supports applying UnitSpecifications and DisplayUnitSpecifications to ECProperties.
 
 #include <ECObjects/ECObjects.h>
+#include <ECUnits/Units.h>
 
 EC_TYPEDEFS (Unit);
 EC_TYPEDEFS (UnitConverter);
+EC_TYPEDEFS (IECClassLocater);
+EC_TYPEDEFS (ECUnitsClassLocater);
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -26,6 +29,56 @@ enum UnitConversionType
     UnitConversionType_Factor,
     UnitConversionType_FactorAndOffset
     };
+    
+typedef RefCountedPtr<IECClassLocater> IECClassLocaterPtr;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                  Ramanujam.Raman   12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+struct IECClassLocater : RefCountedBase, NonCopyableClass
+    {
+protected:
+    ECOBJECTS_EXPORT virtual ECClassCP _LocateClass (WCharCP schemaName, WCharCP className) = 0;
+public:
+    ECClassCP LocateClass (WCharCP schemaName, WCharCP className)
+        {
+        return _LocateClass (schemaName, className);
+        }
+
+private:
+    static IECClassLocaterPtr s_registeredClassLocater;
+public:
+    // TODO: This needs to migrate to the ECSchema implementation
+    static ECOBJECTS_EXPORT void RegisterClassLocater (IECClassLocaterR classLocater);
+    static IECClassLocaterP GetRegisteredClassLocater();
+    };
+
+typedef RefCountedPtr<ECUnitsClassLocater> ECUnitsClassLocaterPtr;
+
+/*---------------------------------------------------------------------------------**//**
+* Because Graphite loads ECClasses from schemas dynamically, ECSchemas are not pre-
+* processed for units info and units info is not cached.
+* @bsistruct                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ECUnitsClassLocater : IECClassLocater
+    {
+private:
+    ECSchemaReadContextPtr   m_context;
+    ECSchemaPtr              m_unitsSchema, m_koqSchema;
+
+    ECUnitsClassLocater () {}
+    bool Initialize();
+
+    ECClassCP _LocateClass (WCharCP schemaName, WCharCP className);
+
+public:
+    ECOBJECTS_EXPORT static ECUnitsClassLocaterPtr Create () 
+        {
+        return new ECUnitsClassLocater();
+        }
+    ECOBJECTS_EXPORT static bool LoadUnitsSchemas (ECSchemaReadContextR context);
+    };
+    
 
 /*---------------------------------------------------------------------------------**//**
 * Every Unit has a UnitConverter capable of converting values to and from its base Unit.

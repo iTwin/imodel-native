@@ -11,6 +11,8 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
+IECClassLocaterPtr IECClassLocater::s_registeredClassLocater = NULL;
+
 static WCharCP const  UNITS_SCHEMA                      = L"Units_Schema";
 static WCharCP const  KOQ_SCHEMA                        = L"KindOfQuantity_Schema";
 static WCharCP const  DIMENSION_SCHEMA                  = L"Dimension_Schema";
@@ -81,41 +83,78 @@ bool Unit::ConvertTo (double& value, UnitCR target) const
     value = target.GetConverter().FromBase (this->GetConverter().ToBase (value));
     return true;
     }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ramanujam.Raman                 12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void IECClassLocater::RegisterClassLocater (IECClassLocaterR classLocater) 
+    {
+    s_registeredClassLocater = IECClassLocaterPtr (&classLocater);
+    }
 
 /*---------------------------------------------------------------------------------**//**
-* Because Graphite loads ECClasses from schemas dynamically, ECSchemas are not pre-
-* processed for units info and units info is not cached.
-* This mechanism may later be virtualized so that caching and preprocessing can be
-* implemented in non-Graphite contexts.
-* @bsistruct                                                    Paul.Connelly   09/12
+* @bsimethod                                    Ramanujam.Raman                 12/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ECClassLocater
+IECClassLocaterP IECClassLocater::GetRegisteredClassLocater() 
     {
-public:
-    ECClassCP       LocateClass (WCharCP schemaName, WCharCP className) const
+    return s_registeredClassLocater.get();
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ramanujam.Raman                 12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECUnitsClassLocater::LoadUnitsSchemas (ECSchemaReadContextR context)
+    {
+    SchemaKey keyKoqSchema (KOQ_SCHEMA, 1, 0);
+    ECSchemaPtr koqSchema = context.LocateSchema (keyKoqSchema, SCHEMAMATCHTYPE_LatestCompatible);
+    POSTCONDITION (koqSchema.IsValid() && "Cannot load KOQ_SCHEMA", false);
+
+    SchemaKey keyUnitsSchema (UNITS_SCHEMA, 1, 0);
+    ECSchemaPtr unitsSchema = context.LocateSchema (keyUnitsSchema, SCHEMAMATCHTYPE_LatestCompatible);
+    POSTCONDITION (unitsSchema.IsValid() && "Cannot load UNITS_SCHEMA", false);
+
+    return true;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ramanujam.Raman                 12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECUnitsClassLocater::Initialize()
+    {
+    if (!m_context.IsNull())
+        return true;
+    m_context = ECSchemaReadContext::CreateContext (NULL, false);
+
+    if (!LoadUnitsSchemas (*m_context))
         {
-        static ECSchemaReadContextPtr   s_context;
-        static ECSchemaPtr              s_unitsSchema, s_koqSchema;
-
-        if (s_context.IsNull())
-            {
-            // WIP_UNITS: thread safety...
-            // WIP_UNITS: In a non-graphite build we want to hang on to the standard schemas...
-            s_context = ECSchemaReadContext::CreateContext (NULL, false);
-            SchemaKey key (UNITS_SCHEMA, 1, 0);
-            s_unitsSchema = s_context->LocateSchema (key, SCHEMAMATCHTYPE_LatestCompatible);
-            key.m_schemaName = KOQ_SCHEMA;
-            s_koqSchema = s_context->LocateSchema (key, SCHEMAMATCHTYPE_LatestCompatible);
-            }
-
-        if (KOQ_SCHEMA == schemaName && s_koqSchema.IsValid())
-            return s_koqSchema->GetClassP (className);
-        else if (UNITS_SCHEMA == schemaName && s_unitsSchema.IsValid())
-            return s_unitsSchema->GetClassP (className);
-        else
-            return NULL;
+        m_context = NULL;
+        return false;
         }
-    };
+    
+    SchemaKey keyKoqSchema (KOQ_SCHEMA, 1, 0);
+    m_koqSchema = m_context->GetFoundSchema (keyKoqSchema, SCHEMAMATCHTYPE_LatestCompatible);
+
+    SchemaKey keyUnitsSchema (UNITS_SCHEMA, 1, 0);
+    m_unitsSchema = m_context->LocateSchema (keyUnitsSchema, SCHEMAMATCHTYPE_LatestCompatible);
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ramanujam.Raman                 12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECClassCP ECUnitsClassLocater::_LocateClass (WCharCP schemaName, WCharCP className)
+    {
+    if (!Initialize())
+        return NULL;
+
+    if (UNITS_SCHEMA == schemaName)
+        return m_unitsSchema->GetClassP (className);
+    else if (KOQ_SCHEMA == schemaName)
+        return m_koqSchema->GetClassP (className);
+    /* else */
+    return NULL;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * Note that the managed Units framework expects the client app to load any extra Units or
@@ -128,7 +167,6 @@ struct UnitLocater
     {
 private:
     ECPropertyCR            m_ecprop;
-    ECClassLocater          m_classLocater;
     bool                    m_createIfNonStandard;
 
     bool    GetUnitFromAttribute (UnitR unit, IECInstanceCR attr, WCharCP unitName) const;
@@ -136,11 +174,23 @@ private:
     bool    LocateUnitByKOQ (UnitR unit, WCharCP koqName) const;
     bool    GetUnitFromSpecifications (UnitR unit, WCharCP propName, WCharCP propValue, IECInstanceCR specsAttr) const;
 public:
-    UnitLocater (ECPropertyCR ecprop, bool createIfNonStandard) : m_ecprop(ecprop), m_createIfNonStandard(createIfNonStandard) { }
+    UnitLocater (ECPropertyCR ecprop, bool createIfNonStandard);
 
     bool    LocateUnit (UnitR unit) const;
     bool    LocateUnitByName (UnitR unit, WCharCP unitName) const;
     };
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ramanujam.Raman                 12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+UnitLocater::UnitLocater (ECPropertyCR ecprop, bool createIfNonStandard) 
+    : m_ecprop(ecprop), m_createIfNonStandard(createIfNonStandard) 
+    {
+    // TODO: Need a better place to do this one-time registration
+    IECClassLocaterP classLocater = IECClassLocater::GetRegisteredClassLocater();
+    if (classLocater == NULL)
+        IECClassLocater::RegisterClassLocater (*ECUnitsClassLocater::Create());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
@@ -175,8 +225,11 @@ bool UnitLocater::LocateUnit (UnitR unit) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool UnitLocater::LocateUnitByName (UnitR unit, WCharCP unitName) const
     {
+    IECClassLocaterP classLocater = IECClassLocater::GetRegisteredClassLocater();
+    BeAssert (classLocater != NULL);
+    ECClassCP unitClass = classLocater->LocateClass (UNITS_SCHEMA, unitName);
+
     IECInstancePtr unitAttr;
-    ECClassCP unitClass = m_classLocater.LocateClass (UNITS_SCHEMA, unitName);
     if (NULL != unitClass && (unitAttr = unitClass->GetCustomAttribute (UNIT_ATTRIBUTES)).IsValid())
         return GetUnitFromAttribute (unit, *unitAttr, unitName);
     else if (m_createIfNonStandard)
@@ -301,7 +354,9 @@ bool UnitLocater::LocateUnitByKOQ (UnitR unit, WCharCP koqName) const
         return true;
 
     // Recurse on parent KOQ (KOQ ECClasses are defined in a hierarchy)
-    ECClassCP koqClass = m_classLocater.LocateClass (KOQ_SCHEMA, koqName);
+    IECClassLocaterP classLocater = IECClassLocater::GetRegisteredClassLocater();
+    BeAssert (classLocater != NULL);
+    ECClassCP koqClass = classLocater->LocateClass (KOQ_SCHEMA, koqName);
     if (NULL != koqClass)
         {
         if (koqClass->HasBaseClasses())

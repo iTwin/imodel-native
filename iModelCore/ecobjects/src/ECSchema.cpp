@@ -2300,11 +2300,11 @@ ECSchemaCachePtr    ECSchemaCache::Create ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t ECSchemaCache::GetSchemas (bvector<ECSchemaPtr>& schemas) const
+size_t ECSchemaCache::GetSchemas (bvector<ECSchemaCP>& schemas) const
     {
     schemas.clear();
     for (SchemaMap::const_iterator it = m_schemas.begin(); it != m_schemas.end(); it++)
-        schemas.push_back (it->second);
+        schemas.push_back (it->second.get());
     return schemas.size();
     }
 

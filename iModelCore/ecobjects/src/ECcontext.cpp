@@ -385,11 +385,3 @@ void            ECSchemaReadContext::RemoveSchema(ECSchemaR schema)
     {
     m_knownSchemas.DropSchema(schema);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCacheR  ECSchemaReadContext::GetKnownSchemas ()
-    {
-    return m_knownSchemas;
-    }
