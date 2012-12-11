@@ -603,7 +603,7 @@ ECClassR sourceClass
         FOR_EACH(ECPropertyP sourceProperty, sourceClass.GetProperties(false))
             {
             ECPropertyP destProperty;
-            status = targetClass->CopyProperty(destProperty, sourceProperty);
+            status = targetClass->CopyProperty(destProperty, sourceProperty, true);
             if (ECOBJECTS_STATUS_Success != status)
                 return status;
             }
