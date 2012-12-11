@@ -827,11 +827,15 @@ SchemaPrecedence precedence
         ECPropertyP consolidatedECProperty = consolidatedECClass->GetPropertyP(supplementalECProperty->GetName(), false);
         if (NULL == consolidatedECProperty)
             {
-            ECObjectsStatus status = consolidatedECClass->CopyProperty(consolidatedECProperty, supplementalECProperty);
-            if (ECOBJECTS_STATUS_Success != status)
-                {
+            ECPropertyP inheritedECProperty = consolidatedECClass->GetPropertyP(supplementalECProperty->GetName(), true);
+            BeAssert(inheritedECProperty);
+            if (NULL == inheritedECProperty)
                 continue;
-                }
+
+            ECObjectsStatus status = consolidatedECClass->CopyProperty(consolidatedECProperty, inheritedECProperty);
+            if (ECOBJECTS_STATUS_Success != status)
+                continue;
+
             // By adding this property override it is possible that classes derived from this one that override this property
             // will need to have the BaseProperty updated to the newly added temp property.
             FOR_EACH(ECClassP derivedClass, consolidatedECClass->GetDerivedClasses())
