@@ -28,7 +28,7 @@ static WCharCP const  SHORT_LABEL                       = L"ShortLabel";
 static WCharCP const  BASE_UNIT                         = L"BaseUnit";
 static WCharCP const  UNIT_SPECIFICATION                = L"UnitSpecification";
 static WCharCP const  UNIT_SPECIFICATIONS               = L"UnitSpecifications";
-static WCharCP const  UNIT_SPECIFICATION_LIST           = L"UnitSpecificationList[]";
+static WCharCP const  UNIT_SPECIFICATION_LIST           = L"UnitSpecificationList";
 static WCharCP const  DISPLAY_UNIT_SPECIFICATION        = L"DisplayUnitSpecification";
 static WCharCP const  UNIT_NAME                         = L"UnitName";
 static WCharCP const  KOQ_NAME                          = L"KindOfQuantityName";
@@ -149,9 +149,9 @@ ECClassCP ECUnitsClassLocater::_LocateClass (WCharCP schemaName, WCharCP classNa
         return NULL;
 
     if (UNITS_SCHEMA == schemaName)
-        return m_unitsSchema->GetClassP (className);
+        return m_unitsSchema->GetClassCP (className);
     else if (KOQ_SCHEMA == schemaName)
-        return m_koqSchema->GetClassP (className);
+        return m_koqSchema->GetClassCP (className);
     /* else */
     return NULL;
     }

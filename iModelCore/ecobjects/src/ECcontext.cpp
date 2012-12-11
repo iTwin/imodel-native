@@ -350,7 +350,7 @@ ECSchemaCR      ECInstanceReadContext::GetFallBackSchema ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr     ECSchemaReadContext::GetFoundSchema (SchemaKeyR key, SchemaMatchType matchType)
+ECSchemaPtr     ECSchemaReadContext::GetFoundSchema (SchemaKeyCR key, SchemaMatchType matchType)
     {
     return m_knownSchemas.GetSchema(key, matchType);
     }

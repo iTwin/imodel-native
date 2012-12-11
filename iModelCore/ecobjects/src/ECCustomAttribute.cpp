@@ -380,6 +380,10 @@ bool requireSchemaReference
             {
             if (requireSchemaReference)
                 {
+                ECObjectsLogger::Log()->errorv(L"%ls (used in ECSchema %ls) requires a (missing) reference to ECSchema %ls", 
+                    classDefinition.GetFullName(), 
+                    containerSchema->GetName().c_str(), 
+                    classDefinition.GetSchema().GetFullSchemaName().c_str());
                 BeAssert (false);
                 return ECOBJECTS_STATUS_SchemaNotFound;
                 }
@@ -490,9 +494,9 @@ InstanceReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeXmlNodeR
         {
         if (0 != strcmp (customAttributeNode->GetName (), EC_CUSTOM_ATTRIBUTES_ELEMENT))
             continue;
+
         for (BeXmlNodeP customAttributeClassNode = customAttributeNode->GetFirstChild(); NULL != customAttributeClassNode; customAttributeClassNode = customAttributeClassNode->GetNextSibling())
             {
-            
             ECInstanceReadContextPtr context = ECInstanceReadContext::CreateContext (schemaContext, fallBackSchema, NULL);
 
             IECInstancePtr  customAttributeInstance;
@@ -543,7 +547,7 @@ BeXmlNodeR containerNode
 ECObjectsStatus IECCustomAttributeContainer::CopyCustomAttributesTo
 (
 IECCustomAttributeContainerR destContainer
-)
+) const
     {
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
     FOR_EACH (IECInstancePtr customAttribute, GetPrimaryCustomAttributes(false))

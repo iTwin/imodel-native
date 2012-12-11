@@ -422,7 +422,7 @@ ECSchemaCP schema
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::CanPropertyBeOverridden (ECPropertyCR baseProperty,ECPropertyCR newProperty) const
+ECObjectsStatus ECClass::CanPropertyBeOverridden (ECPropertyCR baseProperty, ECPropertyCR newProperty) const
     {
     // If the type of base property is an array and the type of the current property is not an array (or vice-versa),
     // return an error immediately.  Unfortunately, there are a class of schemas that have been delivered with this type
@@ -435,7 +435,10 @@ ECObjectsStatus ECClass::CanPropertyBeOverridden (ECPropertyCR baseProperty,ECPr
     
     if (!newProperty._CanOverride(baseProperty))
         {
-        ECObjectsLogger::Log()->errorv(L"The data type of the ECProperty to add does not match the data type of the base property.  Property name: %ls  New Property Data Type: %ls   Base Property Data Type: %ls\n", newProperty.GetName().c_str(), newProperty.GetTypeName().c_str(), baseProperty.GetTypeName().c_str());
+        ECObjectsLogger::Log()->errorv(L"The datatype of ECProperty %ls.%ls (%ls) does not match the datatype of ECProperty %ls.%ls (%ls)... which it overrides.", 
+            newProperty.GetClass().GetFullName(), newProperty.GetName().c_str(), newProperty.GetTypeName().c_str(), 
+            baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), baseProperty.GetTypeName().c_str());
+
         return ECOBJECTS_STATUS_DataTypeMismatch;
         }
     return ECOBJECTS_STATUS_Success; 
@@ -939,7 +942,7 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml ( BeXmlNodeP childNode )
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
 
-    ECSchemaP resolvedSchema = GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
+    ECSchemaCP resolvedSchema = GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
     if (NULL == resolvedSchema)
         {
         ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the namespace prefix '%ls' that can not be resolved to a referenced schema.", 
@@ -947,7 +950,7 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml ( BeXmlNodeP childNode )
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
 
-    ECClassP baseClass = resolvedSchema->GetClassP (className.c_str());
+    ECClassCP baseClass = resolvedSchema->GetClassCP (className.c_str());
     if (NULL == baseClass)
         {
         ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the value '%ls' that can not be resolved to an ECClass named '%ls' in the ECSchema '%ls'", 
@@ -1446,7 +1449,7 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
         
-        ECSchemaP resolvedSchema = m_relClass->GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
+        ECSchemaCP resolvedSchema = m_relClass->GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
         if (NULL == resolvedSchema)
             {
             ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: ECRelationshipConstraint contains a %hs attribute with the namespace prefix '%ls' that can not be resolved to a referenced schema.", 
@@ -1454,7 +1457,7 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
 
-        ECClassP constraintClass = resolvedSchema->GetClassP (className.c_str());
+        ECClassCP constraintClass = resolvedSchema->GetClassCP (className.c_str());
         if (NULL == constraintClass)
             {
             ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: The ECRelationshipConstraint contains a %hs attribute with the value '%ls' that can not be resolved to an ECClass named '%ls' in the ECSchema '%ls'", 

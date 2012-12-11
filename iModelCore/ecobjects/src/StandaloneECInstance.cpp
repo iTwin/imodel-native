@@ -19,7 +19,7 @@ const UInt32 BITS_TO_SHIFT_FOR_FLAGSBITMASK = 5;            // bitToCheck >> BIT
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 MemoryECInstanceBase::MemoryECInstanceBase (byte * data, UInt32 size, ClassLayoutCR classLayout, bool allowWritingDirectlyToInstanceMemory, MemoryECInstanceBase const* parentInstance) :
-        MemoryInstanceSupport (allowWritingDirectlyToInstanceMemory),
+        ECDBuffer (allowWritingDirectlyToInstanceMemory),
         m_bytesAllocated(size)
     {
     m_data = data;
@@ -35,7 +35,7 @@ MemoryECInstanceBase::MemoryECInstanceBase (byte * data, UInt32 size, ClassLayou
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory, MemoryECInstanceBase const* parentInstance) :
-        MemoryInstanceSupport (allowWritingDirectlyToInstanceMemory),
+        ECDBuffer (allowWritingDirectlyToInstanceMemory),
         m_bytesAllocated(0)
     {
     m_structInstances = NULL;
@@ -44,7 +44,7 @@ MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 mi
     m_usageBitmask = 0;
     m_parentInstance = parentInstance;
 
-    UInt32 size = std::max (minimumBufferSize, classLayout.GetSizeOfFixedSection());
+    UInt32 size = std::max (minimumBufferSize, CalculateInitialAllocation (classLayout));
     m_data = (byte*)malloc (size);
     m_bytesAllocated = size;
 
@@ -213,9 +213,7 @@ ECObjectsStatus         MemoryECInstanceBase::IsAnyPerPropertyBitSet (bool& isSe
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus          MemoryECInstanceBase::SetIsLoadedBit (UInt32 propertyIndex)
     {
-    static UInt8 bitIndex = (UInt8) PROPERTYFLAGINDEX_IsLoaded;
-
-    ECObjectsStatus status = SetPerPropertyBit (bitIndex, propertyIndex, true);
+    ECObjectsStatus status = SetPerPropertyBit ((UInt8) PROPERTYFLAGINDEX_IsLoaded, propertyIndex, true);
 
     PropertyLayoutCP propertyLayout = NULL;
 
@@ -578,7 +576,7 @@ UInt32              MemoryECInstanceBase::GetBytesUsed () const
     if (NULL == m_data)
         return 0;
 
-    return GetClassLayout().CalculateBytesUsed(_GetData());
+    return CalculateBytesUsed (GetClassLayout());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1064,10 +1062,9 @@ ECObjectsStatus           StandaloneECInstance::_GetValue (ECValueR v, UInt32 pr
     ECObjectsStatus status = GetValueFromMemory (v, classLayout, propertyIndex, useArrayIndex, arrayIndex);
     if (ECOBJECTS_STATUS_Success == status)
         {
-        static UInt8 bitIndex = (UInt8) PROPERTYFLAGINDEX_IsLoaded;
         bool isSet = false;
 
-        if (ECOBJECTS_STATUS_Success == MemoryECInstanceBase::IsPerPropertyBitSet (isSet, bitIndex, propertyIndex)) 
+        if (ECOBJECTS_STATUS_Success == MemoryECInstanceBase::IsPerPropertyBitSet (isSet, (UInt8) PROPERTYFLAGINDEX_IsLoaded, propertyIndex)) 
             v.SetIsLoaded (isSet);
         }
 
@@ -1133,9 +1130,7 @@ ECObjectsStatus           StandaloneECInstance::_AddArrayElements (WCharCP prope
 ECObjectsStatus           StandaloneECInstance::_RemoveArrayElement (WCharCP propertyAccessString, UInt32 index)
     {
     ClassLayoutCR classLayout = GetClassLayout();    
-    ECObjectsStatus status = RemoveArrayElementsAt (classLayout, propertyAccessString, index, 1);
-    
-    return status;
+    return RemoveArrayElementsAt (classLayout, propertyAccessString, index, 1);
     } 
 
  /*---------------------------------------------------------------------------------**//**
@@ -1143,7 +1138,28 @@ ECObjectsStatus           StandaloneECInstance::_RemoveArrayElement (WCharCP pro
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECInstance::_ClearArray (WCharCP propertyAccessString)
     {
-    return ECOBJECTS_STATUS_OperationNotSupported;
+    ClassLayoutCR classLayout = GetClassLayout();    
+    PropertyLayoutCP pPropertyLayout = NULL;
+    ECObjectsStatus status = classLayout.GetPropertyLayout (pPropertyLayout, propertyAccessString);
+    if (SUCCESS != status || NULL == pPropertyLayout)
+        return ECOBJECTS_STATUS_PropertyNotFound;
+
+    UInt32 arrayCount = GetReservedArrayCount (*pPropertyLayout);
+    if (arrayCount > 0)
+        {
+        status =  RemoveArrayElements (classLayout, *pPropertyLayout, 0, arrayCount);
+
+        if (ECOBJECTS_STATUS_Success == status)
+            {
+            UInt32 propertyIndex;
+            if (ECOBJECTS_STATUS_Success == classLayout.GetPropertyLayoutIndex (propertyIndex, *pPropertyLayout))
+                SetPerPropertyBit ((UInt8) PROPERTYFLAGINDEX_IsLoaded, propertyIndex, false);
+            }
+
+        return  status;
+        }
+
+    return ECOBJECTS_STATUS_Success;
     }                      
 
 /*---------------------------------------------------------------------------------**//**

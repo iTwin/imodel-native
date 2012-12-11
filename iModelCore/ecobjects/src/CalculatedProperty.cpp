@@ -44,6 +44,11 @@ public:
 ParserRegexP ParserRegex::Create (WCharCP regexStr, bool doNotUseECMA)
     {
 #if defined (HAVE_REGEX)
+    if (regexStr == NULL)
+        {
+        return NULL;
+        }
+
     ParserRegexP parserRegex = new ParserRegex();
     WString fixedRegexStr;
     if (parserRegex->ConvertRegexString (fixedRegexStr, regexStr))
@@ -77,6 +82,8 @@ ParserRegexP ParserRegex::Create (WCharCP regexStr, bool doNotUseECMA)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ParserRegex::ConvertRegexString (WStringR converted, WCharCP in)
     {
+    PRECONDITION (in != NULL, false);
+
     WCharCP end = in + wcslen (in);
     Int32 depth = 0;
     return ProcessRegex (converted, in, end, depth) && 0 == depth;
@@ -87,6 +94,8 @@ bool ParserRegex::ConvertRegexString (WStringR converted, WCharCP in)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ParserRegex::ProcessRegex (WStringR converted, WCharCP& in, WCharCP end, Int32& depth)
     {
+    PRECONDITION (in != NULL && end != NULL, false);
+
     bool inQuotes = false;
     while (in < end)
         {
@@ -105,6 +114,13 @@ bool ParserRegex::ProcessRegex (WStringR converted, WCharCP& in, WCharCP end, In
                 depth++;
                 if (!ProcessCaptureGroup (converted, ++in, end, depth))
                     return false;
+                //capture group processing might have already moved the in string to the last end character. So
+                //we need to check for end here again. TODO: Maybe method should be refactored to avoid having
+                //to check for end in while loop again.
+                else if (in >= end)
+                    {
+                    return true;
+                    }
                 }
             break;
         case ')':
@@ -267,7 +283,7 @@ CalculatedPropertySpecificationPtr CalculatedPropertySpecification::Create (Prim
     // ###TODO: It seems to me that if the calculated property spec is for default value only, then setting the value should not affect dependent properties and we don't require ParserRegex...correct?
     // Note: ParserRegex only makes sense for string properties
     ParserRegexP parserRegex = NULL;
-    bool wantParserRegex = !isDefaultOnly && PRIMITIVETYPE_String == ecprop.GetType() && !ecprop.GetIsReadOnly();
+    bool wantParserRegex = !isDefaultOnly && PRIMITIVETYPE_String == ecprop.GetType() && !ecprop.IsReadOnlyFlagSet();
     if (wantParserRegex)
         {
         // ###TODO: there is also a configuration variable which can be used to control this...In System.Configuration.ConfigurationManager.AppSettings[] - relevant?
@@ -339,7 +355,7 @@ ECObjectsStatus CalculatedPropertySpecification::UpdateDependentProperties (ECVa
 
     else
 #if defined (HAVE_REGEX)    // WIP_NONPORT - regex
-        return m_parserRegex->Apply (instance, v.GetString()) ? ECOBJECTS_STATUS_Success : ECOBJECTS_STATUS_Error; // Add a status for failure to parse regexp
+        return m_parserRegex->Apply (instance, v.GetString()) ? ECOBJECTS_STATUS_Success : ECOBJECTS_STATUS_ParseError;
 #else
         return ECOBJECTS_STATUS_ParseError;
 #endif
