@@ -285,7 +285,8 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty)
 ECObjectsStatus ECClass::CopyProperty
 (
 ECPropertyP& destProperty, 
-ECPropertyP sourceProperty
+ECPropertyP sourceProperty,
+bool copyCustomAttributes
 )
     {
     if (sourceProperty->GetIsPrimitive())
@@ -328,7 +329,8 @@ ECPropertyP sourceProperty
     destProperty->SetName(sourceProperty->GetName());
     destProperty->SetIsReadOnly(sourceProperty->GetIsReadOnly());
     destProperty->m_forSupplementation = true;
-    sourceProperty->CopyCustomAttributesTo(*destProperty);
+    if (copyCustomAttributes)
+        sourceProperty->CopyCustomAttributesTo(*destProperty);
     ECObjectsStatus status = AddProperty(destProperty, sourceProperty->GetName());
     if (ECOBJECTS_STATUS_Success != status)
         delete destProperty;
