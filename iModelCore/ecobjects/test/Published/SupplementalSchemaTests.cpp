@@ -1104,7 +1104,7 @@ TEST_F(SupplementedSchemaBuilderTests, SupplementCustomAttributesOnRelationshipC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef 0
+#if 0
 TEST_F(SupplementedSchemaBuilderTests, SupplementingWithInheritance)
     {
     ECSchemaPtr inheritPrimarySchema;
