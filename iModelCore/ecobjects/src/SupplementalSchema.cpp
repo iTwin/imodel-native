@@ -532,6 +532,7 @@ ECSchemaP schema2
 
     WString supplementalSchemaFullName = schema2->GetFullSchemaName();
     WString mergedSchemaFullName = schema1->GetFullSchemaName();
+    ECObjectsLogger::Log()->infov (L"Merging %ls into %ls", supplementalSchemaFullName.c_str(), mergedSchemaFullName.c_str());
     MergeCustomAttributeClasses(*mergedSchema, schema2->GetPrimaryCustomAttributes(false), SCHEMA_PRECEDENCE_Equal, &supplementalSchemaFullName, &mergedSchemaFullName);
 
     SupplementedSchemaStatus status = SUPPLEMENTED_SCHEMA_STATUS_Success;
@@ -830,9 +831,8 @@ SchemaPrecedence precedence
             ECPropertyP inheritedECProperty = consolidatedECClass->GetPropertyP(supplementalECProperty->GetName(), true);
             if (NULL == inheritedECProperty)
                 {
-                ECObjectsLogger::Log()->warningv(L"Supplemental ECClass %ls attempted to supplement ECProperty '%ls% which does not exist in %ls",
-                    supplementalECClass->GetFullName(), supplementalECProperty->GetName().c_str(), consolidatedECClass->GetFullName());
-                //BeDataAssert(inheritedECProperty);
+                ECObjectsLogger::Log()->warningv(L"%ls supplements non-existent ECProperty %ls.%ls",
+                    supplementalECClass->GetFullName(), consolidatedECClass->GetFullName(), supplementalECProperty->GetName().c_str());
                 continue;
                 }
 
