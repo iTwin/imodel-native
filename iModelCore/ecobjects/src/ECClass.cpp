@@ -478,7 +478,7 @@ ECSchemaCP schema
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::CanPropertyBeOverridden (ECPropertyCR baseProperty,ECPropertyCR newProperty) const
+ECObjectsStatus ECClass::CanPropertyBeOverridden (ECPropertyCR baseProperty, ECPropertyCR newProperty) const
     {
     // If the type of base property is an array and the type of the current property is not an array (or vice-versa),
     // return an error immediately.  Unfortunately, there are a class of schemas that have been delivered with this type
@@ -491,7 +491,10 @@ ECObjectsStatus ECClass::CanPropertyBeOverridden (ECPropertyCR baseProperty,ECPr
     
     if (!newProperty._CanOverride(baseProperty))
         {
-        ECObjectsLogger::Log()->errorv(L"The data type of the ECProperty to add does not match the data type of the base property.  Property name: %ls  New Property Data Type: %ls   Base Property Data Type: %ls\n", newProperty.GetName().c_str(), newProperty.GetTypeName().c_str(), baseProperty.GetTypeName().c_str());
+        ECObjectsLogger::Log()->errorv(L"The datatype of ECProperty %ls.%ls (%ls) does not match the datatype of ECProperty %ls.%ls (%ls)... which it overrides.", 
+            newProperty.GetClass().GetFullName(), newProperty.GetName().c_str(), newProperty.GetTypeName().c_str(), 
+            baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), baseProperty.GetTypeName().c_str());
+
         return ECOBJECTS_STATUS_DataTypeMismatch;
         }
     return ECOBJECTS_STATUS_Success; 
