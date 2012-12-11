@@ -828,9 +828,13 @@ SchemaPrecedence precedence
         if (NULL == consolidatedECProperty)
             {
             ECPropertyP inheritedECProperty = consolidatedECClass->GetPropertyP(supplementalECProperty->GetName(), true);
-            BeAssert(inheritedECProperty);
             if (NULL == inheritedECProperty)
+                {
+                ECObjectsLogger::Log()->warningv(L"Supplemental ECClass %ls attempted to supplement ECProperty '%ls% which does not exist in %ls",
+                    supplementalECClass->GetFullName(), supplementalECProperty->GetName().c_str(), consolidatedECClass->GetFullName());
+                //BeDataAssert(inheritedECProperty);
                 continue;
+                }
 
             ECObjectsStatus status = consolidatedECClass->CopyProperty(consolidatedECProperty, inheritedECProperty);
             if (ECOBJECTS_STATUS_Success != status)
