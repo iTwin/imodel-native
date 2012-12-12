@@ -20,9 +20,10 @@ void UnitsTestBase::SetUp
 )
     {
     m_testSchema = NULL;
+    m_supplementedSchema = NULL;
 
     bvector<ECSchemaP> supplementalSchemas;
-    InitializeUnits (L"testschema", m_testSchema,supplementalSchemas);
+    InitializeUnits (L"testschema",supplementalSchemas);
 
     // Test that test schemas are not null
      ASSERT_TRUE(m_testSchema!=NULL)<<"Test setup failure: Domain Schema not loaded";
@@ -36,8 +37,12 @@ void UnitsTestBase::SetUp
 
     // Build Supplemented Schema
     SupplementedSchemaBuilder supplementedSchemaBuilder;// = new SupplementedSchemaBuilder ();
+#ifdef COPY_SCHEMA_IS_BROKEN
 	m_testSchema->CopySchema (m_supplementedSchema);
 	m_supplementedSchema->IsSupplemented();
+#endif
+
+
     supplementedSchemaBuilder.UpdateSchema (*m_supplementedSchema, supplementalSchemas);
 	m_supplementedSchema->IsSupplemented();
    // m_supplementedSchema = supplementedSchemaBuilder.SupplementedSchema;
@@ -50,9 +55,18 @@ void UnitsTestBase::SetUp
 
     InitExpectedResultLists ();
 
-    WString schemaXml;
-    m_supplementedSchema->WriteToXmlString (schemaXml);
-    wprintf (schemaXml.c_str());
+//#define DEBUGGING_SUPPLEMENTED_SCHEMA
+#ifdef DEBUGGING_SUPPLEMENTED_SCHEMA
+    static bool s_once = false;
+    if (!s_once)
+        {
+        s_once = true;
+
+        WString schemaXml;
+        m_supplementedSchema->WriteToXmlString (schemaXml);
+        wprintf (schemaXml.c_str());
+        }
+#endif
     }
 
 /*------------------------------------------------------------------------------------**/
@@ -62,7 +76,6 @@ void UnitsTestBase::SetUp
 void UnitsTestBase::InitializeUnits
 (
 WString testSchemaName,
-ECSchemaPtr testSchema,
 bvector< ECSchemaP > & testSupplementalSchemas
 )
     {
@@ -77,12 +90,20 @@ bvector< ECSchemaP > & testSupplementalSchemas
 	SchemaKey key(testSchemaName.c_str(), 01, 00);
     
     m_testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);//ECSchema::LocateSchema(key, *schemaContext);
+
     EXPECT_TRUE(m_testSchema.IsValid());
     EXPECT_FALSE(m_testSchema->ShouldNotBeStored());
 	ECClassP ecClass=m_testSchema->GetClassP(L"Bike");
 	ASSERT_TRUE (NULL != ecClass);
 	//ECSchema::ReadFromXmlFile (testSchema, ECTestFixture::GetTestDataPath(testSchemaName.c_str()).c_str(), *schemaContext);
     //testSchema = ECObjects.LocateSchema (testSchemaName, SchemaMatchType.Exact, NULL, NULL);
+
+
+    schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater (*schemaLocater);
+    m_supplementedSchema = schemaContext->LocateSchema (key, SCHEMAMATCHTYPE_Latest);
+    EXPECT_TRUE (m_supplementedSchema.IsValid());
+    EXPECT_FALSE (m_supplementedSchema.get() == m_testSchema.get());
 
   //   Load Supplemental Schema
     //testSupplementalSchemas = new bvector< ECSchemaP > ();
