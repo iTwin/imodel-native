@@ -92,7 +92,6 @@ struct ECNameValidation
 private:
 /*__PUBLISH_SECTION_END__*/
     static void AppendEncodedCharacter (WStringR encoded, WChar c);
-    static bool IsValidAlphaNumericCharacter (WChar c);
 /*__PUBLISH_SECTION_START__*/
 public:
     enum ValidationResult
@@ -119,6 +118,9 @@ public:
     //! @param[in] name     The name to validate
     //! @returns RESULT_Valid if the name is valid, or a ValidationResult indicating why the name is invalid.
     ECOBJECTS_EXPORT static ValidationResult    Validate (WCharCP name);
+
+    //! Checks whether a character is valid for use in an ECName, e.g. alphanumeric, plus '_'
+    ECOBJECTS_EXPORT static bool IsValidAlphaNumericCharacter (WChar c);
     };
 
 //=======================================================================================    
@@ -300,7 +302,7 @@ private:
     IECCustomAttributeContainerCR m_container;
     bool                        m_includeBaseContainers;
     bool                        m_includeSupplementalAttributes;
-   ECCustomAttributeInstanceIterable( IECCustomAttributeContainerCR container, bool includeBase, bool includeSupplementalAttributes) : m_container(container), m_includeBaseContainers(includeBase),
+    ECCustomAttributeInstanceIterable( IECCustomAttributeContainerCR container, bool includeBase, bool includeSupplementalAttributes) : m_container(container), m_includeBaseContainers(includeBase),
     m_includeSupplementalAttributes(includeSupplementalAttributes) {};
 public:
     struct IteratorState : RefCountedBase
@@ -761,7 +763,7 @@ private:
     void            AddDerivedClass(ECClassCR baseClass) const;
     void            RemoveDerivedClass(ECClassCR baseClass) const;
     static void     SetErrorHandling (bool doAssert);
-    ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyP sourceProperty);
+    ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyP sourceProperty, bool copyCustomAttributes);
 
 protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
@@ -1290,6 +1292,8 @@ struct SchemaKey
         }
 /*__PUBLISH_SECTION_END__*/
     ECOBJECTS_EXPORT WString GetFullSchemaName() const;
+    ECOBJECTS_EXPORT UInt32 GetVersionMajor() const { return m_versionMajor; };
+    ECOBJECTS_EXPORT UInt32 GetVersionMinor() const { return m_versionMinor; };
 /*__PUBLISH_SECTION_START__*/
     };
 
@@ -1507,6 +1511,10 @@ struct ECSchemaCache : public RefCountedBase
 /*__PUBLISH_SECTION_END__*/
 protected:
     SchemaMap   m_schemas;
+
+    // TODO: Uncomment this and remove the public desctructor once ECDb stops declaring this on the stack. 
+    // ECSchemaCache() {}
+    // ECOBJECTS_EXPORT virtual ~ECSchemaCache ();
 
     ECOBJECTS_EXPORT virtual ECSchemaPtr     _LocateSchema (SchemaKeyR schema, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
 

@@ -568,9 +568,10 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromStri
     SchemaReadStatus status = ECSchema::ReadFromXmlString (schema, 
         L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         L"<ECSchema schemaName=\"Widgets\" version=\"09.06\" displayLabel=\"Widgets Display Label\" description=\"Widgets Description\" nameSpacePrefix=\"wid\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
-        L"<ECSchemaReference name=\"EditorCustomAttributes\" version=\"01.00\" prefix=\"beca\" />"
         L"    <ECClass typeName=\"ecProject\" description=\"Project ECClass\" displayLabel=\"Project\" isDomainClass=\"True\">"
         L"       <ECProperty propertyName=\"Name\" typeName=\"string\" displayLabel=\"Project Name\" />"
+        L"       <ECProperty propertyName=\"Geometry\" typeName=\"Bentley.Geometry.Common.IGeometry\" displayLabel=\"Geometry\" />"
+        L"       <ECProperty propertyName=\"LineSegment\" typeName=\"Bentley.Geometry.Common.ILineSegment\" displayLabel=\"Line Segment\" />"
         L"    </ECClass>"
         L"</ECSchema>", *schemaContext);
 
@@ -612,6 +613,34 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromStri
     EXPECT_TRUE (PRIMITIVETYPE_String == pProperty->GetAsPrimitiveProperty()->GetType());
     EXPECT_TRUE (pProperty->GetIsDisplayLabelDefined());
     EXPECT_STREQ (L"Project Name", pProperty->GetDisplayLabel().c_str());
+    EXPECT_STREQ (L"", pProperty->GetDescription().c_str());
+    EXPECT_EQ (pClass, &pProperty->GetClass());
+    EXPECT_FALSE (pProperty->GetIsReadOnly());
+
+    pProperty = pClass->GetPropertyP (L"Geometry");
+    ASSERT_TRUE (NULL != pProperty);
+    EXPECT_STREQ (L"Geometry", pProperty->GetName().c_str());
+    EXPECT_TRUE (pProperty->GetIsPrimitive());
+    EXPECT_FALSE (pProperty->GetIsStruct());
+    EXPECT_FALSE (pProperty->GetIsArray());
+    EXPECT_STREQ (L"Bentley.GeometryNET.Common.IGeometry", pProperty->GetTypeName().c_str());
+    EXPECT_TRUE (PRIMITIVETYPE_IGeometry == pProperty->GetAsPrimitiveProperty()->GetType());
+    EXPECT_TRUE (pProperty->GetIsDisplayLabelDefined());
+    EXPECT_STREQ (L"Geometry", pProperty->GetDisplayLabel().c_str());
+    EXPECT_STREQ (L"", pProperty->GetDescription().c_str());
+    EXPECT_EQ (pClass, &pProperty->GetClass());
+    EXPECT_FALSE (pProperty->GetIsReadOnly());
+
+    pProperty = pClass->GetPropertyP (L"LineSegment");
+    ASSERT_TRUE (NULL != pProperty);
+    EXPECT_STREQ (L"LineSegment", pProperty->GetName().c_str());
+    EXPECT_TRUE (pProperty->GetIsPrimitive());
+    EXPECT_FALSE (pProperty->GetIsStruct());
+    EXPECT_FALSE (pProperty->GetIsArray());
+    EXPECT_STREQ (L"Bentley.GeometryNET.Common.IGeometry", pProperty->GetTypeName().c_str());
+    EXPECT_TRUE (PRIMITIVETYPE_IGeometry == pProperty->GetAsPrimitiveProperty()->GetType());
+    EXPECT_TRUE (pProperty->GetIsDisplayLabelDefined());
+    EXPECT_STREQ (L"Line Segment", pProperty->GetDisplayLabel().c_str());
     EXPECT_STREQ (L"", pProperty->GetDescription().c_str());
     EXPECT_EQ (pClass, &pProperty->GetClass());
     EXPECT_FALSE (pProperty->GetIsReadOnly());

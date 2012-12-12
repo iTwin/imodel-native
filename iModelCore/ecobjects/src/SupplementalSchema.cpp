@@ -530,6 +530,7 @@ ECSchemaP schema2
 
     WString supplementalSchemaFullName = schema2->GetFullSchemaName();
     WString mergedSchemaFullName = schema1->GetFullSchemaName();
+    ECObjectsLogger::Log()->infov (L"Merging %ls into %ls", supplementalSchemaFullName.c_str(), mergedSchemaFullName.c_str());
     MergeCustomAttributeClasses(*mergedSchema, schema2->GetPrimaryCustomAttributes(false), SCHEMA_PRECEDENCE_Equal, &supplementalSchemaFullName, &mergedSchemaFullName);
 
     SupplementedSchemaStatus status = SUPPLEMENTED_SCHEMA_STATUS_Success;
@@ -574,7 +575,7 @@ WStringCR mergedSchemaFullName
         // Class exists but this property does not
         if (NULL == mergedProperty)
             {
-            mergedClass->CopyProperty(mergedProperty, supplementalProperty);
+            mergedClass->CopyProperty(mergedProperty, supplementalProperty, true);
             }
         // Class and property exist, merge property custom attributes
         else
@@ -654,7 +655,7 @@ SchemaPrecedence precedence
         if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
             {
             ECObjectsLogger::Log()->errorv(L"Failed to merge the custom attributes from the supplemental class '%ls' into the supplemented class '%ls:%ls'",
-                ecClass->GetFullName(),  primarySchema.GetFullSchemaName(), ecClass->GetName());     
+                                           ecClass->GetFullName(),  primarySchema.GetFullSchemaName().c_str(), ecClass->GetName().c_str());
             return status;
             }
         }
@@ -803,11 +804,18 @@ SchemaPrecedence precedence
         ECPropertyP consolidatedECProperty = consolidatedECClass->GetPropertyP(supplementalECProperty->GetName(), false);
         if (NULL == consolidatedECProperty)
             {
-            ECObjectsStatus status = consolidatedECClass->CopyProperty(consolidatedECProperty, supplementalECProperty);
-            if (ECOBJECTS_STATUS_Success != status)
+            ECPropertyP inheritedECProperty = consolidatedECClass->GetPropertyP(supplementalECProperty->GetName(), true);
+            if (NULL == inheritedECProperty)
                 {
+                ECObjectsLogger::Log()->warningv(L"%ls supplements non-existent ECProperty %ls.%ls",
+                    supplementalECClass->GetFullName(), consolidatedECClass->GetFullName(), supplementalECProperty->GetName().c_str());
                 continue;
                 }
+
+            ECObjectsStatus status = consolidatedECClass->CopyProperty(consolidatedECProperty, inheritedECProperty, false);
+            if (ECOBJECTS_STATUS_Success != status)
+                continue;
+
             // By adding this property override it is possible that classes derived from this one that override this property
             // will need to have the BaseProperty updated to the newly added temp property.
             FOR_EACH(ECClassP derivedClass, consolidatedECClass->GetDerivedClasses())

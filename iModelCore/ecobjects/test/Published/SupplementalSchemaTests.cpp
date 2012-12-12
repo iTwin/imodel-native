@@ -440,7 +440,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
                 // BaseClass2
             ECClassP derivedClass4;
             primarySchema->CreateClass(derivedClass4, L"DerivedClass4");
-            derivedClass4->AddBaseClass(*derivedClass2);
+            derivedClass4->AddBaseClass(*baseClass2);
             }
 
         void CreateLowPrioritySchema1(ECSchemaPtr& supplementalSchema)

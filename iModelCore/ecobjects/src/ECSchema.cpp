@@ -603,7 +603,7 @@ ECClassR sourceClass
         FOR_EACH(ECPropertyP sourceProperty, sourceClass.GetProperties(false))
             {
             ECPropertyP destProperty;
-            status = targetClass->CopyProperty(destProperty, sourceProperty);
+            status = targetClass->CopyProperty(destProperty, sourceProperty, true);
             if (ECOBJECTS_STATUS_Success != status)
                 return status;
             }
@@ -1384,7 +1384,7 @@ bvector<WString>&               searchPaths
                     return schemaOut;
                     }
                 ECObjectsLogger::Log()->warningv (L"Located %ls, which does not meet 'latest compatible' criteria to match %ls, but is being accepted because some legacy schemas are known to require this", 
-                    fullFileName.c_str(), key.GetFullSchemaName());
+                                                  fullFileName.c_str(), key.GetFullSchemaName().c_str());
                 }
             else
                 {
@@ -1862,7 +1862,7 @@ UInt32 CheckSumHelper::ComputeCheckSumForString (Utf8CP string, size_t bufferSiz
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          CheckSumHelper::ComputeCheckSumForString (WCharCP string, size_t bufferSize)
+UInt32 CheckSumHelper::ComputeCheckSumForString (WCharCP string, size_t bufferSize)
     {
     return crc32 (0, (Byte*) string, bufferSize);
     }
@@ -1927,7 +1927,7 @@ SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSc
         {
         //We have serialized a schema and its valid. Add its checksum
         ECObjectsLogger::Log()->infov (L"Native ECSchema read from file: fileName='%ls', schemaName='%ls.%02d.%02d' classCount='%d' address='0x%x'", 
-            ecSchemaXmlFile, schemaOut->GetName().c_str(), schemaOut->GetVersionMajor(), schemaOut->GetVersionMinor(), schemaOut->m_classMap.size(), schemaOut);
+                                       ecSchemaXmlFile, schemaOut->GetName().c_str(), schemaOut->GetVersionMajor(), schemaOut->GetVersionMinor(), schemaOut->m_classMap.size(), schemaOut.get());
         }
 
     return status;
@@ -1987,12 +1987,12 @@ ECSchemaReadContextR schemaContext
 SchemaReadStatus     ECSchema::ReadFromXmlString
 (
 ECSchemaPtr&         schemaOut, 
-WCharCP                         ecSchemaXml,
+WCharCP              ecSchemaXml,
 ECSchemaReadContextR schemaContext
 )
     {                  
     ECObjectsLogger::Log()->debugv (L"About to read native ECSchema read from string."); // mainly included for timing
-        schemaOut = NULL;
+    schemaOut = NULL;
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
 
     BeXmlStatus xmlStatus;
