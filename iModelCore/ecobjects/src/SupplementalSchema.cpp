@@ -803,13 +803,16 @@ SchemaPrecedence precedence
         {
         ECCustomAttributeInstanceIterable supplementalCustomAttributes = supplementalECProperty->GetCustomAttributes(false);
 
-        ECPropertyP consolidatedECProperty = consolidatedECClass->GetPropertyP(supplementalECProperty->GetName(), false);
+        if (supplementalCustomAttributes.begin() == supplementalCustomAttributes.end())
+            continue;
+
+       ECPropertyP consolidatedECProperty = consolidatedECClass->GetPropertyP(supplementalECProperty->GetName(), false);
         if (NULL == consolidatedECProperty)
             {
             ECPropertyP inheritedECProperty = consolidatedECClass->GetPropertyP(supplementalECProperty->GetName(), true);
             if (NULL == inheritedECProperty)
                 {
-                ECObjectsLogger::Log()->warningv(L"%ls supplements non-existent ECProperty %ls.%ls",
+                ECObjectsLogger::Log()->debugv(L"%ls supplements non-existent ECProperty %ls.%ls",
                     supplementalECClass->GetFullName(), consolidatedECClass->GetFullName(), supplementalECProperty->GetName().c_str());
                 continue;
                 }
