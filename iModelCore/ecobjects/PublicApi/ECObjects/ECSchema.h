@@ -45,6 +45,7 @@ bool operator()(WCharCP s1, WCharCP s2) const
     return false;
     }
 };
+
 typedef bvector<ECPropertyP> PropertyList;
 typedef bmap<WCharCP , ECPropertyP, less_str> PropertyMap;
 typedef bmap<WCharCP , ECClassP,    less_str> ClassMap;
@@ -762,7 +763,7 @@ private:
     void            AddDerivedClass(ECClassCR baseClass) const;
     void            RemoveDerivedClass(ECClassCR baseClass) const;
     static void     SetErrorHandling (bool doAssert);
-    ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyP sourceProperty);
+    ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyP sourceProperty, bool copyCustomAttributes);
 
 protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
