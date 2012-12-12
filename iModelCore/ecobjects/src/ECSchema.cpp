@@ -2062,7 +2062,7 @@ bool    utf16
     if (SCHEMA_WRITE_STATUS_Success != (status = WriteXml (*xmlDom.get())))
         return status;
 
-    return (BEXML_Success == xmlDom->ToFile (ecSchemaXmlFile, BeXmlDom::TO_STRING_OPTION_Indent, utf16 ? BeXmlDom::FILE_ENCODING_Utf16 : BeXmlDom::FILE_ENCODING_Utf8)) 
+    return (BEXML_Success == xmlDom->ToFile (ecSchemaXmlFile, (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Indent | BeXmlDom::TO_STRING_OPTION_Formatted), utf16 ? BeXmlDom::FILE_ENCODING_Utf16 : BeXmlDom::FILE_ENCODING_Utf8)) 
         ? SCHEMA_WRITE_STATUS_Success : SCHEMA_WRITE_STATUS_FailedToWriteFile;
     }
    
