@@ -16,8 +16,6 @@ using namespace Bentley::ECN;
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-#ifdef THESE_TESTS_ALL_CRASH
-
 /*====================================================================================**/
 /// <summary>Tests for Bentley.Units and Bentley.ECObjects.Units.</summary>
 /// <author>Colin.Kerr</author>                             <date>3/2008</date>
@@ -51,7 +49,7 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyDirectlyFromPropertyOverrid
     {
 		Unit defaultUnit;
 		EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_seatPostAngleProp));
-        VerifyDefaultUnit (L"POUND", defaultUnit);
+        VerifyDefaultUnit (L"ANGLE_SECOND", defaultUnit);
     }
 
 TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyDirectlyFromProperty)
@@ -118,6 +116,7 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitFromDomainSchemaOverridingExternalSche
 
 /////////////////////////////
 
+#ifdef THE_CODE_THAT_INITIALIZES_THESE_MEMBERS_IS_COMMENTED_OUT
 
 TEST_F (ECSchemaUnitsManagerTests, GetUnit_FromUnitSystemDefaults1)
     {

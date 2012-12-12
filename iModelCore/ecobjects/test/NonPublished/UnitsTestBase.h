@@ -188,7 +188,6 @@ public: void SetUp
 public: void InitializeUnits
 (
 WString testSchemaName,
-ECSchemaPtr testSchema,
 bvector< ECSchemaP > & testSupplementalSchemas
 );
 

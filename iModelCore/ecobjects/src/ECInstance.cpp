@@ -3019,8 +3019,10 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
 
     // no members, don't write anything.
     ECValue         ecValue;
-    if (SUCCESS != ecInstance.GetValue (ecValue, accessString.c_str(), 0) || ecValue.IsNull())
+    if (SUCCESS != ecInstance.GetValue (ecValue, accessString.c_str()) || ecValue.IsNull() || ecValue.GetArrayInfo().GetCount() == 0)
         return INSTANCE_WRITE_STATUS_Success;
+
+    UInt32 nElements = ecValue.GetArrayInfo().GetCount();
 
     BeXmlNodeP  arrayNode = propertyValueNode.AddEmptyElement (arrayProperty.GetName().c_str());
 
@@ -3029,7 +3031,7 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
         {
         PrimitiveType   memberType  = arrayProperty.GetPrimitiveElementType();
         Utf8CP          typeString  = GetPrimitiveTypeString (memberType);
-        for (int index=0; ; index++)
+        for (UInt32 index=0; index < nElements ; index++)
             {
             if (SUCCESS != ecInstance.GetValue (ecValue, accessString.c_str(), index))
                 break;
@@ -3046,7 +3048,7 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
         }
     else if (ARRAYKIND_Struct == arrayKind)
         {
-        for (int index=0; ; index++)
+        for (UInt32 index=0; index < nElements ; index++)
             {
             if (SUCCESS != ecInstance.GetValue (ecValue, accessString.c_str(), index))
                 break;
@@ -3057,6 +3059,7 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
             IECInstancePtr  structInstance = ecValue.GetStruct();
             if (!structInstance.IsValid())
                 {
+                // ###TODO: It is valid to have null struct array instances....
                 BeAssert (false);
                 break;
                 }
