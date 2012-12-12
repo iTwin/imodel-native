@@ -1002,61 +1002,67 @@ IECInstancePtr consolidatedCustomAttribute,
 SchemaPrecedence precedence
 )
     {
-    // Each attribute contains a list of UnitSpecification instances
-    // We want to combine both lists into one
-    // Where both lists contain an entry with the same "key", we select or merge based on precedence
-    IECInstanceP to = SCHEMA_PRECEDENCE_Greater == precedence ? supplementalCustomAttribute.get() : consolidatedCustomAttribute.get();
-    IECInstanceCP from = to == supplementalCustomAttribute.get() ? consolidatedCustomAttribute.get() : supplementalCustomAttribute.get();
-    bool detectConflicts = SCHEMA_PRECEDENCE_Equal == precedence;
-
-    ECValue toList, fromList;
-    to->GetValue (toList, L"UnitSpecificationList");
-    from->GetValue (fromList, L"UnitSpecificationList");
-
-    ArrayInfo toInfo    = toList.GetArrayInfo(),
-              fromInfo  = fromList.GetArrayInfo();
-
-    // build the set UnitSpecification instances in destination list
-    bmap<WString, IECInstancePtr> toSpecs;
-    WString unitSpecKey;
-    for (UInt32 i = 0; i < toInfo.GetCount(); i++)
+    IECInstanceP attributeToStore = supplementalCustomAttribute.get();
+    if (consolidatedCustomAttribute.IsValid())
         {
-        ECValue spec;
-        if (ECOBJECTS_STATUS_Success == to->GetValue (spec, L"UnitSpecificationList", i) && !spec.IsNull())
-            {
-            buildUnitSpecificationKey (unitSpecKey, *spec.GetStruct());
-            toSpecs[unitSpecKey] = spec.GetStruct();
-            }
-        }
+        // Each attribute contains a list of UnitSpecification instances
+        // We want to combine both lists into one
+        // Where both lists contain an entry with the same "key", we select or merge based on precedence
+        IECInstanceP to = SCHEMA_PRECEDENCE_Greater == precedence ? supplementalCustomAttribute.get() : consolidatedCustomAttribute.get();
+        IECInstanceCP from = to == supplementalCustomAttribute.get() ? consolidatedCustomAttribute.get() : supplementalCustomAttribute.get();
+        bool detectConflicts = SCHEMA_PRECEDENCE_Equal == precedence;
 
-    // merge each UnitSpecification instance from source list
-    UInt32 specCount = toInfo.GetCount();
-    for (UInt32 i = 0; i < fromInfo.GetCount(); i++)
-        {
-        ECValue spec;
-        if (ECOBJECTS_STATUS_Success == from->GetValue (spec, L"UnitSpecificationList", i) && !spec.IsNull())
+        ECValue toList, fromList;
+        to->GetValue (toList, L"UnitSpecificationList");
+        from->GetValue (fromList, L"UnitSpecificationList");
+
+        ArrayInfo toInfo    = toList.GetArrayInfo(),
+                  fromInfo  = fromList.GetArrayInfo();
+
+        // build the set UnitSpecification instances in destination list
+        bmap<WString, IECInstancePtr> toSpecs;
+        WString unitSpecKey;
+        for (UInt32 i = 0; i < toInfo.GetCount(); i++)
             {
-            buildUnitSpecificationKey (unitSpecKey, *spec.GetStruct());
-            bmap<WString, IECInstancePtr>::const_iterator found = toSpecs.find (unitSpecKey);
-            if (toSpecs.end() != found)
+            ECValue spec;
+            if (ECOBJECTS_STATUS_Success == to->GetValue (spec, L"UnitSpecificationList", i) && !spec.IsNull())
                 {
-                SupplementedSchemaStatus mergeStatus = mergeUnitSpecification (*(found->second), *spec.GetStruct(), detectConflicts);
-                if (SUPPLEMENTED_SCHEMA_STATUS_Success != mergeStatus)
-                    return mergeStatus;
-                }
-            else
-                {
-                // add the spec
-                to->AddArrayElements (L"UnitSpecificationList", 1);
-                ++specCount;
-                ECValue newSpec;
-                newSpec.SetStruct (spec.GetStruct().get());
-                to->SetValue (L"UnitSpecificationList", newSpec, specCount - 1);
+                buildUnitSpecificationKey (unitSpecKey, *spec.GetStruct());
+                toSpecs[unitSpecKey] = spec.GetStruct();
                 }
             }
+
+        // merge each UnitSpecification instance from source list
+        UInt32 specCount = toInfo.GetCount();
+        for (UInt32 i = 0; i < fromInfo.GetCount(); i++)
+            {
+            ECValue spec;
+            if (ECOBJECTS_STATUS_Success == from->GetValue (spec, L"UnitSpecificationList", i) && !spec.IsNull())
+                {
+                buildUnitSpecificationKey (unitSpecKey, *spec.GetStruct());
+                bmap<WString, IECInstancePtr>::const_iterator found = toSpecs.find (unitSpecKey);
+                if (toSpecs.end() != found)
+                    {
+                    SupplementedSchemaStatus mergeStatus = mergeUnitSpecification (*(found->second), *spec.GetStruct(), detectConflicts);
+                    if (SUPPLEMENTED_SCHEMA_STATUS_Success != mergeStatus)
+                        return mergeStatus;
+                    }
+                else
+                    {
+                    // add the spec
+                    to->AddArrayElements (L"UnitSpecificationList", 1);
+                    ++specCount;
+                    ECValue newSpec;
+                    newSpec.SetStruct (spec.GetStruct().get());
+                    to->SetValue (L"UnitSpecificationList", newSpec, specCount - 1);
+                    }
+                }
+            }
+
+        attributeToStore = to;
         }
 
-    return ECOBJECTS_STATUS_Success == consolidatedCustomAttributeContainer.SetConsolidatedCustomAttribute (*to) ? SUPPLEMENTED_SCHEMA_STATUS_Success : SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
+    return ECOBJECTS_STATUS_Success == consolidatedCustomAttributeContainer.SetConsolidatedCustomAttribute (*attributeToStore) ? SUPPLEMENTED_SCHEMA_STATUS_Success : SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
     }
 
 /*---------------------------------------------------------------------------------**//**
