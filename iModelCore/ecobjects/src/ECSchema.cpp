@@ -2403,7 +2403,7 @@ ECSchemaCachePtr    ECSchemaCache::Create ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t ECSchemaCache::GetSchemas (bvector<ECSchemaCP>& schemas) const
+size_t ECSchemaCache::GetSchemas (bvector<ECSchemaP>& schemas) const
     {
     schemas.clear();
     for (SchemaMap::const_iterator it = m_schemas.begin(); it != m_schemas.end(); it++)
