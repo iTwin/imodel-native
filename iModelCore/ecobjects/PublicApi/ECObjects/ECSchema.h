@@ -210,6 +210,7 @@ struct IECCustomAttributeContainer
 private:
     friend struct ECCustomAttributeInstanceIterable;
     friend struct SupplementedSchemaBuilder;
+
     ECCustomAttributeCollection         m_primaryCustomAttributes;
     ECCustomAttributeCollection         m_consolidatedCustomAttributes;
     SchemaWriteStatus                   AddCustomAttributeProperties (BeXmlNodeR oldNode, BeXmlNodeR newNode) const;
@@ -218,7 +219,8 @@ private:
     IECInstancePtr                      GetCustomAttributeInternal(ECClassCR ecClass, bool includeBaseClasses, bool includeSupplementalAttributes) const;
 
     ECObjectsStatus                     SetCustomAttributeInternal(ECCustomAttributeCollection& customAttributeCollection, IECInstanceR customAttributeInstance, bool requireSchemaReference = false);
-    ECObjectsStatus                     SetConsolidatedCustomAttribute(IECInstanceR customAttributeInstance);
+    //! Does not check if the container's ECSchema references the requisite ECSchema(s)
+    ECObjectsStatus                     SetConsolidatedCustomAttributeUnchecked(IECInstanceR customAttributeInstance);
     ECObjectsStatus                     SetPrimaryCustomAttribute(IECInstanceR customAttributeInstance);
 
 protected:
@@ -1554,7 +1556,7 @@ public:
     ECOBJECTS_EXPORT int     GetCount();
     ECOBJECTS_EXPORT void    Clear();
     ECOBJECTS_EXPORT IECSchemaLocater& GetSchemaLocater();
-    ECOBJECTS_EXPORT size_t GetSchemas (bvector<ECSchemaCP>& schemas) const;
+    ECOBJECTS_EXPORT size_t GetSchemas (bvector<ECSchemaP>& schemas) const;
 };
 
 

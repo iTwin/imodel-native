@@ -2025,7 +2025,7 @@ UInt32          CheckSumHelper::ComputeCheckSumForFile (WCharCP schemaFile)
 SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSchemaXmlFile, ECSchemaReadContextR schemaContext)
     {
     ECObjectsLogger::Log()->debugv (L"About to read native ECSchema read from file: fileName='%ls'", ecSchemaXmlFile);
-        schemaOut = NULL;
+    schemaOut = NULL;
         
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
 
@@ -2545,7 +2545,7 @@ ECSchemaCachePtr    ECSchemaCache::Create ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t ECSchemaCache::GetSchemas (bvector<ECSchemaCP>& schemas) const
+size_t ECSchemaCache::GetSchemas (bvector<ECSchemaP>& schemas) const
     {
     schemas.clear();
     for (SchemaMap::const_iterator it = m_schemas.begin(); it != m_schemas.end(); it++)

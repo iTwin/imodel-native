@@ -325,8 +325,9 @@ private:
     //! @param[in]  precedence  Determines if the precedence is greater, lower, or equal to the consolidated schema
     SupplementedSchemaStatus MergeUnitSpecificationsCustomAttribute(IECCustomAttributeContainerR consolidatedCustomAttributeContainer, IECInstancePtr supplementalCustomAttribute, IECInstancePtr consolidatedCustomAttribute, SchemaPrecedence precedence);
 
-    //! This is safe function to set consolidated custom attribute. It automatically add reference to schema that contain the custom attribute to container schema.
-    //! @param[in,out] container Container on which consolidated custom attribute need to be set
+    //! This is safe function to set consolidated custom attribute. If the customAttributeInstance requires a new ECSchema to be referenced
+    //! the the container's ECSchema, the ECSchemaReference will be added automatically
+    //! @param[in,out] container Container on which consolidated custom attribute needs to be set
     //! @param[in]  customAttributeInstance The custom attribute from the consolidated schema
     static ECObjectsStatus  SetConsolidatedCustomAttribute(IECCustomAttributeContainerR container, IECInstanceR customAttributeInstance);
 

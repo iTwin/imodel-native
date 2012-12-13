@@ -754,7 +754,7 @@ ECValue::ECValue (Utf16CP string, bool holdADuplicate)
     };
 
 /*---------------------------------------------------------------------------------**//**
-* The ECValue is never responsible for freeing the memory... its creator is. 
+* The ECValue constructed by this overload is not responsible for freeing the memory... its creator is. 
 * The consumer of the ECValue should make a copy of the memory.
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
