@@ -16,14 +16,14 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 struct ECSelectionEvent: public ECEvent
     {
     private:
-        ECInstanceIterableDataContextP  m_instanceIterable;
+        IAUIDataContextP                m_dataContext;
         void*                           m_selectionSource;
     public:
-    ECSelectionEvent (void* eventhub, ECInstanceIterableDataContextR instanceIterable)
-        :ECEvent(eventhub), m_instanceIterable(&instanceIterable), m_selectionSource(NULL)
+    ECSelectionEvent (void* eventhub, IAUIDataContextR dataContext)
+        :ECEvent(eventhub), m_dataContext(&dataContext), m_selectionSource(NULL)
         {}
     
-    ECInstanceIterableDataContextCP GetInstanceIterable () const {return m_instanceIterable;}
+    IAUIDataContextP GetContext () const {return m_dataContext;}
 
     void    SetSelectionSource (void* src) {m_selectionSource = src;}
     void*   GetSelectionSource () const {return m_selectionSource;}
@@ -33,7 +33,7 @@ struct ECSelectionEvent: public ECEvent
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ECSelectionListener
+struct ECSelectionListener : public IECPresentationProvider
     {
     friend struct ECPresentationManager;
     protected:
@@ -43,6 +43,8 @@ struct ECSelectionListener
     virtual void _OnSelection (ECSelectionEventCR selectionEvent) = 0;
 
     virtual void _OnSubSelection (ECSelectionEventCR selectionEvent) {}
+
+    virtual ProviderType _GetProviderType(void) const override {return SelectionService;}
 
     public:
         ECOBJECTS_EXPORT void const *  GeteventHub () const;

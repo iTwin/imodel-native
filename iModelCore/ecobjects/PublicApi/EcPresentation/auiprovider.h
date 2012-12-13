@@ -13,7 +13,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct          IECPresentationProvider
+struct          IECPresentationProvider : public RefCountedBase
     {
     enum ProviderType
         {
@@ -22,6 +22,8 @@ struct          IECPresentationProvider
         CommandService      = 1<<2,
         ImageService        = 1<<3,
         LocalizationService = 1<<4,
+        SelectionService    = 1<<5,
+        JournalService      = 1<<6,
         };
 
     protected:

@@ -85,6 +85,7 @@ struct IUICommand : public RefCountedBase
         {
         Unknown              = 0,
         ViewWindowRightClick = 1,
+        ToolBar              = 2,
         };
 
     //__PUBLISH_SECTION_END__
@@ -171,7 +172,16 @@ struct IUICommand : public RefCountedBase
     };
 
 typedef RefCountedPtr<UICommand> UICommandPtr;
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ActionPriorityComparer
+    {
+    bool operator () (IUICommandPtr const& lhs, IUICommandPtr const& rhs)
+        {
+        return lhs->GetPriority() > rhs->GetPriority();
+        }
+    };
 /*---------------------------------------------------------------------------------**//**
 //! A UIcommand represents an action that can be applied on a data context. (Usually an ecinstnace)
 * @bsiclass                                    Abeesh.Basheer                  04/2012
