@@ -688,11 +688,16 @@ WStringCP consolidatedSchemaFullName
         IECInstancePtr localCustomAttribute = consolidatedCustomAttributeContainer.GetCustomAttributeLocal(customAttribute->GetClass());
         IECInstancePtr consolidatedCustomAttribute;
         
-        if (localCustomAttribute.IsValid())
-            if (m_createCopyOfSupplementalCustomAttribute)
-                consolidatedCustomAttribute = localCustomAttribute->CreateCopyThroughSerialization();
-            else
-                consolidatedCustomAttribute = localCustomAttribute;
+        if (localCustomAttribute.IsNull())
+            {
+            return SetConsolidatedCustomAttribute (consolidatedCustomAttributeContainer, *customAttribute) == ECN::ECOBJECTS_STATUS_Success ?
+                SUPPLEMENTED_SCHEMA_STATUS_Success : SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
+            }
+
+        if (m_createCopyOfSupplementalCustomAttribute)
+            consolidatedCustomAttribute = localCustomAttribute->CreateCopyThroughSerialization();
+        else
+            consolidatedCustomAttribute = localCustomAttribute;
 
         // We don't use merging delegates like in the managed world, but Units custom attributes still need to be treated specially
         if (customAttribute->GetClass().GetSchema().GetName().EqualsI(L"Unit_Attributes"))  // changed from "Unit_Attributes.01.00" - ECSchema::GetName() does not include the version numbers...
@@ -1049,8 +1054,8 @@ SchemaPrecedence precedence
     to->GetValue (toList, L"UnitSpecificationList");
     from->GetValue (fromList, L"UnitSpecificationList");
 
-    ArrayInfo toInfo    = toList.GetArrayInfo(),
-              fromInfo  = fromList.GetArrayInfo();
+    ArrayInfo toInfo    = toList.GetArrayInfo();
+    ArrayInfo fromInfo  = fromList.GetArrayInfo();
 
     // build the set UnitSpecification instances in destination list
     bmap<WString, IECInstancePtr> toSpecs;
