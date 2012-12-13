@@ -14,7 +14,7 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt16          IECPresentationProvider::GetProviderId () const
+size_t          IECPresentationProvider::GetProviderId () const
     {
     return _GetProviderId();
     }

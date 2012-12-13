@@ -185,7 +185,6 @@ void    ECPresentationManager::GetCommands (bvector<IUICommandPtr>& commands, IA
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct LoggingJournalProvider : public IJournalProvider
     {
-    virtual UInt16  _GetProviderId(void) const override {return 0;}
     virtual WCharCP _GetProviderName(void) const override {return L"LoggingJournalProvider";}
     virtual ProviderType _GetProviderType(void) const override {return JournalService;}
 
