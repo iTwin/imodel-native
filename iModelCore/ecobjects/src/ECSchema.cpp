@@ -605,6 +605,7 @@ ECClassR sourceClass
                 return status;
             }
         }
+
     return sourceClass.CopyCustomAttributesTo(*targetClass);
     }
 

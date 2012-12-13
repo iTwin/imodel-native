@@ -431,7 +431,7 @@ IECInstanceR customAttributeInstance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus IECCustomAttributeContainer::SetConsolidatedCustomAttributeUnchecked
+ECObjectsStatus IECCustomAttributeContainer::SetConsolidatedCustomAttribute
 (
 IECInstanceR customAttributeInstance
 )

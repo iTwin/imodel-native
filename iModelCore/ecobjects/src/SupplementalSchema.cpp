@@ -528,7 +528,7 @@ ECSchemaP schema2
 )
     {
     ECSchemaPtr mergedSchema;
-    schema1->CopySchema(mergedSchema);
+    schema1->CopySchema(mergedSchema);  //Do we need to copy it?
 
     WString supplementalSchemaFullName = schema2->GetFullSchemaName();
     WString mergedSchemaFullName = schema1->GetFullSchemaName();
@@ -678,7 +678,7 @@ WStringCP consolidatedSchemaFullName
 )
     {
     SupplementedSchemaStatus status = SUPPLEMENTED_SCHEMA_STATUS_Success;
-    FOR_EACH (IECInstancePtr customAttribute, supplementalCustomAttributes)
+    FOR_EACH (IECInstancePtr const & customAttribute, supplementalCustomAttributes)
         {
         WString className = customAttribute->GetClass().GetName();
         if (0 == wcscmp(SupplementalSchemaMetaData::GetCustomAttributeAccessor(), className.c_str()))
@@ -690,8 +690,10 @@ WStringCP consolidatedSchemaFullName
         
         if (localCustomAttribute.IsNull())
             {
-            return SetConsolidatedCustomAttribute (consolidatedCustomAttributeContainer, *customAttribute) == ECN::ECOBJECTS_STATUS_Success ?
-                SUPPLEMENTED_SCHEMA_STATUS_Success : SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
+            if (SetMergedCustomAttribute (consolidatedCustomAttributeContainer, *customAttribute, precedence) != ECN::ECOBJECTS_STATUS_Success)
+                return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
+
+            continue;
             }
 
         if (m_createCopyOfSupplementalCustomAttribute)
@@ -721,7 +723,7 @@ WStringCP consolidatedSchemaFullName
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Affan.Khan                      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus SupplementedSchemaBuilder::SetConsolidatedCustomAttribute(IECCustomAttributeContainerR container, IECInstanceR customAttributeInstance)
+ECObjectsStatus SupplementedSchemaBuilder::SetMergedCustomAttribute(IECCustomAttributeContainerR container, IECInstanceR customAttributeInstance, SchemaPrecedence precedence)
     {
     ECSchemaR customAttributeSchema = const_cast<ECSchemaR>(customAttributeInstance.GetClass().GetSchema());
     ECSchemaP containerSchema = container.GetContainerSchema();
@@ -735,7 +737,10 @@ ECObjectsStatus SupplementedSchemaBuilder::SetConsolidatedCustomAttribute(IECCus
             }
         }
 
-    return container.SetConsolidatedCustomAttributeUnchecked (customAttributeInstance);
+    if (precedence == SCHEMA_PRECEDENCE_Equal)
+        return container.SetPrimaryCustomAttribute (customAttributeInstance);
+    else
+        return container.SetConsolidatedCustomAttribute (customAttributeInstance);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -880,12 +885,12 @@ SchemaPrecedence precedence
     ECClassCR customAttributeClass = supplementalCustomAttribute->GetClass();
     if (SCHEMA_PRECEDENCE_Greater == precedence)
         {
-        if (ECOBJECTS_STATUS_Success != SetConsolidatedCustomAttribute(consolidatedCustomAttributeContainer, *supplementalCustomAttribute))
+        if (ECOBJECTS_STATUS_Success != SetMergedCustomAttribute(consolidatedCustomAttributeContainer, *supplementalCustomAttribute, precedence))
             return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
         }
-    // This case is ONLY for dealing with two supplemental schemas that have the same precedence.
+    // This case is ONLY for dealing with two supplemental ECSchemas that have the same precedence.
     // A supplemental schema CAN NOT be a primary schema and hence can NOT be supplemented,
-    // because of that we must work on the actual custom attributes.
+    // because of that we must work on the actual primary custom attributes.
     else if (SCHEMA_PRECEDENCE_Equal == precedence)
         {
         IECInstancePtr primaryCustomAttribute = consolidatedCustomAttributeContainer.GetPrimaryCustomAttribute(customAttributeClass);
@@ -896,11 +901,11 @@ SchemaPrecedence precedence
             return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
             }
 
-        if (ECOBJECTS_STATUS_Success != consolidatedCustomAttributeContainer.SetPrimaryCustomAttribute(*supplementalCustomAttribute))
+        if (ECOBJECTS_STATUS_Success != SetMergedCustomAttribute (consolidatedCustomAttributeContainer, *supplementalCustomAttribute, precedence))
             return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
         }
     else if (!consolidatedCustomAttribute.IsValid())
-        if (ECOBJECTS_STATUS_Success != SetConsolidatedCustomAttribute (consolidatedCustomAttributeContainer, *supplementalCustomAttribute))
+        if (ECOBJECTS_STATUS_Success != SetMergedCustomAttribute (consolidatedCustomAttributeContainer, *supplementalCustomAttribute, precedence))
             return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
 
     return SUPPLEMENTED_SCHEMA_STATUS_Success;
@@ -1010,10 +1015,10 @@ SchemaPrecedence precedence
         if (SUPPLEMENTED_SCHEMA_STATUS_Success != mergeStatus)
             return mergeStatus;
 
-        setStatus = SetConsolidatedCustomAttribute (consolidatedCustomAttributeContainer, *to);
+        setStatus = SetMergedCustomAttribute (consolidatedCustomAttributeContainer, *to, precedence);
         }
     else
-        setStatus = SetConsolidatedCustomAttribute (consolidatedCustomAttributeContainer, *supplementalCustomAttribute);
+        setStatus = SetMergedCustomAttribute (consolidatedCustomAttributeContainer, *supplementalCustomAttribute, precedence);
 
     return setStatus == ECOBJECTS_STATUS_Success ? SUPPLEMENTED_SCHEMA_STATUS_Success : SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
     }
@@ -1097,7 +1102,7 @@ SchemaPrecedence precedence
             }
         }
 
-    return ECOBJECTS_STATUS_Success == SetConsolidatedCustomAttribute (consolidatedCustomAttributeContainer, *to) ? SUPPLEMENTED_SCHEMA_STATUS_Success : SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
+    return ECOBJECTS_STATUS_Success == SetMergedCustomAttribute (consolidatedCustomAttributeContainer, *to, precedence) ? SUPPLEMENTED_SCHEMA_STATUS_Success : SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
     }
 
 /*---------------------------------------------------------------------------------**//**
