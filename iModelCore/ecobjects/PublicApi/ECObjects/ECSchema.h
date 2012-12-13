@@ -1534,7 +1534,7 @@ public:
     ECOBJECTS_EXPORT int     GetCount();
     ECOBJECTS_EXPORT void    Clear();
     ECOBJECTS_EXPORT IECSchemaLocater& GetSchemaLocater();
-    ECOBJECTS_EXPORT size_t GetSchemas (bvector<ECSchemaCP>& schemas) const;
+    ECOBJECTS_EXPORT size_t GetSchemas (bvector<ECSchemaP>& schemas) const;
 };
 
 
