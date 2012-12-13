@@ -78,6 +78,16 @@ WStringCR ECProperty::GetName () const
     }
 
 /*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                      Affan.Khan        12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyId ECProperty::GetId () const
+    {
+    ECNameHashCodeGenerator::ECHashCode propertyId = GetClass().GetId();
+    ECNameHashCodeGenerator::Update (propertyId, GetName().c_str());
+    return propertyId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECProperty::SetName (WStringCR name)
