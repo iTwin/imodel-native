@@ -7,17 +7,10 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-
-#define NO_USING_NAMESPACE_BENTLEY 1
-
 /*__PUBLISH_SECTION_START__*/
 
 #include <Bentley/Bentley.h>
 #include <Bentley/BeAssert.h>
-
-// In many of the DgnPlatform libraries we redefine the below macros based on __cplusplus.  This is because there
-// are existing C callers that we can not get rid of.  I've spoken to Sam and he recommends that for any new libraries we
-// ONLY support cpp callers and therefore do not repeat this pattern.
 
 #ifdef __ECOBJECTS_BUILD__
     #define ECOBJECTS_EXPORT EXPORT_ATTRIBUTE
