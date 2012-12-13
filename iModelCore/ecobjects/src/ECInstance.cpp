@@ -3019,8 +3019,10 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
 
     // no members, don't write anything.
     ECValue         ecValue;
-    if (SUCCESS != ecInstance.GetValue (ecValue, accessString.c_str(), 0) || ecValue.IsNull())
+    if (SUCCESS != ecInstance.GetValue (ecValue, accessString.c_str()) || ecValue.IsNull() || ecValue.GetArrayInfo().GetCount() == 0)
         return INSTANCE_WRITE_STATUS_Success;
+
+    UInt32 nElements = ecValue.GetArrayInfo().GetCount();
 
     BeXmlNodeP  arrayNode = propertyValueNode.AddEmptyElement (arrayProperty.GetName().c_str());
 
@@ -3029,7 +3031,7 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
         {
         PrimitiveType   memberType  = arrayProperty.GetPrimitiveElementType();
         Utf8CP          typeString  = GetPrimitiveTypeString (memberType);
-        for (int index=0; ; index++)
+        for (UInt32 index=0; index < nElements ; index++)
             {
             if (SUCCESS != ecInstance.GetValue (ecValue, accessString.c_str(), index))
                 break;
@@ -3046,7 +3048,7 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
         }
     else if (ARRAYKIND_Struct == arrayKind)
         {
-        for (int index=0; ; index++)
+        for (UInt32 index=0; index < nElements ; index++)
             {
             if (SUCCESS != ecInstance.GetValue (ecValue, accessString.c_str(), index))
                 break;
@@ -3057,6 +3059,7 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
             IECInstancePtr  structInstance = ecValue.GetStruct();
             if (!structInstance.IsValid())
                 {
+                // ###TODO: It is valid to have null struct array instances....
                 BeAssert (false);
                 break;
                 }
@@ -3147,6 +3150,23 @@ InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr& ecInstance,
     return ReadFromBeXmlDom (ecInstance, *xmlDom.get(), context);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                12/2012
+//+---------------+---------------+---------------+---------------+---------------+------
+InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr& ecInstance, Utf8CP ecInstanceXml, ECInstanceReadContextR context)
+    {
+    ecInstance = NULL;
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString (xmlStatus, ecInstanceXml, strlen (ecInstanceXml) * sizeof(Utf8Char));
+    if (!xmlDom.IsValid())
+        {
+        BeAssert (false);
+        LogXmlLoadError ();
+        return INSTANCE_READ_STATUS_XmlParseError;
+        }
+    return ReadFromBeXmlDom (ecInstance, *xmlDom.get(), context);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3197,8 +3217,36 @@ InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool isSt
     if (INSTANCE_WRITE_STATUS_Success != (status = instanceWriter.WriteInstance (*this, writeInstanceId)))
         return status;
 
-    return (BEXML_Success == xmlDom->ToFile (fileName, BeXmlDom::TO_STRING_OPTION_Indent, utf16 ? BeXmlDom::FILE_ENCODING_Utf16 : BeXmlDom::FILE_ENCODING_Utf8)) 
+    return (BEXML_Success == xmlDom->ToFile (fileName, (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Indent | BeXmlDom::TO_STRING_OPTION_Formatted), utf16 ? BeXmlDom::FILE_ENCODING_Utf16 : BeXmlDom::FILE_ENCODING_Utf8)) 
             ? INSTANCE_WRITE_STATUS_Success : INSTANCE_WRITE_STATUS_FailedToWriteFile;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T_STR> InstanceWriteStatus writeInstanceToXmlString (T_STR& ecInstanceXml, bool isStandAlone, bool writeInstanceId, IECInstanceR instance)
+    {
+    ecInstanceXml.clear();
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();        
+    InstanceXmlWriter   instanceWriter (*xmlDom.get(), NULL);
+    InstanceWriteStatus status;
+    if (INSTANCE_WRITE_STATUS_Success != (status = instanceWriter.WriteInstance (instance, writeInstanceId)))
+        return status;
+
+    UInt64  opts = BeXmlDom::TO_STRING_OPTION_OmitByteOrderMark;
+    if ( ! isStandAlone)
+        opts |= BeXmlDom::TO_STRING_OPTION_OmitXmlDeclaration;
+
+    xmlDom->ToString (ecInstanceXml, (BeXmlDom::ToStringOption) opts);
+    return INSTANCE_WRITE_STATUS_Success;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                12/2012
+//+---------------+---------------+---------------+---------------+---------------+------
+InstanceWriteStatus     IECInstance::WriteToXmlString (Utf8String & ecInstanceXml, bool isStandAlone, bool writeInstanceId)
+    {
+    return writeInstanceToXmlString (ecInstanceXml, isStandAlone, writeInstanceId, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3206,24 +3254,7 @@ InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool isSt
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceWriteStatus     IECInstance::WriteToXmlString (WString & ecInstanceXml, bool isStandAlone, bool writeInstanceId)
     {
-    ecInstanceXml.clear();
-
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();        
-
-    InstanceXmlWriter   instanceWriter (*xmlDom.get(), NULL);
-
-    InstanceWriteStatus status;
-    if (INSTANCE_WRITE_STATUS_Success != (status = instanceWriter.WriteInstance (*this, writeInstanceId)))
-        return status;
-
-    UInt64  opts = BeXmlDom::TO_STRING_OPTION_OmitByteOrderMark;
-
-    if ( ! isStandAlone)
-        opts |= BeXmlDom::TO_STRING_OPTION_OmitXmlDeclaration;
-
-    xmlDom->ToString (ecInstanceXml, (BeXmlDom::ToStringOption) opts);
-
-    return INSTANCE_WRITE_STATUS_Success;
+    return writeInstanceToXmlString (ecInstanceXml, isStandAlone, writeInstanceId, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**

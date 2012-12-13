@@ -603,7 +603,7 @@ ECClassR sourceClass
         FOR_EACH(ECPropertyP sourceProperty, sourceClass.GetProperties(false))
             {
             ECPropertyP destProperty;
-            status = targetClass->CopyProperty(destProperty, sourceProperty);
+            status = targetClass->CopyProperty(destProperty, sourceProperty, true);
             if (ECOBJECTS_STATUS_Success != status)
                 return status;
             }
@@ -1384,7 +1384,7 @@ bvector<WString>&               searchPaths
                     return schemaOut;
                     }
                 ECObjectsLogger::Log()->warningv (L"Located %ls, which does not meet 'latest compatible' criteria to match %ls, but is being accepted because some legacy schemas are known to require this", 
-                    fullFileName.c_str(), key.GetFullSchemaName());
+                                                  fullFileName.c_str(), key.GetFullSchemaName().c_str());
                 }
             else
                 {
@@ -1846,14 +1846,23 @@ struct          CheckSumHelper
 
     static const int BUFFER_SIZE = 1024;
     public:
+        static UInt32 ComputeCheckSumForString (Utf8CP string, size_t bufferSize);
         static UInt32 ComputeCheckSumForString (WCharCP string, size_t bufferSize);
         static UInt32 ComputeCheckSumForFile (WCharCP schemaFile);
     };
 
+ /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Krischan.Eberle                  12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32 CheckSumHelper::ComputeCheckSumForString (Utf8CP string, size_t bufferSize)
+    {
+    return crc32 (0, (Byte*) string, bufferSize);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          CheckSumHelper::ComputeCheckSumForString (WCharCP string, size_t bufferSize)
+UInt32 CheckSumHelper::ComputeCheckSumForString (WCharCP string, size_t bufferSize)
     {
     return crc32 (0, (Byte*) string, bufferSize);
     }
@@ -1918,12 +1927,11 @@ SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSc
         {
         //We have serialized a schema and its valid. Add its checksum
         ECObjectsLogger::Log()->infov (L"Native ECSchema read from file: fileName='%ls', schemaName='%ls.%02d.%02d' classCount='%d' address='0x%x'", 
-            ecSchemaXmlFile, schemaOut->GetName().c_str(), schemaOut->GetVersionMajor(), schemaOut->GetVersionMinor(), schemaOut->m_classMap.size(), schemaOut);
+                                       ecSchemaXmlFile, schemaOut->GetName().c_str(), schemaOut->GetVersionMajor(), schemaOut->GetVersionMinor(), schemaOut->m_classMap.size(), schemaOut.get());
         }
 
     return status;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
@@ -1931,12 +1939,60 @@ SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSc
 SchemaReadStatus     ECSchema::ReadFromXmlString
 (
 ECSchemaPtr&                      schemaOut, 
-WCharCP                         ecSchemaXml,
+Utf8CP               ecSchemaXml,
 ECSchemaReadContextR schemaContext
 )
     {                  
     ECObjectsLogger::Log()->debugv (L"About to read native ECSchema read from string."); // mainly included for timing
-        schemaOut = NULL;
+    schemaOut = NULL;
+    SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
+    
+    size_t stringByteCount = strlen (ecSchemaXml) * sizeof(Utf8Char);
+    
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString (xmlStatus, ecSchemaXml, stringByteCount);
+        
+    if (BEXML_Success != xmlStatus)
+        {
+        BeAssert (s_noAssert);
+        LogXmlLoadError (xmlDom.get());
+        return SCHEMA_READ_STATUS_FailedToParseXml;
+        } 
+    
+    UInt32 checkSum = CheckSumHelper::ComputeCheckSumForString (ecSchemaXml, stringByteCount);
+    status = ReadXml (schemaOut, *xmlDom.get(), checkSum, schemaContext);
+    if (SCHEMA_READ_STATUS_DuplicateSchema == status)
+        return status; // already logged
+    
+    if (ECOBJECTS_STATUS_Success != status)
+        {
+        Utf8Char first200Characters[201];
+               
+        BeStringUtilities::Strncpy (first200Characters, ecSchemaXml, 200);
+        first200Characters[200] = '\0';
+        ECObjectsLogger::Log()->errorv (L"Failed to read XML from string (1st 200 characters): %hs", first200Characters);
+        }
+    else
+        {
+        ECObjectsLogger::Log()->infov (L"Native ECSchema read from string: schemaName='%ls' classCount='%d' schemaAddress='0x%x' stringAddress='0x%x'", 
+        schemaOut->GetSchemaKey().GetFullSchemaName().c_str(), schemaOut->m_classMap.size(), schemaOut.get(), ecSchemaXml);
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaReadStatus     ECSchema::ReadFromXmlString
+(
+ECSchemaPtr&         schemaOut, 
+WCharCP              ecSchemaXml,
+ECSchemaReadContextR schemaContext
+)
+    {                  
+    ECObjectsLogger::Log()->debugv (L"About to read native ECSchema read from string."); // mainly included for timing
+    schemaOut = NULL;
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
 
     BeXmlStatus xmlStatus;
@@ -2041,6 +2097,24 @@ SchemaWriteStatus ECSchema::WriteToXmlString (WStringR ecSchemaXml) const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
+SchemaWriteStatus ECSchema::WriteToXmlString (Utf8StringR ecSchemaXml) const
+    {
+    ecSchemaXml.clear();
+
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();        
+
+    SchemaWriteStatus status;
+    if (SCHEMA_WRITE_STATUS_Success != (status = WriteXml (*xmlDom.get())))
+        return status;
+
+    xmlDom->ToString (ecSchemaXml, BeXmlDom::TO_STRING_OPTION_OmitByteOrderMark);
+
+    return SCHEMA_WRITE_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus ECSchema::WriteToXmlFile
 (
 WCharCP ecSchemaXmlFile,
@@ -2053,7 +2127,7 @@ bool    utf16
     if (SCHEMA_WRITE_STATUS_Success != (status = WriteXml (*xmlDom.get())))
         return status;
 
-    return (BEXML_Success == xmlDom->ToFile (ecSchemaXmlFile, BeXmlDom::TO_STRING_OPTION_Indent, utf16 ? BeXmlDom::FILE_ENCODING_Utf16 : BeXmlDom::FILE_ENCODING_Utf8)) 
+    return (BEXML_Success == xmlDom->ToFile (ecSchemaXmlFile, (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Indent | BeXmlDom::TO_STRING_OPTION_Formatted), utf16 ? BeXmlDom::FILE_ENCODING_Utf16 : BeXmlDom::FILE_ENCODING_Utf8)) 
         ? SCHEMA_WRITE_STATUS_Success : SCHEMA_WRITE_STATUS_FailedToWriteFile;
     }
    

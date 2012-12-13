@@ -92,7 +92,6 @@ struct ECNameValidation
 private:
 /*__PUBLISH_SECTION_END__*/
     static void AppendEncodedCharacter (WStringR encoded, WChar c);
-    static bool IsValidAlphaNumericCharacter (WChar c);
 /*__PUBLISH_SECTION_START__*/
 public:
     enum ValidationResult
@@ -119,6 +118,9 @@ public:
     //! @param[in] name     The name to validate
     //! @returns RESULT_Valid if the name is valid, or a ValidationResult indicating why the name is invalid.
     ECOBJECTS_EXPORT static ValidationResult    Validate (WCharCP name);
+
+    //! Checks whether a character is valid for use in an ECName, e.g. alphanumeric, plus '_'
+    ECOBJECTS_EXPORT static bool IsValidAlphaNumericCharacter (WChar c);
     };
 
 //=======================================================================================    
@@ -300,7 +302,7 @@ private:
     IECCustomAttributeContainerCR m_container;
     bool                        m_includeBaseContainers;
     bool                        m_includeSupplementalAttributes;
-   ECCustomAttributeInstanceIterable( IECCustomAttributeContainerCR container, bool includeBase, bool includeSupplementalAttributes) : m_container(container), m_includeBaseContainers(includeBase),
+    ECCustomAttributeInstanceIterable( IECCustomAttributeContainerCR container, bool includeBase, bool includeSupplementalAttributes) : m_container(container), m_includeBaseContainers(includeBase),
     m_includeSupplementalAttributes(includeSupplementalAttributes) {};
 public:
     struct IteratorState : RefCountedBase
@@ -761,7 +763,7 @@ private:
     void            AddDerivedClass(ECClassCR baseClass) const;
     void            RemoveDerivedClass(ECClassCR baseClass) const;
     static void     SetErrorHandling (bool doAssert);
-    ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyP sourceProperty);
+    ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyP sourceProperty, bool copyCustomAttributes);
 
 protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
@@ -1293,6 +1295,8 @@ struct SchemaKey
         }
 /*__PUBLISH_SECTION_END__*/
     ECOBJECTS_EXPORT WString GetFullSchemaName() const;
+    ECOBJECTS_EXPORT UInt32 GetVersionMajor() const { return m_versionMajor; };
+    ECOBJECTS_EXPORT UInt32 GetVersionMinor() const { return m_versionMinor; };
 /*__PUBLISH_SECTION_START__*/
     };
 
@@ -1510,6 +1514,10 @@ struct ECSchemaCache : public RefCountedBase
 /*__PUBLISH_SECTION_END__*/
 protected:
     SchemaMap   m_schemas;
+
+    // TODO: Uncomment this and remove the public desctructor once ECDb stops declaring this on the stack. 
+    // ECSchemaCache() {}
+    // ECOBJECTS_EXPORT virtual ~ECSchemaCache ();
 
     ECOBJECTS_EXPORT virtual ECSchemaPtr     _LocateSchema (SchemaKeyR schema, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
 
@@ -1750,6 +1758,12 @@ public:
     //          will contain the serialized schema.  Otherwise, ecSchemaXml will be unmodified
     ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlString (WStringR ecSchemaXml) const;
 
+    //! Serializes an ECXML schema to a string
+    //! @param[out] ecSchemaXml     The string containing the Xml of the serialized schema
+    //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml
+    //          will contain the serialized schema.  Otherwise, ecSchemaXml will be unmodified
+    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlString (Utf8StringR ecSchemaXml) const;
+
     //! Serializes an ECXML schema to a file
     //! @param[in]  ecSchemaXmlFile  The absolute path of the file to serialize the schema to
     //! @param[in]  utf16            'false' (the default) to use utf-8 encoding
@@ -1862,7 +1876,27 @@ public:
      ECOBJECTS_EXPORT static ECSchemaPtr  LocateSchema (SchemaKeyR schema, ECSchemaReadContextR schemaContext);
 
     //!
-    //! Writes an ECSchema from an ECSchemaXML-formatted string.
+    //! Reads an ECSchema from a UTF-8 encoded ECSchemaXML-formatted string.
+    //! @code
+    //! // The IECSchemaOwner determines the lifespan of any ECSchema objects that are created using it.
+    //! ECSchemaCachePtr                  schemaOwner = ECSchemaCache::Create();
+    //!
+    //! // The schemaContext supplies an IECSchemaOwner to control the lifetime of read ECSchemas and a
+    //!
+    //! ECSchemaP schema;
+    //! SchemaReadStatus status = ECSchema::ReadFromXmlString (schema, ecSchemaAsString, *schemaContext);
+    //! if (SCHEMA_READ_STATUS_Success != status)
+    //!     return ERROR;
+    //! @endcode
+    //! @param[out]   schemaOut           The read schema
+    //! @param[in]    ecSchemaXml         The UTF-8 encoded string containing ECSchemaXML to write
+    //! @param[in]    schemaContext       Required to create schemas
+    //! @return   A status code indicating whether the schema was successfully read.  If SUCCESS is returned then schemaOut will
+    //!           contain the read schema.  Otherwise schemaOut will be unmodified.
+    ECOBJECTS_EXPORT static SchemaReadStatus ReadFromXmlString (ECSchemaPtr& schemaOut, Utf8CP ecSchemaXml, ECSchemaReadContextR schemaContext);
+
+    //!
+    //! Reads an ECSchema from an ECSchemaXML-formatted string.
     //! @code
     //! // The IECSchemaOwner determines the lifespan of any ECSchema objects that are created using it.
     //! ECSchemaCachePtr                  schemaOwner = ECSchemaCache::Create();
