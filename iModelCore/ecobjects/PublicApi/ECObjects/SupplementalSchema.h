@@ -329,7 +329,8 @@ private:
     //! the the container's ECSchema, the ECSchemaReference will be added automatically
     //! @param[in,out] container Container on which consolidated custom attribute needs to be set
     //! @param[in]  customAttributeInstance The custom attribute from the consolidated schema
-    static ECObjectsStatus  SetConsolidatedCustomAttribute(IECCustomAttributeContainerR container, IECInstanceR customAttributeInstance);
+    //! @param[in] precedence If SCHEMA_PRECEDENCE_Equal, sets into list of primary ECCustomAttributes, otherwise into list of consolidated
+    static ECObjectsStatus  SetMergedCustomAttribute(IECCustomAttributeContainerR container, IECInstanceR customAttributeInstance, SchemaPrecedence precedence);
 
 public:
     //! Gets the primary schema name
