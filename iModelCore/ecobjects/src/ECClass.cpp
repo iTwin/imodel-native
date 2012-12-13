@@ -61,6 +61,15 @@ WStringCR ECClass::GetName () const
     }
 
 /*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                      Affan.Khan        12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECClassId ECClass::GetId () const
+    {
+    ECNameHashCodeGenerator::ECHashCode classId = GetSchema().GetId();
+    ECNameHashCodeGenerator::Update(classId, GetName().c_str());
+    return classId;
+    }
+/*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 WCharCP ECClass::GetFullName () const

@@ -74,6 +74,19 @@ public:
     void                SetDisplayLabel (WCharCP label);
     };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                        Affan.Khan   12/11
++---------------+---------------+---------------+---------------+---------------+------*/    
+struct ECNameHashCodeGenerator
+    {
+public:
+    typedef UInt64 ECHashCode;
+    static void         Init(ECHashCode& hashcode);
+    static bool         Update(ECHashCode& hashcode, WCharCP name);
+    static bool         Update(ECHashCode& hashcode, Utf8CP name);
+    static ECHashCode   Compute(WCharCP name);
+    static ECHashCode   Compute(Utf8CP name);
+    };
 /*__PUBLISH_SECTION_START__*/
 
 //=======================================================================================
@@ -172,6 +185,10 @@ public:
     inline short                GetTypeKindQualifier() const   { return m_primitiveType; }
 /*__PUBLISH_SECTION_START__*/
 };
+
+typedef Int64 ECClassId;
+typedef Int64 ECPropertyId;
+typedef Int64 ECSchemaId;
 
 /*__PUBLISH_SECTION_END__*/
 // NEEDSWORK - unsure what the best way is to model ECProperty.  Managed implementation has a single ECProperty and introduces an ECType concept.  My gut is that
@@ -463,6 +480,8 @@ public:
     bool                                IsReadOnlyFlagSet() const { return m_readOnly; }
 /*__PUBLISH_SECTION_START__*/
 public:
+    //! Return unique id that is computed using the schemaName:className:propertyName.
+    ECOBJECTS_EXPORT ECPropertyId       GetId() const;
     //! Returns the name of the ECClass that this property is contained within
     ECOBJECTS_EXPORT ECClassCR          GetClass() const;
     // ECClass implementation will index property by name so publicly name can not be reset
@@ -798,6 +817,8 @@ protected:
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
+    //! Return unique id that is computed using the schemaName:className.
+    ECOBJECTS_EXPORT ECClassId             GetId() const;
     ECOBJECTS_EXPORT StandaloneECEnablerP  GetDefaultStandaloneEnabler() const;
     ECOBJECTS_EXPORT ECRelationshipClassCP GetRelationshipClassCP() const;
     //! The ECSchema that this class is defined in
@@ -1296,6 +1317,7 @@ struct SchemaKey
     ECOBJECTS_EXPORT WString GetFullSchemaName() const;
     ECOBJECTS_EXPORT UInt32 GetVersionMajor() const { return m_versionMajor; };
     ECOBJECTS_EXPORT UInt32 GetVersionMinor() const { return m_versionMinor; };
+    ECOBJECTS_EXPORT ECSchemaId GetId () const;
 /*__PUBLISH_SECTION_START__*/
     };
 
@@ -1634,6 +1656,7 @@ private:
     SchemaWriteStatus                   WritePropertyDependencies (BeXmlNodeR parentNode, ECClassCR ecClass, ECSchemaWriteContext&) const;
     void                                CollectAllSchemasInGraph (bvector<ECN::ECSchemaCP>& allSchemas,  bool includeRootSchema) const;
     void                                ReComputeCheckSum ();
+
 protected:
     virtual ECSchemaCP                  _GetContainerSchema() const override;
 
@@ -1644,9 +1667,9 @@ public:
     ECOBJECTS_EXPORT void               DebugDump() const;
     ECOBJECTS_EXPORT static void        SetErrorHandling (bool showMessages, bool doAssert);
 
-    //! Sets the name of this schema
-    //! @param[in]  value   The name of the ECSchema
-    //! @returns Success if the name passes validation and is set, ECOBJECTS_STATUS_InvalidName otherwise
+    //! Return unique id that is computed using the schema name.
+    ECOBJECTS_EXPORT ECSchemaId         GetId() const;
+    //! Get a unique id base on schema name.
     ECOBJECTS_EXPORT ECObjectsStatus    SetName(WStringCR value);
     //! Returns the name of this ECSchema
     ECOBJECTS_EXPORT WStringCR          GetName() const;
@@ -1942,7 +1965,9 @@ public:
     //! Returns this if the name matches, otherwise searches referenced ECSchemas for one whose name matches schemaName
     ECOBJECTS_EXPORT ECSchemaP FindSchemaP (SchemaKeyCR schema, SchemaMatchType matchType);
 
-    ECOBJECTS_EXPORT static Int64 GenerateHashcodeFromECName(WCharCP name);
+    ECOBJECTS_EXPORT static Int64 GenerateIdFromECName(WCharCP schemaName, WCharCP className, WCharCP propertyName);
+    ECOBJECTS_EXPORT static Int64 GenerateIdFromECName(Utf8CP schemaName, Utf8CP className, Utf8CP propertyName);
+
     //!Set the schema to be immutable. Immutable schema cannot be modified.
     ECOBJECTS_EXPORT void   SetImmutable();
 }; // ECSchema
