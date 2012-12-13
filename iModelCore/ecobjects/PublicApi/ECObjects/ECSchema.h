@@ -797,12 +797,16 @@ protected:
     SchemaWriteStatus                   _WriteXml (BeXmlNodeP& createdClassNode, BeXmlNodeR parentNode, Utf8CP elementName) const;
 
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const { return NULL; }  // used to avoid dynamic_cast
+    virtual ECRelationshipClassP        _GetRelationshipClassP ()        { return NULL; }  // used to avoid dynamic_cast
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
     ECOBJECTS_EXPORT StandaloneECEnablerP  GetDefaultStandaloneEnabler() const;
+    //! Used to avoid dynamic_cast
     ECOBJECTS_EXPORT ECRelationshipClassCP GetRelationshipClassCP() const;
+    //! Used to avoid dynamic_cast
+    ECOBJECTS_EXPORT ECRelationshipClassP GetRelationshipClassP();
     //! The ECSchema that this class is defined in
     ECOBJECTS_EXPORT ECSchemaCR         GetSchema() const;
     // schemas index class by name so publicly name can not be reset
@@ -1164,6 +1168,7 @@ protected:
     virtual SchemaReadStatus            _ReadXmlAttributes (BeXmlNodeR classNode) override;
     virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context) override;
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const override {return this;};
+    virtual ECRelationshipClassP        _GetRelationshipClassP ()  override {return this;};
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
