@@ -236,6 +236,14 @@ ECRelationshipClassCP ECClass::GetRelationshipClassCP() const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipClassP ECClass::GetRelationshipClassP()
+    {
+    return _GetRelationshipClassP();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
 StandaloneECEnablerP ECClass::GetDefaultStandaloneEnabler() const
     {
     if (!m_defaultStandaloneEnabler.IsValid())
@@ -331,6 +339,7 @@ bool copyCustomAttributes
     destProperty->m_forSupplementation = true;
     if (copyCustomAttributes)
         sourceProperty->CopyCustomAttributesTo(*destProperty);
+
     ECObjectsStatus status = AddProperty(destProperty, sourceProperty->GetName());
     if (ECOBJECTS_STATUS_Success != status)
         delete destProperty;
@@ -1711,6 +1720,7 @@ ECRelationshipConstraintR toRelationshipConstraint
         if (ECOBJECTS_STATUS_Success != status)
             return status;
         }
+
     return CopyCustomAttributesTo(toRelationshipConstraint);
     }
        
