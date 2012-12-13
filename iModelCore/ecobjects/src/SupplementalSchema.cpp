@@ -565,7 +565,7 @@ WStringCR mergedSchemaFullName
         }
 
     // The class does exist, we need to do a merge
-    ECRelationshipClassP supplementalRelationship = dynamic_cast<ECRelationshipClassP>(supplementalClass);
+    ECRelationshipClassP supplementalRelationship = supplementalClass->GetRelationshipClassP();
     if (NULL != supplementalRelationship)
         MergeRelationshipClassConstraints(mergedClass, supplementalRelationship, SCHEMA_PRECEDENCE_Equal);
 
@@ -763,7 +763,7 @@ WStringCP supplementalSchemaFullName
         return SUPPLEMENTED_SCHEMA_STATUS_SupplementalClassHasBaseClass;
         }
 
-    ECRelationshipClassP relationship = dynamic_cast<ECRelationshipClassP>(supplementalECClass);
+    ECRelationshipClassP relationship = supplementalECClass->GetRelationshipClassP();
     // If this is a relationship class merge custom attributes on the source and target constraints
     if (NULL != relationship)
         status = MergeRelationshipClassConstraints(consolidatedECClass, relationship, precedence);
@@ -796,7 +796,7 @@ SchemaPrecedence precedence
     {
     WString supplementalSchemaFullName = supplementalECRelationshipClass->GetSchema().GetFullSchemaName();
 
-    ECRelationshipClassP consolidatedECRelationshipClass = dynamic_cast<ECRelationshipClassP>(consolidatedECClass);
+    ECRelationshipClassP consolidatedECRelationshipClass = consolidatedECClass ? consolidatedECClass->GetRelationshipClassP() : NULL;
     if (NULL == consolidatedECRelationshipClass)
         {
         ECObjectsLogger::Log()->errorv(L"The supplemental class is an ECRelationshipClass but the primary class is not.  Class name: '%ls.%ls'",

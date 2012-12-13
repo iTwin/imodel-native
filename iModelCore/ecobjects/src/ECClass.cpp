@@ -236,6 +236,14 @@ ECRelationshipClassCP ECClass::GetRelationshipClassCP() const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipClassP ECClass::GetRelationshipClassP()
+    {
+    return _GetRelationshipClassP();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
 StandaloneECEnablerP ECClass::GetDefaultStandaloneEnabler() const
     {
     if (!m_defaultStandaloneEnabler.IsValid())

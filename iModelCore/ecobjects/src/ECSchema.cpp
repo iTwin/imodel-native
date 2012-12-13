@@ -203,7 +203,7 @@ ECSchema::~ECSchema ()
     while (classIterator != classEnd)
         {
         ECClassP ecClass = classIterator->second;
-        ECRelationshipClassP relClass = dynamic_cast<ECRelationshipClassP>(ecClass);
+        ECRelationshipClassP relClass = ecClass ? ecClass->GetRelationshipClassP() : NULL;
         classIterator = m_classMap.erase(classIterator);
         if (NULL != relClass)
             delete relClass;
@@ -570,7 +570,7 @@ ECClassR sourceClass
         return ECOBJECTS_STATUS_NamedItemAlreadyExists;
     
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
-    ECRelationshipClassP sourceAsRelationshipClass = dynamic_cast<ECRelationshipClassP>(&sourceClass);
+    ECRelationshipClassP sourceAsRelationshipClass = sourceClass.GetRelationshipClassP();
     if (NULL != sourceAsRelationshipClass)
         {
         ECRelationshipClassP newRelationshipClass;
@@ -608,6 +608,7 @@ ECClassR sourceClass
                 return status;
             }
         }
+
     return sourceClass.CopyCustomAttributesTo(*targetClass);
     }
 
@@ -1012,7 +1013,7 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema (ECSchemaR refSchema)
             }
             
         // If it is a relationship class, check the constraints to make sure the constraints don't use that schema
-        ECRelationshipClassP relClass = dynamic_cast<ECRelationshipClassP>(ecClass);
+        ECRelationshipClassP relClass = ecClass->GetRelationshipClassP();
         if (NULL != relClass)
             {
             FOR_EACH (ECClassP target, relClass->GetTarget().GetClasses())
@@ -1633,7 +1634,7 @@ SchemaWriteStatus ECSchema::WriteClass (BeXmlNodeR parentNode, ECClassCR ecClass
         }
        
     // Serialize relationship constraint dependencies
-    ECRelationshipClassP relClass = dynamic_cast<ECRelationshipClassP>((ECClassP) &ecClass);
+    ECRelationshipClassP relClass = const_cast<ECRelationshipClassP>(ecClass.GetRelationshipClassCP());
     if (NULL != relClass)
         {
         FOR_EACH (ECClassP source, relClass->GetSource().GetClasses())
@@ -1901,7 +1902,7 @@ UInt32          CheckSumHelper::ComputeCheckSumForFile (WCharCP schemaFile)
 SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSchemaXmlFile, ECSchemaReadContextR schemaContext)
     {
     ECObjectsLogger::Log()->debugv (L"About to read native ECSchema read from file: fileName='%ls'", ecSchemaXmlFile);
-        schemaOut = NULL;
+    schemaOut = NULL;
         
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
 
@@ -1938,7 +1939,7 @@ SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSc
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus     ECSchema::ReadFromXmlString
 (
-ECSchemaPtr&                      schemaOut, 
+ECSchemaPtr&         schemaOut, 
 Utf8CP               ecSchemaXml,
 ECSchemaReadContextR schemaContext
 )
