@@ -33,7 +33,7 @@ void            ECPresentationManager::CheckAndAddProviderFromList (ProviderType
         }
     RefCountedPtr <ProviderType> providerPtr (&provider);
     typename ContainerType::iterator iter = std::lower_bound(providerList.begin(), providerList.end(), providerPtr, RefPtrComparer<ProviderType>());
-    if (iter->get() == &provider)
+    if (iter != providerList.end() && iter->get() == &provider)
         return;
     providerList.insert (iter, &provider);
     }
