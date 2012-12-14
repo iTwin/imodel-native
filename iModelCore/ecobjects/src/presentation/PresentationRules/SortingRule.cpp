@@ -28,7 +28,7 @@ bool SortingRule::_ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_schemaName,      COMMON_XML_ATTRIBUTE_SCHEMANAME))
         m_schemaName = L"";
 
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_className,       COMMON_XML_ATTRIBUTE_CLASSNAMES))
+    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_className,       COMMON_XML_ATTRIBUTE_CLASSNAME))
         m_className = L"";
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_propertyName,    COMMON_XML_ATTRIBUTE_PROPERTYNAME))
@@ -49,7 +49,7 @@ bool SortingRule::_ReadXml (BeXmlNodeP xmlNode)
 void SortingRule::_WriteXml (BeXmlNodeP xmlNode)
     {
     xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_SCHEMANAME,            m_schemaName.c_str ());
-    xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_CLASSNAMES,            m_className.c_str ());
+    xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_CLASSNAME,             m_className.c_str ());
     xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_PROPERTYNAME,          m_propertyName.c_str ());
     xmlNode->AddAttributeBooleanValue (SORTING_RULE_XML_ATTRIBUTE_SORTASCENDING,  m_sortAscending);
     xmlNode->AddAttributeBooleanValue (SORTING_RULE_XML_ATTRIBUTE_DONOTSORT,      m_doNotSort);
