@@ -2025,6 +2025,7 @@ UInt32          CheckSumHelper::ComputeCheckSumForFile (WCharCP schemaFile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSchemaXmlFile, ECSchemaReadContextR schemaContext)
     {
+    StopWatch timer(L"", true);
     ECObjectsLogger::Log()->debugv (L"About to read native ECSchema read from file: fileName='%ls'", ecSchemaXmlFile);
     schemaOut = NULL;
         
@@ -2051,8 +2052,8 @@ SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSc
     else
         {
         //We have serialized a schema and its valid. Add its checksum
-        ECObjectsLogger::Log()->infov (L"Native ECSchema read from file: fileName='%ls', schemaName='%ls.%02d.%02d' classCount='%d' address='0x%x'", 
-                                       ecSchemaXmlFile, schemaOut->GetName().c_str(), schemaOut->GetVersionMajor(), schemaOut->GetVersionMinor(), schemaOut->m_classMap.size(), schemaOut.get());
+        timer.Stop();
+        ECObjectsLogger::Log()->infov (L"Read (in %.4f seconds) [%3d ECClasses] %ls", timer.GetElapsedSeconds(), schemaOut->m_classMap.size(), ecSchemaXmlFile);
         }
 
     return status;
@@ -2324,7 +2325,7 @@ void            ECSchema::CollectAllSchemasInGraph (bvector<ECN::ECSchemaCP>& al
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECSchema::FindAllSchemasInGraph (bvector<ECN::ECSchemaCP>& allSchemas, bool includeRootSchema) const
     {
-    this->CollectAllSchemasInGraph (allSchemas, includeRootSchema);
+    CollectAllSchemasInGraph (allSchemas, includeRootSchema);
     std::reverse(allSchemas.begin(), allSchemas.end());
     }
 
@@ -2341,11 +2342,10 @@ ECSchemaId ECSchema::GetId() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Int64 ECSchema::GenerateIdFromECName(WCharCP schemaName, WCharCP className, WCharCP propertyName)
     {
-    BeAssert (schemaName != NULL && "SchemaName should never be null");
+    BeAssert (schemaName != NULL && "schemaName should never be null");
     if (propertyName != NULL)
-        {
-        BeAssert(className != NULL && "Schema and Class Name should not be null if propertyName is provided");
-        }
+        BeAssert(className != NULL && "className should not be null if propertyName is provided");
+
     ECNameHashCodeGenerator::ECHashCode hashCode;
     ECNameHashCodeGenerator::Init(hashCode);
     if (schemaName != NULL)
@@ -2366,11 +2366,10 @@ Int64 ECSchema::GenerateIdFromECName(WCharCP schemaName, WCharCP className, WCha
 +---------------+---------------+---------------+---------------+---------------+------*/
 Int64 ECSchema::GenerateIdFromECName(Utf8CP schemaName, Utf8CP className, Utf8CP propertyName)
     {
-    BeAssert (schemaName != NULL && "SchemaName should never be null");
+    BeAssert (schemaName != NULL && "schemaName should never be null");
     if (propertyName != NULL)
-        {
-        BeAssert(className != NULL && "Schema and Class Name should not be null if propertyName is provided");
-        }
+        BeAssert(className != NULL && "className should not be null if propertyName is provided");
+
     ECNameHashCodeGenerator::ECHashCode hashCode;
     ECNameHashCodeGenerator::Init(hashCode);
     if (schemaName != NULL)
@@ -2385,6 +2384,7 @@ Int64 ECSchema::GenerateIdFromECName(Utf8CP schemaName, Utf8CP className, Utf8CP
         }
     return hashCode;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod 
 +---------------+---------------+---------------+---------------+---------------+------*/
