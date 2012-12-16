@@ -2068,8 +2068,8 @@ ECSchemaPtr&         schemaOut,
 Utf8CP               ecSchemaXml,
 ECSchemaReadContextR schemaContext
 )
-    {                  
-    ECObjectsLogger::Log()->debugv (L"About to read native ECSchema read from string."); // mainly included for timing
+    {
+    StopWatch timer(L"", true);
     schemaOut = NULL;
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
     
@@ -2100,8 +2100,9 @@ ECSchemaReadContextR schemaContext
         }
     else
         {
-        ECObjectsLogger::Log()->infov (L"Native ECSchema read from string: schemaName='%ls' classCount='%d' schemaAddress='0x%x' stringAddress='0x%x'", 
-        schemaOut->GetSchemaKey().GetFullSchemaName().c_str(), schemaOut->m_classMap.size(), schemaOut.get(), ecSchemaXml);
+        timer.Stop();
+        ECObjectsLogger::Log()->infov (L"Read from string (in %.4f seconds) [%3d ECClasses] %ls", timer.GetElapsedSeconds(), 
+            schemaOut->m_classMap.size(), schemaOut->GetFullSchemaName());
         }
 
     return status;
@@ -2117,7 +2118,7 @@ WCharCP              ecSchemaXml,
 ECSchemaReadContextR schemaContext
 )
     {                  
-    ECObjectsLogger::Log()->debugv (L"About to read native ECSchema read from string."); // mainly included for timing
+    StopWatch timer(L"", true);
     schemaOut = NULL;
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
 
@@ -2146,9 +2147,11 @@ ECSchemaReadContextR schemaContext
         }
     else
         {
-        ECObjectsLogger::Log()->infov (L"Native ECSchema read from string: schemaName='%ls' classCount='%d' schemaAddress='0x%x' stringAddress='0x%x'", 
-            schemaOut->GetSchemaKey().GetFullSchemaName().c_str(), schemaOut->m_classMap.size(), schemaOut.get(), ecSchemaXml);
+        timer.Stop();
+        ECObjectsLogger::Log()->infov (L"Read from string (in %.4f seconds) [%3d ECClasses] %ls", timer.GetElapsedSeconds(), 
+            schemaOut->m_classMap.size(), schemaOut->GetFullSchemaName());
         }
+
     return status;
     }
 

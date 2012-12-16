@@ -447,11 +447,11 @@ bool createCopyOfSupplementalCustomAttribute
 )
     {
     m_createCopyOfSupplementalCustomAttribute = createCopyOfSupplementalCustomAttribute;
+    StopWatch timer (L"", true);
+
     bmap<UInt32, ECSchemaP> schemasByPrecedence;
     bvector<ECSchemaP> localizationSchemas;
-    SupplementedSchemaStatus status = SUPPLEMENTED_SCHEMA_STATUS_Success;
-
-    status = OrderSupplementalSchemas(schemasByPrecedence, primarySchema, supplementalSchemaList, localizationSchemas);
+    SupplementedSchemaStatus status = OrderSupplementalSchemas(schemasByPrecedence, primarySchema, supplementalSchemaList, localizationSchemas);
     if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
         return status;
 
@@ -468,6 +468,10 @@ bool createCopyOfSupplementalCustomAttribute
     status = MergeSchemasIntoSupplementedSchema(primarySchema, schemasByPrecedence);
     primarySchema.SetIsSupplemented(true);
     primarySchema.SetSupplementalSchemaInfo(SupplementalSchemaInfo::Create(primarySchema.GetFullSchemaName().c_str(), m_supplementalSchemaNamesAndPurposes).get());
+
+    timer.Stop();
+    ECObjectsLogger::Log()->infov ("Supplemented (in %.4f seconds) %ls with %d supplemental ECSchemas", timer.GetElapsedSeconds(), 
+        primarySchema.GetFullSchemaName(), supplementalSchemaList.size());
 
     return status;
     }
