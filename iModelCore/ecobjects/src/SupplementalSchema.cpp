@@ -470,8 +470,9 @@ bool createCopyOfSupplementalCustomAttribute
     primarySchema.SetSupplementalSchemaInfo(SupplementalSchemaInfo::Create(primarySchema.GetFullSchemaName().c_str(), m_supplementalSchemaNamesAndPurposes).get());
 
     timer.Stop();
+    WString primarySchemaName = primarySchema.GetFullSchemaName();
     ECObjectsLogger::Log()->infov ("Supplemented (in %.4f seconds) %ls with %d supplemental ECSchemas", timer.GetElapsedSeconds(), 
-        primarySchema.GetFullSchemaName(), supplementalSchemaList.size());
+        primarySchemaName.c_str(), supplementalSchemaList.size());
 
     return status;
     }

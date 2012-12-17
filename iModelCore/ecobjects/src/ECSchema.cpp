@@ -2101,8 +2101,9 @@ ECSchemaReadContextR schemaContext
     else
         {
         timer.Stop();
+        WString schemaOutName = schemaOut->GetFullSchemaName();
         ECObjectsLogger::Log()->infov (L"Read from string (in %.4f seconds) [%3d ECClasses] %ls", timer.GetElapsedSeconds(), 
-            schemaOut->m_classMap.size(), schemaOut->GetFullSchemaName());
+            schemaOut->m_classMap.size(), schemaOutName.c_str());
         }
 
     return status;
@@ -2148,8 +2149,9 @@ ECSchemaReadContextR schemaContext
     else
         {
         timer.Stop();
+        WString schemaOutName = schemaOut->GetFullSchemaName();
         ECObjectsLogger::Log()->infov (L"Read from string (in %.4f seconds) [%3d ECClasses] %ls", timer.GetElapsedSeconds(), 
-            schemaOut->m_classMap.size(), schemaOut->GetFullSchemaName());
+            schemaOut->m_classMap.size(), schemaOutName.c_str());
         }
 
     return status;
