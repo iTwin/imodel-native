@@ -2823,7 +2823,8 @@ ECObjectsStatus  ECDBuffer::EvaluateCalculatedProperty (ClassLayoutCR classLayou
         { 
         // ###TODO: Comment out BeAssert until Graphite CalculatedECProperty support is in better shape
         // BeAssert (false);
-        return ECOBJECTS_STATUS_Error; 
+        ECObjectsLogger::Log()->errorv(L"Calculated properties are ignored on Graphite");
+        return ECOBJECTS_STATUS_Success; 
         }
 
     ECValue updatedValue;
@@ -2856,7 +2857,8 @@ ECObjectsStatus ECDBuffer::SetCalculatedProperty (ECValueCR v, ClassLayoutCR cla
         { 
         // ###TODO: Comment out BeAssert until Graphite CalculatedECProperty support is in better shape
         // BeAssert (false);
-        return ECOBJECTS_STATUS_Error; 
+        ECObjectsLogger::Log()->errorv(L"Calculated properties are ignored on Graphite");
+        return ECOBJECTS_STATUS_Success; 
         }
     else
         {
