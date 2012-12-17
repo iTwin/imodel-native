@@ -693,14 +693,14 @@ WStringCP consolidatedSchemaFullName
         if (customAttribute->GetClass().GetSchema().GetName().EqualsI(L"Unit_Attributes"))  // changed from "Unit_Attributes.01.00" - ECSchema::GetName() does not include the version numbers...
             {
             if (customAttribute->GetClass().GetName().EqualsI(L"UnitSpecification"))
-                status = MergeUnitSpecificationCustomAttribute(consolidatedCustomAttributeContainer, supplementalCustomAttribute, consolidatedCustomAttribute, precedence);
+                status = MergeUnitSpecificationCustomAttribute(consolidatedCustomAttributeContainer, *supplementalCustomAttribute, consolidatedCustomAttribute.get(), precedence);
             else if (customAttribute->GetClass().GetName().EqualsI(L"UnitSpecifications"))
-                status = MergeUnitSpecificationsCustomAttribute(consolidatedCustomAttributeContainer, supplementalCustomAttribute, consolidatedCustomAttribute, precedence);
+                status = MergeUnitSpecificationsCustomAttribute(consolidatedCustomAttributeContainer, *supplementalCustomAttribute, consolidatedCustomAttribute.get(), precedence);
             else
-                status = MergeStandardCustomAttribute(consolidatedCustomAttributeContainer, supplementalCustomAttribute, consolidatedCustomAttribute, precedence);
+                status = MergeStandardCustomAttribute(consolidatedCustomAttributeContainer, *supplementalCustomAttribute, consolidatedCustomAttribute.get(), precedence);
             }
         else
-            status = MergeStandardCustomAttribute(consolidatedCustomAttributeContainer, supplementalCustomAttribute, consolidatedCustomAttribute, precedence);
+            status = MergeStandardCustomAttribute(consolidatedCustomAttributeContainer, *supplementalCustomAttribute, consolidatedCustomAttribute.get(), precedence);
 
         if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
             return status;
@@ -842,15 +842,15 @@ SchemaPrecedence precedence
 SupplementedSchemaStatus SupplementedSchemaBuilder::MergeStandardCustomAttribute
 (
 IECCustomAttributeContainerR consolidatedCustomAttributeContainer, 
-IECInstancePtr supplementalCustomAttribute, 
-IECInstancePtr consolidatedCustomAttribute, 
+IECInstanceR supplementalCustomAttribute, 
+IECInstanceP consolidatedCustomAttribute, 
 SchemaPrecedence precedence
 )
     {
-    ECClassCR customAttributeClass = supplementalCustomAttribute->GetClass();
+    ECClassCR customAttributeClass = supplementalCustomAttribute.GetClass();
     if (SCHEMA_PRECEDENCE_Greater == precedence)
         {
-        if (ECOBJECTS_STATUS_Success != consolidatedCustomAttributeContainer.SetConsolidatedCustomAttribute(*supplementalCustomAttribute))
+        if (ECOBJECTS_STATUS_Success != consolidatedCustomAttributeContainer.SetConsolidatedCustomAttribute(supplementalCustomAttribute))
             return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
         }
     // This case is ONLY for dealing with two supplemental schemas that have the same precedence.
@@ -866,11 +866,11 @@ SchemaPrecedence precedence
             return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
             }
 
-        if (ECOBJECTS_STATUS_Success != consolidatedCustomAttributeContainer.SetPrimaryCustomAttribute(*supplementalCustomAttribute))
+        if (ECOBJECTS_STATUS_Success != consolidatedCustomAttributeContainer.SetPrimaryCustomAttribute(supplementalCustomAttribute))
             return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
         }
-    else if (!consolidatedCustomAttribute.IsValid())
-        if (ECOBJECTS_STATUS_Success != consolidatedCustomAttributeContainer.SetConsolidatedCustomAttribute(*supplementalCustomAttribute))
+    else if (NULL == consolidatedCustomAttribute)
+        if (ECOBJECTS_STATUS_Success != consolidatedCustomAttributeContainer.SetConsolidatedCustomAttribute(supplementalCustomAttribute))
             return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
 
     return SUPPLEMENTED_SCHEMA_STATUS_Success;
@@ -964,16 +964,16 @@ static SupplementedSchemaStatus mergeUnitSpecification (IECInstanceR to, IECInst
 SupplementedSchemaStatus SupplementedSchemaBuilder::MergeUnitSpecificationCustomAttribute
 (
 IECCustomAttributeContainerR consolidatedCustomAttributeContainer, 
-IECInstancePtr supplementalCustomAttribute, 
-IECInstancePtr consolidatedCustomAttribute, 
+IECInstanceR supplementalCustomAttribute, 
+IECInstanceP consolidatedCustomAttribute, 
 SchemaPrecedence precedence
 )
     {
     ECObjectsStatus setStatus = ECOBJECTS_STATUS_Success;
-    if (consolidatedCustomAttribute.IsValid())
+    if (NULL != consolidatedCustomAttribute)
         {
-        IECInstanceP to = SCHEMA_PRECEDENCE_Greater == precedence ? supplementalCustomAttribute.get() : consolidatedCustomAttribute.get();
-        IECInstanceCP from = to == supplementalCustomAttribute.get() ? consolidatedCustomAttribute.get() : supplementalCustomAttribute.get();
+        IECInstanceP to = SCHEMA_PRECEDENCE_Greater == precedence ? &supplementalCustomAttribute : consolidatedCustomAttribute;
+        IECInstanceCP from = to == &supplementalCustomAttribute ? consolidatedCustomAttribute : &supplementalCustomAttribute;
         bool detectConflicts = SCHEMA_PRECEDENCE_Equal == precedence;
         
         SupplementedSchemaStatus mergeStatus = mergeUnitSpecification (*to, *from, detectConflicts);
@@ -983,7 +983,7 @@ SchemaPrecedence precedence
         setStatus = consolidatedCustomAttributeContainer.SetConsolidatedCustomAttribute (*to);
         }
     else
-        setStatus = consolidatedCustomAttributeContainer.SetConsolidatedCustomAttribute(*supplementalCustomAttribute);
+        setStatus = consolidatedCustomAttributeContainer.SetConsolidatedCustomAttribute(supplementalCustomAttribute);
 
     return setStatus == ECOBJECTS_STATUS_Success ? SUPPLEMENTED_SCHEMA_STATUS_Success : SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
     }
@@ -1008,19 +1008,19 @@ static void buildUnitSpecificationKey (WStringR key, IECInstanceCR spec)
 SupplementedSchemaStatus SupplementedSchemaBuilder::MergeUnitSpecificationsCustomAttribute
 (
 IECCustomAttributeContainerR consolidatedCustomAttributeContainer, 
-IECInstancePtr supplementalCustomAttribute, 
-IECInstancePtr consolidatedCustomAttribute, 
+IECInstanceR supplementalCustomAttribute, 
+IECInstanceP consolidatedCustomAttribute, 
 SchemaPrecedence precedence
 )
     {
-    IECInstanceP attributeToStore = supplementalCustomAttribute.get();
-    if (consolidatedCustomAttribute.IsValid())
+    IECInstanceP attributeToStore = &supplementalCustomAttribute;
+    if (NULL != consolidatedCustomAttribute)
         {
         // Each attribute contains a list of UnitSpecification instances
         // We want to combine both lists into one
         // Where both lists contain an entry with the same "key", we select or merge based on precedence
-        IECInstanceP to = SCHEMA_PRECEDENCE_Greater == precedence ? supplementalCustomAttribute.get() : consolidatedCustomAttribute.get();
-        IECInstanceCP from = to == supplementalCustomAttribute.get() ? consolidatedCustomAttribute.get() : supplementalCustomAttribute.get();
+        IECInstanceP to = SCHEMA_PRECEDENCE_Greater == precedence ? &supplementalCustomAttribute : consolidatedCustomAttribute;
+        IECInstanceCP from = to == &supplementalCustomAttribute ? consolidatedCustomAttribute : &supplementalCustomAttribute;
         bool detectConflicts = SCHEMA_PRECEDENCE_Equal == precedence;
 
         ECValue toList, fromList;
