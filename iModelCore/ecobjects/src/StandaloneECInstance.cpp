@@ -907,7 +907,7 @@ StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerR enabler, UInt32
 +---------------+---------------+---------------+---------------+---------------+------*/        
 StandaloneECInstance::~StandaloneECInstance ()
     {
-    //ECObjectsLogger::Log()->tracev (L"StandaloneECInstance at 0x%x is being destructed. It references enabler 0x%x", this, m_sharedWipEnabler);
+    //LOG.tracev (L"StandaloneECInstance at 0x%x is being destructed. It references enabler 0x%x", this, m_sharedWipEnabler);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -291,7 +291,7 @@ CalculatedPropertySpecificationPtr CalculatedPropertySpecification::Create (Prim
     customAttr->GetValue (failureValue, L"FailureValue");
     if (!failureValue.ConvertToPrimitiveType (ecprop.GetType()))
         {
-        ECObjectsLogger::Log()->infov (L"Unable to convert failure value %ls to primitive type %ls\n", failureValue.GetString(), ecprop.GetTypeName().c_str());
+        LOG.infov (L"Unable to convert failure value %ls to primitive type %ls\n", failureValue.GetString(), ecprop.GetTypeName().c_str());
         failureValue.SetToNull();
         }
 

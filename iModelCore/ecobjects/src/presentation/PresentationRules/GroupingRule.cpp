@@ -37,13 +37,13 @@ bool GroupingRule::_ReadXml (BeXmlNodeP xmlNode)
     //Required:
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_schemaName, GROUPING_RULE_XML_ATTRIBUTE_SCHEMANAME))
         {
-        ECObjectsLogger::Log()->errorv (L"Invalid GroupingRuleXML: %hs element must contain a %hs attribute", GROUPING_RULE_XML_NODE_NAME, GROUPING_RULE_XML_ATTRIBUTE_SCHEMANAME);
+        LOG.errorv (L"Invalid GroupingRuleXML: %hs element must contain a %hs attribute", GROUPING_RULE_XML_NODE_NAME, GROUPING_RULE_XML_ATTRIBUTE_SCHEMANAME);
         return false;
         }
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_className, GROUPING_RULE_XML_ATTRIBUTE_CLASSNAME))
         {
-        ECObjectsLogger::Log()->errorv (L"Invalid GroupingRuleXML: %hs element must contain a %hs attribute", GROUPING_RULE_XML_NODE_NAME, GROUPING_RULE_XML_ATTRIBUTE_CLASSNAME);
+        LOG.errorv (L"Invalid GroupingRuleXML: %hs element must contain a %hs attribute", GROUPING_RULE_XML_NODE_NAME, GROUPING_RULE_XML_ATTRIBUTE_CLASSNAME);
         return false;
         }
 
@@ -193,7 +193,7 @@ bool PropertyGroup::_ReadXml (BeXmlNodeP xmlNode)
     //Required:
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_propertyName, COMMON_XML_ATTRIBUTE_PROPERTYNAME))
         {
-        ECObjectsLogger::Log()->errorv (L"Invalid PropertyGroupXML: %hs element must contain a %hs attribute", PROPERTY_GROUP_XML_NODE_NAME, COMMON_XML_ATTRIBUTE_PROPERTYNAME);
+        LOG.errorv (L"Invalid PropertyGroupXML: %hs element must contain a %hs attribute", PROPERTY_GROUP_XML_NODE_NAME, COMMON_XML_ATTRIBUTE_PROPERTYNAME);
         return false;
         }
 
@@ -229,13 +229,13 @@ bool PropertyRangeGroupSpecification::ReadXml (BeXmlNodeP xmlNode)
     //Required:
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_fromValue, PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_FROMVALUE))
         {
-        ECObjectsLogger::Log()->errorv (L"Invalid PropertyRangeGroupSpecificationXML: %hs element must contain a %hs attribute", PROPERTY_RANGE_GROUP_XML_NODE_NAME, PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_FROMVALUE);
+        LOG.errorv (L"Invalid PropertyRangeGroupSpecificationXML: %hs element must contain a %hs attribute", PROPERTY_RANGE_GROUP_XML_NODE_NAME, PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_FROMVALUE);
         return false;
         }
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_toValue, PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_TOVALUE))
         {
-        ECObjectsLogger::Log()->errorv (L"Invalid PropertyRangeGroupSpecificationXML: %hs element must contain a %hs attribute", PROPERTY_RANGE_GROUP_XML_NODE_NAME, PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_TOVALUE);
+        LOG.errorv (L"Invalid PropertyRangeGroupSpecificationXML: %hs element must contain a %hs attribute", PROPERTY_RANGE_GROUP_XML_NODE_NAME, PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_TOVALUE);
         return false;
         }
 

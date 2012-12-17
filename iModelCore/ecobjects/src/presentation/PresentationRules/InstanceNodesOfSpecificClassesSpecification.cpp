@@ -28,7 +28,7 @@ bool InstanceNodesOfSpecificClassesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     //Required:
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_classNames, COMMON_XML_ATTRIBUTE_CLASSNAMES))
         {
-        ECObjectsLogger::Log()->errorv (L"Invalid InstanceNodesOfSpecificClassesSpecificationXML: %hs element must contain a %hs attribute", INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME, COMMON_XML_ATTRIBUTE_CLASSNAMES);
+        LOG.errorv (L"Invalid InstanceNodesOfSpecificClassesSpecificationXML: %hs element must contain a %hs attribute", INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME, COMMON_XML_ATTRIBUTE_CLASSNAMES);
         return false;
         }
 
