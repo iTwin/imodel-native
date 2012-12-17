@@ -244,9 +244,9 @@ public:
 //__PUBLISH_SECTION_START__
 public:
     //! Returns true if the container has a custom attribute of a class of the specified name
-    ECOBJECTS_EXPORT bool               IsDefined(WStringCR className) ;
+    ECOBJECTS_EXPORT bool               IsDefined (WStringCR className) const;
     //! Returns true if the container has a custom attribute of a class of the specified class definition
-    ECOBJECTS_EXPORT bool               IsDefined(ECClassCR classDefinition) ;
+    ECOBJECTS_EXPORT bool               IsDefined (ECClassCR classDefinition) const;
 
     //! Retrieves the custom attribute matching the class name.  Includes supplemental custom attributes
     //! and custom attributes from the base containers

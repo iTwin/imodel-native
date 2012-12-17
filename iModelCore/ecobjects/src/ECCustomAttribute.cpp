@@ -109,7 +109,7 @@ ECCustomAttributeCollection& returnList
 bool IECCustomAttributeContainer::IsDefined
 (
 WStringCR className
-) 
+) const
     {
     ECCustomAttributeCollection::const_iterator iter;
     for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
@@ -136,7 +136,7 @@ WStringCR className
 bool IECCustomAttributeContainer::IsDefined
 (
 ECClassCR classDefinition
-) 
+) const
     {
     ECCustomAttributeCollection::const_iterator iter;
     for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
