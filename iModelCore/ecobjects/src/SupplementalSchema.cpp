@@ -530,7 +530,7 @@ ECSchemaP schema2
 
     WString supplementalSchemaFullName = schema2->GetFullSchemaName();
     WString mergedSchemaFullName = schema1->GetFullSchemaName();
-    ECObjectsLogger::Log()->infov (L"Merging %ls into %ls", supplementalSchemaFullName.c_str(), mergedSchemaFullName.c_str());
+    LOG.infov (L"Merging %ls into %ls", supplementalSchemaFullName.c_str(), mergedSchemaFullName.c_str());
     MergeCustomAttributeClasses(*mergedSchema, schema2->GetPrimaryCustomAttributes(false), SCHEMA_PRECEDENCE_Equal, &supplementalSchemaFullName, &mergedSchemaFullName);
 
     SupplementedSchemaStatus status = SUPPLEMENTED_SCHEMA_STATUS_Success;
@@ -645,7 +645,7 @@ SchemaPrecedence precedence
     SupplementedSchemaStatus status = MergeCustomAttributeClasses(primarySchema.GetCustomAttributeContainer(), supplementalCustomAttributes, precedence, &supplementalSchemaFullName, NULL);
     if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
         {
-        ECObjectsLogger::Log()->errorv (L"Failed to merge the custom attributes from the supplemental schema '%ls' into the supplemented schema '%ls'", supplementalSchemaFullName.c_str(), primarySchema.GetFullSchemaName().c_str());
+        LOG.errorv (L"Failed to merge the custom attributes from the supplemental schema '%ls' into the supplemented schema '%ls'", supplementalSchemaFullName.c_str(), primarySchema.GetFullSchemaName().c_str());
         return status;
         }
 
@@ -654,7 +654,7 @@ SchemaPrecedence precedence
         status = SupplementClass(primarySchema, supplementalSchema, ecClass, precedence, &supplementalSchemaFullName);
         if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
             {
-            ECObjectsLogger::Log()->errorv(L"Failed to merge the custom attributes from the supplemental class '%ls' into the supplemented class '%ls:%ls'",
+            LOG.errorv(L"Failed to merge the custom attributes from the supplemental class '%ls' into the supplemented class '%ls:%ls'",
                                            ecClass->GetFullName(),  primarySchema.GetFullSchemaName().c_str(), ecClass->GetName().c_str());
             return status;
             }
@@ -727,7 +727,7 @@ WStringCP supplementalSchemaFullName
 
     if (supplementalECClass->HasBaseClasses())
         {
-        ECObjectsLogger::Log()->errorv(L"The class '%ls' from the Supplemental Schema '%ls' has one or more base classes.  This is not allowed.",
+        LOG.errorv(L"The class '%ls' from the Supplemental Schema '%ls' has one or more base classes.  This is not allowed.",
             supplementalECClass->GetName().c_str(), supplementalSchemaFullName->c_str());
         return SUPPLEMENTED_SCHEMA_STATUS_SupplementalClassHasBaseClass;
         }
@@ -768,7 +768,7 @@ SchemaPrecedence precedence
     ECRelationshipClassP consolidatedECRelationshipClass = dynamic_cast<ECRelationshipClassP>(consolidatedECClass);
     if (NULL == consolidatedECRelationshipClass)
         {
-        ECObjectsLogger::Log()->errorv(L"The supplemental class is an ECRelationshipClass but the primary class is not.  Class name: '%ls.%ls'",
+        LOG.errorv(L"The supplemental class is an ECRelationshipClass but the primary class is not.  Class name: '%ls.%ls'",
             supplementalSchemaFullName.c_str(), supplementalECRelationshipClass->GetName().c_str());
         return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
         }
@@ -810,7 +810,7 @@ SchemaPrecedence precedence
             ECPropertyP inheritedECProperty = consolidatedECClass->GetPropertyP(supplementalECProperty->GetName(), true);
             if (NULL == inheritedECProperty)
                 {
-                ECObjectsLogger::Log()->debugv(L"%ls supplements non-existent ECProperty %ls.%ls",
+                LOG.debugv(L"%ls supplements non-existent ECProperty %ls.%ls",
                     supplementalECClass->GetFullName(), consolidatedECClass->GetFullName(), supplementalECProperty->GetName().c_str());
                 continue;
                 }
@@ -861,7 +861,7 @@ SchemaPrecedence precedence
         IECInstancePtr primaryCustomAttribute = consolidatedCustomAttributeContainer.GetPrimaryCustomAttribute(customAttributeClass);
         if (primaryCustomAttribute.IsValid())
             {
-            ECObjectsLogger::Log()->errorv(L"The CustomAttribute: %ls:%ls exists in the same place in two schemas which have the same precedence",
+            LOG.errorv(L"The CustomAttribute: %ls:%ls exists in the same place in two schemas which have the same precedence",
                 customAttributeClass.GetSchema().GetFullSchemaName().c_str(), customAttributeClass.GetName().c_str());
             return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
             }

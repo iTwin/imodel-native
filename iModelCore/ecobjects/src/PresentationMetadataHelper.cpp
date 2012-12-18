@@ -67,7 +67,7 @@ PresentationMetadataHelper::PresentationMetadataHelper (ECSchemaReadContextR sch
         {
         // If we can't find the custom attributes schema, all methods will return ECOBJECTS_STATUS_SchemaNotFound
         BeAssert (false);
-        ECObjectsLogger::Log()->error (L"Unable to locate EditorCustomAttributes schema");
+        LOG.error (L"Unable to locate EditorCustomAttributes schema");
         }
     }
 
@@ -89,12 +89,12 @@ IECInstancePtr PresentationMetadataHelper::CreateInstance (WCharCP className) co
     if (NULL == ecClass)
         {
         BeAssert (false);
-        ECObjectsLogger::Log()->errorv (L"Failed to locate ECClass %ls in EditorCustomAttributes schema", className);
+        LOG.errorv (L"Failed to locate ECClass %ls in EditorCustomAttributes schema", className);
         }
     else if ((instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance()).IsNull())
         {
         BeAssert (false);
-        ECObjectsLogger::Log()->errorv (L"Failed to create instance of ECClass %ls", className);
+        LOG.errorv (L"Failed to create instance of ECClass %ls", className);
         }
 
     return instance;
@@ -221,7 +221,7 @@ ECObjectsStatus PresentationMetadataHelper::SetMembersIndependent (ECPropertyR e
     if (NULL != ecproperty.GetAsPrimitiveProperty())
         {
         BeAssert (false);
-        ECObjectsLogger::Log()->error (L"MembersIndependent custom attribute not permitted on primitive properties");
+        LOG.error (L"MembersIndependent custom attribute not permitted on primitive properties");
         return ECOBJECTS_STATUS_Error;
         }
 
@@ -235,7 +235,7 @@ ECObjectsStatus PresentationMetadataHelper::SetAlwaysExpand (ECPropertyR ecprope
     if (NULL != ecproperty.GetAsPrimitiveProperty() && PRIMITIVETYPE_Point3D != ecproperty.GetAsPrimitiveProperty()->GetType())
         {
         BeAssert (false);
-        ECObjectsLogger::Log()->error (L"AlwaysExpand custom attribute only valid for complex properties");
+        LOG.error (L"AlwaysExpand custom attribute only valid for complex properties");
         return ECOBJECTS_STATUS_Error;
         }
     else if (NULL != ecproperty.GetAsArrayProperty() && andArrayMembers)
