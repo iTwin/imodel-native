@@ -7,6 +7,8 @@
 +----------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
+/// @cond BENTLEY_SDK_Desktop
+
 #include <Bentley/Bentley.h>
 
 #define BEGIN_BENTLEY_ECOBJECT_NAMESPACE  BEGIN_BENTLEY_NAMESPACE namespace ECN {
@@ -79,4 +81,7 @@ public:
 
 //END_BENTLEY_NAMESPACE
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/// @endcond BENTLEY_SDK_Desktop
+
 /*__PUBLISH_SECTION_END__*/

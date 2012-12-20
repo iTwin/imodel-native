@@ -10,6 +10,7 @@
 #include <assert.h>
 #include <stdarg.h>
 /*__PUBLISH_SECTION_START__*/
+/// @cond BENTLEY_SDK_Internal
 #include <ECObjects/ECObjects.h>
 
 //! This class is utilzed by the macros defined in this header file.  No calling code should typically ever need to use this class directly.
@@ -163,3 +164,7 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
     #define DEBUG_EXPECT(_Expression)    EXPECTED_CONDITION(_Expression)
     #define DEBUG_FAIL(_Message)         EXPECTED_CONDITION(false && _Message)
 #endif
+
+/*__PUBLISH_SECTION_START__*/
+
+/// @endcond BENTLEY_SDK_Internal

@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
+/// @cond BENTLEY_SDK_Desktop
 
 #include "ECObjects.h"
 #include <Geom/GeomApi.h>
@@ -163,3 +164,5 @@ public:
 };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/// @endcond BENTLEY_SDK_Desktop

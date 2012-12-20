@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
 /*__PUBLISH_SECTION_START__*/
+/// @cond BENTLEY_SDK_Desktop
 
 #include <Bentley/Bentley.h>
 #include <Bentley/BeAssert.h>
@@ -322,3 +322,5 @@ enum PrimitiveType ENUM_UNDERLYING_TYPE(unsigned short)
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 USING_NAMESPACE_BENTLEY
+
+/// @endcond BENTLEY_SDK_Desktop

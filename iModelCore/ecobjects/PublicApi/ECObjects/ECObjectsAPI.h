@@ -6,11 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
-
 //#define EC_TRACE_MEMORY
-
 /*__PUBLISH_SECTION_START__*/
+/// @cond BENTLEY_SDK_Desktop
 
 /*=================================================================================**//**
 * @if ECOBJECTS_MAINPAGE
@@ -78,4 +76,8 @@
 #include <ECObjects/BeXmlCommonGeometry.h>
 // This define is checked from the ECObjects Published ATPs to ensure that they are building against the published header files.
 #define NON_PUBLISHED_HEADER_INCLUDED
+
+/*__PUBLISH_SECTION_START__*/
+
+/// @endcond BENTLEY_SDK_Desktop
 
