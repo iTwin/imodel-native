@@ -150,7 +150,7 @@ ECObjectsStatus ECClass::SetIsStruct (WCharCP isStruct)
 
     ECObjectsStatus status = ECXml::ParseBooleanString (m_isStruct, isStruct);
     if (ECOBJECTS_STATUS_Success != status)
-        ECObjectsLogger::Log()->warningv  (L"Failed to parse the isStruct string '%ls' for ECClass '%ls'.  Expected values are True or False", isStruct, this->GetName().c_str());
+        LOG.warningv  (L"Failed to parse the isStruct string '%ls' for ECClass '%ls'.  Expected values are True or False", isStruct, this->GetName().c_str());
         
     return status;
     }
@@ -181,7 +181,7 @@ ECObjectsStatus ECClass::SetIsCustomAttributeClass (WCharCP isCustomAttributeCla
 
     ECObjectsStatus status = ECXml::ParseBooleanString (m_isCustomAttributeClass, isCustomAttributeClass);
     if (ECOBJECTS_STATUS_Success != status)
-        ECObjectsLogger::Log()->warningv  (L"Failed to parse the isCustomAttributeClass string '%ls' for ECClass '%ls'.  Expected values are True or False", isCustomAttributeClass, this->GetName().c_str());
+        LOG.warningv  (L"Failed to parse the isCustomAttributeClass string '%ls' for ECClass '%ls'.  Expected values are True or False", isCustomAttributeClass, this->GetName().c_str());
         
     return status;
     }
@@ -212,7 +212,7 @@ ECObjectsStatus ECClass::SetIsDomainClass (WCharCP isDomainClass)
 
     ECObjectsStatus status = ECXml::ParseBooleanString (m_isDomainClass, isDomainClass);
     if (ECOBJECTS_STATUS_Success != status)
-        ECObjectsLogger::Log()->warningv  (L"Failed to parse the isDomainClass string '%ls' for ECClass '%ls'.  Expected values are True or False", isDomainClass, this->GetName().c_str());
+        LOG.warningv  (L"Failed to parse the isDomainClass string '%ls' for ECClass '%ls'.  Expected values are True or False", isDomainClass, this->GetName().c_str());
         
     return status;
     }
@@ -264,7 +264,7 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty)
     PropertyMap::const_iterator propertyIterator = m_propertyMap.find(pProperty->GetName().c_str());
     if (m_propertyMap.end() != propertyIterator)
         {
-        ECObjectsLogger::Log()->warningv  (L"Can not create property '%ls' because it already exists in this ECClass", pProperty->GetName().c_str());
+        LOG.warningv  (L"Can not create property '%ls' because it already exists in this ECClass", pProperty->GetName().c_str());
         return ECOBJECTS_STATUS_NamedItemAlreadyExists;
         }
 
@@ -500,7 +500,7 @@ ECObjectsStatus ECClass::CanPropertyBeOverridden (ECPropertyCR baseProperty, ECP
     
     if (!newProperty._CanOverride(baseProperty))
         {
-        ECObjectsLogger::Log()->errorv(L"The datatype of ECProperty %ls.%ls (%ls) does not match the datatype of ECProperty %ls.%ls (%ls)... which it overrides.", 
+        LOG.errorv(L"The datatype of ECProperty %ls.%ls (%ls) does not match the datatype of ECProperty %ls.%ls (%ls)... which it overrides.", 
             newProperty.GetClass().GetFullName(), newProperty.GetName().c_str(), newProperty.GetTypeName().c_str(), 
             baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), baseProperty.GetTypeName().c_str());
 
@@ -733,7 +733,7 @@ ECObjectsStatus ECClass::AddBaseClass (ECClassCR baseClass)
         {
         if (*baseClassIterator == (ECClassP)&baseClass)
             {
-            ECObjectsLogger::Log()->warningv (L"Can not add class '%ls' as a base class to '%ls' because it already exists as a base class", baseClass.GetName().c_str(), GetName().c_str());
+            LOG.warningv (L"Can not add class '%ls' as a base class to '%ls' because it already exists as a base class", baseClass.GetName().c_str(), GetName().c_str());
             return ECOBJECTS_STATUS_NamedItemAlreadyExists;
             }
         }
@@ -790,7 +790,7 @@ ECObjectsStatus ECClass::RemoveBaseClass (ECClassCR baseClass)
         
     if (!baseClassRemoved)
         {
-        ECObjectsLogger::Log()->warningv(L"Class '%ls' is not a base class of class '%ls'", baseClass.GetName().c_str(), GetName().c_str());
+        LOG.warningv(L"Class '%ls' is not a base class of class '%ls'", baseClass.GetName().c_str(), GetName().c_str());
         return ECOBJECTS_STATUS_ClassNotFound;
         }
         
@@ -1001,7 +1001,7 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml ( BeXmlNodeP childNode )
     WString className;
     if (ECOBJECTS_STATUS_Success != ECClass::ParseClassName (namespacePrefix, className, qualifiedClassName))
         {
-        ECObjectsLogger::Log()->warningv (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the value '%ls' that can not be parsed.",  
+        LOG.warningv (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the value '%ls' that can not be parsed.",  
             this->GetName().c_str(), EC_BASE_CLASS_ELEMENT, qualifiedClassName.c_str());
 
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
@@ -1010,7 +1010,7 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml ( BeXmlNodeP childNode )
     ECSchemaCP resolvedSchema = GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
     if (NULL == resolvedSchema)
         {
-        ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the namespace prefix '%ls' that can not be resolved to a referenced schema.", 
+        LOG.warningv  (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the namespace prefix '%ls' that can not be resolved to a referenced schema.", 
             this->GetName().c_str(), EC_BASE_CLASS_ELEMENT, namespacePrefix.c_str());
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
@@ -1018,7 +1018,7 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml ( BeXmlNodeP childNode )
     ECClassCP baseClass = resolvedSchema->GetClassCP (className.c_str());
     if (NULL == baseClass)
         {
-        ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the value '%ls' that can not be resolved to an ECClass named '%ls' in the ECSchema '%ls'", 
+        LOG.warningv  (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the value '%ls' that can not be resolved to an ECClass named '%ls' in the ECSchema '%ls'", 
             this->GetName().c_str(), EC_BASE_CLASS_ELEMENT, qualifiedClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
@@ -1036,14 +1036,14 @@ SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecPrope
     SchemaReadStatus status = ecProperty->_ReadXml (*childNode, context);
     if (status != SCHEMA_READ_STATUS_Success)
         {
-        ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to read properties of ECClass '%ls:%ls'", this->GetSchema().GetName().c_str(), this->GetName().c_str());                
+        LOG.warningv  (L"Invalid ECSchemaXML: Failed to read properties of ECClass '%ls:%ls'", this->GetSchema().GetName().c_str(), this->GetName().c_str());                
         delete ecProperty;
         return status;
         }
 
     if (ECOBJECTS_STATUS_Success != this->AddProperty (ecProperty))
         {
-        ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: Failed to read ECClass '%ls:%ls' because a problem occurred while adding ECProperty '%hs'", 
+        LOG.warningv  (L"Invalid ECSchemaXML: Failed to read ECClass '%ls:%ls' because a problem occurred while adding ECProperty '%hs'", 
             this->GetName().c_str(), this->GetSchema().GetName().c_str(), childNodeName);
         delete ecProperty;
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
@@ -1106,7 +1106,7 @@ WStringCR qualifiedClassName
     {
     if (0 == qualifiedClassName.length())
         {
-        ECObjectsLogger::Log()->warningv  (L"Failed to parse a prefix and class name from a qualified class name because the string is empty.");
+        LOG.warningv  (L"Failed to parse a prefix and class name from a qualified class name because the string is empty.");
         return ECOBJECTS_STATUS_ParseError;
         }
         
@@ -1120,7 +1120,7 @@ WStringCR qualifiedClassName
 
     if (qualifiedClassName.length() == colonIndex + 1)
         {
-        ECObjectsLogger::Log()->warningv  (L"Failed to parse a prefix and class name from the qualified class name '%ls' because the string ends with a colon.  There must be characters after the colon.", 
+        LOG.warningv  (L"Failed to parse a prefix and class name from the qualified class name '%ls' because the string ends with a colon.  There must be characters after the colon.", 
             qualifiedClassName.c_str());
         return ECOBJECTS_STATUS_ParseError;
         }
@@ -1147,7 +1147,7 @@ ECClassCR  ecClass
     WString namespacePrefix;
     if (!EXPECTED_CONDITION (ECOBJECTS_STATUS_Success == primarySchema.ResolveNamespacePrefix (ecClass.GetSchema(), namespacePrefix)))
         {
-        ECObjectsLogger::Log()->warningv (L"warning: Can not qualify an ECClass name with a namespace prefix unless the schema containing the ECClass is referenced by the primary schema."
+        LOG.warningv (L"warning: Can not qualify an ECClass name with a namespace prefix unless the schema containing the ECClass is referenced by the primary schema."
             L"The class name will remain unqualified.\n  Primary ECSchema: %ls\n  ECClass: %ls\n ECSchema containing ECClass: %ls", primarySchema.GetName().c_str(), ecClass.GetName().c_str(), ecClass.GetSchema().GetName().c_str());
         return ecClass.GetName();
         }
@@ -1472,7 +1472,7 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
         WString className;
         if (ECOBJECTS_STATUS_Success != ECClass::ParseClassName (namespacePrefix, className, constraintClassName))
             {
-            ECObjectsLogger::Log()->warningv (L"Invalid ECSchemaXML: The ECRelationshipConstraint contains a %hs attribute with the value '%ls' that can not be parsed.", 
+            LOG.warningv (L"Invalid ECSchemaXML: The ECRelationshipConstraint contains a %hs attribute with the value '%ls' that can not be parsed.", 
                 CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str());
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
@@ -1480,7 +1480,7 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
         ECSchemaCP resolvedSchema = m_relClass->GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
         if (NULL == resolvedSchema)
             {
-            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: ECRelationshipConstraint contains a %hs attribute with the namespace prefix '%ls' that can not be resolved to a referenced schema.", 
+            LOG.warningv  (L"Invalid ECSchemaXML: ECRelationshipConstraint contains a %hs attribute with the namespace prefix '%ls' that can not be resolved to a referenced schema.", 
                 CONSTRAINTCLASSNAME_ATTRIBUTE, namespacePrefix.c_str());
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
@@ -1488,7 +1488,7 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
         ECClassCP constraintClass = resolvedSchema->GetClassCP (className.c_str());
         if (NULL == constraintClass)
             {
-            ECObjectsLogger::Log()->warningv  (L"Invalid ECSchemaXML: The ECRelationshipConstraint contains a %hs attribute with the value '%ls' that can not be resolved to an ECClass named '%ls' in the ECSchema '%ls'", 
+            LOG.warningv  (L"Invalid ECSchemaXML: The ECRelationshipConstraint contains a %hs attribute with the value '%ls' that can not be resolved to an ECClass named '%ls' in the ECSchema '%ls'", 
                 CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
@@ -1617,7 +1617,7 @@ ECObjectsStatus ECRelationshipConstraint::SetIsPolymorphic (WCharCP isPolymorphi
 
     ECObjectsStatus status = ECXml::ParseBooleanString (m_isPolymorphic, isPolymorphic);
     if (ECOBJECTS_STATUS_Success != status)
-        ECObjectsLogger::Log()->warningv  (L"Failed to parse the isPolymorphic string '%ls' for ECRelationshipConstraint.  Expected values are True or False", isPolymorphic);
+        LOG.warningv  (L"Failed to parse the isPolymorphic string '%ls' for ECRelationshipConstraint.  Expected values are True or False", isPolymorphic);
         
     return status;
     }
@@ -1668,7 +1668,7 @@ ECObjectsStatus ECRelationshipConstraint::SetCardinality (WCharCP cardinality)
     ECObjectsStatus status = ECXml::ParseCardinalityString(lowerLimit, upperLimit, cardinality);
     if (ECOBJECTS_STATUS_Success != status)
         {
-        ECObjectsLogger::Log()->errorv (L"Failed to parse the RelationshipCardinality string '%ls'.", cardinality);
+        LOG.errorv (L"Failed to parse the RelationshipCardinality string '%ls'.", cardinality);
         return ECOBJECTS_STATUS_ParseError;
         }
     else
@@ -1786,7 +1786,7 @@ ECObjectsStatus ECRelationshipClass::SetStrength (WCharCP strength)
     StrengthType strengthType;
     ECObjectsStatus status = ECXml::ParseStrengthType(strengthType, strength);
     if (ECOBJECTS_STATUS_Success != status)
-        ECObjectsLogger::Log()->errorv (L"Failed to parse the Strength string '%ls' for ECRelationshipClass '%ls'.", strength, this->GetName().c_str());
+        LOG.errorv (L"Failed to parse the Strength string '%ls' for ECRelationshipClass '%ls'.", strength, this->GetName().c_str());
     else
         SetStrength (strengthType);
         
@@ -1820,7 +1820,7 @@ ECObjectsStatus ECRelationshipClass::SetStrengthDirection (WCharCP directionStri
     ECRelatedInstanceDirection direction;
     ECObjectsStatus status = ECXml::ParseDirectionString(direction, directionString);
     if (ECOBJECTS_STATUS_Success != status)
-        ECObjectsLogger::Log()->errorv (L"Failed to parse the ECRelatedInstanceDirection string '%ls' for ECRelationshipClass '%ls'.", directionString, this->GetName().c_str());
+        LOG.errorv (L"Failed to parse the ECRelatedInstanceDirection string '%ls' for ECRelationshipClass '%ls'.", directionString, this->GetName().c_str());
     else
         SetStrengthDirection (direction);
         
@@ -1947,4 +1947,23 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, EC
     return SCHEMA_READ_STATUS_Success;
     }
     
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            ECClass::Is(WCharCP name) const
+    {
+    if (0 == GetName().CompareTo(name))
+        return true;
+
+    const ECBaseClassesList& baseClass = GetBaseClasses();
+    for (ECBaseClassesList::const_iterator iter = baseClass.begin(); iter != baseClass.end(); ++iter)
+        {
+        if ((*iter)->Is(name))
+            return true;
+        }
+
+    return false;
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE

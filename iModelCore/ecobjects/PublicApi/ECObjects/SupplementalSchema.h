@@ -309,21 +309,21 @@ private:
     //! @param[in]  consolidatedCustomAttribute The custom attribute from the consolidated schema
     //! @param[in]  supplementalCustomAttribute The custom attribute from the supplemental schema
     //! @param[in]  precedence  Determines if the precedence is greater, lower, or equal to the consolidated schema
-    SupplementedSchemaStatus MergeStandardCustomAttribute(IECCustomAttributeContainerR consolidatedCustomAttributeContainer, IECInstancePtr supplementalCustomAttribute, IECInstancePtr consolidatedCustomAttribute, SchemaPrecedence precedence);
+    SupplementedSchemaStatus MergeStandardCustomAttribute(IECCustomAttributeContainerR consolidatedCustomAttributeContainer, IECInstanceR supplementalCustomAttribute, IECInstanceP consolidatedCustomAttribute, SchemaPrecedence precedence);
 
     //! The merging "delegate" for merging the UnitSpecification custom attribute
     //! @param[in,out] consolidatedCustomAttributeContainer The ECSchema, ECClass, or ECProperty that holds the consolidation custom attributes
     //! @param[in]  consolidatedCustomAttribute The custom attribute from the consolidated schema
     //! @param[in]  supplementalCustomAttribute The custom attribute from the supplemental schema
     //! @param[in]  precedence  Determines if the precedence is greater, lower, or equal to the consolidated schema
-    SupplementedSchemaStatus MergeUnitSpecificationCustomAttribute(IECCustomAttributeContainerR consolidatedCustomAttributeContainer, IECInstancePtr supplementalCustomAttribute, IECInstancePtr consolidatedCustomAttribute, SchemaPrecedence precedence);
+    SupplementedSchemaStatus MergeUnitSpecificationCustomAttribute(IECCustomAttributeContainerR consolidatedCustomAttributeContainer, IECInstanceR supplementalCustomAttribute, IECInstanceP consolidatedCustomAttribute, SchemaPrecedence precedence);
 
     //! The merging "delegate" for merging the UnitSpecifications custom attribute
     //! @param[in,out] consolidatedCustomAttributeContainer The ECSchema, ECClass, or ECProperty that holds the consolidation custom attributes
     //! @param[in]  consolidatedCustomAttribute The custom attribute from the consolidated schema
     //! @param[in]  supplementalCustomAttribute The custom attribute from the supplemental schema
     //! @param[in]  precedence  Determines if the precedence is greater, lower, or equal to the consolidated schema
-    SupplementedSchemaStatus MergeUnitSpecificationsCustomAttribute(IECCustomAttributeContainerR consolidatedCustomAttributeContainer, IECInstancePtr supplementalCustomAttribute, IECInstancePtr consolidatedCustomAttribute, SchemaPrecedence precedence);
+    SupplementedSchemaStatus MergeUnitSpecificationsCustomAttribute(IECCustomAttributeContainerR consolidatedCustomAttributeContainer, IECInstanceR supplementalCustomAttribute, IECInstanceP consolidatedCustomAttribute, SchemaPrecedence precedence);
 
     //! This is safe function to set consolidated custom attribute. If the customAttributeInstance requires a new ECSchema to be referenced
     //! the the container's ECSchema, the ECSchemaReference will be added automatically

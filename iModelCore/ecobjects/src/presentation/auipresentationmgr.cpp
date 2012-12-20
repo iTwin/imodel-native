@@ -11,6 +11,15 @@
 
 USING_NAMESPACE_EC
 
+template <typename ProviderType>
+struct RefPtrComparer
+    {
+    bool operator () (RefCountedPtr<ProviderType> const& rhs, RefCountedPtr<ProviderType> const& lhs)
+        {
+        return rhs.get() <lhs.get();
+        }
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -22,9 +31,9 @@ void            ECPresentationManager::CheckAndAddProviderFromList (ProviderType
         providerList.push_back(&provider);
         return;
         }
-
-    typename ContainerType::iterator iter = std::lower_bound(providerList.begin(), providerList.end(), &provider);
-    if (*iter == &provider)
+    RefCountedPtr <ProviderType> providerPtr (&provider);
+    typename ContainerType::iterator iter = std::lower_bound(providerList.begin(), providerList.end(), providerPtr, RefPtrComparer<ProviderType>());
+    if (iter != providerList.end() && iter->get() == &provider)
         return;
     providerList.insert (iter, &provider);
     }
@@ -38,8 +47,9 @@ void            ECPresentationManager::RemoveProviderFromList (ProviderType & pr
     if (providerList.empty())
         return;
 
-    typename ContainerType::iterator iter = std::lower_bound(providerList.begin(), providerList.end(), &provider);
-    if (*iter != &provider)
+    RefCountedPtr <ProviderType> providerPtr (&provider);
+    typename ContainerType::iterator iter = std::lower_bound(providerList.begin(), providerList.end(), providerPtr, RefPtrComparer<ProviderType>());
+    if (iter->get() != &provider)
         return;
 
     providerList.erase(iter);
@@ -125,7 +135,7 @@ ECPresentationCommandProviderCP ECPresentationManager::GetCommandProviderById (U
     {
     for (T_CmdProviderSet::iterator iter = m_cmdProviders.begin(); iter != m_cmdProviders.end(); ++iter)
         if ((*iter)->GetProviderId () == providerId)
-            return *iter;
+            return iter->get();
     return NULL;
     }
 
@@ -173,25 +183,19 @@ void    ECPresentationManager::GetCommands (bvector<IUICommandPtr>& commands, IA
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <typename ProviderType>
-class ProviderSingletonPattern : public NonCopyableClass
+struct LoggingJournalProvider : public IJournalProvider
     {
-    public:
-    static ProviderType& GetProvider ()
-        {
-        ProviderType* provider = new ProviderType();
-        return *provider;
-        }
-    };
+    virtual WCharCP _GetProviderName(void) const override {return L"LoggingJournalProvider";}
+    virtual ProviderType _GetProviderType(void) const override {return JournalService;}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct LoggingJournalProvider : public IJournalProvider, public ProviderSingletonPattern<LoggingJournalProvider>
-    {
     virtual void    _JournalCmd (IUICommandCR cmd, IAUIDataContextCP instanceData) override
         {
         
+        }
+    static LoggingJournalProvider& GetProvider ()
+        {
+        LoggingJournalProvider* provider = new LoggingJournalProvider();
+        return *provider;
         }
     };
 

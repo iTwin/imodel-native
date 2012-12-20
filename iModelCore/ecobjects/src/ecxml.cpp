@@ -178,7 +178,7 @@ ECObjectsStatus ECXml::ParseCardinalityString (UInt32 &lowerLimit, UInt32 &upper
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
     if (0 == cardinalityString.compare(L"1"))
         {
-        ECObjectsLogger::Log()->debugv(L"Legacy cardinality of '1' interpreted as '(1,1)'");
+        LOG.debugv(L"Legacy cardinality of '1' interpreted as '(1,1)'");
         lowerLimit = 1;
         upperLimit = 1;
         return status;
@@ -188,7 +188,7 @@ ECObjectsStatus ECXml::ParseCardinalityString (UInt32 &lowerLimit, UInt32 &upper
              (0 == cardinalityString.compare(L"unbounded")) || (0 == cardinalityString.compare(L"n")) ||
              (0 == cardinalityString.compare(L"N")))
         {
-        ECObjectsLogger::Log()->debugv(L"Legacy cardinality of '%ls' interpreted as '(0,n)'", cardinalityString.c_str());
+        LOG.debugv(L"Legacy cardinality of '%ls' interpreted as '(0,n)'", cardinalityString.c_str());
         lowerLimit = 0;
         upperLimit = UINT_MAX;
         return status;
@@ -201,14 +201,14 @@ ECObjectsStatus ECXml::ParseCardinalityString (UInt32 &lowerLimit, UInt32 &upper
         {
         if (0 == BeStringUtilities::Swscanf(cardinalityWithoutSpaces.c_str(), L"%d", &upperLimit))
             return ECOBJECTS_STATUS_ParseError;
-        ECObjectsLogger::Log()->debugv(L"Legacy cardinality of '%d' interpreted as '(0,%d)'", upperLimit, upperLimit);
+        LOG.debugv(L"Legacy cardinality of '%d' interpreted as '(0,%d)'", upperLimit, upperLimit);
         lowerLimit = 0;
         return status;
         }
         
     if (openParenIndex != 0 && cardinalityWithoutSpaces.find(')') != cardinalityWithoutSpaces.length() - 1)
         {
-        ECObjectsLogger::Log()->warningv(L"Cardinality string '%ls' is invalid.", cardinalityString.c_str());
+        LOG.warningv(L"Cardinality string '%ls' is invalid.", cardinalityString.c_str());
         return ECOBJECTS_STATUS_ParseError;
         }
      
@@ -218,7 +218,7 @@ ECObjectsStatus ECXml::ParseCardinalityString (UInt32 &lowerLimit, UInt32 &upper
         
     if (0 == scanned)
         {
-        ECObjectsLogger::Log()->warningv(L"Cardinality string '%ls' is invalid.", cardinalityString.c_str());
+        LOG.warningv(L"Cardinality string '%ls' is invalid.", cardinalityString.c_str());
         return ECOBJECTS_STATUS_ParseError;
         }
     

@@ -23,7 +23,7 @@ struct IJournalItem
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct  IJournalProvider
+struct  IJournalProvider :  public IECPresentationProvider
     {
     protected:
         virtual void    _JournalCmd (IUICommandCR cmd, IAUIDataContextCP instanceData) = 0;

@@ -881,6 +881,9 @@ public:
     //! Returns true if the class is the type specified or derived from it.
     ECOBJECTS_EXPORT bool            Is(ECClassCP targetClass) const;
 
+    //! Returns true if the class name  is of the type specified or derived from it.
+    ECOBJECTS_EXPORT bool            Is(WCharCP name) const;
+
     //! If the given name is valid, creates a primitive property object with the default type of STRING
     ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, WStringCR name);
 

@@ -28,6 +28,8 @@
 #define COMMON_XML_ATTRIBUTE_RELATEDCLASSNAMES                                        "RelatedClassNames"
 #define COMMON_XML_ATTRIBUTE_SCHEMANAME                                               "SchemaName"
 #define COMMON_XML_ATTRIBUTE_CLASSNAMES                                               "ClassNames"
+#define COMMON_XML_ATTRIBUTE_CLASSNAME                                                "ClassName"
+#define COMMON_XML_ATTRIBUTE_PROPERTYNAMES                                            "PropertyNames"
 #define COMMON_XML_ATTRIBUTE_PROPERTYNAME                                             "PropertyName"
 #define COMMON_XML_ATTRIBUTE_ONLYIFNOTHANDLED                                         "OnlyIfNotHandled"
 #define COMMON_XML_ATTRIBUTE_AREPOLYMORPHIC                                           "ArePolymorphic"

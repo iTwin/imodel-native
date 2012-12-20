@@ -23,14 +23,16 @@ struct RelatedPropertiesSpecification
     {
     /*__PUBLISH_SECTION_END__*/
     private:
-        RequiredRelationDirection  m_requiredDirection;
-        WString                    m_relationshipClassNames;
-        WString                    m_relatedClassNames;
+        RequiredRelationDirection          m_requiredDirection;
+        WString                            m_relationshipClassNames;
+        WString                            m_relatedClassNames;
+        WString                            m_propertyNames;
+        RelatedPropertiesSpecificationList m_nestedRelatedPropertiesSpecification;
 
     public:
     /*__PUBLISH_SECTION_START__*/
         ECOBJECTS_EXPORT RelatedPropertiesSpecification ()
-            : m_requiredDirection (RequiredRelationDirection_Both), m_relationshipClassNames (L""), m_relatedClassNames (L"")
+            : m_requiredDirection (RequiredRelationDirection_Both), m_relationshipClassNames (L""), m_relatedClassNames (L""), m_propertyNames (L"")
             {
             }
 
@@ -38,13 +40,18 @@ struct RelatedPropertiesSpecification
                                        (
                                         RequiredRelationDirection  requiredDirection,
                                         WString                    relationshipClassNames,
-                                        WString                    relatedClassNames
+                                        WString                    relatedClassNames,
+                                        WString                    propertyNames
                                        )
             : m_requiredDirection (requiredDirection), 
               m_relationshipClassNames (relationshipClassNames),
-              m_relatedClassNames (relatedClassNames)
+              m_relatedClassNames (relatedClassNames),
+              m_propertyNames (propertyNames)
             {
             }
+
+        //! Destructor.
+        ECOBJECTS_EXPORT                              ~RelatedPropertiesSpecification (void);
 
         //! Reads specification from XML.
         ECOBJECTS_EXPORT bool                         ReadXml (BeXmlNodeP xmlNode);
@@ -60,6 +67,14 @@ struct RelatedPropertiesSpecification
 
         //! Related class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
         ECOBJECTS_EXPORT WStringCR                    GetRelatedClassNames (void) const          { return m_relatedClassNames; }
+
+        //! Property names separated by comma. RelatedClasses are required if related properties are specified.
+        //! These properties of RelatedClasses will be selected in the ECQuery and shown next to the parent ECInstance (the same row).
+        //! If PropertyNames are not specified ALL visible properties will be selected. "_none_" keyword can be used to suppress all properties.
+        ECOBJECTS_EXPORT WStringCR                    GetPropertyNames (void) const              { return m_propertyNames; }
+
+        //! Nested related properties, that will be shown next to ECInstance proerties (the same row for example).
+        ECOBJECTS_EXPORT RelatedPropertiesSpecificationList& GetNestedRelatedProperties (void)   { return m_nestedRelatedPropertiesSpecification; }
 
     };
 
