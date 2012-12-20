@@ -60,7 +60,7 @@ public:
 #ifdef  NDEBUG
 #if defined (_WIN32) // WIP_NONPORT -- we don't really need to use _noop here, right?
     #define ASSERT_FALSE_IF_NOT_DISABLED    __noop
-#elif defined (__unix__) // WIP_NONPORT - this implementation should be good for both platforms??
+#elif defined (__APPLE__) || defined (ANDROID) // WIP_NONPORT - this implementation should be good for both platforms??
     #define ASSERT_FALSE_IF_NOT_DISABLED(_Message)  (void)0
 #endif
 #else
@@ -155,7 +155,7 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
 #if defined (_WIN32) // WIP_NONPORT -- we don't really need to use _noop here, right?
     #define DEBUG_EXPECT(_Expression)    __noop
     #define DEBUG_FAIL(_Message)         __noop
-#elif defined (__unix__) // WIP_NONPORT - this implementation should be good for both platforms??
+#elif defined (__APPLE__) || defined (ANDROID) // WIP_NONPORT - this implementation should be good for both platforms??
     #define DEBUG_EXPECT(_Expression)    
     #define DEBUG_FAIL(_Message)         
 #endif
