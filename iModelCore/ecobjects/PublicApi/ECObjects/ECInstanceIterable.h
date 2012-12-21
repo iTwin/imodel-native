@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECInstanceIterable.h $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,7 +32,7 @@ struct CollectionTransformIteratble
     {
     private:
     CollectionType const* m_collection;
-    
+
     public:
     CollectionTransformIteratble (CollectionType const& collection)
         :m_collection (&collection)
@@ -95,7 +95,7 @@ typedef ECN::IInstanceCollectionIteratorAdapter<IECInstanceP const>      IECInst
 /*__PUBLISH_SECTION_END__*/
 
 /*---------------------------------------------------------------------------------**//**
-//Utility class to wrap ones own collection iterator as exposes a DgnECInstanceP 
+//Utility class to wrap ones own collection iterator as exposes a DgnECInstanceP
 * @bsimethod                                    Abeesh.Basheer                  03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename CollectionType, typename value_type>
@@ -110,21 +110,21 @@ struct InstanceCollectionAdapterIteratorImpl :public IInstanceCollectionIterator
             {
             if (!begin)
                 return;
-            
+
             if (m_adapteriterator == m_adapterParentcollection->end())
                 return;
-            
+
             if (NULL == *m_adapteriterator)
                 MoveToNext();
             }
 
     public:
-    
+
         /*---------------------------------------------------------------------------------**//**
         // IInstanceCollectionIteratorAdapter implementation
         * @bsimethod                                    Abeesh.Basheer                  03/2011
         +---------------+---------------+---------------+---------------+---------------+------*/
-        virtual void    MoveToNext  () override                         
+        virtual void    MoveToNext  () override
             {
             do
                 {
@@ -144,7 +144,7 @@ struct InstanceCollectionAdapterIteratorImpl :public IInstanceCollectionIterator
         static IInstanceCollectionIteratorAdapter<value_type>* Create (CollectionType const& collection, bool begin) {
             return new InstanceCollectionAdapterIteratorImpl(collection, begin);
             }
-        
+
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod                                    Abeesh.Basheer                  03/2011
         +---------------+---------------+---------------+---------------+---------------+------*/
@@ -173,12 +173,12 @@ protected:
         {
         }
 public:
-    
+
     static InstanceCollectionAdapterImpl* Create (CollectionType& collection)
         {
         return new InstanceCollectionAdapterImpl(collection);
         }
-    
+
     virtual typename IInstanceCollectionAdapterEx<value_type>::const_iterator begin() const override
         {
         return typename IInstanceCollectionAdapterEx<value_type>::const_iterator (*InstanceCollectionAdapterIteratorImpl <CollectionType, value_type>::Create(*m_adaptedcollection, true));
@@ -195,7 +195,7 @@ public:
     };
 
 template <typename CollectionType>
-struct IECInstanceCollectionAdapterImpl : public ECN::InstanceCollectionAdapterImpl<CollectionType, IECInstanceP const> 
+struct IECInstanceCollectionAdapterImpl : public ECN::InstanceCollectionAdapterImpl<CollectionType, IECInstanceP const>
     {
     };
 
@@ -211,7 +211,7 @@ struct ECInstancePVector : public ECN::CollectionTransformIteratble< bvector<Ref
 
 /*__PUBLISH_SECTION_START__*/
 /*---------------------------------------------------------------------------------**//**
-typical usage 
+typical usage
 for (ECInstanceIterable::const_iterator iter = collection.begin(); iter != collection.end(); ++iter)
     {
     IECInstanceP instance = *iter;
@@ -229,7 +229,7 @@ struct ECInstanceIterable
             {
             }
         ECOBJECTS_EXPORT ECInstanceIterable (IECInstanceCollectionAdapter* collection);
-    
+
         typedef IECInstanceCollectionAdapter::const_iterator  const_iterator;
         ECOBJECTS_EXPORT const_iterator begin () const;
         ECOBJECTS_EXPORT const_iterator end   () const;

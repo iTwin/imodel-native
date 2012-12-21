@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/PresentationMetadataHelper.h $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,7 +15,7 @@
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 //=======================================================================================
-//! Helper object used to apply metadata to ECSchemas, ECClasses, and ECProperties used 
+//! Helper object used to apply metadata to ECSchemas, ECClasses, and ECProperties used
 //! to control how they are presented in the UI.
 //! Modifying a schema with this object will add a reference from that schema to the
 //! standard EditorCustomAttributes schema which defines the custom attribute classes.
@@ -40,7 +40,7 @@ public:
     //! Creates an PresentationMetadataHelper object which can be used to apply metadata to ECSchema, ECClass, and ECProperty objects.
     //! @param schemaContext    An ECSchemaReadContext from which the standard EditorCustomAttributes schema can be obtained.
     ECOBJECTS_EXPORT PresentationMetadataHelper (ECSchemaReadContextR schemaContext);
-    
+
     ECOBJECTS_EXPORT ~PresentationMetadataHelper();
 
     // ###TODO: move standard types enum down from DgnPlatform?
@@ -55,7 +55,7 @@ public:
     //! @param extendTypeName   The name of the extended type.
     //! @return ECOBJECTS_STATUS_Success if the custom attribute was applied
     ECOBJECTS_EXPORT ECObjectsStatus    SetExtendedType (ECPropertyR ecproperty, WCharCP extendTypeName) const;
-    
+
     // ###TODO: move standard types enum down from DgnPlatform?
     //! Sets the standard extended type for members of the array property
     //! @param ecproperty       The property to which to apply the custom attribute

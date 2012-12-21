@@ -13,8 +13,8 @@
 #include <Bentley/RefCounted.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
-  
-struct SupplementalSchemaMetaData;  
+
+struct SupplementalSchemaMetaData;
 typedef RefCountedPtr<SupplementalSchemaMetaData> SupplementalSchemaMetaDataPtr;
 typedef bmap<WString, WString> SchemaNamePurposeMap;
 
@@ -126,34 +126,34 @@ public:
 
 // Statics
     //! Returns the string used to get the SupplementalSchemaMetaData custom attribute.
-    ECOBJECTS_EXPORT static WCharCP GetCustomAttributeAccessor();    
+    ECOBJECTS_EXPORT static WCharCP GetCustomAttributeAccessor();
 
     //! Returns the string used to access the PrimarySchemaName property on the
     //! SupplementalSchemaMetaData custom attribute.
-    ECOBJECTS_EXPORT static WCharCP GetPrimarySchemaNamePropertyAccessor();    
+    ECOBJECTS_EXPORT static WCharCP GetPrimarySchemaNamePropertyAccessor();
 
     //! Returns the string used to access the PrimarySchemaMajorVersion property on the
     //! SupplementalSchemaMetaData custom attribute.
-    ECOBJECTS_EXPORT static WCharCP GetPrimarySchemaMajorVersionPropertyAccessor();    
+    ECOBJECTS_EXPORT static WCharCP GetPrimarySchemaMajorVersionPropertyAccessor();
 
     //! Returns the string used to access the PrimarySchemaMinorVersion property on the
     //! SupplementalSchemaMetaData custom attribute.
-    ECOBJECTS_EXPORT static WCharCP GetPrimarySchemaMinorVersionPropertyAccessor();    
+    ECOBJECTS_EXPORT static WCharCP GetPrimarySchemaMinorVersionPropertyAccessor();
 
     //! Returns the string used to access the Precedence property on the
     //! SupplementalSchemaMetaData custom attribute.
-    ECOBJECTS_EXPORT static WCharCP GetPrecedencePropertyAccessor(); 
-       
+    ECOBJECTS_EXPORT static WCharCP GetPrecedencePropertyAccessor();
+
     //! Returns the string used to access the Purpose property on the
     //! SupplementalSchemaMetaData custom attribute.
-    ECOBJECTS_EXPORT static WCharCP GetPurposePropertyAccessor();    
-    
+    ECOBJECTS_EXPORT static WCharCP GetPurposePropertyAccessor();
+
     //! Returns the string used to access the IsUserSpecific property on the
     //! SupplementalSchemaMetaData custom attribute.
-    ECOBJECTS_EXPORT static WCharCP GetIsUserSpecificPropertyAccessor();    
+    ECOBJECTS_EXPORT static WCharCP GetIsUserSpecificPropertyAccessor();
 
     //! Tries to get and build the SupplementalSchemaMetaData from the passed in supplementalSchemaMetadata
-    //! @param[out] supplementalSchemaMetadata  The variable that gets the SupplementalSchemaMetaData from the supplementalSchema. 
+    //! @param[out] supplementalSchemaMetadata  The variable that gets the SupplementalSchemaMetaData from the supplementalSchema.
     //! @param[in]  supplementalSchema          The schema that the supplementalSchemeMetaData is to be retrieved from
     //! @returns    true                        If the custom attribute was successfully found on the schema
     ECOBJECTS_EXPORT static bool TryGetFromSchema(SupplementalSchemaMetaDataPtr& supplementalSchemaMetadata, ECSchemaCR supplementalSchema);
@@ -166,26 +166,26 @@ public:
     struct StandardPurpose
         {
         //! The Standard Purpose for a Supplemental schema that contains Units information
-        static WCharCP Units () { return L"Units"; } 
+        static WCharCP Units () { return L"Units"; }
 
         //! The Standard Purpose for a Supplemental schema that contains Localization information
-        static WCharCP Localization() { return L"Localization"; } 
+        static WCharCP Localization() { return L"Localization"; }
 
         //! The Standard Purpose for a Supplemental schema that contains ChangeTracking information
-        static WCharCP ChangeTracking() { return L"ChangeTracking"; } 
+        static WCharCP ChangeTracking() { return L"ChangeTracking"; }
         };
 };
 
 //=======================================================================================
 //! @ingroup ECObjectsGroup
 //! The SupplementedSchemaBuilder merges ECCustomAttributes from multiple schemas into one combined Schema
-//! @remarks 
+//! @remarks
 //!
 //! The input schemas consit of one primary schema and any number of supplemental schemas.  The primary
 //! schema contains all of the actual class definitions.  The supplemental schemas only contain ECCustomAttributes applied
 //! to a skeleton of classes and properties.  Each supplemental achema is identified by a custom attribute instance of class
 //! 'SupplementalSchemaMetaData/'  This class can be found in the 'Bentley_Standard_CustomAttributes' schema.h  It contains
-//! entries that give a back reference to the primary schema, a precedence value, and a context.  
+//! entries that give a back reference to the primary schema, a precedence value, and a context.
 //! \n\n
 //! The precedence value determines which custom attributes override the primary schema and which ones are overridden
 //! by the primary schema.  Precedence is an integer value from 0-699.  It is split up into 7 levels, higher numbers
@@ -203,7 +203,7 @@ public:
 //! @li --- Primary Schema ---
 //! @li Application     100-199
 //! @li Global          0-99
-//! 
+//!
 //! \n
 //! The level names above correspond to the default level names for ProjectWise Managed Workspaces.  For example, give
 //! a supplemental schema a precedence in the 'Discipline' range if it contains metadata that varies per Discipline.
@@ -241,11 +241,11 @@ public:
     enum SchemaPrecedence
         {
         //! The supplemental schema has lower precedence than the consolidated schema
-        SCHEMA_PRECEDENCE_Lower,  
+        SCHEMA_PRECEDENCE_Lower,
         //! The supplemental schema has the same precedence as the consolidated schema. This is a special case where two schemas have the same precedence value.
-        SCHEMA_PRECEDENCE_Equal,  
+        SCHEMA_PRECEDENCE_Equal,
         //! The supplemental schema has greater precedence than the consolidated schema.
-        SCHEMA_PRECEDENCE_Greater 
+        SCHEMA_PRECEDENCE_Greater
         };
 
 private:
@@ -272,7 +272,7 @@ private:
     //! @param[in,out]  primarySchema   The schema to merge the supplemental schemas into
     //! @param[in]      schemasByPrecedence A map of supplemental schemas sorted by precedence
     SupplementedSchemaStatus MergeSchemasIntoSupplementedSchema (ECSchemaR primarySchema, bmap<UInt32, ECSchemaP> schemasByPrecedence);
-    
+
     //! Merges a supplemental schema into the consolidated schema
     //! @param[in,out]  primarySchema   The consolidated schema that will get supplemented
     //! @param[in]      supplemental    The supplemental schema being merged
@@ -348,7 +348,7 @@ public:
     //! @param[in]  createCopyOfSupplementalCustomAttribute Create copy of supplemental custom attribute before putting it on
     //! the primary schema.
     //! @returns A status code indicating whether the primarySchema was successfully supplemented
-    ECOBJECTS_EXPORT SupplementedSchemaStatus UpdateSchema(ECSchemaR primarySchema, bvector<ECSchemaP>& supplementalSchemaList, bool createCopyOfSupplementalCustomAttribute = true); 
+    ECOBJECTS_EXPORT SupplementedSchemaStatus UpdateSchema(ECSchemaR primarySchema, bvector<ECSchemaP>& supplementalSchemaList, bool createCopyOfSupplementalCustomAttribute = true);
     }; // SupplementalSchemaBuilder
 
 //=======================================================================================

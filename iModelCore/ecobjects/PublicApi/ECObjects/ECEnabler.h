@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECEnabler.h $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -23,17 +23,17 @@ typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
 
 #define INVALID_PROPERTY_INDEX  0;
 
-//=======================================================================================    
+//=======================================================================================
 //! base class ensuring that all enablers are refcounted
 //! @ingroup ECObjectsGroup
-//=======================================================================================    
+//=======================================================================================
 struct ECEnabler : RefCountedBase
 /*__PUBLISH_SECTION_END__*/
     , IStandaloneEnablerLocater
 /*__PUBLISH_SECTION_START__*/
     {
     //! Interface of functor that wants to process text-valued properties
-    struct IPropertyProcessor 
+    struct IPropertyProcessor
         {
         //! Callback for primitive property on instance.
         //! @return true if the desired property was found and processing should stop; else return false if processing should continue.
@@ -52,7 +52,7 @@ private:
 
 protected:
     //! Protected as part of the RefCounted pattern
-    ECOBJECTS_EXPORT ~ECEnabler(); 
+    ECOBJECTS_EXPORT ~ECEnabler();
 
     //! Subclasses of ECEnabler should implement a FactoryMethod to construct the enabler, as
     //! part of the RefCounted pattern.
@@ -60,7 +60,7 @@ protected:
     //! /code
     //!   static ____EnablerPtr CreateEnabler (ECClassCR ecClass)
     //!       {
-    //!       return new ____Enabler (ecClass);    
+    //!       return new ____Enabler (ecClass);
     //!       };
     //! /endcode
     //! where the ____ is a name specific to your subclass, and the parameters may vary per enabler.
@@ -99,19 +99,19 @@ public:
 public:
     //! Primarily for debugging/logging purposes. Should match your fully-qualified class name
     ECOBJECTS_EXPORT WCharCP                    GetName() const;
-    
+
     //! Get the ECClass that this enabler 'enables'
     ECOBJECTS_EXPORT ECClassCR                  GetClass() const;
-    
+
     //! Obtain a propertyIndex given an access string. The propertyIndex can be used with ECInstances enabled by this enabler for more efficient property value access
     ECOBJECTS_EXPORT ECObjectsStatus            GetPropertyIndex     (UInt32& propertyIndex, WCharCP propertyAccessString) const;
-    
+
     //! Given a propertyIndex, find the corresponding property access string
     ECOBJECTS_EXPORT ECObjectsStatus            GetAccessString      (WCharCP& propertyAccessString, UInt32 propertyIndex) const;
-    
+
     //! Get the first propertyIndex (used in conjunction with GetNextPropertyIndex for efficiently looping over property values.)
     ECOBJECTS_EXPORT UInt32                     GetFirstPropertyIndex (UInt32 parentIndex) const;
-    
+
     //! Get the next (after inputIndex) propertyIndex (used in conjunction with GetFirstPropertyIndex for efficiently looping over property values.)
     //! @return 0 if there are no more
     ECOBJECTS_EXPORT UInt32                     GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const;
@@ -126,10 +126,10 @@ public:
     ECOBJECTS_EXPORT IStandaloneEnablerLocaterR GetStandaloneEnablerLocater();
 
     ECOBJECTS_EXPORT UInt32                     GetPropertyCount () const;
-    ECOBJECTS_EXPORT StandaloneECEnablerPtr     GetEnablerForStructArrayMember (SchemaKeyCR schemaKey, WCharCP className); 
-    
+    ECOBJECTS_EXPORT StandaloneECEnablerPtr     GetEnablerForStructArrayMember (SchemaKeyCR schemaKey, WCharCP className);
+
 #if defined (EXPERIMENTAL_TEXT_FILTER)
-    //! Call processor on all primitive-valued properties of specified type(s) on this instance. 
+    //! Call processor on all primitive-valued properties of specified type(s) on this instance.
     //! Processing is terminated if the processor returns a non-zero value.
     //! @remarks This function returns immediately with PROPERTY_PROCESSING_RESULT_Miss if the class of \a instance is in \a failedClasses.
     //! If this function detects that the class has no properties of the specified type, it will return PROPERTY_PROCESSING_RESULT_Miss and
@@ -144,10 +144,10 @@ public:
 #endif
     };
 
-//=======================================================================================    
+//=======================================================================================
 //! Base class for all relationship enablers
 //! @ingroup ECObjectsGroup
-//=======================================================================================    
+//=======================================================================================
  struct IECRelationshipEnabler
  {
 protected:
@@ -162,7 +162,7 @@ protected:
 
  /*__PUBLISH_SECTION_END__*/
 /*---------------------------------------------------------------------------------**//**
-//! A derived helper enabler that allows you to generates property indices based on a array of 
+//! A derived helper enabler that allows you to generates property indices based on a array of
 //! property strings. This will only work on simple instances with no embedded structs.
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -182,7 +182,7 @@ protected:
                 }
             return ECOBJECTS_STATUS_InvalidPropertyAccessString;
             }
-        
+
         virtual ECObjectsStatus _GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const override
             {
             if (propertyIndex > DerivedClass::MAX_PROPERTY_COUNT || propertyIndex <= 0)
@@ -198,9 +198,9 @@ protected:
                 return ++inputIndex;
             return 0;
             }
-        
+
         virtual UInt32          _GetPropertyCount () const override {return DerivedClass::MAX_PROPERTY_COUNT;}
-        
+
         virtual ECObjectsStatus _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const override
             {
             for (UInt32 index = 0; index < DerivedClass::MAX_PROPERTY_COUNT; ++index)
@@ -209,7 +209,7 @@ protected:
 
             }
         virtual UInt32          _GetFirstPropertyIndex (UInt32 parentIndex) const override {return 1;}
-        
+
         virtual bool            _HasChildProperties (UInt32 parentIndex) const override {return false;}
 
     protected:
@@ -217,7 +217,7 @@ protected:
             :BaseEnablerClass(ecClass, structStandaloneEnablerLocater)
             {}
     };
- 
+
  /*__PUBLISH_SECTION_START__*/
 
 END_BENTLEY_ECOBJECT_NAMESPACE
