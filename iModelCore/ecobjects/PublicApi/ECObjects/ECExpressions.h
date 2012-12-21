@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
 /*__PUBLISH_SECTION_START__*/
+/// @cond BENTLEY_SDK_Desktop
 
 #define EXPR_TYPEDEFS(_name_)  \
         BEGIN_BENTLEY_ECOBJECT_NAMESPACE      \
@@ -738,6 +738,8 @@ public:
 
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/// @endcond BENTLEY_SDK_Desktop
 
 /*__PUBLISH_SECTION_END__*/
 

@@ -859,15 +859,17 @@ SchemaPrecedence precedence
             if (ECOBJECTS_STATUS_Success != status)
                 continue;
 
+            consolidatedECProperty->SetBaseProperty (inheritedECProperty);
             // By adding this property override it is possible that classes derived from this one that override this property
             // will need to have the BaseProperty updated to the newly added temp property.
-            FOR_EACH(ECClassP derivedClass, consolidatedECClass->GetDerivedClasses())
+            FOR_EACH (ECClassP derivedClass, consolidatedECClass->GetDerivedClasses())
                 {
                 ECPropertyP derivedECProperty = derivedClass->GetPropertyP(supplementalECProperty->GetName(), false);
                 if (NULL != derivedECProperty)
                     derivedECProperty->SetBaseProperty(consolidatedECProperty);
                 }
             }
+
         WString schemaName = supplementalECClass->GetSchema().GetFullSchemaName();
         status = MergeCustomAttributeClasses(*consolidatedECProperty, supplementalCustomAttributes, precedence, &schemaName, NULL);
         if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)

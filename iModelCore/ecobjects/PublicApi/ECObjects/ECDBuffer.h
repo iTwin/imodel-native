@@ -5,8 +5,9 @@
 |   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-/*__PUBLISH_SECTION_START__*/
 #pragma once
+/*__PUBLISH_SECTION_START__*/
+/// @cond BENTLEY_SDK_Desktop
 
 #include "ECObjects.h"
 
@@ -609,3 +610,5 @@ public:
     };   
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/// @endcond BENTLEY_SDK_Desktop

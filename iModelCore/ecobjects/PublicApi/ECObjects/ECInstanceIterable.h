@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
+/// @cond BENTLEY_SDK_Desktop
 
 #include <ECObjects/ECObjects.h>
 /*__PUBLISH_SECTION_END__*/
@@ -237,5 +238,7 @@ struct ECInstanceIterable
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/// @endcond BENTLEY_SDK_Desktop
 
 /*__PUBLISH_SECTION_END__*/

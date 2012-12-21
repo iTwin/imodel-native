@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
 /*__PUBLISH_SECTION_START__*/
+/// @cond BENTLEY_SDK_Desktop
 
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECObjects.h>
@@ -1987,3 +1987,5 @@ BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::ECN::ECCustomAttributeInsta
 BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::ECN::ECPropertyIterable)
 BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::ECN::ECClassContainer)
 //__PUBLISH_SECTION_START__
+
+/// @endcond BENTLEY_SDK_Desktop
