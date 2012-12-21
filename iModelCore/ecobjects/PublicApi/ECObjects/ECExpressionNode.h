@@ -59,7 +59,7 @@ public:
 *
 * @bsiclass                                                     John.Gooding    02/2011
 +===============+===============+===============+===============+===============+======*/
-struct          Operations 
+struct          Operations
 {
 private:
     static void        ReportInvalidDivisionOperands() {}
@@ -130,7 +130,7 @@ private:
 protected:
     virtual bool            _HasError () override { return true; }
 
-                ErrorNode (wchar_t const* summary, wchar_t const* detail1, wchar_t const* detail12) 
+                ErrorNode (wchar_t const* summary, wchar_t const* detail1, wchar_t const* detail12)
                     : m_summary(summary), m_detail1(detail1), m_detail2(detail12) {}
     virtual WString     _ToString() const override { return L"ERROR"; }
     virtual ExpressionToken _GetOperation () const override { return TOKEN_Error; }
@@ -156,15 +156,15 @@ private:
     WString     m_value;
 
 protected:
-    virtual WString     _ToString() const override 
-        { 
+    virtual WString     _ToString() const override
+        {
         WString retval = L"\"";
         retval.append (m_value);
         retval.append (L"\"");
         return retval;
         }
 
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context,
                                         bool allowUnknown, bool allowOverrides) override
         {
         evalResult = ECN::ECValue(m_value.c_str(), false);
@@ -198,7 +198,7 @@ private:
 protected:
     virtual WString     _ToString() const override { return m_value; }
 
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context,
                                         bool allowUnknown, bool allowOverrides) override
         {
         //  Store the string in the ECValue and store a type in there
@@ -226,14 +226,14 @@ private:
     int         m_value;
 
 protected:
-    virtual WString     _ToString() const override 
-        { 
+    virtual WString     _ToString() const override
+        {
         wchar_t     buffer [256];
         BeStringUtilities::Snwprintf(buffer, _countof (buffer), L"%d", m_value);
-        return buffer; 
+        return buffer;
         }
 
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context,
                                         bool allowUnknown, bool allowOverrides) override
         {
         evalResult = ECN::ECValue(m_value);
@@ -261,14 +261,14 @@ private:
     Int64     m_value;
 
 protected:
-    virtual WString     _ToString() const override 
-        { 
+    virtual WString     _ToString() const override
+        {
         wchar_t     buffer [256];
         BeStringUtilities::Snwprintf(buffer, _countof(buffer), L"%I64d", m_value);
-        return buffer; 
+        return buffer;
         }
 
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context,
                                         bool allowUnknown, bool allowOverrides) override
         {
         evalResult = ECN::ECValue(m_value);
@@ -297,14 +297,14 @@ private:
     double      m_value;
 
 protected:
-    virtual WString     _ToString() const override 
-        { 
+    virtual WString     _ToString() const override
+        {
         wchar_t     buffer [256];
         BeStringUtilities::Snwprintf(buffer, _countof(buffer), L"%f", m_value);
-        return buffer; 
+        return buffer;
         }
 
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context,
                                         bool allowUnknown, bool allowOverrides) override
         {
         evalResult = ECN::ECValue(m_value);
@@ -333,7 +333,7 @@ private:
 
 protected:
     virtual WString     _ToString() const override { return m_value ? L"True" : L"False"; }
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context,
                                         bool allowUnknown, bool allowOverrides) override
         {
         evalResult = ECN::ECValue(m_value);
@@ -355,7 +355,7 @@ public:
 *
 * Holds a list of nodes forming a primary.  Every dotted expression, method call
 * or array access expression must start with an identifier.  That identifier is represesented
-* by the member m_identName.  All subsequent operations are represented by entries in 
+* by the member m_identName.  All subsequent operations are represented by entries in
 * m_operators.
 *
 * The entire primary list is fed into the context.  The context that resolves m_identName
@@ -368,7 +368,7 @@ struct          PrimaryListNode : Node
 private:
     bvector<NodePtr>        m_operators;
 
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor)
         {
         for (size_t i = 0; i < m_operators.size(); i++)
             {
@@ -376,18 +376,18 @@ private:
             if (!retval)
                 return retval;
             }
-        
+
         return true;
         }
 
 protected:
-    virtual WString     _ToString() const override 
+    virtual WString     _ToString() const override
         {
         return L"";
         }
 
     virtual ExpressionToken _GetOperation () const override { return TOKEN_PrimaryList; }
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context,
                                         bool allowUnknown, bool allowOverrides) override;
 
     virtual bool            _HasError () override { return false; }
@@ -446,13 +446,13 @@ struct          DotNode : IdentNode
 private:
     WString                 m_memberName;
 
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor)
         {
-        return visitor.ProcessNode(*this); 
+        return visitor.ProcessNode(*this);
         }
 
 protected:
-    virtual WString     _ToString() const override 
+    virtual WString     _ToString() const override
         {
         return L"." + m_memberName;
         }
@@ -490,7 +490,7 @@ private:
 
 protected:
     virtual WString     _ToString() const override { return L"["; }
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor)
         {
         bool retval = visitor.StartArrayIndex(*this);
         if (retval)
@@ -527,7 +527,7 @@ private:
 protected:
     virtual WString     _ToString() const override { return Lexer::GetString(m_operator); }
 
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor)
         {
         bool    retval = visitor.ProcessNode(*this);
         if (retval)
@@ -544,7 +544,7 @@ protected:
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
 public:
-                UnaryNode (ExpressionToken tokenId, NodeR left) : 
+                UnaryNode (ExpressionToken tokenId, NodeR left) :
                                     m_operator(tokenId), m_left(&left) {}
 
 };  //  End of struct Unary
@@ -559,7 +559,7 @@ struct          UnaryArithmeticNode : UnaryNode
 {
 private:
 protected:
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context,
                                         bool allowUnknown, bool allowOverrides) override;
 
 public:
@@ -584,7 +584,7 @@ protected:
 
     virtual WString     _ToString() const override { return Lexer::GetString(m_operatorCode); }
 
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor)
         {
         bool    retval = m_left->Traverse(visitor);
         if (retval)
@@ -630,22 +630,22 @@ protected:
     virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) override;
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override;
 
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context,
                                         bool allowUnknown, bool allowOverrides);
 
 
-    virtual ExpressionStatus _Promote(EvaluationResult& leftResult, EvaluationResult& rightResult, 
+    virtual ExpressionStatus _Promote(EvaluationResult& leftResult, EvaluationResult& rightResult,
                                         ExpressionContextR context) { return ExprStatus_NotImpl; }
 
     //  Undecided if this is pure virtual or a default implementation.
     virtual ExpressionStatus _PerformOperation(EvaluationResultR result,
-                                        EvaluationResultCR leftResult, EvaluationResultCR rightResult, 
+                                        EvaluationResultCR leftResult, EvaluationResultCR rightResult,
                                         ExpressionContextR context)  { return ExprStatus_NotImpl; }
 
     ExpressionStatus        PerformDefaultPromotion(EvaluationResult& leftResult, EvaluationResult& rightResult);
 
 public:
-                ArithmeticNode(ExpressionToken operatorCode, NodeR left, NodeR right) 
+                ArithmeticNode(ExpressionToken operatorCode, NodeR left, NodeR right)
                                 : BinaryNode (operatorCode, left, right) {}
 
 };  //  End of struct ArithmeticNode
@@ -659,11 +659,11 @@ public:
 struct          ExponentNode : ArithmeticNode
 {
 protected:
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context,
                                         bool allowUnknown, bool allowOverrides) override;
 
 public:
-                ExponentNode(NodeR left, NodeR right) 
+                ExponentNode(NodeR left, NodeR right)
                                 : ArithmeticNode (TOKEN_Exponentiation, left, right) {}
 
 };  //  End of struct ExponentNode
@@ -677,11 +677,11 @@ public:
 struct          MultiplyNode : ArithmeticNode  //  No modifiers -- see ModifierNode
 {
 protected:
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context,
                                         bool allowUnknown, bool allowOverrides) override;
 
 public:
-                MultiplyNode(ExpressionToken operatorCode, NodeR left, NodeR right) 
+                MultiplyNode(ExpressionToken operatorCode, NodeR left, NodeR right)
                                 : ArithmeticNode (operatorCode, left, right) {}
 
 };  //  End of struct MultiplyNode
@@ -695,11 +695,11 @@ public:
 struct          DivideNode : ArithmeticNode  //  No modifiers -- see ModifierNode
 {
 protected:
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context,
                                         bool allowUnknown, bool allowOverrides) override;
 
 public:
-                DivideNode(ExpressionToken operatorCode, NodeR left, NodeR right) 
+                DivideNode(ExpressionToken operatorCode, NodeR left, NodeR right)
                                 : ArithmeticNode (operatorCode, left, right) {}
 
 };  //  End of struct DivideNode
@@ -710,19 +710,19 @@ public:
 *
 * @bsiclass                                                     John.Gooding    02/2011
 +===============+===============+===============+===============+===============+======*/
-struct          PlusMinusNode : ArithmeticNode 
+struct          PlusMinusNode : ArithmeticNode
 {
 protected:
     //  Undecided if this is pure virtual or a default implementation.
-    virtual ExpressionStatus _Promote(EvaluationResult& leftResult, EvaluationResult& rightResult, 
+    virtual ExpressionStatus _Promote(EvaluationResult& leftResult, EvaluationResult& rightResult,
                                         ExpressionContextR context);
 
     //  Undecided if this is pure virtual or a default implementation.
     virtual ExpressionStatus _PerformOperation(EvaluationResultR result,
-                                        EvaluationResultCR leftResult, EvaluationResultCR rightResult, 
+                                        EvaluationResultCR leftResult, EvaluationResultCR rightResult,
                                         ExpressionContextR context);
 public:
-                PlusMinusNode(ExpressionToken operatorCode, NodeR left, NodeR right) 
+                PlusMinusNode(ExpressionToken operatorCode, NodeR left, NodeR right)
                                 : ArithmeticNode (operatorCode, left, right) {}
 
 };  //  End of struct PlusMinusNode
@@ -733,14 +733,14 @@ public:
 *
 * @bsiclass                                                     John.Gooding    02/2011
 +===============+===============+===============+===============+===============+======*/
-struct          ConcatenateNode : ArithmeticNode 
+struct          ConcatenateNode : ArithmeticNode
 {
 protected:
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context,
                                         bool allowUnknown, bool allowOverrides) override;
 
 public:
-                ConcatenateNode(NodeR left, NodeR right) 
+                ConcatenateNode(NodeR left, NodeR right)
                                 : ArithmeticNode (TOKEN_Concatenate, left, right) {}
 
 };  //  End of struct ConcatenateNode
@@ -754,11 +754,11 @@ public:
 struct          ShiftNode : BinaryNode
 {
 protected:
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context,
                                         bool allowUnknown, bool allowOverrides) override;
 
 public:
-                ShiftNode(ExpressionToken operatorCode, NodeR left, NodeR right) 
+                ShiftNode(ExpressionToken operatorCode, NodeR left, NodeR right)
                                 : BinaryNode (operatorCode, left, right) {}
 
 };  //  End of struct ShiftNode
@@ -772,11 +772,11 @@ public:
 struct          BitWiseNode : BinaryNode
 {
 protected:
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context,
                                         bool allowUnknown, bool allowOverrides) override;
 
 public:
-                BitWiseNode(ExpressionToken operatorCode, NodeR left, NodeR right) 
+                BitWiseNode(ExpressionToken operatorCode, NodeR left, NodeR right)
                                 : BinaryNode (operatorCode, left, right) {}
 };  //  End of struct BitWiseNode
 
@@ -789,11 +789,11 @@ public:
 struct          ComparisonNode : BinaryNode
 {
 protected:
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context,
                                         bool allowUnknown, bool allowOverrides) override;
 
 public:
-                ComparisonNode(ExpressionToken operatorCode, NodeR left, NodeR right) 
+                ComparisonNode(ExpressionToken operatorCode, NodeR left, NodeR right)
                                 : BinaryNode (operatorCode, left, right) {}
 
 };  //  End of struct ComparisonNode
@@ -807,11 +807,11 @@ public:
 struct          LogicalNode : BinaryNode
 {
 protected:
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context,
                                         bool allowUnknown, bool allowOverrides) override;
 
 public:
-                LogicalNode(ExpressionToken operatorCode, NodeR left, NodeR right) 
+                LogicalNode(ExpressionToken operatorCode, NodeR left, NodeR right)
                                 : BinaryNode (operatorCode, left, right) {}
 
 };  //  End of struct LogicalNode
@@ -829,10 +829,10 @@ private:
     static ExpressionStatus PerformModifier (ExpressionToken  modifier, EvaluationResultR left, EvaluationResultR right);
 
 public:
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context,
                                         bool allowUnknown, bool allowOverrides) override;
 
-                AssignmentNode(NodeR left, NodeR right, ExpressionToken assignmentSubtype) 
+                AssignmentNode(NodeR left, NodeR right, ExpressionToken assignmentSubtype)
                                 : BinaryNode (assignmentSubtype, left, right) {}
 
 };  //  End of struct AssignmentNode
@@ -851,7 +851,7 @@ private:
 protected:
     virtual WString     _ToString() const override { return L""; }
 
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor)
         {
         bool    announceComma = false;
         visitor.StartArguments(*this);
@@ -893,7 +893,7 @@ private:
     WString             m_methodName;
     bool                m_dotted;
 
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor)
         {
         bool    retval = visitor.ProcessNode(*this);;
         if (!retval)
@@ -903,17 +903,17 @@ private:
         }
 
     //  Constructor
-                CallNode(ArgumentTreeNodeR arguments, wchar_t const* methodName, bool dotted) : 
+                CallNode(ArgumentTreeNodeR arguments, wchar_t const* methodName, bool dotted) :
                                     m_arguments (&arguments), m_methodName(methodName), m_dotted(dotted) {}
 
 protected:
-    virtual WString     _ToString() const override 
+    virtual WString     _ToString() const override
         {
         WString     retval;
         if (m_dotted)
             retval.append(L".");
         retval.append(m_methodName);
-        return retval; 
+        return retval;
         }
 
     virtual ExpressionToken _GetOperation () const override { return TOKEN_LParen; }
@@ -945,7 +945,7 @@ private:
 
 protected:
     virtual WString     _ToString() const override { return Lexer::GetString(TOKEN_IIf); }
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor)
         {
         if (!visitor.ProcessNode(*this))
             return false;
@@ -972,7 +972,7 @@ protected:
         }
 
     virtual ExpressionToken _GetOperation () const { return TOKEN_IIf; }
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context,
                                         bool allowUnknown, bool allowOverrides);
 
 public:

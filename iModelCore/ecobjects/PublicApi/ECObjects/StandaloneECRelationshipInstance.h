@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/StandaloneECRelationshipInstance.h $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -23,7 +23,7 @@ typedef RefCountedPtr<StandaloneECRelationshipInstance> StandaloneECRelationship
 //=======================================================================================
 //! @ingroup ECObjectsGroup
 //! StandaloneECRelationshipInstance is used to represent a relationship between
-//! two IECInstances 
+//! two IECInstances
 //=======================================================================================
 struct StandaloneECRelationshipInstance : IECRelationshipInstance
 //__PUBLISH_SECTION_END__
@@ -39,13 +39,13 @@ private:
     Int64                             m_sourceOrderId;
     Int64                             m_targetOrderId;
     WString                           m_name;
-    StandaloneECRelationshipEnablerCP m_relationshipEnabler; 
+    StandaloneECRelationshipEnablerCP m_relationshipEnabler;
     WString                           m_instanceId;
 
     StandaloneECRelationshipInstance (StandaloneECRelationshipEnablerCR relationshipEnabler);
     ~StandaloneECRelationshipInstance();
 
-protected:  
+protected:
     // IECRelationshipInstance
     virtual void            _SetSource (IECInstanceP instance);
     virtual IECInstancePtr  _GetSource () const;
@@ -57,16 +57,16 @@ protected:
     // IECInstance
     virtual WString             _GetInstanceId() const override;
     virtual ECObjectsStatus     _SetInstanceId(WCharCP id) override;
-    virtual bool                _IsReadOnly() const override;        
+    virtual bool                _IsReadOnly() const override;
     virtual ECObjectsStatus     _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
-    virtual ECObjectsStatus     _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
+    virtual ECObjectsStatus     _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;
     virtual ECObjectsStatus     _SetInternalValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;
     virtual ECObjectsStatus     _GetIsPropertyNull (bool& isNull, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
 
     virtual ECObjectsStatus     _InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size) override;
     virtual ECObjectsStatus     _AddArrayElements (WCharCP propertyAccessString, UInt32 size) override;
     virtual ECObjectsStatus     _RemoveArrayElement (WCharCP propertyAccessString, UInt32 index) override;
-    virtual ECObjectsStatus     _ClearArray (WCharCP propertyAccessString) override;    
+    virtual ECObjectsStatus     _ClearArray (WCharCP propertyAccessString) override;
     virtual WString             _ToString (WCharCP indent) const override;
     virtual ClassLayoutCR       _GetClassLayout () const;
     virtual ECEnablerCR         _GetEnabler() const override;
@@ -81,10 +81,10 @@ protected:
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
-    ECOBJECTS_EXPORT StandaloneECRelationshipEnablerCR  GetRelationshipEnabler() const; 
+    ECOBJECTS_EXPORT StandaloneECRelationshipEnablerCR  GetRelationshipEnabler() const;
     ECOBJECTS_EXPORT ECRelationshipClassCR              GetRelationshipClass () const;
-    ECOBJECTS_EXPORT WCharCP                            GetName(); 
-    ECOBJECTS_EXPORT void                               SetName(WCharCP name); 
+    ECOBJECTS_EXPORT WCharCP                            GetName();
+    ECOBJECTS_EXPORT void                               SetName(WCharCP name);
     };
 
 //=======================================================================================
@@ -117,10 +117,10 @@ protected:
     virtual IECWipRelationshipInstancePtr _CreateWipRelationshipInstance () const;
     virtual ECN::ECRelationshipClassCR     _GetRelationshipClass() const;
 
-public: 
+public:
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
-public: 
+public:
     ECOBJECTS_EXPORT static StandaloneECRelationshipEnablerPtr CreateStandaloneRelationshipEnabler (ECN::ECRelationshipClassCR ecClass);
     ECOBJECTS_EXPORT StandaloneECRelationshipInstancePtr       CreateRelationshipInstance () const;
     ECOBJECTS_EXPORT ECEnablerCR                               GetECEnabler() const;

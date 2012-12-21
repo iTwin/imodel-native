@@ -18,7 +18,7 @@
 * This file describes the public API for writing applications using the ECObjects library.
 *
 * \section Namespaces
-* All of the ECObjects APIs are contained within the Bentley::EC namespace. 
+* All of the ECObjects APIs are contained within the Bentley::EC namespace.
 *
 * \section headerFiles Header Files
 * By far the most convenient and efficient way of accessing the classes in the ECObjects API is to use:
@@ -36,7 +36,7 @@
 * \section Logging
 * ECObjects makes use of the BSI logger for logging warnings and errors in the code, as well
 * as debug information.  If the calling application has configured a logger already, ECObjects
-* will log to that logger.  Otherwise, ECObjects may register a new logger and configure it, according to 
+* will log to that logger.  Otherwise, ECObjects may register a new logger and configure it, according to
 * these rules:
 *   -# If the environment variable "BENTLEY_LOGGING_CONFIG" is set, it will use the file pointed
 *      to by this path as the configuration file.

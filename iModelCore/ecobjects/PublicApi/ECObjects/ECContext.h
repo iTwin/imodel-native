@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECContext.h $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -40,7 +40,7 @@ friend struct SearchPathSchemaFileLocater;
         int                 m_priority;
         IECSchemaLocaterP   m_locator;
 
-        bool operator < (SchemaLocatorKey const & rhs) const 
+        bool operator < (SchemaLocatorKey const & rhs) const
             {
             if (m_priority != rhs.m_priority)
                 return m_priority < rhs.m_priority;//Order the higher priority ones first
@@ -71,7 +71,7 @@ private:
     bvector<SearchPathSchemaFileLocaterPtr>                 m_ownedLocators;
     bool                            m_acceptLegacyImperfectLatestCompatibleMatch;
 
-    
+
     SchemaLocatorSet::iterator  GetHighestLocatorInRange (UInt32& prioirty);
     bool                        GetStandardPaths (bvector<WString>& standardPaths);
 
@@ -105,7 +105,7 @@ public:
     //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestCompatible only checks that the major version matches. A warning will be logged if minor version is too low, but the ECSchema will be accepted
     //! @remarks This more-flexible override is primarily for internal use
     ECOBJECTS_EXPORT static ECSchemaReadContextPtr CreateContext (IStandaloneEnablerLocaterP standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch = false);
-    
+
     //! Creates a context for deserializing ECSchemas
     //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestCompatible only checks that the major version matches. A warning will be logged if minor version is too low, but the ECSchema will be accepted
     ECOBJECTS_EXPORT static ECSchemaReadContextPtr CreateContext (bool acceptLegacyImperfectLatestCompatibleMatch = false);
@@ -133,7 +133,7 @@ private:
     StandaloneECInstancePtr             m_dummy;
     ECSchemaCR                          m_fallBackSchema;
 protected:
-    ECInstanceReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, ECSchemaCR fallBackSchema) 
+    ECInstanceReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, ECSchemaCR fallBackSchema)
         : m_standaloneEnablerLocater (standaloneEnablerLocater), m_fallBackSchema (fallBackSchema)
         {
         }
@@ -141,7 +141,7 @@ protected:
     //! Will be called by ECInstance deserialization to create the ECInstances that it returns.
     //! The default implementation calls GetDefaultStandaloneEnabler() on the ecClass
     ECOBJECTS_EXPORT virtual IECInstancePtr _CreateStandaloneInstance (ECClassCR ecClass);
-    
+
     virtual ECSchemaCP  _FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType) const = 0;
 
 public:

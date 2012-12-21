@@ -1,10 +1,10 @@
-/*----------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+
 |
 |     $Source: PublicApi/ECObjects/VirtualCollectionIterator.h $
 |
 |  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
-+----------------------------------------------------------------------*/
++--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 /// @cond BENTLEY_SDK_Desktop
@@ -25,9 +25,9 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 *
 * To use the template, an iterator class must:
 *   1) Satisfy the requirements of RefCountedPtr usually by deriving from RefCountedBase.
-*   2) The iterator must implement standard iterator traits : value_type and reference typedef 
+*   2) The iterator must implement standard iterator traits : value_type and reference typedef
 
-*   3) Provide the following methods:        
+*   3) Provide the following methods:
 *       bool             IsDifferent(MyIterator const& rhs) const;
 *       void             MoveToNext ();
 *       ReturnType       GetCurrent () const;
@@ -59,7 +59,7 @@ public:
         {
         bool leftIsNull = m_implementation.IsNull();
         bool rightIsNull = rhs.m_implementation.IsNull();
-        
+
         if (leftIsNull && rightIsNull)
             return false;
 
@@ -68,7 +68,7 @@ public:
 
         return true;
         }
-    
+
     bool IsNull() const {return m_implementation.IsNull();}
     VirtualCollectionIterator&   operator++()
         {

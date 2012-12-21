@@ -76,7 +76,7 @@ public:
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                        Affan.Khan   12/11
-+---------------+---------------+---------------+---------------+---------------+------*/    
++---------------+---------------+---------------+---------------+---------------+------*/
 struct ECNameHashCodeGenerator
     {
 public:
@@ -136,7 +136,7 @@ public:
     ECOBJECTS_EXPORT static bool IsValidAlphaNumericCharacter (WChar c);
     };
 
-//=======================================================================================    
+//=======================================================================================
 //! Used to represent the type of an ECProperty
 //! @ingroup ECObjectsGroup
 //! @bsiclass
@@ -479,7 +479,7 @@ public:
     // The following are used by the 'extended type' system which is currently implemented in DgnPlatform
     IECTypeAdapter*                     GetCachedTypeAdapter() const { return m_cachedTypeAdapter; }
     void                                SetCachedTypeAdapter (IECTypeAdapter* adapter) const { m_cachedTypeAdapter = adapter; }
-    
+
     bool                                IsReadOnlyFlagSet() const { return m_readOnly; }
 /*__PUBLISH_SECTION_START__*/
 public:
@@ -943,7 +943,7 @@ public:
     //! @return   A pointer to an ECN::ECProperty if the named property exists within the current class; otherwise, NULL
     ECOBJECTS_EXPORT ECPropertyP     GetPropertyP (WStringCR name, bool includeBaseClasses=true) const;
 
-    //! Get the property that stores the instance label for the class. 
+    //! Get the property that stores the instance label for the class.
     //! @return A pointer to ECN::ECProperty if the instance label has been specified; otherwise, NULL
     ECOBJECTS_EXPORT ECPropertyP GetInstanceLabelProperty() const;
 
@@ -1544,7 +1544,7 @@ struct ECSchemaCache : public RefCountedBase
 protected:
     SchemaMap   m_schemas;
 
-    // TODO: Uncomment this and remove the public desctructor once ECDb stops declaring this on the stack. 
+    // TODO: Uncomment this and remove the public desctructor once ECDb stops declaring this on the stack.
     // ECSchemaCache() {}
     // ECOBJECTS_EXPORT virtual ~ECSchemaCache ();
 
@@ -1790,7 +1790,7 @@ public:
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml
     //          will contain the serialized schema.  Otherwise, ecSchemaXml will be unmodified
     ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlString (WStringR ecSchemaXml) const;
-    
+
     //! Serializes an ECXML schema to a string
     //! @param[out] ecSchemaXml     The string containing the Xml of the serialized schema
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml
@@ -1803,8 +1803,8 @@ public:
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the file pointed
     //          to by ecSchemaXmlFile will contain the serialized schema.  Otherwise, the file will be unmodified
     ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlFile (WCharCP ecSchemaXmlFile, bool utf16 = false) const;
-    
-    
+
+
     //! Writes an ECXML schema to an IStream
     //! @param[in]  ecSchemaXmlStream   The IStream to write the serialized XML to
     //! @param[in]  utf16            'false' (the default) to use utf-8 encoding
@@ -1841,7 +1841,7 @@ public:
                                                           UInt32 versionMajor, UInt32 versionMinor);
 
 /*__PUBLISH_SECTION_END__*/
-    
+
 /*__PUBLISH_SECTION_START__*/
 
     //! Generate a schema version string given the major and minor version values.
