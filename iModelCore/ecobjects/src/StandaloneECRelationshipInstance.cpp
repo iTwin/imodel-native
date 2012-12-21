@@ -34,7 +34,7 @@ StandaloneECRelationshipInstance::~StandaloneECRelationshipInstance()
     {
     m_relationshipEnabler->Release();
 
-    //ECObjectsLogger::Log()->tracev (L"StandaloneECRelationshipInstance at 0x%x is being destructed. It references enabler 0x%x", this, m_sharedWipEnabler);
+    //LOG.tracev (L"StandaloneECRelationshipInstance at 0x%x is being destructed. It references enabler 0x%x", this, m_sharedWipEnabler);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -236,7 +236,7 @@ void            StandaloneECRelationshipInstance::_SetSource (IECInstanceP insta
         }
 
     BeAssert(false && "Invalid source instance");
-    ECObjectsLogger::Log()->warningv (L"Invalid source instance of class '%ls' for relationship class %ls", instance->GetClass().GetName().c_str(), GetRelationshipClass().GetName().c_str());
+    LOG.warningv (L"Invalid source instance of class '%ls' for relationship class %ls", instance->GetClass().GetName().c_str(), GetRelationshipClass().GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -290,7 +290,7 @@ void            StandaloneECRelationshipInstance::_SetTarget (IECInstanceP insta
         }
 
     BeAssert(false && "Invalid target instance");
-    ECObjectsLogger::Log()->warningv (L"Invalid target instance of class '%ls' for relationship class %ls", instance->GetClass().GetName().c_str(), GetRelationshipClass().GetName().c_str());
+    LOG.warningv (L"Invalid target instance of class '%ls' for relationship class %ls", instance->GetClass().GetName().c_str(), GetRelationshipClass().GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

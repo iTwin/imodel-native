@@ -289,11 +289,13 @@ public:
     ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromXmlFile   (IECInstancePtr& ecInstance, WCharCP fileName,   ECInstanceReadContextR context);
     ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromXmlStream (IECInstancePtr& ecInstance, IStreamP stream,    ECInstanceReadContextR context);
     ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromXmlString (IECInstancePtr& ecInstance, WCharCP xmlString,  ECInstanceReadContextR context);
+    ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromXmlString (IECInstancePtr& ecInstance, Utf8CP xmlString,   ECInstanceReadContextR context);
     ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromBeXmlDom  (IECInstancePtr& ecInstance, BeXmlDomR xmlNode,  ECInstanceReadContextR context);
     ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromBeXmlNode (IECInstancePtr& ecInstance, BeXmlNodeR xmlNode, ECInstanceReadContextR context);
 
-    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlFile   (WCharCP fileName, bool isStandAlone, bool writeInstanceId, bool utf16);
-    ECOBJECTS_EXPORT InstanceWriteStatus            WriteToXmlStream (IStreamP stream, bool isStandAlone, bool writeInstanceId, bool utf16);
+    ECOBJECTS_EXPORT InstanceWriteStatus        WriteToXmlFile   (WCharCP fileName, bool isStandAlone, bool writeInstanceId, bool utf16);
+    ECOBJECTS_EXPORT InstanceWriteStatus        WriteToXmlStream (IStreamP stream, bool isStandAlone, bool writeInstanceId, bool utf16);
+    ECOBJECTS_EXPORT InstanceWriteStatus        WriteToXmlString (Utf8String & ecInstanceXml, bool isStandAlone, bool writeInstanceId);
     ECOBJECTS_EXPORT InstanceWriteStatus        WriteToXmlString (WString & ecInstanceXml, bool isStandAlone, bool writeInstanceId);
     ECOBJECTS_EXPORT InstanceWriteStatus        WriteToBeXmlNode (BeXmlNodeR xmlNode);
     };

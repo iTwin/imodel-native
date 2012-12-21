@@ -681,5 +681,85 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWhenSerializingInstance)
     //VerifyTestInstance (readbackInstance.get(), true);
     };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(InstanceSerializationTest, ExpectSuccessWhenRoundTrippingViaWCharXmlString)
+    {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+
+    // we get the instance we want to serialize by reading the instance from XML.
+    ECSchemaPtr schema;
+    SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, schemaStatus);
+    
+    ECClassCP testClass = schema->GetClassP (L"TestClass");
+    WCharCP propertyName = L"StringMember";
+    ECInstanceReadContextPtr instanceReadContext = ECInstanceReadContext::CreateContext (*schema);    
+        
+    IECInstancePtr testInstance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
+        
+    //*** Test with WChar String
+    WString expectedString (L"הצüבß");
+    ECValue expectedValue (expectedString.c_str ());
+    EXPECT_EQ (SUCCESS, testInstance->SetValue (propertyName, expectedValue));
+        
+    WString wcharXml;
+    InstanceWriteStatus serializeStat = testInstance->WriteToXmlString (wcharXml, true, true);
+    EXPECT_EQ (INSTANCE_WRITE_STATUS_Success, serializeStat) << L"IECInstance::WriteToXmlString with WString overload failed.";
+    
+    // then read it back.
+    IECInstancePtr readbackInstance = NULL;
+    InstanceReadStatus deserializeStatus = IECInstance::ReadFromXmlString (readbackInstance, wcharXml.c_str (), *instanceReadContext);
+    EXPECT_EQ (INSTANCE_READ_STATUS_Success, deserializeStatus) << L"IECInstance::ReadFromXmlString with WChar overload failed";
+    
+    ECValue actualValue;
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (actualValue, propertyName)) << L"Could not retrieve property value for property '" << propertyName << "'.";
+    
+    EXPECT_TRUE (expectedValue.Equals (actualValue)) << L"Roundtripped WChar ECValue does not match original ECValue.";
+    WCharCP actualString = actualValue.GetString ();
+    EXPECT_STREQ (expectedString.c_str (), actualString) << L"Roundtripped WChar string does not match original string.";    
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(InstanceSerializationTest, ExpectSuccessWhenRoundTrippingViaUtf8XmlString)
+    {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+
+    // we get the instance we want to serialize by reading the instance from XML.
+    ECSchemaPtr schema;
+    SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, schemaStatus);
+    
+    ECClassCP testClass = schema->GetClassP (L"TestClass");
+    WCharCP propertyName = L"StringMember";
+    ECInstanceReadContextPtr instanceReadContext = ECInstanceReadContext::CreateContext (*schema);    
+        
+    IECInstancePtr testInstance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
+        
+    //*** Test with WChar String
+    Utf8String expectedString;
+    BeStringUtilities::WCharToUtf8 (expectedString, L"הצüßבט");
+    ECValue expectedValue (expectedString.c_str ());
+    EXPECT_EQ (SUCCESS, testInstance->SetValue (propertyName, expectedValue));
+        
+    Utf8String utf8Xml;
+    InstanceWriteStatus serializeStat = testInstance->WriteToXmlString (utf8Xml, true, true);
+    EXPECT_EQ (INSTANCE_WRITE_STATUS_Success, serializeStat) << L"IECInstance::WriteToXmlString with Utf8String overload failed.";
+    
+    // then read it back.
+    IECInstancePtr readbackInstance = NULL;
+    InstanceReadStatus deserializeStatus = IECInstance::ReadFromXmlString (readbackInstance, utf8Xml.c_str (), *instanceReadContext);
+    EXPECT_EQ (INSTANCE_READ_STATUS_Success, deserializeStatus) << L"IECInstance::ReadFromXmlString with Utf8Char overload failed";
+    
+    ECValue actualValue;
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (actualValue, propertyName)) << L"Could not retrieve property value for property '" << propertyName << "'.";
+    
+    EXPECT_TRUE (expectedValue.Equals (actualValue)) << L"Roundtripped WChar ECValue does not match original ECValue.";
+    Utf8CP actualString = actualValue.GetUtf8CP ();
+    EXPECT_STREQ (expectedString.c_str (), actualString) << L"Roundtripped WChar string does not match original string.";    
+    };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

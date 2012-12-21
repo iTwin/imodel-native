@@ -44,6 +44,9 @@ public:
 ParserRegexP ParserRegex::Create (WCharCP regexStr, bool doNotUseECMA)
     {
 #if defined (HAVE_REGEX)
+    if (regexStr == NULL)
+        return NULL;
+
     ParserRegexP parserRegex = new ParserRegex();
     WString fixedRegexStr;
     if (parserRegex->ConvertRegexString (fixedRegexStr, regexStr))
@@ -77,6 +80,8 @@ ParserRegexP ParserRegex::Create (WCharCP regexStr, bool doNotUseECMA)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ParserRegex::ConvertRegexString (WStringR converted, WCharCP in)
     {
+    PRECONDITION (in != NULL, false);
+
     WCharCP end = in + wcslen (in);
     Int32 depth = 0;
     return ProcessRegex (converted, in, end, depth) && 0 == depth;
@@ -87,6 +92,8 @@ bool ParserRegex::ConvertRegexString (WStringR converted, WCharCP in)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ParserRegex::ProcessRegex (WStringR converted, WCharCP& in, WCharCP end, Int32& depth)
     {
+    PRECONDITION (in != NULL && end != NULL, false);
+
     bool inQuotes = false;
     while (in < end)
         {
@@ -284,7 +291,7 @@ CalculatedPropertySpecificationPtr CalculatedPropertySpecification::Create (Prim
     customAttr->GetValue (failureValue, L"FailureValue");
     if (!failureValue.ConvertToPrimitiveType (ecprop.GetType()))
         {
-        ECObjectsLogger::Log()->infov (L"Unable to convert failure value %ls to primitive type %ls\n", failureValue.GetString(), ecprop.GetTypeName().c_str());
+        LOG.infov (L"Unable to convert failure value %ls to primitive type %ls\n", failureValue.GetString(), ecprop.GetTypeName().c_str());
         failureValue.SetToNull();
         }
 

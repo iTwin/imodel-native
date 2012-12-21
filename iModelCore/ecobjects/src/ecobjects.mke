@@ -53,7 +53,6 @@ ECObjectsHeaders =  $(ecobjectsPublicAPISrc)ECObjects.h \
                     $(ecobjectsPublicAPISrc)SupplementalSchema.h \
                     $(ecobjectsPublicAPISrc)ECEvent.h \
                     $(baseDir)ecxml.h \
-                    $(baseDir)Logger.h \
                     $(baseDir)FileUtilities.h \
                     $(baseDir)StopWatch.h \
                     $(ecobjectsPublicAPISrc)CalculatedProperty.h
@@ -135,8 +134,6 @@ $(o)StandaloneECRelationshipInstance$(oext)                : $(baseDir)Standalon
 $(o)SupplementalSchema$(oext)                              : $(baseDir)SupplementalSchema.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)DesignByContract$(oext)                                : $(baseDir)DesignByContract.cpp $(ecobjectsPublicAPISrc)DesignByContract.h ${MultiCompileDepends} 
-
-$(o)Logger$(oext)                                          : $(baseDir)Logger.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)BeXmlCGReader$(oext)                                   : $(baseDir)BeXmlCGReader.cpp $(ecobjectsPublicAPISrc)BeXmlCommonGeometry.h ${MultiCompileDepends} 
 

@@ -1487,7 +1487,7 @@ ECN::ECEnablerP                  ECInstanceInteropHelper::GetEnablerForStructArr
     ECN::StandaloneECEnablerPtr standaloneEnabler = structArrayEnabler->GetEnablerForStructArrayMember (schemaKey, className);
     if (standaloneEnabler.IsNull())
         {
-        ECObjectsLogger::Log()->errorv (L"Unable to locate a standalone enabler for class %ls", className);
+        LOG.errorv (L"Unable to locate a standalone enabler for class %ls", className);
         return NULL;
         }
 
@@ -1535,7 +1535,7 @@ ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (ECN::ECValueAcces
     ECN::StandaloneECEnablerPtr standaloneEnabler = structArrayEnabler.GetEnablerForStructArrayMember (schemaKey, className);
     if (standaloneEnabler.IsNull())
         {
-        ECObjectsLogger::Log()->errorv (L"Unable to locate a standalone enabler for class \" %ls \"", className);
+        LOG.errorv (L"Unable to locate a standalone enabler for class \" %ls \"", className);
         return ECOBJECTS_STATUS_EnablerNotFound;
         }
 
@@ -1562,14 +1562,14 @@ ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (ECN::ECValueAcces
         ECN::IECInstancePtr parentNativeInstance = getParentNativeInstance (&instance, structArrayValueAccessor);
         if (parentNativeInstance.IsNull())
             {
-            ECObjectsLogger::Log()->error (L"Unable to get native instance when processing ECInstanceInteropHelper::GetStructArrayEntry");
+            LOG.error (L"Unable to get native instance when processing ECInstanceInteropHelper::GetStructArrayEntry");
             return ECOBJECTS_STATUS_Error;
             }
 
         ::UInt32 numToInsert = (index + 1) - arrayCount;
         if (ECN::ECOBJECTS_STATUS_Success != parentNativeInstance->AddArrayElements (wcharAccessString, numToInsert))
             {
-            ECObjectsLogger::Log()->errorv(L"Unable to add array element(s) to native instance - access string \"%ls\"", structArrayValueAccessor.GetManagedAccessString().c_str());
+            LOG.errorv(L"Unable to add array element(s) to native instance - access string \"%ls\"", structArrayValueAccessor.GetManagedAccessString().c_str());
             return ECOBJECTS_STATUS_UnableToAddStructArrayMember;
             }
 
@@ -1602,7 +1602,7 @@ ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (ECN::ECValueAcces
             ECN::IECInstancePtr parentNativeInstance = getParentNativeInstance (&instance, structArrayValueAccessor);
             if (parentNativeInstance.IsNull())
                 {
-                ECObjectsLogger::Log()->error (L"Unable to get native instance when processing ECInstanceInteropHelper::GetStructArrayEntry");
+                LOG.error (L"Unable to get native instance when processing ECInstanceInteropHelper::GetStructArrayEntry");
                 return ECOBJECTS_STATUS_Error;
                 }
 
@@ -2164,7 +2164,7 @@ static BentleyStatus    LogXmlLoadError ()
     {        
     WString     errorString;
     BeXmlDom::GetLastErrorString (errorString);
-    ECObjectsLogger::Log()->errorv (errorString.c_str());
+    LOG.errorv (errorString.c_str());
 
     return SUCCESS;
     }
@@ -2242,7 +2242,7 @@ InstanceReadStatus      GetInstance (ECClassCP& ecClass, IECInstancePtr& ecInsta
 
     if (NULL == schema)
         {
-        ECObjectsLogger::Log()->errorv (L"Failed to locate ECSchema %ls", m_fullSchemaName.c_str());
+        LOG.errorv (L"Failed to locate ECSchema %ls", m_fullSchemaName.c_str());
         return INSTANCE_READ_STATUS_ECSchemaNotFound;
         }
 
@@ -2269,7 +2269,7 @@ InstanceReadStatus      GetInstance (ECClassCP& ecClass, IECInstancePtr& ecInsta
         }
     if (NULL == foundClass)
         {
-        ECObjectsLogger::Log()->errorv (L"Failed to find ECClass %ls in %ls", className.c_str(), m_fullSchemaName.c_str());
+        LOG.errorv (L"Failed to find ECClass %ls in %ls", className.c_str(), m_fullSchemaName.c_str());
         return INSTANCE_READ_STATUS_ECClassNotFound;
         }
 
@@ -2356,7 +2356,7 @@ InstanceReadStatus   ReadPropertyValue (ECClassCR ecClass, IECInstanceP ecInstan
     ECPropertyP ecProperty;
     if (NULL == (ecProperty = ecClass.GetPropertyP (propertyName)))
         {
-        ECObjectsLogger::Log()->warningv (L"No ECProperty '%ls' found in ECClass '%ls'. Value will be ignored.", propertyName.c_str(), ecClass.GetName().c_str());
+        LOG.warningv (L"No ECProperty '%ls' found in ECClass '%ls'. Value will be ignored.", propertyName.c_str(), ecClass.GetName().c_str());
         return INSTANCE_READ_STATUS_PropertyNotFound;
         }
 
@@ -2400,7 +2400,7 @@ InstanceReadStatus   ReadPrimitivePropertyValue (PrimitiveECPropertyP primitiveP
         setStatus = ecInstance->SetInternalValue (primitiveProperty->GetName().c_str(), ecValue);
 
         if (ECOBJECTS_STATUS_Success != setStatus && ECOBJECTS_STATUS_PropertyValueMatchesNoChange != setStatus)
-            ECObjectsLogger::Log()->warningv(L"Unable to set value for property %ls", primitiveProperty->GetName().c_str());
+            LOG.warningv(L"Unable to set value for property %ls", primitiveProperty->GetName().c_str());
         }
     else
         {
@@ -2409,7 +2409,7 @@ InstanceReadStatus   ReadPrimitivePropertyValue (PrimitiveECPropertyP primitiveP
         setStatus = ecInstance->SetInternalValue (compoundAccessString.c_str(), ecValue);
 
         if (ECOBJECTS_STATUS_Success != setStatus && ECOBJECTS_STATUS_PropertyValueMatchesNoChange != setStatus)
-            ECObjectsLogger::Log()->warningv(L"Unable to set value for property %ls", compoundAccessString.c_str());
+            LOG.warningv(L"Unable to set value for property %ls", compoundAccessString.c_str());
         }
 
     BeAssert (ECOBJECTS_STATUS_Success == setStatus || ECOBJECTS_STATUS_PropertyValueMatchesNoChange == setStatus);
@@ -2448,7 +2448,7 @@ InstanceReadStatus   ReadArrayPropertyValue (ArrayECPropertyP arrayProperty, IEC
             {
             if (!ValidateArrayPrimitiveType (arrayValueNode->GetName(), memberType))
                 {
-                ECObjectsLogger::Log()->warningv(L"Incorrectly formatted array element found in array %ls.  Expected: %hs  Found: %hs", accessString.c_str(), GetPrimitiveTypeString (memberType), arrayValueNode->GetName());
+                LOG.warningv(L"Incorrectly formatted array element found in array %ls.  Expected: %hs  Found: %hs", accessString.c_str(), GetPrimitiveTypeString (memberType), arrayValueNode->GetName());
                 continue;
                 }
 
@@ -2606,7 +2606,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
 
             if (INSTANCE_READ_STATUS_Success != ConvertStringToByteArray (byteArray, propertyValueString.c_str ()))
                 {
-                ECObjectsLogger::Log()->warningv(L"Type mismatch in deserialization: \"%ls\" is not Binary", propertyValueString.c_str ());
+                LOG.warningv(L"Type mismatch in deserialization: \"%ls\" is not Binary", propertyValueString.c_str ());
                 return INSTANCE_READ_STATUS_TypeMismatch;
                 }
             ecValue.SetBinary (&byteArray.front(), byteArray.size(), true);
@@ -3019,8 +3019,10 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
 
     // no members, don't write anything.
     ECValue         ecValue;
-    if (SUCCESS != ecInstance.GetValue (ecValue, accessString.c_str(), 0) || ecValue.IsNull())
+    if (SUCCESS != ecInstance.GetValue (ecValue, accessString.c_str()) || ecValue.IsNull() || ecValue.GetArrayInfo().GetCount() == 0)
         return INSTANCE_WRITE_STATUS_Success;
+
+    UInt32 nElements = ecValue.GetArrayInfo().GetCount();
 
     BeXmlNodeP  arrayNode = propertyValueNode.AddEmptyElement (arrayProperty.GetName().c_str());
 
@@ -3029,7 +3031,7 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
         {
         PrimitiveType   memberType  = arrayProperty.GetPrimitiveElementType();
         Utf8CP          typeString  = GetPrimitiveTypeString (memberType);
-        for (int index=0; ; index++)
+        for (UInt32 index=0; index < nElements ; index++)
             {
             if (SUCCESS != ecInstance.GetValue (ecValue, accessString.c_str(), index))
                 break;
@@ -3046,7 +3048,7 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
         }
     else if (ARRAYKIND_Struct == arrayKind)
         {
-        for (int index=0; ; index++)
+        for (UInt32 index=0; index < nElements ; index++)
             {
             if (SUCCESS != ecInstance.GetValue (ecValue, accessString.c_str(), index))
                 break;
@@ -3057,6 +3059,7 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
             IECInstancePtr  structInstance = ecValue.GetStruct();
             if (!structInstance.IsValid())
                 {
+                // ###TODO: It is valid to have null struct array instances....
                 BeAssert (false);
                 break;
                 }
@@ -3147,6 +3150,23 @@ InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr& ecInstance,
     return ReadFromBeXmlDom (ecInstance, *xmlDom.get(), context);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                12/2012
+//+---------------+---------------+---------------+---------------+---------------+------
+InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr& ecInstance, Utf8CP ecInstanceXml, ECInstanceReadContextR context)
+    {
+    ecInstance = NULL;
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString (xmlStatus, ecInstanceXml, strlen (ecInstanceXml) * sizeof(Utf8Char));
+    if (!xmlDom.IsValid())
+        {
+        BeAssert (false);
+        LogXmlLoadError ();
+        return INSTANCE_READ_STATUS_XmlParseError;
+        }
+    return ReadFromBeXmlDom (ecInstance, *xmlDom.get(), context);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3158,7 +3178,7 @@ InstanceReadStatus  IECInstance::ReadFromBeXmlDom (IECInstancePtr& ecInstance, B
     if ( (BEXML_Success != xmlDom.SelectNode (instanceNode, "/", NULL, BeXmlDom::NODE_BIAS_First)) || (NULL == instanceNode) )
         {
         BeAssert (false);
-        ECObjectsLogger::Log()->errorv (L"Invalid ECInstanceXML: Missing a top-level instance node");
+        LOG.errorv (L"Invalid ECInstanceXML: Missing a top-level instance node");
         return INSTANCE_READ_STATUS_BadElement;
         }
 
@@ -3168,7 +3188,7 @@ InstanceReadStatus  IECInstance::ReadFromBeXmlDom (IECInstancePtr& ecInstance, B
     if (NULL == instanceNode)
         {
         BeAssert (false);
-        ECObjectsLogger::Log()->errorv (L"Invalid ECInstanceXML: Missing a top-level instance node");
+        LOG.errorv (L"Invalid ECInstanceXML: Missing a top-level instance node");
         return INSTANCE_READ_STATUS_BadElement;
         }
 
@@ -3197,8 +3217,36 @@ InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool isSt
     if (INSTANCE_WRITE_STATUS_Success != (status = instanceWriter.WriteInstance (*this, writeInstanceId)))
         return status;
 
-    return (BEXML_Success == xmlDom->ToFile (fileName, BeXmlDom::TO_STRING_OPTION_Indent, utf16 ? BeXmlDom::FILE_ENCODING_Utf16 : BeXmlDom::FILE_ENCODING_Utf8)) 
+    return (BEXML_Success == xmlDom->ToFile (fileName, (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Indent | BeXmlDom::TO_STRING_OPTION_Formatted), utf16 ? BeXmlDom::FILE_ENCODING_Utf16 : BeXmlDom::FILE_ENCODING_Utf8)) 
             ? INSTANCE_WRITE_STATUS_Success : INSTANCE_WRITE_STATUS_FailedToWriteFile;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T_STR> InstanceWriteStatus writeInstanceToXmlString (T_STR& ecInstanceXml, bool isStandAlone, bool writeInstanceId, IECInstanceR instance)
+    {
+    ecInstanceXml.clear();
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();        
+    InstanceXmlWriter   instanceWriter (*xmlDom.get(), NULL);
+    InstanceWriteStatus status;
+    if (INSTANCE_WRITE_STATUS_Success != (status = instanceWriter.WriteInstance (instance, writeInstanceId)))
+        return status;
+
+    UInt64  opts = BeXmlDom::TO_STRING_OPTION_OmitByteOrderMark;
+    if ( ! isStandAlone)
+        opts |= BeXmlDom::TO_STRING_OPTION_OmitXmlDeclaration;
+
+    xmlDom->ToString (ecInstanceXml, (BeXmlDom::ToStringOption) opts);
+    return INSTANCE_WRITE_STATUS_Success;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                12/2012
+//+---------------+---------------+---------------+---------------+---------------+------
+InstanceWriteStatus     IECInstance::WriteToXmlString (Utf8String & ecInstanceXml, bool isStandAlone, bool writeInstanceId)
+    {
+    return writeInstanceToXmlString (ecInstanceXml, isStandAlone, writeInstanceId, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3206,24 +3254,7 @@ InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool isSt
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceWriteStatus     IECInstance::WriteToXmlString (WString & ecInstanceXml, bool isStandAlone, bool writeInstanceId)
     {
-    ecInstanceXml.clear();
-
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();        
-
-    InstanceXmlWriter   instanceWriter (*xmlDom.get(), NULL);
-
-    InstanceWriteStatus status;
-    if (INSTANCE_WRITE_STATUS_Success != (status = instanceWriter.WriteInstance (*this, writeInstanceId)))
-        return status;
-
-    UInt64  opts = BeXmlDom::TO_STRING_OPTION_OmitByteOrderMark;
-
-    if ( ! isStandAlone)
-        opts |= BeXmlDom::TO_STRING_OPTION_OmitXmlDeclaration;
-
-    xmlDom->ToString (ecInstanceXml, (BeXmlDom::ToStringOption) opts);
-
-    return INSTANCE_WRITE_STATUS_Success;
+    return writeInstanceToXmlString (ecInstanceXml, isStandAlone, writeInstanceId, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
