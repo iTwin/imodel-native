@@ -2587,6 +2587,74 @@ void            ECSchema::SetImmutable()
     m_immutable = true;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            SchemaKey::LessThan (SchemaKeyCR rhs, SchemaMatchType matchType) const
+    {
+    switch (matchType)
+        {
+        case SCHEMAMATCHTYPE_Identical:
+            {
+            if (0 != m_checkSum || 0 != rhs.m_checkSum)
+                return m_checkSum < rhs.m_checkSum;
+            //Fall through
+            }
+        case SCHEMAMATCHTYPE_Exact:
+            {
+            int nameCompare = wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str());
+
+            if (nameCompare != 0)
+                return nameCompare < 0;
+
+            if (m_versionMajor != rhs.m_versionMajor)
+                return m_versionMajor < rhs.m_versionMajor;
+
+            return m_versionMinor < rhs.m_versionMinor;
+            break;
+            }
+        case SCHEMAMATCHTYPE_Latest: //Only compare by name
+            {
+            return wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str()) < 0;
+            }
+        case SCHEMAMATCHTYPE_LatestCompatible:
+            {
+            int nameCompare = wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str());
+
+            if (nameCompare != 0)
+                return nameCompare < 0;
+
+            return m_versionMajor < rhs.m_versionMajor;
+            }
+        default:
+            return false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            SchemaKey::Matches (SchemaKeyCR rhs, SchemaMatchType matchType) const
+    {
+    switch (matchType)
+        {
+        case SCHEMAMATCHTYPE_Identical:
+            {
+            if (0 != m_checkSum && 0 != rhs.m_checkSum)
+                return m_checkSum == rhs.m_checkSum;
+            //fall through
+            }
+        case SCHEMAMATCHTYPE_Exact:
+            return 0 == wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str()) && m_versionMajor == rhs.m_versionMajor && m_versionMinor == rhs.m_versionMinor;
+        case SCHEMAMATCHTYPE_Latest:
+            return 0 == wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str());
+        case SCHEMAMATCHTYPE_LatestCompatible:
+            return 0 == wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str()) && m_versionMajor == rhs.m_versionMajor && m_versionMinor >= rhs.m_versionMinor;
+        default:
+            return false;
+        }
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 
