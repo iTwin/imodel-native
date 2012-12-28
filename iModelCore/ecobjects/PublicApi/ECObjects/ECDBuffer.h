@@ -460,17 +460,17 @@ private:
     //! @param bytesAllocated How much memory is allocated for the data
     //! @param propertyLayout PropertyLayout of the variable-sized property whose size is increasing
     //! @param shiftBy        Positive or negative! Memory will be moved and SecondaryOffsets will be adjusted by this amount
-    ECObjectsStatus                   ShiftValueData(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated, PropertyLayoutCR propertyLayout, Int32 shiftBy);
+    ECObjectsStatus                   ShiftValueData(byte * data, UInt32 bytesAllocated, PropertyLayoutCR propertyLayout, Int32 shiftBy);
     ECObjectsStatus                   ShiftArrayIndexValueData(PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 arrayCount,  UInt32 endOfValueDataOffset, Int32 shiftBy);
         
-    ECObjectsStatus                   EnsureSpaceIsAvailable (UInt32& offset, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded);
-    ECObjectsStatus                   EnsureSpaceIsAvailableForArrayIndexValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 bytesNeeded);
-    ECObjectsStatus                   GrowPropertyValue (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 additionalbytesNeeded);
+    ECObjectsStatus                   EnsureSpaceIsAvailable (UInt32& offset, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded);
+    ECObjectsStatus                   EnsureSpaceIsAvailableForArrayIndexValue (PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 bytesNeeded);
+    ECObjectsStatus                   GrowPropertyValue (PropertyLayoutCR propertyLayout, UInt32 additionalbytesNeeded);
     // Updates the calculated value in memory and returns the updated value in existingValue
-    ECObjectsStatus                   EvaluateCalculatedProperty (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, ECValueR existingValue) const;
+    ECObjectsStatus                   EvaluateCalculatedProperty (PropertyLayoutCR propertyLayout, ECValueR existingValue) const;
     // Updates the dependent properties of the calculated property
-    ECObjectsStatus                   SetCalculatedProperty (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout);
-    ECObjectsStatus                   SetPrimitiveValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, bool alreadyCalculated);
+    ECObjectsStatus                   SetCalculatedProperty (ECValueCR v, PropertyLayoutCR propertyLayout);
+    ECObjectsStatus                   SetPrimitiveValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, bool alreadyCalculated);
 
     ECObjectsStatus                   ModifyData (byte const* data, void const* newData, size_t dataLength);
     ECObjectsStatus                   ModifyData (UInt32 const* data, UInt32 newData);
@@ -482,7 +482,7 @@ private:
     virtual bool                      _ReleaseData() const = 0;
 protected:
     //! Returns the number of bytes which must be allocated to store the header + the fixed portion of the property data, using ECDFormat_Current
-    ECOBJECTS_EXPORT UInt32                 CalculateBytesUsed (ClassLayoutCR classLayout) const;
+    ECOBJECTS_EXPORT UInt32                 CalculateBytesUsed () const;
     ECOBJECTS_EXPORT ECDHeader const*       GetECDHeaderCP() const;
 
     //! Returns the number of elements in the specfieid array that are currently reserved but not necessarily allocated.
@@ -509,28 +509,28 @@ protected:
     //! If nIndices is > 0 then the primitive value for the array element at the specified index is obtained.
     //! This is protected because implementors of _GetStructArrayArrayValueFromMemory should call it to obtain the binary primitive value that they stored
     //! when _SetStructArrayValueToMemory was invoked as a means to locate the externalized struct array value.
-    ECOBJECTS_EXPORT ECObjectsStatus  GetPrimitiveValueFromMemory (ECValueR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, bool useIndex = false, UInt32 index = 0) const;    
+    ECOBJECTS_EXPORT ECObjectsStatus  GetPrimitiveValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, bool useIndex = false, UInt32 index = 0) const;    
     //! Sets the primitive value for the specified property
     //! If nIndices is > 0 then the primitive value for the array element at the specified index is set.
     //! This is protected because implementors of _SetStructArrayArrayValueToMemory should call it to store a binary primitive value that can be retrieved
     //! when _GetStructArrayValueFromMemory is invoked as a means to locate the externalized struct array value.
-    ECOBJECTS_EXPORT ECObjectsStatus  SetPrimitiveValueToMemory   (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, bool useIndex = false, UInt32 index = 0);    
-    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout) const;
-    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index) const;    
-    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, ClassLayoutCR classLayout, WCharCP propertyAccessString, bool useIndex = false, UInt32 index = 0) const;
-    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, ClassLayoutCR classLayout, UInt32 propertyIndex, bool useArrayIndex = false, UInt32 arrayIndex = 0) const;
-    ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout);          
-    ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index);              
-    ECOBJECTS_EXPORT ECObjectsStatus  SetInternalValueToMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, ECValueCR v, bool useIndex = false, UInt32 index = 0);
-    ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ClassLayoutCR classLayout, WCharCP propertyAccessString, ECValueCR v,  bool useIndex = false, UInt32 index = 0);      
-    ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ClassLayoutCR classLayout, UInt32 propertyIndex, ECValueCR v, bool useArrayIndex = false, UInt32 arrayIndex = 0);      
-    ECOBJECTS_EXPORT ECObjectsStatus  InsertNullArrayElementsAt (ClassLayoutCR classLayout, UInt32 propIdx, UInt32 insertIndex, UInt32 insertCount);
-    ECOBJECTS_EXPORT ECObjectsStatus  AddNullArrayElementsAt (ClassLayoutCR classLayout, UInt32 propIdx, UInt32 insertCount);
-    ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElementsFromMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
-    ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElementsAt (ClassLayoutCR classLayout, UInt32 propIdx, UInt32 removeIndex, UInt32 removeCount);
-    ECOBJECTS_EXPORT ECObjectsStatus  ClearArrayElementsFromMemory (ClassLayoutCR classLayout, UInt32 propIdx);
-    ECOBJECTS_EXPORT WString          InstanceDataToString (WCharCP indent, ClassLayoutCR classLayout) const;
-    ECOBJECTS_EXPORT ECObjectsStatus  GetIsNullValueFromMemory (ClassLayoutCR classLayout, bool& isNull, UInt32 propertyIndex, bool useIndex, UInt32 index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus  SetPrimitiveValueToMemory   (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex = false, UInt32 index = 0);    
+    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout) const;
+    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const;    
+    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, WCharCP propertyAccessString, bool useIndex = false, UInt32 index = 0) const;
+    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, UInt32 propertyIndex, bool useArrayIndex = false, UInt32 arrayIndex = 0) const;
+    ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout);          
+    ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, UInt32 index);              
+    ECOBJECTS_EXPORT ECObjectsStatus  SetInternalValueToMemory (PropertyLayoutCR propertyLayout, ECValueCR v, bool useIndex = false, UInt32 index = 0);
+    ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (WCharCP propertyAccessString, ECValueCR v,  bool useIndex = false, UInt32 index = 0);      
+    ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex = false, UInt32 arrayIndex = 0);      
+    ECOBJECTS_EXPORT ECObjectsStatus  InsertNullArrayElementsAt (UInt32 propIdx, UInt32 insertIndex, UInt32 insertCount);
+    ECOBJECTS_EXPORT ECObjectsStatus  AddNullArrayElementsAt (UInt32 propIdx, UInt32 insertCount);
+    ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElementsFromMemory (PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
+    ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElementsAt (UInt32 propIdx, UInt32 removeIndex, UInt32 removeCount);
+    ECOBJECTS_EXPORT ECObjectsStatus  ClearArrayElementsFromMemory (UInt32 propIdx);
+    ECOBJECTS_EXPORT WString          InstanceDataToString (WCharCP indent) const;
+    ECOBJECTS_EXPORT ECObjectsStatus  GetIsNullValueFromMemory (bool& isNull, UInt32 propertyIndex, bool useIndex, UInt32 index) const;
 
     ECOBJECTS_EXPORT ECObjectsStatus  CopyInstancePropertiesToBuffer (IECInstanceCR srcInstance);
 
@@ -542,11 +542,11 @@ protected:
     //! with a binary token that will actually be stored with the instance at the array index value that can then be used to locate the externalized struct value.
     //! Note that top-level struct properties will automatically be stored in the data section of the instance.  It is only struct array values that must be stored
     //! externally.
-    virtual ECObjectsStatus           _SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index) = 0;
+    virtual ECObjectsStatus           _SetStructArrayValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, UInt32 index) = 0;
     virtual ECObjectsStatus           _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const = 0;
     virtual ECN::PrimitiveType         _GetStructArrayPrimitiveType () const = 0;
 
-    virtual ECObjectsStatus           _RemoveStructArrayElementsFromMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount) = 0;
+    virtual ECObjectsStatus           _RemoveStructArrayElementsFromMemory (PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount) = 0;
 
     //! Invoked after a variable-sized array is successfully resized, to allow derived classes to adjust their internal state in response if necessary.
     virtual void                      _HandleArrayResize (PropertyLayoutCP propertyLayout, UInt32 atIndex, Int32 countDelta) { };
@@ -586,7 +586,7 @@ public:
 
     ECOBJECTS_EXPORT IECInstanceP           GetAsIECInstance () const;
 
-    ECOBJECTS_EXPORT ECObjectsStatus        RemoveArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
+    ECOBJECTS_EXPORT ECObjectsStatus        RemoveArrayElements (PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
    
     ECOBJECTS_EXPORT void                   SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable);
 
