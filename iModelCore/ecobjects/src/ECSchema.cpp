@@ -197,6 +197,14 @@ bool ECNameValidation::IsValidAlphaNumericCharacter (WChar c)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool ECNameValidation::IsValidAlphaNumericCharacter (Utf8Char c)
+    {
+    return (((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_'));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
 bool ECNameValidation::DecodeFromValidName (WStringR decoded, WStringCR name)
     {
     // "__x####__"

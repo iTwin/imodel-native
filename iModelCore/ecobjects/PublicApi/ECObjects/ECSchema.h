@@ -134,6 +134,7 @@ public:
 
     //! Checks whether a character is valid for use in an ECName, e.g. alphanumeric, plus '_'
     ECOBJECTS_EXPORT static bool IsValidAlphaNumericCharacter (WChar c);
+    ECOBJECTS_EXPORT static bool IsValidAlphaNumericCharacter (Utf8Char c);
     };
 
 //=======================================================================================
