@@ -2,7 +2,7 @@
 |
 |     $Source: src/ExpressionContext.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -849,6 +849,98 @@ SymbolExpressionContextPtr SymbolExpressionContext::Create (bvector<WString> con
         }
     
     return context;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceListExpressionContext::InstanceListExpressionContext (bvector<IECInstancePtr> const& instances)
+  : ExpressionContext(NULL), m_initialized(false)
+    {
+    Initialize (instances);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void InstanceListExpressionContext::Initialize()
+    {
+    if (!m_initialized)
+        {
+        bvector<IECInstancePtr> instances;
+        _GetInstances (instances);
+        Initialize (instances);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void InstanceListExpressionContext::Initialize (bvector<IECInstancePtr> const& instances)
+    {
+    if (!m_initialized)
+        {
+        FOR_EACH (IECInstancePtr const& instance, instances)
+            {
+            // ###TODO: handle multiple instances of a single ECClass
+            InstanceExpressionContextPtr instanceContext = InstanceExpressionContext::Create (NULL);
+            instanceContext->SetInstance (*instance);
+            m_instances.push_back (instanceContext.get());
+            }
+
+        m_initialized = true;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus InstanceListExpressionContext::_GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, UInt32 startIndex)
+    {
+    WCharCP name = primaryList.GetName (startIndex);
+
+    // ###TODO: Add a couple of symbols:
+    //  -IsEmpty()/Count() => true if no instances/# of instances
+    //  -GetInstanceOfClass(className[, schemaName]) => get a specific instance
+
+    Initialize();
+
+    ExpressionStatus status = ExprStatus_UnknownSymbol;
+    if (NULL != name)
+        {
+        FOR_EACH (ExpressionContextPtr const& instance, m_instances)
+            if (ExprStatus_Success == (status = instance->GetValue (evalResult, primaryList, globalContext, startIndex)))
+                break;
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus InstanceListExpressionContext::_GetReference (EvaluationResultR evalResult, ReferenceResultR refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, UInt32 startIndex)
+    {
+    Initialize();
+
+    ExpressionStatus status = ExprStatus_UnknownSymbol;
+    WCharCP name = primaryList.GetName (startIndex);
+    if (NULL != name)
+        {
+        FOR_EACH (ExpressionContextPtr const& instance, m_instances)
+            if (ExprStatus_Success == (status = instance->GetReference (evalResult, refResult, primaryList, globalContext, startIndex)))
+                break;
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceListExpressionContextPtr InstanceListExpressionContext::Create (bvector<IECInstancePtr> const& instances)
+    {
+    return new InstanceListExpressionContext (instances);
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
