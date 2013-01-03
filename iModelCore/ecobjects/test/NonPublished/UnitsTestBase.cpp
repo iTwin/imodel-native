@@ -204,7 +204,7 @@ void UnitsTestBase::InitClassAndPropertyVariables
     //m_widthProp                 = m_wheelClass["Width"];
     //m_quantityProp              = m_wheelClass["Quantity"];
     //m_weightProp                = m_wheelClass["Weight"];
-    //m_hubStructProp             = m_wheelClass->GetPropertyP(L"WheelHub");
+    m_hubStructProp             = m_wheelClass->GetPropertyP(L"WheelHub");
 
     m_wheelsChildClass          = m_supplementedSchema->GetClassP(L"WheelsChild");
     m_wcDiameterProp            = m_wheelsChildClass->GetPropertyP(L"Diameter");

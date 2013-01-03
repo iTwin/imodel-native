@@ -211,19 +211,6 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnit_FromKOQ_OverriddingUnitSystemDefaults
 		EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_sucWidthProp));
         VerifyDefaultUnit (L"MILLIMETRE", defaultUnit);
     }
-
- /*====================================================================================**/
-/// <summary></summary>
-/// <author>Muhammad.Zaighum</author>                             <date>12/12</date>
-/*==============+===============+===============+===============+===============+======*/
-TEST_F (ECSchemaUnitsManagerTests, GetUnit_FromBaseKindOfQuantity)
-    {
-		Unit defaultUnit;
-		EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_hubStructProp));
-        VerifyDefaultUnit (L"DIAMETER", defaultUnit);
-    }
-
-
 //#endif
 
 END_BENTLEY_ECOBJECT_NAMESPACE

@@ -149,10 +149,6 @@ TEST_F(SchemaTest, TestGetClassCount)
     ASSERT_EQ(4, count);
 
 	ASSERT_EQ(2,schema->GetClassCount());
-	FOR_EACH (ECClassCP ecClass, schema->GetClasses())
-        {
-        WString name = ecClass->GetName();
-        ASSERT_EQ( ecClass, name.c_str());
-        }
+
     }
 END_BENTLEY_ECOBJECT_NAMESPACE
