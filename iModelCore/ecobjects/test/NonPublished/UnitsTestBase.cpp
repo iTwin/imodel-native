@@ -114,7 +114,7 @@ bvector< ECSchemaP > & testSupplementalSchemas
     m_supplementalSchemas.push_back ((schemaContext->LocateSchema(suppKey, SCHEMAMATCHTYPE_Latest)).get());
     m_supplementalSchemas.push_back ((schemaContext->LocateSchema(defKey, SCHEMAMATCHTYPE_Latest)).get());
     m_supplementalSchemas.push_back ((schemaContext->LocateSchema(widthKey, SCHEMAMATCHTYPE_Latest)).get());
-    }
+    } 
 
     for (size_t i = 0; i < m_supplementalSchemas.size(); ++i)
         testSupplementalSchemas.push_back (m_supplementalSchemas[i].get());
