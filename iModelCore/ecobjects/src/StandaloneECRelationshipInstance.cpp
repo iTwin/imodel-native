@@ -134,9 +134,7 @@ bool                StandaloneECRelationshipInstance::_IsReadOnly() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECRelationshipInstance::_GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const
     {
-    ClassLayoutCR classLayout = GetClassLayout();
-
-    return GetValueFromMemory (v, classLayout, propertyIndex, useArrayIndex, arrayIndex);
+    return GetValueFromMemory (v, propertyIndex, useArrayIndex, arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -144,9 +142,7 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_GetValue (ECValueR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECRelationshipInstance::_GetIsPropertyNull (bool& isNull, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const
     {
-    ClassLayoutCR classLayout = GetClassLayout();
-
-    return GetIsNullValueFromMemory (classLayout, isNull, propertyIndex, useArrayIndex, arrayIndex);
+    return GetIsNullValueFromMemory (isNull, propertyIndex, useArrayIndex, arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -154,11 +150,9 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_GetIsPropertyNull (
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECRelationshipInstance::_SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
     {
-    ClassLayoutCR classLayout = GetClassLayout();
-
     SetIsLoadedBit (propertyIndex);
 
-    return SetValueToMemory (classLayout, propertyIndex, v, useArrayIndex, arrayIndex);
+    return SetValueToMemory (propertyIndex, v, useArrayIndex, arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -174,8 +168,7 @@ ECObjectsStatus StandaloneECRelationshipInstance::_SetInternalValue (UInt32 prop
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECRelationshipInstance::_InsertArrayElements (UInt32 propIdx, UInt32 index, UInt32 size)
     {
-    ClassLayoutCR classLayout = GetClassLayout();
-    ECObjectsStatus status = InsertNullArrayElementsAt (classLayout, propIdx, index, size);
+    ECObjectsStatus status = InsertNullArrayElementsAt (propIdx, index, size);
     
     return status;
     } 
@@ -185,8 +178,7 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_InsertArrayElements
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECRelationshipInstance::_AddArrayElements (UInt32 propIdx, UInt32 size)
     {
-    ClassLayoutCR classLayout = GetClassLayout();    
-    ECObjectsStatus status = AddNullArrayElementsAt (classLayout, propIdx, size);
+    ECObjectsStatus status = AddNullArrayElementsAt (propIdx, size);
     
     return status;
     }        
@@ -196,8 +188,7 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_AddArrayElements (U
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECRelationshipInstance::_RemoveArrayElement (UInt32 propIdx, UInt32 index)
     {
-    ClassLayoutCR classLayout = GetClassLayout();    
-    ECObjectsStatus status = RemoveArrayElementsAt (classLayout, propIdx, index, 1);
+    ECObjectsStatus status = RemoveArrayElementsAt (propIdx, index, 1);
     
     return status;
     } 
@@ -215,7 +206,7 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_ClearArray (UInt32 
 +---------------+---------------+---------------+---------------+---------------+------*/    
 WString        StandaloneECRelationshipInstance::_ToString (WCharCP indent) const
     {
-    return InstanceDataToString (indent, GetClassLayout());
+    return InstanceDataToString (indent);
     }
 
 /*---------------------------------------------------------------------------------**//**

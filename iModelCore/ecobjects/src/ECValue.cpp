@@ -2142,6 +2142,19 @@ ECValueAccessorCR   ECPropertyValue::GetValueAccessor ()    const    { return m_
 ECValueAccessorR    ECPropertyValue::GetValueAccessorR ()            { return m_accessor; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyValuePtr     ECPropertyValue::GetPropertyValue (IECInstanceCR instance, WCharCP propertyAccessor)
+    {
+    ECValueAccessor va;
+
+    if (ECOBJECTS_STATUS_Success != ECValueAccessor::PopulateValueAccessor (va, instance, propertyAccessor))
+        return NULL;
+
+    return  new ECPropertyValue (instance, va);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 void                ECPropertyValue::ResetValue()

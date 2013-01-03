@@ -1245,64 +1245,9 @@ struct SchemaKey
 
     ECOBJECTS_EXPORT static ECObjectsStatus ParseSchemaFullName (SchemaKey& key, WCharCP schemaFullName);
 
-    bool LessThan (SchemaKeyCR rhs, SchemaMatchType matchType) const
-        {
-        int nameCompare = 0;
-        switch (matchType)
-            {
-            case SCHEMAMATCHTYPE_Identical:
-                {
-                if (0 != m_checkSum || 0 != rhs.m_checkSum)
-                    return m_checkSum < rhs.m_checkSum;
-                //Fall through
-                }
-            case SCHEMAMATCHTYPE_Exact:
-                {
-                nameCompare = wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str());
-
-                if (nameCompare != 0)
-                    return nameCompare < 0;
-
-                if (m_versionMajor != rhs.m_versionMajor)
-                    return m_versionMajor < rhs.m_versionMajor;
-
-                return m_versionMinor < rhs.m_versionMinor;
-                break;
-                }
-            case SCHEMAMATCHTYPE_Latest: //Only compare by name
-                return nameCompare < 0;
-            case SCHEMAMATCHTYPE_LatestCompatible:
-                {
-                if (nameCompare != 0)
-                    return nameCompare < 0;
-
-                return m_versionMajor < rhs.m_versionMajor;
-                }
-            default:
-                return false;
-            }
-        }
-
-    bool Matches (SchemaKeyCR rhs, SchemaMatchType matchType) const
-        {
-        switch (matchType)
-            {
-            case SCHEMAMATCHTYPE_Identical:
-                {
-                if (0 != m_checkSum && 0 != rhs.m_checkSum)
-                    return m_checkSum == rhs.m_checkSum;
-                //fall through
-                }
-            case SCHEMAMATCHTYPE_Exact:
-                return 0 == wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str()) && m_versionMajor == rhs.m_versionMajor && m_versionMinor == rhs.m_versionMinor;
-            case SCHEMAMATCHTYPE_Latest:
-                return 0 == wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str());
-            case SCHEMAMATCHTYPE_LatestCompatible:
-                return 0 == wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str()) && m_versionMajor == rhs.m_versionMajor && m_versionMinor >= rhs.m_versionMinor;
-            default:
-                return false;
-            }
-        }
+    ECOBJECTS_EXPORT bool LessThan (SchemaKeyCR rhs, SchemaMatchType matchType) const;
+    
+    ECOBJECTS_EXPORT bool Matches (SchemaKeyCR rhs, SchemaMatchType matchType) const;
 
     bool operator == (SchemaKeyCR rhs) const
         {
