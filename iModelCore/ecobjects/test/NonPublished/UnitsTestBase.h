@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/UnitsTestBase.h $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //#include "ECObjectsTestPCH.h"
@@ -53,7 +53,7 @@ ECPropertyP m_AreaProp;//                = null;
 ///// <summary>Wheel Property</summary>
 //IECProperty m_weightProp              = null;
 ///// <summary>Wheel Property</summary>
-//IECProperty m_hubStructProp           = null;
+ECPropertyP m_hubStructProp;
 
 /// <summary>Bike Class</summary>
 ECClassP m_BikeClass;
