@@ -178,6 +178,8 @@ public:
     static ECEnablerPtr Create (ECEnablerR enabler) { return new ECWrappedEnabler (enabler); }
     };
 
+/*__PUBLISH_SECTION_START__*/
+
 //=======================================================================================    
 //! Base class for all relationship enablers
 //! @ingroup ECObjectsGroup

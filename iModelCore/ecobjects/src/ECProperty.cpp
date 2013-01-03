@@ -6,7 +6,7 @@
 |       $Date: 2005/11/07 15:38:45 $
 |     $Author: EarlinLutz $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -825,13 +825,18 @@ ECObjectsStatus ArrayECProperty::SetMaxOccurs (WStringCR maxOccurs)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-EC_INLINE bool IECTypeAdapter::HasStandardValues() const                                                                       { return _HasStandardValues(); }
-EC_INLINE bool IECTypeAdapter::CanConvertFromString () const                                                                   { return _CanConvertFromString (); }
-EC_INLINE bool IECTypeAdapter::CanConvertToString () const                                                                     { return _CanConvertToString (); }
-EC_INLINE bool IECTypeAdapter::IsStruct() const                                                                                { return _IsStruct(); }
-EC_INLINE bool IECTypeAdapter::IsTreatedAsString() const                                                                       { return _IsTreatedAsString(); }
-EC_INLINE IECInstancePtr IECTypeAdapter::CreateDefaultFormatter (bool includeAllValues, bool forDwg) const                     { return _CreateDefaultFormatter (includeAllValues, forDwg); }
-EC_INLINE IECInstancePtr IECTypeAdapter::CondenseFormatterForSerialization (IECInstanceCR formatter) const                     { return _CondenseFormatterForSerialization (formatter); }
-EC_INLINE IECInstancePtr IECTypeAdapter::PopulateDefaultFormatterProperties (IECInstanceCR formatter) const                    { return _PopulateDefaultFormatterProperties (formatter); }
+bool IECTypeAdapter::HasStandardValues() const                                                                       { return _HasStandardValues(); }
+bool IECTypeAdapter::CanConvertFromString () const                                                                   { return _CanConvertFromString (); }
+bool IECTypeAdapter::CanConvertToString () const                                                                     { return _CanConvertToString (); }
+bool IECTypeAdapter::IsStruct() const                                                                                { return _IsStruct(); }
+bool IECTypeAdapter::IsTreatedAsString() const                                                                       { return _IsTreatedAsString(); }
+IECInstancePtr IECTypeAdapter::CreateDefaultFormatter (bool includeAllValues, bool forDwg) const                     { return _CreateDefaultFormatter (includeAllValues, forDwg); }
+IECInstancePtr IECTypeAdapter::CondenseFormatterForSerialization (IECInstanceCR formatter) const                     { return _CondenseFormatterForSerialization (formatter); }
+IECInstancePtr IECTypeAdapter::PopulateDefaultFormatterProperties (IECInstanceCR formatter) const                    { return _PopulateDefaultFormatterProperties (formatter); }
+
+ECPropertyCP        IECTypeAdapterContext::GetProperty() const           { return _GetProperty(); }
+UInt32              IECTypeAdapterContext::GetComponentIndex() const     { return _GetComponentIndex(); }
+bool                IECTypeAdapterContext::Is3d() const                  { return _Is3d(); }
+IECInstanceCP       IECTypeAdapterContext::GetECInstance() const         { return _GetECInstance(); }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
