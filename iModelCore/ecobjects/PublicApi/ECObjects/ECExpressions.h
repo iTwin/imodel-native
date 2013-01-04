@@ -271,13 +271,39 @@ protected:
 
 public:
     ECN::ECEnablerCR             GetEnabler() { return m_instance->GetEnabler(); }
-
+    ECN::IECInstanceP            GetInstanceP() { return m_instance.get(); }
 /*__PUBLISH_SECTION_START__*/
 public:
     ECOBJECTS_EXPORT ECN::IECInstanceCP          GetInstanceCP() const;
     ECOBJECTS_EXPORT void                        SetInstance(ECN::IECInstanceCR instance);
     ECOBJECTS_EXPORT static InstanceExpressionContextPtr Create(ExpressionContextP outer);
 }; // End of class InstanceExpressionContext
+
+/*__PUBLISH_SECTION_END__*/
+/*=================================================================================**//**
+* @ingroup ECObjectsGroup
++===============+===============+===============+===============+===============+======*/
+struct InstanceListMethodReference : MethodReference
+    {
+    typedef ExpressionStatus (* MethodImpl)(bvector<InstanceExpressionContextPtr> const&, EvaluationResultR, EvaluationResultVector&);
+private:
+    WString                                 m_name;
+    InstanceListExpressionContextR          m_context;
+    MethodImpl                              m_impl;
+
+    InstanceListMethodReference (WCharCP name, InstanceListExpressionContextR context, MethodImpl impl)
+        : m_name(name), m_context(context), m_impl(impl) { }
+
+    virtual ExpressionStatus    _InvokeStaticMethod (EvaluationResultR evalResult, EvaluationResultVector& arguments) override;
+    virtual bool                _SupportsStaticMethodCall () const override { return true; }
+    virtual bool                _SupportsInstanceMethodCall () const override { return false; }
+public:
+    WCharCP                     GetName() const { return m_name.c_str(); }
+
+    static InstanceListMethodReference* Create (WCharCP name, InstanceListExpressionContextR context, MethodImpl impl)
+        { return new InstanceListMethodReference (name, context, impl); }
+    };
+/*__PUBLISH_SECTION_START__*/
 
 /*=================================================================================**//**
 * A context in which multiple IECInstances provide the context for expression evaluation
@@ -287,22 +313,28 @@ struct          InstanceListExpressionContext : ExpressionContext
     {
 /*__PUBLISH_SECTION_END__*/
 private:
-    bvector<InstanceExpressionContextPtr>       m_instances;
-    bool                                        m_initialized;
+    friend struct InstanceListMethodReference;
+    bvector<InstanceExpressionContextPtr> const&        GetInstanceList();
+
+    bvector<InstanceExpressionContextPtr>                   m_instances;
+    bvector<RefCountedPtr<InstanceListMethodReference> >    m_methods;
+    bool                                                    m_initialized;
 
     InstanceListExpressionContext (bvector<IECInstancePtr> const& instances);
 
     void                                        Initialize();
     void                                        Initialize (bvector<IECInstancePtr> const& instances);
+    void                                        InitSymbols();
 
-    ECOBJECTS_EXPORT virtual bool               _IsNamespace() const override { return true; }
+                     virtual bool               _IsNamespace() const override { return true; }
     ECOBJECTS_EXPORT virtual ExpressionStatus   _GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
     ECOBJECTS_EXPORT virtual ExpressionStatus   _GetReference (EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
+    ECOBJECTS_EXPORT virtual ExpressionStatus   _ResolveMethod(MethodReferencePtr& result, wchar_t const* ident, bool useOuterIfNecessary) override;
 protected:
     // The following protected methods are only relevant to derived classes, which may want to:
     //  -lazily load the instance list, and/or
     //  -Reuse the context for differing lists of instances
-    InstanceListExpressionContext() : ExpressionContext (NULL), m_initialized (false) { }
+    ECOBJECTS_EXPORT InstanceListExpressionContext();
 
     virtual void                                _GetInstances (bvector<IECInstancePtr>& instances) { }
 
