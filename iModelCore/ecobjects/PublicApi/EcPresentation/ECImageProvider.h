@@ -2,13 +2,16 @@
 |
 |     $Source: PublicApi/EcPresentation/ECImageProvider.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
 #include <Bentley\BeIconUtilities.h>
+#include "ecpresentationtypedefs.h"
 #include "ecimagekey.h"
+#include "auiprovider.h"
+
 #include <Geom/GeomApi.h>
 #include <Bentley/BeAssert.h>
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
@@ -79,9 +82,10 @@ struct ECPresentationImageProvider : public IECPresentationProvider
     protected:
         virtual ProviderType      _GetProviderType() const override {return ImageService;}
         virtual IECNativeImagePtr _GetImage (ECImageKeyCR imageKey, DPoint2dCR size) = 0;
-
+        virtual IECNativeImagePtr _GetOverlayImage (IAUIDataContextCR context, DPoint2dCR size) {return NULL;}
     public:
         ECOBJECTS_EXPORT IECNativeImagePtr GetImage (ECImageKeyCR imageKey, DPoint2dCR size);
+        ECOBJECTS_EXPORT IECNativeImagePtr GetOverlayImage (IAUIDataContextCR context, DPoint2dCR size);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
