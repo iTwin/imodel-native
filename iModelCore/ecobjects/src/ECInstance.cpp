@@ -239,7 +239,6 @@ ECEnablerR            IECInstance::GetEnablerR() const { return *const_cast<ECEn
 bool                  IECInstance::IsReadOnly() const { return _IsReadOnly();  }
 ECDBuffer*            IECInstance::GetECDBuffer() const { return _GetECDBuffer(); }
 MemoryECInstanceBase* IECInstance::GetAsMemoryECInstance () const {return _GetAsMemoryECInstance();}
-IECTypeAdapterContextPtr IECInstance::CreateTypeAdapterContext (ECPropertyCR ecproperty) const { return _CreateTypeAdapterContext (ecproperty); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
@@ -3311,24 +3310,6 @@ ECSchemaCP ECInstanceReadContext::FindSchemaCP(SchemaKeyCR key, SchemaMatchType 
         return schema;
 
     return &m_fallBackSchema;
-    }
-
-static IECInstance::TypeAdapterContextCreateFn s_typeAdapterContextCreateFn;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void IECInstance::RegisterTypeAdapterContextCreateFn (TypeAdapterContextCreateFn fn)
-    {
-    s_typeAdapterContextCreateFn = fn;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-IECTypeAdapterContextPtr IECInstance::_CreateTypeAdapterContext (ECPropertyCR ecproperty) const
-    {
-    return NULL != s_typeAdapterContextCreateFn ? s_typeAdapterContextCreateFn (ecproperty, *this) : NULL;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

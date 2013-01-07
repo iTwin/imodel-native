@@ -367,6 +367,11 @@ public:
     //! The following are relevant to adapters for point types.
     ECOBJECTS_EXPORT  UInt32            GetComponentIndex() const;
     ECOBJECTS_EXPORT  bool              Is3d() const;
+
+    //! internal use only, primarily for ECExpressions
+    typedef RefCountedPtr<IECTypeAdapterContext> (* FactoryFn)(ECPropertyCR, IECInstanceCR instance);
+    ECOBJECTS_EXPORT static void            RegisterFactory (FactoryFn fn);
+    RefCountedPtr<IECTypeAdapterContext>    Create (ECPropertyCR ecproperty, IECInstanceCR instance);
 /*__PUBLISH_SECTION_START__*/
     };
 
@@ -386,14 +391,28 @@ struct IECTypeAdapter : RefCountedBase
     // We may want to see if it is worthwhile to factor out the non-dgn-specific context and move it down to the ECObjects layer.
 protected:
     virtual bool                _HasStandardValues() const = 0;
-    virtual bool                _CanConvertToString() const = 0;
-    virtual bool                _CanConvertFromString() const = 0;
     virtual bool                _IsStruct() const = 0;
     virtual bool                _IsTreatedAsString() const = 0;
-    virtual ECN::IECInstancePtr  _CondenseFormatterForSerialization (ECN::IECInstanceCR formatter) const = 0;
-    virtual ECN::IECInstancePtr  _PopulateDefaultFormatterProperties (ECN::IECInstanceCR formatter) const = 0;
-    virtual ECN::IECInstancePtr  _CreateDefaultFormatter (bool includeAllValues, bool forDwg) const = 0;
 
+    virtual IECInstancePtr      _CondenseFormatterForSerialization (ECN::IECInstanceCR formatter) const = 0;
+    virtual IECInstancePtr      _PopulateDefaultFormatterProperties (ECN::IECInstanceCR formatter) const = 0;
+    virtual IECInstancePtr      _CreateDefaultFormatter (bool includeAllValues, bool forDwg) const = 0;
+
+    virtual bool                _CanConvertToString() const = 0;
+    virtual bool                _CanConvertFromString() const = 0;
+    virtual bool                _ConvertToString (WStringR str, ECValueCR v, IECTypeAdapterContextCR context, IECInstanceCP formatter) = 0;
+    virtual bool                _ConvertFromString (ECValueR v, WCharCP str, IECTypeAdapterContextCR context) = 0;
+
+    virtual bool                _RequiresExpressionTypeConversion() const = 0;
+    virtual bool                _ConvertToExpressionType (ECValueR v, IECTypeAdapterContextCR context) = 0;
+public:
+    // For DgnPlatform interop
+    struct Factory
+        {
+        virtual IECTypeAdapter& GetForProperty (ECPropertyCR ecproperty) const = 0;
+        virtual IECTypeAdapter& GetForArrayMember (ArrayECPropertyCR ecproperty) const = 0;
+        };
+    ECOBJECTS_EXPORT static void          SetFactory (Factory const& factory);
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
@@ -402,6 +421,31 @@ public:
 
     //! @return true if it is possible to extract the underlying type from a string
     ECOBJECTS_EXPORT bool                 CanConvertFromString () const;
+
+    //! Converts the ECValue to a display string
+    //! @param[out] str     The string representation of the value
+    //! @param[in] v        Value to convert
+    //! @param[in] context  Context under which conversion is performed
+    //! @param[in] formatter Optional formatting specification, for ECFields
+    //! @return true if successfully converted to string
+    ECOBJECTS_EXPORT        bool ConvertToString (WStringR str, ECValueCR v, IECTypeAdapterContextCR context, IECInstanceCP formatter = NULL);
+
+    //! Converts from a string to the underlying ECValue type. Input string typically comes from user input
+    //! @param[out] v       The converted value
+    //! @param[in] str      The string to convert
+    //! @param[in] context  Context under which conversion is performed
+    //! @return true if conversion is successful
+    ECOBJECTS_EXPORT        bool ConvertFromString (ECValueR v, WCharCP str, IECTypeAdapterContextCR context);
+
+    //! @return true if the value must be converted for use in ECExpressions.
+    ECOBJECTS_EXPORT        bool RequiresExpressionTypeConversion() const;
+
+    //! Converts the value to the value which should be used when evaluating ECExpressions.
+    //! Typically no conversion is required. If the value has units, it should be converted to master units
+    //! @param[out] v     The value to convert in-place
+    //! @param[in] context  The context under which conversion is performed
+    //! @returns true if successfully converted
+    ECOBJECTS_EXPORT        bool ConvertToExpressionType (ECValueR v, IECTypeAdapterContextCR context);
 
     //! Create an IECInstance representing default formatting options for converting to string.
     //! @param[in] includeAllValues If false, property values will be left NULL to save space; otherwise they will be initialized with default values
@@ -484,7 +528,7 @@ public:
     // The following are used by the 'extended type' system which is currently implemented in DgnPlatform
     IECTypeAdapter*                     GetCachedTypeAdapter() const { return m_cachedTypeAdapter; }
     void                                SetCachedTypeAdapter (IECTypeAdapter* adapter) const { m_cachedTypeAdapter = adapter; }
-    
+    IECTypeAdapter*                     GetTypeAdapter() const;
     bool                                IsReadOnlyFlagSet() const { return m_readOnly; }
 /*__PUBLISH_SECTION_START__*/
 public:
@@ -630,8 +674,8 @@ private:
         ECClassCP       m_structType;
         };
 
-    ArrayKind           m_arrayKind;
-    mutable void*       m_cachedMemberTypeAdapter;
+    ArrayKind               m_arrayKind;
+    mutable IECTypeAdapter* m_cachedMemberTypeAdapter;
 
     ArrayECProperty (ECClassCR ecClass)
         : ECProperty(ecClass), m_primitiveType(PRIMITIVETYPE_String), m_arrayKind (ARRAYKIND_Primitive),
@@ -649,8 +693,9 @@ protected:
 
 public:
     // The following are used by the 'extended type' system which is currently implemented in DgnPlatform
-    void*                               GetCachedMemberTypeAdapter() const  { return m_cachedMemberTypeAdapter; }
-    void                                SetCachedMemberTypeAdapter (void* adapter) const { m_cachedMemberTypeAdapter = adapter; }
+    IECTypeAdapter*                     GetCachedMemberTypeAdapter() const  { return m_cachedMemberTypeAdapter; }
+    void                                SetCachedMemberTypeAdapter (IECTypeAdapter* adapter) const { m_cachedMemberTypeAdapter = adapter; }
+    IECTypeAdapter*                     GetMemberTypeAdapter() const;
 
 /*__PUBLISH_SECTION_START__*/
 public:
