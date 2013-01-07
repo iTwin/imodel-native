@@ -370,8 +370,8 @@ public:
 
     //! internal use only, primarily for ECExpressions
     typedef RefCountedPtr<IECTypeAdapterContext> (* FactoryFn)(ECPropertyCR, IECInstanceCR instance);
-    ECOBJECTS_EXPORT static void            RegisterFactory (FactoryFn fn);
-    RefCountedPtr<IECTypeAdapterContext>    Create (ECPropertyCR ecproperty, IECInstanceCR instance);
+    ECOBJECTS_EXPORT static void                RegisterFactory (FactoryFn fn);
+    static RefCountedPtr<IECTypeAdapterContext> Create (ECPropertyCR ecproperty, IECInstanceCR instance);
 /*__PUBLISH_SECTION_START__*/
     };
 
