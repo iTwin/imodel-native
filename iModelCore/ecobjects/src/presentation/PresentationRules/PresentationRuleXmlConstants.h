@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/PresentationRuleXmlConstants.h $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,6 +18,7 @@
 
 #define COMMON_XML_ATTRIBUTE_PRIORITY                                                 "Priority"
 #define COMMON_XML_ATTRIBUTE_GROUPBYCLASS                                             "GroupByClass"
+#define COMMON_XML_ATTRIBUTE_GROUPBYRELATIONSHIP                                      "GroupByRelationship"
 #define COMMON_XML_ATTRIBUTE_GROUPBYLABEL                                             "GroupByLabel"
 #define COMMON_XML_ATTRIBUTE_SUPPORTEDSCHEMAS                                         "SupportedSchemas"
 #define COMMON_XML_ATTRIBUTE_SKIPRELATEDLEVEL                                         "SkipRelatedLevel"
