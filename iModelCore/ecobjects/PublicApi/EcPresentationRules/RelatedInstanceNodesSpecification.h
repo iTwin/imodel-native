@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/RelatedInstanceNodesSpecification.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -37,6 +37,7 @@ struct RelatedInstanceNodesSpecification : public ChildNodeSpecification
     /*__PUBLISH_SECTION_END__*/
     private:
         bool                       m_groupByClass;
+        bool                       m_groupByRelationship;
         bool                       m_groupByLabel;
         bool                       m_showEmptyGroups;
         int                        m_skipRelatedLevel;
@@ -55,7 +56,7 @@ struct RelatedInstanceNodesSpecification : public ChildNodeSpecification
 
     public:
         ECOBJECTS_EXPORT RelatedInstanceNodesSpecification ()
-            : ChildNodeSpecification (), m_groupByClass (true), m_groupByLabel (true), m_showEmptyGroups (false),
+            : ChildNodeSpecification (), m_groupByClass (true), m_groupByRelationship (false), m_groupByLabel (true), m_showEmptyGroups (false),
             m_skipRelatedLevel (0), m_instanceFilter (L""), m_requiredDirection (RequiredRelationDirection_Both),
             m_supportedSchemas (L""), m_relationshipClassNames (L""), m_relatedClassNames (L"")
             {
@@ -67,6 +68,7 @@ struct RelatedInstanceNodesSpecification : public ChildNodeSpecification
                                            bool                       alwaysReturnsChildren, 
                                            bool                       hideNodesInHierarchy, 
                                            bool                       groupByClass,
+                                           bool                       groupByRelationship,
                                            bool                       groupByLabel,
                                            bool                       showEmptyGroups,
                                            bool                       hideIfNoChildren,
@@ -78,7 +80,7 @@ struct RelatedInstanceNodesSpecification : public ChildNodeSpecification
                                            WString                    relatedClassNames
                                           )
             : ChildNodeSpecification (priority, alwaysReturnsChildren, hideNodesInHierarchy, hideIfNoChildren), 
-              m_groupByClass (groupByClass), m_groupByLabel (groupByLabel), m_showEmptyGroups (showEmptyGroups), 
+              m_groupByClass (groupByClass), m_groupByRelationship (groupByRelationship), m_groupByLabel (groupByLabel), m_showEmptyGroups (showEmptyGroups), 
               m_skipRelatedLevel (skipRelatedLevel), m_instanceFilter (instanceFilter), m_requiredDirection (requiredDirection),
               m_supportedSchemas (supportedSchemas), m_relationshipClassNames (relationshipClassNames),  m_relatedClassNames (relatedClassNames)
             {
@@ -86,6 +88,9 @@ struct RelatedInstanceNodesSpecification : public ChildNodeSpecification
 
         //! Returns true if grouping by class should be applied.
         ECOBJECTS_EXPORT bool                         GetGroupByClass (void) const               { return m_groupByClass; }
+
+        //! Returns true if grouping by relationship should be applied.
+        ECOBJECTS_EXPORT bool                         GetGroupByRelationship (void) const        { return m_groupByRelationship; }
 
         //! Returns true if grouping by label should be applied.
         ECOBJECTS_EXPORT bool                         GetGroupByLabel (void) const               { return m_groupByLabel; }

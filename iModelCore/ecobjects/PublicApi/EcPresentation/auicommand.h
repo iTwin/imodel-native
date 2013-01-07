@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentation/auicommand.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -86,6 +86,7 @@ struct IUICommand : public RefCountedBase
         Unknown              = 0,
         ViewWindowRightClick = 1,
         ToolBar              = 2,
+        ExplorerMenu         = 3,
         };
 
     //__PUBLISH_SECTION_END__
