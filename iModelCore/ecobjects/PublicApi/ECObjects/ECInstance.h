@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECInstance.h $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -124,7 +124,8 @@ protected:
     ECOBJECTS_EXPORT virtual ECObjectsStatus        _SetInternalValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex);
 
 /*__PUBLISH_SECTION_END__*/
-    virtual Bentley::DgnPlatform::DgnECInstance const*  _GetAsDgnECInstance() const   { return NULL; }
+    virtual Bentley::DgnPlatform::DgnECInstance const*              _GetAsDgnECInstance() const   { return NULL; }
+    ECOBJECTS_EXPORT virtual RefCountedPtr<IECTypeAdapterContext>   _CreateTypeAdapterContext (ECPropertyCR ecproperty) const;
 /*__PUBLISH_SECTION_START__*/
 public:
     ECOBJECTS_EXPORT void const*        GetBaseAddress () {return this;}
@@ -250,6 +251,10 @@ public:
     // These are provided to avoid the cost of dynamic cast.
     ECOBJECTS_EXPORT Bentley::DgnPlatform::DgnECInstance const* AsDgnECInstanceCP() const;
     ECOBJECTS_EXPORT Bentley::DgnPlatform::DgnECInstance*       AsDgnECInstanceP();
+
+    typedef RefCountedPtr<IECTypeAdapterContext> (* TypeAdapterContextCreateFn)(ECPropertyCR, IECInstanceCR instance);
+    ECOBJECTS_EXPORT static void                            RegisterTypeAdapterContextCreateFn (TypeAdapterContextCreateFn fn);
+    ECOBJECTS_EXPORT RefCountedPtr<IECTypeAdapterContext>   CreateTypeAdapterContext (ECPropertyCR ecproperty) const;
 /*__PUBLISH_SECTION_START__*/
 
     //! Check property to see it is a fixed size array and optionally return the fixed size.

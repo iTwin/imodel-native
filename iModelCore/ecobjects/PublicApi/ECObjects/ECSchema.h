@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECSchema.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -347,6 +347,31 @@ public:
 
 struct PrimitiveECProperty;
 
+/*=================================================================================**//**
+Base class for an object which provides the context for an IECTypeAdapter
+@ingroup ECObjectsGroup
+@bsiclass
++===============+===============+===============+===============+===============+======*/
+struct IECTypeAdapterContext : RefCountedBase
+    {
+/*__PUBLISH_SECTION_END__*/
+protected:
+    virtual ECPropertyCP                _GetProperty() const = 0;
+    virtual UInt32                      _GetComponentIndex() const = 0;
+    virtual bool                        _Is3d() const = 0;
+    virtual IECInstanceCP               _GetECInstance() const = 0;
+public:
+    ECOBJECTS_EXPORT  IECInstanceCP     GetECInstance() const;
+    ECOBJECTS_EXPORT  ECPropertyCP      GetProperty() const;
+
+    //! The following are relevant to adapters for point types.
+    ECOBJECTS_EXPORT  UInt32            GetComponentIndex() const;
+    ECOBJECTS_EXPORT  bool              Is3d() const;
+/*__PUBLISH_SECTION_START__*/
+    };
+
+typedef RefCountedPtr<IECTypeAdapterContext> IECTypeAdapterContextPtr;
+    
 /*=================================================================================**//**
 Base class for an object which adapts the internal value of an ECProperty to a user-friendly string representation.
 @ingroup ECObjectsGroup
