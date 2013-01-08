@@ -17,7 +17,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 struct ParserRegex
     {
 private:
-    std::tr1::wregex        m_regex;
+    STD_TR1::wregex         m_regex;
     bvector<WString>        m_capturedPropertyNames;        // order indicates capture group number - 1
 
     ParserRegex() { }
@@ -47,7 +47,7 @@ ParserRegexP ParserRegex::Create (WCharCP regexStr, bool doNotUseECMA)
         {
         try
             {
-            parserRegex->m_regex = std::tr1::wregex (fixedRegexStr.c_str(), doNotUseECMA ? std::tr1::regex_constants::extended : std::tr1::regex_constants::ECMAScript);
+            parserRegex->m_regex = STD_TR1::wregex (fixedRegexStr.c_str(), doNotUseECMA ? STD_TR1::regex_constants::extended : STD_TR1::regex_constants::ECMAScript);
             }
         catch (...)
             {
@@ -170,8 +170,8 @@ static bool SETVALUE_SUCCEEDED (ECObjectsStatus status)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ParserRegex::Apply (IECInstanceR instance, WCharCP calculatedValue) const
     {
-    std::tr1::match_results<WCharCP> matches;
-    if (!std::tr1::regex_match (calculatedValue, matches, m_regex) || matches.size() != m_capturedPropertyNames.size() + 1)
+    STD_TR1::match_results<WCharCP> matches;
+    if (!STD_TR1::regex_match (calculatedValue, matches, m_regex) || matches.size() != m_capturedPropertyNames.size() + 1)
         return false;
 
     for (size_t i = 0; i < m_capturedPropertyNames.size(); i++)
