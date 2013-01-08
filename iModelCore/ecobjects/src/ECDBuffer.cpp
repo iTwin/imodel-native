@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECDBuffer.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "ECObjectsPch.h"
@@ -601,7 +601,7 @@ UInt32          ClassLayout::Factory::GetParentStructIndex (WCharCP accessString
     {
     // The access string will contain a '.' only if the property is inside an embedded struct.
     UInt32          parentStructIndex = 0;
-    WCharCP  pLastDot = wcsrchr (accessString, L'.');
+    WCharCP  pLastDot = ::wcsrchr (accessString, L'.');
 
     if (NULL != pLastDot)
         {
