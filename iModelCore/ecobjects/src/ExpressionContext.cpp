@@ -370,6 +370,13 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
                 return ExprStatus_UnknownError;
                 }
 
+            IECTypeAdapter* typeAdapter = primProp->GetTypeAdapter();
+            if (NULL != typeAdapter && typeAdapter->RequiresExpressionTypeConversion() && !typeAdapter->ConvertToExpressionType (ecValue, *IECTypeAdapterContext::Create (*primProp, *instance)))
+                {
+                evalResult.Clear();
+                return ExprStatus_UnknownError;
+                }
+
             evalResult = ecValue;
             return ExprStatus_Success;
             }
@@ -494,6 +501,13 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
                 BeAssert (ECN::ECOBJECTS_STATUS_Success == ecStatus);
 
                 if (ECN::ECOBJECTS_STATUS_Success != ecStatus)
+                    {
+                    evalResult.Clear();
+                    return ExprStatus_UnknownError;
+                    }
+
+                IECTypeAdapter* typeAdapter = arrayProp->GetMemberTypeAdapter();
+                if (NULL != typeAdapter && typeAdapter->RequiresExpressionTypeConversion() && !typeAdapter->ConvertToExpressionType (ecValue, *IECTypeAdapterContext::Create (*arrayProp, *instance)))
                     {
                     evalResult.Clear();
                     return ExprStatus_UnknownError;

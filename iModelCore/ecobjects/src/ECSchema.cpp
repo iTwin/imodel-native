@@ -6,7 +6,7 @@
 |       $Date: 2005/11/07 15:38:45 $
 |     $Author: EarlinLutz $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -2653,6 +2653,21 @@ bool            SchemaKey::Matches (SchemaKeyCR rhs, SchemaMatchType matchType) 
         default:
             return false;
         }
+    }
+
+static IECTypeAdapterContext::FactoryFn s_typeAdapterContextFactory;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void IECTypeAdapterContext::RegisterFactory (FactoryFn fn)  { s_typeAdapterContextFactory = fn; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+IECTypeAdapterContextPtr IECTypeAdapterContext::Create (ECPropertyCR prop, IECInstanceCR instance)
+    {
+    return NULL != s_typeAdapterContextFactory ? s_typeAdapterContextFactory (prop, instance) : NULL;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
