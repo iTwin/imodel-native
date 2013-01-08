@@ -2,17 +2,12 @@
 |
 |     $Source: src/CalculatedProperty.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
 
-#if defined (_WIN32)    // WIP_NONPORT - regex
-    #define HAVE_REGEX
-    #include    <regex>
-#elif defined (__unix__)
-    // regex is coming in C++0x
-#endif
+#include    <regex>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -21,7 +16,6 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ParserRegex
     {
-#if defined (HAVE_REGEX)
 private:
     std::tr1::wregex        m_regex;
     bvector<WString>        m_capturedPropertyNames;        // order indicates capture group number - 1
@@ -31,7 +25,6 @@ private:
     bool ConvertRegexString (WStringR converted, WCharCP in);
     bool ProcessCaptureGroup (WStringR converted, WCharCP& in, WCharCP end, Int32& depth);
     bool ProcessRegex (WStringR converted, WCharCP& in, WCharCP end, Int32& depth);
-#endif
 public:
     bool                Apply (IECInstanceR instance, WCharCP calculatedValue) const;
 
@@ -43,7 +36,6 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 ParserRegexP ParserRegex::Create (WCharCP regexStr, bool doNotUseECMA)
     {
-#if defined (HAVE_REGEX)
     if (regexStr == NULL)
         {
         return NULL;
@@ -70,12 +62,7 @@ ParserRegexP ParserRegex::Create (WCharCP regexStr, bool doNotUseECMA)
         }
 
     return parserRegex;
-#else
-    return NULL;
-#endif
     }
-
-#if defined (HAVE_REGEX)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
@@ -217,8 +204,6 @@ bool ParserRegex::Apply (IECInstanceR instance, WCharCP calculatedValue) const
     return true;
     }
 
-#endif  // HAVE_REGEX
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -352,16 +337,10 @@ ECObjectsStatus CalculatedPropertySpecification::UpdateDependentProperties (ECVa
         return ECOBJECTS_STATUS_OperationNotSupported;          // only supported for strings
     else if (NULL == m_parserRegex)
         return ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
-
     else
-#if defined (HAVE_REGEX)    // WIP_NONPORT - regex
         return m_parserRegex->Apply (instance, v.GetString()) ? ECOBJECTS_STATUS_Success : ECOBJECTS_STATUS_ParseError;
-#else
-        return ECOBJECTS_STATUS_ParseError;
-#endif
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 
-#undef HAVE_REGEX
 
