@@ -836,6 +836,7 @@ IECInstancePtr IECTypeAdapter::PopulateDefaultFormatterProperties (IECInstanceCR
 bool IECTypeAdapter::ConvertToString (WStringR str, ECValueCR v, IECTypeAdapterContextCR context, IECInstanceCP opts) { return _ConvertToString (str, v, context, opts); }
 bool IECTypeAdapter::ConvertFromString (ECValueR v, WCharCP str, IECTypeAdapterContextCR context)                    { return _ConvertFromString (v, str, context); }
 bool IECTypeAdapter::ConvertToExpressionType (ECValueR v, IECTypeAdapterContextCR context)                           { return _ConvertToExpressionType (v, context); }
+bool IECTypeAdapter::ConvertFromExpressionType (ECValueR v, IECTypeAdapterContextCR context)                         { return _ConvertFromExpressionType (v, context); }
 bool IECTypeAdapter::RequiresExpressionTypeConversion() const                                                        { return _RequiresExpressionTypeConversion(); }
 
 ECPropertyCP        IECTypeAdapterContext::GetProperty() const           { return _GetProperty(); }
