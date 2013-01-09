@@ -560,7 +560,7 @@ ECObjectsStatus ECSchema::CreateClass (ECClassP& pClass, WStringCR name)
 ECObjectsStatus ECSchema::CopyClass
 (    
 ECClassP& targetClass, 
-ECClassR sourceClass
+ECClassCR sourceClass
 )
     {
     if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
@@ -570,7 +570,7 @@ ECClassR sourceClass
         return ECOBJECTS_STATUS_NamedItemAlreadyExists;
     
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
-    ECRelationshipClassP sourceAsRelationshipClass = dynamic_cast<ECRelationshipClassP>(&sourceClass);
+    ECRelationshipClassCP sourceAsRelationshipClass = dynamic_cast<ECRelationshipClassCP>(&sourceClass);
     if (NULL != sourceAsRelationshipClass)
         {
         ECRelationshipClassP newRelationshipClass;
@@ -840,7 +840,7 @@ ECSchemaPtr& schemaOut
         {
         ECClassP copyClass;
         status = schemaOut->CopyClass(copyClass, *ecClass);
-        if (ECOBJECTS_STATUS_Success != status)
+        if (ECOBJECTS_STATUS_Success != status && ECOBJECTS_STATUS_NamedItemAlreadyExists != status)
             return status;
         }
 

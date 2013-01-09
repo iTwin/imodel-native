@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/SchemaTests.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -18,6 +18,7 @@ struct SchemaDeserializationTest : ECTestFixture {};
 struct SchemaSerializationTest   : ECTestFixture {};
 struct SchemaReferenceTest       : ECTestFixture {};
 struct SchemaCreationTest        : ECTestFixture {};
+struct SchemaCopyTest            : ECTestFixture {};
 struct ClassTest                 : ECTestFixture {};
 struct SchemaLocateTest          : ECTestFixture {};
 
@@ -1300,6 +1301,22 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     EXPECT_EQ(5, relationshipClass->GetTarget().GetCardinality().GetUpperLimit());
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaCopyTest, ExpectSuccessWhenCopyingStructs)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath( L"Widgets.01.00.ecschema.xml").c_str(), *schemaContext);
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
+
+    ECSchemaPtr copiedSchema;
+    ECObjectsStatus status2 = schema->CopySchema(copiedSchema);
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, status2);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
