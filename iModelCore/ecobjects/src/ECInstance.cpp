@@ -680,7 +680,8 @@ ECObjectsStatus           IECInstance::GetValueUsingAccessor (ECValueR v, ECValu
         if (ECOBJECTS_STATUS_Success != status)
             {
             // if we're accessing a property of an embedded struct, we expect GetValue() to return a null struct - so continue
-            if (v.IsStruct () && v.IsNull () && ECValueAccessor::INDEX_ROOT == accessor[depth].GetArrayIndex())
+            ECPropertyCP ecprop = accessor.GetECProperty();
+            if (NULL != ecprop && ecprop->GetIsStruct())
                 continue;
             else
                 return status;

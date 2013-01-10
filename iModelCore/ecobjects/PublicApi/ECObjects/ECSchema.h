@@ -405,6 +405,7 @@ protected:
 
     virtual bool                _RequiresExpressionTypeConversion() const = 0;
     virtual bool                _ConvertToExpressionType (ECValueR v, IECTypeAdapterContextCR context) = 0;
+    virtual bool                _ConvertFromExpressionType (ECValueR v, IECTypeAdapterContextCR context) = 0;
 public:
     // For DgnPlatform interop
     struct Factory
@@ -446,6 +447,13 @@ public:
     //! @param[in] context  The context under which conversion is performed
     //! @returns true if successfully converted
     ECOBJECTS_EXPORT        bool ConvertToExpressionType (ECValueR v, IECTypeAdapterContextCR context);
+
+    //! Converts the value from the value which should be used when evaluating ECExpressions.
+    //! Typically no conversion is required. If the value has units, it should be converted from master units
+    //! @param[out] v     The value to convert in-place
+    //! @param[in] context  The context under which conversion is performed
+    //! @returns true if successfully converted
+    ECOBJECTS_EXPORT        bool ConvertFromExpressionType (ECValueR v, IECTypeAdapterContextCR context);
 
     //! Create an IECInstance representing default formatting options for converting to string.
     //! @param[in] includeAllValues If false, property values will be left NULL to save space; otherwise they will be initialized with default values
