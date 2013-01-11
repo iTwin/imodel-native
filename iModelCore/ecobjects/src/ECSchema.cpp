@@ -598,6 +598,13 @@ ECClassCR sourceClass
         targetClass->SetDisplayLabel(sourceClass.GetDisplayLabel());
     targetClass->SetDescription(sourceClass.GetDescription());
 
+    // Set the base classes on the target class from the source class
+    // This is inconsistent with the Managed implementation of CopyClass which does not copy base classes
+    FOR_EACH (ECClassP baseClass, sourceClass.GetBaseClasses())
+        {
+        targetClass->AddBaseClass(*baseClass);
+        }
+
     if (!sourceClass.GetSchema().IsSupplemented())
         {
         FOR_EACH(ECPropertyP sourceProperty, sourceClass.GetProperties(false))
