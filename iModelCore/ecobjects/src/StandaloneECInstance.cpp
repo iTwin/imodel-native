@@ -408,7 +408,7 @@ UInt32              MemoryECInstanceBase::_GetBytesAllocated () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index)
+ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, UInt32 index)
     {
     IECInstancePtr p;
     ECValue structValueIdValue (PRIMITIVETYPE_Integer);
@@ -440,7 +440,7 @@ ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueC
         structValueIdValue.SetInteger (structValueId);
         }
 
-    ECObjectsStatus status = SetPrimitiveValueToMemory (structValueIdValue, classLayout, propertyLayout, true, index);      
+    ECObjectsStatus status = SetPrimitiveValueToMemory (structValueIdValue, propertyLayout, true, index);      
     if (status != ECOBJECTS_STATUS_Success)
         {
         // This useless return value again....
@@ -548,7 +548,7 @@ IECInstancePtr  MemoryECInstanceBase::GetStructArrayInstance (StructValueIdentif
 ECObjectsStatus           MemoryECInstanceBase::_GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const
     {
     ECValue structValueIdValue;
-    ECObjectsStatus status = GetPrimitiveValueFromMemory (structValueIdValue, GetClassLayout(), propertyLayout, true, index);      
+    ECObjectsStatus status = GetPrimitiveValueFromMemory (structValueIdValue, propertyLayout, true, index);      
     if (status != ECOBJECTS_STATUS_Success)
         return status;
         
@@ -593,7 +593,7 @@ UInt32              MemoryECInstanceBase::GetBytesUsed () const
     if (NULL == m_data)
         return 0;
 
-    return CalculateBytesUsed (GetClassLayout());
+    return CalculateBytesUsed ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -633,22 +633,22 @@ ECObjectsStatus MemoryECInstanceBase::RemoveStructStructArrayEntry (StructValueI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus          MemoryECInstanceBase::RemoveStructArrayElements (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount)
+ECObjectsStatus          MemoryECInstanceBase::RemoveStructArrayElements (PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount)
     {
-    return  _RemoveStructArrayElementsFromMemory (classLayout, propertyLayout, removeIndex, removeCount);
+    return  _RemoveStructArrayElementsFromMemory (propertyLayout, removeIndex, removeCount);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus MemoryECInstanceBase::_RemoveStructArrayElementsFromMemory (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount)
+ECObjectsStatus MemoryECInstanceBase::_RemoveStructArrayElementsFromMemory (PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount)
     {
     ECValue         v;
     ECObjectsStatus status;
 
     for (UInt32 i = 0; i<removeCount; i++)
         {
-        status = GetPrimitiveValueFromMemory (v, GetClassLayout(), propertyLayout, true, removeIndex+i);
+        status = GetPrimitiveValueFromMemory (v, propertyLayout, true, removeIndex+i);
         if (status != ECOBJECTS_STATUS_Success)
             return status;
 
@@ -660,7 +660,7 @@ ECObjectsStatus MemoryECInstanceBase::_RemoveStructArrayElementsFromMemory (Clas
             return status;
        }   
 
-    return RemoveArrayElementsFromMemory (classLayout, propertyLayout, removeIndex, removeCount);
+    return RemoveArrayElementsFromMemory (propertyLayout, removeIndex, removeCount);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -692,7 +692,7 @@ UInt32                   MemoryECInstanceBase::GetPerPropertyFlagsDataLength () 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus      MemoryECInstanceBase::AddNullArrayElements (UInt32 propIdx, UInt32 insertCount)
     {
-    return AddNullArrayElementsAt (GetClassLayout(), propIdx, insertCount);
+    return AddNullArrayElementsAt (propIdx, insertCount);
     }
         
 /*---------------------------------------------------------------------------------**//**
@@ -845,7 +845,7 @@ ECObjectsStatus MemoryECInstanceBase::SetValueInternal (UInt32 propertyIndex, EC
     if (ECOBJECTS_STATUS_Success == (status = GetClassLayout().GetPropertyLayoutByIndex (propLayout, propertyIndex)))
         {
         SetIsLoadedBit (propertyIndex);
-        status = SetInternalValueToMemory (GetClassLayout(), *propLayout, v, useArrayIndex, arrayIndex);
+        status = SetInternalValueToMemory (*propLayout, v, useArrayIndex, arrayIndex);
         }
 
     return status;
@@ -1000,9 +1000,7 @@ ECObjectsStatus           StandaloneECInstance::_GetValue (ECValueR v, UInt32 pr
     {
     v.Clear ();
 
-    ClassLayoutCR classLayout = GetClassLayout();
-
-    ECObjectsStatus status = GetValueFromMemory (v, classLayout, propertyIndex, useArrayIndex, arrayIndex);
+    ECObjectsStatus status = GetValueFromMemory (v, propertyIndex, useArrayIndex, arrayIndex);
     if (ECOBJECTS_STATUS_Success == status)
         {
         bool isSet = false;
@@ -1018,9 +1016,7 @@ ECObjectsStatus           StandaloneECInstance::_GetValue (ECValueR v, UInt32 pr
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECInstance::_GetIsPropertyNull (bool& isNull, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const
     {
-    ClassLayoutCR classLayout = GetClassLayout();
-
-    return GetIsNullValueFromMemory (classLayout, isNull, propertyIndex, useArrayIndex, arrayIndex);
+    return GetIsNullValueFromMemory (isNull, propertyIndex, useArrayIndex, arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1028,11 +1024,9 @@ ECObjectsStatus           StandaloneECInstance::_GetIsPropertyNull (bool& isNull
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECInstance::_SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
     {
-    ClassLayoutCR classLayout = GetClassLayout();
-
     SetIsLoadedBit (propertyIndex);
 
-    return SetValueToMemory (classLayout, propertyIndex, v, useArrayIndex, arrayIndex);
+    return SetValueToMemory (propertyIndex, v, useArrayIndex, arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1049,8 +1043,7 @@ ECObjectsStatus StandaloneECInstance::_SetInternalValue (UInt32 propertyIndex, E
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECInstance::_InsertArrayElements (UInt32 propIdx, UInt32 index, UInt32 size)
     {
-    ClassLayoutCR classLayout = GetClassLayout();
-    ECObjectsStatus status = InsertNullArrayElementsAt (classLayout, propIdx, index, size);
+    ECObjectsStatus status = InsertNullArrayElementsAt (propIdx, index, size);
     
     return status;
     } 
@@ -1060,8 +1053,7 @@ ECObjectsStatus           StandaloneECInstance::_InsertArrayElements (UInt32 pro
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECInstance::_AddArrayElements (UInt32 propIdx, UInt32 size)
     {
-    ClassLayoutCR classLayout = GetClassLayout();    
-    ECObjectsStatus status = AddNullArrayElementsAt (classLayout, propIdx, size);
+    ECObjectsStatus status = AddNullArrayElementsAt (propIdx, size);
     
     return status;
     }        
@@ -1071,8 +1063,7 @@ ECObjectsStatus           StandaloneECInstance::_AddArrayElements (UInt32 propId
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECInstance::_RemoveArrayElement (UInt32 propIdx, UInt32 index)
     {
-    ClassLayoutCR classLayout = GetClassLayout();    
-    return RemoveArrayElementsAt (classLayout, propIdx, index, 1);
+    return RemoveArrayElementsAt (propIdx, index, 1);
     } 
 
  /*---------------------------------------------------------------------------------**//**
@@ -1080,16 +1071,15 @@ ECObjectsStatus           StandaloneECInstance::_RemoveArrayElement (UInt32 prop
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECInstance::_ClearArray (UInt32 propIdx)
     {
-    ClassLayoutCR classLayout = GetClassLayout();    
     PropertyLayoutCP pPropertyLayout = NULL;
-    ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (pPropertyLayout, propIdx);
+    ECObjectsStatus status = GetClassLayout().GetPropertyLayoutByIndex (pPropertyLayout, propIdx);
     if (SUCCESS != status || NULL == pPropertyLayout)
         return ECOBJECTS_STATUS_PropertyNotFound;
 
     UInt32 arrayCount = GetReservedArrayCount (*pPropertyLayout);
     if (arrayCount > 0)
         {
-        status =  RemoveArrayElements (classLayout, *pPropertyLayout, 0, arrayCount);
+        status =  RemoveArrayElements (*pPropertyLayout, 0, arrayCount);
 
         if (ECOBJECTS_STATUS_Success == status)
             SetPerPropertyBit ((UInt8) PROPERTYFLAGINDEX_IsLoaded, propIdx, false);
@@ -1105,7 +1095,7 @@ ECObjectsStatus           StandaloneECInstance::_ClearArray (UInt32 propIdx)
 +---------------+---------------+---------------+---------------+---------------+------*/    
 WString        StandaloneECInstance::_ToString (WCharCP indent) const
     {
-    return InstanceDataToString (indent, GetClassLayout());
+    return InstanceDataToString (indent);
     }
 
 ///////////////////////////////////////////////////////////////////////////////////////////

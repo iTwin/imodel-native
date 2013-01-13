@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentation/auipresentationmgr.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__BENTLEY_INTERNAL_ONLY__*/
@@ -94,6 +94,8 @@ struct  ECPresentationManager: public NonCopyableClass
     //! Fetch an image of the specified size and name from the image providers.
     ECOBJECTS_EXPORT IECNativeImagePtr                  GetImage (ECImageKeyCR imageKey, DPoint2dCR size);
 
+    //! Fetch an overlay image of the specified size and name from the image providers.
+    ECOBJECTS_EXPORT IECNativeImagePtr                  GetOverlayImage (IAUIDataContextCR imageKey, DPoint2dCR size);
     //! Get string from localization providers.
     //!@param[in] rscFileName   Dll name which contains the resource.
     //!@param[in] tableId       Table ID form which resource shoud be taken.

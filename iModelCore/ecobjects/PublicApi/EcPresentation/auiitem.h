@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentation/auiitem.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__PUBLISH_SECTION_START__*/
@@ -147,6 +147,8 @@ struct  AUIInstanceDataContext : public IAUIDataContext
         virtual IECInstanceP    GetInstance () const override {return m_instancePtr.get();}
         InstanceType*  GetDataInstnce () const {return m_instancePtr.get();}
     };
+
+typedef AUIInstanceDataContext<IECInstanceP>   ECInstanceDataContext;
 
 /*---------------------------------------------------------------------------------**//**
 //! A class which describes the data that is backed by a single ECInstance in the UI.

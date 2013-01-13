@@ -6,7 +6,7 @@
 |       $Date: 2005/11/07 15:38:45 $
 |     $Author: EarlinLutz $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -560,7 +560,7 @@ ECObjectsStatus ECSchema::CreateClass (ECClassP& pClass, WStringCR name)
 ECObjectsStatus ECSchema::CopyClass
 (    
 ECClassP& targetClass, 
-ECClassR sourceClass
+ECClassCR sourceClass
 )
     {
     if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
@@ -597,6 +597,13 @@ ECClassR sourceClass
     if (sourceClass.GetIsDisplayLabelDefined())
         targetClass->SetDisplayLabel(sourceClass.GetDisplayLabel());
     targetClass->SetDescription(sourceClass.GetDescription());
+
+    // Set the base classes on the target class from the source class
+    // This is inconsistent with the Managed implementation of CopyClass which does not copy base classes
+    FOR_EACH (ECClassP baseClass, sourceClass.GetBaseClasses())
+        {
+        targetClass->AddBaseClass(*baseClass);
+        }
 
     if (!sourceClass.GetSchema().IsSupplemented())
         {
@@ -841,7 +848,7 @@ ECSchemaPtr& schemaOut
         {
         ECClassP copyClass;
         status = schemaOut->CopyClass(copyClass, *ecClass);
-        if (ECOBJECTS_STATUS_Success != status)
+        if (ECOBJECTS_STATUS_Success != status && ECOBJECTS_STATUS_NamedItemAlreadyExists != status)
             return status;
         }
 
@@ -2586,6 +2593,89 @@ void            ECSchema::SetImmutable()
     BeAssert(!m_immutable);
     ReComputeCheckSum();
     m_immutable = true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            SchemaKey::LessThan (SchemaKeyCR rhs, SchemaMatchType matchType) const
+    {
+    switch (matchType)
+        {
+        case SCHEMAMATCHTYPE_Identical:
+            {
+            if (0 != m_checkSum || 0 != rhs.m_checkSum)
+                return m_checkSum < rhs.m_checkSum;
+            //Fall through
+            }
+        case SCHEMAMATCHTYPE_Exact:
+            {
+            int nameCompare = wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str());
+
+            if (nameCompare != 0)
+                return nameCompare < 0;
+
+            if (m_versionMajor != rhs.m_versionMajor)
+                return m_versionMajor < rhs.m_versionMajor;
+
+            return m_versionMinor < rhs.m_versionMinor;
+            break;
+            }
+        case SCHEMAMATCHTYPE_Latest: //Only compare by name
+            {
+            return wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str()) < 0;
+            }
+        case SCHEMAMATCHTYPE_LatestCompatible:
+            {
+            int nameCompare = wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str());
+
+            if (nameCompare != 0)
+                return nameCompare < 0;
+
+            return m_versionMajor < rhs.m_versionMajor;
+            }
+        default:
+            return false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            SchemaKey::Matches (SchemaKeyCR rhs, SchemaMatchType matchType) const
+    {
+    switch (matchType)
+        {
+        case SCHEMAMATCHTYPE_Identical:
+            {
+            if (0 != m_checkSum && 0 != rhs.m_checkSum)
+                return m_checkSum == rhs.m_checkSum;
+            //fall through
+            }
+        case SCHEMAMATCHTYPE_Exact:
+            return 0 == wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str()) && m_versionMajor == rhs.m_versionMajor && m_versionMinor == rhs.m_versionMinor;
+        case SCHEMAMATCHTYPE_Latest:
+            return 0 == wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str());
+        case SCHEMAMATCHTYPE_LatestCompatible:
+            return 0 == wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str()) && m_versionMajor == rhs.m_versionMajor && m_versionMinor >= rhs.m_versionMinor;
+        default:
+            return false;
+        }
+    }
+
+static IECTypeAdapterContext::FactoryFn s_typeAdapterContextFactory;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void IECTypeAdapterContext::RegisterFactory (FactoryFn fn)  { s_typeAdapterContextFactory = fn; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+IECTypeAdapterContextPtr IECTypeAdapterContext::Create (ECPropertyCR prop, IECInstanceCR instance)
+    {
+    return NULL != s_typeAdapterContextFactory ? s_typeAdapterContextFactory (prop, instance) : NULL;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

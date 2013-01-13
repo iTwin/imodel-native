@@ -579,7 +579,7 @@ WStringCR mergedSchemaFullName
         // Class exists but this property does not
         if (NULL == mergedProperty)
             {
-            mergedClass->CopyProperty(mergedProperty, supplementalProperty, true);
+            mergedClass->CopyPropertyForSupplementation(mergedProperty, supplementalProperty, true);
             }
         // Class and property exist, merge property custom attributes
         else
@@ -850,7 +850,7 @@ SchemaPrecedence precedence
                 continue;
                 }
 
-            ECObjectsStatus status = consolidatedECClass->CopyProperty(consolidatedECProperty, inheritedECProperty, false);
+            ECObjectsStatus status = consolidatedECClass->CopyPropertyForSupplementation(consolidatedECProperty, inheritedECProperty, false);
             if (ECOBJECTS_STATUS_Success != status)
                 continue;
 

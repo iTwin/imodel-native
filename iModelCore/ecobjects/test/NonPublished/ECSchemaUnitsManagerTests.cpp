@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/ECSchemaUnitsManagerTests.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -18,7 +18,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*====================================================================================**/
 /// <summary>Tests for Bentley.Units and Bentley.ECObjects.Units.</summary>
-/// <author>Colin.Kerr</author>                             <date>3/2008</date>
+/// <author>Muhammad.Zaighum</author>                             <date>12/12</date>
 /*==============+===============+===============+===============+===============+======*/
 //[TestFixture]
  class ECSchemaUnitsManagerTests : public UnitsTestBase
@@ -32,6 +32,10 @@ public: ECSchemaUnitsManagerTests()
 
 };
  
+ /*====================================================================================**/
+/// <summary></summary>
+/// <author>Muhammad.Zaighum</author>                             <date>12/12</date>
+/*==============+===============+===============+===============+===============+======*/
 TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromSupplementalSchemaWhereSupplementalSchemaOverridesDomainSchemaAtPropertyLevel)
     {
 		Unit defaultUnit;
@@ -39,12 +43,22 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromSupplementalSchemaWhere
         VerifyDefaultUnit (L"MILLIFOOT", defaultUnit);
     }
 
+
+ /*====================================================================================**/
+/// <summary></summary>
+/// <author>Muhammad.Zaighum</author>                             <date>12/12</date>
+/*==============+===============+===============+===============+===============+======*/
 TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromSupplementalSchemaOverrideOfBaseClass)
     {
 		Unit defaultUnit;
 		EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_wcWeightProp));
         VerifyDefaultUnit (L"POUND", defaultUnit);
     }
+
+ /*====================================================================================**/
+/// <summary></summary>
+/// <author>Muhammad.Zaighum</author>                             <date>12/12</date>
+/*==============+===============+===============+===============+===============+======*/
 TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyDirectlyFromPropertyOverridesSupplementalSchema)
     {
 		Unit defaultUnit;
@@ -52,6 +66,11 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyDirectlyFromPropertyOverrid
         VerifyDefaultUnit (L"ANGLE_SECOND", defaultUnit);
     }
 
+
+ /*====================================================================================**/
+/// <summary></summary>
+/// <author>Muhammad.Zaighum</author>                             <date>12/12</date>
+/*==============+===============+===============+===============+===============+======*/
 TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyDirectlyFromProperty)
     {
 		Unit defaultUnit;
@@ -59,6 +78,11 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyDirectlyFromProperty)
         VerifyDefaultUnit (L"INCH_SQUARED", defaultUnit);
     }
 
+
+ /*====================================================================================**/
+/// <summary></summary>
+/// <author>Muhammad.Zaighum</author>                             <date>12/12</date>
+/*==============+===============+===============+===============+===============+======*/
 
 TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromClassUsingKOQFromProperty)
     {
@@ -68,6 +92,11 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromClassUsingKOQFromProper
     }
 
 
+ /*====================================================================================**/
+/// <summary></summary>
+/// <author>Muhammad.Zaighum</author>                             <date>12/12</date>
+/*==============+===============+===============+===============+===============+======*/
+
 TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromDomainSchemaUsingKOQFromPropertyOnBaseClass)
     {
 		Unit defaultUnit;
@@ -76,6 +105,11 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromDomainSchemaUsingKOQFro
     }
 
 
+ /*====================================================================================**/
+/// <summary></summary>
+/// <author>Muhammad.Zaighum</author>                             <date>12/12</date>
+/*==============+===============+===============+===============+===============+======*/
+
 TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromSupplementalSchemaUsingKOQFromProperty)
     {
 		Unit defaultUnit;
@@ -83,6 +117,10 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromSupplementalSchemaUsing
         VerifyDefaultUnit (L"RADIAN", defaultUnit);
     }
 
+ /*====================================================================================**/
+/// <summary></summary>
+/// <author>Muhammad.Zaighum</author>                             <date>12/12</date>
+/*==============+===============+===============+===============+===============+======*/
 
 TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromSupplementalSchemaUsingKOQFromDomainSchema)
     {
@@ -91,6 +129,11 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromSupplementalSchemaUsing
         VerifyDefaultUnit (L"CENTIMETRE", defaultUnit);
     }
 
+
+ /*====================================================================================**/
+/// <summary></summary>
+/// <author>Muhammad.Zaighum</author>                             <date>12/12</date>
+/*==============+===============+===============+===============+===============+======*/
 TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromSupplementalSchemaUsingKOQFromSupplementalSchema)
     {
 		Unit defaultUnit;
@@ -98,6 +141,11 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromSupplementalSchemaUsing
         VerifyDefaultUnit (L"MILLIFOOT", defaultUnit);
     }
 
+
+ /*====================================================================================**/
+/// <summary></summary>
+/// <author>Muhammad.Zaighum</author>                             <date>12/12</date>
+/*==============+===============+===============+===============+===============+======*/
 
 
 TEST_F (ECSchemaUnitsManagerTests, GetUnitFromExternalSchemaUsingKOQFromProperty)
@@ -107,6 +155,10 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitFromExternalSchemaUsingKOQFromProperty
         VerifyDefaultUnit (L"ATMOSPHERE", defaultUnit);
     }
 
+ /*====================================================================================**/
+/// <summary></summary>
+/// <author>Muhammad.Zaighum</author>                             <date>12/12</date>
+/*==============+===============+===============+===============+===============+======*/
 TEST_F (ECSchemaUnitsManagerTests, GetUnitFromDomainSchemaOverridingExternalSchemaUsingKOQFromProperty)
     {
 		Unit defaultUnit;
@@ -114,9 +166,11 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitFromDomainSchemaOverridingExternalSche
         VerifyDefaultUnit (L"FOOT_OF_H2O_CONVENTIONAL", defaultUnit);
     }
 
-/////////////////////////////
+ /*====================================================================================**/
+/// <summary></summary>
+/// <author>Muhammad.Zaighum</author>                             <date>12/12</date>
+/*==============+===============+===============+===============+===============+======*/
 
-#ifdef THE_CODE_THAT_INITIALIZES_THESE_MEMBERS_IS_COMMENTED_OUT
 
 TEST_F (ECSchemaUnitsManagerTests, GetUnit_FromUnitSystemDefaults1)
     {
@@ -125,6 +179,10 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnit_FromUnitSystemDefaults1)
         VerifyDefaultUnit (L"FOOT_SQUARED", defaultUnit);
     }
 
+ /*====================================================================================**/
+/// <summary></summary>
+/// <author>Muhammad.Zaighum</author>                             <date>12/12</date>
+/*==============+===============+===============+===============+===============+======*/
 TEST_F (ECSchemaUnitsManagerTests, GetUnit_FromUnitSystemDefaults2)
     {
 		Unit defaultUnit;
@@ -132,6 +190,10 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnit_FromUnitSystemDefaults2)
         VerifyDefaultUnit (L"FOOT_CUBED", defaultUnit);
     }
 
+ /*====================================================================================**/
+/// <summary></summary>
+/// <author>Muhammad.Zaighum</author>                             <date>12/12</date>
+/*==============+===============+===============+===============+===============+======*/
 TEST_F (ECSchemaUnitsManagerTests, GetUnit_FromUnitSystemDefaults3)
     {
 		Unit defaultUnit;
@@ -139,13 +201,16 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnit_FromUnitSystemDefaults3)
         VerifyDefaultUnit (L"DEGREE_FAHRENHEIT", defaultUnit);
     }
 
+ /*====================================================================================**/
+/// <summary></summary>
+/// <author>Muhammad.Zaighum</author>                             <date>12/12</date>
+/*==============+===============+===============+===============+===============+======*/
 TEST_F (ECSchemaUnitsManagerTests, GetUnit_FromKOQ_OverriddingUnitSystemDefaults)
     {
 		Unit defaultUnit;
 		EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_sucWidthProp));
         VerifyDefaultUnit (L"MILLIMETRE", defaultUnit);
     }
-
-#endif
+//#endif
 
 END_BENTLEY_ECOBJECT_NAMESPACE

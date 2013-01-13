@@ -395,10 +395,10 @@ protected:
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
 public:
-    wchar_t const*          GetName(size_t index) const;
-    size_t                  GetNumberOfOperators() const;
-    NodeP                   GetOperatorNode(size_t index) const;
-    ExpressionToken    GetOperation(size_t index) const;
+    ECOBJECTS_EXPORT wchar_t const*     GetName(size_t index) const;
+    ECOBJECTS_EXPORT size_t             GetNumberOfOperators() const;
+    NodeP                               GetOperatorNode(size_t index) const;
+    ECOBJECTS_EXPORT ExpressionToken    GetOperation(size_t index) const;
 
     static PrimaryListNodePtr Create() { return new PrimaryListNode(); }
     void                    AppendCallNode(CallNodeR  callNode);

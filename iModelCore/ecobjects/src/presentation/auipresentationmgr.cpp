@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/auipresentationmgr.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -49,7 +49,7 @@ void            ECPresentationManager::RemoveProviderFromList (ProviderType & pr
 
     RefCountedPtr <ProviderType> providerPtr (&provider);
     typename ContainerType::iterator iter = std::lower_bound(providerList.begin(), providerList.end(), providerPtr, RefPtrComparer<ProviderType>());
-    if (iter->get() != &provider)
+    if (iter == providerList.end() || iter->get() != &provider)
         return;
 
     providerList.erase(iter);
@@ -345,3 +345,20 @@ void            ECPresentationManager::TriggerSubSelectionEvent (ECSelectionEven
             (*iter)->_OnSubSelection(selectionEvent);
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  01/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+IECNativeImagePtr ECPresentationManager::GetOverlayImage (IAUIDataContextCR context, DPoint2dCR size)
+    {
+    for (T_ImageProviderSet::const_iterator iter = m_imageProviders.begin(); iter != m_imageProviders.end(); ++iter)
+        {
+        IECNativeImagePtr nativeImage = (*iter)->GetOverlayImage(context, size);
+        if (nativeImage.IsNull())
+            continue;
+
+        return nativeImage;
+        }
+    return NULL;
+    }
+

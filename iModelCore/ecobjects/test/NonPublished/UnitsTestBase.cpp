@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/UnitsTestBase.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -114,7 +114,7 @@ bvector< ECSchemaP > & testSupplementalSchemas
     m_supplementalSchemas.push_back ((schemaContext->LocateSchema(suppKey, SCHEMAMATCHTYPE_Latest)).get());
     m_supplementalSchemas.push_back ((schemaContext->LocateSchema(defKey, SCHEMAMATCHTYPE_Latest)).get());
     m_supplementalSchemas.push_back ((schemaContext->LocateSchema(widthKey, SCHEMAMATCHTYPE_Latest)).get());
-    }
+    } 
 
     for (size_t i = 0; i < m_supplementalSchemas.size(); ++i)
         testSupplementalSchemas.push_back (m_supplementalSchemas[i].get());
@@ -204,7 +204,7 @@ void UnitsTestBase::InitClassAndPropertyVariables
     //m_widthProp                 = m_wheelClass["Width"];
     //m_quantityProp              = m_wheelClass["Quantity"];
     //m_weightProp                = m_wheelClass["Weight"];
-    //m_hubStructProp             = m_wheelClass["WheelHub"];
+    m_hubStructProp             = m_wheelClass->GetPropertyP(L"WheelHub");
 
     m_wheelsChildClass          = m_supplementedSchema->GetClassP(L"WheelsChild");
     m_wcDiameterProp            = m_wheelsChildClass->GetPropertyP(L"Diameter");
@@ -221,14 +221,14 @@ void UnitsTestBase::InitClassAndPropertyVariables
     m_headSetAngleProp          = m_BikeClass->GetPropertyP (L"HeadSetAngle");
     m_seatPostAngleProp         = m_BikeClass->GetPropertyP (L"SeatPostAngle");
 
-    /*m_ExceptionClass = m_supplementedSchema["ExceptionCauser"];
+   // m_ExceptionClass = m_supplementedSchema["ExceptionCauser"];
 
-    m_standardUnitsClass        = m_supplementedSchema["StandardUnitsClass"];
-    m_sucAreaProp               = m_standardUnitsClass["Area"];
-    m_sucVolumeProp             = m_standardUnitsClass["Volume"];
-    m_sucTemperatureProp        = m_standardUnitsClass["Temperature"];
-    m_sucWidthProp              = m_standardUnitsClass["Width"];
-
+    m_standardUnitsClass        = m_supplementedSchema->GetClassP(L"StandardUnitsClass");
+    m_sucAreaProp               = m_standardUnitsClass->GetPropertyP (L"Area");
+    m_sucVolumeProp             = m_standardUnitsClass->GetPropertyP (L"Volume");
+    m_sucTemperatureProp        = m_standardUnitsClass->GetPropertyP (L"Temperature");
+    m_sucWidthProp              = m_standardUnitsClass->GetPropertyP (L"Width");
+/*
     m_pipeClass                 = m_testSchema2["PipeClass"];
     m_roughnessProp             = m_pipeClass["Roughness"];
     m_absRoughnessProp          = m_pipeClass["AbsoluteRoughness"];

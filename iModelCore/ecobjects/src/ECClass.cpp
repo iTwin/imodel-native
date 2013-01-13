@@ -6,7 +6,7 @@
 |       $Date: 2005/11/07 15:38:45 $
 |     $Author: EarlinLutz $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -297,6 +297,7 @@ ECPropertyP sourceProperty,
 bool copyCustomAttributes
 )
     {
+    ECSchemaP schema = const_cast<ECSchemaP>(&m_schema);
     if (sourceProperty->GetIsPrimitive())
         {
         PrimitiveECPropertyP destPrimitive;
@@ -312,7 +313,13 @@ bool copyCustomAttributes
         ArrayECPropertyP sourceArray = sourceProperty->GetAsArrayProperty();
         destArray = new ArrayECProperty (*this);
         if (NULL != sourceArray->GetStructElementType())
-            destArray->SetStructElementType(sourceArray->GetStructElementType());
+            {
+            ECClassCP sourceType = sourceArray->GetStructElementType();
+            ECClassP targetType = schema->GetClassP(sourceType->GetName().c_str());
+            if (NULL == targetType)
+                schema->CopyClass(targetType, *sourceType);
+            destArray->SetStructElementType(targetType);
+            }
         else
             destArray->SetPrimitiveElementType(sourceArray->GetPrimitiveElementType());
 
@@ -326,7 +333,12 @@ bool copyCustomAttributes
         StructECPropertyP destStruct;
         StructECPropertyP sourceStruct = sourceProperty->GetAsStructProperty();
         destStruct = new StructECProperty (*this);
-        destStruct->SetType(sourceStruct->GetType());
+        ECClassCR sourceType = sourceStruct->GetType();
+        ECClassP targetType = schema->GetClassP(sourceType.GetName().c_str());
+        if (NULL == targetType)
+            schema->CopyClass(targetType, sourceType);
+
+        destStruct->SetType(*targetType);
 
         destProperty = destStruct;
         }
@@ -336,7 +348,6 @@ bool copyCustomAttributes
         destProperty->SetDisplayLabel(sourceProperty->GetDisplayLabel());
     destProperty->SetName(sourceProperty->GetName());
     destProperty->SetIsReadOnly(sourceProperty->GetIsReadOnly());
-    destProperty->m_forSupplementation = true;
     if (copyCustomAttributes)
         sourceProperty->CopyCustomAttributesTo(*destProperty);
 
@@ -347,6 +358,22 @@ bool copyCustomAttributes
     return status;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::CopyPropertyForSupplementation
+(
+ECPropertyP& destProperty, 
+ECPropertyP sourceProperty, 
+bool copyCustomAttributes
+)
+    {
+    ECObjectsStatus status = CopyProperty(destProperty, sourceProperty, copyCustomAttributes);
+    if (ECOBJECTS_STATUS_Success == status)
+        destProperty->m_forSupplementation = true;
+
+    return status;
+    }
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/

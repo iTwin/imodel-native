@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECInstance.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -680,7 +680,8 @@ ECObjectsStatus           IECInstance::GetValueUsingAccessor (ECValueR v, ECValu
         if (ECOBJECTS_STATUS_Success != status)
             {
             // if we're accessing a property of an embedded struct, we expect GetValue() to return a null struct - so continue
-            if (v.IsStruct () && v.IsNull () && ECValueAccessor::INDEX_ROOT == accessor[depth].GetArrayIndex())
+            ECPropertyCP ecprop = accessor.GetECProperty();
+            if (NULL != ecprop && ecprop->GetIsStruct())
                 continue;
             else
                 return status;
@@ -3311,4 +3312,5 @@ ECSchemaCP ECInstanceReadContext::FindSchemaCP(SchemaKeyCR key, SchemaMatchType 
 
     return &m_fallBackSchema;
     }
+
 END_BENTLEY_ECOBJECT_NAMESPACE

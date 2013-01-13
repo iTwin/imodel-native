@@ -465,7 +465,9 @@ public:
     
     //! For array and struct values, gets a virtual collection of the embedded values
     ECOBJECTS_EXPORT ECValuesCollectionPtr  GetChildValues () const;
-    // TODO?? ECOBJECTS_EXPORT ECPropertyValuePtr     GetPropertyValue (IECInstanceCR, WCharCP propertyName) const;
+
+    //! Get ECPropertyValue given an access string. The access string is in the format of managed accessors
+    ECOBJECTS_EXPORT static ECPropertyValuePtr     GetPropertyValue (IECInstanceCR, WCharCP propertyAccessor);
     };
 
 //=======================================================================================  

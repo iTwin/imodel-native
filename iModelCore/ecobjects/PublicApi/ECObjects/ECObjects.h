@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECObjects.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -90,6 +90,7 @@ EC_TYPEDEFS (PresentationMetadataHelper);
 
 EC_TYPEDEFS (CalculatedPropertySpecification);
 EC_TYPEDEFS (ParserRegex);
+EC_TYPEDEFS(IECTypeAdapterContext);
 
 typedef struct IStream* IStreamP;
 
