@@ -2,7 +2,7 @@
 |
 |     $Source: src/SupplementalSchema.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -445,11 +445,10 @@ ECSchemaR primarySchema,
 bvector<ECSchemaP>& supplementalSchemaList
 )
     {
+    StopWatch timer (L"", true);
     bmap<UInt32, ECSchemaP> schemasByPrecedence;
     bvector<ECSchemaP> localizationSchemas;
-    SupplementedSchemaStatus status = SUPPLEMENTED_SCHEMA_STATUS_Success;
-
-    status = OrderSupplementalSchemas(schemasByPrecedence, primarySchema, supplementalSchemaList, localizationSchemas);
+    SupplementedSchemaStatus status = OrderSupplementalSchemas(schemasByPrecedence, primarySchema, supplementalSchemaList, localizationSchemas);
     if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
         return status;
 
@@ -466,6 +465,11 @@ bvector<ECSchemaP>& supplementalSchemaList
     status = MergeSchemasIntoSupplementedSchema(primarySchema, schemasByPrecedence);
     primarySchema.SetIsSupplemented(true);
     primarySchema.SetSupplementalSchemaInfo(SupplementalSchemaInfo::Create(primarySchema.GetFullSchemaName().c_str(), m_supplementalSchemaNamesAndPurposes).get());
+
+    timer.Stop();
+    WString primarySchemaName = primarySchema.GetFullSchemaName();
+    LOG.infov ("Supplemented (in %.4f seconds) %ls with %d supplemental ECSchemas", timer.GetElapsedSeconds(), 
+        primarySchemaName.c_str(), supplementalSchemaList.size());
 
     return status;
     }
@@ -881,7 +885,7 @@ SchemaPrecedence precedence
     ECClassCR customAttributeClass = supplementalCustomAttribute.GetClass();
     if (SCHEMA_PRECEDENCE_Greater == precedence)
         {
-        if (ECOBJECTS_STATUS_Success != SetMergedCustomAttribute(consolidatedCustomAttributeContainer, *supplementalCustomAttribute, precedence))
+        if (ECOBJECTS_STATUS_Success != SetMergedCustomAttribute(consolidatedCustomAttributeContainer, supplementalCustomAttribute, precedence))
             return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
         }
     // This case is ONLY for dealing with two supplemental ECSchemas that have the same precedence.
@@ -892,16 +896,16 @@ SchemaPrecedence precedence
         IECInstancePtr primaryCustomAttribute = consolidatedCustomAttributeContainer.GetPrimaryCustomAttribute(customAttributeClass);
         if (primaryCustomAttribute.IsValid())
             {
-            ECObjectsLogger::Log()->errorv(L"The ECCustomAttribute: %ls:%ls exists in the same place in two ECSchemas that have the same precedence",
+            LOG.errorv(L"The ECCustomAttribute: %ls:%ls exists in the same place in two ECSchemas that have the same precedence",
                 customAttributeClass.GetSchema().GetFullSchemaName().c_str(), customAttributeClass.GetName().c_str());
             return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
             }
 
-        if (ECOBJECTS_STATUS_Success != SetMergedCustomAttribute (consolidatedCustomAttributeContainer, *supplementalCustomAttribute, precedence))
+        if (ECOBJECTS_STATUS_Success != SetMergedCustomAttribute (consolidatedCustomAttributeContainer, supplementalCustomAttribute, precedence))
             return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
         }
     else if (NULL == consolidatedCustomAttribute)
-        if (ECOBJECTS_STATUS_Success != SetMergedCustomAttribute (consolidatedCustomAttributeContainer, *supplementalCustomAttribute, precedence))
+        if (ECOBJECTS_STATUS_Success != SetMergedCustomAttribute (consolidatedCustomAttributeContainer, supplementalCustomAttribute, precedence))
             return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
 
     return SUPPLEMENTED_SCHEMA_STATUS_Success;
@@ -1014,7 +1018,7 @@ SchemaPrecedence precedence
         setStatus = SetMergedCustomAttribute (consolidatedCustomAttributeContainer, *to, precedence);
         }
     else
-        setStatus = SetMergedCustomAttribute (consolidatedCustomAttributeContainer, *supplementalCustomAttribute, precedence);
+        setStatus = SetMergedCustomAttribute (consolidatedCustomAttributeContainer, supplementalCustomAttribute, precedence);
 
     return setStatus == ECOBJECTS_STATUS_Success ? SUPPLEMENTED_SCHEMA_STATUS_Success : SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
     }
@@ -1058,8 +1062,8 @@ SchemaPrecedence precedence
         to->GetValue (toList, L"UnitSpecificationList");
         from->GetValue (fromList, L"UnitSpecificationList");
 
-        ArrayInfo toInfo    = toList.GetArrayInfo(),
-                  fromInfo  = fromList.GetArrayInfo();
+        ArrayInfo toInfo    = toList.GetArrayInfo();
+        ArrayInfo fromInfo  = fromList.GetArrayInfo();
 
         // build the set UnitSpecification instances in destination list
         bmap<WString, IECInstancePtr> toSpecs;
