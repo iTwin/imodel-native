@@ -570,7 +570,7 @@ ECClassCR sourceClass
         return ECOBJECTS_STATUS_NamedItemAlreadyExists;
     
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
-    ECRelationshipClassP sourceAsRelationshipClass = sourceClass.GetRelationshipClassP();
+    ECRelationshipClassCP sourceAsRelationshipClass = sourceClass.GetRelationshipClassCP();
     if (NULL != sourceAsRelationshipClass)
         {
         ECRelationshipClassP newRelationshipClass;
