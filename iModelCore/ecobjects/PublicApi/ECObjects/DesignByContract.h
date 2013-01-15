@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/DesignByContract.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -59,15 +59,17 @@ public:
 /*__PUBLISH_SECTION_END__*/
 
 #ifdef  NDEBUG
-#if defined (_WIN32) // WIP_NONPORT -- we don't really need to use _noop here, right?
-    #define ASSERT_FALSE_IF_NOT_DISABLED    __noop
-#elif defined (__APPLE__) || defined (ANDROID) // WIP_NONPORT - this implementation should be good for both platforms??
-    #define ASSERT_FALSE_IF_NOT_DISABLED(_Message)  (void)0
-#endif
+    #define ASSERT_FALSE_IF_NOT_DISABLED(_Message) (void)0
 #else
     //! Avoid direct use of this macro.  It is only intended for use by other macros defined in this file.
     // Forces an assert with the specified message as long as asserts are enabled.  No expression is evaluated.
-#define ASSERT_FALSE_IF_NOT_DISABLED(_Message)    (void)((AssertDisabler::AreAssertsDisabled()) || (BeAssert(_Message), 0))
+    #define ASSERT_FALSE_IF_NOT_DISABLED(_Message)    (void)((AssertDisabler::AreAssertsDisabled()) || (BeAssert(_Message), 0))
+#endif
+
+#if defined(NDEBUG) && !defined (LOG_ASSERT_IN_PRODUCTION_CODE)
+    #define LOG_ASSERT_FAILURE(_LogMessage, ...) (void)0
+#else
+    #define LOG_ASSERT_FAILURE(_LogMessage, ...) LogFailureMessage(_LogMessage, ## __VA_ARGS__)
 #endif
 
 //! Avoid direct use of this function.  It is only intended for use by macros defined in this file.
@@ -76,7 +78,7 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
 //! Avoid direct use of this macro.  It is only intended for use by other macros defined in this file.
 #define LOG_ASSERT_RETURN(_Expression, _ErrorStatus, _LogMessage, ...)           \
         {                                                           \
-        LogFailureMessage (_LogMessage, ## __VA_ARGS__);            \
+        LOG_ASSERT_FAILURE (_LogMessage, ## __VA_ARGS__);           \
         ASSERT_FALSE_IF_NOT_DISABLED(_Expression);                  \
         return _ErrorStatus;                                        \
         }
@@ -149,17 +151,12 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
 //!         }
 //! \endcode
 #define EXPECTED_CONDITION(_Expression)     ( (_Expression) \
-    || (LogFailureMessage(L"The following expected condition has failed:\n  expected condition: %hs\n  method: %hs\n  file: %hs\n  line: %i\n", #_Expression, __FUNCTION__, __FILE__, __LINE__), 0) \
+    || (LOG_ASSERT_FAILURE(L"The following expected condition has failed:\n  expected condition: %hs\n  method: %hs\n  file: %hs\n  line: %i\n", #_Expression, __FUNCTION__, __FILE__, __LINE__), 0) \
     || (ASSERT_FALSE_IF_NOT_DISABLED (_Expression), 0) )
 
 #ifdef NDEBUG
-#if defined (_WIN32) // WIP_NONPORT -- we don't really need to use _noop here, right?
-    #define DEBUG_EXPECT(_Expression)    __noop
-    #define DEBUG_FAIL(_Message)         __noop
-#elif defined (__APPLE__) || defined (ANDROID) // WIP_NONPORT - this implementation should be good for both platforms??
-    #define DEBUG_EXPECT(_Expression)
-    #define DEBUG_FAIL(_Message)
-#endif
+    #define DEBUG_EXPECT(_Expression) (void)0
+    #define DEBUG_FAIL(_Message) (void)0
 #else
     #define DEBUG_EXPECT(_Expression)    EXPECTED_CONDITION(_Expression)
     #define DEBUG_FAIL(_Message)         EXPECTED_CONDITION(false && _Message)
