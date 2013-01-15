@@ -9,8 +9,8 @@
 
 /*__PUBLISH_SECTION_START__*/
 
-#include <ECObjects\ECInstance.h>
-#include <Bentley\RefCounted.h>
+#include <ECObjects/ECInstance.h>
+#include <Bentley/RefCounted.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
   
@@ -324,6 +324,13 @@ private:
     //! @param[in]  supplementalCustomAttribute The custom attribute from the supplemental schema
     //! @param[in]  precedence  Determines if the precedence is greater, lower, or equal to the consolidated schema
     SupplementedSchemaStatus MergeUnitSpecificationsCustomAttribute(IECCustomAttributeContainerR consolidatedCustomAttributeContainer, IECInstanceR supplementalCustomAttribute, IECInstanceP consolidatedCustomAttribute, SchemaPrecedence precedence);
+
+    //! This is safe function to set consolidated custom attribute. If the customAttributeInstance requires a new ECSchema to be referenced
+    //! the the container's ECSchema, the ECSchemaReference will be added automatically
+    //! @param[in,out] container Container on which consolidated custom attribute needs to be set
+    //! @param[in]  customAttributeInstance The custom attribute from the consolidated schema
+    //! @param[in] precedence If SCHEMA_PRECEDENCE_Equal, sets into list of primary ECCustomAttributes, otherwise into list of consolidated
+    static ECObjectsStatus  SetMergedCustomAttribute(IECCustomAttributeContainerR container, IECInstanceR customAttributeInstance, SchemaPrecedence precedence);
 
 public:
     //! Gets the primary schema name

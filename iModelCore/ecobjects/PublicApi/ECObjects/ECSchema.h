@@ -193,6 +193,7 @@ struct IECCustomAttributeContainer
 private:
     friend struct ECCustomAttributeInstanceIterable;
     friend struct SupplementedSchemaBuilder;
+
     ECCustomAttributeCollection         m_primaryCustomAttributes;
     ECCustomAttributeCollection         m_consolidatedCustomAttributes;
     SchemaWriteStatus                   AddCustomAttributeProperties (BeXmlNodeR oldNode, BeXmlNodeR newNode) const;
@@ -201,13 +202,15 @@ private:
     IECInstancePtr                      GetCustomAttributeInternal(ECClassCR ecClass, bool includeBaseClasses, bool includeSupplementalAttributes) const;
 
     ECObjectsStatus                     SetCustomAttributeInternal(ECCustomAttributeCollection& customAttributeCollection, IECInstanceR customAttributeInstance, bool requireSchemaReference = false);
+    //! Does not check if the container's ECSchema references the requisite ECSchema(s). @see SupplementedSchemaBuilder::SetMergedCustomAttribute
     ECObjectsStatus                     SetConsolidatedCustomAttribute(IECInstanceR customAttributeInstance);
+    //! Does not check if the container's ECSchema references the requisite ECSchema(s). @see SupplementedSchemaBuilder::SetMergedCustomAttribute
     ECObjectsStatus                     SetPrimaryCustomAttribute(IECInstanceR customAttributeInstance);
 
 protected:
     InstanceReadStatus                  ReadCustomAttributes (BeXmlNodeR containerNode, ECSchemaReadContextR context, ECSchemaCR fallBackSchema);
     SchemaWriteStatus                   WriteCustomAttributes(BeXmlNodeR parentNode) const;
-
+    //! Only copies primary ones, not consolidated ones. Does not check if the container's ECSchema references the requisite ECSchema(s). @see SupplementedSchemaBuilder::SetMergedCustomAttribute
     ECObjectsStatus                     CopyCustomAttributesTo(IECCustomAttributeContainerR destContainer) const;
 
     void                                AddUniqueCustomAttributesToList(ECCustomAttributeCollection& returnList);
@@ -873,12 +876,16 @@ protected:
     SchemaWriteStatus                   _WriteXml (BeXmlNodeP& createdClassNode, BeXmlNodeR parentNode, Utf8CP elementName) const;
 
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const { return NULL; }  // used to avoid dynamic_cast
+    virtual ECRelationshipClassP        _GetRelationshipClassP ()        { return NULL; }  // used to avoid dynamic_cast
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
     ECOBJECTS_EXPORT StandaloneECEnablerP  GetDefaultStandaloneEnabler() const;
+    //! Used to avoid dynamic_cast
     ECOBJECTS_EXPORT ECRelationshipClassCP GetRelationshipClassCP() const;
+    //! Used to avoid dynamic_cast
+    ECOBJECTS_EXPORT ECRelationshipClassP GetRelationshipClassP();
     //! The ECSchema that this class is defined in
     ECOBJECTS_EXPORT ECSchemaCR         GetSchema() const;
     // schemas index class by name so publicly name can not be reset
@@ -1241,6 +1248,7 @@ protected:
     virtual SchemaReadStatus            _ReadXmlAttributes (BeXmlNodeR classNode) override;
     virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context) override;
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const override {return this;};
+    virtual ECRelationshipClassP        _GetRelationshipClassP ()  override {return this;};
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__

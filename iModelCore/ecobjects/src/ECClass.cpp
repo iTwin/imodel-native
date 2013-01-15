@@ -15,7 +15,7 @@
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 // If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
-// Test programs generally want to get error status back and not assert, so they call ECSchema::AssertOnXmlError (false);
+// Test programs generally want to get error status back and not BeAssert, so they call ECSchema::AssertOnXmlError (false);
 static  bool        s_noAssert = false;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                10/2011
@@ -236,6 +236,14 @@ ECRelationshipClassCP ECClass::GetRelationshipClassCP() const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipClassP ECClass::GetRelationshipClassP()
+    {
+    return _GetRelationshipClassP();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
 StandaloneECEnablerP ECClass::GetDefaultStandaloneEnabler() const
     {
     if (!m_defaultStandaloneEnabler.IsValid())
@@ -342,6 +350,7 @@ bool copyCustomAttributes
     destProperty->SetIsReadOnly(sourceProperty->GetIsReadOnly());
     if (copyCustomAttributes)
         sourceProperty->CopyCustomAttributesTo(*destProperty);
+
     ECObjectsStatus status = AddProperty(destProperty, sourceProperty->GetName());
     if (ECOBJECTS_STATUS_Success != status)
         delete destProperty;
@@ -1755,6 +1764,7 @@ ECRelationshipConstraintR toRelationshipConstraint
         if (ECOBJECTS_STATUS_Success != status)
             return status;
         }
+
     return CopyCustomAttributesTo(toRelationshipConstraint);
     }
        
