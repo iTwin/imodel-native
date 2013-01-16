@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/UnitsTests.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -92,6 +92,9 @@ static WCharCP s_schemaXml =
     L"              <UnitSpecification xmlns=\"Unit_Attributes.01.00\">"
     L"                  <KindOfQuantityName>DIAMETER_LARGE</KindOfQuantityName>"
     L"              </UnitSpecification>"
+    L"              <DisplayUnitSpecification xmlns=\"Unit_Attributes.01.00\">"
+    L"                  <DisplayUnitName>DECIMETRE</DisplayUnitName>"
+    L"              </DisplayUnitSpecification>"
     L"          </ECCustomAttributes>"
     L"        </ECProperty>"
     L"        <ECProperty propertyName=\"FromKOQDimension\" typeName=\"double\">"
@@ -106,6 +109,9 @@ static WCharCP s_schemaXml =
     L"              <UnitSpecification xmlns=\"Unit_Attributes.01.00\">"
     L"                  <DimensionName>L</DimensionName>"
     L"              </UnitSpecification>"
+    L"              <DisplayUnitSpecification xmlns=\"Unit_Attributes.01.00\">"
+    L"                  <DisplayUnitName>MILE</DisplayUnitName>"
+    L"              </DisplayUnitSpecification>"
     L"          </ECCustomAttributes>"
     L"        </ECProperty>"
     L"        <ECProperty propertyName=\"FromNonExistentKOQWithDimension\" typeName=\"double\">"
@@ -150,6 +156,7 @@ struct UnitsTest : ECTestFixture
 
     void            TestUnitConversion (double fromVal, WCharCP fromUnitName, double expectedVal, WCharCP targetUnitName, double tolerance);
     void            TestUnitSpecification (WCharCP propName, double expectedValueOfOneMeter);
+    void            TestUnitFormatting (WCharCP propName, double storedValue, WCharCP formattedValue);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -198,6 +205,18 @@ void UnitsTest::TestUnitSpecification (WCharCP propName, double expectedValueOfO
 
     EXPECT_TRUE (propUnit.ConvertTo (expectedValueOfOneMeter, meter));
     EXPECT_EQ (1.0, expectedValueOfOneMeter);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void UnitsTest::TestUnitFormatting (WCharCP propName, double storedValue, WCharCP formattedValue)
+    {
+    ECPropertyCP ecprop = m_schema->GetClassP (L"UnitSpecClass")->GetPropertyP (propName);
+
+    WString formatted;
+    EXPECT_TRUE (Unit::FormatValue (formatted, ECValue (storedValue), *ecprop, NULL));
+    EXPECT_TRUE (formatted.Equals (formattedValue)) << L"Expected: " << formattedValue << L" Actual: " << formatted.c_str();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1725,12 +1744,23 @@ TEST_F (UnitsTest, TestUnitSpecifications)
     EXPECT_EQ (0, wcscmp (nonStandardUnit.GetShortLabel(), L"NONEXISTENT_UNIT"));
     EXPECT_EQ (0, wcscmp (nonStandardUnit.GetBaseUnitName(), L"NONEXISTENT_UNIT"));
     }
-//TEST_F (UnitsTest, GetUnitForPropertyFromSupplementalSchemaWhereSupplementalSchemaOverridesDomainSchemaAtPropertyLevel)
-//    {
-//		
-//        Unit defaultUnit;// = m_manager.GetUnit (m_wheelClass, m_AreaProp);
-//		Unit::GetUnitForECProperty (defaultUnit, *m_fromProperty)
-//        ASSERT_NEQ (NULL,defaultUnit)<< "The returned Unit is null.";
-//		ASSERT_EQ (expectedUnitName, defaultUnit.Name)<<"The expected Unit name does not match the actual name.");
-//    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (UnitsTest, Formatting)
+    {
+    // Storage: cm Display: none
+    TestUnitFormatting (L"FromKOQ", 123.456, L"123.46 cm");
+
+    // Storage: cm Display: decimetre
+    TestUnitFormatting (L"FromParentKOQ", 123.456, L"12.35 dm");
+
+    // Storage: km Display: none
+    TestUnitFormatting (L"FromKOQDimension", 123.456, L"123.46 km");
+
+    // Storage: km Display: miles
+    TestUnitFormatting (L"FromDimension", 123.456, L"76.71 mi");
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE

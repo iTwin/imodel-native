@@ -2,7 +2,7 @@
 |
 |     $Source: src/Units/Units.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -333,18 +333,75 @@ bool Unit::GetUnitForECProperty (UnitR unit, ECPropertyCR ecprop)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Unit::GetDisplayUnitForECProperty (UnitR unit, WStringR fmt, ECPropertyCR ecprop)
     {
+    return GetDisplayUnitForECProperty (unit, &fmt, ecprop);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Unit::GetDisplayUnitForECProperty (UnitR unit, WStringP fmt, ECPropertyCR ecprop)
+    {
     ECValue v;
     IECInstancePtr attr = ecprop.GetCustomAttribute (DISPLAY_UNIT_SPECIFICATION);
     if (attr.IsValid() && ECOBJECTS_STATUS_Success == attr->GetValue (v, DISPLAY_UNIT_NAME) && !v.IsNull() && UnitLocater (ecprop, false).LocateUnitByName (unit, v.GetString()))
         {
-        fmt.clear();
-        if (ECOBJECTS_STATUS_Success == attr->GetValue (v, DISPLAY_FORMAT_STRING) && !v.IsNull())
-            fmt = v.GetString();
-        
+        if (NULL != fmt)
+            {
+            fmt->clear();
+            if (ECOBJECTS_STATUS_Success == attr->GetValue (v, DISPLAY_FORMAT_STRING) && !v.IsNull())
+                *fmt = v.GetString();
+            }
+
         return true;
         }
 
     return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* This method was requested by Graphite team. They have a need to format Units values
+* without dependency on DgnPlatform, where ECUnitsTypeAdapter lives.
+* If DgnPlatform is present, the method will use the type adapter.
+* Otherwise we will do the formatting here in ECObjects. In that case,
+* the FormatString property of DisplayUnitSpecification is ignored.
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Unit::FormatValue (WStringR formatted, ECValueCR inputVal, ECPropertyCR ecprop, IECInstanceCP instance)
+    {
+    Unit storedUnit;
+    ECValue v (inputVal);
+
+    // if GetForECProperty() fails, we have no valid UnitSpecification attribute
+    if (v.IsNull() || !v.ConvertToPrimitiveType (PRIMITIVETYPE_Double) || !Unit::GetUnitForECProperty (storedUnit, ecprop))
+        return false;
+
+    // See if we've got a registered ECUnitsTypeAdapter from DgnPlatform
+    IECTypeAdapter* typeAdapter;
+    if (NULL != instance && NULL != (typeAdapter = ecprop.GetTypeAdapter()))
+        return typeAdapter->ConvertToString (formatted, inputVal, *IECTypeAdapterContext::Create (ecprop, *instance));
+
+    // No TypeAdapter, do basic formatting
+    double displayValue = v.GetDouble();
+    WCharCP label = storedUnit.GetShortLabel();
+
+    Unit displayUnit;
+    if (Unit::GetDisplayUnitForECProperty (displayUnit, NULL, ecprop))
+        {
+        if (!displayUnit.IsCompatible (storedUnit) || !storedUnit.ConvertTo (displayValue, displayUnit))
+            return false;
+
+        label = displayUnit.GetShortLabel();
+        }
+
+    formatted.clear();
+    formatted.Sprintf (L"%0.2f", displayValue);
+    if (NULL != label)
+        {
+        formatted.append (1, ' ');
+        formatted.append (label);
+        }
+
+    return true;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

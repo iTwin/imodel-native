@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECUnits/Units.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -56,6 +56,8 @@ private:
     WString                 m_shortLabel;
     UnitConverter           m_converter;
     WString                 m_unitName;     // This is required only because DgnPlatform needs it in order to look up unit label customizations...
+
+    static bool                         GetDisplayUnitForECProperty (UnitR unit, WStringP displayFormat, ECPropertyCR ecprop);
 public:
     Unit() { }
     Unit (WCharCP unitName, WCharCP shortLabel, UnitConverterCR converter, WCharCP baseUnitName) : m_baseUnitName (baseUnitName), m_shortLabel (shortLabel), m_converter (converter), m_unitName (unitName) { }
@@ -71,6 +73,12 @@ public:
 
     ECOBJECTS_EXPORT static bool        GetUnitForECProperty (UnitR unit, ECPropertyCR ecprop);
     ECOBJECTS_EXPORT static bool        GetDisplayUnitForECProperty (UnitR unit, WStringR displayFormat, ECPropertyCR ecprop);
+
+    // Formats the ECValue according to UnitSpecification custom attribute on the ECProperty.
+    // If instance is non-null and an IECTypeAdapter can be located to perform the formatting, the IECTypeAdapter::ConvertToString() method will be used
+    // Otherwise basic formatting will be applied, ignoring the FormatString property of any DisplayUnitSpecification custom attribute on the ECProperty
+    // Returns false if no UnitSpecification present or if an error occurs
+    ECOBJECTS_EXPORT static bool        FormatValue (WStringR formatted, ECValueCR v, ECPropertyCR ecprop, IECInstanceCP instance);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
