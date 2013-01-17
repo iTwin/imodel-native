@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/PresentationRules.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -31,6 +31,8 @@ EC_TYPEDEFS (ClassGroup);
 EC_TYPEDEFS (PropertyGroup);
 EC_TYPEDEFS (PropertyRangeGroupSpecification);
 EC_TYPEDEFS (LocalizationResourceKeyDefinition);
+EC_TYPEDEFS (UserSettingsGroup);
+EC_TYPEDEFS (UserSettingsItem);
 EC_TYPEDEFS (ChildNodeSpecification);
 EC_TYPEDEFS (AllInstanceNodesSpecification);
 EC_TYPEDEFS (AllRelatedInstanceNodesSpecification);
@@ -57,6 +59,7 @@ END_BENTLEY_ECOBJECT_NAMESPACE
 #include <ECPresentationRules/LabelOverride.h>
 #include <ECPresentationRules/StyleOverride.h>
 #include <ECPresentationRules/LocalizationResourceKeyDefinition.h>
+#include <ECPresentationRules/UserSettingsGroup.h>
 #include <ECPresentationRules/CheckBoxRule.h>
 #include <ECPresentationRules/RenameNodeRule.h>
 #include <ECPresentationRules/SortingRule.h>

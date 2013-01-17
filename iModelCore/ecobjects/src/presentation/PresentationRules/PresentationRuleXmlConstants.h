@@ -102,6 +102,15 @@
 #define LOCALIZATION_DEFINITION_XML_ATTRIBUTE_KEY                                     "Key"
 #define LOCALIZATION_DEFINITION_XML_ATTRIBUTE_DEFAULTVALUE                            "DefaultValue"
 
+#define USER_SETTINGS_XML_NODE_NAME                                                   "UserSettings"
+#define USER_SETTINGS_XML_ATTRIBUTE_CATEGORY_LABEL                                    "CategoryLabel"
+
+#define USER_SETTINGS_ITEM_XML_NODE_NAME                                              "UserSettingsItem"
+#define USER_SETTINGS_ITEM_XML_ATTRIBUTE_ID                                           "Id"
+#define USER_SETTINGS_ITEM_XML_ATTRIBUTE_LABEL                                        "Label"
+#define USER_SETTINGS_ITEM_XML_ATTRIBUTE_OPTIONS                                      "Options"
+#define USER_SETTINGS_ITEM_XML_ATTRIBUTE_DEFAULT_VALUE                                "DefaultValue"
+
 #define SORTING_RULE_XML_NODE_NAME                                                    "SortingRule"
 #define SORTING_RULE_XML_ATTRIBUTE_SORTASCENDING                                      "SortAscending"
 #define SORTING_RULE_XML_ATTRIBUTE_DONOTSORT                                          "DoNotSort"
