@@ -2,12 +2,13 @@
 |
 |     $Source: src/ECValue.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
 #include <Bentley/IStorage.h>   // for _FILETIME
 #include <Bentley/BeAssert.h>
+#include <Bentley/ValueFormat.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -2565,6 +2566,490 @@ UInt64 ECValue::GetDateTimeUnixMillis() const
     fileTime.dwLowDateTime = ticks & 0xFFFFFFFF;
     fileTime.dwHighDateTime = ticks >> 0x20;
     return BeTimeUtilities::ConvertFiletimeToUnixMillis (fileTime);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECValue::SupportsDotNetFormatting() const
+    {
+    if (IsNull() || !IsPrimitive())
+        return false;
+    
+    switch (GetPrimitiveType())
+        {
+    case PRIMITIVETYPE_Long:
+    case PRIMITIVETYPE_Integer:
+    case PRIMITIVETYPE_Double:
+        return true;
+    default:
+        return false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct NumericFormat
+    {
+private:
+    static const UInt32 MAX_PRECISION = 97;         // A limit imposed by Snwprintf(); values above this will produce an exception
+
+    bool            insertThousandsSeparator;
+    PrecisionType   precisionType;
+    UInt8           widthBeforeDecimal;         // pad with leading zeros to meet this width
+    UInt8           minDecimalPrecision;        // pad with trailing zeros to meet this precision
+    UInt8           maxDecimalPrecision;        // remove trailing zeros between minDecimalPrecision and this
+    double          multiplier;
+    size_t          insertPos;
+
+    NumericFormat () : insertThousandsSeparator(false), precisionType(PRECISION_TYPE_Decimal), widthBeforeDecimal(0), minDecimalPrecision(0), maxDecimalPrecision(0), multiplier(1.0), insertPos(-1) { }
+
+    DoubleFormatterPtr ToFormatter() const
+        {
+        DoubleFormatterPtr fmtr = DoubleFormatter::Create();
+        fmtr->SetLeadingZero (widthBeforeDecimal > 0);
+        fmtr->SetTrailingZeros (maxDecimalPrecision > 0);
+        fmtr->SetPrecision (precisionType, maxDecimalPrecision);
+        fmtr->SetInsertThousandsSeparator (insertThousandsSeparator);
+        return fmtr;
+        }
+
+    static bool     ExtractStandardFormatPrecision (WCharCP fmt, UInt32& precision);
+    static bool     ApplyStandardNumericFormat (WStringR formatted, WCharCP fmt, double d);
+    static WCharCP  ParseNumberFormat (NumericFormat& numFormat, WCharCP start);
+    static WCharCP  SkipLiteralString (WCharCP start);
+public:
+    static bool                 FormatDouble (WStringR formatted, WCharCP formatString, double d);
+    static bool                 FormatInteger (WStringR formatted, WCharCP formatString, Int64 i);
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool NumericFormat::ExtractStandardFormatPrecision (WCharCP fmt, UInt32& precision)
+    {
+    // Expect 0-2 digits specifying a precision or width from 0-99
+    // Don't overwrite value of precision unless one is explicitly specified or cannot be extracted
+    bool isValidFormat = true;
+    BeAssert (NULL != fmt);
+    if (*fmt)
+        {
+        precision = 0;
+        if (iswdigit (*fmt))
+            {
+            precision = (UInt32)(*fmt - '0');
+            if (*++fmt)
+                {
+                if (iswdigit (*fmt))
+                    {
+                    precision *= 10;
+                    precision += (UInt32)(*fmt - '0');
+                    if (precision > MAX_PRECISION)
+                        precision = MAX_PRECISION;
+
+                    if (*++fmt)   // trailing characters
+                        isValidFormat = false;
+                    }
+                else
+                    isValidFormat = false;
+                }
+            }
+        else
+            isValidFormat = false;
+        }
+
+    return isValidFormat;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool NumericFormat::FormatInteger (WStringR formatted, WCharCP fmt, Int64 i)
+    {
+    // Check for a couple of standard formats specific to integers
+    if (NULL != fmt)
+        {
+        WChar spec = *fmt;
+        WChar lspec = towlower (spec);
+        if ('d' == lspec || 'x' == lspec)
+            {
+            UInt32 precision = 0;
+            if (ExtractStandardFormatPrecision (fmt + 1, precision))
+                {
+                WChar buf[100]; // because max width is 99
+                switch (lspec)
+                    {
+                    case 'x':       // hexadecimal
+                        {
+                        BeStringUtilities::HexFormatOptions opts = BeStringUtilities::HEXFORMAT_LeadingZeros;
+                        if ('X' == spec)
+                            opts = (BeStringUtilities::HexFormatOptions)(opts | BeStringUtilities::HEXFORMAT_Uppercase);
+
+                        BeStringUtilities::FormatUInt64 (buf, _countof(buf), (UInt64)i, opts, precision);
+                        }
+                        break;
+                    case 'd':       // decimal
+                        {
+                        BeStringUtilities::Snwprintf (buf, _countof(buf), L"%0*lld", precision, i);
+                        }
+                        break;
+                    }
+
+                formatted = buf;
+                return true;
+                }
+            }
+        }
+
+    // Treat as double
+    return FormatDouble (formatted, fmt, (double)i);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool NumericFormat::ApplyStandardNumericFormat (WStringR formatted, WCharCP fmt, double d)
+    {
+    // Limited support for following standard .NET specifiers. All can be upper- or lower-case, all take an optional width/precision from 0-99
+    //  E: scientific notation. Default precision 6.
+    //  C: Currency. Treated as F
+    //  F: Fixed-point. Default precision 2.
+    //  N: Includes group separators
+    //  R: Round-trippable. Treated as F with maximum precision.
+    //  P: Multiply input by 100, append '%'
+    //  G: Treated as fixed-point.
+
+    BeAssert (NULL != fmt && 0 != *fmt);
+
+    WChar spec = *fmt,
+          lspec = towlower (spec);
+
+    PrecisionType precisionType = PRECISION_TYPE_Decimal;
+    bool groupSeparators = false,
+         appendPercent = false,
+         ignoreExtractedPrecision = false;
+    switch (lspec)
+        {
+    case 'e':
+        precisionType = PRECISION_TYPE_Scientific;
+        break;
+    case 'p':
+        d *= 100.0;
+        appendPercent = true;
+        spec = lspec = 'f';
+        break;
+    case 'r':
+        ignoreExtractedPrecision = true;
+        spec = lspec = 'f';
+        break;
+    case 'n':
+        groupSeparators = true;
+        // fall-through intentional
+    case 'c':
+    case 'g':
+        spec = lspec = 'f';
+        break;
+    case 'f':
+        break;
+    default:
+        return false;
+        }
+
+    UInt32 precision = 'f' == lspec ? 2 : 6;
+    if (!ExtractStandardFormatPrecision (fmt + 1, precision))
+        return false;
+
+    DoubleFormatterPtr fmtr = DoubleFormatter::Create();
+
+    if (ignoreExtractedPrecision)
+        precision = MAX_PRECISION;
+    else
+        fmtr->SetTrailingZeros (true);
+
+    fmtr->SetLeadingZero (true);
+    fmtr->SetInsertThousandsSeparator (groupSeparators);
+    fmtr->SetPrecision (precisionType, (byte)precision);
+
+    formatted = fmtr->ToString (d);
+
+    if (appendPercent)
+        formatted.append (1, L'%');
+    else if (ignoreExtractedPrecision && formatted.length() > 1)
+        {
+        // DoubleFormatter is going to give us trailing zeros. Strip them off
+        size_t endPos = formatted.length() - 1,
+               startPos = formatted.find ('.');
+
+        while (formatted[endPos] == '0')
+            --endPos;
+
+        if (endPos == startPos)
+            --endPos;   // only zeros follow the decimal point, so remove it.
+
+        formatted.erase (endPos + 1);
+        }
+        
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool NumericFormat::FormatDouble (WStringR formatted, WCharCP fmt, double d)
+    {
+    if (ApplyStandardNumericFormat (formatted, fmt, d))
+        return true;
+
+    // Custom formatting.
+    // Limitations:
+    //  -Expects a single contiguous number format like '###,##0.00#' consisting of only those four characters, with optional prefix and suffix.
+    //      i.e. "xxx ##,#00.0## xxx" is valid, "## xxx 000.0 xx 00" is not - only the "##" will be replaced with digits.
+    //  -Does not support custom exponent sign/width
+    //  -Does not support specifying varying formats for positive/negative/zero values
+    //  -Probably misc differences. Note that Microsoft's implementation does not match their documentation in all cases either, so we are not going to bend over backwards...
+
+    NumericFormat numFormat;
+    while (0 != *fmt)
+        {
+        switch (*fmt)
+            {
+            case '\'':
+            case '"':       // literal string
+                {
+                WCharCP endQuote = SkipLiteralString (fmt);
+                if (endQuote - fmt > 2)
+                    formatted.append (fmt + 1, endQuote - fmt - 1);
+
+                fmt = (0 != *endQuote) ? endQuote : endQuote - 1;   // in case of unclosed quote.
+                }
+                break;
+            case '\\':      // escaped character
+                if (0 != *++fmt)
+                    formatted.append (1, *fmt);
+
+                break;
+            case '%':
+                numFormat.multiplier *= 100.0;
+                formatted.append (1, '%');
+                break;
+            case ',':
+                if (numFormat.insertPos != -1)  // a comma anywhere after the number format acts as a scaling factor, IF no decimal precision specified
+                    {
+                    if (numFormat.maxDecimalPrecision == 0)
+                        numFormat.multiplier /= 1000.0;
+                    }
+                else
+                    formatted.append (1, ',');
+                break;
+            case 'e':
+            case 'E':
+                numFormat.precisionType = PRECISION_TYPE_Scientific;
+                // ignore exponent sign
+                fmt++;
+                if ('+' == *fmt || '-' == *fmt)
+                    fmt++;
+
+                // ignore exponent width
+                while ('0' == *fmt)
+                    fmt++;
+                
+                continue;   // we've already moved to next token
+            case '.':
+            case '0':
+            case '#':
+                if (numFormat.insertPos == -1)
+                    {
+                    numFormat.insertPos = formatted.length();
+                    fmt = ParseNumberFormat (numFormat, fmt);
+                    }
+                else
+                    formatted.append (1, *fmt++);
+                continue;   // we've already moved to next token
+            default:
+                formatted.append (1, *fmt);
+                break;
+            }
+
+        fmt++;
+        }
+
+    // It's possible the format string did not actually contain any placeholders for the digits, in which case we have no formatting to do
+    if (WString::npos != numFormat.insertPos)
+        {
+        DoubleFormatterPtr fmtr = numFormat.ToFormatter();
+        WString formattedDouble = fmtr->ToString (d * numFormat.multiplier);
+
+        // We have to pad width with leading zeros, DoubleFormatter doesn't support it.
+        if (numFormat.widthBeforeDecimal > 0)
+            {
+            size_t endPos = formattedDouble.find ('.');
+            if (WString::npos == endPos)
+                endPos = formattedDouble.length();
+
+            if ((UInt32)endPos < numFormat.widthBeforeDecimal)
+                formattedDouble.insert (0, numFormat.widthBeforeDecimal - (UInt32)endPos, '0');
+            }
+        else if (formattedDouble.length() > 0 && formattedDouble[0] == '0')
+            {
+            // DoubleFormatter ignores our leading zero setting if the value of the double is zero
+            formattedDouble.erase (0, 1);
+            }
+
+        // And we have to remove trailing zeros
+        if (numFormat.minDecimalPrecision < numFormat.maxDecimalPrecision)
+            {
+            size_t decimalPos = (UInt32)formattedDouble.find ('.');
+            if (WString::npos != decimalPos)
+                {
+                UInt32 minPos = (UInt32)decimalPos + 1 + numFormat.minDecimalPrecision, // the minimum number of decimal digits to keep, regardless of whether or not they are zero
+                       maxPos = (UInt32)decimalPos + 1 + numFormat.maxDecimalPrecision;
+
+                if (maxPos >= (UInt32)formattedDouble.length())
+                    maxPos = (UInt32)formattedDouble.length()-1;
+
+                while (maxPos >= minPos && '0' == formattedDouble[maxPos])
+                    formattedDouble.erase (maxPos--);
+
+                // trailing decimal point?
+                if ((UInt32)decimalPos == maxPos)
+                    formattedDouble.erase (decimalPos);
+                }
+            }
+
+            if (numFormat.insertPos == formatted.length())
+                formatted.append (formattedDouble);
+            else if (numFormat.insertPos < formatted.length())
+                formatted.insert (numFormat.insertPos, formattedDouble);
+            else
+                { BeAssert (false); return false; }
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP NumericFormat::SkipLiteralString (WCharCP start)
+    {
+    WCharCP end = start + 1;
+    WChar quoteChar = *start;
+
+    while (*end)
+        {
+        if (quoteChar == *end)
+            break;
+
+        ++end;
+        }
+
+    return end;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP NumericFormat::ParseNumberFormat (NumericFormat& numFormat, WCharCP start)
+    {
+    bool foundZero = false;
+    bool stopProcessing = false;
+    WCharCP cur = start;
+    while (0 != *cur)
+        {
+        switch (*cur)
+            {
+            case '0':
+                foundZero = true;
+                numFormat.widthBeforeDecimal++;
+                break;
+            case '#':
+                if (foundZero)
+                    numFormat.widthBeforeDecimal++;
+                break;
+            case ',':
+                // check if this is a trailing comma, in which case we treat it as a scaling factor, not a group separator
+                if (*(cur+1) == '.' || *(cur+1) == ',')
+                    {
+                    // Is a scaling factor if immediately precedes decimal point
+                    numFormat.multiplier /= 1000.0;
+                    break;
+                    }
+                else if (*(cur+1) != '0' && *(cur+1) != '#')
+                    {
+                    // Is a scaling factor, will be processed by calling code
+/*<==*/             return cur;
+                    }
+                else
+                    {
+                    // Is a group separator
+                    numFormat.insertThousandsSeparator = true;
+                    break;
+                    }
+            case '.':
+            default:
+                stopProcessing = true;
+                break;
+            }
+        
+        if (stopProcessing)
+            break;
+        else
+            ++cur;
+        }
+
+    if ('.' == *cur)
+        {
+        UInt32 numPlaceholders = 0;
+        cur++;
+        stopProcessing = false;
+        while (0 != *cur)
+            {
+            switch (*cur)
+                {
+                case '0':
+                    numPlaceholders++;
+                    numFormat.minDecimalPrecision = numFormat.maxDecimalPrecision = numPlaceholders;
+                    break;
+                case '#':
+                    numPlaceholders++;
+                    numFormat.maxDecimalPrecision = numPlaceholders;
+                    break;
+                default:
+                    stopProcessing = true;
+                    break;
+                }
+
+            if (stopProcessing)
+                break;
+            else
+                ++cur;
+            }
+        }
+
+    return cur;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECValue::ApplyDotNetFormatting (WStringR out, WCharCP fmt) const
+    {
+    if (IsNull())
+        return false;
+
+    switch (GetPrimitiveType())
+        {
+    case PRIMITIVETYPE_Integer:
+        return NumericFormat::FormatInteger (out, fmt, GetInteger());
+    case PRIMITIVETYPE_Long:
+        return NumericFormat::FormatInteger (out, fmt, GetLong());
+    case PRIMITIVETYPE_Double:
+        return NumericFormat::FormatDouble (out, fmt, GetDouble());
+    default:
+        BeAssert (false && L"Call ECValue::SupportsDotNetFormatting() to determine if this ECValue can be formatted");
+        return false;
+        }
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

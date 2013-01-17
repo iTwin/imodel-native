@@ -56,8 +56,6 @@ private:
     WString                 m_shortLabel;
     UnitConverter           m_converter;
     WString                 m_unitName;     // This is required only because DgnPlatform needs it in order to look up unit label customizations...
-
-    static bool                         GetDisplayUnitForECProperty (UnitR unit, WStringP displayFormat, ECPropertyCR ecprop);
 public:
     Unit() { }
     Unit (WCharCP unitName, WCharCP shortLabel, UnitConverterCR converter, WCharCP baseUnitName) : m_baseUnitName (baseUnitName), m_shortLabel (shortLabel), m_converter (converter), m_unitName (unitName) { }

@@ -329,28 +329,17 @@ bool Unit::GetUnitForECProperty (UnitR unit, ECPropertyCR ecprop)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Unit::GetDisplayUnitForECProperty (UnitR unit, WStringR fmt, ECPropertyCR ecprop)
-    {
-    return GetDisplayUnitForECProperty (unit, &fmt, ecprop);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Unit::GetDisplayUnitForECProperty (UnitR unit, WStringP fmt, ECPropertyCR ecprop)
+bool Unit::GetDisplayUnitForECProperty (UnitR unit, WStringR fmt, ECPropertyCR ecprop)
     {
     ECValue v;
     IECInstancePtr attr = ecprop.GetCustomAttribute (DISPLAY_UNIT_SPECIFICATION);
     if (attr.IsValid() && ECOBJECTS_STATUS_Success == attr->GetValue (v, DISPLAY_UNIT_NAME) && !v.IsNull() && UnitLocater (ecprop, false).LocateUnitByName (unit, v.GetString()))
         {
-        if (NULL != fmt)
-            {
-            fmt->clear();
-            if (ECOBJECTS_STATUS_Success == attr->GetValue (v, DISPLAY_FORMAT_STRING) && !v.IsNull())
-                *fmt = v.GetString();
-            }
+        fmt.clear();
+        if (ECOBJECTS_STATUS_Success == attr->GetValue (v, DISPLAY_FORMAT_STRING) && !v.IsNull())
+            fmt = v.GetString();
 
         return true;
         }
@@ -362,8 +351,9 @@ bool Unit::GetDisplayUnitForECProperty (UnitR unit, WStringP fmt, ECPropertyCR e
 * This method was requested by Graphite team. They have a need to format Units values
 * without dependency on DgnPlatform, where ECUnitsTypeAdapter lives.
 * If DgnPlatform is present, the method will use the type adapter.
-* Otherwise we will do the formatting here in ECObjects. In that case,
-* the FormatString property of DisplayUnitSpecification is ignored.
+* Otherwise we will do the formatting here in ECObjects.
+* (The difference is that DgnPlatform will search for and apply any unit label customization
+* schemas present in the instance's DgnFile).
 * @bsimethod                                                    Paul.Connelly   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Unit::FormatValue (WStringR formatted, ECValueCR inputVal, ECPropertyCR ecprop, IECInstanceCP instance)
@@ -380,21 +370,26 @@ bool Unit::FormatValue (WStringR formatted, ECValueCR inputVal, ECPropertyCR ecp
     if (NULL != instance && NULL != (typeAdapter = ecprop.GetTypeAdapter()))
         return typeAdapter->ConvertToString (formatted, inputVal, *IECTypeAdapterContext::Create (ecprop, *instance));
 
-    // No TypeAdapter, do basic formatting
-    double displayValue = v.GetDouble();
+    // No TypeAdapter
     WCharCP label = storedUnit.GetShortLabel();
 
     Unit displayUnit;
-    if (Unit::GetDisplayUnitForECProperty (displayUnit, NULL, ecprop))
+    WString fmt;
+    if (Unit::GetDisplayUnitForECProperty (displayUnit, fmt, ecprop))
         {
+        double displayValue = v.GetDouble();
         if (!displayUnit.IsCompatible (storedUnit) || !storedUnit.ConvertTo (displayValue, displayUnit))
             return false;
 
+        v.SetDouble (displayValue);
         label = displayUnit.GetShortLabel();
         }
 
     formatted.clear();
-    formatted.Sprintf (L"%0.2f", displayValue);
+    WCharCP fmtCP = fmt.empty() ? L"f" : fmt.c_str();
+    if (!v.ApplyDotNetFormatting (formatted, fmtCP))
+        return false;
+
     if (NULL != label)
         {
         formatted.append (1, ' ');

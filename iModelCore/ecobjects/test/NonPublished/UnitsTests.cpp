@@ -111,6 +111,7 @@ static WCharCP s_schemaXml =
     L"              </UnitSpecification>"
     L"              <DisplayUnitSpecification xmlns=\"Unit_Attributes.01.00\">"
     L"                  <DisplayUnitName>MILE</DisplayUnitName>"
+    L"                  <DisplayFormatString>0000.###### \"ignored\"</DisplayFormatString>"
     L"              </DisplayUnitSpecification>"
     L"          </ECCustomAttributes>"
     L"        </ECProperty>"
@@ -1759,8 +1760,8 @@ TEST_F (UnitsTest, Formatting)
     // Storage: km Display: none
     TestUnitFormatting (L"FromKOQDimension", 123.456, L"123.46 km");
 
-    // Storage: km Display: miles
-    TestUnitFormatting (L"FromDimension", 123.456, L"76.71 mi");
+    // Storage: km Display: miles Format: 0000.###### \"ignored\"
+    TestUnitFormatting (L"FromDimension", 123.456, L"0076.712002 ignored mi");
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

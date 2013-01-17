@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECValue.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -221,6 +221,13 @@ public:
     //  - int, long, double, boolean, points, and datetime can be converted to string (uses ToString())
     //  - a null value of any primitive type can be converted a null value of any other primitive type
     ECOBJECTS_EXPORT bool           ConvertToPrimitiveType (PrimitiveType primitiveType);
+
+    // Attempts to format the underlying value using the specified .NET-style format string.
+    // Typically the format string originated from an ECCustomAttribute.
+    // Currently only supports numeric types: double, int, and long
+    // Use DgnPlatform::IECInteropStringFormatter() for more full-featured formatting.
+    ECOBJECTS_EXPORT bool           ApplyDotNetFormatting (WStringR formatted, WCharCP formatString) const;
+    ECOBJECTS_EXPORT bool           SupportsDotNetFormatting() const;
 /*__PUBLISH_SECTION_START__*/
 
     ECOBJECTS_EXPORT ECObjectsStatus  SetStructArrayInfo (UInt32 count, bool isFixedSize);
