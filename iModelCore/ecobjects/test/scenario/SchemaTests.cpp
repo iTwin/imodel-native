@@ -65,19 +65,6 @@ TEST_F(SchemaTest,ExpectReadOnly)
     StructECPropertyP PropertyOfCustomAttribute;
     customAttributeClass->CreateStructProperty(PropertyOfCustomAttribute, L"PropertyOfCustomAttribute",*structClass);
     ASSERT_TRUE(PropertyOfCustomAttribute!=NULL);
-      
-    //IECInstancePtr instance = GetClassInstance(L"CustomAttribute", *schema, *schemaOwner);
-    //ASSERT_TRUE(instance.get()!=NULL);
- 
-    //ECObjectsStatus status =domainClass->SetCustomAttribute(*instance);
-    //ASSERT_EQ(ECOBJECTS_STATUS_Success,status);
- 
-    //derivedClass->AddBaseClass(*domainClass);
- 
-    //instance = derivedClass->GetCustomAttribute(L"CustomAttribute");
- 
-    //bool status1 = instance->IsReadOnly();
-    //ASSERT_TRUE(status1 ==true); // Assertion Fails since IsReadOnly() returns False
 }
 TEST_F(SchemaTest, ShouldBeAbleToIterateOverECClassContainer)
     {
